@@ -52,16 +52,16 @@ vi.mock("firebase/firestore", () => {
   };
 });
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
 
-vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/sync-status-state.svelte.js", () => ({
   trackWrite: vi.fn(async (fn: () => Promise<unknown>, _name?: string) => fn()),
 }));
 
 const mockReportErrorTelemetry = vi.fn();
-vi.mock("$lib/shared/error/services/error-telemetry-reporter", () => ({
+vi.mock("#lib/shared/error/services/error-telemetry-reporter.js", () => ({
   reportErrorTelemetry: (...args: unknown[]) => mockReportErrorTelemetry(...args),
 }));
 
@@ -71,7 +71,7 @@ import {
   firestoreSet,
   firestoreDelete,
 } from "../../../../src/lib/shared/firestore/firestore-crud";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
 
 const TestSchema = z.object({
   id: z.string(),

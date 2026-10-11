@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Plane } from "@tka/tka-types";
-import { firestoreDate } from "$lib/shared/firestore";
+import { firestoreDate } from "#lib/shared/firestore/index.js";
 import { HandPathDataSchema } from "./hand-path-schemas";
 
 const SoloPropStepSchema = z

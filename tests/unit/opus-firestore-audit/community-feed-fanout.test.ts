@@ -79,11 +79,11 @@ vi.mock("firebase/firestore", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 
-vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => ({
+vi.mock("#lib/shared/library/services/collection-firestore-mapper.js", () => ({
   mapDocToCollection: (data: Record<string, unknown>, id: string) => ({
     id,
     ...data,
@@ -95,7 +95,7 @@ vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => ({
 
 // Real batching logic, instrumented: mirrors user-repository.getVisibleOwnerNames
 // (30-uid `in` chunks over the users collection, 1 billed read per matched doc).
-vi.mock("$lib/shared/community/services/user-repository", () => ({
+vi.mock("#lib/shared/community/services/user-repository.js", () => ({
   getVisibleOwnerNames: vi.fn(async (userIds: string[]) => {
     const unique = [...new Set(userIds)].filter(Boolean);
     const names = new Map<string, string>();
@@ -108,7 +108,7 @@ vi.mock("$lib/shared/community/services/user-repository", () => ({
   }),
 }));
 
-import { communityCollectionsState } from "$lib/features/browse/collections/state/community-collections-state.svelte";
+import { communityCollectionsState } from "#lib/features/browse/collections/state/community-collections-state.svelte.js";
 
 /** A collection-group doc at users/{owner}/collections/{id}. */
 function collectionDoc(

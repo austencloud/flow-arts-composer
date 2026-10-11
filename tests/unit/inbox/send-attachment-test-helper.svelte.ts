@@ -1,4 +1,4 @@
-import { createSendAttachmentState } from "$lib/shared/inbox/state/send-attachment-state.svelte";
+import { createSendAttachmentState } from "#lib/shared/inbox/state/send-attachment-state.svelte.js";
 
 type Inputs = Parameters<typeof createSendAttachmentState>[0];
 type Dependencies = Parameters<typeof createSendAttachmentState>[1];

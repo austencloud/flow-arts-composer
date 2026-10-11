@@ -9,14 +9,14 @@
   Uses instant content swap - the workspace expansion is the "hero" animation.
 -->
 <script lang="ts">
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { GridJoin } from "@tka/tka-types";
-  import OptionPicker from "$lib/features/create/construct/option-picker/components/OptionPicker.svelte";
-  import StartPlacementPicker from "$lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import type { SimplifiedStartPlacementState } from "$lib/shared/create/state/start-placement-state.svelte";
+  import OptionPicker from "#lib/features/create/construct/option-picker/components/OptionPicker.svelte";
+  import StartPlacementPicker from "#lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import type { SimplifiedStartPlacementState } from "#lib/shared/create/state/start-placement-state.svelte.js";
   import ConstructTutorialGuide from "../../construct/tutorial/components/ConstructTutorialGuide.svelte";
   import ConstructGuideEntry from "../../construct/tutorial/components/ConstructGuideEntry.svelte";
   import type { StartPlacementPath } from "../../construct/services/construct-analytics";
@@ -106,7 +106,6 @@
               validationMessage={startPlacementValidationMessage}
               onNavigateToAdvanced={onStartPlacementNavigateToAdvanced}
               onNavigateToDefault={onStartPlacementNavigateToDefault}
-              {isSideBySideLayout}
               onPlacementSubmitted={onStartPlacementSubmitted}
               heading={startPlacementHeading}
               suppressHeading={constructTutorialState.isActive}

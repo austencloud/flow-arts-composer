@@ -11,7 +11,7 @@
  * this stays an ordinary unit test — no browser, no component harness.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createHeroScanTimeline } from "$lib/features/store/components/front-door/hero-scan-timeline.svelte";
+import { createHeroScanTimeline } from "#lib/features/store/components/front-door/hero-scan-timeline.svelte.js";
 
 /** No reduced-motion preference unless a test asks for one. */
 function stubMatchMedia(reduced: boolean): void {

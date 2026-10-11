@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
+import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 import {
   SequenceTimeMapSchema,
   createBpmTimeMap,

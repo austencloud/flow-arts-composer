@@ -8,8 +8,8 @@ Dark mode: Polls visibility manager for dark mode state (supports pictograph
 dark mode independent of app dark mode). Export uses explicit darkMode prop.
 -->
 <script lang="ts">
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     stepNumber = null,

@@ -20,7 +20,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import type { FestivalSubmission } from "../domain/models/festival";
 import { create as createFestival } from "./festival-repository";
 import { trackFestivalSubmitted } from "../analytics/festival-events";

@@ -1,5 +1,5 @@
 import { redirect } from "@sveltejs/kit";
-import { safeInternalPath } from "$lib/shared/auth/services/escape-target";
+import { safeInternalPath } from "#lib/shared/auth/services/escape-target.js";
 import type { PageLoad } from "./$types";
 
 // The destination arrives in the request query, which does not exist during

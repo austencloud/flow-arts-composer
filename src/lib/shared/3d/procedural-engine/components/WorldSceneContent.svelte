@@ -25,34 +25,34 @@
     createPhysicsWorldState,
     initPhysicsWorld,
     disposePhysicsWorld,
-  } from "$lib/shared/3d/physics/rapier-world";
+  } from "#lib/shared/3d/physics/rapier-world.js";
   import type {
     PhysicsWorldState,
     PlayerControllerState,
-  } from "$lib/shared/3d/physics/types";
-  import { TerrainPhysicsManager } from "$lib/shared/3d/physics/terrain-collider";
+  } from "#lib/shared/3d/physics/types.js";
+  import { TerrainPhysicsManager } from "#lib/shared/3d/physics/terrain-collider.js";
   import {
     createPlayerController,
     disposePlayerController,
-  } from "$lib/shared/3d/physics/player-controller";
+  } from "#lib/shared/3d/physics/player-controller.js";
   import {
     createRapierPhysicsProvider,
     RapierPhysicsProvider,
-  } from "$lib/shared/3d/physics/rapier-physics-provider";
+  } from "#lib/shared/3d/physics/rapier-physics-provider.js";
   import type {
     PhysicsProvider,
     AvatarState,
-  } from "$lib/shared/3d/camera/types";
+  } from "#lib/shared/3d/camera/types.js";
 
   // Unified camera system
   import { UnifiedCameraController, CameraMode } from "@austencloud/camera-3d";
-  import { cameraPreferences } from "$lib/shared/3d/camera/camera-preferences.svelte";
+  import { cameraPreferences } from "#lib/shared/3d/camera/camera-preferences.svelte.js";
 
   // Avatar components
   import { Avatar3D } from "@austencloud/scene-3d";
   import { Prop3D } from "@austencloud/scene-3d";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import Grid3D from "$lib/shared/3d/components/Grid3D.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import Grid3D from "#lib/shared/3d/components/Grid3D.svelte";
   import { Plane } from "@austencloud/scene-3d";
 
   // World systems
@@ -70,8 +70,8 @@
   import type { RealmConfig } from "../core/world-config";
 
   // Museum
-  import { createMuseumState } from "$lib/shared/museum/state/museum-state.svelte";
-  import { setActiveMuseumState } from "$lib/shared/museum/state/museum-state-bridge.svelte";
+  import { createMuseumState } from "#lib/shared/museum/state/museum-state.svelte.js";
+  import { setActiveMuseumState } from "#lib/shared/museum/state/museum-state-bridge.svelte.js";
 
   // Archive realm (ARCHIVE_WING1_CONFIG) - procedural indoor scene via IndoorScene.
   // (The standalone archive feature module was deleted Jun 2026; museum supersedes it.)
@@ -88,7 +88,7 @@
     Matrix3,
     type Scene,
   } from "three";
-  import type { RaycastResult } from "$lib/shared/3d/debug/game-bridge-types";
+  import type { RaycastResult } from "#lib/shared/3d/debug/game-bridge-types.js";
 
   // Terrain material + game loop services
   import { createTerrainMaterialFactory } from "../services/terrain-material-factory";
@@ -97,7 +97,7 @@
     type GameLoopContext,
     type GameLoopState,
   } from "../services/world-game-loop";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
   import { attachKtx2Decoder } from "../../scene-boot/gltf-decoders";
 
   // The module-scoped loader gets its geometry decoders at import time, but the
@@ -162,7 +162,7 @@
     showAvatar: boolean;
     showGridPlanes: boolean;
     inputCapabilities: ReturnType<
-      typeof import("$lib/shared/input/InputCapabilities.svelte").getInputCapabilities
+      typeof import("#lib/shared/input/InputCapabilities.svelte.js").getInputCapabilities
     >;
     onModeChange: (mode: CameraMode) => void;
 
@@ -182,7 +182,7 @@
 
     /** Performer state for sequence playback (optional) */
     performerState?:
-      | import("$lib/shared/3d/state/character-instance-state.svelte").CharacterInstanceState
+      | import("#lib/shared/3d/state/character-instance-state.svelte.js").CharacterInstanceState
       | null;
 
     /** Validated real-world terrain data for Earth destinations.
@@ -1112,7 +1112,7 @@
 
 <!-- Museum Pavilions (only when museum realm is active) -->
 {#if isMuseumRealm && isInitialized && isReadyToRender}
-  {#await import("$lib/features/museum/scenes/procedural/components/MuseumGrounds.svelte") then mod}
+  {#await import("#lib/features/museum/scenes/procedural/components/MuseumGrounds.svelte") then mod}
     <mod.default
       {museumState}
       groundY={(activeConfig.terrain.waterLevel ?? 5) + 3}

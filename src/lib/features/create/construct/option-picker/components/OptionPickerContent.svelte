@@ -5,7 +5,7 @@ Single responsibility: Organize prepared options into sections and layout.
 Uses organizer and sizer services for section grouping and sizing.
 -->
 <script lang="ts">
-  import type { PreparedPictographData } from "$lib/shared/pictograph/option/prepared-pictograph-data";
+  import type { PreparedPictographData } from "#lib/shared/pictograph/option/prepared-pictograph-data.js";
   import type {
     OrganizedSection,
     SortMethod,
@@ -14,24 +14,24 @@ Uses organizer and sizer services for section grouping and sizing.
     DeviceAwareSizingParams,
     DeviceAwareSizingResult,
   } from "../services/types";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   // CSS animations used instead of Svelte transitions to avoid carousel dimension issues
   import OptionSection from "./OptionSection.svelte";
-  import { safe } from "$lib/shared/attract/domain/annotations";
-  import { createRootFontRamp } from "$lib/shared/ui/root-font-ramp.svelte";
+  import { safe } from "#lib/shared/attract/domain/annotations.js";
+  import { createRootFontRamp } from "#lib/shared/ui/root-font-ramp.svelte.js";
   import Option456Row from "./Option456Row.svelte";
   import OptionGrid from "./OptionGrid.svelte";
   import OptionCard from "./OptionCard.svelte";
   import OptionViewerSwipeLayout from "../swipe-layout/components/OptionViewerSwipeLayout.svelte";
   import OptionViewerSection from "../swipe-layout/components/OptionViewerSection.svelte";
-  import HorizontalSwipeContainer from "$lib/shared/foundation/ui/HorizontalSwipeContainer.svelte";
+  import HorizontalSwipeContainer from "#lib/shared/foundation/ui/HorizontalSwipeContainer.svelte";
   import OptionPickerHeader from "./OptionPickerHeader.svelte";
   import OptionPickerControlsPopover from "./OptionPickerControlsPopover.svelte";
-  import type { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import type { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type {
     TurnLevel,
     TurnValue,
-  } from "$lib/shared/create/services/level-turn-values";
+  } from "#lib/shared/create/services/level-turn-values.js";
   import { identifyContinuation } from "../services/continuation-identifier";
   import { buildLetterTypeGroupPanels } from "../services/letter-type-navigation";
   import type { LetterTypeGroupKey } from "../services/section-title-formatter";
@@ -41,14 +41,14 @@ Uses organizer and sizer services for section grouping and sizing.
   } from "../../services/construct-analytics";
   import type { Attachment } from "svelte/attachments";
   import { onMount } from "svelte";
-  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
+  import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
   import OptionInteractionHint from "./OptionInteractionHint.svelte";
   import { createOptionInteractionHintState } from "../state/option-interaction-hint-state.svelte";
   import {
     hasSeenOptionInteractionHint,
     markOptionInteractionHintSeen,
   } from "../services/option-interaction-hint-marker";
-  import { tryGetCreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
+  import { tryGetCreateModuleContext } from "#lib/features/create/shared/context/create-module-context.js";
   import { selectOptionInteractionHintPresentation } from "../services/option-interaction-hint-presentation";
   import { selectOptionControlsPresentation } from "../services/option-controls-presentation";
   import {

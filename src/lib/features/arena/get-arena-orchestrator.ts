@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { ArenaOrchestrator } from './services/arena-orchestrator';
 
 let instance: ArenaOrchestrator | null = null;

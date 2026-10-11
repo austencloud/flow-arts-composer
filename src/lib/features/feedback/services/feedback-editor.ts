@@ -5,8 +5,8 @@
  * Used by FeedbackDetailState to track edits and restore from snapshots.
  */
 
-import type { EditSnapshot, EditableFields, ValidationResult } from "$lib/shared/feedback/domain/feedback-contract-types";
-import type { FeedbackItem } from "$lib/shared/feedback/domain/models/feedback-models";
+import type { EditSnapshot, EditableFields, ValidationResult } from "#lib/shared/feedback/domain/feedback-contract-types.js";
+import type { FeedbackItem } from "#lib/shared/feedback/domain/models/feedback-models.js";
 
 /**
  * Create a snapshot of current feedback state for change tracking

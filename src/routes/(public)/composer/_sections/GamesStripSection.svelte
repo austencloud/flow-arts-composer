@@ -27,8 +27,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import type { Component } from "svelte";
-  import { GAME_REGISTRY } from "$lib/features/learn/play/domain/game-registry";
-  import type { GameId } from "$lib/features/learn/play/domain/arcade-types";
+  import { GAME_REGISTRY } from "#lib/features/learn/play/domain/game-registry.js";
+  import type { GameId } from "#lib/features/learn/play/domain/arcade-types.js";
 
   // Lead with the four no-alphabet-knowledge games, in this order, then the
   // rest in registry order. Titles/accents come from the registry — never a
@@ -58,7 +58,7 @@
 
   onMount(async () => {
     const mod = await import(
-      "$lib/features/learn/play/components/previews/preview-map"
+      "#lib/features/learn/play/components/previews/preview-map.js"
     );
     getPreview = mod.getGamePreview;
   });

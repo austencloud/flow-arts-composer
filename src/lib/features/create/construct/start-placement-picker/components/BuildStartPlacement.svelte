@@ -1,24 +1,24 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     startPlacementManager,
     type StartPlacementPlacement,
-  } from "$lib/shared/create/services/start-placement-manager";
-  import PropPlacementGrid from "$lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
-  import type { PropPlacementChange } from "$lib/shared/pictograph/grid/domain/prop-placement";
+  } from "#lib/shared/create/services/start-placement-manager.js";
+  import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
+  import type { PropPlacementChange } from "#lib/shared/pictograph/grid/domain/prop-placement.js";
   import {
     GridLocation,
     GridMode,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { normalizeOrientationForLocation } from "$lib/shared/pictograph/grid/domain/orientation-from-drag";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { normalizeOrientationForLocation } from "#lib/shared/pictograph/grid/domain/orientation-from-drag.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     HandSide,
     type Orientation,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import OrientationCycler from "./OrientationCycler.svelte";
   import { getStartPlacementDisplayLabel } from "../services/start-placement-display-label";
 

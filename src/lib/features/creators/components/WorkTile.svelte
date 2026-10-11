@@ -11,13 +11,13 @@
   and navigation; it does not own another preview player.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import SequenceShowcasePreview from "$lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-  import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
+  import SequenceShowcasePreview from "#lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+  import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   interface Props {
     sequence: SequenceData;

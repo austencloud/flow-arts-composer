@@ -1,7 +1,7 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "$lib/shared/auth/firebase";
-import { authedFetch } from "$lib/shared/auth/services/authed-fetch";
+import { auth } from "#lib/shared/auth/firebase.js";
+import { authedFetch } from "#lib/shared/auth/services/authed-fetch.js";
 import type {
   LifecycleEventEnvelope,
   LifecycleEventInput,

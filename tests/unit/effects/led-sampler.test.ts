@@ -3,14 +3,14 @@ import {
   LedSampler,
   patternFrameIndex,
   type LedSamplerConfig,
-} from "$lib/shared/animation-engine/services/led-sampler";
+} from "#lib/shared/animation-engine/services/led-sampler.js";
 import {
   DEFAULT_LED_CONFIG,
   LED_BRIGHTNESS_LEVELS,
   PATTERN_MATERIALIZE_BRIGHTNESS,
   type LedOverlayConfig,
-} from "$lib/shared/animation-engine/domain/types/led-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+} from "#lib/shared/animation-engine/domain/types/led-types.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 
 const SAMPLER_CONFIG: LedSamplerConfig = {
   canvasSize: 950,

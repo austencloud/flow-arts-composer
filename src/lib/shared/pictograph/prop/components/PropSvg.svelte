@@ -83,6 +83,7 @@ even when Svelte recreates the component instance.
   // Unmount cleanup only. Deliberately not the effect teardown (see above).
   onDestroy(() => {
     if (fadeTimeoutId !== null) clearTimeout(fadeTimeoutId);
+    if (settleFrame !== null) cancelAnimationFrame(settleFrame);
   });
 
   let {
@@ -192,6 +193,11 @@ even when Svelte recreates the component instance.
   let displayedRotation = $state<number>(propPosition?.rotation ?? 0);
   let previousRotation: number | null = null;
   let previousSnapshot: MotionSnapshot | null = null;
+  let wasDirectPositioning = false;
+  // Keeps transitions off from the moment direct positioning ends until the
+  // browser has painted the still angle (see the rotation effect below).
+  let settlingFromDirect = $state(false);
+  let settleFrame: number | null = null;
 
   // Track displayed position for smooth CSS transitions
   // CSS transitions require the old value to be rendered before the new value
@@ -344,9 +350,23 @@ even when Svelte recreates the component instance.
       previousSnapshot === null || previousRotation === null;
 
     if (directPositioning) {
+      cancelSettle();
       displayedRotation = targetRotation;
     } else if (isFirstRender) {
       displayedRotation = targetRotation;
+    } else if (wasDirectPositioning) {
+      // Per-frame motion just handed back to the still pose. Its frames carry
+      // an accumulated angle (-89°) while the still pose names the same
+      // heading canonically (270°), and playback can end before its last
+      // frame paints. Easing from the last painted angle would then spin the
+      // prop a full turn, so land on the nearest equivalent and keep
+      // transitions off until the browser has painted it.
+      displayedRotation = resolveRotation(
+        previousRotation!,
+        targetRotation,
+        "auto"
+      );
+      holdTransitionsUntilPainted();
     } else {
       const direction = determineAnimationDirection(
         previousSnapshot!,
@@ -359,9 +379,33 @@ even when Svelte recreates the component instance.
       );
     }
 
+    wasDirectPositioning = directPositioning;
     previousRotation = displayedRotation;
     previousSnapshot = snapshot;
   });
+
+  /**
+   * Two frames, as in the position effect above: the first lets the browser
+   * paint the still angle with transitions off, the second turns them back on.
+   */
+  function holdTransitionsUntilPainted(): void {
+    cancelSettle();
+    settlingFromDirect = true;
+    settleFrame = requestAnimationFrame(() => {
+      settleFrame = requestAnimationFrame(() => {
+        settleFrame = null;
+        settlingFromDirect = false;
+      });
+    });
+  }
+
+  function cancelSettle(): void {
+    if (settleFrame !== null) {
+      cancelAnimationFrame(settleFrame);
+      settleFrame = null;
+    }
+    settlingFromDirect = false;
+  }
 
   function determineAnimationDirection(
     previous: MotionSnapshot,
@@ -518,7 +562,9 @@ even when Svelte recreates the component instance.
     <g
       class="prop-svg {motionData.hand}-prop-svg clickable"
       class:selected={isSelected}
-      class:no-transition={isTransforming || directPositioning}
+      class:no-transition={isTransforming ||
+        directPositioning ||
+        settlingFromDirect}
       class:prop-fading={propFading}
       data-prop-type={motionData?.propType}
       data-direct-positioning={directPositioning || undefined}
@@ -552,7 +598,9 @@ even when Svelte recreates the component instance.
     <g
       class="prop-svg {motionData.hand}-prop-svg"
       class:selected={isSelected}
-      class:no-transition={isTransforming || directPositioning}
+      class:no-transition={isTransforming ||
+        directPositioning ||
+        settlingFromDirect}
       class:prop-fading={propFading}
       data-prop-type={motionData?.propType}
       data-direct-positioning={directPositioning || undefined}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { calculatePhysicalCardLayout } from "$lib/features/choreo-card/services/physical-card-layout-calculator";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { calculatePhysicalCardLayout } from "#lib/features/choreo-card/services/physical-card-layout-calculator.js";
 
 function sequence(stepCount: number): SequenceData {
   return {

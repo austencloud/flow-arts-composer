@@ -1,11 +1,11 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceEntry } from "$lib/shared/loop-labeler/domain/sequence-models";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceEntry } from "#lib/shared/loop-labeler/domain/sequence-models.js";
 import type { ComponentId } from "../domain/constants/loop-components";
 import {
   LOOPComponent,
   RESERVED_ORIENTATION_PRIMITIVES,
   type LOOPDomain,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import type {
   LOOPSpecWire,
   ReflectionAxis,
@@ -13,11 +13,11 @@ import type {
 import {
   Period,
   type LOOPType,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import { loopDetector } from "./loop-detector";
-import { convert as convertSequenceToEntry } from "$lib/features/choreo-card/services/sequence-to-entry-converter";
-import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
-import { canonicalJSON } from "$lib/shared/foundation/utils/canonical-json";
+import { convert as convertSequenceToEntry } from "#lib/features/choreo-card/services/sequence-to-entry-converter.js";
+import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
+import { canonicalJSON } from "#lib/shared/foundation/utils/canonical-json.js";
 
 export interface LoopDisplay {
   components: Set<LOOPComponent>;

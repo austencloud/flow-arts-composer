@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { GENERATE_DEFAULT_CONFIG } from "$lib/features/create/generate/state/generate-config.svelte";
-import { DEFAULT_SOLO_LOOP_RECIPE } from "$lib/features/fuse/services/solo-loop-generator";
-import { DEFAULT_GENERATION_STYLE } from "$lib/shared/create/domain/generation-style";
+import { GENERATE_DEFAULT_CONFIG } from "#lib/features/create/generate/state/generate-config.svelte.js";
+import { DEFAULT_SOLO_LOOP_RECIPE } from "#lib/features/fuse/services/solo-loop-generator.js";
+import { DEFAULT_GENERATION_STYLE } from "#lib/shared/create/domain/generation-style.js";
 
 describe("shared generation style defaults", () => {
   it("keeps Generate and Fuse on the same production policy", () => {

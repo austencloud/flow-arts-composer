@@ -14,22 +14,22 @@
 
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { CandidateUnit } from "$lib/shared/combination/domain/closure-types";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { CandidateUnit } from "#lib/shared/combination/domain/closure-types.js";
 import {
   bucketByCircleCount,
   describeCombination,
   expandClosures,
-} from "$lib/shared/combination/services/circle-buckets";
+} from "#lib/shared/combination/services/circle-buckets.js";
 import {
   buildUnitSequence,
   findLOOPCombinations,
-} from "$lib/shared/combination/services/loop-combinator";
+} from "#lib/shared/combination/services/loop-combinator.js";
 import {
   loadCombinationSteps,
   searchCandidateUnits,
-} from "$lib/shared/combination/services/unit-search";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/combination/services/unit-search.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 import { AAAA_CCW } from "./fixtures";
 import { loadPictographDatasetForTests } from "./pictograph-dataset";

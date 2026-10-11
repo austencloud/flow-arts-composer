@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFirstFireBlenderContract } from "$lib/features/museum/data/first-fire-blender-contract";
+import { buildFirstFireBlenderContract } from "#lib/features/museum/data/first-fire-blender-contract.js";
 import {
   FIRST_FIRE_COURT_LIGHT_REACH_METRES,
   FIRST_FIRE_NEUTRAL_BLACKOUT_MS,

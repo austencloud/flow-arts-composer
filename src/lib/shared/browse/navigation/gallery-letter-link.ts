@@ -1,7 +1,7 @@
 import {
   normalizeLetter,
   type Letter,
-} from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/foundation/domain/models/letter.js";
 
 export const GALLERY_LETTER_QUERY_PARAM = "letter";
 

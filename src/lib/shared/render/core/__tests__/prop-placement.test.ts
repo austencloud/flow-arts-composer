@@ -3,10 +3,10 @@ import {
   calculatePropPosition,
   calculatePropRotation,
   calculatePropPlacement,
-} from "$lib/shared/render/core/calculations/prop-placement";
-import { getHandPointCoordinates } from "$lib/shared/render/core/calculations/grid-placement";
-import { switchOrientation } from "$lib/shared/render/core/calculations/orientation";
-import type { Orientation } from "$lib/shared/render/core/types";
+} from "#lib/shared/render/core/calculations/prop-placement.js";
+import { getHandPointCoordinates } from "#lib/shared/render/core/calculations/grid-placement.js";
+import { switchOrientation } from "#lib/shared/render/core/calculations/orientation.js";
+import type { Orientation } from "#lib/shared/render/core/types.js";
 
 /**
  * A prop's rotation angle encodes which way the prop points. A wrong angle is a

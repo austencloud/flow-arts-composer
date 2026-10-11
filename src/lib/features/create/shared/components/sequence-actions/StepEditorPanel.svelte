@@ -9,44 +9,44 @@
   Desktop: Side panel with pictograph preview, horizontal controls
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import PropPlacementGrid from "$lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
-  import type { PlacementMotionMove } from "$lib/shared/pictograph/grid/state/prop-placement-motion.svelte";
-  import type { PropPlacementChange } from "$lib/shared/pictograph/grid/domain/prop-placement";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
+  import type { PlacementMotionMove } from "#lib/shared/pictograph/grid/state/prop-placement-motion.svelte.js";
+  import type { PropPlacementChange } from "#lib/shared/pictograph/grid/domain/prop-placement.js";
   import StartPlacementEditMode from "./StartPlacementEditMode.svelte";
   import DurationControl from "./DurationControl.svelte";
   import PictographInspectModal from "./PictographInspectModal.svelte";
   import ArrowAdjustmentPanel from "./ArrowAdjustmentPanel.svelte";
   import ArrowAdjustmentHistory from "./ArrowAdjustmentHistory.svelte";
-  import StepEditorTour from "$lib/shared/onboarding/components/step-editor-tour/StepEditorTour.svelte";
-  import { stepEditorTourState } from "$lib/shared/onboarding/state/step-editor-tour-state.svelte";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import StepEditorTour from "#lib/shared/onboarding/components/step-editor-tour/StepEditorTour.svelte";
+  import { stepEditorTourState } from "#lib/shared/onboarding/state/step-editor-tour-state.svelte.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { gridJoinCellResolver } from "@tka/render-core";
-  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-  import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+  import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     HandSide,
     Orientation,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     GridLocation,
     GridMode,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { deriveGridMode } from "$lib/shared/pictograph/grid/services/grid-mode-deriver";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { isAdmin } from "$lib/shared/auth/state/auth-state.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { deriveGridMode } from "#lib/shared/pictograph/grid/services/grid-mode-deriver.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { isAdmin } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { getCreateModuleContext } from "../../context/create-module-context";
-  import { selectedArrowState } from "$lib/shared/create/state/selected-arrow-state.svelte";
-  import { UndoOperationType } from "$lib/features/create/shared/services/undo-manager";
+  import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
+  import { UndoOperationType } from "#lib/features/create/shared/services/undo-manager.js";
   import {
     getShortestRotationStepsBetweenLocations,
     rotateLocation,
-  } from "$lib/shared/create/services/rotation-helpers";
-  import { setGridRotationDirection } from "$lib/shared/pictograph/grid/state/grid-rotation-state.svelte";
-  import { createPersistenceHelper } from "$lib/shared/state/utils/persistent-state";
+  } from "#lib/shared/create/services/rotation-helpers.js";
+  import { setGridRotationDirection } from "#lib/shared/pictograph/grid/state/grid-rotation-state.svelte.js";
+  import { createPersistenceHelper } from "#lib/shared/state/utils/persistent-state.js";
   import { onMount } from "svelte";
 
   // Persist whether the inspect modal is open so a dev HMR / page refresh

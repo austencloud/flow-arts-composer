@@ -1,8 +1,8 @@
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
-import type { ShareURLMetadata } from "$lib/shared/navigation/services/types";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
+import type { ShareURLMetadata } from "#lib/shared/navigation/services/types.js";
 import type { PendingActionType } from "./pending-action-queue";
 import type { ViewerMode } from "../state/viewer-state.svelte";
 import type { ExportType } from "../domain/viewer-orchestrator-context";

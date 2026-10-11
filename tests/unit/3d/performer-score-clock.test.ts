@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { performerScoreClock } from "$lib/shared/3d/domain/performer-score-clock";
+import { performerScoreClock } from "#lib/shared/3d/domain/performer-score-clock.js";
 
 // A sequence with a static start pose plays it as step 0, so beat 1 is step
 // `motionStepOffset`. The raw score clock already runs 0 to 1 across it.

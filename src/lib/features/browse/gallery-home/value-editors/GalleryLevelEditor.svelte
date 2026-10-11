@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
-  import SequencePeek from "$lib/shared/browse/components/SequencePeek.svelte";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-  import { DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
+  import SequencePeek from "#lib/shared/browse/components/SequencePeek.svelte";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+  import { DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
   import { valueDisabled } from "../gallery-value-editor";
   import type {
     GalleryValueHeadSnippet,

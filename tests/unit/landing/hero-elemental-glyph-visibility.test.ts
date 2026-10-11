@@ -1,7 +1,7 @@
 import { flushSync } from "svelte";
 import { effect, effect_root, get, set, state } from "svelte/internal/client";
 import { describe, expect, it, vi } from "vitest";
-import { syncHeroElementalGlyphVisibility } from "$lib/shared/landing/services/hero-elemental-glyph-visibility";
+import { syncHeroElementalGlyphVisibility } from "#lib/shared/landing/services/hero-elemental-glyph-visibility.js";
 
 describe("syncHeroElementalGlyphVisibility", () => {
   it("does not capture synchronous canvas observer state during a hero handoff", () => {

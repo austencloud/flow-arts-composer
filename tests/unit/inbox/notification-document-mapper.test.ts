@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapNotificationDocument } from "$lib/shared/feedback/services/notifier";
+import { mapNotificationDocument } from "#lib/shared/feedback/services/notifier.js";
 
 const createdAt = new Date("2026-08-09T05:26:35.592Z");
 

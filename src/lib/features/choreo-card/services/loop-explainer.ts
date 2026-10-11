@@ -9,20 +9,20 @@
  * Does NOT modify the LOOPDetector - wraps its output with richer analysis.
  */
 
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { LOOPExplanation, SeedInfo, SeedTransformation } from "./types";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 import {
   HORIZONTAL_MIRROR_PLACEMENT_MAP,
   VERTICAL_MIRROR_PLACEMENT_MAP,
   INVERTED_LETTER_MAP,
-} from "$lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps";
+} from "#lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps.js";
 import {
   HALF_PLACEMENT_MAP,
-} from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
+} from "#lib/shared/foundation/domain/models/generation/circular-placement-maps.js";
 
 // Verb phrases describing what each transformation does to the sequence.
 // Written so they read naturally after a subject: "The second half [verb]."

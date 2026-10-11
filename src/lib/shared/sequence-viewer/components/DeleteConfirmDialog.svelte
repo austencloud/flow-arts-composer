@@ -6,7 +6,7 @@
   gallery and video panel pass their own title and body for performance videos.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   interface Props {
     /** The word/name shown in the default confirmation message */
     word?: string;

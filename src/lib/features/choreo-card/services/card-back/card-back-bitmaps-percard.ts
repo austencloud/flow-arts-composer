@@ -43,9 +43,9 @@ import {
   TURN_GLYPH_BOX_H_CQI,
 } from "../../components/card-back/turn-glyph-layout";
 import type { TurnGlyphEntry } from "../../components/card-back/card-back-data";
-import type { DirectRenderOptions } from "$lib/shared/render/services/IDirectRenderer";
-import type { RenderCanvas } from "$lib/shared/render/services/types";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { DirectRenderOptions } from "#lib/shared/render/services/IDirectRenderer.js";
+import type { RenderCanvas } from "#lib/shared/render/services/types.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 // ── Render scale (matches card-back-bitmaps-constant.ts / card-back-layout.ts) ─
 /** Card back render width in px (822 logical * scale 2). */
@@ -104,8 +104,8 @@ let directRendererReady: Promise<void> | null = null;
 const defaultRenderPicto: RenderPictoFn = async (pictograph, options) => {
   if (!directRenderer) {
     const [{ Canvas2DDirectRenderer }, { pictographPreparer }] = await Promise.all([
-      import("$lib/shared/render/services/canvas-2d-direct-renderer"),
-      import("$lib/shared/pictograph/shared/services/pictograph-preparer"),
+      import("#lib/shared/render/services/canvas-2d-direct-renderer.js"),
+      import("#lib/shared/pictograph/shared/services/pictograph-preparer.js"),
     ]);
     directRenderer = new Canvas2DDirectRenderer(pictographPreparer);
     directRendererReady = directRenderer.initialize();

@@ -1,23 +1,23 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
-  import { loopStartPickTarget } from "$lib/features/create/shared/services/choose-start-analyzer";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
+  import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
+  import { loopStartPickTarget } from "#lib/features/create/shared/services/choose-start-analyzer.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import OverflowMenu from "#lib/shared/ui/components/OverflowMenu.svelte";
   import FuseVtgPathPicker from "./FuseVtgPathPicker.svelte";
   import FuseSoloLoopPicker from "./FuseSoloLoopPicker.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import ChoreoCardContextMenuHost from "$lib/shared/sequence-viewer/components/choreo-card-context-menu/ChoreoCardContextMenuHost.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import ChoreoCardContextMenuHost from "#lib/shared/sequence-viewer/components/choreo-card-context-menu/ChoreoCardContextMenuHost.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import FuseLivePathGrid from "./FuseLivePathGrid.svelte";
   import FuseSourceActionPopover from "./FuseSourceActionPopover.svelte";
-  import CardInspectModal from "$lib/features/choreo-card/components/CardInspectModal.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { getSoloPropSaveOrchestrator } from "$lib/features/library/get-solo-prop-save-orchestrator";
-  import { ensureGuestIdentity } from "$lib/shared/auth/services/guest-identity";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+  import CardInspectModal from "#lib/features/choreo-card/components/CardInspectModal.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { getSoloPropSaveOrchestrator } from "#lib/features/library/get-solo-prop-save-orchestrator.js";
+  import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { getFuseContext } from "../context/fuse-context";
   import { fuseRuleLabel } from "../domain/fuse-rule";
   import {

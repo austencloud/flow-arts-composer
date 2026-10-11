@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { findEmptyCellForQR } from "$lib/shared/render/services/cell-border-renderer";
-import { calculateLayout } from "$lib/shared/render/services/layout-calculator";
+import { findEmptyCellForQR } from "#lib/shared/render/services/cell-border-renderer.js";
+import { calculateLayout } from "#lib/shared/render/services/layout-calculator.js";
 
 // Regression: one-count cards (a single beat + start position) have no spare
 // cell. In row mode the QR heuristic returned { col: columns - 1, row: 0 },

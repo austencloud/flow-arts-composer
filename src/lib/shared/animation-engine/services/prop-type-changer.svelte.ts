@@ -6,7 +6,7 @@
  * Uses reactive state ownership - service owns $state, component derives from it.
  */
 
-import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
+import type { SettingsState } from "#lib/shared/settings/state/settings-state.svelte.js";
 export interface PropTypeChangerState {
   leftPropType: string;
   rightPropType: string;

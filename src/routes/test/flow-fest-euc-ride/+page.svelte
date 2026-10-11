@@ -13,7 +13,7 @@
   import { onMount } from "svelte";
   import { Canvas } from "@threlte/core";
   import { AgXToneMapping, PCFSoftShadowMap } from "three";
-  import { FLOW_FEST_EUC_CONTACT_THRESHOLDS, type FlowFestEucMountedPoseDiagnostic } from "$lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose";
+  import { FLOW_FEST_EUC_CONTACT_THRESHOLDS, type FlowFestEucMountedPoseDiagnostic } from "#lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose.js";
   import FlowFestEucRideStage from "./FlowFestEucRideStage.svelte";
   import {
     EUC_RIDE_CAMERA_IDS,

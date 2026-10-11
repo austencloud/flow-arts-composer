@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createPropPlacementMotionState } from "$lib/shared/pictograph/grid/state/prop-placement-motion.svelte";
-import { buildPlacementTransformTransition } from "$lib/shared/pictograph/grid/services/prop-placement-view-model";
-import { placementPairPreview } from "$lib/features/learn/components/interactive/placements/hand-placement-lesson";
+import { createPropPlacementMotionState } from "#lib/shared/pictograph/grid/state/prop-placement-motion.svelte.js";
+import { buildPlacementTransformTransition } from "#lib/shared/pictograph/grid/services/prop-placement-view-model.js";
+import { placementPairPreview } from "#lib/features/learn/components/interactive/placements/hand-placement-lesson.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { DURATION } from "$lib/shared/transitions/transitions";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 
 const preference = vi.hoisted(() => ({ reduce: false }));
-vi.mock("$lib/shared/transitions/motion", () => ({
+vi.mock("#lib/shared/transitions/motion.js", () => ({
   reducedMotion: () => preference.reduce,
 }));
 

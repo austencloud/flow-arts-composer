@@ -45,9 +45,9 @@ import { describe, expect, it } from "vitest";
 import {
   ensureComposition,
   hydrate,
-} from "$lib/shared/foundation/services/sequence-hydrator";
-import { computeHash } from "$lib/shared/library/services/sequence-content-hasher";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/services/sequence-hydrator.js";
+import { computeHash } from "#lib/shared/library/services/sequence-content-hasher.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 import {
   asStoredDocument,

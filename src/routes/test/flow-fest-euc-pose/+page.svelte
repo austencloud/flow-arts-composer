@@ -19,11 +19,11 @@
   import { onMount } from "svelte";
   import { Canvas } from "@threlte/core";
   import { AgXToneMapping, PCFSoftShadowMap } from "three";
-  import type { FlowFestElectricUnicycleDynamics } from "$lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle";
+  import type { FlowFestElectricUnicycleDynamics } from "#lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle.js";
   import {
     FLOW_FEST_EUC_CONTACT_THRESHOLDS,
     type FlowFestEucMountedPoseDiagnostic,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose.js";
   import FlowFestEucPoseStage from "./FlowFestEucPoseStage.svelte";
   import {
     EUC_POSE_MOTION_IDS,
@@ -123,9 +123,8 @@
       }),
       __flowFestEucPoseSet: (overrides: HarnessOverrides) =>
         goto(href(overrides), {
-          replaceState: true,
-          noScroll: true,
-          keepFocus: true,
+          replace: true,
+          reset: false,
         }),
     });
   });

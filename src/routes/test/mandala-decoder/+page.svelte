@@ -8,7 +8,7 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
 
   interface Glyph {
     shapeKey: string;

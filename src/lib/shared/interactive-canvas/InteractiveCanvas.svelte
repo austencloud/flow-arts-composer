@@ -12,14 +12,14 @@
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-  import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import HitTargetOverlay from "./components/HitTargetOverlay.svelte";
-  import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   interface Props {
     // AnimatorCanvas rendering props

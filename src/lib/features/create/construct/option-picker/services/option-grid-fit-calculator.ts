@@ -11,7 +11,7 @@
  */
 
 import type { DeviceAwareSizingParams, DeviceAwareSizingResult, DeviceConfig, GridFitParams, GridFitResult } from "./types";
-import { BREAKPOINTS } from "$lib/shared/device/domain/constants/device-constants";
+import { BREAKPOINTS } from "#lib/shared/device/domain/constants/device-constants.js";
 
 const DEFAULT_MIN_SIZE = 40;
 

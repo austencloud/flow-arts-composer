@@ -1,18 +1,18 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
   import {
     createRenderActivityGate,
     renderGateTarget,
-  } from "$lib/shared/render-gating/render-activity-gate";
-  import { reducedMotion } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/render-gating/render-activity-gate.js";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import { downbeatPulse } from "./timing-intro-phase";
   import type { TimingLessonTopic } from "./timing-lesson-stage";
   import PlacementComparison from "./PlacementComparison.svelte";
-  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
 
   let { topic, active = true }: { topic: TimingLessonTopic; active?: boolean } =
     $props();

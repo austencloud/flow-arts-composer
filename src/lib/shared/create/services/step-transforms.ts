@@ -14,20 +14,20 @@
  * reconciled asynchronously by the calling sequence-transform operation.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import { reconcileStepDerived } from "$lib/shared/create/services/sequence-derived-fields";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { IMotionQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import { reconcileStepDerived } from "#lib/shared/create/services/sequence-derived-fields.js";
 import {
   VERTICAL_MIRROR_PLACEMENT_MAP,
   HORIZONTAL_MIRROR_PLACEMENT_MAP,
   SWAPPED_PLACEMENT_MAP,
-} from "$lib/shared/create/domain/strict-loop-placement-maps";
+} from "#lib/shared/create/domain/strict-loop-placement-maps.js";
 import {
   mirrorMotion,
   flipMotion,
@@ -35,9 +35,9 @@ import {
   reassignMotionHand,
   invertMotion,
   rewindMotion,
-} from "$lib/shared/create/services/motion-transforms";
-import { getToggledGridMode } from "$lib/shared/create/services/rotation-helpers";
-import type { TargetHand } from "$lib/shared/create/state/panel-coordination-state.svelte";
+} from "#lib/shared/create/services/motion-transforms.js";
+import { getToggledGridMode } from "#lib/shared/create/services/rotation-helpers.js";
+import type { TargetHand } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 
 /**
  * Check if a specific hand should be transformed.

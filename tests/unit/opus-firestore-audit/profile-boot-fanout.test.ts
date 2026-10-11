@@ -101,16 +101,16 @@ vi.mock("firebase/firestore", () => ({
   Timestamp: { now: () => ({ toDate: () => new Date() }) },
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: vi.fn(), warning: vi.fn(), success: vi.fn(), info: vi.fn() },
   showToast: vi.fn(),
 }));
 
-import { refreshPublicSequenceOwnerProfile } from "$lib/shared/library/services/public-sequence-persister";
-import { PUBLIC_PROJECTION_SCHEMA_VERSION } from "$lib/shared/foundation/domain/models/public-sequence-wire-schema";
+import { refreshPublicSequenceOwnerProfile } from "#lib/shared/library/services/public-sequence-persister.js";
+import { PUBLIC_PROJECTION_SCHEMA_VERSION } from "#lib/shared/foundation/domain/models/public-sequence-wire-schema.js";
 
 const OWNER = "creator-uid";
 const PROFILE = { displayName: "Ada Lovelace", avatarUrl: "https://x/a.png" };

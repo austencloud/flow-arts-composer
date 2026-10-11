@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { MusicPlayer } from './services/music-player';
 
 let instance: MusicPlayer | null = null;

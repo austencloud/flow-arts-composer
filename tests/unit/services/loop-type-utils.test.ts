@@ -8,9 +8,9 @@ import {
   expanderMultiplier,
   specHasExpandInversion,
   resolveLoopConfig,
-} from "$lib/shared/create/services/loop-type-utils";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/create/services/loop-type-utils.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
 const C = LOOPComponent;
 

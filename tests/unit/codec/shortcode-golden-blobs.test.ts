@@ -14,8 +14,8 @@
  * blobs only; no owner data).
  */
 import { describe, expect, it } from "vitest";
-import { decodeSequenceFromQR } from "$lib/shared/navigation/services/sequence-encoder";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { decodeSequenceFromQR } from "#lib/shared/navigation/services/sequence-encoder.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import golden from "../../fixtures/shortcode-payloads/golden-blobs.json";
 
 interface GoldenEntry {

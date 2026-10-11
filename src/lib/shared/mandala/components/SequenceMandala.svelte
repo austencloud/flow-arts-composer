@@ -3,15 +3,15 @@
 		renderMandalaSVG,
 		renderMandalaToCanvas,
 		resolveMandalaRenderExtent,
-	} from "$lib/shared/mandala/services/mandala-renderer";
+	} from "#lib/shared/mandala/services/mandala-renderer.js";
 	import { onMount, untrack } from "svelte";
 	import {
 		createRenderActivityGate,
 		renderGateTarget
-	} from "$lib/shared/render-gating/render-activity-gate";
+	} from "#lib/shared/render-gating/render-activity-gate.js";
 	import { cubicInOut } from "svelte/easing";
-	import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-	import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+	import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+	import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
 	import { applyMandalaHandColors } from "../domain/mandala-palette";
 	import type {
 		MandalaHandVisibility,
@@ -26,7 +26,7 @@
 	import {
 		createMandalaCanvasSizeTracker,
 		unrotatedSquareSide,
-	} from "$lib/shared/mandala/services/mandala-canvas-size";
+	} from "#lib/shared/mandala/services/mandala-canvas-size.js";
 	import {
 		MANDALA_DEFAULT_SIZE,
 		MANDALA_STANDARD_TIP_DX,
@@ -50,9 +50,9 @@
 	import { getMandalaPathOptions } from "../services/mandala-path-options";
 	import { resolveMandalaTipOffsets } from "../services/mandala-path-preparer";
 	import { createMandalaMorph, mandalaPathsEqual } from "../services/mandala-path-interpolator";
-	import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-	import { pairTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
-	import { DURATION } from "$lib/shared/transitions/transitions";
+	import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+	import { pairTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
+	import { DURATION } from "#lib/shared/transitions/transitions.js";
 	import type { MandalaHandOffsets } from "../services/mandala-grid-join";
 
 	export type { MandalaPathShape, UndulationEasing } from "../domain/mandala-types";

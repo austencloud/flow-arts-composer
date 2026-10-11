@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { createStageChoreographyState } from "$lib/features/stage/state/stage-choreography-state.svelte";
-import { sampleStageFormations } from "$lib/features/stage/domain/stage-formation-sampler";
-import { resolveStageTravel } from "$lib/features/stage/domain/stage-travel-plan";
-import { generatePresetPositions } from "$lib/features/stage/state/formation-presets";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { SceneEnvironmentId } from "$lib/shared/3d/environments/domain/scene-environment";
+import { createStageChoreographyState } from "#lib/features/stage/state/stage-choreography-state.svelte.js";
+import { sampleStageFormations } from "#lib/features/stage/domain/stage-formation-sampler.js";
+import { resolveStageTravel } from "#lib/features/stage/domain/stage-travel-plan.js";
+import { generatePresetPositions } from "#lib/features/stage/state/formation-presets.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
 import {
   STUDIO_PROJECT_SCHEMA,
   STUDIO_PROJECT_VERSION,
-} from "$lib/features/stage/domain/studio-project";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/features/stage/domain/studio-project.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 function sequence(id: string, word: string, stepCount: number): SequenceData {
   return {

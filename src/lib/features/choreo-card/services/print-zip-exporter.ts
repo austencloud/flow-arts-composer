@@ -8,7 +8,7 @@
  */
 
 import type { ZipCardPair } from "./types";
-import { sanitizeFilename } from "$lib/shared/foundation/services/file-downloader";
+import { sanitizeFilename } from "#lib/shared/foundation/services/file-downloader.js";
 import {
   PRINT_SERVICE_PIXELS_PER_INCH,
   verifyCardFrontQrs,

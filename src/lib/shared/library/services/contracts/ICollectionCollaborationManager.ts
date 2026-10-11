@@ -2,8 +2,8 @@ import type {
   CollectionAccessRole,
   CollectionShareGrant,
   LibraryCollection,
-} from "$lib/shared/library/domain/models/collection";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+} from "#lib/shared/library/domain/models/collection.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 
 export interface CollectionShareRecipient {
   id: string;

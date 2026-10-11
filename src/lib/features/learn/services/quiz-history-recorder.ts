@@ -20,8 +20,8 @@ import {
   serverTimestamp,
   type QueryConstraint,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
 import { getUserQuizHistoryPath } from "../data/firestore-paths";
 import type { QuizAttempt, ConceptMastery } from "../domain/quiz-history-types";
 

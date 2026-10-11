@@ -2,7 +2,7 @@
 StaffQuizTypeBadge - Question type indicator badge
 -->
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import type { QuestionType } from "../../../../domain/constants/staff-quiz-questions";
 
   let { type }: { type: QuestionType } = $props();

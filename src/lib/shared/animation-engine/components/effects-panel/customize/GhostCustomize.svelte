@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import EffectControlStack from "$lib/shared/effects/components/EffectControlStack.svelte";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import EffectControlStack from "#lib/shared/effects/components/EffectControlStack.svelte";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
 
   interface Props {
     onBack?: () => void;

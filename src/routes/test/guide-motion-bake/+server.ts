@@ -1,4 +1,4 @@
-import { error, json } from "@sveltejs/kit";
+import { error } from "@sveltejs/kit";
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import type { RequestHandler } from "./$types";
@@ -26,5 +26,5 @@ export const POST: RequestHandler = async ({ request, url }) => {
   // id is allowlisted to a fixed slug set → no traversal possible.
   await writeFile(path.join(MOTIONS_DIR, `${id}.mp4`), buffer);
 
-  return json({ ok: true, id, bytes: buffer.byteLength });
+  return Response.json({ ok: true, id, bytes: buffer.byteLength });
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import manifests from "$lib/features/choreo-card/data/festival-sampler-manifests.json";
+import manifests from "#lib/features/choreo-card/data/festival-sampler-manifests.json";
 import {
   buildFestivalTurnReviewItems,
   formatFestivalTurnPattern,
@@ -12,7 +12,7 @@ import {
   writeFestivalTurnReviewSession,
   FESTIVAL_TURN_REVIEW_SESSION_KEY,
   type FestivalTurnReviewManifest,
-} from "$lib/features/choreo-card/services/festival-sampler-turn-review";
+} from "#lib/features/choreo-card/services/festival-sampler-turn-review.js";
 
 const packs = manifests.candidates as FestivalTurnReviewManifest[];
 

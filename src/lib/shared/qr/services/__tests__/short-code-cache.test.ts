@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { ShortCodeCache } from "../short-code-cache";
 
-// In the test env `$app/environment` browser=false, so IndexedDB is skipped and
+// In the test env `$app/env` browser=false, so IndexedDB is skipped and
 // the memory layer is exercised in isolation (set writes memory before the
 // browser guard; get/getMany read memory first). That's exactly the per-session
 // hot path the cold-deck fix depends on.

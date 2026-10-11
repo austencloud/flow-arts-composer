@@ -22,7 +22,7 @@ import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
 // getCameraManager() refuses to hand out the singleton unless `browser`, and
 // the shared test stub reports false.
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: true,
   building: false,
@@ -30,7 +30,7 @@ vi.mock("$app/environment", () => ({
 }));
 
 const { getCameraManager } =
-  await import("$lib/shared/train/get-camera-manager");
+  await import("#lib/shared/train/get-camera-manager.js");
 const { default: VideoRecordPanel } = await import("./VideoRecordPanel.svelte");
 
 interface Gate<T> {

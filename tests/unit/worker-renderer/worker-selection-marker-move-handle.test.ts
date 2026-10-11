@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createWorkerMoveHandleOwner,
   type WorkerMoveHandleSnapshot,
-} from "$lib/shared/3d/worker-renderer/worlds/selection-markers/worker-performer-move-handle";
+} from "#lib/shared/3d/worker-renderer/worlds/selection-markers/worker-performer-move-handle.js";
 
 function snapshot(
   overrides: Partial<WorkerMoveHandleSnapshot> = {}

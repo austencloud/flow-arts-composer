@@ -10,10 +10,10 @@
   inside it — they lay out their grid, the tile styles itself.
 -->
 <script lang="ts">
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import LessonGridDisplay from "$lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import LessonGridDisplay from "#lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import type { CategoryEntry } from "./gallery-drill-catalog.svelte";
 
   interface Props {

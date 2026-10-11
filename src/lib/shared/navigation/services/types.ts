@@ -2,7 +2,7 @@
  * Co-exported types from retired interface contracts.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ModuleId, Section } from "../domain/types";
 
 export type SheetType =

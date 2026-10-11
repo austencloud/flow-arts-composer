@@ -1,5 +1,5 @@
 import { page } from "$app/state";
-import { writeUrl } from "$lib/shared/navigation/services/url-state";
+import { writeUrl } from "#lib/shared/navigation/services/url-state.js";
 import {
   canAddTeachingKeyAtPhase,
   canMoveTeachingKey,
@@ -16,12 +16,12 @@ import {
 import {
   CHARACTER_DEFINITIONS,
   type CharacterId,
-} from "$lib/shared/3d/domain/character-model";
+} from "#lib/shared/3d/domain/character-model.js";
 import {
   DEFAULT_LAB_STAFF_LENGTH_M,
   MIN_LAB_STAFF_LENGTH_M,
   MAX_LAB_STAFF_LENGTH_M,
-} from "$lib/shared/3d/performers/staff-isolation";
+} from "#lib/shared/3d/performers/staff-isolation.js";
 
 export type InspectionView = "front" | "side" | "hand";
 export type InspectionHand = "right" | "left";
@@ -107,7 +107,7 @@ function option<T extends string>(
 
 /** Shareable URL state with a per-tab draft for in-progress edits and history. */
 export function createContactInspectionState() {
-  let url = $state(new URL(page.url));
+  let url = $state(new URL(page.url.href));
   let phase = $state(numberInRange(url.searchParams.get("phase"), 0));
   let playing = $state(url.searchParams.get("play") === "1");
   let view = $state<InspectionView>(

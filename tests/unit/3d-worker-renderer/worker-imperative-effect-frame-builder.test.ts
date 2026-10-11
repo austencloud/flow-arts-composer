@@ -6,23 +6,23 @@ import {
   propFinishState,
   type PropState3D,
 } from "@austencloud/scene-3d";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   resolveLed3D,
   resolveGoo3D,
   resolveSparkles3D,
   resolveTrails3D,
-} from "$lib/shared/effects/translators/webgl3d-translator";
+} from "#lib/shared/effects/translators/webgl3d-translator.js";
 import {
   WorkerImperativeEffectFrameBuilder,
   type WorkerImperativeEffectFrameInput,
-} from "$lib/shared/3d/worker-renderer/effects/worker-imperative-effect-frame-builder";
+} from "#lib/shared/3d/worker-renderer/effects/worker-imperative-effect-frame-builder.js";
 import {
   WORKER_IMPERATIVE_EFFECTS,
   WORKER_POOLED_EFFECTS,
   WORKER_UNSUPPORTED_EFFECTS,
   isWorkerEffectExact,
-} from "$lib/shared/3d/worker-renderer/effects/worker-effect-support";
+} from "#lib/shared/3d/worker-renderer/effects/worker-effect-support.js";
 
 function prop(x = 0): PropState3D {
   return {
@@ -113,6 +113,28 @@ describe("worker imperative effect frame builder", () => {
       fadeDuration: 2,
     });
     expect(() => structuredClone(output)).not.toThrow();
+  });
+
+  it("keeps effective staff tips exact and scales fixed fan effects", () => {
+    const staff = input("trails");
+    staff.staffHalfLength = 0.4;
+    staff.propScale = 2 / 3;
+    const staffTrails = new WorkerImperativeEffectFrameBuilder()
+      .build(staff)
+      .imperative?.filter((frame) => frame.renderer === "trail");
+    expect(staffTrails).toHaveLength(2);
+    expect(
+      Math.abs(staffTrails![0]!.position[0] - staffTrails![1]!.position[0])
+    ).toBeCloseTo(0.8);
+
+    const moonInput = input("led");
+    moonInput.propScale = 0.5;
+    moonInput.left.propType = PropType.FAN;
+    moonInput.intent.propBuild = { ...propFinishState.build, fanBuild: "moon" };
+    const moonFan = new WorkerImperativeEffectFrameBuilder()
+      .build(moonInput)
+      .imperative?.find((frame) => frame.renderer === "moon-fan");
+    expect(moonFan).toMatchObject({ scale: 0.5 });
   });
 
   it("keeps LED pattern sampling and sub-frame supersampling inside the worker", () => {

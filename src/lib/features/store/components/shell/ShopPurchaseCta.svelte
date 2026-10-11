@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
   import type { Product } from "../../domain/models/product";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { LoopConfig } from "../../domain/loop-config";
   import type { ShopListing } from "../../analytics/shop-funnel";
   import {

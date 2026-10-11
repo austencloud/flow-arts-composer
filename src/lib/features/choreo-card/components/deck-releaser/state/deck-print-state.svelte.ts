@@ -1,5 +1,5 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { hashSequenceContent } from "$lib/shared/foundation/services/content-hasher";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { hashSequenceContent } from "#lib/shared/foundation/services/content-hasher.js";
 import type { CardSizeId, PaperSizeId } from "../../../domain/card-sizes";
 import { getPageLayout, PAPER_SIZES } from "../../../domain/card-sizes";
 import { buildDeckAiSummary } from "../../../services/deck-ai-summary";

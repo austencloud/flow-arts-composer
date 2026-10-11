@@ -24,12 +24,12 @@
     RotationDirection,
     Orientation,
   } from "../domain/tka-enums";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import {
     HandSide,
     type HandSide as HandSideValue,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   interface Props {
     beats: BeatNotation[];

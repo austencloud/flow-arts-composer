@@ -7,18 +7,18 @@
   import { T } from "@threlte/core";
   import { onMount } from "svelte";
   import CellLabel3D from "./CellLabel3D.svelte";
-  import TelekineticFormation3D from "$lib/features/museum/components/game/TelekineticFormation3D.svelte";
+  import TelekineticFormation3D from "#lib/features/museum/components/game/TelekineticFormation3D.svelte";
   import { EFFECT_CELLS } from "./effect-grid";
-  import SceneEffectsCoordinator3D from "$lib/shared/3d/effects/scene-effects/SceneEffectsCoordinator3D.svelte";
-  import { SceneEffectsManager3D } from "$lib/shared/3d/effects/scene-effects/scene-effects-manager-3d";
-  import { setSceneEffectsContext } from "$lib/shared/3d/effects/scene-effects/scene-effects-context";
-  import { InfiniteSequenceGenerator } from "$lib/features/landing/services/infinite-sequence-generator";
-  import { SpinnerMetricsRepository } from "$lib/features/landing/services/spinner-metrics-repository";
-  import { getGenerationOrchestrator } from "$lib/features/create/generate/shared/get-generation-orchestrator";
-  import { orientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
-  import { isEffectPreviewLoop } from "$lib/shared/effects/domain/effect-preview-loop-policy";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { GeneratedSequenceInfo } from "$lib/features/landing/domain/models/spinner-models";
+  import SceneEffectsCoordinator3D from "#lib/shared/3d/effects/scene-effects/SceneEffectsCoordinator3D.svelte";
+  import { SceneEffectsManager3D } from "#lib/shared/3d/effects/scene-effects/scene-effects-manager-3d.js";
+  import { setSceneEffectsContext } from "#lib/shared/3d/effects/scene-effects/scene-effects-context.js";
+  import { InfiniteSequenceGenerator } from "#lib/features/landing/services/infinite-sequence-generator.js";
+  import { SpinnerMetricsRepository } from "#lib/features/landing/services/spinner-metrics-repository.js";
+  import { getGenerationOrchestrator } from "#lib/features/create/generate/shared/get-generation-orchestrator.js";
+  import { orientationCycleExtender } from "#lib/features/create/generate/circular/services/orientation-cycle-extender.js";
+  import { isEffectPreviewLoop } from "#lib/shared/effects/domain/effect-preview-loop-policy.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { GeneratedSequenceInfo } from "#lib/features/landing/domain/models/spinner-models.js";
 
   const GENERATED_EFFECT_PREVIEW_SEQUENCE_ID = "generated-effect-preview-loop";
 

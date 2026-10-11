@@ -1,8 +1,8 @@
 <script lang="ts">
   import { getVideoTrailsContext } from "../context/video-trails-context";
   import type { ExportConfig } from "../domain/types";
-  import { shareOrDownloadBlob } from "$lib/shared/foundation/services/file-downloader";
-  import { shareTarget, saveActionLabel } from "$lib/shared/mobile/share-action.svelte";
+  import { shareOrDownloadBlob } from "#lib/shared/foundation/services/file-downloader.js";
+  import { shareTarget, saveActionLabel } from "#lib/shared/mobile/share-action.svelte.js";
 
   const { state: trailsState } = getVideoTrailsContext();
 

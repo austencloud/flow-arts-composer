@@ -1,8 +1,8 @@
 <!-- FeedbackList - Premium list with empty states, loading skeletons, and infinite scroll -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { FeedbackManageState } from "$lib/shared/feedback/state/feedback-manage-state.svelte";
-  import type { FeedbackStatus } from "$lib/shared/feedback/domain/models/feedback-models";
+  import type { FeedbackManageState } from "#lib/shared/feedback/state/feedback-manage-state.svelte.js";
+  import type { FeedbackStatus } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import FeedbackCard from "./FeedbackCard.svelte";
 
   // Using 'manageState' to avoid conflict with $state rune

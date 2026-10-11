@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computeGridLayoutSignature,
   type GridLayoutSignatureInput,
-} from "$lib/features/create/shared/workspace-panel/sequence-display/domain/grid-layout-signature";
+} from "#lib/features/create/shared/workspace-panel/sequence-display/domain/grid-layout-signature.js";
 
 /** A four-step grid, two columns, plus the start tile. */
 function baseGrid(

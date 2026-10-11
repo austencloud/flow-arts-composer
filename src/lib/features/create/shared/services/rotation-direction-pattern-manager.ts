@@ -26,17 +26,17 @@ import {
   addDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type {
   RotationDirectionPattern,
   RotationDirectionPatternCreateData,
   RotationDirectionPatternEntry,
   RotationDirectionValue,
 } from "../domain/models/rotation-direction-pattern-data";
-import type { TargetHand } from "$lib/shared/create/services/turn-pattern-manager";
+import type { TargetHand } from "#lib/shared/create/services/turn-pattern-manager.js";
 
 /**
  * Result of applying a rotation direction pattern to a sequence
@@ -57,18 +57,18 @@ import {
   createMotionData,
   isVisibleMotion,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
   type Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
 const logger = createComponentLogger("RotationDirectionPatternManager");
 

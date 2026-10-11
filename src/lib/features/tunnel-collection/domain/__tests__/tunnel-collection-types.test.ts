@@ -4,22 +4,22 @@ import {
   TUNNEL_COLLECTION_STORAGE_KEY,
   type CollectedTunnel,
 } from "../tunnel-collection-types";
-import { SNAPSHOT_VERSION } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { SNAPSHOT_VERSION } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { DEFAULT_TRAIL_SETTINGS } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { DEFAULT_CONFIG } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   createDerivedTunnelPerformer,
   createIndependentTunnelPerformer,
   createTunnelComposition,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   createTunnelRevision,
   prepareTunnelRevision,

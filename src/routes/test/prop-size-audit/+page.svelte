@@ -21,19 +21,19 @@
   import PropPickerReview from "./PropPickerReview.svelte";
   import FireFanFidelityReview from "./FireFanFidelityReview.svelte";
   import CompactStageComparison from "./CompactStageComparison.svelte";
-  import { VIEWBOX_SIZE } from "$lib/shared/render/core/constants/viewbox";
-  import { getPropDimensions } from "$lib/shared/animation-engine/services/IPropTextureLoader";
+  import { VIEWBOX_SIZE } from "#lib/shared/render/core/constants/viewbox.js";
+  import { getPropDimensions } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
   import {
     CLUB_TIP_REACH,
     getTipPointsBaseline,
-  } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+  } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
   import {
     getAllPropTypes,
     getPropTypeDisplayInfo,
     isPropActive,
-  } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { propTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   const CENTER = VIEWBOX_SIZE / 2;
   const HAND_ORBIT = 150;

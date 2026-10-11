@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { StepLike } from "$lib/shared/foundation/domain/models/step-like";
+import type { StepLike } from "#lib/shared/foundation/domain/models/step-like.js";
 import { defaultInterval, extractPairRelations } from "../relation-extractor";
 
 function step(

@@ -8,10 +8,10 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import fs from 'fs';
 import path from 'path';
-import { requireAdmin as requireAdminAuth } from '$lib/server/auth/requireAdmin';
-import { RATE_LIMITS } from '$lib/server/security/rate-limiter';
-import { withRateLimit } from '$lib/server/security/withRateLimit';
-import { logAdminAction } from '$lib/server/security/audit-logger';
+import { requireAdmin as requireAdminAuth } from '#lib/server/auth/requireAdmin.js';
+import { RATE_LIMITS } from '#lib/server/security/rate-limiter.js';
+import { withRateLimit } from '#lib/server/security/withRateLimit.js';
+import { logAdminAction } from '#lib/server/security/audit-logger.js';
 
 interface FlaggedItem {
 	id: string;

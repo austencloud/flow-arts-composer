@@ -1,44 +1,44 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getOfflineCacheOrchestrator } from "$lib/shared/offline/get-offline-cache-orchestrator";
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getOfflineCacheOrchestrator } from "#lib/shared/offline/get-offline-cache-orchestrator.js";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
   import { getBrowseEventHandler } from "../get-browse-event-handler";
-  import { getThumbnailRenderOrchestrator } from "$lib/shared/browse/get-thumbnail-render-orchestrator";
-  import type { ResponsiveSettings } from "$lib/shared/device/domain/models/device-models";
+  import { getThumbnailRenderOrchestrator } from "#lib/shared/browse/get-thumbnail-render-orchestrator.js";
+  import type { ResponsiveSettings } from "#lib/shared/device/domain/models/device-models.js";
   import { onMount, onDestroy, setContext } from "svelte";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import ErrorBanner from "../../../create/shared/components/ErrorBanner.svelte";
 
-  import { createOfflineCacheState } from "$lib/shared/offline/state/offline-cache-state.svelte";
-  import { setOfflineCacheContext } from "$lib/shared/offline/context/offline-cache-context";
+  import { createOfflineCacheState } from "#lib/shared/offline/state/offline-cache-state.svelte.js";
+  import { setOfflineCacheContext } from "#lib/shared/offline/context/offline-cache-context.js";
 
-  import { networkStatusState } from "$lib/shared/offline/state/network-status-state.svelte";
+  import { networkStatusState } from "#lib/shared/offline/state/network-status-state.svelte.js";
 
   import type { BrowseEventHandler } from "../services/browse-event-handler";
   import MyCollectionsPanel from "../../collections/components/MyCollectionsPanel.svelte";
   import CommunityCollectionsPanel from "../../collections/components/CommunityCollectionsPanel.svelte";
-  import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
+  import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
   import GalleryTab from "./GalleryTab.svelte";
-  import SmartCollectionSaveDialog from "$lib/features/library/components/SmartCollectionSaveDialog.svelte";
-  import FilterWorkspace from "$lib/features/browse/gallery-home/FilterWorkspace.svelte";
-  import { loadCanonicalTnDSequences } from "$lib/features/browse/gallery-home/canonical-tnd-pool";
-  import { browseScrollState } from "$lib/shared/browse/state/browse-scroll-state.svelte";
+  import SmartCollectionSaveDialog from "#lib/features/library/components/SmartCollectionSaveDialog.svelte";
+  import FilterWorkspace from "#lib/features/browse/gallery-home/FilterWorkspace.svelte";
+  import { loadCanonicalTnDSequences } from "#lib/features/browse/gallery-home/canonical-tnd-pool.js";
+  import { browseScrollState } from "#lib/shared/browse/state/browse-scroll-state.svelte.js";
   import {
     createBrowseNavigationState,
     getCollectionScanTargetFromURL,
     type BrowseLocation,
-  } from "$lib/shared/browse/state/browse-navigation-state.svelte";
-  import { setBrowseNavigationContext } from "$lib/shared/browse/context/browse-navigation-context";
-  import type { BrowsePrimary } from "$lib/shared/browse/navigation/browse-route-resolver";
-  import { setPendingScanIntent } from "$lib/features/browse/state/pending-scan-intent.svelte";
-  import { removeCurrentUrlParams } from "$lib/shared/navigation/services/url-state";
+  } from "#lib/shared/browse/state/browse-navigation-state.svelte.js";
+  import { setBrowseNavigationContext } from "#lib/shared/browse/context/browse-navigation-context.js";
+  import type { BrowsePrimary } from "#lib/shared/browse/navigation/browse-route-resolver.js";
+  import { setPendingScanIntent } from "#lib/features/browse/state/pending-scan-intent.svelte.js";
+  import { removeCurrentUrlParams } from "#lib/shared/navigation/services/url-state.js";
   import { BrowseScrollBehavior } from "../services/browse-scroll-behavior";
-  import { desktopSidebarState } from "$lib/shared/layout/desktop-sidebar-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { ensureGuestIdentity } from "$lib/shared/auth/services/guest-identity";
+  import { desktopSidebarState } from "#lib/shared/layout/desktop-sidebar-state.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
   import AnimationSheetCoordinator from "../../../../shared/coordinators/AnimationSheetCoordinator.svelte";
   import { consumePendingSequenceView } from "../../state/pending-sequence.svelte";
   import {
@@ -50,25 +50,25 @@
     getGalleryViewState,
     setGalleryViewState,
   } from "../services/gallery-view-persister";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
-  import { communityCollectionsState } from "$lib/features/browse/collections/state/community-collections-state.svelte";
-  import { createSharedCollectionsState } from "$lib/features/browse/collections/state/shared-collections-state.svelte";
-  import { setSharedCollectionsContext } from "$lib/features/browse/collections/context/shared-collections-context";
-  import { getCollectionCollaborationManager } from "$lib/shared/library/get-collection-collaboration-manager";
-  import { getCollectionOptions } from "$lib/features/browse/gallery-home/collection-options.svelte";
-  import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
-  import { trackBrowseDestinationEntered } from "$lib/shared/analytics/browse-events";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { exploreVisualsVisible } from "$lib/shared/browse/navigation/visuals-promotion";
-  import ExploreVisualsPanel from "$lib/features/browse/visuals/components/ExploreVisualsPanel.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+  import { communityCollectionsState } from "#lib/features/browse/collections/state/community-collections-state.svelte.js";
+  import { createSharedCollectionsState } from "#lib/features/browse/collections/state/shared-collections-state.svelte.js";
+  import { setSharedCollectionsContext } from "#lib/features/browse/collections/context/shared-collections-context.js";
+  import { getCollectionCollaborationManager } from "#lib/shared/library/get-collection-collaboration-manager.js";
+  import { getCollectionOptions } from "#lib/features/browse/gallery-home/collection-options.svelte.js";
+  import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
+  import { trackBrowseDestinationEntered } from "#lib/shared/analytics/browse-events.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { exploreVisualsVisible } from "#lib/shared/browse/navigation/visuals-promotion.js";
+  import ExploreVisualsPanel from "#lib/features/browse/visuals/components/ExploreVisualsPanel.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { page } from "$app/state";
   import {
     GALLERY_LETTER_QUERY_PARAM,
     parseGalleryLetterQuery,
-  } from "$lib/shared/browse/navigation/gallery-letter-link";
+  } from "#lib/shared/browse/navigation/gallery-letter-link.js";
 
   type ExploreSection = "sequences" | "collections" | "visuals";
   const EXPLORE_OPTIONS: Array<{

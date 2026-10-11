@@ -6,30 +6,30 @@
  * propagation). Split out of `turn-pattern-manager.ts` so consumers that only
  * transform sequences — the deck variation engine and the firebase-free landing
  * hero pool — can import these without dragging the Firestore CRUD half (and its
- * `$lib/shared/auth/firebase` side effects) into their bundle.
+ * `#lib/shared/auth/firebase.js` side effects) into their bundle.
  *
  * `turn-pattern-manager.ts` re-exports everything here for backward compatibility.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type {
   TurnPattern,
   TurnPatternCreateData,
   TurnPatternEntry,
-} from "$lib/shared/create/domain/turn-pattern-data";
+} from "#lib/shared/create/domain/turn-pattern-data.js";
 import {
   createMotionData,
   isVisibleMotion,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   type Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
 import { applyTurnToMotion } from "./apply-turns-to-motion";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
 const logger = createComponentLogger("TurnPatternApply");
 

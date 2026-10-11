@@ -4,9 +4,9 @@ import {
   enumerateHybridWords,
   findIngredientCoverWitness,
   type IngredientEdges,
-} from "$lib/shared/combination/services/letter-calculus";
+} from "#lib/shared/combination/services/letter-calculus.js";
 import { GGGG_CW, HHHH_CCW, AAAA_CCW, FALG } from "./fixtures";
-import { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridPlacementGroup } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 const FL: IngredientEdges = {
   name: "FL",

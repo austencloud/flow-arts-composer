@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { localizedLevelDescription } from "../../domain/shape-matrix-display";
   import { SHAPE_MATRIX_LEVELS } from "../shape-matrix-levels";

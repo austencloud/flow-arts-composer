@@ -9,28 +9,28 @@
  * app state together, with the load held open the way a real one is.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { buildFlowerAxis } from "$lib/shared/shape-matrix/domain/flower-signature";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { buildFlowerAxis } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: true,
   building: false,
   version: "test",
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({ auth: { currentUser: null } }));
-vi.mock("$lib/shared/analytics/services/posthog-activity-logger", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({ auth: { currentUser: null } }));
+vi.mock("#lib/shared/analytics/services/posthog-activity-logger.js", () => ({
   logSettingChange: vi.fn(),
 }));
 
 const { settingsService } = await import(
-  "$lib/shared/settings/state/settings-state.svelte"
+  "#lib/shared/settings/state/settings-state.svelte.js"
 );
 const { createShapeMatrixAppState } = await import(
-  "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte"
+  "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js"
 );
 const { createShapeEnginePropSource } = await import(
-  "$lib/features/create/shape-engine/shape-engine-prop-source"
+  "#lib/features/create/shape-engine/shape-engine-prop-source.js"
 );
 
 type PropPair = { left: PropType; right: PropType };

@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { EffectPointsPersister } from './services/effect-points-persister';
 

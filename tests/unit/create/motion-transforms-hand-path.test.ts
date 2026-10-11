@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   mirrorMotion,
   flipMotion,
-} from "$lib/shared/create/services/motion-transforms";
-import { calculate } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/create/services/motion-transforms.js";
+import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandPath,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 describe("reflected hand paths", () => {
   for (const [name, reflect] of [

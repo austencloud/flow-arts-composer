@@ -5,7 +5,7 @@
  * Prevents data loss from HMR, page refresh, or navigation.
  */
 
-import type { FeedbackFormData } from "$lib/shared/feedback/domain/models/feedback-models";
+import type { FeedbackFormData } from "#lib/shared/feedback/domain/models/feedback-models.js";
 
 const DRAFT_KEY = "tka-feedback-draft";
 // Legacy key from previous implementation - migrate on first load

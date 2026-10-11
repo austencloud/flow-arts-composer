@@ -27,12 +27,12 @@
  *   step carries one, and BOTH channels' motion identity (type + start→end)
  *   matches between the two steps.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 type LooseMotion = {
   motionType?: unknown;

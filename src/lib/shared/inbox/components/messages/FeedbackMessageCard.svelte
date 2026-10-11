@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * FeedbackMessageCard
    *
@@ -8,18 +8,18 @@
    * Shows an unavailable state when an attachment has no feedback target.
    */
 
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
   import {
     TYPE_CONFIG,
     STATUS_CONFIG,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
-  import type { MessageAttachment } from "$lib/shared/messaging/domain/models/message-models";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import type { MessageAttachment } from "#lib/shared/messaging/domain/models/message-models.js";
   import { inboxState } from "../../state/inbox-state.svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { setNotificationTargetFeedback } from "$lib/shared/feedback/state/notification-action-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { setNotificationTargetFeedback } from "#lib/shared/feedback/state/notification-action-state.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
 
   interface Props {
     attachment: MessageAttachment;

@@ -17,15 +17,15 @@ import {
   isDeniedPath,
   safe,
   type GhostKind,
-} from "$lib/shared/attract/domain/annotations";
+} from "#lib/shared/attract/domain/annotations.js";
 import {
   EMPTY_WORLD,
   type GhostContext,
-} from "$lib/shared/attract/domain/intention";
-import { createMemory } from "$lib/shared/attract/domain/scoring";
-import { createRng } from "$lib/shared/attract/services/rng";
-import { createTrail } from "$lib/shared/attract/services/trail";
-import { ALL_INTENTIONS } from "$lib/shared/attract/intentions";
+} from "#lib/shared/attract/domain/intention.js";
+import { createMemory } from "#lib/shared/attract/domain/scoring.js";
+import { createRng } from "#lib/shared/attract/services/rng.js";
+import { createTrail } from "#lib/shared/attract/services/trail.js";
+import { ALL_INTENTIONS } from "#lib/shared/attract/intentions/index.js";
 
 const INTENTIONS_DIR = "src/lib/shared/attract/intentions";
 

@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { AUTUMN_DEPTH_MATERIAL_GRADES } from "../../../scripts/autumn-depth-material-grades.mjs";
 import { AUTUMN_HERO_MATERIAL_GRADES } from "../../../scripts/autumn-hero-material-grades.mjs";
-import { getAutumnDepthCohesionProfile } from "$lib/shared/3d/environments/scenes/autumn/runtime/atmosphere/autumn-depth-cohesion";
-import { resolveAutumnShadowRole } from "$lib/shared/3d/environments/scenes/autumn/runtime/lighting/autumn-shadow-roles";
+import { getAutumnDepthCohesionProfile } from "#lib/shared/3d/environments/scenes/autumn/runtime/atmosphere/autumn-depth-cohesion.js";
+import { resolveAutumnShadowRole } from "#lib/shared/3d/environments/scenes/autumn/runtime/lighting/autumn-shadow-roles.js";
 import { AUTUMN_FRONT_SIDE_MATERIAL_PREFIXES } from "../../../scripts/autumn-material-sidedness.mjs";
 
 interface OptimizedAutumnGltf {

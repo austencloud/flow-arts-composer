@@ -5,9 +5,9 @@ import {
   MAX_FILLED_GAP,
   type FrameTrackResult,
   type EndStatus,
-} from "$lib/shared/media-composition/services/staff-tip-tracking";
-import type { DetectionBlob } from "$lib/shared/media-composition/services/staff-tip-detection";
-import { TIP_FILLED, TIP_MISSING, TIP_SEEN } from "$lib/shared/media-composition/domain/staff-tip-track";
+} from "#lib/shared/media-composition/services/staff-tip-tracking.js";
+import type { DetectionBlob } from "#lib/shared/media-composition/services/staff-tip-detection.js";
+import { TIP_FILLED, TIP_MISSING, TIP_SEEN } from "#lib/shared/media-composition/domain/staff-tip-track.js";
 
 function blob(x: number, y: number, colour: "red" | "blue", overrides: Partial<DetectionBlob> = {}): DetectionBlob {
   return {

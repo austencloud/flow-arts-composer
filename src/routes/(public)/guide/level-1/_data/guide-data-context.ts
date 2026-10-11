@@ -1,8 +1,8 @@
 import { getContext, setContext } from "svelte";
 import type { GuideChapterData } from "./guide-types";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const GUIDE_DATA_KEY = Symbol("guide-data");
 const ACTIVE_SECTION_KEY = Symbol("active-section");

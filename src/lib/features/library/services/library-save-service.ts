@@ -12,54 +12,54 @@
  * sequence is already safe in local storage.
  */
 
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import { warmSequenceCells } from "$lib/shared/render/services/warm-sequence-cells";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceVisibility } from "$lib/shared/library/domain/models/library-sequence";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+import { warmSequenceCells } from "#lib/shared/render/services/warm-sequence-cells.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceVisibility } from "#lib/shared/library/domain/models/library-sequence.js";
 import { findTagByName, createUserTag } from "./tag-manager";
 import type { ArtifactExtractor } from "./artifact-extractor";
 import { TAG_COLORS } from "../domain/models/tag";
-import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte.ts";
+import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.ts";
 import type { SaveToLibraryOptions, SaveProgress, SaveResult } from "./types";
-import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
-import { LibraryError } from "$lib/shared/library/domain/library-error";
+import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
+import { LibraryError } from "#lib/shared/library/domain/library-error.js";
 import {
   isEmptySequence,
   meetsCommunityMinimum,
   MIN_COMMUNITY_STEPS,
   withCanonicalStepCount,
-} from "$lib/shared/library/domain/sequence-min-length";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte.ts";
-import { db } from "$lib/shared/persistence/database/tka-database";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { isFullAccountUser } from "$lib/shared/auth/domain/access-tier";
-import { ensureGuestIdentity } from "$lib/shared/auth/services/guest-identity";
-import { GUEST_SAVE_CAP } from "$lib/shared/auth/domain/guest-access-config";
-import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
+} from "#lib/shared/library/domain/sequence-min-length.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.ts";
+import { db } from "#lib/shared/persistence/database/tka-database.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { isFullAccountUser } from "#lib/shared/auth/domain/access-tier.js";
+import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
+import { GUEST_SAVE_CAP } from "#lib/shared/auth/domain/guest-access-config.js";
+import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
 import type { Sharer } from "../../../shared/share/services/sharer";
 import type { R2VideoUploader } from "../../../shared/share/services/r2-video-uploader";
-import type { LibraryRepository } from "$lib/shared/library/services/library-repository";
+import type { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
 import { markSequenceSyncStatus } from "./library-sync-retry";
-import { computeHash } from "$lib/shared/library/services/sequence-content-hasher";
+import { computeHash } from "#lib/shared/library/services/sequence-content-hasher.js";
 import {
   getOwnedSequenceIdSet,
   recordSavedSequenceId,
   recordUnownedSequenceId,
-} from "$lib/shared/library/services/saved-sequence-ledger";
-import { clearSequenceDeletionIntent } from "$lib/shared/library/services/sequence-persistence-coordinator";
-import { reportPostHogLifecycleEvent } from "$lib/shared/analytics/services/posthog-lifecycle-reporter";
+} from "#lib/shared/library/services/saved-sequence-ledger.js";
+import { clearSequenceDeletionIntent } from "#lib/shared/library/services/sequence-persistence-coordinator.js";
+import { reportPostHogLifecycleEvent } from "#lib/shared/analytics/services/posthog-lifecycle-reporter.js";
 import {
   captureActivePropConfig,
   resolveRecordedPropConfig,
-} from "$lib/shared/foundation/services/recorded-prop-intent";
+} from "#lib/shared/foundation/services/recorded-prop-intent.js";
 import {
   capturePresentation,
   resolvePresentation,
-} from "$lib/shared/foundation/services/presentation-intent";
-import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-import { loadPersistedEffectsConfig } from "$lib/shared/effects/state/effects-config-state.svelte";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+} from "#lib/shared/foundation/services/presentation-intent.js";
+import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+import { loadPersistedEffectsConfig } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 
 /** How long the "Saved!" success state lingers before the overlay dismisses. */
 const SUCCESS_STATE_LINGER_MS = 800;
@@ -703,7 +703,7 @@ export class LibrarySaveService {
   private async refreshLibraryState(): Promise<void> {
     try {
       const { libraryState } =
-        await import("$lib/features/library/state/library-state.svelte.ts");
+        await import("#lib/features/library/state/library-state.svelte.ts");
       if (libraryState) {
         await libraryState.loadSequences();
       }

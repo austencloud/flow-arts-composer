@@ -3,7 +3,7 @@
  * Firestore (owned by PropUnlockManager). Mirrors the house localStorage idiom
  * (browser guard + try/catch + tka- prefixed key).
  */
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import {
   defaultCollection,
   type PropCollection,

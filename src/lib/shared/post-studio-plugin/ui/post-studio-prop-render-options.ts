@@ -1,5 +1,5 @@
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
 
 /**
  * Pins one Post Studio prop choice into every card-rendering override consumed

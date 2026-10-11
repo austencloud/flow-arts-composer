@@ -21,8 +21,8 @@
   to it.
 -->
 <script lang="ts">
-  import TurnsColumn from "$lib/shared/pictograph/tka-glyph/components/TurnsColumn.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import TurnsColumn from "#lib/shared/pictograph/tka-glyph/components/TurnsColumn.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 
   // Same swatch as TurnsColumn.svelte's STATIC_COLORS.light — the values
   // Austen actually looks at on a light background.

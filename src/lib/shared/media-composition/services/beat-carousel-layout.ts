@@ -23,7 +23,7 @@ import {
   continuousCellOpacity,
   continuousCellScale,
   stripHeroScale,
-} from "$lib/shared/timeline/strip-window";
+} from "#lib/shared/timeline/strip-window.js";
 import { clamp01, easeInOut } from "@austencloud/video-editor/render";
 
 export interface BeatCarouselRect {

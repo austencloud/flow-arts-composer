@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * GroupSettingsSheet
    *
@@ -8,18 +8,18 @@
    * All members can view participants and leave the group.
    */
 
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
   import type {
     Conversation,
     ParticipantInfo,
-  } from "$lib/shared/messaging/domain/models/conversation-models";
-  import { conversationService } from "$lib/shared/messaging/services/conversation-manager";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import UserSearchInput from "$lib/shared/user-search/UserSearchInput.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { getUserIdentityLabels } from "$lib/shared/community/domain/user-identity-labels";
+  } from "#lib/shared/messaging/domain/models/conversation-models.js";
+  import { conversationService } from "#lib/shared/messaging/services/conversation-manager.js";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
+  import UserSearchInput from "#lib/shared/user-search/UserSearchInput.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { getUserIdentityLabels } from "#lib/shared/community/domain/user-identity-labels.js";
 
   interface Props {
     conversation: Conversation;

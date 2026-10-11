@@ -19,7 +19,7 @@ import { describe, it, expect, vi } from "vitest";
 
 // Prevent the orchestrator's cloud-cache import from pulling Firebase into
 // the node test env — these tests only exercise pure key derivation.
-vi.mock("$lib/shared/browse/services/cloud-thumbnail-cache", () => ({
+vi.mock("#lib/shared/browse/services/cloud-thumbnail-cache.js", () => ({
   upload: vi.fn(),
   getCachedUrl: vi.fn(),
   getUrl: vi.fn(),
@@ -31,10 +31,10 @@ vi.mock("$lib/shared/browse/services/cloud-thumbnail-cache", () => ({
 import {
   THUMBNAIL_RENDERER_VERSION,
   deriveKey,
-} from "$lib/shared/browse/services/thumbnail-key-deriver";
-import type { ThumbnailRenderInput } from "$lib/shared/browse/services/thumbnail-key-deriver";
-import { ThumbnailRenderOrchestrator } from "$lib/shared/browse/services/thumbnail-render-orchestrator";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/browse/services/thumbnail-key-deriver.js";
+import type { ThumbnailRenderInput } from "#lib/shared/browse/services/thumbnail-key-deriver.js";
+import { ThumbnailRenderOrchestrator } from "#lib/shared/browse/services/thumbnail-render-orchestrator.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 function galleryInput(overrides: Partial<ThumbnailRenderInput> = {}): ThumbnailRenderInput {
   return {

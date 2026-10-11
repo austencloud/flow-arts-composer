@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { generatePlacementKey } from "$lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator";
-import { ArrowPlacer } from "$lib/shared/pictograph/arrow/positioning/placement/services/arrow-placer";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { generatePlacementKey } from "#lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator.js";
+import { ArrowPlacer } from "#lib/shared/pictograph/arrow/positioning/placement/services/arrow-placer.js";
 import {
   HandSide,
   MotionType,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 const PRO_PATH = "/data/arrow_placement/default/default_pro_placements.json";
 

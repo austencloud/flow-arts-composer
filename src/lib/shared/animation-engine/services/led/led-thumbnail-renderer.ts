@@ -27,8 +27,8 @@
 import { WebGLLedRenderer } from "./web-gl-led-renderer";
 import { materializeGeneratorPattern } from "./led-pattern-materializer";
 import { patternFrameIndex } from "../led-sampler";
-import { getPixel } from "$lib/shared/poi/domain/strip-pattern";
-import type { StripPattern } from "$lib/shared/poi/domain/strip-pattern";
+import { getPixel } from "#lib/shared/poi/domain/strip-pattern.js";
+import type { StripPattern } from "#lib/shared/poi/domain/strip-pattern.js";
 import type {
   LedSample,
   LedSimulatorConfig,

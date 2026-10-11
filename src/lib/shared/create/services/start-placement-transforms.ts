@@ -10,31 +10,31 @@
  * - "both": Transform both motions (default, original behavior)
  */
 
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 import {
   VERTICAL_MIRROR_PLACEMENT_MAP,
   HORIZONTAL_MIRROR_PLACEMENT_MAP,
   SWAPPED_PLACEMENT_MAP,
-} from "$lib/shared/create/domain/strict-loop-placement-maps";
+} from "#lib/shared/create/domain/strict-loop-placement-maps.js";
 import {
   mirrorMotion,
   flipMotion,
   rotateMotion,
   reassignMotionHand,
-} from "$lib/shared/create/services/motion-transforms";
+} from "#lib/shared/create/services/motion-transforms.js";
 import {
   invertMotionType,
   reverseRotationDirection,
-} from "$lib/shared/create/services/rotation-helpers";
-import type { TargetHand } from "$lib/shared/create/state/panel-coordination-state.svelte";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/create/services/rotation-helpers.js";
+import type { TargetHand } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
 /**
  * Derive the static letter (α, β, γ, ζ, η) from a grid placement.

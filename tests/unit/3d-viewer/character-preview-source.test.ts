@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { resolveCharacterPreviewPerformer } from "$lib/shared/3d/components/controls/character-select/character-preview-source";
+import { resolveCharacterPreviewPerformer } from "#lib/shared/3d/components/controls/character-select/character-preview-source.js";
 
 const pickerSource = readFileSync(
   resolve(

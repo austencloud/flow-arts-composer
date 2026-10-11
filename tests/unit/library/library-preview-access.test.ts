@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   previewReadOnly: false,
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     get effectiveUserId() {
       return mocks.effectiveUserId;
@@ -13,11 +13,11 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   },
 }));
 
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   isPreviewReadOnly: () => mocks.previewReadOnly,
 }));
 
-import { getAuthenticatedUserId } from "$lib/shared/library/services/collection-firestore-mapper";
+import { getAuthenticatedUserId } from "#lib/shared/library/services/collection-firestore-mapper.js";
 
 describe("Library preview access", () => {
   beforeEach(() => {

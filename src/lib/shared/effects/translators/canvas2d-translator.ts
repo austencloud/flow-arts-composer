@@ -40,7 +40,7 @@ import { resolveWaterPalette } from "../domain/water-palettes";
 import { resolveBubblePalette } from "../domain/bubble-palettes";
 import { resolvePetalPalette } from "../domain/petal-palettes";
 import { resolveSmokePalette } from "../domain/smoke-palettes";
-import { resolveInkPalette } from "$lib/shared/3d/effects/ink/ink-palettes";
+import { resolveInkPalette } from "#lib/shared/3d/effects/ink/ink-palettes.js";
 import { resolveFrostPalette } from "../domain/frost-palettes";
 import { resolveSilkPalette } from "../domain/silk-palettes";
 import { resolveAnimalPalette } from "../domain/animal-palettes";
@@ -48,7 +48,7 @@ import { resolvePulsePalette } from "../domain/pulse-palettes";
 import {
   DEFAULT_TRAIL_GLOW_BLUR,
   type TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 /**
  * Fold the effects-config trail VISUALS into a legacy TrailSettings base.
@@ -121,12 +121,10 @@ export function resolveZap2D(
   override: Partial<Zap2DParams> = {}
 ): Zap2DParams {
   const defaults: Omit<Zap2DParams, keyof ZapIntent> = {
-    segments: Math.max(4, Math.round(6 + intent.intensity * 10)),
-    jitterAmount: 6 + intent.intensity * 10,
-    // Glow halo now follows the dedicated `glow` knob (was intensity-derived).
-    // 6 + glow*22 ≈ the old 8 + intensity*12 around the midpoints.
-    glowBlur: 6 + intent.glow * 22,
-    lineWidth: 1.5 + intent.intensity * 1.5,
+    coreWidth: 1 + intent.intensity * 0.8,
+    haloWidth: 5 + intent.glow * 15,
+    haloAlpha: 0.06 + intent.glow * 0.12,
+    brightness: 0.45 + intent.intensity * 0.65,
   };
   return { ...intent, ...defaults, ...override };
 }
@@ -229,16 +227,16 @@ export function resolvePetals2D(
  *
  * Composes user intent with palette behavior flags:
  *   - effectiveAmbient = min(intent.ambientEmission, 0.3) - motion-dominant
- *     hard cap. Ink is a stroke medium. If the user dials ambient to full,
- *     it still emits at ≤ 30% of the motion-driven rate.
+ *     hard cap. Ink is a stroke medium: at full ambient a still tip adds at
+ *     most 0.6 points/s, against 60 points/s from motion.
  *   - opacityMax = watercolor ? 0.68 : 1.0 - palette-carried opacity cap.
  *     Watercolor is translucent by identity (not a user knob).
  *   - strokeWidthMax = palette material profile. Neon is narrowest;
  *     Watercolor carries the widest faint bleed.
  *   - attached-stroke gravity = viscosity-gated. Detached droplets keep full
  *     gravity while ordinary painted marks stay on the choreography.
- *   - blendMode = palette.emissive ? "lighter" : "source-over" - neon is
- *     the only emissive ink palette. The other five are opaque pigment.
+ *   - compositing stays with the renderer's material branches: neon is the
+ *     only emissive ink palette, every other palette is opaque pigment.
  *
  * The current production tuning is governed by
  * docs/superpowers/specs/active/2026-08-14-ink-sumi-material-redesign.md.
@@ -263,11 +261,9 @@ export function resolveInk2D(
   // bounded-history shift doesn't eat the newest stroke while keeping
   // older tail visible for the full lifetime.
   const MAX_POINTS_PER_TIP = 90;
-  const STAMP_SCALE_MIN = 0.3;
-  const STAMP_SCALE_MAX = 1.2;
 
   // Motion-dominant hard cap on ambient. Even at slider=1 the effective
-  // ambient rate is ≤ 30% of the base rate.
+  // ambient rate is 30% of AMBIENT_BASE_RATE.
   const effectiveAmbient = Math.min(intent.ambientEmission, 0.3);
 
   // Watercolor gets its width from a faint bleed pass around a normal-sized
@@ -306,22 +302,15 @@ export function resolveInk2D(
         : 320;
   const gravityPx = palette.watercolor ? 180 * 0.2 : 180;
   // Attached pigment follows the brush. Only a deliberately viscous dense ink
-  // sags, and even then much less than a detached droplet. This keeps Classic,
-  // Neon, Sumi, and Toxic on the choreography while preserving the weight of
-  // Drip and Splatter.
+  // (viscosity above 0.55) sags, and even then much less than a detached
+  // droplet. Every shipped look sits below that line, so its marks stay on
+  // the choreography; droplets keep full gravity.
   const denseSag = Math.max(0, Math.min(1, (intent.viscosity - 0.55) / 0.45));
   const strokeGravityPx =
     palette.watercolor || isSumi || isNeon ? 0 : gravityPx * denseSag * 0.65;
 
-  // Neon is the only emissive ink palette. All others composite opaque -
-  // this is the #1 differentiator from trails (which are always emissive).
-  const blendMode: GlobalCompositeOperation = palette.emissive
-    ? "lighter"
-    : "source-over";
-
   const defaults: Omit<Ink2DParams, keyof InkIntent> = {
     resolvedPalette: palette,
-    blendMode,
     effectiveAmbient,
     ambientSpawnRate: AMBIENT_BASE_RATE,
     motionSpawnRate: MOTION_BASE_RATE,
@@ -332,8 +321,6 @@ export function resolveInk2D(
     lifetimeSeconds,
     maxPointsPerTip,
     strokeLengthPx,
-    stampScaleMin: STAMP_SCALE_MIN,
-    stampScaleMax: STAMP_SCALE_MAX,
     gravityPx,
     strokeGravityPx,
     breakStretchMax: 80,

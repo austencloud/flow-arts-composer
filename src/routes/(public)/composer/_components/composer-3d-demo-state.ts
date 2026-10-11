@@ -1,14 +1,14 @@
 import { Plane } from "@austencloud/scene-3d";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   SceneEnvironmentId,
   type SceneEnvironmentId as SceneEnvironmentIdValue,
-} from "$lib/shared/3d/environments/domain/scene-environment";
-import { SCENE_FEATURES } from "$lib/shared/3d/scene-features/domain/scene-feature-registry";
+} from "#lib/shared/3d/environments/domain/scene-environment.js";
+import { SCENE_FEATURES } from "#lib/shared/3d/scene-features/domain/scene-feature-registry.js";
 import type {
   Viewer3DState,
   Viewer3DStateSeed,
-} from "$lib/shared/3d/state/viewer-3d-state.svelte";
+} from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
 
 const DEMO_SCENE_FEATURES = Object.fromEntries(
   SCENE_FEATURES.map((feature) => [feature.key, feature.defaultEnabled])

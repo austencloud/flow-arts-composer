@@ -6,15 +6,15 @@ const mocks = vi.hoisted(() => ({
   initMandala: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: mocks.getFirestoreInstance,
 }));
 vi.mock(
-  "$lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte",
+  "#lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte.js",
   () => ({ mandalaCollectionState: { init: mocks.initMandala } })
 );
 
-import { initializeMandalaCollection } from "$lib/shared/auth/services/auth-boot-orchestrator";
+import { initializeMandalaCollection } from "#lib/shared/auth/services/auth-boot-orchestrator.js";
 
 function user(uid: string): User {
   return { uid } as User;

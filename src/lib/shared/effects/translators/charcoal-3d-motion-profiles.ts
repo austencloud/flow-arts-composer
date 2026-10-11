@@ -1,4 +1,4 @@
-import type { CharcoalEmissionStyle } from "$lib/shared/effects/domain/effects-config";
+import type { CharcoalEmissionStyle } from "#lib/shared/effects/domain/effects-config.js";
 
 export interface Charcoal3DMotionProfile {
   idleEmissionScale: number;

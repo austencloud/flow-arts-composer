@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { calculate } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { buildIndex, type IndexInput } from "$lib/shared/mandala/services/mandala-index-builder";
-import { decode } from "$lib/shared/mandala/services/mandala-decoder";
-import type { StepLike, MotionLike } from "$lib/shared/mandala/services/types";
+import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { buildIndex, type IndexInput } from "#lib/shared/mandala/services/mandala-index-builder.js";
+import { decode } from "#lib/shared/mandala/services/mandala-decoder.js";
+import type { StepLike, MotionLike } from "#lib/shared/mandala/services/types.js";
 
 // Two minimal hand-authored 2-beat sequences with blue+red motions. Locations
 // use the lowercase strings the calculator resolves ("n","e","s","w").

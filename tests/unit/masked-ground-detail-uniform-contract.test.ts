@@ -7,7 +7,7 @@ import {
   type WebGLProgramParametersWithUniforms,
   type WebGLRenderer,
 } from "three";
-import { patchMaskedGroundDetailMaterial } from "$lib/shared/3d/environments/primitives/masked-ground-detail-material";
+import { patchMaskedGroundDetailMaterial } from "#lib/shared/3d/environments/primitives/masked-ground-detail-material.js";
 
 /**
  * A 2026-08-31 identifier sweep renamed the JS side of the red/blue detail

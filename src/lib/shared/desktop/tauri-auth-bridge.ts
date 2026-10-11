@@ -3,8 +3,8 @@ import {
 	signInWithCredential,
 	type OAuthCredential,
 } from "firebase/auth";
-import { auth } from "$lib/shared/auth/firebase";
-import { GOOGLE_CLIENT_ID } from "$lib/shared/auth/config/google-oauth";
+import { auth } from "#lib/shared/auth/firebase.js";
+import { GOOGLE_CLIENT_ID } from "#lib/shared/auth/config/google-oauth.js";
 
 /** How long the loopback redirect may take before the attempt is abandoned. */
 const OAUTH_TIMEOUT_MS = 120_000;

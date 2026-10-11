@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { heartbeatPostProject } from "$lib/server/post-project-dev-bridge";
+import { heartbeatPostProject } from "#lib/server/post-project-dev-bridge.js";
 import {
   GET as listRoute,
   POST as createRoute,

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { calculateOptionInteractionHintPosition } from "../services/option-interaction-hint-position";
-  import { safe } from "$lib/shared/attract/domain/annotations";
+  import { safe } from "#lib/shared/attract/domain/annotations.js";
 
   const { containerElement, onDismiss } = $props<{
     containerElement: HTMLElement | null;

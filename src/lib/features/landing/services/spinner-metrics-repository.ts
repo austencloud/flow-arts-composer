@@ -14,8 +14,8 @@ import {
   onSnapshot,
   type Unsubscribe
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { firestoreGet, firestoreSet } from "$lib/shared/firestore";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { firestoreGet, firestoreSet } from "#lib/shared/firestore/index.js";
 import { SpinnerMetricsSchema } from "../domain/models/spinner-metrics-schemas";
 import type { SpinnerMetrics } from "../domain/models/spinner-models";
 

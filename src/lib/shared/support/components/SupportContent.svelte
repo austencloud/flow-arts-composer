@@ -16,7 +16,7 @@
    * passes and the modal omits.
    */
   import { slide } from "svelte/transition";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   let {
     donated = false,
@@ -87,7 +87,7 @@
     try {
       // Dynamic import keeps the firebase SDK out of the public/landing bundle.
       const { createDonationCheckout } = await import(
-        "$lib/shared/support/donation-checkout"
+        "#lib/shared/support/donation-checkout.js"
       );
       const url = await createDonationCheckout(
         Math.round(dollars * 100),

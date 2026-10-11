@@ -9,8 +9,8 @@ import {
 import type {
   ResolvedTakeTiming,
   TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
-import { shownLandings } from "$lib/shared/share/components/post-studio/builder/timing-lane-landings";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import { shownLandings } from "#lib/shared/share/components/post-studio/builder/timing-lane-landings.js";
 import { tkaEditorOf } from "./tka-editor-context";
 
 /**

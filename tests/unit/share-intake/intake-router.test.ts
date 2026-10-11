@@ -31,33 +31,33 @@ const {
   };
 });
 
-vi.mock("$lib/shared/inbox/state/send-sequence-state.svelte", () => ({
+vi.mock("#lib/shared/inbox/state/send-sequence-state.svelte.js", () => ({
   openSendAttachmentSheet: (...args: unknown[]) =>
     openSendAttachmentSheet(...args),
 }));
 
-vi.mock("$lib/shared/share-intake/services/open-filed-card", () => ({
+vi.mock("#lib/shared/share-intake/services/open-filed-card.js", () => ({
   openFiledCard: (...args: unknown[]) => openFiledCard(...args),
 }));
 
-vi.mock("$lib/shared/qr/get-short-code-manager", () => ({
+vi.mock("#lib/shared/qr/get-short-code-manager.js", () => ({
   getShortCodeManager: () => getShortCodeManager(),
 }));
 
-vi.mock("$lib/features/library/get-library-save-service", () => ({
+vi.mock("#lib/features/library/get-library-save-service.js", () => ({
   getLibrarySaveService: () => ({ saveSequence }),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({ toast }));
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({ toast }));
 
-vi.mock("$lib/shared/messaging/services/conversation-manager", () => ({
+vi.mock("#lib/shared/messaging/services/conversation-manager.js", () => ({
   conversationService: {
     getConversation: (...args: unknown[]) => getConversation(...args),
   },
 }));
 
-import { routeIntake } from "$lib/shared/share-intake/services/intake-router";
-import type { IntakeClassification } from "$lib/shared/share-intake/domain/share-intake-models";
+import { routeIntake } from "#lib/shared/share-intake/services/intake-router.js";
+import type { IntakeClassification } from "#lib/shared/share-intake/domain/share-intake-models.js";
 
 function png(name: string): File {
   return new File([new Uint8Array([1])], name, { type: "image/png" });

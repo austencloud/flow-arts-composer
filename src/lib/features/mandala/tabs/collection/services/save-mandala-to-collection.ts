@@ -1,4 +1,4 @@
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 import {
   buildMandalaCollectionEntry,
   type SaveMandalaInput,

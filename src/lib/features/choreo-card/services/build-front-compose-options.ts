@@ -8,12 +8,12 @@
  * by hand-mirrored option objects (which drift).
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
 import type { PrintRenderOptions } from "./types";
 import { buildCanonicalCardVisibility } from "../domain/canonical-card-visibility";
 import { getCardFrameContentInset } from "./card-front-frame";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 // MPC poker card defaults (822x1122 at 300 DPI with 36px bleed).
 const MPC_WIDTH = 822;

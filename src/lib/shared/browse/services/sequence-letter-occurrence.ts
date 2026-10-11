@@ -1,5 +1,5 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { splitIntoLetterUnits } from "$lib/shared/foundation/utils/word-simplifier";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { splitIntoLetterUnits } from "#lib/shared/foundation/utils/word-simplifier.js";
 
 /**
  * Does this sequence's notation contain one exact TKA letter?

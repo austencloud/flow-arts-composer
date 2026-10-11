@@ -15,7 +15,7 @@
  * whole point is the next sign-in on this device. Account deletion clears it.
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 
 export type LastAuthMethod =
   | "google"

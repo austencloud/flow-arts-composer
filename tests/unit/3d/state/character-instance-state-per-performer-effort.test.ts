@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createCharacterInstanceState, makeStandaloneDeps } from "$lib/shared/3d/state/character-instance-state.svelte";
+import { createCharacterInstanceState, makeStandaloneDeps } from "#lib/shared/3d/state/character-instance-state.svelte.js";
 
 function makeConfig(id = "p1") { return { id, positionX: 0 }; }
 function makeDeps() { return makeStandaloneDeps(); }

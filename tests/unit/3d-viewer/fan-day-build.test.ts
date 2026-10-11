@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { fanAppearanceArtwork } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import { fanAppearanceArtwork } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
 const root = process.cwd();
 const contours = JSON.parse(

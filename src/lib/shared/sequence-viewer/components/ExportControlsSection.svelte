@@ -10,14 +10,14 @@
   - Integrates with existing export settings panels
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { MediaFormat } from "$lib/shared/export-panel/domain/models/media-format";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { MediaFormat } from "#lib/shared/export-panel/domain/models/media-format.js";
   import type { ExportProgress, ExportSettings } from "../domain/types";
-  import ExportButton from "$lib/shared/export-panel/components/shared/ExportButton.svelte";
-  import SettingsPanel from "$lib/shared/export-panel/components/settings/SettingsPanel.svelte";
-  import AnimationSettings from "$lib/shared/export-panel/components/settings/AnimationSettings.svelte";
-  import StaticSettingsPanel from "$lib/shared/export-panel/components/settings/StaticSettings.svelte";
-  import PerformanceSettingsPanel from "$lib/shared/export-panel/components/settings/PerformanceSettings.svelte";
+  import ExportButton from "#lib/shared/export-panel/components/shared/ExportButton.svelte";
+  import SettingsPanel from "#lib/shared/export-panel/components/settings/SettingsPanel.svelte";
+  import AnimationSettings from "#lib/shared/export-panel/components/settings/AnimationSettings.svelte";
+  import StaticSettingsPanel from "#lib/shared/export-panel/components/settings/StaticSettings.svelte";
+  import PerformanceSettingsPanel from "#lib/shared/export-panel/components/settings/PerformanceSettings.svelte";
 
   let {
     selectedFormat = "animation" as MediaFormat,

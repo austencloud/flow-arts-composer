@@ -1,29 +1,32 @@
 <script lang="ts">
+  import StudioProjectLibrary from "./components/StudioProjectLibrary.svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import { isTkaWord, simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
-  import TkaEditorScope from "$lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import {
+    isTkaWord,
+    simplifyRepeatedWord,
+  } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import { createCardPreviewState } from "#lib/shared/share/state/card-preview-state.svelte.js";
+  import TkaEditorScope from "#lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import {
     listSyncedPostProjects,
     loadSyncedPostDraft,
     resolveSyncedPostSequence,
     saveSyncedPostDraft,
+    cancelPostCloudRetries,
   } from "./services/post-account-projects";
-  import { savePostDraft } from "$lib/shared/media-composition/services/post-draft-storage";
-  import type {
-  PostProject,
-} from "@austencloud/video-editor/core";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { savePostDraft } from "#lib/shared/media-composition/services/post-draft-storage.js";
+  import type { PostProject } from "@austencloud/video-editor/core";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     createPostModuleState,
     featureSelectionId,
   } from "./state/post-module-state.svelte";
   import { setPostModuleContext } from "./context/post-module-context";
-  import { canAccessPostStudio } from "$lib/shared/sequence-viewer/services/post-studio-access";
+  import { canAccessPostStudio } from "#lib/shared/sequence-viewer/services/post-studio-access.js";
   import {
     providePostEditorHeader,
     VideoEditor,
@@ -33,7 +36,7 @@
     visible?: boolean;
   }
   let { visible = true }: Props = $props();
-  const state = createPostModuleState({
+  const moduleState = createPostModuleState({
     list: listSyncedPostProjects,
     resolve: resolveSyncedPostSequence,
     loadDraft: loadSyncedPostDraft,
@@ -43,14 +46,11 @@
       ? {
           listFeatures: async () =>
             (
-              await import(
-                "$lib/shared/media-composition/services/feature-video-client"
-              )
+              await import("#lib/shared/media-composition/services/feature-video-client.js")
             ).listFeatureVideos(),
           loadFeature: async (slug: string) => {
-            const client = await import(
-              "$lib/shared/media-composition/services/feature-video-client"
-            );
+            const client =
+              await import("#lib/shared/media-composition/services/feature-video-client.js");
             return client.createFeatureVideoSync(
               await client.loadFeatureVideo(slug)
             );
@@ -58,29 +58,33 @@
         }
       : {}),
   });
-  setPostModuleContext(state);
+  setPostModuleContext(moduleState);
   /** The editor puts Save, more actions and Export in this header row. */
   const editorHeader = providePostEditorHeader();
   const exportOptions = getExportOptionsState();
   const cardPreview = createCardPreviewState({
-    getSequence: () => state.sequence,
-    getEnabled: () => visible && !state.showingProjects,
+    getSequence: () => moduleState.sequence,
+    getEnabled: () => visible && !moduleState.showingProjects,
     getDarkMode: () => exportOptions.imageDarkMode,
     getResolvedAutoLayout: () => null,
   });
   let previousParam: string | null = null;
   let previousFeature: string | null = null;
   let initialVisit = true;
+  let footageToImport = $state.raw<{ projectId: string; file: File } | null>(
+    null
+  );
   const currentWord = $derived(
-    simplifyRepeatedWord(state.sequence?.word || "")
+    simplifyRepeatedWord(moduleState.sequence?.word || "")
   );
   const currentTitle = $derived(
-    state.feature?.title ??
+    moduleState.feature?.title ??
+      moduleState.draft?.title ??
       simplifyRepeatedWord(
-        state.sequence?.displayName ||
-          state.sequence?.name ||
+        moduleState.sequence?.displayName ||
+          moduleState.sequence?.name ||
           currentWord ||
-          state.selectedId ||
+          moduleState.selectedId ||
           ""
       )
   );
@@ -91,24 +95,29 @@
    */
   const featureMode = $derived(
     import.meta.env.DEV &&
-      (page.url.searchParams.has("feature") || state.feature !== null)
+      (page.url.searchParams.has("feature") || moduleState.feature !== null)
   );
 
   let previousAccount: string | null | undefined = undefined;
   $effect(() => {
     if (!authState.initialized) return;
-    const uid = authState.user && !authState.user.isAnonymous ? authState.user.uid : null;
+    const uid =
+      authState.user && !authState.user.isAnonymous ? authState.user.uid : null;
     if (previousAccount === uid) return;
+    // A cloud retry waiting for the previous account must never run as this one.
+    if (previousAccount !== undefined) cancelPostCloudRetries();
     previousAccount = uid;
     initialVisit = true;
     previousParam = null;
     previousFeature = null;
-    state.resetForAccount();
+    footageToImport = null;
+    moduleState.resetForAccount();
   });
   $effect(() => {
     if (!authState.initialized) return;
     authState.user?.uid;
     const project = page.url.searchParams.get("project");
+    const library = page.url.searchParams.get("library") === "1";
     const feature = import.meta.env.DEV
       ? page.url.searchParams.get("feature")
       : null;
@@ -116,148 +125,75 @@
       initialVisit = false;
       previousParam = project;
       previousFeature = feature;
-      if (feature) void state.openFeature(feature);
+      if (feature) void moduleState.openFeature(feature);
       else {
-        const target = project || state.lastSelectedId();
-        if (target) void state.open(target);
+        const target = project || (!library && moduleState.lastSelectedId());
+        if (target) void moduleState.open(target);
       }
       return;
     }
-    if (feature && feature !== previousFeature) void state.openFeature(feature);
-    else if (project && project !== previousParam) void state.open(project);
+    if (library) moduleState.showProjects();
+    else if (feature && feature !== previousFeature)
+      void moduleState.openFeature(feature);
+    else if (project && project !== previousParam)
+      void moduleState.open(project);
     previousParam = project;
     previousFeature = feature;
   });
 
-  function openProject(id: string): void {
-    if (id === state.selectedId && !state.showingProjects) return;
+  function openProject(id: string, footage?: File): void {
+    if (id === moduleState.selectedId && !moduleState.showingProjects) return;
+    footageToImport = footage ? { projectId: id, file: footage } : null;
     void goto(`/post?project=${encodeURIComponent(id)}`);
   }
 
   function openFeature(slug: string): void {
-    if (featureSelectionId(slug) === state.selectedId && !state.showingProjects)
+    if (
+      featureSelectionId(slug) === moduleState.selectedId &&
+      !moduleState.showingProjects
+    )
       return;
     void goto(`/post?feature=${encodeURIComponent(slug)}`);
   }
 
   function showProjects(): void {
-    state.showProjects();
-    void goto("/post", { replaceState: true });
+    moduleState.showProjects();
+    void goto("/post", { replace: true });
   }
 
   /**
-   * The account save for one sequence, bound when the editor opens: a copy
-   * it still holds when another post opens saves with its own sequence.
+   * The account save for one post, bound when the editor opens: a copy it
+   * still holds when another post opens, or after someone else signs in,
+   * saves with its own sequence and only to its own account.
    */
-  function saveSyncedFor(sequence: SequenceData) {
-    return (project: PostProject) => saveSyncedPostDraft(project, sequence);
+  function saveSyncedFor(uid: string, sequence: SequenceData | null) {
+    return (project: PostProject) =>
+      saveSyncedPostDraft(project, sequence, uid);
   }
 </script>
 
-<section class="post-module" aria-label="Post">
+<section class="post-module" aria-label="Studio">
   {#if !canAccessPostStudio() && !featureMode}
-    <div class="editor-status" role="status">Post is in early access.</div>
+    <div class="editor-status" role="status">Studio is in early access.</div>
   {:else}
-    <div class="project-list" hidden={!state.showingProjects}>
-      <header class="list-header">
-        <h1>Projects</h1>
-        <p>Open a saved post or choose Edit in Post from a sequence.</p>
-      </header>
-      {#if authState.user && !authState.user.isAnonymous}<p class="notice">Saved edits sync with your account. You need to select this device’s videos again on another device.</p>{/if}
-      {#if state.catalogError}<p class="notice" role="status">
-          {state.catalogError}
-        </p>{/if}
-      {#if state.loadingCatalog}<p class="list-status" role="status">
-          Loading projects…
-        </p>
-      {:else if state.projects.length === 0}<p class="list-status">
-          No post projects yet. Open a sequence and choose Edit in Post.
-        </p>
-      {:else}
-        <ul>
-          {#each state.projects as project (project.sequenceId)}
-            {@const projectWord = project.word || project.sequenceId}
-            {@const showProjectWord = projectWord !== project.title}
-            <li>
-              <button
-                type="button"
-                aria-label={`Open ${project.title}`}
-                onclick={() => openProject(project.sequenceId)}
-              >
-                <span class="project-mark"
-                  ><i class="fas fa-clapperboard" aria-hidden="true"></i></span
-                >
-                <div class="project-info">
-                  {#if isTkaWord(project.title)}
-                    <TKAWordGlyph word={project.title} height={24} darkMode />
-                  {:else}
-                    <strong>{project.title}</strong>
-                  {/if}
-                  {#if showProjectWord || project.hasDraft}
-                    <div class="project-details">
-                      {#if showProjectWord}
-                        {#if isTkaWord(projectWord)}
-                          <TKAWordGlyph word={projectWord} height={14} darkMode />
-                        {:else}
-                          <span>{projectWord}</span>
-                        {/if}
-                      {/if}
-                      {#if project.hasDraft}
-                        <span>{showProjectWord ? "· " : ""}Saved draft</span>
-                      {/if}
-                    </div>
-                  {/if}
-                </div>
-                <span class="project-date"
-                  >{new Date(project.updatedAt).toLocaleDateString()}</span
-                >
-                <i class="fas fa-chevron-right" aria-hidden="true"></i>
-              </button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-      {#if state.features.length || state.unreadableFeatures.length || state.featureError}
-        <section class="feature-videos" aria-labelledby="feature-videos-title">
-          <h2 id="feature-videos-title">Feature videos</h2>
-          {#if state.featureError}<p class="notice" role="status">
-              {state.featureError}
-            </p>{/if}
-          {#if state.unreadableFeatures.length}<p class="notice" role="status">
-              Could not read the project.json in {state.unreadableFeatures.join(", ")}.
-              Each folder's history keeps earlier copies.
-            </p>{/if}
-          {#if state.features.length}
-            <ul>
-              {#each state.features as video (video.slug)}
-                <li>
-                  <button
-                    type="button"
-                    aria-label={`Open ${video.title}`}
-                    onclick={() => openFeature(video.slug)}
-                  >
-                    <span class="project-mark"
-                      ><i class="fas fa-film" aria-hidden="true"></i></span
-                    >
-                    <div class="project-info">
-                      <strong>{video.title}</strong>
-                      <div class="project-details">
-                        <span>{video.slug} · {video.sequenceId}</span>
-                      </div>
-                    </div>
-                    <span class="project-date"
-                      >{new Date(video.savedAt).toLocaleDateString()}</span
-                    >
-                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
-                  </button>
-                </li>
-              {/each}
-            </ul>
-          {/if}
-        </section>
+    <div class="project-list" hidden={!moduleState.showingProjects}>
+      {#if moduleState.showingProjects}
+        {#key authState.user?.uid ?? "guest"}
+          <StudioProjectLibrary
+            projects={moduleState.projects}
+            features={moduleState.features}
+            loading={moduleState.loadingCatalog}
+            error={moduleState.catalogError}
+            featureError={moduleState.featureError}
+            unreadableFeatures={moduleState.unreadableFeatures}
+            onopen={openProject}
+            onfeature={openFeature}
+            onrefresh={() => void moduleState.refreshProjects()}
+          />
+        {/key}
       {/if}
     </div>
-    <div class="editor-host" hidden={state.showingProjects}>
+    <div class="editor-host" hidden={moduleState.showingProjects}>
       <div class="project-toolbar">
         <div class="toolbar-row">
           <button
@@ -275,27 +211,35 @@
               {currentTitle}
             {/if}
           </div>
-          {#if editorHeader.actions && !state.loadingProject && state.sequence}{@render editorHeader.actions()}{/if}
+          {#if editorHeader.actions && !moduleState.loadingProject && moduleState.editorReady}{@render editorHeader.actions()}{/if}
         </div>
       </div>
-      {#if state.loadingProject}<div class="editor-status" role="status">
-          Opening post…
+      {#if moduleState.loadingProject}<div class="editor-status" role="status">
+          Opening project…
         </div>
-      {:else if !state.sequence}<div class="editor-status error" role="alert">
-          <p>{state.projectError || "This sequence could not be opened."}</p>
-          <button type="button" onclick={() => void state.retry()}
+      {:else if !moduleState.editorReady}<div
+          class="editor-status error"
+          role="alert"
+        >
+          <p>
+            {moduleState.projectError || "This project could not be opened."}
+          </p>
+          <button type="button" onclick={() => void moduleState.retry()}
             >Try again</button
           >
         </div>
       {:else}
-        <!-- The scope's snippet loses the branch's narrowing; bind it here. -->
-        {@const sequence = state.sequence}
-        {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${state.feature ? featureSelectionId(state.feature.slug) : state.sequence.id}`}
+        {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${moduleState.selectedId}`}
           <TkaEditorScope
-            active={visible && !state.showingProjects}
-            sequence={state.sequence}
-            feature={state.feature ?? undefined}
-            initialProject={state.feature ? state.feature.initialProject : (state.draft ?? undefined)}
+            editArrangementOnOpen={!!moduleState.selectedId?.startsWith(
+              "studio-arrangement:"
+            )}
+            active={visible && !moduleState.showingProjects}
+            sequence={moduleState.sequence}
+            feature={moduleState.feature ?? undefined}
+            initialProject={moduleState.feature
+              ? moduleState.feature.initialProject
+              : (moduleState.draft ?? undefined)}
             cardPreviewUrl={cardPreview.url}
             cardRenderOptions={cardPreview.renderOptions}
             animationPreviewUrl={null}
@@ -312,9 +256,19 @@
                 registerExport={scope.registerExport}
                 audioSeed={scope.audioSeed}
                 onAudioChange={scope.onAudioChange}
-                active={visible && !state.showingProjects}
-                onSaveDraft={state.feature ? state.feature.save : authState.user && !authState.user.isAnonymous ? saveSyncedFor(sequence) : state.diskAvailable ? savePostDraft : undefined}
-                draftLoadError={state.projectError}
+                active={visible && !moduleState.showingProjects}
+                initialFootage={footageToImport?.projectId ===
+                moduleState.selectedId
+                  ? footageToImport.file
+                  : null}
+                onSaveDraft={moduleState.feature
+                  ? moduleState.feature.save
+                  : authState.user && !authState.user.isAnonymous
+                    ? saveSyncedFor(authState.user.uid, moduleState.sequence)
+                    : moduleState.diskAvailable
+                      ? savePostDraft
+                      : undefined}
+                draftLoadError={moduleState.projectError}
               />
             {/snippet}
           </TkaEditorScope>
@@ -333,117 +287,11 @@
     background: var(--theme-panel-bg);
   }
   .project-list {
-    max-width: 940px;
     height: 100%;
     overflow-y: auto;
-    margin: 0 auto;
-    padding: clamp(20px, 4vw, 52px);
   }
   .post-module [hidden] {
     display: none;
-  }
-  .list-header {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 24px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid var(--theme-stroke);
-  }
-  .list-header h1 {
-    margin: 2px 0 0;
-    font-size: clamp(28px, 4vw, 40px);
-  }
-  .list-header p {
-    max-width: 250px;
-    margin: 0;
-    color: var(--theme-text-secondary);
-    font-size: 14px;
-    line-height: 1.45;
-  }
-  .notice {
-    color: var(--theme-text-secondary);
-    font-size: 13px;
-  }
-  .list-status {
-    padding: 40px 0;
-    color: var(--theme-text-secondary);
-  }
-  .feature-videos {
-    margin-top: 36px;
-  }
-  .feature-videos h2 {
-    margin: 0;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--theme-stroke);
-    font-size: 18px;
-  }
-  ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  li {
-    border-bottom: 1px solid var(--theme-stroke);
-  }
-  li button {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    width: 100%;
-    min-height: 76px;
-    padding: 12px 6px;
-    border: 0;
-    color: inherit;
-    background: transparent;
-    text-align: left;
-    cursor: pointer;
-  }
-  li button:hover,
-  li button:focus-visible {
-    background: var(--theme-card-bg);
-    outline: 2px solid transparent;
-  }
-  li button:focus-visible {
-    outline-color: var(--theme-text-secondary);
-  }
-  .project-mark {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    background: var(--theme-card-bg);
-    color: var(--theme-text-secondary);
-    flex: none;
-  }
-  .project-info {
-    display: grid;
-    gap: 4px;
-    min-width: 0;
-    flex: 1;
-  }
-  .project-info strong,
-  .project-details {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .project-details,
-  .project-date {
-    color: var(--theme-text-secondary);
-    font-size: 12px;
-  }
-  .project-details {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .project-details > span {
-    flex-shrink: 0;
-  }
-  .project-date {
-    white-space: nowrap;
   }
   .editor-host {
     display: flex;
@@ -522,19 +370,5 @@
   ) {
     flex: 1;
     min-height: 0;
-  }
-  @media (max-width: 600px) {
-    .list-header {
-      display: block;
-    }
-    .list-header p {
-      margin-top: 10px;
-    }
-    .project-date {
-      display: none;
-    }
-    .project-list {
-      padding: 20px 16px;
-    }
   }
 </style>

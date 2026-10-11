@@ -9,9 +9,9 @@
  * Uses the canonical Canvas2D pictograph renderer — never hand-rolled SVG.
  */
 
-import { canvas2DDirectRenderer } from "$lib/shared/render/services/canvas-2d-direct-renderer";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { canvas2DDirectRenderer } from "#lib/shared/render/services/canvas-2d-direct-renderer.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import { sequenceFirstStep } from "./sequence-first-step";
 
 /**

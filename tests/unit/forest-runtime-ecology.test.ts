@@ -15,7 +15,7 @@ import {
   createForestRuntimeTreeInstances,
   disposeForestRuntimeEcology,
   selectForestRuntimeGrassDensity,
-} from "$lib/shared/3d/environments/scenes/forest/forest-runtime-ecology";
+} from "#lib/shared/3d/environments/scenes/forest/forest-runtime-ecology.js";
 
 describe("forest runtime ecology", () => {
   it("uses simplified geometry with the accepted near-tree material payload", () => {

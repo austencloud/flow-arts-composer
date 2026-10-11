@@ -25,11 +25,11 @@ import {
 import {
   pipHandoffOf,
   type PipHandoff,
-} from "$lib/shared/media-composition/domain/pip-handoff";
+} from "#lib/shared/media-composition/domain/pip-handoff.js";
 import {
   titlesPlanOf,
   type TunnelTitlesPlan,
-} from "$lib/shared/media-composition/domain/tunnel-titles";
+} from "#lib/shared/media-composition/domain/tunnel-titles.js";
 // Types only: item-kinds imports this module by value for each kind's compile.
 import type {
   PostAnimationItem,

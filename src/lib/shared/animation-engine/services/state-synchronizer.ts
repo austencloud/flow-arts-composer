@@ -1,7 +1,7 @@
 import type { CanvasResizer } from "./canvas-resizer.svelte";
 import type { EffectRendererManager } from "./effect-renderer-manager";
 import type { TrailCapturer } from "./trail-capturer";
-import type { IAnimationRenderLoop } from "$lib/shared/animation-engine/services/IAnimationRenderLoop";
+import type { IAnimationRenderLoop } from "#lib/shared/animation-engine/services/IAnimationRenderLoop.js";
 import {
   sameFrame,
   squareFrame,

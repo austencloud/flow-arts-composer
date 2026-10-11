@@ -1,21 +1,21 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import type { CollectionAccessRole } from "$lib/shared/library/domain/models/collection";
-  import { getCollectionCollaborationManager } from "$lib/shared/library/get-collection-collaboration-manager";
-  import type { CollectionShareAccessItem } from "$lib/shared/library/services/contracts/ICollectionCollaborationManager";
-  import type { ConversationPreview } from "$lib/shared/messaging/domain/models/conversation-models";
-  import { conversationService } from "$lib/shared/messaging/services/conversation-manager";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import UserSearchInput from "$lib/shared/user-search/UserSearchInput.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import type { CollectionAccessRole } from "#lib/shared/library/domain/models/collection.js";
+  import { getCollectionCollaborationManager } from "#lib/shared/library/get-collection-collaboration-manager.js";
+  import type { CollectionShareAccessItem } from "#lib/shared/library/services/contracts/ICollectionCollaborationManager.js";
+  import type { ConversationPreview } from "#lib/shared/messaging/domain/models/conversation-models.js";
+  import { conversationService } from "#lib/shared/messaging/services/conversation-manager.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import UserSearchInput from "#lib/shared/user-search/UserSearchInput.svelte";
   import { onMount } from "svelte";
   import type { PendingMessageAttachment } from "../../domain/pending-message-attachment";
   import { inboxState } from "../../state/inbox-state.svelte";
-  import { getUserIdentityLabels } from "$lib/shared/community/domain/user-identity-labels";
+  import { getUserIdentityLabels } from "#lib/shared/community/domain/user-identity-labels.js";
 
   interface Props {
     attachment: Extract<PendingMessageAttachment, { type: "collection" }>;

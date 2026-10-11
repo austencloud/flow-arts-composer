@@ -6,14 +6,17 @@
 import {
   resolveFusePictographMotionFrame,
   type FusePictographMotionFrame,
-} from "$lib/features/fuse/services/fuse-pictograph-motion-frame";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/features/fuse/services/fuse-pictograph-motion-frame.js";
+import type { FuseSide } from "#lib/features/fuse/state/fuse-shuffle-pool.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   transformOnto,
   type CellRect,
   type FuseLayout,
 } from "./method-preview-compositions";
+import { DEMO_STEP_START } from "./method-preview-demo";
+import { PREVIEW_MOVE_MS } from "./method-preview-run";
 
 /** The scene's beats, in milliseconds, in the order they play. */
 export const FUSE_PREVIEW_TIMING = Object.freeze({
@@ -21,12 +24,20 @@ export const FUSE_PREVIEW_TIMING = Object.freeze({
   clearMs: 150,
   /** The blue and red sources fade in, apart. */
   sourcesInMs: 300,
+  /**
+   * A new path's halves arrive over the end of sourcesInMs with a small
+   * pop, after the kept hand's, so the eye finds what changed.
+   */
+  newHandMs: 180,
   /** They slide together, each half onto its fused cell. */
   slideMs: 520,
   /** The fused cells take over from the halves. */
   mergeMs: 120,
-  /** Each fused step plays. */
-  stepMs: 650,
+  /**
+   * Each fused step plays, at the pace Construct's and Generate's steps move
+   * (2026-10-11; 650 ms before, quick enough to miss).
+   */
+  stepMs: PREVIEW_MOVE_MS,
 });
 
 /**
@@ -46,6 +57,34 @@ export function fuseFrames(
     if (frame) frames.push(frame);
   }
   return frames;
+}
+
+/**
+ * How long a turn waits for cells still drawing a new pair before it plays
+ * what they show.
+ */
+export const FUSE_PREVIEW_DRAW_WAIT_MS = 200;
+
+/** Regenerate gives red a new path first, then blue, taking turns. */
+export const FIRST_FUSE_SWAP: FuseSide = "right";
+
+/** The hand that gets a new path after `side`. */
+export function nextFuseSwap(side: FuseSide): FuseSide {
+  return side === "left" ? "right" : "left";
+}
+
+/** How many fused steps the scene plays. */
+export const FUSE_PREVIEW_STEPS = 2;
+
+/**
+ * The fused steps the scene plays from a sequence: two steps from Fuse's
+ * place in the demo (DEMO_STEP_START.fuse), so a new pair's kept hand shows
+ * the very steps it showed before.
+ */
+export function fusePreviewFrames(
+  sequence: SequenceData
+): FusePictographMotionFrame[] {
+  return fuseFrames(sequence, FUSE_PREVIEW_STEPS, DEMO_STEP_START.fuse);
 }
 
 /** One hand of one step, before it fuses. */

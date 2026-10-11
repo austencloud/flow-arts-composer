@@ -4,7 +4,7 @@ import {
   clearCameraUrlPose,
   readCameraUrlPose,
   setCameraUrlPose,
-} from "$lib/shared/3d/domain/camera-url-pose";
+} from "#lib/shared/3d/domain/camera-url-pose.js";
 
 describe("camera URL pose", () => {
   it("round-trips a complete camera pose through the review-link format", () => {

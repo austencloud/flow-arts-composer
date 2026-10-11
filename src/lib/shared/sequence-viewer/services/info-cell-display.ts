@@ -1,4 +1,4 @@
-import { calculateLayout } from "$lib/shared/render/services/layout-calculator";
+import { calculateLayout } from "#lib/shared/render/services/layout-calculator.js";
 
 export type InfoCellChoice = "qr" | "mandala" | "none";
 

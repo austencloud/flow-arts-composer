@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isCreateSurfaceCollapsed } from "$lib/shared/hmr-helper";
+import { isCreateSurfaceCollapsed } from "#lib/shared/hmr-helper.js";
 
 function rect(width: number, height: number): DOMRect {
   return {

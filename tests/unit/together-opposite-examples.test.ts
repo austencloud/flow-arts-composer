@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { TnDMode } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { TnDMode } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
 import { selectTogetherOppositeExamples } from "../../src/routes/(public)/timing-and-direction/_data/together-opposite-examples";
 import { getAllLetterVariants } from "../helpers/real-pictograph-loader";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
 describe("Together-Opposite article examples", () => {
   it("uses geometry-classified dataframe variants instead of a letter-family table", async () => {

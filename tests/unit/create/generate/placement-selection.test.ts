@@ -3,8 +3,8 @@ import {
   blockAllExcept,
   hasSameBlockedPlacements,
   toggleBlockedPlacement,
-} from "$lib/shared/components/placement-picker/placement-selection";
-import { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/components/placement-picker/placement-selection.js";
+import { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 const placements = [
   GridPlacement.ALPHA1,

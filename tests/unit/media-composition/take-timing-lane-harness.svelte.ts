@@ -4,9 +4,9 @@ import {
   resolveTakeTiming,
   takeLandingDragRange,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
-import TakeTimingLane from "$lib/shared/share/components/post-studio/builder/TakeTimingLane.svelte";
-import type { LandingRef } from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import TakeTimingLane from "#lib/shared/share/components/post-studio/builder/TakeTimingLane.svelte";
+import type { LandingRef } from "#lib/shared/share/components/post-studio/builder/post-timing-session.svelte.js";
 
 /**
  * The timing lane on `initial` at `mediaSeconds` in Adjust landings mode,

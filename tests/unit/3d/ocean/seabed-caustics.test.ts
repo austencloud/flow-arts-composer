@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MeshStandardMaterial } from "three";
-import { patchCausticsMaterial } from "$lib/shared/3d/environments/scenes/ocean/runtime/atmosphere/seabed-caustics";
+import { patchCausticsMaterial } from "#lib/shared/3d/environments/scenes/ocean/runtime/atmosphere/seabed-caustics.js";
 
 describe("ocean seabed caustics shader", () => {
   it("uses the bounded analytic pattern and skips it when strength is zero", () => {

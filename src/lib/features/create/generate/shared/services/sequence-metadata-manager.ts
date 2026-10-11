@@ -7,7 +7,7 @@ import {
   DifficultyLevel,
   type GenerationOptions,
 } from "../domain/models/generate-models";
-import { DIFFICULTY_TO_LEVEL } from "$lib/shared/create/utils/config-mapper";
+import { DIFFICULTY_TO_LEVEL } from "#lib/shared/create/utils/config-mapper.js";
 
 export function generateSequenceName(options: GenerationOptions): string {
   const timestamp = new Date().toLocaleString("en-US", {

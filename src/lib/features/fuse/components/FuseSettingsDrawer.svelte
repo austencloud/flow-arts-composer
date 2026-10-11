@@ -1,5 +1,5 @@
 <script lang="ts">
-  import GenerationSettingsDrawer from "$lib/features/create/generate/components/modals/GenerationSettingsDrawer.svelte";
+  import GenerationSettingsDrawer from "#lib/features/create/generate/components/modals/GenerationSettingsDrawer.svelte";
   import type { FuseSettingsDestination } from "../domain/fuse-recipe-destination";
   import FuseRecipeSettings from "./FuseRecipeSettings.svelte";
 

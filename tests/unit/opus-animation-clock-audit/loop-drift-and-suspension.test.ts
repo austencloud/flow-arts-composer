@@ -23,15 +23,15 @@
  */
 
 import { describe, it, expect, afterEach } from "vitest";
-import { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
-import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
+import { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
+import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
 import {
   createRenderActivityGate,
   __resetRenderGatingSharedState,
-} from "$lib/shared/render-gating/render-activity-gate";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/render-gating/render-activity-gate.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   canonicalFreeformSequence,
   canonicalSeamlessSequence,

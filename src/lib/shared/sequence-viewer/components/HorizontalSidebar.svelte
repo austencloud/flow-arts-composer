@@ -5,10 +5,10 @@
   Adapts between compact (tabbed) and expanded modes based on available height.
 -->
 <script lang="ts">
-	import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
-	import SettingsTogglePanel from "$lib/shared/animation-engine/components/controls/SettingsTogglePanel.svelte";
-	import PlaybackPane from "$lib/shared/animation-engine/components/controls/settings-panel/PlaybackPane.svelte";
-	import VisualPane from "$lib/shared/animation-engine/components/controls/settings-panel/VisualPane.svelte";
+	import TempoControl from "#lib/shared/animation-panel/components/TempoControl.svelte";
+	import SettingsTogglePanel from "#lib/shared/animation-engine/components/controls/SettingsTogglePanel.svelte";
+	import PlaybackPane from "#lib/shared/animation-engine/components/controls/settings-panel/PlaybackPane.svelte";
+	import VisualPane from "#lib/shared/animation-engine/components/controls/settings-panel/VisualPane.svelte";
 	import type { ControlsLevel } from "../domain/types";
 
 	let {

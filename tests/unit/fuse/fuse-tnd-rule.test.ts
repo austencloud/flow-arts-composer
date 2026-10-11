@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createFuseRule,
   LEGACY_RULES,
-} from "$lib/features/fuse/domain/fuse-rule";
+} from "#lib/features/fuse/domain/fuse-rule.js";
 import {
   classifyFuseRule,
   coerceToTnDRule,
@@ -13,7 +13,7 @@ import {
   resolveFuseRule,
   withFuseTnDAxes,
   type FuseTnDSelection,
-} from "$lib/features/fuse/domain/fuse-tnd-rule";
+} from "#lib/features/fuse/domain/fuse-tnd-rule.js";
 
 function selection(partial: Partial<FuseTnDSelection>): FuseTnDSelection {
   return {

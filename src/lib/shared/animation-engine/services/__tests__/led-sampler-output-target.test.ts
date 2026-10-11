@@ -4,7 +4,7 @@ import {
   DEFAULT_LED_CONFIG,
   type LedSample,
 } from "../../domain/types/led-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 
 /**
  * The render loop samples several poses per slow frame. Each prior set needs

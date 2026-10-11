@@ -1,11 +1,11 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import AdminActionButton from "$lib/shared/admin/components/AdminActionButton.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import CopyForAIButton from "$lib/shared/foundation/ui/CopyForAIButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import AdminActionButton from "#lib/shared/admin/components/AdminActionButton.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import CopyForAIButton from "#lib/shared/foundation/ui/CopyForAIButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import SessionReplayPanel from "./SessionReplayPanel.svelte";
-  import { getPostHogUserAnalytics } from "$lib/features/admin/get-post-hog-user-analytics";
+  import { getPostHogUserAnalytics } from "#lib/features/admin/get-post-hog-user-analytics.js";
   import { buildSessionExceptionReport } from "../domain/session-exception-report";
   import type {
     PostHogSessionEvent,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { clipBox, clipShapeFor, postOutputSize, postSafeArea, shapedBox, spotAround, POST_BOX, EASING_PRESETS, setProjectCanvas, updateItem } from "@austencloud/video-editor/core";
-import { compilePostProject, PostProjectSchema, editContext } from "$lib/shared/post-studio-plugin";
+import { compilePostProject, PostProjectSchema, editContext } from "#lib/shared/post-studio-plugin/index.js";
 import { NOW, project, video } from "./post-project-fixtures";
 
 const ctx = editContext(NOW);

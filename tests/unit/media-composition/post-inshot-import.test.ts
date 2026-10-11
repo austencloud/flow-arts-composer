@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { importRecoveredInShotDraft } from "$lib/shared/media-composition/domain/post-inshot-import";
+import { importRecoveredInShotDraft } from "#lib/shared/media-composition/domain/post-inshot-import.js";
 import {
   compilePostProject,
   normalizeProject,
   editContext,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   channelValueAt,
   sampleEasing,

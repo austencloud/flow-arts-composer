@@ -19,11 +19,11 @@
   import {
     FLOW_FEST_EUC_CONFIG,
     type FlowFestElectricUnicycleDynamics,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle";
-  import type { FlowFestEucMountedPoseDiagnostic } from "$lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose";
-  import { FlowFestEucMountedPoseRig } from "$lib/features/flow-fest-sim/services/flow-fest-euc-mounted-pose-rig";
-  import { repairFadeLeftoverMaterials } from "$lib/features/flow-fest-sim/services/flow-fest-avatar-material-repair";
-  import { refreshSkinnedSkeletons } from "$lib/features/flow-fest-sim/services/flow-fest-avatar-skeleton-refresh";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle.js";
+  import type { FlowFestEucMountedPoseDiagnostic } from "#lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose.js";
+  import { FlowFestEucMountedPoseRig } from "#lib/features/flow-fest-sim/services/flow-fest-euc-mounted-pose-rig.js";
+  import { repairFadeLeftoverMaterials } from "#lib/features/flow-fest-sim/services/flow-fest-avatar-material-repair.js";
+  import { refreshSkinnedSkeletons } from "#lib/features/flow-fest-sim/services/flow-fest-avatar-skeleton-refresh.js";
 
   interface Props {
     dynamics: FlowFestElectricUnicycleDynamics;

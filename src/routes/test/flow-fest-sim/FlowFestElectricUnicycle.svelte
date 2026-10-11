@@ -4,12 +4,12 @@
   import {
     type FlowFestElectricUnicycleDynamics,
     type FlowFestElectricUnicycleTerrainAttitude,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle.js";
   import {
     flowFestEucPedalAnchorLocal,
     flowFestEucSuspensionOffsetMeters,
     type FlowFestEucMountedPoseDiagnostic,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose.js";
   import FlowFestEucMountedRider from "./FlowFestEucMountedRider.svelte";
 
   interface Props {

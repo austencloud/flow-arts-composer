@@ -1,13 +1,13 @@
 <script lang="ts">
   import { Canvas, T } from "@threlte/core";
 
-  import SkyGradient from "$lib/shared/3d/environments/primitives/SkyGradient.svelte";
-  import Starfield from "$lib/shared/3d/environments/primitives/Starfield.svelte";
-  import MeteorStreaks from "$lib/shared/3d/environments/scenes/cosmic/MeteorStreaks.svelte";
+  import SkyGradient from "#lib/shared/3d/environments/primitives/SkyGradient.svelte";
+  import Starfield from "#lib/shared/3d/environments/primitives/Starfield.svelte";
+  import MeteorStreaks from "#lib/shared/3d/environments/scenes/cosmic/MeteorStreaks.svelte";
   import type {
     MeteorStreaksConfig,
     StarfieldConfig,
-  } from "$lib/shared/3d/environments/domain/models/scene-configs";
+  } from "#lib/shared/3d/environments/domain/models/scene-configs.js";
 
   const stars: StarfieldConfig = {
     enabled: true,

@@ -10,12 +10,12 @@
   // here. The full-featured original still lives at the old path as a
   // compatibility shim for VirtualizedCreatorGrid/FeaturedCreatorsSection
   // until Phase 2 deletes them.
-  import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-  import { getEffectiveProp } from "$lib/shared/community/domain/get-effective-prop";
-  import { formatTimeAgo } from "$lib/shared/i18n/i18n-formatters";
-  import { buildCreatorPath } from "$lib/shared/navigation/services/creator-routes";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
+  import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+  import { getEffectiveProp } from "#lib/shared/community/domain/get-effective-prop.js";
+  import { formatTimeAgo } from "#lib/shared/i18n/i18n-formatters.js";
+  import { buildCreatorPath } from "#lib/shared/navigation/services/creator-routes.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
 
   interface Props {
     user: EnhancedUserProfile;

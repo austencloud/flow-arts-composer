@@ -16,11 +16,11 @@
 import {
   PROP_MODEL_SPRITES,
   type PropModelSpriteEntry,
-} from "$lib/shared/pictograph/prop/domain/prop-model-sprites.generated";
+} from "#lib/shared/pictograph/prop/domain/prop-model-sprites.generated.js";
 import {
   HOOP_FAMILY_TIP_POINTS,
   TRIANGLE_STATIONS_M,
-} from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
+} from "#lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.js";
 
 /**
  * A single tip attachment point on a prop. Position only - no effect-specific

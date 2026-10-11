@@ -1,12 +1,15 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   applySequenceActions,
   pressSequenceAction,
   resetSequenceActions,
   withSequenceAction,
   type PostSequenceTransforms,
-} from "$lib/shared/media-composition/domain/post-sequence-actions";
-import { PostProjectSchema, editContext } from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/media-composition/domain/post-sequence-actions.js";
+import {
+  PostProjectSchema,
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
 import type { PostProject } from "@austencloud/video-editor/core";
 import { project as fixture } from "./post-project-fixtures";
 

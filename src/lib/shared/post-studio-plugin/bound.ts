@@ -18,7 +18,7 @@ import {
   type EvaluatedFrameLayer,
   type SourceTimeOffsets,
 } from "@austencloud/video-editor/render";
-import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video-url";
+import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video-url.js";
 import { tkaFrameAlignment, type SequenceFrameAlignment } from "./alignment";
 import { createTkaPlugin } from "./create-plugin";
 

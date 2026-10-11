@@ -5,7 +5,7 @@
   Responsive layout that works on all device sizes.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount, onDestroy } from "svelte";
   import { createTrainState } from "../state/train-state.svelte";
   import { TrainMode, PracticeMode } from "../domain/enums/train-enums";
@@ -16,18 +16,18 @@
   } from "../state/train-practice-state.svelte";
   import ResultsScreen from "./ResultsScreen.svelte";
   import type { MediaPipeDetector } from "../services/media-pipe-detector";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { getSessionCompletionProcessor } from "$lib/features/train/get-session-completion-processor";
-  import { getPositionDetector } from "$lib/features/train/get-position-detector";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { getSessionCompletionProcessor } from "#lib/features/train/get-session-completion-processor.js";
+  import { getPositionDetector } from "#lib/features/train/get-position-detector.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { getTrainPracticeState } from "../state/train-practice-state.svelte";
   import ModeSettingsSheet from "./practice/ModeSettingsSheet.svelte";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import PracticeBentoLayout from "./practice/PracticeBentoLayout.svelte";
   import ModePickerSheet from "./practice/ModePickerSheet.svelte";
   import GridSettingsSheet from "./practice/GridSettingsSheet.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { createScreenWakeLockManager } from "$lib/shared/device/services/screen-wake-lock-manager";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { createScreenWakeLockManager } from "#lib/shared/device/services/screen-wake-lock-manager.js";
 
   interface Props {
     sequence?: SequenceData | null;

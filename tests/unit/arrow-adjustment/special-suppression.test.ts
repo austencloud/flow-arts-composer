@@ -16,25 +16,25 @@ import { describe, it, expect, afterEach, vi } from "vitest";
 vi.mock("firebase/firestore", () => ({ collection: vi.fn(), doc: vi.fn() }));
 
 import { Point } from "fabric";
-import { ArrowAdjustmentCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator";
+import { ArrowAdjustmentCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator.js";
 import {
   setSpecialOverrideResolver,
   setGlobalAdjustmentResolver,
   setPropGeometryResolver,
-} from "$lib/shared/pictograph/arrow/positioning/placement/services/override-resolvers";
-import { createSpecialArrowPlacementState } from "$lib/shared/pictograph/arrow/positioning/special-override/state/special-arrow-placement-state.svelte";
-import { SpecialArrowPlacementSchema } from "$lib/shared/pictograph/arrow/positioning/special-override/domain/special-arrow-placement";
-import { computeSpecialOverrideKey } from "$lib/shared/pictograph/arrow/positioning/special-override/services/special-override-key";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { arrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/arrow/positioning/placement/services/override-resolvers.js";
+import { createSpecialArrowPlacementState } from "#lib/shared/pictograph/arrow/positioning/special-override/state/special-arrow-placement-state.svelte.js";
+import { SpecialArrowPlacementSchema } from "#lib/shared/pictograph/arrow/positioning/special-override/domain/special-arrow-placement.js";
+import { computeSpecialOverrideKey } from "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-key.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { arrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 const SPECIAL_VALUE = { x: 70, y: -45 };
 const DEFAULT_VALUE = { x: 0, y: -50 };

@@ -1,24 +1,24 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { getPropDimensions } from "$lib/shared/animation-engine/services/IPropTextureLoader";
-import { setTrailPointOverrideProvider } from "$lib/shared/animation-engine/domain/types/trail-point-types";
+import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { getPropDimensions } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
+import { setTrailPointOverrideProvider } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
 import {
   CLUB_TIP_REACH,
   setTipPointOverrideProvider,
-} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { resolveTrailPointConfig } from "$lib/shared/animation-engine/domain/types/trail-point-types";
-import { ENGINE_GRID_RADIUS } from "$lib/shared/mandala/domain/mandala-constants";
+} from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import { resolveTrailPointConfig } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
+import { ENGINE_GRID_RADIUS } from "#lib/shared/mandala/domain/mandala-constants.js";
 import {
   computeEngineAlignedMandalaScale,
   resolveMandalaTipOffsets,
-} from "$lib/shared/mandala/services/mandala-path-preparer";
-import { calculate } from "$lib/shared/mandala/services/mandala-geometry-calculator";
+} from "#lib/shared/mandala/services/mandala-path-preparer.js";
+import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
 import type {
   MandalaTipOverrides,
   StepLike,
-} from "$lib/shared/mandala/services/types";
+} from "#lib/shared/mandala/services/types.js";
 
 // Both derive from the prop's own pictograph viewBox half-width — the animation
 // canvas draws that artwork, so the traced tip sits on its visible end.

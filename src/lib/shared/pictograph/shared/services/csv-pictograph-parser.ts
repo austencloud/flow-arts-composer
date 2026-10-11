@@ -6,7 +6,7 @@ import { createMotionData } from "../domain/models/motion-data";
 import type { PictographData } from "../domain/models/pictograph-data";
 import { createPictographData } from "../domain/factories/create-pictograph-data";
 import type { EnumMapper } from "../../../foundation/services/implementations/data/enum-mapper";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
 import { Orientation } from "../domain/enums/pictograph-enums";
 
 /**

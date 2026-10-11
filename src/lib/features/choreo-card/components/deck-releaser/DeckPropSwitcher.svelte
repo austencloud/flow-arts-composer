@@ -6,12 +6,12 @@
   BaseModal owns focus, Escape, backdrop dismissal, motion, and focus restore.
 -->
 <script lang="ts">
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
-  import ModalFooter from "$lib/shared/foundation/ui/modal/ModalFooter.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import ModalFooter from "#lib/shared/foundation/ui/modal/ModalFooter.svelte";
   import { getDeckReleaserContext } from "./context/deck-releaser-context";
 
   const { state: rs } = getDeckReleaserContext();

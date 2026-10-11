@@ -1,6 +1,6 @@
-import type { Viewer3DState } from "$lib/shared/3d/context/viewer-3d-context";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import { captureTunnelPoster } from "$lib/shared/sequence-viewer/tunnel/tunnel-poster";
+import type { Viewer3DState } from "#lib/shared/3d/context/viewer-3d-context.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import { captureTunnelPoster } from "#lib/shared/sequence-viewer/tunnel/tunnel-poster.js";
 import type {
   Scene3DGroupId,
   Scene3DSnapshot,

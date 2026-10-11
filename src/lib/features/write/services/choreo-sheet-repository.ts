@@ -24,7 +24,7 @@ import {
   firestoreDelete,
   firestoreDate,
   requireAuth,
-} from "$lib/shared/firestore";
+} from "#lib/shared/firestore/index.js";
 import {
   DEFAULT_SHEET_LAYOUT,
   type ChoreoSheet,

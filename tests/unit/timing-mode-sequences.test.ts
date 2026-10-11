@@ -1,13 +1,17 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-import { hydrateSequence } from "$lib/features/choreo-card/services/sequence-render-hydrator";
-import { TnDMode } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
-import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-import { MODE_ORDER } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+import { hydrateSequence } from "#lib/features/choreo-card/services/sequence-render-hydrator.js";
+import { TnDMode } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
+import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+import { jsonCache } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
+import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import { handPathIdFor } from "#lib/features/choreo-card/services/hand-path-data-builder.js";
 import {
   adjustModeLoop,
   adjustModeLoops,
+  groupByHandPath,
+  loadModeLoops,
   modeLoopCount,
   modeLoopsPerGrid,
   selectModeLoops,
@@ -19,11 +23,28 @@ const records = JSON.parse(
   readFileSync("static/data/hero/tnd-base-words.json", "utf8")
 );
 const sequences = records.map(hydrateSequence);
-vi.mock("$lib/features/browse/gallery-home/canonical-tnd-pool", () => ({
-  loadCanonicalTnDBaseSequences: async () => sequences,
-}));
 
 describe("mode guide four-count loops", () => {
+  it("loads every mode through the page's own loader", async () => {
+    // Serve the checked-in snapshot at its real URL, so the test goes through
+    // the same loader and data the page fetches in the browser.
+    const get = vi
+      .spyOn(jsonCache, "get")
+      .mockImplementation(async (url: string) => {
+        if (url !== "/data/hero/tnd-base-words.json")
+          throw new Error(`Unexpected fetch ${url}`);
+        return records;
+      });
+    try {
+      for (const code of MODE_ORDER) {
+        const loops = await loadModeLoops(code);
+        expect(loops).toHaveLength(modeLoopCount(code));
+      }
+    } finally {
+      get.mockRestore();
+    }
+  });
+
   it("gives every mode real closed loops on both grids, all in that mode", () => {
     const expected = {
       SS: ["AAAA", "BBBB", "CCCC", "AAAA", "BBBB", "CCCC"],
@@ -69,6 +90,44 @@ describe("mode guide four-count loops", () => {
           }
         }
       }
+    }
+  });
+
+  it("derives the stored hand-path ID from each base word's own steps", () => {
+    for (const [index, record] of records.entries()) {
+      expect(handPathIdFor(sequences[index]!)).toBe(record.metadata.handPathId);
+    }
+  });
+
+  it("shows each distinct hand path once per grid, including after a swap", async () => {
+    const expected = {
+      SS: [["AAAA", "BBBB", "CCCC"]],
+      TS: [["GGGG", "HHHH", "IIII"]],
+      QS: [
+        ["SSSS", "TTTT"],
+        ["UUUU", "VVVV"],
+      ],
+      SO: [["JDJD", "KEKE", "LFLF"]],
+      TO: [["DJDJ", "EKEK", "FLFL"]],
+      QO: [["MPMP", "NQNQ", "OROR"]],
+    } as const;
+    for (const code of MODE_ORDER) {
+      const loops = selectModeLoops(code, sequences);
+      for (const gridMode of ["diamond", "box"] as const) {
+        const groups = groupByHandPath(
+          loops.filter((loop) => loop.gridMode === gridMode)
+        );
+        expect(groups).toHaveLength(expected[code].length);
+        if (gridMode === "diamond") {
+          expect(groups.map((group) => group.map((loop) => loop.word))).toEqual(
+            expected[code]
+          );
+        }
+      }
+      // Box and diamond versions trace different paths.
+      expect(groupByHandPath(loops)).toHaveLength(2 * expected[code].length);
+      const swapped = await transformModeLoops(loops, "swap");
+      expect(groupByHandPath(swapped)).toHaveLength(2 * expected[code].length);
     }
   });
 

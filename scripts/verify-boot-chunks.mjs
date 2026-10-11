@@ -1,5 +1,5 @@
 /**
- * Guard the emitted startup graph, including Rollup's small-chunk merges.
+ * Guard the emitted startup graph, including the bundler's small-chunk merges.
  * Source import tests cannot see a lazy module merged into a startup chunk.
  * Run after a production build: npm run verify:boot-chunks
  * Compare another build: add --manifest <file> --generated-dir <client-optimized>
@@ -9,7 +9,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { staticClosure } from "./verify-public-firebase.mjs";
+import {
+  GENERATED_CLIENT_DIR,
+  startEntryKeys,
+  staticClosure,
+} from "./verify-public-firebase.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const { values } = parseArgs({
@@ -35,9 +39,9 @@ const entries = ["entry/app", "entry/start", "nodes/0"].map((name) => {
     throw new Error(`expected one startup entry named ${name}`);
   return keys[0];
 });
+entries.push(...startEntryKeys(manifest, entries[1]).slice(1));
 const generatedNodes = path.join(
-  values["generated-dir"] ??
-    path.join(root, ".svelte-kit/generated/client-optimized"),
+  values["generated-dir"] ?? path.join(root, GENERATED_CLIENT_DIR),
   "nodes"
 );
 const generatedSources = fs

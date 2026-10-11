@@ -10,16 +10,16 @@
  * uploads misses (including the IDB-hit upload backfill), so re-runs are
  * cheap. Cancellation takes effect between sequences.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import {
   warmSequenceCells,
   type WarmOptions,
   type WarmSequenceCellsResult,
-} from "$lib/shared/render/services/warm-sequence-cells";
-import type { ShortCodeResolution } from "$lib/shared/qr/services/short-code-manager";
-import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
-import { resolveScanPropConfig } from "$lib/shared/qr/services/scan-prop-resolver";
+} from "#lib/shared/render/services/warm-sequence-cells.js";
+import type { ShortCodeResolution } from "#lib/shared/qr/services/short-code-manager.js";
+import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
+import { resolveScanPropConfig } from "#lib/shared/qr/services/scan-prop-resolver.js";
 
 export interface CellWarmProgress {
   /** Sequences fully processed. */
@@ -118,7 +118,7 @@ export async function listAllShortCodes(): Promise<readonly string[]> {
 
 async function resolveShortCode(code: string): Promise<ShortCodeResolution> {
   const { getShortCodeManager } =
-    await import("$lib/shared/qr/get-short-code-manager");
+    await import("#lib/shared/qr/get-short-code-manager.js");
   return getShortCodeManager().resolveShortCodeWithRecord(code);
 }
 
@@ -228,13 +228,13 @@ async function bakeCanonicalQr(
   props: WarmOptions
 ): Promise<void> {
   const { getShortCodeManager } =
-    await import("$lib/shared/qr/get-short-code-manager");
+    await import("#lib/shared/qr/get-short-code-manager.js");
   const { getUrlQRCodeGenerator } =
-    await import("$lib/shared/qr/get-qr-code-generator");
+    await import("#lib/shared/qr/get-qr-code-generator.js");
   const { getQrImageCache } =
-    await import("$lib/shared/qr/services/qr-image-cache");
+    await import("#lib/shared/qr/services/qr-image-cache.js");
   const { PreparedQrCache } =
-    await import("$lib/shared/qr/services/prepared-qr-cache");
+    await import("#lib/shared/qr/services/prepared-qr-cache.js");
   const cache = new PreparedQrCache(getQrImageCache());
   const url = getShortCodeManager().urlForExistingCode(code, props);
   for (const darkMode of [true, false]) {

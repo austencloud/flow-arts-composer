@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { TrailMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+import { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import {
   HERO_TIP_EFFECT_MAP,
   HERO_TRAIL_PRESET,
-} from "$lib/shared/landing/data/hero-trail-preset";
+} from "#lib/shared/landing/data/hero-trail-preset.js";
 
 const ghostHarness = vi.hoisted(() => ({
   paused: false,
@@ -19,7 +19,7 @@ const ghostHarness = vi.hoisted(() => ({
   dwell: vi.fn<() => Promise<void>>(),
 }));
 
-vi.mock("$lib/shared/attract/services/attract-ghost.svelte", () => ({
+vi.mock("#lib/shared/attract/services/attract-ghost.svelte.js", () => ({
   createAttractGhost: () => {
     const core = {
       ghost: { x: 0, y: 0, pressed: false, visible: false, parked: false },
@@ -66,7 +66,7 @@ import {
   createConstructAttractAct,
   type ConstructBoardProgress,
 } from "../construct-attract-act.svelte";
-import type { createAttractGhost as createActualAttractGhost } from "$lib/shared/attract/services/attract-ghost.svelte";
+import type { createAttractGhost as createActualAttractGhost } from "#lib/shared/attract/services/attract-ghost.svelte.js";
 
 describe("createConstructAttractAct", () => {
   beforeEach(() => {
@@ -187,7 +187,7 @@ describe("createConstructAttractAct", () => {
   it("settles the resume activation before accepting a later takeover", async () => {
     const { createAttractGhost } = await vi.importActual<{
       createAttractGhost: typeof createActualAttractGhost;
-    }>("$lib/shared/attract/services/attract-ghost.svelte");
+    }>("#lib/shared/attract/services/attract-ghost.svelte.js");
     const { core } = createAttractGhost({ getRoot: () => null });
 
     core.pause();

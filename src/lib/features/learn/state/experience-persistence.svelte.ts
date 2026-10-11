@@ -16,7 +16,7 @@
  * ```
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { LEGACY_CONCEPT_ID_ALIASES } from "../services/concept-progress-tracker";
 
 /**

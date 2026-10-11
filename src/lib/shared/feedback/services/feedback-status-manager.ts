@@ -11,11 +11,11 @@ import {
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { firestoreDelete } from "$lib/shared/firestore";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { firestoreDelete } from "#lib/shared/firestore/index.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 
-import type { FeedbackItem, FeedbackStatus, StatusHistoryEntry, } from "$lib/shared/feedback/domain/models/feedback-models";
+import type { FeedbackItem, FeedbackStatus, StatusHistoryEntry, } from "#lib/shared/feedback/domain/models/feedback-models.js";
 import { generateTitleFromDescription } from "./feedback-submission-service";
 import { getFeedback } from "./feedback-querier";
 
@@ -200,7 +200,7 @@ export class FeedbackStatusManager {
     await updateDoc(docRef, updateData);
 
     const updatedDoc = await getDoc(docRef);
-    const { mapDocToFeedbackItem } = await import("$lib/shared/feedback/services/feedback-document-mapper");
+    const { mapDocToFeedbackItem } = await import("#lib/shared/feedback/services/feedback-document-mapper.js");
     return mapDocToFeedbackItem(
       updatedDoc.id,
       updatedDoc.data()!

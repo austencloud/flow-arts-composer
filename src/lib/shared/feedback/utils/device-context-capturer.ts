@@ -5,8 +5,8 @@
  * Helps developers understand the user's environment when debugging issues.
  */
 
-import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-import type { DeviceContext } from "$lib/shared/feedback/domain/models/feedback-models";
+import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+import type { DeviceContext } from "#lib/shared/feedback/domain/models/feedback-models.js";
 
 /**
  * Capture current device/browser context

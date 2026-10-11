@@ -4,8 +4,8 @@ import {
   marksToFormations,
   type LegacyPerformer,
   type Mark,
-} from "$lib/features/stage/domain/formation-migration";
-import type { Formation } from "$lib/features/stage/domain/stage-types";
+} from "#lib/features/stage/domain/formation-migration.js";
+import type { Formation } from "#lib/features/stage/domain/stage-types.js";
 
 const CHOREOGRAPHY = { bpm: 120, stageWidth: 10, stageDepth: 8 };
 

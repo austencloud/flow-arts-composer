@@ -17,15 +17,16 @@ import {
 import { formatUsername } from "../domain/models/username-validation";
 import { isActivityStale } from "../domain/activity-refresh";
 import { retryAuthenticatedFirestoreOperation } from "./retry-authenticated-firestore-operation";
+import { rememberAccountProfile } from "../state/account-profile-snapshot";
 
-import { generateAvatarUrl } from "$lib/shared/foundation/utils/avatar-generator";
-import { PUBLIC_PROFILE_VERSION } from "$lib/shared/community/domain/models/public-profile-contract";
+import { generateAvatarUrl } from "#lib/shared/foundation/utils/avatar-generator.js";
+import { PUBLIC_PROFILE_VERSION } from "#lib/shared/community/domain/models/public-profile-contract.js";
 import {
   captureWhenReady,
   getCurrentPostHogSessionId,
-} from "$lib/shared/analytics/services/posthog";
-import { reportErrorTelemetry } from "$lib/shared/error/services/error-telemetry-reporter";
-import { refreshPublicSequenceOwnerProfile } from "$lib/shared/library/services/public-sequence-persister";
+} from "#lib/shared/analytics/services/posthog.js";
+import { reportErrorTelemetry } from "#lib/shared/error/services/error-telemetry-reporter.js";
+import { refreshPublicSequenceOwnerProfile } from "#lib/shared/library/services/public-sequence-persister.js";
 
 /**
  * Capitalize each word in a name (e.g., "brendan freaney" -> "Brendan Freaney")
@@ -306,6 +307,16 @@ export class UserDocumentManager {
         const storedPrivateProfile = privateProfileDoc.exists()
           ? privateProfileDoc.data()
           : undefined;
+
+        rememberAccountProfile({
+          userId: user.uid,
+          username: existingUsername || "",
+          instagramUsername: existingData?.instagramUsername || "",
+          pronouns: existingData?.pronouns || "",
+          profileColor: existingData?.profileColor || null,
+          googlePhotoUrl:
+            googlePhotoURL ?? storedPrivateProfile?.googlePhotoURL ?? null,
+        });
 
         // Only update googlePhotoURL if we have a fresh one from the provider.
         // Don't null it out - the provider's photoURL becomes null after the

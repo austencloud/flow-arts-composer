@@ -1,10 +1,10 @@
 <!-- Optional presentation step for the skill featured beside a creator name. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getProfilePropLabel } from "$lib/shared/community/domain/profile-prop-catalog";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import PropSelectionButton from "$lib/shared/settings/components/tabs/prop-type/PropSelectionButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getProfilePropLabel } from "#lib/shared/community/domain/profile-prop-catalog.js";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import PropSelectionButton from "#lib/shared/settings/components/tabs/prop-type/PropSelectionButton.svelte";
 
   interface Props {
     selectedProps: PropType[];

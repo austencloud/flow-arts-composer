@@ -6,7 +6,7 @@
  * per-tile rule-count dots. Lived in BrowseModule until the workspace became
  * shared between the gallery and the Library.
  */
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 
 export type WorkspaceSection =
   | "level"

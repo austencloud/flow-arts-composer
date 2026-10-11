@@ -9,7 +9,7 @@
 import { render } from "vitest-browser-svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { registerBackgroundFreezeTarget } from "$lib/shared/background/shared/state/background-hold.svelte";
+import { registerBackgroundFreezeTarget } from "#lib/shared/background/shared/state/background-hold.svelte.js";
 import PanelGroupMotionTestHarness from "./PanelGroupMotionTestHarness.svelte";
 
 function settle(ms: number) {

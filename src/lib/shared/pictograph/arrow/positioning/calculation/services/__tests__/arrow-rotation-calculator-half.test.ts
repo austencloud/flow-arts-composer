@@ -1,18 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { arrowRotationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-rotation-calculator";
-import { calculateSegmentRotation } from "$lib/shared/pictograph/arrow/positioning/calculation/services/segment-rotation";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { arrowRotationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-rotation-calculator.js";
+import { calculateSegmentRotation } from "#lib/shared/pictograph/arrow/positioning/calculation/services/segment-rotation.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-// Routes are not under `$lib` — relative import. __tests__ sits 8 levels below
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+// Routes are not under `#lib` — relative import. __tests__ sits 8 levels below
 // src/ (lib/shared/pictograph/arrow/positioning/calculation/services/__tests__),
 // so 8 "../" reaches src/, then descend into routes/.
 import { poseAt, type HalfwayMotion } from "../../../../../../../../routes/(public)/guide/level-2/_data/halfway-pose";
-import { calculateOrientationAt } from "$lib/shared/animation-engine/services/orientation-at";
+import { calculateOrientationAt } from "#lib/shared/animation-engine/services/orientation-at.js";
 
 const HALF = { t0: 0, t1: 0.5 };
 

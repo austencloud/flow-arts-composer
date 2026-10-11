@@ -5,9 +5,9 @@
   Just the emoji(s) in a small rounded container with a shadow for depth.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { MessageReaction } from "$lib/shared/messaging/domain/models/message-models";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { MessageReaction } from "#lib/shared/messaging/domain/models/message-models.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 
   let { reactions, onToggleReaction, currentUserId } = $props<{
     reactions: MessageReaction[];

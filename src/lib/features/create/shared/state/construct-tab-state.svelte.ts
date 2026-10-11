@@ -10,32 +10,32 @@
  * ✅ Component-scoped state (not global singleton)
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
-import { createSimplifiedStartPlacementState } from "$lib/shared/create/state/start-placement-state.svelte";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { createSimplifiedStartPlacementState } from "#lib/shared/create/state/start-placement-state.svelte.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 const debug = createComponentLogger("ConstructTabState");
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
-import type { CreateModuleOrchestrator } from "$lib/features/create/shared/services/create-module-orchestrator";
-import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import type { SequenceStatsCalculator } from "$lib/features/create/shared/services/sequence-stats-calculator";
-import type { SequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
-import type { SequenceValidator } from "$lib/features/create/shared/services/sequence-validator";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
+import type { CreateModuleOrchestrator } from "#lib/features/create/shared/services/create-module-orchestrator.js";
+import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+import type { SequenceStatsCalculator } from "#lib/features/create/shared/services/sequence-stats-calculator.js";
+import type { SequenceTransformer } from "#lib/features/create/shared/services/sequence-transforms/sequence-transformer.js";
+import type { SequenceValidator } from "#lib/features/create/shared/services/sequence-validator.js";
 import {
   reversalDetector,
   type ReversalDetector,
-} from "$lib/shared/create/services/reversal-detector";
+} from "#lib/shared/create/services/reversal-detector.js";
 import { createSequenceState } from "./sequence-state-orchestrator.svelte";
 import type { SequenceState } from "./sequence-state-orchestrator.svelte";
 import type { UndoMetadata } from "../services/undo-manager";
 import { UndoOperationType } from "../services/undo-manager";
-import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
+import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
 import type { IFilterPersister } from "../../construct/option-picker/services/filter-persister";
-import { ensureGuestIdentity } from "$lib/shared/auth/services/guest-identity";
-import { invalidateLoopDisplayCache } from "$lib/shared/create/services/loop-certificate";
+import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
+import { invalidateLoopDisplayCache } from "#lib/shared/create/services/loop-certificate.js";
 import { updateSequenceStartPlacement } from "../../construct/start-placement-picker/services/update-sequence-start-placement";
 import { createOptionInteractionHintState } from "../../construct/option-picker/state/option-interaction-hint-state.svelte";
 import {
@@ -53,7 +53,7 @@ interface CreateModuleStateMinimal {
 import { createUndoController } from "./create-module/undo-controller.svelte";
 import { undoManager } from "../services/undo-manager";
 
-import { getFilterPersister } from "$lib/features/create/construct/option-picker/get-filter-persister";
+import { getFilterPersister } from "#lib/features/create/construct/option-picker/get-filter-persister.js";
 
 /**
  * Creates construct tab state for construct-specific concerns

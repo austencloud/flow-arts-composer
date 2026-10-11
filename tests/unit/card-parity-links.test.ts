@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import demo from "../../src/lib/shared/landing/data/demo-sequence.json";
 import { APP_DOMAIN } from "../../src/config/domains";
-import { generateViewerURL } from "$lib/shared/navigation/services/sequence-encoder";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { verifyEncodedChoreography } from "$lib/shared/qr/services/choreography-fidelity";
+import { generateViewerURL } from "#lib/shared/navigation/services/sequence-encoder.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { verifyEncodedChoreography } from "#lib/shared/qr/services/choreography-fidelity.js";
 import {
   cardParityCases,
   DEMO_SEQUENCE_LINK_8,

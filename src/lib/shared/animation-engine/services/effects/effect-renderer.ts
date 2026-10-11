@@ -1,4 +1,4 @@
-import { computeEffectScale } from "$lib/shared/effects/renderers/scale";
+import { computeEffectScale } from "#lib/shared/effects/renderers/scale.js";
 
 /**
  * Structural contract every effect renderer satisfies — canvas2d overlays

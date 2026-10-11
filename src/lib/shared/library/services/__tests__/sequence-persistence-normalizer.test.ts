@@ -19,27 +19,27 @@ import {
   trySequenceNormalization,
   SequenceNormalizationError,
 } from "../sequence-persistence-normalizer";
-import { ensureComposition } from "$lib/shared/foundation/services/sequence-hydrator";
+import { ensureComposition } from "#lib/shared/foundation/services/sequence-hydrator.js";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   computeHash,
   CONTENT_HASH_VERSION,
   HASH_VERSION_V3,
 } from "../sequence-content-hasher";
-import { IncompleteWordError } from "$lib/shared/foundation/services/word-deriver";
+import { IncompleteWordError } from "#lib/shared/foundation/services/word-deriver.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 // Fixtures
 

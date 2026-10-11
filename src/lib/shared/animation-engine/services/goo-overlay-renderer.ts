@@ -14,9 +14,9 @@
  * replaced by the viscous luminous goo metaball look.
  */
 
-import type { GooParams } from "$lib/shared/effects/translators/canvas2d-types";
-import { Goo2DRenderer } from "$lib/shared/effects/renderers/goo-2d-renderer";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
+import type { GooParams } from "#lib/shared/effects/translators/canvas2d-types.js";
+import { Goo2DRenderer } from "#lib/shared/effects/renderers/goo-2d-renderer.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 import { EffectRenderer } from "./effects/effect-renderer";
 
 export class GooOverlayRenderer extends EffectRenderer {
@@ -39,8 +39,8 @@ export class GooOverlayRenderer extends EffectRenderer {
 }
 
 import type { EffectPlugin } from "./effects/effect-plugin";
-import type { GooIntent } from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { GooIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 export const gooEffectPlugin: EffectPlugin<GooIntent> = {
   id: "goo",

@@ -8,10 +8,10 @@
  * The SHA-256 hash is computed via Web Crypto API (native, zero dependencies).
  */
 
-import { getPublicSequencesPath } from "$lib/shared/library/data/firestore-paths";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PublicSequenceIndex } from "$lib/shared/foundation/domain/models/public-sequence-index";
-import { encodeSequence } from "$lib/shared/navigation/services/sequence-encoder";
+import { getPublicSequencesPath } from "#lib/shared/library/data/firestore-paths.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PublicSequenceIndex } from "#lib/shared/foundation/domain/models/public-sequence-index.js";
+import { encodeSequence } from "#lib/shared/navigation/services/sequence-encoder.js";
 
 export interface SequenceMatchResult {
 	readonly matched: boolean;
@@ -32,7 +32,7 @@ export class PublicSequenceHashMatcher {
 		const { collection, getDocs, limit, query, where } = await import(
 			"firebase/firestore"
 		);
-		const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+		const { getFirestoreInstance } = await import("#lib/shared/auth/firebase.js");
 		const firestore = await getFirestoreInstance();
 
 		const snap = await getDocs(

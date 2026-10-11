@@ -1,4 +1,4 @@
-import { capturePosterFrame } from "$lib/shared/sequence-viewer/tunnel/tunnel-poster";
+import { capturePosterFrame } from "#lib/shared/sequence-viewer/tunnel/tunnel-poster.js";
 
 /**
  * Must stay 16:9. A square crop drops the left and right thirds of the frame,

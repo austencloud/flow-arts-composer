@@ -1,20 +1,20 @@
 import {
   createAxisStream,
   resolveFilmSeed,
-} from "$lib/features/film-director/domain/directive-random";
-import { resolveCastAxis } from "$lib/features/film-director/domain/resolve-directives";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+} from "#lib/features/film-director/domain/directive-random.js";
+import { resolveCastAxis } from "#lib/features/film-director/domain/resolve-directives.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import {
   charactersWithPresentation,
   countCharacterPresentations,
-} from "$lib/shared/3d/config/character-presentation";
-import { DEPLOYED_CHARACTER_IDS } from "$lib/shared/3d/config/deployed-characters";
-import type { CharacterId } from "$lib/shared/3d/domain/character-model";
+} from "#lib/shared/3d/config/character-presentation.js";
+import { DEPLOYED_CHARACTER_IDS } from "#lib/shared/3d/config/deployed-characters.js";
+import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
 import type {
   Viewer3DState,
   ViewerPerformerAppearanceAssignment,
-} from "$lib/shared/3d/state/viewer-3d-state.svelte";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { StageChoreography } from "../domain/stage-types";
 import {
   TikaDirectorResponseSchema,

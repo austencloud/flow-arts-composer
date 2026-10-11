@@ -9,7 +9,7 @@ const mapsApi = vi.hoisted(() => ({
 
 vi.mock("@googlemaps/js-api-loader", () => mapsApi);
 
-import { GoogleMapsLibraryLoader } from "$lib/shared/maps/services/implementations/GoogleMapsLibraryLoader";
+import { GoogleMapsLibraryLoader } from "#lib/shared/maps/services/implementations/GoogleMapsLibraryLoader.js";
 
 beforeEach(() => {
   vi.clearAllMocks();

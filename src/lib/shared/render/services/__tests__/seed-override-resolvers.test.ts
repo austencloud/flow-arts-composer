@@ -3,8 +3,8 @@ import { seedOverrideResolvers } from "../seed-override-resolvers";
 import {
   getSpecialOverrideResolver, getGlobalAdjustmentResolver, getPropGeometryResolver,
   setSpecialOverrideResolver, setGlobalAdjustmentResolver, setPropGeometryResolver,
-} from "$lib/shared/pictograph/arrow/positioning/placement/services/override-resolvers";
-import { setDefaultOverrideResolver } from "$lib/shared/pictograph/arrow/positioning/placement/services/arrow-placer";
+} from "#lib/shared/pictograph/arrow/positioning/placement/services/override-resolvers.js";
+import { setDefaultOverrideResolver } from "#lib/shared/pictograph/arrow/positioning/placement/services/arrow-placer.js";
 
 describe("seedOverrideResolvers", () => {
   beforeEach(() => {

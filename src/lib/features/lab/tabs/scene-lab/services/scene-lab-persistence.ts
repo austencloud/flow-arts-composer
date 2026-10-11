@@ -3,16 +3,16 @@ import {
   createDefaultAutumnConfig,
   normalizeAutumnConfig,
   type AutumnSceneConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs/autumn-scene-config";
-import type { BlossomSceneConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/blossom-scene-config";
-import type { CelestialSceneConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/celestial-scene-config";
-import type { CosmicSceneConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/cosmic-scene-config";
-import type { EmberSceneConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/ember-scene-config";
-import type { ForestSceneConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config";
-import type { OceanSceneConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/ocean-scene-config";
-import type { RainbowSceneConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/rainbow-scene-config";
-import type { VoidSceneConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/void-scene-config";
-import type { WinterSceneConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/winter-scene-config";
+} from "#lib/shared/3d/environments/domain/models/scene-configs/autumn-scene-config.js";
+import type { BlossomSceneConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/blossom-scene-config.js";
+import type { CelestialSceneConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/celestial-scene-config.js";
+import type { CosmicSceneConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/cosmic-scene-config.js";
+import type { EmberSceneConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/ember-scene-config.js";
+import type { ForestSceneConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config.js";
+import type { OceanSceneConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/ocean-scene-config.js";
+import type { RainbowSceneConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/rainbow-scene-config.js";
+import type { VoidSceneConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/void-scene-config.js";
+import type { WinterSceneConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/winter-scene-config.js";
 
 const STORAGE_KEY = "scene-lab-state";
 const CURRENT_VERSION = 3;

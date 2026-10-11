@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
 import {
   buildCardVisibilityMenuItems,
   type CardThemeVisibility,

@@ -16,14 +16,14 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import {
     isEmailLinkPending,
     getPendingEmailLinkRecipient,
     completeEmailLinkSignIn,
   } from "../services/email-link-completion";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let pending = $state(false);
   let recipientEmail = $state<string | null>(null);

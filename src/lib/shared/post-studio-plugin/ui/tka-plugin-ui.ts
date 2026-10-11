@@ -1,6 +1,6 @@
 import type { PluginUi, VideoEditorState } from "@austencloud/video-editor";
-import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import { qrImageForAppearance } from "./post-qr-image-appearance";
 import { tkaAddItems } from "./tka-add-items";
 import { TKA_BACKUP } from "./tka-backup";

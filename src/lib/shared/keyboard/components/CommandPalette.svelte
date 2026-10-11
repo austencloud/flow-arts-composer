@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getLocale, t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick } from "svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
-  import PanelSearch from "$lib/shared/components/panel/PanelSearch.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import PanelSearch from "#lib/shared/components/panel/PanelSearch.svelte";
   import KeyboardKeyDisplay from "./settings/KeyboardKeyDisplay.svelte";
   import { getCommandPalette } from "../get-command-palette";
-  import type { CommandPalette } from "$lib/shared/keyboard/services/command-palette";
+  import type { CommandPalette } from "#lib/shared/keyboard/services/command-palette.js";
   import { commandPaletteState } from "../state/command-palette-state.svelte";
   import { keyboardShortcutState } from "../state/keyboard-shortcut-state.svelte";
   import type { CommandPaletteItem } from "../domain/types/keyboard-types";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { buildNavigationDestinationId } from "$lib/shared/navigation/domain/navigation-visit";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { buildNavigationDestinationId } from "#lib/shared/navigation/domain/navigation-visit.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 
   let paletteService = $state<CommandPalette | null>(null);
   let inputElement = $state<HTMLInputElement | null>(null);

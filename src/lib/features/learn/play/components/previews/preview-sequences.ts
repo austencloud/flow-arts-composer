@@ -11,8 +11,8 @@ import {
   getCachedCatalogs,
   loadCatalogs,
   loadCatalogSequencesPage,
-} from "$lib/features/choreo-card/services/catalog-loader";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/features/choreo-card/services/catalog-loader.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 let pool: Promise<SequenceData[]> | null = null;
 

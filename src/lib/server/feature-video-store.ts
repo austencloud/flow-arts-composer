@@ -2,7 +2,7 @@ import { error } from "@sveltejs/kit";
 import { randomUUID } from "node:crypto";
 import { constants as fsConstants, promises as fs } from "node:fs";
 import path from "node:path";
-import { fingerprint } from "$lib/server/post-project-dev-bridge";
+import { fingerprint } from "#lib/server/post-project-dev-bridge.js";
 import {
   FEATURE_VIDEO_FILE_FORMAT,
   FEATURE_VIDEO_HISTORY_LIMIT,
@@ -13,11 +13,11 @@ import {
   rehomeFeatureMediaUrls,
   type FeatureVideoFile,
   type FeatureVideoSummary,
-} from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   applyPostProjectOps,
   type PostProjectOp,
-} from "$lib/shared/media-composition/domain/post-project-ops";
+} from "#lib/shared/media-composition/domain/post-project-ops.js";
 import {
   POST_CANVAS_RATIOS,
   POST_DEFAULT_CANVAS,
@@ -28,7 +28,7 @@ import {
   PostProjectSchema,
   createEmptyPostProject,
   editContext,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 
 /**
  * Feature videos on disk: one folder per project under a root folder,

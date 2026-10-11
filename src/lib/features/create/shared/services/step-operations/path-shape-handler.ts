@@ -4,11 +4,11 @@
  * Per-hand, not per-step — blue and red can have different overrides.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ICreateModuleState } from "../../types/create-module-types";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { getStepDataFromState, START_PLACEMENT_BEAT_NUMBER } from "./step-data-helpers";
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 const logger = createComponentLogger("PathShapeHandler");
 

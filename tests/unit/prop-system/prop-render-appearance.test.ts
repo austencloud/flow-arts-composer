@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-import { resolvePreviewCellRender } from "$lib/shared/sequence-viewer/services/preview-cell-render-contract";
-import { deriveCacheKey } from "$lib/shared/sequence-viewer/services/cell-cache-key-deriver";
-import { deriveBaseLayerKey } from "$lib/shared/render/services/layer-key-deriver";
-import { buildCellLayerOptions } from "$lib/shared/render/services/card-front-assembler";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import { resolvePreviewCellRender } from "#lib/shared/sequence-viewer/services/preview-cell-render-contract.js";
+import { deriveCacheKey } from "#lib/shared/sequence-viewer/services/cell-cache-key-deriver.js";
+import { deriveBaseLayerKey } from "#lib/shared/render/services/layer-key-deriver.js";
+import { buildCellLayerOptions } from "#lib/shared/render/services/card-front-assembler.js";
 
 const fire: FanAppearance = {
   build: "fire",

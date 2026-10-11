@@ -12,18 +12,25 @@
   cellSize drives read-ahead depth (zoom); compact density fits the same behavior
   into smaller editorial surfaces without changing the established default.
 -->
+<script module lang="ts">
+  // Shared by every rail, so a remounted rail never reuses a glide generation
+  // (see stripGlideKey) that an earlier one remembered poses under.
+  let lastGlideGeneration = 0;
+</script>
+
 <script lang="ts">
   import { untrack, type Snippet } from "svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { buildNotationCells, type NotationCell } from "./notation-cell";
   import {
     buildStripWindow,
     nextLoopOffset,
     cellOpacity,
     cellScale,
+    stripGlideKey,
     stripHeroScale,
   } from "./strip-window";
 
@@ -50,6 +57,7 @@
     staggerCellUpdates = false,
     onCellClick = null,
     renderCell = undefined,
+    transitionKey = null,
   }: {
     /** Prebuilt cells for callers that already own the notation mapping. */
     cells?: NotationCell[] | null;
@@ -107,6 +115,11 @@
     onCellClick?: ((stepNumber: number) => void) | null;
     /** Optional artwork inside each cell; the carousel still owns layout and seeking. */
     renderCell?: Snippet<[NotationCell]>;
+    /** Lasting identity for this rail's pictographs. When set, a cell whose
+     *  step changes in place (a transform or a turn edit) glides its props and
+     *  arrows to the new pose, the same way the workspace does. Null keeps the
+     *  rail drawing each change at once. */
+    transitionKey?: string | null;
   } = $props();
 
   const GAP = $derived(presentation === "strip" ? 3 : 6);
@@ -304,6 +317,8 @@
   let trackOffset = $state(0);
   let animateTrack = $state(false);
   let prevVirtual = -1;
+  // Each rail, and each jump, starts a new glide generation.
+  let glideGeneration = $state(++lastGlideGeneration);
   $effect(() => {
     const idx = virtualActive;
     const focus = focusOffset;
@@ -311,6 +326,9 @@
     // increasing, so the track slides forward through the wrap with no snap.
     const isBackOrInit = prevVirtual === -1 || idx < prevVirtual;
     animateTrack = !isBackOrInit;
+    if (isBackOrInit && prevVirtual !== -1) {
+      glideGeneration = ++lastGlideGeneration;
+    }
     prevVirtual = idx;
     trackOffset = focus - idx * STRIDE;
   });
@@ -348,13 +366,18 @@
     class:vertical
     class:continuous-strip={presentation === "strip"}
     bind:this={stepStripEl}
-    style="--slide-dur: {slideDurMs}ms; --cell: {effCell}px; --frame: {FRAME}px; {fillHeight
+    style="--slide-dur: {slideDurMs}ms; {fillHeight
       ? 'height: 100%'
       : `height: ${viewportHeight}px`}"
   >
+    <!-- Cell and frame sizes go on the boxes that use them. An inherited
+         variable on the viewport made every resize restyle each pictograph's
+         whole subtree: ~400 elements a frame while Play grew the stage. -->
     <div
       class="step-focus"
       style="{vertical ? 'top' : 'left'}: {frameOffset}px"
+      style:width="{FRAME}px"
+      style:height="{FRAME}px"
     >
       {#if stepPulse}
         <div class="step-progress" style="transform: scaleX({stepPhase})"></div>
@@ -378,6 +401,8 @@
           data-cell-instance={item.primary ? "primary" : "repeat"}
           style="{vertical ? 'top' : 'left'}: {item.vi *
             STRIDE}px; opacity: {cellOpacity(presentation, item.dist)}"
+          style:width="{effCell}px"
+          style:height="{effCell}px"
           role={onCellClick ? "button" : undefined}
           tabindex={onCellClick ? 0 : undefined}
           onclick={onCellClick
@@ -406,8 +431,15 @@
               <PictographContainer
                 pictographData={item.cell.data}
                 darkMode={true}
-                disableTransitions={true}
+                disableTransitions={transitionKey === null}
                 disableContentTransitions={true}
+                transitionKey={stripGlideKey({
+                  transitionKey,
+                  leftPropType,
+                  rightPropType,
+                  generation: glideGeneration,
+                  virtualIndex: item.vi,
+                })}
                 leftPropTypeOverride={leftPropType ?? undefined}
                 rightPropTypeOverride={rightPropType ?? undefined}
                 {leftColorOverride}
@@ -512,8 +544,6 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: var(--frame, 98px);
-    height: var(--frame, 98px);
     border: 2px solid #d4813a;
     border-radius: 8px;
     box-shadow: 0 0 12px rgba(212, 129, 58, 0.32); /* calm steady glow — no pulse */
@@ -545,8 +575,6 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: var(--cell, 72px);
-    height: var(--cell, 72px);
     border: 1.5px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
     overflow: hidden;

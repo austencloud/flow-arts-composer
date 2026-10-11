@@ -1,4 +1,4 @@
-import { t } from "$lib/shared/i18n/i18n.svelte";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { PathShapeValue } from "../../services/step-operations/path-shape-handler";
 
 export function handLabel(hand: "left" | "right"): string {

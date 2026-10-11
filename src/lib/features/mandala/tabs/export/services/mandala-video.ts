@@ -6,23 +6,23 @@
  * component owns UI state, this owns the spec math and delivery.
  */
 
-import type { MandalaFrameSpec } from "$lib/shared/mandala/services/mandala-frame-renderer";
-import type { StepLike } from "$lib/shared/mandala/services/types";
+import type { MandalaFrameSpec } from "#lib/shared/mandala/services/mandala-frame-renderer.js";
+import type { StepLike } from "#lib/shared/mandala/services/types.js";
 import {
   BLUE_STROKE,
   RED_STROKE,
-} from "$lib/shared/mandala/domain/mandala-constants";
+} from "#lib/shared/mandala/domain/mandala-constants.js";
 import {
   exportMandalaVideo,
   mandalaBitrateFor,
   type MandalaVideoExportHandle,
   type MandalaVideoExportCallbacks,
-} from "$lib/shared/mandala/services/mandala-video-exporter";
-import { shareOrDownloadBlob } from "$lib/shared/foundation/services/file-downloader";
+} from "#lib/shared/mandala/services/mandala-video-exporter.js";
+import { shareOrDownloadBlob } from "#lib/shared/foundation/services/file-downloader.js";
 import type {
   MandalaPathShape,
   MandalaRenderOptions,
-} from "$lib/shared/mandala/domain/mandala-types";
+} from "#lib/shared/mandala/domain/mandala-types.js";
 
 // Fixed seamless-loop defaults for the Playground (v1: no options UI).
 //   period 5s × reps 4 = 20s, 4 breathing cycles;

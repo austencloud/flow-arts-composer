@@ -28,15 +28,17 @@ function isFirebaseSpecifier(spec: string): boolean {
   return (
     /(^|\/)firebase(-admin)?($|\/)/.test(spec) ||
     spec.includes("shared/auth/firebase") ||
-    /(^|\/)catalog-loader$/.test(spec)
+    /(^|\/)catalog-loader(\.js)?$/.test(spec)
   );
 }
 
-/** Resolve a $lib / relative import specifier to an on-disk file, or null. */
+/** Resolve a #lib / relative import specifier to an on-disk file, or null. */
 function resolveSpecifier(fromFile: string, spec: string): string | null {
   let base: string;
-  if (spec.startsWith("$lib/")) base = path.join(srcLib, spec.slice("$lib/".length));
-  else if (spec === "$lib") base = srcLib;
+  // `#lib` imports name the emitted `.js` file; the source beside it is `.ts`.
+  if (spec.startsWith("#lib/"))
+    base = path.join(srcLib, spec.slice("#lib/".length).replace(/\.js$/, ""));
+  else if (spec === "#lib") base = srcLib;
   else if (spec.startsWith(".")) base = path.resolve(path.dirname(fromFile), spec);
   else return null; // bare npm specifier — not walked (firebase caught by name)
 

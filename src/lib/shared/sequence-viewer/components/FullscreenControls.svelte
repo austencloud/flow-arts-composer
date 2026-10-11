@@ -5,9 +5,9 @@
   Auto-hides after 3 seconds and shows on tap.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
-  import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import TempoControl from "#lib/shared/animation-panel/components/TempoControl.svelte";
 
   interface Props {
     visible: boolean;

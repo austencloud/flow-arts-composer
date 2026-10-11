@@ -5,15 +5,15 @@ In spell mode, shows bridge count as subtitle and allows upward adjustment.
 -->
 <script lang="ts">
   import { untrack } from "svelte";
-  import { GenerationMode } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { GenerationMode } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import StepperCard from "./StepperCard/StepperCard.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import {
     resolveAccessTier,
     getMaxSteps,
-  } from "$lib/shared/auth/domain/access-tier";
-  import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
+  } from "#lib/shared/auth/domain/access-tier.js";
+  import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
 
   let {
     currentLength,

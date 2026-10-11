@@ -6,11 +6,11 @@
  * into the lab's phase. The other videos follow the timed one, shifted by
  * however much later or earlier each heard the clap.
  */
-import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
+import { sequenceFrameAt } from "#lib/shared/media-composition/domain/sequence-frame.js";
 import {
   takeSampleAt,
   type ResolvedTakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 /**
  * How far below the step count a landed last move sits. The lab wraps a

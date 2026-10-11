@@ -16,11 +16,11 @@
    *
    * Design: docs/superpowers/specs/active/2026-05-30-loop-composer-deoverwhelm-design.md
    */
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import AxisCardGroup from "./AxisCardGroup.svelte";
   import TransformPanel from "./TransformPanel.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import CollapsibleLabSection from "$lib/shared/components/lab/CollapsibleLabSection.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import CollapsibleLabSection from "#lib/shared/components/lab/CollapsibleLabSection.svelte";
   import { TURN_PATTERNS, type VariationConfig, type StartOriMode } from "../../services/deck-variation";
   import { loopDrawCounts } from "../../services/deck-composer";
   import type { ResolvedReversalPattern } from "../../domain/reversal-transform";

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ActiveFilter } from "$lib/shared/browse/domain/multi-filter-models";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import { getFilteredCount } from "$lib/shared/browse/services/multi-filter";
-import { deriveAvailableStartingLetterOptions } from "$lib/features/browse/gallery-home/pick-representatives";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ActiveFilter } from "#lib/shared/browse/domain/multi-filter-models.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import { getFilteredCount } from "#lib/shared/browse/services/multi-filter.js";
+import { deriveAvailableStartingLetterOptions } from "#lib/features/browse/gallery-home/pick-representatives.js";
 
 function sequence(id: string, word: string, level: number): SequenceData {
   return { id, word, level, steps: [] } as unknown as SequenceData;

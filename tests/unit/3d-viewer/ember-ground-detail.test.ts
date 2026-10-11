@@ -6,8 +6,8 @@ import {
   Vector2,
   type WebGLProgramParametersWithUniforms,
 } from "three";
-import { patchMaskedGroundDetailMaterial } from "$lib/shared/3d/environments/primitives/masked-ground-detail-material";
-import volcanicWorldR7 from "$lib/shared/3d/environments/domain/models/scene-configs/ember-volcanic-world-r7.json";
+import { patchMaskedGroundDetailMaterial } from "#lib/shared/3d/environments/primitives/masked-ground-detail-material.js";
+import volcanicWorldR7 from "#lib/shared/3d/environments/domain/models/scene-configs/ember-volcanic-world-r7.json";
 import {
   EMBER_GROUND_DETAIL_MASK,
   EMBER_GROUND_DETAIL_TEXTURES,
@@ -16,7 +16,7 @@ import {
   inheritEmberGroundDetailPatch,
   isEmberGroundDetailSurface,
   patchEmberGroundDetailMaterial,
-} from "$lib/shared/3d/environments/scenes/ember/ember-ground-detail";
+} from "#lib/shared/3d/environments/scenes/ember/ember-ground-detail.js";
 
 function createShaderStub(): WebGLProgramParametersWithUniforms {
   return {

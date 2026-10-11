@@ -2,7 +2,7 @@ import type {
   SequenceFrame,
   SequencePhase,
 } from "@austencloud/video-editor/core";
-import { createBeatClock } from "$lib/shared/media-composition/domain/tap-fit";
+import { createBeatClock } from "#lib/shared/media-composition/domain/tap-fit.js";
 
 export type { SequenceFrame, SequencePhase };
 

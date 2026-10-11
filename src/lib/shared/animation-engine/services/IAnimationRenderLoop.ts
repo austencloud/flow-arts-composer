@@ -5,22 +5,22 @@
  * Handles RAF scheduling, trail point gathering, and scene rendering.
  */
 
-import type { IAnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
+import type { IAnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
 import type { CanvasFrame } from "../domain/types/canvas-frame";
 import type {
   ITrailCapturer,
   AdditionalLayerProps,
-} from "$lib/shared/animation-engine/services/ITrailCapturer";
+} from "#lib/shared/animation-engine/services/ITrailCapturer.js";
 import type { GridJoin } from "@tka/tka-types";
 import type {
   GridJoinTweenSample,
   HandOffsets,
-} from "$lib/shared/grid-join/grid-join-tween";
+} from "#lib/shared/grid-join/grid-join-tween.js";
 import type { MotionSampleSource } from "./motion-sub-sampler";
 import type { TrailSettings } from "../domain/types/trail-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import type { AnimationPathCache } from "$lib/shared/animation-engine/services/animation-path-cache";
-import type { FrameBudgetMonitor } from "$lib/shared/animation-engine/services/frame-budget-monitor";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import type { AnimationPathCache } from "#lib/shared/animation-engine/services/animation-path-cache.js";
+import type { FrameBudgetMonitor } from "#lib/shared/animation-engine/services/frame-budget-monitor.js";
 import type { FireTipTracker } from "./fire-tip-tracker";
 import type {
   FireOverlayConfig,
@@ -42,23 +42,23 @@ import type {
   Sparkles2DParams,
   GooParams,
   Zap2DParams,
-} from "$lib/shared/effects/translators/canvas2d-types";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+} from "#lib/shared/effects/translators/canvas2d-types.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 import type {
   EffectType,
   TipEffectMap,
 } from "../domain/types/tip-effect-types";
 import type { EffectRendererLike } from "./effects/effect-renderer";
-import type { MandalaOverlayCanvas } from "$lib/shared/mandala/services/mandala-overlay-canvas";
-import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
-import type { RenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
+import type { MandalaOverlayCanvas } from "#lib/shared/mandala/services/mandala-overlay-canvas.js";
+import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
+import type { RenderActivityGate } from "#lib/shared/render-gating/render-activity-gate.js";
 import type {
   MandalaPathOptions,
   StepLike,
-} from "$lib/shared/mandala/services/types";
+} from "#lib/shared/mandala/services/types.js";
 
 /**
  * Configuration for render loop initialization
@@ -227,6 +227,12 @@ export interface RenderFrameParams {
   /** The layout slide running this frame, or null/absent when none is. */
   gridJoinSlide?: GridJoinTweenSample | null;
   /**
+   * True while a transform's pose glide runs (FrameSystem's `PoseGlide`):
+   * `props` hold an in-between pose the sequence never passes through, so
+   * trails and tip capture wait for it to land.
+   */
+  poseGlide?: boolean;
+  /**
    * Pure pose source for the sequence being played, with this frame's grid
    * join applied. The render loop fills slow frames with poses sampled from
    * it. Absent when the engine's orchestrator has no sequence.
@@ -290,6 +296,14 @@ export interface IAnimationRenderLoop {
    * @param getFrameParams - Callback to get current frame parameters
    */
   triggerRender(getFrameParams: () => RenderFrameParams): void;
+
+  /**
+   * Start the effect memory over for a new run of the same sequence: clear
+   * every registry effect overlay (Ghost, sparkles and the rest) and forget
+   * the loop-wrap tracking, so the next frame reads as the first frame of a
+   * run instead of a wrap back from wherever the last run stopped.
+   */
+  resetRunHistory(): void;
 
   /**
    * Put the loop under external (deterministic) control. When true, the

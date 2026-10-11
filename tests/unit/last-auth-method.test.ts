@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // The module is browser-gated. Force the browser branch so the localStorage
 // path under test actually runs.
-vi.mock("$app/environment", () => ({ browser: true }));
+vi.mock("$app/env", () => ({ browser: true }));
 
 const STORAGE_KEY = "tka:last-auth-method";
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -16,7 +16,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  */
 async function loadModule() {
   vi.resetModules();
-  return import("$lib/shared/auth/services/last-auth-method.svelte");
+  return import("#lib/shared/auth/services/last-auth-method.svelte.js");
 }
 
 beforeEach(() => {

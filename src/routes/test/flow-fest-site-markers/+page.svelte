@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import {
     FLOW_FEST_IMAGE,
     type ImagePoint,
@@ -25,7 +25,7 @@
     type FlowFestSiteMarkerDraft,
   } from "./_lib/flow-fest-site-markers";
   import { createNarrationCapture } from "./_lib/narration-capture.svelte";
-  import { flyFade } from "$lib/shared/transitions/motion";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
 
   type InteractionMode = "place" | "pan";
   type NoticeKind = "quiet" | "success" | "error";

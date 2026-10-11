@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { flexPresence } from "$lib/shared/transitions/motion";
-import { DURATION } from "$lib/shared/transitions/transitions";
+import { flexPresence } from "#lib/shared/transitions/motion.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 
 function setReducedMotion(matches: boolean): void {
   vi.stubGlobal(

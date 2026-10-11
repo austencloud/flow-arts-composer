@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     mainItemAt,
     TUNNEL_BACKDROP_MAX_ZOOM,
@@ -16,23 +16,23 @@
     POST_MAX_SPOKEN_LENGTH,
     type PostAnimationAppearance,
     type PostMovesMode,
-  } from "$lib/shared/post-studio-plugin";
+  } from "#lib/shared/post-studio-plugin/index.js";
   import {
     setTunnelAppearance,
     setTunnelHookBackdropFrame,
     setTunnelHookSpeed,
-  } from "$lib/shared/media-composition/domain/post-project-edits";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
+  } from "#lib/shared/media-composition/domain/post-project-edits.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
   import {
     easingPresetLabel,
     PostCurveEditor,
   } from "@austencloud/video-editor/ui";
-  import { tkaEditorTranslate } from "$lib/shared/media-composition/state/editor-strings";
-  import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
-  import PostAnimationAppearanceTool from "$lib/shared/post-studio-plugin/ui/PostAnimationAppearanceTool.svelte";
-  import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "$lib/shared/mandala/domain/mandala-overlay-types";
+  import { tkaEditorTranslate } from "#lib/shared/media-composition/state/editor-strings.js";
+  import ChipPopoverOption from "#lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
+  import PostAnimationAppearanceTool from "#lib/shared/post-studio-plugin/ui/PostAnimationAppearanceTool.svelte";
+  import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
   import { useTkaEditor } from "./tka-editor-context";
 
   /**

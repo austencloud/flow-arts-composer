@@ -4,7 +4,7 @@
 <script lang="ts">
   import RetroButton from "../../../primitives/RetroButton.svelte";
   import { desktopState } from "../../../../state/desktop-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 
   let {
     onback,

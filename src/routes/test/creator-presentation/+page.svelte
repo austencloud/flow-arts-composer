@@ -1,30 +1,30 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import SequenceShowcasePreview from "$lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
-  import ArtifactTile from "$lib/features/creators/components/profile/stage/ArtifactTile.svelte";
-  import { LiveSlots } from "$lib/features/creators/components/profile/stage/live-slots.svelte";
-  import SavePropDialog from "$lib/shared/library/components/SavePropDialog.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { FALLBACK_DEMO } from "$lib/shared/landing/data/per-visit-demo";
-  import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { ResolvedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
+  import SequenceShowcasePreview from "#lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
+  import ArtifactTile from "#lib/features/creators/components/profile/stage/ArtifactTile.svelte";
+  import { LiveSlots } from "#lib/features/creators/components/profile/stage/live-slots.svelte.js";
+  import SavePropDialog from "#lib/shared/library/components/SavePropDialog.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { FALLBACK_DEMO } from "#lib/shared/landing/data/per-visit-demo.js";
+  import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { ResolvedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
   import {
     capturePresentation,
     resolvePresentation,
     summarizePresentation,
     type PresentationSummary,
-  } from "$lib/shared/foundation/services/presentation-intent";
+  } from "#lib/shared/foundation/services/presentation-intent.js";
   import {
     DEFAULT_TRAIL_SETTINGS,
     TrailMode,
     TrailEffect,
     type TrailSettings,
-  } from "$lib/shared/animation-engine/domain/types/trail-types";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
+  } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import type { EffectsConfig } from "#lib/shared/effects/domain/effects-config.js";
 
   // Real multi-beat fixture: the baked per-visit-demo fallback, also used by
   // HomeHero's pre-hydration frame and the static notation prop pages. 16

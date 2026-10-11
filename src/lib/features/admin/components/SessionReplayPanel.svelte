@@ -1,6 +1,6 @@
 <script lang="ts">
-  import AdminActionButton from "$lib/shared/admin/components/AdminActionButton.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import AdminActionButton from "#lib/shared/admin/components/AdminActionButton.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import type { PostHogReplayAccessState } from "../services/types";
 
   interface Props {

@@ -6,28 +6,28 @@ import {
   decodeSequenceFromQR,
   decodeSequenceWithCompression,
   encodeSequenceWithCompression,
-} from "$lib/shared/navigation/services/sequence-encoder";
-import { loopDetector } from "$lib/shared/create/services/loop-detector";
-import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
+import { loopDetector } from "#lib/shared/create/services/loop-detector.js";
+import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
 
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   createMotionData,
   isVisibleMotion,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   MotionType,
   RotationDirection,
   Orientation,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
 
 function injectRealCsvData() {
   const root = resolve(__dirname, "../../..");

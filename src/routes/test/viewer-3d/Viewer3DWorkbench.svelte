@@ -5,24 +5,26 @@
     userProportionsState,
     type CameraStateSnapshot,
   } from "@austencloud/scene-3d";
-  import midflank from "$lib/shared/3d/environments/domain/models/scene-configs/ember-midflank-r5.json";
-  import { SCENE_FEATURES } from "$lib/shared/3d/scene-features/domain/scene-feature-registry";
-  import { replaceState } from "$app/navigation";
-  import { onDestroy } from "svelte";
+  import midflank from "#lib/shared/3d/environments/domain/models/scene-configs/ember-midflank-r5.json";
+  import { SCENE_FEATURES } from "#lib/shared/3d/scene-features/domain/scene-feature-registry.js";
+  import { goto } from "$app/navigation";
+  import { onDestroy, onMount } from "svelte";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { readReviewEffect } from "./effect-review.js";
 
-  import Viewer3DFullscreen from "$lib/shared/3d/components/Viewer3DFullscreen.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
+  import Viewer3DFullscreen from "#lib/shared/3d/components/Viewer3DFullscreen.svelte";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
   import {
     readCameraUrlPose,
     setCameraUrlPose,
-  } from "$lib/shared/3d/domain/camera-url-pose";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-  import { createPlaybackState } from "$lib/shared/3d/state/playback-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import demoSequenceJson from "$lib/shared/landing/data/demo-sequence.json";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { EMBER_VIEWER_FRONT_STAGE_FACING_ANGLE } from "$lib/shared/3d/domain/viewer-formation-facing";
-  import { parseGridJoinToken } from "$lib/shared/foundation/domain/models/grid-join-token";
+  } from "#lib/shared/3d/domain/camera-url-pose.js";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+  import { createPlaybackState } from "#lib/shared/3d/state/playback-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import demoSequenceJson from "#lib/shared/landing/data/demo-sequence.json";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { EMBER_VIEWER_FRONT_STAGE_FACING_ANGLE } from "#lib/shared/3d/domain/viewer-formation-facing.js";
+  import { parseGridJoinToken } from "#lib/shared/foundation/domain/models/grid-join-token.js";
 
   const WORKBENCH_SCENES = new Set<string>([
     BackgroundType.FOREST,
@@ -37,6 +39,14 @@
     BackgroundType.VOID,
   ]);
   const STREAMED_SCENE_FEATURES = ["environment"] as const;
+  const reviewEffect =
+    typeof window !== "undefined"
+      ? readReviewEffect(new URLSearchParams(window.location.search))
+      : undefined;
+  const reviewEffects = reviewEffect
+    ? createEffectsConfigState(undefined, { persist: false })
+    : undefined;
+  if (reviewEffect) reviewEffects?.setActiveEffect(reviewEffect);
   const workerReview =
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("renderer") === "worker";
@@ -130,6 +140,13 @@
         },
   });
   viewer.enter3D(sequence);
+  // The review config supplies effect parameters; the scene reads the
+  // performer's assignment to decide which effect to emit from the prop.
+  if (reviewEffect) {
+    viewer
+      .scopedPerformers()[0]
+      ?.setEffect(reviewEffect, { recordUndo: false });
+  }
   if (!requestedJoin || workerReview) viewer.hideAllPlanes();
   if (
     typeof window !== "undefined" &&
@@ -151,6 +168,14 @@
   });
   const currentStep = $derived(currentStepBase + playback.progress);
 
+  onMount(() => {
+    if (reviewEffect) {
+      // Persisted isPlaying does not itself schedule an animation frame.
+      playback.pause();
+      playback.play();
+    }
+  });
+
   $effect(() => {
     playback.speed = bpm / 60;
   });
@@ -161,7 +186,7 @@
     const url = new URL(window.location.href);
     if (url.searchParams.get("scene") === scene) return;
     url.searchParams.set("scene", scene);
-    replaceState(url, {});
+    goto(url, { shallow: true, replace: true });
   });
 
   $effect(() => {
@@ -169,7 +194,7 @@
     if (!camera || typeof window === "undefined") return;
     const url = new URL(window.location.href);
     setCameraUrlPose(url, camera, 3);
-    replaceState(url, {});
+    goto(url, { shallow: true, replace: true });
   });
 
   onDestroy(() => {
@@ -180,6 +205,7 @@
 
 <div class="workbench" data-viewer-3d-workbench>
   <Viewer3DFullscreen
+    effectsConfig={reviewEffects}
     sequenceData={sequence}
     {currentStep}
     isPlaying={playback.isPlaying}

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createMultiSelectionState } from "$lib/shared/selection/state/create-multi-selection-state.svelte";
+import { createMultiSelectionState } from "#lib/shared/selection/state/create-multi-selection-state.svelte.js";
 
 describe("createMultiSelectionState", () => {
   it("enters with the long-pressed item and clears when selection mode exits", () => {

@@ -1,6 +1,6 @@
 import { z } from "zod";
 // Worker-safe leaf (no auth/firebase-client): the barrel pulls authState → $app/navigation.
-import { firestoreDate } from "$lib/shared/firestore/firestore-date";
+import { firestoreDate } from "#lib/shared/firestore/firestore-date.js";
 import type { Timestamp } from "firebase/firestore";
 import {
   normalizePlacementFrame,

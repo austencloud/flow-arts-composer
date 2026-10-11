@@ -2,8 +2,8 @@
   import {
     logAccountSetupTaskSelected,
     logAccountSetupViewed,
-  } from "$lib/shared/analytics/services/onboarding-events";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  } from "#lib/shared/analytics/services/onboarding-events.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     AccountSetupState,
     AccountSetupTask,

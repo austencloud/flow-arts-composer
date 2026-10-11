@@ -7,7 +7,10 @@ import { describe, expect, it } from "vitest";
 import {
   assembleLayout,
   cellCenter,
+  type CellRect,
+  CONSTRUCT_CHOICE_COUNT,
   CONSTRUCT_MAX_SLOTS,
+  constructChoiceCells,
   constructLayout,
   fuseLayout,
   generateLayout,
@@ -15,13 +18,13 @@ import {
   shapeCellRect,
   shapeLayout,
   tunnelLayout,
-} from "$lib/features/create/shared/components/method-previews/method-preview-compositions";
+} from "#lib/features/create/shared/components/method-previews/method-preview-compositions.js";
 import {
   DEMO_SEQUENCE,
   openingSteps,
   startPictograph,
-} from "$lib/features/create/shared/components/method-previews/method-preview-demo";
-import type { MethodPreviewShape } from "$lib/features/create/shared/components/method-previews/method-preview-layout";
+} from "#lib/features/create/shared/components/method-previews/method-preview-demo.js";
+import type { MethodPreviewShape } from "#lib/features/create/shared/components/method-previews/method-preview-layout.js";
 
 const at = (x: number, y: number, size: number) => ({ x, y, size });
 
@@ -46,26 +49,55 @@ describe("Construct", () => {
       at(99, 1, 46),
     ]);
     expect(constructLayout("roomy", 308, 96)).toEqual([
-      at(0, 11, 73),
-      at(78, 11, 73),
-      at(156, 11, 73),
-      at(234, 11, 73),
+      at(5, 0, 96),
+      at(106, 0, 96),
+      at(207, 0, 96),
     ]);
   });
 
-  it("wraps them two by two in a square", () => {
+  it("centers the last step under the first two in a square", () => {
     expect(constructLayout("square", 144, 144)).toEqual([
       at(0, 0, 68),
       at(75, 0, 68),
-      at(0, 75, 68),
-      at(75, 75, 68),
+      at(38, 75, 68),
     ]);
     expect(constructLayout("square", 200, 200)).toEqual([
       at(0, 0, 96),
       at(104, 0, 96),
-      at(0, 104, 96),
-      at(104, 104, 96),
+      at(52, 104, 96),
     ]);
+  });
+});
+
+describe("Construct choices", () => {
+  it("sets three choices across the middle of a box", () => {
+    expect(constructChoiceCells(at(0, 0, 68))).toEqual([
+      at(1, 24, 20),
+      at(24, 24, 20),
+      at(47, 24, 20),
+    ]);
+    expect(constructChoiceCells(at(0, 11, 73))).toEqual([
+      at(0, 36, 22),
+      at(25, 36, 22),
+      at(50, 36, 22),
+    ]);
+  });
+
+  it("keeps every choice inside its box", () => {
+    for (const box of constructLayout("square", 200, 200)) {
+      const cells = constructChoiceCells(box);
+      expect(cells).toHaveLength(CONSTRUCT_CHOICE_COUNT);
+      for (const cell of cells) {
+        expect(cell.x).toBeGreaterThanOrEqual(box.x);
+        expect(cell.y).toBeGreaterThanOrEqual(box.y);
+        expect(cell.x + cell.size).toBeLessThanOrEqual(box.x + box.size);
+        expect(cell.y + cell.size).toBeLessThanOrEqual(box.y + box.size);
+      }
+    }
+  });
+
+  it("offers none in a box too small to split", () => {
+    expect(constructChoiceCells(at(0, 0, 4))).toEqual([]);
   });
 });
 
@@ -234,10 +266,57 @@ describe("Tunnel", () => {
 });
 
 describe("Assemble", () => {
-  it("centers the grid in any box", () => {
-    expect(assembleLayout(146, 48)).toEqual(at(49, 0, 48));
-    expect(assembleLayout(308, 96)).toEqual(at(106, 0, 96));
-    expect(assembleLayout(200, 200)).toEqual(at(0, 0, 200));
+  it("puts the beats beside the grid in a strip", () => {
+    expect(assembleLayout("strip", 146, 48)).toEqual({
+      grid: at(8, 0, 48),
+      beats: [at(62, 6, 36), at(101, 6, 36)],
+    });
+    expect(assembleLayout("roomy", 308, 96)).toEqual({
+      grid: at(26, 0, 96),
+      beats: [at(132, 12, 72), at(209, 12, 72)],
+    });
+  });
+
+  it("puts the beats under the grid in a square", () => {
+    expect(assembleLayout("square", 144, 144)).toEqual({
+      grid: at(29, 0, 85),
+      beats: [at(17, 92, 51), at(75, 92, 51)],
+    });
+    expect(assembleLayout("square", 200, 200)).toEqual({
+      grid: at(40, 0, 120),
+      beats: [at(24, 128, 72), at(104, 128, 72)],
+    });
+  });
+
+  it("keeps the grid and both beats apart and inside any box", () => {
+    const overlap = (a: CellRect, b: CellRect) =>
+      a.x < b.x + b.size &&
+      b.x < a.x + a.size &&
+      a.y < b.y + b.size &&
+      b.y < a.y + a.size;
+    for (const shape of ["strip", "roomy", "square"] as const) {
+      for (let width = 40; width <= 820; width += 13) {
+        for (let height = 30; height <= 420; height += 11) {
+          const layout = assembleLayout(shape, width, height);
+          if (!layout) continue;
+          const rects = [layout.grid, ...layout.beats];
+          expect(layout.beats).toHaveLength(2);
+          for (const rect of rects) {
+            expect(rect.size).toBeGreaterThan(0);
+            expect(rect.x).toBeGreaterThanOrEqual(0);
+            expect(rect.y).toBeGreaterThanOrEqual(0);
+            expect(rect.x + rect.size).toBeLessThanOrEqual(width);
+            expect(rect.y + rect.size).toBeLessThanOrEqual(height);
+          }
+          expect(layout.beats[0]!.size).toBeLessThan(layout.grid.size);
+          for (const [index, a] of rects.entries()) {
+            for (const b of rects.slice(index + 1)) {
+              expect(overlap(a, b)).toBe(false);
+            }
+          }
+        }
+      }
+    }
   });
 });
 
@@ -248,6 +327,6 @@ describe("an unsized box", () => {
     expect(shapeLayout("square", 0, 10)).toBeNull();
     expect(fuseLayout("strip", 0, 48)).toBeNull();
     expect(tunnelLayout("strip", 0, 48)).toBeNull();
-    expect(assembleLayout(0, 48)).toBeNull();
+    expect(assembleLayout("strip", 0, 48)).toBeNull();
   });
 });

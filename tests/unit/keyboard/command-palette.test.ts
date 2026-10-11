@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import type { CommandPaletteItem } from "$lib/shared/keyboard/domain/types/keyboard-types";
-import { CommandPalette } from "$lib/shared/keyboard/services/command-palette";
-import type { NavigationVisit } from "$lib/shared/navigation/domain/navigation-visit";
-import type { INavigationVisitPersister } from "$lib/shared/navigation/services/contracts/INavigationVisitPersister";
+import type { CommandPaletteItem } from "#lib/shared/keyboard/domain/types/keyboard-types.js";
+import { CommandPalette } from "#lib/shared/keyboard/services/command-palette.js";
+import type { NavigationVisit } from "#lib/shared/navigation/domain/navigation-visit.js";
+import type { INavigationVisitPersister } from "#lib/shared/navigation/services/contracts/INavigationVisitPersister.js";
 
 function command(
   id: string,

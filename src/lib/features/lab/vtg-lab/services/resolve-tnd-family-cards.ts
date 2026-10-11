@@ -1,13 +1,13 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   TND_BASE_CATALOG_ID,
   buildTnDSeedClasses,
   getTnDFamilyOptions,
   buildTnDCards,
-} from "$lib/features/choreo-card/services/deck-composer";
-import { loadCatalogSequences } from "$lib/features/choreo-card/services/catalog-loader";
-import { resolveDeckSequences } from "$lib/features/choreo-card/services/deck-variation";
-import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
+} from "#lib/features/choreo-card/services/deck-composer.js";
+import { loadCatalogSequences } from "#lib/features/choreo-card/services/catalog-loader.js";
+import { resolveDeckSequences } from "#lib/features/choreo-card/services/deck-variation.js";
+import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
 import { allTurnPatterns, groupCardsBySeed, type SeedMatrix } from "../domain/tnd-turn-patterns";
 
 export interface ResolveTnDFamilyCardsOptions {

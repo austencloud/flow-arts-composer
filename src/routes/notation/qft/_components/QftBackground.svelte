@@ -1,19 +1,19 @@
 <script lang="ts">
   type BackgroundHostComponent =
-    (typeof import("$lib/shared/background/shared/components/BackgroundHost.svelte"))["default"];
+    (typeof import("#lib/shared/background/shared/components/BackgroundHost.svelte"))["default"];
 
   let liveBackground = $state<BackgroundHostComponent | null>(null);
 
   $effect(() => {
     let mounted = true;
     const frame = requestAnimationFrame(() => {
-      void import("$lib/shared/background/shared/components/BackgroundHost.svelte").then(
+      void import("#lib/shared/background/shared/components/BackgroundHost.svelte").then(
         ({ default: BackgroundHost }) => {
           if (mounted) liveBackground = BackgroundHost;
         }
       );
       void Promise.all([
-        import("$lib/shared/settings/utils/background-theme-calculator"),
+        import("#lib/shared/settings/utils/background-theme-calculator.js"),
         import("@austencloud/backgrounds"),
       ]).then(([{ applyThemeForBackground }, { BackgroundType }]) => {
         if (mounted) applyThemeForBackground(BackgroundType.COSMIC);

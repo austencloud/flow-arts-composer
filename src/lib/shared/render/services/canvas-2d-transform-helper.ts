@@ -3,7 +3,7 @@ import type { PreparedPictographData } from "../../pictograph/shared/domain/mode
 import {
   HandSide,
   type HandSide as HandSideValue,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { DirectRenderOptions } from "./IDirectRenderer";
 import { buildArrowHaloFilter } from "../../pictograph/arrow/rendering/arrow-halo";
 import { isBuugengFamilyProp } from "../core/constants/prop-classification";

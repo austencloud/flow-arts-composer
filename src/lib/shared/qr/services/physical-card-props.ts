@@ -6,7 +6,7 @@
  * before that change still carry `bp`/`rp` in the URL, and those always win:
  * the record only fills a hand the URL does not name.
  */
-import { parsePropsFromURL } from "$lib/shared/navigation/services/sequence-encoder";
+import { parsePropsFromURL } from "#lib/shared/navigation/services/sequence-encoder.js";
 import {
   isPhysicalCardId,
   isShortCode,

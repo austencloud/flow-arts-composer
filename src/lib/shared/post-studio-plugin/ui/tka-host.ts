@@ -4,17 +4,17 @@ import type {
   EditorSync,
   VideoEditorHost,
 } from "@austencloud/video-editor";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
-import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
-import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
-import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
+import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
+import { getKeyboardShortcutManager } from "#lib/shared/keyboard/get-keyboard-shortcut-manager.js";
+import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
 import {
   removeToast,
   showToast,
-} from "$lib/shared/toast/state/toast-state.svelte";
-import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
-import type { SequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
+} from "#lib/shared/toast/state/toast-state.svelte.js";
+import type { FeatureVideoSync } from "#lib/shared/media-composition/services/feature-video-client.js";
+import type { SequenceVideosStore } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
 import { createTkaMediaLibrary } from "./tka-media-library.svelte";
 
 /**

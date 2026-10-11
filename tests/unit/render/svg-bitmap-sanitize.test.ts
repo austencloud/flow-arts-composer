@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeSvgForBitmap } from "$lib/shared/render/services/svg-bitmap-sanitize";
+import { sanitizeSvgForBitmap } from "#lib/shared/render/services/svg-bitmap-sanitize.js";
 
 describe("sanitizeSvgForBitmap", () => {
   // The real letter glyph SVGs (static/images/letters_trimmed/Type1/A.svg) ship

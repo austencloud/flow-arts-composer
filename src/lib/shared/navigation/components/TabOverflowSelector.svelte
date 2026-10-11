@@ -1,12 +1,12 @@
 <!-- TabOverflowSelector - 2026-ready tab overflow handler using Popover API -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type {
     Section,
     SectionHomeDestination,
-  } from "$lib/shared/navigation/domain/types";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  } from "#lib/shared/navigation/domain/types.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
 
   let {

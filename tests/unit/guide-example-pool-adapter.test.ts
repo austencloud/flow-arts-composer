@@ -12,20 +12,20 @@ import {
   swappedPool,
 } from "../../src/routes/(public)/guide/level-1/_data/example-pools/pool-adapter";
 import type { RawPool } from "../../src/routes/(public)/guide/level-1/_data/example-pools/pool-adapter";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   GridLocation,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   getGridPlacementFromLocations,
   getGridLocationsFromPlacement,
-} from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 // The adapter turns curated MCP step JSON into pictograph strips via the SAME
 // canonical primitives the hand-authored content uses. These are silent-bug

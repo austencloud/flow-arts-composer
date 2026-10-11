@@ -7,9 +7,9 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
 	import { connectState } from '../state/connect-state.svelte';
-	import ProgressRing from '$lib/shared/components/loading/ProgressRing.svelte';
+	import ProgressRing from '#lib/shared/components/loading/ProgressRing.svelte';
 	import type { Invite } from '../domain/models/connect-models';
-	import { t } from '$lib/shared/i18n/i18n.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
 
 	// Derived from state
 	const activeInvite = $derived(connectState.activeInviteOverlay);

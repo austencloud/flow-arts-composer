@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CARD_SIZES, getPageLayout } from '$lib/features/choreo-card/domain/card-sizes';
+import { CARD_SIZES, getPageLayout } from '#lib/features/choreo-card/domain/card-sizes.js';
 
 describe('CARD_SIZES', () => {
   it('poker dimensions match existing MPC constants', () => {

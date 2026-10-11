@@ -11,7 +11,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import QRCodeStyling from "qr-code-styling";
-  import { playIconDataUrl } from "$lib/shared/qr/services/qr-code-generator";
+  import { playIconDataUrl } from "#lib/shared/qr/services/qr-code-generator.js";
 
   const SAMPLE_URL = "https://tka.run/DEMO12";
 

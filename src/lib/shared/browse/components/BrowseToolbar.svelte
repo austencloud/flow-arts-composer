@@ -9,24 +9,24 @@
   4. Result count (right-aligned, tabular-nums)
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizeFilterChip } from "./localize-filter-chip";
   import { onMount, onDestroy } from "svelte";
   import type { BrowseEngine } from "../engine/types";
-  import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-  import ExpandableSearchBar from "$lib/shared/browse/components/ExpandableSearchBar.svelte";
-  import LevelFilterChip from "$lib/shared/browse/components/filter-chips/LevelFilterChip.svelte";
-  import FavoritesFilterChip from "$lib/shared/browse/components/filter-chips/FavoritesFilterChip.svelte";
-  import LengthFilterChip from "$lib/shared/browse/components/filter-chips/LengthFilterChip.svelte";
-  import LOOPFilterChip from "$lib/shared/browse/components/filter-chips/LOOPFilterChip.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+  import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+  import ExpandableSearchBar from "#lib/shared/browse/components/ExpandableSearchBar.svelte";
+  import LevelFilterChip from "#lib/shared/browse/components/filter-chips/LevelFilterChip.svelte";
+  import FavoritesFilterChip from "#lib/shared/browse/components/filter-chips/FavoritesFilterChip.svelte";
+  import LengthFilterChip from "#lib/shared/browse/components/filter-chips/LengthFilterChip.svelte";
+  import LOOPFilterChip from "#lib/shared/browse/components/filter-chips/LOOPFilterChip.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
   import type { SequenceSource } from "../engine/types";
   // Every mutation below changes the visible result set. Routed through the one
   // morph seam so the grid rearranges instead of blinking wherever a host has
   // declared a live results grid (the gallery split pane today); inert
   // everywhere else — see shared/transitions/results-morph.
-  import { withResultsMorph } from "$lib/shared/transitions/results-morph";
+  import { withResultsMorph } from "#lib/shared/transitions/results-morph.js";
 
   interface Props {
     engine: BrowseEngine;
@@ -502,28 +502,35 @@
       type="button"
       class="filters-pill"
       onclick={onOpenFilters}
-      aria-label={activeUserFilterCount > 0
-        ? t("browse_audit_filters_with_active", {
-            results:
-              engine.resultCount === 1
-                ? t("browse_audit_one_sequence", { count: engine.resultCount })
-                : t("browse_audit_many_sequences", {
-                    count: engine.resultCount,
-                  }),
-            active: activeUserFilterCount,
-          })
-        : t("browse_audit_filters_with_results", {
-            results:
-              engine.resultCount === 1
-                ? t("browse_audit_one_sequence", { count: engine.resultCount })
-                : t("browse_audit_many_sequences", {
-                    count: engine.resultCount,
-                  }),
-          })}
+      aria-label={!engine.isLibraryComplete
+        ? `At least ${engine.resultCount} sequences loaded. More may be available.`
+        : activeUserFilterCount > 0
+          ? t("browse_audit_filters_with_active", {
+              results:
+                engine.resultCount === 1
+                  ? t("browse_audit_one_sequence", {
+                      count: engine.resultCount,
+                    })
+                  : t("browse_audit_many_sequences", {
+                      count: engine.resultCount,
+                    }),
+              active: activeUserFilterCount,
+            })
+          : t("browse_audit_filters_with_results", {
+              results:
+                engine.resultCount === 1
+                  ? t("browse_audit_one_sequence", {
+                      count: engine.resultCount,
+                    })
+                  : t("browse_audit_many_sequences", {
+                      count: engine.resultCount,
+                    }),
+            })}
     >
       <i class="fas fa-sliders" aria-hidden="true"></i>
       <span class="filters-pill-count">
-        {engine.resultCount}<span class="result-count-word"
+        {engine.resultCount}{engine.isLibraryComplete ? "" : "+"}<span
+          class="result-count-word"
           >&nbsp;{engine.resultCount === 1
             ? t("browse_audit_sequence")
             : t("browse_audit_sequences")}</span
@@ -534,9 +541,11 @@
       {/if}
     </button>
     <span class="sr-only" aria-live="polite" aria-atomic="true">
-      {engine.resultCount === 1
-        ? t("browse_audit_one_sequence", { count: engine.resultCount })
-        : t("browse_audit_many_sequences", { count: engine.resultCount })}
+      {engine.isLibraryComplete
+        ? engine.resultCount === 1
+          ? t("browse_audit_one_sequence", { count: engine.resultCount })
+          : t("browse_audit_many_sequences", { count: engine.resultCount })
+        : `At least ${engine.resultCount} sequences loaded`}
     </span>
   {/if}
 
@@ -668,10 +677,18 @@
   {#if !onOpenFilters}
     <span class="result-count" aria-live="polite" aria-atomic="true">
       {#if resultTotal !== undefined && resultTotal !== engine.resultCount}
-        {t("browse_verified_results_shown", { count: engine.resultCount, total: resultTotal })}
+        {t("browse_verified_results_shown", {
+          count: engine.resultCount,
+          total: resultTotal,
+        })}
       {:else}
-        {engine.resultCount}<span class="result-count-word"
-          >&nbsp;{t(engine.resultCount === 1 ? "browse_audit_sequence" : "browse_audit_sequences")}</span
+        {engine.resultCount}{engine.isLibraryComplete ? "" : "+"}<span
+          class="result-count-word"
+          >&nbsp;{t(
+            engine.resultCount === 1
+              ? "browse_audit_sequence"
+              : "browse_audit_sequences"
+          )}</span
         >
       {/if}
     </span>

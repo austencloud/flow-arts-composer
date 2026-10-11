@@ -15,19 +15,22 @@ const renderCell = vi.fn<RenderCellMock>(async (data) => {
   }
   return "blob:fake";
 });
-vi.mock("$lib/shared/sequence-viewer/services/preview-cell-renderer", () => ({
-  renderCell: (
-    data: { letter?: string },
-    stepNumber: number | undefined,
-    isDark: boolean,
-    options: unknown
-  ) => renderCell(data, stepNumber, isDark, options),
-}));
+vi.mock(
+  "#lib/shared/sequence-viewer/services/preview-cell-renderer.js",
+  () => ({
+    renderCell: (
+      data: { letter?: string },
+      stepNumber: number | undefined,
+      isDark: boolean,
+      options: unknown
+    ) => renderCell(data, stepNumber, isDark, options),
+  })
+);
 
 const deriveCloudCellHash = vi.fn(
   async (data: { letter?: string }) => `hash-${data.letter ?? "cell"}`
 );
-vi.mock("$lib/shared/render/services/cloud-cell-key", () => ({
+vi.mock("#lib/shared/render/services/cloud-cell-key.js", () => ({
   CANONICAL_CELL_SIZE: 480,
   CANONICAL_CARD_VISIBILITY: { showTKA: true },
   deriveCloudCellHash: (...args: unknown[]) =>
@@ -37,13 +40,13 @@ vi.mock("$lib/shared/render/services/cloud-cell-key", () => ({
 const cloudDownload = vi
   .fn()
   .mockResolvedValue(new Blob(["ready"], { type: "image/webp" }));
-vi.mock("$lib/shared/render/services/pictograph-cloud-cache", () => ({
+vi.mock("#lib/shared/render/services/pictograph-cloud-cache.js", () => ({
   download: (...args: unknown[]) => cloudDownload(...args),
   isCellKnownAvailable: (hash: string) => knownCloudHashes.has(hash),
 }));
 
 vi.mock(
-  "$lib/shared/pictograph/shared/services/start-placement-deriver",
+  "#lib/shared/pictograph/shared/services/start-placement-deriver.js",
   () => ({
     startPlacementDeriver: {
       getOrDeriveStartPlacement: (sequence: { startPlacement?: unknown }) =>
@@ -59,8 +62,8 @@ import {
   IncompleteCellWarmError,
   warmSequenceCells,
 } from "./warm-sequence-cells";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const sequence = {
   id: "s1",

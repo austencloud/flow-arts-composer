@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createCreateModuleState } from "$lib/features/create/shared/state/create-module-state.svelte";
-import { createAssembleTabState } from "$lib/features/create/shared/state/assemble-tab-state.svelte";
-import { executeClearSequenceWorkflow } from "$lib/shared/create/utils/clear-sequence-workflow";
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { createCreateModuleState } from "#lib/features/create/shared/state/create-module-state.svelte.js";
+import { createAssembleTabState } from "#lib/features/create/shared/state/assemble-tab-state.svelte.js";
+import { executeClearSequenceWorkflow } from "#lib/shared/create/utils/clear-sequence-workflow.js";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
-vi.mock("$lib/shared/navigation/state/navigation-state.svelte", () => ({
+vi.mock("#lib/shared/navigation/state/navigation-state.svelte.js", () => ({
   navigationState: {
     activeTab: "assemble",
     currentSection: "assemble",
@@ -15,15 +15,18 @@ vi.mock("$lib/shared/navigation/state/navigation-state.svelte", () => ({
   },
 }));
 
-vi.mock("$lib/shared/gamification/get-prop-unlock-manager", () => ({
+vi.mock("#lib/shared/gamification/get-prop-unlock-manager.js", () => ({
   getPropUnlockManager: () => ({ recordCreation: vi.fn() }),
 }));
 
-vi.mock("$lib/shared/pictograph/shared/services/motion-query-handler", () => ({
-  motionQueryHandler: {
-    findLetterByMotionConfiguration: vi.fn(async () => Letter.A),
-  },
-}));
+vi.mock(
+  "#lib/shared/pictograph/shared/services/motion-query-handler.js",
+  () => ({
+    motionQueryHandler: {
+      findLetterByMotionConfiguration: vi.fn(async () => Letter.A),
+    },
+  })
+);
 
 const sequenceRepository = {} as SequenceRepository;
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;

@@ -5,9 +5,9 @@ import {
   createTunnelRealizationAssociation,
   mediaAssociationKey,
   normalizeMediaAssociations,
-} from "$lib/shared/video-collaboration/domain/collaborative-video";
-import { createArtifactRevisionRef } from "$lib/shared/artifact-revisions/domain/artifact-revision";
-import { auditMediaAssociationRevision } from "$lib/shared/video-collaboration/domain/media-revision-audit";
+} from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+import { createArtifactRevisionRef } from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
+import { auditMediaAssociationRevision } from "#lib/shared/video-collaboration/domain/media-revision-audit.js";
 
 const base = {
   id: "video-1",

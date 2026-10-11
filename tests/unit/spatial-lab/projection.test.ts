@@ -6,7 +6,7 @@ import {
   getViewConfig,
   getBodyEllipseParams,
   type Point3D,
-} from "$lib/features/lab/tabs/spatial-lab/services/projection";
+} from "#lib/features/lab/tabs/spatial-lab/services/projection.js";
 
 describe("project3Dto2D", () => {
   const origin: Point3D = { x: 0, y: 0, z: 0 };

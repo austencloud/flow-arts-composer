@@ -10,10 +10,10 @@
   - Space: play/pause
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Phase1OverlayRenderer } from "../../services/phase1-overlay-renderer";
   import type { Phase1Result } from "../../domain/models";
-  import type { DetectionFrame } from "$lib/shared/train/domain/detection-frame";
+  import type { DetectionFrame } from "#lib/shared/train/domain/detection-frame.js";
   import DetectionOverlay from "./DetectionOverlay.svelte";
   import FrameDataPanel from "./FrameDataPanel.svelte";
 

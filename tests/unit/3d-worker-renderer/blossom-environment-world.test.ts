@@ -11,15 +11,15 @@ import {
   type WebGLRenderer,
 } from "three";
 
-import { createDefaultBlossomConfig } from "$lib/shared/3d/environments/domain/models/scene-configs";
-import { CANONICAL_PERFORMER_ANCHOR_Y } from "$lib/shared/3d/environments/domain/stage-coordinate-frame";
-import { createBlossomRuntimeConfig } from "$lib/shared/3d/environments/scenes/cherry-blossom/blossom-runtime";
-import { createBlossomAtmosphere } from "$lib/shared/3d/environments/worlds/blossom/blossom-atmosphere";
+import { createDefaultBlossomConfig } from "#lib/shared/3d/environments/domain/models/scene-configs.js";
+import { CANONICAL_PERFORMER_ANCHOR_Y } from "#lib/shared/3d/environments/domain/stage-coordinate-frame.js";
+import { createBlossomRuntimeConfig } from "#lib/shared/3d/environments/scenes/cherry-blossom/blossom-runtime.js";
+import { createBlossomAtmosphere } from "#lib/shared/3d/environments/worlds/blossom/blossom-atmosphere.js";
 import {
   BLOSSOM_AUTHORED_RESOURCE_URLS,
   createBlossomEnvironmentWorld,
   type BlossomEnvironmentAssets,
-} from "$lib/shared/3d/environments/worlds/blossom/blossom-environment-world";
+} from "#lib/shared/3d/environments/worlds/blossom/blossom-environment-world.js";
 
 function mesh(name: string, materialName = "", role = ""): Mesh {
   const material = new MeshStandardMaterial({ color: "#ffffff" });

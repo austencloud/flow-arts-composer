@@ -18,13 +18,13 @@
  * and generates its first sequence after hydration, then pre-fetches the rest
  * of the act.
  */
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { TnDElement } from "$lib/features/choreo-card/domain/tnd-element";
-import type { PreparedSequenceHandoff } from "$lib/shared/animation-engine/domain/chaining-types";
-import { generatePerVisitDemo } from "$lib/shared/landing/data/per-visit-demo";
-import { runAtBackgroundPriority } from "$lib/shared/foundation/utils/background-scheduling";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { TnDElement } from "#lib/features/choreo-card/domain/tnd-element.js";
+import type { PreparedSequenceHandoff } from "#lib/shared/animation-engine/domain/chaining-types.js";
+import { generatePerVisitDemo } from "#lib/shared/landing/data/per-visit-demo.js";
+import { runAtBackgroundPriority } from "#lib/shared/foundation/utils/background-scheduling.js";
 
 /** Fraction of hero draws that come from the shape matrix (rest are generated). */
 const DEFAULT_MATRIX_FRACTION = 2 / 3;
@@ -136,7 +136,7 @@ export function createHeroAct(options?: {
     if (matrixFraction > 0 && random() < matrixFraction) {
       try {
         const { drawMatrixRealization } =
-          await import("$lib/shared/landing/data/shape-matrix-hero-pool");
+          await import("#lib/shared/landing/data/shape-matrix-hero-pool.js");
         const draw = await drawMatrixRealization({
           chainStartPlacement: opts.chainStartPlacement ?? null,
           random,
@@ -158,7 +158,7 @@ export function createHeroAct(options?: {
     if (boxFraction > 0 && random() < boxFraction) {
       try {
         const { applyBoxMode } =
-          await import("$lib/features/choreo-card/services/deck-variation");
+          await import("#lib/features/choreo-card/services/deck-variation.js");
         sequence = applyBoxMode(sequence, "box");
       } catch {
         // keep the diamond sequence on any transform failure

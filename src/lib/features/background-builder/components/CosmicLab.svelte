@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { type QualityLevel, type UFOMood, type WobbleType } from "@austencloud/backgrounds";
-  import type { CosmicDensityPreset, CosmicLabMode } from "$lib/shared/background-builder/domain/lab-settings-types";
+  import type { CosmicDensityPreset, CosmicLabMode } from "#lib/shared/background-builder/domain/lab-settings-types.js";
   import type { UFOStatusSnapshot } from "../services/types";
   import { getCosmicLabController } from "../get-cosmic-lab-controller";
   import { getUFOStatusPoller } from "../get-ufo-status-poller";

@@ -5,12 +5,12 @@
   can render the user's selected props through the same interaction core.
 -->
 <script lang="ts">
-  import PropPlacementGrid from "$lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
+  import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
   import {
     GridLocation,
     type GridMode,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { HandPosition } from "../../../domain/constants/placement-quiz-data";
 
   interface PlacementGridProps {

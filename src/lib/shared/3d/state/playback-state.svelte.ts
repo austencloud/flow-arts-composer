@@ -6,7 +6,7 @@
  * Persists settings to localStorage for survival across refreshes.
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 
 const DEFAULT_STORAGE_KEY = "tka-3d-playback-state";
 

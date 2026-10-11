@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { CoralSceneRenderer } from './services/coral-scene-renderer';
 import { getCoralAssetLoader } from './get-coral-asset-loader';
 

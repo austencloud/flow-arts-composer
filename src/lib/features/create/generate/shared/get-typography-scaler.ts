@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { typographyScaler } from './services/typography-scaler';
 
 export function getTypographyScaler(): typeof typographyScaler {

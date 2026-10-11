@@ -33,7 +33,7 @@ import {
   flowFestEucSuspensionOffsetMeters,
   gradeFlowFestEucSoleContact,
   type FlowFestEucSoleContact,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose.js";
 import {
   FlowFestEucMountedPoseRig,
   calibrateSoleFrame,
@@ -41,11 +41,11 @@ import {
   measureTwoBoneChain,
   readAnchorFrame,
   type MountedPoseAnchors,
-} from "$lib/features/flow-fest-sim/services/flow-fest-euc-mounted-pose-rig";
+} from "#lib/features/flow-fest-sim/services/flow-fest-euc-mounted-pose-rig.js";
 import {
   FLOW_FEST_EUC_CONFIG,
   deriveFlowFestEucTerrainAttitude,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle.js";
 
 const DEGREES = Math.PI / 180;
 

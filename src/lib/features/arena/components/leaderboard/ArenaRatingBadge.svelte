@@ -9,7 +9,7 @@
     INITIAL_PHI,
     ARENA_COLOR,
   } from "../../domain/constants/arena-constants";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     rating,

@@ -9,18 +9,18 @@
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     PLAYBACK_MAX_BPM,
     PLAYBACK_MIN_BPM,
-  } from "$lib/shared/animation-engine/domain/constants/timing";
+  } from "#lib/shared/animation-engine/domain/constants/timing.js";
   import {
     NUMERIC_TEMPO_PRESETS,
     TEMPO_TAP_TIMEOUT_MS,
     calculateTapTempo,
     clampTempoBpm,
     recordTempoTap,
-  } from "$lib/shared/animation-engine/domain/tempo-behavior";
+  } from "#lib/shared/animation-engine/domain/tempo-behavior.js";
 
   // Props
   let {

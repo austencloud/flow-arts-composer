@@ -8,7 +8,7 @@
  * index -> surfaces -> ... -> index), and whichever module loads second reads `undefined` exports.
  *
  * Type-only imports are erased, so they are fine. If this fails, import the value from the
- * plugin file that declares it (`$lib/shared/post-studio-plugin/item-kinds`,
+ * plugin file that declares it (`#lib/shared/post-studio-plugin/item-kinds.js`,
  * `.../project-extension`) instead of the index.
  */
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -104,12 +104,12 @@ function valueEdges(source: string, fileName = "source.ts"): ValueEdge[] {
 
 /**
  * The repo file a specifier names, with forward slashes, or null for a specifier that is not
- * `$lib/` or relative (packages, `$app`). An unresolvable `$lib/` or relative specifier throws.
+ * `#lib/` or relative (packages, `$app`). An unresolvable `#lib/` or relative specifier throws.
  */
 function resolveSpecifier(specifier: string, from: string): string | null {
   const bare = specifier.split("?")[0];
   let base: string;
-  if (bare.startsWith("$lib/")) base = `src/lib/${bare.slice("$lib/".length)}`;
+  if (bare.startsWith("#lib/")) base = `src/lib/${bare.slice("#lib/".length)}`;
   else if (bare === "." || bare.startsWith("./") || bare.startsWith("../"))
     base = path.posix.join(path.posix.dirname(from), bare);
   else return null;
@@ -168,8 +168,8 @@ describe("plugin bound.ts and surfaces.ts value closure", () => {
       { specifier: "./x", line: 1 },
     ]);
     expect(
-      valueEdges('const load = () => import("$lib/x");\nexport { load };')
-    ).toEqual([{ specifier: "$lib/x", line: 1 }]);
+      valueEdges('const load = () => import("#lib/x");\nexport { load };')
+    ).toEqual([{ specifier: "#lib/x", line: 1 }]);
   });
 
   it("resolves every spelling of the plugin index to index.ts", () => {
@@ -178,8 +178,8 @@ describe("plugin bound.ts and surfaces.ts value closure", () => {
       expect(resolveSpecifier(specifier, inside)).toBe(INDEX_FILE);
     }
     for (const specifier of [
-      "$lib/shared/post-studio-plugin",
-      "$lib/shared/post-studio-plugin/index",
+      "#lib/shared/post-studio-plugin/index.js",
+      "#lib/shared/post-studio-plugin/index.js",
     ]) {
       expect(resolveSpecifier(specifier, BOUND_FILE)).toBe(INDEX_FILE);
     }

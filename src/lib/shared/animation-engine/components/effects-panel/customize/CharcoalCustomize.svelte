@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import CharcoalPanel from "../../settings-panels/CharcoalPanel.svelte";
 
   interface Props {

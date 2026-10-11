@@ -5,7 +5,7 @@
   and 5 preset buttons. Values range from 0.25x to 2.0x.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   let {
     currentSpeed,
     onSetSpeed,

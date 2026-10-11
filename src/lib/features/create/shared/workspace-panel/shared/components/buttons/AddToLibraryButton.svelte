@@ -5,7 +5,7 @@
   Saves the current constructed sequence to the user's Firebase library.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
 
   // Props
   const {

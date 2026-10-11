@@ -5,18 +5,18 @@
   Supports: Facebook, Google, Email/Password
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { signInWithFacebook } from "$lib/shared/auth/services/authenticator";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { signInWithFacebook } from "#lib/shared/auth/services/authenticator.js";
   import {
     trackAuthModalAbandoned,
     trackAuthProviderResult,
     trackAuthSurfaceOpened,
-  } from "$lib/shared/analytics/auth-events";
+  } from "#lib/shared/analytics/auth-events.js";
   import {
     clearAuthSubmissionBridge,
     recordAuthSubmission,
-  } from "$lib/shared/auth/services/auth-analytics-bridge";
+  } from "#lib/shared/auth/services/auth-analytics-bridge.js";
   import Drawer from "../../foundation/ui/Drawer.svelte";
   import type { HapticFeedback } from "../../application/services/haptic-feedback";
   import { onMount } from "svelte";

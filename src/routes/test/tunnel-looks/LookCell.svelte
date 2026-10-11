@@ -1,10 +1,10 @@
 <script lang="ts">
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
-  import { buildTunnelLayers } from "$lib/shared/sequence-viewer/tunnel/tunnel-layer-builder";
-  import { sampleTunnelProps } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-sampling";
-  import { copyModulators, propCount, type TunnelConfig } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
+  import { buildTunnelLayers } from "#lib/shared/sequence-viewer/tunnel/tunnel-layer-builder.js";
+  import { sampleTunnelProps } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-sampling.js";
+  import { copyModulators, propCount, type TunnelConfig } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
 
   const {
     base,

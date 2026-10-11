@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
 import {
   createTakeTiming,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 import {
   timedTakeForFile,

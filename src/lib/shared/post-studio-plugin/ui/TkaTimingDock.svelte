@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount, type Snippet } from "svelte";
   import type { VideoEditorState } from "@austencloud/video-editor";
-  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
-  import PostTimingTap from "$lib/shared/share/components/post-studio/builder/PostTimingTap.svelte";
+  import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
+  import PostTimingTap from "#lib/shared/share/components/post-studio/builder/PostTimingTap.svelte";
   import { useTkaEditor } from "./tka-editor-context";
   import TkaTimingPanel from "./TkaTimingPanel.svelte";
 

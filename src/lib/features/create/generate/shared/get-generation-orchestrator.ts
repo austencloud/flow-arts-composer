@@ -1,9 +1,9 @@
-import { browser } from '$app/environment';
-import { GenerationOrchestrator } from '$lib/shared/create/services/generation-orchestrator';
+import { browser } from '$app/env';
+import { GenerationOrchestrator } from '#lib/shared/create/services/generation-orchestrator.js';
 import { BrowserVariationProvider } from './services/browser-variation-provider';
 import { BuildResultTransformer } from './services/build-result-transformer';
-import { letterQueryHandler } from '$lib/shared/pictograph/tka-glyph/services/letter-query-handler';
-import { reversalDetector } from '$lib/shared/create/services/reversal-detector';
+import { letterQueryHandler } from '#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js';
+import { reversalDetector } from '#lib/shared/create/services/reversal-detector.js';
 import { getSequenceMetadataManager } from './get-sequence-metadata-manager';
 
 let instance: GenerationOrchestrator | null = null;

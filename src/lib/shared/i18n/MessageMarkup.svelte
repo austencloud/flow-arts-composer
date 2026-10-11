@@ -7,7 +7,7 @@
   reach them. Style them from the parent with :global(strong) or :global(em).
 -->
 <script lang="ts">
-  import { toMessageSegments } from "$lib/shared/i18n/message-markup";
+  import { toMessageSegments } from "#lib/shared/i18n/message-markup.js";
 
   let { text }: { text: string } = $props();
 

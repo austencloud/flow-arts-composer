@@ -1,10 +1,10 @@
 // Manages undo/redo state for changelog editing
-import { t } from "$lib/shared/i18n/i18n.svelte";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type {
   AppVersion,
   ChangelogEntry,
-} from "$lib/shared/versioning/domain/models/version-models";
-import * as versionService from "$lib/shared/feedback/services/version-service";
+} from "#lib/shared/versioning/domain/models/version-models.js";
+import * as versionService from "#lib/shared/feedback/services/version-service.js";
 
 export type UndoAction =
   | { type: "delete"; entry: ChangelogEntry; absoluteIndex: number }

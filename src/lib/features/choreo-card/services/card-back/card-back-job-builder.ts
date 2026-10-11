@@ -20,12 +20,12 @@
  * jsdom-based unit testing.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { pairTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
-import { applyMandalaHandColors } from "$lib/shared/mandala/domain/mandala-palette";
-import type { MandalaPaths, MandalaPalette } from "$lib/shared/mandala/domain/mandala-types";
-import type { MandalaPathOptions } from "$lib/shared/mandala/services/types";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { pairTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
+import { applyMandalaHandColors } from "#lib/shared/mandala/domain/mandala-palette.js";
+import type { MandalaPaths, MandalaPalette } from "#lib/shared/mandala/domain/mandala-types.js";
+import type { MandalaPathOptions } from "#lib/shared/mandala/services/types.js";
 import {
   MANDALA_STANDARD_TIP_DX,
   DARK_MOTION_BLUE_STROKE,
@@ -40,16 +40,16 @@ import {
   LIGHT_MOTION_RED_FILL,
   LIGHT_MOTION_PURPLE_STROKE,
   LIGHT_MOTION_PURPLE_FILL,
-} from "$lib/shared/mandala/domain/mandala-constants";
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { renderMandalaToCanvas } from "$lib/shared/mandala/services/mandala-renderer";
+} from "#lib/shared/mandala/domain/mandala-constants.js";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { renderMandalaToCanvas } from "#lib/shared/mandala/services/mandala-renderer.js";
 import {
   sequenceMandalaHandOffsets,
   type MandalaHandOffsets,
-} from "$lib/shared/mandala/services/mandala-grid-join";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
+} from "#lib/shared/mandala/services/mandala-grid-join.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { resolveLoopDisplay } from "#lib/features/loop-labeler/services/loop-display-resolver.js";
 import {
   getReflectionIconTransform,
   type LOOPComponentId,

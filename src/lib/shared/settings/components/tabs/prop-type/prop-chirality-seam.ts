@@ -1,7 +1,7 @@
 import {
   getSettings,
   updateSettings,
-} from "$lib/shared/application/state/app-state.svelte";
+} from "#lib/shared/application/state/app-state.svelte.js";
 import type { HandSide } from "@tka/tka-types";
 
 export type ChiralityHand = HandSide;

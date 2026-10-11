@@ -1,9 +1,9 @@
 <!-- VersionHeader - Badge and date display -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
-  import { PRE_RELEASE_VERSION } from "$lib/shared/versioning/domain/models/version-models";
-  import CopyForAIButton from "$lib/shared/foundation/ui/CopyForAIButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getReactiveLocale } from "#lib/shared/i18n/locale-state.svelte.js";
+  import { PRE_RELEASE_VERSION } from "#lib/shared/versioning/domain/models/version-models.js";
+  import CopyForAIButton from "#lib/shared/foundation/ui/CopyForAIButton.svelte";
 
   let {
     version,

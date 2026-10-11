@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { rowsToJourneyPoints, shouldShowJourney } from "$lib/shared/qr/journey/journey-loader";
+import { rowsToJourneyPoints, shouldShowJourney } from "#lib/shared/qr/journey/journey-loader.js";
 
 describe("rowsToJourneyPoints", () => {
   it("keeps rows with exact lat/lng", () => {

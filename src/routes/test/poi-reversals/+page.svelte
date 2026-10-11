@@ -1,24 +1,24 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
-  import QftStage from "$lib/shared/notation/qft/components/QftStage.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
+  import QftStage from "#lib/shared/notation/qft/components/QftStage.svelte";
   import {
     buildTrajectoryIncrements,
     trajectoryPropRateAt,
     trajectoryReversals,
-  } from "$lib/shared/notation/qft/qft-trajectory";
-  import HorizontalTransportRow from "$lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
-  import type { PositionValue } from "$lib/shared/notation/qft/qft-model";
-  import seed from "$lib/features/levels/poi-lab/data/poi-reversal-observations.json";
+  } from "#lib/shared/notation/qft/qft-trajectory.js";
+  import HorizontalTransportRow from "#lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
+  import type { PositionValue } from "#lib/shared/notation/qft/qft-model.js";
+  import seed from "#lib/features/levels/poi-lab/data/poi-reversal-observations.json";
   import {
     POI_REVERSAL_REASON_LIMIT,
     type PoiReversalObservationFile,
-  } from "$lib/features/levels/poi-lab/domain/poi-reversal-observations";
+  } from "#lib/features/levels/poi-lab/domain/poi-reversal-observations.js";
   import type {
     PoiCandidateSelectionReason,
     PoiReversalVerdict,
-  } from "$lib/features/levels/poi-lab/domain/poi-reversal-candidates";
-  import { createPoiReversalReviewState } from "$lib/features/levels/poi-lab/state/poi-reversal-review-state.svelte";
+  } from "#lib/features/levels/poi-lab/domain/poi-reversal-candidates.js";
+  import { createPoiReversalReviewState } from "#lib/features/levels/poi-lab/state/poi-reversal-review-state.svelte.js";
 
   const STEP_MS = 620;
 

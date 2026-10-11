@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createFlowFestProgress } from "$lib/features/flow-fest-sim/state/flow-fest-progress";
+import { createFlowFestProgress } from "#lib/features/flow-fest-sim/state/flow-fest-progress.js";
 import {
   FLOW_FEST_GATE4_MOBILITY_SESSION_KEY,
   FLOW_FEST_GATE4_SESSION_KEY,

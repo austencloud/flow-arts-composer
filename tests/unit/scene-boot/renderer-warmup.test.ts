@@ -14,7 +14,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   warmupRenderer,
   type WarmupHandles,
-} from "$lib/shared/3d/scene-boot/renderer-warmup";
+} from "#lib/shared/3d/scene-boot/renderer-warmup.js";
 
 interface FakeObject {
   visible: boolean;

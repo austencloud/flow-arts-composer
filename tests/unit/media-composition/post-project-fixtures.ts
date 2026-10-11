@@ -5,7 +5,7 @@ import {
   type PostTrack,
   type PostVideoItem,
 } from "@austencloud/video-editor/core";
-import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
 import type { PostTake } from "@austencloud/video-editor/core";
 
 /** Builders for post-project tests. Every field has a plain default. */

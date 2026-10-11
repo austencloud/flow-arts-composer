@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   applyFilter,
   getSequenceMaxTurn,
-} from "$lib/shared/browse/services/browse-filter";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/browse/services/browse-filter.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 // Minimal step shape the filter reads: motions.left/right.turns + isBlank.
 function step(

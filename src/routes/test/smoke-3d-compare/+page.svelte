@@ -5,27 +5,27 @@
     FormationPreset,
   } from "@austencloud/scene-3d";
   import { onDestroy, onMount } from "svelte";
-  import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
-  import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-  import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import Viewer3DCanvas from "$lib/shared/3d/components/Viewer3DCanvas.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
+  import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import Viewer3DCanvas from "#lib/shared/3d/components/Viewer3DCanvas.svelte";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
   import {
     SmokeVolumeRenderer3D,
     type SmokeVolumeRendererDiagnostic3D,
-  } from "$lib/shared/3d/effects/smoke/smoke-volume-renderer-3d";
-  import { createScene3DRenderState } from "$lib/shared/3d/scene-features/state/scene-3d-render-state.svelte";
-  import { setScene3DRenderContext } from "$lib/shared/3d/scene-features/state/scene-3d-render-context";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-  import { SMOKE_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/smoke-presets";
-  import { orientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
-  import { getGenerationOrchestrator } from "$lib/features/create/generate/shared/get-generation-orchestrator";
-  import type { GeneratedSequenceInfo } from "$lib/features/landing/domain/models/spinner-models";
-  import { InfiniteSequenceGenerator } from "$lib/features/landing/services/infinite-sequence-generator";
-  import { SpinnerMetricsRepository } from "$lib/features/landing/services/spinner-metrics-repository";
-  import { isEffectPreviewLoop } from "$lib/shared/effects/domain/effect-preview-loop-policy";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+  } from "#lib/shared/3d/effects/smoke/smoke-volume-renderer-3d.js";
+  import { createScene3DRenderState } from "#lib/shared/3d/scene-features/state/scene-3d-render-state.svelte.js";
+  import { setScene3DRenderContext } from "#lib/shared/3d/scene-features/state/scene-3d-render-context.js";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+  import { SMOKE_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/smoke-presets.js";
+  import { orientationCycleExtender } from "#lib/features/create/generate/circular/services/orientation-cycle-extender.js";
+  import { getGenerationOrchestrator } from "#lib/features/create/generate/shared/get-generation-orchestrator.js";
+  import type { GeneratedSequenceInfo } from "#lib/features/landing/domain/models/spinner-models.js";
+  import { InfiniteSequenceGenerator } from "#lib/features/landing/services/infinite-sequence-generator.js";
+  import { SpinnerMetricsRepository } from "#lib/features/landing/services/spinner-metrics-repository.js";
+  import { isEffectPreviewLoop } from "#lib/shared/effects/domain/effect-preview-loop-policy.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 
   const ENVIRONMENTS = [
     { id: BackgroundType.COSMIC, label: "Black stage" },

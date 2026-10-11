@@ -5,7 +5,7 @@
  */
 import { flushSync, mount, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import GhostPointer from "$lib/shared/attract/components/GhostPointer.svelte";
+import GhostPointer from "#lib/shared/attract/components/GhostPointer.svelte";
 
 // vitest-setup.ts swaps document.createElement for stubs that are not DOM
 // nodes. Mounting a component needs jsdom's own, from document's prototype.

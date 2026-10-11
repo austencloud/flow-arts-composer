@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { GripType } from "@austencloud/scene-3d";
 import { createAvatarServices } from "../../../node_modules/@austencloud/scene-3d/src/lib/services/implementations/AvatarServicesFactory";
 import { avatar, avatarAssetsPresent, loadRig } from "../3d/locomotion-harness";
-import { sampleStaffIsolation } from "$lib/shared/3d/performers/staff-isolation";
+import { sampleStaffIsolation } from "#lib/shared/3d/performers/staff-isolation.js";
 import {
   allowedTipOffset,
   authoredBodyPose,

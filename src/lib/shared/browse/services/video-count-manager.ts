@@ -5,7 +5,7 @@
  * Reduces Firestore reads by caching counts.
  */
 
-import { getVideosForSequence } from "$lib/shared/video-collaboration/services/collaborative-video-manager";
+import { getVideosForSequence } from "#lib/shared/video-collaboration/services/collaborative-video-manager.js";
 
 export class VideoCountManager {
   // Cache video counts to avoid repeated Firestore queries

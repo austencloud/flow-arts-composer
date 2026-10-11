@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   resolveBloomAfterglowRetention,
   resolveBloomHistoryDeposit,
-} from "$lib/shared/effects/domain/bloom-optics";
+} from "#lib/shared/effects/domain/bloom-optics.js";
 
 describe("Bloom afterglow energy", () => {
   it("fully disables persistence at zero", () => {

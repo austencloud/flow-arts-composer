@@ -6,12 +6,12 @@
     MIN_MOVE_SECONDS,
     TAKE_MAX_BPM,
     TAKE_MIN_BPM,
-  } from "$lib/shared/media-composition/domain/take-timing";
-  import { landingName } from "$lib/shared/media-composition/domain/timing-summary";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
+  } from "#lib/shared/media-composition/domain/take-timing.js";
+  import { landingName } from "#lib/shared/media-composition/domain/timing-summary.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import TypeableValue from "#lib/shared/ui/components/TypeableValue.svelte";
   import type { PostTimingSession } from "./post-timing-session.svelte";
   import { formatTakeClock, parseClock } from "./post-builder-format";
 

@@ -6,8 +6,8 @@ import {
   galleryQrPolicy,
   galleryThumbnailRequestChanged,
   type GalleryCompositionSource,
-} from "$lib/shared/browse/services/gallery-render-input";
-import type { InfoCellChoice } from "$lib/shared/sequence-viewer/services/info-cell-display";
+} from "#lib/shared/browse/services/gallery-render-input.js";
+import type { InfoCellChoice } from "#lib/shared/sequence-viewer/services/info-cell-display.js";
 
 // Pure fake of the slice buildGalleryVisibility reads. Mirrors the real
 // ImageCompositionStateManager getters the live gallery card passes.

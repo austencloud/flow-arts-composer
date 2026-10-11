@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { HAND_TUNNEL_PRESETS, presetById } from "../hand-tunnel-presets";
 import { cycleForSegment } from "../../services/build-hand-tunnel-sequence";
 import { MAX_PERFORMERS } from "../hand-tunnel-types";

@@ -1,6 +1,6 @@
-import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-import type { ViewerPerformerSelectionController } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-import type { SceneEnvironmentId } from "$lib/shared/3d/environments/domain/scene-environment";
+import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+import type { ViewerPerformerSelectionController } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+import type { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
 import { Viewer3DUndoManager } from "@austencloud/scene-3d";
 
 export type ViewerState = ReturnType<typeof createViewer3DState>;

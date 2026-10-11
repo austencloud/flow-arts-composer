@@ -7,7 +7,7 @@
  * This is a plain helper class, not an inversify service - instantiated directly by components.
  */
 
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { isTopDrawer, dismissTopDrawer } from "./drawer-stack";
 
 const debug = createComponentLogger("SwipeToDismiss");

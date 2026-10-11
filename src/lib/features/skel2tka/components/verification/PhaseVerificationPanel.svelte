@@ -9,8 +9,8 @@
   When correcting, shows a GridPlacementPicker for each hand per beat.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { DetectedBeat } from "../../domain/models";
   import type { PhaseVerdict, UserCorrection } from "../../domain/verification-models";
   import GridPlacementPicker from "./GridPlacementPicker.svelte";

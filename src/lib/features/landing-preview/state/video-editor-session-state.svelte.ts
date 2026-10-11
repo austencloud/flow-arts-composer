@@ -1,4 +1,4 @@
-import type { VideoCache } from "$lib/shared/video/services/video-cache";
+import type { VideoCache } from "#lib/shared/video/services/video-cache.js";
 import type {
   CurationProgress,
   LinkingProgress,

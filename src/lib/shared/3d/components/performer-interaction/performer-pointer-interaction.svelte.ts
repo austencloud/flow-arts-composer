@@ -1,4 +1,4 @@
-import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
 import type CameraControls from "camera-controls";
 import {
   Camera,

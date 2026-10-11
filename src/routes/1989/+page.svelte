@@ -1,5 +1,5 @@
 <script lang="ts">
-	import DosTerminal from "$lib/features/retro/dos/components/DosTerminal.svelte";
+	import DosTerminal from "#lib/features/retro/dos/components/DosTerminal.svelte";
 </script>
 
 <svelte:head>

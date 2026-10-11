@@ -2,10 +2,10 @@ import {
   PROP_RENDER_KEY_TIP_POINTS,
   PROP_TIP_POINTS,
   type PropTipConfig,
-} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+} from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import type { EffectPoint } from "./types";
 import type { EffectPointsPersister } from "./effect-points-persister";
-import type { TrailPointConfig } from "$lib/shared/animation-engine/domain/types/trail-point-types";
+import type { TrailPointConfig } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
 
 /** Deep-copy that works on Svelte 5 $state proxies (structuredClone cannot clone them). */
 function deepCopy<T>(value: T): T {

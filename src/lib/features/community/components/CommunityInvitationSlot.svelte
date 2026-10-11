@@ -16,8 +16,8 @@
   this height and is verified for clipping and viewport containment instead.
 -->
 <script lang="ts">
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import {
     CityResolutionError,
     type CitySuggestion,

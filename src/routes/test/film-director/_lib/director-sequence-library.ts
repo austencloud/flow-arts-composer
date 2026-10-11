@@ -18,7 +18,7 @@
  * defaults are the production owners.
  */
 
-import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
+import { generationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
 import {
   flipSequence,
   invertSequence,
@@ -27,9 +27,9 @@ import {
   rotateSequence,
   shiftStartPlacement,
   swapHands,
-} from "$lib/shared/create/services/sequence-transformer";
-import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/create/services/sequence-transformer.js";
+import type { GenerationOptions } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 import { loadPublicLibrarySequence } from "./director-library-source";
 import type {

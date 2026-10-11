@@ -3,24 +3,24 @@ import {
   FeatureVideoFileSchema,
   type FeatureVideoFile,
   type FeatureVideoSummary,
-} from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   featureVideoExportUrl,
   isSavedFeatureExport,
   type SavedFeatureExport,
-} from "$lib/shared/media-composition/domain/feature-video-export";
+} from "#lib/shared/media-composition/domain/feature-video-export.js";
 import {
   PostProjectSchema,
   createEmptyPostProject,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import type { PostProject } from "@austencloud/video-editor/core";
 import {
   createTakeTiming,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
-import { createPostEditorHistoryStorage } from "$lib/shared/media-composition/services/post-editor-history-store";
-import type { PostEditorStore } from "$lib/shared/media-composition/services/post-editor-store";
-import { deepEqual } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import { createPostEditorHistoryStorage } from "#lib/shared/media-composition/services/post-editor-history-store.js";
+import type { PostEditorStore } from "#lib/shared/media-composition/services/post-editor-store.js";
+import { deepEqual } from "#lib/shared/sequence-viewer/services/viewer-url-state-codec.js";
 
 /**
  * The Post page's side of a feature video: list and load them from the dev
@@ -91,6 +91,47 @@ export async function loadFeatureVideo(
   if (!parsed.success)
     throw new Error(`The dev server sent an unreadable copy of ${slug}.`);
   return parsed.data;
+}
+
+/** Makes a separate feature video with its own copied media folder. */
+export async function duplicateSoftwareFeatureVideo(
+  slug: string,
+  title: string,
+  fetcher: Fetcher = fetch
+): Promise<string> {
+  if (!import.meta.env.DEV)
+    throw new Error("Feature video copies are available on the dev server.");
+  const name = title.trim();
+  if (!name || name.length > 120)
+    throw new Error("Name the copy in 1 to 120 characters.");
+  const stem =
+    name
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48)
+      .replace(/-+$/g, "") || "showcase";
+  const copySlug = `${stem}-${crypto.randomUUID().slice(0, 8)}`;
+  const body = await readJson(
+    await fetcher(
+      `${FEATURE_VIDEO_API}/${encodeURIComponent(slug)}/duplicate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: copySlug,
+          title: name,
+          shareMedia: false,
+        }),
+      }
+    )
+  );
+  const parsed = FeatureVideoFileSchema.safeParse(body.file);
+  if (!parsed.success || parsed.data.slug !== copySlug)
+    throw new Error("The dev server sent an unreadable feature video copy.");
+  return copySlug;
 }
 
 /**

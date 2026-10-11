@@ -1,19 +1,19 @@
 import { onDestroy, onMount, untrack } from "svelte";
-import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { markScan } from "$lib/shared/analytics/scan-perf";
-import { buildChoreoCardRenderKeys } from "$lib/shared/choreo-card/services/choreo-card-render-keys";
+import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { markScan } from "#lib/shared/analytics/scan-perf.js";
+import { buildChoreoCardRenderKeys } from "#lib/shared/choreo-card/services/choreo-card-render-keys.js";
 import type {
   ChoreoCardRenderModel,
   createChoreoCardRenderEngine,
-} from "$lib/shared/choreo-card/services/choreo-card-render-engine";
-import type { createCrossfaderState } from "$lib/shared/choreo-card/state/crossfader-state.svelte";
+} from "#lib/shared/choreo-card/services/choreo-card-render-engine.js";
+import type { createCrossfaderState } from "#lib/shared/choreo-card/state/crossfader-state.svelte.js";
 
 export interface ChoreoCardRenderLifecycleDeps {
-  readonly fanAppearance?: import("$lib/shared/pictograph/prop/domain/fan-appearance").FanAppearance;
-  readonly propLook?: import("$lib/shared/pictograph/prop/domain/prop-look").PropLook;
-  readonly triangleGrip?: import("$lib/shared/pictograph/prop/domain/triangle-appearance").TriangleGrip;
+  readonly fanAppearance?: import("#lib/shared/pictograph/prop/domain/fan-appearance.js").FanAppearance;
+  readonly propLook?: import("#lib/shared/pictograph/prop/domain/prop-look.js").PropLook;
+  readonly triangleGrip?: import("#lib/shared/pictograph/prop/domain/triangle-appearance.js").TriangleGrip;
   readonly primaryPropColors?: { left: string; right: string } | null;
   readonly sequence: SequenceData;
   readonly handPathMode?: boolean;

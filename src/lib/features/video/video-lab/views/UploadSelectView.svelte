@@ -6,18 +6,18 @@
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
-  import type { LibraryRepository } from "$lib/shared/library/services/library-repository";
+  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
+  import type { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
   import type {
     CollaborativeVideo,
     StepMap,
-  } from "$lib/shared/video-collaboration/domain/collaborative-video";
-  import { getVideosForSequence } from "$lib/shared/video-collaboration/services/collaborative-video-manager";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import { getVideosForSequence } from "#lib/shared/video-collaboration/services/collaborative-video-manager.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   const STORAGE_KEY = "video-lab-sequence";
 

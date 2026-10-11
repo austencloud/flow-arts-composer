@@ -12,7 +12,7 @@
 -->
 <script lang="ts">
   import type { MediaItem } from "./MediaSpotlight.svelte";
-  import { formatTime } from "$lib/shared/sequence-viewer/utils/format-time";
+  import { formatTime } from "#lib/shared/sequence-viewer/utils/format-time.js";
 
   interface Props {
     /** The video item to display */

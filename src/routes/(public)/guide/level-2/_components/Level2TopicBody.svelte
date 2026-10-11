@@ -21,7 +21,7 @@
   import { localizedLevel2Topic } from "../_data/localize-level2-topic";
   import type { Level2TopicPage } from "../_data/level2-topic-routes";
   import { LEVEL2_TOPIC_SECTIONS } from "../_data/level2-topic-sections";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     meta,

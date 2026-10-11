@@ -1,7 +1,7 @@
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import LegalPageShell from "$lib/shared/legal/components/LegalPageShell.svelte";
-  import Seo from "$lib/shared/components/Seo.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import LegalPageShell from "#lib/shared/legal/components/LegalPageShell.svelte";
+  import Seo from "#lib/shared/components/Seo.svelte";
 </script>
 
 <Seo

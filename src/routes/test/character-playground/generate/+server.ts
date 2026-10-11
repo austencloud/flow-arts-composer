@@ -1,5 +1,5 @@
-import { dev } from "$app/environment";
-import { error, json } from "@sveltejs/kit";
+import { dev } from "$app/env";
+import { error } from "@sveltejs/kit";
 import { randomInt } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -49,7 +49,7 @@ function installed(): boolean {
 
 export function GET(event: RequestEvent) {
   assertLocal(event);
-  return json({ available: installed(), busy: existsSync(lockPath) });
+  return Response.json({ available: installed(), busy: existsSync(lockPath) });
 }
 
 export async function POST(event: RequestEvent) {
@@ -103,7 +103,7 @@ export async function POST(event: RequestEvent) {
       ],
       { cwd: process.cwd(), windowsHide: true, maxBuffer: 8 * 1024 * 1024 }
     );
-    return json(
+    return Response.json(
       JSON.parse(await readFile(resolve(job, "result.json"), "utf8"))
     );
   } catch (cause) {

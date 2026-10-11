@@ -1,13 +1,13 @@
 import type { PropTypeManager } from "./prop-type-manager";
 import type { AnimationEngineProps } from "./animation-engine.svelte";
 import type { AnimatorState } from "../state/animator-state.svelte";
-import type { IAnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
-import type { ISVGGenerator } from "$lib/shared/animation-engine/services/ISVGGenerator";
+import type { IAnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
+import type { ISVGGenerator } from "#lib/shared/animation-engine/services/ISVGGenerator.js";
 import type { TrailCapturer } from "./trail-capturer";
-import type { IPropTextureLoader } from "$lib/shared/animation-engine/services/IPropTextureLoader";
-import type { RenderFrameParams } from "$lib/shared/animation-engine/services/IAnimationRenderLoop";
+import type { IPropTextureLoader } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
+import type { RenderFrameParams } from "#lib/shared/animation-engine/services/IAnimationRenderLoop.js";
 import { PropTextureLoader } from "./prop-texture-loader.svelte";
-import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 
 export class PropPipeline {
   private propTextureService: IPropTextureLoader | null = null;

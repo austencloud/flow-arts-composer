@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   resolveViewingProps,
   withSavedProps,
-} from "$lib/shared/foundation/services/prop-viewing";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/foundation/services/prop-viewing.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const own = {
   leftPropType: PropType.STAFF,

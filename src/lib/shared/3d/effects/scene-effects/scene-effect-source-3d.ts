@@ -11,7 +11,7 @@ import type {
   Bloom3DParams,
   Fire3DParams,
   Charcoal3DParams,
-} from "$lib/shared/effects/translators/webgl3d-types";
+} from "#lib/shared/effects/translators/webgl3d-types.js";
 import type { QualityTier } from "../types";
 
 export interface SceneEffectVector3 {
@@ -59,6 +59,8 @@ export interface BubbleTipSource3D extends SceneEffectTipBase3D {
 export interface PetalTipSource3D extends SceneEffectTipBase3D {
   effect: "petals";
   params: Petals3DParams;
+  /** World-space supporting surface below this performer. */
+  collisionFloorY: number;
 }
 
 export interface SmokeTipSource3D extends SceneEffectTipBase3D {

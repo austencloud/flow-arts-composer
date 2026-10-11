@@ -10,15 +10,15 @@
   import type {
     BlockTimelineModel,
     TimelineReflectionComponent,
-  } from "$lib/shared/create/services/loop-block-signatures";
+  } from "#lib/shared/create/services/loop-block-signatures.js";
   import {
     getReflectionIconTransform,
     type LOOPComponentId,
     type LoopReflectionAxis,
   } from "@tka/render-composition";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import { loopComponentLabel } from "$lib/features/create/generate/components/loop-component-presentation";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { loopComponentLabel } from "#lib/features/create/generate/components/loop-component-presentation.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   let { model, height = 34 }: { model: BlockTimelineModel; height?: number } =
     $props();

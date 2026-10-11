@@ -6,7 +6,7 @@
   Users can click to seek or drag markers to adjust beat timestamps.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   interface Props {
     duration: number;
     currentTime: number;

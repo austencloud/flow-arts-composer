@@ -1,4 +1,4 @@
-import type { IVisualSequenceSaveCoordinator } from "$lib/shared/library/services/contracts/IVisualSequenceSaveCoordinator";
+import type { IVisualSequenceSaveCoordinator } from "#lib/shared/library/services/contracts/IVisualSequenceSaveCoordinator.js";
 
 type VisualSequenceSaveCoordinatorFactory = () => Promise<IVisualSequenceSaveCoordinator>;
 
@@ -26,7 +26,7 @@ let lazyRegistration: Promise<void> | null = null;
 function ensureRegistered(): Promise<void> {
   if (factory) return Promise.resolve();
   lazyRegistration ??= Promise.all([
-    import("$lib/shared/composition-root/register-library-repository").then(
+    import("#lib/shared/composition-root/register-library-repository.js").then(
       ({ registerLibraryRepository }) => registerLibraryRepository()
     ),
     learnWhoIsSignedIn(),
@@ -47,7 +47,7 @@ function ensureRegistered(): Promise<void> {
 async function learnWhoIsSignedIn(): Promise<void> {
   try {
     const { initializeAuthListener, awaitAuthSettled } = await import(
-      "$lib/shared/auth/state/auth-state.svelte"
+      "#lib/shared/auth/state/auth-state.svelte.js"
     );
     await initializeAuthListener();
     await awaitAuthSettled();

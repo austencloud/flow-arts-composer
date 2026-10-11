@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import {
   applySequencePathPreview,
   countPathOverrides,
   savedSequencePathPolicy,
-} from "$lib/shared/sequence-viewer/services/sequence-path-policy";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { hashSequenceContent } from "$lib/shared/foundation/services/content-hasher";
+} from "#lib/shared/sequence-viewer/services/sequence-path-policy.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { hashSequenceContent } from "#lib/shared/foundation/services/content-hasher.js";
 
 const arc = { pathShape: "arc", motionAwarePaths: false } as const;
 const hybrid = { pathShape: "arc", motionAwarePaths: true } as const;

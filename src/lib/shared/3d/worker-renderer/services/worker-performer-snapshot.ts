@@ -1,5 +1,4 @@
 import {
-  cmToUnits,
   GRID_OFFSETS,
   PlaneMode,
   PLANE_MODE_CONFIGS,
@@ -82,10 +81,7 @@ export function supportsWorkerPerformer(
 export function resolveWorkerPerformerStaffLength(
   performer: CharacterInstanceState
 ): number {
-  const staffLengthCm = performer.settings.staffLengthCm;
-  return staffLengthCm == null
-    ? userProportionsState.staffLength
-    : cmToUnits(staffLengthCm);
+  return performer.staffLength;
 }
 
 export function supportsWorkerPerformerEffectIntent(
@@ -152,8 +148,10 @@ export function createWorkerPerformerSnapshot(
   const stance = resolvePerformerUpperBodyStance(performer);
   // The same displaced props and reset key the interactive viewer hands its
   // rig.
-  const contact = resolvePerformerContact(performer);
   const staffLength = resolveWorkerPerformerStaffLength(performer);
+  const contact = resolvePerformerContact(performer, {
+    staffLengthM: staffLength,
+  });
   const modeConfig = PLANE_MODE_CONFIGS[performer.planeMode];
   const dualWheel = performer.planeMode === PlaneMode.DUAL_WHEEL;
   const gridOffset = GRID_OFFSETS[performer.planeMode];
@@ -179,6 +177,7 @@ export function createWorkerPerformerSnapshot(
     avatarHeightCm: userProportionsState.heightCm,
     groundY: userProportionsState.groundY,
     staffLength,
+    propScale: performer.gridScale,
     staffThickness: userProportionsState.dimensions.staffRadius,
     propBuild: { ...options.propBuild },
     handColors: { blue: PROP_COLORS.blue.main, red: PROP_COLORS.red.main },

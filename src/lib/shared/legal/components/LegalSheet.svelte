@@ -1,5 +1,5 @@
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 
   type SheetType = "terms" | "privacy";
 

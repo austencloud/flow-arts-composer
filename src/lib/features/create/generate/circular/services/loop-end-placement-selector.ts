@@ -1,4 +1,4 @@
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 import {
   SWAPPED_PLACEMENT_MAP,

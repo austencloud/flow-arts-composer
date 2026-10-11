@@ -13,7 +13,7 @@ export function serializeComposerPlacements(
   const lines: string[] = [];
 
   lines.push(
-    `import type { ComposerPlacement } from "$lib/shared/3d/scene-composer/types";`
+    `import type { ComposerPlacement } from "#lib/shared/3d/scene-composer/types.js";`
   );
   lines.push("");
 

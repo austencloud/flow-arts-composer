@@ -15,7 +15,7 @@ const sitemap = readSource("src/routes/sitemap.xml/+server.ts");
 
 describe("staff choreography human-review gate", () => {
   it("keeps the article reviewable in development and gated in production", () => {
-    expect(route).toContain('import { dev } from "$app/environment"');
+    expect(route).toContain('import { dev } from "$app/env"');
     expect(route).toContain("StaffSpinningChoreographyDraft");
     expect(route).toMatch(/\{#if dev\}\s*<StaffSpinningChoreographyDraft \/>/);
     expect(route).toContain("UnderConstruction");

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { MuseumPerformanceRecorder } from "$lib/features/museum/services/implementations/MuseumPerformanceRecorder";
+import { MuseumPerformanceRecorder } from "#lib/features/museum/services/implementations/MuseumPerformanceRecorder.js";
 
 const context = {
   roomId: "lobby",

@@ -5,8 +5,8 @@
     applyMotionColorToSvg,
     getMotionColor,
     SELECTIVE_COLOR_PROP_TYPES,
-  } from "$lib/shared/utils/svg-color-utils";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/utils/svg-color-utils.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   type Variant = { id: string; label: string; note: string; file: string };
   type Concept = Variant & { parent: string; tradeoff: string };

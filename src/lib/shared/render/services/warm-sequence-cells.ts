@@ -4,21 +4,21 @@
  * admin backfills can inspect the same structured result without duplicating
  * the render/hash contract.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { PreviewCellRenderOptions } from "$lib/shared/sequence-viewer/services/preview-cell-renderer";
-import { renderCell } from "$lib/shared/sequence-viewer/services/preview-cell-renderer";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { PreviewCellRenderOptions } from "#lib/shared/sequence-viewer/services/preview-cell-renderer.js";
+import { renderCell } from "#lib/shared/sequence-viewer/services/preview-cell-renderer.js";
 import {
   CANONICAL_CELL_SIZE,
   CANONICAL_CARD_VISIBILITY,
   deriveCloudCellHash,
-} from "$lib/shared/render/services/cloud-cell-key";
-import * as pictographCloudCache from "$lib/shared/render/services/pictograph-cloud-cache";
-import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-import { detectMixedDurations } from "$lib/shared/choreo-card/services/step-durations";
-import { getSequenceMotionVisibility } from "$lib/shared/foundation/services/sequence-motion-profile";
-import type { CardExportTrace } from "$lib/shared/render/services/card-export-trace";
+} from "#lib/shared/render/services/cloud-cell-key.js";
+import * as pictographCloudCache from "#lib/shared/render/services/pictograph-cloud-cache.js";
+import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+import { detectMixedDurations } from "#lib/shared/choreo-card/services/step-durations.js";
+import { getSequenceMotionVisibility } from "#lib/shared/foundation/services/sequence-motion-profile.js";
+import type { CardExportTrace } from "#lib/shared/render/services/card-export-trace.js";
 import { gridJoinCellResolver } from "@tka/render-core";
 
 export interface WarmOptions {

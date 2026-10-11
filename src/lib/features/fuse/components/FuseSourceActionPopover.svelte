@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Popover } from "bits-ui";
-  import SequenceTransformActions from "$lib/shared/create/components/SequenceTransformActions.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
   import type { FuseSourceAdjustment } from "../state/fuse-state.svelte";
   import { getFuseContext } from "../context/fuse-context";

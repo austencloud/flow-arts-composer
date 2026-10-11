@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
   import type { TipEffectMap } from "../domain/types/tip-effect-types";
   import { DEFAULT_FIRE_CONFIG } from "../domain/types/fire-types";
   import CanvasSurface from "./CanvasSurface.svelte";

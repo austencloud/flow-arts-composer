@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getWorkerEnvironmentCamera } from "$lib/shared/3d/worker-renderer/domain/worker-environment-camera";
+import { getWorkerEnvironmentCamera } from "#lib/shared/3d/worker-renderer/domain/worker-environment-camera.js";
 
 describe("worker environment camera", () => {
   it.each([

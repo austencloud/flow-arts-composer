@@ -1,7 +1,7 @@
 /**
  * How the lab presents the committed prop-continuity sweep.
  *
- * `$lib/shared/3d/diagnostics/prop-continuity-findings` owns the artifact and
+ * `#lib/shared/3d/diagnostics/prop-continuity-findings.js` owns the artifact and
  * the clustering. This module owns the vocabulary the two lab surfaces share,
  * so the goal row and the scrub track can never disagree about what "clean"
  * means or how many jumps a sequence has.
@@ -13,7 +13,7 @@ import {
   continuityClusters,
   continuityReport,
   type ContinuityCluster,
-} from "$lib/shared/3d/diagnostics/prop-continuity-findings";
+} from "#lib/shared/3d/diagnostics/prop-continuity-findings.js";
 
 import { LAB_GOALS } from "./lab-goals";
 

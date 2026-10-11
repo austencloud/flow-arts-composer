@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   startPostProjectDevBridge,
   type PostProjectDevRender,
-} from "$lib/shared/media-composition/services/post-project-dev-client";
+} from "#lib/shared/media-composition/services/post-project-dev-client.js";
 import { project } from "./post-project-fixtures";
 
 const SAVED = {

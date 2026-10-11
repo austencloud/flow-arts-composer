@@ -12,38 +12,38 @@
   - Has ZERO business logic
 -->
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { onMount, onDestroy } from "svelte";
 
   // Extracted components (from animate module)
-  import AnimationPanelHeader from "$lib/shared/animation-engine/components/canvas/AnimationPanelHeader.svelte";
-  import AnimationCanvas from "$lib/shared/animation-engine/components/canvas/AnimationCanvas.svelte";
-  import AnimationControlsPanel from "$lib/shared/animation-engine/components/canvas/AnimationControlsPanel.svelte";
+  import AnimationPanelHeader from "#lib/shared/animation-engine/components/canvas/AnimationPanelHeader.svelte";
+  import AnimationCanvas from "#lib/shared/animation-engine/components/canvas/AnimationCanvas.svelte";
+  import AnimationControlsPanel from "#lib/shared/animation-engine/components/canvas/AnimationControlsPanel.svelte";
   import AnimationViewerHelpSheet from "./AnimationViewerHelpSheet.svelte";
-  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
-  import { toExportTakeoverPhase } from "$lib/shared/video-export/services/export-takeover-phase";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
+  import { toExportTakeoverPhase } from "#lib/shared/video-export/services/export-takeover-phase.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // Lazy-loaded to avoid shared/ → features/ static import
-  let CreatePanelDrawer = $state<typeof import("$lib/features/create/shared/components/CreatePanelDrawer.svelte").default | null>(null);
-  import("$lib/features/create/shared/components/CreatePanelDrawer.svelte").then(m => { CreatePanelDrawer = m.default; });
+  let CreatePanelDrawer = $state<typeof import("#lib/features/create/shared/components/CreatePanelDrawer.svelte").default | null>(null);
+  import("#lib/features/create/shared/components/CreatePanelDrawer.svelte").then(m => { CreatePanelDrawer = m.default; });
 
   // Services
-  import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
-  import type { ResponsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
-  import type { KeyboardShortcutManager } from '$lib/shared/keyboard/services/keyboard-shortcut-manager'
+  import { getKeyboardShortcutManager } from "#lib/shared/keyboard/get-keyboard-shortcut-manager.js";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
+  import type { ResponsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
+  import type { KeyboardShortcutManager } from '#lib/shared/keyboard/services/keyboard-shortcut-manager.js'
   import { animationShortcutRegistrar } from "../services/animation-shortcut-registrar";
 
   // Types
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
 
 
   // Mobile tool view state
@@ -175,9 +175,9 @@
     error?: string | null;
     speed?: number;
     isPlaying?: boolean;
-    playbackMode?: import("$lib/shared/animation-engine/state/animation-panel-state.svelte").PlaybackMode;
+    playbackMode?: import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js").PlaybackMode;
     stepPlaybackPauseMs?: number;
-    stepPlaybackStepSize?: import("$lib/shared/animation-engine/state/animation-panel-state.svelte").StepPlaybackStepSize;
+    stepPlaybackStepSize?: import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js").StepPlaybackStepSize;
     leftProp?: PropState | null;
     rightProp?: PropState | null;
     gridVisible?: boolean;
@@ -192,11 +192,11 @@
     onPlaybackStart?: () => void;
     onPlaybackToggle?: () => void;
     onPlaybackModeChange?: (
-      mode: import("$lib/shared/animation-engine/state/animation-panel-state.svelte").PlaybackMode
+      mode: import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js").PlaybackMode
     ) => void;
     onStepPlaybackPauseMsChange?: (pauseMs: number) => void;
     onStepPlaybackStepSizeChange?: (
-      stepSize: import("$lib/shared/animation-engine/state/animation-panel-state.svelte").StepPlaybackStepSize
+      stepSize: import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js").StepPlaybackStepSize
     ) => void;
     onStepHalfBeatBackward?: () => void;
     onStepHalfBeatForward?: () => void;

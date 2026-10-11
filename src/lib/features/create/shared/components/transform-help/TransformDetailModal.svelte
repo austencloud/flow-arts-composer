@@ -5,16 +5,16 @@
   Shows visual data mapping + interactive pictograph example.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import SwapIcon from "$lib/shared/icons/SwapIcon.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import SwapIcon from "#lib/shared/icons/SwapIcon.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import { onMount } from "svelte";
   import {
     actionHelpContent,
     type ActionHelpId,
     type TransformId,
   } from "../../domain/transforms/transform-help-content";
-  import { portal } from "$lib/features/create/generate/components/modals/portal";
+  import { portal } from "#lib/features/create/generate/components/modals/portal.js";
   import {
     getRandomPictographForTransform,
     reclassifyLetter,
@@ -27,8 +27,8 @@
     applySwap,
     applyRewind,
   } from "../../domain/transforms/transform-functions";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import TransformVisualMapping from "./TransformVisualMapping.svelte";
 
   interface Props {

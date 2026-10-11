@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createHandPath } from "$lib/shared/foundation/services/hand-path-factory";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createHandPath } from "#lib/shared/foundation/services/hand-path-factory.js";
 import {
   handPathToTraceRound,
   pairHandPathsToTraceRound,
-} from "$lib/features/learn/play/games/trace-paths/services/hand-path-to-trace";
+} from "#lib/features/learn/play/games/trace-paths/services/hand-path-to-trace.js";
 import {
   createTracePathsState,
   segmentStartPoint,
-} from "$lib/features/learn/play/games/trace-paths/state/trace-paths-state.svelte";
-import type { TraceSample } from "$lib/features/learn/play/games/trace-paths/domain/trace-types";
+} from "#lib/features/learn/play/games/trace-paths/state/trace-paths-state.svelte.js";
+import type { TraceSample } from "#lib/features/learn/play/games/trace-paths/domain/trace-types.js";
 
 function oneHandRound() {
   return handPathToTraceRound(

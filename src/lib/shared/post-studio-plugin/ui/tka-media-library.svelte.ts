@@ -1,8 +1,8 @@
 import { untrack } from "svelte";
 import type { LibraryTake, MediaLibrary } from "@austencloud/video-editor";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
-import type { SequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { CollaborativeVideo } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+import type { SequenceVideosStore } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
 
 /** A saved video the editor can place: it has a file and a length. */
 function takeOf(video: CollaborativeVideo): LibraryTake | null {

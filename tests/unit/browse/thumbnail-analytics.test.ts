@@ -5,17 +5,17 @@ const analyticsMocks = vi.hoisted(() => ({
   captureException: vi.fn(),
 }));
 
-vi.mock("$lib/shared/analytics/services/posthog", () => analyticsMocks);
+vi.mock("#lib/shared/analytics/services/posthog.js", () => analyticsMocks);
 
 import {
   captureThumbnailRenderFailure,
   installThumbnailAnalyticsSession,
   thumbnailFailureProperties,
-} from "$lib/shared/analytics/thumbnail-analytics";
+} from "#lib/shared/analytics/thumbnail-analytics.js";
 import {
   ThumbnailMetricsCollector,
   type ThumbnailRequestContext,
-} from "$lib/shared/browse/services/thumbnail-metrics-collector";
+} from "#lib/shared/browse/services/thumbnail-metrics-collector.js";
 
 const context: ThumbnailRequestContext = {
   cacheKeyHash: "hash-1",

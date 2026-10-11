@@ -4,7 +4,7 @@ const STORAGE_KEY = "fuse-recipe-panel";
 
 async function loadPanel() {
   vi.resetModules();
-  return (await import("$lib/features/fuse/state/fuse-recipe-panel.svelte"))
+  return (await import("#lib/features/fuse/state/fuse-recipe-panel.svelte.js"))
     .fuseRecipePanel;
 }
 

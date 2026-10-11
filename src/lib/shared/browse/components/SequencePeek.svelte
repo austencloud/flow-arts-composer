@@ -9,8 +9,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import PropAwareThumbnail from "./PropAwareThumbnail.svelte";
-  import ShimmerBlock from "$lib/shared/components/loading/ShimmerBlock.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import ShimmerBlock from "#lib/shared/components/loading/ShimmerBlock.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   interface Props {
     sequence?: SequenceData;

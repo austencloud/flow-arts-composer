@@ -1,4 +1,4 @@
-import { t } from "$lib/shared/i18n/i18n.svelte";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { GuideBlock } from "./guide-content-blocks";
 
 // The source content remains Austen's English proof copy. Translate at render
@@ -321,6 +321,9 @@ const keyByText = {
   "Antispin": "verified_level1_staff_motions_280",
   "• <strong>Antispin</strong> - The prop rotates in the opposite direction of the handpath<br>A 90 degree antispin is our base unit of antispin.": "verified_level1_staff_motions_281",
   "In an antispin, the ends swap orientation. Here, it moves from thumb in to thumb out.": "verified_level1_staff_motions_282",
+  "Prospin and Inspin name the same motion: the prop rotates the same direction as the handpath. Most poi spinners say Inspin. The Kinetic Alphabet says Prospin.": "guide_prospin_intro",
+  "Pro and anti are opposites, with and against, so the pair sorts every shift the way the motion does: with the handpath or against it.": "guide_prospin_why_pair",
+  "In and out already name orientations here, like thumb in and thumb out, so Inspin reads like one of them. Pro isn't an orientation. Prospin only says which way the prop spins.": "guide_prospin_why_orientation",
   "In a base dash, the thumb ends also swap orientation.": "verified_level1_staff_motions_283",
   "Halfway through the motion, the center of the staff is at the grid’s center point.": "verified_level1_staff_motions_284",
   "Staff Placements": "verified_level1_staff_placements_285",
@@ -351,9 +354,8 @@ const keyByText = {
   "The execution of the same word can feel completely different depending on factors like<br>the start position, rotation direction, and thumb orientation. That’s why it’s necessary to<br>draw the full sequence with pictographs for complete clarity.": "verified_level1_words_310",
   "<strong>The Alphabet is primarily a system of <em>pictographs</em>,<br>organized by letters for convenient communication.</strong>": "verified_level1_words_311",
   "The letters do not give all of the information, and are merely intended to separate<br>motion combinations into categories which can be further clarified with detailed pictographs.": "verified_level1_words_312",
-  "Flow Arts Placements: Alpha, Beta, Gamma": "verified_level1_guide_page_seo_1",
   "The three starting hand placements in The Kinetic Alphabet.": "verified_level1_guide_page_seo_2",
-  "Flow Arts Placements: Alpha, Beta, Gamma · The Kinetic Alphabet": "verified_level1_guide_page_seo_3",
+  "Hand Placements: Alpha, Beta, Gamma · Flow Arts Notation Guide": "verified_level1_guide_page_seo_3",
   "The three starting hand placements in The Kinetic Alphabet notation. In Alpha the hands occupy the points across from each other; in Beta the same point; in Gamma they form a right angle.": "verified_level1_guide_page_seo_4",
   "The Grid · Flow Arts Notation Guide": "verified_level1_guide_page_seo_5",
   "There are three fundamental hand motions in the Alphabet.": "verified_level1_guide_page_seo_6",

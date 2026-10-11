@@ -2,16 +2,16 @@
   import { T, useThrelte } from "@threlte/core";
   import { Color, FogExp2 } from "three";
 
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
-  import { createDefaultCelestialConfig } from "$lib/shared/3d/environments/domain/models/scene-configs";
-  import SkyGradient from "$lib/shared/3d/environments/primitives/SkyGradient.svelte";
-  import CelestialCloudPanorama from "$lib/shared/3d/environments/scenes/celestial/CelestialCloudPanorama.svelte";
-  import CelestialSun from "$lib/shared/3d/environments/scenes/celestial/CelestialSun.svelte";
-  import OliveCloudbreakSlice from "$lib/shared/3d/environments/scenes/celestial/OliveCloudbreakSlice.svelte";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
+  import { createDefaultCelestialConfig } from "#lib/shared/3d/environments/domain/models/scene-configs.js";
+  import SkyGradient from "#lib/shared/3d/environments/primitives/SkyGradient.svelte";
+  import CelestialCloudPanorama from "#lib/shared/3d/environments/scenes/celestial/CelestialCloudPanorama.svelte";
+  import CelestialSun from "#lib/shared/3d/environments/scenes/celestial/CelestialSun.svelte";
+  import OliveCloudbreakSlice from "#lib/shared/3d/environments/scenes/celestial/OliveCloudbreakSlice.svelte";
   import {
     CLOUDBREAK_LAYOUT,
     CLOUDBREAK_SKY_SUN,
-  } from "$lib/shared/3d/environments/scenes/celestial/cloudbreak-layout";
+  } from "#lib/shared/3d/environments/scenes/celestial/cloudbreak-layout.js";
 
   import type { CloudbreakCatalogView } from "./catalog";
 

@@ -5,8 +5,8 @@
    * Browse and select user sequences for challenges
    */
 
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
   // Props
   let {

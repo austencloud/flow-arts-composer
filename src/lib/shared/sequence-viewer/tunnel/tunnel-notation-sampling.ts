@@ -1,4 +1,4 @@
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { BuiltTunnelLayer } from "./tunnel-layer-builder";
 import { tunnelStepIndexAt } from "./tunnel-prop-sampling";
 

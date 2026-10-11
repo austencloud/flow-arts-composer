@@ -7,6 +7,7 @@
  *
  * Pure functions; the runes state consumes them at hydrate time.
  */
+import type { GridJoin } from "@tka/tka-types";
 
 /** Structural mirror of viewer-3d-state's StoredPerformerSettings. */
 export interface PlainOpenPerformerSettings {
@@ -14,6 +15,7 @@ export interface PlainOpenPerformerSettings {
   effortId: string | null;
   effect: string | null;
   staffLengthCm: number | null;
+  gridJoin?: GridJoin | null;
 }
 
 export function resolvePlainOpenPerformerSettings(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { layoutBeatCarousel } from "$lib/shared/media-composition/services/beat-carousel-layout";
+import { layoutBeatCarousel } from "#lib/shared/media-composition/services/beat-carousel-layout.js";
 
 const rect = { x: 500, y: 1420, width: 580, height: 500 };
 const layout = (position: number) =>

@@ -20,7 +20,7 @@ import type {
 import {
   HandSide,
   type HandSide as HandSideValue,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 const THRESHOLDS = {
   MIN_HAND_DETECTION_RATE: 0.8,

@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import type { IDirectRenderer } from './services/IDirectRenderer';
 import { Canvas2DDirectRenderer } from './services/canvas-2d-direct-renderer';
 

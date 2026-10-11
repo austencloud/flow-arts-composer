@@ -1,5 +1,5 @@
-import type { ScanActivityState } from "$lib/features/choreo-card/state/scan-activity-state.svelte";
-import { watchScanActivityConnection } from "$lib/features/choreo-card/state/scan-activity-connection.svelte";
+import type { ScanActivityState } from "#lib/features/choreo-card/state/scan-activity-state.svelte.js";
+import { watchScanActivityConnection } from "#lib/features/choreo-card/state/scan-activity-connection.svelte.js";
 
 export function createScanActivityConnectionHarness(
   activity: ScanActivityState

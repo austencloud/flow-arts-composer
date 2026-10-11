@@ -7,7 +7,7 @@ import {
   subtractIntervals,
   summarizeIntervals,
   unionMs,
-} from "$lib/shared/3d/scene-boot/boot-interval-math";
+} from "#lib/shared/3d/scene-boot/boot-interval-math.js";
 
 describe("mergeIntervals", () => {
   it("merges overlapping and touching intervals", () => {

@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { fuseSequences } from "$lib/features/fuse/services/sequence-fuser";
-import { createCircularFuseSoloSequence } from "$lib/features/fuse/services/fuse-solo-sequence";
-import { processReversals } from "$lib/shared/create/services/reversal-detector";
-import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
-import type { SoloPropStepData } from "$lib/shared/foundation/domain/models/solo-prop-step-data";
-import { soloPropToSequence } from "$lib/shared/foundation/services/solo-prop-sequence-adapter";
+import { fuseSequences } from "#lib/features/fuse/services/sequence-fuser.js";
+import { createCircularFuseSoloSequence } from "#lib/features/fuse/services/fuse-solo-sequence.js";
+import { processReversals } from "#lib/shared/create/services/reversal-detector.js";
+import type { SoloPropData } from "#lib/shared/foundation/domain/models/solo-prop-data.js";
+import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
+import { soloPropToSequence } from "#lib/shared/foundation/services/solo-prop-sequence-adapter.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 function makeSoloProp(
   id: string,

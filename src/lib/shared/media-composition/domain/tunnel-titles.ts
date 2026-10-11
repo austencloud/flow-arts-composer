@@ -8,7 +8,7 @@ import {
   type TunnelTitlesLook,
   type TunnelWordLook,
 } from "@austencloud/video-editor/core";
-import type { PostTitlesItem } from "$lib/shared/post-studio-plugin";
+import type { PostTitlesItem } from "#lib/shared/post-studio-plugin/index.js";
 
 /**
  * A titles clip: the sequence's name in its glyphs, with how to say it under

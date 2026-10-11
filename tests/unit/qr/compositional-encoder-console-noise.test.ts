@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
-vi.mock("$lib/shared/create/get-loop-detector", () => ({
+vi.mock("#lib/shared/create/get-loop-detector.js", () => ({
   getLoopDetector: () => ({
     detectLOOPType: () => ({
       loopType: "rotated",
@@ -11,7 +11,7 @@ vi.mock("$lib/shared/create/get-loop-detector", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/qr/services/compositional-utils", () => ({
+vi.mock("#lib/shared/qr/services/compositional-utils.js", () => ({
   getLoopExecutor: async () => ({
     executeLOOP: () => {
       throw new Error("candidate cannot be reconstructed");
@@ -22,7 +22,7 @@ vi.mock("$lib/shared/qr/services/compositional-utils", () => ({
   enrichStepsWithGridPlacements: () => {},
 }));
 
-import { CompositionalEncoder } from "$lib/shared/qr/services/compositional-encoder";
+import { CompositionalEncoder } from "#lib/shared/qr/services/compositional-encoder.js";
 
 describe("CompositionalEncoder console behavior", () => {
   it("silently falls back when a strict candidate cannot be reconstructed", async () => {

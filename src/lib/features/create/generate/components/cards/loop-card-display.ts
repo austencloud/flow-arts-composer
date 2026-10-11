@@ -11,17 +11,17 @@
  * sequence data. This card only ever holds a config.
  */
 
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import {
   LOOPType,
   Period,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   parseLoopComponents,
   resolveLoopConfig,
-} from "$lib/shared/create/services/loop-type-utils";
+} from "#lib/shared/create/services/loop-type-utils.js";
 import type { ReflectionAxis } from "@tka/sequence-engine/loop";
-import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
+import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
 
 export interface LoopCardDisplayInput {
   loopEnabled: boolean;

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Canvas, T } from "@threlte/core";
 
-  import CanvasLifecycle from "$lib/shared/3d/components/CanvasLifecycle.svelte";
+  import CanvasLifecycle from "#lib/shared/3d/components/CanvasLifecycle.svelte";
 
   import type { FormationPresetId } from "../domain/stage-types";
   import { PERFORMER_COLORS } from "../domain/stage-types";

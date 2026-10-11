@@ -10,7 +10,7 @@
    * single-frame mode for screenshot tooling.
    */
   import { page } from "$app/state";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   interface Surface {
     id: string;

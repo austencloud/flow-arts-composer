@@ -9,8 +9,8 @@
  */
 
 import { PDFDocument, rgb } from "pdf-lib";
-import { STICKER_TILE_SIZE_PX, STICKER_DPI } from "$lib/features/sticker-lab/domain/sticker-constants";
-import { rasterizeSvgToPng } from "$lib/features/sticker-lab/services/rasterize-svg";
+import { STICKER_TILE_SIZE_PX, STICKER_DPI } from "#lib/features/sticker-lab/domain/sticker-constants.js";
+import { rasterizeSvgToPng } from "#lib/features/sticker-lab/services/rasterize-svg.js";
 import { computeLabelCenters, type LabelTemplate } from "./label-template";
 
 const PDF_POINTS_PER_INCH = 72;

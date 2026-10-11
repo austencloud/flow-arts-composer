@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   createPronunciationPlan,
   getLetterPronunciation,
   resolveRecordedCuePaths,
   type PronunciationManifest,
-} from "$lib/shared/pronunciation/pronunciation-plan";
+} from "#lib/shared/pronunciation/pronunciation-plan.js";
 
 describe("createPronunciationPlan", () => {
   it("keeps dash letters whole and assigns phrase positions", () => {

@@ -5,7 +5,7 @@ import type { QualityTier } from "../types";
 import {
   FADE_EXPONENT,
   MIN_TAIL_WIDTH_RATIO,
-} from "$lib/shared/render-graph/math/trail-mesh";
+} from "#lib/shared/render-graph/math/trail-mesh.js";
 
 /**
  * Ribbon is widened by this factor so the in-shader halo has room to fall off

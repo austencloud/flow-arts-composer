@@ -12,13 +12,13 @@
 import {
   MOTION_QUIZ_QUESTIONS,
   type MotionQuizQuestion,
-} from "$lib/features/learn/domain/constants/motion-quiz-data";
-import { shuffleArray } from "$lib/features/learn/domain/constants/shared-types";
-import { getCodex } from "$lib/features/learn/codex/get-codex";
+} from "#lib/features/learn/domain/constants/motion-quiz-data.js";
+import { shuffleArray } from "#lib/features/learn/domain/constants/shared-types.js";
+import { getCodex } from "#lib/features/learn/codex/get-codex.js";
 import type { Codex } from "../../../learn/codex/services/codex";
-import { getLetterType } from "$lib/shared/foundation/domain/models/letter";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { LetterType } from "$lib/shared/foundation/domain/models/letter-type";
+import { getLetterType } from "#lib/shared/foundation/domain/models/letter.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
 
 // Concepts tab
 

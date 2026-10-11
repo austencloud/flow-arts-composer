@@ -3,13 +3,13 @@ MaxTurnIntensityFilterChip.svelte - Dropdown chip for max-turn-intensity (≤N) 
 Shows available turn-intensity ceilings with contextual counts.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import FilterChipBase from "./FilterChipBase.svelte";
   import ChipPopoverOption from "./ChipPopoverOption.svelte";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { BrowseFilterValue } from "#lib/shared/persistence/domain/types/filtering-types.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
 
   interface Props {

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
-  import ModalFooter from "$lib/shared/foundation/ui/modal/ModalFooter.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import ModalFooter from "#lib/shared/foundation/ui/modal/ModalFooter.svelte";
 
   interface Props {
     open: boolean;

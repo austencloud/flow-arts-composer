@@ -1,7 +1,7 @@
-import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
 interface HeadlessConfig {
   leftPropType: PropType;

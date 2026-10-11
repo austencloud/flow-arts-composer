@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { FALLBACK_DEMO } from "$lib/shared/landing/data/per-visit-demo";
-import { ThirdOrderCompositionSampler } from "$lib/features/toys/tabs/third-order/services/implementations/ThirdOrderCompositionSampler";
+import { FALLBACK_DEMO } from "#lib/shared/landing/data/per-visit-demo.js";
+import { ThirdOrderCompositionSampler } from "#lib/features/toys/tabs/third-order/services/implementations/ThirdOrderCompositionSampler.js";
 import {
   bakeThirdOrderTrajectories,
   thirdOrderWorldFrame,
-} from "$lib/features/toys/tabs/third-order/services/third-order-trajectories";
-import type { ThirdOrderCompositionDraft } from "$lib/features/toys/tabs/third-order/domain/third-order-composition";
-import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+} from "#lib/features/toys/tabs/third-order/services/third-order-trajectories.js";
+import type { ThirdOrderCompositionDraft } from "#lib/features/toys/tabs/third-order/domain/third-order-composition.js";
+import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import {
   revealTrajectoryPoints,
   renderTrajectoryMandalaSVG,
-} from "$lib/shared/mandala/services/trajectory-mandala-renderer";
+} from "#lib/shared/mandala/services/trajectory-mandala-renderer.js";
 
 function composition(): ThirdOrderCompositionDraft {
   return {

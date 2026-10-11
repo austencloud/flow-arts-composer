@@ -1,24 +1,24 @@
 import { Plane, type PropState3D } from "@austencloud/scene-3d";
 import type { Vector3 } from "three";
-import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
 import {
   GridLocation,
   type GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import PropRotAngleManager from "$lib/shared/pictograph/prop/services/prop-rot-angle-manager";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import PropRotAngleManager from "#lib/shared/pictograph/prop/services/prop-rot-angle-manager.js";
 import {
   Orientation,
   type Orientation as OrientationValue,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   getPlaneRight,
   getPlaneUp,
-} from "$lib/shared/3d/domain/constants/plane-transforms";
+} from "#lib/shared/3d/domain/constants/plane-transforms.js";
 import {
   calculatePropRotation,
   gridLocationToPosition3D,
-} from "$lib/shared/3d/services/plane-coordinate-mapper";
+} from "#lib/shared/3d/services/plane-coordinate-mapper.js";
 import {
   FanViewpoint,
   type FanViewpoint as FanViewpointValue,

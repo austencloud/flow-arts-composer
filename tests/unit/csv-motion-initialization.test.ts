@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { CsvLoader } from "$lib/shared/foundation/services/data/csv-loader";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { MotionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
+import { CsvLoader } from "#lib/shared/foundation/services/data/csv-loader.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { MotionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
 
 const emptyDataSet = {
   success: true,

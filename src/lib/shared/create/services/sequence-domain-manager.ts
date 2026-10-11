@@ -7,18 +7,18 @@
  * and desktop.modern.domain.models for actual validation and business rules.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import type {
   ValidationErrorInfo,
   ValidationResult,
-} from "$lib/shared/validation/validation-result";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+} from "#lib/shared/validation/validation-result.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
-import type { SequenceCreateRequest } from "$lib/shared/create/domain/sequence-models";
+import type { SequenceCreateRequest } from "#lib/shared/create/domain/sequence-models.js";
 
 /**
  * Validate a sequence according to business rules

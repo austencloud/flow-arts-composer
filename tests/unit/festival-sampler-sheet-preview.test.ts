@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it } from "vitest";
-import { planFestivalSamplerSheetPreview } from "$lib/features/choreo-card/services/festival-sampler-sheet-preview";
-import type { CardPair } from "$lib/features/choreo-card/services/types";
+import { planFestivalSamplerSheetPreview } from "#lib/features/choreo-card/services/festival-sampler-sheet-preview.js";
+import type { CardPair } from "#lib/features/choreo-card/services/types.js";
 
 function pair(index: number): CardPair {
   const front = document.createElement("canvas");

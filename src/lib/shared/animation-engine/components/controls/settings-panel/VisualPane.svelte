@@ -7,29 +7,29 @@
   - Ends selector (One End/Both Ends) - for bilateral props
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { onMount } from "svelte";
   import {
     getAnimationVisibilityManager,
     type GridMode,
     type TrailVisibility,
-  } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import {
     animationSettings,
     TrailMode,
     TrackingMode,
-  } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { getAnimationScopeContext } from "$lib/shared/animation-engine/state/animation-scope-context";
+  } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { getAnimationScopeContext } from "#lib/shared/animation-engine/state/animation-scope-context.js";
   import {
     resolveEffectivePropsVisibility,
     toggleEffectivePropsVisibility,
-  } from "$lib/shared/animation-engine/state/effective-prop-visibility";
+  } from "#lib/shared/animation-engine/state/effective-prop-visibility.js";
   import {
     isBilateralProp,
     getBilateralEndLabels,
-  } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   let {
     propType = null,

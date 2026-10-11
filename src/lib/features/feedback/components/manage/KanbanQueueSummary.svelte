@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { STATUS_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
+  import { STATUS_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import type { KanbanBoardState } from "../../state/kanban-board-state.svelte";
 
   type KanbanStatus = "new" | "in-progress" | "in-review" | "completed";

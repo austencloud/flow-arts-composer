@@ -53,21 +53,21 @@ import { ambientLetterSet } from "../domain/base-sequence-registry";
 import type { AmbientOptionProvider, SeamState } from "../domain/types";
 import { placementLabelsMatchLocations } from "./placement-groups";
 
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridLocationsFromPlacement } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { getGridLocationsFromPlacement } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
 
 /**
  * Per-provider tally — see the module comment's gate 3.

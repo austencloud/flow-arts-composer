@@ -22,30 +22,31 @@ Last audit: 2025-12-27
 ================================================================================
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+  import type { Snippet } from "svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
   import type { TrailSettings } from "../domain/types/trail-types";
   import { activeWordHeaderStep } from "../domain/word-header-highlight";
-  import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
-  import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+  import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
+  import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
   import CanvasSurface from "./CanvasSurface.svelte";
   import WordHeader from "./layers/WordHeader.svelte";
-  import UnifiedTimeline from "$lib/shared/timeline/UnifiedTimeline.svelte";
-  import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
+  import UnifiedTimeline from "#lib/shared/timeline/UnifiedTimeline.svelte";
+  import { getViewerStudioSurfaces } from "#lib/shared/sequence-viewer/context/viewer-studio-surfaces-context.js";
   import {
     reparentToInspector,
     type ReparentOptions,
-  } from "$lib/shared/sequence-viewer/components/reparent-to-inspector";
-  import SequenceProgressBar from "$lib/shared/animation-engine/components/layers/SequenceProgressBar.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { createAnimatorPlaybackAdapter } from "$lib/shared/timeline/adapters/animator-playback-adapter.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  } from "#lib/shared/sequence-viewer/components/reparent-to-inspector.js";
+  import SequenceProgressBar from "#lib/shared/animation-engine/components/layers/SequenceProgressBar.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { createAnimatorPlaybackAdapter } from "#lib/shared/timeline/adapters/animator-playback-adapter.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     AnimationEngine,
     type AdditionalLayerTextureStatus,
@@ -54,12 +55,12 @@ Last audit: 2025-12-27
     getAnimationVisibilityManager,
     type AnimationVisibilityStateManager,
   } from "../state/animation-visibility-state.svelte";
-  import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
+  import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
   import {
     tryGetLoopDisplayResolver,
     type LoopDisplay,
-  } from "$lib/shared/loop-labeler/get-loop-display-resolver";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import type { FireOverlayConfig } from "../domain/types/fire-types";
   import type { LedOverlayConfig } from "../domain/types/led-types";
   import type {
@@ -68,19 +69,19 @@ Last audit: 2025-12-27
     EffectType,
   } from "../domain/types/tip-effect-types";
   import CanvasContextMenuHost from "./canvas-context-menu/CanvasContextMenuHost.svelte";
-  import { isEmbeddedInAnotherSite } from "$lib/shared/foundation/utils/embedded-in-another-site";
-  import type { ContextMenuEntry } from "$lib/shared/components/context-menu/context-menu-types";
+  import { isEmbeddedInAnotherSite } from "#lib/shared/foundation/utils/embedded-in-another-site.js";
+  import type { ContextMenuEntry } from "#lib/shared/components/context-menu/context-menu-types.js";
   import {
     resolveDisassemblyArrangement,
     type DisassemblyArrangement,
   } from "../services/disassembly-arrangement";
   import SplitCanvasView from "./SplitCanvasView.svelte";
   import { resolveAnimationGridJoin } from "../services/animation-grid-join";
-  import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+  import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import type { QualityTier } from "../domain/types/quality-types";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { GlyphOverlayFrameMode } from "../domain/glyph-overlay-frame";
 
   // Props
@@ -102,6 +103,7 @@ Last audit: 2025-12-27
     letter = null,
     stepData = null,
     sequenceData = null,
+    transitionKey = null,
     currentStep = 0,
     isPlaying = false,
     onCanvasReady = () => {},
@@ -162,6 +164,7 @@ Last audit: 2025-12-27
     cornerToggle = false,
     cornerToggleAtRest = false,
     showScrubberPlaybackControl = false,
+    progressTrailing = undefined,
     extraContextMenuItems = [],
     beatIndicators = true,
     bpm = undefined,
@@ -197,6 +200,9 @@ Last audit: 2025-12-27
     letter?: Letter | null;
     stepData?: StartPlacementData | StepData | null;
     sequenceData?: SequenceData | null;
+    /** Same key across a sequence change glides the props to their new pose
+     *  (a transform); see AnimationEngineProps.transitionKey. */
+    transitionKey?: string | null;
     currentStep?: number;
     isPlaying?: boolean;
     onCanvasReady?: (canvas: HTMLCanvasElement | null) => void;
@@ -331,6 +337,9 @@ Last audit: 2025-12-27
     cornerToggleAtRest?: boolean;
     /** Adds the canonical play/pause action beside the minimal scrubber. */
     showScrubberPlaybackControl?: boolean;
+    /** A control at the far end of the minimal scrubber's row (progressLine
+     *  only), such as the Create preview's effect button. */
+    progressTrailing?: Snippet;
     /** Extra entries injected into the right-click context menu (e.g. "Save
      *  tunnel"). Prepended before the built-in items by CanvasContextMenuHost.
      *  Defaults to [] so existing consumers are unaffected. */
@@ -783,10 +792,10 @@ Last audit: 2025-12-27
   const emptyLoopDisplay: LoopDisplay = {
     components: new Set<LOOPComponent>(),
     rotationPeriod: undefined as
-      | import("$lib/shared/foundation/domain/models/generation/circular-models").Period
+      | import("#lib/shared/foundation/domain/models/generation/circular-models.js").Period
       | undefined,
     inversionPeriod: undefined as
-      | import("$lib/shared/foundation/domain/models/generation/circular-models").Period
+      | import("#lib/shared/foundation/domain/models/generation/circular-models.js").Period
       | undefined,
     overlayComponents: undefined as Set<LOOPComponent> | undefined,
     period: 1,
@@ -907,6 +916,7 @@ Last audit: 2025-12-27
       {letter}
       {stepData}
       {sequenceData}
+      {transitionKey}
       {currentStep}
       {isPlaying}
       bind:trailSettings={externalTrailSettings}
@@ -1008,6 +1018,7 @@ Last audit: 2025-12-27
           onPlaybackToggle={showScrubberPlaybackControl
             ? onPlaybackToggle
             : null}
+          trailing={progressTrailing}
         />
       {:else}
         <SequenceProgressBar
@@ -1103,6 +1114,7 @@ Last audit: 2025-12-27
       {onToggle3DView}
       extraItems={extraContextMenuItems}
       {visibilityManager}
+      {effectsConfigState}
     />
   {/if}
 </div>

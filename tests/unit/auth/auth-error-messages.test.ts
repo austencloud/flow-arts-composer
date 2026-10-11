@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isExpectedAuthInterruption,
   mapAuthError,
-} from "$lib/shared/auth/services/auth-error-messages";
+} from "#lib/shared/auth/services/auth-error-messages.js";
 
 describe("auth provider interruption classification", () => {
   it.each([

@@ -1,7 +1,7 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 
 import { CommandPalette } from "./services/command-palette";
-import { getNavigationVisitPersister } from "$lib/shared/navigation/get-navigation-visit-persister";
+import { getNavigationVisitPersister } from "#lib/shared/navigation/get-navigation-visit-persister.js";
 
 let instance: CommandPalette | null = null;
 

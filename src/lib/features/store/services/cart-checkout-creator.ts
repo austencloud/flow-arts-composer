@@ -7,7 +7,7 @@ import type { CheckoutItem } from "../state/shop-cart.svelte";
 // back into the page.
 export async function createCartCheckoutSession(items: CheckoutItem[]): Promise<string> {
   const { getFunctions, httpsCallable } = await import("firebase/functions");
-  const { app } = await import("$lib/shared/auth/firebase");
+  const { app } = await import("#lib/shared/auth/firebase.js");
   const functions = getFunctions(app);
   const createCartCheckout = httpsCallable<{ items: CheckoutItem[] }, { url: string }>(
     functions,

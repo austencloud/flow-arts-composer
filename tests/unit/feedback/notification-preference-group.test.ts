@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getNotificationPreferenceGroup } from "$lib/features/feedback/domain/notification-preference-group";
-import { DEFAULT_NOTIFICATION_PREFERENCES } from "$lib/shared/feedback/domain/models/notification-models";
+import { getNotificationPreferenceGroup } from "#lib/features/feedback/domain/notification-preference-group.js";
+import { DEFAULT_NOTIFICATION_PREFERENCES } from "#lib/shared/feedback/domain/models/notification-models.js";
 
 describe("notification preference groups", () => {
   it("keeps the chat preference in a visible Messages group", () => {

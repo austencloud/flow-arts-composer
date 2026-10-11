@@ -249,7 +249,7 @@ describe("landing shared-element contract", () => {
       /duration:\s*suppressContentFade\s*\?\s*0\s*:\s*motionDuration\(200\)/
     );
     expect(chrome).toContain(
-      'import { motionDuration } from "$lib/shared/transitions/motion";'
+      'import { motionDuration } from "#lib/shared/transitions/motion.js";'
     );
     expect(chrome).not.toContain("MORPH_PATHS.has(path)");
   });
@@ -270,15 +270,10 @@ describe("landing shared-element contract", () => {
     );
     expect(guideShell).toContain("{#if ownsStandaloneChrome}");
     expect(guidePage).not.toContain("joinWaitlist");
-    expect(guidePage).toContain('href="/learn/concepts"');
-    // 453be00df6 moved the start action's label into the catalog. It still
-    // names the first topic, and English still reads "Start with {topic}".
-    expect(guidePage).toMatch(
-      /tDynamic\("guide_hub_start_with",\s*\{\s*topic:\s*localizedFirstTopicLabel,?\s*\}\)/
-    );
-    expect(readEnglishMessages().guide_hub_start_with).toBe(
-      "Start with {topic}"
-    );
+    // Lesson first: the primary action opens the first lesson from step one.
+    expect(guidePage).toContain("buildConceptStartPath(firstLessonId)");
+    expect(guidePage).toContain("href={firstLessonHref}");
+    expect(readEnglishMessages().guide_hub_start_lesson).toBeTruthy();
     expect(guideCss).toContain("html:has(.guide-layout):not(:has(.mkt-shell))");
   });
 
@@ -396,7 +391,7 @@ describe("landing shared-element contract", () => {
     );
 
     expect(anatomyExplainer).toContain(
-      'import SkeletonLoader from "$lib/shared/foundation/ui/SkeletonLoader.svelte"'
+      'import SkeletonLoader from "#lib/shared/foundation/ui/SkeletonLoader.svelte"'
     );
     expect(anatomyExplainer).toContain('role="alert"');
     expect(anatomyExplainer).toContain('disabled={cardStatus !== "ready"}');
@@ -518,14 +513,14 @@ describe("landing shared-element contract", () => {
     expect(loops).toContain("notation-loop-teaser");
     for (const source of [archive, loops]) {
       expect(source).not.toContain(
-        'from "$lib/shared/loop-explorer/domain/curated-seeds"'
+        'from "#lib/shared/loop-explorer/domain/curated-seeds.js"'
       );
     }
     expect(loops).toContain(
-      'import("$lib/shared/loop-explorer/components/LoopExplorer.svelte")'
+      'import("#lib/shared/loop-explorer/components/LoopExplorer.svelte")'
     );
     expect(loops).not.toContain(
-      'import LoopExplorer from "$lib/shared/loop-explorer/components/LoopExplorer.svelte"'
+      'import LoopExplorer from "#lib/shared/loop-explorer/components/LoopExplorer.svelte"'
     );
 
     // The corpus is served from `static/` rather than bundled — see

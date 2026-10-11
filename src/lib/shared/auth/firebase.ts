@@ -30,7 +30,7 @@ import {
 import type { Firestore } from "firebase/firestore";
 import type { Database } from "firebase/database";
 import type { FirebaseStorage } from "firebase/storage";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { resolveAuthDomain } from "./auth-domain";
 import {
   getFirebaseHMRManager,
@@ -41,8 +41,8 @@ import { registerLoadedAuth } from "./loaded-auth";
 import { shouldAvoidIndexedDbPersistence } from "./services/indexeddb-persistence-policy";
 import type { Functions } from "firebase/functions";
 import type { Unsubscribe } from "firebase/firestore";
-import { browser } from "$app/environment";
-import { env } from "$env/dynamic/public";
+import { browser } from "$app/env";
+import * as env from "$app/env/public";
 import { resolveFirebaseEmulatorConfig } from "./firebase-emulator-config";
 
 const debug = createComponentLogger("Firebase");

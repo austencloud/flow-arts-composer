@@ -13,9 +13,9 @@
  */
 
 import { LOOP_ICON_COLORS } from "@tka/render-composition";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 /**
  * Amber, deliberately outside the six primitive hues: the orientation repeat

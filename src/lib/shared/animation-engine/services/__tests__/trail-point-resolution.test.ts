@@ -17,7 +17,7 @@ import {
   DEFAULT_TRAIL_SETTINGS,
   TrackingMode,
 } from "../../domain/types/trail-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 
 afterEach(() => {
   setTrailPointOverrideProvider(null);

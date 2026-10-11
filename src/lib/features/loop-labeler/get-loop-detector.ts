@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import type { ILOOPDetector } from './services/ILOOPDetector';
 import { LOOPDetector } from './services/loop-detector';
 import { getStepComparisonOrchestrator } from './get-step-comparison-orchestrator';

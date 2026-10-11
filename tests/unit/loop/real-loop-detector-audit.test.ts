@@ -39,13 +39,13 @@ import {
 } from "@tka/sequence-engine/loop";
 
 // #3 — app class detector (hydration path)
-import { loopDetector as appLoopDetector } from "$lib/shared/create/services/loop-detector";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { loopDetector as appLoopDetector } from "#lib/shared/create/services/loop-detector.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { normalizeLegacySteps } from "@tka/tka-types";
 
 // #4 — loop-labeler pipeline
-import { loopDetector as labelerLoopDetector } from "$lib/features/loop-labeler/services/loop-detector";
-import type { SequenceEntry } from "$lib/shared/loop-labeler/domain/sequence-models";
+import { loopDetector as labelerLoopDetector } from "#lib/features/loop-labeler/services/loop-detector.js";
+import type { SequenceEntry } from "#lib/shared/loop-labeler/domain/sequence-models.js";
 
 // #5 — .cjs labelers (CommonJS scripts; exported for this harness)
 const require = createRequire(import.meta.url);

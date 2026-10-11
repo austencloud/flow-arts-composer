@@ -4,7 +4,7 @@
   Spec: docs/superpowers/specs/active/2026-08-24-film-collection-design.md
 -->
 <script lang="ts">
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   import type { CollectedFilm } from "./domain/film-collection-types";
   import { openSavedFilm } from "./services/open-film";

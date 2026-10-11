@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { MUSEUM_EXHIBIT_SEQUENCES } from "$lib/features/museum/data/museum-exhibit-sequences";
+import { MUSEUM_EXHIBIT_SEQUENCES } from "#lib/features/museum/data/museum-exhibit-sequences.js";
 import {
   EFFECT_PREVIEW_MINIMUM_COUNTS,
   EFFECT_PREVIEW_TARGET_COUNTS,
   isEffectPreviewLoop,
-} from "$lib/shared/effects/domain/effect-preview-loop-policy";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/effects/domain/effect-preview-loop-policy.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function caveLoop(repetitions: number): SequenceData {
   const fixture = MUSEUM_EXHIBIT_SEQUENCES["performer-cave-seq"]!;

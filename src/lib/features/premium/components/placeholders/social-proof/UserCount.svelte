@@ -1,6 +1,6 @@
 <!-- UserCount - Display active user count for social proof -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   interface Props {
     totalUsers?: number;
     premiumUsers?: number;

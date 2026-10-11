@@ -16,7 +16,7 @@ import {
   createDefaultRainbowConfig,
   createDefaultVoidConfig,
   createDefaultWinterConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs";
+} from "#lib/shared/3d/environments/domain/models/scene-configs.js";
 
 const factories = {
   createDefaultAutumnConfig,

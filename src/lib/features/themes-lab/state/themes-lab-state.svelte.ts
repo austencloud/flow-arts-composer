@@ -1,13 +1,13 @@
-import { browser } from "$app/environment";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import { createSceneLabState } from "$lib/features/lab/tabs/scene-lab/state/scene-lab-state.svelte";
-import { createComposerEditorState } from "$lib/shared/3d/scene-composer/composer-editor-state.svelte";
+import { browser } from "$app/env";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import { createSceneLabState } from "#lib/features/lab/tabs/scene-lab/state/scene-lab-state.svelte.js";
+import { createComposerEditorState } from "#lib/shared/3d/scene-composer/composer-editor-state.svelte.js";
 import {
   THEME_OPTIONS,
   getThemeOption,
   type ThemeId,
 } from "../domain/theme-types";
-import type { SceneLabContext } from "$lib/features/lab/tabs/scene-lab/context/scene-lab-context";
+import type { SceneLabContext } from "#lib/features/lab/tabs/scene-lab/context/scene-lab-context.js";
 
 export type ThemeMode = "2d" | "3d";
 

@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
 
 const mocks = vi.hoisted(() => ({
   startHistoryTransition: vi.fn(),
   toastInfo: vi.fn(),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: {
     info: mocks.toastInfo,
   },
@@ -16,8 +16,8 @@ vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
 import {
   UndoManager,
   UndoOperationType,
-} from "$lib/features/create/shared/services/undo-manager";
-import { createUndoController } from "$lib/features/create/shared/state/create-module/undo-controller.svelte";
+} from "#lib/features/create/shared/services/undo-manager.js";
+import { createUndoController } from "#lib/features/create/shared/state/create-module/undo-controller.svelte.js";
 
 function sequenceFixture(): SequenceData {
   return {

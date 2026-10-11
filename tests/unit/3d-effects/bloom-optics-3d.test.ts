@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { InstancedMesh, PointLight, Scene } from "three";
-import { BLOOM_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/bloom-presets";
-import { BloomRenderer3D } from "$lib/shared/3d/effects/bloom/bloom-renderer-3d";
+import { BLOOM_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/bloom-presets.js";
+import { BloomRenderer3D } from "#lib/shared/3d/effects/bloom/bloom-renderer-3d.js";
 import {
   resolveBloomFalloffCode,
   resolveBloomHistoryCapacity,
   resolveBloomOpticalFrame3D,
   resolveBloomSourceNormalization,
   shouldResetBloomHistory3D,
-} from "$lib/shared/3d/effects/bloom/bloom-optics-3d";
-import type { BloomTipSource3D } from "$lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
-import { QualityTier } from "$lib/shared/3d/effects/types";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { resolveBloom3D } from "$lib/shared/effects/translators/webgl3d-translator";
+} from "#lib/shared/3d/effects/bloom/bloom-optics-3d.js";
+import type { BloomTipSource3D } from "#lib/shared/3d/effects/scene-effects/scene-effect-source-3d.js";
+import { QualityTier } from "#lib/shared/3d/effects/types.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { resolveBloom3D } from "#lib/shared/effects/translators/webgl3d-translator.js";
 
 function makeSource(
   overrides: Partial<BloomTipSource3D> = {}

@@ -1,16 +1,16 @@
-import { canonicalDigest } from "$lib/shared/foundation/utils/canonical-digest";
+import { canonicalDigest } from "#lib/shared/foundation/utils/canonical-digest.js";
 import {
   createArtifactRevisionRef,
   type ArtifactRevisionRef,
-} from "$lib/shared/artifact-revisions/domain/artifact-revision";
+} from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
 import type {
   DerivedTunnelSource,
   TunnelComposition,
   TunnelPerformerTiming,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import type { PublicArtifactEnvelope } from "$lib/shared/artifact-revisions/domain/public-artifact";
-import type { TunnelConfig } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-import type { TunnelStage } from "$lib/shared/sequence-viewer/tunnel/tunnel-stage";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import type { PublicArtifactEnvelope } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
+import type { TunnelConfig } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import type { TunnelStage } from "#lib/shared/sequence-viewer/tunnel/tunnel-stage.js";
 import {
   CollectedTunnelSchema,
   type CollectedTunnel,

@@ -15,14 +15,14 @@
     createForestRuntimeTreeInstances,
     disposeForestRuntimeEcology,
     selectForestRuntimeGrassDensity,
-  } from "$lib/shared/3d/environments/scenes/forest/forest-runtime-ecology";
+  } from "#lib/shared/3d/environments/scenes/forest/forest-runtime-ecology.js";
   import {
     createInstanceFrustumCuller,
     type InstanceFrustumCuller,
     type InstanceFrustumCullingStats,
-  } from "$lib/shared/3d/rendering/instance-frustum-culling";
-  import { prepareCoveragePreservingAlphaMipmaps } from "$lib/shared/3d/rendering/alpha-coverage-mipmaps";
-  import ForestClearingWind from "$lib/shared/3d/environments/scenes/forest/ForestClearingWind.svelte";
+  } from "#lib/shared/3d/rendering/instance-frustum-culling.js";
+  import { prepareCoveragePreservingAlphaMipmaps } from "#lib/shared/3d/rendering/alpha-coverage-mipmaps.js";
+  import ForestClearingWind from "#lib/shared/3d/environments/scenes/forest/ForestClearingWind.svelte";
   import {
     deriveFlowFestTreeInstanceTint,
     FLOW_FEST_FOREST_GRASS_ASSET,

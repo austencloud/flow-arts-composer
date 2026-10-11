@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-import type { BrowseEngine } from "$lib/shared/browse/engine/types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+import type { BrowseEngine } from "#lib/shared/browse/engine/types.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 import {
   applySpecToEngine,
   buildFilterSpecFromEngine,

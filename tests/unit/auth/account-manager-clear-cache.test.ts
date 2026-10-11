@@ -26,27 +26,27 @@ vi.mock("firebase/firestore", () => ({
   setDoc: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: { currentUser: null },
   getFirestoreInstance: vi.fn(),
   shutdownFirestoreForCacheClear: h.shutdownFirestoreForCacheClear,
 }));
 
-vi.mock("$lib/shared/auth/utils/nuclear-cache-clear", () => ({
+vi.mock("#lib/shared/auth/utils/nuclear-cache-clear.js", () => ({
   nuclearCacheClear: h.nuclearCacheClear,
 }));
 
-vi.mock("$lib/shared/auth/services/authenticator", () => ({
+vi.mock("#lib/shared/auth/services/authenticator.js", () => ({
   reauthenticateWithFacebook: vi.fn(),
   reauthenticateWithGoogle: vi.fn(),
   reauthenticateWithInstagram: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { signOut: h.signOut },
 }));
 
-import { AccountManager } from "$lib/shared/auth/services/account-manager";
+import { AccountManager } from "#lib/shared/auth/services/account-manager.js";
 
 beforeEach(() => {
   vi.useFakeTimers();

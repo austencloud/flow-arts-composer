@@ -1,6 +1,6 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { AnimationPathPolicy } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { AnimationPathPolicy } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 function previewPathShape(
   motion: MotionData,

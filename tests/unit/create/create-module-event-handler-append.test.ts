@@ -1,25 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { CreateModuleEventHandler } from "$lib/features/create/shared/services/create-module-event-handler";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+import { CreateModuleEventHandler } from "#lib/features/create/shared/services/create-module-event-handler.js";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { buildAppendedOptionSequence } from "$lib/features/create/construct/option-picker/services/build-appended-option-sequence";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { buildAppendedOptionSequence } from "#lib/features/create/construct/option-picker/services/build-appended-option-sequence.js";
 import { gridJoinCellResolver } from "@tka/render-core";
 
 const PLACEMENT_BY_LOCATION = {

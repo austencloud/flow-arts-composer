@@ -1,9 +1,9 @@
 import {
   CHARACTER_DEFINITIONS,
   type CharacterId,
-} from "$lib/shared/3d/domain/character-model";
+} from "#lib/shared/3d/domain/character-model.js";
 
-import { resolveDesktopAssetUrl } from "$lib/shared/desktop/desktop-asset-runtime";
+import { resolveDesktopAssetUrl } from "#lib/shared/desktop/desktop-asset-runtime.js";
 
 import { R2_CDN } from "./r2-origin";
 

@@ -4,6 +4,15 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDirector } from "../../../scripts/demo-capture/browser-director.mjs";
 
+// The director steps its pointer and waits for the page's hover on real
+// timers, so these tests take 0.6 to 4.2 s with the cores free (ten-file run,
+// 2026-10-09), and each one makes and removes a folder of frames in its
+// hooks. Under the full suite's 31 forks a file runs five to eight times
+// slower, and on 2026-10-08 one full run timed this file out in those hooks
+// at the 10 s default. Tests get the 120 s tests/unit/3d-animation gives a
+// loaded machine; the folder hooks get 60 s.
+vi.setConfig({ testTimeout: 120_000, hookTimeout: 60_000 });
+
 let root: string;
 beforeEach(async () => {
   root = await fs.mkdtemp(path.join(os.tmpdir(), "director-"));
@@ -213,6 +222,47 @@ describe("createDirector pick", () => {
         y: 400,
       }),
     ]);
+  });
+
+  it("types into a field a key at a time, then presses Enter", async () => {
+    const { cdp, page, sent } = pickFakes(true);
+    const director = createDirector(page, cdp, root);
+    await director.shot("type", 0.05, async () => {
+      await director.type('input[name="generation-word"]', "CAKE", {
+        perKeyMs: 0,
+        enter: true,
+      });
+    });
+    const keys = sent
+      .filter(([method]) => method === "Input.dispatchKeyEvent")
+      .map(([, params]) => params);
+    expect(keys.filter((event) => event.type === "keyDown")).toEqual([
+      { type: "keyDown", key: "C", text: "C" },
+      { type: "keyDown", key: "A", text: "A" },
+      { type: "keyDown", key: "K", text: "K" },
+      { type: "keyDown", key: "E", text: "E" },
+      {
+        type: "keyDown",
+        key: "Enter",
+        code: "Enter",
+        windowsVirtualKeyCode: 13,
+      },
+    ]);
+    // The field is clicked before the first key goes down.
+    const order = sent.map(([, params]) => params.type);
+    expect(order.indexOf("mouseReleased")).toBeLessThan(
+      order.indexOf("keyDown")
+    );
+    const proof = JSON.parse(
+      await fs.readFile(
+        path.join(root, "production", "frames", "type", "capture.json"),
+        "utf8"
+      )
+    );
+    expect(
+      proof.events.map((event: { action: string }) => event.action)
+    ).toEqual(["click", "type"]);
+    expect(proof.events[1]).toMatchObject({ value: "CAKE", x: 300, y: 400 });
   });
 
   it("refuses to click when the page's own hover misses the target", async () => {

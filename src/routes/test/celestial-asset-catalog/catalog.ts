@@ -386,4 +386,4 @@ export function formatCatalogVertices(vertices: number): string {
 import {
   getCloudbreakRuntimeAsset,
   type CloudbreakRenderableAsset,
-} from "$lib/shared/3d/environments/scenes/celestial/cloudbreak-assets";
+} from "#lib/shared/3d/environments/scenes/celestial/cloudbreak-assets.js";

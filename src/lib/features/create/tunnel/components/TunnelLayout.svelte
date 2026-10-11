@@ -1,31 +1,31 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick } from "svelte";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import CreatePanelDrawer from "$lib/features/create/shared/components/CreatePanelDrawer.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import PanelHeader from "$lib/shared/create/components/PanelHeader.svelte";
-  import GeneratePanel from "$lib/features/create/generate/components/GeneratePanel.svelte";
-  import type { SetupSnapshot } from "$lib/features/create/generate/domain/setup-snapshot";
-  import type { GenerationAnimationTarget } from "$lib/features/create/generate/state/generate-actions.svelte";
-  import { createSequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import TunnelArtSettings from "$lib/shared/sequence-viewer/components/art-settings/TunnelArtSettings.svelte";
-  import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
-  import type { GeneratorTunnelSourceProvenance } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-  import { FOLD_OPTIONS } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-  import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
-  import TkaLabel from "$lib/shared/components/TkaLabel.svelte";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import CreatePanelDrawer from "#lib/features/create/shared/components/CreatePanelDrawer.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import PanelState from "#lib/shared/components/panel/PanelState.svelte";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import PanelHeader from "#lib/shared/create/components/PanelHeader.svelte";
+  import GeneratePanel from "#lib/features/create/generate/components/GeneratePanel.svelte";
+  import type { SetupSnapshot } from "#lib/features/create/generate/domain/setup-snapshot.js";
+  import type { GenerationAnimationTarget } from "#lib/features/create/generate/state/generate-actions.svelte.js";
+  import { createSequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import TunnelArtSettings from "#lib/shared/sequence-viewer/components/art-settings/TunnelArtSettings.svelte";
+  import TunnelArtView from "#lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
+  import type { GeneratorTunnelSourceProvenance } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+  import { FOLD_OPTIONS } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+  import { TunnelViewController } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.js";
+  import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
   import { getTunnelCreatorContext } from "../context/tunnel-creator-context";
   import TunnelPerformerRoster from "./TunnelPerformerRoster.svelte";
   import TunnelRelationshipEditor from "./TunnelRelationshipEditor.svelte";
   import TunnelStageFormationSettings from "./TunnelStageFormationSettings.svelte";
   import ShapeMatrixTunnelSourcePicker from "./ShapeMatrixTunnelSourcePicker.svelte";
-  import type { ModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
-  import type { SequenceSource } from "$lib/shared/browse/engine/types";
+  import type { ModeRealization } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
+  import type { SequenceSource } from "#lib/shared/browse/engine/types.js";
   import {
     resolveTunnelPerformerDisplays,
     type TunnelPerformerDisplay,

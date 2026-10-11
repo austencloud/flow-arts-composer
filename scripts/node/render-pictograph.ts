@@ -3,8 +3,8 @@
  *
  * This file is loaded through Vite's SSR module loader by
  * scripts/pictograph-cli.ts, never directly by tsx. That is what lets it
- * import the app's real render pipeline through `$lib`: the SvelteKit plugin
- * resolves the aliases and virtual modules ($app/*, $env/*, import.meta.env)
+ * import the app's real render pipeline through `#lib`: the SvelteKit plugin
+ * resolves the aliases and virtual modules ($app/*, import.meta.env)
  * and compiles the rune-based .svelte.ts state files the pipeline depends on.
  *
  * It uses the same singletons the app uses (pictographPreparer wired into a
@@ -15,13 +15,13 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { Canvas2DDirectRenderer } from "$lib/shared/render/services/canvas-2d-direct-renderer";
-import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { MotionDataInput } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { Canvas2DDirectRenderer } from "#lib/shared/render/services/canvas-2d-direct-renderer.js";
+import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { MotionDataInput } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 export interface RenderPictographOptions {
   /** Project root; the CSV and static assets are resolved against it. */

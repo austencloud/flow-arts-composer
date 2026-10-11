@@ -1,5 +1,5 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import type { TranslationKey } from "$lib/shared/i18n/i18n-types";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 /**
  * Accessible text description of a pictograph, built from the data the renderer
  * already holds (letter, start/end position, each hand's motion).

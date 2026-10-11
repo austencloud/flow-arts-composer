@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { turnManager } from './services/turn-manager';
 
 export function getTurnManager(): typeof turnManager {

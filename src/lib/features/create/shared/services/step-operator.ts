@@ -7,13 +7,13 @@
  * Domain: Create module - Beat Manipulation for Sequence Construction
  */
 
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type {
   ICreateModuleState,
   BatchEditChanges,
 } from "../types/create-module-types";
-import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { IMotionQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 import { removeStep } from "./step-operations/step-removal-handler";
 import { applyBatchChanges } from "./step-operations/batch-edit-handler";
@@ -38,7 +38,7 @@ import {
   clearPathShape,
   type PathShapeValue,
 } from "./step-operations/path-shape-handler";
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 export class StepOperator {
   constructor(
@@ -174,6 +174,6 @@ export class StepOperator {
   }
 }
 
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
 
 export const stepOperator = new StepOperator(motionQueryHandler);

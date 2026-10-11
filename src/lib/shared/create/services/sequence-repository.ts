@@ -9,18 +9,18 @@
  * Import operations moved to SequenceImportService.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
 import type { Step } from "@tka/tka-types";
-import type { SequenceCreateRequest } from "$lib/shared/create/domain/sequence-models";
+import type { SequenceCreateRequest } from "#lib/shared/create/domain/sequence-models.js";
 import {
   saveSequence as persistSaveSequence,
   loadSequence as persistLoadSequence,
   loadAllSequences as persistLoadAllSequences,
-} from "$lib/shared/persistence/services/dexie-persistence-service";
-import type { SequenceImporter } from "$lib/shared/create/services/sequence-importer";
+} from "#lib/shared/persistence/services/dexie-persistence-service.js";
+import type { SequenceImporter } from "#lib/shared/create/services/sequence-importer.js";
 type ReversalDetector = { processReversals: (sequence: SequenceData) => SequenceData };
-import { separateStepsFromStartPlacement } from "$lib/shared/animation-engine/services/sequence-normalizer";
+import { separateStepsFromStartPlacement } from "#lib/shared/animation-engine/services/sequence-normalizer.js";
 type SequenceDomainManager = {
   createSequence: (request: unknown) => SequenceData;
   updateStep: (sequence: SequenceData, stepIndex: number, stepData: unknown) => SequenceData;
@@ -32,12 +32,12 @@ import {
   where,
   or,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import {
   getUserSequencesPath,
-} from "$lib/shared/library/data/firestore-paths";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+} from "#lib/shared/library/data/firestore-paths.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 export class SequenceRepository {
   constructor(
@@ -259,12 +259,12 @@ export class SequenceRepository {
 // ============================================================================
 // DIRECT SINGLETON EXPORT
 // ============================================================================
-import * as sequenceDomainManagerModule from "$lib/shared/create/services/sequence-domain-manager";
+import * as sequenceDomainManagerModule from "#lib/shared/create/services/sequence-domain-manager.js";
 const sequenceDomainManager: SequenceDomainManager = {
   createSequence: sequenceDomainManagerModule.createSequence as SequenceDomainManager['createSequence'],
   updateStep: sequenceDomainManagerModule.updateStep as SequenceDomainManager['updateStep'],
 };
-import * as reversalDetectorModule from "$lib/shared/create/services/reversal-detector";
+import * as reversalDetectorModule from "#lib/shared/create/services/reversal-detector.js";
 const reversalDetector: ReversalDetector = {
   processReversals: reversalDetectorModule.processReversals,
 };

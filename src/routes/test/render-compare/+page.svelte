@@ -11,16 +11,16 @@
    * (NOT letterQueryHandler which goes to Codex - that's for the Learn tab only)
    */
   import { onMount } from 'svelte';
-  import { motionQueryHandler } from '$lib/shared/pictograph/shared/services/motion-query-handler';
-  import type { PictographData } from '$lib/shared/pictograph/shared/domain/models/pictograph-data';
-  import type { SequenceData } from '$lib/shared/foundation/domain/models/sequence-data';
-  import { GridMode } from '$lib/shared/pictograph/grid/domain/enums/grid-enums';
-  import { Letter } from '$lib/shared/foundation/domain/models/letter';
-  import { PropType } from '$lib/shared/pictograph/prop/domain/enums/prop-type';
-  import { renderPictographToSVG } from '$lib/shared/render/utils/pictograph-to-svg';
-  import { Canvas2DDirectRenderer } from '$lib/shared/render/services/canvas-2d-direct-renderer';
-  import PictographContainer from '$lib/shared/pictograph/shared/components/PictographContainer.svelte';
-  import { PublicSequencesLoader } from '$lib/shared/browse/services/public-sequences-loader';
+  import { motionQueryHandler } from '#lib/shared/pictograph/shared/services/motion-query-handler.js';
+  import type { PictographData } from '#lib/shared/pictograph/shared/domain/models/pictograph-data.js';
+  import type { SequenceData } from '#lib/shared/foundation/domain/models/sequence-data.js';
+  import { GridMode } from '#lib/shared/pictograph/grid/domain/enums/grid-enums.js';
+  import { Letter } from '#lib/shared/foundation/domain/models/letter.js';
+  import { PropType } from '#lib/shared/pictograph/prop/domain/enums/prop-type.js';
+  import { renderPictographToSVG } from '#lib/shared/render/utils/pictograph-to-svg.js';
+  import { Canvas2DDirectRenderer } from '#lib/shared/render/services/canvas-2d-direct-renderer.js';
+  import PictographContainer from '#lib/shared/pictograph/shared/components/PictographContainer.svelte';
+  import { PublicSequencesLoader } from '#lib/shared/browse/services/public-sequences-loader.js';
 
   const STORAGE_KEY = 'render-compare-state';
 

@@ -9,51 +9,51 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import { onDestroy, onMount } from "svelte";
-  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
+  import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
   import {
     beginScanVisit,
     captureScanEvent,
     endScanViewerSession,
     updateScanAttribution,
-  } from "$lib/shared/analytics/scan-analytics";
-  import { scanPropProperties } from "$lib/shared/analytics/scan-prop-attribution";
+  } from "#lib/shared/analytics/scan-analytics.js";
+  import { scanPropProperties } from "#lib/shared/analytics/scan-prop-attribution.js";
   import {
     scanResolutionFailureCategory,
     type ScanResolutionFailureCategory,
-  } from "$lib/shared/analytics/scan-resolution-analytics";
-  import { markScan } from "$lib/shared/analytics/scan-perf";
-  import { initPostHog } from "$lib/shared/analytics/services/posthog";
-  import { getDeviceId } from "$lib/shared/auth/services/device-id-service";
+  } from "#lib/shared/analytics/scan-resolution-analytics.js";
+  import { markScan } from "#lib/shared/analytics/scan-perf.js";
+  import { initPostHog } from "#lib/shared/analytics/services/posthog.js";
+  import { getDeviceId } from "#lib/shared/auth/services/device-id-service.js";
   import {
     authState,
     initializeAuthListener,
-  } from "$lib/shared/auth/state/auth-state.svelte";
-  import { saveSequenceRouteHandoff } from "$lib/shared/coordinators/sequence-handoff.svelte";
-  import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { saveSequenceRouteHandoff } from "#lib/shared/coordinators/sequence-handoff.svelte.js";
+  import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     clearModuleChunkRecoveryGuard,
     handleHMRInit,
-  } from "$lib/shared/hmr-helper";
-  import { registerLoopDisplayResolver } from "$lib/shared/loop-labeler/get-loop-display-resolver";
-  import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
+  } from "#lib/shared/hmr-helper.js";
+  import { registerLoopDisplayResolver } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+  import { resolveLoopDisplay } from "#lib/features/loop-labeler/services/loop-display-resolver.js";
   import {
     isInlineEncoded,
     parsePropsFromURL,
-  } from "$lib/shared/navigation/services/sequence-encoder";
-  import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
+  } from "#lib/shared/navigation/services/sequence-encoder.js";
+  import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
   import {
     readScanPhysicalCardId,
     recordCardScanAfterAuth,
-  } from "$lib/shared/qr/services/card-scan-ingest";
-  import { resolveScanPropConfig } from "$lib/shared/qr/services/scan-prop-resolver";
-  import { buildScanSequenceDestination } from "$lib/shared/qr/services/scan-sequence-handoff";
+  } from "#lib/shared/qr/services/card-scan-ingest.js";
+  import { resolveScanPropConfig } from "#lib/shared/qr/services/scan-prop-resolver.js";
+  import { buildScanSequenceDestination } from "#lib/shared/qr/services/scan-sequence-handoff.js";
   import {
     ShortCodeManager,
     type ShortCodeData,
     type ShortCodeSequenceLoader,
-  } from "$lib/shared/qr/services/short-code-manager";
-  import { isFirstScanRouteVisit } from "$lib/shared/qr/utils/scan-detection";
+  } from "#lib/shared/qr/services/short-code-manager.js";
+  import { isFirstScanRouteVisit } from "#lib/shared/qr/utils/scan-detection.js";
 
   interface Props {
     data: {
@@ -77,13 +77,13 @@
       record: ShortCodeData | null;
       preparedSequence: SequenceData | null;
       preparedPropConfig: {
-        leftPropType: import("$lib/shared/pictograph/prop/domain/enums/prop-type").PropType;
-        rightPropType: import("$lib/shared/pictograph/prop/domain/enums/prop-type").PropType;
+        leftPropType: import("#lib/shared/pictograph/prop/domain/enums/prop-type.js").PropType;
+        rightPropType: import("#lib/shared/pictograph/prop/domain/enums/prop-type.js").PropType;
         catDogMode: boolean;
       } | null;
       /** This card's props from its physical card record (serialized QRs no
        *  longer carry bp/rp). Null for legacy cards and URLs that name both. */
-      physicalCardProps: import("$lib/shared/qr/services/scan-prop-resolver").ScanPropCandidate | null;
+      physicalCardProps: import("#lib/shared/qr/services/scan-prop-resolver.js").ScanPropCandidate | null;
     };
     onViewerReady?: () => void;
   }
@@ -264,7 +264,7 @@
       );
       clearModuleChunkRecoveryGuard();
       handoffInProgress = true;
-      await goto(destination, { replaceState: true });
+      await goto(destination, { replace: true });
     } catch (error) {
       handoffInProgress = false;
       failedWhileOffline = !navigator.onLine;

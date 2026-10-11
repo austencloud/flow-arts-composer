@@ -4,7 +4,7 @@
  * Same disables the reflections and Swapped with a reason on each button.
  */
 import { describe, expect, it } from "vitest";
-import { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
+import { LOOPComponent } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
 import {
   buildLoopOverlayModel,
   type LoopOverlayModel,

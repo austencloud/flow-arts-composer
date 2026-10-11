@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { getViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import { loadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
-  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
+  import { getViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import { loadedAuthState } from "#lib/shared/auth/state/loaded-auth-state.svelte.js";
+  import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
   import type {
     SceneControlHostTool,
     SceneControlTool,
-  } from "$lib/shared/3d/domain/scene-control-layout";
+  } from "#lib/shared/3d/domain/scene-control-layout.js";
   import SceneChromeButton from "./SceneChromeButton.svelte";
   import {
     reportViewerControlChange,
     type ViewerControlSink,
-  } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
+  } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
 
   interface Props {
     renderMode: "2d" | "3d";

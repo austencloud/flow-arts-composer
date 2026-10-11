@@ -6,7 +6,7 @@ Handles the forceShowAll logic for showing all glyphs in settings panel.
 -->
 <script lang="ts">
   import type { PictographData } from "../domain/models/pictograph-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import PictographContainer from "./PictographContainer.svelte";
 
   let {

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   toAnimationPathPolicy,
   toMandalaPathShape,
-} from "$lib/shared/mandala/services/mandala-path-policy";
+} from "#lib/shared/mandala/services/mandala-path-policy.js";
 
 describe("mandala path policy", () => {
   it.each(["arc", "linear", "concave"] as const)(

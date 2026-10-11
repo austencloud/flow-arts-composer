@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { InstancedMesh, Mesh } from "three";
-import type { ImportedTerrainDataV2 } from "$lib/shared/3d/procedural-engine/generation/real-terrain-zone";
+import type { ImportedTerrainDataV2 } from "#lib/shared/3d/procedural-engine/generation/real-terrain-zone.js";
 import { parseFlowFestRuntimeContract } from "../../src/routes/test/flow-fest-graybox/flow-fest-runtime-contract";
 import { buildFlowFestProductionDressing } from "../../src/routes/test/flow-fest-sim/flow-fest-production-geometry";
 import { FLOW_FEST_LOWER_LOOP_ROAD_CROSSING } from "../../src/routes/test/flow-fest-sim/flow-fest-camp-plan";

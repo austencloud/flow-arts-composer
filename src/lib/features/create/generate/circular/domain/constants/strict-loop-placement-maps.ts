@@ -25,4 +25,4 @@ export {
   ROTATED_SWAPPED_HALVED_VALIDATION_SET,
   ROTATED_SWAPPED_NONDEGENERATE_QUARTERED_VALIDATION_SET,
   ROTATED_SWAPPED_NONDEGENERATE_HALVED_VALIDATION_SET,
-} from "$lib/shared/create/domain/strict-loop-placement-maps";
+} from "#lib/shared/create/domain/strict-loop-placement-maps.js";

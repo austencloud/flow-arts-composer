@@ -10,10 +10,10 @@ import {
   triangleSpriteKey,
 } from "../triangle-appearance";
 import { basePropTypeOfRenderKey, resolvePropRenderKey } from "../prop-look";
-import { getPropDimensions } from "$lib/shared/animation-engine/services/IPropTextureLoader";
-import { resolvePropSvgPath } from "$lib/shared/animation-engine/services/svg-generator";
-import { getTipPointsBaseline } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { propTextureMatchesRequest } from "$lib/shared/animation-engine/services/canvas2d/prop-texture-match";
+import { getPropDimensions } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
+import { resolvePropSvgPath } from "#lib/shared/animation-engine/services/svg-generator.js";
+import { getTipPointsBaseline } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import { propTextureMatchesRequest } from "#lib/shared/animation-engine/services/canvas2d/prop-texture-match.js";
 import {
   HOOP_FAMILY_BOXES,
   HOOP_FAMILY_TIP_POINTS,

@@ -1,6 +1,6 @@
 <script lang="ts">
   import ComposerExperience from "../composer/_components/ComposerExperience.svelte";
-  import Seo from "$lib/shared/components/Seo.svelte";
+  import Seo from "#lib/shared/components/Seo.svelte";
 
   const TITLE = "About The Kinetic Alphabet";
   const DESCRIPTION =

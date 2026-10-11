@@ -5,9 +5,9 @@ Dialog for configuring sequence metadata before saving to library.
 Allows user to set name, visibility, tags, collections, and notes.
 -->
 <script lang="ts" module>
-  import type { SequenceVisibility } from "$lib/shared/library/domain/models/library-sequence";
+  import type { SequenceVisibility } from "#lib/shared/library/domain/models/library-sequence.js";
 
-  import type { ResolvedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
+  import type { ResolvedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
   export interface SaveMetadata {
     propConfig: ResolvedPropConfig;
     name: string;
@@ -19,16 +19,16 @@ Allows user to set name, visibility, tags, collections, and notes.
 </script>
 
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { untrack } from "svelte";
-  import PropPairField from "$lib/shared/pictograph/prop/components/PropPairField.svelte";
-  import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import CollectionPickerContent from "$lib/features/library/components/collection-picker/CollectionPickerContent.svelte";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
+  import PropPairField from "#lib/shared/pictograph/prop/components/PropPairField.svelte";
+  import { captureActivePropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import CollectionPickerContent from "#lib/features/library/components/collection-picker/CollectionPickerContent.svelte";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
 
   let {
     isOpen = false,

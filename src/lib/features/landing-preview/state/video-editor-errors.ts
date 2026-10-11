@@ -1,4 +1,4 @@
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 export function reportVideoEditError(action: string, error: unknown): void {
   console.error(`Failed to ${action}:`, error);

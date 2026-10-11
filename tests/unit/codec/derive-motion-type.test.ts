@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   deriveMotionType,
   deriveHandOrbitalDirection,
-} from "$lib/shared/render/core/calculations/orientation";
+} from "#lib/shared/render/core/calculations/orientation.js";
 
 describe("deriveHandOrbitalDirection", () => {
   it("returns cw/ccw for shift arcs, null for non-shift geometry", () => {

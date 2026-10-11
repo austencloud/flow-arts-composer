@@ -11,10 +11,10 @@
   (no-layout-shift rule). Quartered is disabled (not hidden) when the resolved
   LOOP type doesn't support a period-4 orbit. -->
 <script lang="ts">
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import { LOOP_COMPONENTS } from "$lib/shared/browse/domain/constants/loop-constants";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { LOOP_COMPONENTS } from "#lib/shared/browse/domain/constants/loop-constants.js";
   import { supportsQuarteredSlice, type LoopSlice } from "../domain/legality";
   import { getLoopExplorerContext } from "../state/loop-explorer-state.svelte";
 

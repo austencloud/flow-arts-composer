@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
+import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-project-bridge-guard.js";
 import type {
   PostProject,
   PostVideoItem,
   PostMusic,
 } from "@austencloud/video-editor/core";
-import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video-url";
+import { featureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video-url.js";
 import { NO_GRID_MESSAGE } from "@austencloud/video-editor/core";
 import {
   applyPostProjectOps,
   type PostProjectOp,
-} from "$lib/shared/media-composition/domain/post-project-ops";
+} from "#lib/shared/media-composition/domain/post-project-ops.js";
 import { NOW, card, project, video } from "./post-project-fixtures";
-import { editContext } from "$lib/shared/post-studio-plugin";
+import { editContext } from "#lib/shared/post-studio-plugin/index.js";
 
 const ctx = editContext(NOW + 1);
 const URL = featureVideoMediaUrl("promo", "music/derail.wav");

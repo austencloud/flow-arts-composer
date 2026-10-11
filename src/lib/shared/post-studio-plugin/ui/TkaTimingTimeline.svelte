@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { VideoEditorState } from "@austencloud/video-editor";
-  import PostTimingTimeline from "$lib/shared/share/components/post-studio/builder/PostTimingTimeline.svelte";
+  import PostTimingTimeline from "#lib/shared/share/components/post-studio/builder/PostTimingTimeline.svelte";
   import { useTkaEditor } from "./tka-editor-context";
 
   /** The timing mode's timeline: the take's landings under the moves square. */

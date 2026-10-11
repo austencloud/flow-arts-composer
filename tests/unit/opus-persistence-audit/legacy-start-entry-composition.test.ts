@@ -24,10 +24,10 @@ import { describe, expect, it } from "vitest";
 import {
   ensureComposition,
   hydrate,
-} from "$lib/shared/foundation/services/sequence-hydrator";
-import { computeHash } from "$lib/shared/library/services/sequence-content-hasher";
-import { normalizeSequenceForPersistence } from "$lib/shared/library/services/sequence-persistence-normalizer";
-import { IncompleteWordError } from "$lib/shared/foundation/services/word-deriver";
+} from "#lib/shared/foundation/services/sequence-hydrator.js";
+import { computeHash } from "#lib/shared/library/services/sequence-content-hasher.js";
+import { normalizeSequenceForPersistence } from "#lib/shared/library/services/sequence-persistence-normalizer.js";
+import { IncompleteWordError } from "#lib/shared/foundation/services/word-deriver.js";
 
 import {
   asStoredDocument,

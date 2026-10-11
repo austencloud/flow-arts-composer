@@ -5,10 +5,10 @@
   Columns → (red, right hand). The header popover edits them; this strip
   reads, and rolls. Wide hosts use ShapeMatrixGridCorner instead. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { flyFade } from "$lib/shared/transitions/motion";
-  import { matrixTurnVisibleLabel } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
-  import { theoryRatioLabel } from "$lib/shared/shape-matrix/domain/theory-ratio";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { matrixTurnVisibleLabel } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
+  import { theoryRatioLabel } from "#lib/shared/shape-matrix/domain/theory-ratio.js";
   import {
     localizedMatrixTurnSpokenLabel,
     localizedTheoryRatioSpokenLabel,

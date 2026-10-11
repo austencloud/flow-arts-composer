@@ -12,17 +12,20 @@ const mocks = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock("$env/dynamic/private", () => ({ env: {} }));
-vi.mock("$lib/server/auth/requireFirebaseUser", () => ({
+vi.mock("$app/env/private", async () => {
+  const { envModule } = await import("#test-helpers/env-module.js");
+  return envModule();
+});
+vi.mock("#lib/server/auth/requireFirebaseUser.js", () => ({
   requireFirebaseUser: vi.fn(async () => ({ uid: "test-user" })),
 }));
-vi.mock("$lib/server/security/withRateLimit", () => ({
+vi.mock("#lib/server/security/withRateLimit.js", () => ({
   withRateLimit: vi.fn(async () => null),
 }));
-vi.mock("$lib/features/tika/ai/system-prompts", () => ({
+vi.mock("#lib/features/tika/ai/system-prompts.js", () => ({
   buildSystemPrompt: () => "Answer using the available tools.",
 }));
-vi.mock("$lib/features/tika/services/server/tika-server-container", () => ({
+vi.mock("#lib/features/tika/services/server/tika-server-container.js", () => ({
   getTikaServerContainer: () => ({
     modelProvider: mocks,
     toolExecutor: { getTermDefinition: mocks.getTermDefinition },

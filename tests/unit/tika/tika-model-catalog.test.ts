@@ -4,8 +4,8 @@ import {
   getConfiguredTikaModels,
   getTikaModelDefinition,
   resolveTikaModelKey,
-} from "$lib/features/tika/domain/tika-model-catalog";
-import { TikaModelProvider } from "$lib/features/tika/services/tika-model-provider";
+} from "#lib/features/tika/domain/tika-model-catalog.js";
+import { TikaModelProvider } from "#lib/features/tika/services/tika-model-provider.js";
 
 describe("TIKA model selection", () => {
   it("defaults to the lower-cost model without changing a saved Sonnet tier", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createStepGridDisplayState } from "$lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte";
+import { createStepGridDisplayState } from "#lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte.js";
 
 describe("step grid pictograph arrival ownership", () => {
   it("hands one staged arrival to its destination cell", () => {

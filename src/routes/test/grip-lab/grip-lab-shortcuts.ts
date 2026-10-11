@@ -1,9 +1,9 @@
-import type { ShortcutRegistrationOptions } from "$lib/shared/keyboard/domain/types/keyboard-types";
+import type { ShortcutRegistrationOptions } from "#lib/shared/keyboard/domain/types/keyboard-types.js";
 import {
   isEditableKeyboardTarget,
   isLayerOwnedKeyboardTarget,
   isWidgetOwnedKeyboardTarget,
-} from "$lib/shared/keyboard/domain/shortcut-target-resolution";
+} from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
 
 export interface GripLabShortcutActions {
   onDelete: () => void;

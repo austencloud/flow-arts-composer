@@ -1,33 +1,36 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createAssembleTabState } from "$lib/features/create/shared/state/assemble-tab-state.svelte";
-import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { createAssembleTabState } from "#lib/features/create/shared/state/assemble-tab-state.svelte.js";
+import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
   SkewDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
-vi.mock("$lib/shared/gamification/get-prop-unlock-manager", () => ({
+vi.mock("#lib/shared/gamification/get-prop-unlock-manager.js", () => ({
   getPropUnlockManager: () => ({ recordCreation: vi.fn() }),
 }));
 
-vi.mock("$lib/shared/pictograph/shared/services/motion-query-handler", () => ({
-  motionQueryHandler: {
-    findLetterByMotionConfiguration: vi.fn(async () => Letter.A),
-  },
-}));
+vi.mock(
+  "#lib/shared/pictograph/shared/services/motion-query-handler.js",
+  () => ({
+    motionQueryHandler: {
+      findLetterByMotionConfiguration: vi.fn(async () => Letter.A),
+    },
+  })
+);
 
 const states: ReturnType<typeof createAssembleTabState>[] = [];
 const sequenceRepository = {} as SequenceRepository;

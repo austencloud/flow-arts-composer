@@ -17,28 +17,28 @@
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-  import { scene3dCollectionState } from "$lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte";
-  import { scene3DHasSteps } from "$lib/features/scene-3d-collection/services/open-3d-scene";
-  import { tunnelCollectionState } from "$lib/features/tunnel-collection/state/tunnel-collection-state.svelte";
-  import { mandalaCollectionState } from "$lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte";
-  import { fitColumns } from "$lib/features/creators/domain/fit-columns";
-  import { sortSequences } from "$lib/shared/browse/services/browse-sorter";
-  import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+  import { scene3dCollectionState } from "#lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte.js";
+  import { scene3DHasSteps } from "#lib/features/scene-3d-collection/services/open-3d-scene.js";
+  import { tunnelCollectionState } from "#lib/features/tunnel-collection/state/tunnel-collection-state.svelte.js";
+  import { mandalaCollectionState } from "#lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte.js";
+  import { fitColumns } from "#lib/features/creators/domain/fit-columns.js";
+  import { sortSequences } from "#lib/shared/browse/services/browse-sorter.js";
+  import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+  import PanelState from "#lib/shared/components/panel/PanelState.svelte";
   import ArtifactTile from "./ArtifactTile.svelte";
   import BandDoorway from "./BandDoorway.svelte";
   import { stripColumns } from "./doorway-policy";
   import { LiveSlots, type Medium } from "./live-slots.svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { setPendingBrowseIntent } from "$lib/features/browse/state/pending-browse-intent.svelte";
-  import { exploreVisualsVisible } from "$lib/shared/browse/navigation/visuals-promotion";
-  import { listPublicArtifactsByOwner } from "$lib/shared/artifact-revisions/services/public-artifact-loader";
-  import type { PublicArtifactEnvelope } from "$lib/shared/artifact-revisions/domain/public-artifact";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { setPendingBrowseIntent } from "#lib/features/browse/state/pending-browse-intent.svelte.js";
+  import { exploreVisualsVisible } from "#lib/shared/browse/navigation/visuals-promotion.js";
+  import { listPublicArtifactsByOwner } from "#lib/shared/artifact-revisions/services/public-artifact-loader.js";
+  import type { PublicArtifactEnvelope } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   let {
     userId,

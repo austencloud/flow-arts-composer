@@ -10,10 +10,10 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import GalleryDrill from "$lib/features/browse/gallery-home/GalleryDrill.svelte";
-  import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
-  import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import GalleryDrill from "#lib/features/browse/gallery-home/GalleryDrill.svelte";
+  import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
+  import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   let mode = $state<"drill" | "grid">("drill");
 

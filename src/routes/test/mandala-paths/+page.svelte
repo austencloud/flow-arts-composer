@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import { renderMandalaSVG } from "$lib/shared/mandala/services/mandala-renderer";
-	import { loadCatalogs, loadCatalogSequences } from "$lib/features/choreo-card/services/catalog-loader";
-	import { mandalaCollectionState } from "$lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte";
-	import type { Catalog } from "$lib/features/choreo-card/domain/models/Catalog";
+	import { renderMandalaSVG } from "#lib/shared/mandala/services/mandala-renderer.js";
+	import { loadCatalogs, loadCatalogSequences } from "#lib/features/choreo-card/services/catalog-loader.js";
+	import { mandalaCollectionState } from "#lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte.js";
+	import type { Catalog } from "#lib/features/choreo-card/domain/models/Catalog.js";
 	import type {
 		MandalaRenderOptions,
 		MandalaPalette,
 		MandalaPaths,
-	} from "$lib/shared/mandala/domain/mandala-types";
+	} from "#lib/shared/mandala/domain/mandala-types.js";
 	import {
 		DARK_MOTION_BLUE_STROKE,
 		DARK_MOTION_RED_STROKE,
@@ -16,9 +16,9 @@
 		DARK_MOTION_RED_FILL,
 		DARK_MOTION_PURPLE_STROKE,
 		DARK_MOTION_PURPLE_FILL,
-	} from "$lib/shared/mandala/domain/mandala-constants";
-	import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-	import type { MandalaPathOptions } from "$lib/shared/mandala/services/types";
+	} from "#lib/shared/mandala/domain/mandala-constants.js";
+	import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+	import type { MandalaPathOptions } from "#lib/shared/mandala/services/types.js";
 
 	const PALETTE: MandalaPalette = {
 		leftStroke: DARK_MOTION_BLUE_STROKE,

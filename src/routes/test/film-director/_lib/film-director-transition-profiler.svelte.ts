@@ -1,7 +1,7 @@
 import type {
   EnvironmentTransitionObservation,
   EnvironmentTransitionPhase,
-} from "$lib/shared/3d/environments/domain/environment-transition";
+} from "#lib/shared/3d/environments/domain/environment-transition.js";
 
 export interface FilmDirectorTransitionProfile {
   from: string | null;

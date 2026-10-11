@@ -1,10 +1,10 @@
 import { doc, serverTimestamp, writeBatch } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { stripUndefined } from "$lib/shared/firestore/firestore-helpers";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { stripUndefined } from "#lib/shared/firestore/firestore-helpers.js";
 import {
   createFirebaseCollectionRepository,
   type FirebaseCollectionRepository,
-} from "$lib/shared/collections/firebase-collection-repository";
+} from "#lib/shared/collections/firebase-collection-repository.js";
 import {
   CollectedMandalaSchema,
   type CollectedMandala,

@@ -6,7 +6,7 @@
   container dimensions and computes per-card scaling to fit.
 -->
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import ChoreoCard from "../ChoreoCard.svelte";
   import BackJobPreview from "../card-back/BackJobPreview.svelte";
   import InfoCardCanvasPreview from "../card-back/InfoCardCanvasPreview.svelte";

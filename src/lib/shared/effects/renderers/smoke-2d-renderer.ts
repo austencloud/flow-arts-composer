@@ -1,5 +1,5 @@
 import type { Smoke2DParams } from "../translators/canvas2d-types";
-import { curl2D } from "$lib/shared/3d/effects/smoke/smoke-curl-field";
+import { curl2D } from "#lib/shared/3d/effects/smoke/smoke-curl-field.js";
 import type { EmitterTip } from "./emitter-tip";
 import { emitterId } from "./emitter-tip";
 

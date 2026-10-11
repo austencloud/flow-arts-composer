@@ -10,8 +10,8 @@
 
 import type { ArenaRating, ArenaVote, ArenaLeaderboardEntry, ArenaUserStats, ArenaEntry, } from "../domain/models/arena-models";
 import type { MatchupCandidate } from "./types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
 import {
   INITIAL_MU,
@@ -23,7 +23,7 @@ import {
   firestoreGet,
   firestoreList,
   firestoreSet,
-} from "$lib/shared/firestore";
+} from "#lib/shared/firestore/index.js";
 import { ArenaRatingSchema, ArenaVoteSchema } from "../domain/models/arena-schemas";
 import {
   collection,
@@ -33,7 +33,7 @@ import {
   writeBatch,
   Timestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 
 const RATINGS_COLLECTION = "arenaRatings";
 const VOTES_COLLECTION = "arenaVotes";

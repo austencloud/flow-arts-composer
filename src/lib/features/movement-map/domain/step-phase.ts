@@ -18,8 +18,8 @@
  * The phase anchors keep them distinguishable when an observation is filed.
  */
 
-import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
-import { arrivalTimestamps } from "$lib/shared/video-collaboration/utils/step-map-utils";
+import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+import { arrivalTimestamps } from "#lib/shared/video-collaboration/utils/step-map-utils.js";
 
 export interface StepPhasePosition {
   /** 0-based index into the sequence of the move being performed. */

@@ -1,7 +1,7 @@
 // Deliberately the params module, not the codec: this file runs in the root
 // layout's `afterNavigate`, and the codec's fflate compression stack has no
 // business on every route's hydration path. See viewer-url-state-params.ts.
-import { VIEWER_STATE_PARAM_NAMES } from "$lib/shared/sequence-viewer/services/viewer-url-state-params";
+import { VIEWER_STATE_PARAM_NAMES } from "#lib/shared/sequence-viewer/services/viewer-url-state-params.js";
 
 interface RouteScopedParameter {
   name: string;
@@ -60,6 +60,7 @@ const ROUTE_SCOPED_PARAMETERS: readonly RouteScopedParameter[] = [
   },
   { name: "handoff", isValidForPath: startsWith("/compose") },
   { name: "project", isValidForPath: startsWith("/post") },
+  { name: "library", isValidForPath: startsWith("/post") },
   { name: "feedback", isValidForPath: startsWith("/feedback") },
   { name: "openFeedback", isValidForPath: startsWith("/feedback") },
   { name: "theme", isValidForPath: startsWith("/settings/theme") },

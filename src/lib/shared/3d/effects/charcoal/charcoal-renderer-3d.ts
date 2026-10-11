@@ -25,12 +25,12 @@ import {
 } from "./charcoal-material-3d";
 import { ParticleInstancePool3D } from "../instancing/particle-instance-pool-3d";
 import { QualityTier } from "../types";
-import type { Charcoal3DParams } from "$lib/shared/effects/translators/webgl3d-types";
-import type { CharcoalEmissionStyle } from "$lib/shared/effects/domain/effects-config";
+import type { Charcoal3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
+import type { CharcoalEmissionStyle } from "#lib/shared/effects/domain/effects-config.js";
 import {
   resolveCharcoal3DMotionProfile,
   type Charcoal3DMotionProfile,
-} from "$lib/shared/effects/translators/charcoal-3d-motion-profiles";
+} from "#lib/shared/effects/translators/charcoal-3d-motion-profiles.js";
 
 const SPARK_POOL_SIZE: Record<QualityTier, number> = {
   [QualityTier.HIGH]: 7200,

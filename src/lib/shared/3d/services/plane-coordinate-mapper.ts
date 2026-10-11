@@ -4,14 +4,14 @@
 
 import { Vector3, type Quaternion } from "three";
 import type { Plane } from "@austencloud/scene-3d";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   GRID_RADIUS_3D,
   planeAngleToWorldPosition,
   getPlaneNormal,
   calculatePropQuaternion,
 } from "../domain/constants/plane-transforms";
-import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
 
 /** Convert a path angle on a plane to a 3D world position. */
 export function angleToPosition3D(

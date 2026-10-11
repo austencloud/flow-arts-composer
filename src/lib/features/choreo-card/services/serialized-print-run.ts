@@ -1,6 +1,6 @@
-import { authedFetch } from "$lib/shared/auth/services/authed-fetch";
-import { getQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
-import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
+import { authedFetch } from "#lib/shared/auth/services/authed-fetch.js";
+import { getQRCodeGenerator } from "#lib/shared/qr/get-qr-code-generator.js";
+import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
 import {
   PHYSICAL_CARD_ID_LENGTH,
   PHYSICAL_CARD_SCHEMA_VERSION,
@@ -12,7 +12,7 @@ import {
   type PhysicalCardIssueRequest,
   type PhysicalCardIssueResponse,
   type PhysicalCardOutputMode,
-} from "$lib/shared/qr/domain/physical-card";
+} from "#lib/shared/qr/domain/physical-card.js";
 import type { CardSizeId } from "../domain/card-sizes";
 import type { CardPair } from "./types";
 import {

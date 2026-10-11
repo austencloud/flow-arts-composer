@@ -163,7 +163,7 @@ export function flyTransition(
  * Migration example:
  * ```svelte
  * // Old:
- * import { springScaleTransition } from "$lib/shared/utils/transitions.js";
+ * import { springScaleTransition } from "#lib/shared/utils/transitions.js";
  * <div transition:springScaleTransition>...</div>
  *
  * // New:

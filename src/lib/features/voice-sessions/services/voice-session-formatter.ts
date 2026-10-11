@@ -8,7 +8,7 @@ import type {
   VoiceSessionEvent,
   VoiceSessionStats,
   ResolutionTier,
-} from "$lib/shared/voice-control/domain/voice-session-types";
+} from "#lib/shared/voice-control/domain/voice-session-types.js";
 
 const TIER_LABELS: Record<ResolutionTier, string> = {
   tier1_regex: "Tier 1 (Regex)",

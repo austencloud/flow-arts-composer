@@ -9,7 +9,7 @@ import {
   FLOW_FEST_GAMEPLAY_GROUND_DECELERATION_METERS_PER_SECOND_SQUARED as DECELERATION,
   FLOW_FEST_GAMEPLAY_SPRINT_MULTIPLIER,
   FLOW_FEST_GAMEPLAY_WALK_SPEED_METERS_PER_SECOND as WALK_SPEED,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-simulation-contract";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-simulation-contract.js";
 
 const RUN_SPEED = WALK_SPEED * FLOW_FEST_GAMEPLAY_SPRINT_MULTIPLIER;
 const FRAME = 1 / 60;

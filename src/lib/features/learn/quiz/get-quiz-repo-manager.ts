@@ -1,6 +1,6 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { QuizRepoManager } from './services/quiz-repo-manager';
-import { getCodexLetterMappingRepo } from '$lib/features/learn/codex/get-codex-letter-mapping-repo';
+import { getCodexLetterMappingRepo } from '#lib/features/learn/codex/get-codex-letter-mapping-repo.js';
 
 let instance: QuizRepoManager | null = null;
 

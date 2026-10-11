@@ -16,10 +16,10 @@
  * Stateless — plain module functions delegating to browse-filter's applyFilter.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
-import type { ActiveFilter } from "$lib/shared/browse/domain/multi-filter-models";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { BrowseFilterValue } from "#lib/shared/persistence/domain/types/filtering-types.js";
+import type { ActiveFilter } from "#lib/shared/browse/domain/multi-filter-models.js";
 import { applyFilter } from "./browse-filter";
 
 /** Single-valued categories whose stacked values are alternatives (OR). */

@@ -20,11 +20,11 @@ import {
   MODE_LABEL,
   MODE_ORDER,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import {
   TND_BY_FAMILY,
   type TnDElement,
-} from "$lib/features/choreo-card/domain/tnd-element";
+} from "#lib/features/choreo-card/domain/tnd-element.js";
 import { createFuseRule, type FuseRule } from "./fuse-rule";
 
 export type FuseTnDMode = VtgMode;

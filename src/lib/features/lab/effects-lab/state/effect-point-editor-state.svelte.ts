@@ -1,12 +1,12 @@
 import type { TipPointOverrideProvider } from "../services/tip-point-override-provider";
 import type { EffectPointsPersister } from "../services/effect-points-persister";
-import type { TipPoint } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+import type { TipPoint } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import {
 	describeTipPointResolution,
 	getTipPointsBaseline,
 	type TipPointSource,
-} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import type { TrailPointConfig } from "$lib/shared/animation-engine/domain/types/trail-point-types";
+} from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import type { TrailPointConfig } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
 
 const MAX_UNDO_DEPTH = 20;
 const SAVE_INDICATOR_DURATION = 1200;

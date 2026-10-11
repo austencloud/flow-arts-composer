@@ -9,7 +9,7 @@
 -->
 <script lang="ts">
   import { PracticeMode } from "../../domain/enums/train-enums";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     activeMode: PracticeMode;

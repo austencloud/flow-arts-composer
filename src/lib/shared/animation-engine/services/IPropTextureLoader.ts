@@ -5,14 +5,14 @@
  * Uses reactive state ownership - service owns $state, component derives from it.
  */
 
-import type { IAnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
-import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
-import type { ISVGGenerator } from "$lib/shared/animation-engine/services/ISVGGenerator";
-import type { ITrailCapturer } from "$lib/shared/animation-engine/services/ITrailCapturer";
-import { parseFanRenderKey } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-import { parseModelRenderKey } from "$lib/shared/pictograph/prop/domain/prop-look";
-import { HOOP_FAMILY_BOXES } from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
-import { parseTriangleRenderKey } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+import type { IAnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
+import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
+import type { ISVGGenerator } from "#lib/shared/animation-engine/services/ISVGGenerator.js";
+import type { ITrailCapturer } from "#lib/shared/animation-engine/services/ITrailCapturer.js";
+import { parseFanRenderKey } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import { parseModelRenderKey } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import { HOOP_FAMILY_BOXES } from "#lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.js";
+import { parseTriangleRenderKey } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 
 /**
  * Prop dimensions

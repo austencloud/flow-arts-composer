@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 
 // MotionData's factory transitively pulls firebase/auth at load time (see
 // wasd-screen-direction.test.ts); the tuple math itself is pure.
-vi.mock("$lib/shared/auth/state/authState.svelte", () => ({
+vi.mock("#lib/shared/auth/state/authState.svelte", () => ({
   authState: { effectiveUserId: null },
 }));
 vi.mock("firebase/firestore", () => ({
@@ -10,10 +10,10 @@ vi.mock("firebase/firestore", () => ({
   doc: vi.fn(),
 }));
 
-import { directionalTupleCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/directional-tuple-processor";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { MotionType, RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { directionalTupleCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/directional-tuple-processor.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { MotionType, RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { arrowDirectionalTuples } from "@tka/render-core";
 
 // A float's tuples follow its hand path: clockwise turns the nudge, counter-

@@ -5,15 +5,15 @@
   controls.
 -->
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { PostProject } from "@austencloud/video-editor/core";
   import { VideoEditor } from "@austencloud/video-editor/ui";
-  import { setViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
+  import { setViewerStudioSurfaces } from "#lib/shared/sequence-viewer/context/viewer-studio-surfaces-context.js";
   import {
     setViewerUrlSessionContext,
     type ViewerUrlSession,
-  } from "$lib/shared/sequence-viewer/services/viewer-url-session";
-  import type { ViewerStudioSurfaces } from "$lib/shared/sequence-viewer/state/viewer-studio-surfaces.svelte";
+  } from "#lib/shared/sequence-viewer/services/viewer-url-session.js";
+  import type { ViewerStudioSurfaces } from "#lib/shared/sequence-viewer/state/viewer-studio-surfaces.svelte.js";
   import TkaEditorScope from "./TkaEditorScope.svelte";
 
   interface Props {

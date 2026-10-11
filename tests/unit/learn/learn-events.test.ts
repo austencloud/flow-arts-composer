@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/shared/analytics/services/posthog-activity-logger", () => ({
+vi.mock("#lib/shared/analytics/services/posthog-activity-logger.js", () => ({
   logActivity: vi.fn(),
 }));
 
-import { logActivity } from "$lib/shared/analytics/services/posthog-activity-logger";
+import { logActivity } from "#lib/shared/analytics/services/posthog-activity-logger.js";
 import {
   trackLessonCompleted,
   trackLessonStarted,
   trackQuizAnswer,
   trackQuizCompleted,
   trackQuizStarted,
-} from "$lib/features/learn/services/learn-events";
+} from "#lib/features/learn/services/learn-events.js";
 
 describe("Learn decision events", () => {
   beforeEach(() => vi.mocked(logActivity).mockClear());

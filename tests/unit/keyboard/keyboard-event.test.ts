@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { NormalizedKeyboardEvent } from "$lib/shared/keyboard/domain/models/keyboard-event";
+import { NormalizedKeyboardEvent } from "#lib/shared/keyboard/domain/models/keyboard-event.js";
 
 describe("NormalizedKeyboardEvent", () => {
   it("leaves application shortcuts alone when a local widget owns the key", () => {

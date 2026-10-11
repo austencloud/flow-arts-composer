@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   buildViewerBrowserUrl,
   buildViewerWebUrl,
@@ -11,7 +11,7 @@ import {
   resolveEditingPane,
   resolveExportType,
   resolveSceneBpmIntent,
-} from "$lib/shared/sequence-viewer/services/viewer-orchestrator-model";
+} from "#lib/shared/sequence-viewer/services/viewer-orchestrator-model.js";
 
 function sequence(overrides: Partial<SequenceData> = {}): SequenceData {
   return {

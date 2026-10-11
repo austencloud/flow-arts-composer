@@ -2,7 +2,7 @@
  * Co-exported types from retired interface contracts.
  */
 
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
+import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
 
 
 export interface StickerMandalaLookup {

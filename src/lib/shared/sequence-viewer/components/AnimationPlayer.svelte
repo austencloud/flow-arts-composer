@@ -15,48 +15,48 @@
   - ExportTakeover (export progress ring)
 -->
 <script lang="ts">
-  import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
+  import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get-animation-playback-controller.js";
   import {
     createRenderActivityGate,
     renderGateTarget,
-  } from "$lib/shared/render-gating/render-activity-gate";
-  import { ensureMotionData } from "$lib/shared/sequence-viewer/services/sequence-motion-loader";
+  } from "#lib/shared/render-gating/render-activity-gate.js";
+  import { ensureMotionData } from "#lib/shared/sequence-viewer/services/sequence-motion-loader.js";
   import { onMount, onDestroy, untrack } from "svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
   import {
     clampDisplayedBeatNumber,
     displayedBeatNumber,
-  } from "$lib/shared/animation-engine/services/step-calculator";
+  } from "#lib/shared/animation-engine/services/step-calculator.js";
   import {
     createAnimationPanelState,
     type AnimationPanelState,
-  } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import {
     TrackingMode,
     type TrailSettings,
-  } from "$lib/shared/animation-engine/domain/types/trail-types";
-  import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-  import { isBilateralProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-  import { tryGetAnimationExportContext } from "$lib/shared/export-panel/context/animation-export-context.svelte";
+  } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import { isBilateralProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+  import { tryGetAnimationExportContext } from "#lib/shared/export-panel/context/animation-export-context.svelte.js";
   import type { ControlsLevel } from "../domain/types";
 
   // Extracted components
-  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { toExportTakeoverPhase } from "$lib/shared/video-export/services/export-takeover-phase";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { toExportTakeoverPhase } from "#lib/shared/video-export/services/export-takeover-phase.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import HorizontalSidebar from "./HorizontalSidebar.svelte";
   import HorizontalTransportRow from "./HorizontalTransportRow.svelte";
   import VerticalModeControls from "./VerticalModeControls.svelte";
 
   const DEFAULT_BPM = 60;
 
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { ViewerCustomColorPair } from "../domain/viewer-custom-colors";
 
   let {

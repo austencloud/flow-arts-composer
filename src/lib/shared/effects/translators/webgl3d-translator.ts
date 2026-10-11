@@ -46,12 +46,12 @@ import { resolveWaterPalette } from "../domain/water-palettes";
 import { resolveBubblePalette } from "../domain/bubble-palettes";
 import { resolvePetalPalette } from "../domain/petal-palettes";
 import { resolveSmokePalette } from "../domain/smoke-palettes";
-import { resolveInkPalette } from "$lib/shared/3d/effects/ink/ink-palettes";
+import { resolveInkPalette } from "#lib/shared/3d/effects/ink/ink-palettes.js";
 import { resolveFrostPalette } from "../domain/frost-palettes";
 import { resolveSilkPalette } from "../domain/silk-palettes";
 import { resolveAnimalPalette } from "../domain/animal-palettes";
 import { resolvePulsePalette } from "../domain/pulse-palettes";
-import { resolveSmokeVolumeProfile3D } from "$lib/shared/3d/effects/smoke/smoke-volume-profile-3d";
+import { resolveSmokeVolumeProfile3D } from "#lib/shared/3d/effects/smoke/smoke-volume-profile-3d.js";
 import { resolveCharcoal3DMotionProfile } from "./charcoal-3d-motion-profiles";
 
 /**
@@ -136,11 +136,16 @@ export function resolveZap3D(
   intent: ZapIntent,
   override: Partial<Zap3DParams> = {}
 ): Zap3DParams {
+  const haloWidth = 0.022 + intent.glow * 0.04;
   const defaults: Omit<Zap3DParams, keyof ZapIntent> = {
-    segments: Math.max(4, Math.round(5 + intent.intensity * 8)),
-    jitterAmount: 0.08 + intent.intensity * 0.14,
-    pointLightIntensity: intent.intensity > 0.5 ? intent.intensity * 2.0 : 0,
-    regenerateEveryFrames: 3,
+    haloWidth,
+    // A core about 7 mm wide at any glow, so a wide halo does not fatten it.
+    coreFraction: Math.min(
+      0.45,
+      (0.0025 + intent.intensity * 0.0015) / haloWidth
+    ),
+    brightness: 0.45 + intent.intensity * 0.65,
+    lightIntensity: intent.intensity > 0.4 ? intent.intensity * 2.5 : 0,
   };
   return { ...intent, ...defaults, ...override };
 }

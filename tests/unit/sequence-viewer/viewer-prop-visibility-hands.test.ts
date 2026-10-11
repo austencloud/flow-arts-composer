@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { createViewerPropHandHarness } from "./viewer-prop-hand-harness.svelte";
 
 const disposals: Array<() => void> = [];

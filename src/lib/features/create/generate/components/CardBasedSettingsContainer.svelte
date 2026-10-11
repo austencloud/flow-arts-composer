@@ -3,9 +3,9 @@ CardBasedSettingsContainer - Minimal card grid renderer
 Delegates ALL logic to services (SRP compliant)
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { buildCardDescriptors } from "$lib/features/create/generate/shared/services/card-configurator";
-  import { getLOOPParameterProvider } from "$lib/features/create/generate/shared/get-loop-parameter-provider";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { buildCardDescriptors } from "#lib/features/create/generate/shared/services/card-configurator.js";
+  import { getLOOPParameterProvider } from "#lib/features/create/generate/shared/get-loop-parameter-provider.js";
   import {
     onMount,
     getContext,
@@ -13,9 +13,9 @@ Delegates ALL logic to services (SRP compliant)
     type Snippet,
   } from "svelte";
   import { flip } from "svelte/animate";
-  import { motionDuration, popIn } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
+  import { motionDuration, popIn } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import {
     generateCardMorphName,
     morphGenerateCard,
@@ -23,12 +23,12 @@ Delegates ALL logic to services (SRP compliant)
   import type {
     PanelCoordinationState,
     StartEndOptions,
-  } from "$lib/shared/create/state/panel-coordination-state.svelte";
+  } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
   import { quintOut } from "svelte/easing";
 
-  import type { CardDescriptor } from "$lib/shared/create/domain/generator-contract-types";
-  import { getGeneratorPanelCards } from "$lib/shared/create/domain/card-registry";
-  import type { LOOPParameterProvider } from "$lib/features/create/generate/shared/services/loop-parameter-provider";
+  import type { CardDescriptor } from "#lib/shared/create/domain/generator-contract-types.js";
+  import { getGeneratorPanelCards } from "#lib/shared/create/domain/card-registry.js";
+  import type { LOOPParameterProvider } from "#lib/features/create/generate/shared/services/loop-parameter-provider.js";
   import { calculateResponsiveFontSize } from "../shared/services/responsive-typographer";
   import {
     GENERATE_DEFAULT_CONFIG,
@@ -45,25 +45,25 @@ Delegates ALL logic to services (SRP compliant)
     LOOPType,
     Period,
   } from "../circular/domain/models/circular-models";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { getCardColors } from "../shared/domain/card-colors";
-  import * as spellServiceLoader from "$lib/features/create/spell/services/spell-service-loader";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import * as spellServiceLoader from "#lib/features/create/spell/services/spell-service-loader.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import {
     resolveAccessTier,
     getMaxSteps,
-  } from "$lib/shared/auth/domain/access-tier";
-  import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-  import LevelSelector from "$lib/shared/components/LevelSelector.svelte";
-  import type { LevelNumber } from "$lib/shared/domain/curriculum/level-metadata";
-  import { MAX_AVAILABLE_LEVEL } from "$lib/shared/create/utils/config-mapper";
-  import { DifficultyLevel as SharedDifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { fitLoopRhythmToLength } from "$lib/shared/create/services/loop-rhythm-gating";
-  import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
+  } from "#lib/shared/auth/domain/access-tier.js";
+  import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+  import LevelSelector from "#lib/shared/components/LevelSelector.svelte";
+  import type { LevelNumber } from "#lib/shared/domain/curriculum/level-metadata.js";
+  import { MAX_AVAILABLE_LEVEL } from "#lib/shared/create/utils/config-mapper.js";
+  import { DifficultyLevel as SharedDifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { fitLoopRhythmToLength } from "#lib/shared/create/services/loop-rhythm-gating.js";
+  import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
   // Card components
   import LevelCard from "./cards/LevelCard.svelte";
   import GridModeCard from "./cards/GridModeCard.svelte";
@@ -76,8 +76,8 @@ Delegates ALL logic to services (SRP compliant)
   import WordInputCard from "./cards/WordInputCard.svelte";
   import PresetCard from "./cards/PresetCard.svelte";
   import type { FavoriteState } from "../state/favorite-state.svelte";
-  import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
-  import type { StartFeasibilityResult } from "$lib/shared/create/domain/start-feasibility";
+  import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
+  import type { StartFeasibilityResult } from "#lib/shared/create/domain/start-feasibility.js";
   import type {
     CommunitySetup,
     SavedGeneratorSetup,

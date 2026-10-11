@@ -17,30 +17,30 @@
  *   mount; the dispatcher gate makes racing renders wait for the seed.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { CoverCard } from "../domain/models/product";
-import { getPrintCardRenderer } from "$lib/features/choreo-card/getPrintCardRenderer";
-import { getCatalogLayoutPolicy } from "$lib/features/choreo-card/domain/catalog-layout-policy";
-import { calculatePhysicalCardLayout } from "$lib/features/choreo-card/services/physical-card-layout-calculator";
-import type { PhysicalCardLayout } from "$lib/features/choreo-card/services/physical-card-layout-calculator";
-import { hydrateSequence } from "$lib/features/choreo-card/services/catalog-loader";
-import type { TnDElement } from "$lib/features/choreo-card/domain/tnd-element";
-import type { PrintRenderOptions } from "$lib/features/choreo-card/services/types";
-import { getImageComposer } from "$lib/shared/render/get-image-composer";
-import { getQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
-import { prewarmCardPool } from "$lib/shared/render/services/card-pool-prewarm";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { getPrintCardRenderer } from "#lib/features/choreo-card/getPrintCardRenderer.js";
+import { getCatalogLayoutPolicy } from "#lib/features/choreo-card/domain/catalog-layout-policy.js";
+import { calculatePhysicalCardLayout } from "#lib/features/choreo-card/services/physical-card-layout-calculator.js";
+import type { PhysicalCardLayout } from "#lib/features/choreo-card/services/physical-card-layout-calculator.js";
+import { hydrateSequence } from "#lib/features/choreo-card/services/catalog-loader.js";
+import type { TnDElement } from "#lib/features/choreo-card/domain/tnd-element.js";
+import type { PrintRenderOptions } from "#lib/features/choreo-card/services/types.js";
+import { getImageComposer } from "#lib/shared/render/get-image-composer.js";
+import { getQRCodeGenerator } from "#lib/shared/qr/get-qr-code-generator.js";
+import { prewarmCardPool } from "#lib/shared/render/services/card-pool-prewarm.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { bakedCoverUrl, SHOP_BACK_THEME } from "../domain/shop-prop-options";
 import {
   configureShortCodeManager,
   getShortCodeManager,
-} from "$lib/shared/qr/get-short-code-manager";
-import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
-import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-import { registerLoopDisplayResolver } from "$lib/shared/loop-labeler/get-loop-display-resolver";
-import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
-import { initializeAppServices } from "$lib/shared/application/state/services.svelte";
+} from "#lib/shared/qr/get-short-code-manager.js";
+import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
+import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+import { registerLoopDisplayResolver } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+import { resolveLoopDisplay } from "#lib/features/loop-labeler/services/loop-display-resolver.js";
+import { initializeAppServices } from "#lib/shared/application/state/services.svelte.js";
 
 // Covers show the printed deck, so they don't follow the viewer's prop
 // settings — they follow the buyer's shop prop choice (both hands the same

@@ -5,7 +5,7 @@
  * and multipart upload orchestration.
  */
 
-import { getFunctionsInstance } from "$lib/shared/auth/firebase";
+import { getFunctionsInstance } from "#lib/shared/auth/firebase.js";
 
 async function call<T>(functionName: string, data: unknown): Promise<T> {
   const { httpsCallable } = await import("firebase/functions");

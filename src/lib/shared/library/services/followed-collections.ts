@@ -17,16 +17,16 @@ import {
   setDoc,
   type Unsubscribe,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import {
   getFollowedCollectionPath,
   getFollowedCollectionsPath,
-} from "$lib/shared/library/data/firestore-paths";
-import { getAuthenticatedUserId } from "$lib/shared/library/services/collection-firestore-mapper";
+} from "#lib/shared/library/data/firestore-paths.js";
+import { getAuthenticatedUserId } from "#lib/shared/library/services/collection-firestore-mapper.js";
 import {
   trackCollectionFollowChanged,
   type CollectionFollowSource,
-} from "$lib/shared/analytics/social-events";
+} from "#lib/shared/analytics/social-events.js";
 
 export interface FollowedCollectionRef {
   readonly ownerId: string;

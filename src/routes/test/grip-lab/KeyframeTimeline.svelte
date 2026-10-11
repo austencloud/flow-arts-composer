@@ -1,7 +1,7 @@
 <script lang="ts">
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import ScrubbableNumber from "$lib/shared/ui/components/ScrubbableNumber.svelte";
-  import { popIn } from "$lib/shared/transitions/motion";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import ScrubbableNumber from "#lib/shared/ui/components/ScrubbableNumber.svelte";
+  import { popIn } from "#lib/shared/transitions/motion.js";
   import { sampleTeachingPose, type TeachingKey } from "./isolation-teaching";
 
   interface Props {

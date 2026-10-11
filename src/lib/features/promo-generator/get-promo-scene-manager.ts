@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { PromoSceneManager } from './services/promo-scene-manager';
 
 let instance: PromoSceneManager | null = null;

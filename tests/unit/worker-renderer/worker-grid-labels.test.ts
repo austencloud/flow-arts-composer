@@ -1,10 +1,10 @@
 import { Group, PerspectiveCamera, Sprite } from "three";
 import { Plane } from "@austencloud/scene-3d";
-import { createWorkerGrid3D } from "$lib/shared/3d/worker-renderer/worlds/grid/worker-grid-3d";
+import { createWorkerGrid3D } from "#lib/shared/3d/worker-renderer/worlds/grid/worker-grid-3d.js";
 import type {
   WorkerGridCanvasFactory,
   WorkerGridCanvasSurface,
-} from "$lib/shared/3d/worker-renderer/worlds/grid/worker-grid-types";
+} from "#lib/shared/3d/worker-renderer/worlds/grid/worker-grid-types.js";
 import { describe, expect, it, vi } from "vitest";
 
 function recordingCanvasFactory() {

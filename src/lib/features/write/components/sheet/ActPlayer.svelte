@@ -9,9 +9,9 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { dockSlide } from "$lib/shared/transitions/dock-slide";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import AnimationPlayer from "$lib/shared/sequence-viewer/components/AnimationPlayer.svelte";
+  import { dockSlide } from "#lib/shared/transitions/dock-slide.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import AnimationPlayer from "#lib/shared/sequence-viewer/components/AnimationPlayer.svelte";
   import MusicPlayer from "../MusicPlayer.svelte";
   import { getMusicPlayer } from "../../get-music-player";
   import {

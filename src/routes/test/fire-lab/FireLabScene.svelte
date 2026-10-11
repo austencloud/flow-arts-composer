@@ -18,8 +18,8 @@
   import { OrbitControls } from "@threlte/extras";
   import { Vector3, Group, HalfFloatType, Vector2 } from "three";
   import { EffectComposer, RenderPass, EffectPass, BloomEffect } from "postprocessing";
-  import { FireRenderer3D, type FireTipInput } from "$lib/shared/3d/effects/fire/fire-renderer-3d";
-  import { QualityTier } from "$lib/shared/3d/effects/types";
+  import { FireRenderer3D, type FireTipInput } from "#lib/shared/3d/effects/fire/fire-renderer-3d.js";
+  import { QualityTier } from "#lib/shared/3d/effects/types.js";
 
   interface Props {
     motionMode: MotionMode;

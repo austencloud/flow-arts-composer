@@ -11,11 +11,11 @@
  * NOTE: wizardPhase removed in 2027 redesign - state is now derived from word/sequence.
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import type { SpellPreferences } from "../domain/models/spell-models";
-import { DEFAULT_SPELL_PREFERENCES } from "$lib/shared/create/domain/spell-constants";
-import { debounce } from "$lib/shared/utils/debounce";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { DEFAULT_SPELL_PREFERENCES } from "#lib/shared/create/domain/spell-constants.js";
+import { debounce } from "#lib/shared/utils/debounce.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 
 /**

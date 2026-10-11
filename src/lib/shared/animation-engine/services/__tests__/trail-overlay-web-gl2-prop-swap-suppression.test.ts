@@ -11,13 +11,13 @@ import { setTrailPointOverrideProvider } from "../../domain/types/trail-point-ty
 import type {
   RenderBackend,
   BackendStats,
-} from "$lib/shared/render-graph/domain/backend";
-import type { FrameGraph } from "$lib/shared/render-graph/domain/frame-graph";
+} from "#lib/shared/render-graph/domain/backend.js";
+import type { FrameGraph } from "#lib/shared/render-graph/domain/frame-graph.js";
 import type {
   TrailPassPayload,
   TrailTipState,
-} from "$lib/shared/render-graph/domain/trail-pass";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+} from "#lib/shared/render-graph/domain/trail-pass.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 
 /**
  * Regression guard for the hero-act prop swap: without suppression, the trail

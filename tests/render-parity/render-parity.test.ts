@@ -38,11 +38,11 @@ import {
   PIPELINE_VERSION,
   type ParityManifest,
   type RenderedStep,
-} from "$lib/shared/render/parity/render-parity-core";
-import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/render/parity/render-parity-core.js";
+import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import corpusJson from "./fixtures/render-parity-corpus.json";
 
 declare const __RENDER_PARITY_MODE__: string;

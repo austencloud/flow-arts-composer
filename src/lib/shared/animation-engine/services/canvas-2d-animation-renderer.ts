@@ -26,42 +26,42 @@
  * - Canvas2DVisibilityFadeManager: Props and trails visibility transitions
  */
 import type { GridJoin } from "@tka/tka-types";
-import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 
-import type { RenderedPropTransform } from "$lib/shared/animation-engine/domain/types/fire-types";
-import type { RenderedPropSprite } from "$lib/shared/animation-engine/domain/types/rendered-prop-sprite";
-import type { RenderSceneParams } from "$lib/shared/animation-engine/domain/types/animation-render-types";
+import type { RenderedPropTransform } from "#lib/shared/animation-engine/domain/types/fire-types.js";
+import type { RenderedPropSprite } from "#lib/shared/animation-engine/domain/types/rendered-prop-sprite.js";
+import type { RenderSceneParams } from "#lib/shared/animation-engine/domain/types/animation-render-types.js";
 
 export type {
   AdditionalLayerRenderData,
   AnimationVisibilitySettings,
   RenderSceneParams,
-} from "$lib/shared/animation-engine/domain/types/animation-render-types";
-import { spotlightFactor } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
-import { Canvas2DApplicationManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-application-manager";
-import { Canvas2DImageLoader } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-image-loader";
-import { propTextureMatchesRequest } from "$lib/shared/animation-engine/services/canvas2d/prop-texture-match";
-import { Canvas2DTrailRenderer } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer";
-import { Canvas2DFadeManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-fade-manager";
-import { Canvas2DGridFadeManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-grid-fade-manager";
+} from "#lib/shared/animation-engine/domain/types/animation-render-types.js";
+import { spotlightFactor } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
+import { Canvas2DApplicationManager } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-application-manager.js";
+import { Canvas2DImageLoader } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-image-loader.js";
+import { propTextureMatchesRequest } from "#lib/shared/animation-engine/services/canvas2d/prop-texture-match.js";
+import { Canvas2DTrailRenderer } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer.js";
+import { Canvas2DFadeManager } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-fade-manager.js";
+import { Canvas2DGridFadeManager } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-grid-fade-manager.js";
 import { Canvas2DVisibilityFadeManager } from "./canvas2d/canvas-2d-visibility-fade-manager";
-import { DURATION } from "$lib/shared/transitions/transitions";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 import {
   lerp,
   lerpAngle,
-} from "$lib/shared/animation-engine/services/angle-calculator";
-import { wsEase } from "$lib/shared/transitions/ws-ease";
+} from "#lib/shared/animation-engine/services/angle-calculator.js";
+import { wsEase } from "#lib/shared/transitions/ws-ease.js";
 import { getMotionColor } from "@tka/render-core";
 import {
   handGridCopyColor,
   type JoinedGridPaint,
-} from "$lib/shared/animation-engine/services/animation-grid-join";
+} from "#lib/shared/animation-engine/services/animation-grid-join.js";
 import {
   CENTERED_HAND_OFFSETS,
   gridJoinLayerAlphas,
   type GridJoinTweenSample,
-} from "$lib/shared/grid-join/grid-join-tween";
-import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
+} from "#lib/shared/grid-join/grid-join-tween.js";
+import { PIXELS_PER_UNIT } from "#lib/shared/multi-grid/domain/constants/grid-mode-offsets.js";
 
 // Constants matching AnimatorCanvas EXACTLY
 const VIEWBOX_SIZE = 950;

@@ -8,7 +8,7 @@
    * AnimationVisibilityStateManager.
    */
 
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
   const vm = getAnimationVisibilityManager();
 

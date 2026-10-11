@@ -4,18 +4,18 @@ import { describe, expect, it } from "vitest";
 import {
   getArrowPath,
   getArrowSvgPath,
-} from "$lib/shared/pictograph/arrow/rendering/services/arrow-path-resolver";
-import { applyColorToSvg } from "$lib/shared/pictograph/arrow/rendering/services/arrow-svg-color-transformer";
-import { parseArrowSvg } from "$lib/shared/pictograph/arrow/rendering/services/arrow-svg-parser";
-import { createArrowPlacementData } from "$lib/shared/pictograph/arrow/positioning/placement/domain/create-arrow-placement-data";
+} from "#lib/shared/pictograph/arrow/rendering/services/arrow-path-resolver.js";
+import { applyColorToSvg } from "#lib/shared/pictograph/arrow/rendering/services/arrow-svg-color-transformer.js";
+import { parseArrowSvg } from "#lib/shared/pictograph/arrow/rendering/services/arrow-svg-parser.js";
+import { createArrowPlacementData } from "#lib/shared/pictograph/arrow/positioning/placement/domain/create-arrow-placement-data.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
   SkewDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 const quarterOrientations = [
   [Orientation.IN, "from_radial"],

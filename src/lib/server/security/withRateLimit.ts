@@ -6,7 +6,7 @@
  *
  * Async because the durable backend (Cloudflare's native ratelimit binding) is
  * async. When the preset names a `binding` and that binding is present on
- * `platform.env`, it enforces the limit cross-isolate; otherwise the call falls
+ * the Worker's env, it enforces the limit cross-isolate; otherwise the call falls
  * back to the in-memory sliding window (see rate-limiter.ts).
  *
  * Usage:
@@ -21,6 +21,7 @@ import {
   type RateLimitConfig,
   type CfRateLimiter,
 } from "./rate-limiter";
+import { workerEnv } from "../cloudflare/worker-env";
 
 /**
  * Apply rate limiting to a request.
@@ -61,8 +62,8 @@ export async function withRateLimit(
       : `${prefix}:${keyType}:${keyValue ?? "missing"}`;
 
   // Prefer the native Cloudflare ratelimit binding (cross-isolate) when this
-  // preset declares one and it's wired on platform.env at runtime.
-  const env = event.platform?.env as Record<string, unknown> | undefined;
+  // preset declares one and it's wired on the Worker's env at runtime.
+  const env = workerEnv() as Record<string, unknown> | undefined;
   const limiter =
     config.binding && env
       ? (env[config.binding] as CfRateLimiter | undefined)

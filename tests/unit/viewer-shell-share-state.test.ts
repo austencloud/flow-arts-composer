@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createViewerShellShareState,
   viewerVideoSourceIdentity,
-} from "$lib/shared/sequence-viewer/state/viewer-shell-share-state.svelte";
+} from "#lib/shared/sequence-viewer/state/viewer-shell-share-state.svelte.js";
 
 interface ShareStateOptions {
   createSequenceSendSession?: () => unknown;

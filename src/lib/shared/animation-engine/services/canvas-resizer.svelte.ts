@@ -7,8 +7,8 @@
  * Uses reactive state ownership - service owns $state, component derives from it.
  */
 
-import { motionDuration } from "$lib/shared/transitions/motion";
-import { DURATION } from "$lib/shared/transitions/transitions";
+import { motionDuration } from "#lib/shared/transitions/motion.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 import {
   measureFrame,
   sameFrame,

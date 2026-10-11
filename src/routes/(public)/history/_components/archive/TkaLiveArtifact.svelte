@@ -1,15 +1,15 @@
 <script lang="ts">
   import { MediaQuery } from "svelte/reactivity";
-  import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import { createHeroAct } from "$lib/shared/landing/data/hero-act.svelte";
-  import { FALLBACK_DEMO } from "$lib/shared/landing/data/per-visit-demo";
+  import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import { createHeroAct } from "#lib/shared/landing/data/hero-act.svelte.js";
+  import { FALLBACK_DEMO } from "#lib/shared/landing/data/per-visit-demo.js";
   import {
     HERO_TRAIL_PRESET,
     HERO_TIP_EFFECT_MAP,
-  } from "$lib/shared/landing/data/hero-trail-preset";
+  } from "#lib/shared/landing/data/hero-trail-preset.js";
 
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   let { active = false }: { active?: boolean } = $props();
 

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { getEffectConfigMapper } from "$lib/features/video/video-trails/get-effect-config-mapper";
-  import { getVideoTipAdapter } from "$lib/features/video/video-trails/get-video-tip-adapter";
-  import { getVideoTrailsExporter } from "$lib/features/video/video-trails/get-video-trails-exporter";
-  import { getLedThresholdDetector } from "$lib/features/video/video-trails/get-led-threshold-detector";
-  import { getColorEndpointDetector } from "$lib/features/video/video-trails/get-color-endpoint-detector";
-  import { getDetectionCorrector } from "$lib/features/video/video-trails/get-detection-corrector";
+  import { getEffectConfigMapper } from "#lib/features/video/video-trails/get-effect-config-mapper.js";
+  import { getVideoTipAdapter } from "#lib/features/video/video-trails/get-video-tip-adapter.js";
+  import { getVideoTrailsExporter } from "#lib/features/video/video-trails/get-video-trails-exporter.js";
+  import { getLedThresholdDetector } from "#lib/features/video/video-trails/get-led-threshold-detector.js";
+  import { getColorEndpointDetector } from "#lib/features/video/video-trails/get-color-endpoint-detector.js";
+  import { getDetectionCorrector } from "#lib/features/video/video-trails/get-detection-corrector.js";
   import { onMount, onDestroy } from "svelte";
   import { getVideoTrailsContext } from "../context/video-trails-context";
   import { DETECTOR_REGISTRY } from "../domain/types";
@@ -12,13 +12,13 @@
   import type { IEndpointDetector } from "../services/IEndpointDetector";
   import type * as EffectConfigMapperModule from "../services/effect-config-mapper";
   import type { VideoTipAdapter } from "../services/video-tip-adapter";
-  import type { TrailPoint } from "$lib/shared/animation-engine/domain/types/trail-types";
-  import type { FireFrameInput } from "$lib/shared/animation-engine/domain/types/fire-types";
-  import type { LedFrameInput } from "$lib/shared/animation-engine/domain/types/led-types";
-  import { WebGLFireRenderer } from "$lib/shared/animation-engine/services/fire/web-gl-fire-renderer";
-  import { WebGLLedRenderer } from "$lib/shared/animation-engine/services/led/web-gl-led-renderer";
-  import { CharcoalSparkRenderer } from "$lib/shared/animation-engine/services/charcoal/charcoal-spark-renderer";
-  import { Canvas2DTrailRenderer } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer";
+  import type { TrailPoint } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import type { FireFrameInput } from "#lib/shared/animation-engine/domain/types/fire-types.js";
+  import type { LedFrameInput } from "#lib/shared/animation-engine/domain/types/led-types.js";
+  import { WebGLFireRenderer } from "#lib/shared/animation-engine/services/fire/web-gl-fire-renderer.js";
+  import { WebGLLedRenderer } from "#lib/shared/animation-engine/services/led/web-gl-led-renderer.js";
+  import { CharcoalSparkRenderer } from "#lib/shared/animation-engine/services/charcoal/charcoal-spark-renderer.js";
+  import { Canvas2DTrailRenderer } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer.js";
   import VideoSourcePanel from "../components/VideoSourcePanel.svelte";
   import EffectCanvasStack from "../components/EffectCanvasStack.svelte";
   import PlaybackControls from "../components/PlaybackControls.svelte";

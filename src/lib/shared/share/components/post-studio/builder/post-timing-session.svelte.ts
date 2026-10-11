@@ -20,17 +20,18 @@ import {
   type TakeTiming,
   type TakeTimingStatus,
   type TimingSection,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import type { PostTake } from "@austencloud/video-editor/core";
 import { untrack } from "svelte";
-import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
+import { sequenceFrameAt } from "#lib/shared/media-composition/domain/sequence-frame.js";
 import {
   landingName,
   summarizeTiming,
-} from "$lib/shared/media-composition/domain/timing-summary";
+} from "#lib/shared/media-composition/domain/timing-summary.js";
 import { shownLanding } from "./timing-lane-landings";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { nextMappedLanding } from "./post-timing-animation";
+import { releaseMediaDownload } from "#lib/shared/media-composition/services/media-download-release.js";
 
 export interface LandingRef {
   sectionId: string;
@@ -106,6 +107,13 @@ export function createPostTimingSession(
       cancelStepReview();
       video?.pause();
     };
+  });
+  $effect(() => {
+    const element = video;
+    if (!element) return;
+    // A remounted editor would otherwise wait behind this take's download for
+    // its project.
+    return () => releaseMediaDownload(element);
   });
   let zoom = $state<TimingZoom>("8");
   let showSquare = $state(true);

@@ -12,7 +12,7 @@ import {
   QuizQuestionFormat,
   QuizType,
 } from "../domain/enums/quiz-enums";
-import type { CodexLetterMappingRepo } from "$lib/shared/learn/services/codex-letter-mapping-repo";
+import type { CodexLetterMappingRepo } from "#lib/shared/learn/services/codex-letter-mapping-repo.js";
 
 export class QuizRepoManager {
   private configurations: Map<string, QuizConfig> = new Map();

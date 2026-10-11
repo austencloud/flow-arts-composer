@@ -9,7 +9,7 @@
  */
 
 import type { InfoCardCanvasOptions } from "./types";
-import { DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
+import { DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
 
 // Scale factor: info cards were designed at 500x700. Content area is 750x1050.
 // Exported (with the frame helpers below) so sibling static cards — the

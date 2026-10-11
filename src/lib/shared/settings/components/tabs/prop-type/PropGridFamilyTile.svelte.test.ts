@@ -1,15 +1,15 @@
 import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getCompositionRecipe } from "$lib/shared/pictograph/prop/domain/prop-composition-recipes";
-import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getCompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
+import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 import PropGrid from "./PropGrid.svelte";
 
 // The component suite serves no static files, so each notation file is a stub
 // that names itself. A tile recolors the file into a data URI for each hand,
 // and the name survives the recolor.
-vi.mock("$lib/shared/net/asset-fetch", () => ({
+vi.mock("#lib/shared/net/asset-fetch.js", () => ({
   assetFetch: async (url: string) =>
     new Response(
       `<svg xmlns="http://www.w3.org/2000/svg" data-src="${url}"><path style="fill:#3575E2"/></svg>`

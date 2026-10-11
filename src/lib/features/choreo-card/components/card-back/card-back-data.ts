@@ -4,24 +4,24 @@
  * so each visual variant doesn't duplicate this logic.
  */
 
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { explainLOOP } from "../../services/loop-explainer";
 import type { LOOPExplanation } from "../../services/types";
-import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
+import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
 import type {
-  Period} from "$lib/shared/foundation/domain/models/generation/circular-models";
+  Period} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   LOOP_TYPE_LABELS,
   ROTATED_LOOP_TYPES
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { resolveLoopDisplay } from "#lib/features/loop-labeler/services/loop-display-resolver.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import { TND_TURNS_RATIO_MAP } from "../../domain/tnd-element";
 import { getReversalPattern } from "../../domain/reversal-patterns";
 import { matchReversalPatternId } from "../../domain/reversal-matcher";
-import { calculateDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
+import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
 
 // The anatomy grid shows which elements appear in the sequence.
 // Each field is a set of string values; the card renders present

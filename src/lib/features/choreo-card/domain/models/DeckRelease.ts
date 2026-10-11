@@ -1,9 +1,9 @@
 import type { ResolvedReversalPattern } from "../reversal-transform";
 import type { VariationConfig } from "../../services/deck-variation";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
 import type { HandPathReferenceCardId } from "../hand-path-reference-card-manifest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export interface CardFooter {
   left?: string;

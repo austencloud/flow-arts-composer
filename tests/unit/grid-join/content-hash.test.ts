@@ -12,16 +12,16 @@ import {
   HASH_VERSION_V1,
   HASH_VERSION_V2,
   HASH_VERSION_V3,
-} from "$lib/shared/library/services/sequence-content-hasher";
+} from "#lib/shared/library/services/sequence-content-hasher.js";
 import {
   hashSequenceContent,
   hashSequenceSkeleton,
-} from "$lib/shared/foundation/services/content-hasher";
+} from "#lib/shared/foundation/services/content-hasher.js";
 import {
   ensureComposition,
   hydrate,
-} from "$lib/shared/foundation/services/sequence-hydrator";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/services/sequence-hydrator.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   buildJoinFixture,
   JOIN_EAST_ONE,

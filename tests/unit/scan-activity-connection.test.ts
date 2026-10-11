@@ -1,7 +1,7 @@
 import { flushSync } from "svelte";
 import { describe, expect, it, vi } from "vitest";
-import { createScanActivityState } from "$lib/features/choreo-card/state/scan-activity-state.svelte";
-import type { ScanEventRow } from "$lib/features/choreo-card/state/scan-activity-state.svelte";
+import { createScanActivityState } from "#lib/features/choreo-card/state/scan-activity-state.svelte.js";
+import type { ScanEventRow } from "#lib/features/choreo-card/state/scan-activity-state.svelte.js";
 import { createScanActivityConnectionHarness } from "./scan-activity-connection-harness.svelte";
 
 describe("scan activity connection lifecycle", () => {

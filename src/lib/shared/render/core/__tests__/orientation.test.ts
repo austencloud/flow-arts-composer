@@ -4,8 +4,8 @@ import {
   calculateOrientations,
   switchOrientation,
   getHandpathDirection,
-} from "$lib/shared/render/core/calculations/orientation";
-import type { Orientation } from "$lib/shared/render/core/types";
+} from "#lib/shared/render/core/calculations/orientation.js";
+import type { Orientation } from "#lib/shared/render/core/types.js";
 
 /**
  * Orientation algebra is the foundation of valid pictograph generation: every

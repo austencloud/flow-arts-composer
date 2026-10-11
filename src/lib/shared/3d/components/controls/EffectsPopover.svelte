@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getViewer3DContext } from "../../context/viewer-3d-context";
-  import EffectsPanel from "$lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
+  import EffectsPanel from "#lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
   import CascadeBadge from "./CascadeBadge.svelte";
 
   const viewer = getViewer3DContext();

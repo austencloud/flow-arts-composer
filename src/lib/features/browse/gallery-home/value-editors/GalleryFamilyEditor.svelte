@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-  import { localizeFilterChip } from "$lib/shared/browse/components/localize-filter-chip";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+  import { localizeFilterChip } from "#lib/shared/browse/components/localize-filter-chip.js";
   import type {
     GalleryValueHeadSnippet,
     GalleryWorkspaceProps,

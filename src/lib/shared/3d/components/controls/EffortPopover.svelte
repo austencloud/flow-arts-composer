@@ -1,8 +1,8 @@
 <script lang="ts">
   import { getViewer3DContext } from "../../context/viewer-3d-context";
-  import EffortPalette from "$lib/shared/phrase-effort-lab/components/EffortPalette.svelte";
+  import EffortPalette from "#lib/shared/phrase-effort-lab/components/EffortPalette.svelte";
   import CascadeBadge from "./CascadeBadge.svelte";
-  import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+  import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 
   const viewer = getViewer3DContext();
   const scopedPerformers = $derived(viewer.scopedPerformers());

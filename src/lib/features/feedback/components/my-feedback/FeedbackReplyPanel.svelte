@@ -3,9 +3,9 @@
   import type {
     FeedbackItem,
     FeedbackStatus,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { STATUS_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { STATUS_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     item: FeedbackItem;

@@ -6,8 +6,8 @@ import {
   withCanonicalStepCount,
   isEmptySequence,
   meetsCommunityMinimum,
-} from "$lib/shared/library/domain/sequence-min-length";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/library/domain/sequence-min-length.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function seq(overrides: Record<string, unknown>) {
   return createSequenceData(overrides as never);

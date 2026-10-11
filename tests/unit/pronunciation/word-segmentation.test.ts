@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { segmentWordByEnergy } from "$lib/features/lab/pronunciation-recorder/domain/voice-activity-trimmer";
+import { segmentWordByEnergy } from "#lib/features/lab/pronunciation-recorder/domain/voice-activity-trimmer.js";
 
 const SAMPLE_RATE = 48_000;
 

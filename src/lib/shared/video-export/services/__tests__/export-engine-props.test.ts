@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { assembleExportEngineProps, type ExportFrameContext } from "../export-engine-props";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import type { TrailSettings } from "$lib/shared/animation-engine/domain/types/trail-types";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import type { TrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 const left: PropState = { x: 1, y: 2, angle: 10 } as unknown as PropState;
 const right: PropState = { x: 3, y: 4, angle: 20 } as unknown as PropState;

@@ -1,7 +1,7 @@
 
 import { describe, it, expect } from "vitest";
-import { applyCorrections } from "$lib/features/video/video-trails/services/detection-corrector";
-import type { DetectedEndpoint, EndpointCorrection } from "$lib/features/video/video-trails/domain/types";
+import { applyCorrections } from "#lib/features/video/video-trails/services/detection-corrector.js";
+import type { DetectedEndpoint, EndpointCorrection } from "#lib/features/video/video-trails/domain/types.js";
 
 function makeEndpoint(overrides: Partial<DetectedEndpoint> = {}): DetectedEndpoint {
   return { x: 100, y: 100, brightness: 1, confidence: 0.9, propIndex: 0, tipIndex: 0, frameIndex: 5, ...overrides };

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { decode } from "$lib/shared/mandala/services/mandala-decoder";
-import { buildIndex, type IndexInput } from "$lib/shared/mandala/services/mandala-index-builder";
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
+import { decode } from "#lib/shared/mandala/services/mandala-decoder.js";
+import { buildIndex, type IndexInput } from "#lib/shared/mandala/services/mandala-index-builder.js";
+import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
 
 function paths(left: string[], right: string[]): MandalaPaths {
   return {

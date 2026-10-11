@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import CollectionDetailsDialog from "$lib/features/browse/collections/components/CollectionDetailsDialog.svelte";
+  import CollectionDetailsDialog from "#lib/features/browse/collections/components/CollectionDetailsDialog.svelte";
   import {
     createCollection,
     type LibraryCollection,
-  } from "$lib/shared/library/domain/models/collection";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+  } from "#lib/shared/library/domain/models/collection.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 
   let open = $state(false);
   let collection = $state<LibraryCollection>({

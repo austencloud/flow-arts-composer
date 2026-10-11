@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { withSequenceJoinAppliedToAll } from "$lib/shared/grid-join/sequence-grid-join";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { withSequenceJoinAppliedToAll } from "#lib/shared/grid-join/sequence-grid-join.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
 
   interface Props {
     title: string;

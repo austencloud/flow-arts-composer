@@ -20,9 +20,9 @@ The pictograph system has complex interdependencies:
 ### Option 1: Load from Database (Recommended)
 
 ```typescript
-import { resolve, loadFeatureModule } from "$lib/shared/inversify/di";
-import { TYPES } from "$lib/shared/inversify/types";
-import type { IBrowseLoader } from "$lib/features/browse/sequences/display/services/contracts/IBrowseLoader";
+import { resolve, loadFeatureModule } from "#lib/shared/inversify/di";
+import { TYPES } from "#lib/shared/inversify/types";
+import type { IBrowseLoader } from "#lib/features/browse/sequences/display/services/contracts/IBrowseLoader";
 
 // Load the browse module first
 await loadFeatureModule("browse");
@@ -42,8 +42,8 @@ const sequence = await browseLoader.loadFullSequenceData("B");
 If you need a variant (e.g., B with 1 turn instead of 0 turns):
 
 ```typescript
-import { TurnPatternService } from "$lib/features/create/shared/services/implementations/TurnPatternService";
-import type { TurnPattern } from "$lib/features/create/shared/domain/models/TurnPatternData";
+import { TurnPatternService } from "#lib/features/create/shared/services/implementations/TurnPatternService";
+import type { TurnPattern } from "#lib/features/create/shared/domain/models/TurnPatternData";
 import { Timestamp } from "firebase/firestore";
 
 const turnPatternService = new TurnPatternService();
@@ -79,7 +79,7 @@ For creating new circular sequences:
 
 ```typescript
 // Use LOOP executors for Linked Orbital Offset Patterns
-import { StrictInvertedLOOPExecutor } from "$lib/features/create/generate/circular/services/implementations/StrictInvertedLOOPExecutor";
+import { StrictInvertedLOOPExecutor } from "#lib/features/create/generate/circular/services/implementations/StrictInvertedLOOPExecutor";
 ```
 
 ## What Makes Motion Data Valid

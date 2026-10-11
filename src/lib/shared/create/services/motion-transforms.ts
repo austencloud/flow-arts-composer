@@ -5,24 +5,24 @@
  * Each function returns a new MotionData without mutating the input.
  */
 
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandPath,
   type HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   VERTICAL_MIRROR_LOCATION_MAP,
   HORIZONTAL_MIRROR_LOCATION_MAP,
-} from "$lib/shared/create/domain/strict-loop-placement-maps";
+} from "#lib/shared/create/domain/strict-loop-placement-maps.js";
 import {
   reverseRotationDirection,
   invertMotionType,
   rotateLocation,
   getToggledGridMode,
-} from "$lib/shared/create/services/rotation-helpers";
+} from "#lib/shared/create/services/rotation-helpers.js";
 
 function reverseHandPath(
   path: HandPath | null | undefined

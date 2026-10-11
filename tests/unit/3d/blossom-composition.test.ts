@@ -4,7 +4,7 @@ import {
   getBlossomRiverCenterline,
   getBlossomRiverOutline,
   getBlossomRiverShoreline,
-} from "$lib/shared/3d/environments/scenes/cherry-blossom/blossom-water";
+} from "#lib/shared/3d/environments/scenes/cherry-blossom/blossom-water.js";
 
 describe("Blossom crescent pond coordinates", () => {
   it("places the water behind the performance deck after reflector rotation", () => {

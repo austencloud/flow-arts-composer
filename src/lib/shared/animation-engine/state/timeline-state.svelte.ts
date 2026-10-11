@@ -7,8 +7,8 @@
  * Decomposed from 908 lines to ~550 lines + 5 action modules.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { TimeSignatureKey } from "$lib/shared/foundation/domain/models/time-signature";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { TimeSignatureKey } from "#lib/shared/foundation/domain/models/time-signature.js";
 import type {
   TimelineProject,
   TimelineTrack,
@@ -36,14 +36,14 @@ import {
   loadFromStorage,
   saveToStorage,
   TIMELINE_STORAGE_KEYS,
-} from "$lib/shared/animation-engine/timeline/state/timeline-storage";
-import { getStepTimes } from "$lib/shared/animation-engine/timeline/services/step-grid-calculator";
-import { createPlayheadActions } from "$lib/shared/animation-engine/timeline/state/actions/playhead-actions";
-import { createSelectionActions } from "$lib/shared/animation-engine/timeline/state/actions/selection-actions";
-import { createViewportActions } from "$lib/shared/animation-engine/timeline/state/actions/viewport-actions";
-import { createUIStateActions } from "$lib/shared/animation-engine/timeline/state/actions/ui-state-actions";
-import { getTimelineUndoManager } from "$lib/shared/animation-engine/timeline/services/timeline-undo-manager";
-import type { TimelineUndoOperationType } from "$lib/shared/animation-engine/timeline/domain/types";
+} from "#lib/shared/animation-engine/timeline/state/timeline-storage.js";
+import { getStepTimes } from "#lib/shared/animation-engine/timeline/services/step-grid-calculator.js";
+import { createPlayheadActions } from "#lib/shared/animation-engine/timeline/state/actions/playhead-actions.js";
+import { createSelectionActions } from "#lib/shared/animation-engine/timeline/state/actions/selection-actions.js";
+import { createViewportActions } from "#lib/shared/animation-engine/timeline/state/actions/viewport-actions.js";
+import { createUIStateActions } from "#lib/shared/animation-engine/timeline/state/actions/ui-state-actions.js";
+import { getTimelineUndoManager } from "#lib/shared/animation-engine/timeline/services/timeline-undo-manager.js";
+import type { TimelineUndoOperationType } from "#lib/shared/animation-engine/timeline/domain/types.js";
 
 // Project Deduplication Helper
 

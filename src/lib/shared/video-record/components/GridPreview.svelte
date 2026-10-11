@@ -5,7 +5,7 @@
   Shows sequence beats in a static grid or with BPM-synced playback highlighting.
 -->
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { GridSettings } from "../state/video-record-settings.svelte";
   import { onMount, onDestroy } from "svelte";
 
@@ -86,7 +86,7 @@
   {#if sequence}
     <!-- Beat Grid -->
     <div class="grid-container">
-      {#await import("$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte") then mod}
+      {#await import("#lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte") then mod}
         <mod.default
           steps={sequence.steps}
           startPlacement={sequence.startPlacement}

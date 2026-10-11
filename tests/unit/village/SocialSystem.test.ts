@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { SocialSystem } from "$lib/features/village/engine/systems/social-system";
+import { SocialSystem } from "#lib/features/village/engine/systems/social-system.js";
 import {
 	createVillageWorld,
 	createAvatarEntity,
-} from "$lib/features/village/engine/village-world";
-import * as personalityGenerator from "$lib/features/village/services/personality-generator";
-import { createDefaultConfig } from "$lib/features/village/engine/village-config";
-import { IDLE_THRESHOLD_BASE } from "$lib/features/village/domain/village-constants";
-import type { VillageEventEmitter } from "$lib/features/village/engine/village-event-emitter";
-import { VillageDecisionEngine } from "$lib/features/village/engine/llm/village-decision-engine";
-import type { Season } from "$lib/features/village/domain/village-types";
+} from "#lib/features/village/engine/village-world.js";
+import * as personalityGenerator from "#lib/features/village/services/personality-generator.js";
+import { createDefaultConfig } from "#lib/features/village/engine/village-config.js";
+import { IDLE_THRESHOLD_BASE } from "#lib/features/village/domain/village-constants.js";
+import type { VillageEventEmitter } from "#lib/features/village/engine/village-event-emitter.js";
+import { VillageDecisionEngine } from "#lib/features/village/engine/llm/village-decision-engine.js";
+import type { Season } from "#lib/features/village/domain/village-types.js";
 
 const mockEmitter: VillageEventEmitter = {
 	emit: () => {},

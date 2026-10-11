@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   analyzeStartPick,
   getStartPickMessage,
   loopStartPickTarget,
-} from "$lib/features/create/shared/services/choose-start-analyzer";
+} from "#lib/features/create/shared/services/choose-start-analyzer.js";
 
 function sequenceOf(stepCount: number, isCircular: boolean): SequenceData {
   return {

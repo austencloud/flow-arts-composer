@@ -1,11 +1,10 @@
+import { getSequenceRenderer } from "#lib/shared/render/get-sequence-renderer.js";
 
-import { getSequenceRenderer } from "$lib/shared/render/get-sequence-renderer";
-import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
 
-import { getSequencePersister } from "$lib/features/create/shared/get-sequence-persister";
+import { getSequencePersister } from "#lib/features/create/shared/get-sequence-persister.js";
 
 export const POST: RequestHandler = async (event) => {
   const blocked = await withRateLimit(event, RATE_LIMITS.AI_RENDER, "ip");
@@ -23,7 +22,7 @@ export const POST: RequestHandler = async (event) => {
     // Load current sequence
     const state = await persistenceService.loadCurrentState();
     if (!state?.currentSequence) {
-      return json({ error: "No sequence loaded" }, { status: 400 });
+      return Response.json({ error: "No sequence loaded" }, { status: 400 });
     }
 
     // Render with specified stepSize
@@ -55,7 +54,7 @@ export const POST: RequestHandler = async (event) => {
     });
   } catch (error) {
     console.error("Test render failed:", error);
-    return json(
+    return Response.json(
       {
         error: error instanceof Error ? error.message : "Unknown error",
       },

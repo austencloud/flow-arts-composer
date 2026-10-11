@@ -1,36 +1,36 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   MandalaPathShape,
   MandalaPalette,
   MandalaColorMode,
   MandalaPresetId,
   MandalaRenderOptions,
-} from "$lib/shared/mandala/domain/mandala-types";
+} from "#lib/shared/mandala/domain/mandala-types.js";
 import {
   PRESET_COLORS,
   mixColors,
   withAlpha,
   sampleGradient,
-} from "$lib/shared/mandala/domain/mandala-palette";
-import type { MandalaFrameSpec } from "$lib/shared/mandala/services/mandala-frame-renderer";
-import { sequenceMandalaHandOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
+} from "#lib/shared/mandala/domain/mandala-palette.js";
+import type { MandalaFrameSpec } from "#lib/shared/mandala/services/mandala-frame-renderer.js";
+import { sequenceMandalaHandOffsets } from "#lib/shared/mandala/services/mandala-grid-join.js";
 import {
   toAnimationPathPolicy,
   toMandalaPathShape,
-} from "$lib/shared/mandala/services/mandala-path-policy";
-import type { MandalaExportDiag } from "$lib/shared/mandala/workers/mandala-export.worker";
-import type { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+} from "#lib/shared/mandala/services/mandala-path-policy.js";
+import type { MandalaExportDiag } from "#lib/shared/mandala/workers/mandala-export.worker.js";
+import type { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import {
   estimateExportTime,
   recordExportThroughput,
   hasDeviceMetrics,
-} from "$lib/shared/animation-panel/state/export-timing-tracker";
-import { shareOrDownloadBlob } from "$lib/shared/foundation/services/file-downloader";
+} from "#lib/shared/animation-panel/state/export-timing-tracker.js";
+import { shareOrDownloadBlob } from "#lib/shared/foundation/services/file-downloader.js";
 import {
   exportMandalaVideo,
   mandalaBitrateFor,
   type MandalaVideoExportHandle,
-} from "$lib/shared/mandala/services/mandala-video-exporter";
+} from "#lib/shared/mandala/services/mandala-video-exporter.js";
 import {
   resolveMandalaExportDelivery,
   type MandalaExportDelivery,

@@ -9,13 +9,13 @@ import {
   isFlowFestDrivingPhase,
   restoreFlowFestProgress,
   type FlowFestProgressState,
-} from "$lib/features/flow-fest-sim/state/flow-fest-progress";
-import { createFlowFestDefaultLoadout } from "$lib/features/flow-fest-sim/domain/flow-fest-loadout";
+} from "#lib/features/flow-fest-sim/state/flow-fest-progress.js";
+import { createFlowFestDefaultLoadout } from "#lib/features/flow-fest-sim/domain/flow-fest-loadout.js";
 import {
   FLOW_FEST_GAMEPLAY_JUMP_FORCE,
   FLOW_FEST_GAMEPLAY_SPRINT_MULTIPLIER,
   FLOW_FEST_GAMEPLAY_WALK_SPEED_METERS_PER_SECOND,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-simulation-contract";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-simulation-contract.js";
 
 const FINGERPRINT = "contract-fingerprint";
 

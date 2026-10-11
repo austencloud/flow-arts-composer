@@ -1,30 +1,30 @@
 import { describe, expect, it } from "vitest";
 import { InstancedMesh, Mesh, Scene } from "three";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   resolveAnimal3D,
   resolveInk3D,
   resolvePulse3D,
   resolveSilk3D,
-} from "$lib/shared/effects/translators/webgl3d-translator";
-import { InkRenderer3D } from "$lib/shared/3d/effects/ink/ink-renderer-3d";
-import { SilkRenderer3D } from "$lib/shared/3d/effects/silk/silk-renderer-3d";
-import { AnimalRenderer3D } from "$lib/shared/3d/effects/animal/animal-renderer-3d";
-import { PulseRenderer3D } from "$lib/shared/3d/effects/pulse/pulse-renderer-3d";
-import { TipPositionBridge3D } from "$lib/shared/3d/effects/tip-position-bridge-3d";
-import { MUSEUM_EXHIBIT_SEQUENCES } from "$lib/features/museum/data/museum-exhibit-sequences";
+} from "#lib/shared/effects/translators/webgl3d-translator.js";
+import { InkRenderer3D } from "#lib/shared/3d/effects/ink/ink-renderer-3d.js";
+import { SilkRenderer3D } from "#lib/shared/3d/effects/silk/silk-renderer-3d.js";
+import { AnimalRenderer3D } from "#lib/shared/3d/effects/animal/animal-renderer-3d.js";
+import { PulseRenderer3D } from "#lib/shared/3d/effects/pulse/pulse-renderer-3d.js";
+import { TipPositionBridge3D } from "#lib/shared/3d/effects/tip-position-bridge-3d.js";
+import { MUSEUM_EXHIBIT_SEQUENCES } from "#lib/features/museum/data/museum-exhibit-sequences.js";
 import {
   getStartPlacementConfigs,
   sequenceToMotionConfigs,
-} from "$lib/shared/3d/services/sequence-converter";
-import { calculatePropState } from "$lib/shared/3d/services/prop-state-interpolator";
+} from "#lib/shared/3d/services/sequence-converter.js";
+import { calculatePropState } from "#lib/shared/3d/services/prop-state-interpolator.js";
 import { Plane } from "@austencloud/scene-3d";
 import type {
   AnimalTipSource3D,
   InkTipSource3D,
   PulseTipSource3D,
   SilkTipSource3D,
-} from "$lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
+} from "#lib/shared/3d/effects/scene-effects/scene-effect-source-3d.js";
 
 const base = {
   sourceId: 1,
@@ -58,7 +58,7 @@ function meshAtRenderOrder(scene: Scene, renderOrder: number): InstancedMesh {
 }
 
 describe("native 3D full-roster renderers", () => {
-  it("renders pressure-reactive Ink segments and releases every pool", () => {
+  it("renders one connected Ink stroke and releases its mesh", () => {
     const scene = new Scene();
     const renderer = new InkRenderer3D();
     renderer.initialize(scene);
@@ -72,7 +72,13 @@ describe("native 3D full-roster renderers", () => {
     renderer.update([source], 1 / 60);
     source.position.x = 0.2;
     renderer.update([source], 1 / 60);
-    expect(visibleInstances(scene)).toBeGreaterThanOrEqual(2);
+    const stroke = scene.children.find(
+      (child): child is Mesh =>
+        child instanceof Mesh && child.renderOrder === 104
+    );
+    expect(stroke).toBeDefined();
+    expect(stroke?.geometry.drawRange.count).toBeGreaterThan(0);
+    expect(stroke?.geometry.drawRange.count % 48).toBe(0);
     renderer.dispose();
     expect(scene.children).toHaveLength(0);
   });
@@ -415,5 +421,67 @@ describe("native 3D full-roster renderers", () => {
     expect(visibleInstances(scene)).toBe(firstCount);
     renderer.dispose();
     expect(scene.children).toHaveLength(0);
+  });
+
+  it("draws solid Pulse in the chosen shade, not a fixed tint", () => {
+    const scene = new Scene();
+    const renderer = new PulseRenderer3D();
+    renderer.initialize(scene);
+    renderer.update(
+      [
+        {
+          ...base,
+          position: { ...base.position },
+          velocity: { ...base.velocity },
+          effect: "pulse",
+          params: resolvePulse3D({
+            ...DEFAULT_EFFECTS_CONFIG.pulse,
+            colorMode: "solid",
+            palette: "ember",
+            harmonics: 0,
+            chromatic: 0,
+          }),
+        },
+      ],
+      1 / 60
+    );
+    const ring = meshAtRenderOrder(scene, 118);
+    const color = ring.geometry.getAttribute("aColor");
+    expect(ring.count).toBeGreaterThan(0);
+    // Ember's ring is #ff6000.
+    expect(color.getX(0)).toBeCloseTo(1, 1);
+    expect(color.getY(0)).toBeCloseTo(0x60 / 255, 1);
+    expect(color.getZ(0)).toBeCloseTo(0, 1);
+    renderer.dispose();
+  });
+
+  it("gathers a Pulse charge at the tip as the next beat nears", () => {
+    const glowAt = (currentStep: number) => {
+      const scene = new Scene();
+      const renderer = new PulseRenderer3D();
+      renderer.initialize(scene);
+      const source: PulseTipSource3D = {
+        ...base,
+        position: { ...base.position },
+        velocity: { x: 0, y: 0, z: 0 },
+        speed: 0,
+        currentStep,
+        effect: "pulse",
+        params: resolvePulse3D({
+          ...DEFAULT_EFFECTS_CONFIG.pulse,
+          charge: 1,
+          flash: 0,
+          style: "stroke",
+        }),
+      };
+      renderer.update([source], 1 / 60);
+      source.currentStep = currentStep + 0.001;
+      renderer.update([source], 1 / 60);
+      const count = meshAtRenderOrder(scene, 117).count;
+      renderer.dispose();
+      return count;
+    };
+    expect(glowAt(0.2)).toBe(0);
+    expect(glowAt(0.9)).toBeGreaterThan(0);
   });
 });

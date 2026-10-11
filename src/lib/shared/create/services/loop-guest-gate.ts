@@ -13,9 +13,9 @@
  * Pure + framework-free so it's testable and shared across every host.
  */
 import type { LOOPSpecWire } from "@tka/sequence-engine/loop";
-import { LOOPType, ROTATED_LOOP_TYPES } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { LOOPType, ROTATED_LOOP_TYPES } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import { expanderMultiplier, specHasExpandInversion } from "./loop-type-utils";
-import { AUTH_NUDGE_TEXTS } from "$lib/shared/auth/domain/auth-nudge-trigger";
+import { AUTH_NUDGE_TEXTS } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
 
 export type GuestLoopLockKind = "category" | "length";
 

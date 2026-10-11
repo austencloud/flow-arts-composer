@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createConstructTutorialState } from "$lib/features/create/construct/tutorial/state/construct-tutorial-state.svelte";
+import { createConstructTutorialState } from "#lib/features/create/construct/tutorial/state/construct-tutorial-state.svelte.js";
 
 describe("Construct live tutorial state", () => {
   it("advances only after the matching successful live action", () => {

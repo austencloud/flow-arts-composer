@@ -22,7 +22,10 @@ import {
   writeBatch,
   type Timestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance, getAuthSync } from "$lib/shared/auth/firebase";
+import {
+  getFirestoreInstance,
+  getAuthSync,
+} from "#lib/shared/auth/firebase.js";
 import {
   createSequenceSession,
   generateDeviceId,

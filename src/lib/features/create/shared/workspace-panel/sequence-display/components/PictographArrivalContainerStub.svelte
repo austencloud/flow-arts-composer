@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
   let {
     pictographData,

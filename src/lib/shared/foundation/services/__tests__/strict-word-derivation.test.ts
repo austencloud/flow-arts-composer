@@ -21,11 +21,11 @@ import {
   deriveWord,
   deriveWordFromBeats,
 } from "../word-deriver";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { getPersistedStepCount } from "$lib/shared/library/domain/sequence-min-length";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StepPairingData } from "$lib/shared/foundation/domain/models/step-pairing-data";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { getPersistedStepCount } from "#lib/shared/library/domain/sequence-min-length.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StepPairingData } from "#lib/shared/foundation/domain/models/step-pairing-data.js";
 
 const motion = () =>
   createMotionData({

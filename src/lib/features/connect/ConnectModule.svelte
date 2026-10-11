@@ -1,16 +1,16 @@
 <script lang="ts">
 
-import { getConnectOrchestrator } from "$lib/features/connect/get-connect-orchestrator";
+import { getConnectOrchestrator } from "#lib/features/connect/get-connect-orchestrator.js";
 	/**
 	 * ConnectModule
 	 *
 	 * Collaborative sync for viewing sequences together.
 	 * Auto-browse nearby sessions, invite friends, or search by username.
 	 */
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { onMount, onDestroy } from 'svelte';
 	import { connectState } from './state/connect-state.svelte';
-	import type { ErrorHandler } from '$lib/shared/application/services/error-handler'
+	import type { ErrorHandler } from '#lib/shared/application/services/error-handler.js'
 
 	// Tab components
 	import NearbyTab from './components/tabs/NearbyTab.svelte';
@@ -19,8 +19,8 @@ import { getConnectOrchestrator } from "$lib/features/connect/get-connect-orches
 
 	// Session viewer overlay
 	import SessionViewer from './components/session/SessionViewer.svelte';
-	import ProgressRing from '$lib/shared/components/loading/ProgressRing.svelte';
-	import { t } from '$lib/shared/i18n/i18n.svelte';
+	import ProgressRing from '#lib/shared/components/loading/ProgressRing.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
 
 	type TabId = 'nearby' | 'friends' | 'invite';
 

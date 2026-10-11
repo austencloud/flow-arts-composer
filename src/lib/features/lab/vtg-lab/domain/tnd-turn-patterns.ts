@@ -1,7 +1,7 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { CardFooter } from "$lib/features/choreo-card/domain/models/DeckRelease";
-import type { ResolvedDeckSequence } from "$lib/features/choreo-card/services/deck-variation";
-import { TURN_VALUES } from "$lib/features/choreo-card/domain/turn-pattern-parser";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { CardFooter } from "#lib/features/choreo-card/domain/models/DeckRelease.js";
+import type { ResolvedDeckSequence } from "#lib/features/choreo-card/services/deck-variation.js";
+import { TURN_VALUES } from "#lib/features/choreo-card/domain/turn-pattern-parser.js";
 
 /** Matches deck-composer's formatTurn: integers bare, halves as X.0/X.5. */
 function formatTurn(v: number): string {

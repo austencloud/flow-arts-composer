@@ -11,7 +11,7 @@
  * the cell map first, then falls through to the global map.
  */
 
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 
 export type EffectType =
   | "none"

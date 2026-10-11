@@ -4,9 +4,9 @@ import {
   CharcoalRenderer3D,
   type CharcoalRenderer3DSpatialDebugSnapshot,
   type CharcoalTipInput,
-} from "$lib/shared/3d/effects/charcoal/charcoal-renderer-3d";
-import { QualityTier } from "$lib/shared/3d/effects/types";
-import { resolveCharcoal3D } from "$lib/shared/effects/translators/webgl3d-translator";
+} from "#lib/shared/3d/effects/charcoal/charcoal-renderer-3d.js";
+import { QualityTier } from "#lib/shared/3d/effects/types.js";
+import { resolveCharcoal3D } from "#lib/shared/effects/translators/webgl3d-translator.js";
 
 function createMockScene(): any {
   return { add: vi.fn(), remove: vi.fn() };

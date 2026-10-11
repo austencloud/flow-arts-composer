@@ -20,8 +20,8 @@ import {
   createMotionData,
   type MotionData,
 } from "../../shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 import { GridLocation } from "../../grid/domain/enums/grid-enums";
 import { PropType } from "../domain/enums/prop-type";
 

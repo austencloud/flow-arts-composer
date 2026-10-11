@@ -1,5 +1,5 @@
-import type { TrailMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { DEFAULT_GLARE_WEIGHT } from "$lib/shared/animation-engine/domain/led-photometry";
+import type { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { DEFAULT_GLARE_WEIGHT } from "#lib/shared/animation-engine/domain/led-photometry.js";
 
 export interface DetectedEndpoint {
   x: number;

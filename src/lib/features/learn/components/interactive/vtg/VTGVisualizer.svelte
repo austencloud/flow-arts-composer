@@ -3,7 +3,7 @@ VTGVisualizer - Animated visualization of VTG (Vulcan Tech Gospel) modes
 Shows how the two hands coordinate across the timing and direction axes.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
 
   type VTGMode = "SS" | "TS" | "SO" | "TO" | "QS" | "QO";
 

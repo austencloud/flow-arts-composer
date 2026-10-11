@@ -6,7 +6,7 @@
  * This is for DISPLAY animations (how steps appear in grid), NOT playback animations.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type {
   AnimationMode,
   AnimationTiming,

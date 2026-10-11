@@ -17,12 +17,12 @@ import {
   onSnapshot,
   serverTimestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { firestoreList, firestoreDelete } from "$lib/shared/firestore";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import { isPermissionDeniedError } from "$lib/shared/auth/utils/is-permission-denied-error";
-import type { UserNotification } from "$lib/shared/feedback/domain/models/notification-models";
-import { UserNotificationSchema } from "$lib/shared/feedback/domain/models/feedback-schemas";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { firestoreList, firestoreDelete } from "#lib/shared/firestore/index.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { isPermissionDeniedError } from "#lib/shared/auth/utils/is-permission-denied-error.js";
+import type { UserNotification } from "#lib/shared/feedback/domain/models/notification-models.js";
+import { UserNotificationSchema } from "#lib/shared/feedback/domain/models/feedback-schemas.js";
 
 const USERS_COLLECTION = "users";
 const NOTIFICATIONS_SUBCOLLECTION = "notifications";

@@ -15,19 +15,19 @@ import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { hydrateSequence } from "$lib/features/choreo-card/services/sequence-render-hydrator";
-import { parseCsvEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import { buildBaseIndex, resolveBase } from "$lib/shared/shape-matrix/services/tnd-base-index";
-import { applyVariationDescriptor } from "$lib/features/choreo-card/services/deck-variation";
-import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
-import { buildFlowerAxis } from "$lib/shared/shape-matrix/domain/flower-signature";
-import { applyFilter } from "$lib/shared/shape-matrix/domain/filter-flower-axis";
-import { MODE_ORDER } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-import { TURN_VALUES } from "$lib/features/choreo-card/domain/turn-pattern-parser";
-import { Orientation, TnDMode } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { CardVariation } from "$lib/features/choreo-card/domain/models/DeckRelease";
+import { hydrateSequence } from "#lib/features/choreo-card/services/sequence-render-hydrator.js";
+import { parseCsvEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import { buildBaseIndex, resolveBase } from "#lib/shared/shape-matrix/services/tnd-base-index.js";
+import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
+import { buildFlowerAxis } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
+import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import { TURN_VALUES } from "#lib/features/choreo-card/domain/turn-pattern-parser.js";
+import { Orientation, TnDMode } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { TND_BY_FAMILY } from "#lib/features/choreo-card/domain/tnd-element.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { CardVariation } from "#lib/features/choreo-card/domain/models/DeckRelease.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const WORDS_PATH = path.join(repoRoot, "static/data/hero/tnd-base-words.json");
@@ -151,7 +151,7 @@ describe("hero pool — drawMatrixRealization (public API)", () => {
 
   it("returns a valid sequence + element for a draw", async () => {
     const { drawMatrixRealization } = await import(
-      "$lib/shared/landing/data/shape-matrix-hero-pool"
+      "#lib/shared/landing/data/shape-matrix-hero-pool.js"
     );
     // Deterministic RNG: fixed value picks the first cell/mode consistently.
     const draw = await drawMatrixRealization({ random: () => 0.01 });

@@ -5,7 +5,7 @@
  * Ensures each test gets a fresh, isolated database instance.
  */
 
-import { db } from "$lib/shared/persistence/database/TKADatabase";
+import { db } from "#lib/shared/persistence/database/TKADatabase";
 import Dexie from "dexie";
 
 /**

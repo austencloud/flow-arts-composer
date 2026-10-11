@@ -8,8 +8,8 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import type { MandalaPalette } from "$lib/shared/mandala/domain/mandala-types";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import type { MandalaPalette } from "#lib/shared/mandala/domain/mandala-types.js";
 
   interface Glyph {
     shapeKey: string;

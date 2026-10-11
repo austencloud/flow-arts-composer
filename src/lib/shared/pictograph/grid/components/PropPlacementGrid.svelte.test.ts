@@ -4,22 +4,22 @@ import { describe, expect, it, vi } from "vitest";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 // Type-only: pulls in the BrowserCommands augmentation without bundling the
 // node-side command implementation into the browser.
-import type {} from "$test-helpers/browser-commands/real-touch";
+import type {} from "#test-helpers/browser-commands/real-touch.js";
 
 vi.mock(
-  "$lib/shared/pictograph/shared/components/PictographContainer.svelte",
+  "#lib/shared/pictograph/shared/components/PictographContainer.svelte",
   async () => ({
     default: (await import("./PropPlacementGridTestRenderer.svelte")).default,
   })
@@ -27,11 +27,11 @@ vi.mock(
 
 import PropPlacementGrid from "./PropPlacementGrid.svelte";
 import { getGridJoinLayout, toJoinedHandPoint } from "@tka/render-core";
-import { getPlacementGridPoints } from "$lib/shared/pictograph/grid/services/placement-grid-points";
+import { getPlacementGridPoints } from "#lib/shared/pictograph/grid/services/placement-grid-points.js";
 import {
   calculateBetaOffset,
   type BetaMotionInput,
-} from "$lib/shared/render/core/calculations/beta-offset";
+} from "#lib/shared/render/core/calculations/beta-offset.js";
 
 /** A staff parked at east, which is what the beta test renders. */
 function betaMotion(color: HandSide): BetaMotionInput {

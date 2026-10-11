@@ -3,7 +3,7 @@ import type {
   TimeSeconds,
   TimelineClip,
   TimelineProject,
-} from "$lib/shared/animation-engine/domain/timeline-types";
+} from "#lib/shared/animation-engine/domain/timeline-types.js";
 
 /**
  * ITimelineSnapper - Contract for timeline snapping functionality

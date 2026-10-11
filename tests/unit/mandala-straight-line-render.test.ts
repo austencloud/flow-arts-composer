@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { renderMandalaSVG } from "$lib/shared/mandala/services/mandala-renderer";
-import { calculate } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import type { StepLike } from "$lib/shared/mandala/services/types";
+import { renderMandalaSVG } from "#lib/shared/mandala/services/mandala-renderer.js";
+import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import type { StepLike } from "#lib/shared/mandala/services/types.js";
 
 const STRAIGHT_LINE_SEQUENCE: StepLike[] = [
   {

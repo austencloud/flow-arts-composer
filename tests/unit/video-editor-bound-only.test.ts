@@ -8,10 +8,10 @@
  * no tka kinds in the compiled preset. The render entry's evaluatePresetLayers and
  * evaluatePresetFrame take the package's FrameAlignment; a file that called them directly would
  * have to build one itself, while tka's callers pass the SequenceFrameAlignment they build today.
- * `$lib/shared/post-studio-plugin` exports the same names with the plugin already bound.
+ * `#lib/shared/post-studio-plugin/index.js` exports the same names with the plugin already bound.
  * The strict per-kind schemas `PostCardItemSchema` and `PostVideoItemSchema` are bound-only too: they parse without tka's card and video fields.
  *
- * If this fails, import the name from `$lib/shared/post-studio-plugin` instead. A whole-module
+ * If this fails, import the name from `#lib/shared/post-studio-plugin/index.js` instead. A whole-module
  * import (`import * as x from`, `export * from` or a dynamic `import()` of the entry) is caught
  * too, because it reaches these names without listing them.
  */
@@ -180,7 +180,7 @@ describe("bound-only video editor functions", () => {
     ).toEqual([]);
     expect(
       boundNamesIn(
-        'import { createProjectSchema } from "$lib/shared/post-studio-plugin";'
+        'import { createProjectSchema } from "#lib/shared/post-studio-plugin/index.js";'
       )
     ).toEqual([]);
     expect(
@@ -200,7 +200,7 @@ describe("bound-only video editor functions", () => {
     ).toEqual([]);
     expect(
       boundImportsIn(
-        'import { evaluatePresetLayers } from "$lib/shared/post-studio-plugin";'
+        'import { evaluatePresetLayers } from "#lib/shared/post-studio-plugin/index.js";'
       )
     ).toEqual([]);
   });
@@ -247,7 +247,9 @@ describe("bound-only video editor functions", () => {
       ).toBe(false);
     }
     expect(
-      importsWholeCore('import * as x from "$lib/shared/post-studio-plugin";')
+      importsWholeCore(
+        'import * as x from "#lib/shared/post-studio-plugin/index.js";'
+      )
     ).toBe(false);
     expect(
       importsWholeCore(

@@ -11,11 +11,11 @@
   Admin-only by virtue of its mount points.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Popover } from "bits-ui";
   import { scale } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
-  import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+  import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
   /** Neutral row shape both domains map their Firestore docs into. */
   export interface HistoryEntry {

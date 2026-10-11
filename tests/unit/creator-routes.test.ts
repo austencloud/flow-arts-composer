@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCreatorPath,
   parseCreatorPathname,
-} from "$lib/shared/navigation/services/creator-routes";
+} from "#lib/shared/navigation/services/creator-routes.js";
 
 describe("creator routes", () => {
   it("builds stable list and profile paths", () => {

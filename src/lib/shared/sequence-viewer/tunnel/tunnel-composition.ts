@@ -1,6 +1,6 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { z } from "zod";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   DEFAULT_CONFIG,
   copyModulators,
@@ -10,8 +10,8 @@ import {
   type CopyOp,
   type TunnelConfig,
 } from "./tunnel-config";
-import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
-import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import {
   cloneTunnelStage,
   createExplicitTunnelStage,

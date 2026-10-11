@@ -8,10 +8,10 @@
   `icon`, or an accent dot (used by Effort).
 -->
 <script lang="ts" generics="T extends string">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import RailPropGlyph from "$lib/shared/components/RailPropGlyph.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import RailPropGlyph from "#lib/shared/components/RailPropGlyph.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
   interface RailPill {
     id: T;

@@ -18,28 +18,31 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("$lib/shared/render/services/cloud-cell-key", () => ({
+vi.mock("#lib/shared/render/services/cloud-cell-key.js", () => ({
   CANONICAL_CELL_SIZE: 200,
   CANONICAL_CARD_VISIBILITY: {},
   deriveCloudCellHash: mocks.deriveHash,
 }));
-vi.mock("$lib/shared/render/services/pictograph-cloud-cache", () => ({
+vi.mock("#lib/shared/render/services/pictograph-cloud-cache.js", () => ({
   isCellKnownAvailable: (hash: string) => mocks.known.has(hash),
   download: mocks.download,
 }));
-vi.mock("$lib/shared/sequence-viewer/services/preview-cell-renderer", () => ({
-  renderCell: mocks.renderCell,
-}));
 vi.mock(
-  "$lib/shared/pictograph/shared/services/start-placement-deriver",
+  "#lib/shared/sequence-viewer/services/preview-cell-renderer.js",
+  () => ({
+    renderCell: mocks.renderCell,
+  })
+);
+vi.mock(
+  "#lib/shared/pictograph/shared/services/start-placement-deriver.js",
   () => ({
     startPlacementDeriver: { getOrDeriveStartPlacement: () => undefined },
   })
 );
-vi.mock("$lib/shared/choreo-card/services/step-durations", () => ({
+vi.mock("#lib/shared/choreo-card/services/step-durations.js", () => ({
   detectMixedDurations: () => false,
 }));
-vi.mock("$lib/shared/foundation/services/sequence-motion-profile", () => ({
+vi.mock("#lib/shared/foundation/services/sequence-motion-profile.js", () => ({
   getSequenceMotionVisibility: () => ({
     showLeftMotion: true,
     showRightMotion: true,
@@ -50,8 +53,8 @@ import {
   IncompleteCellWarmError,
   _resetWarmStateForTest,
   warmSequenceCells,
-} from "$lib/shared/render/services/warm-sequence-cells";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/render/services/warm-sequence-cells.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function sequence(letters: string): SequenceData {
   return {

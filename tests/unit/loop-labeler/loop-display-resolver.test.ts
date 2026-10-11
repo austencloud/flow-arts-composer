@@ -13,13 +13,13 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   resolveLoopDisplay,
   clearLoopDisplayCache,
-} from "$lib/features/loop-labeler/services/loop-display-resolver";
+} from "#lib/features/loop-labeler/services/loop-display-resolver.js";
 import {
   LOOPType,
   Period,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 // Minimal SequenceData factory — only the fields the resolver reads. The
 // resolver either calls the detector (needs .steps ≥ 2) or falls back to

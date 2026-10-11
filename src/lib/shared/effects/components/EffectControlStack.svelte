@@ -12,21 +12,21 @@
    * no shared input-component library). Toggles use the button + indicator
    * pattern (no checkboxes).
    */
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import type {
     EffectsConfigState,
     EffectId,
-  } from "$lib/shared/effects/state/effects-config-state.svelte";
+  } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import {
     controlsForView,
     resolveEffectControlOptions,
     type ControlTier,
     type EffectView,
-  } from "$lib/shared/effects/domain/effect-control-manifest";
+  } from "#lib/shared/effects/domain/effect-control-manifest.js";
   import {
     formatEffectSliderValue,
     type EffectControlOverrides,
-  } from "$lib/shared/effects/effect-control-fields";
+  } from "#lib/shared/effects/effect-control-fields.js";
 
   interface Props {
     effect: EffectId;

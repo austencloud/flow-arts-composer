@@ -7,21 +7,21 @@
  * construct option picker can apply the same canonical logic to its options.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { TurnValue } from "$lib/shared/create/domain/turn-pattern-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { TurnValue } from "#lib/shared/create/domain/turn-pattern-data.js";
 import {
   createMotionData,
   isVisibleMotion,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
 const logger = createComponentLogger("ApplyTurnsToMotion");
 

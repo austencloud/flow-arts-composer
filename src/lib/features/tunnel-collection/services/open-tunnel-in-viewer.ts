@@ -1,15 +1,15 @@
 import type { CollectedTunnel } from "../domain/tunnel-collection-types";
 import { collectedTunnelViewerSequence } from "../domain/collected-tunnel-source";
-import { openSequenceOverlay } from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
-import { persistViewerMode } from "$lib/shared/sequence-viewer/services/viewer-state-persistence";
-import { stageTunnelSnapshotForViewer } from "$lib/shared/sequence-viewer/tunnel/stage-tunnel-snapshot-for-viewer";
+import { openSequenceOverlay } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
+import { persistViewerMode } from "#lib/shared/sequence-viewer/services/viewer-state-persistence.js";
+import { stageTunnelSnapshotForViewer } from "#lib/shared/sequence-viewer/tunnel/stage-tunnel-snapshot-for-viewer.js";
 import {
   captureSettingsCheckpoint,
   revertSettingsCheckpoint,
-} from "$lib/shared/collections/settings-checkpoint.svelte";
-import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-import { closeSequenceOverlay } from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
-import { migrateTunnelSnapshot } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
+} from "#lib/shared/collections/settings-checkpoint.svelte.js";
+import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { closeSequenceOverlay } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
+import { migrateTunnelSnapshot } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
 
 /**
  * Reproduce a saved tunnel in the real sequence viewer: apply the snapshot's

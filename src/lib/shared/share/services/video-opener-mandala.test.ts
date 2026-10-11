@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DARK_MOTION_BLUE_STROKE,
   DARK_MOTION_RED_STROKE,
-} from "$lib/shared/mandala/domain/mandala-constants";
+} from "#lib/shared/mandala/domain/mandala-constants.js";
 import { resolveOpenerPalette } from "./video-opener-mandala";
 
 describe("mandala opener palette", () => {

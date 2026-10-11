@@ -2166,6 +2166,68 @@ describe("media composition presets: private reusable layouts", () => {
   });
 });
 
+describe("compositions: private Arrange layouts that Studio opens", () => {
+  const compositionsPath = (uid: string) => `users/${uid}/compositions`;
+  const compositionPath = (uid: string, id = "comp-1") =>
+    `${compositionsPath(uid)}/${id}`;
+
+  it("lets an owner list, save, favorite, and delete a composition", async () => {
+    const db = fullCtx().firestore(SDK_SETTINGS);
+    // The sync's own query: every composition, newest first.
+    await assertSucceeds(
+      getDocs(
+        query(
+          collection(db, compositionsPath(FULL_UID)),
+          orderBy("updatedAt", "desc")
+        )
+      )
+    );
+    await assertSucceeds(
+      setDoc(
+        doc(db, compositionPath(FULL_UID)),
+        { id: "comp-1", name: "Mandala", updatedAt: "2026-10-10T00:00:00Z" },
+        { merge: true }
+      )
+    );
+    await assertSucceeds(
+      setDoc(
+        doc(db, compositionPath(FULL_UID)),
+        { isFavorite: true },
+        { merge: true }
+      )
+    );
+    await assertSucceeds(deleteDoc(doc(db, compositionPath(FULL_UID))));
+  });
+
+  it("lets a guest account sync its own compositions", async () => {
+    const db = anonCtx().firestore(SDK_SETTINGS);
+    await assertSucceeds(
+      setDoc(doc(db, compositionPath(ANON_UID)), { name: "Guest layout" })
+    );
+    await assertSucceeds(getDocs(collection(db, compositionsPath(ANON_UID))));
+  });
+
+  it("keeps compositions private to their owner", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), compositionPath(FULL_UID)), {
+        name: "Private layout",
+      });
+    });
+
+    const outsider = anonCtx().firestore(SDK_SETTINGS);
+    const signedOut = testEnv.unauthenticatedContext().firestore(SDK_SETTINGS);
+    await assertFails(getDoc(doc(outsider, compositionPath(FULL_UID))));
+    await assertFails(
+      getDocs(collection(outsider, compositionsPath(FULL_UID)))
+    );
+    await assertFails(
+      setDoc(doc(outsider, compositionPath(FULL_UID)), { name: "Changed" })
+    );
+    await assertFails(deleteDoc(doc(outsider, compositionPath(FULL_UID))));
+    await assertFails(getDoc(doc(signedOut, compositionPath(FULL_UID))));
+  });
+});
+
 describe("software history submissions", () => {
   const submission = {
     name: "SpiroAnim",

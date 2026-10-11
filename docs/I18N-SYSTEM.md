@@ -174,7 +174,7 @@ node scripts/paraglide-to-json.js messages/en.js > messages/en.json
 **After (JSON-based):**
 ```svelte
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 </script>
 
 <h1>{t("app_name")}</h1>
@@ -347,7 +347,7 @@ IDE autocomplete shows all 1,398 keys.
 
 ```svelte
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 </script>
 
 <h1>{t("app_name")}</h1>
@@ -369,7 +369,7 @@ When the key is computed at runtime:
 
 ```svelte
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   let moduleId = $state("create");
 </script>
@@ -383,7 +383,7 @@ When the key is computed at runtime:
 
 ```svelte
 <script lang="ts">
-  import { setLocale } from "$lib/shared/i18n/i18n.svelte.js";
+  import { setLocale } from "#lib/shared/i18n/i18n.svelte.js";
 
   async function handleLocaleChange(newLocale: string) {
     await setLocale(newLocale as Locale);
@@ -398,7 +398,7 @@ When the key is computed at runtime:
 
 ```svelte
 <script lang="ts">
-  import { getLocale } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getLocale } from "#lib/shared/i18n/i18n.svelte.js";
 
   const currentLocale = getLocale(); // Reactive
 </script>
@@ -410,7 +410,7 @@ When the key is computed at runtime:
 
 ```svelte
 <script lang="ts">
-  import { getLocaleDirection } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getLocaleDirection } from "#lib/shared/i18n/i18n.svelte.js";
 
   const direction = getLocaleDirection(); // "ltr" or "rtl"
 </script>
@@ -542,7 +542,7 @@ Add translations to each locale file.
 
 ```svelte
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 </script>
 
 <h2>{t("new_feature_title")}</h2>
@@ -660,7 +660,7 @@ Blocks PRs that break translations.
 ```typescript
 // tests/unit/i18n.test.ts
 import { describe, it, expect } from "vitest";
-import { t, setLocale } from "$lib/shared/i18n/i18n.svelte.ts";
+import { t, setLocale } from "#lib/shared/i18n/i18n.svelte.ts";
 
 describe("i18n", () => {
   it("translates basic keys", () => {

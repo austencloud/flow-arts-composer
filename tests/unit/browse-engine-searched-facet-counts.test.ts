@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 import { createBrowseEngineForTest } from "./browse-engine-test-helpers.svelte";
 
 const mocks = vi.hoisted(() => ({ searchCalls: 0 }));
 
-vi.mock("$lib/shared/browse/get-browse-loader", () => ({
+vi.mock("#lib/shared/browse/get-browse-loader.js", () => ({
   getBrowseLoader: () => ({
     loadSequenceMetadata: vi.fn().mockResolvedValue([]),
     refreshFromFirestore: vi.fn().mockResolvedValue([]),
@@ -13,10 +13,10 @@ vi.mock("$lib/shared/browse/get-browse-loader", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/browse/services/browse-filter", async (importOriginal) => {
+vi.mock("#lib/shared/browse/services/browse-filter.js", async (importOriginal) => {
   const actual =
     await importOriginal<
-      typeof import("$lib/shared/browse/services/browse-filter")
+      typeof import("#lib/shared/browse/services/browse-filter.js")
     >();
   return {
     ...actual,
@@ -31,7 +31,7 @@ vi.mock("$lib/shared/browse/services/browse-filter", async (importOriginal) => {
   };
 });
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     effectiveUserId: "owner",
     isAuthenticated: true,
@@ -39,23 +39,23 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   },
 }));
 
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: {
     settings: { gridZoomByBucket: {} },
     updateSetting: vi.fn(),
   },
 }));
 
-vi.mock("$lib/shared/library/library-events", () => ({
+vi.mock("#lib/shared/library/library-events.js", () => ({
   onLibraryMutated: () => () => {},
   onLibrarySequenceAdded: () => () => {},
 }));
 
-vi.mock("$lib/shared/library/services/collection-manager", () => ({
+vi.mock("#lib/shared/library/services/collection-manager.js", () => ({
   toggleFavorite: vi.fn(),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 

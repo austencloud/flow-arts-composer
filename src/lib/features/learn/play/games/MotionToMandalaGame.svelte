@@ -7,9 +7,9 @@
   No misconception-hint pass: gap detection is letter-based, no signal here.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onDestroy, onMount } from "svelte";
   import { generateSequenceMatchQuestion } from "../../quiz/services/sequence-question-generator";
   import { QuizType } from "../../quiz/domain/enums/quiz-enums";
@@ -17,9 +17,9 @@
     QuizAnswerOption,
     QuizQuestionData,
   } from "../../quiz/domain/models/quiz-models";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { BackgroundType } from "@austencloud/backgrounds";
   import QuizContainer from "../../quiz/components/shared/QuizContainer.svelte";
   import QuizLoadingState from "../../quiz/components/shared/QuizLoadingState.svelte";

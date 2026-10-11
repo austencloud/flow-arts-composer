@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CatalogFamily } from "../../domain/models/Catalog";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
 
   interface Props {
     families: readonly CatalogFamily[];

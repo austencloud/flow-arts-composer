@@ -1,10 +1,10 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
+  import { featureFlagService } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
   import { TUTORIAL_SCRIPTS, type PictographPick } from "../_data/tutorial-scripts";
   import { resolvePick } from "../_data/pictograph-resolver";
   import GuidePictograph from "../../../(public)/guide/level-1/_components/GuidePictograph.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
   const script = $derived(TUTORIAL_SCRIPTS.find((s) => s.id === page.params.id));
 

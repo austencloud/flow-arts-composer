@@ -5,7 +5,7 @@
     TAU_BOX_PLACEMENTS,
     TERRA_PLACEMENTS,
   } from "../domain/level5-placement-data";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   let {
     selectedGroup,

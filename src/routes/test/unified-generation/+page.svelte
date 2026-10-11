@@ -10,26 +10,26 @@
   Draw is a deterministic mock driven by the spec's real sfc32 seed. No engine wiring (Phase 2).
 -->
 <script lang="ts">
-  import BaseCard from "$lib/features/create/generate/components/cards/BaseCard.svelte";
-  import StepperCard from "$lib/features/create/generate/components/cards/StepperCard/StepperCard.svelte";
-  import { getCardColors } from "$lib/shared/create/domain/card-colors";
+  import BaseCard from "#lib/features/create/generate/components/cards/BaseCard.svelte";
+  import StepperCard from "#lib/features/create/generate/components/cards/StepperCard/StepperCard.svelte";
+  import { getCardColors } from "#lib/shared/create/domain/card-colors.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import LOOPExpandedOverlay from "$lib/features/create/generate/components/cards/LOOPExpandedOverlay.svelte";
-  import { LOOPType, LOOP_TYPE_LABELS, ROTATED_LOOP_TYPES } from "$lib/features/create/generate/circular/domain/models/circular-models";
-  import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
-  import type { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
-  import TurnIntensityCard from "$lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
-  import { startPlacementManager } from "$lib/shared/create/services/start-placement-manager";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import OrientationCycler from "$lib/features/create/construct/start-placement-picker/components/OrientationCycler.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import LOOPExpandedOverlay from "#lib/features/create/generate/components/cards/LOOPExpandedOverlay.svelte";
+  import { LOOPType, LOOP_TYPE_LABELS, ROTATED_LOOP_TYPES } from "#lib/features/create/generate/circular/domain/models/circular-models.js";
+  import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
+  import type { LOOPComponent } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
+  import TurnIntensityCard from "#lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
+  import { startPlacementManager } from "#lib/shared/create/services/start-placement-manager.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import OrientationCycler from "#lib/features/create/construct/start-placement-picker/components/OrientationCycler.svelte";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { scale } from "svelte/transition";
   import { quintOut } from "svelte/easing";
-  import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   const c = getCardColors(BackgroundType.COSMIC); // DEFAULT_COLORS gradients
   const LOOP_COLOR = "linear-gradient(135deg, #a3a32a 0%, #8a8a22 50%, #6b6b1a 100%)";

@@ -7,7 +7,7 @@
 
 import type { TikaPictographLoader } from "./tika-pictograph-loader";
 import { LETTER_TO_TYPE } from "@tka/domain";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
 export interface SequenceTransition {
   from: string;

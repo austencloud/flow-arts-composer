@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createArcadeSession } from "$lib/features/learn/play/state/arcade-session-state.svelte";
-import { scoreAnswer } from "$lib/features/learn/play/domain/scoring";
+import { createArcadeSession } from "#lib/features/learn/play/state/arcade-session-state.svelte.js";
+import { scoreAnswer } from "#lib/features/learn/play/domain/scoring.js";
 import type {
   GameDefinition,
   ChallengeDefinition,
-} from "$lib/features/learn/play/domain/arcade-types";
-import type { QuizAnswerEvent } from "$lib/features/learn/quiz/domain/models/quiz-models";
+} from "#lib/features/learn/play/domain/arcade-types.js";
+import type { QuizAnswerEvent } from "#lib/features/learn/quiz/domain/models/quiz-models.js";
 
 function evt(isCorrect: boolean): QuizAnswerEvent {
   return {

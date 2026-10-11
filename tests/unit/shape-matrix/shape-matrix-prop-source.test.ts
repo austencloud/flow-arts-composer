@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { shapeMatrixTipPoint } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { shapeMatrixTipPoint } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
 
 describe("Shape Matrix tracked prop source", () => {
   it("tracks the staff thumb end", () => {

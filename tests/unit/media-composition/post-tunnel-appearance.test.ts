@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   PostProjectSchema,
   type PostAnimationItem,
   editContext,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   POST_BOX,
   type PostProject,
@@ -14,14 +14,14 @@ import {
   findTunnelHook,
   removeTunnelHook,
   setTunnelAppearance,
-} from "$lib/shared/media-composition/domain/post-project-edits";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 import {
   animationAppearanceForItem,
   tunnelHidesMandala,
-} from "$lib/shared/post-studio-plugin/ui/post-item-render-options";
+} from "#lib/shared/post-studio-plugin/ui/post-item-render-options.js";
 import { coreToolRow } from "@austencloud/video-editor/ui";
-import { tkaRow, tkaRowFacts } from "$lib/shared/post-studio-plugin/ui/tka-row";
+import { tkaRow, tkaRowFacts } from "#lib/shared/post-studio-plugin/ui/tka-row.js";
 import { NOW, overlay, project, video } from "./post-project-fixtures";
 
 const ctx = editContext(NOW + 1);

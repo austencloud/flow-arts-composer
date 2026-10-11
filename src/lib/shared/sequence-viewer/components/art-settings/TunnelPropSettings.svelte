@@ -5,13 +5,13 @@
      it passes propLook and onPropLookChange. The viewer's Art pane passes
      neither, and the grid edits the account's version. -->
 <script lang="ts">
-  import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
   import HandPropToolbar, {
     type HandPropToolbarProps,
-  } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
-  import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  } from "#lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
+  import type { PropChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 
   interface Props {
     selectedPropType: PropType;

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import CopiesSelect from "./print-preview/CopiesSelect.svelte";
   import { printPdfBlob } from "../services/print-blob";
   import {

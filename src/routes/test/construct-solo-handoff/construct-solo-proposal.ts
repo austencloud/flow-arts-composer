@@ -1,15 +1,15 @@
-import type { AuthoredHand } from "$lib/shared/foundation/domain/models/authored-hand";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { AuthoredHand } from "#lib/shared/foundation/domain/models/authored-hand.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import {
   createMotionData,
   isVisibleMotion,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
 
 function handSide(authoredHand: AuthoredHand): HandSide {
   return authoredHand === "left" ? HandSide.LEFT : HandSide.RIGHT;

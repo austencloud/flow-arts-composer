@@ -37,7 +37,7 @@ import {
   calculateBetaOffset,
   type BetaOffsetInput,
   type BetaMotionInput,
-} from "$lib/shared/render/core/calculations/beta-offset";
+} from "#lib/shared/render/core/calculations/beta-offset.js";
 
 export class PropPlacer {
   constructor(

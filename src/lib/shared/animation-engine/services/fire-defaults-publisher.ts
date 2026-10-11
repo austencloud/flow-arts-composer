@@ -10,8 +10,8 @@ import {
 	setDoc,
 	serverTimestamp,
 } from "firebase/firestore";
-import { auth, getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
+import { auth, getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
 import type { FirePhysicsParams } from "../domain/types/fire-types";
 import type { PropTipConfig } from "../domain/types/prop-tip-points";
 

@@ -10,7 +10,7 @@
  * Failure mode: resolves to an empty array (network/CSV error) — previews
  * render their stage without pictographs rather than erroring the hub.
  */
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import { loadPlayPictographPool } from "../../services/pictograph-pool";
 
 /** Resolve real PictographData for the requested letters (missing ones skipped). */

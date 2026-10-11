@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getSequenceActionsPanelHeight } from "$lib/features/create/shared/components/sequence-actions/sequence-actions-panel-height";
+import { getSequenceActionsPanelHeight } from "#lib/features/create/shared/components/sequence-actions/sequence-actions-panel-height.js";
 
 describe("Sequence Actions panel height", () => {
   it.each([

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ViewerControlSink } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
+  import type { ViewerControlSink } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
   import PerformerHubDetail from "./controls/PerformerHubDetail.svelte";
   import PerformerSpine from "./controls/PerformerSpine.svelte";
   import type { PerformerEditSink } from "./controls/performer-hub-types";

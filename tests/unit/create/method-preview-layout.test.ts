@@ -8,7 +8,7 @@ import {
   gridCellSize,
   rowOfCells,
   slotWaveBand,
-} from "$lib/features/create/shared/components/method-previews/method-preview-layout";
+} from "#lib/features/create/shared/components/method-previews/method-preview-layout.js";
 
 describe("preview box shapes", () => {
   it("calls a short wide box a strip", () => {

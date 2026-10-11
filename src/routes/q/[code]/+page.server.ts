@@ -1,19 +1,20 @@
 import type { PageServerLoad } from "./$types";
-import { env } from "$env/dynamic/public";
-import { parseCloudflareGeo } from "$lib/shared/presence/domain/models/presence-models";
-import type { ShortCodeData } from "$lib/shared/qr/services/types";
-import { fetchPublicShortCodeRecord } from "$lib/shared/qr/services/public-short-code-record-reader";
+import * as env from "$app/env/public";
+import { parseCloudflareGeo } from "#lib/shared/presence/domain/models/presence-models.js";
+import type { ShortCodeData } from "#lib/shared/qr/services/types.js";
+import { fetchPublicShortCodeRecord } from "#lib/shared/qr/services/public-short-code-record-reader.js";
 import {
   isInlineEncoded,
   parsePropsFromURL,
-} from "$lib/shared/navigation/services/sequence-encoder";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
 import {
   prepareScanViewerPayload,
   type PreparedScanViewerPayload,
-} from "$lib/server/scan/scan-viewer-payload-preparer";
-import { getFirestoreRest } from "$lib/server/firestore/firestore-rest";
-import { readPhysicalCardPropsWithin } from "$lib/server/physical-cards/physical-card-props";
-import { physicalCardIdNeedingProps } from "$lib/shared/qr/services/physical-card-props";
+} from "#lib/server/scan/scan-viewer-payload-preparer.js";
+import { getFirestoreRest } from "#lib/server/firestore/firestore-rest.js";
+import { readPhysicalCardPropsWithin } from "#lib/server/physical-cards/physical-card-props.js";
+import { physicalCardIdNeedingProps } from "#lib/shared/qr/services/physical-card-props.js";
+import { requestCf, workerEnv } from "#lib/server/cloudflare/worker-env.js";
 
 // The project id lives in the public env; the value below is the same one the
 // client Firebase config uses (src/lib/shared/auth/firebase.ts) and only
@@ -105,13 +106,8 @@ function stripPreparedPayload(
   return clientRecord;
 }
 
-export const load: PageServerLoad = async ({
-  params,
-  request,
-  platform,
-  url,
-}) => {
-  const cf = (platform as { cf?: Record<string, unknown> } | undefined)?.cf;
+export const load: PageServerLoad = async ({ params, request, url }) => {
+  const cf = requestCf(request);
   const geo = parseCloudflareGeo(request.headers, cf) ?? {
     country: null,
     city: null,
@@ -131,7 +127,7 @@ export const load: PageServerLoad = async ({
   );
   const physicalCardPropsLookup = physicalCardId
     ? readPhysicalCardPropsWithin(
-        () => getFirestoreRest(platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON),
+        () => getFirestoreRest(workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON),
         params.code,
         physicalCardId,
         LOOKUP_TIMEOUT_MS

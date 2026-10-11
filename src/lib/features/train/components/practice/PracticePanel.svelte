@@ -7,7 +7,7 @@
 <script lang="ts">
   import { getTrainPracticeState } from "../../state/train-practice-state.svelte";
   import TrainModePanel from "../TrainModePanel.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   const practiceState = getTrainPracticeState();
 

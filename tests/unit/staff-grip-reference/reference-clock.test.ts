@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createTakeTiming,
   resolveTakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 import {
   LANDED_PHASE_MARGIN,

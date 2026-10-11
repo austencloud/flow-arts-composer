@@ -11,11 +11,11 @@
  * seed's end placement. Outer transformations operate on the already-extended result.
  */
 
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   LOOPType,
   Period,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 /**
  * Interface describing the shape of the LOOP end placement resolver module.
@@ -29,12 +29,12 @@ import {
   HALF_PLACEMENT_MAP,
   QUARTER_PLACEMENT_MAP_CW,
   QUARTER_PLACEMENT_MAP_CCW,
-} from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
+} from "#lib/shared/foundation/domain/models/generation/circular-placement-maps.js";
 import {
   VERTICAL_MIRROR_PLACEMENT_MAP,
   HORIZONTAL_MIRROR_PLACEMENT_MAP,
   SWAPPED_PLACEMENT_MAP,
-} from "$lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps";
+} from "#lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps.js";
 
 export function getValidEndPlacements(
   startPlacement: GridPlacement,

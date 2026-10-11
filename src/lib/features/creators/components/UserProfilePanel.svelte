@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
   import {
     getUserProfile,
@@ -8,31 +8,31 @@
     unfollowUser,
     getFollowers,
     getFollowing,
-  } from "$lib/shared/community/services/user-repository";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  } from "#lib/shared/community/services/user-repository.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { hasProfileWork } from "../domain/profile-tenure";
-  import { scene3dCollectionState } from "$lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte";
-  import { tunnelCollectionState } from "$lib/features/tunnel-collection/state/tunnel-collection-state.svelte";
-  import { mandalaCollectionState } from "$lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte";
-  import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-  import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-  import type { UserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { scene3dCollectionState } from "#lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte.js";
+  import { tunnelCollectionState } from "#lib/features/tunnel-collection/state/tunnel-collection-state.svelte.js";
+  import { mandalaCollectionState } from "#lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte.js";
+  import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+  import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+  import type { UserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import {
     openCreatorProfile,
     backToCreatorsList,
   } from "../state/creators-routing.svelte";
-  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
+  import PanelState from "#lib/shared/components/panel/PanelState.svelte";
   import ProfileHeaderBar from "./profile/ProfileHeaderBar.svelte";
   import ProfileHeroSection from "./profile/ProfileHeroSection.svelte";
   import ProfileStage from "./profile/stage/ProfileStage.svelte";
   import ProfileWorkEmpty from "./profile/ProfileWorkEmpty.svelte";
   import ProfileConnectionSection from "./profile/ProfileConnectionSection.svelte";
   import FollowersModal from "./profile/FollowersModal.svelte";
-  import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
-  import type { LibraryRepository } from "$lib/shared/library/services/library-repository";
+  import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
+  import type { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
 
   interface Props {
     userId: string;

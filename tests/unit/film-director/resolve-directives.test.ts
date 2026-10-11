@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   createAxisStream,
   resolveFilmSeed,
-} from "$lib/features/film-director/domain/directive-random";
-import { resolveCastAxis } from "$lib/features/film-director/domain/resolve-directives";
+} from "#lib/features/film-director/domain/directive-random.js";
+import { resolveCastAxis } from "#lib/features/film-director/domain/resolve-directives.js";
 
 const CATALOG = ["staff", "fan", "club", "sword", "torch", "buugeng"] as const;
 

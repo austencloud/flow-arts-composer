@@ -1,4 +1,4 @@
-import type { ViewerPerformerAppearanceAssignment } from "$lib/shared/3d/state/viewer-3d-state.svelte";
+import type { ViewerPerformerAppearanceAssignment } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
 import { resolveArrangeTargetIndex } from "../domain/active-formation";
 import type { FormationPresetId } from "../domain/stage-types";
 import type {

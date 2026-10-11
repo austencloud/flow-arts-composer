@@ -2,7 +2,7 @@
  * Single source of truth for calculating prop endpoint positions for trail rendering.
  */
 
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import {
   resolveTrailPointConfig,
   type TrailPointSource,

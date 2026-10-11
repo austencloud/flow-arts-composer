@@ -8,14 +8,14 @@
    * Accessibility: WCAG AAA compliant
    */
   import { onMount } from "svelte";
-  import { getSystemStateManager } from "$lib/features/admin/get-system-state-manager";
+  import { getSystemStateManager } from "#lib/features/admin/get-system-state-manager.js";
   import type {
     AdminUserAccountSummary,
     CachedUserMetadata,
   } from "../../services/types";
   import type { SystemStateManager } from "../../services/system-state-manager";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   let isLoading = $state(true);
   let loadError = $state(false);

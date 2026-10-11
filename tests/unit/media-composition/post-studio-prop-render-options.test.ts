@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { withPostStudioPropType } from "$lib/shared/post-studio-plugin/ui/post-studio-prop-render-options";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { withPostStudioPropType } from "#lib/shared/post-studio-plugin/ui/post-studio-prop-render-options.js";
 
 describe("withPostStudioPropType", () => {
   it("pins one prop into every live and exported card override", () => {

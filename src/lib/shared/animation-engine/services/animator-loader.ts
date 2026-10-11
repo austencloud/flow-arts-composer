@@ -3,9 +3,9 @@
  * Provides access to core animation dependencies.
  */
 
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import type { IAnimationRenderer as AnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
-import { Canvas2DAnimationRenderer } from "$lib/shared/animation-engine/services/canvas-2d-animation-renderer";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import type { IAnimationRenderer as AnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
+import { Canvas2DAnimationRenderer } from "#lib/shared/animation-engine/services/canvas-2d-animation-renderer.js";
 import {
   generateGridSvg,
   generatePropSvg,
@@ -13,10 +13,10 @@ import {
   generateRightPropSvg,
   generateLeftStaffSvg,
   generateRightStaffSvg,
-} from "$lib/shared/animation-engine/services/svg-generator";
-import type { ISVGGenerator } from "$lib/shared/animation-engine/services/ISVGGenerator";
-import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/get-sequence-animation-orchestrator";
-import { getTrailCapturer } from "$lib/shared/animation-engine/get-trail-capturer";
+} from "#lib/shared/animation-engine/services/svg-generator.js";
+import type { ISVGGenerator } from "#lib/shared/animation-engine/services/ISVGGenerator.js";
+import { getSequenceAnimationOrchestrator } from "#lib/shared/animation-engine/get-sequence-animation-orchestrator.js";
+import { getTrailCapturer } from "#lib/shared/animation-engine/get-trail-capturer.js";
 
 import type {
   AnimatorServices,

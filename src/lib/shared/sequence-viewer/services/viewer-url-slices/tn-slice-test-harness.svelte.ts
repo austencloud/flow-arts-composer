@@ -12,7 +12,7 @@
 import {
   TunnelViewController,
   type TunnelControllerSources,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.js";
 
 export interface RootedTunnelViewController {
   controller: TunnelViewController;

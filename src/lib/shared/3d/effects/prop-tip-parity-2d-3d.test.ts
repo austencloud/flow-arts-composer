@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   PROP_TIP_POINTS,
   getTipPointsBaseline,
-} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+} from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import {
   resolveEffect,
   type TipEffectMap,
-} from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-import { getDefaultTrailPointConfig } from "$lib/shared/animation-engine/domain/types/trail-point-types";
-import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
+} from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+import { getDefaultTrailPointConfig } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
+import { propTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
 import type { PropBuildTipGeometry3D } from "./prop-build-tip-geometry-3d";
 import {
   resolvePropTipAnchors3D,

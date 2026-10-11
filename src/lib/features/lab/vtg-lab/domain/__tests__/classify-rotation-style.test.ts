@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { classifyRotationStyle } from "$lib/shared/shape-matrix/domain/rotation-style";
+import { classifyRotationStyle } from "#lib/shared/shape-matrix/domain/rotation-style.js";
 
 // Minimal sequence shape: steps with blue/red motions carrying a motionType.
 function seq(pairs: Array<[string, string]>): any {

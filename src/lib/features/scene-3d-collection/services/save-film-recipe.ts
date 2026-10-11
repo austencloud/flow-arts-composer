@@ -1,14 +1,14 @@
-import type { Viewer3DState } from "$lib/shared/3d/context/viewer-3d-context";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { CameraKeyframe } from "$lib/shared/video-export/domain/camera-keyframe";
-import { compactCameraKeyframes } from "$lib/shared/video-export/domain/camera-keyframe";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import type { Viewer3DState } from "#lib/shared/3d/context/viewer-3d-context.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { CameraKeyframe } from "#lib/shared/video-export/domain/camera-keyframe.js";
+import { compactCameraKeyframes } from "#lib/shared/video-export/domain/camera-keyframe.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import {
   captureScene3DSnapshot,
   captureScene3DPoster,
 } from "./capture-3d-scene";
-import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
 import { scene3dCollectionState } from "../state/scene-3d-collection-state.svelte";
 import { SCENE_3D_GROUPS } from "../domain/scene-3d-collection-types";
 import type {

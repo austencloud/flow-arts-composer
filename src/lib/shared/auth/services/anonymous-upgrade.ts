@@ -17,17 +17,17 @@ import {
   type AuthError,
   type User,
 } from "firebase/auth";
-import { getAuthInstance } from "$lib/shared/auth/firebase";
-import { stashPendingLink } from "$lib/shared/auth/services/pending-credential-link";
-import { recordLastAuthMethod } from "$lib/shared/auth/services/last-auth-method.svelte";
-import { getPropUnlockManager } from "$lib/shared/gamification/get-prop-unlock-manager";
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import { reportPostHogLifecycleEvent } from "$lib/shared/analytics/services/posthog-lifecycle-reporter";
-import { getAuthSubmissionContext } from "$lib/shared/auth/services/auth-analytics-bridge";
-import * as dexiePersistence from "$lib/shared/persistence/services/dexie-persistence-service";
-import { getSavedSequenceIds } from "$lib/shared/library/services/saved-sequence-ledger";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { getAuthInstance } from "#lib/shared/auth/firebase.js";
+import { stashPendingLink } from "#lib/shared/auth/services/pending-credential-link.js";
+import { recordLastAuthMethod } from "#lib/shared/auth/services/last-auth-method.svelte.js";
+import { getPropUnlockManager } from "#lib/shared/gamification/get-prop-unlock-manager.js";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { reportPostHogLifecycleEvent } from "#lib/shared/analytics/services/posthog-lifecycle-reporter.js";
+import { getAuthSubmissionContext } from "#lib/shared/auth/services/auth-analytics-bridge.js";
+import * as dexiePersistence from "#lib/shared/persistence/services/dexie-persistence-service.js";
+import { getSavedSequenceIds } from "#lib/shared/library/services/saved-sequence-ledger.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export type UpgradeStatus = "linked" | "collision-signed-in";
 
@@ -188,7 +188,7 @@ export async function notifyUpgradeSignup(linkedUser?: User): Promise<void> {
     // skipped it while the session was anonymous (PROD-only guest-doc guard).
     try {
       const { getUserDocumentManager } =
-        await import("$lib/shared/auth/get-user-document-manager");
+        await import("#lib/shared/auth/get-user-document-manager.js");
       await getUserDocumentManager().createOrUpdateUserDocument(user);
     } catch (error) {
       console.warn(
@@ -258,7 +258,7 @@ export async function upgradeAnonymousWithGoogle(): Promise<UpgradeResult> {
   // Native: linkWithPopup dead-ends in the WebView (Google blocks WebView
   // sign-in), so get the credential from the native SDK and link it directly.
   const { isNative } =
-    await import("$lib/shared/platform/services/platform-detector");
+    await import("#lib/shared/platform/services/platform-detector.js");
   if (isNative()) {
     const { nativeGoogleCredential } = await import("./native-google-auth");
     const credential = await nativeGoogleCredential();
@@ -267,10 +267,10 @@ export async function upgradeAnonymousWithGoogle(): Promise<UpgradeResult> {
 
   // Desktop (Tauri): same popup wall in WebView2 — get the credential from
   // the system-browser OAuth bridge and link it directly.
-  const { isDesktop } = await import("$lib/shared/desktop/is-desktop");
+  const { isDesktop } = await import("#lib/shared/desktop/is-desktop.js");
   if (isDesktop()) {
     const { desktopGoogleCredential } =
-      await import("$lib/shared/desktop/tauri-auth-bridge");
+      await import("#lib/shared/desktop/tauri-auth-bridge.js");
     return upgradeAnonymousWithGoogleCredential(
       anon,
       await desktopGoogleCredential()

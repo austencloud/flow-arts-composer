@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scanPropProperties } from "$lib/shared/analytics/scan-prop-attribution";
+import { scanPropProperties } from "#lib/shared/analytics/scan-prop-attribution.js";
 
 describe("scan prop attribution", () => {
   it("keeps mixed left and right props explicit", () => {

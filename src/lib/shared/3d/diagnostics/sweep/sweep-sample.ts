@@ -23,7 +23,7 @@ import {
   fitStaffLengthForHug,
   measurePerformerReach,
   type PerformerReachMeasurements,
-} from "$lib/shared/3d/domain/performer-reach-measurements";
+} from "#lib/shared/3d/domain/performer-reach-measurements.js";
 
 /** Read-only point. Structurally satisfied by three.js `Vector3`. */
 export interface SweepPoint {

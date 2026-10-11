@@ -2,7 +2,7 @@
 ProspinPage - Page 3: Prospin rotation concept
 -->
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { PROSPIN_EXAMPLES } from "../../../../domain/constants/staff-examples";
   import StaffPlacementVisualizer from "../StaffPlacementVisualizer.svelte";
 

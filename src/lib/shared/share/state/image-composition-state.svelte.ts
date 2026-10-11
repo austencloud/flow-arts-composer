@@ -5,20 +5,20 @@
  * Persists to Firebase for authenticated users, falls back to localStorage for guests.
  */
 
-import { browser } from "$app/environment";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+import { browser } from "$app/env";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 import type { User } from "firebase/auth";
-import { loadedAuth, whenAuthLoaded } from "$lib/shared/auth/loaded-auth";
-import { hasSavedFirebaseUser } from "$lib/shared/auth/services/saved-firebase-user";
-import type { InfoCellChoice } from "$lib/shared/sequence-viewer/services/info-cell-display";
-import type { AppSettings } from "$lib/shared/settings/domain/app-settings";
+import { loadedAuth, whenAuthLoaded } from "#lib/shared/auth/loaded-auth.js";
+import { hasSavedFirebaseUser } from "#lib/shared/auth/services/saved-firebase-user.js";
+import type { InfoCellChoice } from "#lib/shared/sequence-viewer/services/info-cell-display.js";
+import type { AppSettings } from "#lib/shared/settings/domain/app-settings.js";
 import {
   COLUMN_COUNT_PREFERENCE_VERSION,
   getColumnCountPreferenceOwner,
   sanitizeColumnCountPreference,
   type ColumnCountPreferenceSource,
-} from "$lib/shared/share/domain/column-count-preference";
+} from "#lib/shared/share/domain/column-count-preference.js";
 
 const STORAGE_KEY = "tka-image-composition-settings";
 const COLUMN_PREFERENCES_KEY = `${STORAGE_KEY}:column-preferences-v1`;
@@ -278,7 +278,7 @@ class ImageCompositionStateManager {
         adoptIdentity(null);
         return;
       }
-      import("$lib/shared/auth/firebase").catch((error) =>
+      import("#lib/shared/auth/firebase.js").catch((error) =>
         console.warn("[ImageComposition] Firebase failed to load:", error)
       );
     });

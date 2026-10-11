@@ -2,7 +2,7 @@ import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { describe, it, expect, vi } from "vitest";
 import MotionColorChips from "./MotionColorChips.svelte";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 
 describe("MotionColorChips", () => {
   it("clicking the blue chip calls onToggleBlue and leaves onToggleRed untouched", async () => {

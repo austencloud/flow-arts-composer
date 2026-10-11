@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ThumbnailRenderInput } from "./thumbnail-key-deriver";
 
 // The cloud tier talks to Firebase Storage — stub it out entirely so a miss
 // there can't mask (or fake) the tiers under test.
-vi.mock("$lib/shared/browse/services/cloud-thumbnail-cache", () => ({
+vi.mock("#lib/shared/browse/services/cloud-thumbnail-cache.js", () => ({
   getCachedUrl: () => undefined,
   getUrl: vi.fn(async () => null),
   upload: vi.fn(async () => {}),
@@ -16,7 +16,7 @@ vi.mock("$lib/shared/browse/services/cloud-thumbnail-cache", () => ({
 
 import { ThumbnailRenderOrchestrator } from "./thumbnail-render-orchestrator";
 import { deriveKey } from "./thumbnail-key-deriver";
-import * as cloudCacheModule from "$lib/shared/browse/services/cloud-thumbnail-cache";
+import * as cloudCacheModule from "#lib/shared/browse/services/cloud-thumbnail-cache.js";
 
 const sequence = {
   id: "seq-1",

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { SequenceState } from "../../../state/sequence-state-orchestrator.svelte";
-  import type { LetterSource } from "$lib/shared/create/domain/spell-models";
-  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
+  import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
+  import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
   import WordLabel from "./WordLabel.svelte";
   import SequenceMetadataRail from "./SequenceMetadataRail.svelte";
 

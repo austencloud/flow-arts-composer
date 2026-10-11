@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { COLOR_PRESETS } from "$lib/shared/ui/color-presets";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import { COLOR_PRESETS } from "#lib/shared/ui/color-presets.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 
   export interface ColorPreset {
     hex: string;

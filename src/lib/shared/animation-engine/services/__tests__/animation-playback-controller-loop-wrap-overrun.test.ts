@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { AnimationPanelState } from "../../state/animation-panel-state.svelte";
 import type { AnimationLoop } from "../animation-loop";
 import type { SequenceAnimationOrchestrator } from "../sequence-animation-orchestrator";
@@ -8,9 +8,12 @@ import { AnimationPlaybackController } from "../animation-playback-controller";
 // Toggled per test so one file covers the seamless and the freeform wrap.
 const loopability = vi.hoisted(() => ({ seamless: true }));
 
-vi.mock("$lib/shared/foundation/services/sequence-loopability-checker", () => ({
-  isSeamlesslyLoopable: () => loopability.seamless,
-}));
+vi.mock(
+  "#lib/shared/foundation/services/sequence-loopability-checker.js",
+  () => ({
+    isSeamlesslyLoopable: () => loopability.seamless,
+  })
+);
 
 function createState(): AnimationPanelState {
   let isPlaying = false;

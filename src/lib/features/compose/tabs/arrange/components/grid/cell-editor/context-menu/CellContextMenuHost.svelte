@@ -4,11 +4,11 @@
   Rebuilds menu items reactively when cell state changes.
 -->
 <script lang="ts">
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuState,
     ContextMenuEntry,
-  } from "$lib/shared/components/context-menu/context-menu-types";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
   import {
     buildCellContextMenuItems,
     type CellContextMenuCallbacks,

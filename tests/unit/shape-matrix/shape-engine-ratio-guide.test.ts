@@ -5,10 +5,10 @@ import { describe, expect, it } from "vitest";
 import {
   flowerPetals,
   ratioLabel,
-} from "$lib/shared/shape-matrix/domain/flower-signature";
-import { matrixFiltersForSize } from "$lib/shared/shape-matrix/domain/matrix-size-preset";
-import { applyFilter } from "$lib/shared/shape-matrix/domain/filter-flower-axis";
-import { buildShapeMatrixAxis } from "$lib/shared/shape-matrix/domain/flower-signature";
+} from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { matrixFiltersForSize } from "#lib/shared/shape-matrix/domain/matrix-size-preset.js";
+import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
+import { buildShapeMatrixAxis } from "#lib/shared/shape-matrix/domain/flower-signature.js";
 
 function read(path: string): string {
   return readFileSync(resolve(path), "utf8");

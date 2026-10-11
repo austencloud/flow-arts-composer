@@ -6,7 +6,7 @@
   Owned by tests/opus-accessibility-audit. No production behavior lives here.
 -->
 <script lang="ts">
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
 
   let { isOpen = $bindable(true) }: { isOpen?: boolean } = $props();
 

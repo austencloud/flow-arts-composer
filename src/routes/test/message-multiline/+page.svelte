@@ -7,10 +7,10 @@
    * criterion, so the `white-space: pre-wrap` behavior can be inspected without
    * sending live messages to another person.
    */
-  import MessageBubble from "$lib/shared/inbox/components/messages/MessageBubble.svelte";
-  import type { Message } from "$lib/shared/messaging/domain/models/message-models";
-  import { messageHasSequencePreview } from "$lib/shared/inbox/domain/message-link-parts";
-  import { createSequencePreviewCoordinator } from "$lib/shared/inbox/state/sequence-preview-coordinator.svelte";
+  import MessageBubble from "#lib/shared/inbox/components/messages/MessageBubble.svelte";
+  import type { Message } from "#lib/shared/messaging/domain/models/message-models.js";
+  import { messageHasSequencePreview } from "#lib/shared/inbox/domain/message-link-parts.js";
+  import { createSequencePreviewCoordinator } from "#lib/shared/inbox/state/sequence-preview-coordinator.svelte.js";
 
   const SELF = "self-user";
   const OTHER = "other-user";

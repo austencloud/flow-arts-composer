@@ -1,9 +1,9 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type {
   FeedbackPriority,
   FeedbackStatus,
   FeedbackType,
-} from "$lib/shared/feedback/domain/models/feedback-models";
+} from "#lib/shared/feedback/domain/models/feedback-models.js";
 
 export function feedbackTypeLabel(type: FeedbackType, short = false): string {
   const keys = short

@@ -6,7 +6,7 @@ import {
 import {
   getGridLocationsFromPlacement,
   getGridPlacementFromLocations,
-} from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
+} from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 
 describe("GridPlacementDeriver", () => {
   // The class collapsed into standalone functions. Bind them to an object so

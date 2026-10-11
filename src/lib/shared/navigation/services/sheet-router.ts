@@ -2,7 +2,7 @@
  * Sheet Router - URL-driven sheet and spotlight navigation
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { page } from "$app/state";
 import type { SheetType, RouteState, AnimationPanelState } from "./types";
 import { writeUrl } from "./url-state";

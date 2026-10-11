@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { resolveBrowseInitialViewerMode } from "$lib/features/browse/shared/services/performance-browse-intent";
-import type { ActiveFilter } from "$lib/shared/browse/engine/types";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import { resolveBrowseInitialViewerMode } from "#lib/features/browse/shared/services/performance-browse-intent.js";
+import type { ActiveFilter } from "#lib/shared/browse/engine/types.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 
 function filter(
   type: BrowseFilterType,

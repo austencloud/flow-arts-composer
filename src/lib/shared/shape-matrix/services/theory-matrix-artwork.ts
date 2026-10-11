@@ -20,12 +20,12 @@
 import type {
   MandalaPaths,
   SVGPathData,
-} from "$lib/shared/mandala/domain/mandala-types";
+} from "#lib/shared/mandala/domain/mandala-types.js";
 import {
   ENGINE_GRID_RADIUS,
   MANDALA_GRID_RADIUS,
-} from "$lib/shared/mandala/domain/mandala-constants";
-import { traceScaledPath } from "$lib/shared/notation/qft/qft-model";
+} from "#lib/shared/mandala/domain/mandala-constants.js";
+import { traceScaledPath } from "#lib/shared/notation/qft/qft-model.js";
 import {
   CLUB_ARTWORK_PAINTER,
   type ShapeMatrixArtworkPainter,

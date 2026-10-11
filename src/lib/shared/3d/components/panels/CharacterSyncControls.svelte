@@ -6,7 +6,7 @@
    * Compact design for side panel placement.
    */
 
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { CharacterSyncState } from "../../state/character-sync-state.svelte";
 
   interface Props {

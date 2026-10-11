@@ -14,14 +14,14 @@ import {
   createDefaultRainbowConfig,
   createDefaultVoidConfig,
   createDefaultWinterConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs";
+} from "#lib/shared/3d/environments/domain/models/scene-configs.js";
 import {
   getPerformerStageBounds,
   getPerformerStageClearance,
   resolveCircularStageRadius,
   type PerformerStageBounds,
   type PerformerStagePosition,
-} from "$lib/shared/3d/environments/domain/performer-stage-bounds";
+} from "#lib/shared/3d/environments/domain/performer-stage-bounds.js";
 
 interface CloudbreakLayout {
   performanceTerrace: {

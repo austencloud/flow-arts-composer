@@ -4,7 +4,7 @@
  * Provides proper sorting for kinetic alphabet letters respecting system order
  */
 
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
 /**
  * Complete kinetic alphabet letter order

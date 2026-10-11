@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { ConflictResolver } from './services/conflict-resolver';
 

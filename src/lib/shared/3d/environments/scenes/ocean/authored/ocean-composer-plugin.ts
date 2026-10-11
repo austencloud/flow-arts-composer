@@ -1,15 +1,15 @@
 import type { Mesh } from "three";
-import { composerRegistry } from "$lib/shared/3d/scene-composer/registry";
+import { composerRegistry } from "#lib/shared/3d/scene-composer/registry.js";
 import type {
   SceneComposerPlugin,
   ComposerCatalog,
   CatalogCategory,
   SurfaceRules,
   PlacementConstraints,
-} from "$lib/shared/3d/scene-composer/types";
-import type { ObjectDefinition } from "$lib/shared/3d/procedural-engine/objects/object-catalog";
+} from "#lib/shared/3d/scene-composer/types.js";
+import type { ObjectDefinition } from "#lib/shared/3d/procedural-engine/objects/object-catalog.js";
 import { OCEAN_PLACEMENTS } from "./placements";
-import { createMetadataSceneObjectAdapter } from "$lib/shared/3d/scene-composer/metadata-scene-object-adapter";
+import { createMetadataSceneObjectAdapter } from "#lib/shared/3d/scene-composer/metadata-scene-object-adapter.js";
 
 const coralItems: ObjectDefinition[] = [
   {

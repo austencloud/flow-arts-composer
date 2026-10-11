@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { ShortcutCustomizer } from './services/shortcut-customizer';
 import { getShortcutRegistry } from './get-shortcut-registry';
 

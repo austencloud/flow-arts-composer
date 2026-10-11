@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import NotationRosetta from "./NotationRosetta.svelte";
   import NotationShapeMatrix from "./NotationShapeMatrix.svelte";
   import NotationSequenceStage from "./NotationSequenceStage.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 
   type LayoutMode = "atlas" | "cinematic";
 

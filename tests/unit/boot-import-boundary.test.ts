@@ -3,11 +3,12 @@
  *
  * The root layout is on every route's hydration path — landing, /create,
  * /browse, everything. Whatever it can reach through a STATIC import is
- * downloaded, parsed and evaluated before the page becomes interactive, and
- * Rollup's `experimentalMinChunkSize` merge (vite.config.ts,
- * `clientOnlyChunkMergePlugin`) means a sub-20 KB module can be folded into
- * the layout's own chunk, so a single static edge into a large shared vendor
- * chunk is enough to put megabytes there.
+ * downloaded, parsed and evaluated before the page becomes interactive. The
+ * Rollup build's `experimentalMinChunkSize` merge could fold a sub-20 KB
+ * module into the layout's own chunk, so a single static edge into a large
+ * shared vendor chunk was enough to put megabytes there. The Rolldown build
+ * has no such merge yet (vite.config.ts, "NO SMALL-CHUNK MERGE UNDER
+ * ROLLDOWN"); these rules keep a future one safe.
  *
  * Measured on the 2026-09-12 production build of `c4be1619`: the boot preload
  * set for `/` was 21 requests / 3,870,217 raw bytes, of which two chunks were
@@ -75,9 +76,10 @@ describe("boot import boundary", () => {
   }
 
   it("keeps background-hold free of package imports so it is safe to merge", () => {
-    // Under ~20 KB, so Rollup's experimentalMinChunkSize merge can fold this
-    // module into any neighbouring chunk — including the root layout's. It can
-    // only stay safe to merge while it imports no package at all.
+    // Under ~20 KB, so a small-chunk merge (Rollup's experimentalMinChunkSize,
+    // or a future Rolldown equivalent) can fold this module into any
+    // neighbouring chunk — including the root layout's. It can only stay safe
+    // to merge while it imports no package at all.
     const holdGraph = staticGraph([
       rel("src/lib/shared/background/shared/state/background-hold.svelte.ts"),
     ]);

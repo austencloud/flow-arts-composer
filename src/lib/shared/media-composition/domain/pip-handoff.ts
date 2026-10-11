@@ -7,7 +7,7 @@ import {
 import type {
   PostAnimationItem,
   PostMovesItem,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 
 /**
  * An animation that ends over a picture-in-picture square shrinks into it

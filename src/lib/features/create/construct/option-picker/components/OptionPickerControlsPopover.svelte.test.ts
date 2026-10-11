@@ -1,12 +1,12 @@
 import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type {
   TurnLevel,
   TurnValue,
-} from "$lib/shared/create/services/level-turn-values";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+} from "#lib/shared/create/services/level-turn-values.js";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 import OptionPickerControlsPopover from "./OptionPickerControlsPopover.svelte";
 
 function renderControls({

@@ -1,10 +1,10 @@
 /**
  * Mounts FuseScene with props a test can change, the way the preview box
- * resizes a live scene.
+ * resizes a live scene and the turn coordinator gives it turns.
  */
 import { flushSync, mount, unmount } from "svelte";
-import FuseScene from "$lib/features/create/shared/components/method-previews/FuseScene.svelte";
-import type { MethodPreviewShape } from "$lib/features/create/shared/components/method-previews/method-preview-layout";
+import FuseScene from "#lib/features/create/shared/components/method-previews/FuseScene.svelte";
+import type { MethodPreviewShape } from "#lib/features/create/shared/components/method-previews/method-preview-layout.js";
 
 export function mountFuseScene(
   target: HTMLElement,
@@ -51,6 +51,17 @@ export function mountFuseScene(
       props.shape = next.shape;
       props.width = next.width;
       props.height = next.height;
+      flushSync();
+    },
+    /** Start a turn, as the coordinator does. */
+    play(turn: number): void {
+      props.turn = turn;
+      props.playing = true;
+      flushSync();
+    },
+    /** The turn passes to the next card. */
+    stop(): void {
+      props.playing = false;
       flushSync();
     },
     destroy(): void {

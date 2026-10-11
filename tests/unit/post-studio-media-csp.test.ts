@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/server/auth/firebase-auth-handler-proxy", () => ({
+vi.mock("#lib/server/auth/firebase-auth-handler-proxy.js", () => ({
   isFirebaseAuthHandlerPath: () => false,
   proxyFirebaseAuthHandler: vi.fn(),
 }));
 
-vi.mock("$lib/server/auth/meta-oauth-proxy", () => ({
+vi.mock("#lib/server/auth/meta-oauth-proxy.js", () => ({
   isMetaOAuthProxyPath: () => false,
   proxyMetaOAuthRequest: vi.fn(),
 }));

@@ -6,7 +6,7 @@
  * authoring origin (the water bay centre), so physics and the Blender geometry
  * cannot drift apart. Ramps are single tilted slabs — see buildRampSlab.
  */
-import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
+import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
 import {
   buildDrownedGalleryLayout,
   CAUSEWAY_Y,
@@ -14,8 +14,8 @@ import {
   GALLERY_ROOF_Y,
   type DrownedGalleryLayout,
   type WorldRect,
-} from "$lib/features/museum/data/drowned-gallery-terrain";
-import { MIN_UNCROSSABLE_BARRIER } from "$lib/features/museum/domain/museum-design-rules";
+} from "#lib/features/museum/data/drowned-gallery-terrain.js";
+import { MIN_UNCROSSABLE_BARRIER } from "#lib/features/museum/domain/museum-design-rules.js";
 
 export interface DrownedGalleryCollider {
   id: string;

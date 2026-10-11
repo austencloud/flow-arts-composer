@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   claimModuleChunkRecovery,
   clearModuleChunkRecoveryGuard,
-} from "$lib/shared/hmr-helper";
+} from "#lib/shared/hmr-helper.js";
 
 describe("module chunk recovery guard", () => {
   beforeEach(() => {

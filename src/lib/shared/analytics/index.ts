@@ -12,7 +12,7 @@
  * All utilities are tree-shakeable and only active in development.
  *
  * Quick start:
- *   import { initPerformanceMonitoring } from '$lib/shared/analytics';
+ *   import { initPerformanceMonitoring } from '#lib/shared/analytics/index.js';
  *   initPerformanceMonitoring();
  *
  * Console access (dev only):

@@ -14,11 +14,11 @@
 
 import { Plane } from "@austencloud/scene-3d";
 
-import { CHARACTER_DEFINITIONS } from "$lib/shared/3d/domain/character-model";
-import { SCENE_PROP_FAMILIES } from "$lib/shared/3d/domain/scene-prop-catalog";
-import { SCENE_ENVIRONMENTS } from "$lib/shared/3d/environments/domain/scene-environment";
-import { EFFECTS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
+import { CHARACTER_DEFINITIONS } from "#lib/shared/3d/domain/character-model.js";
+import { SCENE_PROP_FAMILIES } from "#lib/shared/3d/domain/scene-prop-catalog.js";
+import { SCENE_ENVIRONMENTS } from "#lib/shared/3d/environments/domain/scene-environment.js";
+import { EFFECTS } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+import { EFFORTS } from "#lib/shared/effort/domain/effort-types.js";
 
 import { CAMERA_MOVE_RULES, type DirectorCameraMove } from "./camera-language";
 import {

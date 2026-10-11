@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createViewerAnimatorInspectorState } from "$lib/shared/sequence-viewer/state/viewer-animator-inspector-state.svelte";
+import { createViewerAnimatorInspectorState } from "#lib/shared/sequence-viewer/state/viewer-animator-inspector-state.svelte.js";
 
 describe("viewer animator inspector state", () => {
   const animationSections = [

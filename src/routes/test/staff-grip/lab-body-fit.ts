@@ -20,7 +20,7 @@ import {
   type HugReachGeometry,
   type PerformerReachMeasurements,
   type StaffFitResult,
-} from "$lib/shared/3d/domain/performer-reach-measurements";
+} from "#lib/shared/3d/domain/performer-reach-measurements.js";
 
 /**
  * The one anthropometric ratio inside the fit. It is private to the fit

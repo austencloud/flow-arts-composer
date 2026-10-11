@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Product } from "$lib/features/store/domain/models/product";
+import type { Product } from "#lib/features/store/domain/models/product.js";
 
 const env = vi.hoisted(() => ({ browser: false }));
 
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   get browser() {
     return env.browser;
   },
@@ -12,7 +12,7 @@ vi.mock("$app/environment", () => ({
   version: "test",
 }));
 
-vi.mock("$lib/features/store/analytics/shop-funnel", () => ({
+vi.mock("#lib/features/store/analytics/shop-funnel.js", () => ({
   trackCheckoutStarted: vi.fn(),
 }));
 
@@ -34,7 +34,7 @@ const checkout = { createCheckoutSession: vi.fn() };
 // store-state keeps a module-level products cache; load a fresh copy per test.
 async function freshStoreState() {
   vi.resetModules();
-  return (await import("$lib/features/store/state/store-state.svelte")).createStoreState;
+  return (await import("#lib/features/store/state/store-state.svelte.js")).createStoreState;
 }
 
 beforeEach(() => {

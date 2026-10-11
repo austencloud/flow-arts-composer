@@ -10,9 +10,9 @@ import {
   Vector4,
 } from "three";
 import type { WebGLRenderer } from "three";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { resolveBubbles3D } from "$lib/shared/effects/translators/webgl3d-translator";
-import type { BubbleTipSource3D } from "$lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { resolveBubbles3D } from "#lib/shared/effects/translators/webgl3d-translator.js";
+import type { BubbleTipSource3D } from "#lib/shared/3d/effects/scene-effects/scene-effect-source-3d.js";
 import {
   BUBBLE_FRAGMENT_COUNT_MAX,
   BUBBLE_FRAGMENT_COUNT_MIN,
@@ -29,9 +29,9 @@ import {
   resolveBubbleSizeMultiplier3D,
   resolveBubbleVelocityInheritance3D,
   resolvePoppingBubbleFrame3D,
-} from "$lib/shared/3d/effects/bubbles/bubble-art-direction-3d";
-import { createBubbleFilmMaterial3D } from "$lib/shared/3d/effects/bubbles/bubble-film-material-3d";
-import { BubbleFilmPool3D } from "$lib/shared/3d/effects/bubbles/bubble-film-pool-3d";
+} from "#lib/shared/3d/effects/bubbles/bubble-art-direction-3d.js";
+import { createBubbleFilmMaterial3D } from "#lib/shared/3d/effects/bubbles/bubble-film-material-3d.js";
+import { BubbleFilmPool3D } from "#lib/shared/3d/effects/bubbles/bubble-film-pool-3d.js";
 import {
   SCENE_COLOR_SNAPSHOT_SCALE_3D,
   SCENE_COLOR_SNAPSHOT_TTL_FRAMES_3D,
@@ -39,13 +39,13 @@ import {
   consumeSceneColorSnapshotDemand3D,
   publishSceneColorSnapshot3D,
   requestSceneColorSnapshot3D,
-} from "$lib/shared/3d/effects/post-processing/scene-color-snapshot-3d";
+} from "#lib/shared/3d/effects/post-processing/scene-color-snapshot-3d.js";
 import {
   BubbleRenderer3D,
   resolveBubbleCapacityForQuality3D,
   resolveBubbleCapacityTier3D,
-} from "$lib/shared/3d/effects/bubbles/bubble-renderer-3d";
-import { QualityTier } from "$lib/shared/3d/effects/types";
+} from "#lib/shared/3d/effects/bubbles/bubble-renderer-3d.js";
+import { QualityTier } from "#lib/shared/3d/effects/types.js";
 
 function makeSource(
   sourceId: number,

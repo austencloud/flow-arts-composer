@@ -1,7 +1,7 @@
 import {
   normalizeProject,
   createEmptyPostProject,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   MAIN_TRACK_ID,
   POST_BOX,

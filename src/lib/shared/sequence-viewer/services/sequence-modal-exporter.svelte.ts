@@ -1,29 +1,29 @@
 import type {
   IVideoExportOrchestrator,
   VideoExportProgress,
-} from "$lib/shared/compose/domain/video-export-types";
-import type { VideoOpenerImage } from "$lib/shared/compose/domain/video-opener-frame";
-import type { Offline3DExporter } from "$lib/shared/3d/services/offline-3d-exporter";
-import type { SequenceRenderer } from "$lib/shared/render/services/sequence-renderer";
-import { getSequenceRenderer } from "$lib/shared/render/get-sequence-renderer";
-import { sanitizeFilename } from "$lib/shared/foundation/services/file-downloader";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { recordExportThroughput } from "$lib/shared/animation-panel/state/export-timing-tracker";
-import { logShareAction } from "$lib/shared/analytics/services/posthog-activity-logger";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { VideoExportOrchestratorOptions } from "$lib/shared/compose/domain/video-export-types";
-import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
+} from "#lib/shared/compose/domain/video-export-types.js";
+import type { VideoOpenerImage } from "#lib/shared/compose/domain/video-opener-frame.js";
+import type { Offline3DExporter } from "#lib/shared/3d/services/offline-3d-exporter.js";
+import type { SequenceRenderer } from "#lib/shared/render/services/sequence-renderer.js";
+import { getSequenceRenderer } from "#lib/shared/render/get-sequence-renderer.js";
+import { sanitizeFilename } from "#lib/shared/foundation/services/file-downloader.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { recordExportThroughput } from "#lib/shared/animation-panel/state/export-timing-tracker.js";
+import { logShareAction } from "#lib/shared/analytics/services/posthog-activity-logger.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { VideoExportOrchestratorOptions } from "#lib/shared/compose/domain/video-export-types.js";
+import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
 
 import {
   ensureVideoExportOrchestrator,
   tryGetVideoExportOrchestrator,
-} from "$lib/shared/animation-engine/get-video-export-orchestrator";
-import { getOffline3DExporter } from "$lib/shared/3d/get-offline-3d-exporter";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import type { CameraKeyframeBuffer } from "$lib/shared/video-export/domain/camera-keyframe";
+} from "#lib/shared/animation-engine/get-video-export-orchestrator.js";
+import { getOffline3DExporter } from "#lib/shared/3d/get-offline-3d-exporter.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import type { CameraKeyframeBuffer } from "#lib/shared/video-export/domain/camera-keyframe.js";
 import { reportImageExportDelivery } from "./image-export-delivery";
 
 export interface VideoExportEffectOverrides {

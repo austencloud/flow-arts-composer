@@ -17,7 +17,7 @@ All panel states that should persist across page refreshes now use a unified pat
 For a simple boolean or number property:
 
 ```typescript
-import { createPersistenceHelper } from "$lib/shared/state/utils/persistent-state";
+import { createPersistenceHelper } from "#lib/shared/state/utils/persistent-state.js";
 
 const myPersistence = createPersistenceHelper({
   key: "my-state-key",

@@ -7,7 +7,7 @@ import {
   samplePetalAirflow3D,
   type PetalAirflow2D,
   type PetalAirflow3D,
-} from "$lib/shared/effects/domain/petal-airflow";
+} from "#lib/shared/effects/domain/petal-airflow.js";
 
 describe("petal airflow", () => {
   it("keeps nearby petals in the same coherent current", () => {

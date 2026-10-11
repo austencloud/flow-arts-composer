@@ -2,19 +2,19 @@ import type { GuideBlock } from "../guide-content-blocks";
 import {
   createMotionData,
   createPlaceholderMotion,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridMode,
   GridLocation,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 const { NORTH: N, EAST: E, SOUTH: SO_ } = GridLocation;
 const { IN, OUT } = Orientation;
@@ -209,5 +209,21 @@ export const staffMotionsContent: GuideBlock[] = [
   {
     kind: "prose",
     html: "Halfway through the motion, the center of the staff is at the grid’s center point.",
+  },
+
+  // Web only, not on the printed sheet: the note that was the standalone
+  // /guide/prospin-and-inspin page until 2026-10-11, in that page's words.
+  { kind: "heading", level: 2, text: "Prospin and Inspin" },
+  {
+    kind: "prose",
+    html: "Prospin and Inspin name the same motion: the prop rotates the same direction as the handpath. Most poi spinners say Inspin. The Kinetic Alphabet says Prospin.",
+  },
+  {
+    kind: "prose",
+    html: "Pro and anti are opposites, with and against, so the pair sorts every shift the way the motion does: with the handpath or against it.",
+  },
+  {
+    kind: "prose",
+    html: "In and out already name orientations here, like thumb in and thumb out, so Inspin reads like one of them. Pro isn't an orientation. Prospin only says which way the prop spins.",
   },
 ];

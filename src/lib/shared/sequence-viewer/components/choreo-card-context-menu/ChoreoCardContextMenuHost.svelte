@@ -6,22 +6,22 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuState,
     ContextMenuEntry,
-  } from "$lib/shared/components/context-menu/context-menu-types";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
   import {
     composeMenu,
     type MenuSection,
-  } from "$lib/shared/components/context-menu/compose-menu";
-  import { buildCardMenuSection } from "$lib/shared/choreo-card/services/card-menu-section";
-  import { buildPictographContextMenuItems } from "$lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder";
-  import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import type { ExportOptionsStateManager } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/components/context-menu/compose-menu.js";
+  import { buildCardMenuSection } from "#lib/shared/choreo-card/services/card-menu-section.js";
+  import { buildPictographContextMenuItems } from "#lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder.js";
+  import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import type { ExportOptionsStateManager } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     contextMenuCloseCounts,
     instrumentContextMenuEntries,

@@ -1,13 +1,13 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 
 import { SequenceExtender } from "./services/sequence-extender";
 import { getReversalDetector } from "./get-reversal-detector";
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-import { getStepConverter } from "$lib/features/create/generate/shared/get-step-converter";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+import { getStepConverter } from "#lib/features/create/generate/shared/get-step-converter.js";
 import { getLOOPValidator } from "./get-loop-validator";
 import { getSequenceAnalyzer } from "./get-sequence-analyzer";
 import { getBridgeFinder } from "./get-bridge-finder";
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
 
 let instance: SequenceExtender | null = null;
 

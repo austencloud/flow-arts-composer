@@ -11,7 +11,7 @@
  * and text choices, not visibility toggles.
  */
 
-import type { ContextMenuItem } from "$lib/shared/components/context-menu/context-menu-types";
+import type { ContextMenuItem } from "#lib/shared/components/context-menu/context-menu-types.js";
 
 /** The slice of ImageCompositionStateManager the submenu touches. */
 export interface CardCompositionVisibility {

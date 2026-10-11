@@ -14,18 +14,18 @@ import { effect_root } from "svelte/internal/client";
 import {
   createPanelCoordinationState,
   type PanelCoordinationState,
-} from "$lib/shared/create/state/panel-coordination-state.svelte";
-import { createPropTypeSyncEffect } from "$lib/features/create/shared/state/managers/prop-type-sync-manager.svelte";
-import type { StepOperator } from "$lib/features/create/shared/services/step-operator";
-import type { CreateModuleState } from "$lib/features/create/shared/state/create-module-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import { createPropTypeSyncEffect } from "#lib/features/create/shared/state/managers/prop-type-sync-manager.svelte.js";
+import type { StepOperator } from "#lib/features/create/shared/services/step-operator.js";
+import type { CreateModuleState } from "#lib/features/create/shared/state/create-module-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   resetSettingsHarness,
   settingsHarness,
 } from "./prop-swap-harness.svelte";
 
-vi.mock("$lib/shared/application/state/app-state.svelte", async () => {
+vi.mock("#lib/shared/application/state/app-state.svelte.js", async () => {
   const { settingsHarness } = await import("./prop-swap-harness.svelte");
   return { getSettings: () => settingsHarness };
 });

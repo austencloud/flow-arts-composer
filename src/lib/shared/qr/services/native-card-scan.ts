@@ -12,8 +12,8 @@
  * only logged; nothing is shown to the person scanning.
  */
 
-import { getDeviceId } from "$lib/shared/foundation/services/device-id";
-import { scanLinkCode } from "$lib/shared/platform/services/native-deep-link-target";
+import { getDeviceId } from "#lib/shared/foundation/services/device-id.js";
+import { scanLinkCode } from "#lib/shared/platform/services/native-deep-link-target.js";
 import { isScannableShortCode } from "../domain/physical-card";
 import { claimScanVisit } from "../utils/scan-detection";
 import {
@@ -64,7 +64,7 @@ const defaultDeps: NativeCardScanDeps = {
   deviceId: getDeviceId,
   waitForAuth: async () => {
     const { awaitAuthSettled } =
-      await import("$lib/shared/auth/state/auth-state.svelte");
+      await import("#lib/shared/auth/state/auth-state.svelte.js");
     await awaitAuthSettled();
   },
 };

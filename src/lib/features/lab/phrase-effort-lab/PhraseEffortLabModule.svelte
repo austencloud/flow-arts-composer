@@ -15,34 +15,34 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
   import type {
     EffortTimeline,
     EffortPhrase,
   } from "./domain/effort-timeline-types";
   import { findPhraseAtBeat } from "./domain/effort-timeline-types";
-  import { interpolatePhrase } from "$lib/shared/phrase-effort-lab/services/phrase-interpolator";
+  import { interpolatePhrase } from "#lib/shared/phrase-effort-lab/services/phrase-interpolator.js";
 
-  import { interpolatePropAngles } from "$lib/shared/animation-engine/services/prop-interpolator";
-  import { mapTimePositionToBeat } from "$lib/shared/animation-engine/services/step-calculator";
-  import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
+  import { mapTimePositionToBeat } from "#lib/shared/animation-engine/services/step-calculator.js";
+  import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-  import { getFirestoreInstance, getAuthSync } from "$lib/shared/auth/firebase";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { getFirestoreInstance, getAuthSync } from "#lib/shared/auth/firebase.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import EffortPalette from "$lib/shared/phrase-effort-lab/components/EffortPalette.svelte";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import EffortPalette from "#lib/shared/phrase-effort-lab/components/EffortPalette.svelte";
   import PhraseTimeline from "./components/PhraseTimeline.svelte";
   import PhraseEasingCurveOverlay from "./components/PhraseEasingCurveOverlay.svelte";
-  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
-  import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
-  import { libraryState } from "$lib/features/library/state/library-state.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import TempoControl from "#lib/shared/animation-panel/components/TempoControl.svelte";
+  import { libraryState } from "#lib/features/library/state/library-state.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { createPhraseEffortLabState } from "./state/phrase-effort-lab-state.svelte";
 
   // ─── Reactive UI state (factory + context pattern) ────────────────────

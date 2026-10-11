@@ -1,10 +1,10 @@
 import { signInAnonymously } from "firebase/auth";
-import { getAuthInstance } from "$lib/shared/auth/firebase";
-import { adoptUnownedSequenceIds } from "$lib/shared/library/services/saved-sequence-ledger";
+import { getAuthInstance } from "#lib/shared/auth/firebase.js";
+import { adoptUnownedSequenceIds } from "#lib/shared/library/services/saved-sequence-ledger.js";
 import {
   captureExceptionWhenReady,
   captureWhenReady,
-} from "$lib/shared/analytics/services/posthog";
+} from "#lib/shared/analytics/services/posthog.js";
 
 /**
  * Lazily provision an anonymous Firebase identity. Idempotent and

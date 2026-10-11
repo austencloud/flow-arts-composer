@@ -7,7 +7,7 @@ import {
   MeshBasicMaterial,
   PerspectiveCamera,
 } from "three";
-import { createInstanceFrustumCuller } from "$lib/shared/3d/rendering/instance-frustum-culling";
+import { createInstanceFrustumCuller } from "#lib/shared/3d/rendering/instance-frustum-culling.js";
 
 function buildTreeBatch() {
   const geometry = new BoxGeometry(1, 1, 1);

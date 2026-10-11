@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   evaluateChip,
   evaluateSelection,

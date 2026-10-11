@@ -15,8 +15,8 @@ import {
   sharedFileToFile,
   sharedFilesToFiles,
   toFetchableUrl,
-} from "$lib/shared/share-intake/services/shared-file-bridge";
-import { MAX_INTAKE_BYTES } from "$lib/shared/share-intake/services/intake-validator";
+} from "#lib/shared/share-intake/services/shared-file-bridge.js";
+import { MAX_INTAKE_BYTES } from "#lib/shared/share-intake/services/intake-validator.js";
 
 function descriptor(name: string, uri = `/cache/shared_files/${name}`) {
   return { uri, name, mimeType: "image/png" };

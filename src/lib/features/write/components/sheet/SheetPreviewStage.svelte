@@ -2,9 +2,9 @@
   import SheetPreviewPages from "./SheetPreviewPages.svelte";
   import SheetReadingView from "./SheetReadingView.svelte";
   import { getChoreoSheetContext } from "../../state/choreo-sheet-state.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { onDestroy } from "svelte";
-  import ShimmerBlock from "$lib/shared/components/loading/ShimmerBlock.svelte";
+  import ShimmerBlock from "#lib/shared/components/loading/ShimmerBlock.svelte";
   import { shouldUseTwoUpSheetLayout } from "../../domain/sheet-workspace-layout";
 
   const ZOOM_STEPS = [1, 1.25, 1.5, 2, 3] as const;

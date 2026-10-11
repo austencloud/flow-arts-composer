@@ -1,5 +1,5 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 import type {
   StateExtension,
   VideoEditorState,
@@ -19,8 +19,8 @@ import {
   type PostAnimationItem,
   editContext,
   tkaFrameAlignment,
-} from "$lib/shared/post-studio-plugin";
-import { findTunnelHook } from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/post-studio-plugin/index.js";
+import { findTunnelHook } from "#lib/shared/media-composition/domain/post-project-edits.js";
 import {
   confirmTakeTiming,
   resolveTakeTiming,
@@ -32,14 +32,14 @@ import {
   type ResolvedTakeTiming,
   type TakeTiming,
   type TakeTimingStatus,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   projectDraftRecord,
   resolvePostStudioDraft,
-} from "$lib/shared/media-composition/services/post-project-backup";
-import type { PostTimingEffect } from "$lib/shared/media-composition/services/post-editor-history-store";
-import type { PostEditorStore } from "$lib/shared/media-composition/services/post-editor-store";
-import { deepEqual } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
+} from "#lib/shared/media-composition/services/post-project-backup.js";
+import type { PostTimingEffect } from "#lib/shared/media-composition/services/post-editor-history-store.js";
+import type { PostEditorStore } from "#lib/shared/media-composition/services/post-editor-store.js";
+import { deepEqual } from "#lib/shared/sequence-viewer/services/viewer-url-state-codec.js";
 import type { CatalogTakeSource } from "./post-editor-state.svelte";
 
 /**

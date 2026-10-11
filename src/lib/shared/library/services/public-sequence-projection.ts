@@ -10,12 +10,12 @@
 
 import type { FieldValue, Timestamp } from "firebase/firestore";
 
-import { canonicalDigest } from "$lib/shared/foundation/utils/canonical-digest";
-import { getUserSequencePath } from "$lib/shared/library/data/firestore-paths";
-import { PUBLIC_PROJECTION_SCHEMA_VERSION } from "$lib/shared/foundation/domain/models/public-sequence-wire-schema";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-import type { NormalizedSequenceWrite } from "$lib/shared/library/services/sequence-persistence-normalizer";
+import { canonicalDigest } from "#lib/shared/foundation/utils/canonical-digest.js";
+import { getUserSequencePath } from "#lib/shared/library/data/firestore-paths.js";
+import { PUBLIC_PROJECTION_SCHEMA_VERSION } from "#lib/shared/foundation/domain/models/public-sequence-wire-schema.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import type { NormalizedSequenceWrite } from "#lib/shared/library/services/sequence-persistence-normalizer.js";
 
 /**
  * Re-export the reader-owned version so public writers and readers cannot

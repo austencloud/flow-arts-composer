@@ -1,16 +1,18 @@
 <script lang="ts">
   import { effectUiLabel } from "./effect-ui-label";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import type { Snippet } from "svelte";
   import { EFFECTS, type EffectMeta } from "./effect-registry";
+  import { effectInk } from "./effect-ink";
+  import { getThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
   import {
     CATALOG_CAPTION_HEIGHT,
     CATALOG_INNER_GAP,
     CATALOG_TILE_PAD,
     MAX_LIST_ROW,
     type EffectCatalogFit,
-  } from "$lib/shared/animation-engine/domain/effect-catalog-fit";
+  } from "#lib/shared/animation-engine/domain/effect-catalog-fit.js";
 
   interface Props {
     activeEffect: string;
@@ -123,7 +125,7 @@
           ? getActiveLabel(effect)
           : effectUiLabel(effect.label)}
         title={isActive ? getActiveLabel(effect) : effectUiLabel(effect.label)}
-        style:--effect-color={effect.color}
+        style:--effect-color={effectInk(effect.color, getThemeMode())}
         data-ghost="safe"
         data-ghost-kind="effect"
         data-ghost-id={effect.id}

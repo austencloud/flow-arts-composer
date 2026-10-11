@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldAutoplayViewer } from "$lib/shared/sequence-viewer/services/viewer-autoplay-policy";
+import { shouldAutoplayViewer } from "#lib/shared/sequence-viewer/services/viewer-autoplay-policy.js";
 
 describe("viewer autoplay policy", () => {
   it("allows animation and split surfaces to autoplay", () => {

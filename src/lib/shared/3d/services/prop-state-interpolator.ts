@@ -4,8 +4,8 @@
  */
 
 import type { Vector3 } from "three";
-import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
 import type { PropState3D } from "@austencloud/scene-3d";
 import type { MotionConfig3D } from "../domain/models/motion-data-3d";
 import {
@@ -20,7 +20,7 @@ import { normalizeAngle, lerpAngle, lerp } from "./angle-math-calculator";
 import { mapOrientationToAngle } from "./orientation-mapper";
 import { concaveRadiusProfile } from "./petal-path";
 import { calculateTargetStaffAngle } from "./motion-calculator";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import { gridJoinOffset3D } from "./grid-join-3d";
 
 /**

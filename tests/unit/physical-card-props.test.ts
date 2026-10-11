@@ -13,34 +13,38 @@ const mocks = vi.hoisted(() => ({
   prepareScanViewerPayload: vi.fn(),
 }));
 
-vi.mock("$env/dynamic/public", () => ({ env: {} }));
-vi.mock("$lib/server/security/withRateLimit", () => ({
+vi.mock("$app/env/public", async () => {
+  const { envModule } = await import("#test-helpers/env-module.js");
+  return envModule();
+});
+vi.mock("#lib/server/security/withRateLimit.js", () => ({
   withRateLimit: mocks.withRateLimit,
 }));
-vi.mock("$lib/server/firestore/firestore-rest", async (importOriginal) => ({
+vi.mock("#lib/server/firestore/firestore-rest.js", async (importOriginal) => ({
   ...(await importOriginal<
-    typeof import("$lib/server/firestore/firestore-rest")
+    typeof import("#lib/server/firestore/firestore-rest.js")
   >()),
   getFirestoreRest: mocks.getFirestoreRest,
 }));
-vi.mock("$lib/shared/qr/services/public-short-code-record-reader", () => ({
+vi.mock("#lib/shared/qr/services/public-short-code-record-reader.js", () => ({
   fetchPublicShortCodeRecord: mocks.fetchPublicShortCodeRecord,
 }));
-vi.mock("$lib/server/scan/scan-viewer-payload-preparer", () => ({
+vi.mock("#lib/server/scan/scan-viewer-payload-preparer.js", () => ({
   prepareScanViewerPayload: mocks.prepareScanViewerPayload,
 }));
 
 import {
   readPhysicalCardProps,
   readPhysicalCardPropsWithin,
-} from "$lib/server/physical-cards/physical-card-props";
+} from "#lib/server/physical-cards/physical-card-props.js";
 import {
   fetchPhysicalCardProps,
   physicalCardIdNeedingProps,
   physicalCardPropCandidate,
-} from "$lib/shared/qr/services/physical-card-props";
+} from "#lib/shared/qr/services/physical-card-props.js";
 import { GET } from "../../src/routes/api/physical-cards/props/+server";
 import { load } from "../../src/routes/q/[code]/+page.server";
+import { setWorkerEnv } from "#test-helpers/worker-env.js";
 
 const CODE = "K7QM";
 const PID = "k7Qm2XpR9aBc";
@@ -159,7 +163,7 @@ describe("public card props endpoint", () => {
     const url = new URL(
       `https://tkaflowarts.com/api/physical-cards/props?${query}`
     );
-    return GET({ url, platform: { env: {} } } as never);
+    return GET({ url } as never);
   }
 
   it("returns only the prop pair, cacheable and open to the app's origin", async () => {
@@ -266,10 +270,10 @@ describe("/q load with a serialized card", () => {
 
   function scan(query: string) {
     const url = new URL(`https://tkaflowarts.com/q/${CODE}?${query}`);
+    setWorkerEnv({ FIREBASE_SERVICE_ACCOUNT_JSON: "{}" });
     return load({
       params: { code: CODE },
       request: new Request(url),
-      platform: { env: { FIREBASE_SERVICE_ACCOUNT_JSON: "{}" } },
       url,
     } as never) as Promise<Record<string, unknown>>;
   }

@@ -3,7 +3,7 @@ import {
   createDefaultStickerUnit,
   createDefaultStickerSheet,
   type MandalaPrimitiveRef,
-} from "$lib/features/sticker-lab/domain/sticker-types";
+} from "#lib/features/sticker-lab/domain/sticker-types.js";
 
 const testRef: MandalaPrimitiveRef = {
   shapeHash: "shape-abc",

@@ -1,5 +1,5 @@
-import type { ViewMode } from "$lib/shared/sequence-viewer/services/sequence-modal-persistence";
-import { shouldAutoplayMotion } from "$lib/shared/animation-engine/services/motion-autoplay-policy";
+import type { ViewMode } from "#lib/shared/sequence-viewer/services/sequence-modal-persistence.js";
+import { shouldAutoplayMotion } from "#lib/shared/animation-engine/services/motion-autoplay-policy.js";
 
 export interface ViewerAutoplayPolicy {
   viewMode: ViewMode;

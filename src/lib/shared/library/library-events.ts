@@ -40,7 +40,7 @@
  * 2. Add your file to the SCREENS THAT CURRENTLY LISTEN list above.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export const LIBRARY_MUTATED_EVENT = "tka:library-mutated";
 export const LIBRARY_SEQUENCE_ADDED_EVENT = "tka:library-sequence-added";

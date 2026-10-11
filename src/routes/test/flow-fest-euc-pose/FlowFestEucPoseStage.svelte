@@ -20,11 +20,11 @@
     FLOW_FEST_EUC_CONFIG,
     type FlowFestElectricUnicycleDynamics,
     type FlowFestElectricUnicycleTerrainAttitude,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle.js";
   import type {
     FlowFestEucContactPoints,
     FlowFestEucMountedPoseDiagnostic,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose.js";
   import FlowFestElectricUnicycle from "../flow-fest-sim/FlowFestElectricUnicycle.svelte";
   import {
     EUC_POSE_MOTIONS,

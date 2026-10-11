@@ -6,10 +6,10 @@
    * Core component for any sequence review workflow.
    */
   import type { BaseSequenceEntry } from "../domain/models/review-models";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import CopyForAIButton from "$lib/shared/foundation/ui/CopyForAIButton.svelte";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import CopyForAIButton from "#lib/shared/foundation/ui/CopyForAIButton.svelte";
   import type { Snippet } from "svelte";
 
   interface Props {
@@ -164,7 +164,7 @@
       </div>
 
       <div class="step-grid-wrapper" class:interactive>
-        {#await import("$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte") then mod}
+        {#await import("#lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte") then mod}
           <mod.default
             steps={parsedSteps}
             startPlacement={showStartPlacement ? startPlacement : null}

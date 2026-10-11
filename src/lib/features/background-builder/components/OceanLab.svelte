@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { getCoralSceneRenderer } from "../get-coral-scene-renderer";
   import { getOceanBackgroundSystem } from "../get-ocean-background-system";
   import {
@@ -13,8 +13,8 @@
   } from "@austencloud/backgrounds";
   import * as BackgroundsPackage from "@austencloud/backgrounds";
   import { ChipToggle, ChipGroup } from "@austencloud/chip-toggle";
-  import CollapsibleLabSection from "$lib/shared/components/lab/CollapsibleLabSection.svelte";
-  import LabStatusBar from "$lib/shared/components/lab/LabStatusBar.svelte";
+  import CollapsibleLabSection from "#lib/shared/components/lab/CollapsibleLabSection.svelte";
+  import LabStatusBar from "#lib/shared/components/lab/LabStatusBar.svelte";
   import PersonalityBars from "./PersonalityBars.svelte";
   import type { CoralSceneRenderer } from "../services/coral-scene-renderer";
   import { createOceanLabState } from "../state/deep-ocean-lab-state.svelte";

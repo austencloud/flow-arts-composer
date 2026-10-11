@@ -90,10 +90,10 @@ vi.mock("firebase/firestore", () => ({
  * under test and are imported for real. Everything below is inert scaffolding
  * they pull in transitively.
  */
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: vi.fn(), warning: vi.fn(), success: vi.fn(), info: vi.fn() },
   showToast: vi.fn(),
 }));
@@ -103,7 +103,7 @@ import {
   mapDocToPreview,
   previewNeedsRefresh,
   refreshParticipantInfo,
-} from "$lib/shared/messaging/services/conversation-mappers";
+} from "#lib/shared/messaging/services/conversation-mappers.js";
 
 const VIEWER = "viewer-uid";
 const OTHER = "other-uid";

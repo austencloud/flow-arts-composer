@@ -6,12 +6,12 @@
 
 import type { Plane } from "@austencloud/scene-3d";
 import type { GridJoinSpec } from "@tka/render-core";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   RotationDirection,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 /**
  * Simplified motion configuration for testing

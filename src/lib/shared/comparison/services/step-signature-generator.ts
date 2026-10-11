@@ -5,20 +5,20 @@
  * Composes motion signatures with position group and hand angle information.
  */
 
-import type { StepLike } from "$lib/shared/foundation/domain/models/step-like";
+import type { StepLike } from "#lib/shared/foundation/domain/models/step-like.js";
 import type { MotionSignatureGenerator } from "./motion-signature-generator";
 import type {
   StepSignature,
   StepComparisonResult,
   MotionSignature,
 } from "../domain/models/signatures";
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   GridLocation,
   GridPlacementGroup,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getPlacementGroup } from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { getPlacementGroup } from "#lib/shared/foundation/domain/models/generation/circular-placement-maps.js";
 
 /**
  * Scoring weights for beat similarity calculation.

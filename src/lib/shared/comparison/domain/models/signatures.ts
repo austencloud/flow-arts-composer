@@ -9,8 +9,8 @@
 // enum (adds "shift"), and signatures are generated from canonical-compatible
 // MotionWithView inputs. The other enums are structurally identical app-side.
 import type { MotionType } from "@tka/tka-types";
-import type { RotationDirection, Orientation, HandPath, SkewDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { RotationDirection, Orientation, HandPath, SkewDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { GridPlacementGroup } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 
 /**

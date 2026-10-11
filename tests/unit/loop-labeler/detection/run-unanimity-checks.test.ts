@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { runUnanimityChecks } from "$lib/features/loop-labeler/services/detection/run-unanimity-checks";
-import { LOOP_TYPE_DEFINITIONS } from "$lib/features/loop-labeler/domain/constants/loop-type-definitions";
-import type { ComparisonMatrix } from "$lib/features/loop-labeler/services/detection/types";
+import { runUnanimityChecks } from "#lib/features/loop-labeler/services/detection/run-unanimity-checks.js";
+import { LOOP_TYPE_DEFINITIONS } from "#lib/features/loop-labeler/domain/constants/loop-type-definitions.js";
+import type { ComparisonMatrix } from "#lib/features/loop-labeler/services/detection/types.js";
 
 function makeMatrix(
   halved: Record<string, string[]>,

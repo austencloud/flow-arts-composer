@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import manifests from "$lib/features/choreo-card/data/festival-sampler-manifests.json";
+import manifests from "#lib/features/choreo-card/data/festival-sampler-manifests.json";
 import {
   festivalSamplerCardKey,
   findReadyFestivalSamplerPackIndexes,
   type FestivalSamplerCardManifest,
-} from "$lib/features/choreo-card/services/festival-sampler-manifest";
+} from "#lib/features/choreo-card/services/festival-sampler-manifest.js";
 
 const candidates = manifests.candidates as Array<{
   cards: FestivalSamplerCardManifest[];

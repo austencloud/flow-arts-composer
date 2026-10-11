@@ -5,7 +5,7 @@
    * Search bar, action buttons, and filter chips for the video curator.
    */
   import type { VideoCategory } from "../types";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
 
   interface Performer {
     id: string;

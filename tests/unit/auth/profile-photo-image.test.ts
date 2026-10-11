@@ -8,7 +8,7 @@ import {
   getProfilePhotoErrorMessage,
   prepareProfilePhoto,
   type ProfilePhotoImageDependencies,
-} from "$lib/shared/auth/services/profile-photo-image";
+} from "#lib/shared/auth/services/profile-photo-image.js";
 
 function imageFile(): File {
   return new File([new Uint8Array([1, 2, 3])], "camera.jpeg", {

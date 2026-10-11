@@ -1,7 +1,7 @@
-import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { StartEndOptions } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 /** The start/end fields the customize overlay edits, held as live local state. */
 export interface CustomizeStartEndLocalState {

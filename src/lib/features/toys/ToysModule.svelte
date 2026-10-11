@@ -3,8 +3,8 @@
   Successor to the dissolved Playground module.
 -->
 <script lang="ts">
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { TOYS_TABS } from "$lib/shared/navigation/config/tab-definitions";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { TOYS_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
 
   const tabComponents: Record<string, () => Promise<{ default: any }>> = {
     "third-order": () => import("./tabs/third-order/ThirdOrderToy.svelte"),

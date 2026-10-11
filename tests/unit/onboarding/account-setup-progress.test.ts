@@ -3,7 +3,7 @@ import {
   createDefaultAccountSetupProgress,
   mergeAccountSetupProgress,
   normalizeAccountSetupProgress,
-} from "$lib/shared/onboarding/domain/account-setup-progress";
+} from "#lib/shared/onboarding/domain/account-setup-progress.js";
 
 describe("account setup progress persistence", () => {
   it("normalizes old and damaged onboarding documents to safe defaults", () => {

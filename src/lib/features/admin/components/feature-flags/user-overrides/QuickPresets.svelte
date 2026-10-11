@@ -4,7 +4,7 @@
    * Quick action buttons for common permission bundles
    */
 
-  import type { FeatureId } from "$lib/shared/auth/domain/models/feature-flag";
+  import type { FeatureId } from "#lib/shared/auth/domain/models/feature-flag.js";
   import type { OverrideState } from "../shared/feature-utils";
   import { QUICK_PRESETS } from "../shared/feature-utils";
 

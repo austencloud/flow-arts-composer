@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FOREST_FIREFLY_FIELDS } from "$lib/shared/3d/environments/scenes/forest/forest-firefly-fields";
+import { FOREST_FIREFLY_FIELDS } from "#lib/shared/3d/environments/scenes/forest/forest-firefly-fields.js";
 
 describe("Forest firefly habitats", () => {
   it("spans the clearing, both side habitats, and deep woodland", () => {

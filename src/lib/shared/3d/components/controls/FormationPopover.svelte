@@ -6,7 +6,7 @@
   import {
     reportViewerControlChange,
     type ViewerControlSink,
-  } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
+  } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
 
   interface Props {
     onSettingChange?: ViewerControlSink;

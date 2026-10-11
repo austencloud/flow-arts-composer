@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import CommunityCityPicker from "./CommunityCityPicker.svelte";
 import type { CitySuggestion } from "../domain/canonical-city";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 
 // Hoisted: the picker imports the service at module load, which happens before
 // ordinary top-level consts in this file are initialized.

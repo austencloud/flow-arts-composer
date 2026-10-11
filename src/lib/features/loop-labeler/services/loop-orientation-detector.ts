@@ -32,11 +32,11 @@
  *   form-C example from the spec.
  */
 
-import type { SequenceEntry } from "$lib/shared/loop-labeler/domain/sequence-models";
+import type { SequenceEntry } from "#lib/shared/loop-labeler/domain/sequence-models.js";
 import {
   LOOPComponent,
   type DetectedComponent,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
 const ORIENTATION_TO_QUARTER: Record<string, number> = {
   in: 0,

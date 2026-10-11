@@ -3,7 +3,7 @@ VTGConceptExperience - Multi-page VTG (Velocity-Timing-Direction) learning exper
 Teaches the 6 VTG modes: SS, TS, SO, TO, QS, QO
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     VTG_MODES,
     type VTGMode,

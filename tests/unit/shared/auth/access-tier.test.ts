@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveOptimisticAccessTier } from "$lib/shared/auth/domain/access-tier";
+import { resolveOptimisticAccessTier } from "#lib/shared/auth/domain/access-tier.js";
 
 describe("resolveOptimisticAccessTier", () => {
   it("uses the real tier once auth has resolved", () => {

@@ -17,8 +17,8 @@
 -->
 <script lang="ts">
   import "./styles/config-page.css";
-  import * as singleBuyCheckoutCreator from "$lib/features/store/services/single-buy-checkout-creator";
-  import { getProductLoader } from "$lib/features/store/get-product-loader";
+  import * as singleBuyCheckoutCreator from "#lib/features/store/services/single-buy-checkout-creator.js";
+  import { getProductLoader } from "#lib/features/store/get-product-loader.js";
   import { createStoreState } from "./state/store-state.svelte";
   import { setStoreContext } from "./context/store-context";
   import ShopProductShell, {
@@ -36,18 +36,18 @@
   import CardAnatomyExplainer from "./components/CardAnatomyExplainer.svelte";
   import PreorderPriceNote from "./components/PreorderPriceNote.svelte";
   import { activePriceCents, preorderWindowOpen, formatUsd } from "./domain/preorder-pricing";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import BaseCard from "$lib/features/create/generate/components/cards/BaseCard.svelte";
-  import { LOOPType } from "$lib/features/create/generate/circular/domain/models/circular-models";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import BaseCard from "#lib/features/create/generate/components/cards/BaseCard.svelte";
+  import { LOOPType } from "#lib/features/create/generate/circular/domain/models/circular-models.js";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import {
     parseLoopComponents,
     generateLOOPType,
-  } from "$lib/shared/create/services/loop-type-utils";
-  import { generateExplanationText } from "$lib/features/create/generate/shared/services/loop-explanation-text-generator";
-  import { getCardColors } from "$lib/shared/create/domain/card-colors";
+  } from "#lib/shared/create/services/loop-type-utils.js";
+  import { generateExplanationText } from "#lib/features/create/generate/shared/services/loop-explanation-text-generator.js";
+  import { getCardColors } from "#lib/shared/create/domain/card-colors.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import { DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
+  import { DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
   import { untrack } from "svelte";
   import { scale } from "svelte/transition";
   import { quintOut } from "svelte/easing";
@@ -76,11 +76,11 @@
     type LoopFlavor,
     type LoopConfig,
   } from "./domain/loop-config";
-  import { getActivityLogger } from "$lib/shared/analytics/get-activity-logger";
+  import { getActivityLogger } from "#lib/shared/analytics/get-activity-logger.js";
   import { trackVariantSelected, trackPropSelected } from "./analytics/shop-funnel";
   import { trackViewOnceLoaded } from "./analytics/shop-funnel-view.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   interface Props {
     /** The server's catalog snapshot, so the first HTML is the real page. */

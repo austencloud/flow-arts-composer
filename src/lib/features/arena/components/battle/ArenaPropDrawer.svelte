@@ -7,10 +7,10 @@
   picked with it, via callbacks; the arena holds both.
 -->
 <script lang="ts">
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import PropSelectionSheet from "$lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import PropSelectionSheet from "#lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     isOpen = $bindable(false),

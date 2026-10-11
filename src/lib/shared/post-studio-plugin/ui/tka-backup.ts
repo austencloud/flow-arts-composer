@@ -1,10 +1,10 @@
 import type { PluginBackup } from "@austencloud/video-editor";
-import { readInShotRecoveryPackage } from "$lib/shared/media-composition/services/inshot-recovery-package";
+import { readInShotRecoveryPackage } from "#lib/shared/media-composition/services/inshot-recovery-package.js";
 import { loadPostProjectFonts } from "@austencloud/video-editor/ui";
 import {
   parsePostStudioBackup,
   serializePostStudioBackup,
-} from "$lib/shared/media-composition/services/post-project-backup";
+} from "#lib/shared/media-composition/services/post-project-backup.js";
 
 /**
  * tka's Backup, Restore and Import: a `.post-studio.json` backup of the

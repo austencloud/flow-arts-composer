@@ -1,18 +1,18 @@
 <!-- MyFeedbackTab - Tester's personal feedback dashboard -->
 <script lang="ts">
-  import { removeCurrentUrlParams } from "$lib/shared/navigation/services/url-state";
+  import { removeCurrentUrlParams } from "#lib/shared/navigation/services/url-state.js";
   import { onMount, onDestroy } from "svelte";
   import { createMyFeedbackState } from "../../state/my-feedback-state.svelte";
-  import { myFeedbackDetailState } from "$lib/shared/feedback/state/my-feedback-detail-state.svelte";
+  import { myFeedbackDetailState } from "#lib/shared/feedback/state/my-feedback-detail-state.svelte.js";
   import {
     notificationTargetState,
     takeNotificationTargetFeedback,
     setNotificationTargetFeedback,
-  } from "$lib/shared/feedback/state/notification-action-state.svelte";
-  import { useUserPreview } from "$lib/shared/debug/context/user-preview-context";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  } from "#lib/shared/feedback/state/notification-action-state.svelte.js";
+  import { useUserPreview } from "#lib/shared/debug/context/user-preview-context.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import MyFeedbackList from "./MyFeedbackList.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   const state = createMyFeedbackState();
   const preview = useUserPreview();

@@ -5,9 +5,9 @@
    * Displays user profile information and provides account management options
    */
 
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { goto } from "$app/navigation";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
 
   let copying = $state(false);
 

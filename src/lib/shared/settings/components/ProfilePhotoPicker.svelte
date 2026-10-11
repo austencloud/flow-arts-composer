@@ -1,26 +1,26 @@
 <script lang="ts">
-  import { getProviderIds } from "$lib/shared/auth/services/profile-picture-manager";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { getProviderIds } from "#lib/shared/auth/services/profile-picture-manager.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import {
     ALL_GRADIENTS,
     THEME_TO_GRADIENT,
-  } from "$lib/shared/settings/domain/avatar-gradients";
-  import { detectLayout } from "$lib/shared/settings/services/photo-picker-layout-detector";
-  import type { PhotoSelection } from "$lib/shared/settings/domain/photo-picker-types";
+  } from "#lib/shared/settings/domain/avatar-gradients.js";
+  import { detectLayout } from "#lib/shared/settings/services/photo-picker-layout-detector.js";
+  import type { PhotoSelection } from "#lib/shared/settings/domain/photo-picker-types.js";
   import {
     assertProfilePhotoInput,
     getProfilePhotoErrorMessage,
-  } from "$lib/shared/auth/services/profile-photo-image";
-  import { reportErrorTelemetry } from "$lib/shared/error/services/error-telemetry-reporter";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  } from "#lib/shared/auth/services/profile-photo-image.js";
+  import { reportErrorTelemetry } from "#lib/shared/error/services/error-telemetry-reporter.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-  import PhotoOptionsList from "$lib/shared/settings/components/photo-picker/PhotoOptionsList.svelte";
-  import AvatarGenerator from "$lib/shared/settings/components/photo-picker/AvatarGenerator.svelte";
-  import AvatarGeneratorWizard from "$lib/shared/settings/components/photo-picker/AvatarGeneratorWizard.svelte";
+  import PhotoOptionsList from "#lib/shared/settings/components/photo-picker/PhotoOptionsList.svelte";
+  import AvatarGenerator from "#lib/shared/settings/components/photo-picker/AvatarGenerator.svelte";
+  import AvatarGeneratorWizard from "#lib/shared/settings/components/photo-picker/AvatarGeneratorWizard.svelte";
 
   interface Props {
     isOpen: boolean;

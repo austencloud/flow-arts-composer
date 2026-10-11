@@ -8,7 +8,7 @@
 import {
   getFirestoreRest,
   toFirestoreFields,
-} from "$lib/server/firestore/firestore-rest";
+} from "#lib/server/firestore/firestore-rest.js";
 
 export interface AuditEntry {
   /** UID of the admin performing the action */

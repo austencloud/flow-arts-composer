@@ -1,5 +1,5 @@
 import type { TrailPoint, TrailSettings } from "./trail-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 
 export interface AdditionalLayerProps {
   leftProp: PropState | null;

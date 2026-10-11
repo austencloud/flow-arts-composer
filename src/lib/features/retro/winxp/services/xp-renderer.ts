@@ -16,12 +16,12 @@
  */
 
 import type { RetroPictographData } from "../../shared/domain/pictograph-types";
-import type { PictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import type { PreparedRenderData } from "$lib/shared/pictograph/shared/domain/models/prepared-pictograph-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { PictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import type { PreparedRenderData } from "#lib/shared/pictograph/shared/domain/models/prepared-pictograph-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { EraRendererBase } from "../../shared/services/era-renderer-base";
-import type { DrawableImage } from '$lib/shared/render/services/svg-image-cache';
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { DrawableImage } from '#lib/shared/render/services/svg-image-cache.js';
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 
 /** Canvas size for the XP era - 256×256 matches a typical XP-era thumbnail */

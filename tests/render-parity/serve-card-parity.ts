@@ -30,13 +30,21 @@ await build({
   resolve: {
     conditions: ["browser"],
     alias: {
-      $lib: resolve(root, "src/lib"),
       // Always the checkout's own package, never a node_modules link to another one.
       "@tka/render-composition": resolve(
         root,
         "packages/render-composition/src/index.ts"
       ),
-      "$app/environment": resolve(
+      // Listed before `$app/env`, which would otherwise match these as a prefix.
+      "$app/env/public": resolve(
+        root,
+        "tests/setup/stubs/app-env-public.ts"
+      ),
+      "$app/env/private": resolve(
+        root,
+        "tests/setup/stubs/app-env-private.ts"
+      ),
+      "$app/env": resolve(
         root,
         "tests/render-parity/stubs/app-environment.ts"
       ),
@@ -44,16 +52,7 @@ await build({
         root,
         "tests/render-parity/stubs/app-navigation.ts"
       ),
-      "$app/stores": resolve(root, "tests/setup/stubs/app-stores.ts"),
       "$app/state": resolve(root, "tests/setup/stubs/app-state.ts"),
-      "$env/static/public": resolve(
-        root,
-        "tests/setup/stubs/env-static-public.ts"
-      ),
-      "$env/dynamic/public": resolve(
-        root,
-        "tests/setup/stubs/env-dynamic-public.ts"
-      ),
     },
   },
   build: {

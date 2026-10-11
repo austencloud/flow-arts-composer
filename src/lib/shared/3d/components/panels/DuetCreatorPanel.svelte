@@ -1,6 +1,6 @@
 <script lang="ts">
 
-import { getDuetPersister } from "$lib/shared/3d/get-duet-persister";
+import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
   /**
    * DuetCreatorPanel
    *
@@ -9,12 +9,12 @@ import { getDuetPersister } from "$lib/shared/3d/get-duet-persister";
    */
 
   import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
   import type { DuetPersister } from "../../services/duet-persister";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
   import type {
     DuetPositioning,
     CreateDuetInput,

@@ -11,17 +11,17 @@
   shift. Each pictograph renders its own beat number + per-hand turns.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { GridJoin } from "@tka/tka-types";
   import { gridJoinCellResolver } from "@tka/render-core";
-  import { calculateGridLayout } from "$lib/shared/create/utils/grid-calculations";
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
+  import { calculateGridLayout } from "#lib/shared/create/utils/grid-calculations.js";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
   import { flip } from "svelte/animate";
   import { scale } from "svelte/transition";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
     steps: StepData[];

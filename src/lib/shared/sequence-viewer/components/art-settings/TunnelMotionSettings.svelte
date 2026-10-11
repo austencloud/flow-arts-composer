@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import EffortPanel from "$lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
-  import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import EffortPanel from "#lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
+  import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import TunnelPlaybackSettings from "./TunnelPlaybackSettings.svelte";
   import { reportArtSetting } from "./art-setting-change";
   import type { ArtSettingChangeHandler } from "./art-settings-types";

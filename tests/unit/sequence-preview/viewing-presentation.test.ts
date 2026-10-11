@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrailMode,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { capturePresentation } from "$lib/shared/foundation/services/presentation-intent";
-import { resolveViewingPresentation } from "$lib/shared/sequence-preview/services/viewing-presentation";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { capturePresentation } from "#lib/shared/foundation/services/presentation-intent.js";
+import { resolveViewingPresentation } from "#lib/shared/sequence-preview/services/viewing-presentation.js";
 
 const recorded = capturePresentation({
   primaryPropColors: { left: "#111111", right: "#222222" },

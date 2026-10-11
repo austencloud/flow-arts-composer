@@ -1,9 +1,9 @@
 import { createHandPath } from "./hand-path-factory";
-import { hashSoloProp } from "$lib/shared/foundation/services/content-hasher";
+import { hashSoloProp } from "#lib/shared/foundation/services/content-hasher.js";
 import type { SoloPropStepData } from "../domain/models/solo-prop-step-data";
 import type { SoloPropData } from "../domain/models/solo-prop-data";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 function extractHandPathLocations(
   steps: readonly SoloPropStepData[]

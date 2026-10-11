@@ -1,14 +1,14 @@
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { tick } from "svelte";
 
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import { SceneEnvironmentId } from "$lib/shared/3d/environments/domain/scene-environment";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   import type { FormationPresetId } from "../domain/stage-types";
   import {

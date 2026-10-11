@@ -2,14 +2,14 @@ import { readdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   PRONUNCIATION_POSITIONS,
   getLetterPronunciation,
   type PronunciationManifest,
   type PronunciationPosition,
   type PronunciationRecordingSet,
-} from "$lib/shared/pronunciation/pronunciation-plan";
+} from "#lib/shared/pronunciation/pronunciation-plan.js";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDirectory, "..");

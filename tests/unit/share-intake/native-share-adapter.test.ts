@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import "fake-indexeddb/auto";
 
-vi.mock("$app/environment", () => ({ browser: true }));
+vi.mock("$app/env", () => ({ browser: true }));
 
 // vi.mock() factories are hoisted above every top-level statement, including
 // plain `const` declarations in this file. A factory that DEREFERENCES a later
@@ -32,24 +32,24 @@ vi.mock("@capacitor/core", () => ({
   },
 }));
 
-vi.mock("$lib/shared/share-intake/state/share-intake-signal.svelte", () => ({
+vi.mock("#lib/shared/share-intake/state/share-intake-signal.svelte.js", () => ({
   bumpIntakeSignal: () => bumpIntakeSignal(),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({ toast }));
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({ toast }));
 
-vi.mock("$lib/shared/share-intake/services/sharing-shortcuts-publisher", () => ({
+vi.mock("#lib/shared/share-intake/services/sharing-shortcuts-publisher.js", () => ({
   consumeLaunchShortcutId,
 }));
 
 import {
   registerNativeShareTarget,
   whenIdle,
-} from "$lib/shared/share-intake/services/native-share-adapter";
+} from "#lib/shared/share-intake/services/native-share-adapter.js";
 import {
   listIntakes,
   deleteIntake,
-} from "$lib/shared/share-intake/services/intake-store";
+} from "#lib/shared/share-intake/services/intake-store.js";
 
 // jsdom (as pinned in this repo, v27.4.0) does not implement Blob/File's
 // spec-required arrayBuffer() method (jsdom/jsdom#2555). putIntake calls it, so

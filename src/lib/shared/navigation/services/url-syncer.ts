@@ -10,8 +10,8 @@
  * Domain: Navigation - Live URL Synchronization
  */
 
-import { browser } from "$app/environment";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { browser } from "$app/env";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { DebouncedUrlSync, URLSyncOptions } from "./types";
 import { generateShareURL } from "./sequence-encoder";
 import { mutateCurrentUrl, removeCurrentUrlParams } from "./url-state";

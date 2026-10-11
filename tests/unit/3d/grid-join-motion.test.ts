@@ -1,35 +1,37 @@
 import { describe, expect, it } from "vitest";
 import { Plane } from "@austencloud/scene-3d";
 import type { GridJoinSpec } from "@tka/render-core";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   GRID_RADIUS_3D,
   planeAngleToWorldPosition,
-} from "$lib/shared/3d/domain/constants/plane-transforms";
+} from "#lib/shared/3d/domain/constants/plane-transforms.js";
 import {
   fixedHandDistance,
   type HandDistance,
-} from "$lib/shared/3d/domain/performer-hand-distance";
+} from "#lib/shared/3d/domain/performer-hand-distance.js";
 import {
+  gridJoinScale3D,
   gridJoinOffset3D,
   resolveGridJoin3D,
-} from "$lib/shared/3d/services/grid-join-3d";
-import { calculatePropState } from "$lib/shared/3d/services/prop-state-interpolator";
+  scalePerformerHandDistance3D,
+} from "#lib/shared/3d/services/grid-join-3d.js";
+import { calculatePropState } from "#lib/shared/3d/services/prop-state-interpolator.js";
 import {
   getStartPlacementConfigs,
   sequenceToMotionConfigs,
-} from "$lib/shared/3d/services/sequence-converter";
+} from "#lib/shared/3d/services/sequence-converter.js";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
 
 function sequence(join?: unknown, gridMode = "diamond"): SequenceData {
   const beat = (stepNumber: number, motionType: MotionType) =>
@@ -173,16 +175,70 @@ describe("joined-grid 3D motion", () => {
     joined.loadSequence(sequence({ toward: "e", steps: 1 }));
     plain.loadSequence(sequence());
     const join = resolveGridJoin3D(sequence({ toward: "e", steps: 1 }))!;
+    const scale = gridJoinScale3D(join);
     for (const scoreTime of [0, 0.25, 0.5, 0.999, 1, 1.5, 1.999]) {
       const joinedProps = joined.propStatesAtScoreTime(scoreTime);
       const plainProps = plain.propStatesAtScoreTime(scoreTime);
       for (const hand of ["left", "right"] as const) {
-        expectTranslated(
-          joinedProps[hand]!,
-          plainProps[hand]!,
-          gridJoinOffset3D(join, hand, Plane.WALL)
-        );
+        const expected = plainProps[hand]!.worldPosition
+          .clone()
+          .multiplyScalar(scale)
+          .add(gridJoinOffset3D(join, hand, Plane.WALL, joined.handDistance[hand]));
+        expect(joinedProps[hand]!.worldPosition.distanceTo(expected)).toBeLessThan(1e-10);
+        expect(joinedProps[hand]!.worldRotation.equals(plainProps[hand]!.worldRotation)).toBe(true);
       }
     }
+  });
+
+  it("fits one and two joined grids inside the original hand reach", () => {
+    const original = {
+      left: { toward: (_plane: Plane, angle: number) => 0.4 + 0.1 * Math.cos(angle), max: 0.5 },
+      right: fixedHandDistance(0.6),
+    };
+    for (const steps of [1, 2] as const) {
+      const join: GridJoinSpec = { toward: "e", steps };
+      const scaled = scalePerformerHandDistance3D(original, gridJoinScale3D(join));
+      for (const hand of ["left", "right"] as const) {
+        const center = gridJoinOffset3D(join, hand, Plane.FLOOR, scaled[hand]);
+        expect(center.length() + scaled[hand].max).toBeLessThanOrEqual(original[hand].max + 1e-10);
+      }
+    }
+    expect(gridJoinScale3D(null)).toBe(1);
+    expect(scalePerformerHandDistance3D(original, 1)).toBe(original);
+  });
+
+  it("restores original sizes after leaving a joined sequence without changing preferences", () => {
+    const performer = createCharacterInstanceState(
+      { id: "join-size", positionX: 0, persistent: false },
+      makeStandaloneDeps()
+    );
+    performer.setStaffLengthCm(81);
+    performer.setHandDistance({ left: fixedHandDistance(0.48), right: fixedHandDistance(0.6) });
+    performer.loadSequence(sequence({ toward: "e", steps: 1 }));
+    expect(performer.gridScale).toBeCloseTo(2 / 3);
+    expect(performer.staffLength).toBeCloseTo(0.54);
+    expect(performer.handDistance.left.max).toBeCloseTo(0.32);
+    expect(performer.handDistance.right.max).toBeCloseTo(0.4);
+    expect(performer.settings.staffLengthCm).toBe(81);
+    performer.loadSequence(sequence({ toward: "e", steps: 2 }));
+    expect(performer.staffLength).toBeCloseTo(0.405);
+    const joinedSnapshot = performer.captureEditingSnapshot();
+    performer.loadSequence(sequence());
+    expect(performer.gridScale).toBe(1);
+    expect(performer.staffLength).toBeCloseTo(0.81);
+    expect(performer.handDistance.left.max).toBeCloseTo(0.48);
+    expect(performer.handDistance.right.max).toBeCloseTo(0.6);
+    expect(performer.settings.staffLengthCm).toBe(81);
+    performer.restoreEditingSnapshot(joinedSnapshot);
+    expect(performer.gridScale).toBe(0.5);
+    expect(performer.staffLength).toBeCloseTo(0.405);
+    expect(performer.handDistance.left.max).toBeCloseTo(0.24);
+    expect(performer.handDistance.right.max).toBeCloseTo(0.3);
+    expect(performer.settings.staffLengthCm).toBe(81);
+    performer.clearSequence();
+    expect(performer.gridScale).toBe(1);
+    expect(performer.staffLength).toBeCloseTo(0.81);
+    expect(performer.handDistance.left.max).toBeCloseTo(0.48);
+    expect(performer.handDistance.right.max).toBeCloseTo(0.6);
   });
 });

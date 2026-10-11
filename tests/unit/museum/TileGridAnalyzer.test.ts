@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { analyze } from "$lib/features/museum/services/tile-grid-analyzer";
+import { analyze } from "#lib/features/museum/services/tile-grid-analyzer.js";
 import {
 	createEmptyGrid,
 	tileKey,
 	type MuseumGrid,
 	type MuseumTile,
 	type Direction,
-} from "$lib/features/museum/domain/museum-grid-types";
+} from "#lib/features/museum/domain/museum-grid-types.js";
 
 function buildSimpleRoom(width: number, height: number): MuseumGrid {
 	const grid = createEmptyGrid(width, height);

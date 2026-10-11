@@ -6,10 +6,10 @@
   import {
     trackAuthModalAbandoned,
     trackAuthSurfaceOpened,
-  } from "$lib/shared/analytics/auth-events";
-  import { clearAuthSubmissionBridge } from "$lib/shared/auth/services/auth-analytics-bridge";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  } from "#lib/shared/analytics/auth-events.js";
+  import { clearAuthSubmissionBridge } from "#lib/shared/auth/services/auth-analytics-bridge.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     onFacebookAuth: () => Promise<void>;

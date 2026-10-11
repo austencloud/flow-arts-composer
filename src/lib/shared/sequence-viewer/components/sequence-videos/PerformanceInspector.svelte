@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import DeleteConfirmDialog from "../DeleteConfirmDialog.svelte";
   import { getPerformanceWorkspaceContext } from "./context/performance-workspace-context";
   import {
@@ -10,11 +10,11 @@
     performanceCreatorName,
     performanceTimingLabel,
   } from "./performance-video-copy";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     resolveHandLabeling,
     type HandLabeling,
-  } from "$lib/shared/video-collaboration/domain/hand-labeling";
+  } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
 
   interface Props {
     isOwned: boolean;

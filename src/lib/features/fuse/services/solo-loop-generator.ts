@@ -25,32 +25,32 @@ import {
   detectSoloLOOP,
   rewindSoloMotion,
 } from "@tka/sequence-engine/loop/solo";
-import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
-import type { SoloPropStepData } from "$lib/shared/foundation/domain/models/solo-prop-step-data";
-import { createSoloProp } from "$lib/shared/foundation/services/solo-prop-factory";
-import { extractLeftSoloProp } from "$lib/shared/foundation/services/sequence-decomposer";
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
+import type { SoloPropData } from "#lib/shared/foundation/domain/models/solo-prop-data.js";
+import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
+import { createSoloProp } from "#lib/shared/foundation/services/solo-prop-factory.js";
+import { extractLeftSoloProp } from "#lib/shared/foundation/services/sequence-decomposer.js";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
-import type { TurnLevel } from "$lib/shared/create/services/level-turn-values";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import type { TurnLevel } from "#lib/shared/create/services/level-turn-values.js";
 import {
   isVisibleMotion,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { startOrientationsForLevel } from "$lib/features/create/generate/domain/level-orientation-policy";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { startOrientationsForLevel } from "#lib/features/create/generate/domain/level-orientation-policy.js";
 import {
   DEFAULT_GENERATION_STYLE,
   type GenerationMotionTypeFilter,
   type GenerationStyleAxis,
-} from "$lib/shared/create/domain/generation-style";
+} from "#lib/shared/create/domain/generation-style.js";
 
 export interface GeneratedSoloLoop {
   readonly solo: SoloPropData;

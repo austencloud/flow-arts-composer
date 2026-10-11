@@ -18,6 +18,29 @@ Both learning modes remain mutually discoverable. A published lesson links to
 its written topic, and a written topic links back when an interactive lesson
 exists.
 
+## Amendment: one topic, three views (2026-10-10, Austen)
+
+Austen approved the Guide rethink pilot
+(`docs/superpowers/specs/2026-10-10-guide-rethink-design.md`). Each topic now
+has one shared record of its explanations, figures and examples, read by
+three views: the interactive lesson, the Guide web page and the print
+handbook. Each view composes that content for its own medium; bespoke lesson
+state machines stay.
+
+- Authority for written content and print moves from the faithful pages to
+  the shared topic record as each topic migrates. The Grid is the first
+  (`src/lib/shared/guide-topics/grid-topic.ts`); topics not yet migrated keep
+  the faithful pages as their source.
+- The faithful book stays available at `/guide/level-1/print` and becomes the
+  Level 1 first edition. The new handbook (`/guide/level-1/handbook`, noindex
+  until complete) is built from the shared records.
+- `/guide` is lesson first: "Start the first lesson" is the primary action and
+  "Read the guide" the second.
+- A Guide topic's lesson link opens the lesson from its first step. Other
+  lesson links resume saved progress.
+- A test proves that one edit to a shared record changes the lesson, the
+  web page and the handbook together.
+
 ## Product truth
 
 `concept-experience-registry.ts` owns the set of lessons that can actually be

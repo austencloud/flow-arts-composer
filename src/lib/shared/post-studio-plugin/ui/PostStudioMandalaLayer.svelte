@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import MandalaPane from "$lib/shared/sequence-viewer/components/MandalaPane.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import MandalaPane from "#lib/shared/sequence-viewer/components/MandalaPane.svelte";
   import { getPostStudioArtContext } from "./post-studio-art-context.svelte";
 
   interface Props {

@@ -8,7 +8,7 @@ This document consolidates the practical implementation details for Flow Arts Co
 
 ```svelte
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 </script>
 
 <h1>{t("app_name")}</h1>
@@ -109,7 +109,7 @@ const languageNames: Record<Locale, { native: string; english: string }> = {
 
 ```svelte
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   let moduleId = $state("create");
 </script>
 
@@ -122,7 +122,7 @@ const languageNames: Record<Locale, { native: string; english: string }> = {
 
 ```svelte
 <script lang="ts">
-  import { setLocale } from "$lib/shared/i18n/i18n.svelte.js";
+  import { setLocale } from "#lib/shared/i18n/i18n.svelte.js";
 
   async function switchToSpanish() {
     await setLocale("es");
@@ -135,7 +135,7 @@ const languageNames: Record<Locale, { native: string; english: string }> = {
 
 ```svelte
 <script lang="ts">
-  import { getLocale } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getLocale } from "#lib/shared/i18n/i18n.svelte.js";
   const currentLocale = getLocale(); // Reactive
 </script>
 ```

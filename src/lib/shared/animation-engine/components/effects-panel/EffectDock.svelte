@@ -1,9 +1,11 @@
 <script lang="ts">
   import { effectUiLabel } from "./effect-ui-label";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import EffectLookChips from "./EffectLookChips.svelte";
   import EffectPresetsSection from "./EffectPresetsSection.svelte";
   import type { EffectRegistration } from "./effect-registry";
+  import { effectInk } from "./effect-ink";
+  import { getThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
   import type { PrimaryParamSpec } from "./effect-primary-param";
 
   /**
@@ -72,6 +74,8 @@
     looks = "rail",
   }: Props = $props();
 
+  const accent = $derived(effectInk(registration.meta.color, getThemeMode()));
+
   function handleSliderInput(ev: Event): void {
     onPrimaryInput(parseFloat((ev.currentTarget as HTMLInputElement).value));
   }
@@ -79,7 +83,7 @@
 
 <section
   class="effect-dock"
-  style:--effect-accent={registration.meta.color}
+  style:--effect-accent={accent}
   aria-label={t("effect_deep_effect_controls", {
     effect: effectUiLabel(registration.meta.label),
   })}
@@ -121,7 +125,7 @@
       {customChipId}
       {customDisabled}
       {customColors}
-      accentColor={registration.meta.color}
+      accentColor={accent}
       effectLabel={registration.meta.label}
       {onSelectPreset}
       showSummary={false}
@@ -135,7 +139,7 @@
       {customChipId}
       {customDisabled}
       {customColors}
-      accentColor={registration.meta.color}
+      accentColor={accent}
       effectLabel={registration.meta.label}
       onSelect={onSelectPreset}
       wrap={looks === "wrap"}

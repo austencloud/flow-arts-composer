@@ -5,7 +5,7 @@
   import type { PropPlacementAimState } from "../state/prop-placement-aim-state.svelte";
   import type { PropPlacementState } from "../state/prop-placement-state.svelte";
   import { HandSide } from "../../shared/domain/enums/pictograph-enums";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
     placement: PropPlacementState;

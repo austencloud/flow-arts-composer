@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 import {
   legacyAliasesFor,
   resolvePersistedFilterType,

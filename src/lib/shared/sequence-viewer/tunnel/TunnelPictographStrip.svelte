@@ -1,10 +1,10 @@
 <script lang="ts">
-  import StepStrip from "$lib/shared/timeline/StepStrip.svelte";
-  import type { NotationCell } from "$lib/shared/timeline/notation-cell";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import StepStrip from "#lib/shared/timeline/StepStrip.svelte";
+  import type { NotationCell } from "#lib/shared/timeline/notation-cell.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import type { TunnelViewController } from "./tunnel-view-controller.svelte";
   import { sampleTunnelNotation } from "./tunnel-notation-sampling";
 

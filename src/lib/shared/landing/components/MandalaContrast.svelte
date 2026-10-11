@@ -13,8 +13,8 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   let { sequence, note }: { sequence: SequenceData; note?: string } = $props();
 
@@ -42,7 +42,7 @@
       <div class="cell">
         <div class="stage">
           <LazyMount
-            loader={() => import("$lib/shared/mandala/components/SequenceMandala.svelte")}
+            loader={() => import("#lib/shared/mandala/components/SequenceMandala.svelte")}
             {active}
             props={{
               sequence,

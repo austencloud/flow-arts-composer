@@ -4,7 +4,7 @@ import {
   estimateF0Hz,
   measureRmsDb,
   measureTokenFeatures,
-} from "$lib/shared/pronunciation/domain/audio-features";
+} from "#lib/shared/pronunciation/domain/audio-features.js";
 
 const SAMPLE_RATE = 48_000;
 

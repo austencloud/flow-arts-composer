@@ -4,17 +4,17 @@ Replaces InlineFilterPanel + ActiveFilterBar + picker's FilterChipRow.
 Reads from / writes to a headless BrowseEngine instance.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-  import LevelFilterChip from "$lib/shared/browse/components/filter-chips/LevelFilterChip.svelte";
-  import FavoritesFilterChip from "$lib/shared/browse/components/filter-chips/FavoritesFilterChip.svelte";
-  import LengthFilterChip from "$lib/shared/browse/components/filter-chips/LengthFilterChip.svelte";
-  import MaxTurnIntensityFilterChip from "$lib/shared/browse/components/filter-chips/MaxTurnIntensityFilterChip.svelte";
-  import LOOPFilterChip from "$lib/shared/browse/components/filter-chips/LOOPFilterChip.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+  import LevelFilterChip from "#lib/shared/browse/components/filter-chips/LevelFilterChip.svelte";
+  import FavoritesFilterChip from "#lib/shared/browse/components/filter-chips/FavoritesFilterChip.svelte";
+  import LengthFilterChip from "#lib/shared/browse/components/filter-chips/LengthFilterChip.svelte";
+  import MaxTurnIntensityFilterChip from "#lib/shared/browse/components/filter-chips/MaxTurnIntensityFilterChip.svelte";
+  import LOOPFilterChip from "#lib/shared/browse/components/filter-chips/LOOPFilterChip.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { BrowseEngine } from "../engine/types";
   import { localizeFilterChip } from "./localize-filter-chip";
 

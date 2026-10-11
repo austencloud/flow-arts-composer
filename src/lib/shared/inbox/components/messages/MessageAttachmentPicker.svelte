@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Popover } from "bits-ui";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import ImageUpload from "$lib/shared/components/image-upload/ImageUpload.svelte";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import ImageUpload from "#lib/shared/components/image-upload/ImageUpload.svelte";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import type { PendingMessageAttachment } from "../../domain/pending-message-attachment";
-  import type { MessageImageSendProgress } from "$lib/shared/messaging/services/contracts/IMessageImageSender";
+  import type { MessageImageSendProgress } from "#lib/shared/messaging/services/contracts/IMessageImageSender.js";
   import {
     MAX_IMAGE_BYTES,
     IMAGE_TYPES,

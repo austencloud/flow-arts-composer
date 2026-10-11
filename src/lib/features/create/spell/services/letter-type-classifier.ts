@@ -5,8 +5,8 @@
  * filtering capabilities based on letter type.
  */
 
-import { Letter, getLetterType } from "$lib/shared/foundation/domain/models/letter";
-import { LetterType } from "$lib/shared/foundation/domain/models/letter-type";
+import { Letter, getLetterType } from "#lib/shared/foundation/domain/models/letter.js";
+import { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
 
 /**
  * Interface describing the shape of the letter type classifier module.

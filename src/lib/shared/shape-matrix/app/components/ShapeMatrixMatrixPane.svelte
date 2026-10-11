@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
-  import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import ShapeMatrixGrid from "#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
+  import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { getShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
   import { customizeSection } from "../state/shape-matrix-customize";

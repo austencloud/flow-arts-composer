@@ -9,28 +9,28 @@
   Mobile: Tap panel to vote
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount, onDestroy } from "svelte";
   import ArenaMatchupPanel from "./ArenaMatchupPanel.svelte";
   import ArenaDivider from "./ArenaDivider.svelte";
   import ArenaStreakCounter from "./ArenaStreakCounter.svelte";
   import ArenaVoteConfirmation from "./ArenaVoteConfirmation.svelte";
-  import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
+  import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
   import ArenaPropDrawer from "./ArenaPropDrawer.svelte";
   import { arenaState } from "../../state/arena-state.svelte";
   import { getArenaOrchestrator } from "../../get-arena-orchestrator";
-  import { getAuthSync } from "$lib/shared/auth/firebase";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { getAuthSync } from "#lib/shared/auth/firebase.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     DEFAULT_PROP_LOOK,
     versionAfterPick,
     type PropLook,
-  } from "$lib/shared/pictograph/prop/domain/prop-look";
+  } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import {
     PROP_TYPE_DISPLAY_REGISTRY,
     getAllPropTypes,
-  } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // All prop types for the random pool (excludes POI which is momentum-based).
   function pickRandomPropType(): PropType {

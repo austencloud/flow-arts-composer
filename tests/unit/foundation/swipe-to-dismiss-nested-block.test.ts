@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { SwipeToDismiss } from "$lib/shared/foundation/ui/drawer/swipe-to-dismiss";
+import { SwipeToDismiss } from "#lib/shared/foundation/ui/drawer/swipe-to-dismiss.js";
 
 describe("SwipeToDismiss nested swipe blocks", () => {
   let swipe: SwipeToDismiss | undefined;

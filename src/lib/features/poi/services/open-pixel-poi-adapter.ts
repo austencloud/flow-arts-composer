@@ -1,6 +1,6 @@
 import type { IPoiConnection } from "./types";
 import type { PoiDeviceInfo } from "../domain/device-types";
-import type { StripPattern } from "$lib/shared/poi/domain/strip-pattern";
+import type { StripPattern } from "#lib/shared/poi/domain/strip-pattern.js";
 import {
   BLE_START_BYTE,
   BLE_END_BYTE,

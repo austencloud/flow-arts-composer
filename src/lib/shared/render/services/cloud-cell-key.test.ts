@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { canonicalCellKeyString, CANONICAL_CELL_SIZE } from "./cloud-cell-key";
-import type { PreviewCellRenderOptions } from "$lib/shared/sequence-viewer/services/preview-cell-renderer";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PreviewCellRenderOptions } from "#lib/shared/sequence-viewer/services/preview-cell-renderer.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const data = {
   letter: "A",

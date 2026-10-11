@@ -2,12 +2,12 @@
   import { onMount } from "svelte";
   import { useTask } from "@threlte/core";
   import { Avatar3D } from "@austencloud/scene-3d";
-  import LiveSequencePerformer3D from "$lib/shared/3d/performers/LiveSequencePerformer3D.svelte";
+  import LiveSequencePerformer3D from "#lib/shared/3d/performers/LiveSequencePerformer3D.svelte";
   import {
     sampleFlowFestLivingCommunity,
     type FlowFestFestivalCommunityLayout,
     type FlowFestLivingCommunityFrame,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-living-fire-jam";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-living-fire-jam.js";
   import {
     createFlowFestPlaceholderPool,
     flowFestPerformerSequenceProof,

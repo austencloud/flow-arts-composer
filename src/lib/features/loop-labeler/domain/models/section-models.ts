@@ -3,7 +3,7 @@
  */
 
 import type { ComponentId } from "../constants/loop-components";
-import type { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import type { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 export interface SectionDesignation {
   steps: number[]; // Beat numbers in this section

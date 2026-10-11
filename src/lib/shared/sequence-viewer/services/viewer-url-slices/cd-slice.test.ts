@@ -8,7 +8,7 @@ type RemoteListener = (settings: RemoteSettings | null, userId: string) => void;
 
 // The jsdom stub pins `browser` to false, which short-circuits the manager's
 // constructor entirely and would make every write assertion below vacuous.
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: true,
   building: false,
@@ -62,27 +62,27 @@ const visibility = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({ getAuthSync: () => auth }));
+vi.mock("#lib/shared/auth/firebase.js", () => ({ getAuthSync: () => auth }));
 // The composition store reads sign-in through the lazy loader so public pages
 // never pull Firebase; the fake auth stands in as the already-loaded instance.
-vi.mock("$lib/shared/auth/loaded-auth", () => ({
+vi.mock("#lib/shared/auth/loaded-auth.js", () => ({
   loadedAuth: auth,
   whenAuthLoaded: (callback: (instance: typeof auth) => void) => callback(auth),
 }));
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: settingsMock,
 }));
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte",
+  "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js",
   () => ({ getAnimationVisibilityManager: () => visibility })
 );
 
 const { captureCdSlice, seedFromCdSlice } = await import("./cd-slice");
 const { DEFAULT_IMAGE_COMPOSITION_SETTINGS } =
-  await import("$lib/shared/share/state/image-composition-state.svelte");
+  await import("#lib/shared/share/state/image-composition-state.svelte.js");
 
 type CompositionManager = ReturnType<
-  (typeof import("$lib/shared/share/state/image-composition-state.svelte"))["getImageCompositionManager"]
+  (typeof import("#lib/shared/share/state/image-composition-state.svelte.js"))["getImageCompositionManager"]
 >;
 
 const STORAGE_KEY = "tka-image-composition-settings";
@@ -95,7 +95,7 @@ async function loadManager(): Promise<CompositionManager> {
   settingsMock.remoteListeners.clear();
   visibility.observers.clear();
   const { getImageCompositionManager } =
-    await import("$lib/shared/share/state/image-composition-state.svelte");
+    await import("#lib/shared/share/state/image-composition-state.svelte.js");
   return getImageCompositionManager();
 }
 

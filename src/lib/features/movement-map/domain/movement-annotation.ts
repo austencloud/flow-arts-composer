@@ -14,9 +14,9 @@
  * space of movements, which is the entire point of the exercise.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 /**
  * One hand's movement, stripped to the fields that determine what the arm has

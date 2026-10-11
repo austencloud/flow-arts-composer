@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { createHandLabeledSequenceResolver } from "./hand-labeled-sequence";
 
 function makeSequence(id: string): SequenceData {

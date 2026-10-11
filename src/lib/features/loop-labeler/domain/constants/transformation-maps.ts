@@ -45,7 +45,7 @@ export const ROTATE_90_CW: Record<string, string> = {
  * Owned by the shared geometry module and re-exported here so the existing
  * loop-labeler callers keep their import path.
  */
-export { MIRROR_VERTICAL } from "$lib/shared/pictograph/shared/domain/geometry/mirror-vertical";
+export { MIRROR_VERTICAL } from "#lib/shared/pictograph/shared/domain/geometry/mirror-vertical.js";
 
 /** Flip across horizontal axis (top/bottom swap) */
 export const FLIP_HORIZONTAL: Record<string, string> = {

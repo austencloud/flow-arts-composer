@@ -10,9 +10,9 @@
   behind a gear hid a choice that decides what the take looks like.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { CameraChoreographyState } from "$lib/shared/sequence-viewer/camera-choreography/state.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { CameraChoreographyState } from "#lib/shared/sequence-viewer/camera-choreography/state.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     reportViewerControlChange,
     type ViewerControlSink,

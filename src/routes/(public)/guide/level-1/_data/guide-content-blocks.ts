@@ -8,8 +8,8 @@
  * pt = the proof PDF's own points; the sheet is 612pt × 792pt (8.5×11in), and
  * SheetFrame multiplies by S = 816/612 to reach the 816×1056px on-screen sheet.
  */
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 /**
  * Flow-view render hints for a pictograph / pictographGroup. FlowFrame reads these

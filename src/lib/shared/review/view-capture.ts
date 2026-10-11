@@ -14,7 +14,7 @@
  * clipboard. What the pose means is the calling scene's business.
  */
 
-import { refreshInteractiveCanvasFrame } from "$lib/shared/3d/rendering/interactive-canvas-frame";
+import { refreshInteractiveCanvasFrame } from "#lib/shared/3d/rendering/interactive-canvas-frame.js";
 
 /** A first-person camera pose. Angles in radians, position in world metres. */
 export interface ViewPose {

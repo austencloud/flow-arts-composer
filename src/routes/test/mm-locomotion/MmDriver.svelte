@@ -9,7 +9,7 @@
    * a large step after a tab stall.
    */
   import { useTask } from "@threlte/core";
-  import type { MmLocomotionController } from "$lib/features/stage/locomotion/motion-matching/mm-locomotion-controller";
+  import type { MmLocomotionController } from "#lib/features/stage/locomotion/motion-matching/mm-locomotion-controller.js";
 
   let { controller }: { controller: MmLocomotionController | null } = $props();
 

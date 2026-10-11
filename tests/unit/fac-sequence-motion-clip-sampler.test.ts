@@ -1,23 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import type {
   MotionClip,
   MotionCompositionV3,
   PropStream,
-} from "$lib/shared/motion-composition/domain/motion-composition-types";
-import { FacSequenceMotionClipSampler } from "$lib/shared/motion-composition/services/implementations/FacSequenceMotionClipSampler";
-import { sampleMotionCompositionAt } from "$lib/shared/motion-composition/services/motion-composition-sampler";
+} from "#lib/shared/motion-composition/domain/motion-composition-types.js";
+import { FacSequenceMotionClipSampler } from "#lib/shared/motion-composition/services/implementations/FacSequenceMotionClipSampler.js";
+import { sampleMotionCompositionAt } from "#lib/shared/motion-composition/services/motion-composition-sampler.js";
 
 function fixture(): { clip: MotionClip; stream: PropStream } {
   const left = createMotionData({

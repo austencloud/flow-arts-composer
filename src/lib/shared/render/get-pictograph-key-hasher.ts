@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { PictographKeyHasher } from './services/pictograph-key-hasher';
 
 let instance: PictographKeyHasher | null = null;

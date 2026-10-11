@@ -46,7 +46,7 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import { fade } from "svelte/transition";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
     /** The real short code for the card on the stack. Null = no phone content. */

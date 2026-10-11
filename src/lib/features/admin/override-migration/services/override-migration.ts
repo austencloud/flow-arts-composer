@@ -12,17 +12,17 @@
  * dryRun=false → after a 100%-parity staging, persist every row via saveOverride.
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import { enumerateVariationArrows } from "./variation-enumerator";
-import { computeSpecialOverrideKey } from "$lib/shared/pictograph/arrow/positioning/special-override/services/special-override-key";
-import { parseSpecialOverrideKey } from "$lib/shared/pictograph/arrow/positioning/special-override/domain/special-arrow-placement";
-import type { SpecialArrowPlacementInput } from "$lib/shared/pictograph/arrow/positioning/special-override/domain/special-arrow-placement";
-import { arrowAdjustmentCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator";
-import { arrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
-import { setGlobalReadDisabled } from "$lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-singleton";
-import { getSpecialOverrideRepository } from "$lib/shared/pictograph/arrow/positioning/special-override/services/special-override-singleton";
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { computeSpecialOverrideKey } from "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-key.js";
+import { parseSpecialOverrideKey } from "#lib/shared/pictograph/arrow/positioning/special-override/domain/special-arrow-placement.js";
+import type { SpecialArrowPlacementInput } from "#lib/shared/pictograph/arrow/positioning/special-override/domain/special-arrow-placement.js";
+import { arrowAdjustmentCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator.js";
+import { arrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
+import { setGlobalReadDisabled } from "#lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-singleton.js";
+import { getSpecialOverrideRepository } from "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-singleton.js";
+import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 export interface MigrationRow {
   key: string;

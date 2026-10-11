@@ -1,4 +1,4 @@
-import type { EffectType } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+import type { EffectType } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 
 /** Effects reproduced by the scene-wide renderer already running in the worker. */
 export const WORKER_POOLED_EFFECTS = [

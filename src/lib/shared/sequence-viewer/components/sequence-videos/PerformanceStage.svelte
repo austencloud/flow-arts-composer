@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import VisualSequenceSaveContextMenuHost from "#lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import { getPerformanceWorkspaceContext } from "./context/performance-workspace-context";
   import { formatPerformanceDuration } from "./performance-video-copy";
 

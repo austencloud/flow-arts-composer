@@ -5,7 +5,7 @@ const backgroundController = vi.hoisted(() => ({
   unfreeze: vi.fn(),
 }));
 
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: true,
   building: false,
@@ -20,7 +20,7 @@ vi.mock("$app/environment", () => ({
  */
 async function importHolds() {
   const module =
-    await import("$lib/shared/background/shared/state/background-hold.svelte");
+    await import("#lib/shared/background/shared/state/background-hold.svelte.js");
   module.registerBackgroundFreezeTarget(backgroundController);
   return module;
 }
@@ -75,7 +75,7 @@ describe("background holds", () => {
       registerBackgroundFreezeTarget,
       releaseBackground,
     } =
-      await import("$lib/shared/background/shared/state/background-hold.svelte");
+      await import("#lib/shared/background/shared/state/background-hold.svelte.js");
 
     holdBackground("panel-transition");
     expect(backgroundController.freeze).not.toHaveBeenCalled();
@@ -93,7 +93,7 @@ describe("background holds", () => {
       registerBackgroundFreezeTarget,
       releaseBackground,
     } =
-      await import("$lib/shared/background/shared/state/background-hold.svelte");
+      await import("#lib/shared/background/shared/state/background-hold.svelte.js");
 
     holdBackground("panel-transition");
     releaseBackground("panel-transition");

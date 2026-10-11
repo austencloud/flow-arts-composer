@@ -5,7 +5,7 @@
  * so both readers stay on one table instead of drifting.
  */
 
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 
 /** Every value BrowseFilterType currently defines, for validating a
  * persisted entry's stored type string. */

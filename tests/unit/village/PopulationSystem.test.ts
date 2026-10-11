@@ -1,19 +1,19 @@
 import { describe, it, expect } from "vitest";
-import { PopulationSystem } from "$lib/features/village/engine/systems/population-system";
+import { PopulationSystem } from "#lib/features/village/engine/systems/population-system.js";
 import {
 	createVillageWorld,
 	createAvatarEntity,
-} from "$lib/features/village/engine/village-world";
-import * as personalityGenerator from "$lib/features/village/services/personality-generator";
-import { LineageTracker } from "$lib/features/village/services/lineage-tracker";
-import { createDefaultConfig } from "$lib/features/village/engine/village-config";
+} from "#lib/features/village/engine/village-world.js";
+import * as personalityGenerator from "#lib/features/village/services/personality-generator.js";
+import { LineageTracker } from "#lib/features/village/services/lineage-tracker.js";
+import { createDefaultConfig } from "#lib/features/village/engine/village-config.js";
 import {
 	PASSING_DURATION_TICKS,
-} from "$lib/features/village/domain/village-constants";
+} from "#lib/features/village/domain/village-constants.js";
 import type {
 	VillageEventMap,
 	VillageEventKey,
-} from "$lib/features/village/domain/village-types";
+} from "#lib/features/village/domain/village-types.js";
 
 function makeEmitter() {
 	const events: Record<string, unknown[][]> = {};

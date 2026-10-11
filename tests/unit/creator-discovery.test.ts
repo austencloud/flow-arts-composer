@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { matchesCreatorQuery } from "$lib/features/creators/domain/creator-search";
-import { pickCreatorSamplesByOwnerId } from "$lib/features/browse/gallery-home/pick-representatives";
-import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getEffectiveProp } from "$lib/shared/community/domain/get-effective-prop";
+import { matchesCreatorQuery } from "#lib/features/creators/domain/creator-search.js";
+import { pickCreatorSamplesByOwnerId } from "#lib/features/browse/gallery-home/pick-representatives.js";
+import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getEffectiveProp } from "#lib/shared/community/domain/get-effective-prop.js";
 
 function creator(
   patch: Partial<EnhancedUserProfile> = {}

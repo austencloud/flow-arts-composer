@@ -1,5 +1,5 @@
-import type { PositionValue } from "$lib/shared/notation/qft/qft-model";
-import type { QftPropRateProfile } from "$lib/shared/notation/qft/qft-trajectory";
+import type { PositionValue } from "#lib/shared/notation/qft/qft-model.js";
+import type { QftPropRateProfile } from "#lib/shared/notation/qft/qft-trajectory.js";
 import type {
   PoiReversalCalibration,
   PoiReversalCandidate,

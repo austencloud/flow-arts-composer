@@ -5,24 +5,24 @@
  * Each filter type has its own dedicated method for clarity.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 import {
   BrowseFilterType,
   GridJoinFilterValue,
-} from "$lib/shared/persistence/domain/enums/filtering-enums";
-import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
+} from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { BrowseFilterValue } from "#lib/shared/persistence/domain/types/filtering-types.js";
 import type {
-  LOOPType} from "$lib/shared/foundation/domain/models/generation/circular-models";
+  LOOPType} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   LOOP_TYPE_LABELS,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
-import { detectRotationPeriod } from "$lib/shared/create/domain/detect-rotation-period";
-import { calculateDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
+import { detectRotationPeriod } from "#lib/shared/create/domain/detect-rotation-period.js";
+import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
 
 // Constants
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;

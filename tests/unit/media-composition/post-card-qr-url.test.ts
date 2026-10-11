@@ -10,7 +10,7 @@ import {
   PostProjectSchema,
   isPostCardQrUrl,
   editContext,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import { NOW, card, project, text } from "./post-project-fixtures";
 
 const LINK = "https://tka.run/s/abc123";

@@ -1,23 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrailMode,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import { overlay, project as buildProject } from "./post-project-fixtures";
 import {
   loadAccountPostProject,
+  readAccountPostProjectPreview,
+  listSyncedPostProjects,
   loadSyncedPostDraft,
   resolveSyncedPostSequence,
   saveAccountPostProject,
   saveSyncedPostDraft,
-} from "$lib/features/post/services/post-account-projects";
+  cancelPostCloudRetries,
+} from "#lib/features/post/services/post-account-projects.js";
 import {
   loadPostProject,
   savePostProject,
-} from "$lib/shared/media-composition/services/post-project-store";
+} from "#lib/shared/media-composition/services/post-project-store.js";
+import { firestoreList } from "#lib/shared/firestore/index.js";
 
 const mocks = vi.hoisted(() => ({
   auth: { currentUser: { uid: "owner", isAnonymous: false } },
@@ -28,9 +32,19 @@ const mocks = vi.hoisted(() => ({
   /** The whole cloud document, when a test needs more than its revision. */
   remote: null as Record<string, unknown> | null,
   cachedSource: null as SequenceData | null,
+  legacyChoices: [] as {
+    sequenceId: string;
+    title: string;
+    word: string;
+    updatedAt: number;
+    hasDraft: boolean;
+  }[],
 }));
-vi.mock("$lib/features/post/services/post-workspace-projects", () => ({
-  listPostProjects: vi.fn().mockResolvedValue({ projects: [], error: null }),
+vi.mock("#lib/features/post/services/post-workspace-projects.js", () => ({
+  listPostProjects: vi.fn(async () => ({
+    projects: mocks.legacyChoices,
+    error: null,
+  })),
   cachePostSequence: vi.fn((sequence: SequenceData) => {
     mocks.cachedSource = sequence;
   }),
@@ -38,14 +52,14 @@ vi.mock("$lib/features/post/services/post-workspace-projects", () => ({
     .fn()
     .mockImplementation(async () => mocks.cachedSource),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: mocks.auth,
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   awaitAuthSettled: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("$lib/shared/firestore", () => ({
+vi.mock("#lib/shared/firestore/index.js", () => ({
   firestoreGetDetailed: mocks.read,
   firestoreList: vi.fn().mockResolvedValue([]),
 }));
@@ -59,6 +73,7 @@ beforeEach(() => {
   mocks.revision = 0;
   mocks.remote = null;
   mocks.cachedSource = null;
+  mocks.legacyChoices = [];
   localStorage.clear();
   vi.useRealTimers();
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}")));
@@ -79,6 +94,190 @@ beforeEach(() => {
 
 describe("account Post writes", () => {
   const source = (id: string) => ({ id, steps: [{}] }) as SequenceData;
+  it("saves and reopens a source-free title with the required empty cloud source", async () => {
+    const project = createEmptyPostProject({
+      sequenceId: "studio-project:showcase:blank",
+      now: 42,
+      sourceKind: "none",
+      title: "Software tour",
+    });
+    await loadAccountPostProject("owner", project.sequenceId);
+    await saveAccountPostProject("owner", project, null);
+    const record = mocks.set.mock.calls.at(-1)![1];
+    expect(record.source).toBe("");
+    mocks.read.mockResolvedValue({
+      status: "found",
+      data: { ...record, id: encodeURIComponent(project.sequenceId) },
+    });
+    expect(await loadAccountPostProject("owner", project.sequenceId)).toEqual(
+      project
+    );
+    expect(
+      await readAccountPostProjectPreview("owner", project.sequenceId)
+    ).toEqual({ project, source: null });
+    expect(mocks.cachedSource).toBeNull();
+  });
+
+  it("requires the explicit source-free marker for nullable cloud saves", async () => {
+    const project = createEmptyPostProject({ sequenceId: "legacy", now: 1 });
+    await expect(
+      saveAccountPostProject("owner", project, null)
+    ).rejects.toThrow("source sequence is missing");
+  });
+
+  it("syncs a local source-free project and keeps it isolated by account", async () => {
+    const project = createEmptyPostProject({
+      sequenceId: "studio-project:showcase:local",
+      now: 42,
+      sourceKind: "none",
+      title: "Local tour",
+    });
+    expect(savePostProject(project).ok).toBe(true);
+    const owner = await listSyncedPostProjects();
+    expect(owner.projects).toEqual([
+      expect.objectContaining({
+        sequenceId: project.sequenceId,
+        title: "Local tour",
+      }),
+    ]);
+    expect(mocks.set.mock.calls.at(-1)?.[1]?.source).toBe("");
+    mocks.auth.currentUser.uid = "other";
+    const other = await listSyncedPostProjects();
+    expect(other.projects).toEqual([]);
+  });
+
+  it("puts a missing source on the project's card, not the page", async () => {
+    const lost = createEmptyPostProject({
+      sequenceId: "lost-source",
+      now: 7,
+      title: "Lost",
+    });
+    expect(savePostProject(lost).ok).toBe(true);
+
+    const listed = await listSyncedPostProjects();
+
+    expect(listed.error).toBeNull();
+    expect(listed.projects).toEqual([
+      expect.objectContaining({
+        sequenceId: "lost-source",
+        problem: "Its source sequence is missing, so it stays on this device.",
+      }),
+    ]);
+    expect(mocks.set).not.toHaveBeenCalled();
+  });
+
+  it("keeps a project whose upload fails on the device with a card problem", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mocks.cachedSource = source("stuck");
+    const stuck = createEmptyPostProject({
+      sequenceId: "stuck",
+      now: 8,
+      title: "Stuck",
+    });
+    expect(savePostProject(stuck).ok).toBe(true);
+    mocks.transaction.mockRejectedValue(new Error("permission-denied"));
+
+    const listed = await listSyncedPostProjects();
+
+    expect(listed.error).toBeNull();
+    expect(listed.projects).toEqual([
+      expect.objectContaining({
+        sequenceId: "stuck",
+        problem: "It could not sync, so it stays on this device.",
+      }),
+    ]);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("still reports a failed cloud listing on the page", async () => {
+    vi.mocked(firestoreList).mockRejectedValueOnce(
+      new Error("Cloud posts could not be listed.")
+    );
+
+    const listed = await listSyncedPostProjects();
+
+    expect(listed.error).toBe("Cloud posts could not be listed.");
+  });
+
+  it("holds the guest claim open and reports a draft it could not import", async () => {
+    const sequenceId = "studio-arrangement:lost-guest";
+    const project = createEmptyPostProject({ sequenceId, now: 44 });
+    localStorage.setItem(
+      `tka:post-studio:project:v2:${sequenceId}`,
+      JSON.stringify(project)
+    );
+    mocks.legacyChoices = [
+      {
+        sequenceId,
+        title: "Lost guest",
+        word: "",
+        updatedAt: 44,
+        hasDraft: true,
+      },
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({ records: [] })))
+    );
+
+    const listed = await listSyncedPostProjects();
+
+    expect(localStorage.getItem("tka:post-studio:legacy-owner:v1")).toBeNull();
+    expect(listed.error).toContain(
+      `The source sequence for ${sequenceId} is unavailable.`
+    );
+  });
+  it("claims an unscoped guest Studio draft and its source into the account", async () => {
+    const sequenceId = "studio-arrangement:guest-scene";
+    const project = createEmptyPostProject({ sequenceId, now: 42 });
+    localStorage.setItem(
+      `tka:post-studio:project:v2:${sequenceId}`,
+      JSON.stringify(project)
+    );
+    mocks.cachedSource = source(sequenceId);
+    mocks.legacyChoices = [
+      {
+        sequenceId,
+        title: "Guest scene",
+        word: "",
+        updatedAt: 42,
+        hasDraft: true,
+      },
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({ records: [] })))
+    );
+
+    await listSyncedPostProjects();
+
+    expect(loadPostProject(sequenceId)?.updatedAt).toBe(42);
+    expect(localStorage.getItem("tka:post-studio:legacy-owner:v1")).toBe(
+      "owner"
+    );
+    expect(mocks.set).toHaveBeenCalledWith(
+      `users/owner/postProjects/${encodeURIComponent(sequenceId)}`,
+      expect.objectContaining({ source: JSON.stringify(source(sequenceId)) })
+    );
+  });
+  it("opens an unclaimed guest Studio draft directly before the project list is visited", async () => {
+    const sequenceId = "studio-arrangement:direct-open";
+    const project = createEmptyPostProject({ sequenceId, now: 43 });
+    localStorage.setItem(
+      `tka:post-studio:project:v2:${sequenceId}`,
+      JSON.stringify(project)
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(null, { status: 404 }))
+    );
+
+    const opened = await loadSyncedPostDraft(sequenceId);
+
+    expect(opened.project?.updatedAt).toBe(43);
+    expect(loadPostProject(sequenceId)?.updatedAt).toBe(43);
+  });
   it("creates a post only after checking the remote document", async () => {
     const project = createEmptyPostProject({ sequenceId: "post-1", now: 10 });
     await loadAccountPostProject("owner", project.sequenceId);
@@ -129,7 +328,7 @@ describe("account Post writes", () => {
     mocks.transaction.mockRejectedValueOnce(new Error("offline"));
     vi.spyOn(console, "warn").mockImplementation(() => {});
     await expect(
-      saveSyncedPostDraft(project, source(project.sequenceId))
+      saveSyncedPostDraft(project, source(project.sequenceId), "owner")
     ).resolves.toBeNull();
     expect(mocks.set).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(15_000);
@@ -139,12 +338,45 @@ describe("account Post writes", () => {
     );
   });
 
+  it("drops a waiting retry when another account signs in", async () => {
+    vi.useFakeTimers();
+    const project = createEmptyPostProject({ sequenceId: "post-4b", now: 60 });
+    mocks.transaction.mockRejectedValueOnce(new Error("offline"));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await saveSyncedPostDraft(project, source(project.sequenceId), "owner");
+    mocks.auth.currentUser.uid = "someone-else";
+    await vi.advanceTimersByTimeAsync(16_000);
+    expect(mocks.set).not.toHaveBeenCalled();
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels every waiting retry on an account change", async () => {
+    vi.useFakeTimers();
+    const project = createEmptyPostProject({ sequenceId: "post-4c", now: 60 });
+    mocks.transaction.mockRejectedValueOnce(new Error("offline"));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await saveSyncedPostDraft(project, source(project.sequenceId), "owner");
+    cancelPostCloudRetries();
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses a save bound to an account that is no longer signed in", async () => {
+    const project = createEmptyPostProject({ sequenceId: "post-4d", now: 60 });
+    mocks.auth.currentUser.uid = "someone-else";
+    await expect(
+      saveSyncedPostDraft(project, source(project.sequenceId), "owner")
+    ).rejects.toThrow("The account changed");
+    expect(mocks.transaction).not.toHaveBeenCalled();
+    expect(mocks.set).not.toHaveBeenCalled();
+  });
+
   it("puts a later edit from elsewhere on this device when saving", async () => {
     const project = createEmptyPostProject({ sequenceId: "post-5", now: 20 });
     await loadAccountPostProject("owner", project.sequenceId);
     const later = savedElsewhere(project.sequenceId, 70);
     await expect(
-      saveSyncedPostDraft(project, source(project.sequenceId))
+      saveSyncedPostDraft(project, source(project.sequenceId), "owner")
     ).resolves.toEqual(later);
     expect(loadPostProject(project.sequenceId)?.updatedAt).toBe(70);
   });

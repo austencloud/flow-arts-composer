@@ -8,7 +8,7 @@
  * Extracted from LibraryRepository for single responsibility.
  */
 
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 import {
   doc,
   getDoc,
@@ -20,22 +20,22 @@ import {
   type Firestore,
   type QuerySnapshot,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { getUserTagsPath } from "$lib/shared/library/data/firestore-paths";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { getUserTagsPath } from "#lib/shared/library/data/firestore-paths.js";
 import {
   normalizeSequenceForPersistence,
   type NormalizedSequenceWrite,
-} from "$lib/shared/library/services/sequence-persistence-normalizer";
-import type { ProjectionSourceSequence } from "$lib/shared/library/services/public-sequence-projection";
+} from "#lib/shared/library/services/sequence-persistence-normalizer.js";
+import type { ProjectionSourceSequence } from "#lib/shared/library/services/public-sequence-projection.js";
 import {
   publishPublicSequence,
   PublicDuplicateError,
   unpublishPublicSequence,
   updatePublicThumbnails,
-} from "$lib/shared/library/services/public-sequence-persister";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
-import type { FlaggedTerm } from "$lib/features/moderation/domain/models/content-moderation-models";
+} from "#lib/shared/library/services/public-sequence-persister.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
+import type { FlaggedTerm } from "#lib/features/moderation/domain/models/content-moderation-models.js";
 
 interface ContentModerator {
   checkWord(word: string): { isAllowed: boolean; flaggedTerms: FlaggedTerm[] };
@@ -46,18 +46,18 @@ interface ContentAppealManager {
     contentId: string
   ): Promise<boolean>;
 }
-import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { ContentModerationError } from "$lib/features/moderation/errors/content-moderation-error";
-import { getPublicSequenceHashMatcher } from "$lib/shared/sequence-viewer/get-public-sequence-hash-matcher";
-import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
-import { LOOP_LABELS_COLLECTION } from "$lib/features/loop-labeler/domain/constants/firebase-collections";
-import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
-import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
-import { periodToNumber } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
-import { MIN_COMMUNITY_STEPS } from "$lib/shared/library/domain/sequence-min-length";
+import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { ContentModerationError } from "#lib/features/moderation/errors/content-moderation-error.js";
+import { getPublicSequenceHashMatcher } from "#lib/shared/sequence-viewer/get-public-sequence-hash-matcher.js";
+import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
+import { LOOP_LABELS_COLLECTION } from "#lib/features/loop-labeler/domain/constants/firebase-collections.js";
+import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
+import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
+import { periodToNumber } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+import { resolveLoopDisplay } from "#lib/features/loop-labeler/services/loop-display-resolver.js";
+import { MIN_COMMUNITY_STEPS } from "#lib/shared/library/domain/sequence-min-length.js";
 
 export class PublicIndexSyncer {
   constructor(

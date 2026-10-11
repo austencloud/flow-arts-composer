@@ -6,13 +6,13 @@ Clicking a letter inserts it into the word input.
 Haptic feedback on letter selection.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     GREEK_LETTER_PALETTE,
     GREEK_LETTER_DISPLAY,
-  } from "$lib/shared/create/domain/spell-constants";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
+  } from "#lib/shared/create/domain/spell-constants.js";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
   let {
     onSelect,

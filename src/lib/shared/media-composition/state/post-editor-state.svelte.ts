@@ -1,5 +1,5 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 import {
   createVideoEditorState,
   type LibraryTakeSource,
@@ -12,27 +12,27 @@ import {
   normalizeProject,
   editContext,
   tkaPlugin,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   addTitlesItem,
   addTunnelHook as addProjectTunnelHook,
   findTunnelHook,
   removeTunnelHook as removeProjectTunnelHook,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
 import {
   applyTutorialTemplate,
   applyTutorialPreset,
   type TutorialLabels,
-} from "$lib/shared/media-composition/domain/post-project-looks";
-import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
-import type { PostTimingEffect } from "$lib/shared/media-composition/services/post-editor-history-store";
+} from "#lib/shared/media-composition/domain/post-project-looks.js";
+import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-project-bridge-guard.js";
+import type { PostTimingEffect } from "#lib/shared/media-composition/services/post-editor-history-store.js";
 import {
   devicePostEditorStore,
   editorStoreOf,
   type PostEditorStore,
-} from "$lib/shared/media-composition/services/post-editor-store";
-import { postOwnerId } from "$lib/shared/media-composition/services/post-project-store";
-import { getPreviewVideoCache } from "$lib/shared/media-composition/get-preview-video-cache";
+} from "#lib/shared/media-composition/services/post-editor-store.js";
+import { postOwnerId } from "#lib/shared/media-composition/services/post-project-store.js";
+import { getPreviewVideoCache } from "#lib/shared/media-composition/get-preview-video-cache.js";
 import { tkaEditorTranslate } from "./editor-strings";
 import { createPostTimingState } from "./post-timing-state.svelte";
 

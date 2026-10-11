@@ -7,7 +7,7 @@ import {
   DEFAULT_TRAIL_SETTINGS,
   TrailMode,
 } from "../../domain/types/trail-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 
 const CANVAS = 950;
 const CENTRE = CANVAS / 2;

@@ -2,12 +2,12 @@ import { untrack } from "svelte";
 import type {
   getSettings,
   updateSettings,
-} from "$lib/shared/application/state/app-state.svelte";
-import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { isHandPathSequence } from "$lib/shared/foundation/domain/models/sequence-kind";
-import type { getSequenceMotionVisibility } from "$lib/shared/foundation/services/sequence-motion-profile";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/application/state/app-state.svelte.js";
+import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { isHandPathSequence } from "#lib/shared/foundation/domain/models/sequence-kind.js";
+import type { getSequenceMotionVisibility } from "#lib/shared/foundation/services/sequence-motion-profile.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { ImageCompositionSyncState } from "../components/image-composition-sync.svelte";
 import { SequenceViewerVisibilityState } from "./viewer-visibility-state.svelte";
 

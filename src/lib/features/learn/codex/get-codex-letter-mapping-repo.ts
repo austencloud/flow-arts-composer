@@ -1,6 +1,6 @@
-import { browser } from '$app/environment';
-import { CodexLetterMappingRepo } from '$lib/shared/learn/services/codex-letter-mapping-repo';
-import { letterQueryHandler } from '$lib/shared/pictograph/tka-glyph/services/letter-query-handler';
+import { browser } from '$app/env';
+import { CodexLetterMappingRepo } from '#lib/shared/learn/services/codex-letter-mapping-repo.js';
+import { letterQueryHandler } from '#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js';
 
 let instance: CodexLetterMappingRepo | null = null;
 

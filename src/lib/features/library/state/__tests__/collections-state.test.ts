@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
+import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
 
 const mocks = vi.hoisted(() => ({
   addSequenceToCollection: vi.fn(),
@@ -26,7 +26,7 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("$lib/shared/library/services/collection-manager", () => ({
+vi.mock("#lib/shared/library/services/collection-manager.js", () => ({
   addSequenceToCollection: mocks.addSequenceToCollection,
   addSequencesToCollection: mocks.addSequencesToCollection,
   removeSequenceFromCollection: mocks.removeSequenceFromCollection,
@@ -37,7 +37,7 @@ vi.mock("$lib/shared/library/services/collection-manager", () => ({
   updateCollection: mocks.updateCollection,
   deleteCollection: mocks.deleteCollection,
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: {
     error: mocks.toastError,
     success: vi.fn(),
@@ -50,25 +50,25 @@ vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
 // drawer instead of firing a write firestore.rules would deny). Default this
 // mock to a signed-in full user so the delegate path is what gets exercised;
 // the guest branch overrides these per-test.
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: mocks.authState,
 }));
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   isPreviewReadOnly: () => mocks.previewReadOnly,
 }));
-vi.mock("$lib/shared/auth/state/auth-drawer-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-drawer-state.svelte.js", () => ({
   authDrawerState: {
     show: mocks.authDrawerShow,
     offerGuestSaveNudge: mocks.offerGuestSaveNudge,
   },
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
 
 import { collectionsState } from "../collections-state.svelte";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 describe("collection prop details", () => {
   it("persists the prop and explicitly clears it with a Firestore-safe null", async () => {

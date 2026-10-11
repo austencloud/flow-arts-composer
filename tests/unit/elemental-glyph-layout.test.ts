@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   containElementalGlyph,
   getElementalGlyphBox,
-} from "$lib/shared/pictograph/shared/domain/constants/elemental-glyph-layout";
+} from "#lib/shared/pictograph/shared/domain/constants/elemental-glyph-layout.js";
 
 describe("elemental glyph layout", () => {
   it("returns the canonical 950-unit pictograph slot", () => {

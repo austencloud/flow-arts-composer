@@ -3,14 +3,14 @@ import {
   createStartPlacementFromBeatStart,
   createStartPlacementFromStepEnd,
 } from "./sequence-transforms";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
 function stepBetween(
   startPlacement: GridPlacement,

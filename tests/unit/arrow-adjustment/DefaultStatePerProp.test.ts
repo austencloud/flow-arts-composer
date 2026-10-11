@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createDefaultArrowPlacementState } from "$lib/shared/pictograph/arrow/positioning/default-override/state/default-arrow-placement-state.svelte";
+import { createDefaultArrowPlacementState } from "#lib/shared/pictograph/arrow/positioning/default-override/state/default-arrow-placement-state.svelte.js";
 
 describe("default state per-prop isolation", () => {
   it("stores and reads a value under its propType", () => {

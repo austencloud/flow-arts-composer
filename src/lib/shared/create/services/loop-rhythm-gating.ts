@@ -6,7 +6,7 @@
  * divides evenly into the seed the user would be authoring. Kept separate
  * from the Svelte overlay so it's testable without a browser.
  */
-import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import {
   buildLoopSpec,
   expanderMultiplier,

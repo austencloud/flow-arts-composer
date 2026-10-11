@@ -5,8 +5,8 @@
  * Uses Promise-based caching to prevent race conditions during concurrent loads.
  */
 
-import { jsonCache } from "$lib/shared/pictograph/shared/services/simple-json-cache";
-import type { SimpleJsonCache } from "$lib/shared/pictograph/shared/services/simple-json-cache";
+import { jsonCache } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
+import type { SimpleJsonCache } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
 import {
   placementAssetRoot,
   placementFrameForGridMode,

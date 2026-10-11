@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { EscapeLayerManager } from "$lib/shared/keyboard/services/implementations/EscapeLayerManager";
+import { EscapeLayerManager } from "#lib/shared/keyboard/services/implementations/EscapeLayerManager.js";
 
 describe("EscapeLayerManager", () => {
   it("dismisses only the most recently opened layer", () => {

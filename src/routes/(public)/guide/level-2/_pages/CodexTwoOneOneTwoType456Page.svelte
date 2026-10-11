@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Codex 2/1 + 1/2 - Type 4/5/6 - Level 2 body page 31 (manifest
    * `codex-21-12-t456`), faithful to old p31. Four quadrants split by a heavy H+V
@@ -11,10 +11,10 @@
    * Accuracy-pass flag: dual-hand open/close combinatorics (o/c vs c/o) and the exact
    * Same/Opp direction mapping are approximated - confirm vs the artboard.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { codexRelData, codexOpenCloseData } from "../_data/codex-turns";
 
   const S = 816 / 612;

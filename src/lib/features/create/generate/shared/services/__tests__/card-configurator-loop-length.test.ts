@@ -6,7 +6,7 @@ import {
   LOOPType,
   Period,
 } from "../../../circular/domain/models/circular-models";
-import type { CardHandlers } from "$lib/shared/create/domain/generator-contract-types";
+import type { CardHandlers } from "#lib/shared/create/domain/generator-contract-types.js";
 
 describe("LOOP length increments", () => {
   beforeEach(() => localStorage.clear());

@@ -53,7 +53,7 @@
   } from "three";
   import { UnifiedCameraController, CameraMode } from "@austencloud/camera-3d";
   import type { AvatarState } from "@austencloud/camera-3d";
-  import { cameraPreferences } from "$lib/shared/3d/camera/camera-preferences.svelte";
+  import { cameraPreferences } from "#lib/shared/3d/camera/camera-preferences.svelte.js";
   import MuseumMirror from "../game/MuseumMirror.svelte";
 
   interface LoadedItem {

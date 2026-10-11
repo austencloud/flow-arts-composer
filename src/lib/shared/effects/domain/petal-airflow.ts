@@ -1,4 +1,4 @@
-import { curl2D } from "$lib/shared/3d/effects/smoke/smoke-curl-field";
+import { curl2D } from "#lib/shared/3d/effects/smoke/smoke-curl-field.js";
 
 export interface PetalAirflow2D {
   x: number;

@@ -10,9 +10,9 @@ import {
   Texture,
   Vector3,
 } from "three";
-import { createDefaultWinterConfig } from "$lib/shared/3d/environments/domain/models/scene-configs";
-import { createWinterEnvironmentWorld } from "$lib/shared/3d/environments/worlds/winter/winter-environment-world";
-import { getStageCoordinateFrame } from "$lib/shared/3d/environments/domain/stage-coordinate-frame";
+import { createDefaultWinterConfig } from "#lib/shared/3d/environments/domain/models/scene-configs.js";
+import { createWinterEnvironmentWorld } from "#lib/shared/3d/environments/worlds/winter/winter-environment-world.js";
+import { getStageCoordinateFrame } from "#lib/shared/3d/environments/domain/stage-coordinate-frame.js";
 import { BackgroundType } from "@austencloud/backgrounds";
 
 function authoredEnvironment() {

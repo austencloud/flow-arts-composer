@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SectionIndexSidebar from "$lib/shared/browse/components/SectionIndexSidebar.svelte";
+  import SectionIndexSidebar from "#lib/shared/browse/components/SectionIndexSidebar.svelte";
   import type { BrowseEngine } from "../engine/types";
 
   interface Props {
@@ -13,7 +13,7 @@
 
 {#if engine.sections.length > 1}
   <SectionIndexSidebar
-    sections={engine.sections as import("$lib/shared/browse/domain/models/browse-models").SequenceSection[]}
+    sections={engine.sections as import("#lib/shared/browse/domain/models/browse-models.js").SequenceSection[]}
     {onScrollToSection}
     {activeSection}
   />

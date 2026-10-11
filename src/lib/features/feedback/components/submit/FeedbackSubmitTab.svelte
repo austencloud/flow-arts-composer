@@ -1,10 +1,10 @@
 <!-- FeedbackSubmitTab - Fluid container-query based layout -->
 <script lang="ts">
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
   import { onMount } from "svelte";
   import FeedbackForm from "./FeedbackForm.svelte";
   import { getSharedFeedbackSubmitState } from "../../state/feedback-submit-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // Use shared state so drafts persist between tab and quick panel
   const submitState = getSharedFeedbackSubmitState();

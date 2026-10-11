@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { applyFilter } from "$lib/shared/browse/services/browse-filter";
-import { applyFilters } from "$lib/shared/browse/services/multi-filter";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ActiveFilter } from "$lib/shared/browse/domain/multi-filter-models";
+import { applyFilter } from "#lib/shared/browse/services/browse-filter.js";
+import { applyFilters } from "#lib/shared/browse/services/multi-filter.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ActiveFilter } from "#lib/shared/browse/domain/multi-filter-models.js";
 
 function sequence(
   id: string,

@@ -36,7 +36,7 @@ describe("First Fire court vocabulary", () => {
 
   it("uses only ids that exist in the effect registry", async () => {
     const { EFFECTS } = await import(
-      "$lib/shared/animation-engine/components/effects-panel/effect-registry"
+      "#lib/shared/animation-engine/components/effects-panel/effect-registry.js"
     );
     const known = new Set(EFFECTS.map((effect) => effect.id));
     for (const entry of FIRST_FIRE_COURT_VOCABULARY) {

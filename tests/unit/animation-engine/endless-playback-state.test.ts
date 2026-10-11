@@ -1,58 +1,61 @@
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("$lib/shared/di", () => ({ container: {} }));
-vi.mock("$lib/shared/di/containers/core-container", () => ({}));
+vi.mock("#lib/shared/di", () => ({ container: {} }));
+vi.mock("#lib/shared/di/containers/core-container", () => ({}));
 vi.mock("@firebase/firestore", () => ({}));
 vi.mock("@firebase/firestore/lite", () => ({}));
-vi.mock("$lib/shared/application/state/app-state.svelte", () => ({
+vi.mock("#lib/shared/application/state/app-state.svelte.js", () => ({
   getSettings: vi.fn(() => ({})),
 }));
 vi.mock(
-  "$lib/shared/settings/services/implementations/FirebaseSettingsPersister",
+  "#lib/shared/settings/services/implementations/FirebaseSettingsPersister",
   () => ({
     FirebaseSettingsPersister: class {},
   })
 );
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte",
+  "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js",
   () => ({
     getAnimationVisibilityManager: vi.fn(() => ({
       getEffortPreset: () => "linear",
     })),
   })
 );
-vi.mock("$lib/features/compose/utils/animation-panel-persistence", () => ({
+vi.mock("#lib/features/compose/utils/animation-panel-persistence", () => ({
   loadTrailSettings: vi.fn(() => ({})),
 }));
 vi.mock(
-  "$lib/features/compose/services/implementations/Canvas2DAnimationRenderer",
+  "#lib/features/compose/services/implementations/Canvas2DAnimationRenderer",
   () => ({
     Canvas2DAnimationRenderer: class {},
   })
 );
-vi.mock("$lib/shared/animation-engine/services/animator-loader", () => ({
+vi.mock("#lib/shared/animation-engine/services/animator-loader.js", () => ({
   loadAnimatorServices: vi.fn(),
 }));
-vi.mock("$lib/shared/landing/services/prop-type-applier", () => ({
+vi.mock("#lib/shared/landing/services/prop-type-applier.js", () => ({
   applyToSequence: vi.fn((seq: unknown) => seq),
 }));
-vi.mock("$lib/shared/pictograph/grid/services/grid-placement-deriver", () => ({
-  getGridPlacementFromLocations: vi.fn(),
-}));
-vi.mock("$lib/shared/browse/get-claude-code-copier", () => ({
+vi.mock(
+  "#lib/shared/pictograph/grid/services/grid-placement-deriver.js",
+  () => ({
+    getGridPlacementFromLocations: vi.fn(),
+  })
+);
+vi.mock("#lib/shared/browse/get-claude-code-copier.js", () => ({
   getClaudeCodeCopier: vi.fn(() => ({
     copyForClaude: vi.fn(async () => ({ success: true })),
   })),
 }));
 vi.mock(
-  "$lib/shared/pictograph/shared/services/start-placement-deriver",
+  "#lib/shared/pictograph/shared/services/start-placement-deriver.js",
   () => ({
     startPlacementDeriver: { getOrDeriveStartPlacement: vi.fn(() => null) },
   })
 );
 
 import { effect_root } from "svelte/internal/client";
-import { createEndlessPlayback } from "$lib/shared/animation-engine/state/endless-playback-state.svelte";
+import { createEndlessPlayback } from "#lib/shared/animation-engine/state/endless-playback-state.svelte.js";
 
 describe("createEndlessPlayback", () => {
   it("module exports createEndlessPlayback function", () => {

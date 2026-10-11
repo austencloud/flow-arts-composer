@@ -5,7 +5,7 @@
   Only Phase 1 is active. Others show description + "Coming soon".
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { PhaseInfo } from "../domain/models";
 
   interface Props {

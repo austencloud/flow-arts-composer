@@ -1,17 +1,17 @@
 <!-- Offline downloads and local app data controls for Preferences > Advanced. -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import { getAccountManager } from "$lib/shared/auth/get-account-manager";
-  import { getOfflineCacheOrchestrator } from "$lib/shared/offline/get-offline-cache-orchestrator";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import { getAccountManager } from "#lib/shared/auth/get-account-manager.js";
+  import { getOfflineCacheOrchestrator } from "#lib/shared/offline/get-offline-cache-orchestrator.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-  import type { AccountManager } from "$lib/shared/auth/services/account-manager";
+  import type { AccountManager } from "#lib/shared/auth/services/account-manager.js";
   import type {
     DownloadForOfflineResult,
     OfflineCacheStats,
-  } from "$lib/shared/offline/domain/offline-cache-types";
+  } from "#lib/shared/offline/domain/offline-cache-types.js";
 
   let offlineStats = $state<OfflineCacheStats | null>(null);
   let isDownloading = $state(false);

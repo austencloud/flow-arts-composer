@@ -10,26 +10,26 @@ const postHogMock = vi.hoisted(() => {
   return { instance, order };
 });
 
-vi.mock("$app/environment", () => ({ browser: true }));
-vi.mock("$env/dynamic/public", () => ({
-  env: { PUBLIC_POSTHOG_KEY: "test-key" },
-}));
-vi.mock("$env/static/public", () => ({
-  PUBLIC_POSTHOG_HOST: "https://test.posthog.com",
-  PUBLIC_POSTHOG_KEY: "test-key",
-  PUBLIC_POSTHOG_PROJECT_ID: "test-project",
-}));
-vi.mock("$lib/shared/foundation/services/device-id", () => ({
+vi.mock("$app/env", () => ({ browser: true }));
+vi.mock("$app/env/public", async () => {
+  const { envModule } = await import("#test-helpers/env-module.js");
+  return envModule({
+    PUBLIC_POSTHOG_HOST: "https://test.posthog.com",
+    PUBLIC_POSTHOG_KEY: "test-key",
+    PUBLIC_POSTHOG_PROJECT_ID: "test-project",
+  });
+});
+vi.mock("#lib/shared/foundation/services/device-id.js", () => ({
   getDeviceId: () => "device-1",
 }));
 vi.mock("posthog-js", () => ({ default: postHogMock.instance }));
 
-import { initPostHog } from "$lib/shared/analytics/services/posthog";
+import { initPostHog } from "#lib/shared/analytics/services/posthog.js";
 import {
   _resetScanAnalytics,
   beginScanVisit,
   updateScanAttribution,
-} from "$lib/shared/analytics/scan-analytics";
+} from "#lib/shared/analytics/scan-analytics.js";
 
 describe("scan attribution at PostHog readiness", () => {
   beforeEach(() => {

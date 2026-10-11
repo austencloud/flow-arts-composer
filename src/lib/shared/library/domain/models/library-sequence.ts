@@ -5,7 +5,7 @@
  * Extends the base SequenceData with ownership, visibility, organization, and attribution.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { SequenceTag } from "./sequence-tag";
 
 /**

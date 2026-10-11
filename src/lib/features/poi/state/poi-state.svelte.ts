@@ -1,21 +1,21 @@
 import type { StripPatternEngine } from "../services/strip-pattern-engine";
 import type { PoiDeviceManager } from "../services/poi-device-manager";
-import * as poiImageLibrary from "$lib/shared/poi/services/poi-image-library";
-import type { StripPattern, PatternParams, RGBColor } from "$lib/shared/poi/domain/strip-pattern";
+import * as poiImageLibrary from "#lib/shared/poi/services/poi-image-library.js";
+import type { StripPattern, PatternParams, RGBColor } from "#lib/shared/poi/domain/strip-pattern.js";
 import type { PoiDeviceInfo } from "../domain/device-types";
-import type { IPatternPreset } from "$lib/shared/poi/domain/pattern-presets";
+import type { IPatternPreset } from "#lib/shared/poi/domain/pattern-presets.js";
 import type { PatternTimeline, PatternClip } from "../domain/pattern-timeline-types";
-import type { PoiImageLibraryEntry } from "$lib/shared/poi/domain/poi-image-library-entry";
+import type { PoiImageLibraryEntry } from "#lib/shared/poi/domain/poi-image-library-entry.js";
 import {
   createEmptyPatternTimeline,
   insertClip as insertPatternClip,
   removePatternClip,
 } from "../domain/pattern-timeline-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { libraryState } from "$lib/features/library/state/library-state.svelte";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { libraryState } from "#lib/features/library/state/library-state.svelte.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 /**
  * Rich playback state for the LED staff preview. When clips abut and

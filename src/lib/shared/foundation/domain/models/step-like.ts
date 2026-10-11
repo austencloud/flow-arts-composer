@@ -14,8 +14,8 @@
  * guards.
  */
 import type { Letter } from "./letter";
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { MotionWithView } from "$lib/shared/pictograph/shared/domain/models/motion-view";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { MotionWithView } from "#lib/shared/pictograph/shared/domain/models/motion-view.js";
 
 export interface StepLikeMotions {
   readonly left?: MotionWithView;

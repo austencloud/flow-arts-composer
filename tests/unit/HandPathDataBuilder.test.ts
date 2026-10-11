@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { parseHandPathId, buildFromTrace, buildFromHandPathId } from "$lib/features/choreo-card/services/hand-path-data-builder";
+import { parseHandPathId, buildFromTrace, buildFromHandPathId } from "#lib/features/choreo-card/services/hand-path-data-builder.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   HandSide,
   HandPath,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 // Standard 9-location trace (8 beats) used across multiple tests.
 // Blue: n→e→e→s→s→w→w→n→n  (clockwise around the diamond, back to start)

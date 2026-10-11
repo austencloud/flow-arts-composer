@@ -11,7 +11,7 @@ import {
   resolveForestFoliageIndirectDepth,
   resolveForestFoliageLuminanceScale,
   resolveForestIndirectLightRetention,
-} from "$lib/shared/3d/environments/scenes/forest/forest-foliage-grade";
+} from "#lib/shared/3d/environments/scenes/forest/forest-foliage-grade.js";
 
 const luminance = (color: { r: number; g: number; b: number }): number =>
   color.r * 0.2126 + color.g * 0.7152 + color.b * 0.0722;

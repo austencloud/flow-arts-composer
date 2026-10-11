@@ -24,15 +24,15 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import Viewer3DCanvas from "$lib/shared/3d/components/Viewer3DCanvas.svelte";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { createScene3DRenderState } from "$lib/shared/3d/scene-features/state/scene-3d-render-state.svelte";
-  import { setScene3DRenderContext } from "$lib/shared/3d/scene-features/state/scene-3d-render-context";
-  import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { warmDecoderRuntimes } from "$lib/shared/3d/scene-boot/scene-prefetch";
+  import Viewer3DCanvas from "#lib/shared/3d/components/Viewer3DCanvas.svelte";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createScene3DRenderState } from "#lib/shared/3d/scene-features/state/scene-3d-render-state.svelte.js";
+  import { setScene3DRenderContext } from "#lib/shared/3d/scene-features/state/scene-3d-render-context.js";
+  import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { warmDecoderRuntimes } from "#lib/shared/3d/scene-boot/scene-prefetch.js";
   import { buildScene3DSeed } from "../services/scene-3d-seed";
   import type { Collected3DScene } from "../domain/scene-3d-collection-types";
 

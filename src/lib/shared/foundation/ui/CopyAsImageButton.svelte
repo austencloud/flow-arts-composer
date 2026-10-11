@@ -7,7 +7,7 @@
   Uses modern-screenshot for the actual rendering.
 -->
 <script lang="ts">
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { domToBlob } from "modern-screenshot";
 
   interface Props {

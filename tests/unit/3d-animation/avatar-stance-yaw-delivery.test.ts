@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import { AvatarAnimator } from "../../../node_modules/@austencloud/scene-3d/src/lib/services/implementations/AvatarAnimator";
-import { MAX_STANCE_YAW_RAD } from "$lib/shared/3d/collision/upper-body-stance-planner";
+import { MAX_STANCE_YAW_RAD } from "#lib/shared/3d/collision/upper-body-stance-planner.js";
 
 /**
  * The stance blade is one open-loop pass: it measures the yaw the pose already

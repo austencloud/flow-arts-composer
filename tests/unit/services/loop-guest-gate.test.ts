@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { guestLoopGate, minBuildableLength } from "$lib/shared/create/services/loop-guest-gate";
-import { buildLoopSpec, generateLOOPType } from "$lib/shared/create/services/loop-type-utils";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { guestLoopGate, minBuildableLength } from "#lib/shared/create/services/loop-guest-gate.js";
+import { buildLoopSpec, generateLOOPType } from "#lib/shared/create/services/loop-type-utils.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
 const C = LOOPComponent;
 const GUEST_CAP = 8;

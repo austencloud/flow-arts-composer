@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { groupRuleFilters } from "$lib/shared/browse/services/filter-rule-groups";
+import { groupRuleFilters } from "#lib/shared/browse/services/filter-rule-groups.js";
 
 function chip(key: string, type: string, label: string) {
   return { key, type, label, chipColor: "#fff" };

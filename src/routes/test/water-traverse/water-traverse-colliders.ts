@@ -15,7 +15,7 @@ import {
   type WallRect,
   type WaterTraverseLayout,
   type WorldRect,
-} from "$lib/features/water-traverse/data/water-traverse-terrain";
+} from "#lib/features/water-traverse/data/water-traverse-terrain.js";
 
 export interface TraverseCollider {
   id: string;

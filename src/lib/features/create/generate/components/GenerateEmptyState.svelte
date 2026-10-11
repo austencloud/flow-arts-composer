@@ -24,18 +24,18 @@
   generated, loaded AND auto-saved a sequence the user never asked for.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { generateTourState } from "$lib/shared/onboarding/state/generate-tour-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { generateTourState } from "#lib/shared/onboarding/state/generate-tour-state.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import {
     logGenerateTourAccepted,
     logGenerateTourDeclined,
     logGenerateTourOfferViewed,
-  } from "$lib/shared/analytics/services/onboarding-events";
+  } from "#lib/shared/analytics/services/onboarding-events.js";
 
   let hapticService = $state<ReturnType<typeof getHapticFeedback> | null>(null);
 

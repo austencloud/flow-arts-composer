@@ -16,28 +16,28 @@ Supports letter highlighting during animation playback.
     parseWordNotation,
     stripWordNotation,
     type WordUnit,
-  } from "$lib/shared/foundation/utils/word-simplifier";
+  } from "#lib/shared/foundation/utils/word-simplifier.js";
   import {
     getSkewBraceInk,
     SKEW_BRACE_FONT_SCALE,
     skewBraceLineBoxDrop,
-  } from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
+  } from "#lib/shared/pictograph/tka-glyph/utils/skew-brace-layout.js";
   import { untrack } from "svelte";
-  import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
-  import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
-  import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import type { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+  import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
+  import LOOPIconStrip from "#lib/shared/components/LOOPIconStrip.svelte";
+  import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import type { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
   import type { LoopReflectionAxis } from "@tka/render-composition";
-  import { getGlyphCache } from "$lib/shared/render/get-glyph-cache";
+  import { getGlyphCache } from "#lib/shared/render/get-glyph-cache.js";
   import {
     isDashLetter,
     getBaseLetter,
-  } from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
-  import { browser } from "$app/environment";
+  } from "#lib/shared/pictograph/tka-glyph/utils/letter-image-getter.js";
+  import { browser } from "$app/env";
   import { fade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   const cache = browser ? getGlyphCache() : null;
   let glyphLoadVersion = $state(0);

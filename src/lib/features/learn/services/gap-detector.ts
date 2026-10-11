@@ -16,8 +16,8 @@ import type { DetectedGap, MisconceptionPattern } from "./types";
 import { getTypeNodeId } from "./letter-to-concept-mapper";
 import {
   tkaKnowledgeGraph,
-} from "$lib/features/tika/knowledge/semantic-graph";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/features/tika/knowledge/semantic-graph.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import { getHistory } from "./quiz-history-recorder";
 
 export function detectSingleError(event: QuizAnswerEvent): DetectedGap | null {

@@ -21,8 +21,8 @@ let sessionGate: Promise<void> | null = null;
 let sessionEntered = false;
 const enqueueMock = vi.fn();
 
-vi.mock("$app/environment", () => ({ browser: true }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("$app/env", () => ({ browser: true }));
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: {
     authStateReady: async () => {
       if (authReadyGate) await authReadyGate;
@@ -33,10 +33,10 @@ vi.mock("$lib/shared/auth/firebase", () => ({
   },
 }));
 vi.mock("firebase/auth", () => ({ onAuthStateChanged: vi.fn() }));
-vi.mock("$lib/shared/auth/services/authed-fetch", () => ({
+vi.mock("#lib/shared/auth/services/authed-fetch.js", () => ({
   authedFetch: vi.fn().mockResolvedValue({ ok: true }),
 }));
-vi.mock("$lib/shared/analytics/services/posthog-lifecycle-outbox", () => ({
+vi.mock("#lib/shared/analytics/services/posthog-lifecycle-outbox.js", () => ({
   enqueueLifecycleEvent: (...a: unknown[]) => enqueueMock(...a),
   dueLifecycleEvents: () => [],
   readLifecycleOutbox: () => [],
@@ -46,7 +46,7 @@ vi.mock("$lib/shared/analytics/services/posthog-lifecycle-outbox", () => ({
 }));
 // Deferrable on purpose: this helper initialises PostHog on first use, so the
 // real one can await for a long time and an account switch can land inside it.
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   getCurrentPostHogSessionId: async () => {
     sessionEntered = true;
     if (sessionGate) await sessionGate;
@@ -55,7 +55,7 @@ vi.mock("$lib/shared/analytics/services/posthog", () => ({
 }));
 
 const { reportPostHogLifecycleEvent } =
-  await import("$lib/shared/analytics/services/posthog-lifecycle-reporter");
+  await import("#lib/shared/analytics/services/posthog-lifecycle-reporter.js");
 
 const saveEvent = {
   event: "sequence_save",

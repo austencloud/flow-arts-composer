@@ -10,12 +10,12 @@
  */
 
 import { getContext, setContext } from "svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
 import type {
   PlaybackMode,
   StepPlaybackStepSize,
-} from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+} from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 import type { PropState3D } from "@austencloud/scene-3d";
 
 const CONTEXT_KEY = Symbol("animation-export-context");

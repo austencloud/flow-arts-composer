@@ -24,7 +24,7 @@
     ContextMenuState,
   } from "./context-menu-types";
   import { isMenuItem, isSeparator, isHeader } from "./context-menu-types";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
 
   let {
     menuState,

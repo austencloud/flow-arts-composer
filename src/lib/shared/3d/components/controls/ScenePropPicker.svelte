@@ -19,15 +19,15 @@
   } from "@austencloud/scene-3d";
   import { tick } from "svelte";
 
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
-  import FanAppearancePicker from "$lib/shared/pictograph/prop/components/FanAppearancePicker.svelte";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import { createGlobalChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
-  import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import FanAppearancePicker from "#lib/shared/pictograph/prop/components/FanAppearancePicker.svelte";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import { createGlobalChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
+  import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     finishPreviewOptions,
     SCENE_PROP_TYPES,

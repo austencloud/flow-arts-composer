@@ -6,7 +6,7 @@ const {
   DEFAULT_VIDEO_OPTIONS,
   DEFAULT_SPLIT_OPTIONS,
   DEFAULT_IMAGE_OPTIONS,
-} = await import("$lib/shared/animation-panel/state/export-options-state.svelte");
+} = await import("#lib/shared/animation-panel/state/export-options-state.svelte.js");
 
 const STORAGE_KEY = "tka_export_options";
 

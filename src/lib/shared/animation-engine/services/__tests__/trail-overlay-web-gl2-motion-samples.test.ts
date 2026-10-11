@@ -10,8 +10,8 @@ import {
 import type {
   RenderBackend,
   BackendStats,
-} from "$lib/shared/render-graph/domain/backend";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+} from "#lib/shared/render-graph/domain/backend.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import type { MotionSubSample } from "../motion-sub-sampler";
 
 /**

@@ -4,7 +4,7 @@
  * for one of three shapes. Thresholds are tuned on the bench
  * (/test/create-method-previews).
  */
-import { waveBandAt } from "$lib/shared/create/utils/grid-calculations";
+import { waveBandAt } from "#lib/shared/create/utils/grid-calculations.js";
 
 export type MethodPreviewShape = "strip" | "roomy" | "square";
 

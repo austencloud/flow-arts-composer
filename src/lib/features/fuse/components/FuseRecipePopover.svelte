@@ -10,7 +10,7 @@
 -->
 <script lang="ts">
   import { Popover } from "bits-ui";
-  import BaseCard from "$lib/features/create/generate/components/cards/BaseCard.svelte";
+  import BaseCard from "#lib/features/create/generate/components/cards/BaseCard.svelte";
   import type { FuseRecipeDestination } from "../domain/fuse-recipe-destination";
   import FuseRecipeSettingContent from "./FuseRecipeSettingContent.svelte";
 

@@ -8,11 +8,11 @@ const h = vi.hoisted(() => ({
   }),
 }));
 
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureExceptionWhenReady: h.captureExceptionWhenReady,
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthInstance: h.getAuthInstance,
   getFirestoreInstance: h.getFirestoreInstance,
 }));
@@ -25,7 +25,7 @@ vi.mock("firebase/firestore", () => ({
   updateDoc: vi.fn(),
 }));
 
-import { reportErrorTelemetry } from "$lib/shared/error/services/error-telemetry-reporter";
+import { reportErrorTelemetry } from "#lib/shared/error/services/error-telemetry-reporter.js";
 
 describe("reportErrorTelemetry", () => {
   it("queues a versioned path shape without sending the document ID", async () => {

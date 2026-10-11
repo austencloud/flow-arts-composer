@@ -1,17 +1,17 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
-  import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { resolveMotionPathEntryStep } from "../_data/motion-path-entry-step";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { AnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { AnimationScope } from "#lib/shared/animation-engine/state/animation-scope.svelte.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     DEFAULT_TRAIL_SETTINGS,
     TrackingMode,
-  } from "$lib/shared/animation-engine/domain/types/trail-types";
-  import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
+  } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import { foldTrailIntentIntoSettings } from "#lib/shared/effects/translators/canvas2d-translator.js";
 
   type Source = "first" | "second";
 

@@ -1,12 +1,12 @@
 <script lang="ts">
   import { flushSync, setContext, type Snippet, type Component } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { effectUiLabel } from "./effect-ui-label";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import {
     isEffectId,
     type EffectId,
-  } from "$lib/shared/effects/state/effects-config-state.svelte";
+  } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import EffectSelector from "./EffectSelector.svelte";
   import EffectsInspector from "./EffectsInspector.svelte";
   import LedCustomize from "./customize/LedCustomize.svelte";
@@ -14,33 +14,29 @@
   import { EFFECTS, EFFECT_LABELS, getRegistration } from "./effect-registry";
   import type { EffectRegistration } from "./effect-registry";
   import EffectPresetThumbnail from "./EffectPresetThumbnail.svelte";
-  import {
-    createEffectLookPreview,
-    type EffectLookPreviewModel,
-  } from "./effect-look-preview";
-  import type { EffectPreset } from "./presets/types";
+  import { effectCatalogLooks } from "./effect-catalog-looks";
   import {
     fitEffectCatalog,
     fitEffectRoster,
-  } from "$lib/shared/animation-engine/domain/effect-catalog-fit";
+  } from "#lib/shared/animation-engine/domain/effect-catalog-fit.js";
   import {
     matchPresetId,
     pickedPresetId,
     valuesEqual,
   } from "./presets/match-preset";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { startMorph } from "$lib/shared/transitions/results-morph";
-  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
-  import EffectTuneStrip from "$lib/shared/effects/components/EffectTuneStrip.svelte";
-  import { primaryControls } from "$lib/shared/effects/domain/effect-control-manifest";
-  import { createEffectControlOverrides } from "$lib/shared/effects/effect-control-fields";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { startMorph } from "#lib/shared/transitions/results-morph.js";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import EffectTuneStrip from "#lib/shared/effects/components/EffectTuneStrip.svelte";
+  import { primaryControls } from "#lib/shared/effects/domain/effect-control-manifest.js";
+  import { createEffectControlOverrides } from "#lib/shared/effects/effect-control-fields.js";
   import {
     animationSettings,
     type AnimationSettingsState,
-  } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import EffectsPlaybackBar from "./EffectsPlaybackBar.svelte";
   import {
     LED_CUSTOMIZE_PAGE_CONTEXT,
@@ -203,46 +199,13 @@
       : null
   );
 
-  /** The look each tile shows: the one that effect is set to now, so the
-   *  picture shows what turning it on will look like (or, for the effect that
-   *  is on, the look you picked in the dock). An effect with no named looks
-   *  (Ghost) draws its motif from its defaults. */
-  const catalogLooks = $derived.by(() => {
-    // The list arrangement has names only.
-    if (!(catalogFit ? catalogFit.portrait : rosterFit)) return null;
-    void effectsConfigState.version;
-    const looks = new Map<
-      string,
-      { preset: EffectPreset; model: EffectLookPreviewModel }
-    >();
-    for (const meta of EFFECTS) {
-      const group = getRegistration(meta.id)?.presetGroup;
-      if (!group || !isEffectId(meta.id)) continue;
-      const config = effectsConfigState.effect(meta.id) as unknown as Record<
-        string,
-        unknown
-      >;
-      const current =
-        pickedPresetId(
-          group,
-          config,
-          effectsConfigState.activePresets[meta.id]
-        ) ?? matchPresetId(group, config);
-      const preset: EffectPreset = group.presets.find(
-        (candidate) => candidate.id === current
-      ) ??
-        group.presets[0] ?? {
-          id: `${meta.id}-default`,
-          name: meta.label,
-          previewColor: meta.color,
-        };
-      looks.set(meta.id, {
-        preset,
-        model: createEffectLookPreview(meta.id, preset),
-      });
-    }
-    return looks;
-  });
+  /** The look each tile shows (effect-catalog-looks). The list arrangement
+   *  has names only. */
+  const catalogLooks = $derived(
+    (catalogFit ? catalogFit.portrait : rosterFit)
+      ? effectCatalogLooks(effectsConfigState)
+      : null
+  );
 
   const sidebarView = $derived(
     !wideWorkspace &&
@@ -1224,6 +1187,16 @@
   .mep {
     --fx-accent: #4a9eff;
     --fx-accent-text: #c5ddff;
+  }
+
+  /* On the light theme's panels that blue measures 1.64:1 and its text tint
+     less, so selected chips lost their names. The same blue darkened to
+     normal-text contrast, the way effect-ink.ts darkens the effects' own
+     colors. */
+  :global(html[data-theme-luminance="bright"]) .effects-panel,
+  :global(html[data-theme-luminance="bright"]) .mep {
+    --fx-accent: #0050ad;
+    --fx-accent-text: #0050ad;
   }
 
   /* Named so the inspector can recompose against the width it actually gets,

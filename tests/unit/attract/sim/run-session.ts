@@ -6,17 +6,20 @@
  * drifting copy of the harness would report averages of a different ghost.
  */
 
-import { createGhostMind } from "$lib/shared/attract/services/mind.svelte";
-import { createRng } from "$lib/shared/attract/services/rng";
-import { ALL_INTENTIONS } from "$lib/shared/attract/intentions";
-import { setEscapeHatch } from "$lib/shared/attract/intentions/explore";
+import { createGhostMind } from "#lib/shared/attract/services/mind.svelte.js";
+import { createRng } from "#lib/shared/attract/services/rng.js";
+import { ALL_INTENTIONS } from "#lib/shared/attract/intentions/index.js";
+import { setEscapeHatch } from "#lib/shared/attract/intentions/explore.js";
 import {
   EMPTY_WORLD,
   type ConceptId,
   type GhostWorld,
   type UnderstandingStage,
-} from "$lib/shared/attract/domain/intention";
-import { safe, type GhostKind } from "$lib/shared/attract/domain/annotations";
+} from "#lib/shared/attract/domain/intention.js";
+import {
+  safe,
+  type GhostKind,
+} from "#lib/shared/attract/domain/annotations.js";
 import { createSimApp, simBaseWord, SIM_MODULES } from "./app-model";
 import { createFakeGhost } from "./fake-ghost";
 

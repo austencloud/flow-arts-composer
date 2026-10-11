@@ -1,16 +1,16 @@
-import type { ResolvedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
-import type { SequenceRenderer } from "$lib/shared/render/services/sequence-renderer";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+import type { ResolvedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+import type { SequenceRenderer } from "#lib/shared/render/services/sequence-renderer.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
 import type { ShareOptions } from "../domain/models/share-options";
 import { PreviewCache } from "./preview-cache";
-import { sanitizeFilename } from "$lib/shared/foundation/services/file-downloader";
+import { sanitizeFilename } from "#lib/shared/foundation/services/file-downloader.js";
 import { buildCardRenderOptions } from "./card-render-options";
-import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
-import { hashString } from "$lib/shared/foundation/services/content-hasher";
-import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
-import type { CardPresentation } from "$lib/shared/share/domain/models/card-presentation";
-import { startCardExportTrace } from "$lib/shared/render/services/card-export-trace";
+import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
+import { hashString } from "#lib/shared/foundation/services/content-hasher.js";
+import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
+import type { CardPresentation } from "#lib/shared/share/domain/models/card-presentation.js";
+import { startCardExportTrace } from "#lib/shared/render/services/card-export-trace.js";
 
 export const CARD_BLOB_CACHE_MAX_ENTRIES = 3;
 export const CARD_BLOB_CACHE_MAX_BYTES = 24 * 1024 * 1024;

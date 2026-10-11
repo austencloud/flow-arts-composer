@@ -7,11 +7,11 @@
  * and keeps only semantically meaningful motion fields.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { SequenceDetailLoader } from "$lib/shared/browse/services/sequence-detail-loader";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { SequenceDetailLoader } from "#lib/shared/browse/services/sequence-detail-loader.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
 import type { GridJoin } from "@tka/tka-types";
 
 const JOIN_DIRECTION_WORDS: Record<GridJoin["toward"], string> = {

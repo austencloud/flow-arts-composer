@@ -4,12 +4,12 @@
   import {
     Character3D,
     DEFAULT_CHARACTER_ID,
-  } from "$lib/shared/3d/domain/character-model";
+  } from "#lib/shared/3d/domain/character-model.js";
   import { cubicInOut } from "svelte/easing";
   import { Tween } from "svelte/motion";
 
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
     index: number;

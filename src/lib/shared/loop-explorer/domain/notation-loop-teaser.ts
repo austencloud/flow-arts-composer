@@ -1,5 +1,5 @@
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import teaserSeedJson from "./notation-loop-teaser-seed.json";
 import {
   hydrateCuratedSequence,

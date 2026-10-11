@@ -21,8 +21,8 @@
  *
  * Spec: docs/architecture/landing-analytics-taxonomy.md
  */
-import { getActivityLogger } from "$lib/shared/analytics/get-activity-logger";
-import { captureEvent } from "$lib/shared/analytics/services/posthog";
+import { getActivityLogger } from "#lib/shared/analytics/get-activity-logger.js";
+import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
 import type { Product } from "../domain/models/product";
 import type { LoopConfig } from "../domain/loop-config";
 

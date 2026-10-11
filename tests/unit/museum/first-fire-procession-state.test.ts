@@ -5,8 +5,8 @@ import {
   createFirstFireProcessionState,
   enterFirstFireShrine,
   reachFirstFireOrbitZone,
-} from "$lib/features/museum/data/first-fire-procession-state";
-import type { FirstFireShrineId } from "$lib/features/museum/data/first-fire-procession-plan";
+} from "#lib/features/museum/data/first-fire-procession-state.js";
+import type { FirstFireShrineId } from "#lib/features/museum/data/first-fire-procession-plan.js";
 
 function completeShrine(
   state: ReturnType<typeof createFirstFireProcessionState>,

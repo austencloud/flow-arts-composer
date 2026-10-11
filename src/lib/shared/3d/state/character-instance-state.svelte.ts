@@ -6,7 +6,10 @@
  */
 
 import type { MotionConfig3D } from "../domain/models/motion-data-3d";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { GridJoin } from "@tka/tka-types";
+import { withSequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+import { gridJoinsEqual } from "#lib/shared/grid-join/grid-join-controller.js";
 import {
   Plane,
   propFinishState,
@@ -15,12 +18,18 @@ import {
   type TerminalStepPlan,
 } from "@austencloud/scene-3d";
 import { PlaneMode } from "@austencloud/scene-3d";
+import { cmToUnits, userProportionsState } from "@austencloud/scene-3d";
 import {
   PLANE_MODE_CONFIGS,
   type PlaneModeConfig,
 } from "@austencloud/scene-3d";
 import { createPlaybackState } from "./playback-state.svelte";
 import { calculatePropState } from "../services/prop-state-interpolator";
+import {
+  gridJoinScale3D,
+  resolveGridJoin3D,
+  scalePerformerHandDistance3D,
+} from "../services/grid-join-3d";
 import {
   DEFAULT_PERFORMER_HAND_DISTANCE,
   type PerformerHandDistance,
@@ -35,11 +44,11 @@ import {
   DEFAULT_CHARACTER_ID,
   type CharacterId,
 } from "../domain/character-model";
-import { applyEffort } from "$lib/shared/effort/domain/effort-easing-unified";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
-import type { EffortTimeline } from "$lib/shared/effort/domain/effort-timeline-types";
-import { findPhraseAtBeat } from "$lib/shared/effort/domain/effort-timeline-types";
-import { interpolatePhrase } from "$lib/shared/phrase-effort-lab/services/phrase-interpolator";
+import { applyEffort } from "#lib/shared/effort/domain/effort-easing-unified.js";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
+import type { EffortTimeline } from "#lib/shared/effort/domain/effort-timeline-types.js";
+import { findPhraseAtBeat } from "#lib/shared/effort/domain/effort-timeline-types.js";
+import { interpolatePhrase } from "#lib/shared/phrase-effort-lab/services/phrase-interpolator.js";
 import {
   makeDefaultPerformerSettings,
   makeStandaloneDefaults,
@@ -47,8 +56,8 @@ import {
   type DefaultPerformerSettings,
   type OverrideState,
 } from "./performer-settings-types";
-import type { EffectType } from "$lib/shared/effects/domain/effects-config";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { getSceneUndoManager } from "../undo/get-scene-undo-manager";
 import { buildForEffect } from "../domain/build-for-effect";
 import { findScenePropFamily } from "../domain/scene-prop-catalog";
@@ -215,7 +224,12 @@ export function createCharacterInstanceState(
   let showRight = $state(false);
 
   // Sequence mode state
-  let loadedSequence = $state<SequenceData | null>(null);
+  let sourceSequence = $state.raw<SequenceData | null>(null);
+  const loadedSequence = $derived(
+    sourceSequence && _settings.gridJoin !== undefined
+      ? withSequenceGridJoin(sourceSequence, _settings.gridJoin)
+      : sourceSequence
+  );
   let stepConfigs = $state<StepMotionConfigs[]>([]);
   let hasStartPose = $state(false);
   let currentStepIndex = $state(0);
@@ -274,7 +288,8 @@ export function createCharacterInstanceState(
       hasOverride.propBuild ||
       hasOverride.effects ||
       hasOverride.effort ||
-      hasOverride.planes
+      hasOverride.planes ||
+      _settings.gridJoin !== undefined
   );
 
   // Per-beat plane overrides. Key = beat index, value = { blue?, red? }
@@ -414,8 +429,17 @@ export function createCharacterInstanceState(
   // How far each hand sits from its grid center. Every performer holds the
   // fixed default until a grid style derives it from the body and the staff
   // (docs/architecture/performer-grid-styles.md). Not persisted.
-  let handDistance = $state.raw<PerformerHandDistance>(
+  let baseHandDistance = $state.raw<PerformerHandDistance>(
     DEFAULT_PERFORMER_HAND_DISTANCE
+  );
+  const gridScale = $derived(gridJoinScale3D(resolveGridJoin3D(loadedSequence)));
+  const handDistance = $derived(
+    scalePerformerHandDistance3D(baseHandDistance, gridScale)
+  );
+  const staffLength = $derived(
+    (_settings.staffLengthCm == null
+      ? userProportionsState.staffLength
+      : cmToUnits(_settings.staffLengthCm)) * gridScale
   );
 
   /**
@@ -486,19 +510,20 @@ export function createCharacterInstanceState(
    * Auto-enables looping for circular sequences (matching 2D animator behavior).
    */
   function loadSequence(sequence: SequenceData) {
-    loadedSequence = sequence;
+    sourceSequence = sequence;
     beatPlaneOverrides = new Map(); // Reset per-beat overrides for new sequence
     const modeConfig = getEffectiveModeConfig(effectivePlaneMode);
 
     // Get motion configs (beats 1+) and prepend start placement (beat 0)
     // so the full sequence including initial orientation is available.
+    const effectiveSequence = loadedSequence ?? sequence;
     const motionConfigs = sequenceToMotionConfigs(
-      sequence,
+      effectiveSequence,
       Plane.WALL,
       modeConfig
     );
     const startConfig = getStartPlacementConfigs(
-      sequence,
+      effectiveSequence,
       Plane.WALL,
       modeConfig
     );
@@ -529,12 +554,24 @@ export function createCharacterInstanceState(
    * Clear loaded sequence
    */
   function clearSequence() {
-    loadedSequence = null;
+    sourceSequence = null;
     stepConfigs = [];
     currentStepIndex = 0;
     showLeft = false;
     showRight = false;
     playback.reset();
+  }
+
+  /** Reconfigure this performer's grid without changing its source score or clock. */
+  function setGridJoin(join: GridJoin | null | undefined) {
+    if (
+      (_settings.gridJoin === undefined && join === undefined) ||
+      (_settings.gridJoin !== undefined && join !== undefined &&
+        gridJoinsEqual(_settings.gridJoin, join))
+    ) return;
+    _settings.gridJoin = join;
+    reconvertWithConfig(getEffectiveModeConfig(effectivePlaneMode));
+    if (beatPlaneOverrides.size > 0) applyBeatPlaneOverrides();
   }
 
   /**
@@ -941,7 +978,7 @@ export function createCharacterInstanceState(
       selectedPerformerIndex: null,
       characterId,
       displayName,
-      loadedSequence: $state.snapshot(loadedSequence),
+      loadedSequence: $state.snapshot(sourceSequence),
       settings: {
         prop: _settings.prop,
         effortId: _settings.effortId,
@@ -949,6 +986,7 @@ export function createCharacterInstanceState(
         handEffects: $state.snapshot(_settings.handEffects),
         staffLengthCm: _settings.staffLengthCm,
         propBuild: $state.snapshot(_settings.propBuild),
+        gridJoin: $state.snapshot(_settings.gridJoin),
       },
       planes: {
         customLeftPlane,
@@ -969,6 +1007,7 @@ export function createCharacterInstanceState(
       handEffects: snap.settings.handEffects,
       staffLengthCm: snap.settings.staffLengthCm,
       propBuild: snap.settings.propBuild,
+      gridJoin: snap.settings.gridJoin,
     };
     customLeftPlane = snap.planes.customLeftPlane;
     customRightPlane = snap.planes.customRightPlane;
@@ -1261,6 +1300,7 @@ export function createCharacterInstanceState(
       effect: null,
       handEffects: null,
       staffLengthCm: _settings.staffLengthCm,
+      gridJoin: undefined,
     };
     planeMode = null;
     customLeftPlane = null;
@@ -1375,6 +1415,13 @@ export function createCharacterInstanceState(
     get loadedSequence() {
       return loadedSequence;
     },
+    get sourceSequence() {
+      return sourceSequence;
+    },
+    get gridJoin(): GridJoin | null {
+      return resolveGridJoin3D(loadedSequence);
+    },
+    setGridJoin,
     get planeMode() {
       return effectivePlaneMode;
     },
@@ -1483,9 +1530,15 @@ export function createCharacterInstanceState(
     get handDistance() {
       return handDistance;
     },
+    get gridScale() {
+      return gridScale;
+    },
+    get staffLength() {
+      return staffLength;
+    },
     /** Grid styles and picture probes set this; nothing persists it. */
     setHandDistance(next: PerformerHandDistance) {
-      handDistance = next;
+      baseHandDistance = next;
     },
 
     // Playback delegation

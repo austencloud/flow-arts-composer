@@ -5,10 +5,10 @@
   Includes the Choose Start banner while picking a start pose.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import StepGrid from "../../workspace-panel/sequence-display/components/StepGrid.svelte";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
   import type { GridJoin } from "@tka/tka-types";
 
   interface Props {

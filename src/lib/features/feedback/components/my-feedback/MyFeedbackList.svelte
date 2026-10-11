@@ -4,10 +4,10 @@
   import type {
     FeedbackItem,
     FeedbackStatus,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { STATUS_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { STATUS_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import MyFeedbackCard from "./MyFeedbackCard.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { feedbackStatusLabel } from "../../domain/feedback-display-labels";
 
   const { items, selectedItemId, onSelect, isLoading } = $props<{

@@ -14,10 +14,10 @@ import {
   authState,
   awaitAuthSettled,
   getEffectiveUserId,
-} from "$lib/shared/auth/state/auth-state.svelte";
-import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+} from "#lib/shared/auth/state/auth-state.svelte.js";
+import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import {
   captureSetupSnapshot,
   setupSnapshotsEqual,

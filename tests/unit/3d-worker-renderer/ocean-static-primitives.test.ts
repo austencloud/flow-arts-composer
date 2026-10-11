@@ -9,16 +9,16 @@ import {
   PerspectiveCamera,
   Vector3,
 } from "three";
-import { createOceanDepthGradient } from "$lib/shared/3d/environments/worlds/ocean/ocean-depth-gradient";
-import { createOceanWaterSurface } from "$lib/shared/3d/environments/worlds/ocean/ocean-water-surface";
-import { createOceanGodRayShafts } from "$lib/shared/3d/environments/worlds/ocean/ocean-god-ray-shafts";
-import { createOceanMarineParticles } from "$lib/shared/3d/environments/worlds/ocean/ocean-marine-particles";
-import { createOceanRuinsPlatform } from "$lib/shared/3d/environments/worlds/ocean/ocean-ruins-platform";
-import { createOceanLightingRig } from "$lib/shared/3d/environments/worlds/ocean/ocean-lighting-rig";
+import { createOceanDepthGradient } from "#lib/shared/3d/environments/worlds/ocean/ocean-depth-gradient.js";
+import { createOceanWaterSurface } from "#lib/shared/3d/environments/worlds/ocean/ocean-water-surface.js";
+import { createOceanGodRayShafts } from "#lib/shared/3d/environments/worlds/ocean/ocean-god-ray-shafts.js";
+import { createOceanMarineParticles } from "#lib/shared/3d/environments/worlds/ocean/ocean-marine-particles.js";
+import { createOceanRuinsPlatform } from "#lib/shared/3d/environments/worlds/ocean/ocean-ruins-platform.js";
+import { createOceanLightingRig } from "#lib/shared/3d/environments/worlds/ocean/ocean-lighting-rig.js";
 import {
   createOceanAuthoredFloraController,
   enhanceOceanSeabed,
-} from "$lib/shared/3d/environments/worlds/ocean/ocean-authored-flora";
+} from "#lib/shared/3d/environments/worlds/ocean/ocean-authored-flora.js";
 
 describe("Ocean renderer-neutral primitives", () => {
   it("keeps the depth dome centred on the active camera", () => {

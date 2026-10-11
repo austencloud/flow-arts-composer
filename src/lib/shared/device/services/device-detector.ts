@@ -5,7 +5,7 @@ import type {
   ResponsiveSettings,
 } from "../domain/models/device-models";
 import { BREAKPOINTS, LANDSCAPE_THRESHOLDS } from "../domain/constants/device-constants";
-import type { ViewportManager } from '$lib/shared/device/services/viewport-manager.svelte'
+import type { ViewportManager } from '#lib/shared/device/services/viewport-manager.svelte.js'
 /**
  * Device Detector Implementation
  *

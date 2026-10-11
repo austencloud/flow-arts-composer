@@ -10,7 +10,7 @@
  * accessors — no class, no module-level singleton).
  */
 import { getContext, setContext } from "svelte";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import {
   evaluateChip,
   evaluateSelection,

@@ -4,8 +4,8 @@ import {
   serializeDescriptor,
   deserializeDescriptor,
   type RoomDescriptor,
-} from "$lib/features/museum/domain/room-descriptor";
-import type { MuseumGeometryDryRun } from "$lib/features/museum/services/museum-geometry-builder";
+} from "#lib/features/museum/domain/room-descriptor.js";
+import type { MuseumGeometryDryRun } from "#lib/features/museum/services/museum-geometry-builder.js";
 
 
 /**

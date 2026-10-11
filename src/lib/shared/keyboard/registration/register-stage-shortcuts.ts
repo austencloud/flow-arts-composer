@@ -18,7 +18,7 @@
  * Side-effectful registration/orchestration — lives in registration/, not utils/.
  */
 
-import type { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
+import type { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
 import type { ShortcutRegistrationOptions } from "../domain/types/keyboard-types";
 
 /** Every action the Stage binds. StageModule supplies the implementations. */

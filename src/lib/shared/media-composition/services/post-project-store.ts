@@ -8,14 +8,14 @@ import type { PostProject } from "@austencloud/video-editor/core";
 import {
   createEmptyPostProject,
   tkaPlugin,
-} from "$lib/shared/post-studio-plugin";
-import { migratePostPlan } from "$lib/shared/media-composition/domain/post-project-migration";
-import { loadPostPlan } from "$lib/shared/media-composition/services/post-plan-store";
+} from "#lib/shared/post-studio-plugin/index.js";
+import { migratePostPlan } from "#lib/shared/media-composition/domain/post-project-migration.js";
+import { loadPostPlan } from "#lib/shared/media-composition/services/post-plan-store.js";
 import {
   parsePostTimingEffect,
   type PostTimingEffect,
-} from "$lib/shared/media-composition/services/post-editor-history-store";
-import { auth } from "$lib/shared/auth/firebase";
+} from "#lib/shared/media-composition/services/post-editor-history-store.js";
+import { auth } from "#lib/shared/auth/firebase.js";
 
 /**
  * Saves a sequence's v2 project on this device, beside its v1 plan (kept

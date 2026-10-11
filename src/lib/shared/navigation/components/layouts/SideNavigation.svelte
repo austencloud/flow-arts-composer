@@ -3,10 +3,10 @@
   import type {
     Section,
     SectionHomeDestination,
-  } from "$lib/shared/navigation/domain/types";
-  import NavButton from "$lib/shared/navigation/components/buttons/NavButton.svelte";
-  import ModuleSwitcherButton from "$lib/shared/navigation/components/buttons/ModuleSwitcherButton.svelte";
-  import PropNavButton from "$lib/shared/navigation/components/buttons/PropNavButton.svelte";
+  } from "#lib/shared/navigation/domain/types.js";
+  import NavButton from "#lib/shared/navigation/components/buttons/NavButton.svelte";
+  import ModuleSwitcherButton from "#lib/shared/navigation/components/buttons/ModuleSwitcherButton.svelte";
+  import PropNavButton from "#lib/shared/navigation/components/buttons/PropNavButton.svelte";
   import { shouldHideUIForPanels } from "../../../application/state/animation-visibility-state.svelte";
   import {
     navigationState,

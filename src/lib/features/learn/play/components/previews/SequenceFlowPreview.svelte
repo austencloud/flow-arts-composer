@@ -6,8 +6,8 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { loadPreviewPictographs } from "./preview-pictographs";
 
   let { accent }: { accent: string } = $props();

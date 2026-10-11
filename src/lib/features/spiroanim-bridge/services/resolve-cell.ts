@@ -38,23 +38,23 @@ import {
   rotatePositionName,
   rotationStepsFor,
 } from "../domain/orientation-rotation";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-import { applyPendingTurnsToOption } from "$lib/shared/create/services/apply-turns-to-motion";
-import { propagateOrientationsForHand } from "$lib/shared/create/services/orientation-propagation";
-import { convertToStep } from "$lib/features/create/generate/shared/services/step-converter";
-import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+import { applyPendingTurnsToOption } from "#lib/shared/create/services/apply-turns-to-motion.js";
+import { propagateOrientationsForHand } from "#lib/shared/create/services/orientation-propagation.js";
+import { convertToStep } from "#lib/features/create/generate/shared/services/step-converter.js";
+import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
 
 /**
  * One step as SpiroAnim transcribed it. Turns are recorded per prop colour —

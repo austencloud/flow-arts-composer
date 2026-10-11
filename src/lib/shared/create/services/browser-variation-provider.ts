@@ -11,12 +11,12 @@
  */
 
 import type { PictographData as EnginePictographData } from "@tka/sequence-engine/generation";
-import type { ILetterQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
-import type { PictographData as AppPictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { ILetterQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
+import type { PictographData as AppPictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import type { Motion as AppMotion } from "@tka/tka-types";
 import type { MotionData as EngineMotionData } from "@tka/sequence-engine/generation";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export class BrowserVariationProvider {
   private readonly index = new Map<string, EnginePictographData[]>();

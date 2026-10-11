@@ -6,7 +6,7 @@
   import StickerSheetPreview from "./components/StickerSheetPreview.svelte";
   import StickerExportPanel from "./components/StickerExportPanel.svelte";
   import ShapeBrowser from "./components/ShapeBrowser.svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import { getStickerSheetRepository } from "./get-sticker-sheet-repository";
   import { getStickerPrimitiveMigrator } from "./get-sticker-primitive-migrator";
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { BufferAttribute } from "three";
-import { SilkRibbonGeometry3D } from "$lib/shared/3d/effects/silk/silk-ribbon-geometry-3d";
-import { BoundedSourcePath3D } from "$lib/shared/3d/effects/scene-effects/bounded-source-path-3d";
-import type { Silk3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+import { SilkRibbonGeometry3D } from "#lib/shared/3d/effects/silk/silk-ribbon-geometry-3d.js";
+import { BoundedSourcePath3D } from "#lib/shared/3d/effects/scene-effects/bounded-source-path-3d.js";
+import type { Silk3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 
 function makeParams(flutter: number): Silk3DParams {
   return {

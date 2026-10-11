@@ -1,15 +1,15 @@
-import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   CollaborativeVideo,
   StepMap,
-} from "$lib/shared/video-collaboration/domain/collaborative-video";
-import type { SequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-import type { VideoPlayheadBridge } from "$lib/shared/sequence-viewer/context/video-playhead-context";
+} from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+import type { SequenceVideosStore } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
+import type { VideoPlayheadBridge } from "#lib/shared/sequence-viewer/context/video-playhead-context.js";
 import {
   createPerformanceWorkspaceState,
   type PerformanceWorkspaceState,
-} from "$lib/shared/sequence-viewer/components/sequence-videos/state/performance-workspace-state.svelte";
+} from "#lib/shared/sequence-viewer/components/sequence-videos/state/performance-workspace-state.svelte.js";
 
 const sequence = {
   id: "performance-sequence",

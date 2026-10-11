@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   isGallerySyncStale,
   GALLERY_SYNC_TTL_MS,
-} from "$lib/features/browse/shared/services/gallery-sync-staleness";
+} from "#lib/features/browse/shared/services/gallery-sync-staleness.js";
 
 describe("isGallerySyncStale", () => {
   const now = 1_700_000_000_000;

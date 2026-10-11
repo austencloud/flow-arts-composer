@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
-vi.mock("$lib/shared/pictograph/prop/services/orientation-calculator", () => ({
+vi.mock("#lib/shared/pictograph/prop/services/orientation-calculator.js", () => ({
   calculateEndOrientation: (motion: { turns: number | "fl" }) =>
     motion.turns === 0 || motion.turns === "fl" ? "in" : "out",
 }));

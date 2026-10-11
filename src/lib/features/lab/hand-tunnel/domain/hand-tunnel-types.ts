@@ -11,7 +11,7 @@
  * exactly one segment starting at beat 0.
  */
 
-import type { HandPathReferenceCardId } from "$lib/features/choreo-card/domain/hand-path-reference-card-manifest";
+import type { HandPathReferenceCardId } from "#lib/features/choreo-card/domain/hand-path-reference-card-manifest.js";
 
 export type Tnd = HandPathReferenceCardId;
 

@@ -18,17 +18,17 @@ vi.mock("firebase/firestore", () => ({
   query: mocks.query,
   where: mocks.where,
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { effectiveUserId: "viewer" },
 }));
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   isPreviewReadOnly: () => false,
 }));
-vi.mock("$lib/shared/foundation/services/sequence-hydrator", () => ({
+vi.mock("#lib/shared/foundation/services/sequence-hydrator.js", () => ({
   hydrate: vi.fn(),
 }));
 
-import { filterExistingSequenceIds } from "$lib/shared/library/services/collection-firestore-mapper";
+import { filterExistingSequenceIds } from "#lib/shared/library/services/collection-firestore-mapper.js";
 
 const firestore = {} as Firestore;
 

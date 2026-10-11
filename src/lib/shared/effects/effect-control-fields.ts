@@ -1,15 +1,15 @@
-import type { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+import type { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import {
   DEFAULT_PROP_FLAME_COLORS,
   flameColorToHex,
   hexToFlameColor,
-} from "$lib/shared/animation-engine/domain/types/fire-types";
-import type { AnimationSettingsState } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-import type { ControlDescriptor } from "$lib/shared/effects/domain/effect-control-manifest";
+} from "#lib/shared/animation-engine/domain/types/fire-types.js";
+import type { AnimationSettingsState } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+import type { ControlDescriptor } from "#lib/shared/effects/domain/effect-control-manifest.js";
 import type {
   EffectId,
   EffectsConfigState,
-} from "$lib/shared/effects/state/effects-config-state.svelte";
+} from "#lib/shared/effects/state/effects-config-state.svelte.js";
 
 export type EffectControlOverrides = Record<
   string,

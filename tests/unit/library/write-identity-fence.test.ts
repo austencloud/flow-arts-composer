@@ -31,24 +31,24 @@ const authStateMock = {
 let releaseFirestore: (() => void) | null = null;
 let firestoreGate: Promise<void> | null = null;
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthInstance: async () => ({ currentUser: authStateMock.user }),
   getFirestoreInstance: async () => {
     if (firestoreGate) await firestoreGate;
     return {} as any;
   },
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: authStateMock,
 }));
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   isPreviewReadOnly: () => false,
 }));
 
 const { LibraryRepository } =
-  await import("$lib/shared/library/services/library-repository");
+  await import("#lib/shared/library/services/library-repository.js");
 const { LibraryError } =
-  await import("$lib/shared/library/domain/library-error");
+  await import("#lib/shared/library/domain/library-error.js");
 
 function makeRepo() {
   return new LibraryRepository({} as any);

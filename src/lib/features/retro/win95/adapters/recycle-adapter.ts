@@ -9,9 +9,9 @@
 
 import { convertFileName } from "../services/file-name-converter";
 
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-import type { LibraryRepository } from "$lib/shared/library/services/library-repository";
-import { toDate } from "$lib/shared/library/services/collection-firestore-mapper";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+import type { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
+import { toDate } from "#lib/shared/library/services/collection-firestore-mapper.js";
 
 export interface RecycleBinItem {
 	id: string;

@@ -3,13 +3,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 import { tick } from "svelte";
 import demo from "../../src/lib/shared/landing/data/demo-sequence.json";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
-import { EMPTY_META_PUBLISH_STATUS } from "$lib/shared/share/services/meta-publish";
-import type { MetaPublishStatus } from "$lib/shared/share/services/meta-publish";
-import PostShareSheet from "$lib/shared/share/components/PostShareSheet.svelte";
-import { DURATION } from "$lib/shared/transitions/transitions";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
+import { EMPTY_META_PUBLISH_STATUS } from "#lib/shared/share/services/meta-publish.js";
+import type { MetaPublishStatus } from "#lib/shared/share/services/meta-publish.js";
+import PostShareSheet from "#lib/shared/share/components/PostShareSheet.svelte";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 import "../../src/app.css";
 
 const { renderCard, deliverCard } = vi.hoisted(() => ({
@@ -19,12 +19,12 @@ const { renderCard, deliverCard } = vi.hoisted(() => ({
     message: "Download started",
   })),
 }));
-vi.mock("$lib/shared/share/get-sharer", () => ({
+vi.mock("#lib/shared/share/get-sharer.js", () => ({
   getSharer: () => ({ getCardImageBlob: renderCard }),
 }));
-vi.mock("$lib/shared/share/services/post-handoff", async (original) => ({
+vi.mock("#lib/shared/share/services/post-handoff.js", async (original) => ({
   ...(await original<
-    typeof import("$lib/shared/share/services/post-handoff")
+    typeof import("#lib/shared/share/services/post-handoff.js")
   >()),
   downloadArtifact: deliverCard,
 }));

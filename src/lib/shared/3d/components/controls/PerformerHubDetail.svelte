@@ -6,27 +6,32 @@
     getCharacterModelPath,
     prepareCharacterForDisplay,
     type CharacterId,
-  } from "$lib/shared/3d/domain/character-model";
+  } from "#lib/shared/3d/domain/character-model.js";
   import { getViewer3DContext } from "../../context/viewer-3d-context";
   import { getPerformerColor } from "../../constants/performer-colors";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import PerformerPropSizeSlider from "./PerformerPropSizeSlider.svelte";
+  import PerformerGridPanel from "./PerformerGridPanel.svelte";
   import CharacterSelectWorkspace from "./character-select/CharacterSelectWorkspace.svelte";
   import { resolveCharacterPreviewPerformer } from "./character-select/character-preview-source";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import {
+    shouldConfirm,
+    stopAsking,
+  } from "#lib/shared/settings/confirmations.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import PerformerSequencePanel from "./PerformerSequencePanel.svelte";
   import PerformerIdentityHeader from "./PerformerIdentityHeader.svelte";
-  import EffortPalette from "$lib/shared/phrase-effort-lab/components/EffortPalette.svelte";
+  import EffortPalette from "#lib/shared/phrase-effort-lab/components/EffortPalette.svelte";
   import EffectsSettingsPanel from "./EffectsSettingsPanel.svelte";
   import PlanesPopover from "../PlanesPopover.svelte";
   import ScenePropPicker from "./ScenePropPicker.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
   import {
     reportViewerControlChange,
     type ViewerControlSink,
-  } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
+  } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
   import type {
     PerformerEditSink,
     PerformerHubEdit,
@@ -216,6 +221,7 @@
     { id: "character", label: "Character", icon: "fa-user" },
     { id: "sequence", label: "Sequence", icon: "fa-film" },
     { id: "prop", label: "Prop", icon: "fa-shapes" },
+    { id: "grid", label: "Grid", icon: "fa-braille" },
     { id: "planes", label: "Planes", icon: "fa-layer-group" },
     { id: "effort", label: "Effort", icon: "fa-gauge-high" },
     { id: "effects", label: "Effects", icon: "fa-wand-sparkles" },
@@ -290,9 +296,11 @@
       : undefined;
   });
   const propSizeMixed = $derived.by(() => {
-    const first = selectedPerformers[0]?.settings.staffLengthCm ?? 81;
+    const first = selectedPerformers[0];
     return selectedPerformers.some(
-      (item) => (item.settings.staffLengthCm ?? 81) !== first
+      (item) =>
+        item.staffLength !== first?.staffLength ||
+        item.gridScale !== first?.gridScale
     );
   });
 
@@ -388,6 +396,17 @@
 
   let removeConfirmOpen = $state(false);
 
+  // Removing is undoable from the viewer, so the person may turn this off.
+  function requestRemovePerformer(): void {
+    if (shouldConfirm("skipRemovePerformerConfirmation")) {
+      removeConfirmOpen = true;
+    } else {
+      removePerformer();
+    }
+  }
+  let tabContentRect = $state<DOMRectReadOnly>();
+  let tabContentElement = $state<HTMLDivElement>();
+
   function chooseSequence(sequenceData: SequenceData): void {
     const previous = sequenceWord ?? null;
     viewer.loadSequenceScoped(sequenceData);
@@ -428,7 +447,7 @@
     {sequenceWord}
     {sequenceSteps}
     {canRemove}
-    onRemove={() => (removeConfirmOpen = true)}
+    onRemove={requestRemovePerformer}
     emptyHint={emptyScope?.message ?? null}
     onSelectAll={selectAllFromEmptyScope}
     {onSettingChange}
@@ -436,7 +455,12 @@
 
   <div class="header-divider" aria-hidden="true"></div>
 
-  <div class="tab-content">
+  <div
+    class="tab-content"
+    class:fill-grid={activeTab === "grid"}
+    bind:this={tabContentElement}
+    bind:contentRect={tabContentRect}
+  >
     <div
       class="scoped-panes"
       class:locked={emptyScope?.locksTab}
@@ -514,6 +538,24 @@
         </div>
       {/if}
 
+      {#if activeTab === "grid"}
+        <div
+          id="hub-panel-grid"
+          class="tab-pane active"
+          role="tabpanel"
+          aria-labelledby="hub-tab-grid"
+        >
+          <PerformerGridPanel
+            fill
+            performers={selectedPerformers}
+            onChange={(join) =>
+              writeParameter({ field: "gridJoin", value: join }, () =>
+                viewer.setGridJoinScoped(join)
+              )}
+          />
+        </div>
+      {/if}
+
       {#if activeTab === "planes"}
         <div
           id="hub-panel-planes"
@@ -557,6 +599,10 @@
                 ? selectedPerformers
                 : null}
               presentation="performer-hub"
+              availableHeight={tabContentRect?.height ?? 0}
+              onNavigate={() => {
+                if (tabContentElement) tabContentElement.scrollTop = 0;
+              }}
               onEffectEdit={(effect) =>
                 writeParameter({ field: "effect", value: effect }, () =>
                   viewer.setEffectScoped(effect)
@@ -617,6 +663,8 @@
     ? "Keep performers"
     : "Keep performer"}
   variant="danger"
+  showDontAskAgain={true}
+  onDontAskAgainChange={() => stopAsking("skipRemovePerformerConfirmation")}
   onConfirm={removePerformer}
   onCancel={() => (removeConfirmOpen = false)}
 />
@@ -665,7 +713,6 @@
     );
   }
 
-  /* ─── Tab bar (6 columns) ─── */
   .tab-bar {
     position: relative;
     display: grid;
@@ -754,6 +801,29 @@
   .scoped-panes.locked {
     opacity: 0.4;
     filter: saturate(0.4);
+  }
+
+  .tab-content.fill-grid,
+  .fill-grid .scoped-panes,
+  .fill-grid .tab-pane {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tab-content.fill-grid {
+    overflow: visible;
+  }
+
+  @container (max-width: 360px) {
+    .tab-content.fill-grid {
+      padding: 8px 6px;
+    }
+  }
+
+  .fill-grid .scoped-panes,
+  .fill-grid .tab-pane {
+    flex: 1;
+    min-height: 0;
   }
 
   .tab-pane {
@@ -853,8 +923,7 @@
     }
   }
 
-  /* Six side-by-side icon + label pairs overflow their 1/6 column below this
-     width ("Character" ran into the Sequence icon), so stack them. */
+  /* Stack icons above labels when the inspector is too narrow for both. */
   @container (max-width: 620px) {
     .tab-btn {
       flex-direction: column;

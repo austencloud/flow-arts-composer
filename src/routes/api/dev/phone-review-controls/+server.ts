@@ -1,7 +1,7 @@
-import { dev } from "$app/environment";
-import { error, json, type RequestHandler } from "@sveltejs/kit";
-import { parsePhoneReviewClient } from "$lib/shared/dev/phone-review-interactions";
-import { updatePhoneReviewInteractionState } from "$lib/server/phone-review-interaction-state";
+import { dev } from "$app/env";
+import { error, type RequestHandler } from "@sveltejs/kit";
+import { parsePhoneReviewClient } from "#lib/shared/dev/phone-review-interactions.js";
+import { updatePhoneReviewInteractionState } from "#lib/server/phone-review-interaction-state.js";
 
 function requireSameOrigin(request: Request): void {
   const origin = request.headers.get("origin");
@@ -72,5 +72,5 @@ export const POST: RequestHandler = async ({ request }) => {
         };
     }
   });
-  return json({ ok: true });
+  return Response.json({ ok: true });
 };

@@ -66,7 +66,7 @@ export function saveRetroSettings(settings: Partial<RetroSettings>): void {
 
   // Best-effort Firebase sync via settingsService singleton
   try {
-    import("$lib/shared/settings/state/settings-state.svelte").then(({ settingsService }) => {
+    import("#lib/shared/settings/state/settings-state.svelte.js").then(({ settingsService }) => {
       if (
         settingsService &&
         typeof (settingsService as unknown as Record<string, unknown>).updateSetting === "function"

@@ -20,14 +20,14 @@ import path from "node:path";
 import {
   ensureVideoExportOrchestrator,
   getVideoExportOrchestrator,
-} from "$lib/shared/animation-engine/get-video-export-orchestrator";
+} from "#lib/shared/animation-engine/get-video-export-orchestrator.js";
 
 // Stand in for the real deferred-registrations module (which pulls mediabunny,
 // WebCodecs and Firestore). It registers a stub factory the same way the real
 // module does, so the ordering behaviour under test is unchanged.
-vi.mock("$lib/shared/composition-root/deferred-registrations", async () => {
+vi.mock("#lib/shared/composition-root/deferred-registrations.js", async () => {
   const { registerVideoExportOrchestratorFactory } =
-    await import("$lib/shared/animation-engine/get-video-export-orchestrator");
+    await import("#lib/shared/animation-engine/get-video-export-orchestrator.js");
   registerVideoExportOrchestratorFactory(
     () => ({ __stub: true }) as unknown as never
   );

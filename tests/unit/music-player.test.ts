@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MusicPlayer } from "$lib/features/write/services/music-player";
+import { MusicPlayer } from "#lib/features/write/services/music-player.js";
 
 class FakeAudio extends EventTarget {
   static instances: FakeAudio[] = [];

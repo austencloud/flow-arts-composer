@@ -15,10 +15,10 @@
  * 3. All subsequent users get the pre-rendered image instantly
  */
 
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { ThumbnailVariant } from "$lib/shared/browse/services/thumbnail-key-deriver";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { ThumbnailVariant } from "#lib/shared/browse/services/thumbnail-key-deriver.js";
 
 export interface CloudThumbnailKey {
   sequenceName: string;
@@ -482,8 +482,8 @@ export async function upload(
   // cache, which needs no Firebase. Loading sign-in here, on the first
   // upload, keeps Firebase off those pages' first download.
   const [{ ensureGuestIdentity }, { getAuthInstance }] = await Promise.all([
-    import("$lib/shared/auth/services/guest-identity"),
-    import("$lib/shared/auth/firebase"),
+    import("#lib/shared/auth/services/guest-identity.js"),
+    import("#lib/shared/auth/firebase.js"),
   ]);
   await ensureGuestIdentity("thumbnail_upload");
   const auth = await getAuthInstance();
@@ -521,7 +521,7 @@ async function performUpload(
   blob: Blob
 ): Promise<string> {
   const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
-  const { getStorageInstance } = await import("$lib/shared/auth/firebase");
+  const { getStorageInstance } = await import("#lib/shared/auth/firebase.js");
   const storage = await getStorageInstance();
   const storagePath = getStoragePath(key);
   const storageRef = ref(storage, storagePath);
@@ -650,7 +650,7 @@ export async function deleteVariant(
   onProgress?: (progress: DeleteProgress) => void
 ): Promise<number> {
   const { ref, listAll, deleteObject } = await import("firebase/storage");
-  const { getStorageInstance } = await import("$lib/shared/auth/firebase");
+  const { getStorageInstance } = await import("#lib/shared/auth/firebase.js");
   const storage = await getStorageInstance();
 
   // Get reference to the variant folder

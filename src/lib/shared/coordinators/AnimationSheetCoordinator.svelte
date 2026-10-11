@@ -19,30 +19,30 @@
     />
 -->
 <script lang="ts">
-  import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
-  import { ensureVideoExportOrchestrator } from "$lib/shared/animation-engine/get-video-export-orchestrator";
-  import { getVideoExporter } from "$lib/shared/animation-engine/get-video-exporter";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get-animation-playback-controller.js";
+  import { ensureVideoExportOrchestrator } from "#lib/shared/animation-engine/get-video-export-orchestrator.js";
+  import { getVideoExporter } from "#lib/shared/animation-engine/get-video-exporter.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import AnimationShareDrawer from "../animation-engine/components/AnimationShareDrawer.svelte";
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
+  import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
   import type {
     IVideoExportOrchestrator,
     VideoExportProgress,
     VideoExportFormat,
-  } from "$lib/shared/compose/domain/video-export-types";
-  import type { VideoExporter } from "$lib/shared/animation-engine/services/video-exporter";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-  import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
+  } from "#lib/shared/compose/domain/video-export-types.js";
+  import type { VideoExporter } from "#lib/shared/animation-engine/services/video-exporter.js";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+  import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
   import {
     getCurrentAnimationPanelState,
     updateAnimationPanelState,
     openAnimationPanel,
     closeSheet,
     onRouteChange,
-  } from "$lib/shared/navigation/services/sheet-router";
+  } from "#lib/shared/navigation/services/sheet-router.js";
   import type { SequenceData } from "../foundation/domain/models/sequence-data";
   import type { HapticFeedback } from "../application/services/haptic-feedback";
   import { onMount, onDestroy } from "svelte";
@@ -50,7 +50,7 @@
     ANIMATION_LOAD_DELAY_MS,
     ANIMATION_AUTO_START_DELAY_MS,
     VIDEO_EXPORT_SUCCESS_DELAY_MS,
-  } from "$lib/shared/animation-engine/domain/constants/timing";
+  } from "#lib/shared/animation-engine/domain/constants/timing.js";
   import type { AnimationPanelState } from "../navigation/services/types";
   import { createComponentLogger } from "../utils/debug-logger";
   import { setAnimationPlaybackRef } from "./animation-playback-ref.svelte";

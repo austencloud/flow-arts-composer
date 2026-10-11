@@ -1,9 +1,12 @@
 <script lang="ts">
-  import { page } from "$app/stores";
-  import ParityAuditReport from "$lib/features/admin/components/ParityAuditReport.svelte";
-  import { getAuthSync, getFirestoreInstance } from "$lib/shared/auth/firebase";
-  import { UserNotificationSchema } from "$lib/shared/feedback/domain/models/feedback-schemas";
-  import type { ParityAuditNotification } from "$lib/shared/feedback/domain/models/notification-models";
+  import { page } from "$app/state";
+  import ParityAuditReport from "#lib/features/admin/components/ParityAuditReport.svelte";
+  import {
+    getAuthSync,
+    getFirestoreInstance,
+  } from "#lib/shared/auth/firebase.js";
+  import { UserNotificationSchema } from "#lib/shared/feedback/domain/models/feedback-schemas.js";
+  import type { ParityAuditNotification } from "#lib/shared/feedback/domain/models/notification-models.js";
   import {
     collection,
     doc,
@@ -46,7 +49,7 @@
 
     try {
       const firestore = await getFirestoreInstance();
-      const requestedId = $page.url.searchParams.get("notification");
+      const requestedId = page.url.searchParams.get("notification");
 
       if (requestedId) {
         const snapshot = await getDoc(

@@ -6,18 +6,18 @@
  * the lab put it. Files live only for this visit: a browser cannot reopen a
  * local file from a saved name, so Austen picks them again next time.
  */
-import { auth } from "$lib/shared/auth/firebase";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { auth } from "#lib/shared/auth/firebase.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   resolveTakeTiming,
   takeTimingStatus,
   type ResolvedTakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
-import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import { loadPostProject } from "#lib/shared/media-composition/services/post-project-store.js";
 import {
   localTakeKey,
   loadTakeTiming,
-} from "$lib/shared/media-composition/services/take-timing-store";
+} from "#lib/shared/media-composition/services/take-timing-store.js";
 
 import { findClapSeconds } from "./clap-finder";
 import {

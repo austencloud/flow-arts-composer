@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { getConceptProgressTracker } from "$lib/features/learn/get-concept-progress-tracker";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { getConceptProgressTracker } from "#lib/features/learn/get-concept-progress-tracker.js";
   import { getConceptsByCategory } from "../domain/concepts";
   import { getConceptPlace } from "../domain/concept-place-registry";
   import {
@@ -15,14 +15,14 @@
     ConceptCategory,
     LearningProgress,
   } from "../domain/types";
-  import { CAPABILITY_NUDGES } from "$lib/shared/subscription/domain/capability-nudges";
-  import PremiumNudge from "$lib/shared/subscription/components/PremiumNudge.svelte";
+  import { CAPABILITY_NUDGES } from "#lib/shared/subscription/domain/capability-nudges.js";
+  import PremiumNudge from "#lib/shared/subscription/components/PremiumNudge.svelte";
   import HeroConceptCard from "./HeroConceptCard.svelte";
   import ConceptCard from "./ConceptCard.svelte";
   import CategoryHeader from "./CategoryHeader.svelte";
   import ConceptLevelMap from "./ConceptLevelMap.svelte";
-  import { mutateCurrentUrl } from "$lib/shared/navigation/services/url-state";
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedConcept } from "../domain/localized-concept";
 
   let {

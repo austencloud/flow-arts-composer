@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     findItem,
     updateItem,
@@ -9,21 +9,21 @@
   import {
     POST_QR_URL_RULE,
     isPostCardQrUrl,
-  } from "$lib/shared/post-studio-plugin";
+  } from "#lib/shared/post-studio-plugin/index.js";
   import {
     canReplaceOverlayVideoWithAnimation,
     replaceOverlayVideoWithAnimation,
-  } from "$lib/shared/media-composition/domain/post-project-edits";
+  } from "#lib/shared/media-composition/domain/post-project-edits.js";
   import {
     applyLook,
     lookOf,
     type PostLook,
-  } from "$lib/shared/media-composition/domain/post-project-looks";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import PostStaffEffectsTool from "$lib/shared/post-studio-plugin/ui/PostStaffEffectsTool.svelte";
-  import PostCardAppearanceTool from "$lib/shared/post-studio-plugin/ui/PostCardAppearanceTool.svelte";
-  import PostSequenceActionsTool from "$lib/shared/post-studio-plugin/ui/PostSequenceActionsTool.svelte";
+  } from "#lib/shared/media-composition/domain/post-project-looks.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import PostStaffEffectsTool from "#lib/shared/post-studio-plugin/ui/PostStaffEffectsTool.svelte";
+  import PostCardAppearanceTool from "#lib/shared/post-studio-plugin/ui/PostCardAppearanceTool.svelte";
+  import PostSequenceActionsTool from "#lib/shared/post-studio-plugin/ui/PostSequenceActionsTool.svelte";
   import { useTkaEditor } from "./tka-editor-context";
 
   /**

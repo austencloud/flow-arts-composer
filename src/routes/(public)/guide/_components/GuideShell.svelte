@@ -20,13 +20,13 @@
    */
   import type { Snippet } from "svelte";
   import { onMount, untrack } from "svelte";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { page } from "$app/state";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import GuideSidebar from "./GuideSidebar.svelte";
   import { setGuideChromeContext } from "./guide-chrome-context";
-  import SiteHeader from "$lib/shared/landing/components/SiteHeader.svelte";
-  import SiteFooter from "$lib/shared/landing/components/SiteFooter.svelte";
+  import SiteHeader from "#lib/shared/landing/components/SiteHeader.svelte";
+  import SiteFooter from "#lib/shared/landing/components/SiteFooter.svelte";
   import "../level-1/_styles/guide.css";
 
   let {
@@ -84,7 +84,7 @@
     if (!browser || !ownsStandaloneChrome) return;
     void (async () => {
       const { applyThemeForBackground } =
-        await import("$lib/shared/settings/utils/background-theme-calculator");
+        await import("#lib/shared/settings/utils/background-theme-calculator.js");
       const { BackgroundType } = await import("@austencloud/backgrounds");
       applyThemeForBackground(BackgroundType.COSMIC);
     })();

@@ -1,7 +1,7 @@
 import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { PropPreset } from "../../../domain/app-settings";
 import PresetChip from "./PresetChip.svelte";
 
@@ -9,7 +9,7 @@ import PresetChip from "./PresetChip.svelte";
 // no override. The test sets that current version directly, so a chip that
 // ignored its own preset would draw the current version instead.
 const saved = vi.hoisted(() => ({ propArtwork: "pictograph" as string }));
-vi.mock("$lib/shared/application/state/app-state.svelte", () => ({
+vi.mock("#lib/shared/application/state/app-state.svelte.js", () => ({
   getSettings: () => ({ propArtwork: saved.propArtwork }),
 }));
 

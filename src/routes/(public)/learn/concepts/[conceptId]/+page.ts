@@ -1,6 +1,6 @@
 import { error } from "@sveltejs/kit";
-import { getAvailableConcepts } from "$lib/features/learn/domain/concept-experience-registry";
-import { getConceptById } from "$lib/features/learn/domain/concepts";
+import { getAvailableConcepts } from "#lib/features/learn/domain/concept-experience-registry.js";
+import { getConceptById } from "#lib/features/learn/domain/concepts.js";
 import type { EntryGenerator, PageLoad } from "./$types";
 
 // Prerender every published lesson, not only the ones the crawler happens to

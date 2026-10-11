@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createPatternTerminalStepPlan,
   samplePatternTerminalTravel,
-} from "$lib/shared/3d/locomotion/pattern-terminal-step-plan";
+} from "#lib/shared/3d/locomotion/pattern-terminal-step-plan.js";
 
 /**
  * Drive a scripted root at a constant speed toward its mark, the way the walk

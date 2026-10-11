@@ -8,23 +8,23 @@
    * - Categories: Browse skewed pictographs by category (1-4)
    */
 
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import CategoryBrowser from "./components/CategoryBrowser.svelte";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     GridLocation,
     GridMode,
     GridPlacement,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     MotionType,
     RotationDirection,
     Orientation,
     HandSide,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
 
   // State
   let activeTab = $state<"positions" | "categories">("categories");

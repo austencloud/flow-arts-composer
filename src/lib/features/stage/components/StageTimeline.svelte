@@ -1,24 +1,24 @@
 <script lang="ts">
   import { onDestroy, tick } from "svelte";
 
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
-  import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
-  import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import TempoControl from "#lib/shared/animation-panel/components/TempoControl.svelte";
+  import TimeRuler from "#lib/shared/timeline/TimeRuler.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     flyFade,
     growFade,
     motionDuration,
     popIn,
-  } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/transitions/motion.js";
   import {
     createLayoutMotion,
     LAYOUT_MOTION_DURATION_MS,
-  } from "$lib/shared/transitions/layout-flip";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  } from "#lib/shared/transitions/layout-flip.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   import { getStageChoreographyContext } from "../context/stage-choreography-context";
   import {

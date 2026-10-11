@@ -62,8 +62,9 @@ for (const f of files) {
     if (!spec) continue;
     let base;
     if (spec.startsWith(".")) base = path.join(path.dirname(abs), spec);
-    else if (spec.startsWith("$lib/")) base = path.join(root, "src/lib", spec.slice(5));
-    else if (spec === "$lib") base = path.join(root, "src/lib");
+    // #lib imports name the emitted .js file; the source beside it is .ts.
+    else if (spec.startsWith("#lib/"))
+      base = path.join(root, "src/lib", spec.slice(5).replace(/\.js$/, ""));
     else continue;
     base = base.replace(/\\/g, "/");
     const r = tryResolve(base);

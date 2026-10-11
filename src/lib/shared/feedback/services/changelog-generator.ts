@@ -11,8 +11,8 @@
 import type {
   ChangelogEntry,
   ChangelogCategory,
-} from "$lib/shared/feedback/domain/models/version-models";
-import type { VersionFeedbackItem } from "$lib/shared/feedback/domain/models/version-models";
+} from "#lib/shared/feedback/domain/models/version-models.js";
+import type { VersionFeedbackItem } from "#lib/shared/feedback/domain/models/version-models.js";
 
 /**
  * Parsed conventional commit

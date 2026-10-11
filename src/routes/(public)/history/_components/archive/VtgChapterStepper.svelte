@@ -17,7 +17,7 @@
   ../_lib/vtg-chronicle.ts
 -->
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { VTG1_CHAPTERS, vtgChapter } from "./_lib/vtg-chronicle.svelte";
 
   let {

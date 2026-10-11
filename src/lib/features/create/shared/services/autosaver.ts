@@ -20,16 +20,19 @@ import {
   serverTimestamp,
   type Timestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance, getAuthSync } from "$lib/shared/auth/firebase";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
+import {
+  getFirestoreInstance,
+  getAuthSync,
+} from "#lib/shared/auth/firebase.js";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
 import {
   createDraftSequence,
   type DraftSequence,
 } from "../domain/draft-sequence";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { db } from "$lib/shared/persistence/database/tka-database";
-import { UserWorkType } from "$lib/shared/persistence/domain/enums/user-work-type";
-import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { db } from "#lib/shared/persistence/database/tka-database.js";
+import { UserWorkType } from "#lib/shared/persistence/domain/enums/user-work-type.js";
+import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
 
 export class Autosaver {
   private autosaveInterval: number | null = null;

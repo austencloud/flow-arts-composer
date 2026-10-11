@@ -16,8 +16,8 @@
  * forward), rather than the clock holding still to wait for it.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
 
 /**
  * Does one repeat of this sequence perform the start pose?

@@ -47,7 +47,7 @@ import {
 import {
   createPatternTerminalStepPlan,
   samplePatternTerminalTravel,
-} from "$lib/shared/3d/locomotion/pattern-terminal-step-plan";
+} from "#lib/shared/3d/locomotion/pattern-terminal-step-plan.js";
 import {
   avatar,
   avatarAssetsPresent,

@@ -11,7 +11,7 @@ import {
 } from "@austencloud/video-editor/core";
 import type { PostProject } from "@austencloud/video-editor/core";
 import { NOW, project, video } from "./post-project-fixtures";
-import { editContext } from "$lib/shared/post-studio-plugin";
+import { editContext } from "#lib/shared/post-studio-plugin/index.js";
 
 function music(fields: Partial<PostMusic> = {}): PostMusic {
   return {

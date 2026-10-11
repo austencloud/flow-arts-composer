@@ -4,8 +4,8 @@
   Location-specific labels and behavior for the shared prop cycle control.
 -->
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import PropCycleControl from "./PropCycleControl.svelte";
 
   type LocationRotationDirection = "clockwise" | "counterclockwise";

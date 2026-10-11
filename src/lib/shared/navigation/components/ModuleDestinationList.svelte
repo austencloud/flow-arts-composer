@@ -2,7 +2,7 @@
   import type {
     ModuleDefinition,
     Section,
-  } from "$lib/shared/navigation/domain/types";
+  } from "#lib/shared/navigation/domain/types.js";
 
   let {
     module,

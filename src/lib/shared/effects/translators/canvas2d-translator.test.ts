@@ -20,6 +20,7 @@ import { SMOKE_PALETTES } from "../domain/smoke-palettes";
 describe("resolveZap2D - per-hand color", () => {
   const baseIntent = (): ZapIntent => ({
     intensity: 0.7,
+    colorMode: "custom",
     leftColor: "#ff0000",
     rightColor: "#0000ff",
     frequency: 12,
@@ -38,11 +39,14 @@ describe("resolveZap2D - per-hand color", () => {
     expect(out.rightColor).toBe("#0000ff");
   });
 
-  it("derives glowBlur from the glow knob, not intensity", () => {
+  it("derives the halo from the glow knob, not intensity", () => {
     const dim = resolveZap2D({ ...baseIntent(), glow: 0, intensity: 1 });
     const bright = resolveZap2D({ ...baseIntent(), glow: 1, intensity: 0 });
-    expect(bright.glowBlur).toBeGreaterThan(dim.glowBlur); // tracks glow…
-    expect(dim.glowBlur).toBe(6); // …and is independent of intensity (6 + glow*22)
+    expect(bright.haloWidth).toBeGreaterThan(dim.haloWidth);
+    expect(bright.haloAlpha).toBeGreaterThan(dim.haloAlpha);
+    expect(
+      resolveZap2D({ ...baseIntent(), glow: 0, intensity: 0 }).haloWidth
+    ).toBe(dim.haloWidth);
   });
 });
 
@@ -282,9 +286,8 @@ describe("resolveInk2D - palette + motion-dominant + stroke width", () => {
     expect(out.resolvedPalette.id).toBe("india");
     expect(out.resolvedPalette.pigment).toBe("#0a0a0a");
     expect(out.resolvedPalette.edge).toBe("#1a1a1a");
-    // Default palette is opaque - source-over, NOT lighter/emissive.
-    // This is the #1 visual differentiator from trails at sprint 1.
-    expect(out.blendMode).toBe("source-over");
+    // Default palette is opaque pigment, NOT emissive.
+    expect(out.resolvedPalette.emissive).toBeFalsy();
     expect(out.opacityMax).toBe(1.0);
     expect(out.ambientSpawnRate).toBe(2);
     expect(out.motionSpawnRate).toBe(60);
@@ -318,9 +321,9 @@ describe("resolveInk2D - palette + motion-dominant + stroke width", () => {
     expect(out.gravityPx).toBeGreaterThan(0);
     // Alpha is owned by the translator and remains a translucent wash.
     expect(out.opacityMax).toBe(0.68);
-    // Still opaque composite - watercolor ≠ neon. The cap comes from
+    // Still opaque pigment - watercolor ≠ neon. The cap comes from
     // alpha, not from switching to additive blend.
-    expect(out.blendMode).toBe("source-over");
+    expect(out.resolvedPalette.emissive).toBeFalsy();
   });
 
   it("reserves attached-mark sag for deliberately viscous dense ink", () => {
@@ -335,24 +338,23 @@ describe("resolveInk2D - palette + motion-dominant + stroke width", () => {
     expect(viscous.strokeGravityPx).toBeLessThan(viscous.gravityPx);
   });
 
-  it("neon palette flips emissive flag + switches composite to lighter", () => {
+  it("neon palette is the only emissive ink", () => {
     // Neon is the ONLY ink palette that glows. All others composite opaque.
     // One glowing palette reinforces that the default ink read is pigment.
     const out = resolveInk2D(baseIntent({ palette: "neon" }));
     expect(out.resolvedPalette.emissive).toBe(true);
     expect(out.resolvedPalette.id).toBe("neon");
-    expect(out.blendMode).toBe("lighter");
   });
 
   it("blood + acid palettes resolve to opaque pigment (cross-palette naming)", () => {
     const blood = resolveInk2D(baseIntent({ palette: "blood" }));
     expect(blood.resolvedPalette.id).toBe("blood");
-    expect(blood.blendMode).toBe("source-over");
+    expect(blood.resolvedPalette.emissive).toBeFalsy();
     expect(blood.resolvedPalette.pigment).toBe("#8f2635");
 
     const acid = resolveInk2D(baseIntent({ palette: "acid" }));
     expect(acid.resolvedPalette.id).toBe("acid");
-    expect(acid.blendMode).toBe("source-over");
+    expect(acid.resolvedPalette.emissive).toBeFalsy();
     expect(acid.resolvedPalette.pigment).toBe("#7fd94a");
   });
 
@@ -366,7 +368,7 @@ describe("resolveInk2D - palette + motion-dominant + stroke width", () => {
     // Edge ≠ pigment (lightened).
     expect(out.resolvedPalette.edge).not.toBe(out.resolvedPalette.pigment);
     // Custom ink is opaque (no flags).
-    expect(out.blendMode).toBe("source-over");
+    expect(out.resolvedPalette.emissive).toBeFalsy();
     expect(out.opacityMax).toBe(1.0);
     expect(out.strokeLengthPx).toBe(320);
     expect(out.lifetimeSeconds).toBe(2.2);

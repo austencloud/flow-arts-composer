@@ -5,17 +5,17 @@
  * Analyzes pictograph candidates and determines available LOOP patterns.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
-  GridPlacement} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  GridPlacement} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { CircularizationOption } from "./sequence-extender";
 import type { OrientationAlignment } from "./orientation-alignment-calculator";
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { ILetterQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { ILetterQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
 import type { PlacementAnalyzer } from "../../construct/option-picker/services/placement-analyzer";
 import type { LOOPValidator } from "./loop-validator";
 import type { SequenceAnalyzer } from "./sequence-analyzer";
@@ -23,15 +23,15 @@ type OrientationAlignmentCalculator = {
   calculateOrientationAlignment: (sequence: SequenceData, bridgePictograph: PictographData) => OrientationAlignment | null;
   calculateResultingLength: (currentLength: number, rotationRelation: "exact" | "half" | "quarter" | null, repetitionsNeeded?: 1 | 2 | 4) => number;
 };
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   LOOPType,
   Period,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   HALVED_LOOPS,
   QUARTERED_LOOPS,
-} from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
+} from "#lib/shared/foundation/domain/models/generation/circular-placement-maps.js";
 import type { LOOPOption } from "./loop-validator";
 
 export class BridgeFinder {
@@ -297,8 +297,8 @@ export class BridgeFinder {
 // ============================================================================
 // DIRECT SINGLETON EXPORT
 // ============================================================================
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-import { placementAnalyzer } from "$lib/features/create/construct/option-picker/services/placement-analyzer";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+import { placementAnalyzer } from "#lib/features/create/construct/option-picker/services/placement-analyzer.js";
 import { loopValidator } from "./loop-validator";
 import { sequenceAnalyzer } from "./sequence-analyzer";
 import * as orientationAlignmentCalculatorModule from "./orientation-alignment-calculator";

@@ -8,18 +8,18 @@
  * with independent localStorage persistence.
  */
 
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 import {
   initialize as persistenceInitialize,
   saveCurrentSequenceState,
   loadCurrentSequenceState,
   clearCurrentSequenceState,
-} from "$lib/shared/persistence/services/dexie-persistence-service";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ActiveCreateModule } from "$lib/shared/foundation/ui/ui-types";
-import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-import type { ErrorHandler } from '$lib/shared/application/services/error-handler'
+} from "#lib/shared/persistence/services/dexie-persistence-service.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ActiveCreateModule } from "#lib/shared/foundation/ui/ui-types.js";
+import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+import type { ErrorHandler } from '#lib/shared/application/services/error-handler.js'
 
 export class SequencePersister {
   /**

@@ -8,11 +8,11 @@
    * Accuracy-pass flag: exact per-cell Same/Opp vs Open/Close assignment and the
    * dual-hand open/close combinatorics are approximated - confirm vs the artboard.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { codexRelData, codexOpenCloseData } from "../_data/codex-turns";
 
   let { turnLabel, turns }: { turnLabel: string; turns: number } = $props();

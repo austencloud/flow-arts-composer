@@ -2,8 +2,8 @@
   import {
     CHARACTER_DEFINITIONS,
     type CharacterId,
-  } from "$lib/shared/3d/domain/character-model";
-  import type { CharacterInstanceState } from "$lib/shared/3d/state/character-instance-state.svelte";
+  } from "#lib/shared/3d/domain/character-model.js";
+  import type { CharacterInstanceState } from "#lib/shared/3d/state/character-instance-state.svelte.js";
   import PerformerCharacterPicker from "../PerformerCharacterPicker.svelte";
 
   interface Props {

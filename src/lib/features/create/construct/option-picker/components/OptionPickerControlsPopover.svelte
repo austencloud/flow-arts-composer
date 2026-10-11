@@ -6,16 +6,16 @@
   OptionPickerHeader inside their shared utility tray instead.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Popover } from "bits-ui";
-  import { flyFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import type { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import type { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     formatTurnValue,
     type TurnLevel,
     type TurnValue,
-  } from "$lib/shared/create/services/level-turn-values";
+  } from "#lib/shared/create/services/level-turn-values.js";
   import OptionPickerHeader from "./OptionPickerHeader.svelte";
   import OptionPickerIconButton from "./OptionPickerIconButton.svelte";
 

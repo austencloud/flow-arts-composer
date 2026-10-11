@@ -12,13 +12,13 @@
    */
 
   import { onMount } from "svelte";
-  import { getPostHogAnalyticsProvider } from "$lib/features/admin/get-post-hog-analytics-provider";
-  import { getSystemStateManager } from "$lib/features/admin/get-system-state-manager";
+  import { getPostHogAnalyticsProvider } from "#lib/features/admin/get-post-hog-analytics-provider.js";
+  import { getSystemStateManager } from "#lib/features/admin/get-system-state-manager.js";
   import type { CachedUserMetadata } from "../../services/types";
   import type { SystemStateManager } from "../../services/system-state-manager";
   import type { PostHogAnalyticsProvider } from "../../services/post-hog-analytics-provider";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   // PostHog project ID for dashboard links
   const POSTHOG_PROJECT_ID = "299320";

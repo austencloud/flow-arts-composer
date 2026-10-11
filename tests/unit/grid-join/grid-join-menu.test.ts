@@ -11,20 +11,20 @@ import type { GridJoin } from "@tka/tka-types";
 import {
   createGridJoinController,
   type GridJoinController,
-} from "$lib/shared/grid-join/grid-join-controller";
+} from "#lib/shared/grid-join/grid-join-controller.js";
 import {
   buildGridJoinChildren,
   buildGridJoinMenuItem,
-} from "$lib/shared/grid-join/grid-join-menu";
-import { buildCanvasContextMenuItems } from "$lib/shared/animation-engine/components/canvas-context-menu/canvas-context-menu-builder";
-import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { buildPictographContextMenuItems } from "$lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder";
-import { VisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
+} from "#lib/shared/grid-join/grid-join-menu.js";
+import { buildCanvasContextMenuItems } from "#lib/shared/animation-engine/components/canvas-context-menu/canvas-context-menu-builder.js";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { buildPictographContextMenuItems } from "#lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder.js";
+import { VisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
 import {
   isMenuItem,
   type ContextMenuEntry,
   type ContextMenuItem,
-} from "$lib/shared/components/context-menu/context-menu-types";
+} from "#lib/shared/components/context-menu/context-menu-types.js";
 
 function holder(initial: GridJoin | null = null, gridMode = "diamond") {
   let join = initial;

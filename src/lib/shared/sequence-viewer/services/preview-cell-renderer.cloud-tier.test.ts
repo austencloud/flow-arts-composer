@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 // Mocks must be declared before importing the SUT.
 const blobGet = vi.fn();
 const blobSet = vi.fn().mockResolvedValue(undefined);
-vi.mock("$lib/shared/render/services/pictograph-blob-cache", () => ({
+vi.mock("#lib/shared/render/services/pictograph-blob-cache.js", () => ({
   pictographBlobCache: {
     get: (...a: unknown[]) => blobGet(...a),
     set: (...a: unknown[]) => blobSet(...a),
@@ -11,7 +11,7 @@ vi.mock("$lib/shared/render/services/pictograph-blob-cache", () => ({
 }));
 
 const poolRender = vi.fn();
-vi.mock("$lib/shared/render/services/worker-render-pool", () => ({
+vi.mock("#lib/shared/render/services/worker-render-pool.js", () => ({
   getWorkerRenderPool: () => ({
     render: (...a: unknown[]) => poolRender(...a),
   }),
@@ -19,22 +19,25 @@ vi.mock("$lib/shared/render/services/worker-render-pool", () => ({
 
 const cloudDownload = vi.fn();
 const cloudUpload = vi.fn().mockResolvedValue("https://x/y.webp");
-vi.mock("$lib/shared/render/services/pictograph-cloud-cache", () => ({
+vi.mock("#lib/shared/render/services/pictograph-cloud-cache.js", () => ({
   download: (...a: unknown[]) => cloudDownload(...a),
   upload: (...a: unknown[]) => cloudUpload(...a),
   cellPublicUrl: (h: string) => `https://x/${h}.webp`,
 }));
 
-vi.mock("$lib/shared/render/services/cloud-cell-key", () => ({
+vi.mock("#lib/shared/render/services/cloud-cell-key.js", () => ({
   CANONICAL_CELL_SIZE: 480,
   deriveCloudCellHash: vi.fn().mockResolvedValue("HASH"),
   canonicalCellKeyString: vi.fn().mockReturnValue("k"),
 }));
 
-vi.mock("$lib/shared/pictograph/shared/services/pictograph-preparer", () => ({
-  pictographPreparer: { prepareSingle: vi.fn().mockResolvedValue({}) },
-}));
-vi.mock("$lib/shared/render/services/png-blob-to-webp", () => ({
+vi.mock(
+  "#lib/shared/pictograph/shared/services/pictograph-preparer.js",
+  () => ({
+    pictographPreparer: { prepareSingle: vi.fn().mockResolvedValue({}) },
+  })
+);
+vi.mock("#lib/shared/render/services/png-blob-to-webp.js", () => ({
   pngBlobToWebp: vi
     .fn()
     .mockResolvedValue(new Blob(["w"], { type: "image/webp" })),
@@ -43,7 +46,7 @@ vi.mock("$lib/shared/render/services/png-blob-to-webp", () => ({
 globalThis.URL.createObjectURL = vi.fn(() => "blob:fake");
 
 import { renderCell } from "./preview-cell-renderer";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 const data = { letter: "A", motions: {} } as unknown as PictographData;
 

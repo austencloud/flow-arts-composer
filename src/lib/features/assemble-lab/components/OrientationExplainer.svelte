@@ -6,28 +6,28 @@
   exactly as they do in real pictographs.
 -->
 <script lang="ts">
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import BuilderOrientationPicker from "./BuilderOrientationPicker.svelte";
   import GridModePicker from "./GridModePicker.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     GridMode,
     GridLocation,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     Orientation,
     HandSide,
     MotionType,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     DIAMOND_HAND_POINTS,
     BOX_HAND_POINTS,
     CENTER_POINT,
-  } from "$lib/shared/render/core/constants/grid-coordinates";
+  } from "#lib/shared/render/core/constants/grid-coordinates.js";
 
   let { isOpen = $bindable(false) }: { isOpen: boolean } = $props();
 

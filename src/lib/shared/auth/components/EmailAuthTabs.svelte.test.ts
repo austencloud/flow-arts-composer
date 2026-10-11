@@ -14,12 +14,12 @@ vi.mock("./EmailPasswordAuth.svelte", async () => ({
   default: (await import("./__test-stubs__/EmailAuthFormStub.svelte")).default,
 }));
 
-vi.mock("$lib/shared/components/LastUsedBadge.svelte", async () => ({
+vi.mock("#lib/shared/components/LastUsedBadge.svelte", async () => ({
   default: (await import("./__test-stubs__/EmailAuthMethodStub.svelte"))
     .default,
 }));
 
-vi.mock("$lib/shared/i18n/i18n.svelte", () => {
+vi.mock("#lib/shared/i18n/i18n.svelte.js", () => {
   const english: Record<string, string> = {
     auth_email_code: "Email code",
     auth_email_code_last_used: "Email code, last used",
@@ -29,11 +29,11 @@ vi.mock("$lib/shared/i18n/i18n.svelte", () => {
   return { t: (key: string) => english[key] ?? key };
 });
 
-vi.mock("$lib/shared/auth/services/last-auth-method.svelte", () => ({
+vi.mock("#lib/shared/auth/services/last-auth-method.svelte.js", () => ({
   getLastAuthMethod: () => mocks.lastMethod,
 }));
 
-import { persistPendingEmailCode } from "$lib/shared/auth/services/pending-email-code";
+import { persistPendingEmailCode } from "#lib/shared/auth/services/pending-email-code.js";
 import EmailAuthTabs from "./EmailAuthTabs.svelte";
 
 const codeTab = () => page.getByRole("tab", { name: /^Email code/ });

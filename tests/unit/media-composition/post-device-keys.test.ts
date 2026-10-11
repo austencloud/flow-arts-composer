@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TKA_DEVICE_KEYS } from "$lib/shared/media-composition/services/post-project-store";
+import { TKA_DEVICE_KEYS } from "#lib/shared/media-composition/services/post-project-store.js";
 
 const P = "tka:post-studio:project:v2:";
 const account = { ownerId: "account:u1", subjectId: "seq" };

@@ -9,12 +9,12 @@
   Gray = not possible (disabled).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import { LOOP_COMPONENT_MAP } from "$lib/features/create/generate/shared/domain/constants/loop-constants";
-  import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { LOOP_COMPONENT_MAP } from "#lib/features/create/generate/shared/domain/constants/loop-constants.js";
+  import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
   import type { LOOPOption } from "../../../services/loop-validator";
-  import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+  import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
   interface Props {
     /** Components active in detected LOOP */

@@ -14,7 +14,7 @@
  * @example
  * ```typescript
  * // In StageWorld.svelte or any timeline-driven 3D component
- * import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
+ * import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
  *
  * const timelineState = getTimelineState();
  * const adapter = createStageSceneAdapter(timelineState);
@@ -38,11 +38,11 @@
  * ```
  */
 
-import type { TimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
+import type { TimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
 import type {
   TimelineTrack,
   TimelineClip,
-} from "$lib/shared/animation-engine/domain/timeline-types";
+} from "#lib/shared/animation-engine/domain/timeline-types.js";
 import type { FormationPreset } from "@austencloud/scene-3d";
 
 export type TimeSeconds = number;

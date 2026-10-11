@@ -10,15 +10,15 @@
   import { T } from "@threlte/core";
   import { Color } from "three";
   import type { ExhibitSlot } from "../domain/museum-types";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { PerformerRig } from "@austencloud/scene-3d";
   import { Plane } from "@austencloud/scene-3d";
   import { PlaneMode } from "@austencloud/scene-3d";
-  import { createCharacterInstanceState, makeStandaloneDeps } from "$lib/shared/3d/state/character-instance-state.svelte";
+  import { createCharacterInstanceState, makeStandaloneDeps } from "#lib/shared/3d/state/character-instance-state.svelte.js";
   import { userProportionsState } from "@austencloud/scene-3d";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { museumPropPair } from "$lib/features/museum/services/museum-prop-pair";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { museumPropPair } from "#lib/features/museum/services/museum-prop-pair.js";
   interface Props {
     slot: ExhibitSlot;
     isPopulated: boolean;

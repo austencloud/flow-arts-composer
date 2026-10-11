@@ -24,29 +24,29 @@ import {
   type Transaction,
   type Unsubscribe,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import { captureEvent } from "$lib/shared/analytics/services/posthog";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
 import type {
   LibraryCollection,
   SeededSystemCollectionType,
-} from "$lib/shared/library/domain/models/collection";
+} from "#lib/shared/library/domain/models/collection.js";
 import {
   createCollection,
   createSmartCollectionModel,
   createSystemCollection,
   isSystemCollection,
   SYSTEM_COLLECTION_IDS,
-} from "$lib/shared/library/domain/models/collection";
-import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+} from "#lib/shared/library/domain/models/collection.js";
+import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 import {
   getUserCollectionsPath,
   getUserCollectionPath,
   getPublicSequencePath,
   getUserSequencePath,
   LIBRARY_LIMITS,
-} from "$lib/shared/library/data/firestore-paths";
+} from "#lib/shared/library/data/firestore-paths.js";
 import {
   getAuthenticatedUserId,
   mapDocToCollection,
@@ -54,7 +54,7 @@ import {
   batchFetchPublicSequences,
   filterExistingSequenceIds,
   CollectionError,
-} from "$lib/shared/library/services/collection-firestore-mapper";
+} from "#lib/shared/library/services/collection-firestore-mapper.js";
 
 // One delete commit carries at most this many reverse-membership updates, well
 // under Firestore's 500-writes-per-commit ceiling.
@@ -117,7 +117,7 @@ async function ensurePublicMember(
 
   if (ownSnapshot.exists()) {
     const { getLibraryRepository } =
-      await import("$lib/shared/library/get-library-repository");
+      await import("#lib/shared/library/get-library-repository.js");
     // The publish acts as this operation's captured owner, so every read and
     // write inside it agrees about whose library this is and a uid swap fails
     // it rather than moving a sequence between libraries. The check afterwards
@@ -1528,7 +1528,7 @@ export async function getUserPublicCollections(
   userId: string
 ): Promise<LibraryCollection[]> {
   const { getUserPublicCollections: load } =
-    await import("$lib/features/library/services/public-collection-loader");
+    await import("#lib/features/library/services/public-collection-loader.js");
   return load(userId);
 }
 
@@ -1537,7 +1537,7 @@ export async function getUserCollectionSequences(
   collectionId: string
 ): Promise<LibrarySequence[]> {
   const { getUserCollectionSequences: load } =
-    await import("$lib/features/library/services/public-collection-loader");
+    await import("#lib/features/library/services/public-collection-loader.js");
   return load(userId, collectionId);
 }
 
@@ -1545,6 +1545,6 @@ export async function getUserPublicFavoriteIds(
   userId: string
 ): Promise<string[]> {
   const { getUserPublicFavoriteIds: load } =
-    await import("$lib/features/library/services/public-collection-loader");
+    await import("#lib/features/library/services/public-collection-loader.js");
   return load(userId);
 }

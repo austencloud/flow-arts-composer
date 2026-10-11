@@ -8,8 +8,8 @@
    * - Validator: Input sequence and check poi legality
    */
 
-  import { browser } from "$app/environment";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { browser } from "$app/env";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import BrowserTab from "./components/BrowserTab.svelte";
   import ValidatorTab from "./components/ValidatorTab.svelte";
 

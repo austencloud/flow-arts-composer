@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { FCMTokenManager } from "$lib/shared/push/services/fcm-token-manager";
+import { FCMTokenManager } from "#lib/shared/push/services/fcm-token-manager.js";
 
 describe("FCMTokenManager device registration state", () => {
   it("reports unsupported before asking for notification permission", async () => {

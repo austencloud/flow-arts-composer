@@ -5,7 +5,7 @@ import {
   resolveViewerPanelLayout,
   resolveViewerPaneDestinationBox,
   resolveViewerPaneRevealReady,
-} from "$lib/shared/sequence-viewer/components/viewer-panel-layout";
+} from "#lib/shared/sequence-viewer/components/viewer-panel-layout.js";
 
 const desktopSplit = {
   isFullscreen: false,

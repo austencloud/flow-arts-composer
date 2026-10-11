@@ -1,16 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { MonumentSystem } from "$lib/features/village/engine/systems/monument-system";
+import { MonumentSystem } from "#lib/features/village/engine/systems/monument-system.js";
 import {
 	createVillageWorld,
 	createAvatarEntity,
-} from "$lib/features/village/engine/village-world";
-import * as personalityGenerator from "$lib/features/village/services/personality-generator";
-import { MONUMENT_GENERATION_THRESHOLD } from "$lib/features/village/domain/village-constants";
+} from "#lib/features/village/engine/village-world.js";
+import * as personalityGenerator from "#lib/features/village/services/personality-generator.js";
+import { MONUMENT_GENERATION_THRESHOLD } from "#lib/features/village/domain/village-constants.js";
 import type {
 	VillageEventMap,
 	VillageEventKey,
 	VillageEntity,
-} from "$lib/features/village/domain/village-types";
+} from "#lib/features/village/domain/village-types.js";
 
 type EventHandler = (...args: unknown[]) => void;
 

@@ -25,11 +25,11 @@ vi.mock("firebase/firestore", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({ name: "firestore" })),
 }));
 
-vi.mock("$lib/shared/firestore", async () => {
+vi.mock("#lib/shared/firestore/index.js", async () => {
   const { z } = await import("zod");
   return {
     firestoreDate: z.any(),
@@ -38,18 +38,18 @@ vi.mock("$lib/shared/firestore", async () => {
   };
 });
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: vi.fn() },
 }));
 
-vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/sync-status-state.svelte.js", () => ({
   trackWrite: vi.fn(),
 }));
 
 import {
   getVisibleOwnerNames,
   getVisibleOwnerProfiles,
-} from "$lib/shared/community/services/user-repository";
+} from "#lib/shared/community/services/user-repository.js";
 
 function snapshotOf(docs: Array<{ id: string; data: Record<string, unknown> }>) {
   return {

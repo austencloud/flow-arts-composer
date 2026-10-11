@@ -3,7 +3,7 @@ import { AnimationPlaybackController } from "../animation-playback-controller";
 import { AnimationLoop } from "../animation-loop";
 import type { SequenceAnimationOrchestrator } from "../sequence-animation-orchestrator";
 import type { AnimationPanelState } from "../../state/animation-panel-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { sharedAnimationState } from "../../state/shared-animation-state.svelte";
 
 // Regression guard for the "HMR pauses the animation and play/pause goes dead"

@@ -4,7 +4,7 @@
  * Type definitions for poi constraint validation and VTG terminology mapping.
  */
 
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { PoiMotionValidity, PoiTimingDirection, PoiPatternRatio } from "./poi-enums";
 
 /**

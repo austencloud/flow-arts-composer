@@ -4,24 +4,25 @@
  * on `/sequence/[id]`. Same markup a person pastes by hand: this returns
  * `buildEmbedSnippet`'s HTML as the `html` field, so there is exactly one
  * owner for "what an embedded sequence looks like" (see
- * `$lib/shared/share/services/embed-snippet.ts`).
+ * `#lib/shared/share/services/embed-snippet.ts`).
  *
  * The title uses the sequence's published word, resolved by the same
  * `loadPublishedMeta` the `/sequence/[id]` page uses. An inline-encoded id or
  * an unknown sequence falls back to "Sequence", the same fallback the
  * hand-copied snippet uses, rather than a guessed title.
  */
-import { json, error } from "@sveltejs/kit";
+import { error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import {
   buildEmbedSnippet,
   embedDisplayWord,
-} from "$lib/shared/share/services/embed-snippet";
-import { parseSequenceRouteId } from "$lib/shared/navigation/services/sequence-encoder";
+} from "#lib/shared/share/services/embed-snippet.js";
+import { parseSequenceRouteId } from "#lib/shared/navigation/services/sequence-encoder.js";
 import {
   emptySequenceMeta,
   loadPublishedMeta,
 } from "../sequence/[id]/published-meta";
+import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
 
 const SITE_HOST = "tkaflowarts.com";
 const SITE_URL = "https://tkaflowarts.com";
@@ -76,7 +77,7 @@ async function resolvePublishedWord(
   return meta.word;
 }
 
-export const GET: RequestHandler = async ({ url, platform }) => {
+export const GET: RequestHandler = async ({ url }) => {
   const targetUrl = url.searchParams.get("url");
   if (!targetUrl) {
     error(400, "Missing required 'url' parameter");
@@ -104,14 +105,11 @@ export const GET: RequestHandler = async ({ url, platform }) => {
   size = Math.max(size, MIN_SIZE);
 
   const word = embedDisplayWord(
-    await resolvePublishedWord(
-      code,
-      platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON
-    )
+    await resolvePublishedWord(code, workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON)
   );
   const html = buildEmbedSnippet({ code, word, width: size, height: size });
 
-  return json({
+  return Response.json({
     version: "1.0",
     type: "rich",
     width: size,

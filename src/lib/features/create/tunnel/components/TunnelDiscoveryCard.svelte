@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
-  import TkaLabel from "$lib/shared/components/TkaLabel.svelte";
-  import type { TunnelDiscoverySummary } from "$lib/features/tunnel-collection/domain/tunnel-discovery";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
+  import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
+  import type { TunnelDiscoverySummary } from "#lib/features/tunnel-collection/domain/tunnel-discovery.js";
 
   let {
     name,

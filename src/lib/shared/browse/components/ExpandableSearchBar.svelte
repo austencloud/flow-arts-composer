@@ -11,7 +11,7 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     onSearch: (query: string) => void;

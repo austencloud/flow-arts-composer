@@ -17,8 +17,8 @@
  * about the sequence or text the user typed themselves.
  */
 
-import { browser } from "$app/environment";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { browser } from "$app/env";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
 const STORAGE_KEY = "tka-caption-presets-v1";
 const MAX_CUSTOM_PRESETS = 8;

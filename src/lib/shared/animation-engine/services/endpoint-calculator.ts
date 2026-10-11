@@ -5,12 +5,12 @@
  * for different motion types.
  */
 
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { MotionEndpoints } from "$lib/shared/pictograph/shared/domain/models/motion-endpoints";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { MotionEndpoints } from "#lib/shared/pictograph/shared/domain/models/motion-endpoints.js";
 import {
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   mapPositionToAngle,
   mapOrientationToAngle,
@@ -23,8 +23,8 @@ import {
   calculateStaticStaffAngle,
   calculateDashTargetAngle,
   calculateFloatStaffAngle,
-} from "$lib/shared/animation-engine/services/motion-calculator";
-import { PI } from "$lib/shared/foundation/domain/math-constants";
+} from "#lib/shared/animation-engine/services/motion-calculator.js";
+import { PI } from "#lib/shared/foundation/domain/math-constants.js";
 
 // ✅ ELIMINATED: StepEndpoints and StepDefinition - pointless reshuffling!
 // Work directly with MotionData and return simple objects

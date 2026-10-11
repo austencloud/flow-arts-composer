@@ -24,7 +24,7 @@
  * dropped): the app's isSeamlesslyLoopable() circularity gate (orientation
  * closure, not just position closure) lives in
  * src/lib/shared/foundation/services/sequence-loopability-checker.ts, which
- * is SvelteKit-alias-resolved ($lib) app code, not reachable from a plain
+ * is `#lib` app code (TypeScript imported as `.js`), not reachable from a plain
  * Node script without a Vite/SvelteKit runtime. This harness approximates it:
  * position closure (first step startPlacement === last step endPlacement) AND
  * orientation closure (first letter step's start orientation === last step's
@@ -385,7 +385,7 @@ lines.push("");
 lines.push(
   "**Limitation:** circularity gate is an inlined approximation of " +
     "`isSeamlesslyLoopable` (position + orientation closure), not a literal " +
-    "import — that module is SvelteKit-`$lib`-aliased app code unreachable " +
+    "import — that module is `#lib` TypeScript app code unreachable " +
     "from a plain Node script. See script header for detail."
 );
 lines.push("");

@@ -12,7 +12,7 @@
 import {
   GridPlacement,
   GridLocation,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 /**
  * Vertical Mirror Position Map
@@ -737,7 +737,7 @@ import {
   QUARTER_PLACEMENT_MAP_CW,
   QUARTER_PLACEMENT_MAP_CCW,
   HALF_PLACEMENT_MAP,
-} from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
+} from "#lib/shared/foundation/domain/models/generation/circular-placement-maps.js";
 
 /**
  * Rotated-Swapped LOOP validation set (Quartered - 90° rotations)

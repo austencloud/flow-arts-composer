@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { enumerateDiamondInOut } from "$lib/features/lab/tabs/collision-lab/services/diamond-pose-enumerator";
+import { enumerateDiamondInOut } from "#lib/features/lab/tabs/collision-lab/services/diamond-pose-enumerator.js";
 import { Plane } from "@austencloud/scene-3d";
 import type {
   DiamondPosition,
   HandOrientation,
-} from "$lib/features/lab/tabs/collision-lab/domain/types";
+} from "#lib/features/lab/tabs/collision-lab/domain/types.js";
 
 describe("DiamondPoseEnumerator", () => {
 

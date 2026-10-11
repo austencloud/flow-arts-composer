@@ -1,48 +1,48 @@
-import { applyFilter } from "$lib/shared/shape-matrix/domain/filter-flower-axis";
+import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
 import {
   matrixFiltersForTurns,
   clampMatrixTurnToLevel,
   matrixTurnsForLevel,
   type MatrixLabelMode,
-} from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+} from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
 import {
   flowerKey,
   type Flower,
-} from "$lib/shared/shape-matrix/domain/flower-signature";
+} from "#lib/shared/shape-matrix/domain/flower-signature.js";
 import {
   flowerAtTurn,
   semanticVariant,
   type SemanticVariant,
-} from "$lib/shared/shape-matrix/domain/flower-at-turn";
+} from "#lib/shared/shape-matrix/domain/flower-at-turn.js";
 import type {
   TurnLevel,
   TurnValue,
-} from "$lib/shared/create/services/level-turn-values";
-import type { ShapeMatrixData } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
+} from "#lib/shared/create/services/level-turn-values.js";
+import type { ShapeMatrixData } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
 import {
   MODE_ORDER,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import {
   foldUntraceablePropPair,
   propPairFromLegacy,
   type ShapeMatrixPropHand,
   type ShapeMatrixPropPair,
-} from "$lib/shared/shape-matrix/domain/prop-pair";
-import { requestShapeMatrixTransition } from "$lib/shared/shape-matrix/debug/shape-matrix-transition-recorder";
+} from "#lib/shared/shape-matrix/domain/prop-pair.js";
+import { requestShapeMatrixTransition } from "#lib/shared/shape-matrix/debug/shape-matrix-transition-recorder.js";
 import { spinRatioEquals, type SpinRatio } from "@vtg/domain";
 import {
   buildTheoryAxis,
   theoryFlowerKey,
   type TheoryFlower,
-} from "$lib/shared/shape-matrix/domain/theory-flower";
+} from "#lib/shared/shape-matrix/domain/theory-flower.js";
 import {
   DEFAULT_THEORY_RATIO,
   THEORY_RATIO_MAX_PART,
   theoryRatioFromParts,
-} from "$lib/shared/shape-matrix/domain/theory-ratio";
+} from "#lib/shared/shape-matrix/domain/theory-ratio.js";
 
 /** A part of the About modal a reader can be sent straight to. */
 export type ShapeMatrixAboutFocus = "levels" | null;

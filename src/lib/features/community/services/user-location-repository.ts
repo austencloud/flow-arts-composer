@@ -3,7 +3,7 @@
  * Handles persistence of user location data to Firestore
  */
 
-import { firestoreGet, firestoreList, firestoreSet, firestoreDelete } from "$lib/shared/firestore";
+import { firestoreGet, firestoreList, firestoreSet, firestoreDelete } from "#lib/shared/firestore/index.js";
 import { UserLocationSchema } from "../domain/models/user-location-schemas";
 import type {
   UserLocation,

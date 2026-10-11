@@ -1,4 +1,4 @@
-import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
 import type {
   PostCardItem,
   PostProject,

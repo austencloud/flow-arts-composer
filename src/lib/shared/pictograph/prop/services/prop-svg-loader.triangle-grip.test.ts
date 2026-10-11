@@ -6,7 +6,7 @@ import { PropSvgLoader } from "./prop-svg-loader";
 import type { MotionData } from "../../shared/domain/models/motion-data";
 import type { PropPlacementData } from "../domain/models/prop-placement-data";
 import { HandSide } from "../../shared/domain/enums/pictograph-enums";
-import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
+import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
 
 // The pictographs draw the triangle grip the animator draws. The loader used
 // to resolve the triangle without the grip, so a side-grip player saw the

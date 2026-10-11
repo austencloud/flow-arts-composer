@@ -16,10 +16,10 @@
  * Domain: Create module - Current word display management
  */
 
-import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 import type { createCreateModuleState as CreateModuleStateType } from "../create-module-state.svelte";
 import type { createConstructTabState as ConstructTabStateType } from "../construct-tab-state.svelte";
-import type { LetterSource } from "$lib/shared/create/domain/spell-models";
+import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
 
 type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
 type ConstructTabState = ReturnType<typeof ConstructTabStateType>;

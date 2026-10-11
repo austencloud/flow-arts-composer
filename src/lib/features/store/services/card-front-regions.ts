@@ -17,13 +17,13 @@
  * SECOND display space: the trimmed card DeckFanCover shows (bleed removed).
  * It receives the same physical layout selected for that printed front.
  */
-import { calculateLayout } from "$lib/shared/render/services/layout-calculator";
-import { getCatalogLayoutPolicy } from "$lib/features/choreo-card/domain/catalog-layout-policy";
-import { getMandalaPlacements } from "$lib/shared/sequence-viewer/services/get-mandala-placements";
+import { calculateLayout } from "#lib/shared/render/services/layout-calculator.js";
+import { getCatalogLayoutPolicy } from "#lib/features/choreo-card/domain/catalog-layout-policy.js";
+import { getMandalaPlacements } from "#lib/shared/sequence-viewer/services/get-mandala-placements.js";
 import { calculateCardSurface } from "@tka/render-composition";
-import { findEmptyCellForQR } from "$lib/shared/render/services/cell-border-renderer";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PhysicalCardLayout } from "$lib/features/choreo-card/services/physical-card-layout-calculator";
+import { findEmptyCellForQR } from "#lib/shared/render/services/cell-border-renderer.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PhysicalCardLayout } from "#lib/features/choreo-card/services/physical-card-layout-calculator.js";
 
 export interface Rect {
   x: number;

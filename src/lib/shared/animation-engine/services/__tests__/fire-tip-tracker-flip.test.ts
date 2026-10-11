@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FireTipTracker, type FireTipTrackerConfig } from "../fire-tip-tracker";
 import { getTipPoints } from "../../domain/types/prop-tip-points";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 
 const CENTRE = 475;
 

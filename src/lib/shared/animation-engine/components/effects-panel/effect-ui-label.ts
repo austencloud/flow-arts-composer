@@ -1,5 +1,5 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import type { TranslationKey } from "$lib/shared/i18n/i18n-types.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 
 const KEYS: Readonly<Record<string, TranslationKey>> = {
   trigger: "effect_deep_trait_trigger",

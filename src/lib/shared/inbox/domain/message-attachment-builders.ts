@@ -1,6 +1,6 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { decodeSequenceWithCompression } from "$lib/shared/navigation/services/sequence-encoder";
-import type { MessageAttachment } from "$lib/shared/messaging/domain/models/message-models";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { decodeSequenceWithCompression } from "#lib/shared/navigation/services/sequence-encoder.js";
+import type { MessageAttachment } from "#lib/shared/messaging/domain/models/message-models.js";
 import { buildSequenceSharePayload } from "./build-sequence-share-payload";
 
 export interface SequenceMessageAttachmentOptions {

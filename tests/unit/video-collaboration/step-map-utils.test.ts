@@ -5,7 +5,7 @@ import {
   passCountFromStepMap,
   passNumberFromVideo,
   seekTimeForStep,
-} from "$lib/shared/video-collaboration/utils/step-map-utils";
+} from "#lib/shared/video-collaboration/utils/step-map-utils.js";
 
 /**
  * The real map Austen marked by hand for OmLam-XJ.mp4: 43.67 seconds of

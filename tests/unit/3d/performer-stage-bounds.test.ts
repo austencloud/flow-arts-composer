@@ -7,7 +7,7 @@ import {
   getCanonicalStagePositions,
   getStageBoundsForExtent,
   resolveCircularStageRadius,
-} from "$lib/shared/3d/environments/domain/performer-stage-bounds";
+} from "#lib/shared/3d/environments/domain/performer-stage-bounds.js";
 
 const boundsFor = (count: number) =>
   getCanonicalPerformerStageBounds(count, {

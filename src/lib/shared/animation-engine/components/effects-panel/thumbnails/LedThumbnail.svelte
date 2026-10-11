@@ -2,8 +2,8 @@
   import {
     DEFAULT_LED_INTENT,
     type LedSimulatorConfig,
-  } from "$lib/shared/animation-engine/domain/types/led-types";
-  import { renderLedThumbnail } from "$lib/shared/animation-engine/services/led/led-thumbnail-renderer";
+  } from "#lib/shared/animation-engine/domain/types/led-types.js";
+  import { renderLedThumbnail } from "#lib/shared/animation-engine/services/led/led-thumbnail-renderer.js";
   import type { EffectPreset } from "../presets/types";
 
   interface Props {

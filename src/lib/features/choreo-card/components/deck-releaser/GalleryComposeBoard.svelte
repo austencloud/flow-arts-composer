@@ -1,20 +1,20 @@
 <script lang="ts">
   import { onMount, untrack } from "svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
-  import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-  import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
+  import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+  import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
   import {
     applySpecToEngine,
     buildFilterSpecFromEngine,
-  } from "$lib/shared/browse/services/smart-filter-spec";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
-  import FilterWorkspace from "$lib/features/browse/gallery-home/FilterWorkspace.svelte";
-  import { getCollectionOptions } from "$lib/features/browse/gallery-home/collection-options.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/browse/services/smart-filter-spec.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
+  import FilterWorkspace from "#lib/features/browse/gallery-home/FilterWorkspace.svelte";
+  import { getCollectionOptions } from "#lib/features/browse/gallery-home/collection-options.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     legacyGalleryFiltersToSpec,
     type GalleryDeckSelection,

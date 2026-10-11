@@ -9,14 +9,14 @@
 -->
 <script lang="ts">
   import type { Component } from "svelte";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { HAND_PATH_TABS } from "$lib/shared/navigation/config/tab-definitions";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { HAND_PATH_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
 
   type TabModule = { default: Component };
 
   const tabComponents: Record<string, () => Promise<TabModule>> = {
-    "hand-path-explorer": () => import("$lib/features/hand-paths/hand-path-explorer/HandPathExplorerLab.svelte"),
-    "hand-path-builder": () => import("$lib/features/hand-paths/hand-path-builder/HandPathBuilderLab.svelte"),
+    "hand-path-explorer": () => import("#lib/features/hand-paths/hand-path-explorer/HandPathExplorerLab.svelte"),
+    "hand-path-builder": () => import("#lib/features/hand-paths/hand-path-builder/HandPathBuilderLab.svelte"),
   };
 
   const activeTab = $derived(navigationState.activeTab || HAND_PATH_TABS[0]?.id || "hand-path-explorer");

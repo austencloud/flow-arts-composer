@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   minimumInlineControlsHeight,
   selectOptionControlsPresentation,
-} from "$lib/features/create/construct/option-picker/services/option-controls-presentation";
+} from "#lib/features/create/construct/option-picker/services/option-controls-presentation.js";
 
 describe("Construct option controls presentation", () => {
   it("keeps controls inline in a tall narrow pane", () => {

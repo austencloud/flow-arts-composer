@@ -4,8 +4,8 @@
   same lesson advancing, with the grid carried into its next job.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import GridMergeAnimation from "./grid-merge/GridMergeAnimation.svelte";
   import GridScrollView from "./grid-concept/GridScrollView.svelte";

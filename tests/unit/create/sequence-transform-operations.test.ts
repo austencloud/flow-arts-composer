@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createSequenceTransformOperations } from "$lib/features/create/shared/state/operations/sequence-transform-operations";
-import type { SequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
-import type { SequenceCoreState } from "$lib/features/create/shared/state/core/sequence-core-state.svelte";
-import type { SequenceSelectionState } from "$lib/features/create/shared/state/selection/sequence-selection-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import { createSequenceTransformOperations } from "#lib/features/create/shared/state/operations/sequence-transform-operations.js";
+import type { SequenceTransformer } from "#lib/features/create/shared/services/sequence-transforms/sequence-transformer.js";
+import type { SequenceCoreState } from "#lib/features/create/shared/state/core/sequence-core-state.svelte.js";
+import type { SequenceSelectionState } from "#lib/features/create/shared/state/selection/sequence-selection-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();

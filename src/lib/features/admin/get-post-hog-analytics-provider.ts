@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { PostHogAnalyticsProvider } from './services/post-hog-analytics-provider';
 

@@ -2,36 +2,36 @@
   MandalaModule.svelte — Unified mandala gallery with detail panel + meditation/export modes
 -->
 <script lang="ts">
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
   import type {
     MandalaPathShape,
     MandalaRenderOptions,
     UndulationEasing,
-  } from "$lib/shared/mandala/domain/mandala-types";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
-  import CollectionGalleryDetail from "$lib/shared/modules/CollectionGalleryDetail.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  } from "#lib/shared/mandala/domain/mandala-types.js";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
+  import CollectionGalleryDetail from "#lib/shared/modules/CollectionGalleryDetail.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import MeditationControls from "./tabs/meditate/components/MeditationControls.svelte";
   import MeditationOverlay from "./tabs/meditate/components/MeditationOverlay.svelte";
   import { createMeditationSession } from "./tabs/meditate/state/meditation-session.svelte";
   import { createMeditationAudioService } from "./tabs/meditate/services/meditation-audio";
   import { getPatternCycleTime, type BreathingPattern, type AmbientTrack } from "./tabs/meditate/domain/meditation-types";
   import { exportMandalaPNG } from "./tabs/export/services/mandala-export";
-  import { shareOrDownloadBlob } from "$lib/shared/foundation/services/file-downloader";
-  import { saveActionLabel } from "$lib/shared/mobile/share-action.svelte";
+  import { shareOrDownloadBlob } from "#lib/shared/foundation/services/file-downloader.js";
+  import { saveActionLabel } from "#lib/shared/mobile/share-action.svelte.js";
   import { runMandalaVideoExport } from "./tabs/export/services/mandala-video";
-  import type { MandalaVideoExportHandle } from "$lib/shared/mandala/services/mandala-video-exporter";
+  import type { MandalaVideoExportHandle } from "#lib/shared/mandala/services/mandala-video-exporter.js";
   import { mandalaCollectionState } from "./tabs/collection/state/mandala-collection-state.svelte";
   import { DEFAULT_MANDALAS } from "./tabs/meditate/domain/default-mandalas";
-  import type { StepLike } from "$lib/shared/mandala/services/types";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import type { StepLike } from "#lib/shared/mandala/services/types.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import MandalaPublicationControls from "./tabs/collection/components/MandalaPublicationControls.svelte";
-  import { openLineageSource, hasLineageSource } from "$lib/shared/collections/open-lineage-source";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { openLineageSource, hasLineageSource } from "#lib/shared/collections/open-lineage-source.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { onMount } from "svelte";
-  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
+  import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
 
   type Phase = "gallery" | "detail" | "meditate-config" | "meditate-session";
   let phase = $state<Phase>("gallery");

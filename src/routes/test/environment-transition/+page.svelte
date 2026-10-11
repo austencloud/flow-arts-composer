@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import EnvironmentTransitionVeil from "$lib/shared/3d/environments/components/EnvironmentTransitionVeil.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import EnvironmentTransitionVeil from "#lib/shared/3d/environments/components/EnvironmentTransitionVeil.svelte";
   import {
     DEFAULT_ENVIRONMENT_TRANSITION_TIMING,
     ENVIRONMENT_COVER_DURATION_MS,
@@ -14,7 +14,7 @@
     getEnvironmentVeilOpacity,
     requestEnvironment,
     type EnvironmentTransitionPhase,
-  } from "$lib/shared/3d/environments/domain/environment-transition";
+  } from "#lib/shared/3d/environments/domain/environment-transition.js";
 
   type StudyScene = "forest" | "ocean";
   type MotionMode = "standard" | "reduced";

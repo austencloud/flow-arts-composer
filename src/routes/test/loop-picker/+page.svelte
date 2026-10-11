@@ -8,8 +8,8 @@
   against each option set so the states can actually be looked at.
 -->
 <script lang="ts">
-  import LOOPPicker from "$lib/shared/components/loop-picker/LOOPPicker.svelte";
-  import type { LOOPOption } from "$lib/features/create/shared/services/loop-validator";
+  import LOOPPicker from "#lib/shared/components/loop-picker/LOOPPicker.svelte";
+  import type { LOOPOption } from "#lib/features/create/shared/services/loop-validator.js";
   import {
     COMPACT_LOOP_REVIEW_OPTIONS,
     LOOP_REVIEW_OPTIONS,

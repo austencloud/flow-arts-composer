@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeCovenLayout, type CovenSlot } from "$lib/features/coven-hub/domain/coven-hub-layout";
+import { computeCovenLayout, type CovenSlot } from "#lib/features/coven-hub/domain/coven-hub-layout.js";
 
 describe("computeCovenLayout", () => {
   it("places the seed coven at the origin", () => {

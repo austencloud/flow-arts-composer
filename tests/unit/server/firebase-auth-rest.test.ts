@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   FirebaseAuthRest,
   FirebaseAuthRestError,
-} from "$lib/server/auth/firebase-auth-rest";
-import { ServiceAccountAuthorizer } from "$lib/server/google/service-account-authorizer";
+} from "#lib/server/auth/firebase-auth-rest.js";
+import { ServiceAccountAuthorizer } from "#lib/server/google/service-account-authorizer.js";
 
 function client(response: Response) {
   const fetchImpl = vi.fn(() =>

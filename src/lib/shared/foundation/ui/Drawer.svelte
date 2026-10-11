@@ -17,19 +17,19 @@
 <script lang="ts">
   import "./drawer/Drawer.css";
   import { onMount, onDestroy, untrack, type Snippet } from "svelte";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import { SwipeToDismiss } from "./drawer/swipe-to-dismiss";
   import { FocusTrap } from "./drawer/focus-trap";
   import { SnapPoints, type SnapPointValue } from "./drawer/snap-points";
   import { DrawerEffects } from "./drawer/drawer-effects";
-  import { shouldDeferEscapeShortcut } from "$lib/shared/keyboard/domain/escape-shortcut-target";
+  import { shouldDeferEscapeShortcut } from "#lib/shared/keyboard/domain/escape-shortcut-target.js";
   import {
     generateDrawerId,
     registerDrawer,
     unregisterDrawer,
     isTopDrawer,
   } from "./drawer/drawer-stack";
-  import { holdBackgroundFor } from "$lib/shared/background/shared/state/background-hold.svelte";
+  import { holdBackgroundFor } from "#lib/shared/background/shared/state/background-hold.svelte.js";
 
   type CloseReason = "backdrop" | "escape" | "programmatic";
 

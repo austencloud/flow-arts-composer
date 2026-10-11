@@ -18,22 +18,22 @@ import {
   normalizeProject,
   compilePostProject,
   evaluatePresetLayers,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   type PostProject,
   takeRole,
   PIP_HANDOFF_MAX_CLOCK_SECONDS,
   type PipHandoffStep,
 } from "@austencloud/video-editor/core";
-import { pipHandoffOf } from "$lib/shared/media-composition/domain/pip-handoff";
+import { pipHandoffOf } from "#lib/shared/media-composition/domain/pip-handoff.js";
 import {
   resolveTakeTiming,
   takeSampleAt,
   takeTimingMoveBeats,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import type { TakeClock } from "@austencloud/video-editor/render";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 const args = process.argv.slice(2);
 const option = (name: string) => {

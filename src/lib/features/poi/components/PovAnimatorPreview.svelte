@@ -18,13 +18,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { getPoiContext } from "../context/poi-context";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
-  import { interpolatePropAngles } from "$lib/shared/animation-engine/services/prop-interpolator";
+  import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
 
   const poi = getPoiContext();
 

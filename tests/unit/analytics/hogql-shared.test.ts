@@ -4,7 +4,7 @@ import {
   personIdentityFilter,
   pulseProdFilter,
   EXCLUDED_ADMIN_UIDS,
-} from "$lib/server/analytics/hogql-shared";
+} from "#lib/server/analytics/hogql-shared.js";
 
 describe("escapeHogQL", () => {
   it("escapes single quotes so a uid cannot break out of a literal", () => {

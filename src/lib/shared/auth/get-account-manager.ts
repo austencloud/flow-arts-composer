@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { AccountManager } from './services/account-manager';
 import { getHapticFeedback } from '../application/get-haptic-feedback';

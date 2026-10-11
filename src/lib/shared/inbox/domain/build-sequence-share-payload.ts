@@ -2,7 +2,7 @@ import type {
   SequenceSharePayload,
   SequenceShareSource,
 } from "./models/sequence-share-payload";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
 export function buildSequenceSharePayload(
   seq: SequenceShareSource

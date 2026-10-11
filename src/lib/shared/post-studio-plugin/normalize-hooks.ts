@@ -2,8 +2,8 @@ import type { VideoEditorPlugin } from "@austencloud/video-editor/core";
 import {
   mergeSeparateTunnelHook,
   splitTunnelHookTitles,
-} from "$lib/shared/media-composition/domain/post-project-hook-migration";
-import { withMotionKeys } from "$lib/shared/media-composition/domain/post-project-motion-keys";
+} from "#lib/shared/media-composition/domain/post-project-hook-migration.js";
+import { withMotionKeys } from "#lib/shared/media-composition/domain/post-project-motion-keys.js";
 
 // This module and everything it reaches must never import the plugin index by
 // value: create-plugin imports it, and the index re-exports create-plugin.

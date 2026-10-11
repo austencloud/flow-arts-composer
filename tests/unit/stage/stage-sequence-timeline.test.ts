@@ -5,11 +5,11 @@ import {
   getPerformerSequenceEndBeat,
   samplePerformerSequenceAtBeat,
   sortStageSequenceClips,
-} from "$lib/features/stage/domain/stage-sequence-timeline";
+} from "#lib/features/stage/domain/stage-sequence-timeline.js";
 import type {
   Performer,
   StageSequenceClip,
-} from "$lib/features/stage/domain/stage-types";
+} from "#lib/features/stage/domain/stage-types.js";
 
 function clip(
   id: string,

@@ -10,18 +10,18 @@
   reason on the chip.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
-  import RelationshipChoiceChip from "$lib/shared/shape-matrix/components/RelationshipChoiceChip.svelte";
+  import RelationshipChoiceChip from "#lib/shared/shape-matrix/components/RelationshipChoiceChip.svelte";
   import {
     MODE_FAMILY_ID,
     type VtgMode,
-  } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+  } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
   import {
     localizedModeWords,
     localizedElementName,
-  } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
-  import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
+  } from "#lib/shared/shape-matrix/domain/shape-matrix-display.js";
+  import { TND_BY_FAMILY } from "#lib/features/choreo-card/domain/tnd-element.js";
 
   let {
     selected,

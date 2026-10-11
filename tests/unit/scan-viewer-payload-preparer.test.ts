@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { ShortCodeData } from "$lib/shared/qr/services/types";
-import { prepareScanViewerPayload } from "$lib/server/scan/scan-viewer-payload-preparer";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { ShortCodeData } from "#lib/shared/qr/services/types.js";
+import { prepareScanViewerPayload } from "#lib/server/scan/scan-viewer-payload-preparer.js";
 
 const ENCODED_B2ZM =
   "s~r1:sm:f2938653:q1:HYPQN1Z0M/2Q 5Q:66VH93T9PYLH504WU/L92IGQSUG54HJCJQILD2JEQS+MO:9YE1U33FNO5*Q$ZMWDNXZ9PI5B32+80QLL8PR";

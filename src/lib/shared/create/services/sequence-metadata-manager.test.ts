@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { DIFFICULTY_TO_LEVEL } from "$lib/shared/create/utils/config-mapper";
+import { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { DIFFICULTY_TO_LEVEL } from "#lib/shared/create/utils/config-mapper.js";
 import { mapDifficultyToLevel } from "./sequence-metadata-manager";
 
 describe("mapDifficultyToLevel", () => {

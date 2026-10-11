@@ -6,8 +6,8 @@ import {
 	inRectClosed,
 	type ExhibitFixture,
 	type WorldRect,
-} from "$lib/features/museum/data/drowned-gallery-terrain";
-import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
+} from "#lib/features/museum/data/drowned-gallery-terrain.js";
+import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
 
 const layout = buildDrownedGalleryLayout(buildVulcanCaveFloorPlan().grid)!;
 const byId = (id: string): ExhibitFixture => {

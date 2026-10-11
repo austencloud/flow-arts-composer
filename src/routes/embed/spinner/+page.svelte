@@ -12,9 +12,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import PlayWithItInner from "../../landing/components/PlayWithItInner.svelte";
-  import ToastContainer from "$lib/shared/toast/components/ToastContainer.svelte";
-  import AuthModalHost from "$lib/shared/auth/components/AuthModalHost.svelte";
-  import { isEmbeddedInAnotherSite } from "$lib/shared/foundation/utils/embedded-in-another-site";
+  import ToastContainer from "#lib/shared/toast/components/ToastContainer.svelte";
+  import AuthModalHost from "#lib/shared/auth/components/AuthModalHost.svelte";
+  import { isEmbeddedInAnotherSite } from "#lib/shared/foundation/utils/embedded-in-another-site.js";
 
   // Opened directly, a guest who reaches the save limit gets the usual
   // sign-up window. Inside another website's frame the save entry is gone and

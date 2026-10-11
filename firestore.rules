@@ -657,6 +657,18 @@ service cloud.firestore {
         allow delete: if isOwner(userId) || isAdmin();
       }
 
+      // -------------------------------------------------------------------------
+      // COMPOSITIONS (Arrange layouts, opened in Studio)
+      // -------------------------------------------------------------------------
+      // Written by firebase-composition-repository (users/{uid}/compositions)
+      // and pulled by CompositionSyncer whenever Studio lists its projects.
+      // The 2026-02-26 rules cleanup removed this block as unused, so every
+      // signed-in sync was denied.
+      match /compositions/{compositionId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
       // Private Post timeline projects. Media selected from a device is only
       // referenced here; the file itself stays on that device until relinked.
       match /postProjects/{postId} {

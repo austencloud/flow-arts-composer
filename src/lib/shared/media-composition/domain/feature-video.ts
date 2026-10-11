@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { takeFileKey, type PostProject } from "@austencloud/video-editor/core";
-import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
+import { PostProjectSchema } from "#lib/shared/post-studio-plugin/index.js";
 import {
   FEATURE_VIDEO_API,
   FEATURE_VIDEO_SLUG_PATTERN,
   featureVideoMediaUrl,
   isFeatureVideoMediaUrl,
   isFeatureVideoSlug,
-} from "$lib/shared/media-composition/domain/feature-video-url";
+} from "#lib/shared/media-composition/domain/feature-video-url.js";
 
 /** Kept here too, for the callers that already import them from this file. */
 export {

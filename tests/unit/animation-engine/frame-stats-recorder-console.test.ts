@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { frameStatsRecorder } from "$lib/shared/animation-engine/services/frame-stats-recorder";
+import { frameStatsRecorder } from "#lib/shared/animation-engine/services/frame-stats-recorder.js";
 
 describe("FrameStatsRecorder console behavior", () => {
   beforeEach(() => {

@@ -6,12 +6,12 @@
  */
 
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 
 import type {
   FeedbackSubtask,
   SubtaskStatus,
-} from "$lib/shared/feedback/domain/models/feedback-models";
+} from "#lib/shared/feedback/domain/models/feedback-models.js";
 
 /**
  * Add a new subtask to feedback item

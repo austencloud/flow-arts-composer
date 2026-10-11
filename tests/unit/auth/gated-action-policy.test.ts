@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { requiresFullAccount } from "$lib/shared/auth/domain/gated-action-policy";
+import { requiresFullAccount } from "#lib/shared/auth/domain/gated-action-policy.js";
 
 describe("requiresFullAccount", () => {
   it("publish requires a full account", () => {

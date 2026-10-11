@@ -5,14 +5,14 @@
  */
 
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { getFirestoreInstance } from '$lib/shared/auth/firebase';
-import { authState } from '$lib/shared/auth/state/auth-state.svelte';
+import { getFirestoreInstance } from '#lib/shared/auth/firebase.js';
+import { authState } from '#lib/shared/auth/state/auth-state.svelte.js';
 interface ReportQuerier {
 	getById(reportId: string): Promise<UserReport | null>;
 }
 import type { ResolveReportInput, UserReport } from '../domain/models/report-models';
 import { REPORT_CATEGORIES } from '../domain/models/report-models';
-import * as notificationTriggerService from '$lib/features/feedback/services/notification-trigger-service';
+import * as notificationTriggerService from '#lib/features/feedback/services/notification-trigger-service.js';
 
 const REPORTS_COLLECTION = 'userReports';
 const USERS_COLLECTION = 'users';

@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { CreateModuleHandlers } from './services/create-module-handlers';
 import { getCreateModuleOrchestrator } from './get-create-module-orchestrator';

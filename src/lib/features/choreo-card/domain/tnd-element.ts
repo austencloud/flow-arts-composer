@@ -159,5 +159,5 @@ export function getTnDElementByIconPath(iconPath: string): TnDElement | null {
   const normalized = ICON_LEGACY[iconPath] ?? iconPath;
   return TND_ELEMENTS.find((t) => t.iconPath === normalized) ?? null;
 }
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";

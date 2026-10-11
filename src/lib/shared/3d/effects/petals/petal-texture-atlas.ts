@@ -7,7 +7,7 @@ import {
 import {
   drawPetalSilhouette,
   type PetalSpriteShape,
-} from "$lib/shared/effects/domain/petal-palettes";
+} from "#lib/shared/effects/domain/petal-palettes.js";
 
 const SHAPES: readonly PetalSpriteShape[] = [
   "round",

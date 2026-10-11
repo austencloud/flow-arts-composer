@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { derivePropGeometryKey } from "$lib/shared/pictograph/arrow/positioning/prop-geometry/domain/prop-geometry-key-deriver";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { derivePropGeometryKey } from "#lib/shared/pictograph/arrow/positioning/prop-geometry/domain/prop-geometry-key-deriver.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 function makeMotion(over: Partial<MotionData> = {}): MotionData {
   return {

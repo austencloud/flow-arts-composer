@@ -1,30 +1,30 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { tick, untrack } from "svelte";
-  import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
-  import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
-  import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import type { MatrixLabelMode } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
-  import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+  import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
+  import PanelGroup from "#lib/shared/panels/PanelGroup.svelte";
+  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import type { MatrixLabelMode } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
+  import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
   import { KINETIC_SHAPE_ENGINE_NAME } from "../shape-engine-identity";
-  import { shareOrCopyLink } from "$lib/shared/share/services/link-share";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { shareOrCopyLink } from "#lib/shared/share/services/link-share.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { goto } from "$app/navigation";
-  import { saveSequenceRouteHandoff } from "$lib/shared/coordinators/sequence-handoff.svelte";
-  import { generateSequenceRoutePath } from "$lib/shared/navigation/services/sequence-encoder";
-  import type { ModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
+  import { saveSequenceRouteHandoff } from "#lib/shared/coordinators/sequence-handoff.svelte.js";
+  import { generateSequenceRoutePath } from "#lib/shared/navigation/services/sequence-encoder.js";
+  import type { ModeRealization } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
 
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { createShapeMatrixAnimationState } from "../state/shape-matrix-animation-state.svelte";
   import { customizeSection } from "../state/shape-matrix-customize";
   import { setShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
-  import { setAnimationScopeContext } from "$lib/shared/animation-engine/state/animation-scope-context";
-  import { setAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
-  import { SequenceViewerVisibilityState } from "$lib/shared/sequence-viewer/state/viewer-visibility-state.svelte";
-  import { setViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import { setAnimationScopeContext } from "#lib/shared/animation-engine/state/animation-scope-context.js";
+  import { setAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
+  import { SequenceViewerVisibilityState } from "#lib/shared/sequence-viewer/state/viewer-visibility-state.svelte.js";
+  import { setViewerVisibilityContext } from "#lib/shared/sequence-viewer/context/viewer-visibility-context.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import ShapeMatrixCustomizeWorkspace from "./ShapeMatrixCustomizeWorkspace.svelte";
   import ShapeMatrixDetailPane from "./ShapeMatrixDetailPane.svelte";
   import ShapeMatrixDifficultyControl from "./ShapeMatrixDifficultyControl.svelte";
@@ -35,9 +35,9 @@
   import ShapeMatrixTheoryPane from "./ShapeMatrixTheoryPane.svelte";
   import { runMandalaMorph } from "../services/shape-matrix-mandala-morph";
   import { runShapeMatrixDetailReveal } from "../services/shape-matrix-reveal";
-  import { growFade, motionDuration } from "$lib/shared/transitions/motion";
+  import { growFade, motionDuration } from "#lib/shared/transitions/motion.js";
   import ShapeMatrixFocusWorkspace from "./ShapeMatrixFocusWorkspace.svelte";
-  import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
+  import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
 
   interface Props {
     /** Embedded hosts (the Create module's Shape tab) get their name from
@@ -120,7 +120,7 @@
       // Only the Create module's Shape tab opens the viewer in place. Loading
       // the navigator on this click keeps it, and the sign-in and Firebase
       // code behind it, off the public /shape-engine page's first download.
-      void import("$lib/shared/sequence-viewer/services/sequence-viewer-navigator").then(
+      void import("#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js").then(
         ({ openSequenceViewer }) =>
           openSequenceViewer(realization.seq, {
             source: "shape_engine",

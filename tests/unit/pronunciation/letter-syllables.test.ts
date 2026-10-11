@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { syllablesOf, syllablesInWord } from "$lib/features/lab/pronunciation-recorder/domain/letter-syllables";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { syllablesOf, syllablesInWord } from "#lib/features/lab/pronunciation-recorder/domain/letter-syllables.js";
 
 describe("syllablesOf", () => {
   it("covers every letter in the alphabet", () => {

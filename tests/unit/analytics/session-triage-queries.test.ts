@@ -6,7 +6,7 @@ import {
   toIsoUtc,
   parseTriageEventRow,
   parseTriageSessionRow,
-} from "$lib/server/analytics/session-triage-queries";
+} from "#lib/server/analytics/session-triage-queries.js";
 
 describe("buildTriageSessionsQuery", () => {
   const sql = buildTriageSessionsQuery("2026-08-01T00:00:00Z", 20);

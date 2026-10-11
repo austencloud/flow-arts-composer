@@ -1,25 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/shared/3d/state/viewer-3d-state.svelte", () => ({
+vi.mock("#lib/shared/3d/state/viewer-3d-state.svelte.js", () => ({
   clearViewer3DPresetIntent: vi.fn(),
   markViewer3DPresetIntent: vi.fn(),
   writeViewer3DConfig: vi.fn(),
 }));
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: { settings: {}, updateSetting: vi.fn() },
 }));
-vi.mock("$lib/shared/sequence-viewer/services/viewer-state-persistence", () => ({
+vi.mock("#lib/shared/sequence-viewer/services/viewer-state-persistence.js", () => ({
   persistViewerMode: vi.fn(),
 }));
-vi.mock("$lib/shared/collections/settings-checkpoint.svelte", () => ({
+vi.mock("#lib/shared/collections/settings-checkpoint.svelte.js", () => ({
   captureSettingsCheckpoint: vi.fn(),
   revertSettingsCheckpoint: vi.fn(),
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   showToast: vi.fn(),
 }));
 vi.mock(
-  "$lib/shared/navigation-coordinator/navigation-coordinator.svelte",
+  "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js",
   () => ({ handleModuleChange: vi.fn() })
 );
 vi.mock("../domain/scene-3d-look", () => ({

@@ -3,9 +3,9 @@
   import type {
     FeedbackItem,
     FeedbackStatus,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import FeedbackKanbanCard from "./FeedbackKanbanCard.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { ClaimStatusDeriver } from "../../services/claim-status-deriver";
 
   const {

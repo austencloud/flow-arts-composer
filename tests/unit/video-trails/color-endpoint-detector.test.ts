@@ -1,7 +1,7 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { ColorEndpointDetector } from "$lib/features/video/video-trails/services/color-endpoint-detector";
-import type { DetectionConfig } from "$lib/features/video/video-trails/domain/types";
+import { ColorEndpointDetector } from "#lib/features/video/video-trails/services/color-endpoint-detector.js";
+import type { DetectionConfig } from "#lib/features/video/video-trails/domain/types.js";
 
 // jsdom doesn't implement ImageData. Provide a minimal polyfill that stores
 // the pixel data exactly like the browser version so the detector can read it.

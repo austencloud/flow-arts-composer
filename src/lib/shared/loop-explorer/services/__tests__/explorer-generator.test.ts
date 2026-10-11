@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { LOOPType, Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { LOOPType, Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { generateVerifiedExample, MAX_ATTEMPTS } from "../explorer-generator";
 
 // generateVerifiedExample falls back to the real curated-seeds.json pool
@@ -10,7 +10,7 @@ import { generateVerifiedExample, MAX_ATTEMPTS } from "../explorer-generator";
 // exercises the "no fallback available" branch deterministically, regardless
 // of which (loopType, slice) pairs the harness has since populated real
 // seeds for (curated-seeds.json is regenerated data, not test fixture data).
-vi.mock("$lib/shared/loop-explorer/domain/curated-seeds", () => ({
+vi.mock("#lib/shared/loop-explorer/domain/curated-seeds.js", () => ({
   findCuratedSeed: () => null,
 }));
 

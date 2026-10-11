@@ -1,4 +1,4 @@
-import type { PendingActionType } from "$lib/shared/sequence-viewer/services/pending-action-queue";
+import type { PendingActionType } from "#lib/shared/sequence-viewer/services/pending-action-queue.js";
 
 /**
  * Actions that publish content to shared/public collections under a visible

@@ -9,13 +9,13 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { LanSyncCoordinator } from '$lib/shared/lan-sync/services/lan-sync-coordinator';
-import type { PeerConnectionManager } from '$lib/shared/lan-sync/services/peer-connection-manager';
-import type { SyncRoomBroadcaster } from '$lib/shared/lan-sync/services/sync-room-broadcaster';
+import { LanSyncCoordinator } from '#lib/shared/lan-sync/services/lan-sync-coordinator.js';
+import type { PeerConnectionManager } from '#lib/shared/lan-sync/services/peer-connection-manager.js';
+import type { SyncRoomBroadcaster } from '#lib/shared/lan-sync/services/sync-room-broadcaster.js';
 import {
 	createInitialConnectionState,
 	type SyncMessage
-} from '$lib/shared/lan-sync/domain/models/lan-sync-models';
+} from '#lib/shared/lan-sync/domain/models/lan-sync-models.js';
 
 function makeHarness() {
 	let messageHandler: ((m: SyncMessage) => void) | null = null;

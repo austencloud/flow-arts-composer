@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldAvoidIndexedDbPersistence } from "$lib/shared/auth/services/indexeddb-persistence-policy";
+import { shouldAvoidIndexedDbPersistence } from "#lib/shared/auth/services/indexeddb-persistence-policy.js";
 
 describe("shouldAvoidIndexedDbPersistence", () => {
   it("uses non-IndexedDB Firebase backends in desktop Safari", () => {

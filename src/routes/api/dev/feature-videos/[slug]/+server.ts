@@ -1,10 +1,10 @@
-import { error, json, type RequestHandler } from "@sveltejs/kit";
-import { authorizeLoopback, readJsonBody } from "$lib/server/dev-loopback";
+import { error, type RequestHandler } from "@sveltejs/kit";
+import { authorizeLoopback, readJsonBody } from "#lib/server/dev-loopback.js";
 import {
   FeatureVideoError,
   featureVideoFailure,
   featureVideos,
-} from "$lib/server/feature-video-store";
+} from "#lib/server/feature-video-store.js";
 
 /** Dev only: one feature video, read whole and saved whole. */
 export const GET: RequestHandler = async ({
@@ -14,7 +14,7 @@ export const GET: RequestHandler = async ({
 }) => {
   authorizeLoopback(request, getClientAddress);
   try {
-    return json(await featureVideos().read(params.slug ?? ""));
+    return Response.json(await featureVideos().read(params.slug ?? ""));
   } catch (cause) {
     featureVideoFailure(cause);
   }
@@ -37,7 +37,7 @@ export const PUT: RequestHandler = async ({
   )
     error(400, "Send baseRevision, the revision this edit started from.");
   try {
-    return json(
+    return Response.json(
       await featureVideos().write(params.slug ?? "", {
         baseRevision: input.baseRevision,
         project: input.project,
@@ -45,7 +45,7 @@ export const PUT: RequestHandler = async ({
     );
   } catch (cause) {
     if (cause instanceof FeatureVideoError && cause.status === 409)
-      return json(
+      return Response.json(
         { message: cause.message, revision: cause.revision },
         { status: 409 }
       );

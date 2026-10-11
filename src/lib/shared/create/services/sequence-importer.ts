@@ -5,26 +5,26 @@
  * Separate from core sequence CRUD operations and focused on data transformation.
  */
 
-import { extractSequenceMetadata } from "$lib/shared/pictograph/shared/utils/png-metadata-extractor";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { extractSequenceMetadata } from "#lib/shared/pictograph/shared/utils/png-metadata-extractor.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   mapMotionType,
   mapLocation,
   mapOrientation,
   mapRotationDirection,
-} from "$lib/shared/foundation/services/implementations/data/enum-mapper";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/foundation/services/implementations/data/enum-mapper.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
-import { parseStrict } from "$lib/shared/validation/validation-utils";
-import { PngMetadataArraySchema } from "$lib/shared/foundation/domain/schemas";
-import { createPictographData } from "$lib/shared/pictograph/shared/domain/factories/create-pictograph-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { parseStrict } from "#lib/shared/validation/validation-utils.js";
+import { PngMetadataArraySchema } from "#lib/shared/foundation/domain/schemas.js";
+import { createPictographData } from "#lib/shared/pictograph/shared/domain/factories/create-pictograph-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 /**
  * Import sequence from PNG metadata

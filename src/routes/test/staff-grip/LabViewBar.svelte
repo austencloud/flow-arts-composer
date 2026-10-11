@@ -7,8 +7,8 @@
   steps aside and the row keeps only what still applies.
 -->
 <script lang="ts">
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   import { INSPECTION_VIEWS } from "./inspection-framing";
   import type { LabView, StaffLabState } from "./lab-state.svelte";

@@ -1,7 +1,7 @@
 import {
   isBackgroundInteractionBlocked,
   toBackgroundCoordinates,
-} from "$lib/shared/background/shared/background-interaction-routing";
+} from "#lib/shared/background/shared/background-interaction-routing.js";
 import { afterEach, describe, expect, it } from "vitest";
 
 function mount(markup: string): HTMLElement {

@@ -7,8 +7,8 @@
 <script lang="ts">
 	import { onDestroy } from "svelte";
 	import type { EffectPointEditorState } from "../state/effect-point-editor-state.svelte";
-	import { DEACTIVATED_PROP_TYPES } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-	import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+	import { DEACTIVATED_PROP_TYPES } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+	import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 	interface Props {
 		editorState: EffectPointEditorState;

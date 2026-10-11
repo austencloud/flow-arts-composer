@@ -1,9 +1,9 @@
 <!-- VersionDetailPanel - Drawer wrapper for version detail content -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import type { AppVersion } from "$lib/shared/versioning/domain/models/version-models";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import type { AppVersion } from "#lib/shared/versioning/domain/models/version-models.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import VersionDetailContent from "./VersionDetailContent.svelte";
 
   let {

@@ -4,14 +4,14 @@ import {
   initGameBridge,
   getGameBridge,
   destroyGameBridge,
-} from "$lib/shared/3d/debug/game-bridge";
-import type { GameBridgeBindings } from "$lib/shared/3d/debug/game-bridge-types";
+} from "#lib/shared/3d/debug/game-bridge.js";
+import type { GameBridgeBindings } from "#lib/shared/3d/debug/game-bridge-types.js";
 import {
   serializeGrid,
   deserializeGrid,
   createEmptyGrid,
-} from "$lib/features/museum/domain/museum-grid-types";
-import type { MuseumGrid } from "$lib/features/museum/domain/museum-grid-types";
+} from "#lib/features/museum/domain/museum-grid-types.js";
+import type { MuseumGrid } from "#lib/features/museum/domain/museum-grid-types.js";
 
 function createMinimalBindings(): GameBridgeBindings {
   return {

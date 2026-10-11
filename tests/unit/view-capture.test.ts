@@ -9,7 +9,7 @@ import {
   VIEW_PARAM,
   type ViewCaptureKeypress,
   type ViewPose,
-} from "$lib/shared/review/view-capture";
+} from "#lib/shared/review/view-capture.js";
 
 const POSE: ViewPose = {
   x: -14.2371,

@@ -2,24 +2,24 @@ import { describe, expect, it } from "vitest";
 import {
   createStaffEffectPainter,
   createStaffPointMapper,
-} from "$lib/shared/media-composition/services/staff-effect-painter";
+} from "#lib/shared/media-composition/services/staff-effect-painter.js";
 import {
   POST_STAFF_EFFECTS,
   compilePostProject,
   staffEffectRole,
   evaluatePresetFrame,
-} from "$lib/shared/post-studio-plugin";
-import type { StaffTipTrack } from "$lib/shared/media-composition/domain/staff-tip-track";
+} from "#lib/shared/post-studio-plugin/index.js";
+import type { StaffTipTrack } from "#lib/shared/media-composition/domain/staff-tip-track.js";
 import { renderPostStudioFrame } from "@austencloud/video-editor/render";
 import type {
   PaintFrame,
   PostStudioLayerPainter,
 } from "@austencloud/video-editor/render";
-import { CANVAS2D_HOSTED_EFFECTS } from "$lib/shared/effects/services/canvas2d-effect-host";
+import { CANVAS2D_HOSTED_EFFECTS } from "#lib/shared/effects/services/canvas2d-effect-host.js";
 import {
   EFFECT_ICONS,
   EFFECT_LABELS,
-} from "$lib/shared/effects/domain/effect-meta";
+} from "#lib/shared/effects/domain/effect-meta.js";
 import { project, video } from "./post-project-fixtures";
 
 type Transform = NonNullable<PaintFrame["transform"]>;

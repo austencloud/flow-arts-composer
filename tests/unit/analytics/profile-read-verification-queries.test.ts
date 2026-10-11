@@ -4,7 +4,7 @@ import {
   buildProfileReadExposureQuery,
   parseProfileReadDenial,
   parseProfileReadExposure,
-} from "$lib/server/analytics/profile-read-verification-queries";
+} from "#lib/server/analytics/profile-read-verification-queries.js";
 
 describe("profile read verification queries", () => {
   it("counts only exact profile-read executions and failures", () => {

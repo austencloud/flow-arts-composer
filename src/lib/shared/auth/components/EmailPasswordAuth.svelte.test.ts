@@ -23,28 +23,28 @@ vi.mock("../firebase", () => ({
   configureAuthPersistence: mocks.configurePersistence,
 }));
 
-vi.mock("$lib/shared/auth/services/anonymous-upgrade", () => ({
+vi.mock("#lib/shared/auth/services/anonymous-upgrade.js", () => ({
   captureAnonymousDrafts: vi.fn(),
   upgradeAnonymousWithEmail: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/state/anonymous-import-prompt.svelte", () => ({
+vi.mock("#lib/shared/auth/state/anonymous-import-prompt.svelte.js", () => ({
   promptAnonymousImport: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/services/auth-analytics-bridge", () => ({
+vi.mock("#lib/shared/auth/services/auth-analytics-bridge.js", () => ({
   recordAuthSubmission: mocks.recordSubmission,
 }));
 
-vi.mock("$lib/shared/auth/services/last-auth-method.svelte", () => ({
+vi.mock("#lib/shared/auth/services/last-auth-method.svelte.js", () => ({
   recordLastAuthMethod: mocks.recordLastMethod,
 }));
 
-vi.mock("$lib/shared/analytics/auth-events", () => ({
+vi.mock("#lib/shared/analytics/auth-events.js", () => ({
   trackAuthProviderResult: mocks.trackResult,
 }));
 
-vi.mock("$lib/shared/i18n/i18n.svelte.js", async () => {
+vi.mock("#lib/shared/i18n/i18n.svelte.js", async () => {
   const english: Record<string, string> = (
     await import("../../../../../messages/en.json")
   ).default;

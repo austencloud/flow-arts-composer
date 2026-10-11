@@ -14,10 +14,10 @@
 import type { LedOverlayConfig, LedSample } from "../domain/types/led-types";
 import { ledBrightnessToFloat } from "../domain/types/led-types";
 import { ledFadeFlux } from "../domain/led-photometry";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import { getTipPoints } from "../domain/types/prop-tip-points";
-import type { StripPattern } from "$lib/shared/poi/domain/strip-pattern";
-import { getPixel } from "$lib/shared/poi/domain/strip-pattern";
+import type { StripPattern } from "#lib/shared/poi/domain/strip-pattern.js";
+import { getPixel } from "#lib/shared/poi/domain/strip-pattern.js";
 import {
   LedPatternMaterializer,
   type LedImageLoader,
@@ -31,7 +31,7 @@ import {
   tunnelPropColor,
   tunnelPerformerPair,
   type TunnelPropColorPair,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 
 export interface LedSamplerConfig {
   canvasSize: number;

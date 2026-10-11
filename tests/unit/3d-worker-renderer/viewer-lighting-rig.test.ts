@@ -4,7 +4,7 @@ import {
   createViewerBaseLightingGroup,
   resolveViewerBaseLighting,
   VIEWER_KEY_LIGHT_POSITION,
-} from "$lib/shared/3d/rendering/viewer-lighting-rig";
+} from "#lib/shared/3d/rendering/viewer-lighting-rig.js";
 
 describe("viewer lighting rig", () => {
   it("keeps the production day, night, and no-environment profiles explicit", () => {

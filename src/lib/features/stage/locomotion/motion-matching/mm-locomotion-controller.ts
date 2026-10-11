@@ -3,8 +3,8 @@ import { Quaternion } from "three";
 import type { Bone } from "three";
 import { Vector3 } from "three";
 import { startInertialize, applyInertialize, type Inertializer } from "./inertialization";
-import { solveLegIK } from "$lib/shared/3d/services/hinge-constrained-leg-ik-solver";
-import { computeKneeHingeAxis } from "$lib/shared/3d/services/knee-hinge-axis-calibrator";
+import { solveLegIK } from "#lib/shared/3d/services/hinge-constrained-leg-ik-solver.js";
+import { computeKneeHingeAxis } from "#lib/shared/3d/services/knee-hinge-axis-calibrator.js";
 import type { RigBinding, LegChain } from "./rig-binding";
 
 /**

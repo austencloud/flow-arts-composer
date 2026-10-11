@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildTrajectoryQuery } from "$lib/features/stage/locomotion/motion-matching/trajectory";
-import { HORIZONS_SEC } from "$lib/features/stage/locomotion/motion-matching/feature-types";
+import { buildTrajectoryQuery } from "#lib/features/stage/locomotion/motion-matching/trajectory.js";
+import { HORIZONS_SEC } from "#lib/features/stage/locomotion/motion-matching/feature-types.js";
 
 describe("buildTrajectoryQuery", () => {
   it("ramps facing toward the target across horizons (root-local)", () => {

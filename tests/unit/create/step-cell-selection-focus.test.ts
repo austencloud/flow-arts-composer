@@ -1,20 +1,20 @@
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DURATION } from "$lib/shared/transitions/transitions";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 import { mountStepCellRow } from "./step-cell-focus-harness.svelte";
 
 // The pictograph, its context menu and the arrow modal need the whole render
 // stack. Focus lives on the cell around them.
 vi.mock(
-  "$lib/shared/pictograph/shared/components/PictographContainer.svelte",
+  "#lib/shared/pictograph/shared/components/PictographContainer.svelte",
   () => ({ default: () => ({}) })
 );
 vi.mock(
-  "$lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte",
+  "#lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte",
   () => ({ default: () => ({}) })
 );
 vi.mock(
-  "$lib/features/create/shared/components/arrow-adjustment/ArrowLayerModal.svelte",
+  "#lib/features/create/shared/components/arrow-adjustment/ArrowLayerModal.svelte",
   () => ({ default: () => ({}) })
 );
 

@@ -8,27 +8,27 @@
     type MeshStandardMaterial,
     type Object3D,
   } from "three";
-  import type { InstanceFrustumCullingStats } from "$lib/shared/3d/rendering/instance-frustum-culling";
-  import SkyGradient from "$lib/shared/3d/environments/primitives/SkyGradient.svelte";
-  import FallingParticles from "$lib/shared/3d/environments/primitives/FallingParticles.svelte";
-  import ForestLighting from "$lib/shared/3d/environments/scenes/forest/ForestLighting.svelte";
+  import type { InstanceFrustumCullingStats } from "#lib/shared/3d/rendering/instance-frustum-culling.js";
+  import SkyGradient from "#lib/shared/3d/environments/primitives/SkyGradient.svelte";
+  import FallingParticles from "#lib/shared/3d/environments/primitives/FallingParticles.svelte";
+  import ForestLighting from "#lib/shared/3d/environments/scenes/forest/ForestLighting.svelte";
   import {
     loadGeospatialEvidenceLayers,
     loadGeospatialTerrain,
     parseGeospatialTerrainManifest,
-  } from "$lib/shared/3d/procedural-engine/generation/geospatial-terrain";
+  } from "#lib/shared/3d/procedural-engine/generation/geospatial-terrain.js";
   import type {
     FlowFestMoment,
     FlowFestProgressPhase,
-  } from "$lib/features/flow-fest-sim/state/flow-fest-progress";
-  import { isFlowFestCampEstablishedPhase } from "$lib/features/flow-fest-sim/state/flow-fest-progress";
+  } from "#lib/features/flow-fest-sim/state/flow-fest-progress.js";
+  import { isFlowFestCampEstablishedPhase } from "#lib/features/flow-fest-sim/state/flow-fest-progress.js";
   import {
     loadFlowFestRuntimeContract,
     type FlowFestBranchId,
     type FlowFestRuntimeContract,
   } from "../flow-fest-graybox/flow-fest-runtime-contract";
-  import type { FlowFestFireJamState } from "$lib/features/flow-fest-sim/domain/flow-fest-fire-jam";
-  import type { FlowFestLivingCommunityFrame } from "$lib/features/flow-fest-sim/domain/flow-fest-living-fire-jam";
+  import type { FlowFestFireJamState } from "#lib/features/flow-fest-sim/domain/flow-fest-fire-jam.js";
+  import type { FlowFestLivingCommunityFrame } from "#lib/features/flow-fest-sim/domain/flow-fest-living-fire-jam.js";
   import {
     buildFlowFestProductionDressing,
     type FlowFestProductionDressing,
@@ -46,7 +46,7 @@
     flowFestFireJamAttendance,
     type FlowFestPopulationFrame,
     type FlowFestPopulationSite,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-population";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-population.js";
   import type { FlowFestPerformerSequenceProof } from "./flow-fest-performer-sequences";
   import FlowFestForestEcology from "./FlowFestForestEcology.svelte";
   import FlowFestParkedCars from "./FlowFestParkedCars.svelte";
@@ -57,7 +57,7 @@
   import { flowFestParkedCarModel } from "./flow-fest-parked-car-catalog";
   import type { FlowFestGateQueueCar } from "./flow-fest-camp-plan";
   import { sampleFlowFestTerrainWorldY } from "../flow-fest-graybox/flow-fest-terrain-host";
-  import type { ImportedTerrainDataV2 } from "$lib/shared/3d/procedural-engine/generation/real-terrain-zone";
+  import type { ImportedTerrainDataV2 } from "#lib/shared/3d/procedural-engine/generation/real-terrain-zone.js";
   import FlowFestGroundSurface from "./FlowFestGroundSurface.svelte";
   import FlowFestHeroFire from "./FlowFestHeroFire.svelte";
   import { getFlowFestVisualProfile } from "./flow-fest-visual-system";

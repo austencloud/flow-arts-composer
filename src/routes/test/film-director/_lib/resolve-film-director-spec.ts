@@ -8,21 +8,22 @@ import {
 import {
   CHARACTER_DEFINITIONS,
   type CharacterId,
-} from "$lib/shared/3d/domain/character-model";
+} from "#lib/shared/3d/domain/character-model.js";
 
 import {
   EFFECTS,
   getRegistration,
-} from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-import { getStageCoordinateFrame } from "$lib/shared/3d/environments/domain/stage-coordinate-frame";
-import { getPerformerStageBounds } from "$lib/shared/3d/environments/domain/performer-stage-bounds";
+} from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+import { getStageCoordinateFrame } from "#lib/shared/3d/environments/domain/stage-coordinate-frame.js";
+import { getPerformerStageBounds } from "#lib/shared/3d/environments/domain/performer-stage-bounds.js";
 import {
   getSceneEnvironmentRendererKey,
   SceneEnvironmentId,
-} from "$lib/shared/3d/environments/domain/scene-environment";
-import type { EffectType } from "$lib/shared/effects/domain/effects-config";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/3d/environments/domain/scene-environment.js";
+import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { GridJoin } from "@tka/tka-types";
 
 import {
   AUDIENCE_FACING_ANGLE,
@@ -34,14 +35,14 @@ import { resolveDirectorCameraTrack } from "./director-camera-track";
 import {
   isDirectiveExpression,
   type DirectiveValue,
-} from "$lib/features/film-director/domain/directives";
+} from "#lib/features/film-director/domain/directives.js";
 import {
   createAxisStream,
   resolveFilmSeed,
   seededPick,
   type FilmSeed,
-} from "$lib/features/film-director/domain/directive-random";
-import { resolveCastAxis } from "$lib/features/film-director/domain/resolve-directives";
+} from "#lib/features/film-director/domain/directive-random.js";
+import { resolveCastAxis } from "#lib/features/film-director/domain/resolve-directives.js";
 import {
   assertSequenceDirective,
   transformSourceId,
@@ -140,6 +141,7 @@ interface ResolvedPerformerFields {
   characterId: CharacterId;
   prop: PropType;
   propBuild?: DirectorPropBuild;
+  gridJoin?: GridJoin | null;
   effect: EffectType;
   handEffects?: ResolvedDirectorHandEffects;
   effort: EffortId;
@@ -778,6 +780,7 @@ function buildResolvedPerformers(
       characterId: input.characterId,
       prop: input.prop,
       ...(input.propBuild ? { propBuild: input.propBuild } : {}),
+      ...(input.gridJoin !== undefined ? { gridJoin: input.gridJoin } : {}),
       effect: input.effect,
       ...(input.handEffects ? { handEffects: input.handEffects } : {}),
       effort: input.effort,
@@ -1145,6 +1148,7 @@ function resolveScene(
       ...(input.propBuild ?? cast?.defaults?.propBuild
         ? { propBuild: input.propBuild ?? cast!.defaults!.propBuild! }
         : {}),
+      ...(input.gridJoin !== undefined ? { gridJoin: input.gridJoin } : {}),
       effect: resolvedEffects[index]! as EffectType,
       ...(resolvedHandEffects[index]
         ? { handEffects: resolvedHandEffects[index]! }

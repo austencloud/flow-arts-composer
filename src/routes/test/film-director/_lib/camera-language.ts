@@ -1,6 +1,6 @@
 import { userProportionsState } from "@austencloud/scene-3d";
 
-import { computeFramingShot } from "$lib/shared/3d/camera/compute-framing-shot";
+import { computeFramingShot } from "#lib/shared/3d/camera/compute-framing-shot.js";
 
 import { applyDirectorEasing } from "./director-easing";
 import { allocateMoveWindows } from "./director-move-windows";

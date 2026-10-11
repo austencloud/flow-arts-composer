@@ -5,7 +5,7 @@
   swipe-dismissable bottom-sheet Drawer.
 -->
 <script lang="ts">
-  import CollectionGalleryDetail from "$lib/shared/modules/CollectionGalleryDetail.svelte";
+  import CollectionGalleryDetail from "#lib/shared/modules/CollectionGalleryDetail.svelte";
 
   const items = Array.from({ length: 8 }, (_, i) => ({ id: i, name: `Item ${i + 1}` }));
   let selectedId = $state<number | null>(null);

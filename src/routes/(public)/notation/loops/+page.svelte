@@ -12,15 +12,15 @@
   tests/unit/withdrawn-public-pages-contract.test.ts.
 -->
 <script lang="ts">
-  import Seo from "$lib/shared/components/Seo.svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
-  import { activateWhenNear } from "$lib/actions/activate-when-near";
-  import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import { LOOP_COMPONENTS } from "$lib/shared/browse/domain/constants/loop-constants";
-  import { NOTATION_LOOP_TEASER_SEQUENCE } from "$lib/shared/loop-explorer/domain/notation-loop-teaser";
-  import "$lib/shared/landing/styles/public-editorial.css";
+  import Seo from "#lib/shared/components/Seo.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
+  import { activateWhenNear } from "#lib/actions/activate-when-near.js";
+  import LOOPIconStrip from "#lib/shared/components/LOOPIconStrip.svelte";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { LOOP_COMPONENTS } from "#lib/shared/browse/domain/constants/loop-constants.js";
+  import { NOTATION_LOOP_TEASER_SEQUENCE } from "#lib/shared/loop-explorer/domain/notation-loop-teaser.js";
+  import "#lib/shared/landing/styles/public-editorial.css";
 
   const TITLE = "The LOOP Algebra | The Kinetic Alphabet";
   const DESCRIPTION =
@@ -158,7 +158,7 @@
     <div class="explorer-wrap" use:activateExplorerWhenNear>
       <LazyMount
         loader={() =>
-          import("$lib/shared/loop-explorer/components/LoopExplorer.svelte")}
+          import("#lib/shared/loop-explorer/components/LoopExplorer.svelte")}
         active={explorerActive}
       >
         {#snippet placeholder()}

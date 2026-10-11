@@ -1,17 +1,17 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
-import { applySequencePathPreview } from "$lib/shared/sequence-viewer/services/sequence-path-policy";
-import type { AnimationPathPolicy } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createAnimationScope } from "#lib/shared/animation-engine/state/animation-scope.svelte.js";
+import { applySequencePathPreview } from "#lib/shared/sequence-viewer/services/sequence-path-policy.js";
+import type { AnimationPathPolicy } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import type { MandalaPathShape } from "#lib/shared/mandala/domain/mandala-types.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   flowerKey,
   type Flower,
-} from "$lib/shared/shape-matrix/domain/flower-signature";
+} from "#lib/shared/shape-matrix/domain/flower-signature.js";
 import {
   MODE_ORDER,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import { motionPathExamples } from "./motion-path-examples";
 
 export type MotionPathRealizationBuilder = (

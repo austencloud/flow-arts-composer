@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { AppVersionSchema } from "$lib/shared/feedback/domain/models/feedback-schemas";
+import { AppVersionSchema } from "#lib/shared/feedback/domain/models/feedback-schemas.js";
 
 /**
  * Legacy version-doc regression lock.

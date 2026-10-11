@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { SIMPLE_PATTERNS } from "../domain/reversal-patterns";
   import { resolvePattern, type ResolvedReversalPattern } from "../domain/reversal-transform";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
 
   interface Props {
     activePatternId: string | null;

@@ -56,7 +56,7 @@ const authRef = vi.hoisted(() => ({
     } | null,
   },
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: authRef.current,
   configureAuthPersistence: h.configureAuthPersistence,
   getFunctionsInstance: h.getFunctionsInstance,
@@ -65,10 +65,10 @@ vi.mock("$lib/shared/auth/firebase", () => ({
 // Successful magic-link auth skips profile setup and anonymous upgrades can
 // send an admin notification. Stub both side effects so this suite stays
 // focused on link completion.
-vi.mock("$lib/shared/onboarding/state/first-run-state.svelte", () => ({
+vi.mock("#lib/shared/onboarding/state/first-run-state.svelte.js", () => ({
   firstRunState: { markSkipped: h.markFirstRunSkipped },
 }));
-vi.mock("$lib/shared/auth/services/anonymous-upgrade", () => ({
+vi.mock("#lib/shared/auth/services/anonymous-upgrade.js", () => ({
   notifyUpgradeSignup: h.notifyUpgradeSignup,
   upgradeMagicLinkCollision: vi.fn(async () => []),
 }));
@@ -78,7 +78,7 @@ import {
   getSavedEmailForSignIn,
   getPendingEmailLinkRecipient,
   completeEmailLinkSignIn,
-} from "$lib/shared/auth/services/email-link-completion";
+} from "#lib/shared/auth/services/email-link-completion.js";
 
 const EMAIL_KEY = "emailForSignIn";
 

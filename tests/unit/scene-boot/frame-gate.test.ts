@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_FRAME_GATE, createFrameGate } from "$lib/shared/3d/scene-boot/frame-gate";
+import { DEFAULT_FRAME_GATE, createFrameGate } from "#lib/shared/3d/scene-boot/frame-gate.js";
 
 describe("createFrameGate", () => {
   it("stays closed until enough consecutive frames land inside the budget", () => {

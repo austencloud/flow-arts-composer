@@ -35,4 +35,4 @@ export const livePipelineEdit = {
     current = null;
   },
 };
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";

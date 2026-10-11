@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import { buildMandalaCollectionEntry } from "../build-mandala-collection-entry";
 
 const step = { stepNumber: 1 } as StepData;

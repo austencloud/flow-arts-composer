@@ -1,24 +1,24 @@
 <script lang="ts">
-  import { getAllReleases } from "$lib/features/choreo-card/services/deck-release-store";
-  import { loadSequencesByIds } from "$lib/features/choreo-card/services/catalog-loader";
+  import { getAllReleases } from "#lib/features/choreo-card/services/deck-release-store.js";
+  import { loadSequencesByIds } from "#lib/features/choreo-card/services/catalog-loader.js";
   import type {
     DeckRelease,
     CardFooter,
-  } from "$lib/features/choreo-card/domain/models/DeckRelease";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { resolveDeckSequences } from "$lib/features/choreo-card/services/deck-variation";
-  import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-  import type { CardPair } from "$lib/features/choreo-card/services/types";
-  import type { CardSizeId } from "$lib/features/choreo-card/domain/card-sizes";
-  import type { PrintPDFMode } from "$lib/features/choreo-card/services/print-pdf-exporter";
+  } from "#lib/features/choreo-card/domain/models/DeckRelease.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { resolveDeckSequences } from "#lib/features/choreo-card/services/deck-variation.js";
+  import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+  import type { CardPair } from "#lib/features/choreo-card/services/types.js";
+  import type { CardSizeId } from "#lib/features/choreo-card/domain/card-sizes.js";
+  import type { PrintPDFMode } from "#lib/features/choreo-card/services/print-pdf-exporter.js";
   import {
     getTnDElementByIconPath,
     TND_ELEMENTS,
     type TnDElement,
-  } from "$lib/features/choreo-card/domain/tnd-element";
-  import PrintPreviewPages from "$lib/features/choreo-card/components/print-preview/PrintPreviewPages.svelte";
-  import PrintPreviewToolbar from "$lib/features/choreo-card/components/print-preview/PrintPreviewToolbar.svelte";
-  import PrintDialog from "$lib/features/choreo-card/components/print-preview/PrintDialog.svelte";
+  } from "#lib/features/choreo-card/domain/tnd-element.js";
+  import PrintPreviewPages from "#lib/features/choreo-card/components/print-preview/PrintPreviewPages.svelte";
+  import PrintPreviewToolbar from "#lib/features/choreo-card/components/print-preview/PrintPreviewToolbar.svelte";
+  import PrintDialog from "#lib/features/choreo-card/components/print-preview/PrintDialog.svelte";
 
   let releases: DeckRelease[] = $state([]);
   let selectedDeck: DeckRelease | null = $state(null);
@@ -179,7 +179,7 @@
     try {
       const renderedPairs = await preparePairs();
       const { exportHomePrintPDF } =
-        await import("$lib/features/choreo-card/services/print-pdf-exporter");
+        await import("#lib/features/choreo-card/services/print-pdf-exporter.js");
       const deckName = `Deck_${String(selectedDeck!.deckNumber).padStart(3, "0")}`;
       const suffix =
         mode === "fronts" ? "_fronts" : mode === "backs" ? "_backs" : "_print";
@@ -212,7 +212,7 @@
     try {
       const renderedPairs = await preparePairs();
       const { exportDeckZIP } =
-        await import("$lib/features/choreo-card/services/print-zip-exporter");
+        await import("#lib/features/choreo-card/services/print-zip-exporter.js");
       const deckName = `Deck_${String(selectedDeck!.deckNumber).padStart(3, "0")}`;
       const blob = await exportDeckZIP(
         renderedPairs,

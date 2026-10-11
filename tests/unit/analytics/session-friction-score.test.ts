@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { scoreSession, resolveModule } from "$lib/server/analytics/session-friction-score";
-import type { TriageSessionRow } from "$lib/server/analytics/session-triage-queries";
+import { scoreSession, resolveModule } from "#lib/server/analytics/session-friction-score.js";
+import type { TriageSessionRow } from "#lib/server/analytics/session-triage-queries.js";
 
 function row(over: Partial<TriageSessionRow> = {}): TriageSessionRow {
   return {

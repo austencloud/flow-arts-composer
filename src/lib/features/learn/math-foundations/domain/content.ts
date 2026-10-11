@@ -5,18 +5,18 @@
  * Uses actual TKA concepts and domain models.
  */
 
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   Orientation,
   RotationDirection,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation, GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 /**
  * Triad palette — single source for the thesis/antithesis/synthesis colors

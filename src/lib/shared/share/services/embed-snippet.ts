@@ -13,7 +13,7 @@
  * defeated if the credit line is drawn inside the frame instead of beside it.
  */
 
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
 const SITE_URL = "https://tkaflowarts.com";
 const DEFAULT_WIDTH = 560;

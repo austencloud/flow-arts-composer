@@ -33,12 +33,12 @@ import { describe, expect, it } from "vitest";
 import {
   ensureComposition,
   hydrate,
-} from "$lib/shared/foundation/services/sequence-hydrator";
-import { extractLeftSoloProp } from "$lib/shared/foundation/services/sequence-decomposer";
-import { soloPropToSequence } from "$lib/shared/foundation/services/solo-prop-sequence-adapter";
-import { getSequenceMotionProfile } from "$lib/shared/foundation/services/sequence-motion-profile";
-import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/services/sequence-hydrator.js";
+import { extractLeftSoloProp } from "#lib/shared/foundation/services/sequence-decomposer.js";
+import { soloPropToSequence } from "#lib/shared/foundation/services/solo-prop-sequence-adapter.js";
+import { getSequenceMotionProfile } from "#lib/shared/foundation/services/sequence-motion-profile.js";
+import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 import { asStoredDocument, realCorpusSequences } from "./fixtures";
 

@@ -12,7 +12,7 @@
  * Images are rasters, so they are cached per (painter, key, size, dpr) with a
  * bounded LRU; a resize repaints, a repeat visit is free.
  */
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
+import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
 import { flowerKey, type Flower } from "../domain/flower-signature";
 import {
   renderCell,

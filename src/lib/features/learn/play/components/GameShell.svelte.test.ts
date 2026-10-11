@@ -26,7 +26,7 @@ import type {
   GameDefinition,
   ChallengeDefinition,
 } from "../domain/arcade-types";
-import type { QuizAnswerEvent } from "$lib/features/learn/quiz/domain/models/quiz-models";
+import type { QuizAnswerEvent } from "#lib/features/learn/quiz/domain/models/quiz-models.js";
 
 // Minimal fake event — only `isCorrect` matters to the engine. Shape copied
 // from tests/unit/play/arcade-session.test.ts's evt() helper.

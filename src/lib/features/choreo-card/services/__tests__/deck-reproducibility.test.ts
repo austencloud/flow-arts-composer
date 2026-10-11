@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { composeDeck } from "../deck-composer";
-import { makeRng, childSeed } from "$lib/shared/foundation/utils/seeded-rng";
+import { makeRng, childSeed } from "#lib/shared/foundation/utils/seeded-rng.js";
 import { hashRecipe } from "../deck-recipe";
 import type { DeckRecipe, StepCountWeight } from "../../domain/models/DeckRelease";
 

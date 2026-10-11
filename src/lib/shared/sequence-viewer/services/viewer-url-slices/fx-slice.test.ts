@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { captureFxSlice, seedFromFxSlice } from "./fx-slice";
-import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 afterEach(() => vi.restoreAllMocks());
 

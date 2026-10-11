@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import type { AmbientTrack } from "../domain/meditation-types";
 
 const AUDIO_BASE_PATH = "/audio/meditation";

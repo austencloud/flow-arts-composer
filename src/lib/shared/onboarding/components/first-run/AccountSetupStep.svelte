@@ -5,15 +5,15 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import {
     logAccountSetupNameSave,
     logAccountSetupViewed,
-  } from "$lib/shared/analytics/services/onboarding-events";
-  import { reportErrorTelemetry } from "$lib/shared/error/services/error-telemetry-reporter";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  } from "#lib/shared/analytics/services/onboarding-events.js";
+  import { reportErrorTelemetry } from "#lib/shared/error/services/error-telemetry-reporter.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     /** Admin "preview" — render the card even for accounts that don't need it. */

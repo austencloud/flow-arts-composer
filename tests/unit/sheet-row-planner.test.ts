@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { planSheet, type SheetPage } from "$lib/features/write/services/sheet-row-planner";
-import { DEFAULT_SHEET_LAYOUT } from "$lib/features/write/domain/types/choreo-sheet";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { planSheet, type SheetPage } from "#lib/features/write/services/sheet-row-planner.js";
+import { DEFAULT_SHEET_LAYOUT } from "#lib/features/write/domain/types/choreo-sheet.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 // minimal StepData stub — the planner only reads identity/length, not pictograph fields
 function step(n: number): StepData {

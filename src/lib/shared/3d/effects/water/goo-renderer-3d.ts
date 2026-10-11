@@ -515,7 +515,8 @@ export class GooRenderer3D {
             strand.tension,
             strand.edge,
             strand.metalness,
-            strand.alpha
+            strand.alpha,
+            Math.abs(strand.velocity.y)
           );
         }
         strand.active = false;
@@ -643,7 +644,8 @@ export class GooRenderer3D {
           drop.tension,
           drop.color,
           drop.metalness,
-          drop.alpha
+          drop.alpha,
+          Math.abs(drop.velocity.y)
         );
         drop.active = false;
       } else if (drop.age >= drop.maxAge) {

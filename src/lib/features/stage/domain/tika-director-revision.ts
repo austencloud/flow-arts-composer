@@ -1,4 +1,4 @@
-import type { PerformerDomainSnapshot } from "$lib/shared/3d/undo/scene-undo-types";
+import type { PerformerDomainSnapshot } from "#lib/shared/3d/undo/scene-undo-types.js";
 
 /**
  * The part of a rig's editing snapshot that counts as authored scene state for

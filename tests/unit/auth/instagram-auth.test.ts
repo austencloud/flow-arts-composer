@@ -10,7 +10,7 @@ vi.mock("firebase/firestore", () => ({
 vi.mock("firebase/functions", () => ({
   httpsCallable: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   configureAuthPersistence: vi.fn(),
   getAuthInstance: vi.fn(),
   getFirestoreInstance: vi.fn(),
@@ -21,8 +21,8 @@ import {
   getInstagramAuthErrorCode,
   getInstagramAuthErrorMessage,
   readInstagramOAuthState,
-} from "$lib/shared/auth/services/instagram-auth";
-import { INSTAGRAM_LOGIN_ENABLED } from "$lib/shared/auth/services/auth-providers.config";
+} from "#lib/shared/auth/services/instagram-auth.js";
+import { INSTAGRAM_LOGIN_ENABLED } from "#lib/shared/auth/services/auth-providers.config.js";
 
 describe("Instagram client auth contract", () => {
   it("keeps the entry point off until the external provider test passes", () => {

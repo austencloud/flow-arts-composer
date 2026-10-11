@@ -5,8 +5,8 @@ import {
   NO_LAYERS,
   allLayersOn,
   type QftLayers,
-} from "$lib/shared/notation/qft/qft-layers";
-import { GUIDE_MOVES } from "$lib/shared/notation/qft/qft-guide";
+} from "#lib/shared/notation/qft/qft-layers.js";
+import { GUIDE_MOVES } from "#lib/shared/notation/qft/qft-guide.js";
 import {
   activeHandsAreValid,
   buildActiveHands,
@@ -14,17 +14,17 @@ import {
   selectedPresetId,
   validOriginPhases,
   validVtgModes,
-} from "$lib/shared/notation/qft/qft-app-selection";
+} from "#lib/shared/notation/qft/qft-app-selection.js";
 import {
   buildTrajectoryIncrements,
   type QftTrajectory,
-} from "$lib/shared/notation/qft/qft-trajectory";
+} from "#lib/shared/notation/qft/qft-trajectory.js";
 import type {
   QftHandCount,
   QftSession,
   QftSessionHand,
-} from "$lib/shared/notation/qft/qft-session";
-import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/notation/qft/qft-session.js";
+import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 
 export interface QftAppStateDeps {
   loadSession: () => QftSession | null;

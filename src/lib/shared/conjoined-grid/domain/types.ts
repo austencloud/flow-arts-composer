@@ -5,7 +5,7 @@
  * with junction-based overlap detection between blue and red props.
  */
 
-import type { PointRef, Junction } from "$lib/shared/multi-grid/domain/models/grid-topology";
+import type { PointRef, Junction } from "#lib/shared/multi-grid/domain/models/grid-topology.js";
 
 /** Whether the user is browsing existing sequences or exploring grid arrangements */
 export type ConjoinedGridMode = "browse" | "explore";

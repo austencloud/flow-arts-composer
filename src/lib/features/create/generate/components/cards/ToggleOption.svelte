@@ -3,8 +3,8 @@ ToggleOption.svelte - Individual toggle option display component
 Presentational component for a single toggle option with icon and label
 -->
 <script lang="ts">
-  import FontAwesomeIcon from "$lib/shared/foundation/ui/FontAwesomeIcon.svelte";
-  import CircleQuarterIcon from "$lib/shared/icons/CircleQuarterIcon.svelte";
+  import FontAwesomeIcon from "#lib/shared/foundation/ui/FontAwesomeIcon.svelte";
+  import CircleQuarterIcon from "#lib/shared/icons/CircleQuarterIcon.svelte";
 
   let {
     label,

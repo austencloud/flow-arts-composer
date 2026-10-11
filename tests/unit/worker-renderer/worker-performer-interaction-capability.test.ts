@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { assessWorkerPerformerInteractionCapability } from "$lib/shared/3d/worker-renderer/services/worker-performer-interaction-capability";
+import { assessWorkerPerformerInteractionCapability } from "#lib/shared/3d/worker-renderer/services/worker-performer-interaction-capability.js";
 
 const camera = {
   position: [0, 2, 8] as const,

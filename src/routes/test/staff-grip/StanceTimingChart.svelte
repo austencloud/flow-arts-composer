@@ -18,11 +18,11 @@
     describeStanceYawTrack,
     sampleStanceYawTrackDetail,
     type StanceYawTrack,
-  } from "$lib/shared/3d/collision/stance-yaw-track";
+  } from "#lib/shared/3d/collision/stance-yaw-track.js";
   import {
     FULL_ASSIST_LATERAL_M,
     MAX_STANCE_YAW_RAD,
-  } from "$lib/shared/3d/collision/upper-body-stance-planner";
+  } from "#lib/shared/3d/collision/upper-body-stance-planner.js";
 
   interface Props {
     track: StanceYawTrack | null;

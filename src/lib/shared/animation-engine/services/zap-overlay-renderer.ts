@@ -9,19 +9,19 @@
  *
  * The overlay canvas is fully cleared each frame before drawing - Zap2DRenderer
  * uses additive blending, so we don't want stale arcs from the previous frame
- * to fade in/out unpredictably. Procedural midpoint-displacement regenerates
- * arcs every few frames inside the renderer to produce the flicker.
+ * to fade in/out unpredictably. Strike timing and afterglow live inside the
+ * renderer and advance by the frame's dt in seconds.
  */
 
-import type { Zap2DParams } from "$lib/shared/effects/translators/canvas2d-types";
-import { Zap2DRenderer } from "$lib/shared/effects/renderers/zap-2d-renderer";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
+import type { Zap2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
+import { Zap2DRenderer } from "#lib/shared/effects/renderers/zap-2d-renderer.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 import { EffectRenderer } from "./effects/effect-renderer";
 
 export class ZapOverlayRenderer extends EffectRenderer {
   private renderer = new Zap2DRenderer();
 
-  renderFrame(params: Zap2DParams, tips: EmitterTip[]): void {
+  renderFrame(params: Zap2DParams, tips: EmitterTip[], dt: number): void {
     const ctx = this.ctx;
     if (!ctx) return;
 
@@ -34,7 +34,7 @@ export class ZapOverlayRenderer extends EffectRenderer {
       return;
     }
 
-    this.renderer.render(ctx, params, tips, this.scale);
+    this.renderer.render(ctx, params, tips, dt, this.scale);
   }
 
   protected override onDispose(): void {
@@ -43,8 +43,8 @@ export class ZapOverlayRenderer extends EffectRenderer {
 }
 
 import type { EffectPlugin } from "./effects/effect-plugin";
-import type { ZapIntent } from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { ZapIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 export const zapEffectPlugin: EffectPlugin<ZapIntent> = {
   id: "zap",

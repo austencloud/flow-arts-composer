@@ -17,30 +17,30 @@ import { UndoManager, UndoOperationType } from "../../../services/undo-manager";
 import { createUndoController } from "../undo-controller.svelte";
 import { removeStep } from "../../../services/step-operations/step-removal-handler";
 import { createSequenceState } from "../../sequence-state-orchestrator.svelte";
-import { registerCreateShortcuts } from "$lib/shared/keyboard/registration/register-create-shortcuts";
-import { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
-import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
-import type { ShortcutRegistrationOptions } from "$lib/shared/keyboard/domain/types/keyboard-types";
-import type { createKeyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
-import { setCreateModuleStateRef } from "$lib/shared/create/state/create-module-state-ref.svelte";
-import { createPanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
-import { createSequence } from "$lib/shared/create/services/sequence-domain-manager";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { registerCreateShortcuts } from "#lib/shared/keyboard/registration/register-create-shortcuts.js";
+import { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
+import { ShortcutRegistry } from "#lib/shared/keyboard/services/shortcut-registry.js";
+import type { ShortcutRegistrationOptions } from "#lib/shared/keyboard/domain/types/keyboard-types.js";
+import type { createKeyboardShortcutState } from "#lib/shared/keyboard/state/keyboard-shortcut-state.svelte.js";
+import { setCreateModuleStateRef } from "#lib/shared/create/state/create-module-state-ref.svelte.js";
+import { createPanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import { createSequence } from "#lib/shared/create/services/sequence-domain-manager.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /**
  * Canonical alpha1 -> alpha3 shift: left hand south to west, right hand north

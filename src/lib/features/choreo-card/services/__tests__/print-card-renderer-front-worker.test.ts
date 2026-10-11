@@ -8,10 +8,10 @@ const h = vi.hoisted(() => ({
   workerAvailable: true,
 }));
 
-vi.mock("$lib/shared/render/services/composition-dispatcher", () => ({
+vi.mock("#lib/shared/render/services/composition-dispatcher.js", () => ({
   CompositionDispatcher: { canUseWorker: () => h.workerAvailable },
 }));
-vi.mock("$lib/shared/render/get-composition-dispatcher", () => ({
+vi.mock("#lib/shared/render/get-composition-dispatcher.js", () => ({
   getCompositionDispatcher: () => ({
     composeFrontBitmap: h.composeFrontBitmap,
   }),
@@ -35,7 +35,7 @@ vi.mock("../card-back/card-back-raster", () => ({ paintBackJob: vi.fn() }));
 
 import { PrintCardRenderer } from "../PrintCardRenderer";
 import { buildBackJob } from "../card-back/card-back-job-builder";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { PrintRenderOptions } from "../types";
 
 const seq = {

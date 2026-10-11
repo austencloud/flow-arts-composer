@@ -5,9 +5,9 @@
   import * as workshopPortfolioRepository from "./services/workshop-portfolio-repository";
   import { createFestivalState, type FestivalTab } from "./state/festival-state.svelte";
   import { setFestivalContext } from "./context/festival-context";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { auth } from "$lib/shared/auth/firebase";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { auth } from "#lib/shared/auth/firebase.js";
   import DiscoverTab from "./components/discover/DiscoverTab.svelte";
   import FestivalMap from "./components/map/FestivalMap.svelte";
   import FestivalDetailView from "./components/discover/FestivalDetailView.svelte";

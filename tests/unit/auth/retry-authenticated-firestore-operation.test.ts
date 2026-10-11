@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { User } from "firebase/auth";
-import { retryAuthenticatedFirestoreOperation } from "$lib/shared/auth/services/retry-authenticated-firestore-operation";
+import { retryAuthenticatedFirestoreOperation } from "#lib/shared/auth/services/retry-authenticated-firestore-operation.js";
 
 function userWithRefresh(refresh = vi.fn(async () => "fresh-token")): User {
   return { getIdToken: refresh } as unknown as User;

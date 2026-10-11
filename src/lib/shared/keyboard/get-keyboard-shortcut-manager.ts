@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { KeyboardShortcutManager } from './services/keyboard-shortcut-manager';
 import { getShortcutRegistry } from './get-shortcut-registry';

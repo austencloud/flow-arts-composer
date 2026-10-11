@@ -46,37 +46,37 @@ diagnostic here and are not persisted or transmitted, same as in the game.
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { createHandPath } from "$lib/shared/foundation/services/hand-path-factory";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { createHandPath } from "#lib/shared/foundation/services/hand-path-factory.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 
-  import TraceStage from "$lib/features/learn/play/games/trace-paths/components/TraceStage.svelte";
+  import TraceStage from "#lib/features/learn/play/games/trace-paths/components/TraceStage.svelte";
   import {
     createTracePathsState,
     setTracePathsContext,
     handName,
     locationName,
     segmentEndPoint,
-  } from "$lib/features/learn/play/games/trace-paths/state/trace-paths-state.svelte";
+  } from "#lib/features/learn/play/games/trace-paths/state/trace-paths-state.svelte.js";
   import {
     handPathToTraceRound,
     pairHandPathsToTraceRound,
-  } from "$lib/features/learn/play/games/trace-paths/services/hand-path-to-trace";
+  } from "#lib/features/learn/play/games/trace-paths/services/hand-path-to-trace.js";
   import {
     normalizeStagePoint,
     polylineLength,
     type StageRect,
-  } from "$lib/features/learn/play/games/trace-paths/services/trace-path-sampler";
-  import { projectOntoPolyline } from "$lib/features/learn/play/games/trace-paths/services/trace-evaluator";
-  import { sharedGridPreflight } from "$lib/features/learn/play/games/trace-paths/services/shared-grid-preflight";
+  } from "#lib/features/learn/play/games/trace-paths/services/trace-path-sampler.js";
+  import { projectOntoPolyline } from "#lib/features/learn/play/games/trace-paths/services/trace-evaluator.js";
+  import { sharedGridPreflight } from "#lib/features/learn/play/games/trace-paths/services/shared-grid-preflight.js";
   import type {
     NormalizedPoint,
     TraceHand,
     TraceSegment,
-  } from "$lib/features/learn/play/games/trace-paths/domain/trace-types";
-  import { TRACE_HANDS } from "$lib/features/learn/play/games/trace-paths/domain/trace-types";
+  } from "#lib/features/learn/play/games/trace-paths/domain/trace-types.js";
+  import { TRACE_HANDS } from "#lib/features/learn/play/games/trace-paths/domain/trace-types.js";
 
   // The state under test
 

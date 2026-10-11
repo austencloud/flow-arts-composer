@@ -1,6 +1,6 @@
-import type { TrailSettings } from "$lib/shared/animation-engine/domain/types/trail-types";
-import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
-import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+import type { TrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import type { EffectsConfig } from "#lib/shared/effects/domain/effects-config.js";
+import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
 
 /** Trail render settings minus workflow flags and the tunnel-only layer array. */
 export type PresentationTrailSettings = Omit<

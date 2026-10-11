@@ -1,5 +1,5 @@
 import { cubicOut } from "svelte/easing";
-import { DURATION } from "$lib/shared/transitions/transitions";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 
 export type WorkerMoveHandleWorldPosition = readonly [
   x: number,

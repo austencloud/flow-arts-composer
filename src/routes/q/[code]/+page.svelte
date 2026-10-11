@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { page } from "$app/state";
   import { onMount } from "svelte";
-  import LoadingGate from "$lib/shared/components/loading/LoadingGate.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import LoadingGate from "#lib/shared/components/loading/LoadingGate.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   let { data } = $props();
 

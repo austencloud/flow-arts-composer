@@ -5,9 +5,9 @@ import {
   isSpinnerViewerProp,
   resolvePropMotionDiscipline,
   sceneNeedsContactViewer,
-} from "$lib/shared/3d/domain/prop-motion-discipline";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getBasePropsByCategory } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+} from "#lib/shared/3d/domain/prop-motion-discipline.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getBasePropsByCategory } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 
 describe("prop motion discipline", () => {
   it("routes the entire contact-ball family away from the spinner stage", () => {

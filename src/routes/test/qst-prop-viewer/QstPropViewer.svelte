@@ -1,19 +1,19 @@
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { onMount } from "svelte";
   import { T } from "@threlte/core";
   import { Plane, Prop3D, type PropState3D } from "@austencloud/scene-3d";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import Scene3D from "$lib/shared/3d/components/Scene3D.svelte";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
-  import { calculatePropState } from "$lib/shared/3d/services/prop-state-interpolator";
-  import { motionDataToConfig3D } from "$lib/shared/3d/services/sequence-converter";
-  import { setSceneFeatureContext } from "$lib/shared/3d/scene-features/context/scene-feature-context";
-  import { createSceneFeatureState } from "$lib/shared/3d/scene-features/state/scene-feature-state.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import Scene3D from "#lib/shared/3d/components/Scene3D.svelte";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
+  import { calculatePropState } from "#lib/shared/3d/services/prop-state-interpolator.js";
+  import { motionDataToConfig3D } from "#lib/shared/3d/services/sequence-converter.js";
+  import { setSceneFeatureContext } from "#lib/shared/3d/scene-features/context/scene-feature-context.js";
+  import { createSceneFeatureState } from "#lib/shared/3d/scene-features/state/scene-feature-state.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import archiveJson from "../../../../docs/research/spiroanim/qst-228-sequences.json";
 
   interface QstStep {

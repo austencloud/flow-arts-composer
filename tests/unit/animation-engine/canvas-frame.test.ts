@@ -5,7 +5,7 @@ import {
   sameFrame,
   squareFrame,
   staleRasterScale,
-} from "$lib/shared/animation-engine/domain/types/canvas-frame";
+} from "#lib/shared/animation-engine/domain/types/canvas-frame.js";
 
 describe("canvas frame", () => {
   it("centres the engine square inside a wide or tall frame", () => {

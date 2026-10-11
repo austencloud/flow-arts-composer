@@ -13,8 +13,8 @@
    * the button.
    */
 
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     /** Id of the profile this button follows/unfollows. */

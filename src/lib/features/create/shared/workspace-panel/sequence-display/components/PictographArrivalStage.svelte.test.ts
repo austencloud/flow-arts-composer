@@ -1,18 +1,18 @@
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { describe, expect, it, vi } from "vitest";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 vi.mock(
-  "$lib/shared/pictograph/shared/components/PictographContainer.svelte",
+  "#lib/shared/pictograph/shared/components/PictographContainer.svelte",
   async () => ({
     default: (await import("./PictographArrivalContainerStub.svelte")).default,
   })

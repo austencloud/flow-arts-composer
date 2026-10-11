@@ -1,4 +1,4 @@
-import { logActivity } from "$lib/shared/analytics/services/posthog-activity-logger";
+import { logActivity } from "#lib/shared/analytics/services/posthog-activity-logger.js";
 
 export function trackTikaQuestionSubmitted(properties: {
   mode: "single" | "compare";

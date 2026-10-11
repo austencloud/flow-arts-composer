@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const axis = [
   { key: "pro", style: "pro" },
@@ -11,66 +11,69 @@ async function loadHarness(loadEdges = vi.fn().mockResolvedValue([])) {
   vi.resetModules();
   const resolveArchetypes = vi.fn().mockResolvedValue([]);
   vi.doMock(
-    "$lib/shared/animation-engine/domain/types/prop-tip-points",
+    "#lib/shared/animation-engine/domain/types/prop-tip-points.js",
     () => ({ getTipPoints: () => ({ points: [{ dx: 12, dy: 0 }] }) })
   );
   vi.doMock(
-    "$lib/shared/animation-engine/domain/types/trail-point-types",
+    "#lib/shared/animation-engine/domain/types/trail-point-types.js",
     () => ({
       getDefaultTrailPointConfig: () => ({ right: { type: "tip", index: 0 } }),
     })
   );
   vi.doMock(
-    "$lib/shared/shape-matrix/services/rotation-style-archetypes",
+    "#lib/shared/shape-matrix/services/rotation-style-archetypes.js",
     () => ({ resolveRotationStyleArchetypes: resolveArchetypes })
   );
   vi.doMock(
-    "$lib/features/choreo-card/services/pictograph-letter-lookup",
+    "#lib/features/choreo-card/services/pictograph-letter-lookup.js",
     () => ({ loadDiamondEdges: loadEdges })
   );
-  vi.doMock("$lib/shared/shape-matrix/services/flower-archetype", () => ({
+  vi.doMock("#lib/shared/shape-matrix/services/flower-archetype.js", () => ({
     resolveFlowerArchetype: () => ({}),
   }));
-  vi.doMock("$lib/shared/shape-matrix/domain/flower-signature", () => ({
+  vi.doMock("#lib/shared/shape-matrix/domain/flower-signature.js", () => ({
     buildShapeMatrixAxis: () => axis,
     flowerKey: (flower: (typeof axis)[number]) => flower.key,
   }));
-  vi.doMock("$lib/features/lab/vtg-lab/services/build-flower-sequence", () => ({
-    buildFlowerSequence: (
-      archetype: unknown,
-      flower: (typeof axis)[number]
-    ) => ({
-      steps: [
-        {
-          motions: {
-            left: {
-              motionType: flower.style,
-              rotationDirection: "cw",
-              startLocation: "n",
-              endLocation: "e",
-              turns: 1,
-              startOrientation: "out",
-              endOrientation: "out",
+  vi.doMock(
+    "#lib/features/lab/vtg-lab/services/build-flower-sequence.js",
+    () => ({
+      buildFlowerSequence: (
+        archetype: unknown,
+        flower: (typeof axis)[number]
+      ) => ({
+        steps: [
+          {
+            motions: {
+              left: {
+                motionType: flower.style,
+                rotationDirection: "cw",
+                startLocation: "n",
+                endLocation: "e",
+                turns: 1,
+                startOrientation: "out",
+                endOrientation: "out",
+              },
             },
           },
-        },
-      ],
-    }),
-  }));
+        ],
+      }),
+    })
+  );
 
   const { loadShapeMatrix } =
-    await import("$lib/shared/shape-matrix/services/shape-matrix-flowers");
+    await import("#lib/shared/shape-matrix/services/shape-matrix-flowers.js");
   return { loadShapeMatrix, resolveArchetypes };
 }
 
 afterEach(() => {
-  vi.doUnmock("$lib/shared/animation-engine/domain/types/prop-tip-points");
-  vi.doUnmock("$lib/shared/animation-engine/domain/types/trail-point-types");
-  vi.doUnmock("$lib/shared/shape-matrix/services/rotation-style-archetypes");
-  vi.doUnmock("$lib/features/choreo-card/services/pictograph-letter-lookup");
-  vi.doUnmock("$lib/shared/shape-matrix/services/flower-archetype");
-  vi.doUnmock("$lib/shared/shape-matrix/domain/flower-signature");
-  vi.doUnmock("$lib/features/lab/vtg-lab/services/build-flower-sequence");
+  vi.doUnmock("#lib/shared/animation-engine/domain/types/prop-tip-points.js");
+  vi.doUnmock("#lib/shared/animation-engine/domain/types/trail-point-types.js");
+  vi.doUnmock("#lib/shared/shape-matrix/services/rotation-style-archetypes.js");
+  vi.doUnmock("#lib/features/choreo-card/services/pictograph-letter-lookup.js");
+  vi.doUnmock("#lib/shared/shape-matrix/services/flower-archetype.js");
+  vi.doUnmock("#lib/shared/shape-matrix/domain/flower-signature.js");
+  vi.doUnmock("#lib/features/lab/vtg-lab/services/build-flower-sequence.js");
   vi.resetModules();
 });
 
@@ -80,7 +83,7 @@ function pathFor(data: Awaited<ReturnType<typeof importMatrix>>, key: string) {
 
 async function importMatrix() {
   const { loadShapeMatrix } =
-    await import("$lib/shared/shape-matrix/services/shape-matrix-flowers");
+    await import("#lib/shared/shape-matrix/services/shape-matrix-flowers.js");
   return loadShapeMatrix(PropType.STAFF);
 }
 

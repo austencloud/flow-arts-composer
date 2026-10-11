@@ -10,7 +10,7 @@
  *
  *   <button use:methodPreviewHold={{ turns, id: method.id }}>
  */
-import type { MethodPreviewTurns } from "$lib/features/create/shared/state/method-preview-turns.svelte";
+import type { MethodPreviewTurns } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 
 export interface MethodPreviewHoldParams {
   turns: Pick<MethodPreviewTurns, "hold" | "release">;

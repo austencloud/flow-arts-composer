@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   FEATURE_VIDEO_FILE_FORMAT,
   type FeatureVideoFile,
-} from "$lib/shared/media-composition/domain/feature-video";
-import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/media-composition/domain/feature-video.js";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
 import {
   createFeatureVideoSync,
   saveFeatureVideoExport,
-} from "$lib/shared/media-composition/services/feature-video-client";
+} from "#lib/shared/media-composition/services/feature-video-client.js";
 
 const SAVED = {
   file: "exports/cut 1.mp4",

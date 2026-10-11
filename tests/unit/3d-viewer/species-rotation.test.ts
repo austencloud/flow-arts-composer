@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
 	SpeciesRotationManager,
 	type VisitorGroup,
-} from '$lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/fish-species';
+} from '#lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/fish-species.js';
 
 describe('SpeciesRotationManager', () => {
 	let manager: SpeciesRotationManager;

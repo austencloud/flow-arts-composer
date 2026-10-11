@@ -15,13 +15,13 @@
  */
 
 import type { GridJoin, GridJoinDirection } from "@tka/tka-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   VERTICAL_MIRROR_LOCATION_MAP,
   HORIZONTAL_MIRROR_LOCATION_MAP,
-} from "$lib/shared/create/domain/strict-loop-placement-maps";
-import { rotateLocation } from "$lib/shared/create/services/rotation-helpers";
-import type { TargetHand } from "$lib/shared/create/state/panel-coordination-state.svelte";
+} from "#lib/shared/create/domain/strict-loop-placement-maps.js";
+import { rotateLocation } from "#lib/shared/create/services/rotation-helpers.js";
+import type { TargetHand } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 
 type JoinTurn = (toward: GridJoinDirection) => GridJoinDirection;
 

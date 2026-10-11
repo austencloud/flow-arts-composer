@@ -1,8 +1,8 @@
 <script lang="ts">
-  import Seo from "$lib/shared/components/Seo.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import "$lib/shared/landing/styles/public-editorial.css";
-  import SoftwareSubmitForm from "$lib/shared/landing/components/SoftwareSubmitForm.svelte";
+  import Seo from "#lib/shared/components/Seo.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import "#lib/shared/landing/styles/public-editorial.css";
+  import SoftwareSubmitForm from "#lib/shared/landing/components/SoftwareSubmitForm.svelte";
   import HistoryEra from "./_components/HistoryEra.svelte";
   import SoftwareGallery from "./_components/SoftwareGallery.svelte";
 

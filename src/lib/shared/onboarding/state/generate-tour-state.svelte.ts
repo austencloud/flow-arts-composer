@@ -11,19 +11,19 @@
 import {
   TOUR_STOP_IDS,
   type GeneratorCardId,
-} from "$lib/shared/create/domain/card-registry";
+} from "#lib/shared/create/domain/card-registry.js";
 import {
   safeLocalStorageSetItem,
   removeLocalStorageItem,
-} from "$lib/shared/foundation/services/storage-manager";
+} from "#lib/shared/foundation/services/storage-manager.js";
 import {
   logGenerateTourCompleted,
   logGenerateTourSkipped,
   logGenerateTourStarted,
   logGenerateTourStepViewed,
   type GenerateTourSource,
-} from "$lib/shared/analytics/services/onboarding-events";
-import { captureExceptionWhenReady } from "$lib/shared/analytics/services/posthog";
+} from "#lib/shared/analytics/services/onboarding-events.js";
+import { captureExceptionWhenReady } from "#lib/shared/analytics/services/posthog.js";
 
 const TOUR_COMPLETED_KEY = "tka-generate-tour-completed";
 const TOUR_INDEX_KEY = "tka-generate-tour-index";
@@ -79,11 +79,11 @@ function createGenerateTourState() {
 
     try {
       const { getFirestoreInstance } =
-        await import("$lib/shared/auth/firebase");
+        await import("#lib/shared/auth/firebase.js");
       const { doc, setDoc, serverTimestamp } =
         await import("firebase/firestore");
       const { authState } =
-        await import("$lib/shared/auth/state/auth-state.svelte");
+        await import("#lib/shared/auth/state/auth-state.svelte.js");
 
       const userId = authState.effectiveUserId;
       if (!userId) return;
@@ -276,10 +276,10 @@ function createGenerateTourState() {
 
       try {
         const { getFirestoreInstance } =
-          await import("$lib/shared/auth/firebase");
+          await import("#lib/shared/auth/firebase.js");
         const { doc, getDoc } = await import("firebase/firestore");
         const { authState } =
-          await import("$lib/shared/auth/state/auth-state.svelte");
+          await import("#lib/shared/auth/state/auth-state.svelte.js");
 
         const userId = authState.effectiveUserId;
         if (!userId) {

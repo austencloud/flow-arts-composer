@@ -28,7 +28,7 @@ export interface DetectionOptions {
 import type {
   DetectionFrame,
   DetectedPosition,
-} from "$lib/shared/train/domain/detection-frame";
+} from "#lib/shared/train/domain/detection-frame.js";
 import type { HandLandmarker } from "./hand-landmarker";
 import type { HandTrackingStabilizer } from "./hand-tracking-stabilizer";
 import { analyzeHandedness } from "./handedness-analyzer";
@@ -38,7 +38,7 @@ import {
   getReferencePoint,
 } from "./hand-state-analyzer";
 import { mapToQuadrant, isValidForMode } from "./quadrant-mapper";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 // How many frames to persist a hand after it disappears (for stability)
 const HAND_PERSISTENCE_FRAMES = 5;

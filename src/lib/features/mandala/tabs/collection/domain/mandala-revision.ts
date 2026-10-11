@@ -1,10 +1,10 @@
-import { canonicalDigest } from "$lib/shared/foundation/utils/canonical-digest";
+import { canonicalDigest } from "#lib/shared/foundation/utils/canonical-digest.js";
 import {
   ARTIFACT_REVISION_DIGEST_ALGORITHM,
   ARTIFACT_REVISION_DIGEST_VERSION,
   createArtifactRevisionRef,
   type ArtifactRevisionRef,
-} from "$lib/shared/artifact-revisions/domain/artifact-revision";
+} from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
 import type { CollectedMandala } from "./mandala-collection-types";
 
 /**

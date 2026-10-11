@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Vector3 } from "three";
 import { TkaPoseClassifier } from "./tka-pose-classifier";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 const c = new TkaPoseClassifier();
 
@@ -68,7 +68,7 @@ describe("TkaPoseClassifier.classifyOrientation", () => {
   });
 });
 
-import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 describe("TkaPoseClassifier.classifyHandMotion", () => {
   it("same location = static", () => {
@@ -106,7 +106,7 @@ describe("TkaPoseClassifier.classifyShiftType", () => {
   });
 });
 
-import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { StaffPose3D } from "../domain/notation-3d";
 
 function pose(grip: Vector3, axis: Vector3): StaffPose3D {

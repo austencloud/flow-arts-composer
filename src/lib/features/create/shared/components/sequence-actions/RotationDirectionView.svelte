@@ -7,13 +7,13 @@
   - Save: extract rotation directions from the current sequence and save
 -->
 <script lang="ts">
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import * as rotationDirectionPatternManagerModule from "$lib/features/create/shared/services/rotation-direction-pattern-manager";
+  import * as rotationDirectionPatternManagerModule from "#lib/features/create/shared/services/rotation-direction-pattern-manager.js";
   import { rotationDirectionPatternState } from "../../state/rotation-direction-pattern-state.svelte.ts";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { layoutState } from "$lib/shared/layout/layout-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { layoutState } from "#lib/shared/layout/layout-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { RotationDirectionPattern } from "../../domain/models/rotation-direction-pattern-data";
   import {
     templateToPattern,

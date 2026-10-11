@@ -20,13 +20,13 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { calculateEndOrientation } from "@tka/sequence-engine/core";
 import { Plane, type Plane as PlaneValue } from "@tka/tka-types";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import { calculateHandpathDirection } from "$lib/shared/pictograph/arrow/positioning/calculation/services/handpath-direction-calculator";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import { calculateHandpathDirection } from "#lib/shared/pictograph/arrow/positioning/calculation/services/handpath-direction-calculator.js";
 import {
   lookupLetter,
   parseCsvEdges,
-} from "$lib/features/choreo-card/services/pictograph-letter-lookup";
+} from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
 
 type QstCollectionKey = "breaks" | "advanced" | "beyond";
 type QstPosition = "top" | "left" | "front" | "right" | "bottom" | "back";

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildScanAppHandoffHref,
   buildScanAppHandoffPath,
-} from "$lib/shared/qr/services/scan-app-handoff";
+} from "#lib/shared/qr/services/scan-app-handoff.js";
 
 function handoffDestination(path: string): URL {
   const bridge = new URL(path, "https://tkaflowarts.com");

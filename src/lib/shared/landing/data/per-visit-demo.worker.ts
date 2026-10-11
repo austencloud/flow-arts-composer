@@ -15,10 +15,10 @@
  * Protocol is one request, one response, correlated by id — see
  * per-visit-demo-worker-client.ts, which owns the main-thread half.
  */
-import { rollPerVisitDemo } from "$lib/shared/landing/data/per-visit-demo-core";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { rollPerVisitDemo } from "#lib/shared/landing/data/per-visit-demo-core.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export interface PerVisitDemoRequest {
   id: number;

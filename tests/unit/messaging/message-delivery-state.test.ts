@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { IMessageDeliveryCoordinator } from "$lib/shared/inbox/services/contracts/IMessageDeliveryCoordinator";
-import type { IMessageDeliveryRepository } from "$lib/shared/inbox/services/contracts/IMessageDeliveryRepository";
+import type { IMessageDeliveryCoordinator } from "#lib/shared/inbox/services/contracts/IMessageDeliveryCoordinator.js";
+import type { IMessageDeliveryRepository } from "#lib/shared/inbox/services/contracts/IMessageDeliveryRepository.js";
 import type {
   MessageDraftRecord,
   MessageOutboxRecord,
-} from "$lib/shared/inbox/domain/message-delivery-models";
-import { createMessageDeliveryState } from "$lib/shared/inbox/state/message-delivery-state.svelte";
+} from "#lib/shared/inbox/domain/message-delivery-models.js";
+import { createMessageDeliveryState } from "#lib/shared/inbox/state/message-delivery-state.svelte.js";
 
 class MemoryDeliveryRepository implements IMessageDeliveryRepository {
   drafts = new Map<string, MessageDraftRecord>();

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import SettingToggleButton from "$lib/shared/settings/components/SettingToggleButton.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import SettingToggleButton from "#lib/shared/settings/components/SettingToggleButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     label: string;

@@ -1,20 +1,20 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import SequenceTransformActions from "$lib/shared/create/components/SequenceTransformActions.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getToggledGridMode } from "$lib/shared/create/services/rotation-helpers";
-  import { createPropPlacementMotionState } from "$lib/shared/pictograph/grid/state/prop-placement-motion.svelte";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getToggledGridMode } from "#lib/shared/create/services/rotation-helpers.js";
+  import { createPropPlacementMotionState } from "#lib/shared/pictograph/grid/state/prop-placement-motion.svelte.js";
   import {
     buildPlacementTransformTransition,
     type PlacementTransition,
-  } from "$lib/shared/pictograph/grid/services/prop-placement-view-model";
-  import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { reducedMotion } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/pictograph/grid/services/prop-placement-view-model.js";
+  import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import {
     PLACEMENT_KINDS,
     PLACEMENT_LETTERS,

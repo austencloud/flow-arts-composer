@@ -21,31 +21,31 @@
  * Extracted from CreateModule.svelte monolith to follow runes state management pattern.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type {
   MandalaPathShape,
   MandalaRenderOptions,
-} from "$lib/shared/mandala/domain/mandala-types";
+} from "#lib/shared/mandala/domain/mandala-types.js";
 import type {
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { createPersistenceHelper } from "$lib/shared/state/utils/persistent-state";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { createPersistenceHelper } from "#lib/shared/state/utils/persistent-state.js";
 import {
   forgetCustomizeOverlay,
   recallCustomizeScreen,
   rememberCustomizeOverlayOpen,
-} from "$lib/shared/create/state/customize-overlay-hmr";
-import type { CreateModuleState } from "$lib/shared/create/state/create-module-state-types";
-import type { ConstructOptionAudition } from "$lib/shared/create/domain/construct-option-audition";
-import { logSequenceActionsOpened } from "$lib/shared/create/analytics/sequence-action-events";
-import type { SequenceActionsOpenSource } from "$lib/shared/create/domain/sequence-action-types";
+} from "#lib/shared/create/state/customize-overlay-hmr.js";
+import type { CreateModuleState } from "#lib/shared/create/state/create-module-state-types.js";
+import type { ConstructOptionAudition } from "#lib/shared/create/domain/construct-option-audition.js";
+import { logSequenceActionsOpened } from "#lib/shared/create/analytics/sequence-action-events.js";
+import type { SequenceActionsOpenSource } from "#lib/shared/create/domain/sequence-action-types.js";
 
 // Lazy import to break circular dependency
 // panel-coordination-state ↔ create-module-state-ref ↔ construct-tab-state (cycle)
@@ -55,7 +55,7 @@ let _cachedGetCreateModuleStateRef:
 function getCreateModuleStateRefLazy() {
   if (!_cachedGetCreateModuleStateRef) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require("$lib/shared/create/state/create-module-state-ref.svelte");
+    const mod = require("#lib/shared/create/state/create-module-state-ref.svelte.js");
     _cachedGetCreateModuleStateRef = mod.getCreateModuleStateRef;
   }
   return _cachedGetCreateModuleStateRef!();
@@ -64,10 +64,10 @@ function getCreateModuleStateRefLazy() {
 // Re-export TargetHand from standalone types file for backwards compatibility
 // The type is defined in domain/types/panel-types.ts to break circular dependency
 // with SequenceTransformer which also needs this type
-export type { TargetHand } from "$lib/shared/create/domain/panel-types";
+export type { TargetHand } from "#lib/shared/create/domain/panel-types.js";
 
 // Import for local use
-import type { TargetHand } from "$lib/shared/create/domain/panel-types";
+import type { TargetHand } from "#lib/shared/create/domain/panel-types.js";
 
 export interface MandalaViewerSelection {
   variant: MandalaRenderOptions["show"];

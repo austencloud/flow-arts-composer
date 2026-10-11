@@ -6,9 +6,9 @@ import { getCatalogLayoutPolicy } from "../domain/catalog-layout-policy";
 import type { FestivalSamplerCardManifest } from "./festival-sampler-manifest";
 import type { PrintRenderOptions } from "./types";
 import { getCardFrameContentInset } from "./card-front-frame";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { pickBestFitLayout } from "$lib/shared/render/services/container-aware-layout";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { pickBestFitLayout } from "#lib/shared/render/services/container-aware-layout.js";
 
 export const FESTIVAL_SAMPLER_NAME = "Festival Sampler 2026";
 

@@ -19,9 +19,9 @@
  * See docs/superpowers/specs/active/2026-07-02-gallery-thumbnail-warm-pass-design.md
  */
 
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ThumbnailRenderOrchestrator } from "./thumbnail-render-orchestrator";
 import type { PublicSequencesLoader } from "./public-sequences-loader";
 import {
@@ -156,10 +156,10 @@ export function startGalleryWarm(
   const promise = (async (): Promise<WarmProgress> => {
     const orchestrator =
       deps?.orchestrator ??
-      (await import("$lib/shared/browse/get-thumbnail-render-orchestrator")).getThumbnailRenderOrchestrator();
+      (await import("#lib/shared/browse/get-thumbnail-render-orchestrator.js")).getThumbnailRenderOrchestrator();
     const loader =
       deps?.loader ??
-      (await import("$lib/shared/browse/get-browse-loader")).getBrowseLoader();
+      (await import("#lib/shared/browse/get-browse-loader.js")).getBrowseLoader();
 
     const loaded = await loader.loadSequenceMetadata();
     const extras = deps?.extraSequences ? await deps.extraSequences() : [];

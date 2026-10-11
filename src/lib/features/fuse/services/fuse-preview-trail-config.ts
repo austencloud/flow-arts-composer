@@ -1,9 +1,9 @@
-import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import {
   setCellWide,
   type TipEffectMap,
-} from "$lib/shared/animation-engine/services/tip-effect-resolver";
-import { pairTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
+} from "#lib/shared/animation-engine/services/tip-effect-resolver.js";
+import { pairTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
 
 /**
  * Trail settings choose where the live overlay captures a prop. The effect map

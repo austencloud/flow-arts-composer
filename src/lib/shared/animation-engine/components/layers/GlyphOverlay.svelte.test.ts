@@ -2,7 +2,7 @@ import { render } from "vitest-browser-svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import GlyphOverlay from "./GlyphOverlay.svelte";
 
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   building: false,
   dev: false,

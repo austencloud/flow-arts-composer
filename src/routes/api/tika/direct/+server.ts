@@ -1,16 +1,16 @@
-import { dev } from "$app/environment";
-import { env } from "$env/dynamic/private";
-import { TikaDirectorRequestSchema } from "$lib/features/stage/domain/tika-director";
-import { planStageDirection } from "$lib/features/stage/services/server/tika-director-planner";
-import { reviewStageDirection } from "$lib/features/stage/services/server/tika-director-reviewer";
+import { dev } from "$app/env";
+import * as env from "$app/env/private";
+import { TikaDirectorRequestSchema } from "#lib/features/stage/domain/tika-director.js";
+import { planStageDirection } from "#lib/features/stage/services/server/tika-director-planner.js";
+import { reviewStageDirection } from "#lib/features/stage/services/server/tika-director-reviewer.js";
 import {
   createTikaDirectorModel,
   isTikaDirectorModelConfigured,
-} from "$lib/features/stage/services/server/tika-director-models";
-import { requireAdmin } from "$lib/server/auth/requireAdmin";
-import { requireFirebaseUser } from "$lib/server/auth/requireFirebaseUser";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
+} from "#lib/features/stage/services/server/tika-director-models.js";
+import { requireAdmin } from "#lib/server/auth/requireAdmin.js";
+import { requireFirebaseUser } from "#lib/server/auth/requireFirebaseUser.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
 import { isHttpError, type RequestHandler } from "@sveltejs/kit";
 
 export const POST: RequestHandler = async (event) => {

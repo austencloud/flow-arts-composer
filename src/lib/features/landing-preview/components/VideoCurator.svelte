@@ -1,8 +1,8 @@
 <script lang="ts">
 
-import { getSequenceMatcher } from "$lib/features/landing-preview/get-sequence-matcher";
-import * as videoCuratorLoader from "$lib/features/landing-preview/services/video-curator-loader";
-import * as videoCuratorPersister from "$lib/features/landing-preview/services/video-curator-persister";
+import { getSequenceMatcher } from "#lib/features/landing-preview/get-sequence-matcher.js";
+import * as videoCuratorLoader from "#lib/features/landing-preview/services/video-curator-loader.js";
+import * as videoCuratorPersister from "#lib/features/landing-preview/services/video-curator-persister.js";
   /**
    * VideoCurator
    *
@@ -10,10 +10,10 @@ import * as videoCuratorPersister from "$lib/features/landing-preview/services/v
    * Uses the unified VideoEditorOverlay for all editing modes.
    */
   import { onMount } from "svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { getVideoCache } from "$lib/shared/video";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { getVideoCache } from "#lib/shared/video/index.js";
   import VideoEditorOverlay from "./video-editor/VideoEditorOverlay.svelte";
   import VideoEditModal from "./VideoEditModal.svelte";
   import VideoFilterBar from "./VideoFilterBar.svelte";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SoloPropDataSchema } from "$lib/shared/foundation/domain/models/solo-prop-schemas";
+import { SoloPropDataSchema } from "#lib/shared/foundation/domain/models/solo-prop-schemas.js";
 
 describe("SoloPropDataSchema", () => {
   it("accepts the canonical start/end step shape persisted by the solo repository", () => {

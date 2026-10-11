@@ -37,7 +37,7 @@ import {
 } from "../../src/lib/shared/foundation/services/sequence-hydrator";
 import { computeHash } from "../../src/lib/shared/library/services/sequence-content-hasher";
 // Import the node-safe classes directly — the getStepSignatureGenerator getter
-// is a browser-only singleton (imports $app/environment and throws when !browser).
+// is a browser-only singleton (imports $app/env and throws when !browser).
 import { StepSignatureGenerator } from "../../src/lib/shared/comparison/services/step-signature-generator";
 import { MotionSignatureGenerator } from "../../src/lib/shared/comparison/services/motion-signature-generator";
 import {

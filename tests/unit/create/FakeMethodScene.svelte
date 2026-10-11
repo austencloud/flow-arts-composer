@@ -16,7 +16,7 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { MethodPreviewSceneProps } from "$lib/features/create/shared/components/method-previews/method-preview-scenes";
+  import type { MethodPreviewSceneProps } from "#lib/features/create/shared/components/method-previews/method-preview-scenes.js";
 
   let {
     playing,

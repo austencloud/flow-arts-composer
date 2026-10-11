@@ -9,7 +9,10 @@ import {
   type Material,
   type Object3D,
 } from "three";
-import type { ViewPose, ViewTarget3D } from "$lib/shared/review/view-capture";
+import type {
+  ViewPose,
+  ViewTarget3D,
+} from "#lib/shared/review/view-capture.js";
 
 export interface EnvironmentReviewReading {
   camera: ViewPose;

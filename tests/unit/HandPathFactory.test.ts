@@ -7,11 +7,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { createHandPath } from "$lib/shared/foundation/services/hand-path-factory";
+import { createHandPath } from "#lib/shared/foundation/services/hand-path-factory.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 describe("HandPathFactory", () => {
 

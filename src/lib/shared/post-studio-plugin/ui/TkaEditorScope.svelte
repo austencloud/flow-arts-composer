@@ -1,34 +1,34 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
-  import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
-  import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getKeyboardShortcutManager } from "#lib/shared/keyboard/get-keyboard-shortcut-manager.js";
+  import { registerEditHistoryShortcuts } from "#lib/shared/keyboard/registration/register-edit-history-shortcuts.js";
+  import { keyboardShortcutState } from "#lib/shared/keyboard/state/keyboard-shortcut-state.svelte.js";
   import { onDestroy, onMount, untrack, type Snippet } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+  import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
   import {
     getEffectsConfigContext,
     setEffectsConfigContext,
-  } from "$lib/shared/effects/state/effects-config-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+  } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import {
     getAnimationVisibilityContext,
     setAnimationVisibilityContext,
-  } from "$lib/shared/animation-engine/state/animation-visibility-context";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { tryGetViewerUrlSessionContext } from "$lib/shared/sequence-viewer/services/viewer-url-session";
+  } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { tryGetViewerUrlSessionContext } from "#lib/shared/sequence-viewer/services/viewer-url-session.js";
   import {
     capturePsSlice,
     persistedPsSlice,
     seedFromPsSlice,
     type PsSlicePayload,
-  } from "$lib/shared/sequence-viewer/services/viewer-url-slices/ps-slice";
-  import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
-  import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import { createPostSequenceView } from "$lib/shared/media-composition/services/post-sequence-view.svelte";
+  } from "#lib/shared/sequence-viewer/services/viewer-url-slices/ps-slice.js";
+  import { getViewerStudioSurfaces } from "#lib/shared/sequence-viewer/context/viewer-studio-surfaces-context.js";
+  import { getSequenceVideosStore } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
+  import { createPostSequenceView } from "#lib/shared/media-composition/services/post-sequence-view.svelte.js";
   import type {
     PostProject,
     PostVideoItem,
@@ -37,25 +37,25 @@
   import {
     DEFAULT_HAND_LABELING,
     type HandLabeling,
-  } from "$lib/shared/video-collaboration/domain/hand-labeling";
+  } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
   import type { CompositionSourceBinding } from "@austencloud/video-editor";
   import {
     createPostEditorState,
     type CatalogTakeSource,
-  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
   import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
-  import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
-  import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
+  import type { StaffTipAnalysis } from "#lib/shared/media-composition/state/staff-tip-analysis.svelte.js";
+  import type { FeatureVideoSync } from "#lib/shared/media-composition/services/feature-video-client.js";
   import {
     isSavedFeatureExport,
     type SavedFeatureExport,
-  } from "$lib/shared/media-composition/domain/feature-video-export";
+  } from "#lib/shared/media-composition/domain/feature-video-export.js";
   import type { PostStudioShareExport } from "@austencloud/video-editor/ui";
   import { provideStrings } from "@austencloud/video-editor/strings";
   import "@austencloud/video-editor/css/video-editor-tokens.css";
-  import { tkaEditorTranslate } from "$lib/shared/media-composition/state/editor-strings";
-  import { createPostTimingSession } from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
-  import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
+  import { tkaEditorTranslate } from "#lib/shared/media-composition/state/editor-strings.js";
+  import { createPostTimingSession } from "#lib/shared/share/components/post-studio/builder/post-timing-session.svelte.js";
+  import VisualSequenceSaveContextMenuHost from "#lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import { qrPayloadForImage } from "./post-qr-image-appearance";
   import { withPostStudioPropType } from "./post-studio-prop-render-options";
   import { beatsClipOf } from "./tka-beats";
@@ -528,7 +528,7 @@
     if (!import.meta.env.DEV) return;
     let disposed = false;
     let stop: (() => void) | undefined;
-    void import("$lib/shared/media-composition/services/post-project-dev-client")
+    void import("#lib/shared/media-composition/services/post-project-dev-client.js")
       .then(({ startPostProjectDevBridge }) => {
         if (disposed) return;
         stop = startPostProjectDevBridge(

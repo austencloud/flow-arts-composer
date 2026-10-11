@@ -3,7 +3,7 @@ import type { PostVideoItem } from "@austencloud/video-editor/core";
 import {
   compilePostProject,
   evaluatePresetFrame,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import { NOW, project, take, video } from "./post-project-fixtures";
 
 const BAND = {

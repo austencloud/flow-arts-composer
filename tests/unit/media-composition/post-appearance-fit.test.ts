@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appearanceControlsFit } from "$lib/shared/post-studio-plugin/ui/post-appearance-fit";
+import { appearanceControlsFit } from "#lib/shared/post-studio-plugin/ui/post-appearance-fit.js";
 
 describe("Post appearance chooser space", () => {
   it("drills down when the timeline leaves insufficient height, even on desktop", () => {

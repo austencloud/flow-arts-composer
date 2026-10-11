@@ -20,8 +20,8 @@
   list's offset below the toolbar/filter bar.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { onMount, onDestroy, untrack } from "svelte";
   import {
     createVirtualizer,
@@ -29,25 +29,25 @@
     type SvelteVirtualizer,
   } from "@tanstack/svelte-virtual";
   import type { Readable } from "svelte/store";
-  import ChoreoCardThumbnail from "$lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
-  import SectionHeader from "$lib/shared/browse/components/SectionHeader.svelte";
-  import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
-  import type { SequenceSection } from "$lib/shared/browse/domain/models/browse-models";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { BrowseThumbnailProvider } from "$lib/shared/browse/services/browse-thumbnail-provider";
+  import ChoreoCardThumbnail from "#lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
+  import SectionHeader from "#lib/shared/browse/components/SectionHeader.svelte";
+  import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
+  import type { SequenceSection } from "#lib/shared/browse/domain/models/browse-models.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { BrowseThumbnailProvider } from "#lib/shared/browse/services/browse-thumbnail-provider.js";
   import type { BrowseEngine } from "../engine/types";
   import {
     buildVariationMap,
     variationGroupKey,
-  } from "$lib/shared/browse/services/variation-grouper";
-  import { calculateGalleryAspectRatio } from "$lib/shared/render/services/layout-calculator";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { isCatDogMode } from "$lib/shared/browse/utils/prop-mode-helpers";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { cellPreWarmer } from "$lib/shared/sequence-viewer/services/cell-pre-warmer";
-  import { prefetch as prefetchSequenceData } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-  import { registerResultsLayoutStabilizer } from "$lib/shared/transitions/results-morph";
+  } from "#lib/shared/browse/services/variation-grouper.js";
+  import { calculateGalleryAspectRatio } from "#lib/shared/render/services/layout-calculator.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { isCatDogMode } from "#lib/shared/browse/utils/prop-mode-helpers.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { cellPreWarmer } from "#lib/shared/sequence-viewer/services/cell-pre-warmer.js";
+  import { prefetch as prefetchSequenceData } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+  import { registerResultsLayoutStabilizer } from "#lib/shared/transitions/results-morph.js";
   import {
     createSectionedGridMeasurementSignature,
     getSectionedGridItemKey,
@@ -428,6 +428,8 @@
     return { destroy: () => ro.disconnect() };
   }
 
+  let sectionJumpFrame: number | null = null;
+
   onMount(() => {
     scrollMargin = measureScrollMargin();
     createAndSubscribe(
@@ -441,6 +443,8 @@
     if (onGridReady) {
       onGridReady({
         scrollToSectionTitle: (title: string) => {
+          if (sectionJumpFrame !== null) cancelAnimationFrame(sectionJumpFrame);
+          sectionJumpFrame = null;
           const idx = flat.headerIndexByTitle.get(title);
           if (idx == null || !currentVirtualizer) return;
           // Variable-size virtualization: the first jump uses estimates for the
@@ -450,9 +454,12 @@
           const jump = () =>
             currentVirtualizer?.scrollToIndex(idx, { align: "start" });
           jump();
-          requestAnimationFrame(() => {
+          sectionJumpFrame = requestAnimationFrame(() => {
             jump();
-            requestAnimationFrame(() => jump());
+            sectionJumpFrame = requestAnimationFrame(() => {
+              sectionJumpFrame = null;
+              jump();
+            });
           });
         },
       });
@@ -497,6 +504,7 @@
   });
 
   onDestroy(() => {
+    if (sectionJumpFrame !== null) cancelAnimationFrame(sectionJumpFrame);
     storeUnsub?.();
     unregisterMorphStabilizer?.();
     if (remeasureRaf !== null) cancelAnimationFrame(remeasureRaf);

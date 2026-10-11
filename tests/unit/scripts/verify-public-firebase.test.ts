@@ -5,18 +5,18 @@
 import { describe, expect, it } from "vitest";
 import {
   FIREBASE_CHUNK_NAME,
+  GENERATED_CLIENT_DIR,
   inspectRoutes,
 } from "../../../scripts/verify-public-firebase.mjs";
 
-const node = (index: number) =>
-  `.svelte-kit/generated/client-optimized/nodes/${index}.js`;
+const node = (index: number) => `${GENERATED_CLIENT_DIR}/nodes/${index}.js`;
 
 // A small build: a root layout (0), a group layout (3), a clean page (5), a
 // page whose loader imports Firebase (6), and a page under a layout that
 // imports Firebase (8, below layout 7).
 const clientManifest = {
   "kit/entry.js": { file: "entry/start.js", name: "entry/start" },
-  ".svelte-kit/generated/client-optimized/app.js": {
+  [`${GENERATED_CLIENT_DIR}/app.js`]: {
     file: "entry/app.js",
     name: "entry/app",
     imports: ["_shared.js"],
@@ -98,6 +98,26 @@ describe("verify-public-firebase", () => {
       { id: "/redirect", firebase: false, importers: [] },
     ]);
     expect(check()[0]?.error).toContain("node 9");
+  });
+
+  it("counts the client runtime the start entry loads at once", () => {
+    // SvelteKit 3's start entry reaches its runtime only through import().
+    const runtimeImportsFirebase = {
+      ...clientManifest,
+      "kit/entry.js": {
+        file: "entry/start.js",
+        name: "entry/start",
+        dynamicImports: ["kit/client-entry.js"],
+      },
+      "kit/client-entry.js": {
+        file: "chunks/client-entry.js",
+        name: "client-entry",
+        imports: ["_firebase.js"],
+      },
+    };
+    expect(inspect(["/(public)/clean"], runtimeImportsFirebase)).toEqual([
+      { id: "/(public)/clean", firebase: true, importers: ["client-entry"] },
+    ]);
   });
 
   it("refuses to run when the Firebase chunk cannot be found", () => {

@@ -9,7 +9,7 @@
  * composition concerns.
  */
 
-import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
 
 export function createImageCompositionSync() {
   const imageComposition = getImageCompositionManager();

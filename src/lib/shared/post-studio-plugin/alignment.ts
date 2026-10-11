@@ -10,18 +10,18 @@ import {
   type SequenceTimeMap,
   type TakeSample,
 } from "@austencloud/video-editor/core";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   sequencePositionToAnimationTime,
   wrapSequencePosition,
-} from "$lib/shared/animation-engine/services/step-calculator";
-import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
+} from "#lib/shared/animation-engine/services/step-calculator.js";
+import { sequenceFrameAt } from "#lib/shared/media-composition/domain/sequence-frame.js";
 import {
   resolveTakeTiming,
   takeSampleAt,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 // This module and everything it reaches must never import the plugin index by
 // value: bound imports it, and the index re-exports bound.

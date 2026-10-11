@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeCardFrontLayout } from "$lib/shared/render/services/card-front-assembler";
+import { computeCardFrontLayout } from "#lib/shared/render/services/card-front-assembler.js";
 
 describe("computeCardFrontLayout", () => {
   it("derives deckCard geometry from contentWidth/Height", () => {

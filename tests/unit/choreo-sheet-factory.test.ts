@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createEmptyChoreoSheet, DEFAULT_SHEET_LAYOUT } from "$lib/features/write/domain/types/choreo-sheet";
+import { createEmptyChoreoSheet, DEFAULT_SHEET_LAYOUT } from "#lib/features/write/domain/types/choreo-sheet.js";
 
 describe("createEmptyChoreoSheet", () => {
   it("creates a sheet with default layout and the given owner/name", () => {

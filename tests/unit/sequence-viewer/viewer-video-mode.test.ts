@@ -3,12 +3,12 @@ import {
   initialViewerModeForUrl,
   viewerModeForRenderMode,
   viewerModeOptions,
-} from "$lib/shared/sequence-viewer/services/viewer-modes";
+} from "#lib/shared/sequence-viewer/services/viewer-modes.js";
 import {
   loadSplitConfig,
   loadViewerMode,
-} from "$lib/shared/sequence-viewer/services/viewer-state-persistence";
-import { resolveEditingPane } from "$lib/shared/sequence-viewer/services/viewer-orchestrator-model";
+} from "#lib/shared/sequence-viewer/services/viewer-state-persistence.js";
+import { resolveEditingPane } from "#lib/shared/sequence-viewer/services/viewer-orchestrator-model.js";
 
 const VIEWER_MODE_KEY = "tka-viewer-mode";
 const SPLIT_CONFIG_KEY = "tka-viewer-split-config";

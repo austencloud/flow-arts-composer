@@ -8,37 +8,37 @@ the shared BrowsePanel renders the result. Editable collections show their
 rule here; TKA's founding decks use the surrounding library hierarchy instead.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import CollectionDetailsDialog from "./CollectionDetailsDialog.svelte";
   import { onMount, untrack } from "svelte";
-  import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
-  import { subscribeToCollection } from "$lib/shared/library/services/collection-manager";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
-  import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
-  import { applySpecToEngine } from "$lib/shared/browse/services/smart-filter-spec";
-  import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+  import { subscribeToCollection } from "#lib/shared/library/services/collection-manager.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+  import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
+  import { applySpecToEngine } from "#lib/shared/browse/services/smart-filter-spec.js";
+  import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuEntry,
     ContextMenuState,
-  } from "$lib/shared/components/context-menu/context-menu-types";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import SmartCollectionBuilderSheet from "./SmartCollectionBuilderSheet.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
-  import { browseScrollState } from "$lib/shared/browse/state/browse-scroll-state.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
+  import { browseScrollState } from "#lib/shared/browse/state/browse-scroll-state.svelte.js";
   import {
     loadCanonicalTnDSequences,
     loadCanonicalBookVariations,
-  } from "$lib/features/browse/gallery-home/canonical-tnd-pool";
+  } from "#lib/features/browse/gallery-home/canonical-tnd-pool.js";
   import {
     isFoundingId,
     getFoundingCollection,
     toSyntheticCollection,
-  } from "$lib/features/browse/collections/config/founding-collections";
+  } from "#lib/features/browse/collections/config/founding-collections.js";
   import SmartCollectionDetailSurface from "./SmartCollectionDetailSurface.svelte";
-  import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 
   let {
     collectionId,

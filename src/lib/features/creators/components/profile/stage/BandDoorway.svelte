@@ -13,7 +13,7 @@
   import ArtifactTile from "./ArtifactTile.svelte";
   import { sampleCount } from "./doorway-policy";
   import type { LiveSlots, Medium } from "./live-slots.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   /** Mirrors ArtifactTile's own prop types exactly. `unknown` here would fail
    *  to assign to the tile's `sequence: SequenceData | null`. */

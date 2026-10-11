@@ -2,7 +2,7 @@ import type {
   ArenaEntry,
   ArenaRating,
 } from "../domain/models/arena-models";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /**
  * IStabilityAnalyzer

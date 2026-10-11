@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   PROP_LOCKING_ENABLED,
   UNLOCKABLE_POOL,
-} from "$lib/shared/gamification/domain/prop-pool";
+} from "#lib/shared/gamification/domain/prop-pool.js";
 import {
   applyClaim,
   defaultCollection,
@@ -11,7 +11,7 @@ import {
   mergeCollections,
   recordOne,
   remainingLocked,
-} from "$lib/shared/gamification/domain/prop-collection";
+} from "#lib/shared/gamification/domain/prop-collection.js";
 
 describe("prop-collection", () => {
   it("defaults to an empty earned set", () => {

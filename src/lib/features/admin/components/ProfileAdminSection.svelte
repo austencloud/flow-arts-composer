@@ -5,8 +5,8 @@
    * Privileged actions are sent through the authoritative admin endpoint.
    */
 
-  import { auth } from "$lib/shared/auth/firebase";
-  import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
+  import { auth } from "#lib/shared/auth/firebase.js";
+  import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
   import type { AdminUserProfile } from "../domain/admin-user-profile";
   import AdminAccountControls from "./AdminAccountControls.svelte";
   import AdminConfirmationModal from "./AdminConfirmationModal.svelte";

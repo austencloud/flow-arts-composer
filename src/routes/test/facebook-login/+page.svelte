@@ -8,22 +8,22 @@
   helping reproduce an account-collision path.
 -->
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import FacebookIcon from "$lib/shared/auth/components/icons/FacebookIcon.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import FacebookIcon from "#lib/shared/auth/components/icons/FacebookIcon.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import {
     signInWithFacebook,
     linkFacebookAccount,
     signOut,
-  } from "$lib/shared/auth/services/authenticator";
+  } from "#lib/shared/auth/services/authenticator.js";
   import {
     hasPendingLink,
     getPendingLinkEmail,
     getPendingLinkProviderId,
-  } from "$lib/shared/auth/services/pending-credential-link";
-  import { FACEBOOK_LOGIN_ENABLED } from "$lib/shared/auth/services/auth-providers.config";
-  import { app } from "$lib/shared/auth/firebase";
+  } from "#lib/shared/auth/services/pending-credential-link.js";
+  import { FACEBOOK_LOGIN_ENABLED } from "#lib/shared/auth/services/auth-providers.config.js";
+  import { app } from "#lib/shared/auth/firebase.js";
 
   type LogEntry = {
     time: string;

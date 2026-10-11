@@ -5,7 +5,7 @@ import {
   stageTunnelSnapshotForViewer,
   type TunnelViewerStagingDependencies,
 } from "../stage-tunnel-snapshot-for-viewer";
-import { EFFECTS_CONFIG_STORAGE_KEY } from "$lib/shared/effects/state/effects-config-state.svelte";
+import { EFFECTS_CONFIG_STORAGE_KEY } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 
 const snapshot = {
   version: 3,

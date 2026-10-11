@@ -1,5 +1,5 @@
 import type { VideoEditorPlugin } from "@austencloud/video-editor/core";
-import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video-url";
+import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video-url.js";
 import { TKA_COMPILE_HOOKS, TKA_COMPILE_OUTPUTS } from "./compile-hooks";
 import { TKA_EDIT_HOOKS } from "./edit-hooks";
 import { TKA_ITEM_KINDS, TKA_KIND_EXTENSIONS } from "./item-kinds";

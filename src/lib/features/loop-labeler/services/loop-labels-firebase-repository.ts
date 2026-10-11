@@ -3,9 +3,9 @@ import {
   firestoreDelete,
   firestoreGet,
   firestoreList,
-} from "$lib/shared/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { unpublishPublicSequence } from "$lib/shared/library/services/public-sequence-persister";
+} from "#lib/shared/firestore/index.js";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { unpublishPublicSequence } from "#lib/shared/library/services/public-sequence-persister.js";
 import { LabeledSequenceSchema } from "../domain/models/loop-label-schemas";
 import type { LabeledSequence } from "./types";
 

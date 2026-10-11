@@ -8,8 +8,8 @@ import {
   normalizeProfileSkill,
   normalizeProfileSkills,
   toggleProfileSkill,
-} from "$lib/shared/community/domain/profile-prop-catalog";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/community/domain/profile-prop-catalog.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 // Persisted profiles outlive the enum: one saved while Sickles existed still
 // carries "sickles" after its 2026-09-06 removal, and must still be purged.

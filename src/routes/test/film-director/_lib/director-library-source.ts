@@ -6,9 +6,9 @@
  * one-id shape and a director-readable miss.
  */
 
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { batchFetchPublicSequences } from "$lib/shared/library/services/collection-firestore-mapper";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { batchFetchPublicSequences } from "#lib/shared/library/services/collection-firestore-mapper.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export async function loadPublicLibrarySequence(
   sequenceId: string

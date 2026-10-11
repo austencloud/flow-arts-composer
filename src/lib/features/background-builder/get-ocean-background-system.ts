@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { OceanBackgroundOrchestrator } from '@austencloud/backgrounds';
 
 let instance: OceanBackgroundOrchestrator | null = null;

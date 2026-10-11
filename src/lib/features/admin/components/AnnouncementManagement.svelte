@@ -8,12 +8,12 @@
   import {
     getAllAnnouncements,
     deleteAnnouncement,
-  } from "$lib/features/admin/services/announcement-manager";
+  } from "#lib/features/admin/services/announcement-manager.js";
   import type { Announcement } from "../domain/models/announcement-models";
   import AnnouncementForm from "./announcements/AnnouncementForm.svelte";
   import AnnouncementList from "./announcements/AnnouncementList.svelte";
-  import AdminModal from "$lib/shared/admin/components/AdminModal.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import AdminModal from "#lib/shared/admin/components/AdminModal.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // State
   let announcements = $state<Announcement[]>([]);

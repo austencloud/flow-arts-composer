@@ -2654,8 +2654,8 @@ export class WebGLFireRenderer {
 // ── EffectPlugin descriptor ──────────────────────────────────────────────────
 import type { EffectPlugin } from "../effects/effect-plugin";
 import type { EffectRendererManager } from "../effect-renderer-manager";
-import type { FireIntent } from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { FireIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 export const fireEffectPlugin: EffectPlugin<FireIntent> = {
   id: "fire",

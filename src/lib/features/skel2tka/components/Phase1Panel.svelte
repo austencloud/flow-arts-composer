@@ -12,7 +12,7 @@
   8. Accepted/corrected results save as training data
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Phase1Result } from "../domain/models";
   import type { SanityCheckReport } from "../domain/verification-models";
   import type { PhaseVerdict, UserCorrection } from "../domain/verification-models";
@@ -20,12 +20,12 @@
   import type { Phase1OverlayRenderer } from "../services/phase1-overlay-renderer";
   import { checkPhase1 } from "../services/sanity-checker";
   import type { TrainingDataPersister } from "../services/training-data-persister";
-  import { getImageModeHandLandmarker } from "$lib/features/skel2tka/get-image-mode-hand-landmarker";
-  import { extractFrames } from "$lib/features/skel2tka/services/video-frame-extractor";
-  import { getVideoHandAnalyzer } from "$lib/features/skel2tka/get-video-hand-analyzer";
-  import { detectBeats } from "$lib/features/skel2tka/services/step-boundary-detector";
-  import { getPhase1OverlayRenderer } from "$lib/features/skel2tka/get-phase1-overlay-renderer";
-  import { getTrainingDataPersister } from "$lib/features/skel2tka/get-training-data-persister";
+  import { getImageModeHandLandmarker } from "#lib/features/skel2tka/get-image-mode-hand-landmarker.js";
+  import { extractFrames } from "#lib/features/skel2tka/services/video-frame-extractor.js";
+  import { getVideoHandAnalyzer } from "#lib/features/skel2tka/get-video-hand-analyzer.js";
+  import { detectBeats } from "#lib/features/skel2tka/services/step-boundary-detector.js";
+  import { getPhase1OverlayRenderer } from "#lib/features/skel2tka/get-phase1-overlay-renderer.js";
+  import { getTrainingDataPersister } from "#lib/features/skel2tka/get-training-data-persister.js";
   import VideoUploadDropzone from "./VideoUploadDropzone.svelte";
   import TrajectoryTimeline from "./TrajectoryTimeline.svelte";
   import PlacementSequenceOutput from "./PlacementSequenceOutput.svelte";

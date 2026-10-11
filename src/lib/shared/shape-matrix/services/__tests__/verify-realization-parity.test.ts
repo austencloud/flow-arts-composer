@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { SVGPathData } from "$lib/shared/mandala/domain/mandala-types";
+import type { SVGPathData } from "#lib/shared/mandala/domain/mandala-types.js";
 import {
   pathPoints,
   loopDistance,

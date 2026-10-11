@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { QualityTierDetector } from "$lib/shared/3d/effects/quality/quality-tier-detector";
+import { QualityTierDetector } from "#lib/shared/3d/effects/quality/quality-tier-detector.js";
 import {
   QualityTier,
   TIER_CONFIGS,
-} from "$lib/shared/3d/effects/types";
+} from "#lib/shared/3d/effects/types.js";
 import {
   ADAPTIVE_QUALITY_SETTLE_FRAMES,
   ADAPTIVE_QUALITY_SETTLE_SECONDS,
   createAdaptiveQualityState,
-} from "$lib/shared/3d/state/adaptive-quality-state.svelte";
+} from "#lib/shared/3d/state/adaptive-quality-state.svelte.js";
 
 function detectorAt(tier: QualityTier): QualityTierDetector {
   const detector = new QualityTierDetector();

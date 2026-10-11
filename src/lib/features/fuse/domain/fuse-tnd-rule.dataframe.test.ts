@@ -7,13 +7,13 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { deriveTnD } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { deriveTnD } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HORIZONTAL_MIRROR_LOCATION_MAP,
   VERTICAL_MIRROR_LOCATION_MAP,
-} from "$lib/shared/create/domain/strict-loop-placement-maps";
-import { rotateLocation } from "$lib/shared/create/services/rotation-helpers";
+} from "#lib/shared/create/domain/strict-loop-placement-maps.js";
+import { rotateLocation } from "#lib/shared/create/services/rotation-helpers.js";
 import type { FuseRule } from "./fuse-rule";
 import {
   FUSE_TND_MODES,

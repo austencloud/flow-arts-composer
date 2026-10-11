@@ -24,17 +24,17 @@
   import type { Snippet } from "svelte";
   import { fade } from "svelte/transition";
   import { PresenceAnimation } from "../../../../../../shared/ui-animation/animations.svelte";
-  import { getCreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
+  import { getCreateModuleContext } from "#lib/features/create/shared/context/create-module-context.js";
   import ClearSequencePanelButton from "./buttons/ClearSequenceButton.svelte";
   import SequenceActionsButton from "./buttons/SequenceActionsButton.svelte";
   import ViewSequenceButton from "./buttons/ViewSequenceButton.svelte";
   import ShareButton from "./buttons/ShareButton.svelte";
   import { workspaceButtonsInZone } from "../workspace-button-layout";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { shareTarget } from "$lib/shared/mobile/share-action.svelte";
-  import { logConstructFullPlay } from "$lib/features/create/construct/services/construct-analytics";
-  import OptionInteractionBanner from "$lib/features/create/construct/option-picker/components/OptionInteractionBanner.svelte";
-  import { logSequenceActionSurfaceShown } from "$lib/shared/create/analytics/sequence-action-events";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { shareTarget } from "#lib/shared/mobile/share-action.svelte.js";
+  import { logConstructFullPlay } from "#lib/features/create/construct/services/construct-analytics.js";
+  import OptionInteractionBanner from "#lib/features/create/construct/option-picker/components/OptionInteractionBanner.svelte";
+  import { logSequenceActionSurfaceShown } from "#lib/shared/create/analytics/sequence-action-events.js";
 
   // Get context - ButtonPanel is ONLY used inside CreateModule, so context is always available
   const {

@@ -12,8 +12,8 @@
   undulation is off entirely under prefers-reduced-motion.
 -->
 <script lang="ts">
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import type { MandalaPublicPayload } from "$lib/features/mandala/tabs/collection/domain/mandala-public-revision";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import type { MandalaPublicPayload } from "#lib/features/mandala/tabs/collection/domain/mandala-public-revision.js";
 
   const { payload }: { payload: MandalaPublicPayload } = $props();
 

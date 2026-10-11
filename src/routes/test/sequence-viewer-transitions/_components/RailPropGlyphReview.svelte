@@ -1,15 +1,15 @@
 <script lang="ts">
-  import RailPropGlyph from "$lib/shared/components/RailPropGlyph.svelte";
-  import FanAppearancePicker from "$lib/shared/pictograph/prop/components/FanAppearancePicker.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import RailPropGlyph from "#lib/shared/components/RailPropGlyph.svelte";
+  import FanAppearancePicker from "#lib/shared/pictograph/prop/components/FanAppearancePicker.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     DEFAULT_FAN_APPEARANCE,
     type FanAppearance,
-  } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import {
     getAllPropTypes,
     getPropTypeDisplayInfo,
-  } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+  } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 
   const propTypes = getAllPropTypes();
   let fanAppearance = $state<FanAppearance>(DEFAULT_FAN_APPEARANCE);

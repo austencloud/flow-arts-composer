@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type {
     CardFooter,
     DeckReleaseCard,
@@ -8,13 +8,13 @@
   import PrintPreviewPages from "../print-preview/PrintPreviewPages.svelte";
   import PrintPreviewToolbar from "../print-preview/PrintPreviewToolbar.svelte";
   import CardInspectModal from "../CardInspectModal.svelte";
-  import CopyForAIButton from "$lib/shared/foundation/ui/CopyForAIButton.svelte";
+  import CopyForAIButton from "#lib/shared/foundation/ui/CopyForAIButton.svelte";
   import DeckPropSwitcher from "./DeckPropSwitcher.svelte";
   import type { CardSizeId, PaperSizeId } from "../../domain/card-sizes";
   import type { TnDElement } from "../../domain/tnd-element";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
-  import FilterRuleStrip from "$lib/shared/browse/components/FilterRuleStrip.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
+  import FilterRuleStrip from "#lib/shared/browse/components/FilterRuleStrip.svelte";
 
   interface Props {
     cards: DeckReleaseCard[];

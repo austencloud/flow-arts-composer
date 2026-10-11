@@ -6,14 +6,14 @@ import {
 
 export type FirebaseUser = VerifiedFirebaseIdToken;
 
-function getBearerToken(event: RequestEvent): string | null {
+function getBearerToken(event: Pick<RequestEvent, "request">): string | null {
   const header = event.request.headers.get("authorization")?.trim() ?? "";
   const match = header.match(/^Bearer\s+(.+)$/i);
   return match?.[1] ?? null;
 }
 
 export async function requireFirebaseUser(
-  event: RequestEvent
+  event: Pick<RequestEvent, "request">
 ): Promise<FirebaseUser> {
   const token = getBearerToken(event);
   if (!token) {

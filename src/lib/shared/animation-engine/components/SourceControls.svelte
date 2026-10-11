@@ -5,11 +5,11 @@
   action buttons (pick/skip/shuffle), and current sequence info.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SourceMode } from "$lib/shared/animation-engine/services/sequence-chaining-orchestrator";
-  import { simplifyAndTruncate } from "$lib/shared/foundation/utils/word-simplifier";
-  import CopyForAIButton from "$lib/shared/foundation/ui/CopyForAIButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { SourceMode } from "#lib/shared/animation-engine/services/sequence-chaining-orchestrator.js";
+  import { simplifyAndTruncate } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import CopyForAIButton from "#lib/shared/foundation/ui/CopyForAIButton.svelte";
 
   interface Props {
     sourceMode: SourceMode;

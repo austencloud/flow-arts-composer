@@ -14,13 +14,13 @@ import {
   handGridCopyColor,
   shiftTrailPoints,
   shiftTrailPointsBy,
-} from "$lib/shared/animation-engine/services/animation-grid-join";
+} from "#lib/shared/animation-engine/services/animation-grid-join.js";
 import {
   CENTERED_HAND_OFFSETS,
   GridJoinTween,
   gridJoinHandOffsets,
   gridJoinLayerAlphas,
-} from "$lib/shared/grid-join/grid-join-tween";
+} from "#lib/shared/grid-join/grid-join-tween.js";
 
 const GRID_DIR = resolve(__dirname, "../../../static/images/grid");
 const EAST_ONE: GridJoin = { toward: "e", steps: 1 };

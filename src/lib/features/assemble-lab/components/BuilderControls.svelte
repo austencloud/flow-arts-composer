@@ -9,8 +9,8 @@
 <script lang="ts">
   import type { AssembleState } from "../state/assemble-state.svelte";
   import BuilderHandPicker from "./BuilderHandPicker.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
 
   let { builderState }: { builderState: AssembleState } = $props();
 

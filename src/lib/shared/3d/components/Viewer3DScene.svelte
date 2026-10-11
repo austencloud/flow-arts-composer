@@ -1,29 +1,30 @@
 <script lang="ts">
   import { T, useTask, useThrelte, useScheduler } from "@threlte/core";
   import { layers, type ThrelteLayers } from "@threlte/extras";
-  import { onMount, onDestroy, tick, type Snippet } from "svelte";
+  import { flushSync, onMount, onDestroy, tick, type Snippet } from "svelte";
   import {
     PerformerRig,
     type AvatarGripDiagnostics,
     type AvatarPoseDiagnostics,
     type CollisionEvent,
   } from "@austencloud/scene-3d";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { isBuugengFamilyProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
   import { BackgroundType } from "@austencloud/backgrounds";
   import Environment3D from "../environments/components/Environment3D.svelte";
   import { getViewer3DContext } from "../context/viewer-3d-context";
   import { getSceneFeatureContext } from "../scene-features/context/scene-feature-context";
   import SeatedAudience3D from "./SeatedAudience3D.svelte";
-  import { Plane, GRID_OFFSETS, cmToUnits } from "@austencloud/scene-3d";
+  import { Plane, GRID_OFFSETS } from "@austencloud/scene-3d";
   import type { GridMode } from "@austencloud/scene-3d";
   import Grid3D from "./Grid3D.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import type { CharacterInstanceState } from "../state/character-instance-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-  import { resolvePerformerProp } from "$lib/shared/3d/state/performer-prop-resolution";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+  import { resolvePerformerProp } from "#lib/shared/3d/state/performer-prop-resolution.js";
   import { AdditiveBlending } from "three";
   import type { Group } from "three";
   import { userProportionsState } from "@austencloud/scene-3d";
@@ -31,9 +32,9 @@
   import { getPerformerColor } from "../constants/performer-colors";
   import { attachSceneUndoKeyboard } from "../undo/scene-undo-keyboard";
   import { getSceneUndoManager } from "../undo/get-scene-undo-manager";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import CharacterSwapTransition from "./CharacterSwapTransition.svelte";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
   import type { SceneEffectsManager3D } from "../effects/scene-effects/scene-effects-manager-3d";
   import type { QualityTier } from "../effects/types";
   import { resolvePetalEnvironmentProfile } from "../effects/petals/petal-world-art-direction";
@@ -204,7 +205,7 @@
 
   const viewer3DState = getViewer3DContext();
   type SettingsService =
-    (typeof import("$lib/shared/settings/state/settings-state.svelte"))["settingsService"];
+    (typeof import("#lib/shared/settings/state/settings-state.svelte.js"))["settingsService"];
   let viewerSettings = $state<SettingsService | null>(null);
   const sequenceIsSeamless = $derived(
     sequenceData ? isSeamlesslyLoopable(sequenceData) : false
@@ -343,14 +344,18 @@
   // The visibility manager uses an observer pattern (not Svelte runes), so we
   // bridge it into reactive state with $state + registerObserver.
   const visibilityManager = getAnimationVisibilityManager();
-  let globalTipEffectMap = $state<TipEffectMap>(
+  const viewerEffects = getEffectsConfigContext();
+  let legacyTipEffectMap = $state<TipEffectMap>(
     visibilityManager.effectsConfigState?.tipEffectMap ?? {}
+  );
+  const globalTipEffectMap = $derived(
+    viewerEffects?.tipEffectMap ?? legacyTipEffectMap
   );
 
   $effect(() => {
     // Sync on mount and whenever visibility settings change
     const updateMap = () => {
-      globalTipEffectMap =
+      legacyTipEffectMap =
         visibilityManager.effectsConfigState?.tipEffectMap ?? {};
     };
     visibilityManager.registerObserver(updateMap);
@@ -406,6 +411,12 @@
     if (!viewer3DState.isExporting) {
       performerManager.updateFormationTransition();
     }
+
+    // Props, hand anchors and the rig take their transforms from Svelte
+    // effects, which would otherwise run after this frame is drawn. Effects
+    // and the avatar's hand IK read the new pose in later tasks this frame,
+    // so apply it now or the drawn props trail them by one frame.
+    flushSync();
   });
 
   let performerInteraction = $state<PerformerPointerInteraction | null>(null);
@@ -419,7 +430,7 @@
     // Prop type overrides choose the choreography's props, but Buugeng
     // chirality stays a personal setting. Load settings for both so a Browse
     // viewer with explicit prop types still shows the selected handedness.
-    void import("$lib/shared/settings/state/settings-state.svelte").then(
+    void import("#lib/shared/settings/state/settings-state.svelte.js").then(
       ({ settingsService }) => {
         if (mounted) viewerSettings = settingsService;
       }
@@ -795,11 +806,9 @@
         performerSequence?.steps[0]?.gridMode ??
         "diamond"}
       {@const performerGridMode: GridMode = sequenceGridMode === "box" ? "box" : "diamond"}
-      {@const performerGridJoin = resolveGridJoin3D(performerSequence)}
+      {@const performerGridJoin = resolveGridJoin3D(performer.loadedSequence)}
       {@const performerGridOffset = GRID_OFFSETS[performer.planeMode]}
-      {@const perfStaffCm = performer.settings.staffLengthCm}
-      {@const propLength =
-        perfStaffCm != null ? cmToUnits(perfStaffCm) : undefined}
+      {@const propLength = performer.staffLength}
       {@const propBuild = performer.effectivePropBuild}
       {@const resolvedLeftProp = resolvePerformerProp(
         performer,
@@ -835,7 +844,9 @@
       <!-- Staffs the hands cannot hold from the planned stance move toward
          them, radially and in depth; a seek clears the animator's contact
          history. -->
-      {@const contact = resolvePerformerContact(performer)}
+      {@const contact = resolvePerformerContact(performer, {
+        staffLengthM: propLength,
+      })}
       <PerformerVisualPickTarget
         performerIndex={i}
         register={performerInteraction?.registerVisualPickTarget}
@@ -868,6 +879,7 @@
               contactResetKey={contact.resetKey}
               tipEffectMap={perfTipMap}
               {propLength}
+              propScale={performer.gridScale}
               {propBuild}
               isPlaying={renderEntry.presencePhase !== "exiting" &&
                 isPlaying &&
@@ -914,18 +926,18 @@
                     userData={{ performerInteractionExcluded: true }}
                   >
                     <Grid3D
+                      size={userProportionsState.gridSize * performer.gridScale}
                       visiblePlanes={explicitPlanes}
                       gridMode={performerGridMode}
                       gridJoin={performerGridJoin}
                       handDistance={performer.handDistance}
-                      staffHalfLength={(propLength ??
-                        userProportionsState.staffLength) / 2}
+                      staffHalfLength={propLength / 2}
                       outerPointRadius={performerGridJoin
                         ? Math.max(
                             performer.handDistance.left.max,
                             performer.handDistance.right.max
                           ) +
-                          (propLength ?? userProportionsState.staffLength) / 2
+                          propLength / 2
                         : undefined}
                       planeMode={performer.planeMode}
                       showLabels={viewer3DState.showGridLabels}
@@ -957,6 +969,7 @@
                       rightPropType={toScenePropType(resolvedRightProp)}
                       isPlaying={rigPlaying}
                       {staffHalfLength}
+                      propScale={performer.gridScale}
                       {propBuild}
                       tipEffectMap={perfTipMap}
                       {leftHandPos}

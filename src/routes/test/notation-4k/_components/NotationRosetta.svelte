@@ -1,6 +1,6 @@
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
   let { pictograph }: { pictograph: StepData } = $props();
 </script>

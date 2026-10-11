@@ -18,9 +18,9 @@
    * scene measures against.
    */
   import { onDestroy } from "svelte";
-  import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import { runAfterNamedRouteMorphIdle } from "$lib/shared/transitions/named-route-morph-state.svelte";
+  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import { runAfterNamedRouteMorphIdle } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import { classifyPreviewShape } from "./method-preview-layout";
   import {
     METHOD_PREVIEW_SCENES,

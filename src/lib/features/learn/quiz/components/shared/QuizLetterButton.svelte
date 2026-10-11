@@ -2,7 +2,7 @@
 QuizLetterButton - Answer button for quiz
 -->
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   let {
     letter,
     state,

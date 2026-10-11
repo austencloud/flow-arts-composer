@@ -1,5 +1,5 @@
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { app } from "$lib/shared/auth/firebase";
+import { app } from "#lib/shared/auth/firebase.js";
 
 /**
  * Starts a Stripe Checkout session for a donation of `amountCents` and returns

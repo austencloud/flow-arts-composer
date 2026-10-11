@@ -8,7 +8,7 @@
  * the test because a `.svelte.test.ts` rename would move the file into the
  * browser component project (see the vitest config's exclude).
  */
-import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
+import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
 
 export type Viewer3DState = ReturnType<typeof createViewer3DState>;
 export type Viewer3DOptions = Parameters<typeof createViewer3DState>[1];

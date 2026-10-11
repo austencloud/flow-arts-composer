@@ -5,7 +5,7 @@
  * No complex error hierarchies, just basic caching.
  */
 
-import { assetFetch } from "$lib/shared/net/asset-fetch";
+import { assetFetch } from "#lib/shared/net/asset-fetch.js";
 
 export class SimpleJsonCache {
   private cache = new Map<string, unknown>();

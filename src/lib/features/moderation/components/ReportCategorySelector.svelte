@@ -3,7 +3,7 @@
 		REPORT_CATEGORIES,
 		type ReportCategory
 	} from '../domain/models/report-models';
-	import { t } from '$lib/shared/i18n/i18n.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
 
 	interface Props {
 		selected: ReportCategory | null;

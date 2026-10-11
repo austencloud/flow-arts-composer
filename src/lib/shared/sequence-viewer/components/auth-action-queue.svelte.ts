@@ -8,18 +8,18 @@
  * Extracted from SequenceViewerOrchestrator to isolate auth concerns.
  */
 
-import { browser } from "$app/environment";
-import { requiresFullAccount } from "$lib/shared/auth/domain/gated-action-policy";
-import type { AuthNudgeTrigger } from "$lib/shared/auth/domain/auth-nudge-trigger";
-import { ensureGuestIdentity } from "$lib/shared/auth/services/guest-identity";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { browser } from "$app/env";
+import { requiresFullAccount } from "#lib/shared/auth/domain/gated-action-policy.js";
+import type { AuthNudgeTrigger } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
+import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import { getPendingActionQueue } from "../get-pending-action-queue";
-import type { PendingActionType } from "$lib/shared/sequence-viewer/services/pending-action-queue";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { PendingActionType } from "#lib/shared/sequence-viewer/services/pending-action-queue.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   mutateCurrentUrl,
   removeCurrentUrlParams,
-} from "$lib/shared/navigation/services/url-state";
+} from "#lib/shared/navigation/services/url-state.js";
 
 /**
  * Everything the sign-in sheet can be opened FOR. Pending actions replay after

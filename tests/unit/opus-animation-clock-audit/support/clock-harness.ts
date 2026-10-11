@@ -22,18 +22,18 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { normalizeLegacySteps } from "@tka/tka-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import type {
   AnimationPanelState,
   PlaybackMode,
   StepPlaybackStepSize,
-} from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+} from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 import {
   PLAYBACK_MAX_SPEED,
   PLAYBACK_MIN_SPEED,
-} from "$lib/shared/animation-engine/domain/constants/timing";
+} from "#lib/shared/animation-engine/domain/constants/timing.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

@@ -3,22 +3,22 @@
  *
  * Pure functions for formatting pictograph data as text.
  */
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import DefaultPropPositioner from "$lib/shared/pictograph/prop/services/default-prop-positioner";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { propPlacer } from "$lib/shared/pictograph/prop/services/prop-placer";
-import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import DefaultPropPositioner from "#lib/shared/pictograph/prop/services/default-prop-positioner.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { propPlacer } from "#lib/shared/pictograph/prop/services/prop-placer.js";
+import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
 import {
   HandSide,
   Orientation,
   type HandSide as HandSideValue,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   isBuugengFamilyProp,
   isUnilateralProp,
-} from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
+} from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
 
 /** "dash" -> "Dash", "static" -> "Static". For the dense motion-line display. */
 export function formatMotionTypeLabel(motionType: string | undefined): string {

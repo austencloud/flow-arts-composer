@@ -22,7 +22,7 @@
   passes none, and the lane holds its height so the cameras above never move.
 -->
 <script lang="ts">
-  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
 
   import {
     LAB_FRAME_STEP,

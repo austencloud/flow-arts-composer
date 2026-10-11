@@ -27,10 +27,10 @@
  * downstream. The count is warned once per search rather than per result.
  */
 
-import { getSequenceCanonicalizer } from "$lib/shared/comparison/get-sequence-canonicalizer";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { getSequenceCanonicalizer } from "#lib/shared/comparison/get-sequence-canonicalizer.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
 import { ambientBaseForLetter } from "../domain/base-sequence-registry";
 import type {

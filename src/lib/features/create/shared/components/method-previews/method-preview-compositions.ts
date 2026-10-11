@@ -66,17 +66,11 @@ function centeredGrid(
   return cells;
 }
 
-/** Construct: the start position, then its steps (plan: Spec Corrections 13). */
-export const CONSTRUCT_STRIP_SLOTS = Object.freeze({ min: 3, max: 4 });
-export const CONSTRUCT_ROOMY_SLOTS = Object.freeze({ min: 4, max: 4 });
-export const CONSTRUCT_SQUARE_GRID = Object.freeze({ columns: 2, rows: 2 });
-
-/** The most slots constructLayout() returns; the scene sizes its data to it. */
-export const CONSTRUCT_MAX_SLOTS = Math.max(
-  CONSTRUCT_STRIP_SLOTS.max,
-  CONSTRUCT_ROOMY_SLOTS.max,
-  CONSTRUCT_SQUARE_GRID.columns * CONSTRUCT_SQUARE_GRID.rows
-);
+/**
+ * Construct: the start position and two steps, in every shape. Each step
+ * plays its move, and a three-second turn has room for two (2026-10-10).
+ */
+export const CONSTRUCT_MAX_SLOTS = 3;
 
 export function constructLayout(
   shape: MethodPreviewShape,
@@ -85,16 +79,47 @@ export function constructLayout(
 ): CellRect[] {
   const gap = previewGap(width, height);
   if (shape === "square") {
-    const { columns, rows } = CONSTRUCT_SQUARE_GRID;
-    const size = gridCellSize(width, height, columns, rows, gap);
-    return size > 0
-      ? centeredGrid(columns, rows, size, gap, width, height)
-      : [];
+    // The step grid's 2×2 wrap, with the last step centered under the two.
+    const size = gridCellSize(width, height, 2, 2, gap);
+    if (size <= 0) return [];
+    const [first, second] = centeredGrid(2, 2, size, gap, width, height);
+    const last = {
+      x: Math.floor((width - size) / 2),
+      y: first!.y + size + gap,
+      size,
+    };
+    return [first!, second!, last];
   }
-  const slots =
-    shape === "roomy" ? CONSTRUCT_ROOMY_SLOTS : CONSTRUCT_STRIP_SLOTS;
-  const { count, size } = rowOfCells(width, height, gap, slots.min, slots.max);
+  const { count, size } = rowOfCells(
+    width,
+    height,
+    gap,
+    CONSTRUCT_MAX_SLOTS,
+    CONSTRUCT_MAX_SLOTS
+  );
   return size > 0 ? centeredRow(count, size, gap, width, height) : [];
+}
+
+/** Choices in each Construct box: the real step and two other moves. */
+export const CONSTRUCT_CHOICE_COUNT = 3;
+
+/**
+ * Construct's choices: a row across the middle of a box. The row spans the
+ * box with thin gaps, so the choices stay as large as the box allows.
+ */
+export function constructChoiceCells(box: CellRect): CellRect[] {
+  const count = CONSTRUCT_CHOICE_COUNT;
+  const gap = Math.max(2, Math.round(box.size * 0.04));
+  const size = Math.floor((box.size - gap * (count - 1)) / count);
+  if (size <= 0) return [];
+  const span = count * size + (count - 1) * gap;
+  const x0 = box.x + Math.floor((box.size - span) / 2);
+  const y = box.y + Math.floor((box.size - size) / 2);
+  return Array.from({ length: count }, (_, index) => ({
+    x: x0 + index * (size + gap),
+    y,
+    size,
+  }));
 }
 
 /** Generate: the dice, then the cells it fills. */
@@ -344,14 +369,57 @@ export function tunnelLayout(
   };
 }
 
-/** Assemble: the grid, square and centered. */
-export function assembleLayout(width: number, height: number): CellRect | null {
+/** Assemble: the grid, and the two beats its taps write. */
+export interface AssembleLayout {
+  grid: CellRect;
+  beats: CellRect[];
+}
+
+/** A beat's side against the grid's: beside it in a strip, under it in a square. */
+export const ASSEMBLE_BEAT_SCALE = Object.freeze({ strip: 0.75, square: 0.6 });
+
+export function assembleLayout(
+  shape: MethodPreviewShape,
+  width: number,
+  height: number
+): AssembleLayout | null {
   if (!(width > 0) || !(height > 0)) return null;
-  const size = Math.floor(Math.min(width, height));
+  const gap = previewGap(width, height);
+  if (shape === "square") {
+    // The grid on top, the beats in a row under it.
+    const scale = ASSEMBLE_BEAT_SCALE.square;
+    const grid = Math.floor(
+      Math.min(width, (height - gap) / (1 + scale), (width - gap) / (2 * scale))
+    );
+    const beat = Math.floor(grid * scale);
+    if (grid <= 0 || beat <= 0) return null;
+    const top = Math.floor((height - (grid + gap + beat)) / 2);
+    return {
+      grid: { x: Math.floor((width - grid) / 2), y: top, size: grid },
+      beats: centeredRow(2, beat, gap, width, beat).map((cell) => ({
+        ...cell,
+        y: top + grid + gap,
+      })),
+    };
+  }
+  // The grid, then the beats beside it, set a little apart from it.
+  const scale = ASSEMBLE_BEAT_SCALE.strip;
+  const apart = 2 * gap;
+  const grid = Math.floor(
+    Math.min(height, (width - apart - gap) / (1 + 2 * scale))
+  );
+  const beat = Math.floor(grid * scale);
+  if (grid <= 0 || beat <= 0) return null;
+  const left = Math.floor((width - (grid + apart + 2 * beat + gap)) / 2);
+  const beatsLeft = left + grid + apart;
+  const beatTop = Math.floor((height - beat) / 2);
   return {
-    x: Math.floor((width - size) / 2),
-    y: Math.floor((height - size) / 2),
-    size,
+    grid: { x: left, y: Math.floor((height - grid) / 2), size: grid },
+    beats: [0, 1].map((index) => ({
+      x: beatsLeft + index * (beat + gap),
+      y: beatTop,
+      size: beat,
+    })),
   };
 }
 

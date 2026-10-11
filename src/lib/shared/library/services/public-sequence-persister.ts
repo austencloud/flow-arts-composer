@@ -59,18 +59,18 @@ import {
   type PublicProjectionContext,
   type PublicProjectionPriorState,
   type PublicProjectionTimestamp,
-} from "$lib/shared/library/services/public-sequence-projection";
-import { computeStoredProjectionDigest } from "$lib/shared/library/services/public-sequence-projection";
-import { PUBLIC_PROJECTION_SCHEMA_VERSION } from "$lib/shared/foundation/domain/models/public-sequence-wire-schema";
-import type { NormalizedSequenceWrite } from "$lib/shared/library/services/sequence-persistence-normalizer";
+} from "#lib/shared/library/services/public-sequence-projection.js";
+import { computeStoredProjectionDigest } from "#lib/shared/library/services/public-sequence-projection.js";
+import { PUBLIC_PROJECTION_SCHEMA_VERSION } from "#lib/shared/foundation/domain/models/public-sequence-wire-schema.js";
+import type { NormalizedSequenceWrite } from "#lib/shared/library/services/sequence-persistence-normalizer.js";
 import {
   getPublicSequencePath,
   getSequenceRevisionPath,
   getUserCollectionPath,
   getUserSequencePath,
-} from "$lib/shared/library/data/firestore-paths";
-import { buildSequenceRevisionRecord } from "$lib/shared/library/services/sequence-revision";
-import type { ArtifactRevisionRef } from "$lib/shared/artifact-revisions/domain/artifact-revision";
+} from "#lib/shared/library/data/firestore-paths.js";
+import { buildSequenceRevisionRecord } from "#lib/shared/library/services/sequence-revision.js";
+import type { ArtifactRevisionRef } from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
 
 // Claims
 

@@ -14,11 +14,11 @@ import {
   resolveAnimationGridJoin,
   shiftPropState,
   shiftTrailPoints,
-} from "$lib/shared/animation-engine/services/animation-grid-join";
-import { calculatePropCenter } from "$lib/shared/animation-engine/services/prop-position-calculator";
-import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+} from "#lib/shared/animation-engine/services/animation-grid-join.js";
+import { calculatePropCenter } from "#lib/shared/animation-engine/services/prop-position-calculator.js";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { PIXELS_PER_UNIT } from "#lib/shared/multi-grid/domain/constants/grid-mode-offsets.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import {
   JOIN_GRID_LOCATIONS,
   joinedPointColors,

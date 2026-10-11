@@ -6,7 +6,7 @@
   Tapping toggles between left and right.
 -->
 <script lang="ts">
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   let {
     activeHand,

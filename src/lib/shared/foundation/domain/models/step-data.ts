@@ -18,8 +18,8 @@
  */
 import type { Step } from "@tka/tka-types";
 import type { Letter } from "./letter";
-import type { GridPlacement, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { GridPlacement, GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 export interface StepMotions {
   readonly left: MotionData;
@@ -53,7 +53,7 @@ export interface StepData extends Step {
 type Assert<T extends true> = T;
 type _StepDataIsCanonicalStep = Assert<StepData extends Step ? true : false>;
 type _StepDataIsPictographData = Assert<
-  StepData extends import("$lib/shared/pictograph/shared/domain/models/pictograph-data").PictographData
+  StepData extends import("#lib/shared/pictograph/shared/domain/models/pictograph-data.js").PictographData
     ? true
     : false
 >;

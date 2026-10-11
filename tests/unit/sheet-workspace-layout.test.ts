@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   shouldStackSheetWorkspace,
   shouldUseTwoUpSheetLayout,
-} from "$lib/features/write/domain/sheet-workspace-layout";
+} from "#lib/features/write/domain/sheet-workspace-layout.js";
 
 const base = {
   zoom: 1,

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getBasePropType } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-  import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getBasePropType } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { isBuugengFamilyProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+  import { captureActivePropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
 
   let { size = 40 }: { size?: number } = $props();
   const settings = $derived(getSettings());

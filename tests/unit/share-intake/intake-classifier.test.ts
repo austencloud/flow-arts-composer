@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   classifyIntake,
   extractCodeFromText,
-} from "$lib/shared/share-intake/services/intake-classifier";
+} from "#lib/shared/share-intake/services/intake-classifier.js";
 
 function png(name: string): File {
   return new File([new Uint8Array([1])], name, { type: "image/png" });

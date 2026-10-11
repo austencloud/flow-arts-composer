@@ -8,9 +8,9 @@ import {
   Quaternion,
   Vector3,
 } from "three";
-import { SceneGraphObjectAdapter } from "$lib/shared/3d/scene-composer/scene-graph-object-adapter";
-import { CommandStack } from "$lib/shared/history/command-stack.svelte";
-import { serializeComposerPlacementManifest } from "$lib/shared/3d/scene-composer/persistence/manifest-persistence";
+import { SceneGraphObjectAdapter } from "#lib/shared/3d/scene-composer/scene-graph-object-adapter.js";
+import { CommandStack } from "#lib/shared/history/command-stack.svelte.js";
+import { serializeComposerPlacementManifest } from "#lib/shared/3d/scene-composer/persistence/manifest-persistence.js";
 
 function createInstanceBatch(ids: string[]) {
   const batch = new InstancedMesh(

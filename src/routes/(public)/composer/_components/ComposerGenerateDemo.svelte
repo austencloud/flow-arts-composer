@@ -26,21 +26,21 @@
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { MediaQuery } from "svelte/reactivity";
-  import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { activateWhenNear } from "$lib/actions/activate-when-near";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { activateWhenNear } from "#lib/actions/activate-when-near.js";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ComposerWordRow from "./ComposerWordRow.svelte";
   import {
     HERO_TIP_EFFECT_MAP,
     HERO_TRAIL_PRESET,
-  } from "$lib/shared/landing/data/hero-trail-preset";
-  import { setPendingGenerationAnimation } from "$lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/landing/data/hero-trail-preset.js";
+  import { setPendingGenerationAnimation } from "#lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     classifyComposerGenerationFailure,
     type ComposerGenerationResult,
@@ -189,7 +189,7 @@
         {#key current?.id}
           <LazyMount
             loader={() =>
-              import("$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte")}
+              import("#lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte")}
             active={previewActive && inViewport && !!current}
             props={{
               steps: stepData,
@@ -220,7 +220,7 @@
       <div class="stage-content">
         <LazyMount
           loader={() =>
-            import("$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
+            import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
           active={previewActive && inViewport && !!current}
           props={{
             sequence: current,

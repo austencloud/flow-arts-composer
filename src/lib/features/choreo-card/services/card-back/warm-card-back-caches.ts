@@ -10,7 +10,7 @@
  * freeze off the first visible card render, mirroring the front pool seed.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { buildBackJob as realBuildBackJob } from "./card-back-job-builder";
 import type { BackBitmapKind } from "./back-job";
 

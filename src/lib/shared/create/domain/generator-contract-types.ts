@@ -2,12 +2,12 @@ import type {
   DifficultyLevel,
   GenerationMode,
   PropContinuity,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
-import type { GeneratorCardId } from "$lib/shared/create/domain/card-registry";
-import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { StartEndOptions } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import type { GeneratorCardId } from "#lib/shared/create/domain/card-registry.js";
+import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
 
 /**
  * Card descriptor for rendering in the UI

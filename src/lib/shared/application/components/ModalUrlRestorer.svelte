@@ -11,17 +11,17 @@
   This component should be placed at the app root level (in +layout.svelte).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-import { getDeepLinkResolver } from "$lib/shared/application/get-deep-link-resolver";
+import { getDeepLinkResolver } from "#lib/shared/application/get-deep-link-resolver.js";
   import { onMount, onDestroy } from "svelte";
   import {
     getModalUrlState,
     clearModalUrlState,
   } from "../state/ui/modal-url-state.svelte";
   import type { DeepLinkError } from "../services/types";
-  import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
 
   // Error state for failed deep links
   let loadError = $state<DeepLinkError>(null);

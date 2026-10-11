@@ -7,14 +7,14 @@ import {
   isFeatureVideoMediaUrl,
   isFeatureVideoSlug,
   rehomeFeatureMediaUrls,
-} from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   takeFileKey,
   type PostTake,
   type PostProject,
 } from "@austencloud/video-editor/core";
-import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
-import { createTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
+import { createTakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
 
 const NOW = 1_780_000_000_000;
 const SEQUENCE = "DCK\u03a8-";

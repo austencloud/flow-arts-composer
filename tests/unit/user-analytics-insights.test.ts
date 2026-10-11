@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildUserAnalyticsSignals } from "$lib/features/admin/domain/user-analytics-insights";
-import type { PostHogSessionSummary } from "$lib/features/admin/services/types";
+import { buildUserAnalyticsSignals } from "#lib/features/admin/domain/user-analytics-insights.js";
+import type { PostHogSessionSummary } from "#lib/features/admin/services/types.js";
 
 function session(
   overrides: Partial<PostHogSessionSummary> = {}

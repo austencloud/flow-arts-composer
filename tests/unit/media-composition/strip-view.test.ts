@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
+import { sequenceFrameAt } from "#lib/shared/media-composition/domain/sequence-frame.js";
 import {
   mandalaPrefixFraction,
   resolveStripView,
-} from "$lib/shared/media-composition/domain/strip-view";
+} from "#lib/shared/media-composition/domain/strip-view.js";
 
 // Same move-duration shape as sequence-frame.test.ts's DCK: 8 moves, move 3
 // takes two beats. Reused here so a frame built from it is known-good.

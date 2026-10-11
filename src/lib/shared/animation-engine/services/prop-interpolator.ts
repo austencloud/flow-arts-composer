@@ -5,18 +5,18 @@
  * Single responsibility: Motion interpolation between keyframes.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { MotionEndpoints } from "$lib/shared/pictograph/shared/domain/models/motion-endpoints";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { MotionEndpoints } from "#lib/shared/pictograph/shared/domain/models/motion-endpoints.js";
 import type { InterpolationResult } from "./animation-state-manager";
 import { lerpAngle, normalizeAnglePositive } from "./angle-calculator";
 import { calculateMotionEndpoints } from "./endpoint-calculator";
 import {
   getAnimationVisibilityManager,
   type AnimationVisibilityStateManager,
-} from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+} from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
 // `vm` lets a caller pass a per-instance (e.g. landing-page ephemeral) visibility
 // manager so path-shape settings stay scoped to that surface. When omitted we

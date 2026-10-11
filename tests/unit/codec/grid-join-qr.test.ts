@@ -5,36 +5,36 @@
  * join the rebuild would lose sends the sequence down the flat path instead.
  */
 import { describe, expect, it } from "vitest";
-import { compressForQR } from "$lib/shared/navigation/services/sequence-codec";
+import { compressForQR } from "#lib/shared/navigation/services/sequence-codec.js";
 import {
   decodeSequence,
   decodeSequenceFromQR,
   encodeSequence,
   encodeSequenceForQR,
-} from "$lib/shared/navigation/services/sequence-encoder";
-import { CompositionalEncoder } from "$lib/shared/qr/services/compositional-encoder";
-import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
+import { CompositionalEncoder } from "#lib/shared/qr/services/compositional-encoder.js";
+import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
 import {
   LOOPType as EngineLOOPType,
   Period as EnginePeriod,
   loopExecutorSelector,
 } from "@tka/sequence-engine/loop";
-import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   buildJoinFixture,
   joinOf,

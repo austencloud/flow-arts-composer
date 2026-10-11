@@ -13,9 +13,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // offlineCachingSupported() requires dev === false. The shared setup file mocks
-// $app/environment with dev: true; this per-file mock overrides it (same
+// $app/env with dev: true; this per-file mock overrides it (same
 // pattern as network-conditions.test.ts).
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: false,
   building: false,
@@ -25,29 +25,29 @@ vi.mock("$app/environment", () => ({
 // The orchestrator pulls these module singletons inside its methods. Mock every
 // one BEFORE import so the real module graphs (Dexie, Firebase, Svelte runes)
 // never load under jsdom.
-vi.mock("$lib/shared/browse/get-browse-loader", () => ({
+vi.mock("#lib/shared/browse/get-browse-loader.js", () => ({
   getBrowseLoader: vi.fn(),
 }));
-vi.mock("$lib/shared/browse/services/cloud-thumbnail-cache", () => ({
+vi.mock("#lib/shared/browse/services/cloud-thumbnail-cache.js", () => ({
   getUrl: vi.fn(),
   loadManifest: vi.fn(async () => 0),
   markMissing: vi.fn(),
 }));
-vi.mock("$lib/shared/browse/services/thumbnail-key-deriver", () => ({
+vi.mock("#lib/shared/browse/services/thumbnail-key-deriver.js", () => ({
   deriveKey: vi.fn(() => ({ hash: "h" })),
 }));
-vi.mock("$lib/shared/browse/get-thumbnail-render-orchestrator", () => ({
+vi.mock("#lib/shared/browse/get-thumbnail-render-orchestrator.js", () => ({
   getThumbnailRenderOrchestrator: vi.fn(() => ({
     buildCloudKey: vi.fn(() => "ck"),
   })),
 }));
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte",
+  "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js",
   () => ({
     getAnimationVisibilityManager: vi.fn(() => ({ isDarkMode: () => false })),
   })
 );
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: {
     settings: {
       leftPropType: "staff",
@@ -57,13 +57,13 @@ vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
   },
 }));
 
-import { OfflineCacheOrchestrator } from "$lib/shared/offline/services/offline-cache-orchestrator";
-import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
+import { OfflineCacheOrchestrator } from "#lib/shared/offline/services/offline-cache-orchestrator.js";
+import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
 import {
   getUrl,
   loadManifest,
   markMissing,
-} from "$lib/shared/browse/services/cloud-thumbnail-cache";
+} from "#lib/shared/browse/services/cloud-thumbnail-cache.js";
 
 const OFFLINE_RENDER_PROBE = "/images/grid/diamond_grid.svg";
 

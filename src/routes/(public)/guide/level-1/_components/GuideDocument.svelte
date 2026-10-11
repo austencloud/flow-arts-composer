@@ -17,6 +17,7 @@
   import ProofTextPage from "../_pages/ProofTextPage.svelte";
   import { GUIDE_BODY_PAGES, type GuidePageMeta } from "../_data/guide-manifest";
   import { PROOF_TEXT } from "../_data/proof-text";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { guideEdit, ptDrag, pt, editText, registerEditSource } from "../_data/guide-edit.svelte";
   import FlowFrame from "./FlowFrame.svelte";
   import { GUIDE_CONTENT, hasReflowContent } from "../_data/guide-content";
@@ -63,10 +64,10 @@
       "<span class=\"ln\">If this guide helps you, you can support its development.</span>" +
       "<span class=\"ln\">Any amount is genuinely appreciated.</span>",
     readme: [
-      "Greetings, flow arts aficionado!",
-      "You've come across The Kinetic Alphabet, a notation system designed to help you craft and communicate your own unique choreography. This grid-based language is designed for music, using pictographs and letters that combine like puzzle pieces for each step. This system has propelled my sequence creation to new heights, and I hope it will do the same for you!",
+      t("guide_welcome_greeting"),
+      t("guide_welcome_what"),
       "The Kinetic Alphabet is a fusion of elements from VTG (Vulcan Tech Gospel), siteswap (Juggling Notation), and musical notation. Although it can be introduced to beginners, it's designed for intermediate learners, bridging the gap between improvisation and choreography. Originally built for double staves, it can be applied to any dual wielded static prop like clubs, fans, triads, buugeng, and more.",
-      "Pictographs form the core of The Kinetic Alphabet. The letters are a useful tool to categorize and communicate the pictographs, but they are secondary to the pictographs themselves. It's not necessary to memorize the letters immediately to benefit from this system.",
+      t("guide_welcome_pictographs"),
       "This is a work-in-progress and is continually growing. Whether you fully embrace this system, draw inspiration from certain parts, or follow a different path altogether, I hope the ideas presented here contribute to your creative growth.",
       "I can't wait to see the unique choreography you'll create!",
       "With love,<br /><span class=\"rm-sig\">Austen Cloud</span>",

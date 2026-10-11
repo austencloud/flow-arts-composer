@@ -11,7 +11,7 @@ import type { Spin } from "./qft-model";
 import {
   MODE_ORDER,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import { normalizeLegacyHandPair } from "@tka/tka-types";
 
 export const QFT_SESSION_KEY = "qft:session:v3";

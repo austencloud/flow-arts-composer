@@ -12,12 +12,12 @@
   - Uses svelte-dnd-action for drag-and-drop
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
   import { flip } from "svelte/animate";
   import { dragHandleZone, dragHandle } from "svelte-dnd-action";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import {
     featureFlagService,
     featureFlagState,
@@ -64,7 +64,9 @@
 
   // Get all main modules (for showing in the UI)
   const allMainModules = $derived.by(() => {
-    return MODULE_DEFINITIONS.filter((module) => module.isMain);
+    return MODULE_DEFINITIONS.filter(
+      (module) => module.isMain && module.id !== "compose"
+    );
   });
 
   // Get modules that are NOT visible in the sidebar but COULD be enabled

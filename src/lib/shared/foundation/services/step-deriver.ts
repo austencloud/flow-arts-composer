@@ -2,21 +2,21 @@ import type { ViewerPreferences } from "./types";
 import type { SoloPropData } from "../domain/models/solo-prop-data";
 import type { StepPairingData } from "../domain/models/step-pairing-data";
 import type { SoloPropStepData } from "../domain/models/solo-prop-step-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { calculateHandpathDirection } from "$lib/shared/pictograph/arrow/positioning/calculation/services/handpath-direction-calculator";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { calculateHandpathDirection } from "#lib/shared/pictograph/arrow/positioning/calculation/services/handpath-direction-calculator.js";
 
 const CARDINAL = new Set<GridLocation>([
   GridLocation.NORTH,

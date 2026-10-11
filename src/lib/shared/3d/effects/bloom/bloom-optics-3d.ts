@@ -1,6 +1,6 @@
-import type { Bloom3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+import type { Bloom3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 import type { QualityTier } from "../types";
-import { resolveBloomExposure } from "$lib/shared/effects/domain/bloom-optics";
+import { resolveBloomExposure } from "#lib/shared/effects/domain/bloom-optics.js";
 
 export interface BloomOpticalFrame3D {
   energy: number;

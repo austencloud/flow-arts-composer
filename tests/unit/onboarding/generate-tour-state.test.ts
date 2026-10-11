@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Keep the cloud-sync paths hermetic: no real Firestore in a unit run. The
 // state module dynamic-imports these three; with effectiveUserId=null,
 // syncToCloud is a no-op and syncFromCloud just resolves the gate.
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 vi.mock("firebase/firestore", () => ({
@@ -14,19 +14,19 @@ vi.mock("firebase/firestore", () => ({
   setDoc: vi.fn(async () => {}),
   serverTimestamp: vi.fn(() => 0),
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { effectiveUserId: null },
 }));
 
 type TourState =
-  typeof import("$lib/shared/onboarding/state/generate-tour-state.svelte").generateTourState;
+  typeof import("#lib/shared/onboarding/state/generate-tour-state.svelte.js").generateTourState;
 
 /** Re-import the singleton with a clean module + localStorage each time so we
  *  can exercise its construction-time read of the persisted flags. */
 async function freshState(): Promise<TourState> {
   vi.resetModules();
   const mod = await import(
-    "$lib/shared/onboarding/state/generate-tour-state.svelte"
+    "#lib/shared/onboarding/state/generate-tour-state.svelte.js"
   );
   return mod.generateTourState;
 }

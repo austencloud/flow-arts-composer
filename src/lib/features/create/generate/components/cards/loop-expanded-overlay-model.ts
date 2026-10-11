@@ -4,20 +4,20 @@ import {
   LOOP_COMPONENTS,
   LOOPComponent,
   type LOOPComponentInfo,
-} from "$lib/features/create/generate/shared/domain/constants/loop-components";
-import { generateExplanationText } from "$lib/features/create/generate/shared/services/loop-explanation-text-generator";
+} from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
+import { generateExplanationText } from "#lib/features/create/generate/shared/services/loop-explanation-text-generator.js";
 import {
   guestLoopGate,
   type GuestLoopLock,
-} from "$lib/shared/create/services/loop-guest-gate";
+} from "#lib/shared/create/services/loop-guest-gate.js";
 import {
   gateRhythm,
   type RhythmGate,
-} from "$lib/shared/create/services/loop-rhythm-gating";
+} from "#lib/shared/create/services/loop-rhythm-gating.js";
 import {
   describeTnDSelection,
   type TnDSelection,
-} from "$lib/shared/create/domain/hand-relationship";
+} from "#lib/shared/create/domain/hand-relationship.js";
 import {
   buildLoopSpec,
   canExtendCombo,
@@ -25,7 +25,7 @@ import {
   generateLOOPType,
   tndLoopCompatibility,
   type TndLoopCompatibility,
-} from "$lib/shared/create/services/loop-type-utils";
+} from "#lib/shared/create/services/loop-type-utils.js";
 
 export interface LoopRhythmValue {
   rotationInterval: 2 | 4;

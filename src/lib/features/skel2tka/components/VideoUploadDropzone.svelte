@@ -5,7 +5,7 @@
   Shows the selected file name and size. Emits the File object.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     onFileSelected: (file: File) => void;

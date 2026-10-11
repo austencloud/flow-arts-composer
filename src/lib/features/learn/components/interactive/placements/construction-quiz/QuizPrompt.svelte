@@ -3,7 +3,7 @@ QuizPrompt - Displays the target placement type the user must build.
 Large Greek symbol with placement name and color accent.
 -->
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     PLACEMENT_TYPE_INFO,
     type PlacementType,

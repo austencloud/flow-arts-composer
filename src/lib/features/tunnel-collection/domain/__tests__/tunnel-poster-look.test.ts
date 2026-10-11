@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { SNAPSHOT_VERSION } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
-import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { SNAPSHOT_VERSION } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
+import { DEFAULT_CONFIG } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TAIL_LENGTH_MAX,
   TrailEffect,
   TrailMode,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import type { CollectedTunnel } from "../tunnel-collection-types";
 import {
   POSTER_NO_DECAY_FADE_MS,

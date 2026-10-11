@@ -54,7 +54,7 @@ describe("withdrawn public pages", () => {
   it("returns 404 in production while retaining development access", () => {
     for (const path of gatedRoutes) {
       const source = readSource(path);
-      expect(source).toContain('import { dev } from "$app/environment"');
+      expect(source).toContain('import { dev } from "$app/env"');
       expect(source).toContain("export const prerender = false");
       expect(source).toMatch(/if \(!dev\) error\(404, "Not found"\)/);
     }

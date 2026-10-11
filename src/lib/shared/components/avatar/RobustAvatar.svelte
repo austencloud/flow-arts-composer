@@ -10,12 +10,12 @@
    * - Consistent styling across the app
    */
 
-  import { generateAvatarUrl } from "$lib/shared/foundation/utils/avatar-generator";
+  import { generateAvatarUrl } from "#lib/shared/foundation/utils/avatar-generator.js";
   import {
     constructGoogleAvatarUrl,
     isGoogleAvatarUrl,
     isValidImageUrl,
-  } from "$lib/shared/foundation/utils/google-avatar";
+  } from "#lib/shared/foundation/utils/google-avatar.js";
 
   type AvatarSize = "xs" | "sm" | "md" | "lg" | "xl";
 

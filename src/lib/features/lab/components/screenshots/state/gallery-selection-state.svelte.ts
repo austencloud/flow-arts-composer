@@ -6,11 +6,11 @@
  * and bulk tag operations on selected items.
  */
 
-import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
 import type { ScreenshotTagController } from "../../../services/screenshot-tag-controller";
 import type { GalleryItem } from "../../../services/types";
 import type { MediaTag } from "@austencloud/media-tagging-types";
-import { createMultiSelectionState } from "$lib/shared/selection/state/create-multi-selection-state.svelte";
+import { createMultiSelectionState } from "#lib/shared/selection/state/create-multi-selection-state.svelte.js";
 
 export interface GallerySelectionDeps {
   getHapticService: () => HapticFeedback | null;

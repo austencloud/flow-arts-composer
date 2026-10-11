@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { TurnAllocator } from './services/turn-allocator';
 import { getLOOPParameterProvider } from './get-loop-parameter-provider';

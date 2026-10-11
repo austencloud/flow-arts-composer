@@ -9,8 +9,8 @@
    * Domain: Create module - Sequence Editing Coordination
    */
 
-  import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+  import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import SequenceActionsPanel from "../sequence-actions/SequenceActionsPanel.svelte";
   import { getCreateModuleContext } from "../../context/create-module-context";
 

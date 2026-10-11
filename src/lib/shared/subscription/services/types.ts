@@ -1,4 +1,4 @@
-import type { CapabilityFeatureId } from "$lib/shared/auth/domain/models/feature-flag";
+import type { CapabilityFeatureId } from "#lib/shared/auth/domain/models/feature-flag.js";
 export interface NudgeConfig {
 	capability: CapabilityFeatureId;
 	description: string;

@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
 import {
   estimateWorkerRuntimeBytes,
   retainedSceneBudgetBytes,
-} from "$lib/shared/3d/worker-renderer/services/worker-runtime-memory-estimate";
+} from "#lib/shared/3d/worker-renderer/services/worker-runtime-memory-estimate.js";
 
 const viewport = { width: 1, height: 1, dpr: 1 };
 

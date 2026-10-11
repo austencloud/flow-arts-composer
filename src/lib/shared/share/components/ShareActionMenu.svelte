@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { DropdownMenu, Portal } from "bits-ui";
   import type { HTMLButtonAttributes } from "svelte/elements";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import type { ShareActionMenuItem } from "$lib/shared/share/domain/models/share-action-menu";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import type { ShareActionMenuItem } from "#lib/shared/share/domain/models/share-action-menu.js";
 
   interface Props {
     open?: boolean;

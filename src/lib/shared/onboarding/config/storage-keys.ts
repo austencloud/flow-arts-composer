@@ -18,7 +18,7 @@
  * and was itself deleted 2026-07-19 (see onboarding/README.md).
  */
 
-import { getOnboardingPersister } from "$lib/shared/onboarding/get-onboarding-persister";
+import { getOnboardingPersister } from "#lib/shared/onboarding/get-onboarding-persister.js";
 import type { OnboardingPersister } from "../services/onboarding-persister";
 
 // Lazy service resolution to avoid circular dependencies

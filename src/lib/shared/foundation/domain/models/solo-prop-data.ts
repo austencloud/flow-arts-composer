@@ -1,8 +1,8 @@
 import type {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { HandPathData } from "./hand-path-data";
 import type { SoloPropStepData } from "./solo-prop-step-data";
 import type { AuthoredHand } from "./authored-hand";

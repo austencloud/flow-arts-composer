@@ -5,8 +5,8 @@
   has. The frame color exists only in 3D, so 2D hosts leave it off.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PropBuildPicker from "$lib/shared/3d/components/controls/PropBuildPicker.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PropBuildPicker from "#lib/shared/3d/components/controls/PropBuildPicker.svelte";
   import {
     fanBuildPreviewOptions,
     compactFanLookPreviewOptions,
@@ -19,8 +19,8 @@
     type FanCover,
     type FanFrameColor,
   } from "../domain/fan-appearance";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   let {
     value,

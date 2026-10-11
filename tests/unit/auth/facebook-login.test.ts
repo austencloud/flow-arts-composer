@@ -68,7 +68,7 @@ vi.mock("firebase/auth", () => ({
 // The authenticator's static `auth` export + the lazy getAuthInstance both come
 // from the HMR-heavy firebase module. Replace with a controllable fake.
 const authRef = vi.hoisted(() => ({ current: { currentUser: null as any } }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: authRef.current,
   getAuthInstance: async () => authRef.current,
   getStorageInstance: async () => ({}),
@@ -78,16 +78,16 @@ vi.mock("$lib/shared/auth/firebase", () => ({
 const upgradeRef = vi.hoisted(() => ({
   upgradeAnonymousWithFacebook: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/services/anonymous-upgrade", () => ({
+vi.mock("#lib/shared/auth/services/anonymous-upgrade.js", () => ({
   upgradeAnonymousWithFacebook: upgradeRef.upgradeAnonymousWithFacebook,
 }));
 
 const promptRef = vi.hoisted(() => ({ promptAnonymousImport: vi.fn() }));
-vi.mock("$lib/shared/auth/state/anonymous-import-prompt.svelte", () => ({
+vi.mock("#lib/shared/auth/state/anonymous-import-prompt.svelte.js", () => ({
   promptAnonymousImport: promptRef.promptAnonymousImport,
 }));
 
-vi.mock("$lib/shared/auth/services/instagram-auth", () => ({
+vi.mock("#lib/shared/auth/services/instagram-auth.js", () => ({
   authenticateWithInstagram: vi.fn(),
   disconnectInstagramAccount: vi.fn(),
 }));
@@ -96,7 +96,7 @@ vi.mock("$lib/shared/auth/services/instagram-auth", () => ({
 // tests only need getProviderIds + updateFacebookProfilePictureIfNeeded, so stub
 // the registry to keep this a true unit test.
 vi.mock(
-  "$lib/shared/pictograph/prop/domain/prop-type-display-registry",
+  "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js",
   () => ({ PROP_TYPE_DISPLAY_REGISTRY: {} })
 );
 
@@ -104,19 +104,19 @@ import { linkWithCredential } from "firebase/auth";
 import {
   signInWithFacebook,
   linkFacebookAccount,
-} from "$lib/shared/auth/services/authenticator";
+} from "#lib/shared/auth/services/authenticator.js";
 import {
   getProviderIds,
   updateFacebookProfilePictureIfNeeded,
-} from "$lib/shared/auth/services/profile-picture-manager";
-import { FACEBOOK_LOGIN_ENABLED } from "$lib/shared/auth/services/auth-providers.config";
+} from "#lib/shared/auth/services/profile-picture-manager.js";
+import { FACEBOOK_LOGIN_ENABLED } from "#lib/shared/auth/services/auth-providers.config.js";
 import {
   clearPendingLink,
   consumePendingLinkForUser,
   getPendingLinkEmail,
   hasPendingLink,
   stashPendingLink,
-} from "$lib/shared/auth/services/pending-credential-link";
+} from "#lib/shared/auth/services/pending-credential-link.js";
 
 function fbProvider(providerId: string, uid = "p-uid", photoURL?: string) {
   return { providerId, uid, photoURL };

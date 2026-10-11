@@ -5,7 +5,7 @@
  * across navigation changes.
  */
 
-import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 import type { PanelCoordinationState } from "../state/panel-coordination-state.svelte";
 
 export type PanelId =

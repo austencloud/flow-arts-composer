@@ -1,17 +1,17 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { MessageAttachment } from "$lib/shared/messaging/domain/models/message-models";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { MessageAttachment } from "#lib/shared/messaging/domain/models/message-models.js";
   import { goto } from "$app/navigation";
-  import type { CollectionShareGrant } from "$lib/shared/library/domain/models/collection";
-  import { getCollectionCollaborationManager } from "$lib/shared/library/get-collection-collaboration-manager";
+  import type { CollectionShareGrant } from "#lib/shared/library/domain/models/collection.js";
+  import { getCollectionCollaborationManager } from "#lib/shared/library/get-collection-collaboration-manager.js";
   import {
     clearPendingBrowseIntent,
     createCollectionDetailIntent,
     setPendingBrowseIntent,
-  } from "$lib/features/browse/state/pending-browse-intent.svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
+  } from "#lib/features/browse/state/pending-browse-intent.svelte.js";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
   import { inboxState } from "../../state/inbox-state.svelte";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { resolveCollectionMessageRole } from "../../domain/collection-message-access";
 
   interface Props {

@@ -12,7 +12,7 @@ Provides sophisticated navigation sections matching desktop functionality:
 Follows Svelte 5 runes + microservices architecture.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
   import { slide } from "svelte/transition";
     import type {
@@ -20,7 +20,7 @@ Follows Svelte 5 runes + microservices architecture.
     BrowseNavigationItem,
   } from "../domain/models/navigation-models";
   import type { HapticFeedback } from "../../../../../shared/application/services/haptic-feedback";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // ✅ PURE RUNES: Props using modern Svelte 5 runes
   const {

@@ -147,6 +147,8 @@ test-results/
 .playwright-mcp/
 # vitest-browser-svelte saves screenshots here on test failure (regenerated, never commit)
 **/__screenshots__/
+# Vitest 4.1 browser mode also keeps failure screenshots here (regenerated)
+.vitest-attachments/
 
 # VSCode — ignore all except the shared launch config (dev-server launch,
 # runs scripts/start-dev.ps1), which is tracked so it syncs across machines.

@@ -1,8 +1,8 @@
 
-import { PI } from "$lib/shared/foundation/domain/math-constants";
-import type { AnimationParams } from "$lib/shared/assemble-lab/domain/types";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { applyEffort } from "$lib/shared/effort/domain/effort-easing-unified";
+import { PI } from "#lib/shared/foundation/domain/math-constants.js";
+import type { AnimationParams } from "#lib/shared/assemble-lab/domain/types.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { applyEffort } from "#lib/shared/effort/domain/effort-easing-unified.js";
 import {
   deriveBuilderMotionGeometry,
   lerpAngle,

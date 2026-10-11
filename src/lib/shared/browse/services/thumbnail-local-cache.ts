@@ -12,7 +12,7 @@
  * 4. Local render (slow)
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 
 export interface ThumbnailLocalCacheStats {
   count: number;

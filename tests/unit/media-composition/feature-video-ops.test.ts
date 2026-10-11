@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
+import { featureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   applyPostProjectOps,
   type PostProjectOp,
-} from "$lib/shared/media-composition/domain/post-project-ops";
+} from "#lib/shared/media-composition/domain/post-project-ops.js";
 import { NOW, project } from "./post-project-fixtures";
-import { editContext } from "$lib/shared/post-studio-plugin";
+import { editContext } from "#lib/shared/post-studio-plugin/index.js";
 
 const ctx = editContext(NOW + 1);
 const URL_03 = featureVideoMediaUrl("promo", "footage/take-03.mp4");

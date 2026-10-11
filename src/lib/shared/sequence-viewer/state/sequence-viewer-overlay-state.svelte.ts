@@ -1,25 +1,25 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ViewMode } from "$lib/shared/sequence-viewer/domain/viewer-orchestrator-context";
-import type { ViewerMode } from "$lib/shared/sequence-viewer/state/viewer-state.svelte";
-import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ViewMode } from "#lib/shared/sequence-viewer/domain/viewer-orchestrator-context.js";
+import type { ViewerMode } from "#lib/shared/sequence-viewer/state/viewer-state.svelte.js";
+import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 import type {
   TunnelComposition,
   TunnelSaveTarget,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import type { TunnelSavedCallback } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
-import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import { getShortCodeShareMessage } from "$lib/shared/qr/domain/short-code-error";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import type { TunnelSavedCallback } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
+import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+import { getShortCodeShareMessage } from "#lib/shared/qr/domain/short-code-error.js";
 import {
   mutateCurrentUrl,
   removeCurrentUrlParams,
   writeUrl,
-} from "$lib/shared/navigation/services/url-state";
+} from "#lib/shared/navigation/services/url-state.js";
 import { VIEWER_STATE_PARAM_NAMES } from "../services/viewer-url-state-codec";
-import type { SequenceViewerSource } from "$lib/shared/sequence-viewer/analytics/viewer-events";
+import type { SequenceViewerSource } from "#lib/shared/sequence-viewer/analytics/viewer-events.js";
 
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 let _collectionPropType = $state<PropType | null>(null);
 let _isOpen = $state(false);

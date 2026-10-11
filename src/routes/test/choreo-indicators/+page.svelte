@@ -1,12 +1,12 @@
 <script lang="ts">
-  import PrintPreviewPages from "$lib/features/choreo-card/components/print-preview/PrintPreviewPages.svelte";
-  import type { CardFooter } from "$lib/features/choreo-card/domain/models/DeckRelease";
-  import SequenceMetadataRail from "$lib/features/create/shared/workspace-panel/sequence-display/components/SequenceMetadataRail.svelte";
-  import WordLabel from "$lib/features/create/shared/workspace-panel/sequence-display/components/WordLabel.svelte";
-  import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import demoSequenceJson from "$lib/shared/landing/data/demo-sequence.json";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import PrintPreviewPages from "#lib/features/choreo-card/components/print-preview/PrintPreviewPages.svelte";
+  import type { CardFooter } from "#lib/features/choreo-card/domain/models/DeckRelease.js";
+  import SequenceMetadataRail from "#lib/features/create/shared/workspace-panel/sequence-display/components/SequenceMetadataRail.svelte";
+  import WordLabel from "#lib/features/create/shared/workspace-panel/sequence-display/components/WordLabel.svelte";
+  import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import demoSequenceJson from "#lib/shared/landing/data/demo-sequence.json";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   type WorkspaceState = "empty" | "first" | "loop";
 

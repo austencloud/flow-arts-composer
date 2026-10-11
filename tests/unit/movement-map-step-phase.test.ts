@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   stepPhaseAt,
   timeForPhase,
-} from "$lib/features/movement-map/domain/step-phase";
+} from "#lib/features/movement-map/domain/step-phase.js";
 
 // Four moves, one second each, marked from t=10. Marks are arrivals, so there
 // are five of them: the opening pose plus one per move.

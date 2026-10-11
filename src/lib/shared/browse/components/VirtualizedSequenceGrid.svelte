@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { prefetch as prefetchSequenceData } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { prefetch as prefetchSequenceData } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     createVirtualizer,
     type VirtualItem,
@@ -9,18 +9,18 @@
   } from "@tanstack/svelte-virtual";
   import type { Readable } from "svelte/store";
   import { onMount, onDestroy, untrack } from "svelte";
-  import type { BrowseThumbnailProvider } from "$lib/shared/browse/services/browse-thumbnail-provider";
-  import ChoreoCardThumbnail from "$lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { isCatDogMode } from "$lib/shared/browse/utils/prop-mode-helpers";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import type { BrowseThumbnailProvider } from "#lib/shared/browse/services/browse-thumbnail-provider.js";
+  import ChoreoCardThumbnail from "#lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { isCatDogMode } from "#lib/shared/browse/utils/prop-mode-helpers.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import {
     buildVariationMap,
     variationGroupKey,
-  } from "$lib/shared/browse/services/variation-grouper";
-  import { calculateGalleryAspectRatio } from "$lib/shared/render/services/layout-calculator";
-  import { cellPreWarmer } from "$lib/shared/sequence-viewer/services/cell-pre-warmer";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+  } from "#lib/shared/browse/services/variation-grouper.js";
+  import { calculateGalleryAspectRatio } from "#lib/shared/render/services/layout-calculator.js";
+  import { cellPreWarmer } from "#lib/shared/sequence-viewer/services/cell-pre-warmer.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
 
   /**
    * The virtualizer needs to know each row's height before it renders.

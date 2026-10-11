@@ -1,4 +1,4 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   TUNNEL_COMPOSITION_VERSION,
   MAX_AUTHORED_TUNNEL_PERFORMERS,
@@ -8,21 +8,21 @@ import {
   type TunnelComposition,
   type TunnelPerformer,
   type TunnelSourceProvenance,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
 import {
   cloneTunnelStage,
   createExplicitTunnelStage,
   fitTunnelStageToFormation,
   type TunnelStage,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-stage";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-stage.js";
 import {
   DEFAULT_CONFIG,
   FOLD_OPTIONS,
   configKey,
   imageCount,
   type TunnelConfig,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-import { deriveTunnelName } from "$lib/shared/sequence-viewer/tunnel/tunnel-name";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import { deriveTunnelName } from "#lib/shared/sequence-viewer/tunnel/tunnel-name.js";
 import {
   TUNNEL_CREATOR_DRAFT_VERSION,
   type TunnelCreatorDraft,
@@ -39,7 +39,7 @@ import {
   updateTunnelRelationship,
   type TunnelRelationshipRule,
 } from "../domain/tunnel-relationship-rule";
-import type { TunnelSnapshot } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
+import type { TunnelSnapshot } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
 import type { TunnelPresentationState } from "./tunnel-presentation-state.svelte";
 
 const INITIAL_VISIBLE_PERFORMERS = 2;

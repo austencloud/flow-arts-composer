@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { solveHandFlips } from "../reversal-seed-service";
-import { processReversals } from "$lib/shared/create/services/reversal-detector";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { processReversals } from "#lib/shared/create/services/reversal-detector.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /**
  * Proves the live reversal apply is WYSIWYG and idempotent.

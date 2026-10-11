@@ -1,8 +1,8 @@
-import { db } from "$lib/shared/persistence/database/tka-database";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PublicSequenceIndex } from "$lib/shared/foundation/domain/models/public-sequence-index";
-import type { AppSettings } from "$lib/shared/settings/domain/app-settings";
-import { getGalleryOfflineCache } from "$lib/shared/offline/get-gallery-offline-cache";
+import { db } from "#lib/shared/persistence/database/tka-database.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PublicSequenceIndex } from "#lib/shared/foundation/domain/models/public-sequence-index.js";
+import type { AppSettings } from "#lib/shared/settings/domain/app-settings.js";
+import { getGalleryOfflineCache } from "#lib/shared/offline/get-gallery-offline-cache.js";
 
 const BUNDLE_VERSION_KEY = "desktop-bundle-version";
 const GALLERY_BUNDLE_KEY = "desktop-gallery-bundle";

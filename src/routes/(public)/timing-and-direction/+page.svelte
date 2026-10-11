@@ -1,38 +1,19 @@
 <script lang="ts">
-  import Seo from "$lib/shared/components/Seo.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import Seo from "#lib/shared/components/Seo.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import TimingDirectionAtlas from "./_components/TimingDirectionAtlas.svelte";
   import TimingDirectionModeCard from "./_components/TimingDirectionModeCard.svelte";
-  import { TIMING_DIRECTION_ARTICLES } from "./_data/timing-direction-articles";
+  import {
+    TIMING_DIRECTION_ARTICLES,
+    TIMING_DIRECTION_DISCUSSIONS,
+  } from "./_data/timing-direction-articles";
 
   const TITLE = "Timing and Direction in Flow Arts: All 6 Modes";
   const DESCRIPTION =
     "Together, split, and quarter timing crossed with same or opposite direction. See all six flow-arts modes with animations, definitions, history, and TKA examples.";
   const URL = "https://tkaflowarts.com/timing-and-direction";
 
-  const sources = [
-    {
-      date: "August 2002",
-      title: "How do you define a weave?",
-      preview:
-        "Spinners compare split and non-split timing, same and opposite direction, and how those combinations show up in weaves and butterflies.",
-      href: "https://www.homeofpoi.com/en/community/forums/topics/120838/How-do-you-define-a-weave",
-    },
-    {
-      date: "November 2002",
-      title: "Quarter-time butterflies",
-      preview:
-        "Jez names quarter-time butterflies in a discussion about concept moves and plane transitions. An early written use of quarter timing.",
-      href: "https://www.homeofpoi.com/en/community/forums/topics/122222/Concept-moves-and-why-make-lists",
-    },
-    {
-      date: "May 2009",
-      title: "Prop transitioning",
-      preview:
-        "Noel Yee separates timing from direction and works through transitions between the four original combinations.",
-      href: "https://www.homeofpoi.com/fr/community/forums/topics/887635/X-Post-Prop-Transitioning-Article",
-    },
-  ];
+  const sources = TIMING_DIRECTION_DISCUSSIONS;
 
   const jsonLd = {
     "@context": "https://schema.org",

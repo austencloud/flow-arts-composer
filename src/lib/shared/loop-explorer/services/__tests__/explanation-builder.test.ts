@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import { buildExplanation } from "../explanation-builder";
 import type { StepPairRelation } from "../relation-extractor";
 

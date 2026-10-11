@@ -7,16 +7,16 @@
  * live demo. Dev-bake use only — NOT unit-testable in jsdom.
  */
 
-import { Canvas2DAnimationRenderer } from "$lib/shared/animation-engine/services/canvas-2d-animation-renderer";
-import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/get-sequence-animation-orchestrator";
-import { getVideoExporter } from "$lib/shared/animation-engine/get-video-exporter";
+import { Canvas2DAnimationRenderer } from "#lib/shared/animation-engine/services/canvas-2d-animation-renderer.js";
+import { getSequenceAnimationOrchestrator } from "#lib/shared/animation-engine/get-sequence-animation-orchestrator.js";
+import { getVideoExporter } from "#lib/shared/animation-engine/get-video-exporter.js";
 import {
   generateLeftPropSvg,
   generateRightPropSvg,
-} from "$lib/shared/animation-engine/services/svg-generator";
-import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+} from "#lib/shared/animation-engine/services/svg-generator.js";
+import { DEFAULT_TRAIL_SETTINGS } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import {
   buildGuideMotionSequence,
   type GuideMotionConfig,

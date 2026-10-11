@@ -1,5 +1,5 @@
 import { Color, Vector3, type Camera, type Object3D } from "three";
-import { Canvas2DVisibilityFadeManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-visibility-fade-manager";
+import { Canvas2DVisibilityFadeManager } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-visibility-fade-manager.js";
 import type {
   DynamicLightManager,
   LightHandle,

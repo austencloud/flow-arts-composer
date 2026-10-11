@@ -7,7 +7,7 @@
  * interpolate, and one that interpolates two request fields raw.
  *
  * `fs` is mocked, so the suite observes the composed path without touching
- * disk. `$app/environment` reports dev:true (see the suite's stub).
+ * disk. `$app/env` reports dev:true (see the suite's stub).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import path from "node:path";

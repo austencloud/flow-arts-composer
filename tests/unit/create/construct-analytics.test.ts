@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureEvent: vi.fn(),
 }));
 
-import { captureEvent } from "$lib/shared/analytics/services/posthog";
+import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
 import {
   logConstructContextPreviewReady,
   logConstructImmediateUndo,
@@ -12,7 +12,7 @@ import {
   logConstructOptionApplied,
   logConstructStartPlacementCompleted,
   resetConstructAnalyticsForTests,
-} from "$lib/features/create/construct/services/construct-analytics";
+} from "#lib/features/create/construct/services/construct-analytics.js";
 
 describe("Construct privacy-safe analytics", () => {
   beforeEach(() => {

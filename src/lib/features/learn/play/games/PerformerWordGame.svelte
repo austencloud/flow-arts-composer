@@ -10,15 +10,15 @@ the exact QuizAnswerEvent shape gap detection depends on. The challenge's
 wordLength constraint rides through the question generator as a soft filter.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { detectSingleError } from "$lib/features/learn/services/gap-detector";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { detectSingleError } from "#lib/features/learn/services/gap-detector.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onDestroy, onMount } from "svelte";
   import * as QuestionGenerator from "../../quiz/services/question-generator";
   import { QuizType } from "../../quiz/domain/enums/quiz-enums";
   import type { QuizQuestionData } from "../../quiz/domain/models/quiz-models";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { DetectedGap } from "../../services/types";
   import QuizContainer from "../../quiz/components/shared/QuizContainer.svelte";
   import QuizLoadingState from "../../quiz/components/shared/QuizLoadingState.svelte";
@@ -29,9 +29,9 @@ wordLength constraint rides through the question generator as a soft filter.
   import QuizFeedbackBanner from "../../quiz/components/shared/QuizFeedbackBanner.svelte";
   import MisconceptionHint from "../../quiz/components/shared/MisconceptionHint.svelte";
   import ScorePopAnimation from "../../quiz/components/shared/ScorePopAnimation.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import { ANIMATED_BACKGROUNDS } from "$lib/shared/settings/utils/public-page-backgrounds";
+  import { ANIMATED_BACKGROUNDS } from "#lib/shared/settings/utils/public-page-backgrounds.js";
   import { getCatalogIdForSequence } from "../../quiz/services/sequence-question-generator";
   import { getArcadeSession } from "../state/arcade-session-state.svelte";
   import type { QuestionConstraints } from "../domain/arcade-types";

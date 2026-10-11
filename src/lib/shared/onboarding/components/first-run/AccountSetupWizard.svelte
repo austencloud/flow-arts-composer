@@ -5,7 +5,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import AccountSetupStep from "./AccountSetupStep.svelte";
-  import { FocusTrap } from "$lib/shared/foundation/ui/drawer/focus-trap";
+  import { FocusTrap } from "#lib/shared/foundation/ui/drawer/focus-trap.js";
 
   interface Props {
     forcePreview?: boolean;

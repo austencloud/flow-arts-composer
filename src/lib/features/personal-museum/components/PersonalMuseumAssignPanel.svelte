@@ -15,10 +15,10 @@
    * picker to place it there. Tapping the armed slot again disarms.
    */
   import { sequenceFirstStep } from "../services/sequence-first-step";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import SequencePicker from "./SequencePicker.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
   import type { PersonalMuseumState } from "../state/personal-museum-state.svelte";
 
   interface Props {

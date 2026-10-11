@@ -1,21 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { AppSettings } from "$lib/shared/settings/domain/app-settings";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { AppSettings } from "#lib/shared/settings/domain/app-settings.js";
 
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: true,
   building: false,
   version: "test",
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({ auth: { currentUser: null } }));
-vi.mock("$lib/shared/analytics/services/posthog-activity-logger", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({ auth: { currentUser: null } }));
+vi.mock("#lib/shared/analytics/services/posthog-activity-logger.js", () => ({
   logSettingChange: vi.fn(),
 }));
 
 const { settingsService } = await import("./settings-state.svelte");
 const { logSettingChange } = await import(
-  "$lib/shared/analytics/services/posthog-activity-logger"
+  "#lib/shared/analytics/services/posthog-activity-logger.js"
 );
 
 const STORAGE_KEY = "tka-modern-web-settings";

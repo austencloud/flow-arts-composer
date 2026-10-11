@@ -12,10 +12,10 @@ import {
   encodeSequence,
   encodeSequenceWithCompression,
   verifySequenceRoundTrip,
-} from "$lib/shared/navigation/services/sequence-encoder";
-import { detectLegacySequenceFormat } from "$lib/shared/navigation/services/legacy-sequence-codec";
-import { GRID_JOIN_DIRECTIONS } from "$lib/shared/foundation/domain/models/grid-join-token";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
+import { detectLegacySequenceFormat } from "#lib/shared/navigation/services/legacy-sequence-codec.js";
+import { GRID_JOIN_DIRECTIONS } from "#lib/shared/foundation/domain/models/grid-join-token.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   buildJoinFixture,
   joinOf,

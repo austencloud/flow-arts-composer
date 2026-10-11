@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import ShareActionMenu from "$lib/shared/share/components/ShareActionMenu.svelte";
-  import type { ShareActionMenuItem } from "$lib/shared/share/domain/models/share-action-menu";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import ShareActionMenu from "#lib/shared/share/components/ShareActionMenu.svelte";
+  import type { ShareActionMenuItem } from "#lib/shared/share/domain/models/share-action-menu.js";
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
   import {
     getWorkspaceCardMenuAction,

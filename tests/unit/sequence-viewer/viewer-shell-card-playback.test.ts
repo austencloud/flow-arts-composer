@@ -2,17 +2,17 @@
 
 import { effect_root } from "svelte/internal/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
-import type { OrchestratorContext } from "$lib/shared/sequence-viewer/domain/viewer-orchestrator-context";
-import { createViewerEditModeState } from "$lib/shared/sequence-viewer/state/viewer-edit-mode-state.svelte";
-import { createViewerShellLayoutState } from "$lib/shared/sequence-viewer/state/viewer-shell-layout-state.svelte";
-import { DURATION, STAGGER } from "$lib/shared/transitions/transitions";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
+import type { OrchestratorContext } from "#lib/shared/sequence-viewer/domain/viewer-orchestrator-context.js";
+import { createViewerEditModeState } from "#lib/shared/sequence-viewer/state/viewer-edit-mode-state.svelte.js";
+import { createViewerShellLayoutState } from "#lib/shared/sequence-viewer/state/viewer-shell-layout-state.svelte.js";
+import { DURATION, STAGGER } from "#lib/shared/transitions/transitions.js";
 import type {
   ExportContext,
   SplitConfig,
   ViewerMode,
-} from "$lib/shared/sequence-viewer/state/viewer-state.svelte";
+} from "#lib/shared/sequence-viewer/state/viewer-state.svelte.js";
 
 /**
  * Slack for the two settled paints the Card size pin waits on before it clears.

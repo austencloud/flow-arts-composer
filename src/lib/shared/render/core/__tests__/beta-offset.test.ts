@@ -3,8 +3,8 @@ import {
   calculateBetaOffset,
   type BetaMotionInput,
   type BetaOffsetInput,
-} from "$lib/shared/render/core/calculations/beta-offset";
-import { getBetaOffsetSize } from "$lib/shared/render/core/constants/prop-classification";
+} from "#lib/shared/render/core/calculations/beta-offset.js";
+import { getBetaOffsetSize } from "#lib/shared/render/core/constants/prop-classification.js";
 import { HandSide } from "@tka/tka-types";
 
 /**

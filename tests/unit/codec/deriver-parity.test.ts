@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   calculateEndOrientation as core,
   deriveMotionType,
-} from "$lib/shared/render/core/calculations/orientation";
+} from "#lib/shared/render/core/calculations/orientation.js";
 // The sequence-engine copy is a positional-arg wrapper that delegates to core.
-import { calculateEndOrientation as engine } from "$lib/shared/sequence-engine/services/orientation-propagator";
+import { calculateEndOrientation as engine } from "#lib/shared/sequence-engine/services/orientation-propagator.js";
 // The shared package copy. mcp-server delegates to this one, so covering it
 // here also covers mcp-server.
 import { calculateEndOrientation as pkg } from "@tka/render-core";

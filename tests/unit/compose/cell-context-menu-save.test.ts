@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { GridCell } from "$lib/features/compose/tabs/arrange/state/arrange-grid-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { GridCell } from "#lib/features/compose/tabs/arrange/state/arrange-grid-state.svelte.js";
 import {
   buildCellContextMenuItems,
   type CellContextMenuCallbacks,
-} from "$lib/features/compose/tabs/arrange/components/grid/cell-editor/context-menu/cell-context-menu-builder";
+} from "#lib/features/compose/tabs/arrange/components/grid/cell-editor/context-menu/cell-context-menu-builder.js";
 
 describe("composition cell context menu save action", () => {
   it("names the saved artifact when the cell displays a sequence", () => {

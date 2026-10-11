@@ -12,17 +12,17 @@
 import {
   LOOPType,
   ROTATED_LOOP_TYPES,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   DEFAULT_TND_SELECTION,
   isTnDSelection,
   type TnDSelection,
-} from "$lib/shared/create/domain/hand-relationship";
+} from "#lib/shared/create/domain/hand-relationship.js";
 import {
   MODE_ORDER,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import {
   getLOOPSpecExpansionMultiplier,
   loopSpecFromWire,

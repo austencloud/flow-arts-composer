@@ -14,8 +14,8 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
 
   let drawerOpen = $state(true);
   let modalOpen = $state(false);

@@ -1,8 +1,8 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { handSwapSequence } from "$lib/shared/create/services/sequence-transforms";
-import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { handSwapSequence } from "#lib/shared/create/services/sequence-transforms.js";
+import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
 /**
  * Pure base-word index for shape-matrix realizations (firebase-free).

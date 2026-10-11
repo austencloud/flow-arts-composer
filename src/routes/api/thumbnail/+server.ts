@@ -1,7 +1,8 @@
 import type { RequestHandler } from "./$types";
-import { requireFirebaseUser } from "$lib/server/auth/requireFirebaseUser";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
+import { requireFirebaseUser } from "#lib/server/auth/requireFirebaseUser.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
+import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
 
 const MAX_THUMBNAIL_SIZE = 10 * 1024 * 1024;
 const MAX_SEQUENCE_ID_LENGTH = 200;
@@ -141,8 +142,9 @@ export const POST: RequestHandler = async (event) => {
     return textResponse("Unsupported thumbnail type", 415);
   }
 
-  const bucket = event.platform?.env?.TKA_ASSETS;
-  const publicUrl = event.platform?.env?.R2_PUBLIC_URL?.replace(/\/+$/, "");
+  const env = workerEnv();
+  const bucket = env?.TKA_ASSETS;
+  const publicUrl = env?.R2_PUBLIC_URL?.replace(/\/+$/, "");
   if (!bucket || !publicUrl) {
     return textResponse("Thumbnail storage is not configured", 503);
   }

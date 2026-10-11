@@ -13,18 +13,18 @@
  */
 
 import { FirebaseError } from "firebase/app";
-import { db } from "$lib/shared/persistence/database/tka-database";
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-import { networkStatusState } from "$lib/shared/offline/state/network-status-state.svelte";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import { LibraryError } from "$lib/shared/library/domain/library-error";
-import { IncompleteWordError } from "$lib/shared/foundation/services/word-deriver";
-import { SequenceNormalizationError } from "$lib/shared/library/services/sequence-persistence-normalizer";
-import { PublicDuplicateError } from "$lib/shared/library/services/public-sequence-persister";
-import { ContentModerationError } from "$lib/features/moderation/errors/content-moderation-error";
-import { isSequenceDeletionIntended } from "$lib/shared/library/services/sequence-persistence-coordinator";
-import { getOwnedSequenceIdSet } from "$lib/shared/library/services/saved-sequence-ledger";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { db } from "#lib/shared/persistence/database/tka-database.js";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+import { networkStatusState } from "#lib/shared/offline/state/network-status-state.svelte.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { LibraryError } from "#lib/shared/library/domain/library-error.js";
+import { IncompleteWordError } from "#lib/shared/foundation/services/word-deriver.js";
+import { SequenceNormalizationError } from "#lib/shared/library/services/sequence-persistence-normalizer.js";
+import { PublicDuplicateError } from "#lib/shared/library/services/public-sequence-persister.js";
+import { ContentModerationError } from "#lib/features/moderation/errors/content-moderation-error.js";
+import { isSequenceDeletionIntended } from "#lib/shared/library/services/sequence-persistence-coordinator.js";
+import { getOwnedSequenceIdSet } from "#lib/shared/library/services/saved-sequence-ledger.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 
 export type SequenceSyncStatus = "synced" | "pending" | "failed";
 

@@ -5,7 +5,7 @@ import {
   buildPillSpecs,
   resolveActivePill,
   type PillId,
-} from "$lib/shared/animation-panel/pill-nav/pill-types";
+} from "#lib/shared/animation-panel/pill-nav/pill-types.js";
 
 /**
  * The sidebar merges Effort and Playback into one Motion page; the mobile dock

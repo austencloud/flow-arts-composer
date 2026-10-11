@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
-import type { FollowedCollection } from "$lib/features/library/state/followed-collections-state.svelte";
+import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+import type { FollowedCollection } from "#lib/features/library/state/followed-collections-state.svelte.js";
 import {
 	readOwnMirror,
 	writeOwnMirror,

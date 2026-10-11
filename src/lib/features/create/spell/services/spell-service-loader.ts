@@ -17,8 +17,8 @@ import { letterTransitionGraph as letterTransitionGraphSingleton } from "./lette
 import { wordSequenceGenerator as wordSequenceGeneratorSingleton } from "./word-sequence-generator";
 import { variationConstraintBuilder as variationConstraintBuilderSingleton } from "./variation-constraint-builder";
 import { randomSequenceGenerator as randomSequenceGeneratorSingleton } from "./random-sequence-generator";
-import { sequenceExtender as sequenceExtenderSingleton } from "$lib/features/create/shared/services/sequence-extender";
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
+import { sequenceExtender as sequenceExtenderSingleton } from "#lib/features/create/shared/services/sequence-extender.js";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
 
 export async function getWordGenerator(): Promise<WordSequenceGenerator> {
   return wordSequenceGeneratorSingleton;

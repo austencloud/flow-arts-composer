@@ -7,7 +7,7 @@ import {
   getGridPlaneGeometry,
   getGridRenderResourceCounts,
   getGridRingGeometry,
-} from "$lib/shared/3d/components/grid-render-resources";
+} from "#lib/shared/3d/components/grid-render-resources.js";
 
 describe("grid render resources", () => {
   it("shares identical geometry and material requests across performers", () => {

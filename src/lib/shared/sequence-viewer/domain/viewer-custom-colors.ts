@@ -1,5 +1,5 @@
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
 import {
   normalizeHandHexColor,
   resolveHandColorPair,

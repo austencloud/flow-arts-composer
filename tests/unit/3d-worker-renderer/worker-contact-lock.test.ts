@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   WORKER_CONTACT_LOCK_MAX_M,
   applyLegacyContactLock,
-} from "$lib/shared/3d/worker-renderer/worlds/worker-contact-lock";
+} from "#lib/shared/3d/worker-renderer/worlds/worker-contact-lock.js";
 
 /** A staff anchor under a turned, moved performer root, with its correction
  *  group already knocked off from an earlier frame. */

@@ -1,6 +1,6 @@
 import { BackgroundType } from "@austencloud/backgrounds";
 import { describe, expect, it } from "vitest";
-import { SceneEnvironmentId } from "$lib/shared/3d/environments/domain/scene-environment";
+import { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
 import {
   MIGRATED_WORKER_ENVIRONMENTS,
   WORKER_ENVIRONMENT_BY_BACKGROUND,
@@ -8,7 +8,7 @@ import {
   decideWorkerViewerBackend,
   getWorkerEnvironmentKey,
   type WorkerViewerBackendInput,
-} from "$lib/shared/3d/worker-renderer/domain/worker-viewer-backend";
+} from "#lib/shared/3d/worker-renderer/domain/worker-viewer-backend.js";
 
 function supported(
   overrides: Partial<WorkerViewerBackendInput> = {}

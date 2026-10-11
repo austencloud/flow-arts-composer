@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { HTMLButtonAttributes } from "svelte/elements";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import { localizedPropName } from "./localized-prop-name";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PropSelectionButton from "./PropSelectionButton.svelte";
 
   let {

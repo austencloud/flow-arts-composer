@@ -1,4 +1,4 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /** Absolute floor: a sequence needs at least this many motion steps to be saved at all. */
 export const MIN_SAVE_STEPS = 1;

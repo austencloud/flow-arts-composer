@@ -1,4 +1,4 @@
-import { R2_CDN } from "$lib/shared/3d/constants/r2-origin";
+import { R2_CDN } from "#lib/shared/3d/constants/r2-origin.js";
 
 export type OceanFloraVariant = "authored" | "composed";
 

@@ -4,13 +4,13 @@
  * Svelte 5 runes-based state for version tracking and release management.
  */
 
-import * as versionService from "$lib/shared/feedback/services/version-service";
+import * as versionService from "#lib/shared/feedback/services/version-service.js";
 import type {
   AppVersion,
   VersionFeedbackItem,
   ChangelogEntry,
 } from "../domain/models/version-models";
-import { generateFromFeedback } from "$lib/shared/feedback/services/changelog-generator";
+import { generateFromFeedback } from "#lib/shared/feedback/services/changelog-generator.js";
 
 export interface VersionState {
   // Data

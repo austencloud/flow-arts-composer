@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { CHARCOAL_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/charcoal-presets";
+import { CHARCOAL_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/charcoal-presets.js";
 
 describe("Charcoal motion profiles", () => {
   it("keeps the review profiles physically distinct", () => {

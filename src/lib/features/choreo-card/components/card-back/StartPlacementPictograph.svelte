@@ -10,12 +10,12 @@
   so it works both in live Svelte rendering and offscreen DOM capture.
 -->
 <script lang="ts">
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { PreparedPictographData } from "$lib/shared/pictograph/shared/domain/models/prepared-pictograph-data";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-  import PictographRenderer from "$lib/shared/pictograph/shared/components/PictographRenderer.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { resolveStartPlacementColorOverrides } from "$lib/features/choreo-card/services/card-back/card-back-appearance";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { PreparedPictographData } from "#lib/shared/pictograph/shared/domain/models/prepared-pictograph-data.js";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+  import PictographRenderer from "#lib/shared/pictograph/shared/components/PictographRenderer.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { resolveStartPlacementColorOverrides } from "#lib/features/choreo-card/services/card-back/card-back-appearance.js";
 
   interface Props {
     pictographData: PictographData;

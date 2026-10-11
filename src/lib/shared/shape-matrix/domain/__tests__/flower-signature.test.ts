@@ -11,7 +11,7 @@ import {
   flowerTurnPattern,
   ratioLabel,
 } from "../flower-signature";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 describe("flower-signature", () => {
   it("enumerates 56 flowers ordered by turns, pro/anti alternating per step", () => {

@@ -2,8 +2,8 @@
  * Searches for sequences with fuzzy matching, name search, smart ranking, and VTG aliases
  */
 import type { MatchedSequence } from "../types";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
 // Known user ID for Austen (primary sequence creator)
 const AUSTEN_USER_ID = "PBp3GSBO6igCKPwJyLZNmVEmamI3";

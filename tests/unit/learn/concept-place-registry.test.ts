@@ -6,15 +6,15 @@ import {
   getConceptPlace,
   getConceptPlaceIdForLesson,
   getConceptPlacesByLevel,
-} from "$lib/features/learn/domain/concept-place-registry";
+} from "#lib/features/learn/domain/concept-place-registry.js";
 import {
   buildConceptPlaceHref,
   readConceptPlaceId,
   shouldResumeSavedConcept,
   writeConceptPlaceId,
-} from "$lib/features/learn/domain/concept-place-routes";
-import { getConceptExperience } from "$lib/features/learn/domain/concept-experience-registry";
-import { getGame } from "$lib/features/learn/play/domain/game-registry";
+} from "#lib/features/learn/domain/concept-place-routes.js";
+import { getConceptExperience } from "#lib/features/learn/domain/concept-experience-registry.js";
+import { getGame } from "#lib/features/learn/play/domain/game-registry.js";
 import { GUIDE_BODY_PAGES } from "../../../src/routes/(public)/guide/level-1/_data/guide-manifest";
 
 describe("concept place registry", () => {

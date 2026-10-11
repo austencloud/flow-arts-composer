@@ -6,7 +6,7 @@
  * stored join when the edited sequence has none, which would bring back a join
  * the user just removed.
  */
-import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
 
 export function mergeSavedOverStored<
   TStored extends { readonly conjoined?: unknown },

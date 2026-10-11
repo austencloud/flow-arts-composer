@@ -3,7 +3,7 @@ import type { PageServerLoad } from "./$types";
 export const load: PageServerLoad = async ({ params }) => {
   let product: Record<string, unknown> | null = null;
   try {
-    const { getAdminDb } = await import("$lib/server/firebaseAdmin");
+    const { getAdminDb } = await import("#lib/server/firebaseAdmin.js");
     const db = getAdminDb();
     const doc = await db.collection("products").doc(params.productId).get();
     if (doc.exists) {

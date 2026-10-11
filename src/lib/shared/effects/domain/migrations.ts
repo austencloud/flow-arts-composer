@@ -1,7 +1,7 @@
 import type { EffectsConfig } from "./effects-config";
 import { clampSilkIntensity, EFFECTS_CONFIG_VERSION } from "./effects-config";
 import { DEFAULT_EFFECTS_CONFIG } from "./defaults";
-import { migrateLedConfig } from "$lib/shared/animation-engine/domain/types/led-config-migration";
+import { migrateLedConfig } from "#lib/shared/animation-engine/domain/types/led-config-migration.js";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -35,6 +35,81 @@ export function normalizeLegacyEffectIntentColors<T>(
   delete normalized.blueColor;
   delete normalized.redColor;
   return normalized as T;
+}
+
+/** The tint every v39 Pulse shipped with. */
+const PULSE_V39_FACTORY_TINT = "#38bdf8";
+
+/**
+ * Before v40 the solid color mode drew `color`, a tint separate from the
+ * palette chips, so picking Ember still drew sky blue. A tint someone chose
+ * becomes the custom palette. The untouched factory look (Sonar, factory
+ * tint, no look applied) moves to the new Prop default, which colors each
+ * hand's pulses like its prop. A chosen palette or look stays solid and now
+ * draws as picked.
+ */
+function migratePulseSolidTint(value: unknown, lookApplied: boolean): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const pulse: UnknownRecord = { ...(value as UnknownRecord) };
+  const tint = typeof pulse.color === "string" ? pulse.color.toLowerCase() : null;
+  delete pulse.color;
+  // Solid was the v39 default, so a block without colorMode drew solid.
+  if ((pulse.colorMode ?? "solid") !== "solid") return pulse;
+  pulse.colorMode = "solid";
+  const palette = pulse.palette ?? "sonar";
+  if (palette === "custom") return pulse;
+  if (tint && tint !== PULSE_V39_FACTORY_TINT) {
+    pulse.palette = "custom";
+    pulse.customColor = tint;
+  } else if (palette === "sonar" && !lookApplied) {
+    pulse.colorMode = "prop-matched";
+  }
+  return pulse;
+}
+
+/** The v40 factory Zap: the plasma look at one strike a second. */
+const ZAP_V40_FACTORY: Readonly<UnknownRecord> = {
+  intensity: 0.7,
+  frequency: 1,
+  branching: 0.35,
+  style: "plasma",
+  wobbleRate: 0.18,
+  wobbleAmount: 0.5,
+};
+const ZAP_V40_FACTORY_COLOR = "#88ccff";
+
+/**
+ * v41 rebuilt Zap as real lightning colored by the props. Without a look
+ * applied, every field still at its v40 factory value moves to the new
+ * default, so an untouched Zap becomes prop-colored Storm while a value someone
+ * set stays. Colors someone picked, and every look's palette, stay as chosen
+ * under the Custom color mode.
+ */
+function migrateZapLightning(value: unknown, lookApplied: boolean): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const zap: UnknownRecord = { ...(value as UnknownRecord) };
+  if (zap.colorMode === "prop" || zap.colorMode === "custom") return zap;
+  const factory = DEFAULT_EFFECTS_CONFIG.zap as unknown as UnknownRecord;
+  const color = (field: string) =>
+    typeof zap[field] === "string"
+      ? (zap[field] as string).toLowerCase()
+      : ZAP_V40_FACTORY_COLOR;
+  const factoryColors =
+    color("leftColor") === ZAP_V40_FACTORY_COLOR &&
+    color("rightColor") === ZAP_V40_FACTORY_COLOR;
+  if (lookApplied || !factoryColors) {
+    zap.colorMode = "custom";
+  } else {
+    zap.colorMode = "prop";
+    zap.leftColor = factory.leftColor;
+    zap.rightColor = factory.rightColor;
+  }
+  if (!lookApplied) {
+    for (const [field, old] of Object.entries(ZAP_V40_FACTORY)) {
+      if (zap[field] === undefined || zap[field] === old) zap[field] = factory[field];
+    }
+  }
+  return zap;
 }
 
 /**
@@ -552,6 +627,24 @@ export function migrateEffectsConfig(raw: unknown): EffectsConfig {
   // hand colors (either spelling) no longer mean anything.
   if (version < 39 && input.ghost) {
     input.ghost = normalizeLegacyEffectIntentColors("ghost", input.ghost);
+  }
+
+  // v39 → v40: Pulse's solid mode draws the selected palette instead of a
+  // separate tint that every palette and look ignored.
+  if (version < 40 && input.pulse) {
+    input.pulse = migratePulseSolidTint(
+      input.pulse,
+      Boolean(input.activePresets?.pulse)
+    ) as EffectsConfig["pulse"];
+  }
+
+  // v40 → v41: Zap is rebuilt as prop-colored lightning; an untouched factory
+  // Zap moves to the new default, chosen colors and looks stay custom.
+  if (version < 41 && input.zap) {
+    input.zap = migrateZapLightning(
+      input.zap,
+      Boolean(input.activePresets?.zap)
+    ) as EffectsConfig["zap"];
   }
 
   const out: EffectsConfig = {

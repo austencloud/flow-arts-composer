@@ -15,23 +15,23 @@
   a way back to everything.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Component } from "svelte";
-  import { getBrowseNavigationContext } from "$lib/shared/browse/context/browse-navigation-context";
-  import type { BrowseVisualType } from "$lib/shared/browse/navigation/browse-route-resolver";
+  import { getBrowseNavigationContext } from "#lib/shared/browse/context/browse-navigation-context.js";
+  import type { BrowseVisualType } from "#lib/shared/browse/navigation/browse-route-resolver.js";
   import {
     listPublicArtifacts,
     getPublicArtifactDetail,
-  } from "$lib/shared/artifact-revisions/services/public-artifact-loader";
+  } from "#lib/shared/artifact-revisions/services/public-artifact-loader.js";
   import type {
     PublicArtifactEnvelope,
     PublicArtifactType,
-  } from "$lib/shared/artifact-revisions/domain/public-artifact";
-  import type { TunnelPublicPayload } from "$lib/features/tunnel-collection/domain/tunnel-public-revision";
-  import type { MandalaPublicPayload } from "$lib/features/mandala/tabs/collection/domain/mandala-public-revision";
-  import type { CollectedTunnel } from "$lib/features/tunnel-collection/domain/tunnel-collection-types";
-  import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
-  import TkaLabel from "$lib/shared/components/TkaLabel.svelte";
+  } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
+  import type { TunnelPublicPayload } from "#lib/features/tunnel-collection/domain/tunnel-public-revision.js";
+  import type { MandalaPublicPayload } from "#lib/features/mandala/tabs/collection/domain/mandala-public-revision.js";
+  import type { CollectedTunnel } from "#lib/features/tunnel-collection/domain/tunnel-collection-types.js";
+  import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
+  import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
 
   const browseNavigation = getBrowseNavigationContext();
 
@@ -213,7 +213,7 @@
 
         if (!TunnelDetailPreview) {
           const loaded =
-            await import("$lib/features/tunnel-collection/components/TunnelDetailPreview.svelte");
+            await import("#lib/features/tunnel-collection/components/TunnelDetailPreview.svelte");
           if (token !== detailToken) return;
           TunnelDetailPreview = loaded.default;
         }

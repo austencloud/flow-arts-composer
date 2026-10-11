@@ -1,4 +1,4 @@
-import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
+import { PostProjectSchema } from "#lib/shared/post-studio-plugin/index.js";
 import type {
   PostBox,
   PostEasing,

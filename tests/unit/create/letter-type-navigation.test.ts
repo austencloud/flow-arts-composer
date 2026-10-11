@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildLetterTypeGroupPanels } from "$lib/features/create/construct/option-picker/services/letter-type-navigation";
+import { buildLetterTypeGroupPanels } from "#lib/features/create/construct/option-picker/services/letter-type-navigation.js";
 import {
   getLetterTypeGroupPresentation,
   LETTER_TYPE_GROUP_DESCRIPTORS,
   LETTER_TYPE_DESCRIPTORS,
-} from "$lib/features/create/construct/option-picker/services/section-title-formatter";
-import type { OrganizedSection } from "$lib/features/create/construct/option-picker/domain/option-picker-types";
+} from "#lib/features/create/construct/option-picker/services/section-title-formatter.js";
+import type { OrganizedSection } from "#lib/features/create/construct/option-picker/domain/option-picker-types.js";
 
 function section(title: string, ids: string[]): OrganizedSection {
   return {

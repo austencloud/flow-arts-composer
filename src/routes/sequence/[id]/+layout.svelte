@@ -14,9 +14,9 @@
   import type { Snippet } from "svelte";
   import { onMount } from "svelte";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import BackgroundHost from "$lib/shared/background/shared/components/BackgroundHost.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { ensureThemeApplied } from "$lib/shared/settings/utils/background-theme-calculator";
+  import BackgroundHost from "#lib/shared/background/shared/components/BackgroundHost.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { ensureThemeApplied } from "#lib/shared/settings/utils/background-theme-calculator.js";
 
   let { children }: { children: Snippet } = $props();
 

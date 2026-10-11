@@ -1,20 +1,20 @@
 import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   CodeEntry,
   ScanEventRow,
-} from "$lib/features/choreo-card/state/scan-activity-state.svelte";
+} from "#lib/features/choreo-card/state/scan-activity-state.svelte.js";
 import ScanCardPeek from "./ScanCardPeek.svelte";
 
-vi.mock("$lib/shared/browse/components/PropAwareThumbnail.svelte", async () => {
+vi.mock("#lib/shared/browse/components/PropAwareThumbnail.svelte", async () => {
   const stub = await import("./__test-stubs__/PropAwareThumbnailStub.svelte");
   return { default: stub.default };
 });
 
-vi.mock("$lib/shared/render/get-glyph-cache", () => ({
+vi.mock("#lib/shared/render/get-glyph-cache.js", () => ({
   getGlyphCache: () => ({
     getGlyphDataUrl: () => null,
     loadGlyphsByLetter: () => Promise.resolve(),

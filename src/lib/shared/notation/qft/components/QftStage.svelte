@@ -2,8 +2,8 @@
   import type {
     QftIncrement,
     QftKnobs,
-  } from "$lib/shared/notation/qft/qft-model";
-  import type { QftTrajectory as QftHandTrajectory } from "$lib/shared/notation/qft/qft-trajectory";
+  } from "#lib/shared/notation/qft/qft-model.js";
+  import type { QftTrajectory as QftHandTrajectory } from "#lib/shared/notation/qft/qft-trajectory.js";
 
   /** Which prop a figure is, and therefore what colour it wears. */
   export type QftTone = "accent" | "blue" | "red";
@@ -41,16 +41,16 @@
     tracePath,
     tracePendulum,
     PROP_LENGTH,
-  } from "$lib/shared/notation/qft/qft-model";
+  } from "#lib/shared/notation/qft/qft-model.js";
   import {
     traceTrajectory,
     trajectoryPosesAt,
     type QftTrajectory,
-  } from "$lib/shared/notation/qft/qft-trajectory";
+  } from "#lib/shared/notation/qft/qft-trajectory.js";
   import {
     ALL_LAYERS,
     type QftLayers,
-  } from "$lib/shared/notation/qft/qft-layers";
+  } from "#lib/shared/notation/qft/qft-layers.js";
   import QftFigure from "./QftFigure.svelte";
 
   interface Props {

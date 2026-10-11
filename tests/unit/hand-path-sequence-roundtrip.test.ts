@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { getHandPathReferenceCards } from "$lib/features/choreo-card/domain/hand-path-reference-cards";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
-import { normalizeSequenceForPersistence } from "$lib/shared/library/services/sequence-persistence-normalizer";
-import { computeHash } from "$lib/shared/library/services/sequence-content-hasher";
+import { getHandPathReferenceCards } from "#lib/features/choreo-card/domain/hand-path-reference-cards.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
+import { normalizeSequenceForPersistence } from "#lib/shared/library/services/sequence-persistence-normalizer.js";
+import { computeHash } from "#lib/shared/library/services/sequence-content-hasher.js";
 import {
   encodeSequence,
   decodeSequenceFromQR,
-} from "$lib/shared/navigation/services/sequence-encoder";
-import { buildHandPathShortCodePayload } from "$lib/shared/qr/services/hand-path-short-code-payload";
-import { hydrateSelfContainedShortCodePayload } from "$lib/shared/qr/services/short-code-payload-hydrator";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
+import { buildHandPathShortCodePayload } from "#lib/shared/qr/services/hand-path-short-code-payload.js";
+import { hydrateSelfContainedShortCodePayload } from "#lib/shared/qr/services/short-code-payload-hydrator.js";
 import {
   findChoreographyMismatch,
   projectChoreography,
-} from "$lib/shared/qr/services/choreography-fidelity";
+} from "#lib/shared/qr/services/choreography-fidelity.js";
 
 describe("saved hand-path cards", () => {
   it.each(getHandPathReferenceCards())(

@@ -6,7 +6,7 @@
 // observes the speech fallback no matter which resolver would have run.
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { PronunciationPlayer } from "$lib/shared/pronunciation/services/pronunciation-player";
+import { PronunciationPlayer } from "#lib/shared/pronunciation/services/pronunciation-player.js";
 
 function manifestResponse(recordings: Record<string, Record<string, string>>) {
   return {

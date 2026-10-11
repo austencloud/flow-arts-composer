@@ -1,5 +1,5 @@
 /**
- * Audit-local `$app/environment` stub.
+ * Audit-local `$app/env` stub.
  *
  * The shared stub at tests/setup/stubs/app-environment.ts reports
  * `browser === false`, which makes the app's browser-only service getters

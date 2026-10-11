@@ -5,7 +5,7 @@
  */
 import { flushSync, mount, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import CreateMethodPreview from "$lib/features/create/shared/components/method-previews/CreateMethodPreview.svelte";
+import CreateMethodPreview from "#lib/features/create/shared/components/method-previews/CreateMethodPreview.svelte";
 import FakeMethodScene, { fakeScene } from "./FakeMethodScene.svelte";
 import { mountMethodPreview } from "./create-method-preview-harness.svelte";
 

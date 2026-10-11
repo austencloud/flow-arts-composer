@@ -1,4 +1,4 @@
-import type { TesterConfirmationStatus } from "$lib/shared/feedback/domain/models/feedback-models";
+import type { TesterConfirmationStatus } from "#lib/shared/feedback/domain/models/feedback-models.js";
 
 /**
  * Interface for admin/tester workflow interactions.

@@ -2,7 +2,7 @@ import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { describe, expect, it, vi } from "vitest";
 import type { ComponentProps } from "svelte";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import WorkspaceShareControl from "./WorkspaceShareControl.svelte";
 
 type ShareControlProps = ComponentProps<typeof WorkspaceShareControl>;

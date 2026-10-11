@@ -7,11 +7,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { buildMuseumGrid } from "$lib/features/museum/services/museum-grid-builder";
-import { MUSEUM_ROOMS, MUSEUM_EDGES, GRID_CONFIG } from "$lib/features/museum/data/museum-room-graph";
-import { tileKey } from "$lib/features/museum/domain/museum-grid-types";
-import { isWalkable } from "$lib/features/museum/domain/tile-registry";
-import type { RoomNode, RoomEdge } from "$lib/features/museum/domain/layout-types";
+import { buildMuseumGrid } from "#lib/features/museum/services/museum-grid-builder.js";
+import { MUSEUM_ROOMS, MUSEUM_EDGES, GRID_CONFIG } from "#lib/features/museum/data/museum-room-graph.js";
+import { tileKey } from "#lib/features/museum/domain/museum-grid-types.js";
+import { isWalkable } from "#lib/features/museum/domain/tile-registry.js";
+import type { RoomNode, RoomEdge } from "#lib/features/museum/domain/layout-types.js";
 
 describe("MuseumGridConnectivity", () => {
   it("all rooms are reachable from spawn (full museum)", () => {

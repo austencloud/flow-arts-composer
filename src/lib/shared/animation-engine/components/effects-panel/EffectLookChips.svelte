@@ -1,8 +1,12 @@
 <script lang="ts">
   import { effectUiLabel } from "./effect-ui-label";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { EffectPresetGroup } from "./presets/types";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import {
+    scrollEdges,
+    type ScrollEdges,
+  } from "#lib/shared/ui/scroll-edges.js";
 
   /**
    * The compact presentation of "choose a Look for this effect".
@@ -51,32 +55,7 @@
   // A clipped chip against a hard edge reads as broken, not as scrollable, so
   // the rail fades its overflowing edges - but only the edges that actually
   // overflow, so a rail whose chips fit keeps its last chip crisp.
-  let rail = $state<HTMLElement | null>(null);
-  let overflowStart = $state(false);
-  let overflowEnd = $state(false);
-
-  function measure(): void {
-    if (!rail || wrap) {
-      overflowStart = false;
-      overflowEnd = false;
-      return;
-    }
-    const max = rail.scrollWidth - rail.clientWidth;
-    overflowStart = rail.scrollLeft > 1;
-    overflowEnd = rail.scrollLeft < max - 1;
-  }
-
-  $effect(() => {
-    // Re-measure when the effect (and therefore the chip count) changes.
-    void presetGroup.effectType;
-    void wrap;
-    void customDisabled;
-    if (!rail) return;
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(rail);
-    return () => observer.disconnect();
-  });
+  let edges = $state<ScrollEdges>({ start: false, end: false });
 
   // Trails' factory Default IS the matched blue/red, so its Default chip shows
   // those dots rather than a generic accent dot. Static by design.
@@ -98,12 +77,11 @@
 {/snippet}
 
 <div
-  bind:this={rail}
-  onscroll={measure}
+  use:scrollEdges={(next) => (edges = next)}
   class="look-chips"
   class:wrap
-  class:fade-start={overflowStart}
-  class:fade-end={overflowEnd}
+  class:fade-start={!wrap && edges.start}
+  class:fade-end={!wrap && edges.end}
   role="radiogroup"
   aria-label={t("effect_deep_choose_look", {
     effect: effectUiLabel(effectLabel),

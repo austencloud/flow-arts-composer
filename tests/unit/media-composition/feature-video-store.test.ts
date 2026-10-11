@@ -5,9 +5,9 @@ import {
   FeatureVideoError,
   createFeatureVideoStore,
   type FeatureVideoStore,
-} from "$lib/server/feature-video-store";
-import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
-import { POST_QR_URL_RULE } from "$lib/shared/post-studio-plugin";
+} from "#lib/server/feature-video-store.js";
+import { featureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
+import { POST_QR_URL_RULE } from "#lib/shared/post-studio-plugin/index.js";
 import { takeFileKey } from "@austencloud/video-editor/core";
 import { tempFeatureRoot } from "./feature-video-test-helpers";
 

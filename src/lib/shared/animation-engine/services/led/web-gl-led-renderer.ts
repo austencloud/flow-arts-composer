@@ -1694,8 +1694,8 @@ export class WebGLLedRenderer {
 
 // ── EffectPlugin descriptor ──────────────────────────────────────────────────
 import type { EffectPlugin } from "../effects/effect-plugin";
-import type { LedIntent } from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { LedIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 export const ledEffectPlugin: EffectPlugin<LedIntent> = {
   id: "led",

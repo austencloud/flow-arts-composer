@@ -18,7 +18,7 @@ import type { ShareMode } from "../domain/models/share-mode";
 import type { MediaFormat } from "../domain/models/media-format";
 import type { CompositeLayout } from "../domain/models/composite-layout";
 import { DEFAULT_COMPOSITE_LAYOUT } from "../domain/models/composite-layout";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /** Settings for animation export */
 export interface AnimationSettings {

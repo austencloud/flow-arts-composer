@@ -9,8 +9,8 @@
    * the Composer page's demo fingers it passes no speed, so it draws no
    * trail: GhostPointer sizes its trail for page-length glides.
    */
-  import GhostPointer from "$lib/shared/attract/components/GhostPointer.svelte";
-  import type { GhostState } from "$lib/shared/attract/services/attract-ghost.svelte";
+  import GhostPointer from "#lib/shared/attract/components/GhostPointer.svelte";
+  import type { GhostState } from "#lib/shared/attract/services/attract-ghost.svelte.js";
 
   let { pose }: { pose: GhostState | null } = $props();
 </script>

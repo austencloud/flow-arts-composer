@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Object3D, PlaneGeometry, ShaderMaterial, Texture } from "three";
-import { ParticleInstancePool3D } from "$lib/shared/3d/effects/instancing/particle-instance-pool-3d";
-import { setLinearRgbFromHex } from "$lib/shared/3d/effects/instancing/particle-color";
+import { ParticleInstancePool3D } from "#lib/shared/3d/effects/instancing/particle-instance-pool-3d.js";
+import { setLinearRgbFromHex } from "#lib/shared/3d/effects/instancing/particle-color.js";
 
 describe("ParticleInstancePool3D", () => {
   it("packs visible particles into stable instance attributes", () => {
@@ -128,6 +128,7 @@ describe("ParticleInstancePool3D", () => {
     expect(material.fog).toBe(true);
     expect(material.lights).toBe(true);
     expect(material.defines.USE_PARTICLE_SURFACE_LIGHTING).toBe("");
+    expect(material.defines.USE_PARTICLE_THIN_SURFACE).toBeUndefined();
     expect(material.defines.USE_PARTICLE_COLOR_MANAGEMENT).toBe("");
     expect(material.defines.USE_PARTICLE_CONTRAST_ADAPTATION).toBe("");
     expect(material.uniforms.uLightingStrength?.value).toBe(0.72);
@@ -159,6 +160,26 @@ describe("ParticleInstancePool3D", () => {
     expect(material.uniforms.uBackdropLuminance?.value).toBe(0.56);
     expect(material.uniforms.uMaximumSurfaceLuminance?.value).toBe(0.2);
     expect(material.uniforms.uContrastStrength?.value).toBe(0.94);
+  });
+
+  it("enables thin-surface lighting only when requested", () => {
+    const pool = new ParticleInstancePool3D({
+      capacity: 1,
+      geometry: new PlaneGeometry(1, 1),
+      texture: new Texture(),
+      surfaceLighting: { strength: 0.72, floor: 0.24 },
+      thinSurfaceLighting: true,
+      contrastAdaptation: {
+        backdropLuminance: 0.56,
+        minimumSurfaceLuminance: 0.15,
+        maximumSurfaceLuminance: 0.2,
+        strength: 0.94,
+        edgeStrength: 0.2,
+      },
+    });
+    const material = pool.mesh.material as ShaderMaterial;
+    expect(material.defines.USE_PARTICLE_THIN_SURFACE).toBe("");
+    pool.dispose();
   });
 
   it("converts authored sRGB tints into the shader's linear working space", () => {

@@ -13,8 +13,8 @@ import {
 import {
   createAutumnEnvironmentWorld,
   attachAutumnEnvironmentWorld,
-} from "$lib/shared/3d/environments/worlds/autumn/autumn-environment-world";
-import { disposeAutumnEnvironmentAssets } from "$lib/shared/3d/environments/worlds/autumn/autumn-environment-assets";
+} from "#lib/shared/3d/environments/worlds/autumn/autumn-environment-world.js";
+import { disposeAutumnEnvironmentAssets } from "#lib/shared/3d/environments/worlds/autumn/autumn-environment-assets.js";
 
 function authoredEnvironment(): Group {
   const root = new Group();

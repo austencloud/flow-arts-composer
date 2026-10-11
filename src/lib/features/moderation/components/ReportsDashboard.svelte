@@ -4,7 +4,7 @@
 	import { REPORT_STATUSES, REPORT_CATEGORIES, type ReportStatus, type ReportCategory } from '../domain/models/report-models';
 	import ReportCard from './ReportCard.svelte';
 	import ReportDetailPanel from './ReportDetailPanel.svelte';
-	import { t, tDynamic } from '$lib/shared/i18n/i18n.svelte';
+	import { t, tDynamic } from '#lib/shared/i18n/i18n.svelte.js';
 
 	const statusTabs: { key: ReportStatus | 'all'; labelKey: string }[] = [
 		{ key: 'all', labelKey: 'moderation_tab_all' },

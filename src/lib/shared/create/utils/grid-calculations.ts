@@ -6,11 +6,11 @@
  * The component's $derived will call these with reactive values.
  */
 
-import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
+import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
 import {
   getMaxColumnsForBeatCount,
   getStepFrameLayout,
-} from "$lib/shared/create/domain/step-frame-layouts";
+} from "#lib/shared/create/domain/step-frame-layouts.js";
 
 export interface GridLayout {
   rows: number;

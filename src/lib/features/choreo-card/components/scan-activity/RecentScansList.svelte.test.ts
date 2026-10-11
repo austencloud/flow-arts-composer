@@ -2,9 +2,9 @@ import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { describe, expect, it, vi } from "vitest";
 import RecentScansList from "./RecentScansList.svelte";
-import type { ScanEventRow } from "$lib/features/choreo-card/state/scan-activity-state.svelte";
+import type { ScanEventRow } from "#lib/features/choreo-card/state/scan-activity-state.svelte.js";
 
-vi.mock("$lib/shared/render/get-glyph-cache", () => ({
+vi.mock("#lib/shared/render/get-glyph-cache.js", () => ({
   getGlyphCache: () => ({
     getGlyphDataUrl: () => null,
     loadGlyphsByLetter: () => Promise.resolve(),

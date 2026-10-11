@@ -1,6 +1,6 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
-import { VideoCountManager } from '$lib/shared/browse/services/video-count-manager';
+import { VideoCountManager } from '#lib/shared/browse/services/video-count-manager.js';
 
 let instance: VideoCountManager | null = null;
 

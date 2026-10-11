@@ -8,7 +8,7 @@
    * mark, drawn from the same shapes QftFigure draws at full size — so the
    * control looks like the thing it controls.
    */
-  import type { QftLayers } from "$lib/shared/notation/qft/qft-layers";
+  import type { QftLayers } from "#lib/shared/notation/qft/qft-layers.js";
 
   interface Props {
     layer: keyof QftLayers;

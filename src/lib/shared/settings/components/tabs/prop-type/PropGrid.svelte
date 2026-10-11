@@ -14,9 +14,9 @@
     beats grouping.
 -->
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     PROP_PICKER_SECTIONS,
     getAllVariations,
@@ -27,10 +27,10 @@
     getFamilyTileDisplayProp,
     isPropActive,
     isSameProp,
-  } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+  } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import { tick } from "svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
   import PropGridButton from "./PropGridButton.svelte";
   import {
     FILL_MAX_TILE,
@@ -38,13 +38,13 @@
     centeredOrphan,
     sectionFillLayout,
   } from "./section-fill-layout";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import {
     hasModelSprite,
     normalizePropLook,
     propLookOptions,
-  } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import type { CompositionRecipe } from "$lib/shared/pictograph/prop/domain/prop-composition-recipes";
+  } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import type { CompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
   import PropChiralityRow from "./PropChiralityRow.svelte";
   import PropLookPicker from "./PropLookPicker.svelte";
   import FanStyleOptionsCore from "./FanStyleOptionsCore.svelte";
@@ -52,22 +52,22 @@
     fanBuildPreviewOptions,
     isFanPropType,
     normalizeFanAppearance,
-  } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type {
     FanAppearance,
     FanBuild,
-  } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { PropChiralitySeam } from "./prop-chirality-seam";
-  import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
+  import { isBuugengFamilyProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
   import { localizedPropName } from "./localized-prop-name";
   import type { Snippet } from "svelte";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import {
     TRIANGLE_GRIP_OPTIONS,
     isTrianglePropType,
     normalizeTriangleGrip,
     type TriangleGrip,
-  } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+  } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 
   let {
     selectedPropType,

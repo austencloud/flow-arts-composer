@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import TakeTimingLane from "./TakeTimingLane.svelte";
   import type { PostTimingSession } from "./post-timing-session.svelte";
-  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
+  import TypeableValue from "#lib/shared/ui/components/TypeableValue.svelte";
   import { formatTakeClock, parseClock } from "./post-builder-format";
 
   let {

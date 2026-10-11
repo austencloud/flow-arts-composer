@@ -4,12 +4,12 @@ import {
   getGeneratorCardHelp,
   getGeneratorCardSpan,
   getGeneratorPanelCards,
-} from "$lib/shared/create/domain/card-registry";
-import { buildCardDescriptors } from "$lib/features/create/generate/shared/services/card-configurator";
-import { DifficultyLevel } from "$lib/features/create/generate/shared/domain/models/generate-models";
-import type { UIGenerationConfig } from "$lib/features/create/generate/state/generate-config.svelte";
-import type { CardHandlers } from "$lib/shared/create/domain/generator-contract-types";
-import { generateTourState } from "$lib/shared/onboarding/state/generate-tour-state.svelte";
+} from "#lib/shared/create/domain/card-registry.js";
+import { buildCardDescriptors } from "#lib/features/create/generate/shared/services/card-configurator.js";
+import { DifficultyLevel } from "#lib/features/create/generate/shared/domain/models/generate-models.js";
+import type { UIGenerationConfig } from "#lib/features/create/generate/state/generate-config.svelte.js";
+import type { CardHandlers } from "#lib/shared/create/domain/generator-contract-types.js";
+import { generateTourState } from "#lib/shared/onboarding/state/generate-tour-state.svelte.js";
 
 const CURRENT_PANEL_CARD_IDS = [
   "level",

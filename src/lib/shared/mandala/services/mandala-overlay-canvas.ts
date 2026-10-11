@@ -17,9 +17,9 @@ import {
 	OVERLAY_WARMUP_FRAMES,
 	OVERLAY_ALPHA_DECAY,
 } from "../domain/mandala-constants";
-import { Canvas2DFadeManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-fade-manager";
-import { reducedMotion } from "$lib/shared/transitions/motion";
-import { DURATION } from "$lib/shared/transitions/transitions";
+import { Canvas2DFadeManager } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-fade-manager.js";
+import { reducedMotion } from "#lib/shared/transitions/motion.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 import { MandalaOverlapMasks, paintMandalaGuide } from "./mandala-guide-painter";
 import { mandalaHandOffsetsKey } from "./mandala-grid-join";
 

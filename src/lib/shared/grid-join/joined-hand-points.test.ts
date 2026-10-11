@@ -10,9 +10,9 @@ import {
   toJoinedHandPoint,
   type GridJoinSpec,
 } from "@tka/render-core";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getPlacementGridPoints } from "$lib/shared/pictograph/grid/services/placement-grid-points";
-import { getHitTargets } from "$lib/shared/assemble-lab/services/grid-hit-target-calculator";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { getPlacementGridPoints } from "#lib/shared/pictograph/grid/services/placement-grid-points.js";
+import { getHitTargets } from "#lib/shared/assemble-lab/services/grid-hit-target-calculator.js";
 
 const CASES: readonly [
   GridJoinSpec,

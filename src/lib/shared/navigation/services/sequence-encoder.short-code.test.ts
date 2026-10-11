@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { generateViewerURL } from "./sequence-encoder";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const sequence = createSequenceData({ word: "EHWE" });
 

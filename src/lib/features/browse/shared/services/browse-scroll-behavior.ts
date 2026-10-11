@@ -17,7 +17,7 @@
  *    - Scrolling UP → SHOW UI
  */
 
-import type { BrowseScrollState } from "$lib/shared/browse/state/browse-scroll-state.svelte";
+import type { BrowseScrollState } from "#lib/shared/browse/state/browse-scroll-state.svelte.js";
 
 export class BrowseScrollBehavior {
   private scrollThreshold = 50; // Minimum scroll distance to trigger hide/show

@@ -10,7 +10,7 @@
 import {
   runAfterNamedRouteMorph,
   runAfterNamedRouteMorphIdle,
-} from "$lib/shared/transitions/named-route-morph-state.svelte";
+} from "#lib/shared/transitions/named-route-morph-state.svelte.js";
 
 export interface ActivateWhenNearOptions {
   readonly activate: () => void;

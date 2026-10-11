@@ -6,14 +6,14 @@
  * - Orientation types (radial IN/OUT vs non-radial CLOCK/COUNTER)
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   analyzeDifficultyMotions,
   type DifficultyAnalysis,
   type DifficultyTrigger,
 } from "@tka/render-composition";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 export type { DifficultyAnalysis, DifficultyTrigger };
 

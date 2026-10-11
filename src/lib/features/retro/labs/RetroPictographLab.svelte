@@ -7,10 +7,10 @@
   Domain: Retro Win95 Shell
 -->
 <script lang="ts">
-  import { PixelRenderer } from "$lib/features/retro/win95/services/pixel-renderer";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { PixelRenderer } from "#lib/features/retro/win95/services/pixel-renderer.js";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import { createAsciiLabState } from "./ascii-pictograph-lab-state.svelte";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
 
   const labState = createAsciiLabState();
   const renderer = new PixelRenderer(pictographPreparer);

@@ -9,8 +9,8 @@
  * Candidates are presented for human/Claude review via /voice-review.
  */
 
-import type { VoiceSession, VoiceSessionEvent } from "$lib/shared/voice-control/domain/voice-session-types";
-import type { VoiceCommandCategory } from "$lib/shared/voice-control/domain/voice-command-types";
+import type { VoiceSession, VoiceSessionEvent } from "#lib/shared/voice-control/domain/voice-session-types.js";
+import type { VoiceCommandCategory } from "#lib/shared/voice-control/domain/voice-command-types.js";
 import type { PromotionCandidate, PromotionEvidence } from "../domain/promotion-types";
 
 /** Minimum T2 hits before generating a promotion candidate */

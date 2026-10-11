@@ -9,15 +9,15 @@
  *   saveSequenceRouteHandoff(...) + goto(sequenceEncoder.generateSequenceRoutePath(...))
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ViewMode } from "$lib/shared/sequence-viewer/domain/viewer-orchestrator-context";
-import type { ViewerMode } from "$lib/shared/sequence-viewer/state/viewer-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ViewMode } from "#lib/shared/sequence-viewer/domain/viewer-orchestrator-context.js";
+import type { ViewerMode } from "#lib/shared/sequence-viewer/state/viewer-state.svelte.js";
 import { openSequenceOverlay } from "../state/sequence-viewer-overlay-state.svelte";
 import { cellPreWarmer } from "./cell-pre-warmer";
-import { getCached } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-import type { SequenceViewerSource } from "$lib/shared/sequence-viewer/analytics/viewer-events";
+import { getCached } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+import type { SequenceViewerSource } from "#lib/shared/sequence-viewer/analytics/viewer-events.js";
 
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export interface OpenSequenceViewerOptions {
   collectionPropType?: PropType | null;

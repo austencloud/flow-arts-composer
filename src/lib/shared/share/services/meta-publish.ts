@@ -12,17 +12,17 @@
  */
 
 import { doc, onSnapshot, type DocumentData } from "firebase/firestore";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { httpsCallable } from "firebase/functions";
 import {
   getAuthInstance,
   getFirestoreInstance,
   getFunctionsInstance,
-} from "$lib/shared/auth/firebase";
+} from "#lib/shared/auth/firebase.js";
 import {
   InstagramCapabilitySnapshotSchema,
   type InstagramCapabilitySnapshot,
-} from "$lib/shared/share/domain/instagram/instagram-capability-schema";
+} from "#lib/shared/share/domain/instagram/instagram-capability-schema.js";
 
 /**
  * Gates every interactive posting entry point: the connect chips, the post

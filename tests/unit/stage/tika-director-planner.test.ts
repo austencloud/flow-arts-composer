@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 import {
   TikaDirectorRequestSchema,
   type TikaDirectorResponse,
-} from "$lib/features/stage/domain/tika-director";
+} from "#lib/features/stage/domain/tika-director.js";
 import {
   planStageDirection,
   TIKA_DIRECTOR_SYSTEM_PROMPT,
-} from "$lib/features/stage/services/server/tika-director-planner";
+} from "#lib/features/stage/services/server/tika-director-planner.js";
 
 const request = {
   prompt: "Give everyone different props",

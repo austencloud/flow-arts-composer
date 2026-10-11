@@ -1,9 +1,9 @@
-import { dev } from "$app/environment";
-import { error, json, type RequestHandler } from "@sveltejs/kit";
-import { commandForClient } from "$lib/shared/dev/phone-review-interactions";
+import { dev } from "$app/env";
+import { error, type RequestHandler } from "@sveltejs/kit";
+import { commandForClient } from "#lib/shared/dev/phone-review-interactions.js";
 import {
   updatePhoneReviewInteractionState,
-} from "$lib/server/phone-review-interaction-state";
+} from "#lib/server/phone-review-interaction-state.js";
 
 function safeParameter(value: string | null, max: number): value is string {
   return !!value && value.length <= max;
@@ -21,6 +21,6 @@ export const GET: RequestHandler = async ({ url }) => {
     if (command) command.deliveredAt = new Date().toISOString();
     return command;
   });
-  if (!command) return json({ command: null });
-  return json({ command });
+  if (!command) return Response.json({ command: null });
+  return Response.json({ command });
 };

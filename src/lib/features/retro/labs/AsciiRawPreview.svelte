@@ -7,7 +7,7 @@
   Domain: Retro DOS Terminal Lab
 -->
 <script lang="ts">
-  import "$lib/features/retro/dos/styles/dos-terminal.css";
+  import "#lib/features/retro/dos/styles/dos-terminal.css";
 
   /**
    * SANITIZATION CONTRACT: `htmlLines` and `compact` are rendered with

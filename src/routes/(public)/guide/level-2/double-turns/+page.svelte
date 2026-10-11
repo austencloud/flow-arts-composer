@@ -10,7 +10,7 @@
   import GuideSeo from "../../level-1/_components/GuideSeo.svelte";
   import { level2TopicPagesForChapter } from "../_data/level2-topic-routes";
   import { localizedLevel2Topic } from "../_data/localize-level2-topic";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   const topics = level2TopicPagesForChapter("double-turns");
 </script>

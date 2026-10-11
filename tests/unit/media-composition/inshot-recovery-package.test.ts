@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { File as NodeFile } from "node:buffer";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { readInShotRecoveryPackage } from "$lib/shared/media-composition/services/inshot-recovery-package";
+import { readInShotRecoveryPackage } from "#lib/shared/media-composition/services/inshot-recovery-package.js";
 
 // jsdom's File omits Blob.text() and arrayBuffer(), which real browser files provide.
 const namedFile = (name: string, body = "x") =>

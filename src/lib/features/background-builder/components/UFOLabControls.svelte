@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { type UFOMood, type WobbleType } from "@austencloud/backgrounds";
-  import CollapsibleLabSection from "$lib/shared/components/lab/CollapsibleLabSection.svelte";
-  import LabStatusBar from "$lib/shared/components/lab/LabStatusBar.svelte";
+  import CollapsibleLabSection from "#lib/shared/components/lab/CollapsibleLabSection.svelte";
+  import LabStatusBar from "#lib/shared/components/lab/LabStatusBar.svelte";
   import { ChipToggle, ChipGroup } from '@austencloud/chip-toggle';
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
 
   type ColorPreset = "default" | "cyan" | "blue" | "lime" | "amber" | "rose" | "emerald" | "red" | "gray";
 

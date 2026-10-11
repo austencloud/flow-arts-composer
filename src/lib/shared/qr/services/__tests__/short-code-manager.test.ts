@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ShortCodeShareError } from "$lib/shared/qr/domain/short-code-error";
+import { ShortCodeShareError } from "#lib/shared/qr/domain/short-code-error.js";
 
 // In-memory Firestore fake. `store` maps "collection/id" → data. Transactions
 // stage writes and apply them on successful completion, like the real SDK.
@@ -94,17 +94,17 @@ vi.mock("firebase/firestore", () => ({
     }
   ),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
-vi.mock("$lib/shared/navigation/services/sequence-encoder", () => ({
+vi.mock("#lib/shared/navigation/services/sequence-encoder.js", () => ({
   encodeSequenceForQR: vi.fn(async () => "s~test-blob"),
   isInlineEncoded: (s: string) => s.startsWith("s~"),
   decodeSequenceFromQR: vi.fn(async () => ({
     steps: [{ id: "decoded-step-1", stepNumber: 1, letter: null }],
   })),
 }));
-vi.mock("$lib/shared/navigation/services/letter-deriver", () => ({
+vi.mock("#lib/shared/navigation/services/letter-deriver.js", () => ({
   deriveLettersForSequence: vi.fn(
     async (sequence: Record<string, unknown>) => ({
       ...sequence,
@@ -115,21 +115,21 @@ vi.mock("$lib/shared/navigation/services/letter-deriver", () => ({
 
 import { addDoc } from "firebase/firestore";
 import { ShortCodeManager } from "../short-code-manager";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   decodeSequenceFromQR,
   encodeSequenceForQR,
-} from "$lib/shared/navigation/services/sequence-encoder";
-import { deriveLettersForSequence } from "$lib/shared/navigation/services/letter-deriver";
-import { createSoloProp } from "$lib/shared/foundation/services/solo-prop-factory";
-import { soloPropToSequence } from "$lib/shared/foundation/services/solo-prop-sequence-adapter";
-import { getSequenceMotionProfile } from "$lib/shared/foundation/services/sequence-motion-profile";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
+import { deriveLettersForSequence } from "#lib/shared/navigation/services/letter-deriver.js";
+import { createSoloProp } from "#lib/shared/foundation/services/solo-prop-factory.js";
+import { soloPropToSequence } from "#lib/shared/foundation/services/solo-prop-sequence-adapter.js";
+import { getSequenceMotionProfile } from "#lib/shared/foundation/services/sequence-motion-profile.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 // Steps carry letters: the mint path runs STRICT payload-word derivation and
 // rejects a letterless payload (parity-repair spec, shortcode mint path).

@@ -42,16 +42,16 @@
    * wrong tool for a full sub-panel replacement anyway).
    */
   import { Popover } from "bits-ui";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { goto } from "$app/navigation";
-  import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
-  import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
-  import CopyForAIButton from "$lib/shared/foundation/ui/CopyForAIButton.svelte";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import { getClaudeCodeCopier } from "$lib/shared/browse/get-claude-code-copier";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
+  import CopyForAIButton from "#lib/shared/foundation/ui/CopyForAIButton.svelte";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import { getClaudeCodeCopier } from "#lib/shared/browse/get-claude-code-copier.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     sequenceToStrip,
     stripToSequence,
@@ -73,16 +73,16 @@
   import {
     mirrorSequence,
     swapHands,
-  } from "$lib/shared/create/services/sequence-transformer";
-  import { rotateSequenceGeometry } from "$lib/shared/create/services/sequence-derived-fields";
-  import OptionPicker from "$lib/features/create/construct/option-picker/components/OptionPicker.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  } from "#lib/shared/create/services/sequence-transformer.js";
+  import { rotateSequenceGeometry } from "#lib/shared/create/services/sequence-derived-fields.js";
+  import OptionPicker from "#lib/features/create/construct/option-picker/components/OptionPicker.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import GuideCodexControls from "./GuideCodexControls.svelte";
   import { guideTurnDisplayWord } from "../_data/guide-turn-display-word";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
   const PENDING_EDIT_SEQUENCE_KEY = "tka-pending-edit-sequence";
   type TransformKind = "mirror" | "handSwap" | "rotateCw" | "rotateCcw";

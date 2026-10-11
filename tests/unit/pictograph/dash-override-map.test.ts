@@ -1,22 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   dashClockwiseMap,
   dashCounterClockwiseMap,
   dashClockwiseOverrideMap,
   dashCounterClockwiseOverrideMap,
-} from "$lib/shared/pictograph/arrow/positioning/calculation/config/dash-rotation-maps";
-import { checkAndApplyOverride } from "$lib/shared/pictograph/arrow/positioning/calculation/utils/rotation-override-checker";
-import type { IRotationAngleOverrideKeyGenerator } from "$lib/shared/pictograph/arrow/positioning/key-generation/services/rotation-angle-override-key-generator";
-import type { SpecialPlacer } from "$lib/shared/pictograph/arrow/positioning/placement/services/special-placer";
+} from "#lib/shared/pictograph/arrow/positioning/calculation/config/dash-rotation-maps.js";
+import { checkAndApplyOverride } from "#lib/shared/pictograph/arrow/positioning/calculation/utils/rotation-override-checker.js";
+import type { IRotationAngleOverrideKeyGenerator } from "#lib/shared/pictograph/arrow/positioning/key-generation/services/rotation-angle-override-key-generator.js";
+import type { SpecialPlacer } from "#lib/shared/pictograph/arrow/positioning/placement/services/special-placer.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 const CLOCKWISE_OVERRIDES = {
   [GridLocation.NORTH]: 270,

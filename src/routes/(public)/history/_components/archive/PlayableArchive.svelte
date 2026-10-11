@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { pushState } from "$app/navigation";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import { goto } from "$app/navigation";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
   import {
     ARCHIVE_ENTRIES,
     ARCHIVE_START_YEAR,
@@ -12,7 +12,7 @@
   import { entryFromArchiveHash } from "./_lib/archive-presentation";
   import ArchiveChronologicalIndex from "./ArchiveChronologicalIndex.svelte";
   import ArchiveEntryDetail from "./ArchiveEntryDetail.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 
   const defaultEntry = ARCHIVE_ENTRIES[0]!;
   let activeEntry = $state(defaultEntry);
@@ -61,7 +61,7 @@
     activeEntry = entry;
     indexOpen = false;
     const nextHash = `#archive-record-${entry.id}`;
-    if (window.location.hash !== nextHash) pushState(nextHash, {});
+    if (window.location.hash !== nextHash) void goto(nextHash, { shallow: true });
     await tick();
     reader?.focus({ preventScroll: true });
     scrollToEntry();

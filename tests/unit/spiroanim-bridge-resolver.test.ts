@@ -26,17 +26,17 @@ import {
   formatCellKey,
   parseCellKey,
   type BridgeConcept,
-} from "$lib/features/spiroanim-bridge/domain/cell-key";
+} from "#lib/features/spiroanim-bridge/domain/cell-key.js";
 import {
   getReturnLink,
   type DeepLinkMap,
-} from "$lib/features/spiroanim-bridge/domain/return-links";
+} from "#lib/features/spiroanim-bridge/domain/return-links.js";
 import {
   resolveCell,
   type TranscriptionEntry,
-} from "$lib/features/spiroanim-bridge/services/resolve-cell";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
+} from "#lib/features/spiroanim-bridge/services/resolve-cell.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
 
 // Repo-root-relative, matching spiroanim-72-validate.test.ts. An
 // `import.meta.url` base is not safe in this runner: CI resolved it to a

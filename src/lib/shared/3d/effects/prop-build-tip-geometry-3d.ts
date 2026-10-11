@@ -8,7 +8,7 @@ import {
   TRIGENG_ARTWORK_GEOMETRY,
   TRIGENG_TIP_POINTS,
   type PropTipConfig,
-} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+} from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import type { PropTipAnchor3D } from "./prop-tip-geometry-3d";
 
 /**

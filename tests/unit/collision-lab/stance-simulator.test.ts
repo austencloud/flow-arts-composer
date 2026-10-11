@@ -3,9 +3,9 @@ import { Vector3 } from "three";
 import {
   StanceSimulator,
   restPoseFromHeight,
-} from "$lib/features/lab/tabs/collision-lab/services/stance-simulator";
-import type { SimPropTarget } from "$lib/features/lab/tabs/collision-lab/services/contracts/IStanceSimulator";
-import type { StancePose } from "$lib/features/lab/tabs/collision-lab/domain/types";
+} from "#lib/features/lab/tabs/collision-lab/services/stance-simulator.js";
+import type { SimPropTarget } from "#lib/features/lab/tabs/collision-lab/services/contracts/IStanceSimulator";
+import type { StancePose } from "#lib/features/lab/tabs/collision-lab/domain/types.js";
 
 const NEUTRAL_STANCE: StancePose = {
   footOffsetX: 0,

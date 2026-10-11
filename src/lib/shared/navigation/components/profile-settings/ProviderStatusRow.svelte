@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import FacebookIcon from "$lib/shared/auth/components/icons/FacebookIcon.svelte";
-  import GoogleIcon from "$lib/shared/auth/components/icons/GoogleIcon.svelte";
-  import InstagramIcon from "$lib/shared/auth/components/icons/InstagramIcon.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import FacebookIcon from "#lib/shared/auth/components/icons/FacebookIcon.svelte";
+  import GoogleIcon from "#lib/shared/auth/components/icons/GoogleIcon.svelte";
+  import InstagramIcon from "#lib/shared/auth/components/icons/InstagramIcon.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 
   interface Props {
     providerId: string;

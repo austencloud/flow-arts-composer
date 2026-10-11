@@ -32,8 +32,8 @@ import { BackgroundType } from "@austencloud/backgrounds";
 import {
   SCENE_ASSET_MANIFEST,
   sceneAssetUrls,
-} from "$lib/shared/3d/scene-boot/scene-asset-manifest";
-import { OCEAN_FLORA_FILES } from "$lib/shared/3d/environments/scenes/ocean/authored/ocean-flora-url";
+} from "#lib/shared/3d/scene-boot/scene-asset-manifest.js";
+import { OCEAN_FLORA_FILES } from "#lib/shared/3d/environments/scenes/ocean/authored/ocean-flora-url.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

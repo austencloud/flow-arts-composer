@@ -15,12 +15,12 @@
  * Requires admin role and POSTHOG_PERSONAL_API_KEY env var.
  */
 import type { RequestHandler } from "@sveltejs/kit";
-import { json, error } from "@sveltejs/kit";
-import { requireAdmin } from "$lib/server/auth/requireAdmin";
-import { env } from "$env/dynamic/private";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
-import { logAdminAction } from "$lib/server/security/audit-logger";
+import { error } from "@sveltejs/kit";
+import { requireAdmin } from "#lib/server/auth/requireAdmin.js";
+import * as env from "$app/env/private";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
+import { logAdminAction } from "#lib/server/security/audit-logger.js";
 
 const POSTHOG_API_BASE = "https://us.i.posthog.com/api";
 
@@ -65,7 +65,7 @@ export const GET: RequestHandler = async (event) => {
     }
 
     const data = await response.json();
-    return json(data);
+    return Response.json(data);
   } catch (err: unknown) {
     if (typeof err === "object" && err && "status" in err) {
       throw err;
@@ -110,7 +110,7 @@ export const POST: RequestHandler = async (event) => {
     );
 
     if (deactivatedFlags.length === 0) {
-      return json({ success: true, migrated: 0, message: "No deactivated flags found" });
+      return Response.json({ success: true, migrated: 0, message: "No deactivated flags found" });
     }
 
     // Reactivate each with 0% rollout
@@ -146,7 +146,7 @@ export const POST: RequestHandler = async (event) => {
       ip: event.getClientAddress(),
     });
 
-    return json({ success: true, migrated, total: deactivatedFlags.length, results });
+    return Response.json({ success: true, migrated, total: deactivatedFlags.length, results });
   } catch (err: unknown) {
     if (typeof err === "object" && err && "status" in err) {
       throw err;
@@ -187,7 +187,7 @@ export const PATCH: RequestHandler = async (event) => {
     if (!listResponse.ok) {
       const errorText = await listResponse.text();
       console.error("[feature-flags] List error:", errorText);
-      return json(
+      return Response.json(
         { success: false, message: `PostHog API error: ${listResponse.statusText}`, detail: errorText, code: "POSTHOG_LIST_FAILED" },
         { status: listResponse.status }
       );
@@ -219,7 +219,7 @@ export const PATCH: RequestHandler = async (event) => {
       if (!createResponse.ok) {
         const errorText = await createResponse.text();
         console.error("[feature-flags] Create error:", errorText);
-        return json(
+        return Response.json(
           { success: false, message: `Failed to create flag "${flagKey}"`, detail: errorText, code: "POSTHOG_CREATE_FAILED" },
           { status: createResponse.status }
         );
@@ -235,7 +235,7 @@ export const PATCH: RequestHandler = async (event) => {
         ip: event.getClientAddress(),
       });
 
-      return json({
+      return Response.json({
         success: true,
         flag: created,
         action: "created",
@@ -272,7 +272,7 @@ export const PATCH: RequestHandler = async (event) => {
     if (!updateResponse.ok) {
       const errorText = await updateResponse.text();
       console.error("[feature-flags] Update error:", errorText);
-      return json(
+      return Response.json(
         { success: false, message: `Failed to update flag "${flagKey}"`, detail: errorText, code: "POSTHOG_UPDATE_FAILED" },
         { status: updateResponse.status }
       );
@@ -288,7 +288,7 @@ export const PATCH: RequestHandler = async (event) => {
       ip: event.getClientAddress(),
     });
 
-    return json({ success: true, flag: updated, action: "updated", projectId });
+    return Response.json({ success: true, flag: updated, action: "updated", projectId });
   } catch (err: unknown) {
     console.error("[feature-flags] PATCH Error:", err);
 
@@ -296,7 +296,7 @@ export const PATCH: RequestHandler = async (event) => {
     // Return as JSON directly - SvelteKit strips 5xx messages if we re-throw
     if (typeof err === "object" && err !== null && "status" in err && "body" in err) {
       const httpErr = err as { status: number; body: { message: string } };
-      return json(
+      return Response.json(
         { success: false, message: httpErr.body.message, code: "HTTP_ERROR" },
         { status: httpErr.status }
       );
@@ -309,7 +309,7 @@ export const PATCH: RequestHandler = async (event) => {
     // for what is really an auth failure.
     if (typeof err === "object" && err !== null && "status" in err) {
       const statusErr = err as { status: number; code?: string; firebaseCode?: string };
-      return json(
+      return Response.json(
         {
           success: false,
           message: err instanceof Error ? err.message : "Request failed",
@@ -321,7 +321,7 @@ export const PATCH: RequestHandler = async (event) => {
     }
 
     // Regular JS errors (network failures, JSON parse errors, etc.)
-    return json(
+    return Response.json(
       {
         success: false,
         message: err instanceof Error ? err.message : String(err),

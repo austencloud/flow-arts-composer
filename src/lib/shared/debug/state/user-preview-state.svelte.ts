@@ -4,9 +4,9 @@
  * Comprehensive read-only preview of another user's data for admin debugging.
  * The Firestore reads live in ../services/user-preview-fetchers.ts.
  */
-import { browser } from "$app/environment";
-import type { AppSettings } from "$lib/shared/settings/domain/app-settings";
-import type { NotificationPreferences } from "$lib/shared/notifications/domain/models/notification-models";
+import { browser } from "$app/env";
+import type { AppSettings } from "#lib/shared/settings/domain/app-settings.js";
+import type { NotificationPreferences } from "#lib/shared/notifications/domain/models/notification-models.js";
 import {
   fetchAuthData,
   fetchCollections,

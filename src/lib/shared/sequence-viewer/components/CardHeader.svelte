@@ -12,31 +12,31 @@
 </script>
 
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { fade, scale, slide } from "svelte/transition";
-  import { TextRenderer } from "$lib/shared/render/services/text-renderer";
-  import { ensureCardFonts } from "$lib/shared/render/services/gelasio-fonts";
+  import { TextRenderer } from "#lib/shared/render/services/text-renderer.js";
+  import { ensureCardFonts } from "#lib/shared/render/services/gelasio-fonts.js";
   import { cubicOut } from "svelte/easing";
-  import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
-  import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
-  import { loopComponentLabel } from "$lib/features/create/generate/components/loop-component-presentation";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
+  import LOOPIconStrip from "#lib/shared/components/LOOPIconStrip.svelte";
+  import { loopComponentLabel } from "#lib/features/create/generate/components/loop-component-presentation.js";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import {
     calculateHeaderWordSideInset,
     LOOP_ICON_SIZE_SCALE,
     type LOOPComponentId,
     type LoopReflectionAxis,
   } from "@tka/render-composition";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
 
   interface Props {
     sequence: { word?: string };
     showHeader: boolean;
     isBrowseSoloMode: boolean;
     soloHand: "left" | "right" | undefined;
-    browseViewMode?: import("$lib/shared/browse/domain/browse-view-mode").BrowseViewMode;
+    browseViewMode?: import("#lib/shared/browse/domain/browse-view-mode.js").BrowseViewMode;
     customTitleText?: string;
     showDifficultyLevel: boolean;
     difficultyLevel: number;

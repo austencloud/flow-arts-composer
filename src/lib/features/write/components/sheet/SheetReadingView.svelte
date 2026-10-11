@@ -18,7 +18,7 @@
   target) rather than by hitting one of eight invisible column strips.
 -->
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import type { SheetBand } from "../../services/sheet-row-planner";
   import type {
     ChoreoSheetLayout,
@@ -26,7 +26,7 @@
   } from "../../domain/types/choreo-sheet";
   import { SHEET_CELL_VISIBILITY } from "../../services/sheet-cell-config";
   import { joinedCellStep } from "../../services/sheet-cell-raster";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   let {
     bands = [],

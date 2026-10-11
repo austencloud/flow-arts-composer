@@ -29,10 +29,10 @@
   import {
     resolveViewerCustomColorPair,
     type ViewerCustomColorPair,
-  } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { assetFetch } from "$lib/shared/net/asset-fetch";
+  } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { assetFetch } from "#lib/shared/net/asset-fetch.js";
   import {
     colorPropPreview,
     modelPreviewColorMatrix,
@@ -84,7 +84,7 @@
   const rightPropType = $derived(rightPropTypeProp ?? propType);
 
   type GetSettings =
-    (typeof import("$lib/shared/application/state/app-state.svelte"))["getSettings"];
+    (typeof import("#lib/shared/application/state/app-state.svelte.js"))["getSettings"];
   let getSettings = $state<GetSettings | null>(null);
 
   // Hosts that don't pass colors show the user's chosen prop colors.
@@ -101,7 +101,7 @@
   onMount(() => {
     if (!useSavedOverrides) return;
     let mounted = true;
-    void import("$lib/shared/application/state/app-state.svelte").then(
+    void import("#lib/shared/application/state/app-state.svelte.js").then(
       (module) => {
         if (mounted) getSettings = module.getSettings;
       }

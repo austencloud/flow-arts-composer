@@ -10,15 +10,15 @@ import {
   handModesBlockedByLoop,
   resolveLoopConfig,
   specHasExpandInversion,
-} from "$lib/shared/create/services/loop-type-utils";
+} from "#lib/shared/create/services/loop-type-utils.js";
 import type {
   CardDescriptor,
   CardHandlers,
-} from "$lib/shared/create/domain/generator-contract-types";
+} from "#lib/shared/create/domain/generator-contract-types.js";
 import {
   getGeneratorCardSpan,
   getGeneratorPanelCards,
-} from "$lib/shared/create/domain/card-registry";
+} from "#lib/shared/create/domain/card-registry.js";
 
 /**
  * Derive minimum sequence length for a LOOP configuration via the engine's

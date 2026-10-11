@@ -5,10 +5,10 @@
  * following the microservices architecture pattern.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 import type {
   BrowseNavigationConfig,
   BrowseNavigationItem,

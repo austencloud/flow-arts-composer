@@ -8,4 +8,4 @@ export {
   createSequence,
   updateStep,
   calculateSequenceWord,
-} from '$lib/shared/create/services/sequence-domain-manager';
+} from '#lib/shared/create/services/sequence-domain-manager.js';

@@ -8,13 +8,13 @@ vi.mock("firebase/firestore", () => ({
   where: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(),
 }));
 
-import { PublicSequenceHashMatcher } from "$lib/shared/sequence-viewer/services/public-sequence-hash-matcher";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { PublicSequenceHashMatcher } from "#lib/shared/sequence-viewer/services/public-sequence-hash-matcher.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 describe("PublicSequenceHashMatcher", () => {
   it("distinguishes identical motions with different durations", async () => {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { T } from "@threlte/core";
   import { DoubleSide, CanvasTexture, SRGBColorSpace, NearestFilter } from "three";
-  import { applyColorToSvg, SELECTIVE_COLOR_PROP_TYPES } from "$lib/shared/utils/svg-color-utils";
+  import { applyColorToSvg, SELECTIVE_COLOR_PROP_TYPES } from "#lib/shared/utils/svg-color-utils.js";
 
   interface Props {
     position: [number, number, number];

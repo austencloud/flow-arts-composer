@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { PlaneMode } from "@austencloud/scene-3d";
 import { Vector3 } from "three";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
 import {
   ISOLATION_SEQUENCE,
   ISOLATION_STAFF_LENGTH_CM,

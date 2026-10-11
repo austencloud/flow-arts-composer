@@ -2,8 +2,8 @@ import {
   cardPresentationsEqual,
   normalizeCardPresentation,
   type CardPresentation,
-} from "$lib/shared/share/domain/models/card-presentation";
-import type { ShareArtifact } from "$lib/shared/share/services/post-handoff";
+} from "#lib/shared/share/domain/models/card-presentation.js";
+import type { ShareArtifact } from "#lib/shared/share/services/post-handoff.js";
 
 export interface StartPostShareDraftInput {
   readonly availableArtifacts: readonly ShareArtifact[];

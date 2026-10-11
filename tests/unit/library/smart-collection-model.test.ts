@@ -4,7 +4,7 @@ import {
   isSmartCollection,
   type SmartFilterSpec,
   type LibraryCollection,
-} from "$lib/shared/library/domain/models/collection";
+} from "#lib/shared/library/domain/models/collection.js";
 
 const SPEC: SmartFilterSpec = {
   source: "community",

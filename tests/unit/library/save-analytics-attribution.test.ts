@@ -21,8 +21,8 @@ const dbGetMock = vi.fn().mockResolvedValue(undefined);
 const dbCountMock = vi.fn().mockResolvedValue(0);
 const dbUpdateMock = vi.fn().mockResolvedValue(1);
 
-vi.mock("$app/environment", () => ({ browser: true }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("$app/env", () => ({ browser: true }));
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: {
     authStateReady: async () => {},
     get currentUser() {
@@ -31,10 +31,10 @@ vi.mock("$lib/shared/auth/firebase", () => ({
   },
 }));
 vi.mock("firebase/auth", () => ({ onAuthStateChanged: vi.fn() }));
-vi.mock("$lib/shared/auth/services/authed-fetch", () => ({
+vi.mock("#lib/shared/auth/services/authed-fetch.js", () => ({
   authedFetch: vi.fn().mockResolvedValue({ ok: true }),
 }));
-vi.mock("$lib/shared/analytics/services/posthog-lifecycle-outbox", () => ({
+vi.mock("#lib/shared/analytics/services/posthog-lifecycle-outbox.js", () => ({
   enqueueLifecycleEvent: (...a: unknown[]) => enqueueMock(...a),
   dueLifecycleEvents: () => [],
   readLifecycleOutbox: () => [],
@@ -42,12 +42,12 @@ vi.mock("$lib/shared/analytics/services/posthog-lifecycle-outbox", () => ({
   deferLifecycleEvent: vi.fn(),
   removeLifecycleEvent: vi.fn(),
 }));
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   getCurrentPostHogSessionId: vi.fn().mockResolvedValue("session-1"),
 }));
 // NOT mocked: posthog-lifecycle-reporter. It is the boundary under test.
 
-vi.mock("$lib/shared/persistence/database/tka-database", () => ({
+vi.mock("#lib/shared/persistence/database/tka-database.js", () => ({
   db: {
     sequences: {
       put: (...a: unknown[]) => dbPutMock(...a),
@@ -57,7 +57,7 @@ vi.mock("$lib/shared/persistence/database/tka-database", () => ({
     },
   },
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     isAuthenticated: true,
     isAnonymous: true,
@@ -65,42 +65,42 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
     effectiveUserId: null as string | null,
   },
 }));
-vi.mock("$lib/shared/auth/services/guest-identity", () => ({
+vi.mock("#lib/shared/auth/services/guest-identity.js", () => ({
   ensureGuestIdentity: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("$lib/shared/auth/state/auth-drawer-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-drawer-state.svelte.js", () => ({
   authDrawerState: { show: vi.fn(), offerGuestSaveNudge: vi.fn() },
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte.ts", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.ts", () => ({
   toast: { info: vi.fn(), warning: vi.fn(), error: vi.fn(), success: vi.fn() },
 }));
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => ({ showUserError: vi.fn() }),
 }));
-vi.mock("$lib/shared/render/services/warm-sequence-cells", () => ({
+vi.mock("#lib/shared/render/services/warm-sequence-cells.js", () => ({
   warmSequenceCells: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("$lib/shared/share/state/image-composition-state.svelte.ts", () => ({
+vi.mock("#lib/shared/share/state/image-composition-state.svelte.ts", () => ({
   getImageCompositionManager: () => ({ darkMode: true }),
 }));
-vi.mock("$lib/features/library/services/tag-manager", () => ({
+vi.mock("#lib/features/library/services/tag-manager.js", () => ({
   findTagByName: vi.fn().mockResolvedValue(undefined),
   createUserTag: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("$lib/shared/library/services/sequence-content-hasher", () => ({
+vi.mock("#lib/shared/library/services/sequence-content-hasher.js", () => ({
   computeHash: vi.fn().mockResolvedValue("hash-1"),
 }));
-vi.mock("$lib/features/library/services/library-sync-retry", () => ({
+vi.mock("#lib/features/library/services/library-sync-retry.js", () => ({
   markSequenceSyncStatus: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock(
-  "$lib/shared/library/services/sequence-persistence-coordinator",
+  "#lib/shared/library/services/sequence-persistence-coordinator.js",
   () => ({ clearSequenceDeletionIntent: vi.fn() })
 );
-vi.mock("$lib/features/library/state/library-state.svelte", () => ({
+vi.mock("#lib/features/library/state/library-state.svelte.js", () => ({
   libraryState: { loadSequences: vi.fn().mockResolvedValue(undefined) },
 }));
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: {
     settings: {
       leftPropType: "club",
@@ -111,8 +111,9 @@ vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
 }));
 
 const { LibrarySaveService } =
-  await import("$lib/features/library/services/library-save-service");
-const { authState } = await import("$lib/shared/auth/state/auth-state.svelte");
+  await import("#lib/features/library/services/library-save-service.js");
+const { authState } =
+  await import("#lib/shared/auth/state/auth-state.svelte.js");
 
 function makeSequence(id = "seq-1") {
   return { id, steps: [{ letter: "A" }], thumbnails: [] } as any;

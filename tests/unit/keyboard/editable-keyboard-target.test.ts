@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isEditableKeyboardTarget } from "$lib/shared/keyboard/domain/shortcut-target-resolution";
-import { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
-import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
+import { isEditableKeyboardTarget } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
+import { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
+import { ShortcutRegistry } from "#lib/shared/keyboard/services/shortcut-registry.js";
 
 let manager: KeyboardShortcutManager | null = null;
 

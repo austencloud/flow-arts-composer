@@ -1,7 +1,7 @@
 import { doc, getDoc } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { getPublicSequencePath } from "$lib/shared/library/data/firestore-paths";
-import type { ArtifactRevisionRef } from "$lib/shared/artifact-revisions/domain/artifact-revision";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { getPublicSequencePath } from "#lib/shared/library/data/firestore-paths.js";
+import type { ArtifactRevisionRef } from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
 import { createSequenceRevisionRef } from "./sequence-revision";
 
 /** Resolve the retained subject identity from the canonical public projection. */

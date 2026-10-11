@@ -13,9 +13,9 @@
  * Domain: Retro DOS Terminal
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { IDirectRenderer } from "$lib/shared/render/services/IDirectRenderer";
-import type { PictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { IDirectRenderer } from "#lib/shared/render/services/IDirectRenderer.js";
+import type { PictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
 
 
 const BRAILLE_OFFSET = 0x2800;

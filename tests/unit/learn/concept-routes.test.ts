@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   buildConceptPath,
+  buildConceptStartPath,
   conceptIdFromPathname,
+  conceptRestartFromUrl,
   CONCEPT_LIST_PATH,
   isConceptPath,
 } from "../../../src/lib/features/learn/domain/concept-routes";
@@ -32,5 +34,32 @@ describe("concept routes", () => {
     expect(isConceptPath(CONCEPT_LIST_PATH)).toBe(true);
     expect(isConceptPath(`${CONCEPT_LIST_PATH}/`)).toBe(true);
     expect(isConceptPath("/learn/guide")).toBe(false);
+  });
+
+  it("links a lesson from its first step and reads that request back", () => {
+    const href = buildConceptStartPath("grid");
+    expect(href).toBe("/learn/concepts/grid?from-start");
+    expect(
+      conceptRestartFromUrl(new URL(href, "https://example.test"))
+    ).toEqual({ conceptId: "grid", cleanHref: "/learn/concepts/grid" });
+  });
+
+  it("keeps other query and hash parts when it drops the request", () => {
+    expect(
+      conceptRestartFromUrl(
+        new URL("https://example.test/learn/concepts/grid?a=1&from-start#top")
+      )
+    ).toEqual({ conceptId: "grid", cleanHref: "/learn/concepts/grid?a=1#top" });
+  });
+
+  it("ignores lesson URLs without the request and non-lesson URLs", () => {
+    expect(
+      conceptRestartFromUrl(new URL("https://example.test/learn/concepts/grid"))
+    ).toBeNull();
+    expect(
+      conceptRestartFromUrl(
+        new URL("https://example.test/learn/concepts?from-start")
+      )
+    ).toBeNull();
   });
 });

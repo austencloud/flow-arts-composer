@@ -1,9 +1,9 @@
 import type {
   GridJoinTweenSample,
   HandOffsets,
-} from "$lib/shared/grid-join/grid-join-tween";
+} from "#lib/shared/grid-join/grid-join-tween.js";
 import type { TrailPoint, TrailSettings } from "./trail-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import type { QualityHints } from "./quality-types";
 
 export interface AdditionalLayerRenderData {

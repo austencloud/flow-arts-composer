@@ -1,5 +1,5 @@
 import admin from "firebase-admin";
-import { dev } from "$app/environment";
+import { dev } from "$app/env";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 

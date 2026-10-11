@@ -11,8 +11,8 @@ import {
   arrayUnion,
   type DocumentData,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import type { SoloPropData } from "../domain/models/solo-prop-data";
 import type { SoloPropFilters } from "./types";
 import type { ArtifactProvenance } from "../domain/models/artifact-provenance";

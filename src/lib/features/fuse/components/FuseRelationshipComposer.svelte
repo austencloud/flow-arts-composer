@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { getFuseContext } from "../context/fuse-context";
   import {
     fuseRuleLabel,

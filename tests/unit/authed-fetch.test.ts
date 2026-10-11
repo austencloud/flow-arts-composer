@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
   currentUser: null as { getIdToken: ReturnType<typeof vi.fn> } | null,
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: {
     get currentUser() {
       return mocks.currentUser;
@@ -12,7 +12,7 @@ vi.mock("$lib/shared/auth/firebase", () => ({
   },
 }));
 
-import { authedFetch } from "$lib/shared/auth/services/authed-fetch";
+import { authedFetch } from "#lib/shared/auth/services/authed-fetch.js";
 
 describe("authedFetch", () => {
   beforeEach(() => {

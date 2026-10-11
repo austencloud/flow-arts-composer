@@ -9,7 +9,7 @@ import {
   parseFanRenderKey,
   resolveFanRenderKey,
   type FanAppearance,
-} from "$lib/shared/pictograph/prop/domain/fan-appearance";
+} from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
 const root = process.cwd();
 const MOON: FanAppearance = {

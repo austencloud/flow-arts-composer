@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import ErrorScreen from "$lib/shared/foundation/ui/ErrorScreen.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import ErrorScreen from "#lib/shared/foundation/ui/ErrorScreen.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   function handleRetry() {
     window.location.reload();

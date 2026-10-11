@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { t } from "$lib/shared/i18n/i18n.svelte.js";
-	import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-	import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+	import { t } from "#lib/shared/i18n/i18n.svelte.js";
+	import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+	import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 	import {
 		hexToFlameColor,
 		flameColorToHex,
 		DEFAULT_PROP_FLAME_COLORS,
-	} from "$lib/shared/animation-engine/domain/types/fire-types";
+	} from "#lib/shared/animation-engine/domain/types/fire-types.js";
 
 	const effectsConfig = getEffectsConfigContext();
 

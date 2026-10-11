@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
 
   let {
     name,

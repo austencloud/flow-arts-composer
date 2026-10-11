@@ -7,15 +7,15 @@
   the notation shows them better than a number can.
 -->
 <script lang="ts">
-  import LoopChips from "$lib/features/store/components/LoopChips.svelte";
-  import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
-  import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+  import LoopChips from "#lib/features/store/components/LoopChips.svelte";
+  import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
+  import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
   import {
     tryGetLoopDisplayResolver,
     type LoopDisplay,
-  } from "$lib/shared/loop-labeler/get-loop-display-resolver";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { GeneratedSequenceInfo } from "$lib/features/landing/domain/models/spinner-models";
+  } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { GeneratedSequenceInfo } from "#lib/features/landing/domain/models/spinner-models.js";
 
   let {
     sequence,

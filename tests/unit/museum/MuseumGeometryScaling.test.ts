@@ -10,10 +10,10 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { buildMuseumGrid } from "$lib/features/museum/services/museum-grid-builder";
-import { bucketMuseumTiles } from "$lib/features/museum/services/museum-geometry-builder";
-import { MUSEUM_ROOMS, MUSEUM_EDGES, GRID_CONFIG } from "$lib/features/museum/data/museum-room-graph";
-import type { RoomNode, RoomEdge } from "$lib/features/museum/domain/layout-types";
+import { buildMuseumGrid } from "#lib/features/museum/services/museum-grid-builder.js";
+import { bucketMuseumTiles } from "#lib/features/museum/services/museum-geometry-builder.js";
+import { MUSEUM_ROOMS, MUSEUM_EDGES, GRID_CONFIG } from "#lib/features/museum/data/museum-room-graph.js";
+import type { RoomNode, RoomEdge } from "#lib/features/museum/domain/layout-types.js";
 
 /**
  * Build a museum grid with only the first N rooms and their connecting edges.

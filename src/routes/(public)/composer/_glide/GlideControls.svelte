@@ -4,7 +4,7 @@
    * section on hover or focus and marks the one resting on the stage; Next
    * names where it goes and, from the last section, returns to the start.
    */
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 
   let {
     stops,

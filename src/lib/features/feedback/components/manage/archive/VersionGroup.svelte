@@ -1,7 +1,7 @@
 <!-- VersionGroup - Expandable version accordion with feedback items -->
 <script lang="ts">
-  import type { VersionFeedbackItem as VersionFeedbackItemType } from "$lib/shared/feedback/domain/models/version-models";
-  import type { AppVersion } from "$lib/shared/feedback/domain/models/version-models";
+  import type { VersionFeedbackItem as VersionFeedbackItemType } from "#lib/shared/feedback/domain/models/version-models.js";
+  import type { AppVersion } from "#lib/shared/feedback/domain/models/version-models.js";
   import VersionFeedbackItem from "./VersionFeedbackItem.svelte";
 
   const {

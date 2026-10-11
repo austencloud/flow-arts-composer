@@ -1,4 +1,4 @@
-import { getCanonicalCardStepColumnCounts } from "$lib/shared/render/services/card-step-column-options";
+import { getCanonicalCardStepColumnCounts } from "#lib/shared/render/services/card-step-column-options.js";
 
 export const COLUMN_COUNT_PREFERENCE_VERSION = 1 as const;
 export const GUEST_COLUMN_COUNT_PREFERENCE_OWNER = "guest";

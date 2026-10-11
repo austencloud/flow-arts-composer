@@ -87,10 +87,15 @@ function recordFacts(record) {
       value && value.format === BACKUP_FORMAT && "project" in value
         ? value.project
         : value;
+    const scopedStudio =
+      typeof project?.sequenceId === "string" &&
+      project.sequenceId.startsWith("studio-arrangement:") &&
+      (sequenceId.startsWith("account:") || sequenceId.startsWith("guest:")) &&
+      sequenceId.endsWith(`:${project.sequenceId}`);
     if (
       !project ||
       typeof project !== "object" ||
-      project.sequenceId !== sequenceId ||
+      (project.sequenceId !== sequenceId && !scopedStudio) ||
       !Number.isFinite(project.updatedAt)
     )
       return facts;

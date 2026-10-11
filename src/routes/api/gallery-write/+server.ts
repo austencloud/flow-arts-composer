@@ -10,18 +10,17 @@
  * This is a dev tool endpoint - only works in development mode.
  */
 
-import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
-import { dev } from "$app/environment";
-import { requireFirebaseUser } from "$lib/server/auth/requireFirebaseUser";
+import { dev } from "$app/env";
+import { requireFirebaseUser } from "#lib/server/auth/requireFirebaseUser.js";
 
 export const POST: RequestHandler = async (event) => {
   // Only allow in development mode for safety
   if (!dev) {
-    return json(
+    return Response.json(
       { error: "This endpoint is only available in development mode" },
       { status: 403 }
     );
@@ -39,7 +38,7 @@ export const POST: RequestHandler = async (event) => {
     const lightMode = formData.get("lightMode") as string | null;
 
     if (!file || !word) {
-      return json(
+      return Response.json(
         { error: "Missing image or word parameter" },
         { status: 400 }
       );
@@ -79,13 +78,13 @@ export const POST: RequestHandler = async (event) => {
     const buffer = Buffer.from(arrayBuffer);
     await writeFile(filePath, buffer);
 
-    return json({
+    return Response.json({
       success: true,
       path: `static/${relativePath}`,
     });
   } catch (error) {
     console.error("Gallery write failed:", error);
-    return json(
+    return Response.json(
       { error: error instanceof Error ? error.message : "Write failed" },
       { status: 500 }
     );
@@ -93,7 +92,7 @@ export const POST: RequestHandler = async (event) => {
 };
 
 export const GET: RequestHandler = async () => {
-  return json({
+  return Response.json({
     endpoint: "/api/gallery-write",
     method: "POST",
     description: "Writes choreo card images directly to static/gallery/",

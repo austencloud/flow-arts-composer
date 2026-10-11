@@ -1,5 +1,5 @@
 import type { HLCTimestamp, PlaybackIntent, PeerInfo, SyncedRoomState, ViewMode } from './sync-types';
-import type { SequenceData } from '$lib/shared/foundation/domain/models/sequence-data';
+import type { SequenceData } from '#lib/shared/foundation/domain/models/sequence-data.js';
 
 export type SyncMessageType =
 	| 'JOIN'

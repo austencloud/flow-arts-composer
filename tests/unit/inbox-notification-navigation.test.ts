@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveAdminCreatedSequenceTarget } from "$lib/shared/inbox/domain/admin-created-sequence-target";
+import { resolveAdminCreatedSequenceTarget } from "#lib/shared/inbox/domain/admin-created-sequence-target.js";
 
 describe("saved-sequence notification navigation", () => {
   it("targets the creator's private library instead of the admin's library", () => {

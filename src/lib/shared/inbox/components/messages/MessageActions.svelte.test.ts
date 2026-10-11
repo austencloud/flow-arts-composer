@@ -2,8 +2,8 @@ import { createRawSnippet } from "svelte";
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Message } from "$lib/shared/messaging/domain/models/message-models";
-import { messagingService } from "$lib/shared/messaging/services/messenger";
+import type { Message } from "#lib/shared/messaging/domain/models/message-models.js";
+import { messagingService } from "#lib/shared/messaging/services/messenger.js";
 import MessageActions from "./MessageActions.svelte";
 
 const mockLayoutState = vi.hoisted(() => ({ isSideBySideLayout: true }));
@@ -14,15 +14,15 @@ Object.defineProperty(navigator, "clipboard", {
   value: { writeText: clipboardWrite },
 });
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
 
-vi.mock("$lib/shared/layout/layout-state.svelte", () => ({
+vi.mock("#lib/shared/layout/layout-state.svelte.js", () => ({
   layoutState: mockLayoutState,
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     isAuthenticated: true,
     loading: false,
@@ -30,7 +30,7 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   },
 }));
 
-vi.mock("$lib/shared/messaging/services/messenger", () => ({
+vi.mock("#lib/shared/messaging/services/messenger.js", () => ({
   messagingService: {
     toggleReaction: vi.fn(),
     deleteMessage: vi.fn(),
@@ -44,7 +44,7 @@ vi.mock("../../state/inbox-state.svelte", () => ({
   },
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),

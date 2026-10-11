@@ -6,7 +6,7 @@
  * Filter logic is delegated to feedback-manage-state.svelte.ts
  */
 
-import type { FeedbackManageState } from "$lib/shared/feedback/state/feedback-manage-state.svelte";
+import type { FeedbackManageState } from "#lib/shared/feedback/state/feedback-manage-state.svelte.js";
 
 export function createFilterBarUIState(
   getManageState: () => FeedbackManageState

@@ -3,17 +3,17 @@ GenerateButtonCard.svelte - Generate button as a card in the grid
 Always renders as a pure button. Word input is now in WordInputCard.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { UIGenerationConfig } from "../../state/generate-config.svelte";
-  import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
-  import FontAwesomeIcon from "$lib/shared/foundation/ui/FontAwesomeIcon.svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { uiConfigToGenerationOptions } from "$lib/shared/create/utils/config-mapper";
-  import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import type { StartFeasibilityResult } from "$lib/shared/create/domain/start-feasibility";
+  import type { StartEndOptions } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+  import FontAwesomeIcon from "#lib/shared/foundation/ui/FontAwesomeIcon.svelte";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { uiConfigToGenerationOptions } from "#lib/shared/create/utils/config-mapper.js";
+  import type { GenerationOptions } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import type { StartFeasibilityResult } from "#lib/shared/create/domain/start-feasibility.js";
 
   let {
     isGenerating,

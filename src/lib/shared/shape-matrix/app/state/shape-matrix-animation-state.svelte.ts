@@ -1,11 +1,11 @@
-import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
-import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { PillId } from "$lib/shared/animation-panel/pill-nav/pill-types";
-import { loadActivePill } from "$lib/shared/animation-panel/state/active-pill-persistence";
+import { createAnimationScope } from "#lib/shared/animation-engine/state/animation-scope.svelte.js";
+import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { PillId } from "#lib/shared/animation-panel/pill-nav/pill-types.js";
+import { loadActivePill } from "#lib/shared/animation-panel/state/active-pill-persistence.js";
 import {
   HERO_TIP_EFFECT_MAP,
   HERO_TRAIL_PRESET,
-} from "$lib/shared/landing/data/hero-trail-preset";
+} from "#lib/shared/landing/data/hero-trail-preset.js";
 
 /**
  * Presentation state for the Shape Matrix hero. It is intentionally separate

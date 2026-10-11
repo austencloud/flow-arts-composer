@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { FeedbackType } from "$lib/shared/feedback/domain/models/feedback-models";
+  import type { FeedbackType } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import type { FeedbackDetailState } from "../../../state/feedback-detail-state.svelte";
-  import CopyForAIButton from "$lib/shared/foundation/ui/CopyForAIButton.svelte";
+  import CopyForAIButton from "#lib/shared/foundation/ui/CopyForAIButton.svelte";
 
   const {
     detailState,

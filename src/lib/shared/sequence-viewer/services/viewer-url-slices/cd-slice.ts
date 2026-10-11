@@ -74,9 +74,9 @@
  *   length only. `infoCell` is encoded ONLY when an explicit override exists;
  *   the derived value would duplicate showQRCode/showMandala.
  */
-import type { InfoCellChoice } from "$lib/shared/sequence-viewer/services/info-cell-display";
-import type { ImageCompositionSettings } from "$lib/shared/share/state/image-composition-state.svelte";
-import { DEFAULT_IMAGE_COMPOSITION_SETTINGS } from "$lib/shared/share/state/image-composition-state.svelte";
+import type { InfoCellChoice } from "#lib/shared/sequence-viewer/services/info-cell-display.js";
+import type { ImageCompositionSettings } from "#lib/shared/share/state/image-composition-state.svelte.js";
+import { DEFAULT_IMAGE_COMPOSITION_SETTINGS } from "#lib/shared/share/state/image-composition-state.svelte.js";
 import { deepEqual } from "../viewer-url-state-codec";
 
 /** The flat fields that are real, length-independent user state. */

@@ -6,7 +6,7 @@
  * chip group and mobile inline stepper on that same set.
  */
 
-import { getCanonicalCardStepColumnCounts } from "$lib/shared/render/services/card-step-column-options";
+import { getCanonicalCardStepColumnCounts } from "#lib/shared/render/services/card-step-column-options.js";
 
 /**
  * Valid numeric column counts for a sequence of `stepCount` steps.

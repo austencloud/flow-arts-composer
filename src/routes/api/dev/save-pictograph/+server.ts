@@ -7,8 +7,8 @@
  * Only available in development mode.
  */
 
-import { json, type RequestHandler } from "@sveltejs/kit";
-import { dev } from "$app/environment";
+import type { RequestHandler } from "@sveltejs/kit";
+import { dev } from "$app/env";
 import fs from "fs";
 import path from "path";
 
@@ -23,7 +23,7 @@ interface SaveRequest {
 export const POST: RequestHandler = async (event) => {
   // Only allow in development
   if (!dev) {
-    return json(
+    return Response.json(
       { error: "This endpoint is only available in development mode" },
       { status: 403 }
     );
@@ -35,7 +35,7 @@ export const POST: RequestHandler = async (event) => {
     const { letter, variation, gridMode, propType, base64 } = body;
 
     if (!letter || variation === undefined || !gridMode || !base64) {
-      return json(
+      return Response.json(
         { error: "Missing required fields: letter, variation, gridMode, base64" },
         { status: 400 }
       );
@@ -60,14 +60,14 @@ export const POST: RequestHandler = async (event) => {
 
     console.log(`[Dev] Saved pictograph: ${filePath} (${buffer.length} bytes)`);
 
-    return json({
+    return Response.json({
       success: true,
       path: `/pictographs/${gridMode}/${encodeURIComponent(safeLetter)}/${filename}`,
       sizeBytes: buffer.length,
     });
   } catch (error) {
     console.error("[Dev] Error saving pictograph:", error);
-    return json(
+    return Response.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );

@@ -1,6 +1,6 @@
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { PropPreferences, CatdogCombo } from "./types";
 import { normalizeLegacyPropConfig } from "@tka/tka-types";
 

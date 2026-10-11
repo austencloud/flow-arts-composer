@@ -6,8 +6,8 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { getPublicSequencesPath } from "$lib/shared/library/data/firestore-paths";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { getPublicSequencesPath } from "#lib/shared/library/data/firestore-paths.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
 import type { SequenceEntry, RawStepData, RawMotionAttributes } from "./types";
 import type { LabeledSequence } from "./types";

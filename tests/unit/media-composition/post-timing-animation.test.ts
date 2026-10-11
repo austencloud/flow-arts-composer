@@ -3,12 +3,12 @@ import {
   createTakeTiming,
   createTimingSection,
   type ResolvedTakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   layerTimingParts,
   mappingPreviewAppearance,
   nextMappedLanding,
-} from "$lib/shared/share/components/post-studio/builder/post-timing-animation";
+} from "#lib/shared/share/components/post-studio/builder/post-timing-animation.js";
 import { mainItems, timingVideoAt } from "@austencloud/video-editor/core";
 import { overlay, project, video } from "./post-project-fixtures";
 

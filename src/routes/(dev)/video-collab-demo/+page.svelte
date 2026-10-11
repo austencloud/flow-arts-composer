@@ -7,15 +7,15 @@
   DELETE THIS FILE after reviewing the components.
 -->
 <script lang="ts">
-  import VideosPanel from "$lib/shared/video-collaboration/components/VideosPanel.svelte";
-  import UserVideoLibraryView from "$lib/shared/video-collaboration/components/UserVideoLibraryView.svelte";
-  import CollaborativeVideoCard from "$lib/shared/video-collaboration/components/CollaborativeVideoCard.svelte";
-  import CollaboratorAvatars from "$lib/shared/video-collaboration/components/CollaboratorAvatars.svelte";
-  import PendingInviteCard from "$lib/shared/video-collaboration/components/PendingInviteCard.svelte";
-  import InviteCollaboratorsSheet from "$lib/shared/video-collaboration/components/InviteCollaboratorsSheet.svelte";
-  import VideoUploadSheet from "$lib/shared/video-collaboration/components/VideoUploadSheet.svelte";
-  import type { CollaborativeVideo, VideoCollaborator } from "$lib/shared/video-collaboration/domain/collaborative-video";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import VideosPanel from "#lib/shared/video-collaboration/components/VideosPanel.svelte";
+  import UserVideoLibraryView from "#lib/shared/video-collaboration/components/UserVideoLibraryView.svelte";
+  import CollaborativeVideoCard from "#lib/shared/video-collaboration/components/CollaborativeVideoCard.svelte";
+  import CollaboratorAvatars from "#lib/shared/video-collaboration/components/CollaboratorAvatars.svelte";
+  import PendingInviteCard from "#lib/shared/video-collaboration/components/PendingInviteCard.svelte";
+  import InviteCollaboratorsSheet from "#lib/shared/video-collaboration/components/InviteCollaboratorsSheet.svelte";
+  import VideoUploadSheet from "#lib/shared/video-collaboration/components/VideoUploadSheet.svelte";
+  import type { CollaborativeVideo, VideoCollaborator } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   // Demo data
   const mockCollaborators: VideoCollaborator[] = [

@@ -3,7 +3,7 @@ import {
   petalsPerStep,
   concaveRadiusProfile,
   BASE_DIP_RADIUS,
-} from "$lib/shared/3d/services/petal-path";
+} from "#lib/shared/3d/services/petal-path.js";
 
 describe("petalsPerStep", () => {
   it("maps turns to petal count (1 turn = 180° extra)", () => {

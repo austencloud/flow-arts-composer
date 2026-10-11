@@ -3,7 +3,7 @@ import {
   parseCsvEdges,
   lookupLetter,
   type CsvEdge,
-} from "$lib/features/choreo-card/services/pictograph-letter-lookup";
+} from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
 
 const CSV = [
   "letter,startPlacement,endPlacement,blueMotionType,blueStartLocation,blueEndLocation,redMotionType,redStartLocation,redEndLocation",

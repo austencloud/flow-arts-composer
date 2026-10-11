@@ -3,11 +3,11 @@ import type { PropBuild } from "@austencloud/scene-3d";
 import {
   resolveEffect,
   type TipEffectMap,
-} from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-import type { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { resolveTrailColors } from "$lib/shared/animation-engine/domain/resolve-trail-colors";
-import { resolvePropTipAnchors3D } from "$lib/shared/3d/effects/prop-tip-geometry-3d";
-import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
+} from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+import type { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { resolveTrailColors } from "#lib/shared/animation-engine/domain/resolve-trail-colors.js";
+import { resolveScaledPropTipAnchors3D } from "#lib/shared/3d/effects/prop-tip-geometry-3d.js";
+import type { EffectsConfig } from "#lib/shared/effects/domain/effects-config.js";
 import {
   resolveAnimal3D,
   resolveBloom3D,
@@ -23,7 +23,7 @@ import {
   resolveSmoke3D,
   resolveSparkles3D,
   resolveTrails3D,
-} from "$lib/shared/effects/translators/webgl3d-translator";
+} from "#lib/shared/effects/translators/webgl3d-translator.js";
 
 import type {
   WorkerEffectQualityTier,
@@ -44,6 +44,7 @@ export interface WorkerPerformerEffectIntentInput {
   leftPropType: string | undefined;
   rightPropType: string | undefined;
   staffHalfLength: number;
+  propScale?: number;
   tipEffectMap?: TipEffectMap;
   globalTipEffectMap?: TipEffectMap;
   /** Detached output from the canonical effects state owner. */
@@ -72,18 +73,21 @@ export function createWorkerPerformerEffectIntent(
     propIndex: 0 | 1,
     propType: string | undefined
   ): WorkerTipEffectDecision[] =>
-    resolvePropTipAnchors3D(propType, input.staffHalfLength, propBuild).map(
-      ({ effectTipIndex, effectKeyIndex }) => ({
+    resolveScaledPropTipAnchors3D(
+      propType,
+      input.staffHalfLength,
+      input.propScale ?? 1,
+      propBuild
+    ).map(({ effectTipIndex, effectKeyIndex }) => ({
+      propIndex,
+      tipIndex: effectTipIndex,
+      effect: resolveEffect(
         propIndex,
-        tipIndex: effectTipIndex,
-        effect: resolveEffect(
-          propIndex,
-          effectKeyIndex,
-          input.tipEffectMap,
-          input.globalTipEffectMap ?? {}
-        ),
-      })
-    );
+        effectKeyIndex,
+        input.tipEffectMap,
+        input.globalTipEffectMap ?? {}
+      ),
+    }));
   const handTrailEffect = (propIndex: 0 | 1) =>
     resolveEffect(
       propIndex,

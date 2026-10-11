@@ -11,16 +11,16 @@ import {
   phaseLabel,
   type ContinuityPose,
   type ContinuityTrace,
-} from "$lib/shared/3d/diagnostics/prop-continuity-audit";
+} from "#lib/shared/3d/diagnostics/prop-continuity-audit.js";
 import {
   sweepPropContinuity,
   type PropPoseScoreSource,
-} from "$lib/shared/3d/diagnostics/prop-continuity-sweep";
+} from "#lib/shared/3d/diagnostics/prop-continuity-sweep.js";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
-import { FALG } from "$lib/shared/combination/domain/demo-fixtures";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
+import { FALG } from "#lib/shared/combination/domain/demo-fixtures.js";
 
 const PHASE_STEP = 0.002;
 const IDENTITY = { x: 0, y: 0, z: 0, w: 1 } as const;

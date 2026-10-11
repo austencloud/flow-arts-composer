@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { PinnedItem, PinnableContentType } from "$lib/shared/community/domain/models/pinned-item";
+  import type { PinnedItem, PinnableContentType } from "#lib/shared/community/domain/models/pinned-item.js";
 
   let {
     pinnedItems = [],

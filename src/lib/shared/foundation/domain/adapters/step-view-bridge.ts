@@ -11,11 +11,11 @@
  * `stepToStepData`) is the negative control's deliberately-broken bridge.
  */
 import type { Motion, Step } from "@tka/tka-types";
-import { createMotionData, type MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { MotionView } from "$lib/shared/pictograph/shared/domain/models/motion-view";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { createMotionData, type MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { MotionView } from "#lib/shared/pictograph/shared/domain/models/motion-view.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { stepDataToStep, motionToMotionData } from "./step-bridge";
 
 /** A canonical `Step` paired with the per-hand view fields lean `Motion` drops. */

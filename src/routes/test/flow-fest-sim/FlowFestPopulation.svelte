@@ -1,7 +1,7 @@
 <script lang="ts">
   import { useTask, useThrelte } from "@threlte/core";
   import { Avatar3D } from "@austencloud/scene-3d";
-  import type { FlowFestMoment } from "$lib/features/flow-fest-sim/state/flow-fest-progress";
+  import type { FlowFestMoment } from "#lib/features/flow-fest-sim/state/flow-fest-progress.js";
   import {
     FLOW_FEST_PHASE_WARM_START_SECONDS,
     FlowFestPopulationSimulation,
@@ -12,10 +12,10 @@
     type FlowFestNpc,
     type FlowFestPopulationFrame,
     type FlowFestPopulationSite,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-population";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-population.js";
   import { flowFestHomeAnchorIds } from "./flow-fest-population-site";
   import { assignFlowFestPopulationSlots } from "./flow-fest-population-slots";
-  import { sweepFlowFestAvatarMaterials } from "$lib/features/flow-fest-sim/services/flow-fest-avatar-material-repair";
+  import { sweepFlowFestAvatarMaterials } from "#lib/features/flow-fest-sim/services/flow-fest-avatar-material-repair.js";
 
   interface Props {
     site: FlowFestPopulationSite;

@@ -3,11 +3,11 @@
   import {
     Pulse2DRenderer,
     type PulseTipInput,
-  } from "$lib/shared/effects/renderers/pulse-2d-renderer";
-  import { resolvePulse2D } from "$lib/shared/effects/translators/canvas2d-translator";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import { PULSE_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/pulse-presets";
-  import type { PulseIntent } from "$lib/shared/effects/domain/effects-config";
+  } from "#lib/shared/effects/renderers/pulse-2d-renderer.js";
+  import { resolvePulse2D } from "#lib/shared/effects/translators/canvas2d-translator.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import { PULSE_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/pulse-presets.js";
+  import type { PulseIntent } from "#lib/shared/effects/domain/effects-config.js";
 
   // Live intent — drives the REAL renderer via resolvePulse2D each frame.
   let intent = $state<PulseIntent>({ ...DEFAULT_EFFECTS_CONFIG.pulse });
@@ -42,14 +42,15 @@
   const SLIDERS: { key: keyof PulseIntent; label: string; min: number; max: number; step: number; pct?: boolean }[] = [
     { key: "intensity", label: "Intensity", min: 0, max: 1, step: 0.05, pct: true },
     { key: "reach", label: "Reach", min: 0, max: 1, step: 0.05, pct: true },
-    { key: "lifetime", label: "Lifetime (s)", min: 0.2, max: 3, step: 0.1 },
+    { key: "lifetime", label: "Lifetime (beats)", min: 0.2, max: 3, step: 0.1 },
     { key: "thickness", label: "Thickness", min: 0, max: 1, step: 0.05, pct: true },
     { key: "velocityScale", label: "Velocity → Size", min: 0, max: 1, step: 0.05, pct: true },
-    { key: "asymmetry", label: "Asymmetry", min: 0, max: 1, step: 0.05, pct: true },
+    { key: "asymmetry", label: "Momentum", min: 0, max: 1, step: 0.05, pct: true },
     { key: "chromatic", label: "Chromatic", min: 0, max: 1, step: 0.05, pct: true },
     { key: "flash", label: "Flash", min: 0, max: 1, step: 0.05, pct: true },
     { key: "harmonics", label: "Harmonics", min: 0, max: 1, step: 0.05, pct: true },
     { key: "beatInterval", label: "Beat interval", min: 1, max: 8, step: 1 },
+    { key: "charge", label: "Build-up", min: 0, max: 1, step: 0.05, pct: true },
     { key: "velocityThreshold", label: "Vel. threshold", min: 0, max: 1, step: 0.05, pct: true },
   ];
 
@@ -106,6 +107,7 @@
             y: p.y + Math.sin(a) * len * dir,
             propIndex: p.idx,
             tipIndex: tipIndex++,
+            end: dir === 1 ? 0 : 1,
             color: p.idx === 0 ? "#3a8fff" : "#ff4a6a",
           });
         }

@@ -5,9 +5,9 @@ import {
   resolveLed2D,
   resolveCharcoal2D,
   foldTrailIntentIntoSettings,
-} from "$lib/shared/effects/translators/canvas2d-translator";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/effects/translators/canvas2d-translator.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { DEFAULT_TRAIL_SETTINGS } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 describe("resolveTrails2D", () => {
   const intent = DEFAULT_EFFECTS_CONFIG.trails;

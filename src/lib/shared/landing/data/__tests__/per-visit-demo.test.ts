@@ -4,14 +4,14 @@ const mocks = vi.hoisted(() => ({
   generateSequence: vi.fn(),
 }));
 
-vi.mock("$lib/shared/create/services/generation-orchestrator", () => ({
+vi.mock("#lib/shared/create/services/generation-orchestrator.js", () => ({
   generationOrchestrator: {
     generateSequence: mocks.generateSequence,
   },
 }));
 
 vi.mock(
-  "$lib/shared/foundation/domain/models/generation/generate-models",
+  "#lib/shared/foundation/domain/models/generation/generate-models.js",
   () => ({
     DifficultyLevel: {
       BEGINNER: "beginner",
@@ -23,18 +23,18 @@ vi.mock(
 );
 
 vi.mock(
-  "$lib/shared/foundation/domain/models/generation/circular-models",
+  "#lib/shared/foundation/domain/models/generation/circular-models.js",
   () => ({
     LOOPType: { ROTATED: "rotated" },
     Period: { QUARTERED: "quartered" },
   })
 );
 
-vi.mock("$lib/shared/pictograph/grid/domain/enums/grid-enums", () => ({
+vi.mock("#lib/shared/pictograph/grid/domain/enums/grid-enums.js", () => ({
   GridMode: { DIAMOND: "diamond" },
 }));
 
-vi.mock("$lib/shared/pictograph/prop/domain/enums/prop-type", () => ({
+vi.mock("#lib/shared/pictograph/prop/domain/enums/prop-type.js", () => ({
   PropType: { STAFF: "staff" },
 }));
 

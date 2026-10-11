@@ -3,7 +3,7 @@
   // The configurator renders on the server too, seeded with the catalog
   // snapshot (+page.server.ts): a crawler reading the HTML gets the real
   // product page, not a loading line. See +page.ts.
-  import LoopDeckConfiguratorPage from "$lib/features/store/LoopDeckConfiguratorPage.svelte";
+  import LoopDeckConfiguratorPage from "#lib/features/store/LoopDeckConfiguratorPage.svelte";
   import type { PageData } from "./$types";
 
   let { data }: { data: PageData } = $props();

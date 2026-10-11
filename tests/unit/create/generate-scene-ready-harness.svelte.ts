@@ -3,8 +3,8 @@
  * box resizes a live scene.
  */
 import { flushSync, mount, unmount } from "svelte";
-import GenerateScene from "$lib/features/create/shared/components/method-previews/GenerateScene.svelte";
-import type { MethodPreviewShape } from "$lib/features/create/shared/components/method-previews/method-preview-layout";
+import GenerateScene from "#lib/features/create/shared/components/method-previews/GenerateScene.svelte";
+import type { MethodPreviewShape } from "#lib/features/create/shared/components/method-previews/method-preview-layout.js";
 
 export function mountGenerateScene(
   target: HTMLElement,
@@ -51,6 +51,17 @@ export function mountGenerateScene(
       props.shape = next.shape;
       props.width = next.width;
       props.height = next.height;
+      flushSync();
+    },
+    /** Start a turn, as the coordinator does. */
+    play(turn: number): void {
+      props.turn = turn;
+      props.playing = true;
+      flushSync();
+    },
+    /** The turn passes to the next card. */
+    stop(): void {
+      props.playing = false;
       flushSync();
     },
     destroy(): void {

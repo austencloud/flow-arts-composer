@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { DefaultPlacer } from "$lib/shared/pictograph/arrow/positioning/placement/services/default-placer";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { DefaultPlacer } from "#lib/shared/pictograph/arrow/positioning/placement/services/default-placer.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 // Returns a different dataset for the fan/ subfolder than for the staff root.
 const fakeCache = {
@@ -12,7 +12,7 @@ const fakeCache = {
       return { pro_to_layer1_alpha: { "0": [1, 2] } };
     return {};
   },
-} as unknown as import("$lib/shared/pictograph/shared/services/simple-json-cache").SimpleJsonCache;
+} as unknown as import("#lib/shared/pictograph/shared/services/simple-json-cache.js").SimpleJsonCache;
 
 describe("DefaultPlacer forwards propType", () => {
   it("routes propType to the per-prop dataset", async () => {

@@ -4,7 +4,7 @@ import {
   normalizeProject,
   compilePostProject,
   editContext,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import type {
   PostImageItem,
   PostItem,

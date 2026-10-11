@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import type { ShapeMatrixSurface } from "../state/shape-matrix-app-state.svelte";
 

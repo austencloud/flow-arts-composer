@@ -5,11 +5,17 @@ import { DEFAULT_EFFECTS_CONFIG } from "../domain/defaults";
 import type { PulseIntent } from "../domain/effects-config";
 import type { Pulse2DParams } from "../translators/canvas2d-types";
 
+interface Arc {
+  x: number;
+  y: number;
+  r: number;
+  full: boolean;
+}
+
 /** Minimal CanvasRenderingContext2D stub that records the calls the renderer makes. */
 class FakeCtx {
-  points: { x: number; y: number }[] = [];
-  strokeCount = 0;
-  fillCount = 0;
+  arcs: Arc[] = [];
+  strokeColors: string[] = [];
   radialGradientCount = 0;
   shadowBlurSet = false;
 
@@ -20,7 +26,6 @@ class FakeCtx {
   strokeStyle: unknown = "#000";
   fillStyle: unknown = "#000";
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   set shadowBlur(_v: number) {
     this.shadowBlurSet = true;
   }
@@ -28,135 +33,167 @@ class FakeCtx {
   save(): void {}
   restore(): void {}
   beginPath(): void {}
-  moveTo(x: number, y: number): void {
-    this.points.push({ x, y });
+  moveTo(): void {}
+  lineTo(): void {}
+  arc(x: number, y: number, r: number, start: number, end: number): void {
+    this.arcs.push({ x, y, r, full: end - start >= Math.PI * 2 - 1e-6 });
   }
-  lineTo(x: number, y: number): void {
-    this.points.push({ x, y });
-  }
-  arc(): void {}
   closePath(): void {}
   stroke(): void {
-    this.strokeCount++;
+    if (typeof this.strokeStyle === "string") this.strokeColors.push(this.strokeStyle);
   }
-  fill(): void {
-    this.fillCount++;
-  }
-  fillRect(): void {}
-  clearRect(): void {}
+  fill(): void {}
   createRadialGradient() {
     this.radialGradientCount++;
     return { addColorStop() {} };
   }
-  resetPath(): void {
-    this.points = [];
+  createLinearGradient() {
+    return { addColorStop() {} };
+  }
+  reset(): void {
+    this.arcs = [];
+    this.strokeColors = [];
+    this.radialGradientCount = 0;
   }
 }
 
-function params(overrides: Partial<PulseIntent> = {}): Pulse2DParams {
-  const intent: PulseIntent = { ...DEFAULT_EFFECTS_CONFIG.pulse, ...overrides };
-  return resolvePulse2D(intent);
-}
-
-function tip(x: number, y: number): PulseTipInput {
-  return { x, y, propIndex: 0, tipIndex: 0, color: "#3399ff" };
-}
-
+const FRAME = 1 / 60;
 const ctxOf = (c: FakeCtx) => c as unknown as CanvasRenderingContext2D;
 
-/** Drive a tip from A to B over one frame, then hold so the spawned ring ages and draws. */
-function spawnAndAge(
-  r: Pulse2DRenderer,
-  ctx: FakeCtx,
-  p: Pulse2DParams,
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-) {
-  r.render(ctxOf(ctx), p, [tip(from.x, from.y)], 0, 0.1, 1); // establish prev position
-  r.render(ctxOf(ctx), p, [tip(to.x, to.y)], 0, 0.1, 1); // motion → velocity spawn (age 0, not drawn)
-  ctx.resetPath();
-  r.render(ctxOf(ctx), p, [tip(to.x, to.y)], 0, 0.1, 1); // hold → ring ages and draws
+function params(overrides: Partial<PulseIntent> = {}): Pulse2DParams {
+  return resolvePulse2D({ ...DEFAULT_EFFECTS_CONFIG.pulse, ...overrides });
 }
 
-function maxRadius(ctx: FakeCtx, origin: { x: number; y: number }): number {
-  return ctx.points.reduce((m, pt) => Math.max(m, Math.hypot(pt.x - origin.x, pt.y - origin.y)), 0);
-}
-function radiusSpread(ctx: FakeCtx, origin: { x: number; y: number }): number {
-  if (ctx.points.length === 0) return 0;
-  const ds = ctx.points.map((pt) => Math.hypot(pt.x - origin.x, pt.y - origin.y));
-  return Math.max(...ds) - Math.min(...ds);
+function tip(x: number, y: number, end = 0, color = "#3399ff"): PulseTipInput {
+  return { x, y, propIndex: 0, tipIndex: end, end, color };
 }
 
-describe("Pulse2DRenderer — pressure shockwave", () => {
-  it("draws a ring once a spawned ring has aged", () => {
-    const r = new Pulse2DRenderer();
-    const ctx = new FakeCtx();
-    const p = params({ trigger: "velocity", style: "stroke", asymmetry: 0, chromatic: 0, flash: 0, harmonics: 0 });
-    spawnAndAge(r, ctx, p, { x: 100, y: 100 }, { x: 150, y: 100 });
-    expect(ctx.strokeCount).toBeGreaterThan(0);
-    expect(ctx.points.length).toBeGreaterThan(0);
+/** "rgba(r, g, b, a)" → "r,g,b". */
+const rgbOf = (style: string) => style.replace(/^rgba\((\d+), (\d+), (\d+),.*$/, "$1,$2,$3");
+
+function hexRgb(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+}
+
+const QUIET = { asymmetry: 0, chromatic: 0, flash: 0, harmonics: 0, charge: 0 };
+
+/** One beat fires on the first frame; hold the tip still so that ring ages. */
+function fireAndAge(p: Pulse2DParams, tips: PulseTipInput[], seconds = 0.25): FakeCtx {
+  const r = new Pulse2DRenderer();
+  const ctx = new FakeCtx();
+  r.render(ctxOf(ctx), p, tips, 0, FRAME, 1);
+  for (let t = 0; t < seconds; t += FRAME) r.render(ctxOf(ctx), p, tips, 0, FRAME, 1);
+  ctx.reset();
+  r.render(ctxOf(ctx), p, tips, 0, FRAME, 1);
+  return ctx;
+}
+
+describe("Pulse2DRenderer", () => {
+  it("bursts a ring from the tip on the beat and grows it", () => {
+    const ctx = fireAndAge(params({ ...QUIET, trigger: "beat" }), [tip(200, 150)]);
+    const rings = ctx.arcs.filter((a) => a.full);
+    expect(rings.length).toBeGreaterThan(0);
+    for (const ring of rings) {
+      expect(ring.x).toBeCloseTo(200);
+      expect(ring.y).toBeCloseTo(150);
+      expect(ring.r).toBeGreaterThan(10);
+    }
   });
 
-  it("never sets shadowBlur (per-segment shadow is the banned perf killer)", () => {
+  it("never sets shadowBlur", () => {
     const r = new Pulse2DRenderer();
     const ctx = new FakeCtx();
-    const p = params({ trigger: "velocity", style: "glow", asymmetry: 0.9, chromatic: 0.6, flash: 0.9, harmonics: 0.5 });
-    spawnAndAge(r, ctx, p, { x: 100, y: 100 }, { x: 160, y: 100 });
+    const p = params({ style: "glow", asymmetry: 1, chromatic: 1, flash: 1, harmonics: 1, charge: 1 });
+    for (let i = 0; i < 120; i++) {
+      r.render(ctxOf(ctx), p, [tip(200 + i * 4, 150)], Math.floor(i / 30), FRAME, 1);
+    }
+    expect(ctx.arcs.length).toBeGreaterThan(0);
     expect(ctx.shadowBlurSet).toBe(false);
   });
 
-  it("scales ring size with birth energy (fast swing > slow swing)", () => {
-    const base = { trigger: "velocity" as const, style: "stroke" as const, asymmetry: 0, chromatic: 0, flash: 0, harmonics: 0, velocityScale: 0.6 };
-
-    const fastCtx = new FakeCtx();
-    spawnAndAge(new Pulse2DRenderer(), fastCtx, params(base), { x: 100, y: 100 }, { x: 150, y: 100 });
-    const fastR = maxRadius(fastCtx, { x: 150, y: 100 });
-
-    const slowCtx = new FakeCtx();
-    spawnAndAge(new Pulse2DRenderer(), slowCtx, params(base), { x: 100, y: 100 }, { x: 103, y: 100 });
-    const slowR = maxRadius(slowCtx, { x: 103, y: 100 });
-
-    expect(fastR).toBeGreaterThan(slowR * 1.15);
+  it("paints solid mode in the chosen shade", () => {
+    const shade = (palette: PulseIntent["palette"]) => {
+      const p = params({ ...QUIET, style: "stroke", colorMode: "solid", palette });
+      const ctx = fireAndAge(p, [tip(200, 150)]);
+      return { colors: ctx.strokeColors.map(rgbOf), ring: hexRgb(p.resolvedPalette.ring) };
+    };
+    const ember = shade("ember");
+    const sonar = shade("sonar");
+    expect(ember.colors).toContain(ember.ring);
+    expect(sonar.colors).toContain(sonar.ring);
+    expect(ember.ring).not.toBe(sonar.ring);
   });
 
-  it("deforms the ring directionally when asymmetry is high, stays circular at zero", () => {
-    const deformCtx = new FakeCtx();
-    spawnAndAge(
-      new Pulse2DRenderer(),
-      deformCtx,
-      params({ trigger: "velocity", style: "stroke", asymmetry: 1, chromatic: 0, flash: 0, harmonics: 0 }),
-      { x: 100, y: 100 },
-      { x: 150, y: 100 },
-    );
-    const deformSpread = radiusSpread(deformCtx, { x: 150, y: 100 });
-
-    const roundCtx = new FakeCtx();
-    spawnAndAge(
-      new Pulse2DRenderer(),
-      roundCtx,
-      params({ trigger: "velocity", style: "stroke", asymmetry: 0, chromatic: 0, flash: 0, harmonics: 0 }),
-      { x: 100, y: 100 },
-      { x: 150, y: 100 },
-    );
-    const roundSpread = radiusSpread(roundCtx, { x: 150, y: 100 });
-
-    expect(deformSpread).toBeGreaterThan(8);
-    expect(roundSpread).toBeLessThan(1);
+  it("colors each hand's rings like its prop in prop mode", () => {
+    const p = params({ ...QUIET, style: "stroke", colorMode: "prop-matched" });
+    const ctx = fireAndAge(p, [tip(200, 150, 0, "#ff4400")]);
+    expect(ctx.strokeColors.map(rgbOf)).toContain("255,68,0");
   });
 
-  it("emits a trailing overtone train when harmonics > 0", () => {
-    const run = (harmonics: number) => {
+  it("fires the velocity trigger once per swing", () => {
+    const r = new Pulse2DRenderer();
+    const ctx = new FakeCtx();
+    const p = params({ ...QUIET, trigger: "velocity", velocityThreshold: 0.3, lifetime: 6 });
+    let t = 0;
+    for (let i = 0; i < 180; i++) {
+      t += FRAME;
+      const x = 300 + 80 * Math.sin(2 * Math.PI * t);
+      r.render(ctxOf(ctx), p, [tip(x, 150)], Math.floor(t), FRAME, 1);
+    }
+    const fired = (r as unknown as { ringCount: number }).ringCount;
+    expect(fired).toBeGreaterThanOrEqual(5);
+    expect(fired).toBeLessThanOrEqual(6);
+  });
+
+  it("builds a charge before the beat and lets it go when playback stops", () => {
+    const r = new Pulse2DRenderer();
+    const ctx = new FakeCtx();
+    const p = params({ ...QUIET, style: "stroke", charge: 1 });
+    const t0 = tip(200, 150);
+    // Three beats at one second each so the clock knows the tempo.
+    for (let t = 0; t < 3; t += FRAME) r.render(ctxOf(ctx), p, [t0], Math.floor(t), FRAME, 1);
+
+    const coresAt = (seconds: number) => {
+      for (let t = 0; t < seconds; t += FRAME) r.render(ctxOf(ctx), p, [t0], 3, FRAME, 1);
+      ctx.reset();
+      r.render(ctxOf(ctx), p, [t0], 3, FRAME, 1);
+      return ctx.radialGradientCount;
+    };
+    expect(coresAt(0.2)).toBe(0);
+    expect(coresAt(0.65)).toBeGreaterThan(0);
+    expect(coresAt(1)).toBe(0);
+  });
+
+  it("tracks only the chosen end of the prop", () => {
+    const p = params({ ...QUIET, trackingMode: "left_end" });
+    const ctx = fireAndAge(p, [tip(100, 150, 0), tip(300, 150, 1)]);
+    expect(ctx.arcs.length).toBeGreaterThan(0);
+    expect(ctx.arcs.every((a) => a.x < 200)).toBe(true);
+  });
+
+  it("carries the tip's momentum into the ring when Momentum is up", () => {
+    const centers = (asymmetry: number) => {
       const r = new Pulse2DRenderer();
       const ctx = new FakeCtx();
-      const p = params({ trigger: "continuous", style: "stroke", harmonics, asymmetry: 0, chromatic: 0, flash: 0 });
-      // prime, then run frames so scheduled overtone rings get released + drawn
+      const p = params({ ...QUIET, asymmetry, lifetime: 3 });
       let x = 100;
-      for (let i = 0; i < 8; i++) {
-        x += 12;
-        r.render(ctxOf(ctx), p, [tip(x, 100)], i, 0.1, 1);
+      // Steady travel at 300 units/s; the second beat's ring has real momentum.
+      for (let i = 0; i < 80; i++) {
+        x += 5;
+        if (i === 79) ctx.reset();
+        r.render(ctxOf(ctx), p, [tip(x, 150)], Math.floor(i / 60), FRAME, 1);
       }
-      return ctx.strokeCount;
+      return ctx.arcs.map((a) => a.x);
     };
-    expect(run(1)).toBeGreaterThan(run(0));
+    const birth = 100 + 5 * 61;
+    expect(Math.max(...centers(0))).toBeLessThanOrEqual(birth);
+    expect(Math.max(...centers(1))).toBeGreaterThan(birth + 5);
+  });
+
+  it("trails overtones after the ring when harmonics are up", () => {
+    const fullRings = (harmonics: number) =>
+      fireAndAge(params({ ...QUIET, harmonics, style: "stroke" }), [tip(200, 150)], 0.4).arcs.length;
+    expect(fullRings(1)).toBeGreaterThan(fullRings(0));
   });
 });

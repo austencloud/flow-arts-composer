@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type {
   CollaborativeVideo,
   StepMap,
-} from "$lib/shared/video-collaboration/domain/collaborative-video";
+} from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 import { createPerformanceWorkspaceHarness } from "./performance-workspace-state-harness.svelte";
 
 function performance(id: string, beatMap?: StepMap): CollaborativeVideo {

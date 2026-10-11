@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { resolveSkeleton, SHARED_SHELL } from "$lib/shared/modules/skeletons";
-import SharedShellSkeleton from "$lib/shared/modules/skeletons/SharedShellSkeleton.svelte";
+import {
+  resolveSkeleton,
+  SHARED_SHELL,
+} from "#lib/shared/modules/skeletons/index.js";
+import SharedShellSkeleton from "#lib/shared/modules/skeletons/SharedShellSkeleton.svelte";
 
 describe("resolveSkeleton", () => {
   it("uses the neutral loader for create (no verified bespoke skeleton)", () => {

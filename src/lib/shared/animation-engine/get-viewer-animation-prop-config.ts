@@ -1,6 +1,6 @@
-import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-import type { AnimationPropConfig } from "$lib/shared/animation-engine/domain/animation-prop-config";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+import type { AnimationPropConfig } from "#lib/shared/animation-engine/domain/animation-prop-config.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 /**
  * App players follow the prop choices in Settings. Standalone players can skip

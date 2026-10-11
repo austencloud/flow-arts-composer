@@ -1,16 +1,17 @@
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
-  import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
-  import TkaEditorScope from "$lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
+  import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import { createCardPreviewState } from "#lib/shared/share/state/card-preview-state.svelte.js";
+  import TkaEditorScope from "#lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
   import { VideoEditor, type ShareExport } from "@austencloud/video-editor/ui";
-  import type {
-  PostProject,
-} from "@austencloud/video-editor/core";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { savePostDraft } from "$lib/shared/media-composition/services/post-draft-storage";
-  import { loadSyncedPostDraft, saveSyncedPostDraft } from "$lib/features/post/services/post-account-projects";
+  import type { PostProject } from "@austencloud/video-editor/core";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { savePostDraft } from "#lib/shared/media-composition/services/post-draft-storage.js";
+  import {
+    loadSyncedPostDraft,
+    saveSyncedPostDraft,
+  } from "#lib/features/post/services/post-account-projects.js";
 
   /**
    * Post Studio as a sequence-viewer surface.
@@ -74,55 +75,68 @@
         if (current) draft = { sequenceId, ...loaded };
       })
       .catch((cause: unknown) => {
-        if (current) draft = {
-          sequenceId,
-          project: null,
-          diskAvailable: false,
-          error: cause instanceof Error ? cause.message : "The saved post could not be opened.",
-        };
+        if (current)
+          draft = {
+            sequenceId,
+            project: null,
+            diskAvailable: false,
+            error:
+              cause instanceof Error
+                ? cause.message
+                : "The saved post could not be opened.",
+          };
       });
     return () => {
       current = false;
     };
   });
+
+  /** The account save, bound to the account and sequence the editor opened with. */
+  function saveSyncedFor(uid: string, source: SequenceData) {
+    return (project: PostProject) => saveSyncedPostDraft(project, source, uid);
+  }
 </script>
 
 <div class="post-studio-pane">
   {#if draft?.sequenceId === sequence.id}
     {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${sequence.id}`}
-    <!-- The editor's snippet is a function, so it reads `draft` without the {#if}'s narrowing. -->
-    <TkaEditorScope
-      {active}
-      {sequence}
-      initialProject={draft.project ?? undefined}
-      cardPreviewUrl={cardPreview.url}
-      cardRenderOptions={cardPreview.renderOptions}
-      {resolvedCardAutoLayout}
-      animationPreviewUrl={null}
-      isPreparingCard={cardPreview.isPreparing}
-      isPreparingAnimation={false}
-      onRequestAnimation={() => undefined}
-      {onRegisterShareExport}
-    >
-      {#snippet children(scope)}
-        <VideoEditor
-          host={scope.editor.host}
-          plugin={scope.plugin}
-          editor={scope.editor}
-          inspectorTarget={scope.inspectorTarget}
-          registerExport={scope.registerExport}
-          audioSeed={scope.audioSeed}
-          onAudioChange={scope.onAudioChange}
-          {active}
-          onSaveDraft={authState.user && !authState.user.isAnonymous ? (project) => saveSyncedPostDraft(project, sequence) : draft?.diskAvailable ? savePostDraft : undefined}
-          draftLoadError={draft?.error ?? null}
-          {onExported}
-          {onSharePost}
-          {previewTarget}
-          {sharing}
-        />
-      {/snippet}
-    </TkaEditorScope>
+      <!-- The editor's snippet is a function, so it reads `draft` without the {#if}'s narrowing. -->
+      <TkaEditorScope
+        {active}
+        {sequence}
+        initialProject={draft.project ?? undefined}
+        cardPreviewUrl={cardPreview.url}
+        cardRenderOptions={cardPreview.renderOptions}
+        {resolvedCardAutoLayout}
+        animationPreviewUrl={null}
+        isPreparingCard={cardPreview.isPreparing}
+        isPreparingAnimation={false}
+        onRequestAnimation={() => undefined}
+        {onRegisterShareExport}
+      >
+        {#snippet children(scope)}
+          <VideoEditor
+            host={scope.editor.host}
+            plugin={scope.plugin}
+            editor={scope.editor}
+            inspectorTarget={scope.inspectorTarget}
+            registerExport={scope.registerExport}
+            audioSeed={scope.audioSeed}
+            onAudioChange={scope.onAudioChange}
+            {active}
+            onSaveDraft={authState.user && !authState.user.isAnonymous
+              ? saveSyncedFor(authState.user.uid, sequence)
+              : draft?.diskAvailable
+                ? savePostDraft
+                : undefined}
+            draftLoadError={draft?.error ?? null}
+            {onExported}
+            {onSharePost}
+            {previewTarget}
+            {sharing}
+          />
+        {/snippet}
+      </TkaEditorScope>
     {/key}
   {:else}
     <div class="draft-loading" role="status">Loading saved post…</div>

@@ -2,7 +2,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-import { createWorkerPerformerInteractionBridge } from "$lib/shared/3d/worker-renderer/services/worker-performer-interaction";
+import { createWorkerPerformerInteractionBridge } from "#lib/shared/3d/worker-renderer/services/worker-performer-interaction.js";
 
 function firePointer(
   target: EventTarget,

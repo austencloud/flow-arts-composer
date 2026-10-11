@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { PLACEABLE_OBJECTS, type PlaceableObjectDef } from '../../domain/placeable-object-registry';
 	import { museum3dEditorState } from '../../state/museum-3d-editor-state.svelte';
-	import { handleModuleChange } from '$lib/shared/navigation-coordinator/navigation-coordinator.svelte';
-	import type { ModuleId } from '$lib/shared/navigation/domain/types';
+	import { handleModuleChange } from '#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js';
+	import type { ModuleId } from '#lib/shared/navigation/domain/types.js';
 
 	interface Props {
 		currentRoomName?: string;

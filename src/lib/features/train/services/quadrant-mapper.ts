@@ -1,7 +1,7 @@
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 /**
  * Maps normalized coordinates (0-1) to one of 8 grid quadrants.

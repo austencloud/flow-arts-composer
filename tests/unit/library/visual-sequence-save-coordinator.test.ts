@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { LibraryError } from "$lib/shared/library/domain/library-error";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import type { PresentationIntent } from "$lib/shared/foundation/domain/models/presentation-intent";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { LibraryError } from "#lib/shared/library/domain/library-error.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { DEFAULT_TRAIL_SETTINGS } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import type { PresentationIntent } from "#lib/shared/foundation/domain/models/presentation-intent.js";
 
 const { computeHash, showToast, removeToast, onGuestSaveSucceeded } =
   vi.hoisted(() => ({
@@ -14,23 +14,23 @@ const { computeHash, showToast, removeToast, onGuestSaveSucceeded } =
     onGuestSaveSucceeded: vi.fn(),
   }));
 
-vi.mock("$lib/shared/library/services/sequence-content-hasher", () => ({
+vi.mock("#lib/shared/library/services/sequence-content-hasher.js", () => ({
   computeHash,
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   showToast,
   removeToast,
 }));
 
 vi.mock(
-  "$lib/shared/onboarding/state/post-save-activation-state.svelte",
+  "#lib/shared/onboarding/state/post-save-activation-state.svelte.js",
   () => ({
     postSaveActivation: { onGuestSaveSucceeded },
   })
 );
 
-import { VisualSequenceSaveCoordinator } from "$lib/features/library/services/implementations/VisualSequenceSaveCoordinator";
+import { VisualSequenceSaveCoordinator } from "#lib/features/library/services/implementations/VisualSequenceSaveCoordinator.js";
 
 const SEQUENCE = {
   id: "seq-1",

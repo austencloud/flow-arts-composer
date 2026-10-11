@@ -7,11 +7,11 @@ import {
 import {
   LOOPType,
   Period,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import { buildCardDescriptors } from "../../../shared/services/card-configurator";
 import { DifficultyLevel } from "../../../shared/domain/models/generate-models";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { UIGenerationConfig } from "../../../state/generate-config.svelte";
 
 describe("buildLoopCardDisplay — off", () => {

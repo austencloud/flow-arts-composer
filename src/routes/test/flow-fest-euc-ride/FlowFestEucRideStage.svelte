@@ -28,9 +28,9 @@
     type FlowFestElectricUnicycleDynamics,
     type FlowFestElectricUnicycleInput,
     type FlowFestElectricUnicycleTerrainAttitude,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle";
-  import type { FlowFestEucMountedPoseDiagnostic } from "$lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose";
-  import { FlowFestElectricUnicycleDrive } from "$lib/features/flow-fest-sim/services/flow-fest-electric-unicycle-drive";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle.js";
+  import type { FlowFestEucMountedPoseDiagnostic } from "#lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose.js";
+  import { FlowFestElectricUnicycleDrive } from "#lib/features/flow-fest-sim/services/flow-fest-electric-unicycle-drive.js";
   import FlowFestElectricUnicycle from "../flow-fest-sim/FlowFestElectricUnicycle.svelte";
   import type { EucRideCameraId, EucRideTelemetry } from "./euc-ride-telemetry";
   import { createEucRideTwitchMeter } from "./euc-ride-telemetry";

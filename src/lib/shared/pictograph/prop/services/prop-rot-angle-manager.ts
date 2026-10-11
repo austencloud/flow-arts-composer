@@ -1,6 +1,6 @@
 import { GridLocation, GridMode } from "../../grid/domain/enums/grid-enums";
 import { Orientation } from "../../shared/domain/enums/pictograph-enums";
-import { canonicalOrientation } from "$lib/shared/render/core/calculations/orientation";
+import { canonicalOrientation } from "#lib/shared/render/core/calculations/orientation.js";
 
 // Cardinal locations use diamond grid rotation
 const CARDINAL_LOCATIONS: ReadonlySet<GridLocation> = new Set<GridLocation>([

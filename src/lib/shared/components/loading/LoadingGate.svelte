@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * LoadingGate - Full-page loading wrapper with three visual variants.
    * Uses the other loading primitives (IndeterminateBar, ProgressRing, ShimmerBlock).
@@ -49,7 +49,7 @@
       </div>
     </div>
   {:else if variant === "mandala"}
-    {#await import("$lib/shared/mandala/components/MandalaLoader.svelte")}
+    {#await import("#lib/shared/mandala/components/MandalaLoader.svelte")}
       <IndeterminateBar position="top" {color} />
     {:then module}
       <module.default message={loadingMessage} />

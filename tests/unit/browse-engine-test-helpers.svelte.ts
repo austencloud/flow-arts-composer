@@ -1,4 +1,4 @@
-import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
+import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
 
 type BrowseEngineConfig = Parameters<typeof createBrowseEngine>[0];
 export type BrowseEngine = ReturnType<typeof createBrowseEngine>;

@@ -3,21 +3,21 @@
   import {
     SequenceSelection,
     setSequenceSelection,
-  } from "$lib/shared/selection/sequence-selection.svelte";
-  import "$lib/shared/selection/selection.css";
+  } from "#lib/shared/selection/sequence-selection.svelte.js";
+  import "#lib/shared/selection/selection.css";
   import {
     createChoreoSheetState,
     setChoreoSheetContext,
   } from "../../state/choreo-sheet-state.svelte";
   import { getChoreoSheetRepository } from "../../services/choreo-sheet-repository";
   import { createSheetSequenceResolver } from "../../services/sheet-sequence-resolver";
-  import { awaitAuthSettled } from "$lib/shared/auth/state/auth-state.svelte";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { awaitAuthSettled } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import {
     downloadChoreoSheetPDF,
     CHOREO_SHEET_EXPORT_CANCELLED,
   } from "../../services/sheet-pdf-exporter";
-  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
+  import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
   import { trackChoreoSheetExported } from "../../analytics/choreo-events";
   import type {
     ChoreoSheet,
@@ -25,15 +25,15 @@
   } from "../../domain/types/choreo-sheet";
   import ActPlayer from "./ActPlayer.svelte";
   import ActsDock from "./ActsDock.svelte";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
   import ChoreoSheetToolbar from "./ChoreoSheetToolbar.svelte";
   import ChoreoSheetRail from "./ChoreoSheetRail.svelte";
   import SheetPreviewStage from "./SheetPreviewStage.svelte";
   import SheetBrowserDock from "./SheetBrowserDock.svelte";
   import { shouldStackSheetWorkspace } from "../../domain/sheet-workspace-layout";
-  import { shouldDeferEscapeShortcut } from "$lib/shared/keyboard/domain/escape-shortcut-target";
-  import { hasOpenDrawers } from "$lib/shared/foundation/ui/drawer/drawer-stack";
+  import { shouldDeferEscapeShortcut } from "#lib/shared/keyboard/domain/escape-shortcut-target.js";
+  import { hasOpenDrawers } from "#lib/shared/foundation/ui/drawer/drawer-stack.js";
 
   const resolver = createSheetSequenceResolver({
     // Strict on both tiers: null must mean "the server says it's gone", never
@@ -609,8 +609,8 @@
       try {
         const [{ getKeyboardShortcutManager }, { createChoreoShortcuts }] =
           await Promise.all([
-            import("$lib/shared/keyboard/get-keyboard-shortcut-manager"),
-            import("$lib/shared/keyboard/registration/register-choreo-shortcuts"),
+            import("#lib/shared/keyboard/get-keyboard-shortcut-manager.js"),
+            import("#lib/shared/keyboard/registration/register-choreo-shortcuts.js"),
           ]);
         const manager = getKeyboardShortcutManager();
         for (const shortcut of createChoreoShortcuts({
@@ -664,7 +664,7 @@
         // Leave the definitions registered on unmount — they are the static set
         // Settings and `?` read from. Only the live actions go inert again.
         dispose = () => {
-          void import("$lib/shared/keyboard/registration/register-choreo-shortcuts").then(
+          void import("#lib/shared/keyboard/registration/register-choreo-shortcuts.js").then(
             (m) => m.registerChoreoShortcuts(manager)
           );
         };

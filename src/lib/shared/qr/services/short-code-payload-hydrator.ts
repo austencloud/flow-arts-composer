@@ -9,18 +9,18 @@
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   motionHandForAuthoredHand,
   getSequenceMotionProfile,
-} from "$lib/shared/foundation/services/sequence-motion-profile";
+} from "#lib/shared/foundation/services/sequence-motion-profile.js";
 import {
   extractLeftSoloProp,
   extractRightSoloProp,
-} from "$lib/shared/foundation/services/sequence-decomposer";
-import { soloPropToSequence } from "$lib/shared/foundation/services/solo-prop-sequence-adapter";
-import { hashSoloProp } from "$lib/shared/foundation/services/content-hasher";
-import { decodeSequenceFromQR } from "$lib/shared/navigation/services/sequence-encoder";
+} from "#lib/shared/foundation/services/sequence-decomposer.js";
+import { soloPropToSequence } from "#lib/shared/foundation/services/solo-prop-sequence-adapter.js";
+import { hashSoloProp } from "#lib/shared/foundation/services/content-hasher.js";
+import { decodeSequenceFromQR } from "#lib/shared/navigation/services/sequence-encoder.js";
 import { graftPrefloatFromEmbedded } from "./prefloat-graft";
 import type { ShortCodeData } from "./types";
 

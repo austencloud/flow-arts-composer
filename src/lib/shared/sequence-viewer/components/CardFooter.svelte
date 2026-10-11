@@ -5,11 +5,11 @@
   and record dates belong on the sequence record, not the portable card.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
-  import { TextRenderer } from "$lib/shared/render/services/text-renderer";
-  import { ensureCardFonts } from "$lib/shared/render/services/gelasio-fonts";
+  import { TextRenderer } from "#lib/shared/render/services/text-renderer.js";
+  import { ensureCardFonts } from "#lib/shared/render/services/gelasio-fonts.js";
   import type { HandLegend } from "../services/hand-legend";
 
   interface Props {

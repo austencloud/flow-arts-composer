@@ -17,8 +17,8 @@
     type PropBuild,
     type PropState3D,
   } from "@austencloud/scene-3d";
-  import { getEffectsConfigContext as getUnifiedEffectsState } from "$lib/shared/effects/state/effects-config-context";
-  import { getScene3DRenderContext } from "$lib/shared/3d/scene-features/state/scene-3d-render-context";
+  import { getEffectsConfigContext as getUnifiedEffectsState } from "#lib/shared/effects/state/effects-config-context.js";
+  import { getScene3DRenderContext } from "#lib/shared/3d/scene-features/state/scene-3d-render-context.js";
   import {
     resolveGhost3D,
     resolveSparkles3D,
@@ -27,10 +27,10 @@
     resolveBubbles3D,
     resolvePetals3D,
     resolveSmoke3D,
-  } from "$lib/shared/effects/translators/webgl3d-translator";
-  import type { EffectType } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+  } from "#lib/shared/effects/translators/webgl3d-translator.js";
+  import type { EffectType } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import { QualityTier, type TipPositionData3D } from "./types";
-  import { resolvePropTipAnchors3D } from "./prop-tip-geometry-3d";
+  import { resolveScaledPropTipAnchors3D } from "./prop-tip-geometry-3d";
 
   // Effect components
   // Trails are no longer mounted here. The single consolidated 3D trail
@@ -43,7 +43,10 @@
   // path; tests/unit/effects/effect-orchestrator-mounts-layer.test.ts now
   // guards against that recurring.
   import SparkleEmitter from "./particles/SparkleEmitter.svelte";
-  import ElectricityArc from "./energy/ElectricityArc.svelte";
+  import ZapDischarge3D from "./energy/ZapDischarge3D.svelte";
+  import type { ZapEndpoint3D } from "./energy/zap-discharge-3d";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { resolveTrailColors } from "#lib/shared/animation-engine/domain/resolve-trail-colors.js";
   // PropMotionEffects is the LEGACY per-prop motion blur/speed-line mount
   // driven by configState.motion (the `effects-config-state` next to this
   // file, not the unified one). Phase 3 retires it. Ghost is the unified
@@ -69,6 +72,7 @@
     isPlaying: boolean;
     /** Staff length for end position calculations */
     staffLength?: number;
+    propScale?: number;
     /**
      * The effects actually selected for THIS 3D rig's tips, resolved by
      * EffectOrchestrator3D from its tipEffectMap / globalTipEffectMap props.
@@ -108,6 +112,7 @@
     rightPropType = PropType.STAFF,
     isPlaying,
     staffLength = AUSTEN_STAFF.length,
+    propScale = 1,
     activeEffects = [],
     leftHandPos,
     rightHandPos,
@@ -246,7 +251,12 @@
     );
     const finalQuat = propState.worldRotation.clone().multiply(horizontalQuat);
 
-    const anchors = resolvePropTipAnchors3D(propType, halfLength, propBuild);
+    const anchors = resolveScaledPropTipAnchors3D(
+      propType,
+      halfLength,
+      propScale,
+      propBuild
+    );
     const endAt = (slot: 0 | 1): Vector3 | null => {
       const anchor = anchors.find((a) => a.effectTipIndex === slot);
       return anchor
@@ -298,6 +308,29 @@
     }
     if (!rightPropState) return null;
     return calculatePropEnds(rightPropState, rightPropType);
+  });
+
+  // Zap's prop colors are the trail's resolved hand colors, the same pair
+  // the 3D trail and the 2D tips draw with.
+  const zapEndpoints = $derived.by((): ZapEndpoint3D[] => {
+    if (!zap3D) return [];
+    const colors = unifiedState
+      ? resolveTrailColors(unifiedState.trails, getSettings().primaryPropColors)
+      : null;
+    const out: ZapEndpoint3D[] = [];
+    const add = (
+      ends: { positive: Vector3; negative: Vector3 | null } | null,
+      prop: 0 | 1,
+      color: string
+    ) => {
+      if (!ends) return;
+      out.push({ position: ends.positive, prop, end: 1, color });
+      if (ends.negative)
+        out.push({ position: ends.negative, prop, end: 0, color });
+    };
+    add(leftEnds, 0, colors?.leftColor ?? zap3D.leftColor);
+    add(rightEnds, 1, colors?.rightColor ?? zap3D.rightColor);
+    return out;
   });
 
   function vectorFrom(
@@ -394,41 +427,15 @@
      Electricity / Zap Effects (sourced from unified intent layer via resolveZap3D)
      ============================================================================= -->
 {#if zap3D}
-  {#if leftPropState && rightPropState && leftEnds && rightEnds}
-    <!-- jitterAmount/segments/regenerateEveryFrames have been on Zap3DParams
-         since it was defined and nothing read them; the arc hardcoded a
-         25-metre displacement instead. -->
-    <ElectricityArc
-      start={leftEnds.positive}
-      end={rightEnds.positive}
-      enabled={zapEnabled && isPlaying}
-      intensity={zap3D.intensity}
-      color={zap3D.leftColor}
-      mode={zap3D.mode}
-      displacement={zap3D.jitterAmount}
-      segments={zap3D.segments}
-      regenerateEveryFrames={zap3D.regenerateEveryFrames}
-      {sceneEffectsManager}
-      lightSpaceRoot={effectSpaceRoot}
-    />
-    <!-- The second arc needs a back end on BOTH props. One club in hand and
-         there is nothing to arc between. -->
-    {#if leftEnds.negative && rightEnds.negative}
-      <ElectricityArc
-        start={leftEnds.negative}
-        end={rightEnds.negative}
-        enabled={zapEnabled && isPlaying}
-        intensity={zap3D.intensity}
-        color={zap3D.rightColor}
-        mode={zap3D.mode}
-        displacement={zap3D.jitterAmount}
-        segments={zap3D.segments}
-        regenerateEveryFrames={zap3D.regenerateEveryFrames}
-        {sceneEffectsManager}
-        lightSpaceRoot={effectSpaceRoot}
-      />
-    {/if}
-  {/if}
+  <!-- One mount for every bolt: matching ends of the two props pair up, and a
+       lone end (one prop in hand) crackles on its own. -->
+  <ZapDischarge3D
+    endpoints={zapEndpoints}
+    params={zap3D}
+    enabled={zapEnabled && isPlaying}
+    {sceneEffectsManager}
+    lightSpaceRoot={effectSpaceRoot}
+  />
 {/if}
 
 <!-- =============================================================================
@@ -472,6 +479,7 @@
     params={ghost3D}
     enabled={ghostEnabled && isPlaying}
     propLength={staffLength}
+    geometryScale={propScale}
     handAnchor={leftHandPos}
     {currentStep}
     {totalSteps}
@@ -485,6 +493,7 @@
     params={ghost3D}
     enabled={ghostEnabled && isPlaying}
     propLength={staffLength}
+    geometryScale={propScale}
     handAnchor={rightHandPos}
     {currentStep}
     {totalSteps}

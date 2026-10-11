@@ -1,24 +1,25 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick, untrack } from "svelte";
-  import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import UndoButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/UndoButton.svelte";
-  import ClearSequenceButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
-  import GridModeToggle from "$lib/features/create/construct/shared/components/GridModeToggle.svelte";
-  import "$lib/shared/selection/selection.css";
-  import PropPlacementGrid from "$lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import UndoButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/UndoButton.svelte";
+  import ClearSequenceButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
+  import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
+  import GridModeToggle from "#lib/features/create/construct/shared/components/GridModeToggle.svelte";
+  import "#lib/shared/selection/selection.css";
+  import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import {
     GridMode,
     type GridLocation,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PropPlacementChange } from "$lib/shared/pictograph/grid/domain/prop-placement";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PropPlacementChange } from "#lib/shared/pictograph/grid/domain/prop-placement.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
   import {
     PLACEMENT_TYPE_INFO,
@@ -88,6 +89,12 @@
     }))
   );
   let epoch = $state(0);
+  // A transform, an example or Clear replaces the whole pair, which restarts
+  // the grid's own edit history. The pairs they replaced stay here so Undo can
+  // step back past them once the grid has nothing left to undo.
+  let replacedPairs = $state<
+    { left: GridLocation | null; right: GridLocation | null }[]
+  >([]);
   let showReference = $state<boolean | null>(null);
   let hoveredExample = $state<PlacementType | null>(null);
   let boardWidth = $state(300);
@@ -166,11 +173,18 @@
   );
   const handHistory = {
     get canUndo() {
-      return placement.canUndo;
+      return placement.canUndo || replacedPairs.length > 0;
     },
     canRedo: false,
     undo() {
-      grid?.undoPlacement();
+      if (placement.canUndo) {
+        grid?.undoPlacement();
+        return true;
+      }
+      const previous = replacedPairs.at(-1);
+      if (!previous) return false;
+      replacedPairs = replacedPairs.slice(0, -1);
+      loadPair(previous.left, previous.right);
       return true;
     },
     redo() {
@@ -246,19 +260,37 @@
     workshop.edited();
   }
 
-  function study(kind: PlacementType) {
-    const example = workshop.examplePair(kind, gridMode);
-    loadPair(example.left, example.right);
+  function replacePair(left: GridLocation | null, right: GridLocation | null) {
+    // Swapping two hands on one point changes nothing worth undoing.
+    if (left === placement.leftLocation && right === placement.rightLocation)
+      return;
+    replacedPairs = [
+      ...replacedPairs,
+      { left: placement.leftLocation, right: placement.rightLocation },
+    ];
+    loadPair(left, right);
   }
 
-  function transform(action: "rotate" | "mirror" | "swap") {
+  function study(kind: PlacementType) {
+    const example = workshop.examplePair(kind, gridMode);
+    replacePair(example.left, example.right);
+  }
+
+  // Same 45-degree steps and reflection axes as the app's transform tools:
+  // Rotate turns a quarter turn either way, Mirror reflects left-right and
+  // Flip reflects top-bottom.
+  function transform(
+    action: "rotate" | "mirror" | "flip" | "swap",
+    rotationSteps = 2
+  ) {
     if (!placement.leftLocation || !placement.rightLocation || !built) return;
     const result = transformPlacement(
       placement.leftLocation,
       placement.rightLocation,
-      action
+      action === "flip" ? "mirror" : action,
+      { rotationSteps, reflectionAxis: action === "flip" ? 2 : 0 }
     );
-    loadPair(result.left, result.right);
+    replacePair(result.left, result.right);
   }
 
   function changeGrid(mode: GridMode) {
@@ -270,6 +302,7 @@
       mode
     );
     gridMode = mode;
+    replacedPairs = [];
     loadPair(pair.left, pair.right);
   }
 
@@ -277,6 +310,7 @@
     workshop.practice();
     gridMode = workshop.challenge!.gridMode;
     showReference = null;
+    replacedPairs = [];
     loadPair(null, null);
     await tick();
     boardElement.focus({ preventScroll: true });
@@ -291,6 +325,7 @@
     if (workshop.challenge) {
       gridMode = workshop.challenge.gridMode;
       showReference = null;
+      replacedPairs = [];
       loadPair(null, null);
     }
     await tick();
@@ -546,7 +581,7 @@
           <ClearSequenceButton
             disabled={!placement.leftLocation && !placement.rightLocation}
             label={t("learn_ui_clear_both_hands")}
-            onclick={() => loadPair(null, null)}
+            onclick={() => replacePair(null, null)}
           />
           {#if freePlay}
             <div
@@ -554,18 +589,20 @@
               role="group"
               aria-label={t("learn_ui_transform_both_hands")}
             >
-              <PanelButton disabled={!built} onclick={() => transform("rotate")}
-                ><i class="fas fa-rotate-right" aria-hidden="true"></i>
-                {t("learn_ui_rotate")}</PanelButton
-              >
-              <PanelButton disabled={!built} onclick={() => transform("mirror")}
-                ><i class="fas fa-left-right" aria-hidden="true"></i>
-                {t("learn_ui_reflect")}</PanelButton
-              >
-              <PanelButton disabled={!built} onclick={() => transform("swap")}
-                ><i class="fas fa-arrows-rotate" aria-hidden="true"></i>
-                {t("learn_ui_swap_hands")}</PanelButton
-              >
+              <SequenceTransformActions
+                toolbar
+                hasSequence={built}
+                hasSelection={false}
+                isTransforming={false}
+                showEditInConstructor={false}
+                actionSubject={t("learn_ui_placement_subject")}
+                rotationDegrees={90}
+                onMirror={() => transform("mirror")}
+                onFlip={() => transform("flip")}
+                onSwap={() => transform("swap")}
+                onRotateCCW={() => transform("rotate", -2)}
+                onRotateCW={() => transform("rotate", 2)}
+              />
             </div>
           {/if}
         </div>

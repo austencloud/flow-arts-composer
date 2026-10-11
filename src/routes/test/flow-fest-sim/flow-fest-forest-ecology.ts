@@ -1,6 +1,6 @@
-import { childSeed, makeRng } from "$lib/shared/foundation/utils/seeded-rng";
-import { FLOW_FEST_MASTER_SEED } from "$lib/features/flow-fest-sim/domain/flow-fest-simulation-contract";
-import type { ImportedTerrainDataV2 } from "$lib/shared/3d/procedural-engine/generation/real-terrain-zone";
+import { childSeed, makeRng } from "#lib/shared/foundation/utils/seeded-rng.js";
+import { FLOW_FEST_MASTER_SEED } from "#lib/features/flow-fest-sim/domain/flow-fest-simulation-contract.js";
+import type { ImportedTerrainDataV2 } from "#lib/shared/3d/procedural-engine/generation/real-terrain-zone.js";
 import type {
   FlowFestRuntimeContract,
   FlowFestRuntimePoint,

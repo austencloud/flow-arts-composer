@@ -6,8 +6,8 @@
 -->
 <script lang="ts">
   import "./styles/config-page.css";
-  import * as singleBuyCheckoutCreator from "$lib/features/store/services/single-buy-checkout-creator";
-  import { getProductLoader } from "$lib/features/store/get-product-loader";
+  import * as singleBuyCheckoutCreator from "#lib/features/store/services/single-buy-checkout-creator.js";
+  import { getProductLoader } from "#lib/features/store/get-product-loader.js";
   import { onMount } from "svelte";
   import { createStoreState } from "./state/store-state.svelte";
   import { setStoreContext } from "./context/store-context";
@@ -33,7 +33,7 @@
     trackProductViewed,
     trackPropSelected,
   } from "./analytics/shop-funnel";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   interface Props {
     productId: string;

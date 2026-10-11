@@ -19,10 +19,10 @@
  * at both ends.
  */
 
-import { csvLoader } from "$lib/shared/foundation/services/data/csv-loader";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { calculateEndOrientation } from "$lib/shared/render/core/calculations/orientation";
+import { csvLoader } from "#lib/shared/foundation/services/data/csv-loader.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { calculateEndOrientation } from "#lib/shared/render/core/calculations/orientation.js";
 import {
   signatureKey,
   type HandMotionSignature,

@@ -1,11 +1,11 @@
 import {
   fitTapsToGrid,
   type TapFitResult,
-} from "$lib/shared/media-composition/domain/tap-fit";
+} from "#lib/shared/media-composition/domain/tap-fit.js";
 import {
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 /**
  * Says whether a fit can be trusted, in terms Austen can act on.

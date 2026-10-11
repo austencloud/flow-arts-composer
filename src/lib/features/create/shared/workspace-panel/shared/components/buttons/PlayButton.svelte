@@ -5,8 +5,8 @@
   Note: This only opens the viewer - actual playback controls are inside the viewer.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
 
   let { onclick } = $props<{
     onclick?: () => void;

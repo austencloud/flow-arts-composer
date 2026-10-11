@@ -12,12 +12,12 @@
   Use CreatePanelDrawer with bind:isOpen, provide panel content via children slot
 -->
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { onMount } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import { tryGetCreateModuleContext } from "../context/create-module-context";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
-  import type { ResponsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
+  import type { ResponsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import type { Snippet } from "svelte";
 
   let {

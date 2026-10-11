@@ -16,10 +16,10 @@ import {
   where,
   documentId,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { firestoreGet, firestoreList, firestoreDelete } from "$lib/shared/firestore";
-import type { Contributor } from "$lib/shared/feedback/domain/models/contributor-models";
-import { ContributorSchema } from "$lib/shared/feedback/domain/models/feedback-schemas";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { firestoreGet, firestoreList, firestoreDelete } from "#lib/shared/firestore/index.js";
+import type { Contributor } from "#lib/shared/feedback/domain/models/contributor-models.js";
+import { ContributorSchema } from "#lib/shared/feedback/domain/models/feedback-schemas.js";
 
 const CONTRIBUTORS_COLLECTION = "contributors";
 const USERS_COLLECTION = "users";

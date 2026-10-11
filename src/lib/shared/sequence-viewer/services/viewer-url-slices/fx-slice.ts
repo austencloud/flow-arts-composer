@@ -13,9 +13,9 @@
  * diffs the EFFECTIVE active effect (wildcard ?? activeEffect) against the
  * derived default, and treats activeEffect + tipEffectMap as one quantity.
  */
-import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { EffectsConfig } from "#lib/shared/effects/domain/effects-config.js";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import { deepEqual } from "../viewer-url-state-codec";
 
 export interface FxSlicePayload {

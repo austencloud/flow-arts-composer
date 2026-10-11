@@ -16,11 +16,11 @@
   toward the next speed-up (or the goal). Exit lives in the header.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
   import { Popover } from "bits-ui";
-  import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
+  import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
   import type { TempoPracticeProgress } from "../services/tempo-practice-orchestrator";
 
   interface Props {

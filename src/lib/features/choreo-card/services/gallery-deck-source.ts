@@ -10,27 +10,27 @@
  * library repository; the axes it can't express server-side (loop type, period,
  * level, length) are applied client-side over the small result set.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   DeckReleaseCard,
   GalleryFilters,
 } from "../domain/models/DeckRelease";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { ACTIVE_DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-import { LOOP_COMPONENT_MAP } from "$lib/shared/browse/domain/constants/loop-constants";
-import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { ACTIVE_DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+import { LOOP_COMPONENT_MAP } from "#lib/shared/browse/domain/constants/loop-constants.js";
+import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
 import type {
   SmartFilterSpec,
   StoredSmartFilter,
-} from "$lib/shared/library/domain/models/collection";
+} from "#lib/shared/library/domain/models/collection.js";
 import type {
   LibraryPageCursor,
   LibraryQueryOptions,
   LibrarySequencePage,
-} from "$lib/shared/library/domain/library-contract-types";
+} from "#lib/shared/library/domain/library-contract-types.js";
 
 export type { GalleryFilters };
 // NOTE: the library repository + firebase are lazy-imported inside defaultLoaders
@@ -65,16 +65,16 @@ export interface GalleryLoaders {
 const defaultLoaders: GalleryLoaders = {
   listPage: async (opts, cursor) => {
     const { getLibraryRepository } =
-      await import("$lib/shared/library/get-library-repository");
+      await import("#lib/shared/library/get-library-repository.js");
     return getLibraryRepository().getSequencePage(opts, cursor);
   },
   fetchByIds: async (ids) => {
     if (ids.length === 0) return [];
     const [{ authState }, { getFirestoreInstance }, { batchFetchSequences }] =
       await Promise.all([
-        import("$lib/shared/auth/state/auth-state.svelte"),
-        import("$lib/shared/auth/firebase"),
-        import("$lib/shared/library/services/collection-firestore-mapper"),
+        import("#lib/shared/auth/state/auth-state.svelte.js"),
+        import("#lib/shared/auth/firebase.js"),
+        import("#lib/shared/library/services/collection-firestore-mapper.js"),
       ]);
     const userId = authState.effectiveUserId;
     if (!userId) return [];
@@ -295,8 +295,8 @@ export async function queryGalleryDeckFromSpec(
   notes = ""
 ): Promise<{ cards: DeckReleaseCard[]; sequences: SequenceData[] }> {
   const [{ createBrowseEngine }, { applySpecToEngine }] = await Promise.all([
-    import("$lib/shared/browse/engine/create-browse-engine.svelte"),
-    import("$lib/shared/browse/services/smart-filter-spec"),
+    import("#lib/shared/browse/engine/create-browse-engine.svelte.js"),
+    import("#lib/shared/browse/services/smart-filter-spec.js"),
   ]);
   const engine = createBrowseEngine({
     persistKey: null,

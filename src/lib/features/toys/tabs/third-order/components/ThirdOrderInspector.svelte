@@ -1,7 +1,7 @@
 <script lang="ts">
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import ScrubbableNumber from "$lib/shared/ui/components/ScrubbableNumber.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import ScrubbableNumber from "#lib/shared/ui/components/ScrubbableNumber.svelte";
   import { getThirdOrderContext } from "../context/third-order-context";
   import type {
     ThirdOrderCarrierLane,

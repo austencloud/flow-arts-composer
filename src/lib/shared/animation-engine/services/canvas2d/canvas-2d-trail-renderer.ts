@@ -13,14 +13,14 @@
 import type {
   TrailPoint,
   TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import {
   TrailMode,
   TrailEffect,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
-import type { QualityHints } from "$lib/shared/animation-engine/domain/types/quality-types";
-import type { AdditionalLayerRenderData } from "$lib/shared/animation-engine/services/canvas-2d-animation-renderer";
-import { DEFAULT_CANVAS_SIZE } from "$lib/shared/animation-engine/services/canvas-resizer.svelte";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import type { QualityHints } from "#lib/shared/animation-engine/domain/types/quality-types.js";
+import type { AdditionalLayerRenderData } from "#lib/shared/animation-engine/services/canvas-2d-animation-renderer.js";
+import { DEFAULT_CANVAS_SIZE } from "#lib/shared/animation-engine/services/canvas-resizer.svelte.js";
 
 // CATMULL-ROM SPLINE (pure math, no framework dependencies)
 

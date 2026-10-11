@@ -11,11 +11,11 @@
  * evidence instead of just the aggregate verdict.
  */
 
-import type { StepLike } from "$lib/shared/foundation/domain/models/step-like";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { StepLike } from "#lib/shared/foundation/domain/models/step-like.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import { relationsForPair } from "@tka/sequence-engine/loop";
 import type { PairComponentId, PairMotion, PairMotions, PairRelation, RotationAngle } from "@tka/sequence-engine/loop";
-import type { LoopSlice } from "$lib/shared/loop-explorer/domain/legality";
+import type { LoopSlice } from "#lib/shared/loop-explorer/domain/legality.js";
 
 export interface StepPairRelation {
   /** 1-based step index (first occurrence). */

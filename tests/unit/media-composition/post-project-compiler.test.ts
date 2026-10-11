@@ -26,12 +26,12 @@ import {
   PostProjectSchema,
   evaluatePresetFrame,
   editContext,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   fadeBlackOpacityAt,
   resolvePresetTimePoint,
 } from "@austencloud/video-editor/render";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   NOW,
   card,

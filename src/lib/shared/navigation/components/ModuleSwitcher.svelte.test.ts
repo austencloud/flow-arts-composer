@@ -21,11 +21,11 @@ vi.mock("../../auth/components/AuthModal.svelte", async () => ({
   default: (await import("./__test-stubs__/InlineAuthStub.svelte")).default,
 }));
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: () => undefined }),
 }));
 
-vi.mock("$lib/shared/device/get-device-detector", () => ({
+vi.mock("#lib/shared/device/get-device-detector.js", () => ({
   getDeviceDetector: () => ({
     getResponsiveSettings: () => ({ isLandscapeMobile: false }),
     onCapabilitiesChanged: () => () => undefined,
@@ -33,17 +33,17 @@ vi.mock("$lib/shared/device/get-device-detector", () => ({
 }));
 
 vi.mock(
-  "$lib/shared/navigation-coordinator/navigation-coordinator.svelte",
+  "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js",
   () => ({
     getAccessibleSectionsForModule: () => [],
   })
 );
 
-vi.mock("$lib/shared/onboarding/context/account-setup-context", () => ({
+vi.mock("#lib/shared/onboarding/context/account-setup-context.js", () => ({
   tryGetAccountSetupContext: () => null,
 }));
 
-vi.mock("$lib/shared/i18n/i18n.svelte.js", async (importOriginal) => {
+vi.mock("#lib/shared/i18n/i18n.svelte.js", async (importOriginal) => {
   const original = await importOriginal<Record<string, unknown>>();
   const english: Record<string, string> = (
     await import("../../../../../messages/en.json")

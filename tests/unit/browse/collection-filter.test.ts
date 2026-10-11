@@ -25,14 +25,14 @@ vi.stubGlobal("localStorage", {
   removeItem: (k: string) => void store.delete(k),
 });
 
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 import {
   applyFilters,
   OR_STACKING_TYPES,
-} from "$lib/shared/browse/services/multi-filter";
-import { setCollectionMembershipResolver } from "$lib/shared/browse/services/browse-filter";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ActiveFilter } from "$lib/shared/browse/domain/multi-filter-models";
+} from "#lib/shared/browse/services/multi-filter.js";
+import { setCollectionMembershipResolver } from "#lib/shared/browse/services/browse-filter.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ActiveFilter } from "#lib/shared/browse/domain/multi-filter-models.js";
 
 function seq(id: string, level: number): SequenceData {
   return {

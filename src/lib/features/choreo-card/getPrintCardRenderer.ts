@@ -1,6 +1,6 @@
 import { PrintCardRenderer } from "./services/PrintCardRenderer";
-import { getImageComposer } from "$lib/shared/render/get-image-composer";
-import { getQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
+import { getImageComposer } from "#lib/shared/render/get-image-composer.js";
+import { getQRCodeGenerator } from "#lib/shared/qr/get-qr-code-generator.js";
 
 let instance: PrintCardRenderer | null = null;
 export function getPrintCardRenderer(): PrintCardRenderer {

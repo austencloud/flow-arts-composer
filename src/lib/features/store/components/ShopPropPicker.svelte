@@ -10,7 +10,7 @@
     shopPropImage,
     shopPropLabel,
   } from "../domain/shop-prop-options";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   interface Props {
     value: PropType;

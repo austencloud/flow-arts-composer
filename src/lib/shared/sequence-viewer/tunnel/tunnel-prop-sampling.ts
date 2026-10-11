@@ -1,6 +1,6 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import { interpolatePropAngles } from "$lib/shared/animation-engine/services/prop-interpolator";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
 import { stepToIndexProgress } from "./tunnel-fold-math";
 
 const DEFAULT_PROP_STATE: PropState = {

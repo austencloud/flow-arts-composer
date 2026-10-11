@@ -7,10 +7,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { createConjoinedGridState } from "./state/conjoined-grid-state.svelte";
-  import TopologyCanvas from "$lib/shared/multi-grid/components/TopologyCanvas.svelte";
+  import TopologyCanvas from "#lib/shared/multi-grid/components/TopologyCanvas.svelte";
   import ConjoinedGridControls from "./components/ConjoinedGridControls.svelte";
-  import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
+  import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
 
   const state = createConjoinedGridState({
     letterQueryHandler,

@@ -16,8 +16,8 @@ import { describe, expect, it } from "vitest";
 import {
   PROPORTION_SWEEP_CHARACTERS,
   type ProportionSweepCharacter,
-} from "$lib/shared/3d/domain/proportion-sweep-characters";
-import { fitStaffLengthForHug } from "$lib/shared/3d/domain/performer-reach-measurements";
+} from "#lib/shared/3d/domain/proportion-sweep-characters.js";
+import { fitStaffLengthForHug } from "#lib/shared/3d/domain/performer-reach-measurements.js";
 
 /** Which measured dimensions each axis is permitted to move. */
 const AXIS_ALLOWED_TO_CHANGE: Record<string, readonly string[]> = {

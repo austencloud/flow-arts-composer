@@ -6,9 +6,9 @@
  * fallback. Both backends satisfy the same render-loop contract.
  */
 
-import type { Smoke2DParams } from "$lib/shared/effects/translators/canvas2d-types";
-import { Smoke2DRenderer } from "$lib/shared/effects/renderers/smoke-2d-renderer";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
+import type { Smoke2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
+import { Smoke2DRenderer } from "#lib/shared/effects/renderers/smoke-2d-renderer.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 import { EffectRenderer, type EffectRendererLike } from "./effects/effect-renderer";
 import { WebGLSmokeRenderer } from "./smoke/web-gl-smoke-renderer";
 
@@ -115,8 +115,8 @@ export class SmokeOverlayRenderer implements EffectRendererLike {
 }
 
 import type { EffectPlugin } from "./effects/effect-plugin";
-import type { SmokeIntent } from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { SmokeIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 export const smokeEffectPlugin: EffectPlugin<SmokeIntent> = {
   id: "smoke",

@@ -4,14 +4,14 @@
   Responsive drawer pattern: bottom on mobile, right on desktop
 -->
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
   import { onMount } from "svelte";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     onSequenceSelected: (sequence: SequenceData) => void;

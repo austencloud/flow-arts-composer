@@ -1,6 +1,6 @@
 import { Vector3 } from "three";
-import type { RestPoseGeometry } from "$lib/features/lab/tabs/collision-lab/services/types";
-import { STANCE_BOUNDS } from "$lib/features/lab/tabs/collision-lab/domain/types";
+import type { RestPoseGeometry } from "#lib/features/lab/tabs/collision-lab/services/types.js";
+import { STANCE_BOUNDS } from "#lib/features/lab/tabs/collision-lab/domain/types.js";
 import { SweptTube } from "./swept-tube";
 import type { BodyPlacement, DodgeKnob } from "./dodge-types";
 

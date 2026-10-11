@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createAnimatorState } from "$lib/shared/animation-engine/state/animator-state.svelte";
+import { createAnimatorState } from "#lib/shared/animation-engine/state/animator-state.svelte.js";
 
 describe("AnimatorState", () => {
   it("exposes defaults and is independent per instance", () => {

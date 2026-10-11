@@ -12,8 +12,8 @@
  * 950-unit viewBox, and props use hand-point radii as their unit.
  */
 import type { GridJoin } from "@tka/tka-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import { PIXELS_PER_UNIT } from "#lib/shared/multi-grid/domain/constants/grid-mode-offsets.js";
 import {
   JOINED_GRID_TINT,
   JOIN_GRID_LOCATIONS,

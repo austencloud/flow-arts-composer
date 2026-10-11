@@ -16,9 +16,9 @@ const START_TIMEOUT = { timeout: 20_000 };
 
 async function loadSettingsModules() {
   const services =
-    await import("$lib/shared/application/state/services.svelte");
+    await import("#lib/shared/application/state/services.svelte.js");
   const appState =
-    await import("$lib/shared/application/state/app-state.svelte");
+    await import("#lib/shared/application/state/app-state.svelte.js");
   return { services, appState };
 }
 

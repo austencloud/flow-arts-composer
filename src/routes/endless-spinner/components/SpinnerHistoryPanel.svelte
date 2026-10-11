@@ -6,10 +6,10 @@
   The current sequence cannot be replayed because that would be a no-op.
 -->
 <script lang="ts">
-  import { flyFade } from "$lib/shared/transitions/motion";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import type { PlaybackHistoryEntry } from "$lib/shared/animation-engine/domain/chaining-types";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { PlaybackHistoryEntry } from "#lib/shared/animation-engine/domain/chaining-types.js";
 
   let {
     entries,

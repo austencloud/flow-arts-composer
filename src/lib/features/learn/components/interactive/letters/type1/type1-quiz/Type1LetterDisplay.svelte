@@ -2,7 +2,7 @@
 Type1LetterDisplay - Shows the current letter being quizzed
 -->
 <script lang="ts">
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
   let { letter }: { letter: Letter } = $props();
 </script>

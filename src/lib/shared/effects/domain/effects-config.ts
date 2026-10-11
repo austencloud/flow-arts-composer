@@ -8,14 +8,14 @@
  * trail brightness, LED color) independent of any backend.
  */
 
-import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 import type {
   FireColorCurve,
   PropFlameColor,
-} from "$lib/shared/animation-engine/domain/types/fire-types";
-import type { LedSimulatorConfig } from "$lib/shared/animation-engine/domain/types/led-types";
+} from "#lib/shared/animation-engine/domain/types/fire-types.js";
+import type { LedSimulatorConfig } from "#lib/shared/animation-engine/domain/types/led-types.js";
 
-export const EFFECTS_CONFIG_VERSION = 39;
+export const EFFECTS_CONFIG_VERSION = 41;
 
 /** User-facing 2D Fire look. The renderer translates this into its internal profile. */
 export type FireRenderingStyle = "natural" | "liquid";
@@ -128,35 +128,39 @@ export interface CharcoalIntent {
 }
 
 export interface ZapIntent {
-  /** 0-1 - overall arc brightness + branch count. */
+  /** 0-1 - overall brightness, return strokes per strike, and plasma filament count. */
   intensity: number;
-  /** Hex string - color for the blue (left) hand's zap output. */
+  /**
+   * "prop" = each end of a bolt takes its prop's color, so the lightning
+   * blends from one prop to the other (default). "custom" = the two colors below.
+   */
+  colorMode: "prop" | "custom";
+  /** Hex string - the blue (left) hand's end when colorMode is "custom". */
   leftColor: string;
-  /** Hex string - color for the red (right) hand's zap output. */
+  /** Hex string - the red (right) hand's end when colorMode is "custom". */
   rightColor: string;
-  /** 1-30 strikes per second. */
+  /** 1-30 - roughly how many strikes per second each pair throws while still;
+   *  fast swings raise it. The rhythm is irregular, never a metronome. */
   frequency: number;
   /** Legacy topology toggle, superseded by `style`. Retained for back-compat. */
   mode: "arc" | "crackle";
-  /** 0-1 - fork probability per bolt (branching style). */
+  /** 0-1 - how readily a bolt forks (Storm and Web). */
   branching: number;
   /**
    * Discharge character:
    * "branching" = forking storm bolts between blue↔red tip pairs (default).
-   * "plasma" = thick Tesla-coil conduits shedding sputter sparks.
-   * "web" = live mesh across every tip with charge pulses on the edges.
+   * "plasma" = writhing plasma-globe filaments that snap and throw sparks.
+   * "web" = strike-lit mesh across every tip with a charge bead on each bolt.
    */
   style: "branching" | "plasma" | "web";
-  /** 0-1 - plasma conduit undulation SPEED. Low = slow calm bow, high = lively
-   *  (never the per-frame strobe the old hardcoded random gave). */
+  /** 0-1 - how fast the plasma filaments writhe. */
   wobbleRate: number;
-  /** 0-1 - plasma conduit bow AMPLITUDE (how far it bends off the axis). */
+  /** 0-1 - how far the plasma filaments sway off the straight line. */
   wobbleAmount: number;
-  /** 0-1 - glow halo size (drives shadowBlur). Decoupled from intensity so the
-   *  arc can be tightened or bloomed independently. */
+  /** 0-1 - width and strength of the colored glow around each bolt. */
   glow: number;
-  /** 0-1 - bolt-path roughness. Scales the jagged midpoint displacement
-   *  (storm/web) and the plasma crackle octave. */
+  /** 0-1 - bolt-path roughness: how jagged a Storm or Web bolt is, and how
+   *  finely a plasma filament crackles. */
   jitter: number;
 }
 
@@ -334,9 +338,9 @@ export interface PetalsIntent {
 
 export interface InkIntent {
   /**
-   * 0-1. Ambient drip rate at rest. Hard-capped at 0.3 in the renderer -
-   * ink is motion-dominant. User can still dial up but even at max it
-   * stays subtle. This is ink, not rain.
+   * 0-1. Emission while the tip is still. Both translators cap it at 0.3 -
+   * ink is motion-dominant. 3D turns it into a slow drip; the 2D renderer
+   * only adds points once the tip moves, so 2D panels hide this control.
    */
   ambientEmission: number;
   /** 0-1. Velocity-reactive stroke emission. The star of the effect. */
@@ -356,14 +360,14 @@ export interface InkIntent {
   customColor: string;
   /**
    * 0-1. How easily strands break into droplets under stretch.
-   * 0 = continuous ribbon, 1 = shatters into drops. Shipped in the shape
-   * now; sprint 2 (1j.ii) wires it through the renderer.
+   * 0 = continuous ribbon, 1 = shatters into drops. In 2D only India, Neon,
+   * and Acid break up; above 0.55 it also lets dense attached ink sag. 3D
+   * scales its motion droplets by it.
    */
   viscosity: number;
   /**
-   * 0-1. Splatter burst intensity on velocity spikes.
-   * 0 = clean strokes, 1 = Jackson Pollock. Shipped in the shape now;
-   * sprint 2 (1j.iii) wires it through the renderer.
+   * 0-1. Splatter burst intensity on sharp acceleration.
+   * 0 = clean strokes, 1 = Jackson Pollock.
    */
   splatterIntensity: number;
   /** Explicit tracking. */
@@ -483,33 +487,35 @@ export interface PulseIntent {
   intensity: number;
   /** 0-1. Max ring expansion radius. Maps to 20-200px. */
   reach: number;
-  /** 0.2-3.0 seconds. Ring lifetime from birth to full fade. */
+  /** 0.2-3.0 beats. Ring lifetime from birth to full fade, counted in beats
+   *  so every playback speed draws the same picture. */
   lifetime: number;
-  /** "beat" = on beat onsets, "velocity" = on acceleration threshold, "continuous" = steady emission amplified by beats. */
+  /** "beat" = a ring on each beat, "velocity" = a ring at the fastest point
+   *  of each swing, "continuous" = a steady stream that quickens with speed,
+   *  with a full ring on each beat. */
   trigger: "beat" | "velocity" | "continuous";
   /** "stroke" = thin expanding outlines, "glow" = gradient-filled halos with bright leading edge. */
   style: "stroke" | "glow";
   /** 1-8. Beat interval for beat trigger. */
   beatInterval: number;
-  /** 0-1. Velocity threshold for velocity trigger. */
+  /** 0-1. How fast a swing must be to fire the velocity trigger. */
   velocityThreshold: number;
   /** 0-1. Ring stroke width or gradient band thickness. */
   thickness: number;
-  /** Named palette. "custom" uses customColor. */
+  /** Named palette used by the solid color mode. "custom" uses customColor. */
   palette: "sonar" | "ripple" | "aurora" | "neon" | "ember" | "void" | "custom";
   /** Hex string. Used only when palette === "custom". */
   customColor: string;
-  /** Color selection mode. */
+  /** Color selection mode. "solid" draws the selected palette. */
   colorMode: "solid" | "prop-matched" | "rainbow" | "palette";
-  /** Hex - when colorMode === "solid". */
-  color: string;
   /** Multicolor palette (3-5 hex) - when colorMode === "palette". */
   colorPalette: string[];
   /** Which staff end(s) emit rings. */
   trackingMode: "left_end" | "right_end" | "both_ends";
   /** 0-1. How much birth tip-speed drives ring size + brightness. */
   velocityScale: number;
-  /** 0-1. Mach-cone deform strength (renderer adds a base directional floor). */
+  /** 0-1. How much of the tip's momentum a ring carries, and how hard its
+   *  leading side burns. */
   asymmetry: number;
   /** 0-1. RGB fringe split on high-energy rings. */
   chromatic: number;
@@ -517,6 +523,9 @@ export interface PulseIntent {
   flash: number;
   /** 0-1. Trailing overtone-ring count (maps to round(·*3)). */
   harmonics: number;
+  /** 0-1. Beat trigger only: how strongly the next ring gathers at the tip
+   *  before its beat. */
+  charge: number;
 }
 
 export interface EffectsConfig {

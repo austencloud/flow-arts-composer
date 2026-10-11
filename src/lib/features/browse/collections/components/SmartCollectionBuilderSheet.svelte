@@ -6,28 +6,28 @@ it, but the surface itself is now a focused modal workspace. The rule stays in
 one rail while the live matching grid gets the rest of the canvas.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
-  import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
-  import { loadCanonicalTnDSequences } from "$lib/features/browse/gallery-home/canonical-tnd-pool";
-  import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
-  import GalleryDrill from "$lib/features/browse/gallery-home/GalleryDrill.svelte";
-  import { getGalleryPrefetcher } from "$lib/features/browse/shared/get-gallery-prefetcher";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
+  import { loadCanonicalTnDSequences } from "#lib/features/browse/gallery-home/canonical-tnd-pool.js";
+  import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
+  import GalleryDrill from "#lib/features/browse/gallery-home/GalleryDrill.svelte";
+  import { getGalleryPrefetcher } from "#lib/features/browse/shared/get-gallery-prefetcher.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
   import {
     applySpecToEngine,
     buildFilterSpecFromEngine,
-  } from "$lib/shared/browse/services/smart-filter-spec";
-  import { suggestSmartCollectionName } from "$lib/shared/browse/services/smart-collection-name";
-  import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
-  import FilterRuleStrip from "$lib/shared/browse/components/FilterRuleStrip.svelte";
-  import SmartCollectionNameField from "$lib/features/library/components/SmartCollectionNameField.svelte";
+  } from "#lib/shared/browse/services/smart-filter-spec.js";
+  import { suggestSmartCollectionName } from "#lib/shared/browse/services/smart-collection-name.js";
+  import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import PanelState from "#lib/shared/components/panel/PanelState.svelte";
+  import FilterRuleStrip from "#lib/shared/browse/components/FilterRuleStrip.svelte";
+  import SmartCollectionNameField from "#lib/features/library/components/SmartCollectionNameField.svelte";
 
   type FilterPickerSection =
     | "chooser"

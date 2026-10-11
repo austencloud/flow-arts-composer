@@ -3,8 +3,8 @@
   Tabs appear in the sidebar. Navigation handled by the nav system.
 -->
 <script lang="ts">
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { RETRO_TABS } from "$lib/shared/navigation/config/tab-definitions";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { RETRO_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
 
   const tabComponents: Record<string, () => Promise<{ default: any }>> = {
     dos: () => import("./dos/components/DosTerminal.svelte"),

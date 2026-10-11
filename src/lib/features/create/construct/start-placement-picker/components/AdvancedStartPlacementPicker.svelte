@@ -1,9 +1,9 @@
 <!-- AdvancedStartPlacementPicker.svelte - Advanced start placement picker with all 16 variations -->
 <script lang="ts">
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { GridJoin } from "@tka/tka-types";
-  import SimpleGlassScroll from "$lib/shared/foundation/ui/SimpleGlassScroll.svelte";
+  import SimpleGlassScroll from "#lib/shared/foundation/ui/SimpleGlassScroll.svelte";
   import { onMount } from "svelte";
   import { createAdvancedPickerState } from "../state/advanced-picker-state.svelte";
   import PlacementGroupGrid from "./PlacementGroupGrid.svelte";
@@ -14,14 +14,12 @@
     selectedPictograph = null,
     currentGridMode,
     onPictographSelect,
-    isSideBySideLayout = () => false,
     gridJoin = null,
   }: {
     pictographDataSet: PictographData[];
     selectedPictograph?: PictographData | null;
     currentGridMode: GridMode;
     onPictographSelect: (pictograph: PictographData) => void;
-    isSideBySideLayout?: () => boolean;
     gridJoin?: GridJoin | null;
   } = $props();
 
@@ -78,11 +76,7 @@
 <div class="advanced-picker-container">
   <!-- Responsive Grid of all 16 start placements -->
   <SimpleGlassScroll variant="primary" height="100%" width="100%">
-    <ResponsivePlacementGrid
-      {isTransitioning}
-      {hasOverflow}
-      {isSideBySideLayout}
-    >
+    <ResponsivePlacementGrid {isTransitioning} {hasOverflow}>
       <!-- Alpha row (4 variations) -->
       <PlacementGroupGrid
         pictographs={placementGroups.alpha}

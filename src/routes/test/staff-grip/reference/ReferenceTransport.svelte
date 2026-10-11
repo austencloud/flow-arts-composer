@@ -1,6 +1,6 @@
 <!-- Play, frame and landing steps, scrub and speed for the reference clock. -->
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   import type { ReferenceSession } from "./reference-session.svelte";
 

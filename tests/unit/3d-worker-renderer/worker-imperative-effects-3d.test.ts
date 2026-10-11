@@ -1,18 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PerspectiveCamera, Scene } from "three";
-import { TrailRenderer3D } from "$lib/shared/3d/effects/trails/trail-renderer-3d";
-import { LedRenderer3D } from "$lib/shared/3d/effects/led/led-renderer-3d";
-import { PovStripRenderer3D } from "$lib/shared/3d/effects/poi/pov-strip-renderer-3d";
-import { MoonFanDiffuserRenderer3D } from "$lib/shared/3d/effects/led/moon-fan-diffuser-renderer-3d";
-import { DynamicLightManager } from "$lib/shared/3d/effects/lighting/dynamic-light-manager";
-import { QualityTier, TIER_CONFIGS } from "$lib/shared/3d/effects/types";
-import { createEmptyPattern } from "$lib/shared/poi/domain/strip-pattern";
-import { WorkerImperativeEffects3D } from "$lib/shared/3d/worker-renderer/effects/worker-imperative-effects-3d";
+import { TrailRenderer3D } from "#lib/shared/3d/effects/trails/trail-renderer-3d.js";
+import { LedRenderer3D } from "#lib/shared/3d/effects/led/led-renderer-3d.js";
+import { PovStripRenderer3D } from "#lib/shared/3d/effects/poi/pov-strip-renderer-3d.js";
+import { MoonFanDiffuserRenderer3D } from "#lib/shared/3d/effects/led/moon-fan-diffuser-renderer-3d.js";
+import { DynamicLightManager } from "#lib/shared/3d/effects/lighting/dynamic-light-manager.js";
+import { QualityTier, TIER_CONFIGS } from "#lib/shared/3d/effects/types.js";
+import { createEmptyPattern } from "#lib/shared/poi/domain/strip-pattern.js";
+import { WorkerImperativeEffects3D } from "#lib/shared/3d/worker-renderer/effects/worker-imperative-effects-3d.js";
 import type {
   WorkerImperativeEffectFrame,
   WorkerSceneEffectsSnapshot,
   WorkerTrailEffectFrame,
-} from "$lib/shared/3d/worker-renderer/domain/worker-renderer-protocol";
+} from "#lib/shared/3d/worker-renderer/domain/worker-renderer-protocol.js";
 
 function trail(sequence = 1): WorkerTrailEffectFrame {
   return {

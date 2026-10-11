@@ -2,7 +2,7 @@ import { Vector3, Quaternion } from "three";
 import {
   OCEAN_STAGE_DECK_OFFSET_METERS,
   OCEAN_WATER_DEPTH_METERS,
-} from "$lib/shared/3d/environments/domain/models/ocean-water-depth";
+} from "#lib/shared/3d/environments/domain/models/ocean-water-depth.js";
 
 /**
  * The one light axis the ocean scene agrees on.

@@ -1,8 +1,8 @@
 import {
   updateSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ShapeMatrixTunnelSourceProvenance } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ShapeMatrixTunnelSourceProvenance } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
 import { flowerKey, type Flower } from "../domain/flower-signature";
 import type { VtgMode } from "./shape-matrix-realizations";
 

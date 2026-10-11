@@ -1,8 +1,8 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import SessionReplayPanel from "$lib/features/admin/components/SessionReplayPanel.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import type { PostHogReplayAccessState } from "$lib/features/admin/services/types";
+  import SessionReplayPanel from "#lib/features/admin/components/SessionReplayPanel.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import type { PostHogReplayAccessState } from "#lib/features/admin/services/types.js";
 
   const supportedStates = new Set([
     "loading",

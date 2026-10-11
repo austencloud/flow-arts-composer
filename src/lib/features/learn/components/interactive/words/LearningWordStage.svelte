@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import {
     AnimationVisibilityStateManager,
     getAnimationVisibilityManager,
-  } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { derivePropElementalType } from "$lib/shared/shape-matrix/domain/prop-relationship";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { derivePropElementalType } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import PanelGroup from "#lib/shared/panels/PanelGroup.svelte";
   import type { LearningLetterTeachingContent } from "./learning-letter-teaching-content";
 
   let {

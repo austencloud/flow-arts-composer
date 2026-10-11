@@ -5,7 +5,7 @@
  * Uses unified persistence utility for consistent auto-save behavior.
  */
 
-import { createPersistenceHelper } from "$lib/shared/state/utils/persistent-state";
+import { createPersistenceHelper } from "#lib/shared/state/utils/persistent-state.js";
 
 export type ReferenceViewType = "none" | "animation" | "grid";
 

@@ -6,9 +6,9 @@
  * - infinite: Generates novel sequences algorithmically (local)
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { LOOPType, Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import type { DifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { LOOPType, Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import type { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
 /**
  * The two modes of endless spinner operation.

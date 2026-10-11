@@ -6,7 +6,7 @@ import {
   revolutionsToClose,
   tracePath,
   type QftKnobs,
-} from "$lib/shared/notation/qft/qft-model";
+} from "#lib/shared/notation/qft/qft-model.js";
 import { makeSpinRatio } from "../../packages/vtg-domain/src/reference/spin-ratio";
 import { describe, expect, it } from "vitest";
 

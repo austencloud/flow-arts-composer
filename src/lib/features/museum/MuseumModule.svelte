@@ -22,17 +22,17 @@
   import RoomPicker from "./components/RoomPicker.svelte";
   import SoundscapeBubble from "./components/audio/SoundscapeBubble.svelte";
   import MuseumPerformanceOverlay from "./components/game/MuseumPerformanceOverlay.svelte";
-  import ProgressBar from "$lib/shared/components/loading/ProgressBar.svelte";
+  import ProgressBar from "#lib/shared/components/loading/ProgressBar.svelte";
   import { getMuseumPerformanceRecorder } from "./get-museum-performance-recorder";
 
   import { onMount, untrack } from "svelte";
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
-  import { setDesktopSidebarForcedHidden } from "$lib/shared/layout/desktop-sidebar-state.svelte";
+  import { setDesktopSidebarForcedHidden } from "#lib/shared/layout/desktop-sidebar-state.svelte.js";
   import {
     suppressBackground,
     releaseBackground,
-  } from "$lib/shared/background/shared/state/background-suppression.svelte";
+  } from "#lib/shared/background/shared/state/background-suppression.svelte.js";
 
   interface Props {
     /** False when mounted-but-hidden (keep-alive). Default true so the module
@@ -178,7 +178,7 @@
     }
     const qs = params.toString();
     const newUrl = window.location.pathname + (qs ? `?${qs}` : "");
-    goto(newUrl, { invalidateAll: true });
+    goto(newUrl, { refreshAll: true });
   }
 
   // ── Grid caching ──

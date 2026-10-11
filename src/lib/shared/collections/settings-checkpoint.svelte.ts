@@ -21,26 +21,26 @@
  * here rather than risk a stale/mutated snapshot.
  */
 
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import {
   animationSettings,
   type TrailSettings,
-} from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import { EFFECTS_CONFIG_STORAGE_KEY } from "$lib/shared/effects/state/effects-config-state.svelte";
+} from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import { EFFECTS_CONFIG_STORAGE_KEY } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import {
   persistViewerMode,
   type ViewerMode,
-} from "$lib/shared/sequence-viewer/services/viewer-state-persistence";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/sequence-viewer/services/viewer-state-persistence.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   normalizePropLook,
   type PropLook,
-} from "$lib/shared/pictograph/prop/domain/prop-look";
+} from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import { BackgroundType } from "@austencloud/backgrounds";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 import { normalizeLegacyPropConfig } from "@tka/tka-types";
-import { normalizeLegacyTrailSettings } from "$lib/shared/animation-engine/domain/types/trail-types";
+import { normalizeLegacyTrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 const CHECKPOINT_STORAGE_KEY = "tka_settings_checkpoint";
 

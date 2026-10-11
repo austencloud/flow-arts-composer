@@ -3,7 +3,7 @@
   import CodexSheet from "./_components/CodexSheet.svelte";
   import { SHEETS } from "./_data/codex-groups";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   function print() {
     window.print();

@@ -22,12 +22,12 @@ FilterChipBase toggles, not SegmentedControl. The active chip always renders,
 even at zero, so it can be dismissed.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { BrowseEngine } from "$lib/shared/browse/engine/types";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
-  import { communityCollectionsState } from "$lib/features/browse/collections/state/community-collections-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { BrowseEngine } from "#lib/shared/browse/engine/types.js";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+  import { communityCollectionsState } from "#lib/features/browse/collections/state/community-collections-state.svelte.js";
 
   let {
     engine,

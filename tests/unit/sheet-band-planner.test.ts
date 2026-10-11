@@ -4,8 +4,8 @@ import {
   pageChromePt,
   RUNNING_HEADER_PT,
   TITLE_BLOCK_PT,
-} from "$lib/features/write/domain/sheet-page-layout";
-import { DEFAULT_SHEET_LAYOUT } from "$lib/features/write/domain/types/choreo-sheet";
+} from "#lib/features/write/domain/sheet-page-layout.js";
+import { DEFAULT_SHEET_LAYOUT } from "#lib/features/write/domain/types/choreo-sheet.js";
 
 const base = { ...DEFAULT_SHEET_LAYOUT };
 
@@ -52,9 +52,9 @@ import {
   planBands,
   planSheet,
   type BandPlanInput,
-} from "$lib/features/write/services/sheet-row-planner";
-import { buildActSequence } from "$lib/features/write/services/sheet-act-sequence";
-import { bandKey } from "$lib/features/write/domain/types/choreo-sheet";
+} from "#lib/features/write/services/sheet-row-planner.js";
+import { buildActSequence } from "#lib/features/write/services/sheet-act-sequence.js";
+import { bandKey } from "#lib/features/write/domain/types/choreo-sheet.js";
 
 function seq(id: string, n: number) {
   return { id, steps: Array.from({ length: n }, (_, i) => ({ stepNumber: i + 1, letter: "A" })) } as any;

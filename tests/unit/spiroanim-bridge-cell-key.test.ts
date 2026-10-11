@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatCellKey,
   parseCellKey,
-} from "$lib/features/spiroanim-bridge/domain/cell-key";
+} from "#lib/features/spiroanim-bridge/domain/cell-key.js";
 
 // Repo-root-relative, matching spiroanim-72-validate.test.ts. An
 // `import.meta.url` base is not safe in this runner: CI resolved it to a

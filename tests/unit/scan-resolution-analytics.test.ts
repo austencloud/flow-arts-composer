@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scanResolutionFailureCategory } from "$lib/shared/analytics/scan-resolution-analytics";
+import { scanResolutionFailureCategory } from "#lib/shared/analytics/scan-resolution-analytics.js";
 
 describe("scan resolution failure categories", () => {
   it("keeps failure telemetry compact and actionable", () => {

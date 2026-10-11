@@ -8,14 +8,14 @@
   Pattern follows: PictographGrid from StartPlacementPicker
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type { CircularizationOption } from "../../../features/create/shared/services/sequence-extender";
-  import { getLetterBorderColorSafe } from "$lib/shared/pictograph/shared/utils/letter-border-utils";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { getLetterBorderColorSafe } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { onMount } from "svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     /** Bridge options with their pictograph data */

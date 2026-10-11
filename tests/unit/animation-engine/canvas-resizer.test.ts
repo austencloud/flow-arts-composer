@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CanvasResizer } from "$lib/shared/animation-engine/services/canvas-resizer.svelte";
+import { CanvasResizer } from "#lib/shared/animation-engine/services/canvas-resizer.svelte.js";
 
 // The shared setup replaces document.createElement with plain mocks, so real
 // nodes (needed for closest() and MutationObserver) come from the HTML parser.

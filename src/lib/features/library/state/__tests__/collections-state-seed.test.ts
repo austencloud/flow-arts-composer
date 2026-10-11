@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
-import { writeOwnMirror } from "$lib/features/library/services/collection-cache-mirror";
+import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+import { writeOwnMirror } from "#lib/features/library/services/collection-cache-mirror.js";
 
 // The local mirror is intentionally NOT mocked — this test exercises the real
 // localStorage round-trip that makes Library paint synchronously.
@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 	snapshotCb: null as ((cols: LibraryCollection[]) => void) | null,
 }));
 
-vi.mock("$lib/shared/library/services/collection-manager", () => ({
+vi.mock("#lib/shared/library/services/collection-manager.js", () => ({
 	addSequenceToCollection: vi.fn(),
 	removeSequenceFromCollection: vi.fn(),
 	createUserCollection: vi.fn(),
@@ -26,10 +26,10 @@ vi.mock("$lib/shared/library/services/collection-manager", () => ({
 	updateCollection: vi.fn(),
 	deleteCollection: vi.fn(),
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
 	toast: { error: vi.fn(), success: vi.fn() },
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
 	authState: {
 		user: { uid: "u1" },
 		effectiveUserId: "u1",

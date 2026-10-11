@@ -5,7 +5,7 @@
 -->
 <script lang="ts">
   import type { Announcement } from "../../domain/models/announcement-models";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     announcements: Announcement[];

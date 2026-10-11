@@ -11,7 +11,7 @@
 import type {
   EffectConfigMap,
   EffectsConfigState,
-} from "$lib/shared/effects/state/effects-config-state.svelte";
+} from "#lib/shared/effects/state/effects-config-state.svelte.js";
 
 export interface EffectPreset<E extends keyof EffectConfigMap = keyof EffectConfigMap> {
   id: string;

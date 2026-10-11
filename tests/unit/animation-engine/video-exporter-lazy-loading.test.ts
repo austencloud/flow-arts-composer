@@ -3,9 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 describe("VideoExporter encoder loading", () => {
   afterEach(() => {
     vi.doUnmock(
-      "$lib/shared/animation-engine/services/web-codecs-video-encoder"
+      "#lib/shared/animation-engine/services/web-codecs-video-encoder.js"
     );
-    vi.doUnmock("$lib/shared/animation-engine/services/wasm-video-encoder");
+    vi.doUnmock("#lib/shared/animation-engine/services/wasm-video-encoder.js");
     vi.resetModules();
     vi.unstubAllGlobals();
   });
@@ -15,7 +15,7 @@ describe("VideoExporter encoder loading", () => {
     let wasmModuleLoads = 0;
 
     vi.doMock(
-      "$lib/shared/animation-engine/services/web-codecs-video-encoder",
+      "#lib/shared/animation-engine/services/web-codecs-video-encoder.js",
       () => {
         webCodecsModuleLoads += 1;
         return {
@@ -26,7 +26,7 @@ describe("VideoExporter encoder loading", () => {
       }
     );
     vi.doMock(
-      "$lib/shared/animation-engine/services/wasm-video-encoder",
+      "#lib/shared/animation-engine/services/wasm-video-encoder.js",
       () => {
         wasmModuleLoads += 1;
         return {
@@ -41,7 +41,7 @@ describe("VideoExporter encoder loading", () => {
     vi.stubGlobal("VideoFrame", class {});
 
     const { VideoExporter } = await import(
-      "$lib/shared/animation-engine/services/video-exporter"
+      "#lib/shared/animation-engine/services/video-exporter.js"
     );
 
     expect(webCodecsModuleLoads).toBe(0);
@@ -55,7 +55,7 @@ describe("VideoExporter encoder loading", () => {
 
   it("allows another attempt when an encoder module fails to load", async () => {
     vi.doMock(
-      "$lib/shared/animation-engine/services/web-codecs-video-encoder",
+      "#lib/shared/animation-engine/services/web-codecs-video-encoder.js",
       () => {
         throw new Error("encoder chunk unavailable");
       }
@@ -64,7 +64,7 @@ describe("VideoExporter encoder loading", () => {
     vi.stubGlobal("VideoFrame", class {});
 
     const { VideoExporter } = await import(
-      "$lib/shared/animation-engine/services/video-exporter"
+      "#lib/shared/animation-engine/services/video-exporter.js"
     );
     const exporter = new VideoExporter();
 

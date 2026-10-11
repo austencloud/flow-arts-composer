@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import * as triGridCalculator from './services/trigrid-calculator';
 
 export function getTriGridCalculator(): typeof triGridCalculator {

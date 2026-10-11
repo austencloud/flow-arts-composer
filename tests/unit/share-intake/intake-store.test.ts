@@ -3,7 +3,7 @@ import "fake-indexeddb/auto";
 
 // The repo's app-environment stub exports browser=false; the store no-ops
 // under that, so every test here would trivially "pass" against nothing.
-vi.mock("$app/environment", () => ({ browser: true }));
+vi.mock("$app/env", () => ({ browser: true }));
 
 import {
   putIntake,
@@ -15,8 +15,8 @@ import {
   INTAKE_TTL_MS,
   NEEDS_AUTH_TTL_MS,
   MAX_INTAKE_STORE_BYTES,
-} from "$lib/shared/share-intake/services/intake-store";
-import type { SharedIntake } from "$lib/shared/share-intake/domain/share-intake-models";
+} from "#lib/shared/share-intake/services/intake-store.js";
+import type { SharedIntake } from "#lib/shared/share-intake/domain/share-intake-models.js";
 
 // jsdom (as pinned in this repo, v27.4.0) does not implement Blob/File's
 // spec-required arrayBuffer() method (jsdom/jsdom#2555). Polyfilled locally

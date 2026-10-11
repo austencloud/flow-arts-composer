@@ -7,7 +7,7 @@ import type {
 import {
   AvatarGripMotionAudit,
   AVATAR_GRIP_MOTION_THRESHOLDS,
-} from "$lib/shared/3d/diagnostics/avatar-grip-motion-audit";
+} from "#lib/shared/3d/diagnostics/avatar-grip-motion-audit.js";
 
 const FRAME_MS = 1000 / 60;
 

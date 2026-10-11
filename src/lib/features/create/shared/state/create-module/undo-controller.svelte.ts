@@ -5,13 +5,13 @@
  * Handles snapshotting, callbacks, and the animation-friendly undo flow.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { SequenceState } from "../sequence-state-orchestrator.svelte";
 import type { UndoManager } from "../../services/undo-manager";
 import type { UndoMetadata } from "../../services/undo-manager";
 import { UndoOperationType } from "../../services/undo-manager";
-import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import {
   createHistoryTransitionPlan,
   type HistoryDirection,

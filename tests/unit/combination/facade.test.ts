@@ -15,22 +15,22 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import {
   __resetForTests,
   getSequenceCombinator,
-} from "$lib/shared/combination/get-sequence-combinator";
-import { createRuntimeAmbientProvider } from "$lib/shared/combination/services/runtime-ambient-provider";
-import { findCombinations } from "$lib/shared/combination/services/sequence-combinator";
-import type { AmbientOptionProvider } from "$lib/shared/combination/domain/types";
+} from "#lib/shared/combination/get-sequence-combinator.js";
+import { createRuntimeAmbientProvider } from "#lib/shared/combination/services/runtime-ambient-provider.js";
+import { findCombinations } from "#lib/shared/combination/services/sequence-combinator.js";
+import type { AmbientOptionProvider } from "#lib/shared/combination/domain/types.js";
 import {
   ambientLetterSet,
   rosterConfirmedBases,
-} from "$lib/shared/combination/domain/base-sequence-registry";
-import { placementLabelsMatchLocations } from "$lib/shared/combination/services/placement-groups";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/combination/domain/base-sequence-registry.js";
+import { placementLabelsMatchLocations } from "#lib/shared/combination/services/placement-groups.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
 
 import { AAAA_CCW, GGGG_CW, HHHH_CCW } from "./fixtures";
 import { loadPictographDatasetForTests } from "./pictograph-dataset";

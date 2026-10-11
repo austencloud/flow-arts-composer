@@ -5,7 +5,7 @@
    * the same chip language as every other control on the screen. Mono by default
    * (theme accent on selected): color is reserved for the elemental families.
    */
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import GridModeGlyph from "./GridModeGlyph.svelte";
 
   interface AxisOption {

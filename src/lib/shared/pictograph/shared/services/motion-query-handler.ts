@@ -4,12 +4,12 @@ import type { MotionData } from "../domain/models/motion-data";
 import { createMotionData } from "../domain/models/motion-data";
 import type { PictographData } from "../domain/models/pictograph-data";
 import type { CSVPictographParser, CSVRow } from "./csv-pictograph-parser";
-import type { ParsedCsvRow } from "$lib/shared/foundation/domain/models/csv-models";
+import type { ParsedCsvRow } from "#lib/shared/foundation/domain/models/csv-models.js";
 import type { CsvLoader } from "../../../foundation/services/data/csv-loader";
 import type { IMotionQueryHandler } from "../../../foundation/services/data/data-contracts";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
 import type { Orientation } from "../domain/enums/pictograph-enums";
-import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
+import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
 
 interface ICSVParser {
   parseCSV(csvText: string): { rows: ParsedCsvRow[] };

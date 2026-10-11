@@ -1,26 +1,26 @@
 <!-- BottomNavigation - Portrait/Bottom Navigation Layout -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type {
     Section,
     SectionHomeDestination,
-  } from "$lib/shared/navigation/domain/types";
-  import NavButton from "$lib/shared/navigation/components/buttons/NavButton.svelte";
-  import ModuleSwitcherButton from "$lib/shared/navigation/components/buttons/ModuleSwitcherButton.svelte";
-  import PropNavButton from "$lib/shared/navigation/components/buttons/PropNavButton.svelte";
-  import TabOverflowSelector from "$lib/shared/navigation/components/TabOverflowSelector.svelte";
+  } from "#lib/shared/navigation/domain/types.js";
+  import NavButton from "#lib/shared/navigation/components/buttons/NavButton.svelte";
+  import ModuleSwitcherButton from "#lib/shared/navigation/components/buttons/ModuleSwitcherButton.svelte";
+  import PropNavButton from "#lib/shared/navigation/components/buttons/PropNavButton.svelte";
+  import TabOverflowSelector from "#lib/shared/navigation/components/TabOverflowSelector.svelte";
   import NetworkStatusIndicator from "../../../offline/components/NetworkStatusIndicator.svelte";
   import { shouldHideUIForPanels } from "../../../application/state/animation-visibility-state.svelte";
   import {
     navigationState,
     MODULE_DEFINITIONS,
   } from "../../state/navigation-state.svelte";
-  import { sequencePanelManager } from "$lib/shared/browse/state/sequence-panel-state.svelte";
-  import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
-  import { adminToolbarState } from "$lib/shared/debug/state/admin-toolbar-state.svelte";
+  import { sequencePanelManager } from "#lib/shared/browse/state/sequence-panel-state.svelte.js";
+  import { featureFlagService } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
+  import { adminToolbarState } from "#lib/shared/debug/state/admin-toolbar-state.svelte.js";
 
   // Module color no longer needed - using global theme system
 

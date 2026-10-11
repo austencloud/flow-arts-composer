@@ -8,7 +8,8 @@ export interface MicrophoneSettings {
   sampleRate?: number;
   sampleSize?: number;
   channelCount?: number;
-  echoCancellation?: boolean;
+  /** A browser may report a mode such as "remote-only" instead of a flag. */
+  echoCancellation?: boolean | string;
   noiseSuppression?: boolean;
   autoGainControl?: boolean;
 }

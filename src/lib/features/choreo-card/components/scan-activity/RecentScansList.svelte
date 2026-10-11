@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { formatTimeAgo } from "$lib/shared/i18n/i18n-formatters";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import TkaLabel from "$lib/shared/components/TkaLabel.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import type { ScanEventRow } from "$lib/features/choreo-card/state/scan-activity-state.svelte";
+  import { formatTimeAgo } from "#lib/shared/i18n/i18n-formatters.js";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { ScanEventRow } from "#lib/features/choreo-card/state/scan-activity-state.svelte.js";
 
   interface Props {
     events: ScanEventRow[];

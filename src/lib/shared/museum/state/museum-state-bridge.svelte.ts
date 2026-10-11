@@ -4,7 +4,7 @@
  *
  * Only one museum can be active at a time, so a module-level reference is safe.
  */
-import type { MuseumState } from "$lib/shared/museum/state/museum-state.svelte";
+import type { MuseumState } from "#lib/shared/museum/state/museum-state.svelte.js";
 
 let activeMuseumState: MuseumState | null = $state(null);
 

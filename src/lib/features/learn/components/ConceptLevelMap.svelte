@@ -1,7 +1,7 @@
 <script lang="ts">
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import LessonGridDisplay from "$lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import LessonGridDisplay from "#lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     getConceptPlacesByLevel,
     type LearnConceptPlace,
@@ -9,7 +9,7 @@
   } from "../domain/concept-place-registry";
   import { getConceptById as getLessonConceptById } from "../domain/concepts";
   import type { LearnConcept } from "../domain/types";
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedConcept } from "../domain/localized-concept";
 
   let {

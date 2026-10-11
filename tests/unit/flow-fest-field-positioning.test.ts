@@ -8,7 +8,7 @@ import {
   flowFestWgs84ToWorld,
   flowFestWorldToWgs84,
   type FlowFestFieldReference,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-field-positioning";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-field-positioning.js";
 
 const REFERENCE: FlowFestFieldReference = {
   projectedCrsCode: 26916,

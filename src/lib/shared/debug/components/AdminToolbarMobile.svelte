@@ -6,9 +6,9 @@
 -->
 <script lang="ts">
   import { fly } from "svelte/transition";
-  import UserSearchInput from "$lib/shared/user-search/UserSearchInput.svelte";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import { createSwipeDismiss } from "$lib/shared/foundation/ui/gestures/create-swipe-dismiss.svelte";
+  import UserSearchInput from "#lib/shared/user-search/UserSearchInput.svelte";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
+  import { createSwipeDismiss } from "#lib/shared/foundation/ui/gestures/create-swipe-dismiss.svelte.js";
   import type { QuickAccessUser } from "../services/types";
   import type { PreviewUserProfile } from "../state/user-preview-state.svelte";
 

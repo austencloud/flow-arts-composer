@@ -7,12 +7,12 @@
   frame color is a 3D-only detail and stays out of this 2D control.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import FanAppearancePicker from "$lib/shared/pictograph/prop/components/FanAppearancePicker.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import FanAppearancePicker from "#lib/shared/pictograph/prop/components/FanAppearancePicker.svelte";
   import {
     normalizeFanAppearance,
     type FanAppearance,
-  } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
   let {
     fill = false,

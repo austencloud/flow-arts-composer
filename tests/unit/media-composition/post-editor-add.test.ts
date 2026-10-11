@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 import { newItemStart, overlayAt } from "@austencloud/video-editor/ui";
 
 function editorWithClip() {

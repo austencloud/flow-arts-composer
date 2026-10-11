@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, onMount } from "svelte";
   import DisplayTilePreview from "./DisplayTilePreview.svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
@@ -12,9 +12,9 @@
     resolveEffectivePropsVisibility,
     toggleEffectivePropsVisibility,
   } from "../../state/effective-prop-visibility";
-  import { tryGetViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
-  import type { ViewerControlSink } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
-  import { reportViewerControlChange } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
+  import { tryGetViewerVisibilityContext } from "#lib/shared/sequence-viewer/context/viewer-visibility-context.js";
+  import type { ViewerControlSink } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
+  import { reportViewerControlChange } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
   import {
     COMPACT_MAX_ART,
     COMPACT_MIN_ART,

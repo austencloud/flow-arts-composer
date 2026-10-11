@@ -7,10 +7,10 @@
   } from "../../domain/card-sizes";
   import { TND_ELEMENTS, type TnDElement } from "../../domain/tnd-element";
   import type { PrintPDFMode } from "../../services/print-pdf-exporter";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import type { PrintSide } from "./print-side";
-  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
+  import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
 
   interface Props {
     cardCount: number;

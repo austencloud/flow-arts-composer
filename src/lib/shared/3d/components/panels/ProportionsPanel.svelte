@@ -6,7 +6,7 @@
    * Updates the 3D scene in real-time to match their proportions.
    */
 
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { userProportionsState } from "@austencloud/scene-3d";
   import {
     COMMON_HEIGHTS,

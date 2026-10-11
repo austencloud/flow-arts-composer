@@ -9,7 +9,7 @@ Based on legacy start_to_end_pos_glyph.py implementation.
 <script lang="ts">
   import { GridPlacement } from "../../grid/domain/enums/grid-enums";
   import { Letter } from "../../../foundation/domain/models/letter";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     startPlacement = null,

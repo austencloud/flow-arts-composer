@@ -6,28 +6,28 @@
   ChoreoCard; "Play" returns to the animation. Continue is always available.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get-animation-playback-controller.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount, onDestroy } from "svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import { createTutorialState } from "../../../state/create-tutorial-state.svelte";
   import {
     createSequenceData,
     type SequenceData,
-  } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
-  import { pictographDataToStepData } from "$lib/shared/pictograph/shared/domain/utils/step-pictograph-conversion";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
+  } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
+  import { pictographDataToStepData } from "#lib/shared/pictograph/shared/domain/utils/step-pictograph-conversion.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
   import {
     createAnimationPanelState,
     type AnimationStateKey,
-  } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
 
   interface Props {
     onAdvance: () => void;

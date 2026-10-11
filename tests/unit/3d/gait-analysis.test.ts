@@ -15,11 +15,11 @@ import {
   resolveGroundY,
   supportOf,
   travelSpans,
-} from "$lib/shared/3d/diagnostics/gait/gait-analysis";
+} from "#lib/shared/3d/diagnostics/gait/gait-analysis.js";
 import type {
   FootFrame,
   GaitFrame,
-} from "$lib/shared/3d/diagnostics/gait/gait-frame";
+} from "#lib/shared/3d/diagnostics/gait/gait-frame.js";
 
 const DT = 1 / 60;
 

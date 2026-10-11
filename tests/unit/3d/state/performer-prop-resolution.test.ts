@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { resolvePerformerProp } from "$lib/shared/3d/state/performer-prop-resolution";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { resolvePerformerProp } from "#lib/shared/3d/state/performer-prop-resolution.js";
 
 describe("resolvePerformerProp", () => {
   it("returns the performer's effective prop", () => {

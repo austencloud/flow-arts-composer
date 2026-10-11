@@ -6,11 +6,11 @@
 <script lang="ts">
   import { MarkerClusterer } from "@googlemaps/markerclusterer";
   import { onMount, untrack } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { UserLocationWithProfile } from "../domain/models/user-location";
   import UserProfileMarker from "./UserProfileMarker.svelte";
-  import { openCreatorProfile } from "$lib/features/creators/state/creators-routing.svelte";
-  import { getGoogleMapsLibraryLoader } from "$lib/shared/maps/getGoogleMapsLibraryLoader";
+  import { openCreatorProfile } from "#lib/features/creators/state/creators-routing.svelte.js";
+  import { getGoogleMapsLibraryLoader } from "#lib/shared/maps/getGoogleMapsLibraryLoader.js";
 
   let {
     locations = [],

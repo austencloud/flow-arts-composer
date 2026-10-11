@@ -4,7 +4,7 @@
  * Pure functions: no state, no side effects.
  */
 
-import type { GridLocation, GridMode } from "$lib/shared/render/core/types";
+import type { GridLocation, GridMode } from "#lib/shared/render/core/types.js";
 import type { Vec2, GridPlacement } from "../domain/models/grid-topology";
 import {
   LOCATION_OFFSETS,

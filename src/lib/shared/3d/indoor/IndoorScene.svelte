@@ -13,7 +13,7 @@
    */
 
   import { type Snippet } from "svelte";
-  import WebGPUCanvas from "$lib/shared/3d/rendering/WebGPUCanvas.svelte";
+  import WebGPUCanvas from "#lib/shared/3d/rendering/WebGPUCanvas.svelte";
   import IndoorSceneContent from "./IndoorSceneContent.svelte";
   import type { SolvedRoom } from "./domain/room-types";
 

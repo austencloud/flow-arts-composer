@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { flushSync } from "svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   canShowStepEditorDrawer,
   sequenceHasStepEditorContent,
-} from "$lib/features/create/shared/services/step-editor-availability";
+} from "#lib/features/create/shared/services/step-editor-availability.js";
 import { createAutoStepEditorEffectHarness } from "./auto-step-editor-effect-harness.svelte";
 
 const sequenceWithStep = {

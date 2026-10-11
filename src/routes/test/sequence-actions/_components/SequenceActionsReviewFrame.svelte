@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import SequenceActionsPanel from "$lib/features/create/shared/components/sequence-actions/SequenceActionsPanel.svelte";
+  import SequenceActionsPanel from "#lib/features/create/shared/components/sequence-actions/SequenceActionsPanel.svelte";
   import {
     setCreateModuleContext,
     type CreateModuleContext,
-  } from "$lib/features/create/shared/context/create-module-context";
-  import type { TargetHand } from "$lib/shared/create/domain/panel-types";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { ActionHelpId } from "$lib/features/create/shared/domain/transforms/transform-help-content";
-  import type { DirectionDrillRoute } from "$lib/features/create/shared/components/sequence-actions/direction-drill-route";
-  import { createSequenceTransformActionDispatcher } from "$lib/features/create/shared/services/sequence-transform-action-dispatcher";
+  } from "#lib/features/create/shared/context/create-module-context.js";
+  import type { TargetHand } from "#lib/shared/create/domain/panel-types.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { ActionHelpId } from "#lib/features/create/shared/domain/transforms/transform-help-content.js";
+  import type { DirectionDrillRoute } from "#lib/features/create/shared/components/sequence-actions/direction-drill-route.js";
+  import { createSequenceTransformActionDispatcher } from "#lib/features/create/shared/services/sequence-transform-action-dispatcher.js";
   import {
     SEQUENCE_ACTIONS_EXTENSION_ANALYSIS,
     SEQUENCE_ACTIONS_REVIEW_SEQUENCE,
@@ -17,7 +17,7 @@
   import {
     createGridJoinController,
     setGridJoinContext,
-  } from "$lib/shared/grid-join/grid-join-controller";
+  } from "#lib/shared/grid-join/grid-join-controller.js";
 
   let {
     surface,

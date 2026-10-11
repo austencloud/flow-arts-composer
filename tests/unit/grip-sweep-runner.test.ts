@@ -18,30 +18,30 @@ import {
   rebuildPublicSequence,
   selectSweepSequences,
   type PublicSequenceDocument,
-} from "$lib/shared/3d/diagnostics/sweep/sweep-sequence-corpus";
+} from "#lib/shared/3d/diagnostics/sweep/sweep-sequence-corpus.js";
 import {
   DEFAULT_SWEEP_PHASE_PLAN,
   estimateSweepCost,
   planCoarsePhases,
   planRefinementPhases,
-} from "$lib/shared/3d/diagnostics/sweep/sweep-phase-plan";
+} from "#lib/shared/3d/diagnostics/sweep/sweep-phase-plan.js";
 import {
   DEFAULT_SETTLE_POLICY,
   readSettledPhase,
   secondsPerSettledSample,
   type SweepRig,
-} from "$lib/shared/3d/diagnostics/sweep/sweep-settling";
-import type { SweepReading } from "$lib/shared/3d/diagnostics/sweep/sweep-sample";
+} from "#lib/shared/3d/diagnostics/sweep/sweep-settling.js";
+import type { SweepReading } from "#lib/shared/3d/diagnostics/sweep/sweep-sample.js";
 import {
   runSweep,
   type SweepRunState,
   type SweepSampler,
-} from "$lib/shared/3d/diagnostics/sweep/sweep-runner";
+} from "#lib/shared/3d/diagnostics/sweep/sweep-runner.js";
 import {
   enumerateSweepConfigurations,
   sweepSpaceDigest,
   type SweepSpace,
-} from "$lib/shared/3d/diagnostics/sweep/sweep-space";
+} from "#lib/shared/3d/diagnostics/sweep/sweep-space.js";
 
 /**
  * An adult-sized rig with enough reach to hold the product's default 81 cm

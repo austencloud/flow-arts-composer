@@ -1,14 +1,14 @@
 import { Group, Vector3, type Object3D } from "three";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PlaneMode } from "@austencloud/scene-3d";
-import type { WorkerPerformerSnapshot } from "$lib/shared/3d/worker-renderer/domain/worker-renderer-protocol";
-import { WorkerPerformer } from "$lib/shared/3d/worker-renderer/worlds/worker-performer";
-import { createWorkerPerformerSnapshot } from "$lib/shared/3d/worker-renderer/services/worker-performer-snapshot";
+import type { WorkerPerformerSnapshot } from "#lib/shared/3d/worker-renderer/domain/worker-renderer-protocol.js";
+import { WorkerPerformer } from "#lib/shared/3d/worker-renderer/worlds/worker-performer.js";
+import { createWorkerPerformerSnapshot } from "#lib/shared/3d/worker-renderer/services/worker-performer-snapshot.js";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
   type CharacterInstanceState,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
 import { propContinuityCorpus } from "../../tools/prop-continuity-corpus";
 
 /** The avatar the worker would load, reduced to the calls it makes. The
@@ -61,7 +61,7 @@ vi.mock("@austencloud/scene-3d/worker", async (importOriginal) => ({
 }));
 
 vi.mock(
-  "$lib/shared/3d/worker-renderer/worlds/props/worker-prop-factory",
+  "#lib/shared/3d/worker-renderer/worlds/props/worker-prop-factory.js",
   async () => {
     const { Group: VisualRoot } = await import("three");
     return {

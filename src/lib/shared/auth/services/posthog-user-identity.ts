@@ -1,6 +1,6 @@
 import type { User } from "firebase/auth";
-import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
-import { identifyUser } from "$lib/shared/analytics/services/posthog";
+import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
+import { identifyUser } from "#lib/shared/analytics/services/posthog.js";
 
 /**
  * Keep Firebase-to-PostHog identity mapping in one place. Ordinary sign-in and

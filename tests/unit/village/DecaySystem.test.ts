@@ -1,19 +1,19 @@
 import { describe, it, expect } from "vitest";
-import { DecaySystem } from "$lib/features/village/engine/systems/decay-system";
+import { DecaySystem } from "#lib/features/village/engine/systems/decay-system.js";
 import {
 	createVillageWorld,
 	createAvatarEntity,
-} from "$lib/features/village/engine/village-world";
-import * as personalityGenerator from "$lib/features/village/services/personality-generator";
+} from "#lib/features/village/engine/village-world.js";
+import * as personalityGenerator from "#lib/features/village/services/personality-generator.js";
 import {
 	DECAY_GRACE_PERIOD,
 	FORGET_THRESHOLD,
 	DECAY_PER_TICK,
-} from "$lib/features/village/domain/village-constants";
+} from "#lib/features/village/domain/village-constants.js";
 import type {
 	VillageEventMap,
 	VillageEventKey,
-} from "$lib/features/village/domain/village-types";
+} from "#lib/features/village/domain/village-types.js";
 
 function makeEmitter() {
 	const events: Record<string, unknown[][]> = {};

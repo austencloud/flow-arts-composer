@@ -13,42 +13,42 @@
   mount it through LazyMount so none of it lands in the eager graph.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { MediaQuery } from "svelte/reactivity";
   import { onDestroy, onMount, untrack, type Snippet } from "svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ComposerWordRow from "./ComposerWordRow.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
-  import TunnelPictographStrip from "$lib/shared/sequence-viewer/tunnel/TunnelPictographStrip.svelte";
-  import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import TunnelPresetBrowser from "$lib/shared/sequence-viewer/components/art-settings/TunnelPresetBrowser.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import TunnelArtView from "#lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
+  import TunnelPictographStrip from "#lib/shared/sequence-viewer/tunnel/TunnelPictographStrip.svelte";
+  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import TunnelPresetBrowser from "#lib/shared/sequence-viewer/components/art-settings/TunnelPresetBrowser.svelte";
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import { generateComposerDemoSequence } from "./composer-demo-generation";
   import {
     classifyComposerGenerationFailure,
     type ComposerGenerationResult,
   } from "./composer-generation-failure";
-  import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
+  import { TunnelViewController } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.js";
   import {
     DEFAULT_TUNNEL_VIEW_STATE,
     loadTunnelViewState,
     saveTunnelViewState,
-  } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-state";
+  } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-state.js";
   import {
     MAX_IMAGES,
     MAX_IMAGES_RM,
     TUNNEL_PRESETS,
     imageCount,
-  } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-  import { builtInTunnelPresetRecipe } from "$lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import type { ViewerPlaybackState } from "$lib/shared/sequence-viewer/domain/viewer-prop-groups";
+  } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+  import { builtInTunnelPresetRecipe } from "#lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { ViewerPlaybackState } from "#lib/shared/sequence-viewer/domain/viewer-prop-groups.js";
 
   /**
    * `layout`:

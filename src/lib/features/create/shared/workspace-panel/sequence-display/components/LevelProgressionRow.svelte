@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { DIFFICULTY_LEVELS, DEFAULT_DIFFICULTY_STYLE } from "$lib/shared/config/difficulty-styles";
-  import { LEVEL_METADATA, type LevelNumber } from "$lib/shared/domain/curriculum/level-metadata";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { DIFFICULTY_LEVELS, DEFAULT_DIFFICULTY_STYLE } from "#lib/shared/config/difficulty-styles.js";
+  import { LEVEL_METADATA, type LevelNumber } from "#lib/shared/domain/curriculum/level-metadata.js";
 
   let { currentLevel }: { currentLevel: LevelNumber } = $props();
 

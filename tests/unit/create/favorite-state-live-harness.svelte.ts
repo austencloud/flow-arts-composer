@@ -1,5 +1,5 @@
-import { captureSetupSnapshot } from "$lib/features/create/generate/domain/setup-snapshot";
-import type { SavedGeneratorSetup } from "$lib/features/create/generate/domain/models/favorite-config";
+import { captureSetupSnapshot } from "#lib/features/create/generate/domain/setup-snapshot.js";
+import type { SavedGeneratorSetup } from "#lib/features/create/generate/domain/models/favorite-config.js";
 
 /**
  * Reactive stand-in for the Generate panel's live config. The real panel

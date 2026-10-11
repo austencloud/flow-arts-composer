@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { CommandPalette } from "$lib/shared/keyboard/services/command-palette";
+import { CommandPalette } from "#lib/shared/keyboard/services/command-palette.js";
 
 describe("command palette dynamic actions", () => {
   it("resolves availability and labels when the palette is searched", () => {

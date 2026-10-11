@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createMandalaCanvasSizeTracker,
   unrotatedSquareSide,
-} from "$lib/shared/mandala/services/mandala-canvas-size";
+} from "#lib/shared/mandala/services/mandala-canvas-size.js";
 
 describe("mandala canvas size", () => {
   it("takes a spinning container's rotation back out of its box", () => {

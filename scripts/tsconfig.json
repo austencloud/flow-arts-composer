@@ -1,15 +1,12 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "baseUrl": "..",
     "paths": {
-      // Step 4 of the video editor extraction removes these two with the svelte.config.js aliases.
+      // Step 4 of the video editor extraction removes these two with the vite.config.ts aliases.
       "@austencloud/video-editor/*": ["E:/worktrees/shared-packages/video-editor/packages/video-editor/dist/*"],
       "@austencloud/video-editor": ["E:/worktrees/shared-packages/video-editor/packages/video-editor/dist"],
-      "$lib/*": ["src/lib/*"],
-      "$lib": ["src/lib"],
-      "$app/*": ["scripts/mocks/$app/*"],
-      "file-saver": ["scripts/mocks/file-saver"]
+      "$app/*": ["./mocks/$app/*"],
+      "file-saver": ["./mocks/file-saver"]
     }
   },
   "include": ["*.ts", "mocks/**/*"]

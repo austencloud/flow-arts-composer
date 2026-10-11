@@ -18,7 +18,7 @@ vi.mock("firebase/firestore", () => ({
   startAfter: vi.fn(),
   where: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 
@@ -31,14 +31,14 @@ import {
   summarizeScanActivity,
   type ScanEventRow,
   type CodeEntry,
-} from "$lib/features/choreo-card/state/scan-activity-state.svelte";
-import { ScanActivityWatcher } from "$lib/features/choreo-card/services/implementations/ScanActivityWatcher";
+} from "#lib/features/choreo-card/state/scan-activity-state.svelte.js";
+import { ScanActivityWatcher } from "#lib/features/choreo-card/services/implementations/ScanActivityWatcher.js";
 import type {
   IScanActivityWatcher,
   ScanActivityCardDocument,
-} from "$lib/features/choreo-card/services/contracts/IScanActivityWatcher";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/features/choreo-card/services/contracts/IScanActivityWatcher.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { getDocs, onSnapshot, where } from "firebase/firestore";
 
 function ev(partial: Partial<ScanEventRow>): ScanEventRow {

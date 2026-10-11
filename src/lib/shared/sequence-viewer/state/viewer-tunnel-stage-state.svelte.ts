@@ -1,4 +1,4 @@
-import type { ContextMenuEntry } from "$lib/shared/components/context-menu/context-menu-types";
+import type { ContextMenuEntry } from "#lib/shared/components/context-menu/context-menu-types.js";
 import type { TunnelViewController } from "../tunnel/tunnel-view-controller.svelte";
 
 export interface TunnelCanvasSaveAction {

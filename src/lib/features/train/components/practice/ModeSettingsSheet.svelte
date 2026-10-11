@@ -8,12 +8,12 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import { PracticeMode } from "../../domain/enums/train-enums";
   import AdaptiveModeConfig from "./AdaptiveModeConfig.svelte";
   import StepModeConfig from "./StepModeConfig.svelte";
   import TimedModeConfig from "./TimedModeConfig.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     AdaptiveConfig,
     StepConfig,

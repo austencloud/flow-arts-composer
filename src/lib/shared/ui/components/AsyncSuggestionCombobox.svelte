@@ -22,8 +22,8 @@
   first and last option.
 -->
 <script lang="ts" generics="T">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onDestroy, type Snippet } from "svelte";
 
   interface RowState {

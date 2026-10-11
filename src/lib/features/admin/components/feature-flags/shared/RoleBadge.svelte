@@ -4,7 +4,7 @@
    * Displays a user role with icon and color
    */
 
-  import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
+  import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
   import { getRoleColor, getRoleIcon, getRoleLabel } from "./feature-utils";
 
   interface Props {

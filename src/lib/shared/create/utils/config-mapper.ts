@@ -9,31 +9,31 @@
  * a single source of truth for all config transformations.
  */
 
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { PropType as PropTypeEnum } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { PropType as PropTypeEnum } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type {
   DifficultyLevel,
   GenerationOptions,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import {
   DifficultyLevel as DifficultyEnum,
   PropContinuity,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { StartEndOptions } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 import {
   loopBlocksHandMode,
   resolveLoopConfig,
-} from "$lib/shared/create/services/loop-type-utils";
+} from "#lib/shared/create/services/loop-type-utils.js";
 import type { ReflectionAxis } from "@tka/sequence-engine/loop";
 import type {
   GenerationMotionTypeFilter,
   GenerationStyleAxis,
-} from "$lib/shared/create/domain/generation-style";
+} from "#lib/shared/create/domain/generation-style.js";
 import {
   DEFAULT_TND_SELECTION,
   type TnDSelection,
-} from "$lib/shared/create/domain/hand-relationship";
+} from "#lib/shared/create/domain/hand-relationship.js";
 
 /**
  * Map difficulty level number to DifficultyLevel enum

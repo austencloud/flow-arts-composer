@@ -9,7 +9,7 @@
  * `error.message` never reaches that scrubber.
  */
 import { describe, expect, it, vi } from "vitest";
-import { parseSoftwareSubmission } from "$lib/server/software-submissions/software-submission-input";
+import { parseSoftwareSubmission } from "#lib/server/software-submissions/software-submission-input.js";
 import { fakeEvent } from "./helpers/fake-request-event";
 
 describe("/api/test-render is reachable in production and always fails", () => {
@@ -55,7 +55,8 @@ describe("/api/test-render is reachable in production and always fails", () => {
   it("still consumes a rate-limit slot per request before failing", async () => {
     vi.resetModules();
     const { POST } = await import("../../src/routes/api/test-render/+server");
-    const { RATE_LIMITS } = await import("$lib/server/security/rate-limiter");
+    const { RATE_LIMITS } =
+      await import("#lib/server/security/rate-limiter.js");
 
     const send = () =>
       POST(

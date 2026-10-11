@@ -1,11 +1,11 @@
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { pictographDataToStepData } from "$lib/shared/pictograph/shared/domain/utils/step-pictograph-conversion";
-import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-import { generateShareURL } from "$lib/shared/navigation/services/sequence-encoder";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { pictographDataToStepData } from "#lib/shared/pictograph/shared/domain/utils/step-pictograph-conversion.js";
+import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+import { generateShareURL } from "#lib/shared/navigation/services/sequence-encoder.js";
 
 export function buildLetterDraftSequence(
   pictograph: PictographData

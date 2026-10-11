@@ -4,7 +4,7 @@
  * Loads video curator data from Firestore.
  */
 import type { ShowcaseVideo, VideoCategory, UserProfile } from "../types";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 
 const DEFAULT_CATEGORIES: VideoCategory[] = [
   { id: "demonstration", label: "Demonstration", color: "#06b6d4" },

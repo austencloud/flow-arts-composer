@@ -1,6 +1,6 @@
 import type { WorkerRendererSlotState } from "../domain/worker-renderer-handoff";
-import { motionDuration } from "$lib/shared/transitions/motion";
-import { DURATION } from "$lib/shared/transitions/transitions";
+import { motionDuration } from "#lib/shared/transitions/motion.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 import {
   isWorkerRendererOutMessage,
   type WorkerCameraSnapshot,

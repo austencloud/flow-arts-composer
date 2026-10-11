@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Step } from "@tka/tka-types";
-import { sequencePositionToAnimationTime } from "$lib/shared/animation-engine/services/step-calculator";
+import { sequencePositionToAnimationTime } from "#lib/shared/animation-engine/services/step-calculator.js";
 
 const steps = [{ duration: 1 }, { duration: 2 }, { duration: 0.5 }] as Step[];
 

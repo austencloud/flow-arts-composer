@@ -9,9 +9,9 @@
  */
 
 import { animationSettings as animationSettingsState } from "../state/animation-settings-state.svelte";
-import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
+import type { SettingsState } from "#lib/shared/settings/state/settings-state.svelte.js";
 import type { IPropTextureLoader } from "./IPropTextureLoader";
-import type { TrailCapturer } from "$lib/shared/animation-engine/services/trail-capturer";
+import type { TrailCapturer } from "#lib/shared/animation-engine/services/trail-capturer.js";
 import type {
   IAnimationRenderLoop,
   RenderFrameParams,
@@ -19,29 +19,29 @@ import type {
 import type { IAnimationPrecomputer } from "./IAnimationPrecomputer";
 import type { PropTypeChanger } from "./prop-type-changer.svelte";
 import type { FireTipTracker } from "./fire-tip-tracker";
-import type { IAnimationRenderer as AnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
+import type { IAnimationRenderer as AnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
 import {
   tunnelPropColor,
   tunnelPerformerPair,
   type TunnelPropColorPair,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 import { getBaseMotionColors } from "./svg-generator";
 import {
   DEFAULT_FAN_APPEARANCE,
   normalizeFanAppearance,
   type FanAppearance,
-} from "$lib/shared/pictograph/prop/domain/fan-appearance";
+} from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import {
   DEFAULT_PROP_LOOK,
   normalizePropLook,
   resolvePropRenderKey,
   type PropLook,
-} from "$lib/shared/pictograph/prop/domain/prop-look";
+} from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import {
   DEFAULT_TRIANGLE_GRIP,
   normalizeTriangleGrip,
   type TriangleGrip,
-} from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+} from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 
 import type {
   AdditionalLayerTextureStatus,

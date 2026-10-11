@@ -13,21 +13,21 @@ vi.mock("firebase/firestore", () => ({
   addDoc: vi.fn(),
   serverTimestamp: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
 
 import { buildBaseIndex, resolveBase } from "../build-realization-sequence";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   HandSide,
   MotionType,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 type TestMotionStyle = "pro" | "anti";
 

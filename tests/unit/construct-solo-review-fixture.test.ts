@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getSequenceMotionProfile } from "$lib/shared/foundation/services/sequence-motion-profile";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { getSequenceMotionProfile } from "#lib/shared/foundation/services/sequence-motion-profile.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   createConstructRedPartnerReviewSequence,
   createConstructSoloReviewSequence,

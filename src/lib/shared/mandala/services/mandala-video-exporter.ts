@@ -12,14 +12,14 @@
  * instead of each hand-rolling the postMessage handling.
  */
 
-import type { MandalaFrameSpec } from "$lib/shared/mandala/services/mandala-frame-renderer";
+import type { MandalaFrameSpec } from "#lib/shared/mandala/services/mandala-frame-renderer.js";
 import type {
   MandalaExportOut,
   MandalaExportDiag,
-} from "$lib/shared/mandala/workers/mandala-export.worker";
+} from "#lib/shared/mandala/workers/mandala-export.worker.js";
 // Vite emits the compiled export worker and hands back its URL as a string, so
 // we can append a cache-busting version query before instantiating the Worker.
-import exportWorkerUrl from "$lib/shared/mandala/workers/mandala-export.worker.ts?worker&url";
+import exportWorkerUrl from "#lib/shared/mandala/workers/mandala-export.worker.ts?worker&url";
 
 // A mandala is thin bright strokes on flat black — it compresses to far less
 // than typical video at the same resolution. Lower bitrates cut entropy-coding

@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { appEntryState } from "$lib/shared/onboarding/state/app-entry-state.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { appEntryState } from "#lib/shared/onboarding/state/app-entry-state.svelte.js";
   import {
     logOnboardingTutorialIgnored,
     logOnboardingTutorialPromptViewed,
-  } from "$lib/shared/analytics/services/onboarding-events";
+  } from "#lib/shared/analytics/services/onboarding-events.js";
 
   let {
     offerVisible,

@@ -1,9 +1,9 @@
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 import type { EffortTimeline } from "../domain/effort-timeline-types";
 import { createEffortTimeline, removePhrase, insertPhrase, createEffortPhrase } from "../domain/effort-timeline-types";
 import { persistTimeline, restoreTimeline, persistSequenceId, getPersistedSequenceId } from "../services/phrase-effort-lab-persister";

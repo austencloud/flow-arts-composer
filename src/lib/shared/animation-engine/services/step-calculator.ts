@@ -5,7 +5,7 @@
  * Single responsibility: Beat timing and progress calculations.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { Step } from "@tka/tka-types";
 
 export interface StepCalculationResult {

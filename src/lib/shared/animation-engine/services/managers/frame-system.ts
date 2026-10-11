@@ -24,11 +24,11 @@ import type { PropSystem } from "./prop-system";
 import type { AnimationEngineProps } from "../animation-engine.svelte";
 import type { RenderFrameParams } from "../IAnimationRenderLoop";
 import type { TrailSettings } from "../../domain/types/trail-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import type { EffectRendererManager } from "../effect-renderer-manager";
-import type { MandalaPathOptions } from "$lib/shared/mandala/services/types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { MandalaPathOptions } from "#lib/shared/mandala/services/types.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import type { GridJoin } from "@tka/tka-types";
 import {
   resolveAnimationGridJoin,
@@ -37,8 +37,9 @@ import {
 import {
   GridJoinTween,
   gridJoinHandOffsets,
-} from "$lib/shared/grid-join/grid-join-tween";
+} from "#lib/shared/grid-join/grid-join-tween.js";
 import { OrchestratorMotionSampleSource } from "../motion-sub-sampler";
+import { PoseGlide } from "../pose-glide";
 
 export class FrameSystem {
   readonly frameParameterBuilder = new FrameParameterBuilder();
@@ -61,6 +62,12 @@ export class FrameSystem {
    */
   readonly gridJoinTween = new GridJoinTween();
   private gridJoinTweenEnded: (() => void) | null = null;
+  /**
+   * The glide between a sequence and its transform. PlaybackSync starts it
+   * when the host keeps the same `transitionKey` across the change; frames
+   * built while it runs blend the props from where they were drawn.
+   */
+  readonly poseGlide = new PoseGlide();
   /** Pure pose source for slow-frame trail sampling; reads the lifecycle
    *  orchestrator lazily so a sequence switch needs no re-wiring. */
   private readonly motionSampleSource = new OrchestratorMotionSampleSource(
@@ -88,7 +95,7 @@ export class FrameSystem {
     buildDeps: {
       effectsConfigState: EffectsConfigState | null;
       effectRendererManager: EffectRendererManager;
-      getVM: () => import("$lib/shared/animation-engine/state/animation-visibility-state.svelte").AnimationVisibilityStateManager;
+      getVM: () => import("#lib/shared/animation-engine/state/animation-visibility-state.svelte.js").AnimationVisibilityStateManager;
     }
   ): RenderFrameParams {
     const params = this.frameParameterBuilder.getFrameParams(
@@ -117,6 +124,11 @@ export class FrameSystem {
     params.mandalaStrokeWidth = props.mandalaStrokeWidthOverride;
     params.mandalaSteps = props.sequenceData?.steps ?? null;
     params.mandalaPathOptions = this.mandalaPathOptions;
+    params.poseGlide = this.poseGlide.apply(
+      params.props,
+      performance.now(),
+      !!props.sequenceData
+    );
     this.applyGridJoin(
       params,
       resolveAnimationGridJoin(

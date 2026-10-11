@@ -18,10 +18,10 @@
   names its grid container `loop-picker`.
 -->
 <script lang="ts">
-  import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import type { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+  import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import type { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
   import type { LoopReflectionAxis } from "@tka/render-composition";
-  import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
+  import LOOPIconStrip from "#lib/shared/components/LOOPIconStrip.svelte";
 
   interface Props {
     /** Primitives this choice composes. Empty renders `fallbackIcon`. */

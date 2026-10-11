@@ -6,13 +6,13 @@ import {
 import {
   tunnelTitlesLook,
   type TunnelTitlesPlan,
-} from "$lib/shared/media-composition/domain/tunnel-titles";
+} from "#lib/shared/media-composition/domain/tunnel-titles.js";
 import type {
   PaintFrame,
   PaintRect,
   PostStudioLayerPainter,
 } from "@austencloud/video-editor/render";
-import { textRenderer } from "$lib/shared/render/services/text-renderer";
+import { textRenderer } from "#lib/shared/render/services/text-renderer.js";
 
 /** Same ink as a caption, so the opening reads as one family with the post's words. */
 const FILL_COLOR = "#ffffff";

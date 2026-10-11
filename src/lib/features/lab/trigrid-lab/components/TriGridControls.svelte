@@ -5,8 +5,8 @@
   and visibility toggles.
 -->
 <script lang="ts">
-  import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { TriGridMode, TriGridMotionType } from "../domain/trigrid-types";
   import { TRIGRID_ORIENTATIONS } from "../domain/trigrid-types";
   import { getTriGridPlacements } from "../domain/trigrid-placements";

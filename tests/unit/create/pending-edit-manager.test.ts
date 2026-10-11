@@ -1,17 +1,17 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { flushSync } from "svelte";
 import { viewerState } from "./pending-edit-harness.svelte";
-import { createPendingEditEffect } from "$lib/features/create/shared/state/managers/pending-edit-manager.svelte";
-import type { DeepLinkSequenceHandler } from "$lib/features/create/shared/services/deep-link-sequence-handler";
-import type { CreateModuleState } from "$lib/features/create/shared/state/create-module-state.svelte";
-import type { ConstructTabState } from "$lib/features/create/shared/state/construct-tab-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createPendingEditEffect } from "#lib/features/create/shared/state/managers/pending-edit-manager.svelte.js";
+import type { DeepLinkSequenceHandler } from "#lib/features/create/shared/services/deep-link-sequence-handler.js";
+import type { CreateModuleState } from "#lib/features/create/shared/state/create-module-state.svelte.js";
+import type { ConstructTabState } from "#lib/features/create/shared/state/construct-tab-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
-vi.mock("$lib/shared/navigation/state/navigation-state.svelte", () => ({
+vi.mock("#lib/shared/navigation/state/navigation-state.svelte.js", () => ({
   navigationState: { currentModule: "create" },
 }));
 vi.mock(
-  "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte",
+  "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js",
   async () => {
     const { viewerState } = await import("./pending-edit-harness.svelte");
     return { getSequenceOverlayState: () => viewerState };

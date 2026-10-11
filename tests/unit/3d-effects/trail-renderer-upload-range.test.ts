@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Vector3, type BufferAttribute } from "three";
-import { TrailRenderer3D } from "$lib/shared/3d/effects/trails/trail-renderer-3d";
+import { TrailRenderer3D } from "#lib/shared/3d/effects/trails/trail-renderer-3d.js";
 
 /**
  * A trail's buffers are sized for the longest ribbon the config allows, but a

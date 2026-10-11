@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { Phase1OverlayRenderer } from './services/phase1-overlay-renderer';
 
 let instance: Phase1OverlayRenderer | null = null;

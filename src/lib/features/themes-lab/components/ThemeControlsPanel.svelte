@@ -1,19 +1,19 @@
 <script lang="ts">
-  import type { SceneLabState } from "$lib/features/lab/tabs/scene-lab/state/scene-lab-state.svelte";
+  import type { SceneLabState } from "#lib/features/lab/tabs/scene-lab/state/scene-lab-state.svelte.js";
   import type { ThemeId } from "../domain/theme-types";
-  import WinterControls from "$lib/features/lab/tabs/scene-lab/components/WinterControls.svelte";
-  import ForestControls from "$lib/features/lab/tabs/scene-lab/components/ForestControls.svelte";
-  import CosmicControls from "$lib/features/lab/tabs/scene-lab/components/CosmicControls.svelte";
-  import OceanControls from "$lib/features/lab/tabs/scene-lab/components/OceanControls.svelte";
-  import AutumnControls from "$lib/features/lab/tabs/scene-lab/components/AutumnControls.svelte";
-  import EmberControls from "$lib/features/lab/tabs/scene-lab/components/EmberControls.svelte";
-  import BlossomControls from "$lib/features/lab/tabs/scene-lab/components/BlossomControls.svelte";
-  import CelestialControls from "$lib/features/lab/tabs/scene-lab/components/CelestialControls.svelte";
-  import RainbowControls from "$lib/features/lab/tabs/scene-lab/components/RainbowControls.svelte";
-  import VoidControls from "$lib/features/lab/tabs/scene-lab/components/VoidControls.svelte";
-  import ComposerPickerPanel from "$lib/shared/3d/scene-composer/ComposerPickerPanel.svelte";
-  import type { ComposerEditorState } from "$lib/shared/3d/scene-composer/composer-editor-state.svelte";
-  import type { SceneComposerPlugin } from "$lib/shared/3d/scene-composer/types";
+  import WinterControls from "#lib/features/lab/tabs/scene-lab/components/WinterControls.svelte";
+  import ForestControls from "#lib/features/lab/tabs/scene-lab/components/ForestControls.svelte";
+  import CosmicControls from "#lib/features/lab/tabs/scene-lab/components/CosmicControls.svelte";
+  import OceanControls from "#lib/features/lab/tabs/scene-lab/components/OceanControls.svelte";
+  import AutumnControls from "#lib/features/lab/tabs/scene-lab/components/AutumnControls.svelte";
+  import EmberControls from "#lib/features/lab/tabs/scene-lab/components/EmberControls.svelte";
+  import BlossomControls from "#lib/features/lab/tabs/scene-lab/components/BlossomControls.svelte";
+  import CelestialControls from "#lib/features/lab/tabs/scene-lab/components/CelestialControls.svelte";
+  import RainbowControls from "#lib/features/lab/tabs/scene-lab/components/RainbowControls.svelte";
+  import VoidControls from "#lib/features/lab/tabs/scene-lab/components/VoidControls.svelte";
+  import ComposerPickerPanel from "#lib/shared/3d/scene-composer/ComposerPickerPanel.svelte";
+  import type { ComposerEditorState } from "#lib/shared/3d/scene-composer/composer-editor-state.svelte.js";
+  import type { SceneComposerPlugin } from "#lib/shared/3d/scene-composer/types.js";
 
   interface Props {
     themeId: ThemeId;

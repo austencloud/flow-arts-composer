@@ -4,7 +4,7 @@ import {
   itemEnd,
   type PostProject,
 } from "@austencloud/video-editor/core";
-import { pipHandoffOf } from "$lib/shared/media-composition/domain/pip-handoff";
+import { pipHandoffOf } from "#lib/shared/media-composition/domain/pip-handoff.js";
 
 /**
  * An animation and the picture-in-picture square it turns into. The timeline

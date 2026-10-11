@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { Point2 } from "$lib/features/museum/data/drowned-gallery-terrain";
+  import type { Point2 } from "#lib/features/museum/data/drowned-gallery-terrain.js";
   import type {
     FireProcessionPathSection,
     FirstFireProcessionPlan,
     FirstFireShrineId,
-  } from "$lib/features/museum/data/first-fire-procession-plan";
+  } from "#lib/features/museum/data/first-fire-procession-plan.js";
   import type { ReviewStage } from "./first-fire-review";
 
   type ShrineVisualState = "flame" | "coals" | "off";

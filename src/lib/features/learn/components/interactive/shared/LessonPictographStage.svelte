@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   let {
     pictograph,

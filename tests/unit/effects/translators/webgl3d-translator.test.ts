@@ -4,8 +4,8 @@ import {
   resolveFire3D,
   resolveLed3D,
   resolveCharcoal3D,
-} from "$lib/shared/effects/translators/webgl3d-translator";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+} from "#lib/shared/effects/translators/webgl3d-translator.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 describe("resolveTrails3D", () => {
   const intent = DEFAULT_EFFECTS_CONFIG.trails;

@@ -44,16 +44,16 @@ describe("Prop Studio bootstrap", () => {
     );
     expect(source).not.toMatch(/import \{ AnimationPlaybackController \} from/);
     expect(source).toContain(
-      'import("$lib/shared/3d/components/Viewer3DCanvas.svelte")'
+      'import("#lib/shared/3d/components/Viewer3DCanvas.svelte")'
     );
     expect(source).toContain(
-      'import("$lib/shared/animation-engine/services/sequence-animation-orchestrator")'
+      'import("#lib/shared/animation-engine/services/sequence-animation-orchestrator.js")'
     );
     expect(source).toContain(
-      'import("$lib/shared/animation-engine/services/animation-playback-controller")'
+      'import("#lib/shared/animation-engine/services/animation-playback-controller.js")'
     );
     expect(source).toMatch(
-      /import\(\s*"\$lib\/features\/create\/generate\/shared\/get-generation-orchestrator"\s*\)/
+      /import\(\s*"#lib\/features\/create\/generate\/shared\/get-generation-orchestrator\.js"\s*\)/
     );
   });
 
@@ -105,7 +105,7 @@ describe("Prop Studio bootstrap", () => {
     const source = readFileSync(resolve("src/routes/+layout.svelte"), "utf8");
 
     expect(source).toMatch(
-      /detectSiteMode\(\) !== "app"[\s\S]*?import\("\$lib\/shared\/presence\/get-presence-tracker"\)/
+      /detectSiteMode\(\) !== "app"[\s\S]*?import\("#lib\/shared\/presence\/get-presence-tracker\.js"\)/
     );
     expect(source).toMatch(
       /const isDevelopmentHarness =[\s\S]*?import\.meta\.env\.DEV[\s\S]*?pathname\.startsWith\("\/test\/"\)/
@@ -149,7 +149,7 @@ describe("Prop Studio bootstrap", () => {
       "createEffectsConfigState(undefined, { persist: false })"
     );
     expect(studioSource).not.toMatch(
-      /import\s+\{[^}]*DifficultyLevel[^}]*\}\s+from\s+"\$lib\/shared\/foundation\/domain\/models\/generation\/generate-models"/s
+      /import\s+\{[^}]*DifficultyLevel[^}]*\}\s+from\s+"#lib\/shared\/foundation\/domain\/models\/generation\/generate-models\.js"/s
     );
     expect(sceneSource).not.toMatch(/import EffectOrchestrator3D from/);
     expect(sceneSource).not.toMatch(/import SceneEffectsCoordinator3D from/);
@@ -165,7 +165,7 @@ describe("Prop Studio bootstrap", () => {
       'import("../effects/scene-effects/scene-effects-manager-3d")'
     );
     expect(sceneSource).toContain(
-      'import("$lib/shared/settings/state/settings-state.svelte")'
+      'import("#lib/shared/settings/state/settings-state.svelte.js")'
     );
     expect(canvasSource).not.toMatch(/import ScenePostProcessing from/);
     expect(canvasSource).not.toMatch(/import SceneAudioPlayer from/);
@@ -184,7 +184,7 @@ describe("Prop Studio bootstrap", () => {
       /import \{ getSettings \} from .*app-state/
     );
     expect(previewSource).toContain(
-      'import("$lib/shared/application/state/app-state.svelte")'
+      'import("#lib/shared/application/state/app-state.svelte.js")'
     );
   });
 });

@@ -28,18 +28,18 @@ vi.mock("firebase/firestore", () => ({
   })),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 
-vi.mock("$lib/shared/firestore", async (importOriginal) => ({
+vi.mock("#lib/shared/firestore/index.js", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   firestoreList: harness.firestoreList,
   firestoreSet: harness.firestoreSet,
   firestoreDelete: harness.firestoreDelete,
 }));
 
-vi.mock("$lib/shared/community/services/user-repository", () => ({
+vi.mock("#lib/shared/community/services/user-repository.js", () => ({
   getVisibleOwnerProfiles: harness.getVisibleOwnerProfiles,
 }));
 

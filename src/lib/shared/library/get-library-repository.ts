@@ -1,5 +1,5 @@
 import { LibraryRepository } from "./services/library-repository";
-import { getConflictResolver } from "$lib/shared/offline/get-conflict-resolver";
+import { getConflictResolver } from "#lib/shared/offline/get-conflict-resolver.js";
 import type { IPublicIndexSyncer } from "./services/IPublicIndexSyncer";
 
 let publicIndexSyncerFactory: (() => IPublicIndexSyncer) | null = null;

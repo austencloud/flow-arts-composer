@@ -17,8 +17,8 @@ import {
   type PainterEnv,
   type PostStudioLayerPainter,
 } from "@austencloud/video-editor/render";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StaffTipTrack } from "$lib/shared/media-composition/domain/staff-tip-track";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StaffTipTrack } from "#lib/shared/media-composition/domain/staff-tip-track.js";
 import {
   PostProjectSchema,
   TKA_COMPILE_HOOKS,
@@ -30,12 +30,12 @@ import {
   createTkaPlugin,
   normalizeProject,
   staffEffectRole,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   createTkaPainters,
   type TkaPainterDeps,
-} from "$lib/shared/post-studio-plugin/painters";
-import { createTkaSurfaces } from "$lib/shared/post-studio-plugin/surfaces";
+} from "#lib/shared/post-studio-plugin/painters.js";
+import { createTkaSurfaces } from "#lib/shared/post-studio-plugin/surfaces.js";
 
 const DCK_FILE = "tests/fixtures/video-editor-parity/dck.project.json";
 

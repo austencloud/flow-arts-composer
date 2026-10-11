@@ -11,7 +11,7 @@
  */
 
 import type { TikaTopicInteraction } from "./tika-interaction-tracker";
-import type { MasteryContext } from "$lib/features/learn/domain/quiz-history-types";
+import type { MasteryContext } from "#lib/features/learn/domain/quiz-history-types.js";
 
 export interface WelcomeSuggestion {
   icon: string;

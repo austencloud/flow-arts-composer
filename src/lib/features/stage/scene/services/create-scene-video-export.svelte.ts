@@ -1,18 +1,18 @@
-import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   sanitizeFilename,
   shareOrDownloadBlob,
-} from "$lib/shared/foundation/services/file-downloader";
-import type { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-import { ensureFullAccountForExport } from "$lib/shared/auth/domain/export-gate";
+} from "#lib/shared/foundation/services/file-downloader.js";
+import type { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+import { ensureFullAccountForExport } from "#lib/shared/auth/domain/export-gate.js";
 import {
   sequenceModalExporter,
   type Video3DExportDependencies,
-} from "$lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { CameraKeyframeBuffer } from "$lib/shared/video-export/domain/camera-keyframe";
-import type { Scene3DFilm } from "$lib/features/scene-3d-collection/domain/scene-3d-collection-types";
+} from "#lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { CameraKeyframeBuffer } from "#lib/shared/video-export/domain/camera-keyframe.js";
+import type { Scene3DFilm } from "#lib/features/scene-3d-collection/domain/scene-3d-collection-types.js";
 
 type Viewer3DState = ReturnType<typeof createViewer3DState>;
 

@@ -1,15 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
-import { SocialSystem } from "$lib/features/village/engine/systems/social-system";
+import { SocialSystem } from "#lib/features/village/engine/systems/social-system.js";
 import {
 	createVillageWorld,
 	createAvatarEntity,
-} from "$lib/features/village/engine/village-world";
-import * as personalityGenerator from "$lib/features/village/services/personality-generator";
-import { createDefaultConfig } from "$lib/features/village/engine/village-config";
+} from "#lib/features/village/engine/village-world.js";
+import * as personalityGenerator from "#lib/features/village/services/personality-generator.js";
+import { createDefaultConfig } from "#lib/features/village/engine/village-config.js";
 import type {
 	VillageEventMap,
 	VillageEventKey,
-} from "$lib/features/village/domain/village-types";
+} from "#lib/features/village/domain/village-types.js";
 
 function makeEmitter() {
 	const events: Record<string, unknown[][]> = {};

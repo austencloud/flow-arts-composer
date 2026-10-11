@@ -1,4 +1,4 @@
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { PropPreset } from "../../../domain/app-settings";
 import { heldProps } from "../../../domain/prop-presets";
 

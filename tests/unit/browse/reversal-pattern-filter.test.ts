@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { applyFilter } from "$lib/shared/browse/services/browse-filter";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { applyFilter } from "#lib/shared/browse/services/browse-filter.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function seq(id: string, reversalPattern?: string): SequenceData {
   return { id, word: id, ...(reversalPattern ? { reversalPattern } : {}) } as unknown as SequenceData;

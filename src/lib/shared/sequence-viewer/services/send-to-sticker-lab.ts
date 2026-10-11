@@ -1,10 +1,10 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { createDefaultStickerSheet } from "$lib/features/sticker-lab/domain/sticker-types";
-import { createMandalaPrimitiveRef } from "$lib/features/sticker-lab/domain/mandala-primitive-reference";
-import { addPrimitiveToSheet } from "$lib/features/sticker-lab/domain/sticker-sheet-mutations";
-import { getStickerSheetRepository } from "$lib/features/sticker-lab/get-sticker-sheet-repository";
-import { cachePrimitivePaths } from "$lib/features/sticker-lab/state/mandala-paths-cache.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { createDefaultStickerSheet } from "#lib/features/sticker-lab/domain/sticker-types.js";
+import { createMandalaPrimitiveRef } from "#lib/features/sticker-lab/domain/mandala-primitive-reference.js";
+import { addPrimitiveToSheet } from "#lib/features/sticker-lab/domain/sticker-sheet-mutations.js";
+import { getStickerSheetRepository } from "#lib/features/sticker-lab/get-sticker-sheet-repository.js";
+import { cachePrimitivePaths } from "#lib/features/sticker-lab/state/mandala-paths-cache.svelte.js";
 import { goto } from "$app/navigation";
 
 export function sendToStickerLab(seq: SequenceData): void {

@@ -3,7 +3,7 @@ import {
   SCENE_STUDIO_SETUP_SEEN_KEY,
   VIEWER3D_INTRO_SEEN_KEY,
 } from "../config/storage-keys";
-import { getOnboardingPersister } from "$lib/shared/onboarding/get-onboarding-persister";
+import { getOnboardingPersister } from "#lib/shared/onboarding/get-onboarding-persister.js";
 
 function seen(key: string): boolean {
   if (typeof localStorage === "undefined") return false;

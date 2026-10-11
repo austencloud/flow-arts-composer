@@ -7,7 +7,7 @@
   Used on both desktop and mobile platforms.
 -->
 <script lang="ts">
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import type { PreviewUserProfile } from "../state/user-preview-state.svelte";
 
   interface Props {

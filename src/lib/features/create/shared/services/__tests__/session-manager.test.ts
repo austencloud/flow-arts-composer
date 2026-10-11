@@ -32,7 +32,7 @@ vi.mock("firebase/firestore", () => ({
   writeBatch: mocks.writeBatch,
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => mocks.firestore),
   getAuthSync: vi.fn(() => mocks.auth),
 }));

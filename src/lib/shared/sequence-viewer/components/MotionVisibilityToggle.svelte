@@ -9,16 +9,16 @@
   Reads/writes SequenceViewerVisibilityState via context.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { scale } from "svelte/transition";
   import { backOut, cubicOut } from "svelte/easing";
   import { getViewerVisibilityContext } from "../context/viewer-visibility-context";
-  import MotionColorChips from "$lib/shared/components/MotionColorChips.svelte";
-  import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
+  import MotionColorChips from "#lib/shared/components/MotionColorChips.svelte";
+  import PrimaryPropColorSettings from "#lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
   import {
     getSettings,
     updateSetting,
-  } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/application/state/app-state.svelte.js";
 
   const visibility = getViewerVisibilityContext();
   interface Props {

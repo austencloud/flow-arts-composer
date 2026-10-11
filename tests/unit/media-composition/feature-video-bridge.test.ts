@@ -1,26 +1,26 @@
 import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { featureVideos } from "$lib/server/feature-video-store";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { featureVideos } from "#lib/server/feature-video-store.js";
 import {
   activeFeatureVideoSession,
   heartbeatPostProject,
   listPostProjectSessions,
   readPostProjectSession,
-} from "$lib/server/post-project-dev-bridge";
-import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/server/post-project-dev-bridge.js";
+import { featureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
 import type { PostProject } from "@austencloud/video-editor/core";
-import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
-import { applyPostProjectOps } from "$lib/shared/media-composition/domain/post-project-ops";
-import { createTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
-import { devicePostEditorStore } from "$lib/shared/media-composition/services/post-editor-store";
-import { startPostProjectDevBridge } from "$lib/shared/media-composition/services/post-project-dev-client";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-project-bridge-guard.js";
+import { applyPostProjectOps } from "#lib/shared/media-composition/domain/post-project-ops.js";
+import { createTakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
+import { devicePostEditorStore } from "#lib/shared/media-composition/services/post-editor-store.js";
+import { startPostProjectDevBridge } from "#lib/shared/media-composition/services/post-project-dev-client.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 import { POST as postProjectRoute } from "../../../src/routes/api/dev/post-project/+server";
 import { routeEvent, tempFeatureRoot } from "./feature-video-test-helpers";
 import { NOW, project, take } from "./post-project-fixtures";
-import { editContext } from "$lib/shared/post-studio-plugin";
+import { editContext } from "#lib/shared/post-studio-plugin/index.js";
 
 const ctx = editContext(NOW + 1);
 const FEATURE_URL = featureVideoMediaUrl("promo", "footage/a.mp4");

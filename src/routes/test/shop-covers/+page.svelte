@@ -7,9 +7,9 @@
 -->
 <script lang="ts">
   import { COVER_CANDIDATES } from "./candidates";
-  import ChoreoCard from "$lib/features/choreo-card/components/ChoreoCard.svelte";
-  import { LOOP_COMPONENT_MAP } from "$lib/shared/browse/domain/constants/loop-constants";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  import ChoreoCard from "#lib/features/choreo-card/components/ChoreoCard.svelte";
+  import { LOOP_COMPONENT_MAP } from "#lib/shared/browse/domain/constants/loop-constants.js";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
   type Style = "fan" | "stack" | "smallfan";
   let style = $state<Style>("fan");

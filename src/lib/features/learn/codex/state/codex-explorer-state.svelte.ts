@@ -1,4 +1,4 @@
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   CODEX_EXPLORER_STORAGE_KEY,
   defaultCodexExplorerPrefs,

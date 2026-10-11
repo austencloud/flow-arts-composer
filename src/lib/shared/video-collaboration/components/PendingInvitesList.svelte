@@ -5,7 +5,7 @@
   Shows all videos where user has been invited but hasn't responded.
 -->
 <script lang="ts">
-  import { getPendingInvites } from "$lib/shared/video-collaboration/services/collaborative-video-manager";
+  import { getPendingInvites } from "#lib/shared/video-collaboration/services/collaborative-video-manager.js";
   import type { CollaborativeVideo } from "../domain/collaborative-video";
   import { onMount } from "svelte";
   import PendingInviteCard from "./PendingInviteCard.svelte";

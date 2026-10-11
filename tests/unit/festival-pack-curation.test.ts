@@ -4,15 +4,15 @@ import { describe, expect, it } from "vitest";
 import {
   mirrorFestivalSheetColumns,
   placeFestivalSignupAtCenter,
-} from "$lib/features/choreo-card/services/festival-sampler-sheet";
+} from "#lib/features/choreo-card/services/festival-sampler-sheet.js";
 import {
   festivalSamplerCardKey,
   festivalSamplerFingerprint,
   festivalSamplerManifestRevision,
-} from "$lib/features/choreo-card/services/festival-sampler-manifest";
-import uniquePackManifests from "$lib/features/choreo-card/data/festival-sampler-manifests.json";
+} from "#lib/features/choreo-card/services/festival-sampler-manifest.js";
+import uniquePackManifests from "#lib/features/choreo-card/data/festival-sampler-manifests.json";
 import localSequenceData from "../../static/data/choreo-card/festival-sampler-sequences.json";
-import { FESTIVAL_TURN_PATTERN_PRESETS } from "$lib/features/choreo-card/services/festival-sampler-turns";
+import { FESTIVAL_TURN_PATTERN_PRESETS } from "#lib/features/choreo-card/services/festival-sampler-turns.js";
 
 const require = createRequire(import.meta.url);
 const {

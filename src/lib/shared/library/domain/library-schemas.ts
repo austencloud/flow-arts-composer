@@ -14,7 +14,7 @@ import { z } from "zod";
 import {
   firestoreDate,
   firestoreDateLenient,
-} from "$lib/shared/firestore/firestore-date";
+} from "#lib/shared/firestore/firestore-date.js";
 
 
 const ForkAttributionSchema = z

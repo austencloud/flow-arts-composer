@@ -7,15 +7,15 @@
   - Full-screen progress overlay during Pass 2 (deterministic render)
 -->
 <script lang="ts">
-  import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
-  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
+  import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
+  import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
   import {
     toExportTakeoverPhase,
     exportPhaseLabelKey,
-  } from "$lib/shared/video-export/services/export-takeover-phase";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  } from "#lib/shared/video-export/services/export-takeover-phase.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import RenderFilmCard from "./record-scene/RenderFilmCard.svelte";
-  import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
+  import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
   interface Props {
     countdownValue: number;
     isRecording: boolean;

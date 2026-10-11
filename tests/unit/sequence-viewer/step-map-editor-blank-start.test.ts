@@ -2,10 +2,10 @@
 
 import { flushSync, mount, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { formatTime } from "$lib/shared/sequence-viewer/utils/format-time";
+import { formatTime } from "#lib/shared/sequence-viewer/utils/format-time.js";
 
 const { default: StepMapEditor } =
-  await import("$lib/shared/sequence-viewer/components/step-mapping/StepMapEditor.svelte");
+  await import("#lib/shared/sequence-viewer/components/step-mapping/StepMapEditor.svelte");
 
 // vitest-setup.ts swaps document.createElement for canvas stubs that are not
 // DOM nodes. Mounting a component needs jsdom's own, from document's prototype.

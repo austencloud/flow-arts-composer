@@ -4,8 +4,8 @@
  */
 
 import { z } from "zod";
-import { firestoreDate } from "$lib/shared/firestore";
-import { NOTIFICATION_TYPES } from "$lib/shared/feedback/domain/models/notification-models";
+import { firestoreDate } from "#lib/shared/firestore/index.js";
+import { NOTIFICATION_TYPES } from "#lib/shared/feedback/domain/models/notification-models.js";
 
 
 const FeedbackTypeSchema = z.enum(["bug", "feature", "general"]);

@@ -12,26 +12,26 @@ const mocks = vi.hoisted(() => ({
   isWeb: vi.fn(),
 }));
 
-vi.mock("$app/environment", () => ({ dev: false }));
-vi.mock("$lib/shared/platform/services/platform-detector", () => ({
+vi.mock("$app/env", () => ({ dev: false }));
+vi.mock("#lib/shared/platform/services/platform-detector.js", () => ({
   isWeb: mocks.isWeb,
 }));
-vi.mock("$lib/shared/auth/services/authed-fetch", () => ({
+vi.mock("#lib/shared/auth/services/authed-fetch.js", () => ({
   authedFetch: mocks.authedFetch,
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthSync: () => ({
     currentUser: {
       uid: "firebase-user-1",
     },
   }),
 }));
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => ({
     showUserError: mocks.showUserError,
   }),
 }));
-vi.mock("$lib/shared/share/services/r2-presigner", () => ({
+vi.mock("#lib/shared/share/services/r2-presigner.js", () => ({
   getUploadUrl: mocks.getUploadUrl,
   startMultipart: mocks.startMultipart,
   getPartUrl: mocks.getPartUrl,

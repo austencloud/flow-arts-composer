@@ -1,19 +1,19 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   buildTnDSeedClasses,
   getTnDFamilyOptions,
-} from "$lib/features/choreo-card/services/deck-composer";
-import { loadTndBaseWords } from "$lib/features/choreo-card/services/tnd-base-word-snapshot";
-import { applyVariationDescriptor } from "$lib/features/choreo-card/services/deck-variation";
-import type { CardVariation } from "$lib/features/choreo-card/domain/models/DeckRelease";
-import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
+} from "#lib/features/choreo-card/services/deck-composer.js";
+import { loadTndBaseWords } from "#lib/features/choreo-card/services/tnd-base-word-snapshot.js";
+import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
+import type { CardVariation } from "#lib/features/choreo-card/domain/models/DeckRelease.js";
+import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
 import {
   classifyRotationStyle,
   type RotationStyle,
 } from "../domain/rotation-style";
 import { normalizeLegacySequence } from "@tka/tka-types";
-import { yieldToScheduler } from "$lib/shared/foundation/utils/background-scheduling";
+import { yieldToScheduler } from "#lib/shared/foundation/utils/background-scheduling.js";
 
 export type RotationGridMode = "diamond" | "box";
 export type StartOrientationPair = {

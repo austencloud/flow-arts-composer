@@ -1,6 +1,6 @@
-import type { BrowseEngine } from "$lib/shared/browse/engine/types";
-import type { ViewerMode } from "$lib/shared/sequence-viewer/state/viewer-state.svelte";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import type { BrowseEngine } from "#lib/shared/browse/engine/types.js";
+import type { ViewerMode } from "#lib/shared/sequence-viewer/state/viewer-state.svelte.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 
 /**
  * Someone who chose to browse by performances should arrive at the

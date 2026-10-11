@@ -1,23 +1,23 @@
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   LOCATION_ANGLES,
   PI,
-} from "$lib/shared/foundation/domain/math-constants";
+} from "#lib/shared/foundation/domain/math-constants.js";
 import {
   lerpAngle,
   normalizeAnglePositive,
   normalizeAngleSigned,
-} from "$lib/shared/animation-engine/services/angle-calculator";
+} from "#lib/shared/animation-engine/services/angle-calculator.js";
 import {
   centerOrientationToDegrees,
   orientationToStaffAngle,
   staffAngleToCenterOrientation,
   staffAngleToOrientation,
-} from "$lib/shared/render/core/calculations/orientation-angle";
+} from "#lib/shared/render/core/calculations/orientation-angle.js";
 
 export interface BuilderMotionGeometry {
   readonly startCenterAngle: number;

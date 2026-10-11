@@ -2,15 +2,15 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import { calculate } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import type { StepLike } from "$lib/shared/mandala/services/types";
-import { pairTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
+import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import type { StepLike } from "#lib/shared/mandala/services/types.js";
+import { pairTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
 import {
   MANDALA_STANDARD_TIP_DX,
   ENGINE_GRID_RADIUS,
   MANDALA_GRID_RADIUS,
   BASE_SAMPLES_PER_BEAT,
-} from "$lib/shared/mandala/domain/mandala-constants";
+} from "#lib/shared/mandala/domain/mandala-constants.js";
 import { normalizeLegacySteps } from "@tka/tka-types";
 
 /**

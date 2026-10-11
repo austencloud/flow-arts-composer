@@ -14,7 +14,7 @@
  * cannot show that a click was heard, only when the metronome asked for it.
  */
 
-import { Metronome } from "$lib/shared/audio/metronome";
+import { Metronome } from "#lib/shared/audio/metronome.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 interface ScheduledClick {

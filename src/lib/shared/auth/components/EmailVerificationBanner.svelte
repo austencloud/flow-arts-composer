@@ -9,7 +9,7 @@
   import { sendEmailVerification } from "firebase/auth";
   import { auth } from "../firebase";
   import { slide } from "svelte/transition";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let sending = $state(false);
   let sent = $state(false);

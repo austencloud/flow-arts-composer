@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
-import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
+import { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
+import { ShortcutRegistry } from "#lib/shared/keyboard/services/shortcut-registry.js";
 import {
   createGripLabShortcuts,
   shouldIgnoreGripLabKey,
 } from "../../../src/routes/test/grip-lab/grip-lab-shortcuts";
 
-vi.mock("$lib/shared/keyboard/keyboard-shortcut-analytics", () => ({
+vi.mock("#lib/shared/keyboard/keyboard-shortcut-analytics.js", () => ({
   logKeyboardShortcutExecuted: vi.fn(),
   logKeyboardShortcutFailed: vi.fn(),
 }));

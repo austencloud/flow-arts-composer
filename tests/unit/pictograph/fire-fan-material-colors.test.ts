@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { applyFanFrameColor } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import { applyFanFrameColor } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import {
   applyColorToSvg,
   applyMotionColorToSvg,
-} from "$lib/shared/utils/svg-color-utils";
+} from "#lib/shared/utils/svg-color-utils.js";
 import { readFileSync } from "node:fs";
 
 describe("physical fire-fan material colors", () => {

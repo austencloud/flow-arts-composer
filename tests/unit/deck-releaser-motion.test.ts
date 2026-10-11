@@ -29,7 +29,7 @@ describe("deck releaser motion", () => {
     });
     const mutate = vi.fn();
     const { runDeckReleaserTransition } =
-      await import("$lib/features/choreo-card/components/deck-releaser/deck-releaser-motion");
+      await import("#lib/features/choreo-card/components/deck-releaser/deck-releaser-motion.js");
 
     expect(runDeckReleaserTransition("stage", "forward", mutate)).toBeNull();
     expect(mutate).toHaveBeenCalledOnce();
@@ -57,7 +57,7 @@ describe("deck releaser motion", () => {
     });
     const mutate = vi.fn();
     const { runDeckReleaserTransition } =
-      await import("$lib/features/choreo-card/components/deck-releaser/deck-releaser-motion");
+      await import("#lib/features/choreo-card/components/deck-releaser/deck-releaser-motion.js");
 
     expect(
       runDeckReleaserTransition("sidebar", "backward", mutate)

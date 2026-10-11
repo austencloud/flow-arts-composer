@@ -5,7 +5,7 @@
   Shows mappings as chips in a centered, flowing layout.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { TransformId } from "../../domain/transforms/transform-help-content";
 
   interface Props {

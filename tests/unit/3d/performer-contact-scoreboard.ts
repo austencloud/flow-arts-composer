@@ -41,19 +41,19 @@ import {
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
 import {
   buildStanceYawTrackForSource,
   resolveTrackedUpperBodyStance,
-} from "$lib/shared/3d/collision/stance-yaw-track";
-import { MAX_STANCE_YAW_RAD } from "$lib/shared/3d/collision/upper-body-stance-planner";
+} from "#lib/shared/3d/collision/stance-yaw-track.js";
+import { MAX_STANCE_YAW_RAD } from "#lib/shared/3d/collision/upper-body-stance-planner.js";
 import {
   buildHardBeatTrack,
   displaceProp,
   sampleHardBeatTrack,
   type DisplacedBeat,
   type HardBeatTrackOptions,
-} from "$lib/shared/3d/collision/hard-beat-displacement";
+} from "#lib/shared/3d/collision/hard-beat-displacement.js";
 import { propContinuityCorpus } from "../../tools/prop-continuity-corpus";
 import { avatar, loadRig } from "./locomotion-harness";
 import {

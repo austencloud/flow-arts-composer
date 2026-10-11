@@ -4,7 +4,7 @@ import {
   createIcePlatformOutline,
   createIcePlatformShape,
   createIcePlatformSnowCollarShape,
-} from "$lib/shared/3d/environments/scenes/winter/ice-platform-geometry";
+} from "#lib/shared/3d/environments/scenes/winter/ice-platform-geometry.js";
 
 describe("Winter ice platform geometry", () => {
   it("keeps the configured performer-clearance radius in every direction", () => {

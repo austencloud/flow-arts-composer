@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { HandSide } from "../../../shared/domain/enums/pictograph-enums";
-import { applyMotionColorToSvg } from "$lib/shared/utils/svg-color-utils";
+import { applyMotionColorToSvg } from "#lib/shared/utils/svg-color-utils.js";
 import {
   applyHandColorOverride,
   applyModelSpriteColor,

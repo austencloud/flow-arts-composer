@@ -11,7 +11,7 @@ import {
   createMethodPreviewTurns,
   type MethodPreviewTurnOptions,
   type MethodPreviewTurns,
-} from "$lib/features/create/shared/state/method-preview-turns.svelte";
+} from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 
 const TIMING = {
   turnMs: 100,
@@ -89,6 +89,17 @@ describe("method preview turns", () => {
       [555, "c"],
     ]);
     expect(turns.playingId).toBeNull();
+  });
+
+  it("gives a card whose scene needs longer its longer turn", () => {
+    const { turns } = setup({ timing: { ...TIMING, longTurnsMs: { b: 150 } } });
+    turns.start();
+    expect(tick(turns, 400)).toEqual([
+      [5, "a"],
+      [115, "b"],
+      [275, "c"],
+      [385, "a"],
+    ]);
   });
 
   it("numbers each turn so a scene can tell a new turn from the last", () => {

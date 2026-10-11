@@ -1,5 +1,5 @@
-import type { GridMode, GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { GridMode, GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 /** A group of placements sharing the same grid mode */
 export interface PlacementSection {

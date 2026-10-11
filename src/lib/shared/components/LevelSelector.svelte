@@ -16,15 +16,15 @@
   level's own tint, border and glow.
 -->
 <script lang="ts" generics="T extends number = LevelNumber">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     DIFFICULTY_LEVELS,
     DEFAULT_DIFFICULTY_STYLE,
-  } from "$lib/shared/config/difficulty-styles";
+  } from "#lib/shared/config/difficulty-styles.js";
   import {
     LEVEL_METADATA,
     type LevelNumber,
-  } from "$lib/shared/domain/curriculum/level-metadata";
+  } from "#lib/shared/domain/curriculum/level-metadata.js";
 
   interface Props {
     value: T;

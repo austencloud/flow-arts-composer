@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 // Mock the firebase/auth import chain. The transformer + tuple processor are
 // pure math, but MotionData's factory transitively imports modules that pull
 // firebase/auth → protobufjs at load time (see special-override-proptype.test.ts).
-vi.mock("$lib/shared/auth/state/authState.svelte", () => ({
+vi.mock("#lib/shared/auth/state/authState.svelte", () => ({
   authState: { effectiveUserId: null },
 }));
 vi.mock("firebase/firestore", () => ({
@@ -12,12 +12,12 @@ vi.mock("firebase/firestore", () => ({
 }));
 
 import { Point } from "fabric";
-import { screenSpaceAdjustmentTransformer } from "$lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer";
-import { directionalTupleProcessor } from "$lib/shared/pictograph/arrow/positioning/calculation/services/directional-tuple-processor";
-import { arrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { GridLocation, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { MotionType, RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { screenSpaceAdjustmentTransformer } from "#lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer.js";
+import { directionalTupleProcessor } from "#lib/shared/pictograph/arrow/positioning/calculation/services/directional-tuple-processor.js";
+import { arrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { GridLocation, GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { MotionType, RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 // A pressed WASD key is a SCREEN-space delta. The dock inverts the per-quadrant
 // directional-tuple matrix (transformToReference) so the reference value, after

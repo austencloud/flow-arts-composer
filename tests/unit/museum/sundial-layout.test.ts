@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
+import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
 import {
   buildSundialLayout,
   CROSSING_HALF_WIDTH,
@@ -8,7 +8,7 @@ import {
   SUN_SUMMIT_Y,
   SUN_MEDALLION_RADIUS_M,
   SUN_PILLAR_RADIUS_M,
-} from "$lib/features/museum/data/sundial-layout";
+} from "#lib/features/museum/data/sundial-layout.js";
 
 const plan = buildVulcanCaveFloorPlan();
 const layout = buildSundialLayout(plan.grid)!;

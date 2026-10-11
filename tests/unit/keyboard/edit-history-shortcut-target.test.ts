@@ -5,10 +5,10 @@ import {
   getEditHistoryShortcutActionLabel,
   hasEditHistoryShortcutTarget,
   resolveEditHistoryShortcutTarget,
-} from "$lib/shared/keyboard/domain/edit-history-shortcut-target";
-import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
-import { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
-import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
+} from "#lib/shared/keyboard/domain/edit-history-shortcut-target.js";
+import { registerEditHistoryShortcuts } from "#lib/shared/keyboard/registration/register-edit-history-shortcuts.js";
+import { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
+import { ShortcutRegistry } from "#lib/shared/keyboard/services/shortcut-registry.js";
 
 function makeVisible(element: HTMLElement): void {
   Object.defineProperty(element, "getClientRects", {

@@ -1,19 +1,19 @@
-import type { HandPathData } from "$lib/shared/foundation/domain/models/hand-path-data";
-import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
-import type { SoloPropStepData } from "$lib/shared/foundation/domain/models/solo-prop-step-data";
-import type { StepPairingData } from "$lib/shared/foundation/domain/models/step-pairing-data";
-import { createSequenceData, type SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { MotionType, RotationDirection, Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { rehydrateMotion } from "$lib/shared/foundation/services/step-deriver";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { HandPathData } from "#lib/shared/foundation/domain/models/hand-path-data.js";
+import type { SoloPropData } from "#lib/shared/foundation/domain/models/solo-prop-data.js";
+import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
+import type { StepPairingData } from "#lib/shared/foundation/domain/models/step-pairing-data.js";
+import { createSequenceData, type SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { MotionType, RotationDirection, Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { rehydrateMotion } from "#lib/shared/foundation/services/step-deriver.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { FuseOptions } from "./types";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
 
 const DEFAULT_MAX_STEPS = 64;
 

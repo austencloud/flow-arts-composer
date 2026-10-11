@@ -3,7 +3,7 @@
   Labels animate position/scale in sync with grid animations using CSS transitions
 -->
 <script lang="ts">
-	import { tDynamic } from '$lib/shared/i18n/i18n.svelte.js';
+	import { tDynamic } from '#lib/shared/i18n/i18n.svelte.js';
 	import { onDestroy } from 'svelte';
 	import { CARDINAL_LABELS, INTERCARDINAL_LABELS, type Phase, type HighlightPhase } from './grid-merge-constants';
 

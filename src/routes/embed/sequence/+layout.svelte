@@ -12,7 +12,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { onMount } from "svelte";
-  import { ensureThemeApplied } from "$lib/shared/settings/utils/background-theme-calculator";
+  import { ensureThemeApplied } from "#lib/shared/settings/utils/background-theme-calculator.js";
 
   let { children }: { children: Snippet } = $props();
 

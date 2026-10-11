@@ -23,15 +23,15 @@ import {
   compilePostProject,
   evaluatePresetFrame,
   editContext,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   addTitlesItem,
   findTunnelHook,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
 import {
   titlesPlanOf,
   tunnelTitlesLook,
-} from "$lib/shared/media-composition/domain/tunnel-titles";
+} from "#lib/shared/media-composition/domain/tunnel-titles.js";
 import {
   NOW,
   card,

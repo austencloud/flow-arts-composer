@@ -1,4 +1,4 @@
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
+import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
 
 const DB_NAME = "tka-shape-cache";
 const DB_VERSION = 12;

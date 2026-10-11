@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
-import { PostProjectSchema, editContext } from "$lib/shared/post-studio-plugin";
-import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
-import { applyPostProjectOps } from "$lib/shared/media-composition/domain/post-project-ops";
+import { featureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
+import {
+  PostProjectSchema,
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
+import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-project-bridge-guard.js";
+import { applyPostProjectOps } from "#lib/shared/media-composition/domain/post-project-ops.js";
 import type { PostTake } from "@austencloud/video-editor/core";
 import {
   TakeTimingSchema,
   createTakeTiming,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import { NOW, project, spans, take, video } from "./post-project-fixtures";
 
 const ctx = editContext(NOW + 1);

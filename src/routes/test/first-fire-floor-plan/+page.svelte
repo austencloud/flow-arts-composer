@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { buildNominalFirstFireProcessionPlan } from "$lib/features/museum/data/first-fire-procession-plan";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { buildNominalFirstFireProcessionPlan } from "#lib/features/museum/data/first-fire-procession-plan.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import FirstFirePlanMap from "./FirstFirePlanMap.svelte";
   import {
     FIRST_FIRE_REVIEW_STAGES,

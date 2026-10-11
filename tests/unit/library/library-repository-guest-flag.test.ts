@@ -37,7 +37,7 @@ vi.mock("firebase/firestore", () => ({
   getCountFromServer: vi.fn(),
   writeBatch: vi.fn(() => firestoreMocks.batch),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
   getAuthInstance: vi.fn(async () => ({
     get currentUser() {
@@ -45,26 +45,26 @@ vi.mock("$lib/shared/auth/firebase", () => ({
     },
   })),
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     effectiveUserId: "user-1",
     user: { uid: "user-1", displayName: "Test User" },
   },
 }));
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => ({ showUserError: vi.fn() }),
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte.ts", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.ts", () => ({
   toast: { info: vi.fn(), error: vi.fn() },
 }));
-vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/sync-status-state.svelte.js", () => ({
   trackWrite: (operation: () => Promise<unknown>) => operation(),
 }));
-vi.mock("$lib/shared/foundation/services/sequence-hydrator", () => ({
+vi.mock("#lib/shared/foundation/services/sequence-hydrator.js", () => ({
   hydrate: (sequence: unknown) => sequence,
   ensureComposition: (sequence: unknown) => sequence,
 }));
-vi.mock("$lib/shared/firestore", () => ({
+vi.mock("#lib/shared/firestore/index.js", () => ({
   firestoreGet: vi.fn(),
   firestoreList: vi.fn(),
   stripUndefined: (value: Record<string, unknown>) =>
@@ -72,34 +72,34 @@ vi.mock("$lib/shared/firestore", () => ({
       Object.entries(value).filter(([, fieldValue]) => fieldValue !== undefined)
     ),
 }));
-vi.mock("$lib/shared/create/services/orientation-cycle-detector", () => ({
+vi.mock("#lib/shared/create/services/orientation-cycle-detector.js", () => ({
   detectOrientationCycle: vi.fn(),
 }));
-vi.mock("$lib/shared/library/services/sequence-content-hasher", () => ({
+vi.mock("#lib/shared/library/services/sequence-content-hasher.js", () => ({
   computeHash: vi.fn().mockResolvedValue("content-hash"),
   CONTENT_HASH_VERSION: 1,
   HASH_VERSION_V1: 1,
 }));
-vi.mock("$lib/shared/library/services/fork-decision", () => ({
+vi.mock("#lib/shared/library/services/fork-decision.js", () => ({
   decideFork: vi.fn(),
 }));
-vi.mock("$lib/shared/library/get-tag-migrator", () => ({
+vi.mock("#lib/shared/library/get-tag-migrator.js", () => ({
   getTagMigrator: () =>
     vi.fn().mockResolvedValue({ sequenceTags: [], tagIds: [] }),
 }));
-vi.mock("$lib/shared/library/library-events", () => ({
+vi.mock("#lib/shared/library/library-events.js", () => ({
   notifyLibraryMutated: vi.fn(),
   notifyLibrarySequenceAdded: vi.fn(),
   notifyLibrarySequenceUpdated: vi.fn(),
 }));
-vi.mock("$lib/shared/library/services/library-recycle-bin", () => ({
+vi.mock("#lib/shared/library/services/library-recycle-bin.js", () => ({
   LibraryRecycleBin: class {},
 }));
-vi.mock("$lib/shared/library/services/library-batch-operations", () => ({
+vi.mock("#lib/shared/library/services/library-batch-operations.js", () => ({
   LibraryBatchOperations: class {},
 }));
 
-import { LibraryRepository } from "$lib/shared/library/services/library-repository";
+import { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
 
 function makeSequence() {
   return {

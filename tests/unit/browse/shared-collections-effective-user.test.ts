@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ICollectionCollaborationManager } from "$lib/shared/library/services/contracts/ICollectionCollaborationManager";
-import { createSharedCollectionsState } from "$lib/features/browse/collections/state/shared-collections-state.svelte";
+import type { ICollectionCollaborationManager } from "#lib/shared/library/services/contracts/ICollectionCollaborationManager.js";
+import { createSharedCollectionsState } from "#lib/features/browse/collections/state/shared-collections-state.svelte.js";
 
 describe("shared collections effective identity", () => {
   it("drops late subscription results from the previous identity", () => {

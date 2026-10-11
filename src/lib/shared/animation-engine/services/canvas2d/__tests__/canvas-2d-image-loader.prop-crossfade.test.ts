@@ -46,7 +46,7 @@ const { fakeSvgCache } = vi.hoisted(() => {
   };
 });
 
-vi.mock("$lib/shared/animation-engine/services/svg-generator", () => {
+vi.mock("#lib/shared/animation-engine/services/svg-generator.js", () => {
   const propSvg = async (propType: string) => {
     const dimensions = PROP_GEOMETRY[propType];
     if (!dimensions) throw new Error(`Unknown test prop: ${propType}`);
@@ -64,7 +64,7 @@ vi.mock("$lib/shared/animation-engine/services/svg-generator", () => {
   };
 });
 
-vi.mock("$lib/shared/render/services/svg-image-cache", () => ({
+vi.mock("#lib/shared/render/services/svg-image-cache.js", () => ({
   getSvgImageCache: () => fakeSvgCache,
 }));
 

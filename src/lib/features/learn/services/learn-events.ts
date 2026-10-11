@@ -1,4 +1,4 @@
-import { logActivity } from "$lib/shared/analytics/services/posthog-activity-logger";
+import { logActivity } from "#lib/shared/analytics/services/posthog-activity-logger.js";
 
 export function trackLessonStarted(lessonId: string, status: string): void {
   void logActivity("lesson_start", "learn", { lessonId, status });

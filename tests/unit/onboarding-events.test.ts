@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const captureWhenReady = vi.hoisted(() => vi.fn());
 
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureWhenReady,
 }));
 
@@ -19,7 +19,7 @@ import {
   logGenerateTourAccepted,
   logGenerateTourDeclined,
   logAccountSetupNameSave,
-} from "$lib/shared/analytics/services/onboarding-events";
+} from "#lib/shared/analytics/services/onboarding-events.js";
 
 describe("onboarding events", () => {
   beforeEach(() => captureWhenReady.mockClear());

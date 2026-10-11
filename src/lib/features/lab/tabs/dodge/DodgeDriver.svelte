@@ -28,21 +28,21 @@
     Vector3,
     type Bone,
   } from "three";
-  import type { MmLocomotionController } from "$lib/features/stage/locomotion/motion-matching/mm-locomotion-controller";
-  import type { RigBinding, LegChain } from "$lib/features/stage/locomotion/motion-matching/rig-binding";
-  import { solveLegIK } from "$lib/shared/3d/services/hinge-constrained-leg-ik-solver";
-  import { computeKneeHingeAxis } from "$lib/shared/3d/services/knee-hinge-axis-calibrator";
-  import { calculatePropState } from "$lib/shared/3d/services/prop-state-interpolator";
-  import { buildSweptVolume } from "$lib/features/stage/locomotion/dodge/swept-volume-builder";
-  import { planDodge } from "$lib/features/stage/locomotion/dodge/dodge-orchestrator";
+  import type { MmLocomotionController } from "#lib/features/stage/locomotion/motion-matching/mm-locomotion-controller.js";
+  import type { RigBinding, LegChain } from "#lib/features/stage/locomotion/motion-matching/rig-binding.js";
+  import { solveLegIK } from "#lib/shared/3d/services/hinge-constrained-leg-ik-solver.js";
+  import { computeKneeHingeAxis } from "#lib/shared/3d/services/knee-hinge-axis-calibrator.js";
+  import { calculatePropState } from "#lib/shared/3d/services/prop-state-interpolator.js";
+  import { buildSweptVolume } from "#lib/features/stage/locomotion/dodge/swept-volume-builder.js";
+  import { planDodge } from "#lib/features/stage/locomotion/dodge/dodge-orchestrator.js";
   import {
     StanceSimulator,
     restPoseFromHeight,
-  } from "$lib/features/lab/tabs/collision-lab/services/stance-simulator";
-  import type { SimPropTarget, RestPoseGeometry, SimResult } from "$lib/features/lab/tabs/collision-lab/services/types";
-  import type { StancePose } from "$lib/features/lab/tabs/collision-lab/domain/types";
-  import type { DodgePlan, DodgeKnob, BodyPlacement } from "$lib/features/stage/locomotion/dodge/dodge-types";
-  import type { MotionConfig3D } from "$lib/shared/3d/domain/models/motion-data-3d";
+  } from "#lib/features/lab/tabs/collision-lab/services/stance-simulator.js";
+  import type { SimPropTarget, RestPoseGeometry, SimResult } from "#lib/features/lab/tabs/collision-lab/services/types.js";
+  import type { StancePose } from "#lib/features/lab/tabs/collision-lab/domain/types.js";
+  import type { DodgePlan, DodgeKnob, BodyPlacement } from "#lib/features/stage/locomotion/dodge/dodge-types.js";
+  import type { MotionConfig3D } from "#lib/shared/3d/domain/models/motion-data-3d.js";
 
   let {
     controller,

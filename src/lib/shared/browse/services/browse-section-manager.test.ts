@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { organizeSections } from "$lib/shared/browse/services/browse-section-manager";
-import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-import type { SectionConfig } from "$lib/shared/browse/domain/models/browse-models";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { organizeSections } from "#lib/shared/browse/services/browse-section-manager.js";
+import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+import type { SectionConfig } from "#lib/shared/browse/domain/models/browse-models.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 // Minimal StepData factory — only the fields the section manager reads
 // (letter for word derivation, plus array length for the step count).

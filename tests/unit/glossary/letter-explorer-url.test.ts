@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   parseLetterExplorerRoute,
   writeLetterExplorerRoute,
 } from "../../../src/routes/(public)/atlas/_components/codex-boards/letter-explorer-url";
 import { buildComposerDraftHref } from "../../../src/routes/(public)/atlas/_components/codex-boards/letter-explorer-draft";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { parseDeepLink } from "$lib/shared/navigation/services/sequence-encoder";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { parseDeepLink } from "#lib/shared/navigation/services/sequence-encoder.js";
 
 const letters = new Set(["A", "B", "W-"]);
 

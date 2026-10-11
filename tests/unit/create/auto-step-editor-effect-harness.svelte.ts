@@ -1,8 +1,8 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   createAutoStepEditorEffect,
   type AutoEditPanelConfig,
-} from "$lib/features/create/shared/state/managers/auto-edit-panel-manager.svelte";
+} from "#lib/features/create/shared/state/managers/auto-edit-panel-manager.svelte.js";
 
 interface HarnessOptions {
   persistenceInitialized: boolean;

@@ -1,25 +1,25 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { setDefaultOverrideResolver } from "$lib/shared/pictograph/arrow/positioning/placement/services/arrow-placer";
-import { calculateArrowPoint } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator";
-import { calculateSegmentRotation } from "$lib/shared/pictograph/arrow/positioning/calculation/services/segment-rotation";
-import { arrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
-import { getInitialPosition } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-grid-coordinator";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { setDefaultOverrideResolver } from "#lib/shared/pictograph/arrow/positioning/placement/services/arrow-placer.js";
+import { calculateArrowPoint } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator.js";
+import { calculateSegmentRotation } from "#lib/shared/pictograph/arrow/positioning/calculation/services/segment-rotation.js";
+import { arrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
+import { getInitialPosition } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-grid-coordinator.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { ArrowPlacer } from "$lib/shared/pictograph/arrow/positioning/placement/services/arrow-placer";
-import { SimpleJsonCache } from "$lib/shared/pictograph/shared/services/simple-json-cache";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { ArrowPlacer } from "#lib/shared/pictograph/arrow/positioning/placement/services/arrow-placer.js";
+import { SimpleJsonCache } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
 
-vi.mock("$lib/shared/net/asset-fetch", () => ({
+vi.mock("#lib/shared/net/asset-fetch.js", () => ({
   assetFetch: vi.fn(async () =>
     new Response("{}", {
       status: 200,

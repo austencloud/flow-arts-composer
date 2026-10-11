@@ -1,25 +1,25 @@
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
   import type { SequenceState } from "../../../state/sequence-state-orchestrator.svelte";
   import { getCreateModuleContext } from "../../../context/create-module-context";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import type { LetterSource } from "$lib/shared/create/domain/spell-models";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
   import type {
     MandalaPathShape,
     MandalaRenderOptions,
-  } from "$lib/shared/mandala/domain/mandala-types";
+  } from "#lib/shared/mandala/domain/mandala-types.js";
   import StepGrid from "./StepGrid.svelte";
-  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-  import { loopDetector as circularLoopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
-  import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+  import { loopDetector as circularLoopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
+  import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
   import { getIsTimelineMode } from "../state/timeline-mode.svelte";
   import { updateStepDuration } from "../../../services/step-operations/duration-handler";
   import { UndoOperationType } from "../../../services/undo-manager";
   import {
     logConstructContextPreviewCompleted,
     logConstructContextPreviewReady,
-  } from "$lib/features/create/construct/services/construct-analytics";
+  } from "#lib/features/create/construct/services/construct-analytics.js";
 
   let {
     sequenceState,

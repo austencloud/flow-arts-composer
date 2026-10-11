@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { validateRoom } from "$lib/shared/3d/indoor/services/room-validator";
-import { buildRoom } from "$lib/shared/3d/indoor/services/room-geometry-builder";
-import type { RoomDefinition, SolvedRoom } from "$lib/shared/3d/indoor/domain/room-types";
-import { snapToGrid } from "$lib/shared/3d/indoor/domain/room-types";
+import { validateRoom } from "#lib/shared/3d/indoor/services/room-validator.js";
+import { buildRoom } from "#lib/shared/3d/indoor/services/room-geometry-builder.js";
+import type { RoomDefinition, SolvedRoom } from "#lib/shared/3d/indoor/domain/room-types.js";
+import { snapToGrid } from "#lib/shared/3d/indoor/domain/room-types.js";
 
 function makeStandardRoom(overrides: Partial<RoomDefinition> = {}): RoomDefinition {
 	return {

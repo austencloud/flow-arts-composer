@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildFirstFireBlenderContract } from "$lib/features/museum/data/first-fire-blender-contract";
+import { buildFirstFireBlenderContract } from "#lib/features/museum/data/first-fire-blender-contract.js";
 import {
   FIRST_FIRE_LOCKED_CAMERAS,
   buildFirstFireLockedCameraViews,
-} from "$lib/features/museum/data/first-fire-locked-cameras";
+} from "#lib/features/museum/data/first-fire-locked-cameras.js";
 
 const contract = buildFirstFireBlenderContract();
 

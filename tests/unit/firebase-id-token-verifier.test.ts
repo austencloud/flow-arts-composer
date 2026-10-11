@@ -76,6 +76,7 @@ describe("Firebase ID token verification", () => {
       uid: "admin-user",
       email: "admin@example.com",
       name: "Admin",
+      issuedAt: NOW_SECONDS - 60,
       authTime: NOW_SECONDS - 60,
       admin: true,
       isAdmin: undefined,
@@ -141,6 +142,7 @@ describe("admin claim authorization", () => {
   const user = (claims: Partial<VerifiedFirebaseIdToken>) =>
     ({
       uid: "user",
+      issuedAt: NOW_SECONDS,
       authTime: NOW_SECONDS,
       ...claims,
     }) as VerifiedFirebaseIdToken;

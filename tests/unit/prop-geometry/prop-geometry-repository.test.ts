@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { PropGeometryAdjustmentRepository } from "$lib/shared/pictograph/arrow/positioning/prop-geometry/services/prop-geometry-adjustment-repository";
+import { PropGeometryAdjustmentRepository } from "#lib/shared/pictograph/arrow/positioning/prop-geometry/services/prop-geometry-adjustment-repository.js";
 import type {
   PropGeometryAdjustmentInput,
   PropGeometryKey,
-} from "$lib/shared/pictograph/arrow/positioning/prop-geometry/domain/prop-geometry-adjustment";
-import type { PropGeometryAdjustment } from "$lib/shared/pictograph/arrow/positioning/prop-geometry/domain/prop-geometry-adjustment";
+} from "#lib/shared/pictograph/arrow/positioning/prop-geometry/domain/prop-geometry-adjustment.js";
+import type { PropGeometryAdjustment } from "#lib/shared/pictograph/arrow/positioning/prop-geometry/domain/prop-geometry-adjustment.js";
 
 // Force admin so the guard passes.
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { user: { email: "austencloud@gmail.com" } },
 }));
 

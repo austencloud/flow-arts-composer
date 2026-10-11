@@ -1,7 +1,7 @@
 import { PropType, type PropBuild } from "@austencloud/scene-3d";
 import { Group, Mesh, MeshStandardMaterial, SphereGeometry } from "three";
 import { describe, expect, it } from "vitest";
-import { createWorkerPropVisual } from "$lib/shared/3d/worker-renderer/worlds/props/worker-prop-factory";
+import { createWorkerPropVisual } from "#lib/shared/3d/worker-renderer/worlds/props/worker-prop-factory.js";
 
 const BUILD: PropBuild = {
   finish: "fire",

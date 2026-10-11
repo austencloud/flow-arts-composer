@@ -2,7 +2,7 @@
 //
 // Runs the REAL wrapper functions (ensureGuestIdentity / upgradeAnonymousWithEmail
 // / importDrafts) against the Firebase AUTH EMULATOR. The two heavy deps are
-// mocked: the app's HMR-heavy `$lib/shared/auth/firebase` module (replaced with a
+// mocked: the app's HMR-heavy `#lib/shared/auth/firebase.js` module (replaced with a
 // thin getAuthInstance that returns a real emulator-connected Auth), and the
 // library repository (replaced with a recording stub).
 //
@@ -33,11 +33,11 @@ const h = vi.hoisted(() => ({
   dexieRows: [] as any[],
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthInstance: async () => h.testAuth,
 }));
 
-vi.mock("$lib/shared/library/get-library-repository", () => ({
+vi.mock("#lib/shared/library/get-library-repository.js", () => ({
   getLibraryRepository: () => h.repo,
 }));
 
@@ -45,20 +45,20 @@ vi.mock("$lib/shared/library/get-library-repository", () => ({
 // the linked path. The real manager pulls in a `.svelte.ts` $state rune module,
 // which can't compile in this plugin-less emulator config. Stub it — the upgrade
 // logic under test doesn't depend on the merge.
-vi.mock("$lib/shared/gamification/get-prop-unlock-manager", () => ({
+vi.mock("#lib/shared/gamification/get-prop-unlock-manager.js", () => ({
   getPropUnlockManager: () => ({ mergeGuestCollection: () => undefined }),
 }));
 
 // toast-state is a `.svelte.ts` $state rune module — same plugin-less-compile
 // problem. notifyUpgradeSignup() calls toast.success() on the linked path.
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { success: () => undefined, error: () => undefined },
 }));
 
 // last-auth-method is a `.svelte.ts` $state rune module too, imported directly
 // by anonymous-upgrade. Without this the file threw "$state is not defined" at
 // import time and the whole suite silently collected ZERO tests.
-vi.mock("$lib/shared/auth/services/last-auth-method.svelte", () => ({
+vi.mock("#lib/shared/auth/services/last-auth-method.svelte.js", () => ({
   recordLastAuthMethod: () => undefined,
 }));
 
@@ -68,23 +68,26 @@ vi.mock("$lib/shared/auth/services/last-auth-method.svelte", () => ({
 // reached the cloud.) Both sides are stubbed here: the ledger reads
 // localStorage, which this node-environment suite has none of, and Dexie needs
 // a browser IndexedDB.
-vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
+vi.mock("#lib/shared/library/services/saved-sequence-ledger.js", () => ({
   getSavedSequenceIds: () => h.ledgerIds,
   getOwnedSequenceIdSet: () => new Set(h.ledgerIds),
   recordSavedSequenceId: () => undefined,
   removeSavedSequenceIds: () => undefined,
 }));
-vi.mock("$lib/shared/persistence/services/dexie-persistence-service", () => ({
-  getAllSequences: async () => h.dexieRows,
-}));
+vi.mock(
+  "#lib/shared/persistence/services/dexie-persistence-service.js",
+  () => ({
+    getAllSequences: async () => h.dexieRows,
+  })
+);
 
 // Static imports are fine: vi.mock is hoisted above them, so these resolve to
 // the mocked modules.
-import { ensureGuestIdentity } from "$lib/shared/auth/services/guest-identity";
+import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
 import {
   importDrafts,
   upgradeAnonymousWithEmail,
-} from "$lib/shared/auth/services/anonymous-upgrade";
+} from "#lib/shared/auth/services/anonymous-upgrade.js";
 
 /** Minimal fake draft. The repo is stubbed, so the exact shape doesn't matter. */
 function makeDraft(id: string) {

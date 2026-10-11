@@ -26,9 +26,9 @@
  *   - packages/domain/src/curriculum/knowledge-graph.ts
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 const CENTER_ORIENTATIONS = new Set([
   "centerN", "centerNE", "centerE", "centerSE",

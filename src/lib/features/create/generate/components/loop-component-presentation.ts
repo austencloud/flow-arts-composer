@@ -1,11 +1,11 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { LOOPComponent } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
 
 import {
   parseLoopComponents,
   formatLOOPTypeForDisplay,
-} from "$lib/shared/create/services/loop-type-utils";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/create/services/loop-type-utils.js";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 const LABELS = {
   [LOOPComponent.ROTATED]: "generator_loop_rotated",

@@ -1,7 +1,7 @@
-import { browser } from "$app/environment";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import { writeUrl } from "$lib/shared/navigation/services/url-state";
-import { isStandaloneAppSurface } from "$lib/shared/navigation/services/app-shell-route";
+import { browser } from "$app/env";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { writeUrl } from "#lib/shared/navigation/services/url-state.js";
+import { isStandaloneAppSurface } from "#lib/shared/navigation/services/app-shell-route.js";
 import type { ModuleId } from "../../../navigation/domain/types";
 import { featureFlagService } from "../../../auth/services/post-hog-feature-flag-service.svelte";
 import { navigationState } from "../../../navigation/state/navigation-state.svelte";

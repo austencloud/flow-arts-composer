@@ -10,13 +10,13 @@ import {
 import {
   evaluatePresetFrame,
   evaluatePresetLayers,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import type {
   SequenceTimeMap,
   PresetEasing,
   PresetVisualClipMotion,
 } from "@austencloud/video-editor/core";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 const performancePreset = POST_STUDIO_PRESETS.find(
   (preset) => preset.id === "performance-breakdown"

@@ -1,14 +1,14 @@
-import { HAND_PATH_REFERENCE_CARDS } from "$lib/features/choreo-card/domain/hand-path-reference-cards";
-import { rotateSequenceGeometry } from "$lib/shared/create/services/sequence-derived-fields";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { HAND_PATH_REFERENCE_CARDS } from "#lib/features/choreo-card/domain/hand-path-reference-cards.js";
+import { rotateSequenceGeometry } from "#lib/shared/create/services/sequence-derived-fields.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   TnDMode,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
 
 export interface TogetherOppositeExample {
   readonly id: string;

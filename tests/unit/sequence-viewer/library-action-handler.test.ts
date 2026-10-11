@@ -13,12 +13,12 @@ const mocks = vi.hoisted(() => ({
   authState: { user: { uid: "viewer-test-user" } },
 }));
 
-vi.mock("$lib/shared/library/services/collection-manager", () => ({
+vi.mock("#lib/shared/library/services/collection-manager.js", () => ({
   isFavorite: vi.fn(async () => false),
   toggleFavorite: vi.fn(async () => undefined),
 }));
 
-vi.mock("$lib/shared/library/get-library-repository", () => ({
+vi.mock("#lib/shared/library/get-library-repository.js", () => ({
   getLibraryRepository: () => ({
     hasMatchingContent: mocks.hasMatchingContent,
     getSequence: mocks.getSequence,
@@ -29,40 +29,40 @@ vi.mock("$lib/shared/library/get-library-repository", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/foundation/domain/models/sequence-data", () => ({
+vi.mock("#lib/shared/foundation/domain/models/sequence-data.js", () => ({
   createSequenceData: (sequence: unknown) => sequence,
 }));
 
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte",
+  "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js",
   () => ({
     getAnimationVisibilityManager: () => ({ getPathShape: () => "arc" }),
   })
 );
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: mocks.authState,
 }));
 
-vi.mock("$lib/shared/library/services/sequence-content-hasher", () => ({
+vi.mock("#lib/shared/library/services/sequence-content-hasher.js", () => ({
   computeHash: mocks.computeHash,
 }));
 
-vi.mock("$lib/shared/auth/services/guest-identity", () => ({
+vi.mock("#lib/shared/auth/services/guest-identity.js", () => ({
   ensureGuestIdentity: mocks.ensureGuestIdentity,
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   showToast: mocks.showToast,
   removeToast: mocks.removeToast,
 }));
 
-vi.mock("$lib/shared/pictograph/prop/domain/enums/prop-type", () => ({
+vi.mock("#lib/shared/pictograph/prop/domain/enums/prop-type.js", () => ({
   PropType: { STAFF: "staff", FAN: "fan" },
 }));
 
 vi.mock(
-  "$lib/shared/onboarding/state/post-save-activation-state.svelte",
+  "#lib/shared/onboarding/state/post-save-activation-state.svelte.js",
   () => ({
     postSaveActivation: {
       onGuestSaveSucceeded: mocks.onGuestSaveSucceeded,
@@ -70,17 +70,17 @@ vi.mock(
   })
 );
 
-import { createLibraryActionHandler } from "$lib/shared/sequence-viewer/state/library-action-handler.svelte";
-import { LibraryError } from "$lib/shared/library/domain/library-error";
-import { registerVisualSequenceSaveCoordinatorFactory } from "$lib/shared/library/get-visual-sequence-save-coordinator";
-import { VisualSequenceSaveCoordinator } from "$lib/features/library/services/implementations/VisualSequenceSaveCoordinator";
+import { createLibraryActionHandler } from "#lib/shared/sequence-viewer/state/library-action-handler.svelte.js";
+import { LibraryError } from "#lib/shared/library/domain/library-error.js";
+import { registerVisualSequenceSaveCoordinatorFactory } from "#lib/shared/library/get-visual-sequence-save-coordinator.js";
+import { VisualSequenceSaveCoordinator } from "#lib/features/library/services/implementations/VisualSequenceSaveCoordinator.js";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrailMode,
   TrailEffect,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import type { PresentationSource } from "$lib/shared/foundation/services/presentation-intent";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import type { PresentationSource } from "#lib/shared/foundation/services/presentation-intent.js";
 
 const sequence = {
   id: "sequence-1",

@@ -16,7 +16,7 @@
 	against the CONTAINED image rect, not the container box.
 -->
 <script lang="ts">
-  import type { SheetRegionMap, SheetRegion } from "$lib/shared/browse/services/sheet-region-map";
+  import type { SheetRegionMap, SheetRegion } from "#lib/shared/browse/services/sheet-region-map.js";
 
   const {
     src,

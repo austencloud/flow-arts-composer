@@ -1,25 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   FEATURE_VIDEO_API,
   FEATURE_VIDEO_FILE_FORMAT,
   type FeatureVideoFile,
-} from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   createEmptyPostProject,
   editContext,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import type { PostProject } from "@austencloud/video-editor/core";
-import { applyPostProjectOps } from "$lib/shared/media-composition/domain/post-project-ops";
-import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
+import { applyPostProjectOps } from "#lib/shared/media-composition/domain/post-project-ops.js";
+import { addTakeTap } from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   createFeatureVideoSync,
+  duplicateSoftwareFeatureVideo,
   listFeatureVideos,
   loadFeatureVideo,
   type FeatureVideoSync,
-} from "$lib/shared/media-composition/services/feature-video-client";
-import { createPostDraftAutosave } from "$lib/shared/media-composition/services/post-draft-storage";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+} from "#lib/shared/media-composition/services/feature-video-client.js";
+import { createPostDraftAutosave } from "#lib/shared/media-composition/services/post-draft-storage.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 
 const NOW = 1_780_000_000_000;
 const SEQUENCE = "seq";
@@ -418,6 +419,35 @@ describe("a feature video in the Post editor", () => {
 });
 
 describe("listing and loading", () => {
+  it("duplicates a feature into a separately named project with copied media", async () => {
+    const requests: { url: string; body: Record<string, unknown> }[] = [];
+    const fetcher = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        requests.push({ url: String(input), body });
+        return Response.json(
+          { file: { ...featureFile(), slug: body.slug, title: body.title } },
+          { status: 201 }
+        );
+      }
+    ) as typeof fetch;
+    const slug = await duplicateSoftwareFeatureVideo(
+      "promo",
+      "My Showcase",
+      fetcher
+    );
+    expect(slug).toMatch(/^my-showcase-[a-f0-9]{8}$/);
+    expect(requests).toEqual([
+      {
+        url: `${FEATURE_VIDEO_API}/promo/duplicate`,
+        body: {
+          slug,
+          title: "My Showcase",
+          shareMedia: false,
+        },
+      },
+    ]);
+  });
   it("lists and loads feature videos and passes on the server's message", async () => {
     const file = featureFile();
     const summary = {

@@ -22,18 +22,18 @@
  *    hand must not contribute locations to detection).
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepLike } from "$lib/shared/foundation/domain/models/step-like";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import type { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepLike } from "#lib/shared/foundation/domain/models/step-like.js";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import type { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import type {
   ILOOPDetector,
   LOOPDetectionResult,
   CompoundPattern,
-} from "$lib/shared/create/services/ILOOPDetector";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/create/services/ILOOPDetector.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import { loopDetectorClass } from "@tka/sequence-engine/loop";
 
 /** Minimal engine-step shape the canonical detector reads. */

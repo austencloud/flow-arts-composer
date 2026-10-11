@@ -1,9 +1,9 @@
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     DEFAULT_OVERLAP_CONFIG,
     type MandalaOverlapConfig,
-  } from "$lib/shared/mandala/domain/mandala-types";
+  } from "#lib/shared/mandala/domain/mandala-types.js";
 
   type RenderStyle = "stroke" | "filled";
 

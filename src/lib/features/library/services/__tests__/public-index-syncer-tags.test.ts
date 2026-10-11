@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 
 // resolveTagNames maps a sequence's applied tag IDs to human-readable names by
 // reading the owner's users/{userId}/tags collection. These tests pin the
@@ -24,7 +24,7 @@ vi.mock("firebase/firestore", () => ({
   where: vi.fn(),
   limit: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 

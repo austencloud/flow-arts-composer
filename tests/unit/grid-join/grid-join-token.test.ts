@@ -12,7 +12,7 @@ import {
   gridJoinToken,
   isWellFormedGridJoin,
   parseGridJoinToken,
-} from "$lib/shared/foundation/domain/models/grid-join-token";
+} from "#lib/shared/foundation/domain/models/grid-join-token.js";
 
 const EVERY_DIRECTION: Record<GridJoinDirection, true> = {
   n: true,

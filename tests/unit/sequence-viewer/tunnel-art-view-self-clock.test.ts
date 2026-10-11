@@ -9,7 +9,7 @@ import { mountTunnelClock } from "./tunnel-art-view-clock-harness.svelte";
 // The error controller keeps the canvas from mounting, so its heavy import
 // graph has no use here.
 vi.mock(
-  "$lib/shared/animation-engine/components/AnimatorCanvas.svelte",
+  "#lib/shared/animation-engine/components/AnimatorCanvas.svelte",
   async () => ({
     default: (await import("../create/PassthroughStub.svelte")).default,
   })

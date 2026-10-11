@@ -1,24 +1,24 @@
 import type {
   GridMode,
   GridLocation,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   MotionType,
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { createPictographData } from "$lib/shared/pictograph/shared/domain/factories/create-pictograph-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { createPictographData } from "#lib/shared/pictograph/shared/domain/factories/create-pictograph-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   getGridLocationsFromPlacement,
   getGridPlacementFromLocations,
-} from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
+} from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 
 export interface StartPlacementPlacement {
   leftLocation: GridLocation;

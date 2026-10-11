@@ -19,14 +19,14 @@ import {
 } from "./spatial-lab-constants";
 import { DEMO_SEQUENCES, type DemoSequence, type SequenceBeat } from "../services/demo-sequences";
 import { diagnoseReachability, type ReachabilityDiagnosis } from "../services/reachability-taxonomy";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { Plane } from "@austencloud/scene-3d";
 import type { PropState3D } from "@austencloud/scene-3d";
-import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
 import {
   gridLocationToPosition3D,
   calculatePropRotation,
-} from "$lib/shared/3d/services/plane-coordinate-mapper";
+} from "#lib/shared/3d/services/plane-coordinate-mapper.js";
 
 export type LabMode = "sandbox" | "sequence";
 

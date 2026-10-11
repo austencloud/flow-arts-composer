@@ -11,18 +11,18 @@
   import {
     getHitTargets,
     getHitTargetRadius,
-  } from "$lib/shared/assemble-lab/services/grid-hit-target-calculator";
-  import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/assemble-lab/services/grid-hit-target-calculator.js";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     HandSide,
     type HandSide as HandSideValue,
     type Orientation,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     aimDirectionsFor,
     orientationFromDrag,
-  } from "$lib/shared/pictograph/grid/domain/orientation-from-drag";
+  } from "#lib/shared/pictograph/grid/domain/orientation-from-drag.js";
 
   interface Props {
     gridMode: GridMode;

@@ -1,18 +1,18 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import ViewerModeBottomBar from "$lib/shared/sequence-viewer/components/ViewerModeBottomBar.svelte";
-  import MandalaControlDock from "$lib/shared/sequence-viewer/components/MandalaControlDock.svelte";
-  import MandalaExportTakeover from "$lib/shared/sequence-viewer/components/MandalaExportTakeover.svelte";
-  import type { ContentType, ViewerMode } from "$lib/shared/sequence-viewer/state/viewer-state.svelte";
-  import { MandalaViewerController } from "$lib/shared/sequence-viewer/state/mandala-viewer-controller.svelte";
-  import { loadCatalogs, loadCatalogSequences } from "$lib/features/choreo-card/services/catalog-loader";
-  import { mandalaCollectionState } from "$lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte";
-  import type { Catalog } from "$lib/features/choreo-card/domain/models/Catalog";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { forceFreshReload } from "$lib/shared/foundation/services/force-fresh";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import ViewerModeBottomBar from "#lib/shared/sequence-viewer/components/ViewerModeBottomBar.svelte";
+  import MandalaControlDock from "#lib/shared/sequence-viewer/components/MandalaControlDock.svelte";
+  import MandalaExportTakeover from "#lib/shared/sequence-viewer/components/MandalaExportTakeover.svelte";
+  import type { ContentType, ViewerMode } from "#lib/shared/sequence-viewer/state/viewer-state.svelte.js";
+  import { MandalaViewerController } from "#lib/shared/sequence-viewer/state/mandala-viewer-controller.svelte.js";
+  import { loadCatalogs, loadCatalogSequences } from "#lib/features/choreo-card/services/catalog-loader.js";
+  import { mandalaCollectionState } from "#lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte.js";
+  import type { Catalog } from "#lib/features/choreo-card/domain/models/Catalog.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { forceFreshReload } from "#lib/shared/foundation/services/force-fresh.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
   // ── Sequence sourcing (same approach as /test/mandala-paths) ──────
   let catalogs: Catalog[] = $state([]);

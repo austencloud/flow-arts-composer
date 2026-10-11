@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Vector3 } from "three";
-import { restPoseFromHeight } from "$lib/features/lab/tabs/collision-lab/services/stance-simulator";
+import { restPoseFromHeight } from "#lib/features/lab/tabs/collision-lab/services/stance-simulator.js";
 import { SweptTube } from "./swept-tube";
 import { planVacate } from "./dodge-vacate-planner";
 import type { SweepSample } from "./dodge-types";

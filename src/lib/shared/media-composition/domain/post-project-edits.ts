@@ -26,21 +26,21 @@ import {
 import type {
   PostAnimationAppearance,
   PostAnimationItem,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   resolveTakeTiming,
   takePassStartsAround,
   takeTimingMoveBeats,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
-import { openingTitlesSpan } from "$lib/shared/media-composition/domain/tunnel-titles";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import { openingTitlesSpan } from "#lib/shared/media-composition/domain/tunnel-titles.js";
 
 /**
  * tka's own timeline edits: the titles clip, the opening tunnel hook and the
  * swap of a recovered PIP video for the live animation. Each one is pure like
  * the generic edits in `@austencloud/video-editor/core`, which it builds on:
  * it takes the project and returns the next one, laid out by `finish`. Pass
- * the context from `editContext` in `$lib/shared/post-studio-plugin`, which
+ * the context from `editContext` in `#lib/shared/post-studio-plugin/index.js`, which
  * carries the TKA plugin.
  */
 

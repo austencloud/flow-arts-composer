@@ -27,7 +27,7 @@ import {
 	claimViewTransitionName,
 	countViewTransitionNameClaims,
 	resetViewTransitionNameRegistry,
-} from "$lib/shared/transitions/view-transition-name-registry";
+} from "#lib/shared/transitions/view-transition-name-registry.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 

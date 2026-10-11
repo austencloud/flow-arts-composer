@@ -14,11 +14,11 @@
 	import { createVillageVisualState, type VillageVisualState } from "./state/village-visual-state.svelte";
 	import {
 		MUSEUM_EXHIBIT_SEQUENCES,
-	} from "$lib/features/museum/data/museum-exhibit-sequences";
+	} from "#lib/features/museum/data/museum-exhibit-sequences.js";
 	import {
 		createSequenceData,
 		type SequenceData,
-	} from "$lib/shared/foundation/domain/models/sequence-data";
+	} from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 	// Build seed sequences from museum exhibits (first 3)
 	function buildSeedSequences(): SequenceData[] {

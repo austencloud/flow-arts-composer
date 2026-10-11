@@ -6,7 +6,7 @@ import {
   nextWatermark,
   type SessionIssue,
   type Sighting,
-} from "$lib/server/analytics/session-issue-register";
+} from "#lib/server/analytics/session-issue-register.js";
 
 function issue(over: Partial<SessionIssue> = {}): SessionIssue {
   return {

@@ -10,8 +10,8 @@
   import {
     getPropDimensions,
     type PropDimensions,
-  } from "$lib/shared/animation-engine/services/IPropTextureLoader";
-  import { resolvePropSvgPath } from "$lib/shared/animation-engine/services/svg-generator";
+  } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
+  import { resolvePropSvgPath } from "#lib/shared/animation-engine/services/svg-generator.js";
   import type { EffectPointEditorState } from "../state/effect-point-editor-state.svelte";
 
   interface Props {

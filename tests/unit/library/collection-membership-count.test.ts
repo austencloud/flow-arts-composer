@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
 import {
   addSequenceToCollection,
   removeSequenceFromCollection,
-} from "$lib/shared/library/domain/models/collection";
-import { createLibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+} from "#lib/shared/library/domain/models/collection.js";
+import { createLibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 
 function collection(
   sequenceIds: string[],

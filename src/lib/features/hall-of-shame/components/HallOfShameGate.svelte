@@ -7,12 +7,12 @@
 -->
 <script lang="ts">
 
-import { getAgeVerifier } from "$lib/features/hall-of-shame/get-age-verifier";
-	import { t } from '$lib/shared/i18n/i18n.svelte';
-	import BaseModal from '$lib/shared/foundation/ui/modal/BaseModal.svelte';
-	import ModalHeader from '$lib/shared/foundation/ui/modal/ModalHeader.svelte';
-	import ModalFooter from '$lib/shared/foundation/ui/modal/ModalFooter.svelte';
-	import { authState } from '$lib/shared/auth/state/auth-state.svelte';
+import { getAgeVerifier } from "#lib/features/hall-of-shame/get-age-verifier.js";
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
+	import BaseModal from '#lib/shared/foundation/ui/modal/BaseModal.svelte';
+	import ModalHeader from '#lib/shared/foundation/ui/modal/ModalHeader.svelte';
+	import ModalFooter from '#lib/shared/foundation/ui/modal/ModalFooter.svelte';
+	import { authState } from '#lib/shared/auth/state/auth-state.svelte.js';
 
 	interface Props {
 		/** Called when user successfully verifies age */

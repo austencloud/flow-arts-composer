@@ -1,4 +1,4 @@
-import { hashString } from "$lib/shared/foundation/services/content-hasher";
+import { hashString } from "#lib/shared/foundation/services/content-hasher.js";
 import type { ReceiptInput } from "./share-intake-models";
 
 /**

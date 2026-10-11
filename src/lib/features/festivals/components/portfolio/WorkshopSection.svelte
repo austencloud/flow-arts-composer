@@ -1,16 +1,16 @@
 <script lang="ts">
   import { getFestivalContext } from "../../context/festival-context";
-  import { auth, getStorageInstance } from "$lib/shared/auth/firebase";
+  import { auth, getStorageInstance } from "#lib/shared/auth/firebase.js";
   import type {
     TeachingPortfolio,
     WorkshopTemplate,
     WorkshopLevel,
   } from "../../domain/models/teaching-portfolio";
   import WorkshopTemplateCard from "./WorkshopTemplateCard.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
-  import ModalFooter from "$lib/shared/foundation/ui/modal/ModalFooter.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import ModalFooter from "#lib/shared/foundation/ui/modal/ModalFooter.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   const { state: festivalState } = getFestivalContext();
 

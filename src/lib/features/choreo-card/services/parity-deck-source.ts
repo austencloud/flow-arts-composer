@@ -8,8 +8,8 @@
  * harness renders exactly what production renders, on real data.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { CardFooter, DeckRelease } from "../domain/models/DeckRelease";
 import type { TnDElement } from "../domain/tnd-element";
 import { getHandPathReferenceCards } from "../domain/hand-path-reference-cards";

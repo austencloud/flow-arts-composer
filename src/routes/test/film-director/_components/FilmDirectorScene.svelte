@@ -1,16 +1,16 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from "svelte";
 
-  import Viewer3DCanvas from "$lib/shared/3d/components/Viewer3DCanvas.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import { setSceneFeatureContext } from "$lib/shared/3d/scene-features/context/scene-feature-context";
-  import { createSceneFeatureState } from "$lib/shared/3d/scene-features/state/scene-feature-state.svelte";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
+  import Viewer3DCanvas from "#lib/shared/3d/components/Viewer3DCanvas.svelte";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import { setSceneFeatureContext } from "#lib/shared/3d/scene-features/context/scene-feature-context.js";
+  import { createSceneFeatureState } from "#lib/shared/3d/scene-features/state/scene-feature-state.svelte.js";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
   import { resolveFilmDirectorEffectQualityTier } from "../_lib/film-director-performance-policy";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import demoSequenceJson from "$lib/shared/landing/data/demo-sequence.json";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import demoSequenceJson from "#lib/shared/landing/data/demo-sequence.json";
 
   import { getFilmDirectorContext } from "../_lib/film-director-context";
   import {
@@ -28,13 +28,13 @@
   import { createDirectorSequenceLibrary } from "../_lib/director-sequence-library";
   import { createFilmDirectorTransitionProfiler } from "../_lib/film-director-transition-profiler.svelte";
   import { createFilmDirectorWarmupPlan } from "../_lib/film-director-warmup-plan";
-  import { getSceneEnvironmentRendererKey } from "$lib/shared/3d/environments/domain/scene-environment";
-  import type { EnvironmentTransitionObservation } from "$lib/shared/3d/environments/domain/environment-transition";
+  import { getSceneEnvironmentRendererKey } from "#lib/shared/3d/environments/domain/scene-environment.js";
+  import type { EnvironmentTransitionObservation } from "#lib/shared/3d/environments/domain/environment-transition.js";
   import type { BackgroundType } from "@austencloud/backgrounds";
   import type { ResolvedDirectorScene } from "../_lib/film-director-schema";
-  import SceneControlWorkspace from "$lib/shared/3d/components/controls/SceneControlWorkspace.svelte";
-  import type { PerformerHubEdit } from "$lib/shared/3d/components/controls/performer-hub-types";
-  import type { SceneControlTool } from "$lib/shared/3d/domain/scene-control-layout";
+  import SceneControlWorkspace from "#lib/shared/3d/components/controls/SceneControlWorkspace.svelte";
+  import type { PerformerHubEdit } from "#lib/shared/3d/components/controls/performer-hub-types.js";
+  import type { SceneControlTool } from "#lib/shared/3d/domain/scene-control-layout.js";
   import FilmDirectorCapabilityPanel from "./FilmDirectorCapabilityPanel.svelte";
 
   const director = getFilmDirectorContext();

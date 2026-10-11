@@ -22,7 +22,7 @@ const csvBase = "static/data/pictographs/";
 
 const { generatePerVisitDemo, FALLBACK_DEMO } = await import("../per-visit-demo");
 const { applyBoxMode } = await import(
-  "$lib/features/choreo-card/services/deck-variation"
+  "#lib/features/choreo-card/services/deck-variation.js"
 );
 
 describe("per-visit demo chained to a box start position", () => {

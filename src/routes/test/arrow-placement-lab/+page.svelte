@@ -1,33 +1,33 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     HandSide,
     type RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     isVisibleMotion,
     type MotionData,
-  } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-  import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-  import type { PipelineDiagnostics } from "$lib/shared/pictograph/arrow/positioning/calculation/domain/pipeline-diagnostics";
-  import { arrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
-  import { arrowAdjustmentCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator";
-  import { applyRotationMatrix } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-coordinate-transformer";
+  } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+  import type { PipelineDiagnostics } from "#lib/shared/pictograph/arrow/positioning/calculation/domain/pipeline-diagnostics.js";
+  import { arrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
+  import { arrowAdjustmentCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator.js";
+  import { applyRotationMatrix } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-coordinate-transformer.js";
   import {
     getInitialPosition,
     getSceneCenter,
-  } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-grid-coordinator";
+  } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-grid-coordinator.js";
   import {
     calculateArrowPoint,
     shouldMirrorArrow,
-  } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator";
-  import { generatePlacementKey } from "$lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator";
+  } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator.js";
+  import { generatePlacementKey } from "#lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator.js";
   import {
     buildPlacementFixture,
     buildPictographPlacementFixture,

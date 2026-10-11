@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
+import { createTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
 import {
   getTimelineUndoManager,
   resetTimelineUndoManager,
-} from "$lib/shared/animation-engine/timeline/services/timeline-undo-manager";
-import { createProject } from "$lib/shared/animation-engine/domain/timeline-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/animation-engine/timeline/services/timeline-undo-manager.js";
+import { createProject } from "#lib/shared/animation-engine/domain/timeline-types.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 describe("Timeline undo coverage", () => {
   beforeEach(() => {

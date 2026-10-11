@@ -13,9 +13,9 @@ import {
   getCurrentAnimationPanelState,
   openAnimationPanel,
   updateAnimationPanelState,
-} from "$lib/shared/navigation/services/sheet-router";
+} from "#lib/shared/navigation/services/sheet-router.js";
 import type { ExportUrlCallbacks, ExportAnimationUrlState } from "./types";
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 
 export class ExportUrlManager {
   private cleanupRouteListener: (() => void) | undefined;

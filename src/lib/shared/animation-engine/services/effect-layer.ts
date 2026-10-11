@@ -12,9 +12,9 @@
  * module only maps that resolved intent to renderer stacking slots.
  */
 
-import type { EffectLayerMode } from "$lib/shared/effects/domain/effect-layer-policy";
+import type { EffectLayerMode } from "#lib/shared/effects/domain/effect-layer-policy.js";
 
-export type { EffectLayerMode } from "$lib/shared/effects/domain/effect-layer-policy";
+export type { EffectLayerMode } from "#lib/shared/effects/domain/effect-layer-policy.js";
 
 export const LAYER_Z_TRAIL_BEHIND = 1;
 export const LAYER_Z_EFFECT_BEHIND = 2;

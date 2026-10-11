@@ -1,16 +1,16 @@
-import { rotateLocation } from "$lib/shared/create/services/rotation-helpers";
+import { rotateLocation } from "#lib/shared/create/services/rotation-helpers.js";
 import {
   GridMode,
   type GridLocation,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   deriveGridMode,
   usesBoxLocations,
   usesDiamondLocations,
-} from "$lib/shared/pictograph/grid/services/grid-mode-deriver";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { applyRotationMatrix } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-coordinate-transformer";
+} from "#lib/shared/pictograph/grid/services/grid-mode-deriver.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { applyRotationMatrix } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-coordinate-transformer.js";
 
 const BOX_FRAME_ROTATION_DEGREES = 45;
 

@@ -5,31 +5,31 @@
   Designed for widescreen desktop use with easy copy-paste for AI agents.
 -->
 <script lang="ts">
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import {
     HandSide,
     type HandSide as HandSideValue,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { generateOrientationKey } from "$lib/shared/pictograph/arrow/positioning/key-generation/services/special-placement-ori-key-generator";
-  import { deriveGridMode } from "$lib/shared/pictograph/grid/services/grid-mode-deriver";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { calculateAllArrowPoints } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator";
-  import { specialPlacer } from "$lib/shared/pictograph/arrow/positioning/placement/services/special-placer";
-  import { generateRotationAngleOverrideKey } from "$lib/shared/pictograph/arrow/positioning/key-generation/services/rotation-angle-override-key-generator";
-  import { turnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { generateOrientationKey } from "#lib/shared/pictograph/arrow/positioning/key-generation/services/special-placement-ori-key-generator.js";
+  import { deriveGridMode } from "#lib/shared/pictograph/grid/services/grid-mode-deriver.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { calculateAllArrowPoints } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator.js";
+  import { specialPlacer } from "#lib/shared/pictograph/arrow/positioning/placement/services/special-placer.js";
+  import { generateRotationAngleOverrideKey } from "#lib/shared/pictograph/arrow/positioning/key-generation/services/rotation-angle-override-key-generator.js";
+  import { turnsTupleGenerator } from "#lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator.js";
 
-  import type { PipelineDiagnostics } from "$lib/shared/pictograph/arrow/positioning/calculation/domain/pipeline-diagnostics";
-  import { arrowAdjustmentCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator";
-  import { arrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
+  import type { PipelineDiagnostics } from "#lib/shared/pictograph/arrow/positioning/calculation/domain/pipeline-diagnostics.js";
+  import { arrowAdjustmentCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator.js";
+  import { arrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
 
   import InspectModalHeader from "./pictograph-inspect/InspectModalHeader.svelte";
   import BasicInfoBar from "./pictograph-inspect/BasicInfoBar.svelte";
   import MotionColumn from "./pictograph-inspect/MotionColumn.svelte";
   import { formatAllForAI } from "./pictograph-inspect/formatters";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import PipelineEditorDock from "./pictograph-inspect/PipelineEditorDock.svelte";
-  import { selectedArrowState } from "$lib/shared/create/state/selected-arrow-state.svelte";
+  import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
 
   interface Props {
     show: boolean;

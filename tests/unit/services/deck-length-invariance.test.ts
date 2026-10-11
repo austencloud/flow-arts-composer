@@ -2,15 +2,15 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { GenerationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-import { BuildResultTransformer } from "$lib/shared/create/services/build-result-transformer";
-import { sequenceMetadataManager } from "$lib/shared/create/services/sequence-metadata-manager";
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
-import { resolveLoopConfig } from "$lib/shared/create/services/loop-type-utils";
-import { GenerationMode } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { DifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { GenerationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
+import { BuildResultTransformer } from "#lib/shared/create/services/build-result-transformer.js";
+import { sequenceMetadataManager } from "#lib/shared/create/services/sequence-metadata-manager.js";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import { resolveLoopConfig } from "#lib/shared/create/services/loop-type-utils.js";
+import { GenerationMode } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { GenerationOptions } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 function loadCsv(name: string) {

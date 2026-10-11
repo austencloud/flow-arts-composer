@@ -5,13 +5,13 @@
  * Queries activity logs and favorites from followed users to build a personalized feed.
  */
 
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { getFollowing } from "$lib/shared/community/services/user-repository";
-import { queryEvents } from "$lib/shared/analytics/services/posthog-activity-logger";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { getFollowing } from "#lib/shared/community/services/user-repository.js";
+import { queryEvents } from "#lib/shared/analytics/services/posthog-activity-logger.js";
 import type {
   FollowingFeedItem, FollowingFeedOptions } from "./types";
-import type { ActivityEvent } from "$lib/shared/analytics/domain/models/activity-event";
-import type { UserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
+import type { ActivityEvent } from "#lib/shared/analytics/domain/models/activity-event.js";
+import type { UserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
 
 export async function getFollowingFeed(
   options: FollowingFeedOptions = {}

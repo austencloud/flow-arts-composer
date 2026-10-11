@@ -3,19 +3,19 @@
  * Handles beat orientation updates and propagation through the sequence.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
 import type { ICreateModuleState } from "../../types/create-module-types";
 import {
   createMotionData,
   isVisibleMotion,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import {
   getStepDataFromState,
   START_PLACEMENT_BEAT_NUMBER,
@@ -23,7 +23,7 @@ import {
 import {
   withLoopCertificateCleared,
   invalidateLoopDisplayCache,
-} from "$lib/shared/create/services/loop-certificate";
+} from "#lib/shared/create/services/loop-certificate.js";
 
 const logger = createComponentLogger("OrientationHandler");
 

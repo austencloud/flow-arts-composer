@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { mergeIntervals } from "$lib/features/loop-labeler/services/detection/merge-intervals";
-import { LOOP_TYPE_DEFINITIONS } from "$lib/features/loop-labeler/domain/constants/loop-type-definitions";
-import type { UnanimityResult } from "$lib/features/loop-labeler/services/detection/types";
+import { mergeIntervals } from "#lib/features/loop-labeler/services/detection/merge-intervals.js";
+import { LOOP_TYPE_DEFINITIONS } from "#lib/features/loop-labeler/domain/constants/loop-type-definitions.js";
+import type { UnanimityResult } from "#lib/features/loop-labeler/services/detection/types.js";
 
 const rotatedDef = LOOP_TYPE_DEFINITIONS.find(d => d.id === "rotated")!;
 const swappedDef = LOOP_TYPE_DEFINITIONS.find(d => d.id === "swapped")!;

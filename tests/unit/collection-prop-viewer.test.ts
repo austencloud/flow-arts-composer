@@ -1,17 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
-vi.mock("$lib/shared/qr/get-short-code-manager", () => ({
+vi.mock("#lib/shared/qr/get-short-code-manager.js", () => ({
   getShortCodeManager: () => null,
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { isAuthenticated: false },
 }));
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: vi.fn(),
 }));
-vi.mock("$lib/shared/navigation/services/url-state", () => ({
+vi.mock("#lib/shared/navigation/services/url-state.js", () => ({
   mutateCurrentUrl: vi.fn(),
   removeCurrentUrlParams: vi.fn(),
   writeUrl: vi.fn(),
@@ -22,7 +22,7 @@ import {
   closeSequenceOverlay,
   switchVariation,
   getSequenceOverlayState,
-} from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
+} from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
 
 describe("collection viewer context", () => {
   it("keeps the collection prop across variations and discards it on the next ordinary open", () => {

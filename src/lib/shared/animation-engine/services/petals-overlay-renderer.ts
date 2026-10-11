@@ -12,9 +12,9 @@
  * explicit clear().
  */
 
-import type { Petals2DParams } from "$lib/shared/effects/translators/canvas2d-types";
-import { Petals2DRenderer } from "$lib/shared/effects/renderers/petals-2d-renderer";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
+import type { Petals2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
+import { Petals2DRenderer } from "#lib/shared/effects/renderers/petals-2d-renderer.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 import { EffectRenderer } from "./effects/effect-renderer";
 
 export class PetalsOverlayRenderer extends EffectRenderer {
@@ -37,8 +37,8 @@ export class PetalsOverlayRenderer extends EffectRenderer {
 }
 
 import type { EffectPlugin } from "./effects/effect-plugin";
-import type { PetalsIntent } from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { PetalsIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 export const petalsEffectPlugin: EffectPlugin<PetalsIntent> = {
   id: "petals",

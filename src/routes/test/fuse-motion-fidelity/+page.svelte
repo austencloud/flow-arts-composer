@@ -1,6 +1,6 @@
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { buildFuseMotionProofCases } from "./fuse-motion-fidelity-fixtures";
 
   const proofCases = buildFuseMotionProofCases();

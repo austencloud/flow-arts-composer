@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import LabeledColorPairPicker from "$lib/shared/ui/components/LabeledColorPairPicker.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import LabeledColorPairPicker from "#lib/shared/ui/components/LabeledColorPairPicker.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import {
     resolveViewerCustomColorPair,
     type ViewerCustomColorPair,
-  } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { randomCoolWarmPair } from "$lib/shared/ui/color-temperature";
+  } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { randomCoolWarmPair } from "#lib/shared/ui/color-temperature.js";
 
   let {
     colors,

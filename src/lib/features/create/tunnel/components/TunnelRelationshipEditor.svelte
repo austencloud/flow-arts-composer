@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import FuseRotationDial from "$lib/features/fuse/components/FuseRotationDial.svelte";
-  import { copyOpsLabel } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import FuseRotationDial from "#lib/features/fuse/components/FuseRotationDial.svelte";
+  import { copyOpsLabel } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
   import { getTunnelCreatorContext } from "../context/tunnel-creator-context";
   import type { TunnelReflection } from "../domain/tunnel-relationship-rule";
 

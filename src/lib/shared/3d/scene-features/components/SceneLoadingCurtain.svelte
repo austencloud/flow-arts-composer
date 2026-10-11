@@ -9,8 +9,8 @@
    */
 
   import { getSceneFeatureContext } from "../context/scene-feature-context";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { fade } from "svelte/transition";
   import ScenePreparationSurface from "./ScenePreparationSurface.svelte";
 

@@ -5,13 +5,13 @@
   Auto-focuses name input, Enter to save.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/features/create/generate/components/modals/ModalHeader.svelte";
-  import ModalActions from "$lib/features/create/generate/components/modals/ModalActions.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/features/create/generate/components/modals/ModalHeader.svelte";
+  import ModalActions from "#lib/features/create/generate/components/modals/ModalActions.svelte";
 
   let {
     open = $bindable(false),

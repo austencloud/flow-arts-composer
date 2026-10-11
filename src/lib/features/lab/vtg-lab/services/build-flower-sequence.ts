@@ -1,14 +1,14 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { CsvEdge } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import { applyVariationDescriptor } from "$lib/features/choreo-card/services/deck-variation";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { CsvEdge } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
 import { prepareMandalaPropSequence } from "./prepare-mandala-club-sequence";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   flowerStartOrientation,
   flowerTurnPattern,
   type Flower,
-} from "$lib/shared/shape-matrix/domain/flower-signature";
-import { closeSequenceOrientationCycle } from "$lib/shared/create/services/sequence-orientation-cycle";
+} from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { closeSequenceOrientationCycle } from "#lib/shared/create/services/sequence-orientation-cycle.js";
 
 /**
  * archetype (two-hand pure-pro or pure-anti seed) + flower → a single-hand

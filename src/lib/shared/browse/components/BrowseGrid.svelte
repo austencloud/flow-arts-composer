@@ -1,24 +1,24 @@
 <script lang="ts">
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { collectionPropSettings } from "$lib/shared/library/domain/collection-prop";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { collectionPropSettings } from "#lib/shared/library/domain/collection-prop.js";
   import { onDestroy } from "svelte";
-  import ChoreoCardThumbnail from "$lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
+  import ChoreoCardThumbnail from "#lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
   import VirtualizedSequenceGrid, {
     type VirtualGridApi,
-  } from "$lib/shared/browse/components/VirtualizedSequenceGrid.svelte";
+  } from "#lib/shared/browse/components/VirtualizedSequenceGrid.svelte";
   import SectionedVirtualGrid, {
     type SectionedGridApi,
-  } from "$lib/shared/browse/components/SectionedVirtualGrid.svelte";
-  import type { BrowseThumbnailProvider } from "$lib/shared/browse/services/browse-thumbnail-provider";
+  } from "#lib/shared/browse/components/SectionedVirtualGrid.svelte";
+  import type { BrowseThumbnailProvider } from "#lib/shared/browse/services/browse-thumbnail-provider.js";
   import {
     buildVariationMap,
     variationGroupKey,
-  } from "$lib/shared/browse/services/variation-grouper";
-  import { prefetch as prefetchSequenceData } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { isCatDogMode } from "$lib/shared/browse/utils/prop-mode-helpers";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/browse/services/variation-grouper.js";
+  import { prefetch as prefetchSequenceData } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { isCatDogMode } from "#lib/shared/browse/utils/prop-mode-helpers.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { BrowseEngine } from "../engine/types";
 
   interface Props {

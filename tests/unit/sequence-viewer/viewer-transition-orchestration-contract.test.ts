@@ -206,7 +206,7 @@ describe("Sequence Viewer transition orchestration contract", () => {
 
   it("routes split geometry through the canonical PanelGroup owner", () => {
     expect(splitPane).toContain(
-      'import PanelGroup from "$lib/shared/panels/PanelGroup.svelte"'
+      'import PanelGroup from "#lib/shared/panels/PanelGroup.svelte"'
     );
     expect(splitPane).toContain("{#snippet animationPanel()}");
     expect(splitPane).toContain("{#snippet previewPanel()}");
@@ -262,7 +262,7 @@ describe("Sequence Viewer transition orchestration contract", () => {
     expect(shell).not.toContain("grid-template-columns: 1fr 0px");
     expect(shell).not.toContain("transition: grid-template-columns");
     expect(workspacePanels).toContain(
-      'import PanelGroup, {\n    type PanelDefinition,\n  } from "$lib/shared/panels/PanelGroup.svelte"'
+      'import PanelGroup, {\n    type PanelDefinition,\n  } from "#lib/shared/panels/PanelGroup.svelte"'
     );
     expect(workspacePanels).toContain('id: "export-inspector"');
     expect(workspacePanels).toContain('id: "export-inspector-stacked"');
@@ -431,7 +431,7 @@ describe("Sequence Viewer transition orchestration contract", () => {
     expect(reviewPage).toContain("Replay first 3D");
     expect(reviewPage).toContain("Replay repeat switch");
     expect(reviewPage).toContain(
-      'import { fits3DViewport } from "$lib/shared/3d/capabilities/viewport-3d-gate.svelte"'
+      'import { fits3DViewport } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js"'
     );
     expect(reviewPage).toContain("!activeGateCanReplay");
     expect(reviewPage).toContain(

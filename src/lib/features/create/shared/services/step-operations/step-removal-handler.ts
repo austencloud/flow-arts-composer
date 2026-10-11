@@ -5,7 +5,7 @@
 
 import type { ICreateModuleState } from "../../types/create-module-types";
 import { UndoOperationType } from "../undo-manager";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
 const logger = createComponentLogger("StepRemoval");
 

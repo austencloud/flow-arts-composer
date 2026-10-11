@@ -1,8 +1,8 @@
-import { extractScanCode } from "$lib/shared/qr/services/extract-scan-code";
+import { extractScanCode } from "#lib/shared/qr/services/extract-scan-code.js";
 import {
   createTkaQrDetector,
   type TkaQrDetector,
-} from "$lib/shared/qr/services/tka-qr-detector";
+} from "#lib/shared/qr/services/tka-qr-detector.js";
 import type {
   IntakeClassification,
   IntakeItem,

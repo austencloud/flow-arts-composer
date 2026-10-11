@@ -12,9 +12,9 @@ import { describe, it, expect } from 'vitest';
 import {
 	serializeRoomState,
 	validateSerializedRoomState
-} from '$lib/shared/sync/domain/sync-messages';
-import { createInitialRoomState } from '$lib/shared/sync/domain/sync-types';
-import type { SyncedSequence } from '$lib/shared/sync/domain/sync-types';
+} from '#lib/shared/sync/domain/sync-messages.js';
+import { createInitialRoomState } from '#lib/shared/sync/domain/sync-types.js';
+import type { SyncedSequence } from '#lib/shared/sync/domain/sync-types.js';
 
 const sequence: SyncedSequence = { id: 'seq-1', word: 'BOOK' };
 

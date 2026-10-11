@@ -1,24 +1,24 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, untrack } from "svelte";
   import type { Snippet } from "svelte";
-  import { activateWhenNear } from "$lib/actions/activate-when-near";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { activateWhenNear } from "#lib/actions/activate-when-near.js";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     captureActivePropConfig,
     resolveRecordedPropConfig,
-  } from "$lib/shared/foundation/services/recorded-prop-intent";
-  import { resolveShowcasePropPair } from "$lib/shared/sequence-preview/services/showcase-prop-pair";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { resolveViewingPresentation } from "$lib/shared/sequence-preview/services/viewing-presentation";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
+  } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+  import { resolveShowcasePropPair } from "#lib/shared/sequence-preview/services/showcase-prop-pair.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { resolveViewingPresentation } from "#lib/shared/sequence-preview/services/viewing-presentation.js";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { createAnimationScope } from "#lib/shared/animation-engine/state/animation-scope.svelte.js";
 
   interface Props {
     word: string;
@@ -26,6 +26,10 @@
     loadSequence?: () => Promise<SequenceData | null>;
     /** A host-owned sequence bypasses the lazy loader and updates in place. */
     sequence?: SequenceData | null;
+    /** Keep it the same while the host edits its sequence (a transform, a
+     *  turn change) and the player's props, and the rail's pictographs under
+     *  it, glide to their new pose. */
+    transitionKey?: string | null;
     /** Keep the canonical player-and-rail composition visible and interactive. */
     alwaysLive?: boolean;
     /** Host controls rendered in the player frame's unused side rail. */
@@ -57,6 +61,7 @@
     posterUrl = null,
     loadSequence,
     sequence: directSequence = null,
+    transitionKey = null,
     alwaysLive = false,
     controls,
     playbackActive = true,
@@ -338,7 +343,7 @@
       <div class="live-player">
         <LazyMount
           loader={() =>
-            import("$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
+            import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
           active={playerMounted}
           keepAlive={false}
           prefetch={nearViewport && sequence !== null}
@@ -346,6 +351,7 @@
           onStatusChange={(status) => (playerLoadState = status)}
           props={{
             sequence,
+            transitionKey,
             leftPropType:
               leftPropType ?? recordedPropConfig?.leftPropType ?? null,
             rightPropType:
@@ -411,7 +417,7 @@
 
     <div class="strip-zone">
       <LazyMount
-        loader={() => import("$lib/shared/timeline/StepStrip.svelte")}
+        loader={() => import("#lib/shared/timeline/StepStrip.svelte")}
         active={playerMounted}
         keepAlive={false}
         prefetch={nearViewport && sequence !== null}
@@ -440,6 +446,7 @@
           loop: alwaysLive,
           stepPulse: false,
           onCellClick,
+          transitionKey,
         }}
       />
     </div>

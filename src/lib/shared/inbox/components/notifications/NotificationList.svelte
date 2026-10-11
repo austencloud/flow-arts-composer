@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * NotificationList
    *
    * List of notifications with error handling and accessibility
    */
 
-  import type { UserNotification } from "$lib/shared/notifications/domain/models/notification-models";
+  import type { UserNotification } from "#lib/shared/notifications/domain/models/notification-models.js";
   import InboxNotificationItem from "./InboxNotificationItem.svelte";
   import NotificationSkeleton from "../skeletons/NotificationSkeleton.svelte";
   import EmptyNotifications from "../empty-states/EmptyNotifications.svelte";

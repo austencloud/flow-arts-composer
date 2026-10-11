@@ -1,8 +1,8 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { tick } from "svelte";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { __resetWebGL2CapabilityForTests } from "$lib/shared/3d/capabilities/webgl-capabilities";
-import { SceneEnvironmentId } from "$lib/shared/3d/environments/domain/scene-environment";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { __resetWebGL2CapabilityForTests } from "#lib/shared/3d/capabilities/webgl-capabilities.js";
+import { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
 import { normalizeComposer3DDemoState } from "../../src/routes/(public)/composer/_components/composer-3d-demo-state";
 import { createComposerViewerStateForTest } from "./composer-presentation-viewer-state.svelte";
 

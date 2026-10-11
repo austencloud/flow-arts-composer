@@ -1,8 +1,8 @@
 import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { findEmptyCellForQR } from "$lib/shared/render/services/cell-border-renderer";
-import { computeCardFrontLayout } from "$lib/shared/render/services/card-front-assembler";
-import type { QRCodeGenerator } from "$lib/shared/qr/services/qr-code-generator";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { findEmptyCellForQR } from "#lib/shared/render/services/cell-border-renderer.js";
+import { computeCardFrontLayout } from "#lib/shared/render/services/card-front-assembler.js";
+import type { QRCodeGenerator } from "#lib/shared/qr/services/qr-code-generator.js";
 import { buildFrontComposeOptions } from "./build-front-compose-options";
 import { getCardFrameContentInset } from "./card-front-frame";
 import type { PrintRenderOptions } from "./types";

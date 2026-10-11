@@ -6,7 +6,7 @@
  * completion. Keeping every call site behind these functions means the event
  * names and property shape live in one place instead of drifting per
  * call site, mirroring the captureEvent wrappers in
- * `$lib/shared/analytics/landing-events`.
+ * `#lib/shared/analytics/landing-events.js`.
  *
  * `source` distinguishes the normal automatic app-entry flow from a user
  * manually re-triggering the tutorial (Settings "replay tutorial").

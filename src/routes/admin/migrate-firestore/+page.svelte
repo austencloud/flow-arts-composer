@@ -6,7 +6,7 @@
    * to normalize start position data.
    */
 
-  import { getAuthSync, getFirestoreInstance } from "$lib/shared/auth/firebase";
+  import { getAuthSync, getFirestoreInstance } from "#lib/shared/auth/firebase.js";
   import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
   import { onMount } from "svelte";
 

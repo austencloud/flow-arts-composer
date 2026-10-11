@@ -1,10 +1,10 @@
-import { dev } from "$app/environment";
-import { error, json, type RequestHandler } from "@sveltejs/kit";
+import { dev } from "$app/env";
+import { error, type RequestHandler } from "@sveltejs/kit";
 import {
   defaultPhoneReviewTarget,
   parsePhoneReviewTarget,
   type PhoneReviewTarget,
-} from "$lib/shared/dev/phone-review-target";
+} from "#lib/shared/dev/phone-review-target.js";
 
 interface ServedCheckout {
   branch: string | null;
@@ -74,5 +74,5 @@ export const GET: RequestHandler = async () => {
     readTarget(),
     readServedCheckout(),
   ]);
-  return json({ target, served, stateError });
+  return Response.json({ target, served, stateError });
 };

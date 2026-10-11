@@ -13,7 +13,7 @@
  *   /static/pictographs/diamond/α/0-hand.png (with hand prop type)
  */
 
-import { dev } from "$app/environment";
+import { dev } from "$app/env";
 
 export interface PictographFileKey {
   letter: string;

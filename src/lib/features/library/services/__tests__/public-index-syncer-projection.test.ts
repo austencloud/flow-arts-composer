@@ -61,32 +61,35 @@ vi.mock("firebase/firestore", () => ({
   where: vi.fn(),
   limit: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: vi.fn(() => ({ showUserError: mocks.showUserError })),
 }));
-vi.mock("$lib/shared/sequence-viewer/get-public-sequence-hash-matcher", () => ({
-  getPublicSequenceHashMatcher: vi.fn(() => ({
-    computeEncoderHash: vi.fn(async () => "encoder-hash-test"),
-  })),
-}));
+vi.mock(
+  "#lib/shared/sequence-viewer/get-public-sequence-hash-matcher.js",
+  () => ({
+    getPublicSequenceHashMatcher: vi.fn(() => ({
+      computeEncoderHash: vi.fn(async () => "encoder-hash-test"),
+    })),
+  })
+);
 
 import { PublicIndexSyncer } from "../public-index-syncer";
-import { IncompleteWordError } from "$lib/shared/foundation/services/word-deriver";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { IncompleteWordError } from "#lib/shared/foundation/services/word-deriver.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 // Fixtures
 

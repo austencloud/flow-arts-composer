@@ -1,5 +1,5 @@
 import { CanvasTexture, SRGBColorSpace } from "three";
-import type { SmokePalette } from "$lib/shared/effects/domain/smoke-palettes";
+import type { SmokePalette } from "#lib/shared/effects/domain/smoke-palettes.js";
 
 const COLUMNS = 8;
 const CELL_SIZE = 128;

@@ -80,14 +80,15 @@ The preview replaces the icon box. The board's existing `create-entry`
 container tiers choose the arrangement, so every card in a row gets the same
 one and nothing is measured per card.
 
-| Board tier                                        | Card shape there  | Preview                                                    |
-| ------------------------------------------------- | ----------------- | ---------------------------------------------------------- |
-| Narrow, icon above text (iPhone SE, Fold cover)   | 171–174 wide      | Full-width strip where the icon row is today               |
-| 480–1199 px, portrait board (Fold, tablet)        | 336–392 × 207–315 | Strip on top, text below                                   |
-| 480–1199 px, landscape board (Fold landscape)     | 394×172           | Square beside the text                                     |
-| Short landscape (existing height rule)            | 427×105           | Square beside the text                                     |
-| 1200 px and up, primary row (Construct, Generate) | 632–790 × 200     | Square beside the text                                     |
-| 1200 px and up, other rows                        | 306–385 wide      | Strip on top; these cards grow into the spare board height |
+| Board tier                                        | Card shape there     | Preview                                                    |
+| ------------------------------------------------- | -------------------- | ---------------------------------------------------------- |
+| Narrow, icon above text (iPhone SE, Fold cover)   | 171–174 wide         | Full-width strip where the icon row is today               |
+| 480–1199 px, portrait board (Fold, tablet)        | 336–392 × 207–315    | Strip on top, text below                                   |
+| 480–1199 px, landscape and 960 px tall or more    | 551×317 at 1197×1167 | Strip on top, text below (2026-10-10; was a 140 px square) |
+| 480–1199 px, landscape board (Fold landscape)     | 394×172              | Square beside the text, up to 18% of the board's height    |
+| Short landscape (existing height rule)            | 427×105              | Square beside the text                                     |
+| 1200 px and up, primary row (Construct, Generate) | 557–790 wide         | Strip four steps wide on top (2026-10-09; was a square)    |
+| 1200 px and up, other rows                        | 306–385 wide         | Strip on top; these cards grow into the spare board height |
 
 These rules hold everywhere:
 
@@ -166,18 +167,55 @@ each with its own small tap, as the option picker adds steps to the step grid.
 Drawn with `PictographContainer` from the demo sequence's start position and
 first steps.
 
-A short strip holds the start and two or three steps; a roomy strip holds up
-to four. A square shows a 2×2 grid that wraps like the step grid. The finished
+Each box offers three small choices in a row before it fills (2026-10-10):
+the real step and two other moves Construct really offers there. The start
+box offers the start position picker's α and β placements beside the demo's
+γ; each step box offers moves from the option picker's list after the steps
+before it. The finger taps the real one, it grows to fill the box, and the
+other two fade, while the next box shows its choices. The real step's spot
+moves box to box and turn to turn, one spot left per box, and the finger
+starts on the first pick, so the last pick lands before the three-second turn
+ends on the largest stages. The other moves are baked from the
+production options pipeline into `method-preview-construct-choices.json`, so
+the front door never loads the pictograph dataset; a test rebuilds them and
+fails on drift.
+
+A picked step plays its move as it grows in (2026-10-10), as the step grid's
+arrival plays each new step: its props travel from the pose before it, along
+its arrow, for the arrival's base pace of 0.85 s. The arrival slows moves
+with turns; the preview keeps every move at the base pace so two fit the turn.
+The finger moves on to the next box while a move plays, and lifts away after
+the last tap so it never sits on the last move.
+
+Every shape holds the start and two steps (2026-10-10; it held up to four
+before moves played). A strip lines them up; a square sets the start and the
+first step side by side and centers the second step under them. The finished
 picture is the start position with its steps.
 
 ### Generate
 
 The dice is pressed and the whole strip washes in at once, in the step grid's
 own diagonal wave: each cell's band is its row plus its column, staggered by
-CSS animation delay. Each turn rolls a different real sequence from
-`drawMatrixRealization()`; if that source fails, turns step through the demo
-sequence instead. The dice is drawn as a plain glyph for `GhostPointer` to
-press, never a real button.
+CSS animation delay. The finger starts on the dice and taps once; a real
+sequence washes in still, as the step grid shows a roll. Each roll is a real
+sequence from `drawMatrixRealization()`, drawn between turns; if that source
+fails, rolls step through the demo sequence instead. The dice is drawn as a
+plain glyph for `GhostPointer` to press, never a real button.
+
+Once the first step has landed, the roll's first three steps play their
+moves one at a time (2026-10-11), as the workspace's Play steps through a
+sequence: each step's props travel from the pose before it (the start position
+before a sequence's first step), along its arrow, at Construct's 0.85 s pace.
+They land with their props at the start of their moves, so none jumps back to
+start. Most boxes show three steps, so every step shown plays; a four-step
+strip or a 3×3 grid plays its first three. Three moves do not fit a
+three-second turn, so Generate's turn runs 3.7 s. The run ends as the last move
+starts, and that move plays on into the turn's end, so a slow draw costs only
+the end of a move, never a cut.
+
+Turns rolled twice before (2026-10-10), and for a day each cell played its
+move as the wave reached it. That was dropped: the real tool brings steps in
+one after another and never plays them all at once.
 
 Before its first turn, the card rests on the demo sequence half a turn on,
 from its ninth step.
@@ -190,7 +228,13 @@ one. A strip shows the dice and three or four steps. A square shows a 2×2 or
 A corner of the real matrix: blue-hand flowers down the side, red-hand flowers
 across the top, and cells drawn by `ShapeMatrixMandalaArt` from
 `loadShapeMatrix()` for the user's prop. A highlight lands on one cell. The
-cell grows and draws its mandala from start to finish.
+cell grows and draws its mandala from start to finish. Each turn is a Surprise
+roll (2026-10-10), as the Matrix's own Surprise button rolls one: the corner
+turns to a different page (another pair of turn bands from the level the
+Matrix opens on, less the zero band, whose first flower is a single point and
+reads as an empty tile) and the light lands on a different crossing. The next page's
+paths and tiles paint in the background between turns; a turn whose page is
+not painted yet rolls only a new crossing.
 
 The drawing reuses the Matrix's own guide painter, `paintMandalaGuide`, with
 its progressive reveal (`reveal` and `progress`). The live mandala overlay
@@ -202,27 +246,59 @@ function.
 
 A short strip has no room to grow, so it shows one blue flower and the cells
 that fit, and the chosen cell draws in place. The finished picture is the
-corner with the chosen mandala drawn. Loading the matrix here also warms the
+latest roll's corner with its chosen mandala drawn. Loading the matrix here also warms the
 cache Shape uses, so Shape opens faster afterward.
 
 ### Fuse
 
 A blue one-hand path and a red one-hand path slide together and play once as a
 two-prop sequence. The paths are the demo sequence's two hands over its fourth
-and fifth steps, just past Construct's, shown one hand
+and fifth steps, past Construct's, shown one hand
 at a time with `PictographContainer`'s `visibleHand`, as `FuseSourceCard`
-shows Fuse's inputs. After they merge, the combined steps play once with props
-traveling their real paths (`motionStartData` and `motionProgress`).
+shows Fuse's inputs. Each half shows its arrow from the start, as Fuse's
+source cards do, with its prop where the move begins (2026-10-10: arrows that
+appeared only after the halves met read as something new arriving). After they
+merge, the combined steps play once, one at a time, the props traveling their
+real paths along the arrows already shown (`motionStartData` and
+`motionProgress`), at Construct's and Generate's 0.85 s pace (2026-10-11; at
+0.65 s they were quick enough to miss). The run ends as the last step starts,
+so a slow draw costs only the end of its move, never a cut. A hand
+alone is laid out as one hand, and the combined letter can place its arrow or
+prop elsewhere, so while the halves slide, each arrow and prop glides to where
+the combined step draws it instead of snapping there at the merge.
+
+Each turn is a Regenerate (2026-10-10), as Fuse's Regenerate button plays one:
+one hand gets a new path from Fuse's own path maker (`generateSoloLoop` with
+its default recipe) while the other keeps its own, red first, then blue. The
+pair fuses at Fuse's default length of eight steps through `fuseSequences`,
+and its letters come from `deriveLettersForSequence`. At eight steps the path
+maker reads the bundled motion tables, never the Firestore flower catalog,
+and it loads only after the card first draws. The card always shows the fused
+pair's fourth and fifth steps, so the kept hand shows the very steps it showed
+before. The next pair is made and drawn into the hidden sources while the card
+rests; the new hand's halves arrive a beat after the kept hand's with a small
+pop. A pair that is not ready, or a maker that fails, replays the current
+pair.
 
 A strip shows two blue and two red steps meeting as two combined steps. A
 square stacks the blue row over the red row and merges them into one. The
-finished picture is the combined steps.
+finished picture is the latest pair's combined steps. After a turn, each
+combined step stays on the last frame of its play rather than switching back
+to the still pictograph: a prop can end its play a full turn from the still
+picture's angle, and the switch spun it round once.
 
 ### Tunnel
 
 A tunnel plays. The dice on one performer is pressed, that performer gets a
 new sequence, and the tunnel redraws. In the Tunnel tool, a performer card's
 dice does exactly this.
+
+The redraw shows what a tunnel is (2026-10-10): the copies fold back into the
+one performer, which dips out over its tile and comes back alone with its new
+sequence, and its copies then bloom out around it with the viewer's own bloom
+(`revealTunnelCopies`, `TUNNEL_REVEAL_DURATION`). The tile stays; only the
+performer leaves. Before, the whole tile faded out and back, which read as a
+reload.
 
 The tunnel is drawn by the real `TunnelArtView`: one instance, for this card
 only, with a formation from `TUNNEL_PRESETS` and its trail overlay off. Its
@@ -246,13 +322,24 @@ so they curve as they do in the tool. The points come from the demo sequence's
 hand locations.
 
 `InteractiveGrid` itself is not reused, because it is interactive and needs a
-live Assemble state. The grid sits centered in a strip. The finished picture
-shows both props on their final points, as Assemble does on **Complete**.
+live Assemble state. The finished picture shows both props on their final
+points, as Assemble does on **Complete**.
+
+Beside the grid, or under it in a square box, sit the two beats the taps
+write, because Assemble writes its sequence as you tap. Each blue tap writes a
+beat that has only blue in it. Each red tap fills that beat in: the whole beat,
+letter and all, fades in over it while blue's arrow and prop glide to their
+two-hand places. The beats clear when a turn starts, and the finished picture
+shows both whole beats, N and M. They are the demo's third N and M: each
+other pair shares a step with Construct, Fuse, or Generate's usual cells.
+Only Generate's widest strip and its grid of eight show them too, until
+Generate's first roll (added 2026-10-10).
 
 ## Turns
 
 - Cards take turns in board order. A turn is one scene, about three seconds,
-  then a gap of about half a second before the next card. One constant in the
+  then a gap of about half a second before the next card. Generate's turn runs
+  3.7 s so three steps can play their moves (2026-10-11). One constant in the
   turn coordinator owns these timings, including the hover delay below.
 - Turns begin after the board has painted, the browser is idle, and any
   chooser crossfade has finished, so opening Create is not slowed.

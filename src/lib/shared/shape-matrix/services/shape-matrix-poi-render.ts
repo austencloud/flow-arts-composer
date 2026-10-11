@@ -16,11 +16,11 @@ import {
   MANDALA_GRID_RADIUS,
   ENGINE_GRID_RADIUS,
   MANDALA_STANDARD_TIP_DX,
-} from "$lib/shared/mandala/domain/mandala-constants";
+} from "#lib/shared/mandala/domain/mandala-constants.js";
 import type {
   MandalaPaths,
   SVGPathData,
-} from "$lib/shared/mandala/domain/mandala-types";
+} from "#lib/shared/mandala/domain/mandala-types.js";
 
 /** Hue drift per hand: blue trails run cyan→indigo, red run amber→magenta. */
 const HAND_STOPS: Record<"left" | "right", [string, string]> = {

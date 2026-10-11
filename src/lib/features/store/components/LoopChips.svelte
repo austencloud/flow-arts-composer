@@ -8,10 +8,10 @@
   including the dark mirrored purple. Color identity lives in the icon + border.
 -->
 <script lang="ts">
-  import { LOOP_COMPONENT_MAP } from "$lib/shared/browse/domain/constants/loop-constants";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
-  import CheckerboardCircleIcon from "$lib/shared/icons/CheckerboardCircleIcon.svelte";
+  import { LOOP_COMPONENT_MAP } from "#lib/shared/browse/domain/constants/loop-constants.js";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+  import CheckerboardCircleIcon from "#lib/shared/icons/CheckerboardCircleIcon.svelte";
 
   interface Props {
     /** LOOP component ids (enum string values, e.g. "mirrored"). */

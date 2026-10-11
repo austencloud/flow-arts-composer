@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Bloom2DRenderer, type BloomTipInput } from "./bloom-2d-renderer";
 import type { Bloom2DParams } from "../translators/canvas2d-types";
-import { BLOOM_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/bloom-presets";
+import { BLOOM_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/bloom-presets.js";
 
 interface GradientStop {
   offset: number;

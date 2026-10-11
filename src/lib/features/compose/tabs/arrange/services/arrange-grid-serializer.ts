@@ -10,7 +10,7 @@ import type {
   TunnelLayerConfig,
   TransformType,
   AppliedTransform,
-} from "$lib/shared/animation-engine/domain/compose-types";
+} from "#lib/shared/animation-engine/domain/compose-types.js";
 import type { GridCell } from "../state/arrange-grid-state.svelte";
 import type { SerializationContext } from "./types";
 

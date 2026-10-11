@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveRealizationEntryStep } from "$lib/shared/shape-matrix/services/realization-phase-handoff";
+import { resolveRealizationEntryStep } from "#lib/shared/shape-matrix/services/realization-phase-handoff.js";
 
 describe("realization phase handoff", () => {
   it("preserves normalized cycle phase across different sequence lengths", () => {

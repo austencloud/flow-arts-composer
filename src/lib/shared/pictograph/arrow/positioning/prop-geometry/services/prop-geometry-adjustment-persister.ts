@@ -7,19 +7,19 @@
  */
 
 import { collection, onSnapshot, type Unsubscribe } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import {
   firestoreList,
   firestoreSet,
   firestoreDelete,
-} from "$lib/shared/firestore";
+} from "#lib/shared/firestore/index.js";
 import { PropGeometryAdjustmentSchema } from "../domain/prop-geometry-schemas";
 import {
   generatePropGeometryKeyString,
   type PropGeometryAdjustment,
   type PropGeometryAdjustmentInput,
 } from "../domain/prop-geometry-adjustment";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { normalizePlacementFrame } from "../../placement/domain/placement-frame";
 
 const logger = createComponentLogger("PropGeometryAdjustmentPersister");

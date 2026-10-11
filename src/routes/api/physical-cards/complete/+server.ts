@@ -1,16 +1,16 @@
-import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { requireFullFirebaseUser } from "$lib/server/auth/requireFullFirebaseUser";
+import { requireFullFirebaseUser } from "#lib/server/auth/requireFullFirebaseUser.js";
 import {
   FirestoreRestError,
   getFirestoreRest,
   readFirestoreString,
   toFirestoreFields,
   type FirestoreWrite,
-} from "$lib/server/firestore/firestore-rest";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
-import { validatePhysicalCardCompletionRequest } from "$lib/shared/qr/domain/physical-card";
+} from "#lib/server/firestore/firestore-rest.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
+import { validatePhysicalCardCompletionRequest } from "#lib/shared/qr/domain/physical-card.js";
+import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
 
 function updateRunWrite(
   name: string,
@@ -56,7 +56,7 @@ function responseForError(error: unknown): Response {
   if (status >= 500) {
     console.error("[physical-card-complete] failed:", error);
   }
-  return json({ error: message, code }, { status });
+  return Response.json({ error: message, code }, { status });
 }
 
 export const POST: RequestHandler = async (event) => {
@@ -74,14 +74,14 @@ export const POST: RequestHandler = async (event) => {
     try {
       rawBody = await event.request.json();
     } catch {
-      return json(
+      return Response.json(
         { error: "Invalid JSON body", code: "invalid_json" },
         { status: 400 }
       );
     }
     const validation = validatePhysicalCardCompletionRequest(rawBody);
     if (!validation.ok) {
-      return json(
+      return Response.json(
         { error: validation.error, code: "invalid_request" },
         { status: 400 }
       );
@@ -89,7 +89,7 @@ export const POST: RequestHandler = async (event) => {
     const request = validation.value;
 
     const firestore = getFirestoreRest(
-      event.platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON
+      workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON
     );
     const path = `cardPrintRuns/${request.printRunId}`;
     const run = await firestore.getDocument(path, [
@@ -97,13 +97,13 @@ export const POST: RequestHandler = async (event) => {
       "allocatedByUserId",
     ]);
     if (!run) {
-      return json(
+      return Response.json(
         { error: "Print run not found", code: "print_run_not_found" },
         { status: 404 }
       );
     }
     if (readFirestoreString(run, "allocatedByUserId") !== caller.uid) {
-      return json(
+      return Response.json(
         { error: "Print run belongs to another account", code: "forbidden" },
         { status: 403 }
       );
@@ -111,10 +111,10 @@ export const POST: RequestHandler = async (event) => {
 
     const currentStatus = readFirestoreString(run, "status");
     if (currentStatus === request.result) {
-      return json({ status: currentStatus, unchanged: true });
+      return Response.json({ status: currentStatus, unchanged: true });
     }
     if (currentStatus !== "allocated") {
-      return json(
+      return Response.json(
         {
           error: `Print run cannot move from ${currentStatus ?? "unknown"} to ${request.result}`,
           code: "invalid_status_transition",
@@ -146,9 +146,9 @@ export const POST: RequestHandler = async (event) => {
         ? readFirestoreString(changedRun, "status")
         : null;
       if (changedStatus === request.result) {
-        return json({ status: changedStatus, unchanged: true });
+        return Response.json({ status: changedStatus, unchanged: true });
       }
-      return json(
+      return Response.json(
         {
           error: "Print run changed before it could be finalized",
           code: "print_run_conflict",
@@ -156,7 +156,7 @@ export const POST: RequestHandler = async (event) => {
         { status: 409 }
       );
     }
-    return json({
+    return Response.json({
       status: request.result,
       completedAt: completedAt.toISOString(),
     });

@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { replaceState } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import type { CollectedFilm } from "$lib/features/film-collection/domain/film-collection-types";
-  import { filmCollectionState } from "$lib/features/film-collection/state/film-collection-state.svelte";
-  import { parseFilmKey } from "$lib/features/film-director/domain/film-director-link";
+  import type { CollectedFilm } from "#lib/features/film-collection/domain/film-collection-types.js";
+  import { filmCollectionState } from "#lib/features/film-collection/state/film-collection-state.svelte.js";
+  import { parseFilmKey } from "#lib/features/film-director/domain/film-director-link.js";
   import FilmDirectorMarquee from "./_components/FilmDirectorMarquee.svelte";
   import { getLibraryFilm, isLibraryFilmKey } from "./_capabilities/index";
   import type { FilmDirectorInput } from "./_lib/film-director-schema";
@@ -93,7 +93,7 @@
     const url = new URL(window.location.href);
     url.searchParams.delete("film");
     url.searchParams.delete("scene");
-    replaceState(url, {});
+    goto(url, { shallow: true, replace: true });
   }
 
   onMount(() => {

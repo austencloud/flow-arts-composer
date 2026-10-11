@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BackgroundType } from "@austencloud/backgrounds";
 
 type RemoteSettings = Record<string, unknown>;
@@ -13,29 +13,29 @@ const persister = vi.hoisted(() => ({
   listener: null as ((settings: RemoteSettings) => void) | null,
 }));
 
-vi.mock("$app/environment", () => ({ browser: true }));
-vi.mock("$lib/shared/auth/loaded-auth", () => ({ loadedAuth: auth }));
-vi.mock("$lib/shared/settings/get-settings-persister", () => ({
+vi.mock("$app/env", () => ({ browser: true }));
+vi.mock("#lib/shared/auth/loaded-auth.js", () => ({ loadedAuth: auth }));
+vi.mock("#lib/shared/settings/get-settings-persister.js", () => ({
   getSettingsPersister: () => persister,
 }));
-vi.mock("$lib/shared/3d/undo/get-scene-undo-manager", () => ({
+vi.mock("#lib/shared/3d/undo/get-scene-undo-manager.js", () => ({
   getSceneUndoManager: () => ({
     registerDomain: () => {},
     captureState: () => {},
     commitState: () => {},
   }),
 }));
-vi.mock("$lib/shared/settings/utils/background-preloader", () => ({
+vi.mock("#lib/shared/settings/utils/background-preloader.js", () => ({
   updateBodyBackground: () => {},
 }));
-vi.mock("$lib/shared/theme/services/theme-service", () => ({
+vi.mock("#lib/shared/theme/services/theme-service.js", () => ({
   updateTheme: () => {},
 }));
-vi.mock("$lib/shared/settings/utils/background-theme-calculator", () => ({
+vi.mock("#lib/shared/settings/utils/background-theme-calculator.js", () => ({
   applyThemeForBackground: () => {},
 }));
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte",
+  "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js",
   () => ({
     getAnimationVisibilityManager: () => ({
       isDarkMode: () => false,
@@ -46,10 +46,20 @@ vi.mock(
 // Setting changes import the analytics logger without awaiting it; left real,
 // posthog-js can still be loading when the worker closes ("Closing rpc while
 // fetch was pending" failed CI on 2026-10-08 with every test green).
-vi.mock("$lib/shared/analytics/services/posthog-activity-logger", () => ({
+vi.mock("#lib/shared/analytics/services/posthog-activity-logger.js", () => ({
   logSettingChange: vi.fn(async () => {}),
 }));
-vi.mock("$lib/shared/utils/debug-logger", () => ({
+// A bare package name resolves the same on every machine, so even a real
+// logger never pulls the full posthog-js bundle into this file. Any property
+// path is a callable no-op (never a thenable), so a real logger cannot throw.
+vi.mock("posthog-js", () => {
+  const noop: unknown = new Proxy(() => undefined, {
+    get: (_target, key) => (key === "then" ? undefined : noop),
+    apply: () => undefined,
+  });
+  return { default: noop };
+});
+vi.mock("#lib/shared/utils/debug-logger.js", () => ({
   createComponentLogger: () => ({
     info: () => {},
     success: () => {},
@@ -64,11 +74,19 @@ const LEGACY_QUEUE_KEY = "tka-settings-offline-queue";
 async function loadSettingsService() {
   vi.resetModules();
   const module =
-    await import("$lib/shared/settings/state/settings-state.svelte");
+    await import("#lib/shared/settings/state/settings-state.svelte.js");
   return module.settingsService;
 }
 
 describe("account settings synchronization", () => {
+  // The logger stub above did not take on CI on 2026-10-10: the real logger
+  // and posthog-js were still loading at teardown, and Vitest failed the run
+  // with every test green. Each test resets modules and fires its own import,
+  // so wait for it before the next reset; that settles it either way.
+  afterEach(async () => {
+    await import("#lib/shared/analytics/services/posthog-activity-logger.js");
+  });
+
   beforeEach(() => {
     localStorage.clear();
     auth.currentUser = { uid: "user-b" };

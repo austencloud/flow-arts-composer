@@ -12,7 +12,7 @@ import LiveCardParityHarness from "./LiveCardParityHarness.svelte";
 // any service.
 const heldQrRequest = new Promise<never>(() => {});
 
-vi.mock("$lib/shared/qr/get-qr-code-generator", () => ({
+vi.mock("#lib/shared/qr/get-qr-code-generator.js", () => ({
   getQRCodeGenerator: () => undefined,
   getUrlQRCodeGenerator: () => ({
     generateForUrl: () => heldQrRequest,

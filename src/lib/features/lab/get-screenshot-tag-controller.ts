@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { ScreenshotTagController } from './services/screenshot-tag-controller';
 
 let instance: ScreenshotTagController | null = null;

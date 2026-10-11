@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { getCreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
-  import { WORKSPACE_BUTTON_ICON } from "$lib/features/create/shared/workspace-panel/shared/workspace-button-layout";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { getCreateModuleContext } from "#lib/features/create/shared/context/create-module-context.js";
+  import { WORKSPACE_BUTTON_ICON } from "#lib/features/create/shared/workspace-panel/shared/workspace-button-layout.js";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   const { constructTutorialState } = getCreateModuleContext();
 

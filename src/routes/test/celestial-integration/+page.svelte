@@ -4,15 +4,15 @@
   import { onDestroy, onMount } from "svelte";
   import type { WebGLRenderer } from "three";
 
-  import Viewer3DCanvas from "$lib/shared/3d/components/Viewer3DCanvas.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import type { EnvironmentTransitionObservation } from "$lib/shared/3d/environments/domain/environment-transition";
-  import { getPerformerStageBounds } from "$lib/shared/3d/environments/domain/performer-stage-bounds";
-  import { sceneAudioState } from "$lib/shared/3d/state/scene-audio-state.svelte";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-  import demoJson from "$lib/shared/landing/data/demo-sequence.json";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import Viewer3DCanvas from "#lib/shared/3d/components/Viewer3DCanvas.svelte";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import type { EnvironmentTransitionObservation } from "#lib/shared/3d/environments/domain/environment-transition.js";
+  import { getPerformerStageBounds } from "#lib/shared/3d/environments/domain/performer-stage-bounds.js";
+  import { sceneAudioState } from "#lib/shared/3d/state/scene-audio-state.svelte.js";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+  import demoJson from "#lib/shared/landing/data/demo-sequence.json";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { page } from "$app/state";
   import CloudbreakAssetCatalog from "../celestial-asset-catalog/+page.svelte";
 

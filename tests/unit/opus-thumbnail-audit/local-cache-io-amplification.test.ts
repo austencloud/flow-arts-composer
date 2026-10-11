@@ -28,9 +28,9 @@ import FDBObjectStore from "fake-indexeddb/lib/FDBObjectStore";
 import FDBCursor from "fake-indexeddb/lib/FDBCursor";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$app/environment", () => ({ browser: true }));
+vi.mock("$app/env", () => ({ browser: true }));
 
-import { ThumbnailLocalCache } from "$lib/shared/browse/services/thumbnail-local-cache";
+import { ThumbnailLocalCache } from "#lib/shared/browse/services/thumbnail-local-cache.js";
 
 interface IdbCounters {
   transactionModes: string[];

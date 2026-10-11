@@ -1,20 +1,20 @@
 <script lang="ts">
   import { getContext } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { effectUiLabel } from "../effect-ui-label";
   import {
     LED_CUSTOMIZE_PAGE_CONTEXT,
     type LedCustomizePage,
     type LedCustomizePageState,
   } from "../led-customize-page-context";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     CYCLE_DURATION_MAX,
     CYCLE_DURATION_MIN,
     normalizeLedDevice,
     type LedSimulatorConfig,
-  } from "$lib/shared/animation-engine/domain/types/led-types";
+  } from "#lib/shared/animation-engine/domain/types/led-types.js";
   import {
     CAMERA_EXPOSURE_MAX_S,
     CAMERA_EXPOSURE_MIN_S,
@@ -22,10 +22,10 @@
     GLARE_WEIGHT_MAX,
     GLARE_WEIGHT_MIN,
     type LedShutter,
-  } from "$lib/shared/animation-engine/domain/led-photometry";
-  import type { PatternParams } from "$lib/shared/poi/domain/strip-pattern";
-  import { BUILT_IN_PRESETS } from "$lib/shared/poi/domain/pattern-presets";
-  import { stripPatternToImageData } from "$lib/shared/poi/domain/strip-pattern-image";
+  } from "#lib/shared/animation-engine/domain/led-photometry.js";
+  import type { PatternParams } from "#lib/shared/poi/domain/strip-pattern.js";
+  import { BUILT_IN_PRESETS } from "#lib/shared/poi/domain/pattern-presets.js";
+  import { stripPatternToImageData } from "#lib/shared/poi/domain/strip-pattern-image.js";
 
   interface Props {
     onBack: () => void;

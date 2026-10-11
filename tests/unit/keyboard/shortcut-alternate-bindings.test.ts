@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { Shortcut } from "$lib/shared/keyboard/domain/models/shortcut";
-import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
-import { ShortcutCustomizer } from "$lib/shared/keyboard/services/shortcut-customizer";
-import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
+import { Shortcut } from "#lib/shared/keyboard/domain/models/shortcut.js";
+import { keyboardShortcutState } from "#lib/shared/keyboard/state/keyboard-shortcut-state.svelte.js";
+import { ShortcutCustomizer } from "#lib/shared/keyboard/services/shortcut-customizer.js";
+import { ShortcutRegistry } from "#lib/shared/keyboard/services/shortcut-registry.js";
 
 function createShortcut(
   id: string,

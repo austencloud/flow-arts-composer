@@ -21,19 +21,19 @@ const auth = vi.hoisted(() => ({
 
 // The real auth state restores the session through Firebase. What matters
 // here is whether, and when, a page asks it to start.
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { initialize: auth.initialize },
 }));
 
 // The full Shape Engine app is irrelevant to sign-in and far too heavy to mount.
-vi.mock("$lib/shared/shape-matrix/app/ShapeMatrixApp.svelte", () => ({
+vi.mock("#lib/shared/shape-matrix/app/ShapeMatrixApp.svelte", () => ({
   default: () => {},
 }));
 
 const { hasSavedFirebaseUser, signInWhenIdle } =
-  await import("$lib/shared/auth/services/deferred-sign-in");
+  await import("#lib/shared/auth/services/deferred-sign-in.js");
 const { default: SiteHeader } =
-  await import("$lib/shared/landing/components/SiteHeader.svelte");
+  await import("#lib/shared/landing/components/SiteHeader.svelte");
 const { default: ShapeEnginePage } =
   await import("../../../src/routes/(public)/shape-engine/+page.svelte");
 const { default: SequenceViewerRoute } =
@@ -152,6 +152,43 @@ describe("signInWhenIdle", () => {
 
     runIdleCallbacks();
     await vi.waitFor(() => expect(auth.initialize).toHaveBeenCalledTimes(1));
+  });
+
+  it("still starts within two seconds on a page that never goes idle", async () => {
+    // A looping sequence player keeps the main thread busy, and an idle
+    // callback without a timeout then waits as long as the animation runs: the
+    // header avatar took over 22 s on the timing mode guides, or never came.
+    // A busy browser runs an idle callback only when its timeout runs out.
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      vi.stubGlobal(
+        "requestIdleCallback",
+        (callback: () => void, options?: IdleRequestOptions) =>
+          options?.timeout === undefined
+            ? 0
+            : setTimeout(callback, options.timeout)
+      );
+      vi.stubGlobal("cancelIdleCallback", (handle: number) =>
+        clearTimeout(handle)
+      );
+      const onProbed = vi.fn();
+      const signIn = vi.fn(() => Promise.resolve());
+      signInWhenIdle({
+        hasSession: async () => true,
+        onProbed,
+        signIn,
+        label: "test",
+      });
+
+      await vi.advanceTimersByTimeAsync(0);
+      expect(onProbed).toHaveBeenCalledWith(true);
+      expect(signIn).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(signIn).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("schedules nothing for a visitor without a session", async () => {
@@ -308,6 +345,15 @@ describe("sequence viewer page", () => {
 describe("who can start the quiet sign-in", () => {
   const SIGN_IN = repoPath("src/lib/shared/auth/services/deferred-sign-in.ts");
 
+  // importGraph walks the repository's source one readFileSync at a time: 0.7
+  // to 2.9 s per test with the cores free (ten-file run, 2026-10-09), and five
+  // to eight times that under the full suite's 31 forks, where on 2026-10-08
+  // one full run blew the 30 s default. The walk lives in
+  // tests/helpers/import-graph.ts and serves other contracts, so this file
+  // budgets the scan, at the 120 s tests/unit/3d-animation gives a loaded
+  // machine, rather than reshaping the helper.
+  const GRAPH_TIMEOUT_MS = 120_000;
+
   it("is the one owner the site header, Shape Engine and the viewer all use", () => {
     for (const entry of [
       "src/lib/shared/landing/components/SiteHeader.svelte",
@@ -316,7 +362,7 @@ describe("who can start the quiet sign-in", () => {
     ]) {
       expect(importGraph([repoPath(entry)]).files, entry).toContain(SIGN_IN);
     }
-  });
+  }, GRAPH_TIMEOUT_MS);
 
   // Embeds run inside other people's sites and stay device-only. Dynamic
   // imports count: /embed/sequence loads its whole viewer that way.
@@ -329,5 +375,5 @@ describe("who can start the quiet sign-in", () => {
     expect(
       graph.files.has(SIGN_IN) ? chainTo(graph, SIGN_IN) : null
     ).toBeNull();
-  });
+  }, GRAPH_TIMEOUT_MS);
 });

@@ -9,8 +9,8 @@
  * both when this list changes.
  */
 
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 import type { CoverCard } from "./models/product";
 
 export const SHOP_PROP_OPTIONS: readonly PropType[] = [

@@ -5,18 +5,18 @@
    * Modules are collapsible to show/hide their tabs
    */
 
-  import type { FeatureFlagConfig } from "$lib/shared/auth/domain/models/feature-flag";
-  import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
-  import { ROLE_HIERARCHY, ROLE_DISPLAY } from "$lib/shared/auth/domain/models/user-role";
-  import { featureFlagService, featureFlagState } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import type { FeatureFlagConfig } from "#lib/shared/auth/domain/models/feature-flag.js";
+  import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
+  import { ROLE_HIERARCHY, ROLE_DISPLAY } from "#lib/shared/auth/domain/models/user-role.js";
+  import { featureFlagService, featureFlagState } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import {
     buildFeatureHierarchy,
     getFeatureIconAndColor,
     getRoleColor,
   } from "../shared/feature-utils";
-  import { authedFetch } from "$lib/shared/auth/services/authed-fetch";
-  import AdminSearchBox from "$lib/shared/admin/components/AdminSearchBox.svelte";
+  import { authedFetch } from "#lib/shared/auth/services/authed-fetch.js";
+  import AdminSearchBox from "#lib/shared/admin/components/AdminSearchBox.svelte";
   import MatrixRow from "./MatrixRow.svelte";
   import ModuleQuickBar from "./ModuleQuickBar.svelte";
 

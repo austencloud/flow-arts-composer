@@ -12,7 +12,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
 import { Plane } from "@austencloud/scene-3d";
 
 const ID = "eph-persist-test";

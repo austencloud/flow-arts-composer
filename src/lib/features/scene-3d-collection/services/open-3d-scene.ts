@@ -9,16 +9,16 @@ import {
   markViewer3DPresetIntent,
   writeViewer3DConfig,
   type Viewer3DState,
-} from "$lib/shared/3d/state/viewer-3d-state.svelte";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import { persistViewerMode } from "$lib/shared/sequence-viewer/services/viewer-state-persistence";
-import { createSequenceData, type SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import { persistViewerMode } from "#lib/shared/sequence-viewer/services/viewer-state-persistence.js";
+import { createSequenceData, type SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   captureSettingsCheckpoint,
   revertSettingsCheckpoint,
-} from "$lib/shared/collections/settings-checkpoint.svelte";
-import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+} from "#lib/shared/collections/settings-checkpoint.svelte.js";
+import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 const SCENE_FEATURES_STORAGE_KEY = "tka-scene-features";
 
@@ -195,7 +195,7 @@ export function openScene3DInStudio(
   });
   // The coordinator imports auth-state; loading it here keeps the scene
   // controls that apply presets from bringing Firebase onto public pages.
-  void import("$lib/shared/navigation-coordinator/navigation-coordinator.svelte").then(
+  void import("#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js").then(
     ({ handleModuleChange }) => handleModuleChange("stage", "scene")
   );
 }

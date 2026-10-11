@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isFullAccountUser } from "$lib/shared/auth/domain/access-tier";
+import { isFullAccountUser } from "#lib/shared/auth/domain/access-tier.js";
 
 describe("isFullAccountUser", () => {
   it("no user (unauthenticated) → false", () => {

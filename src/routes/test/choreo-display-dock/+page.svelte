@@ -2,8 +2,8 @@
   // Harness for the sequence-viewer choreo-card display panel (ExportImagePanel)
   // rebuilt on ControlDock. The card preview is a placeholder; the dock + its
   // real display toggles (Content/Columns/Theme) are the live components.
-  import ExportImagePanel from "$lib/shared/sequence-viewer/components/ExportImagePanel.svelte";
-  import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
+  import ExportImagePanel from "#lib/shared/sequence-viewer/components/ExportImagePanel.svelte";
+  import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
 
   const exportOptions = getExportOptionsState();
 

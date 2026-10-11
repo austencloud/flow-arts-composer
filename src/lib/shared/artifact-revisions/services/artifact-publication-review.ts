@@ -1,6 +1,6 @@
 import { doc, getDoc, serverTimestamp, writeBatch } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { stripUndefined } from "$lib/shared/firestore/firestore-helpers";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { stripUndefined } from "#lib/shared/firestore/firestore-helpers.js";
 import {
   getArtifactPublicationRequestPath,
   getPublicArtifactPath,

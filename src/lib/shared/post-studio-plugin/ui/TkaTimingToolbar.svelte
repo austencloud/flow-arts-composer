@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import type { VideoEditorState } from "@austencloud/video-editor";
-  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { useTkaEditor } from "./tka-editor-context";
 
   /**

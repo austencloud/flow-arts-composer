@@ -57,7 +57,7 @@ describe("QR scan cloud-render contract", () => {
     expect(route).toContain("aria-hidden={!viewerReady}");
     expect(route).toContain("inert={!viewerReady ? true : undefined}");
     expect(ingress).toContain("buildScanSequenceDestination");
-    expect(ingress).toContain("replaceState: true");
+    expect(ingress).toContain("replace: true");
     expect(ingress).not.toContain("SequenceViewerShell.svelte");
   });
 

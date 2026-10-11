@@ -9,19 +9,19 @@ const mocks = vi.hoisted(() => ({
   getOrCreateGroupConversation: vi.fn(),
 }));
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { user: { uid: "current-user" } },
 }));
 
-vi.mock("$lib/shared/community/services/user-repository", () => ({
+vi.mock("#lib/shared/community/services/user-repository.js", () => ({
   getFollowing: mocks.getFollowing,
 }));
 
-vi.mock("$lib/shared/messaging/services/conversation-manager", () => ({
+vi.mock("#lib/shared/messaging/services/conversation-manager.js", () => ({
   conversationService: {
     getOrCreateConversation: mocks.getOrCreateConversation,
     getOrCreateGroupConversation: mocks.getOrCreateGroupConversation,

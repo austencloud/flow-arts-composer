@@ -4,15 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 
-vi.mock("$lib/shared/choreo-card/components/TKAWordGlyph.svelte", async () => ({
+vi.mock("#lib/shared/choreo-card/components/TKAWordGlyph.svelte", async () => ({
   default: (await import("./SequenceMessagePreviewGlyphTestStub.svelte"))
     .default,
 }));
 
 vi.mock(
-  "$lib/shared/browse/components/PropAwareThumbnail.svelte",
+  "#lib/shared/browse/components/PropAwareThumbnail.svelte",
   async () => ({
     default: (await import("./SequenceMessagePreviewCardTestStub.svelte"))
       .default,

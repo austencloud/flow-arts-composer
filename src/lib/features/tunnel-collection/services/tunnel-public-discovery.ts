@@ -1,8 +1,8 @@
 import {
   getPublicArtifactDetail,
   listPublicArtifacts,
-} from "$lib/shared/artifact-revisions/services/public-artifact-loader";
-import type { PublicArtifactEnvelope } from "$lib/shared/artifact-revisions/domain/public-artifact";
+} from "#lib/shared/artifact-revisions/services/public-artifact-loader.js";
+import type { PublicArtifactEnvelope } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
 import {
   collectedTunnelFromPublicArtifact,
   type TunnelPublicPayload,

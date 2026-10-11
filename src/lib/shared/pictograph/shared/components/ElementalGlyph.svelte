@@ -20,7 +20,7 @@ text embedded within the elemental shape. Known non-Type1 letters are rejected.
     getElementalGlyphBox,
     type ElementalGlyphCorner,
   } from "../domain/constants/elemental-glyph-layout";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { elementalDisplayLabel } from "./elemental-display-label";
 
   let {

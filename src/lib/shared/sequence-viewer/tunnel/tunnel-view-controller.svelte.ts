@@ -1,11 +1,11 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
-import { applyEffort } from "$lib/shared/effort/domain/effort-easing-unified";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
+import { applyEffort } from "#lib/shared/effort/domain/effort-easing-unified.js";
 import {
   getAnimationVisibilityManager,
   type AnimationVisibilityStateManager,
-} from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+} from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import {
   buildTunnelCompositionLayers,
   type BuiltTunnelLayer,
@@ -44,7 +44,7 @@ import {
   type TunnelPropColorPair,
   type TunnelPropColorState,
 } from "./tunnel-prop-colors";
-import { getBaseMotionColors } from "$lib/shared/animation-engine/services/svg-generator";
+import { getBaseMotionColors } from "#lib/shared/animation-engine/services/svg-generator.js";
 import {
   createIndependentTunnelPerformer,
   createTunnelComposition,

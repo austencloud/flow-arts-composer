@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { PostTimingSession } from "./post-timing-session.svelte";
   let { session }: { session: PostTimingSession } = $props();
 </script>

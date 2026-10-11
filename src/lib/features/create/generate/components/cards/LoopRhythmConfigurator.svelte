@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { LOOPComponent } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
   import {
     REFLECTION_AXIS_DETAILS,
     REFLECTION_AXIS_OPTIONS,
     type LoopRhythmValue,
     type ReflectionAxisOption,
   } from "./loop-expanded-overlay-model";
-  import { effectiveInversionInterval } from "$lib/shared/create/services/loop-type-utils";
+  import { effectiveInversionInterval } from "#lib/shared/create/services/loop-type-utils.js";
 
   interface Props {
     component: LOOPComponent;

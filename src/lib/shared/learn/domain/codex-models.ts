@@ -4,8 +4,8 @@
  * Interface definitions for the codex system.
  */
 
-import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { LetterCategory } from "$lib/shared/learn/domain/codex-types";
+import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { LetterCategory } from "#lib/shared/learn/domain/codex-types.js";
 
 export interface CodexLetterMapping {
   startPlacement: string;

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   createDerivedTunnelPerformer,
   createIndependentTunnelPerformer,
@@ -12,17 +12,17 @@ import {
   resolveTunnelLayerPlans,
   tunnelCompositionCycleSteps,
   validateTunnelComposition,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { buildTunnelCompositionLayers } from "$lib/shared/sequence-viewer/tunnel/tunnel-layer-builder";
-import { resolveTunnelPerformerDisplays } from "$lib/features/create/tunnel/domain/tunnel-performer-displays";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { buildTunnelCompositionLayers } from "#lib/shared/sequence-viewer/tunnel/tunnel-layer-builder.js";
+import { resolveTunnelPerformerDisplays } from "#lib/features/create/tunnel/domain/tunnel-performer-displays.js";
 
 function sequence(id: string, steps: number): SequenceData {
   return createSequenceData({

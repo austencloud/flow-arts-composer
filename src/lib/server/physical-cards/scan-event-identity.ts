@@ -1,4 +1,4 @@
-import { hashPrivateValue } from "$lib/server/firestore/firestore-rest";
+import { hashPrivateValue } from "#lib/server/firestore/firestore-rest.js";
 
 export interface ScanEventIdentityInput {
   shortCode: string;

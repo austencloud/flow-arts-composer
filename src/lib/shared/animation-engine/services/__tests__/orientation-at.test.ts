@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { calculateOrientationAt } from "$lib/shared/animation-engine/services/orientation-at";
-import { calculateEndOrientation } from "$lib/shared/render/core/calculations/orientation";
+import { calculateOrientationAt } from "#lib/shared/animation-engine/services/orientation-at.js";
+import { calculateEndOrientation } from "#lib/shared/render/core/calculations/orientation.js";
 import { getAllLetterVariants } from "../../../../../../tests/helpers/real-pictograph-loader";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   MotionType,
   HandSide,
   RotationDirection,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 // A spread across motion families: Type 1 (pro/anti), Type 4 (dash), Type 6 (static).
 const LETTERS = [Letter.A, Letter.B, Letter.G, Letter.J, Letter.PHI, Letter.ALPHA];

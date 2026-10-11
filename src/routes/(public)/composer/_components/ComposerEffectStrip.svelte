@@ -13,10 +13,10 @@
   effects settings).
 -->
 <script lang="ts">
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import { EFFECTS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import type { EffectType } from "$lib/shared/effects/domain/effects-config";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { EFFECTS } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
 
   const effects = getEffectsConfigContext();
   const active = $derived(effects?.config.activeEffect ?? "none");

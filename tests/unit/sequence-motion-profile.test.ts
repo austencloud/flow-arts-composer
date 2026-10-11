@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   getSequenceMotionProfile,
   getSequenceMotionVisibility,
-} from "$lib/shared/foundation/services/sequence-motion-profile";
+} from "#lib/shared/foundation/services/sequence-motion-profile.js";
 
 function step(left: boolean, right: boolean) {
   return createStepData({

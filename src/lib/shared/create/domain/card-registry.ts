@@ -10,8 +10,8 @@ import {
   getGeneratorHelpContent,
   type GeneratorHelpId,
   type GeneratorHelpItem,
-} from "$lib/shared/create/domain/generator-help-content";
-import type { CardColors } from "$lib/shared/create/domain/card-colors";
+} from "#lib/shared/create/domain/generator-help-content.js";
+import type { CardColors } from "#lib/shared/create/domain/card-colors.js";
 import { generatorTourText } from "./generator-tour-display";
 
 export type GeneratorCardSlot = "level" | "grid";

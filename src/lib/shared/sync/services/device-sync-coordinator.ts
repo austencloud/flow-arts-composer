@@ -1,5 +1,5 @@
-import type { SequenceData } from '$lib/shared/foundation/domain/models/sequence-data';
-import type { PeerConnectionManager } from '$lib/shared/lan-sync/services/peer-connection-manager'
+import type { SequenceData } from '#lib/shared/foundation/domain/models/sequence-data.js';
+import type { PeerConnectionManager } from '#lib/shared/lan-sync/services/peer-connection-manager.js'
 import type { AdaptiveHeartbeat } from "./adaptive-heartbeat";
 import type { MessageBatcher } from "./message-batcher";
 import type { MessagePriority } from "./types";

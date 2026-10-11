@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { deepLinker, type DeepLinker } from "./services/deep-linker";
 
 export function getDeepLinker(): DeepLinker {

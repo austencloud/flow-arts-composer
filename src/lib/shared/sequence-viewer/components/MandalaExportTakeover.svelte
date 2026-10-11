@@ -1,9 +1,9 @@
 <script lang="ts">
-  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import { exportPhaseLabelKey } from "$lib/shared/video-export/services/export-takeover-phase";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { sequenceMandalaHandOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
+  import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import { exportPhaseLabelKey } from "#lib/shared/video-export/services/export-takeover-phase.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { sequenceMandalaHandOffsets } from "#lib/shared/mandala/services/mandala-grid-join.js";
   import type { MandalaViewerController } from "../state/mandala-viewer-controller.svelte";
 
   interface Props {

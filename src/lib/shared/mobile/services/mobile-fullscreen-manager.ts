@@ -1,4 +1,4 @@
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
 const debug = createComponentLogger("MobileFullscreenManager");
 

@@ -1,7 +1,7 @@
 import { getContext, setContext, untrack } from "svelte";
-import { TIMING_DIRECTION_MODES } from "$lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
+import { TIMING_DIRECTION_MODES } from "#lib/features/learn/components/interactive/foundations/pictograph-foundation-content.js";
 import { TIMING_DIRECTION_ARTICLES } from "../_data/timing-direction-articles";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export const timingDirectionPreviews = TIMING_DIRECTION_ARTICLES.map(
   (article) => ({

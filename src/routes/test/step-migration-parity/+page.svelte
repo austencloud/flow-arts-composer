@@ -28,7 +28,7 @@
    *      deterministic (so a post-migration diff is signal, not AA noise).
    */
   import { onMount } from "svelte";
-  import { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
+  import { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
   import {
     renderStepSet,
     diffImageData,
@@ -37,8 +37,8 @@
     DRIFT_THRESHOLD,
     PIPELINE_VERSION,
     type RenderedStep,
-  } from "$lib/shared/render/parity/render-parity-core";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/render/parity/render-parity-core.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   const DEFAULT_COUNT = 25;
 

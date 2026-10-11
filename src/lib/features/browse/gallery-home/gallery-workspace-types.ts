@@ -1,5 +1,5 @@
-import type { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { FilterConnective } from "$lib/shared/browse/services/multi-filter";
+import type { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { FilterConnective } from "#lib/shared/browse/services/multi-filter.js";
 import type { Snippet } from "svelte";
 import type {
   CategoryEntry,

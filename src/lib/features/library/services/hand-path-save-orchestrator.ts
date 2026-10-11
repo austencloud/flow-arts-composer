@@ -7,9 +7,9 @@
  * hand-crafted paths and those automatically decomposed from sequences.
  */
 
-import type { HandPathRepository } from "$lib/shared/foundation/services/hand-path-repository-store";
-import type { HandPathData } from "$lib/shared/foundation/domain/models/hand-path-data";
-import type { ArtifactProvenance } from "$lib/shared/foundation/domain/models/artifact-provenance";
+import type { HandPathRepository } from "#lib/shared/foundation/services/hand-path-repository-store.js";
+import type { HandPathData } from "#lib/shared/foundation/domain/models/hand-path-data.js";
+import type { ArtifactProvenance } from "#lib/shared/foundation/domain/models/artifact-provenance.js";
 
 export class HandPathSaveOrchestrator {
   constructor(

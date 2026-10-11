@@ -7,15 +7,15 @@
 -->
 <script lang="ts">
 	import { T, useTask, useThrelte } from "@threlte/core";
-	import VillageAvatar from "$lib/features/village/components/VillageAvatar.svelte";
-	import VillageDeathMark from "$lib/features/village/components/VillageDeathMark.svelte";
-	import VillageMonument from "$lib/features/village/components/VillageMonument.svelte";
-	import VillageJamCircle from "$lib/features/village/components/VillageJamCircle.svelte";
-	import VillageEffectCircle from "$lib/features/village/components/VillageEffectCircle.svelte";
-	import VillageDroppedProp from "$lib/features/village/components/VillageDroppedProp.svelte";
-	import { setVillageContext, setVillageVisualContext } from "$lib/features/village/state/village-context";
-	import ForestScene from "$lib/shared/3d/environments/scenes/ForestScene.svelte";
-	import { createDefaultForestFireflyConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config";
+	import VillageAvatar from "#lib/features/village/components/VillageAvatar.svelte";
+	import VillageDeathMark from "#lib/features/village/components/VillageDeathMark.svelte";
+	import VillageMonument from "#lib/features/village/components/VillageMonument.svelte";
+	import VillageJamCircle from "#lib/features/village/components/VillageJamCircle.svelte";
+	import VillageEffectCircle from "#lib/features/village/components/VillageEffectCircle.svelte";
+	import VillageDroppedProp from "#lib/features/village/components/VillageDroppedProp.svelte";
+	import { setVillageContext, setVillageVisualContext } from "#lib/features/village/state/village-context.js";
+	import ForestScene from "#lib/shared/3d/environments/scenes/ForestScene.svelte";
+	import { createDefaultForestFireflyConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config.js";
 	import { userProportionsState } from "@austencloud/scene-3d";
 	import {
 		getMuseumVillageManager,

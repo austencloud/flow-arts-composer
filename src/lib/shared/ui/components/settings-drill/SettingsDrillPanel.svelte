@@ -29,7 +29,7 @@ children, and detail bodies here are heavy pictograph grids — the carve-out
 named in .claude/rules/crossfade-primitive.md.
 -->
 <script module lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   export type SettingsDrillItem = {
     id: string;
     label: string;
@@ -42,7 +42,7 @@ named in .claude/rules/crossfade-primitive.md.
 <script lang="ts">
   import { fly } from "svelte/transition";
   import { quintOut } from "svelte/easing";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { Snippet } from "svelte";
   import SettingsDrillRow from "./SettingsDrillRow.svelte";
 

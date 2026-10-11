@@ -2,7 +2,7 @@
   import type { Festival } from "../../domain/models/festival";
   import type { UserFestivalTracker, TrackerStatus } from "../../domain/models/festival-tracker";
   import { getFestivalContext } from "../../context/festival-context";
-  import { auth } from "$lib/shared/auth/firebase";
+  import { auth } from "#lib/shared/auth/firebase.js";
 
   interface Props {
     festival: Festival;

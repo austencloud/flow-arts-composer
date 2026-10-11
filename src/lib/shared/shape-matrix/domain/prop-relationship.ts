@@ -1,20 +1,20 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   TND_BY_FAMILY,
   type TnDElement,
-} from "$lib/features/choreo-card/domain/tnd-element";
+} from "#lib/features/choreo-card/domain/tnd-element.js";
 import type { Flower } from "./flower-signature";
 import {
   classifyPropRelationship,
   propPhase,
   timingFromPhase,
 } from "@tka/sequence-engine/generation";
-import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   isVisibleMotion,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 export type PropDirectionRelationship = "same" | "opp";
 export type PropTimingRelationship = "tog" | "split" | "quarter";

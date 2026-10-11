@@ -8,7 +8,7 @@
  * Alpha placements don't exist because there are no opposite points on a 3-point grid.
  */
 
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { TriGridMode, TriGridPlacementInfo } from "./trigrid-types";
 import { getTriGridLocations } from "./trigrid-coordinates";
 

@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     getSettings,
     updateSettings,
-  } from "$lib/shared/application/state/app-state.svelte";
-  import { resolveViewingProps } from "$lib/shared/foundation/services/prop-viewing";
-  import { localizedPropName } from "$lib/shared/settings/components/tabs/prop-type/localized-prop-name";
-  import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
-  import PropPairField from "$lib/shared/pictograph/prop/components/PropPairField.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  } from "#lib/shared/application/state/app-state.svelte.js";
+  import { resolveViewingProps } from "#lib/shared/foundation/services/prop-viewing.js";
+  import { localizedPropName } from "#lib/shared/settings/components/tabs/prop-type/localized-prop-name.js";
+  import { captureActivePropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+  import PropPairField from "#lib/shared/pictograph/prop/components/PropPairField.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   let {
     sequence = null,
@@ -22,10 +22,10 @@
     onUpdate = updateSettings,
   }: {
     presentation?: "default" | "toolbar" | "none";
-    preferences?: import("$lib/shared/settings/domain/app-settings").AppSettings;
+    preferences?: import("#lib/shared/settings/domain/app-settings.js").AppSettings;
     onUpdate?: (
       patch: Partial<
-        import("$lib/shared/settings/domain/app-settings").AppSettings
+        import("#lib/shared/settings/domain/app-settings.js").AppSettings
       >
     ) => void | Promise<void>;
     sequence?: SequenceData | null;

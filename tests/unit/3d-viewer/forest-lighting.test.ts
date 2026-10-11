@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultForestFireflyConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config";
+import { createDefaultForestFireflyConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config.js";
 
 describe("Forest moonlit lighting defaults", () => {
   it("uses cool global bounce instead of campfire-colored ambient light", () => {

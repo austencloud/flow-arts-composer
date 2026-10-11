@@ -1,8 +1,8 @@
 <script lang="ts">
 
-import { getDetectionCorrector } from "$lib/features/video/video-trails/get-detection-corrector";
-import { getVideoTipAdapter } from "$lib/features/video/video-trails/get-video-tip-adapter";
-import { getVideoTrailsRepository } from "$lib/features/video/video-trails/get-video-trails-repository";
+import { getDetectionCorrector } from "#lib/features/video/video-trails/get-detection-corrector.js";
+import { getVideoTipAdapter } from "#lib/features/video/video-trails/get-video-tip-adapter.js";
+import { getVideoTrailsRepository } from "#lib/features/video/video-trails/get-video-trails-repository.js";
   import { onDestroy, type Component } from "svelte";
   import { createVideoTrailsState } from "./state/video-trails-state.svelte";
   import { setVideoTrailsContext } from "./context/video-trails-context";

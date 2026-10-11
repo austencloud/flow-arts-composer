@@ -6,29 +6,29 @@ import {
 } from "../../src/routes/(public)/composer/_components/composer-3d-demo-state";
 import { classifyComposerGenerationFailure } from "../../src/routes/(public)/composer/_components/composer-generation-failure";
 import { isVisitorOwnedConstructSequence } from "../../src/routes/(public)/composer/_components/composer-sequence-ownership";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import type { Viewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-import { SceneEnvironmentId } from "$lib/shared/3d/environments/domain/scene-environment";
-import { SCENE_FEATURES } from "$lib/shared/3d/scene-features/domain/scene-feature-registry";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { Viewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+import { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
+import { SCENE_FEATURES } from "#lib/shared/3d/scene-features/domain/scene-feature-registry.js";
 import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 const POSITION_BY_LOCATION = {
   [GridLocation.NORTH]: GridPlacement.BETA1,

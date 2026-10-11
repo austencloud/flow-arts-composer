@@ -3,7 +3,7 @@
  * can silently drift — which deck codes get picked, whether a redirect
  * target actually matches — have real unit tests instead of only being
  * exercised by a live run against production. No network, no Firestore SDK,
- * no `$lib` imports: everything here takes already-fetched data in and
+ * no `#lib` imports: everything here takes already-fetched data in and
  * returns a decision out.
  */
 

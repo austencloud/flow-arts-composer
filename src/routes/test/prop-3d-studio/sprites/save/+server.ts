@@ -1,8 +1,8 @@
-import { json, type RequestHandler } from "@sveltejs/kit";
-import { dev } from "$app/environment";
+import type { RequestHandler } from "@sveltejs/kit";
+import { dev } from "$app/env";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { isRetiredModelSprite } from "$lib/shared/pictograph/prop/domain/retired-model-sprites";
+import { isRetiredModelSprite } from "#lib/shared/pictograph/prop/domain/retired-model-sprites.js";
 
 // Dev-only: /test/prop-3d-studio/sprites POSTs each captured prop sprite here.
 // The dev server runs from the project root, so resolve from cwd.
@@ -128,24 +128,24 @@ ${rows}
 }
 
 export const POST: RequestHandler = async ({ request }) => {
-  if (!dev) return json({ ok: false, error: "dev only" }, { status: 404 });
+  if (!dev) return Response.json({ ok: false, error: "dev only" }, { status: 404 });
 
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
   } catch {
-    return json({ ok: false, error: "bad JSON body" }, { status: 400 });
+    return Response.json({ ok: false, error: "bad JSON body" }, { status: 400 });
   }
   if (body.finalize === true) {
     try {
       writeGeneratedModule(readManifest());
     } catch (err) {
-      return json(
+      return Response.json(
         { ok: false, error: err instanceof Error ? err.message : "write failed" },
         { status: 500 }
       );
     }
-    return json({ ok: true });
+    return Response.json({ ok: true });
   }
 
   const { prop, color, width, height, fit, dataUrl, extent, gripOffset, bounds } =
@@ -160,13 +160,13 @@ export const POST: RequestHandler = async ({ request }) => {
     typeof dataUrl !== "string" ||
     !dataUrl.startsWith("data:image/webp;base64,")
   ) {
-    return json(
+    return Response.json(
       { ok: false, error: "invalid capture payload" },
       { status: 400 }
     );
   }
   if (isRetiredModelSprite(prop)) {
-    return json(
+    return Response.json(
       { ok: false, error: `${prop} has no Version 2: its capture duplicates another look` },
       { status: 400 }
     );
@@ -204,10 +204,10 @@ export const POST: RequestHandler = async ({ request }) => {
     };
     writeManifest(manifest);
   } catch (err) {
-    return json(
+    return Response.json(
       { ok: false, error: err instanceof Error ? err.message : "write failed" },
       { status: 500 }
     );
   }
-  return json({ ok: true });
+  return Response.json({ ok: true });
 };

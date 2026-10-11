@@ -12,8 +12,8 @@
    * owns: its <svelte:head>, its <Canvas>, and its walk state.
    */
   import type { Snippet } from "svelte";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
-  import type { WingDeclaration } from "$lib/features/museum/data/wing-declarations/types";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
+  import type { WingDeclaration } from "#lib/features/museum/data/wing-declarations/types.js";
   import { resolveLocationLabel } from "./resolve-location-label";
 
   interface Props {

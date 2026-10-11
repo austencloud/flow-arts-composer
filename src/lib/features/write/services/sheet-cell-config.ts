@@ -12,9 +12,9 @@
  * background. Two card-only composition flags are stripped: a bare sheet cell is
  * a pictograph, not a full card, so it carries no QR code and no word banner.
  */
-import { buildCanonicalCardVisibility } from "$lib/features/choreo-card/domain/canonical-card-visibility";
+import { buildCanonicalCardVisibility } from "#lib/features/choreo-card/domain/canonical-card-visibility.js";
 import type { ChoreoSheetLayout } from "../domain/types/choreo-sheet";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 // No elemental glyph on a sheet cell (that's a TnD-deck-card concern), so call
 // the builder with no args, then drop the QR cell flag.

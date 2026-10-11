@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { calculatePhysicalCardLayout } from "$lib/features/choreo-card/services/physical-card-layout-calculator";
-import { computeFrontQrCellRect } from "$lib/features/store/services/card-front-regions";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { calculatePhysicalCardLayout } from "#lib/features/choreo-card/services/physical-card-layout-calculator.js";
+import { computeFrontQrCellRect } from "#lib/features/store/services/card-front-regions.js";
 
 describe("physical shop hero QR region", () => {
   it("covers the bottom-left QR cell on an eight-step portrait card", () => {

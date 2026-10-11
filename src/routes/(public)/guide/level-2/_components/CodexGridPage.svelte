@@ -14,11 +14,11 @@
    *   - split:  pass `leftHeader` + `rightHeader` → two half-width headers with a
    *             vertical divider down the middle (p18: Type 2 | Type 3).
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   type Seg = { t: string; c?: string };
   export type CodexCell = {

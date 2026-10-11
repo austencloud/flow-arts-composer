@@ -5,7 +5,7 @@ import {
   placeTakeLanding,
   splitTimingSection,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import { mountTimingLane } from "./take-timing-lane-harness.svelte";
 import { createPostTimingSessionHarness } from "./post-timing-session-harness.svelte";
 

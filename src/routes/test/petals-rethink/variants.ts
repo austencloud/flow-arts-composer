@@ -18,10 +18,10 @@ import {
   resolvePetalSize,
   type PetalPalette,
   type PetalSpriteShape,
-} from "$lib/shared/effects/domain/petal-palettes";
-import { Petals2DRenderer } from "$lib/shared/effects/renderers/petals-2d-renderer";
-import { resolvePetals2D } from "$lib/shared/effects/translators/canvas2d-translator";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
+} from "#lib/shared/effects/domain/petal-palettes.js";
+import { Petals2DRenderer } from "#lib/shared/effects/renderers/petals-2d-renderer.js";
+import { resolvePetals2D } from "#lib/shared/effects/translators/canvas2d-translator.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 
 const TAU = Math.PI * 2;
 

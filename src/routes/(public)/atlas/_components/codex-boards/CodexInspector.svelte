@@ -14,7 +14,7 @@
   import GuidePictograph from "../../../guide/level-1/_components/GuidePictograph.svelte";
   import { codexData } from "../../../guide/codex/_data/codex-groups";
   import type { CodexLetterInfo } from "./codex-letters";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
   let {
     info,

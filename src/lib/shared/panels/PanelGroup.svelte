@@ -59,9 +59,9 @@
 
 <script lang="ts">
   import { onDestroy, onMount, untrack } from "svelte";
-  import { holdBackgroundFor } from "$lib/shared/background/shared/state/background-hold.svelte";
-  import { flexPresence, growFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { holdBackgroundFor } from "#lib/shared/background/shared/state/background-hold.svelte.js";
+  import { flexPresence, growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import ResizeHandle from "./ResizeHandle.svelte";
   import {
     needsMeasuredBasisHandoff,

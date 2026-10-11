@@ -24,7 +24,7 @@ import {
   MODE_ORDER,
   MODE_WORDS,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 
 export type TnDSelection = "free" | VtgMode;
 

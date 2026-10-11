@@ -6,8 +6,8 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { createRng } from "$lib/shared/attract/services/rng";
-import { createTrail } from "$lib/shared/attract/services/trail";
+import { createRng } from "#lib/shared/attract/services/rng.js";
+import { createTrail } from "#lib/shared/attract/services/trail.js";
 import {
   FATIGUE_GAIN,
   createMemory,
@@ -17,13 +17,13 @@ import {
   scoreAll,
   scoreIntention,
   selectIntention,
-} from "$lib/shared/attract/domain/scoring";
+} from "#lib/shared/attract/domain/scoring.js";
 import type {
   GhostContext,
   GhostWorld,
   Intention,
   IntentionCategory,
-} from "$lib/shared/attract/domain/intention";
+} from "#lib/shared/attract/domain/intention.js";
 
 const EMPTY_WORLD: GhostWorld = {
   moduleId: null,

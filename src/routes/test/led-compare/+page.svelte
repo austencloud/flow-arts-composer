@@ -15,24 +15,24 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
 
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import { LED_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/led-presets";
-  import { describeLook } from "$lib/shared/animation-engine/components/effects-panel/thumbnails/look-copy";
-  import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
-  import { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-  import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-  import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { orientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
-  import { getGenerationOrchestrator } from "$lib/features/create/generate/shared/get-generation-orchestrator";
-  import { InfiniteSequenceGenerator } from "$lib/features/landing/services/infinite-sequence-generator";
-  import { SpinnerMetricsRepository } from "$lib/features/landing/services/spinner-metrics-repository";
-  import { isEffectPreviewLoop } from "$lib/shared/effects/domain/effect-preview-loop-policy";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import { LED_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/led-presets.js";
+  import { describeLook } from "#lib/shared/animation-engine/components/effects-panel/thumbnails/look-copy.js";
+  import { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
+  import { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+  import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+  import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { orientationCycleExtender } from "#lib/features/create/generate/circular/services/orientation-cycle-extender.js";
+  import { getGenerationOrchestrator } from "#lib/features/create/generate/shared/get-generation-orchestrator.js";
+  import { InfiniteSequenceGenerator } from "#lib/features/landing/services/infinite-sequence-generator.js";
+  import { SpinnerMetricsRepository } from "#lib/features/landing/services/spinner-metrics-repository.js";
+  import { isEffectPreviewLoop } from "#lib/shared/effects/domain/effect-preview-loop-policy.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   const DEFAULT_BPM = 60;
 

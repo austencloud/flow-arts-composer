@@ -1,10 +1,10 @@
 <script lang="ts">
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import QftLayerGlyph from "$lib/shared/notation/qft/components/QftLayerGlyph.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import QftLayerGlyph from "#lib/shared/notation/qft/components/QftLayerGlyph.svelte";
   import {
     LAYER_KEYS,
     LAYER_LABELS,
-  } from "$lib/shared/notation/qft/qft-layers";
+  } from "#lib/shared/notation/qft/qft-layers.js";
   import { getQftAppContext } from "../_context/qft-app-context";
 
   let { showReset = true }: { showReset?: boolean } = $props();

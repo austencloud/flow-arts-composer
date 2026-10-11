@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { resolveEffect } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+import { resolveEffect } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import {
   FUSE_PREVIEW_TIP_EFFECT_MAP,
   resolveFusePreviewTrackingMode,
-} from "$lib/features/fuse/services/fuse-preview-trail-config";
+} from "#lib/features/fuse/services/fuse-preview-trail-config.js";
 
 describe("Fuse preview tracking mode", () => {
   it("enables the live trail effect independently of global effect settings", () => {

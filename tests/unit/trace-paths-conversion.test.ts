@@ -10,33 +10,33 @@
 
 import { describe, it, expect } from "vitest";
 
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createHandPath } from "$lib/shared/foundation/services/hand-path-factory";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createStartPlacementData } from "#lib/shared/foundation/domain/factories/create-start-placement-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createHandPath } from "#lib/shared/foundation/services/hand-path-factory.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
-import { sequenceToTraceRound } from "$lib/features/learn/play/games/trace-paths/services/sequence-to-trace";
+import { sequenceToTraceRound } from "#lib/features/learn/play/games/trace-paths/services/sequence-to-trace.js";
 import {
   handPathToTraceRound,
   pairHandPathsToTraceRound,
-} from "$lib/features/learn/play/games/trace-paths/services/hand-path-to-trace";
+} from "#lib/features/learn/play/games/trace-paths/services/hand-path-to-trace.js";
 import type {
   TraceHand,
   TraceRound,
   TraceSegment,
-} from "$lib/features/learn/play/games/trace-paths/domain/trace-types";
+} from "#lib/features/learn/play/games/trace-paths/domain/trace-types.js";
 
 // Fixtures
 

@@ -1,13 +1,13 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import AuthModal from "$lib/shared/auth/components/AuthModal.svelte";
-  import ContextualAuthPrompt from "$lib/shared/auth/components/ContextualAuthPrompt.svelte";
+  import AuthModal from "#lib/shared/auth/components/AuthModal.svelte";
+  import ContextualAuthPrompt from "#lib/shared/auth/components/ContextualAuthPrompt.svelte";
   import {
     getAuthPromptContent,
     type AuthNudgeTrigger,
-  } from "$lib/shared/auth/domain/auth-nudge-trigger";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import type { GuestEncorePrompt } from "$lib/shared/auth/domain/auth-nudge-trigger";
+  } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import type { GuestEncorePrompt } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
 
   type ScenarioKey = "share" | "library" | "step-cap";
 

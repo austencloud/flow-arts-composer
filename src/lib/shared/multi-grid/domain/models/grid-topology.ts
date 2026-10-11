@@ -11,7 +11,7 @@
  * - Plane field on GridPlacement is for L8+ (3D) - defaults to "wall", ignored until then
  */
 
-import type { GridLocation, GridMode } from "$lib/shared/render/core/types";
+import type { GridLocation, GridMode } from "#lib/shared/render/core/types.js";
 import type { Plane } from "@austencloud/scene-3d";
 
 

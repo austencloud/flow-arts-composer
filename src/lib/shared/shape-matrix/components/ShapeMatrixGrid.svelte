@@ -8,11 +8,11 @@
   floor, lazy paint, and the tile-to-hero shared element stay here.
 -->
 <script lang="ts" generics="TAxis = Flower">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import type { ShapeMatrixData } from "../services/shape-matrix-flowers";
   import { flowerKey, type Flower } from "../domain/flower-signature";
-  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import {
     cellArtworkSrc,
     headerArtworkSrc,
@@ -21,7 +21,7 @@
     type ShapeMatrixArtworkPainter,
   } from "../services/shape-matrix-artwork";
   import { localizedFlowerLabel } from "../domain/shape-matrix-display";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import ShapeMatrixMandalaArt from "./ShapeMatrixMandalaArt.svelte";
   import { runShapeMatrixGridReveal } from "../app/services/shape-matrix-reveal";
 

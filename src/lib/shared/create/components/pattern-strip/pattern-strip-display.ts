@@ -1,5 +1,5 @@
-import { getLocale, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-import { describeMask } from "$lib/shared/create/domain/rhythm/pattern-sentence";
+import { getLocale, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+import { describeMask } from "#lib/shared/create/domain/rhythm/pattern-sentence.js";
 
 const laneKeys: Record<string, string> = {
   Left: "pattern_strip_left",

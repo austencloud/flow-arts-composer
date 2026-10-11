@@ -2,36 +2,36 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
-import { loopDetector } from "$lib/shared/create/services/loop-detector";
-import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-import { decodeSequenceFromQR } from "$lib/shared/navigation/services/sequence-encoder";
-import type { ShortCodeData } from "$lib/shared/qr/services/types";
+import { loopDetector } from "#lib/shared/create/services/loop-detector.js";
+import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+import { decodeSequenceFromQR } from "#lib/shared/navigation/services/sequence-encoder.js";
+import type { ShortCodeData } from "#lib/shared/qr/services/types.js";
 import {
   decodeWordShortCodePayload,
   hydrateSelfContainedShortCodePayload,
-} from "$lib/shared/qr/services/short-code-payload-hydrator";
+} from "#lib/shared/qr/services/short-code-payload-hydrator.js";
 import {
   getCached,
   hydrateSequence,
   prefetch,
-} from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
-import { openSequenceOverlay } from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
+} from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
+import { openSequenceOverlay } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
 
 vi.mock(
-  "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte",
+  "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js",
   () => ({
     openSequenceOverlay: vi.fn(),
   })
 );
 
-vi.mock("$lib/shared/create/get-sequence-repository", () => ({
+vi.mock("#lib/shared/create/get-sequence-repository.js", () => ({
   getSequenceRepository: () => ({ getSequence: vi.fn() }),
 }));
-vi.mock("$lib/shared/browse/get-browse-loader", () => ({
+vi.mock("#lib/shared/browse/get-browse-loader.js", () => ({
   getBrowseLoader: () => ({ loadFullSequenceData: vi.fn() }),
 }));
-vi.mock("$lib/shared/sequence-viewer/services/cell-pre-warmer", () => ({
+vi.mock("#lib/shared/sequence-viewer/services/cell-pre-warmer.js", () => ({
   cellPreWarmer: { preWarmSequence: vi.fn() },
 }));
 

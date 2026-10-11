@@ -3,8 +3,8 @@ import {
   EFFECTS_CONFIG_VERSION,
   SILK_INTENSITY_DEFAULT,
 } from "./effects-config";
-import { DEFAULT_LED_INTENT } from "$lib/shared/animation-engine/domain/types/led-types";
-import { DEFAULT_TRAIL_LINE_WIDTH } from "$lib/shared/animation-engine/domain/types/trail-types";
+import { DEFAULT_LED_INTENT } from "#lib/shared/animation-engine/domain/types/led-types.js";
+import { DEFAULT_TRAIL_LINE_WIDTH } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
   version: EFFECTS_CONFIG_VERSION,
@@ -44,15 +44,16 @@ export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
   },
 
   zap: {
-    intensity: 0.7,
+    intensity: 0.75,
+    colorMode: "prop",
     leftColor: "#88ccff",
-    rightColor: "#88ccff",
-    frequency: 1,
+    rightColor: "#a25bff",
+    frequency: 6,
     mode: "arc",
-    branching: 0.35,
-    style: "plasma",
-    wobbleRate: 0.18,
-    wobbleAmount: 0.5,
+    branching: 0.1,
+    style: "branching",
+    wobbleRate: 0.3,
+    wobbleAmount: 0.45,
     glow: 0.5,
     jitter: 0.5,
   },
@@ -210,8 +211,7 @@ export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
     thickness: 0.3,
     palette: "sonar",
     customColor: "#38bdf8",
-    colorMode: "solid",
-    color: "#38bdf8",
+    colorMode: "prop-matched",
     colorPalette: ["#38bdf8", "#a855f7", "#22d3ee", "#f472b6", "#fbbf24"],
     trackingMode: "both_ends",
     velocityScale: 0.5,
@@ -219,6 +219,7 @@ export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
     chromatic: 0.3,
     flash: 0.5,
     harmonics: 0.3,
+    charge: 0.6,
   },
 
   activePresets: {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { beatIndexToTimestamp, prefillTimestamps } from "$lib/features/write/services/timestamp-prefill";
+import { beatIndexToTimestamp, prefillTimestamps } from "#lib/features/write/services/timestamp-prefill.js";
 
 describe("timestamp prefill", () => {
   it("converts a beat index to M:SS at a given BPM", () => {

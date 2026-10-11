@@ -7,12 +7,12 @@ import type {
   TurnPattern,
   TurnPatternEntry,
   TurnValue,
-} from "$lib/shared/create/domain/turn-pattern-data";
+} from "#lib/shared/create/domain/turn-pattern-data.js";
 import type {
   DurationPattern,
   DurationPatternEntry,
 } from "./models/duration-pattern-data";
-import { tilePeriod } from "$lib/shared/create/domain/rhythm/rhythm-mask";
+import { tilePeriod } from "#lib/shared/create/domain/rhythm/rhythm-mask.js";
 
 export function stripToTurnPattern(
   left: readonly TurnValue[],

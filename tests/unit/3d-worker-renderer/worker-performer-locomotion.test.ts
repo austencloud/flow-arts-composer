@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { Group } from "three";
 import type { AvatarServices } from "@austencloud/scene-3d/worker";
-import type { WorkerPerformerLocomotionSnapshot } from "$lib/shared/3d/worker-renderer/domain/worker-renderer-protocol";
-import { WorkerPerformerLocomotion } from "$lib/shared/3d/worker-renderer/worlds/worker-performer-locomotion";
+import type { WorkerPerformerLocomotionSnapshot } from "#lib/shared/3d/worker-renderer/domain/worker-renderer-protocol.js";
+import { WorkerPerformerLocomotion } from "#lib/shared/3d/worker-renderer/worlds/worker-performer-locomotion.js";
 
 function snapshot(): WorkerPerformerLocomotionSnapshot {
   return {

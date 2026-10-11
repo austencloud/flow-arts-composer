@@ -1,10 +1,10 @@
 <!-- One profile skill. Hoop is the only family that opens a size choice. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { ProfilePropFamily } from "$lib/shared/community/domain/profile-prop-catalog";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import PropSelectionButton from "$lib/shared/settings/components/tabs/prop-type/PropSelectionButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { ProfilePropFamily } from "#lib/shared/community/domain/profile-prop-catalog.js";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import PropSelectionButton from "#lib/shared/settings/components/tabs/prop-type/PropSelectionButton.svelte";
 
   interface Props {
     family: ProfilePropFamily;

@@ -1,16 +1,16 @@
-import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
 import {
   logSequenceActionInvoked,
   logSequenceActionResult,
   type SequenceActionEventProperties,
-} from "$lib/shared/create/analytics/sequence-action-events";
+} from "#lib/shared/create/analytics/sequence-action-events.js";
 import type {
   SequenceActionTargetHand,
   SequenceTransformCommandId,
   SequenceTransformCommandOptions,
   SequenceTransformCommandResult,
-} from "$lib/shared/create/domain/sequence-action-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/create/domain/sequence-action-types.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { UndoOperationType } from "./undo-manager";
 
 export interface SequenceTransformActionState {

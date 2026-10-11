@@ -1,4 +1,4 @@
-import type { ComposerPlacement } from "$lib/shared/3d/scene-composer/types";
+import type { ComposerPlacement } from "#lib/shared/3d/scene-composer/types.js";
 
 // Exported from Blender ocean_scene.blend — exact world-space transforms.
 // Source: scripts/blender-export-placements.py → scripts/ocean-blender-placements.json

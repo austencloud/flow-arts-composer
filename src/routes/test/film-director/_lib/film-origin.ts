@@ -1,4 +1,4 @@
-import { savedFilmKey } from "$lib/features/film-director/domain/film-director-link";
+import { savedFilmKey } from "#lib/features/film-director/domain/film-director-link.js";
 
 /**
  * Where the film on the stage came from.

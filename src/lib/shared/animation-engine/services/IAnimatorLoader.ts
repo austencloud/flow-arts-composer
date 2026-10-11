@@ -5,11 +5,11 @@
  * Provides access to core animation dependencies.
  */
 
-import type { IAnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
-import type { ISVGGenerator } from "$lib/shared/animation-engine/services/ISVGGenerator";
-import type { ITrailCapturer } from "$lib/shared/animation-engine/services/ITrailCapturer";
-import type { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
+import type { IAnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
+import type { ISVGGenerator } from "#lib/shared/animation-engine/services/ISVGGenerator.js";
+import type { ITrailCapturer } from "#lib/shared/animation-engine/services/ITrailCapturer.js";
+import type { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+import type { SettingsState } from "#lib/shared/settings/state/settings-state.svelte.js";
 
 /**
  * Core animator services bundle

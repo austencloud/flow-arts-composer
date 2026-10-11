@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { createMotionPathExplorerState } from "../../../src/routes/(public)/guide/motion-paths/_data/motion-path-explorer-state.svelte";
 import { motionPathExamples } from "../../../src/routes/(public)/guide/motion-paths/_data/motion-path-examples";
-import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
-import { MODE_ORDER } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 
 const proIn: Flower = {
   style: "pro",

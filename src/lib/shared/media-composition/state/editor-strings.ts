@@ -3,7 +3,7 @@ import {
   formatString,
   type StringKey,
 } from "@austencloud/video-editor/strings";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 /** The editor's messages as tka shows them today. */
 const TKA_TEXT: Partial<Record<StringKey, string>> = {

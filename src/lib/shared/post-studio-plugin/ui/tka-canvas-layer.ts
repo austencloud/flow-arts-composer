@@ -11,7 +11,7 @@ import {
   type PostItem,
 } from "@austencloud/video-editor/core";
 import type { EvaluatedFrameLayer } from "@austencloud/video-editor/render";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
 import {
   animationAppearanceForItem,
   cardOptionsForItem,

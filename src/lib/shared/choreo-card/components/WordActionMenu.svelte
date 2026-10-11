@@ -1,19 +1,19 @@
 <script lang="ts">
   import { onDestroy, type Snippet } from "svelte";
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuEntry,
     ContextMenuState,
-  } from "$lib/shared/components/context-menu/context-menu-types";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { getPronunciationPlayer } from "$lib/shared/pronunciation/get-pronunciation-player";
-  import type { IPronunciationPlayer } from "$lib/shared/pronunciation/services/types";
-  import type { ErrorContext } from "$lib/shared/error/domain/error-models";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { getPronunciationPlayer } from "#lib/shared/pronunciation/get-pronunciation-player.js";
+  import type { IPronunciationPlayer } from "#lib/shared/pronunciation/services/types.js";
+  import type { ErrorContext } from "#lib/shared/error/domain/error-models.js";
   import {
     compressWord,
     simplifyRepeatedWord,
-  } from "$lib/shared/foundation/utils/word-simplifier";
+  } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   interface WordActionTrigger {
     copyableWord: string;

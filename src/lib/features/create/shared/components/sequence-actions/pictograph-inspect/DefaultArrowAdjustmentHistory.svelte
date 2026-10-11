@@ -7,7 +7,7 @@
   inside the Default tier of PipelineEditorDock).
 -->
 <script lang="ts">
-  import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+  import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
   import {
     collection,
     query,
@@ -16,10 +16,10 @@
     limit,
     getDocs,
   } from "firebase/firestore";
-  import { generateDefaultDocId } from "$lib/shared/pictograph/arrow/positioning/default-override/domain/default-arrow-placement";
-  import { getDefaultOverrideRepository } from "$lib/shared/pictograph/arrow/positioning/default-override/services/default-override-singleton";
-  import { globalAdjustmentVersion } from "$lib/shared/pictograph/arrow/positioning/global/state/global-adjustment-version.svelte";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
+  import { generateDefaultDocId } from "#lib/shared/pictograph/arrow/positioning/default-override/domain/default-arrow-placement.js";
+  import { getDefaultOverrideRepository } from "#lib/shared/pictograph/arrow/positioning/default-override/services/default-override-singleton.js";
+  import { globalAdjustmentVersion } from "#lib/shared/pictograph/arrow/positioning/global/state/global-adjustment-version.svelte.js";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
   import AdjustmentHistoryPanel, {
     type HistoryEntry,
   } from "../AdjustmentHistoryPanel.svelte";

@@ -5,11 +5,11 @@
  * Uses shared services for CSV loading, parsing, and transformation.
  */
 
-import type { CodexLetterMapping } from "$lib/shared/learn/domain/codex-models";
-import type { CodexLetterMappingRepo } from "$lib/shared/learn/services/codex-letter-mapping-repo";
+import type { CodexLetterMapping } from "#lib/shared/learn/domain/codex-models.js";
+import type { CodexLetterMappingRepo } from "#lib/shared/learn/services/codex-letter-mapping-repo.js";
 import type { MotionType } from "../../shared/domain/enums/pictograph-enums";
 import type { PictographData } from "../../shared/domain/models/pictograph-data";
-import type { ParsedCsvRow } from "$lib/shared/foundation/domain/models/csv-models";
+import type { ParsedCsvRow } from "#lib/shared/foundation/domain/models/csv-models.js";
 
 import type { Letter } from "../../../foundation/domain/models/letter";
 import type {

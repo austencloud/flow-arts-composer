@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { flyFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { createSheetDismiss } from "./sheet-dismiss";
 
   interface Props {
@@ -160,6 +160,34 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 12px 14px 18px;
+  }
+
+  /* The grid picker keeps every choice on screen, including on a phone. */
+  .sheet-layer:has(:global(.performer-grid-panel)) {
+    bottom: 0;
+  }
+
+  .sheet-panel:has(:global(.performer-grid-panel)) {
+    height: 100%;
+    max-height: 100%;
+    background:
+      linear-gradient(var(--theme-panel-bg), var(--theme-panel-bg)),
+      var(--theme-page-bg, #0c0e16);
+  }
+
+  .sheet-panel:has(:global(.performer-grid-panel)) .sheet-body {
+    flex: 1;
+    overflow: visible;
+    padding: 6px 8px 8px;
+  }
+
+  .sheet-panel:has(:global(.performer-grid-panel)) .grab-handle {
+    display: none;
+  }
+
+  .sheet-panel:has(:global(.performer-grid-panel)) .sheet-header {
+    min-height: 44px;
+    padding-block: 0;
   }
 
   @media (max-height: 34rem) {

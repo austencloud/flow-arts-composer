@@ -1,13 +1,13 @@
-import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createStartPlacementData } from "#lib/shared/foundation/domain/factories/create-start-placement-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   GridLocation,
   GridMode,
   GridPlacement,
   type GridPlacement as GridPlacementValue,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
@@ -16,11 +16,11 @@ import {
   type MotionType as MotionTypeValue,
   type Orientation as OrientationValue,
   type RotationDirection as RotationDirectionValue,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   createMotionData,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 interface CanonicalMotionInput {
   startLocation: (typeof GridLocation)[keyof typeof GridLocation];

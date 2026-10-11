@@ -6,7 +6,7 @@ import {
   MIN_TAIL_WIDTH_RATIO,
   TRAIL_VERTEX_STRIDE,
   type Point2D,
-} from "$lib/shared/render-graph/math/trail-mesh";
+} from "#lib/shared/render-graph/math/trail-mesh.js";
 
 describe("createSmoothCurve", () => {
   it("returns an empty array for empty input", () => {

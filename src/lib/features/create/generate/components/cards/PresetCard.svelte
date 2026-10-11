@@ -1,6 +1,6 @@
 <!-- The Setups card shows the applied source and opens the setup drawer. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import BaseCard from "./BaseCard.svelte";
 
   let {

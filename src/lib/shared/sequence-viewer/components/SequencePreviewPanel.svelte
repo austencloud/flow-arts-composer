@@ -9,7 +9,7 @@
   Internal sequence preview panel used within Create module and Browse gallery.
 -->
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type {
     ViewerMode,
     MediaType,
@@ -21,8 +21,8 @@
   import SequenceViewer from "./SequenceViewer.svelte";
   import ExportControlsSection from "./ExportControlsSection.svelte";
   import SequenceViewerHelpModal from "./SequenceViewerHelpModal.svelte";
-  import HelpButton from "$lib/shared/components/help/HelpButton.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import HelpButton from "#lib/shared/components/help/HelpButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     sequence,

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { T, useTask } from "@threlte/core";
   import { AdditiveBlending, CanvasTexture, type PointLight } from "three";
-  import VolumetricFireComponent from "$lib/shared/3d/effects/volumetric-fire/VolumetricFireComponent.svelte";
-  import FallingParticles from "$lib/shared/3d/environments/primitives/FallingParticles.svelte";
+  import VolumetricFireComponent from "#lib/shared/3d/effects/volumetric-fire/VolumetricFireComponent.svelte";
+  import FallingParticles from "#lib/shared/3d/environments/primitives/FallingParticles.svelte";
 
   interface Props {
     position: { x: number; y: number; z: number };

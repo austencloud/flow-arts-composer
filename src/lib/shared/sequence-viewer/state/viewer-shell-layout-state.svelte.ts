@@ -1,7 +1,7 @@
-import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
-import type { ResponsiveSettings } from "$lib/shared/device/domain/models/device-models";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
+import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
+import type { ResponsiveSettings } from "#lib/shared/device/domain/models/device-models.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
 import type { ContentType } from "./viewer-state.svelte";
 import type { SelectableViewerMode } from "../services/viewer-modes";
 import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
@@ -10,9 +10,9 @@ import {
   resolvePostStudioShareDockMinWidth,
   type ViewerInspectorProfile,
 } from "../services/viewer-shell-model";
-import { withViewerModeDissolve } from "$lib/shared/transitions/viewer-mode-dissolve";
-import { motionDuration } from "$lib/shared/transitions/motion";
-import { DURATION, STAGGER } from "$lib/shared/transitions/transitions";
+import { withViewerModeDissolve } from "#lib/shared/transitions/viewer-mode-dissolve.js";
+import { motionDuration } from "#lib/shared/transitions/motion.js";
+import { DURATION, STAGGER } from "#lib/shared/transitions/transitions.js";
 import { MIN_VIEWER_PANE_REVEAL_SIZE } from "../components/viewer-panel-layout";
 
 interface ViewerShellLayoutInputs {
@@ -32,10 +32,10 @@ interface ViewerShellLayoutInputs {
 
 interface ViewerShellLayoutDependencies {
   getDeviceDetector: () => DeviceDetector;
-  captureScanSettingChanged: typeof import("$lib/shared/analytics/scan-analytics").captureScanSettingChanged;
-  captureScanViewChanged: typeof import("$lib/shared/analytics/scan-analytics").captureScanViewChanged;
-  captureScanViewerOpened: typeof import("$lib/shared/analytics/scan-analytics").captureScanViewerOpened;
-  captureScanPlaybackChanged: typeof import("$lib/shared/analytics/scan-analytics").captureScanPlaybackChanged;
+  captureScanSettingChanged: typeof import("#lib/shared/analytics/scan-analytics.js").captureScanSettingChanged;
+  captureScanViewChanged: typeof import("#lib/shared/analytics/scan-analytics.js").captureScanViewChanged;
+  captureScanViewerOpened: typeof import("#lib/shared/analytics/scan-analytics.js").captureScanViewerOpened;
+  captureScanPlaybackChanged: typeof import("#lib/shared/analytics/scan-analytics.js").captureScanPlaybackChanged;
 }
 
 export function createViewerShellLayoutState(

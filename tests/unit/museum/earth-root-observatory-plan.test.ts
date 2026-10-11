@@ -9,8 +9,8 @@ import {
   earthRootObservatoryViewingSamples,
   isEarthRootObservatorySightlineBlocked,
   isInsideEarthRootObservatoryFinalFrame,
-} from "$lib/features/museum/data/earth-root-observatory-plan";
-import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
+} from "#lib/features/museum/data/earth-root-observatory-plan.js";
+import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
 
 describe("Earth Root Observatory Gate 1 plan", () => {
   const nominal = buildNominalEarthRootObservatoryPlan();

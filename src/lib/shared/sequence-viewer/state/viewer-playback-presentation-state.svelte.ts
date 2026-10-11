@@ -1,11 +1,11 @@
 import {
   clampDisplayedBeatNumber,
   displayedBeatNumber,
-} from "$lib/shared/animation-engine/services/step-calculator";
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
-import { getStepIndexFromVideo } from "$lib/shared/video-collaboration/utils/step-map-utils";
-import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+} from "#lib/shared/animation-engine/services/step-calculator.js";
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+import { getStepIndexFromVideo } from "#lib/shared/video-collaboration/utils/step-map-utils.js";
+import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
 import type { PlaybackControllerState } from "../components/playback-controller.svelte";
 import type { PlaybackSource } from "../domain/viewer-orchestrator-context";
 import { resolveCurrentStepData } from "../services/viewer-orchestrator-model";

@@ -1,4 +1,4 @@
-import type { CatalogSource } from "$lib/shared/notation/notation-catalog";
+import type { CatalogSource } from "#lib/shared/notation/notation-catalog.js";
 import { ARCHIVE_ENTRIES, type ArchiveEntry } from "./archive-ledger";
 
 export interface ArchiveSection {

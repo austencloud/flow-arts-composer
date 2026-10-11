@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { MandalaPalette } from "$lib/shared/mandala/domain/mandala-types";
+  import type { MandalaPalette } from "#lib/shared/mandala/domain/mandala-types.js";
   import {
     DARK_MOTION_BLUE_FILL,
     DARK_MOTION_BLUE_STROKE,
@@ -7,8 +7,8 @@
     DARK_MOTION_PURPLE_STROKE,
     DARK_MOTION_RED_FILL,
     DARK_MOTION_RED_STROKE,
-  } from "$lib/shared/mandala/domain/mandala-constants";
-  import { renderMandalaSVG } from "$lib/shared/mandala/services/mandala-renderer";
+  } from "#lib/shared/mandala/domain/mandala-constants.js";
+  import { renderMandalaSVG } from "#lib/shared/mandala/services/mandala-renderer.js";
   import type {
     CatalogShapeGroup,
     CatalogShapeMember,

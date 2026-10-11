@@ -1,9 +1,9 @@
 import { flushSync } from "svelte";
 import { render } from "vitest-browser-svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Message } from "$lib/shared/messaging/domain/models/message-models";
-import type { ConversationPreview } from "$lib/shared/messaging/domain/models/conversation-models";
-import { createReactiveAccountDouble } from "$test-helpers/inbox/reactive-account-double.svelte";
+import type { Message } from "#lib/shared/messaging/domain/models/message-models.js";
+import type { ConversationPreview } from "#lib/shared/messaging/domain/models/conversation-models.js";
+import { createReactiveAccountDouble } from "#test-helpers/inbox/reactive-account-double.svelte.js";
 import { inboxState } from "../state/inbox-state.svelte";
 import InboxDrawer from "./InboxDrawer.svelte";
 
@@ -28,11 +28,11 @@ function account(): ReturnType<typeof createReactiveAccountDouble> {
   return mocks.account;
 }
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     get user() {
       return account().authState.user;
@@ -56,7 +56,7 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   awaitAuthSettled: async () => undefined,
 }));
 
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   userPreviewState: { isActive: false, data: {} },
   isPreviewReadOnly: () => false,
   getEffectiveUserId: (userId: string | null) => userId,
@@ -64,21 +64,21 @@ vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
   getEffectivePhotoURL: (url: string | null) => url,
 }));
 
-vi.mock("$lib/shared/feedback/services/notifier", () => ({
+vi.mock("#lib/shared/feedback/services/notifier.js", () => ({
   notificationService: {
     markAllAsRead: mocks.markAllNotificationsRead,
     subscribeToNotifications: () => () => undefined,
   },
 }));
 
-vi.mock("$lib/shared/messaging/services/conversation-manager", () => ({
+vi.mock("#lib/shared/messaging/services/conversation-manager.js", () => ({
   conversationService: {
     getConversation: mocks.getConversation,
     markAllAsRead: vi.fn(),
   },
 }));
 
-vi.mock("$lib/shared/messaging/services/messenger", () => ({
+vi.mock("#lib/shared/messaging/services/messenger.js", () => ({
   messagingService: {
     // Records every listener so a test can emit from one the drawer should
     // already have torn down.
@@ -103,7 +103,7 @@ vi.mock("$lib/shared/messaging/services/messenger", () => ({
 }));
 
 vi.mock(
-  "$lib/shared/navigation-coordinator/navigation-coordinator.svelte",
+  "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js",
   () => ({
     moduleSections: () => [],
     handleSectionChange: vi.fn(),
@@ -129,19 +129,19 @@ vi.mock("../get-message-delivery-coordinator", () => ({
   getMessageDeliveryCoordinator: () => ({ deliver: async () => undefined }),
 }));
 
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => ({ showUserError: vi.fn() }),
 }));
 
-vi.mock("$lib/shared/browse/get-browse-loader", () => ({
+vi.mock("#lib/shared/browse/get-browse-loader.js", () => ({
   getBrowseLoader: () => ({}),
 }));
 
-vi.mock("$lib/shared/qr/get-short-code-manager", () => ({
+vi.mock("#lib/shared/qr/get-short-code-manager.js", () => ({
   getShortCodeManager: () => ({ createShortCode: vi.fn() }),
 }));
 
-vi.mock("$lib/shared/messaging/get-message-image-sender", () => ({
+vi.mock("#lib/shared/messaging/get-message-image-sender.js", () => ({
   getMessageImageSender: () => ({
     send: vi.fn(() => ({ promise: Promise.resolve(), cancel: vi.fn() })),
   }),

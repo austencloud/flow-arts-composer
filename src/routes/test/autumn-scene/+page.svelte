@@ -18,30 +18,30 @@
   import { WebGLRenderer } from "three";
   import { BackgroundType } from "@austencloud/backgrounds";
 
-  import Environment3D from "$lib/shared/3d/environments/components/Environment3D.svelte";
-  import EnvironmentReviewCamera from "$lib/shared/3d/environments/review/EnvironmentReviewCamera.svelte";
-  import EnvironmentReviewViewSource from "$lib/shared/3d/environments/review/EnvironmentReviewViewSource.svelte";
+  import Environment3D from "#lib/shared/3d/environments/components/Environment3D.svelte";
+  import EnvironmentReviewCamera from "#lib/shared/3d/environments/review/EnvironmentReviewCamera.svelte";
+  import EnvironmentReviewViewSource from "#lib/shared/3d/environments/review/EnvironmentReviewViewSource.svelte";
   import {
     environmentReviewPresetFromPose,
     type EnvironmentReviewReading,
-  } from "$lib/shared/3d/environments/review/environment-review-view-source";
-  import { createSceneFeatureState } from "$lib/shared/3d/scene-features/state/scene-feature-state.svelte";
-  import { setSceneFeatureContext } from "$lib/shared/3d/scene-features/context/scene-feature-context";
-  import { createEnvironmentTransitionVisualState } from "$lib/shared/3d/environments/state/environment-transition-visual-state.svelte";
-  import { setEnvironmentTransitionVisualContext } from "$lib/shared/3d/environments/context/environment-transition-visual-context";
-  import ScenePostProcessing from "$lib/shared/3d/effects/post-processing/ScenePostProcessing.svelte";
-  import PerfMonitor from "$lib/shared/3d/components/PerfMonitor.svelte";
-  import SceneShaderWarmup from "$lib/shared/3d/components/SceneShaderWarmup.svelte";
-  import InteractiveCanvasFrameBridge from "$lib/shared/3d/components/InteractiveCanvasFrameBridge.svelte";
-  import type { RendererPerformanceSample } from "$lib/shared/3d/components/renderer-performance-window";
-  import { readCameraUrlPose } from "$lib/shared/3d/domain/camera-url-pose";
+  } from "#lib/shared/3d/environments/review/environment-review-view-source.js";
+  import { createSceneFeatureState } from "#lib/shared/3d/scene-features/state/scene-feature-state.svelte.js";
+  import { setSceneFeatureContext } from "#lib/shared/3d/scene-features/context/scene-feature-context.js";
+  import { createEnvironmentTransitionVisualState } from "#lib/shared/3d/environments/state/environment-transition-visual-state.svelte.js";
+  import { setEnvironmentTransitionVisualContext } from "#lib/shared/3d/environments/context/environment-transition-visual-context.js";
+  import ScenePostProcessing from "#lib/shared/3d/effects/post-processing/ScenePostProcessing.svelte";
+  import PerfMonitor from "#lib/shared/3d/components/PerfMonitor.svelte";
+  import SceneShaderWarmup from "#lib/shared/3d/components/SceneShaderWarmup.svelte";
+  import InteractiveCanvasFrameBridge from "#lib/shared/3d/components/InteractiveCanvasFrameBridge.svelte";
+  import type { RendererPerformanceSample } from "#lib/shared/3d/components/renderer-performance-window.js";
+  import { readCameraUrlPose } from "#lib/shared/3d/domain/camera-url-pose.js";
   import AutumnProductionHarness from "./AutumnProductionHarness.svelte";
-  import { autumnQualityOverride } from "$lib/shared/3d/environments/scenes/autumn/quality/autumn-quality-override.svelte";
-  import type { AutumnQualityTier } from "$lib/shared/3d/environments/scenes/autumn/quality/autumn-quality";
+  import { autumnQualityOverride } from "#lib/shared/3d/environments/scenes/autumn/quality/autumn-quality-override.svelte.js";
+  import type { AutumnQualityTier } from "#lib/shared/3d/environments/scenes/autumn/quality/autumn-quality.js";
   import {
     captureCurrentView,
     parseViewParam,
-  } from "$lib/shared/review/view-capture";
+  } from "#lib/shared/review/view-capture.js";
 
   // The Autumn scene calls getSceneFeatureContext() (for reportReady +
   // stage gating). Provide the same state factory the real Viewer3DCanvas

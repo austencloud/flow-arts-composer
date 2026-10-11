@@ -14,10 +14,10 @@
    * (darkMode={false}) so points print black on white; the two hands reuse the
    * canonical prop hand path, placed on the diamond's W/E hand points.
    */
-  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { THE_GRID_ALPHA3 } from "../_data/the-grid-pictograph";
   import { localizeLevel1Text } from "../_data/localize-level1-content";
   import {

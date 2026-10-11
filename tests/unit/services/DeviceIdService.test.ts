@@ -8,7 +8,7 @@ vi.mock("firebase/firestore", () => ({
   serverTimestamp: vi.fn(() => ({ _type: "timestamp" })),
 }));
 
-import { getDeviceId } from "$lib/shared/auth/services/device-id-service";
+import { getDeviceId } from "#lib/shared/auth/services/device-id-service.js";
 
 describe("device-id-service", () => {
   beforeEach(() => {

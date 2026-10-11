@@ -3,13 +3,13 @@
   import { BackgroundType } from "@austencloud/backgrounds";
   import { Plane, type Plane as PlaneValue } from "@austencloud/scene-3d";
   import { CatmullRomCurve3, DoubleSide, type Vector3 } from "three";
-  import Scene3D from "$lib/shared/3d/components/Scene3D.svelte";
-  import Grid3D from "$lib/shared/3d/components/Grid3D.svelte";
+  import Scene3D from "#lib/shared/3d/components/Scene3D.svelte";
+  import Grid3D from "#lib/shared/3d/components/Grid3D.svelte";
   import {
     getAllGridPlacements,
     gridLocationToPosition3D,
-  } from "$lib/shared/3d/services/plane-coordinate-mapper";
-  import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/3d/services/plane-coordinate-mapper.js";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import SpatialSculptureTracer from "./SpatialSculptureTracer.svelte";
   import {
     LOCATION_LABELS,

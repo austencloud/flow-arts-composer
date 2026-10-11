@@ -8,8 +8,8 @@
   import { onDestroy } from "svelte";
   import type { VideoEditorController } from "../../../state/video-editor-controller.svelte";
   import type { ShowcaseVideo, MatchedSequence } from "../../../types";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
   interface Props {
     video: ShowcaseVideo;

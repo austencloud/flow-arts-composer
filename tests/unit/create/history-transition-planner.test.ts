@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   createHistoryTransitionPlan,
   createStableStepIdentities,
-} from "$lib/features/create/shared/services/history-transition-planner";
-import { UndoOperationType } from "$lib/features/create/shared/services/undo-manager";
+} from "#lib/features/create/shared/services/history-transition-planner.js";
+import { UndoOperationType } from "#lib/features/create/shared/services/undo-manager.js";
 
 function step(id: string, stepNumber: number) {
   return createStepData({ id, stepNumber });

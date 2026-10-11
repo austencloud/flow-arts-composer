@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { SampleRing } from "$lib/features/lab/pronunciation-recorder/domain/sample-ring";
+import { SampleRing } from "#lib/features/lab/pronunciation-recorder/domain/sample-ring.js";
 
 function ramp(from: number, count: number): Float32Array {
   const samples = new Float32Array(count);

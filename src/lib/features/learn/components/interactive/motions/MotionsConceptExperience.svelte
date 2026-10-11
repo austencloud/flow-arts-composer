@@ -5,15 +5,15 @@
   never sends the learner backward through the lesson carousel.
 -->
 <script lang="ts">
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick } from "svelte";
-  import { TND_ELEMENTS } from "$lib/features/choreo-card/domain/tnd-element";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
-  import { motionDuration } from "$lib/shared/transitions/motion";
+  import { TND_ELEMENTS } from "#lib/features/choreo-card/domain/tnd-element.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
   import { getConceptPlacesByLevel } from "../../../domain/concept-place-registry";
   import type { ExperienceViewMode } from "../../../domain/types";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";

@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { NativeInitializer } from "$lib/shared/platform/services/native-initializer";
+import { NativeInitializer } from "#lib/shared/platform/services/native-initializer.js";
 
 const mocks = vi.hoisted(() => ({
   awaitAuthSettled: vi.fn<() => Promise<void>>(),
@@ -20,12 +20,12 @@ const mocks = vi.hoisted(() => ({
     | ((event: { url: string }) => Promise<void>),
 }));
 
-vi.mock("$lib/shared/platform/services/platform-detector", () => ({
+vi.mock("#lib/shared/platform/services/platform-detector.js", () => ({
   isNative: () => true,
   isAndroid: () => false,
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   awaitAuthSettled: mocks.awaitAuthSettled,
 }));
 
@@ -64,29 +64,37 @@ vi.mock("@capacitor/keyboard", () => ({
   KeyboardResize: { None: "none" },
 }));
 
-vi.mock("$lib/shared/share-intake/get-share-intake", () => ({
+vi.mock("#lib/shared/share-intake/get-share-intake.js", () => ({
   ensureShareTargetRegistered: mocks.registerShareTarget,
 }));
 
-vi.mock("$lib/shared/platform/services/native-scan-viewer-readiness", () => ({
-  beginNativeScanViewerTransition: mocks.beginViewerTransition,
-  isNativeScanViewerReady: mocks.isViewerReady,
-  markNativeScanTransitionStage: mocks.markTransitionStage,
-  markNativeScanViewerFailed: mocks.markViewerFailed,
-  waitForNativeScanLoadingSurfaceReady: mocks.waitForLoadingSurface,
-}));
+vi.mock(
+  "#lib/shared/platform/services/native-scan-viewer-readiness.js",
+  () => ({
+    beginNativeScanViewerTransition: mocks.beginViewerTransition,
+    isNativeScanViewerReady: mocks.isViewerReady,
+    markNativeScanTransitionStage: mocks.markTransitionStage,
+    markNativeScanViewerFailed: mocks.markViewerFailed,
+    waitForNativeScanLoadingSurfaceReady: mocks.waitForLoadingSurface,
+  })
+);
 
 // The real scan client runs; only its network call is replaced.
-vi.mock("$lib/shared/auth/firebase", () => ({ auth: { currentUser: null } }));
-vi.mock("$lib/shared/auth/services/authed-fetch", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
+  auth: { currentUser: null },
+}));
+vi.mock("#lib/shared/auth/services/authed-fetch.js", () => ({
   authedFetch: vi.fn(),
 }));
-vi.mock("$lib/shared/qr/services/card-scan-ingest", async (importActual) => ({
-  ...(await importActual<
-    typeof import("$lib/shared/qr/services/card-scan-ingest")
-  >()),
-  recordCardScan: mocks.recordCardScan,
-}));
+vi.mock(
+  "#lib/shared/qr/services/card-scan-ingest.js",
+  async (importActual) => ({
+    ...(await importActual<
+      typeof import("#lib/shared/qr/services/card-scan-ingest.js")
+    >()),
+    recordCardScan: mocks.recordCardScan,
+  })
+);
 
 const PID = "k7Qm2XpR9aBc";
 const SITE_SCAN_ENDPOINT = "https://tkaflowarts.com/api/physical-cards/scan";
@@ -95,7 +103,7 @@ const SITE_SCAN_ENDPOINT = "https://tkaflowarts.com/api/physical-cards/scan";
 // Load that module graph once up front: a slow first import (a loaded CI
 // runner) otherwise lets one test's recording land in the next test's mocks.
 beforeAll(async () => {
-  await import("$lib/shared/qr/services/native-card-scan");
+  await import("#lib/shared/qr/services/native-card-scan.js");
 });
 
 type DeepLinkHandler = {
@@ -160,7 +168,7 @@ describe("NativeInitializer deep-link readiness", () => {
     await initialization;
 
     expect(mocks.goto).not.toHaveBeenCalledWith("/create", {
-      replaceState: true,
+      replace: true,
     });
   });
 

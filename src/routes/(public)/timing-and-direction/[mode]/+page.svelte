@@ -1,35 +1,43 @@
 <script lang="ts">
   import type { PageData } from "./$types";
   import { untrack } from "svelte";
-  import { Popover } from "bits-ui";
-  import { browser } from "$app/environment";
-  import { TIMING_DIRECTION_MODES } from "$lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
-  import Seo from "$lib/shared/components/Seo.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SequenceTransformActions from "$lib/shared/create/components/SequenceTransformActions.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import TurnNotationControls from "$lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
-  import type { MatrixLabelMode } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  import { flip } from "svelte/animate";
+  import { browser } from "$app/env";
+  import { TIMING_DIRECTION_MODES } from "#lib/features/learn/components/interactive/foundations/pictograph-foundation-content.js";
+  import Seo from "#lib/shared/components/Seo.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import TurnNotationControls from "#lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
+  import type { MatrixLabelMode } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
   import {
     turnValuesForLevel,
     type TurnValue,
-  } from "$lib/shared/create/services/level-turn-values";
-  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
-  import SequenceShowcasePreview from "$lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { flyFade, reducedMotion } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/create/services/level-turn-values.js";
+  import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import SequenceShowcasePreview from "#lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import {
+    flipDuration,
+    opaqueFade,
+    reducedMotion,
+  } from "#lib/shared/transitions/motion.js";
   import { getTimingDirectionState } from "../_state/timing-direction-state.svelte";
   import TimingDirectionModeCard from "../_components/TimingDirectionModeCard.svelte";
   import {
     getTimingDirectionArticle,
     TIMING_DIRECTION_ARTICLES,
+    TIMING_DIRECTION_READING,
   } from "../_data/timing-direction-articles";
   import {
     adjustModeLoops,
+    groupByHandPath,
     loadModeLoops,
     modeLoopCount,
     modeLoopsPerGrid,
@@ -88,10 +96,6 @@
   let adjusting = $state(false);
   let adjustmentError = $state<string | null>(null);
   let turnLoopClosed = $state(true);
-  let turnEditorOpen = $state(false);
-  let turnTrigger = $state<HTMLButtonElement | null>(null);
-  let actionEditorOpen = $state(false);
-  let actionTrigger = $state<HTMLButtonElement | null>(null);
   let editingStep = $state(0);
   let examplePlayer: HTMLElement | undefined = $state();
   const selectedLoop = $derived(
@@ -109,13 +113,26 @@
       )
     )
   );
+  const showingHands = $derived(playback.propDisplay === "hands");
   // Cards group by the grid each sequence actually uses, so a quarter
-  // rotation moves them between Diamond and Box.
+  // rotation moves them between Diamond and Box. Without props, sequences
+  // that trace the same hand path look identical, so each path shows once,
+  // keyed by its first sequence so that card stays put while the rest leave.
   const loopGroups = $derived(
-    gridTitles.map(({ gridMode, title }) => ({
-      title,
-      loops: loops.filter((loop) => loop.gridMode === gridMode),
-    }))
+    gridTitles.map(({ gridMode, title }) => {
+      const gridLoops = loops.filter((loop) => loop.gridMode === gridMode);
+      const members = showingHands
+        ? groupByHandPath(gridLoops)
+        : gridLoops.map((loop) => [loop]);
+      return {
+        title,
+        cards: members.map((group) => ({
+          loop: group[0]!,
+          members: group,
+          words: group.map((loop) => simplifyRepeatedWord(loop.word)),
+        })),
+      };
+    })
   );
   const turnsAreReset = $derived(
     loops.every((loop) =>
@@ -135,8 +152,6 @@
       adjustmentRequest += 1;
       adjusting = false;
       adjustmentError = null;
-      turnEditorOpen = false;
-      actionEditorOpen = false;
       loopsLoading = true;
       loopsError = null;
       loops = [];
@@ -147,16 +162,17 @@
       .then((loaded) => {
         if (request !== loopsRequest) return;
         if (loaded.length === 0) {
-          loopsError = "No loops are available for this mode yet.";
+          loopsError = "No sequences are available for this mode yet.";
           return;
         }
         originalLoops = loaded;
         loops = loaded;
         untrack(() => selectLoop(loaded[0]!));
       })
-      .catch(() => {
+      .catch((error) => {
         if (request !== loopsRequest) return;
-        loopsError = "Loops could not load. Try again.";
+        console.error(`${code} mode sequences failed to load`, error);
+        loopsError = "Sequences could not load.";
       })
       .finally(() => {
         if (request === loopsRequest) loopsLoading = false;
@@ -172,8 +188,6 @@
     adjusting = false;
     adjustmentError = null;
     selectedLoopId = loop.id;
-    turnEditorOpen = false;
-    actionEditorOpen = false;
     editingStep = 0;
     syncTurnControls(loop.sequence, editingStep);
     turnLoopClosed =
@@ -313,21 +327,30 @@
     playback.seekStep(index + 1);
   }
 
-  function openTurnEditor() {
-    editingStep = currentStripStep;
-    syncTurnControls(playback.sequence, editingStep);
-    adjustmentError = null;
-    playback.playing = false;
-    turnEditorOpen = !turnEditorOpen;
+  /** A hand-path card stands for several sequences; keep the one playing. */
+  function selectCard(members: readonly ModeLoop[]) {
+    selectLoop(
+      members.find((loop) => loop.id === selectedLoopId) ?? members[0]!,
+      true
+    );
   }
 
   function setApplyTo(value: "all" | "current") {
     applyTo = value;
+    // One step is the one on screen, so it holds still while being edited.
+    if (value === "current") {
+      playback.playing = false;
+      editingStep = currentStripStep;
+    }
     syncTurnControls(playback.sequence, editingStep);
   }
 
   function chooseTurn(hand: "left" | "right", value: TurnValue) {
     if (typeof value !== "number" || !availableTurns.includes(value)) return;
+    if (applyTo === "current" && playback.playing) {
+      editingStep = currentStripStep;
+      syncTurnControls(playback.sequence, editingStep);
+    }
     const current = playback.sequence.steps[editingStep];
     const currentLeft =
       applyTo === "current"
@@ -342,6 +365,21 @@
     if (nextLeft === leftTurns && nextRight === rightTurns) return;
     void adjustTurns(nextLeft, nextRight);
   }
+
+  const controlStatus = $derived(
+    adjustmentError ??
+      (showingHands
+        ? "Turns change only the props. Switch to Props to set them."
+        : !turnLoopClosed
+          ? "Props finish at a different orientation. Plays once."
+          : applyTo === "current"
+            ? `Turns change step ${editingStep + 1} of all ${loopCountWord} sequences.`
+            : `Changes apply to all ${loopCountWord} sequences.`)
+  );
+  // Hands view hides the props, so turns rest there instead of vanishing:
+  // the rail keeps its shape and says why.
+  const turnsLocked = $derived(adjusting || showingHands);
+
   const jsonLd = $derived({
     "@context": "https://schema.org",
     "@graph": [
@@ -354,7 +392,7 @@
         description: article.metaDescription,
         url: canonical,
         inLanguage: "en-US",
-        citation: article.sources.map((source) => ({
+        citation: TIMING_DIRECTION_READING.map((source) => ({
           "@type": "CreativeWork",
           name: source.label,
           url: source.url,
@@ -412,9 +450,26 @@
   {@html `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}<\/script>`}
 </Seo>
 
+{#snippet transformActions(panel: boolean)}
+  <SequenceTransformActions
+    hasSequence={!!selectedLoop}
+    hasSelection={false}
+    isTransforming={adjusting}
+    showEditInConstructor={false}
+    isDesktopPanel={panel}
+    mobileColumns={4}
+    resetPlacement="transform"
+    actionSubject={`all ${loopCountWord} sequences`}
+    onMirror={() => void transformAllLoops("mirror")}
+    onFlip={() => void transformAllLoops("flip")}
+    onSwap={() => void transformAllLoops("swap")}
+    onReset={resetAllLoops}
+  />
+{/snippet}
+
 {#snippet playerControls()}
   <div class="player-controls">
-    <div class="display-switch">
+    <div class="rail-head">
       <SegmentedControl
         options={[
           { value: "staff", label: "With props", shortLabel: "Props" },
@@ -426,37 +481,85 @@
         density="tight"
         color="accent"
       />
-    </div>
-    {#if playback.propDisplay === "staff"}
-      <div class="turn-editor-toggle">
-        <PanelButton
-          bind:ref={turnTrigger}
-          onclick={openTurnEditor}
-          ariaExpanded={turnEditorOpen}
+      {#if browser}
+        <TransportControls
+          isPlaying={playback.playing && !!selectedLoop}
           disabled={!selectedLoop}
-          fullWidth
+          onPlaybackToggle={playback.togglePlayback}
+        />
+      {/if}
+    </div>
+
+    <section class="rail-group turns-group" aria-labelledby="turns-label">
+      <h2 id="turns-label" class="group-label">Turns</h2>
+      <div class="turn-scope">
+        <SegmentedControl
+          options={[
+            { value: "all", label: "All steps", disabled: showingHands },
+            { value: "current", label: "This step", disabled: showingHands },
+          ]}
+          value={applyTo}
+          onchange={setApplyTo}
+          ariaLabel="Which steps the turns change"
+          density="tight"
+          color="accent"
+        />
+        <PanelButton
+          onclick={resetTurns}
+          disabled={turnsLocked || turnsAreReset}
+          ariaLabel="Reset turns"
+          title="Reset turns"
         >
-          Turns
+          <i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i>
         </PanelButton>
       </div>
-    {/if}
-    <div class="action-editor-toggle">
-      <PanelButton
-        bind:ref={actionTrigger}
-        onclick={() => (actionEditorOpen = !actionEditorOpen)}
-        ariaExpanded={actionEditorOpen}
-        disabled={!selectedLoop}
-        fullWidth
-      >
-        Actions
-      </PanelButton>
+      <div class="turn-values" aria-busy={adjusting}>
+        <!-- A tall rail lays every value out. A short one keeps each
+               hand's values behind its own menu so the actions still fit. -->
+        <div class="turns-inline">
+          <TurnNotationControls
+            layout="inline"
+            leftTurn={leftTurns}
+            rightTurn={rightTurns}
+            labelMode={turnLabelMode}
+            onlabelmodechange={(value) => (turnLabelMode = value)}
+            onturn={chooseTurn}
+            turnValues={availableTurns}
+            primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+            disabled={turnsLocked}
+          />
+        </div>
+        <div class="turns-menu">
+          <TurnNotationControls
+            leftTurn={leftTurns}
+            rightTurn={rightTurns}
+            labelMode={turnLabelMode}
+            onlabelmodechange={(value) => (turnLabelMode = value)}
+            onturn={chooseTurn}
+            turnValues={availableTurns}
+            primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+            disabled={turnsLocked}
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="rail-group actions-group" aria-label="Sequence actions">
+      <!-- A tall rail gets the panel tiles. A short one puts all four
+           actions on one row so nothing scrolls out of view. -->
+      <div class="actions-tiles">
+        {@render transformActions(true)}
+      </div>
+      <div class="actions-row">
+        {@render transformActions(false)}
+      </div>
+    </section>
+
+    <div class="rail-status" aria-live="polite">
+      <Crossfade key={controlStatus}>
+        <p>{controlStatus}</p>
+      </Crossfade>
     </div>
-    {#if browser}
-      <TransportControls
-        isPlaying={playback.playing}
-        onPlaybackToggle={playback.togglePlayback}
-      />
-    {/if}
   </div>
 {/snippet}
 
@@ -488,6 +591,7 @@
           <SequenceShowcasePreview
             word={selectedWord}
             sequence={selectedLoop ? playback.sequence : null}
+            transitionKey={selectedLoop ? `timing-${selectedLoop.id}` : null}
             alwaysLive
             playbackActive={playback.playing}
             externalPlaying={playback.playing}
@@ -507,154 +611,6 @@
         </div>
       </figure>
 
-      <Popover.Root
-        open={playback.propDisplay === "staff" && turnEditorOpen}
-        onOpenChange={(open) => (turnEditorOpen = open)}
-      >
-        <Popover.Portal>
-          <Popover.Content
-            customAnchor={turnTrigger ?? undefined}
-            side="bottom"
-            align="end"
-            sideOffset={8}
-            collisionPadding={12}
-            onInteractOutside={(event) => {
-              if (
-                event.target instanceof Node &&
-                turnTrigger?.contains(event.target)
-              )
-                event.preventDefault();
-            }}
-            onCloseAutoFocus={(event) => {
-              event.preventDefault();
-              if (playback.propDisplay === "staff") turnTrigger?.focus();
-            }}
-            forceMount
-          >
-            {#snippet child({ open, wrapperProps, props })}
-              <div {...wrapperProps} style:z-index="50">
-                {#if open}
-                  <section
-                    {...props}
-                    class="turn-disclosure"
-                    aria-label="Prop turns"
-                    transition:flyFade={{ y: -6 }}
-                  >
-                    <div class="turn-workbench">
-                      <div class="turn-controls">
-                        <div class="turn-scope">
-                          <SegmentedControl
-                            options={[
-                              { value: "all", label: "All steps" },
-                              { value: "current", label: "Current step" },
-                            ]}
-                            value={applyTo}
-                            onchange={setApplyTo}
-                            ariaLabel="Turn adjustment scope"
-                            density="tight"
-                            color="accent"
-                          />
-                          <PanelButton
-                            onclick={resetTurns}
-                            disabled={adjusting || turnsAreReset}
-                            >Reset</PanelButton
-                          >
-                        </div>
-                        <div aria-busy={adjusting}>
-                          <TurnNotationControls
-                            leftTurn={leftTurns}
-                            rightTurn={rightTurns}
-                            labelMode={turnLabelMode}
-                            onlabelmodechange={(value) =>
-                              (turnLabelMode = value)}
-                            onturn={chooseTurn}
-                            turnValues={availableTurns}
-                            primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
-                            disabled={adjusting}
-                          />
-                        </div>
-                      </div>
-                      <div class="turn-status" aria-live="polite">
-                        <p>Applies to all {loopCountWord} sequences.</p>
-                        {#if adjustmentError}
-                          <p>{adjustmentError}</p>
-                        {:else if !turnLoopClosed}
-                          <p>
-                            Props finish at a different orientation. Plays once.
-                          </p>
-                        {/if}
-                      </div>
-                    </div>
-                  </section>
-                {/if}
-              </div>
-            {/snippet}
-          </Popover.Content>
-        </Popover.Portal>
-      </Popover.Root>
-
-      <Popover.Root
-        open={actionEditorOpen}
-        onOpenChange={(open) => (actionEditorOpen = open)}
-      >
-        <Popover.Portal>
-          <Popover.Content
-            customAnchor={actionTrigger ?? undefined}
-            side="bottom"
-            align="end"
-            sideOffset={8}
-            collisionPadding={12}
-            onInteractOutside={(event) => {
-              if (
-                event.target instanceof Node &&
-                actionTrigger?.contains(event.target)
-              )
-                event.preventDefault();
-            }}
-            onCloseAutoFocus={(event) => {
-              event.preventDefault();
-              actionTrigger?.focus();
-            }}
-            forceMount
-          >
-            {#snippet child({ open, wrapperProps, props })}
-              <div {...wrapperProps} style:z-index="50">
-                {#if open}
-                  <section
-                    {...props}
-                    class="turn-disclosure action-disclosure"
-                    aria-label="Sequence actions"
-                    transition:flyFade={{ y: -6 }}
-                  >
-                    <SequenceTransformActions
-                      hasSequence={!!selectedLoop}
-                      hasSelection={false}
-                      isTransforming={adjusting}
-                      showEditInConstructor={false}
-                      toolbar
-                      actionSubject={`all ${loopCountWord} sequences`}
-                      onMirror={() => void transformAllLoops("mirror")}
-                      onFlip={() => void transformAllLoops("flip")}
-                      onSwap={() => void transformAllLoops("swap")}
-                      onReset={resetAllLoops}
-                    />
-                    <p class="action-scope">
-                      Applies to all {loopCountWord} sequences. Reset restores the
-                      originals.
-                    </p>
-                    {#if adjustmentError}
-                      <p class="action-scope" aria-live="polite">
-                        {adjustmentError}
-                      </p>
-                    {/if}
-                  </section>
-                {/if}
-              </div>
-            {/snippet}
-          </Popover.Content>
-        </Popover.Portal>
-      </Popover.Root>
-
       <section class="loop-library" aria-labelledby="loop-library-title">
         <h2 id="loop-library-title">Choose a sequence</h2>
         <div class="loop-groups" aria-busy={loopsLoading}>
@@ -664,39 +620,59 @@
               aria-labelledby={`${group.title}-loops`}
             >
               <h3 id={`${group.title}-loops`}>{group.title}</h3>
-              <div class="loop-grid">
-                {#each group.loops as loop (loop.id)}
-                  <PanelButton
-                    fullWidth
-                    ariaPressed={selectedLoopId === loop.id}
-                    ariaLabel={`${simplifyRepeatedWord(loop.word)}, ${group.title}`}
-                    onclick={() => selectLoop(loop, true)}
+              <div
+                class="loop-grid"
+                style:--shown={group.cards.length || loopsPerGrid}
+              >
+                {#each group.cards as card (card.loop.id)}
+                  <div
+                    class="loop-cell"
+                    animate:flip={{ duration: flipDuration() }}
+                    in:opaqueFade
+                    out:opaqueFade
                   >
-                    <div class="loop-card" aria-hidden="true" inert>
-                      <ChoreoCard
-                        sequence={loop.sequence}
-                        showMandala={true}
-                        includeStartPlacement={true}
-                        startPlacementLayoutOverride="row"
-                        columnCount={2}
-                        showQRCode={false}
-                        showWord={true}
-                        showDifficultyLevel={false}
-                        showNotes={false}
-                        showLoopGlyph={false}
-                        handPathMode={playback.propDisplay === "hands"}
-                        darkMode={true}
-                        leftPropType={displayPropType}
-                        rightPropType={displayPropType}
-                        primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
-                        fitWidth={true}
-                      />
-                    </div>
-                  </PanelButton>
+                    <PanelButton
+                      fullWidth
+                      ariaPressed={card.members.some(
+                        (loop) => loop.id === selectedLoopId
+                      )}
+                      ariaLabel={showingHands
+                        ? `Hand path of ${card.words.join(" and ")}, ${group.title}`
+                        : `${card.words[0]}, ${group.title}`}
+                      onclick={() => selectCard(card.members)}
+                    >
+                      <div class="loop-card" aria-hidden="true" inert>
+                        <!-- The view is part of the key: switching between
+                             props and hands redraws rather than gliding. -->
+                        <ChoreoCard
+                          sequence={card.loop.sequence}
+                          transitionKey={`timing-${card.loop.id}:${showingHands ? "hands" : "props"}`}
+                          showMandala={!showingHands}
+                          includeStartPlacement={true}
+                          startPlacementLayoutOverride="row"
+                          columnCount={2}
+                          showQRCode={false}
+                          showWord={true}
+                          showDifficultyLevel={false}
+                          showNotes={false}
+                          showLoopGlyph={false}
+                          handPathMode={showingHands}
+                          customTitleText={showingHands
+                            ? card.words.join(" / ")
+                            : undefined}
+                          darkMode={true}
+                          leftPropType={displayPropType}
+                          rightPropType={displayPropType}
+                          primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+                          fitWidth={true}
+                        />
+                      </div>
+                    </PanelButton>
+                  </div>
                 {:else}
                   <!-- Reserve each card's box so loading never moves the page. -->
                   {#each { length: loopsPerGrid } as _, slot (slot)}
-                    <div class="loop-slot" aria-hidden="true">
+                    <div class="loop-cell loop-slot" aria-hidden="true">
                       <div class="loop-card"></div>
                     </div>
                   {/each}
@@ -710,7 +686,7 @@
                 <p>{loopsError}</p>
                 <PanelButton onclick={retryLoops}>Try again</PanelButton>
               {:else}
-                <p>Loading {loopCountWord} loops…</p>
+                <p>Loading {loopCountWord} sequences…</p>
               {/if}
             </div>
           {/if}
@@ -719,54 +695,39 @@
     </section>
   </div>
 
-  <section class="history" aria-labelledby="learning-title">
-    <h2 id="learning-title">Learn from other spinners</h2>
-    <ul class="sources">
-      {#each article.learningResources as resource (resource.url)}
-        <li>
-          <PanelButton href={resource.url} fullWidth>
-            <span class="source-copy">
-              <strong>{resource.label}</strong>
-              <span>{resource.detail}</span>
-            </span>
-            <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"
-            ></i>
-          </PanelButton>
-        </li>
-      {/each}
-    </ul>
-  </section>
+  <div class="further">
+    <section class="credit" aria-labelledby="credit-title">
+      <div class="credit-origin">
+        <h2 id="credit-title">Where the names come from</h2>
+        <p>
+          Timing and direction come from the geometry of two hands sharing a
+          circle. Nobody invented them, and spinners used them long before they
+          had names. Noel Yee's Vulcan Tech Gospel standardized the names used
+          here. It sorts two-hand patterns by timing, together or split, and by
+          direction, same or opposite.{#if article.timing === "Quarter"}{" "}Quarter
+            time sits between together and split, with the hands a quarter cycle
+            apart.{/if}
+        </p>
+      </div>
+      <div class="credit-reading">
+        <h3 id="reading-title">Further reading</h3>
+        <ul class="reading-list" aria-labelledby="reading-title">
+          {#each TIMING_DIRECTION_READING as source (source.url)}
+            <li><LinkChip href={source.url} wrap>{source.label}</LinkChip></li>
+          {/each}
+        </ul>
+      </div>
+    </section>
 
-  <section class="history" aria-labelledby="history-title">
-    <h2 id="history-title">History & sources</h2>
-    <p>{article.history}</p>
-    <p class="source-note">
-      These are dated examples of public use, not claims of invention.
-    </p>
-    <ul class="sources">
-      {#each article.sources as source}
-        <li>
-          <PanelButton href={source.url} fullWidth>
-            <span class="source-copy">
-              <strong>{source.label}</strong>
-              <span>{source.detail}</span>
-            </span>
-            <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"
-            ></i>
-          </PanelButton>
-        </li>
-      {/each}
-    </ul>
-  </section>
-
-  <nav class="related" aria-label="Other timing and direction modes">
-    <h2>Other modes</h2>
-    <div class="related-modes">
-      {#each relatedArticles as related (related.code)}
-        <TimingDirectionModeCard article={related} />
-      {/each}
-    </div>
-  </nav>
+    <nav class="related" aria-label="Other timing and direction modes">
+      <h2>Other modes</h2>
+      <div class="related-modes">
+        {#each relatedArticles as related (related.code)}
+          <TimingDirectionModeCard article={related} />
+        {/each}
+      </div>
+    </nav>
+  </div>
 </article>
 
 <style>
@@ -785,7 +746,8 @@
     --title-gap: 1rem;
     --hero-foot: 1.5rem;
     --hero-gap: 1.5rem;
-    --rail-w: 9rem;
+    /* Wide enough for the turn values and two columns of action tiles. */
+    --rail-w: 15rem;
     --strip-h: 6.5rem;
     --lib-head: 2.5rem;
     --lib-gap: 0.5rem;
@@ -823,16 +785,22 @@
     display: grid;
     gap: var(--title-gap);
   }
+  /* The title sits centered over the frame below it; the back button keeps
+     to the left without pushing it off center. */
   .mode-header {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: 0.75rem 1rem;
     min-height: var(--title-h);
   }
+  .page-nav {
+    justify-self: start;
+  }
   .mode-title {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.75rem;
     min-width: 0;
   }
@@ -859,69 +827,122 @@
     margin: 0;
   }
   .mode-showcase :global(.sequence-preview) {
+    container-name: showcase;
     border-color: color-mix(
       in srgb,
       var(--mode-accent) 55%,
       var(--theme-stroke)
     );
   }
+
+  /* The rail beside the player is exactly the player's height. Its content
+     never grows that row, and it scrolls only when a short window leaves too
+     little room. */
   .player-controls {
+    container: rail / size;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
     min-width: 0;
-  }
-  .display-switch {
-    width: 100%;
-  }
-  .player-controls :global(.segmented-control) {
-    width: 100%;
-  }
-  .player-controls :global(.transport-controls) {
-    margin: auto 0 0;
-    align-self: center;
-  }
-  .turn-workbench {
-    display: grid;
-    min-width: 0;
-  }
-  .turn-disclosure {
-    width: min(32rem, calc(100vw - 24px));
-    max-height: calc(100dvh - 24px);
+    min-height: 0;
     overflow-y: auto;
-    padding: 0.75rem;
-    border: 1px solid var(--theme-stroke);
-    border-radius: var(--radius-lg, 0.75rem);
-    background: var(--sheet-bg-solid);
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
   }
-  .turn-controls {
-    display: grid;
+  /* Margins rather than gap: a child's cqh measures the rail itself, so a
+     short rail packs its groups closer. */
+  .player-controls > :global(* + *) {
+    margin-top: clamp(0.75rem, 2.5cqh, 1.5rem);
+  }
+  .rail-head {
+    display: flex;
+    flex: none;
+    align-items: center;
     gap: 0.5rem;
+  }
+  .rail-head :global(.segmented-control) {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .rail-head :global(.transport-controls) {
+    flex: none;
+  }
+  .rail-group {
+    display: grid;
+    flex: none;
+    gap: 0.5rem;
+    min-width: 0;
   }
   .turn-scope {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    align-items: stretch;
+    gap: 0.5rem;
   }
   .turn-scope :global(.segmented-control) {
-    width: min(100%, 16rem);
+    flex: 1 1 auto;
+    min-width: 0;
   }
-  .turn-status {
+  .turn-scope :global(.panel-btn) {
+    flex: none;
+    min-height: 0;
+    aspect-ratio: 1;
+    padding: 0;
+    justify-content: center;
+  }
+  /* Matches the section labels of the action tiles below. */
+  .group-label {
+    margin: 0;
+    padding-left: 4px;
+    font-size: var(--font-size-compact, 0.75rem);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--theme-text-dim);
+  }
+  .turn-values {
     display: grid;
+    min-width: 0;
   }
-  .turn-status p {
-    margin: 0.5rem 0 0;
-    color: var(--theme-text-dim);
+  .turns-inline {
+    display: none;
+  }
+  /* Every value laid out needs about 48rem of rail, 12rem more than the
+     menus. */
+  @container rail (min-height: 49rem) {
+    .turns-inline {
+      display: block;
+    }
+    .turns-menu {
+      display: none;
+    }
+  }
+  /* The tiles' own side padding is for a full side panel; in the rail they
+     line up with the controls above. */
+  .actions-group :global(.actions-container.desktop) {
+    padding-inline: 0;
+  }
+  .actions-row {
+    display: none;
+  }
+  /* Below about 35rem the panel tiles push the status out of view. */
+  @container rail (max-height: 35rem) {
+    .actions-tiles {
+      display: none;
+    }
+    .actions-row {
+      display: block;
+    }
+  }
+  .player-controls > .rail-status {
+    flex: none;
+    margin-top: auto;
+    padding-top: clamp(0.75rem, 2.5cqh, 1.5rem);
+  }
+  .rail-status p {
+    margin: 0;
     font-size: 0.875rem;
-  }
-  .action-disclosure {
-    width: min(34rem, calc(100vw - 24px));
-  }
-  .action-scope {
-    margin: 0.75rem 0 0;
+    line-height: 1.4;
     color: var(--theme-text-dim);
-    font-size: 0.875rem;
   }
 
   .loop-library {
@@ -947,12 +968,20 @@
     font-size: 1rem;
     line-height: var(--group-head);
   }
+  /* Every card keeps the width it has with all n showing. Hands can show
+     fewer, which then sit centered. */
   .loop-grid {
+    --cell-w: calc((100% - (var(--n) - 1) * var(--card-gap)) / var(--n));
     display: grid;
-    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--shown, var(--n)), var(--cell-w));
+    justify-content: center;
     gap: var(--card-gap);
   }
-  .loop-grid :global(.panel-btn),
+  .loop-cell {
+    display: grid;
+    min-width: 0;
+  }
+  .loop-cell :global(.panel-btn),
   .loop-slot {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -969,7 +998,7 @@
     aspect-ratio: 5 / 8;
     pointer-events: none;
   }
-  .loop-grid :global(.panel-btn[aria-pressed="true"]) {
+  .loop-cell :global(.panel-btn[aria-pressed="true"]) {
     outline: 2px solid var(--mode-accent);
     outline-offset: -2px;
     background: color-mix(
@@ -1005,53 +1034,63 @@
     line-height: 1.6;
     color: var(--theme-text);
   }
-  .history,
+  .credit,
   .related {
     margin-top: 2.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--theme-stroke);
   }
-  .source-note {
-    font-size: 1rem;
-  }
-  .sources {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
-    gap: 0.5rem;
-    padding: 0;
-    margin: 1rem 0 0;
-    list-style: none;
-  }
-  .sources li {
-    min-width: 0;
-  }
-  .sources :global(.panel-btn) {
-    height: 100%;
-    justify-content: space-between;
-    text-align: left;
-  }
-  .source-copy {
-    display: grid;
-    gap: 0.25rem;
-    min-width: 0;
-  }
-  .source-copy strong {
-    font-size: 1rem;
+  /* The headings are labels, set like the footer's column titles (Explore,
+     Learn); the reading list's chips echo the footer's link rows. */
+  .credit h2,
+  .credit h3 {
+    margin: 0 0 12px;
+    font-size: 0.8rem;
     font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8f8bb0;
   }
-  .source-copy > span {
-    font-size: 1rem;
-    font-weight: 400;
-    color: var(--theme-text);
-    line-height: 1.5;
+  .credit p {
+    max-width: 44rem;
+    margin: 0;
   }
-  .sources i {
-    flex-shrink: 0;
-    font-size: 0.875rem;
+  .credit-reading {
+    margin-top: 1.5rem;
   }
-  .related-modes {
+  .reading-list {
     display: flex;
     flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* Side by side once two columns hold a readable line: the text on the left,
+     the reading list on the right. */
+  @media (min-width: 1024px) {
+    .credit {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: clamp(32px, 3.5vw, 84px);
+      align-items: start;
+    }
+    .credit-reading {
+      margin-top: 0;
+    }
+  }
+  /* Once the left column still holds a comfortable line beside it, the list
+     takes the footer's link column: the footer sizes that column to its
+     longest link row (954.6px) inside a band 1.6px wider each side than this
+     page's, so 59.55rem starts the list where Explore starts. */
+  @media (min-width: 1680px) {
+    .credit {
+      grid-template-columns: minmax(15rem, 1fr) minmax(0, 59.55rem);
+    }
+  }
+  .related-modes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
     gap: 0.5rem;
     margin-top: 1rem;
   }
@@ -1069,16 +1108,11 @@
   }
 
   /* Wherever the title row is short of room, the back button keeps its name
-     for assistive tech but shows only its arrow. The title stays beside it
-     while it can hold two lines; a narrower column puts the arrow on its own
-     row above the title. */
+     for assistive tech but shows only its arrow. */
   @media (max-width: 599.98px),
     (orientation: landscape) and (max-height: 599.98px) {
     .mode-header {
       gap: 0.75rem;
-    }
-    .mode-title {
-      flex: 1 1 15.5rem;
     }
     .nav-label {
       position: absolute;
@@ -1093,36 +1127,54 @@
       height: 40px;
     }
   }
+  /* The centered title leaves each side half of what it does not use. Below
+     about 60rem that half is too narrow for the back button's name. */
+  @container mode-page (max-width: 60rem) {
+    .nav-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
 
   /* Phones held upright: one column, the player first, so the title and the
      whole player fit the first screen. */
   @media (max-width: 599.98px) {
     .mode-page {
       --page-pad: 1rem;
-      --title-gap: 0.75rem;
+      --title-gap: 0.625rem;
+      --card-gap: 0.375rem;
       max-width: 100%;
       padding: calc(var(--header-h) + 0.75rem) var(--page-pad) 2rem;
     }
-    .loop-grid {
-      gap: 0.375rem;
-    }
   }
 
-  /* A narrow upright frame stacks the rail under the player; lay its controls
-     out in a row there. */
+  /* A narrow upright frame stacks the rail under the player. There it grows
+     with its content, lays every turn value out, and keeps the actions to
+     one row. */
   @media (orientation: portrait) {
-    @container (max-width: 28rem) {
+    @container showcase (max-width: 28rem) {
       .player-controls {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        align-items: center;
+        container-type: inline-size;
+        overflow: visible;
       }
-      .player-controls .display-switch {
-        grid-column: 1 / -1;
+      .turns-inline {
+        display: block;
       }
-      .player-controls :global(.transport-controls) {
-        margin: 0;
-        justify-self: center;
+      .turns-menu {
+        display: none;
+      }
+      .actions-tiles {
+        display: none;
+      }
+      .actions-row {
+        display: block;
+      }
+      .player-controls > .rail-status {
+        margin-top: 0;
       }
     }
   }
@@ -1177,6 +1229,12 @@
       --art-h: calc(
         (var(--hero-h) - var(--chooser-stacked)) / 2 - var(--card-chrome)
       );
+      /* The chooser keeps its all-cards width when Hands shows fewer, so
+         the frame never moves. */
+      --lib-w: calc(
+        var(--n) * (var(--art-h) * 0.625 + var(--card-chrome)) +
+          (var(--n) - 1) * var(--card-gap)
+      );
     }
     .mode-top {
       width: fit-content;
@@ -1193,10 +1251,11 @@
       width: calc(var(--hero-h) + var(--rail-w) - var(--strip-h));
     }
     .loop-library {
+      width: var(--lib-w);
       height: var(--hero-h);
     }
     .loop-grid {
-      grid-template-columns: repeat(var(--n), auto);
+      grid-template-columns: repeat(var(--shown, var(--n)), auto);
     }
     .loop-card {
       width: calc(var(--art-h) * 0.625);
@@ -1229,12 +1288,27 @@
           ) /
           var(--n) - var(--card-chrome)
       );
+      --lib-w: calc(
+        2 * (var(--art-h) * 0.625 + var(--card-chrome)) + var(--group-gap)
+      );
+    }
+    .loop-library {
+      display: flex;
+      flex-direction: column;
     }
     .loop-groups {
+      flex: 1 1 auto;
+      min-height: 0;
       grid-template-columns: auto auto;
     }
+    .loop-group {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+    /* Each grid is one column here; fewer hand-path cards center in it. */
     .loop-grid {
       grid-template-columns: auto;
+      align-content: center;
     }
   }
 
@@ -1245,7 +1319,8 @@
   @media (orientation: landscape) and (max-height: 599.98px) {
     .mode-page {
       --page-pad: 1rem;
-      --rail-w: 8rem;
+      /* Wide enough for the step choice and its reset on one line. */
+      --rail-w: 14rem;
       --strip-h: 4rem;
       --sticky-top: calc(var(--header-h) + 0.5rem);
       /* The title and chooser column never gets narrower than this. */

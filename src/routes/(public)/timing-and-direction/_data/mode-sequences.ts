@@ -1,26 +1,27 @@
 import {
   applyBoxMode,
   applyVariationDescriptor,
-} from "$lib/features/choreo-card/services/deck-variation";
-import { processReversals } from "$lib/shared/create/services/reversal-detector";
+} from "#lib/features/choreo-card/services/deck-variation.js";
+import { handPathIdFor } from "#lib/features/choreo-card/services/hand-path-data-builder.js";
+import { processReversals } from "#lib/shared/create/services/reversal-detector.js";
 import {
   flipSequence,
   mirrorSequence,
   rotateSequence,
   swapHands,
-} from "$lib/shared/create/services/sequence-transformer";
+} from "#lib/shared/create/services/sequence-transformer.js";
 import {
   updateSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
 import {
   MODE_FAMILY_ID,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 
 export interface ModeLoop {
   readonly id: string;
@@ -43,7 +44,7 @@ interface LoopGroup {
 
 /**
  * The four-count loops each mode guide offers, drawn from the canonical T&D
- * base pool. Each row is ordered pro-spin, anti-spin, then mixed. The same
+ * base words. Each row is ordered pro-spin, anti-spin, then mixed. The same
  * letters can land in a different family on the other grid (DJDJ is
  * Together-Opposite on diamond and Quarter-Opposite on box), so every word is
  * listed with the grid that gives it this mode; selection verifies each step.
@@ -129,10 +130,15 @@ export function selectModeLoops(
   );
 }
 
+/**
+ * Load from the full 22-word base snapshot. The gallery's canonical base pool
+ * keeps only the 19 diamond-family representatives, which leaves out the box
+ * words Split-Opposite needs (PMPM, QNQN, RORO).
+ */
 export async function loadModeLoops(code: VtgMode): Promise<ModeLoop[]> {
-  const { loadCanonicalTnDBaseSequences } =
-    await import("$lib/features/browse/gallery-home/canonical-tnd-pool");
-  return selectModeLoops(code, await loadCanonicalTnDBaseSequences());
+  const { loadTndBaseWords } =
+    await import("#lib/features/choreo-card/services/tnd-base-word-snapshot.js");
+  return selectModeLoops(code, await loadTndBaseWords());
 }
 
 export async function adjustModeLoop(
@@ -255,6 +261,22 @@ export async function transformModeLoops(
       };
     })
   );
+}
+
+/**
+ * Group loops that trace the same hand path, in first-seen order. With props
+ * hidden, loops in one group look identical, so the guide shows each group
+ * once.
+ */
+export function groupByHandPath(loops: readonly ModeLoop[]): ModeLoop[][] {
+  const groups = new Map<string, ModeLoop[]>();
+  for (const loop of loops) {
+    const id = handPathIdFor(loop.sequence);
+    const group = groups.get(id);
+    if (group) group.push(loop);
+    else groups.set(id, [loop]);
+  }
+  return [...groups.values()];
 }
 
 // TnDMode's enum values are the same two-letter codes as VtgMode.

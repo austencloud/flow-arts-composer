@@ -1,7 +1,7 @@
 <script lang="ts">
   import "../customize-accent.css";
   import type { Snippet } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import { portal } from "./portal";
 
   let {

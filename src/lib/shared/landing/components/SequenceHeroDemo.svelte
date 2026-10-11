@@ -28,27 +28,27 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { activateWhenNear } from "$lib/actions/activate-when-near";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import { activateWhenNear } from "#lib/actions/activate-when-near.js";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
   import {
     isNamedRouteMorphActive,
     runAfterNamedRouteMorph,
-  } from "$lib/shared/transitions/named-route-morph-state.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { TnDElement } from "$lib/features/choreo-card/domain/tnd-element";
-  import type { TrailSettings } from "$lib/shared/animation-engine/domain/types/trail-types";
-  import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-  import type { PreparedSequenceHandoff } from "$lib/shared/animation-engine/domain/chaining-types";
-  import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { syncHeroElementalGlyphVisibility } from "$lib/shared/landing/services/hero-elemental-glyph-visibility";
-  import { prefersReducedData } from "$lib/shared/platform/network-conditions";
-  import { markLanding } from "$lib/shared/performance/landing-marks";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { TnDElement } from "#lib/features/choreo-card/domain/tnd-element.js";
+  import type { TrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import type { PreparedSequenceHandoff } from "#lib/shared/animation-engine/domain/chaining-types.js";
+  import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { syncHeroElementalGlyphVisibility } from "#lib/shared/landing/services/hero-elemental-glyph-visibility.js";
+  import { prefersReducedData } from "#lib/shared/platform/network-conditions.js";
+  import { markLanding } from "#lib/shared/performance/landing-marks.js";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
 
   let {
     sequence,
@@ -324,7 +324,7 @@
                footprint holds constant, so no layout shift either way. -->
           <LazyMount
             loader={() =>
-              import("$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
+              import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
             active={active && !!sequence && !isNamedRouteMorphActive()}
             placeholder={playerPlaceholder}
             onStatusChange={(status) => {
@@ -391,7 +391,7 @@
           aria-busy={notationBusy}
         >
           <LazyMount
-            loader={() => import("$lib/shared/timeline/StepStrip.svelte")}
+            loader={() => import("#lib/shared/timeline/StepStrip.svelte")}
             active={active &&
               canvasReady &&
               !!sequence &&

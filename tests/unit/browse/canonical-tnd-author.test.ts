@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SeedMatrix } from "$lib/features/lab/vtg-lab/domain/tnd-turn-patterns";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SeedMatrix } from "#lib/features/lab/vtg-lab/domain/tnd-turn-patterns.js";
 
 // canonical-tnd-pool.ts resolves each TnD family via resolveTnDFamilyCards, which
 // in turn hits real Firestore (base catalog) + a static CSV fetch (diamond edges)
@@ -8,7 +8,7 @@ import type { SeedMatrix } from "$lib/features/lab/vtg-lab/domain/tnd-turn-patte
 // unit-test surface — this test mocks the family-resolution seam directly so it
 // exercises only what canonical-tnd-pool.ts itself is responsible for: stamping
 // CANONICAL_TND_AUTHOR onto whatever resolveTnDFamilyCards hands back.
-vi.mock("$lib/features/lab/vtg-lab/services/resolve-tnd-family-cards", () => {
+vi.mock("#lib/features/lab/vtg-lab/services/resolve-tnd-family-cards.js", () => {
   const fakeSeq = (id: string) => createSequenceData({ id, word: "AA", steps: [] });
 
   return {
@@ -34,7 +34,7 @@ vi.mock("$lib/features/lab/vtg-lab/services/resolve-tnd-family-cards", () => {
 import {
   loadCanonicalTnDSequences,
   CANONICAL_TND_AUTHOR,
-} from "$lib/features/browse/gallery-home/canonical-tnd-pool";
+} from "#lib/features/browse/gallery-home/canonical-tnd-pool.js";
 
 describe("canonical T&D pool author stamp", () => {
   it("stamps every sequence with the reserved author", async () => {

@@ -7,17 +7,17 @@
   runs the proven duration-pattern-manager.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import PatternStripEditor from "$lib/shared/create/components/pattern-strip/PatternStripEditor.svelte";
+  import PatternStripEditor from "#lib/shared/create/components/pattern-strip/PatternStripEditor.svelte";
   import type {
     StripBinding,
     StripValue,
-  } from "$lib/shared/create/components/pattern-strip/pattern-strip-types";
-  import { DURATION_RHYTHMS } from "$lib/shared/create/domain/rhythm/rhythm-catalog";
+  } from "#lib/shared/create/components/pattern-strip/pattern-strip-types.js";
+  import { DURATION_RHYTHMS } from "#lib/shared/create/domain/rhythm/rhythm-catalog.js";
   import { stripToDurationPattern } from "../../domain/pattern-strip-apply";
-  import * as durationPatternManager from "$lib/features/create/shared/services/duration-pattern-manager";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import * as durationPatternManager from "#lib/features/create/shared/services/duration-pattern-manager.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   type DurationResult = {
     sequence: SequenceData;

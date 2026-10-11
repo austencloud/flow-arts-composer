@@ -1,6 +1,6 @@
-import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { getBilateralEndLabels } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-import { basePropTypeOfRenderKey } from "$lib/shared/pictograph/prop/domain/prop-look";
+import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import { getBilateralEndLabels } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+import { basePropTypeOfRenderKey } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 
 /**
  * Display name for one tip of a prop. `tipIndex` indexes getTipPoints(propType),

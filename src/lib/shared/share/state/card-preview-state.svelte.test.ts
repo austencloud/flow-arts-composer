@@ -1,7 +1,7 @@
 import { render } from "vitest-browser-svelte";
 import { flushSync } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { CardPreviewState } from "./card-preview-state.svelte";
 
 const renderCard = vi.fn();
@@ -9,10 +9,10 @@ const compositionObservers = new Set<() => void>();
 const visibilityObservers = new Set<() => void>();
 let visibilityState = { showTKA: true };
 
-vi.mock("$lib/shared/share/get-sharer", () => ({
+vi.mock("#lib/shared/share/get-sharer.js", () => ({
   getSharer: () => ({ getCardImageBlob: renderCard }),
 }));
-vi.mock("$lib/shared/share/services/card-render-options", () => ({
+vi.mock("#lib/shared/share/services/card-render-options.js", () => ({
   buildCardRenderOptions: (
     sequence: SequenceData,
     input: { darkMode: boolean }
@@ -21,7 +21,7 @@ vi.mock("$lib/shared/share/services/card-render-options", () => ({
     darkMode: input.darkMode,
   }),
 }));
-vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
+vi.mock("#lib/shared/share/state/image-composition-state.svelte.js", () => ({
   getImageCompositionManager: () => ({
     registerObserver: (observer: () => void) =>
       compositionObservers.add(observer),
@@ -29,15 +29,18 @@ vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
       compositionObservers.delete(observer),
   }),
 }));
-vi.mock("$lib/shared/pictograph/shared/state/visibility-state.svelte", () => ({
-  getVisibilityStateManager: () => ({
-    getState: () => visibilityState,
-    registerObserver: (observer: () => void) =>
-      visibilityObservers.add(observer),
-    unregisterObserver: (observer: () => void) =>
-      visibilityObservers.delete(observer),
-  }),
-}));
+vi.mock(
+  "#lib/shared/pictograph/shared/state/visibility-state.svelte.js",
+  () => ({
+    getVisibilityStateManager: () => ({
+      getState: () => visibilityState,
+      registerObserver: (observer: () => void) =>
+        visibilityObservers.add(observer),
+      unregisterObserver: (observer: () => void) =>
+        visibilityObservers.delete(observer),
+    }),
+  })
+);
 
 import CardPreviewStateHarness from "./CardPreviewStateHarness.svelte";
 

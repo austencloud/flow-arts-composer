@@ -3,15 +3,15 @@ import {
   getPictographArrivalPropMotionDurationMs,
   PICTOGRAPH_ARRIVAL_PROP_MOTION_MAX_MS,
   PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS,
-} from "$lib/features/create/shared/workspace-panel/sequence-display/domain/pictograph-arrival-motion";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/features/create/shared/workspace-panel/sequence-display/domain/pictograph-arrival-motion.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 function staticSpin(color: HandSide, turns: number) {
   return createMotionData({

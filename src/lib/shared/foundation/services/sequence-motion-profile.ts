@@ -1,7 +1,7 @@
 import type { SequenceData } from "../domain/models/sequence-data";
 import type { AuthoredHand } from "../domain/models/authored-hand";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 export type { AuthoredHand } from "../domain/models/authored-hand";
 export type SoloMotionHand = HandSide;

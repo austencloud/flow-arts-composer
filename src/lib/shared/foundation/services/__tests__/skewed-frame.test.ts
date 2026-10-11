@@ -6,10 +6,10 @@ import {
   type FrameHand,
   type FrameStepLike,
 } from "../skewed-frame";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StepPairingData } from "$lib/shared/foundation/domain/models/step-pairing-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StepPairingData } from "#lib/shared/foundation/domain/models/step-pairing-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 const hand = (startLocation: string, endLocation: string) => ({ startLocation, endLocation });
 

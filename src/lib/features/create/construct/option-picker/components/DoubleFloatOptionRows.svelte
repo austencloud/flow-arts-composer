@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { TND_ELEMENTS } from "$lib/features/choreo-card/domain/tnd-element";
-  import type { PreparedPictographData } from "$lib/shared/pictograph/option/prepared-pictograph-data";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { TND_ELEMENTS } from "#lib/features/choreo-card/domain/tnd-element.js";
+  import type { PreparedPictographData } from "#lib/shared/pictograph/option/prepared-pictograph-data.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { DoubleFloatOptionRow } from "../services/double-float-option-groups";
   import OptionCard from "./OptionCard.svelte";
 

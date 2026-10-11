@@ -1,11 +1,11 @@
-import { env } from "$env/dynamic/public";
-import { json } from "@sveltejs/kit";
+import * as env from "$app/env/public";
+
 import type { RequestHandler } from "./$types";
-import { LifecycleEventEnvelopeSchema } from "$lib/shared/analytics/domain/lifecycle-event";
-import { capturePostHogLifecycleEvent } from "$lib/server/analytics/posthog-lifecycle-capture";
-import { requireFirebaseUser } from "$lib/server/auth/requireFirebaseUser";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
+import { LifecycleEventEnvelopeSchema } from "#lib/shared/analytics/domain/lifecycle-event.js";
+import { capturePostHogLifecycleEvent } from "#lib/server/analytics/posthog-lifecycle-capture.js";
+import { requireFirebaseUser } from "#lib/server/auth/requireFirebaseUser.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
 
 const MAX_SESSION_ID_LENGTH = 160;
 
@@ -27,7 +27,7 @@ export const POST: RequestHandler = async (event) => {
       typeof authError.status === "number"
         ? authError.status
         : 401;
-    return json({ error: "Authentication required" }, { status });
+    return Response.json({ error: "Authentication required" }, { status });
   }
 
   const blocked = await withRateLimit(
@@ -42,22 +42,25 @@ export const POST: RequestHandler = async (event) => {
   try {
     body = await event.request.json();
   } catch {
-    return json({ error: "Invalid JSON body" }, { status: 400 });
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
   const parsed = LifecycleEventEnvelopeSchema.safeParse(body);
   if (!parsed.success) {
-    return json({ error: "Invalid lifecycle event" }, { status: 400 });
+    return Response.json({ error: "Invalid lifecycle event" }, { status: 400 });
   }
   // Match the browser SDK's dev-capture policy. Local and preview sessions use
   // real Firebase identities, so an API-key check alone would quietly pollute
   // production funnels even though posthog.ts disables its own dev capture.
   if (env.PUBLIC_ENVIRONMENT !== "production") {
-    return json({ accepted: false, disabled: true });
+    return Response.json({ accepted: false, disabled: true });
   }
   if (!env.PUBLIC_POSTHOG_KEY) {
     console.error("[lifecycle] PUBLIC_POSTHOG_KEY is not configured");
-    return json({ error: "Lifecycle delivery unavailable" }, { status: 503 });
+    return Response.json(
+      { error: "Lifecycle delivery unavailable" },
+      { status: 503 }
+    );
   }
 
   try {
@@ -68,9 +71,12 @@ export const POST: RequestHandler = async (event) => {
       sessionId: postHogSessionId(event.request),
       isGuest: caller.signInProvider === "anonymous",
     });
-    return json({ accepted: true });
+    return Response.json({ accepted: true });
   } catch (captureError) {
     console.error("[lifecycle] PostHog capture failed:", captureError);
-    return json({ error: "Lifecycle delivery failed" }, { status: 502 });
+    return Response.json(
+      { error: "Lifecycle delivery failed" },
+      { status: 502 }
+    );
   }
 };

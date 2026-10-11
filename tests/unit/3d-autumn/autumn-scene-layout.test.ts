@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { getAutumnQualityConfig } from "$lib/shared/3d/environments/scenes/autumn/quality/autumn-quality";
-import { AUTUMN_POND_LAYOUT } from "$lib/shared/3d/environments/scenes/autumn/runtime/water/autumn-pond-layout";
+import { getAutumnQualityConfig } from "#lib/shared/3d/environments/scenes/autumn/quality/autumn-quality.js";
+import { AUTUMN_POND_LAYOUT } from "#lib/shared/3d/environments/scenes/autumn/runtime/water/autumn-pond-layout.js";
 import {
   allocateAutumnCanopyLeaves,
   allocateAutumnFireflies,
   AUTUMN_FIREFLY_CLUSTERS,
   AUTUMN_LEAF_EMITTERS,
-} from "$lib/shared/3d/environments/scenes/autumn/runtime/atmosphere/autumn-ground-life-layout";
-import { isAutumnGrassTierVisible } from "$lib/shared/3d/environments/scenes/autumn/runtime/wind/autumn-grass-tier";
+} from "#lib/shared/3d/environments/scenes/autumn/runtime/atmosphere/autumn-ground-life-layout.js";
+import { isAutumnGrassTierVisible } from "#lib/shared/3d/environments/scenes/autumn/runtime/wind/autumn-grass-tier.js";
 
 describe("Autumn scene layout", () => {
   it("gives the two capable tiers contact shadows and spares the weakest", () => {

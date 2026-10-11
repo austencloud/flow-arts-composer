@@ -19,14 +19,14 @@
  * (`!browser || !initialized || import.meta.env.DEV`). These are deliberate
  * no-ops on localhost — don't add per-function guards, don't work around it.
  *
- * Lives under `$lib` rather than `src/routes/landing/` because the components
+ * Lives under `#lib` rather than `src/routes/landing/` because the components
  * that fire these (`LaunchpadTile`, `HomeHero`, `SiteHeader`) are themselves
  * lib components, and lib must not import from routes.
  *
  * Spec: docs/architecture/landing-analytics-taxonomy.md
  */
 
-import { withRoute } from "$lib/shared/analytics/analytics-context";
+import { withRoute } from "#lib/shared/analytics/analytics-context.js";
 /**
  * Marketing chrome lives in the root layout, including on routes that never
  * render it. Keep its recorder behind the event boundary so importing a typed
@@ -36,7 +36,7 @@ function captureLandingEvent(
   eventName: string,
   properties?: Record<string, unknown>
 ): void {
-  void import("$lib/shared/analytics/services/posthog")
+  void import("#lib/shared/analytics/services/posthog.js")
     .then(async ({ captureWhenReady, initPostHog }) => {
       captureWhenReady(eventName, properties);
       await initPostHog();

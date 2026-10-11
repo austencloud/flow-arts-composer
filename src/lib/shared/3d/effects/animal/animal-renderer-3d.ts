@@ -4,8 +4,8 @@ import {
   isTrackedTip,
   type AnimalTipSource3D,
 } from "../scene-effects/scene-effect-source-3d";
-import type { Animal3DParams } from "$lib/shared/effects/translators/webgl3d-types";
-import { shouldResetEffectStateAtStepBoundary } from "$lib/shared/effects/domain/effect-step-boundary";
+import type { Animal3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
+import { shouldResetEffectStateAtStepBoundary } from "#lib/shared/effects/domain/effect-step-boundary.js";
 import { AnimalAnatomy3D } from "./animal-anatomy-3d";
 import {
   applyAnimalSlither3D,

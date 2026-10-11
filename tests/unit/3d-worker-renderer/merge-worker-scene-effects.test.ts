@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { mergeWorkerSceneEffects } from "$lib/shared/3d/worker-renderer/effects/merge-worker-scene-effects";
-import type { WorkerSceneEffectsSnapshot } from "$lib/shared/3d/worker-renderer/domain/worker-renderer-protocol";
+import { mergeWorkerSceneEffects } from "#lib/shared/3d/worker-renderer/effects/merge-worker-scene-effects.js";
+import type { WorkerSceneEffectsSnapshot } from "#lib/shared/3d/worker-renderer/domain/worker-renderer-protocol.js";
 
 describe("mergeWorkerSceneEffects", () => {
   it("preserves scene-global and performer-owned renderer inputs", () => {

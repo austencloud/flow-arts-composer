@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   mapPostHogSharingResponse,
   postHogAppOrigin,
-} from "$lib/server/analytics/posthog-replay-access";
+} from "#lib/server/analytics/posthog-replay-access.js";
 
 describe("PostHog replay access", () => {
   it.each([{ access_token: "snake-token" }, { accessToken: "camel-token" }])(

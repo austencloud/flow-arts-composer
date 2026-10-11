@@ -1,4 +1,4 @@
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export const PlacementFrame = {
   CANONICAL: "canonical",

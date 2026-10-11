@@ -1,5 +1,5 @@
 <script lang="ts">
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { getThirdOrderContext } from "../context/third-order-context";
   import type { ThirdOrderChildDraft } from "../domain/third-order-composition";
 

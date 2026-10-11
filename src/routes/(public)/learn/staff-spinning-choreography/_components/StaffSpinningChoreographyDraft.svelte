@@ -4,8 +4,8 @@
   review is complete.
 -->
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import "$lib/shared/landing/styles/public-editorial.css";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import "#lib/shared/landing/styles/public-editorial.css";
 
   const DESCRIPTION =
     "Learn staff choreography with The Kinetic Alphabet: a notation system built for double staves, from your first isolation to written sequences.";

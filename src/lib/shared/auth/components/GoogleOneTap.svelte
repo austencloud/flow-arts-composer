@@ -41,10 +41,10 @@
    * See: https://developers.google.com/identity/gsi/web/guides/fedcm-migration
    */
 
-  import { signInWithGoogleCredential } from "$lib/shared/auth/services/authenticator";
+  import { signInWithGoogleCredential } from "#lib/shared/auth/services/authenticator.js";
   import { onMount, onDestroy } from "svelte";
   import { GOOGLE_CLIENT_ID } from "../config/google-oauth";
-  import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+  import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
   const debug = createComponentLogger("GoogleOneTap");
 
@@ -174,7 +174,7 @@
     // while Tauri uses its loopback desktop OAuth bridge; loading GIS in either
     // shell produces an unregistered-origin failure before the user can sign in.
     const { isWeb } =
-      await import("$lib/shared/platform/services/platform-detector");
+      await import("#lib/shared/platform/services/platform-detector.js");
     if (!isWeb()) return;
 
     try {

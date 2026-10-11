@@ -4,8 +4,8 @@ import {
   seedGalleryFromBundle,
   type GalleryBundle,
   type GallerySeedDependencies,
-} from "$lib/shared/desktop/desktop-data-seeder";
-import type { PublicSequenceIndex } from "$lib/shared/foundation/domain/models/public-sequence-index";
+} from "#lib/shared/desktop/desktop-data-seeder.js";
+import type { PublicSequenceIndex } from "#lib/shared/foundation/domain/models/public-sequence-index.js";
 
 const EXPORTED_AT = "2026-09-02T10:00:00.000Z";
 

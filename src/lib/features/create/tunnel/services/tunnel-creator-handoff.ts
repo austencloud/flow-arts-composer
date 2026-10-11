@@ -1,12 +1,12 @@
-import type { CollectedTunnel } from "$lib/features/tunnel-collection/domain/tunnel-collection-types";
-import { collectedTunnelComposition } from "$lib/features/tunnel-collection/domain/collected-tunnel-source";
-import { migrateTunnelArtifact } from "$lib/features/tunnel-collection/domain/tunnel-artifact-migration";
-import type { TunnelComposition } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
+import type { CollectedTunnel } from "#lib/features/tunnel-collection/domain/tunnel-collection-types.js";
+import { collectedTunnelComposition } from "#lib/features/tunnel-collection/domain/collected-tunnel-source.js";
+import { migrateTunnelArtifact } from "#lib/features/tunnel-collection/domain/tunnel-artifact-migration.js";
+import type { TunnelComposition } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
 import {
   TunnelSnapshotSchema,
   type TunnelSnapshot,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
-import type { TunnelPresetRecipe } from "$lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
+import type { TunnelPresetRecipe } from "#lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe.js";
 
 const STORAGE_KEY = "tka:tunnel-creator-handoff";
 

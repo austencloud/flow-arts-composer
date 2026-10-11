@@ -38,7 +38,7 @@
  * same blue/red-to-left/right compatibility behavior. The existing
  * `SoloPropDataSchema`
  * (`./solo-prop-schemas.ts`) is NOT reused for `leftSoloProp`/`rightSoloProp`
- * because it imports the `$lib/shared/firestore` barrel, which pulls
+ * because it imports the `#lib/shared/firestore/index.js` barrel, which pulls
  * `firestore-crud` → the Firebase client SDK → `authState` → `$app/navigation`.
  * That barrel is unavailable under `tsx` and is the exact import-cycle hazard
  * documented in `library-schemas.ts:11-14`. It is also the wrong validator here:
@@ -189,7 +189,7 @@ export function isWireTimestamp(value: unknown): value is WireTimestamp {
  * carrying Firestore values rather than application values.
  *
  * This is why the schema does not reuse `firestoreDate`
- * (`$lib/shared/firestore/firestore-date.ts:13-18`): that preprocessor converts
+ * (`#lib/shared/firestore/firestore-date.ts:13-18`): that preprocessor converts
  * during parse, which would erase the wire/application distinction the spec
  * requires, and its `z.coerce.date()` fallback does not understand the
  * `{ seconds, nanoseconds }` shape the offline/export paths produce.

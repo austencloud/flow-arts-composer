@@ -4,10 +4,10 @@ import {
   CAVE_SPACE_ORDER,
   VULCAN_CAVE_EDGES,
   buildVulcanCaveFloorPlan,
-} from "$lib/features/museum/data/vulcan-cave-floor-plan";
-import { MUSEUM_EXHIBIT_SEQUENCES } from "$lib/features/museum/data/museum-exhibit-sequences";
-import { tileKey } from "$lib/features/museum/domain/museum-grid-types";
-import { isWalkable } from "$lib/features/museum/domain/tile-registry";
+} from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
+import { MUSEUM_EXHIBIT_SEQUENCES } from "#lib/features/museum/data/museum-exhibit-sequences.js";
+import { tileKey } from "#lib/features/museum/domain/museum-grid-types.js";
+import { isWalkable } from "#lib/features/museum/domain/tile-registry.js";
 
 describe("Vulcan Cave floor plan", () => {
   const plan = buildVulcanCaveFloorPlan();
@@ -326,7 +326,7 @@ describe("drowned gallery rooms", () => {
 
   it("has a looping base-letter sequence per grotto performer", async () => {
     const { MUSEUM_EXHIBIT_SEQUENCES } = await import(
-      "$lib/features/museum/data/museum-exhibit-sequences"
+      "#lib/features/museum/data/museum-exhibit-sequences.js"
     );
     for (const [id, letter] of [
       ["cave-water-seq-a", "A"],

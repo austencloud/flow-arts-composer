@@ -1,21 +1,22 @@
 import type { RequestHandler } from "@sveltejs/kit";
-import { json } from "@sveltejs/kit";
-import { requireAdmin } from "$lib/server/auth/requireAdmin";
+
+import { requireAdmin } from "#lib/server/auth/requireAdmin.js";
 import {
   getFirebaseAuthRest,
   type FirebaseAuthRest,
   type FirebaseAuthUser,
-} from "$lib/server/auth/firebase-auth-rest";
+} from "#lib/server/auth/firebase-auth-rest.js";
 import {
   fromFirestoreFields,
   getFirestoreRest,
   type FirestoreDocument,
   type FirestoreRest,
-} from "$lib/server/firestore/firestore-rest";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
-import { logAdminAction } from "$lib/server/security/audit-logger";
-import type { AdminUserAccountSummary } from "$lib/features/admin/services/types";
+} from "#lib/server/firestore/firestore-rest.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
+import { logAdminAction } from "#lib/server/security/audit-logger.js";
+import type { AdminUserAccountSummary } from "#lib/features/admin/services/types.js";
+import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
 
 function isAnonymousAccount(user: FirebaseAuthUser): boolean {
   return user.providerData.length === 0 && !user.email;
@@ -70,8 +71,7 @@ export const GET: RequestHandler = async (event) => {
     );
     if (blocked) return blocked;
 
-    const platformCredential =
-      event.platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON;
+    const platformCredential = workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON;
     const [authUsers, profiles] = await Promise.all([
       listAllAuthUsers(getFirebaseAuthRest(platformCredential)),
       listAllProfiles(getFirestoreRest(platformCredential)),
@@ -113,13 +113,13 @@ export const GET: RequestHandler = async (event) => {
       platformCredential
     );
 
-    return json(summary);
+    return Response.json(summary);
   } catch (cause) {
     const status = responseStatus(cause);
     if (status >= 500) {
       console.error("[admin/user-summary] Query failed:", cause);
     }
-    return json(
+    return Response.json(
       {
         message:
           status < 500 && cause instanceof Error

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { PerspectiveCamera, type WebGLRenderer } from "three";
 import { BackgroundType } from "@austencloud/backgrounds";
-import { getStageCoordinateFrame } from "$lib/shared/3d/environments/domain/stage-coordinate-frame";
-import type { WorkerWorldContext } from "$lib/shared/3d/worker-renderer/worlds/worker-environment-world";
+import { getStageCoordinateFrame } from "#lib/shared/3d/environments/domain/stage-coordinate-frame.js";
+import type { WorkerWorldContext } from "#lib/shared/3d/worker-renderer/worlds/worker-environment-world.js";
 
 const mocks = vi.hoisted(() => ({
   setGroundY: vi.fn(),
@@ -10,13 +10,13 @@ const mocks = vi.hoisted(() => ({
   load: vi.fn(),
 }));
 vi.mock(
-  "$lib/shared/3d/environments/worlds/celestial/celestial-environment-world",
+  "#lib/shared/3d/environments/worlds/celestial/celestial-environment-world.js",
   () => ({
     createLoadedCelestialEnvironmentWorld: mocks.load,
     attachCelestialEnvironmentWorld: () => () => {},
   })
 );
-import { createCelestialPrototypeWorld } from "$lib/shared/3d/worker-renderer/worlds/celestial-prototype-world";
+import { createCelestialPrototypeWorld } from "#lib/shared/3d/worker-renderer/worlds/celestial-prototype-world.js";
 
 describe("Celestial worker layout", () => {
   it("uses canonical grounding and updates the authored court for cast changes", async () => {

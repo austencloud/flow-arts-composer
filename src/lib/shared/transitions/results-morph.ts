@@ -20,7 +20,7 @@
  * the Smart Collection builder — the mutation runs exactly as it does today.
  */
 import { flushSync } from "svelte";
-import { holdBackgroundFor } from "$lib/shared/background/shared/state/background-hold.svelte";
+import { holdBackgroundFor } from "#lib/shared/background/shared/state/background-hold.svelte.js";
 import { reducedMotion } from "./motion";
 import { ignoreViewTransitionSkip } from "./named-route-morph-state.svelte";
 import {

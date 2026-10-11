@@ -1,16 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { StyleDriftSystem } from "$lib/features/village/engine/systems/style-drift-system";
+import { StyleDriftSystem } from "#lib/features/village/engine/systems/style-drift-system.js";
 import {
 	createVillageWorld,
 	createAvatarEntity,
-} from "$lib/features/village/engine/village-world";
-import * as personalityGenerator from "$lib/features/village/services/personality-generator";
+} from "#lib/features/village/engine/village-world.js";
+import * as personalityGenerator from "#lib/features/village/services/personality-generator.js";
 import type {
 	VillageEventMap,
 	VillageEventKey,
 	LearnedSequence,
 	VillageEntity,
-} from "$lib/features/village/domain/village-types";
+} from "#lib/features/village/domain/village-types.js";
 import type { World } from "miniplex";
 
 function makeEmitter() {

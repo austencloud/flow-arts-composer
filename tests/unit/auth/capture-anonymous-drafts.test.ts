@@ -15,14 +15,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const dexieRef = vi.hoisted(() => ({ getAllSequences: vi.fn() }));
-vi.mock("$lib/shared/persistence/services/dexie-persistence-service", () => ({
+vi.mock("#lib/shared/persistence/services/dexie-persistence-service.js", () => ({
   getAllSequences: dexieRef.getAllSequences,
   getSequence: vi.fn(),
   saveSequence: vi.fn(),
 }));
 
 const ledgerRef = vi.hoisted(() => ({ getSavedSequenceIds: vi.fn() }));
-vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
+vi.mock("#lib/shared/library/services/saved-sequence-ledger.js", () => ({
   getSavedSequenceIds: ledgerRef.getSavedSequenceIds,
   recordSavedSequenceId: vi.fn(),
 }));
@@ -46,18 +46,18 @@ vi.mock("firebase/auth", () => ({
   signInWithEmailLink: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthInstance: async () => ({ currentUser: null }),
 }));
 
-vi.mock("$lib/shared/library/get-library-repository", () => ({
+vi.mock("#lib/shared/library/get-library-repository.js", () => ({
   getLibraryRepository: vi.fn(),
 }));
-vi.mock("$lib/shared/gamification/get-prop-unlock-manager", () => ({
+vi.mock("#lib/shared/gamification/get-prop-unlock-manager.js", () => ({
   getPropUnlockManager: vi.fn(),
 }));
 
-import { captureAnonymousDrafts } from "$lib/shared/auth/services/anonymous-upgrade";
+import { captureAnonymousDrafts } from "#lib/shared/auth/services/anonymous-upgrade.js";
 
 beforeEach(() => {
   vi.clearAllMocks();

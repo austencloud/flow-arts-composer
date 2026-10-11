@@ -6,8 +6,8 @@
   import {
     reportViewerControlChange,
     type ViewerControlSink,
-  } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
-  import { flipDuration, growFade } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
+  import { flipDuration, growFade } from "#lib/shared/transitions/motion.js";
 
   interface Props {
     onSettingChange?: ViewerControlSink;

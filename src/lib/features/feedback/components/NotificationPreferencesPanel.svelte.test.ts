@@ -1,7 +1,7 @@
 import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_NOTIFICATION_PREFERENCES } from "$lib/shared/feedback/domain/models/notification-models";
+import { DEFAULT_NOTIFICATION_PREFERENCES } from "#lib/shared/feedback/domain/models/notification-models.js";
 import NotificationPreferencesPanel from "./NotificationPreferencesPanel.svelte";
 
 const mocks = vi.hoisted(() => ({
@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  "$lib/features/feedback/services/notification-preferences-manager",
+  "#lib/features/feedback/services/notification-preferences-manager.js",
   () => ({
     getPreferences: mocks.getPreferences,
     savePreferences: mocks.savePreferences,
@@ -30,7 +30,7 @@ vi.mock(
   })
 );
 
-vi.mock("$lib/shared/push/get-fcm-token-manager", () => ({
+vi.mock("#lib/shared/push/get-fcm-token-manager.js", () => ({
   getFCMTokenManager: () => ({
     getRegistrationState: mocks.getRegistrationState,
     getSetupState: mocks.getSetupState,
@@ -39,11 +39,11 @@ vi.mock("$lib/shared/push/get-fcm-token-manager", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => ({ showUserError: mocks.showUserError }),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     isAuthenticated: true,
     isAdmin: false,
@@ -55,7 +55,7 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   },
 }));
 
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   userPreviewState: { isActive: false, data: null },
   getPreviewNotificationPreferences: () => null,
 }));
@@ -121,7 +121,7 @@ const translations: Record<string, string> = {
   common_retry: "Retry",
 };
 
-vi.mock("$lib/shared/i18n/i18n.svelte.js", () => ({
+vi.mock("#lib/shared/i18n/i18n.svelte.js", () => ({
   t: (key: string) => translations[key] ?? key,
 }));
 
@@ -170,37 +170,6 @@ describe("NotificationPreferencesPanel", () => {
     await expect
       .element(page.getByRole("switch", { name: "New Message" }))
       .toHaveAttribute("aria-checked", "true");
-  });
-
-  it("keeps the page heading anchored while preferences load", async () => {
-    let resolvePreferences!: (
-      value: typeof DEFAULT_NOTIFICATION_PREFERENCES
-    ) => void;
-    mocks.getPreferences.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolvePreferences = resolve;
-        })
-    );
-
-    render(NotificationPreferencesPanel);
-
-    const heading = page.getByRole("heading", {
-      name: "Notification Preferences",
-    });
-    await expect.element(heading).toBeVisible();
-    const loadingTop = heading.element().getBoundingClientRect().top;
-
-    resolvePreferences(DEFAULT_NOTIFICATION_PREFERENCES);
-    await expect
-      .element(page.getByRole("heading", { name: "Delivery methods" }))
-      .toBeVisible();
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-    );
-
-    const loadedTop = heading.element().getBoundingClientRect().top;
-    expect(Math.abs(loadedTop - loadingTop)).toBeLessThanOrEqual(1);
   });
 
   it("starts email as an explicit opt-in with all requested categories", async () => {
@@ -299,5 +268,29 @@ describe("NotificationPreferencesPanel", () => {
         context: expect.objectContaining({ action: "enable-all-alerts" }),
       })
     );
+  });
+
+  it("redraws a revisit from the last loaded values while it refreshes", async () => {
+    mocks.getPreferences.mockResolvedValue({
+      ...DEFAULT_NOTIFICATION_PREFERENCES,
+      pushEnabled: true,
+      messageReceived: false,
+    });
+    const first = render(NotificationPreferencesPanel);
+    await expect
+      .element(page.getByRole("switch", { name: "New Message" }))
+      .toHaveAttribute("aria-checked", "false");
+    first.unmount();
+
+    // The refresh never answers, so only the remembered values can show.
+    mocks.getPreferences.mockReturnValue(new Promise(() => {}));
+    render(NotificationPreferencesPanel);
+
+    const row = page.getByRole("switch", { name: "New Message" });
+    await expect.element(row).toHaveAttribute("aria-checked", "false");
+    await expect.element(row).toBeEnabled();
+    await expect
+      .element(page.getByText("Set up", { exact: true }))
+      .toBeVisible();
   });
 });

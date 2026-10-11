@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deriveTnDRatio } from "$lib/features/choreo-card/components/card-back/card-back-data";
+import { deriveTnDRatio } from "#lib/features/choreo-card/components/card-back/card-back-data.js";
 
 /** Helper: one motion per step, both hands have the given turns */
 function makeUniform(turnValue: number, stepCount: number = 3) {

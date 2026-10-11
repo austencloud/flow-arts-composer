@@ -4,7 +4,7 @@
   Header bar with title, review badge, and action buttons.
 -->
 <script lang="ts">
-  import CopyAsImageButton from "$lib/shared/foundation/ui/CopyAsImageButton.svelte";
+  import CopyAsImageButton from "#lib/shared/foundation/ui/CopyAsImageButton.svelte";
   import TikaModelSwitcher from "./TikaModelSwitcher.svelte";
   import TikaActionMenu from "./TikaActionMenu.svelte";
   import type { ModelOption } from "../types";

@@ -5,13 +5,13 @@ import {
   WORKER_PERFORMER_PROP_TYPES,
   type WorkerPerformerSnapshot,
   type WorkerPropSnapshot,
-} from "$lib/shared/3d/worker-renderer/domain/worker-renderer-protocol";
-import { supportsWorkerPerformer } from "$lib/shared/3d/worker-renderer/services/worker-performer-snapshot";
+} from "#lib/shared/3d/worker-renderer/domain/worker-renderer-protocol.js";
+import { supportsWorkerPerformer } from "#lib/shared/3d/worker-renderer/services/worker-performer-snapshot.js";
 import {
   createWorkerPerformerHoverMarker,
   createWorkerPerformerProp,
-} from "$lib/shared/3d/worker-renderer/worlds/worker-performer";
-import { EXACT_WORKER_PROP_TYPES } from "$lib/shared/3d/worker-renderer/worlds/props/worker-prop-factory";
+} from "#lib/shared/3d/worker-renderer/worlds/worker-performer.js";
+import { EXACT_WORKER_PROP_TYPES } from "#lib/shared/3d/worker-renderer/worlds/props/worker-prop-factory.js";
 
 const STATE: WorkerPropSnapshot = {
   centerPathAngle: 0.25,

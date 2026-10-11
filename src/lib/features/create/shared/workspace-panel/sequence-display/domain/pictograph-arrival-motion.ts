@@ -1,6 +1,6 @@
-import { calculateMotionEndpoints } from "$lib/shared/animation-engine/services/endpoint-calculator";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { calculateMotionEndpoints } from "#lib/shared/animation-engine/services/endpoint-calculator.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 /** A readable base pace for ordinary motions, including most zero-turn shifts. */
 export const PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS = 850;
@@ -42,4 +42,4 @@ export function getPictographArrivalPropMotionDurationMs(
 export {
   LAYOUT_MOTION_DURATION_MS as PICTOGRAPH_ARRIVAL_LANDING_MS,
   LAYOUT_MOTION_EASING as PICTOGRAPH_ARRIVAL_LANDING_EASING,
-} from "$lib/shared/transitions/layout-flip";
+} from "#lib/shared/transitions/layout-flip.js";

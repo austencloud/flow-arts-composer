@@ -20,21 +20,21 @@ import {
   type Object3D as ThreeObject3D,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { childSeed, makeRng } from "$lib/shared/foundation/utils/seeded-rng";
+import { childSeed, makeRng } from "#lib/shared/foundation/utils/seeded-rng.js";
 import {
   FLOW_FEST_MASTER_SEED,
   type FlowFestProductionCollisionMesh,
   type FlowFestProductionCollisionSet,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-simulation-contract";
-import { FLOW_FEST_FIRE_JAM_CONTRACT } from "$lib/features/flow-fest-sim/domain/flow-fest-fire-jam";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-simulation-contract.js";
+import { FLOW_FEST_FIRE_JAM_CONTRACT } from "#lib/features/flow-fest-sim/domain/flow-fest-fire-jam.js";
 import {
   auditFlowFestLivingCommunity,
   type FlowFestFestivalCommunityLayout,
   type FlowFestFestivalPersonBehavior,
   type FlowFestFestivalPersonPlacement,
   type FlowFestFestivalPersonRole,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-living-fire-jam";
-import type { ImportedTerrainDataV2 } from "$lib/shared/3d/procedural-engine/generation/real-terrain-zone";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-living-fire-jam.js";
+import type { ImportedTerrainDataV2 } from "#lib/shared/3d/procedural-engine/generation/real-terrain-zone.js";
 import {
   type FlowFestBranchId,
   type FlowFestRuntimeContract,

@@ -5,7 +5,7 @@
  * Moved from main workbench/domain to shared domain.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export type WorkbenchMode = "view" | "edit" | "construct";
 

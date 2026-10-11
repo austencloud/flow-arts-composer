@@ -27,7 +27,7 @@
  */
 
 import type { Unsubscribe } from "firebase/firestore";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
 import { isValidUserRole } from "../domain/models/feature-flag";
 import type { UserRole } from "../domain/models/user-role";
 import type { GlobalFlagOverrides } from "./types";

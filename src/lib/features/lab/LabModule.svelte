@@ -10,30 +10,30 @@
   When experiments are abandoned, delete the tab component.
 -->
 <script lang="ts">
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { LAB_TABS } from "$lib/shared/navigation/config/tab-definitions";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { LAB_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
 
   // Dynamic tab imports - add new experiments here
   const tabComponents: Record<string, () => Promise<{ default: any }>> = {
     // level4, level5, level6, level7, poi graduated to Levels module (Mar 2026)
     // mandala, mandala-collection graduated to Mandala module (May 2026)
-    themes: () => import("$lib/features/themes-lab/ThemesLab.svelte"),
+    themes: () => import("#lib/features/themes-lab/ThemesLab.svelte"),
     // multi-grid graduated to Levels module as conjoined-grid (Mar 2026)
     // community, connect graduated to Social module (Mar 2026)
     voice: () => import("./tabs/VoiceControlLab.svelte"),
     "pronunciation-recorder": () =>
       import("./pronunciation-recorder/PronunciationRecorderLab.svelte"),
-    vtg: () => import("$lib/features/lab/vtg-lab/VtgLabModule.svelte"),
+    vtg: () => import("#lib/features/lab/vtg-lab/VtgLabModule.svelte"),
     // skel2tka graduated to Video module (Mar 2026)
     trigrid: () =>
-      import("$lib/features/lab/trigrid-lab/TriGridLabModule.svelte"),
+      import("#lib/features/lab/trigrid-lab/TriGridLabModule.svelte"),
     effects: () =>
-      import("$lib/features/lab/effects-lab/EffectsLabModule.svelte"),
+      import("#lib/features/lab/effects-lab/EffectsLabModule.svelte"),
     "prop-buttons": () => import("./tabs/PropButtonLab.svelte"),
     // retro, ascii-pictograph, retro-pictograph graduated to Retro module (Mar 2026)
     "phrase-effort": () =>
-      import("$lib/features/lab/phrase-effort-lab/PhraseEffortLabModule.svelte"),
-    village: () => import("$lib/features/village/VillageLabTab.svelte"),
+      import("#lib/features/lab/phrase-effort-lab/PhraseEffortLabModule.svelte"),
+    village: () => import("#lib/features/village/VillageLabTab.svelte"),
     "pov-pattern": () => import("./tabs/PovPatternLab.svelte"),
     combinator: () => import("./tabs/combinator/CombinatorLab.svelte"),
     "collision-lab": () => import("./tabs/collision-lab/CollisionLab.svelte"),
@@ -41,7 +41,7 @@
     "spatial-lab": () => import("./tabs/spatial-lab/SpatialLab.svelte"),
     "fan-relations": () =>
       import("./tabs/fan-relations/FanRelationsLab.svelte"),
-    stickers: () => import("$lib/features/sticker-lab/StickerLab.svelte"),
+    stickers: () => import("#lib/features/sticker-lab/StickerLab.svelte"),
     // pictograph-explorer graduated to the learn Codex tab as the unified CodexExplorer (Jun 2026)
     // hand-path-explorer, hand-path-builder graduated to Hand Paths module (Mar 2026)
     // video-trails, video-lab graduated to Video module (Mar 2026)

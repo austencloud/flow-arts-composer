@@ -54,12 +54,12 @@ import { Vector3 } from "three";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { BoneChain, FootPlanter } from "@austencloud/scene-3d";
 
-import type { GaitReport } from "$lib/shared/3d/diagnostics/gait/gait-analysis";
+import type { GaitReport } from "#lib/shared/3d/diagnostics/gait/gait-analysis.js";
 import {
   verdictRows,
   type GaitManeuverProfile,
   type VerdictRow,
-} from "$lib/shared/3d/diagnostics/gait/gait-verdicts";
+} from "#lib/shared/3d/diagnostics/gait/gait-verdicts.js";
 
 import {
   ALL_RIGS,

@@ -32,6 +32,7 @@ function afterViewTransitionSettles(
 }
 
 import type { ModuleId } from "../navigation/domain/types";
+import { readHistoryState } from "./read-history-state";
 import {
   normalizeNavigationTarget,
   normalizeSectionId,
@@ -444,14 +445,15 @@ const TAB_ORDERS: Record<string, string[]> = {
   train: ["drills", "challenges", "progress"],
   collect: ["achievements", "badges", "stats"],
   feedback: ["submit", "my-feedback", "tracker", "manage"],
+  // The rail's order; Release notes and Keyboard open from Preferences.
   settings: [
     "profile",
-    "release-notes",
-    "notifications",
-    "props",
-    "theme",
     "preferences",
+    "release-notes",
     "keyboard",
+    "theme",
+    "props",
+    "notifications",
   ],
 };
 
@@ -671,34 +673,6 @@ export function getModuleDefinitions() {
 // ---------------------------------------------------------------------------
 // History integration (native back/forward without route-per-tab)
 // ---------------------------------------------------------------------------
-
-type HistoryState = { moduleId: ModuleId; sectionId?: string };
-
-/**
- * Read our own payload back out of a history entry.
- *
- * `pushHistoryState` writes through SvelteKit's `pushState`, which does NOT put
- * the payload at the top level — it nests it under `sveltekit:states` alongside
- * its own bookkeeping keys. The popstate handler below read `event.state.moduleId`
- * directly, which is always undefined for an entry we pushed, so it bailed on
- * every single back/forward and the module never followed the URL: press Back
- * after leaving Creators for Browse and the address bar said /creators/{id}
- * while Browse stayed on screen.
- *
- * Both shapes are accepted. Entries pushed by other code (or by an older build)
- * may still carry the flat form, and a history stack outlives a deploy.
- */
-function readHistoryState(raw: unknown): HistoryState | null {
-  if (!raw || typeof raw !== "object") return null;
-  const flat = raw as Partial<HistoryState>;
-  if (flat.moduleId) return flat as HistoryState;
-  const nested = (raw as Record<string, unknown>)["sveltekit:states"];
-  if (nested && typeof nested === "object") {
-    const inner = nested as Partial<HistoryState>;
-    if (inner.moduleId) return inner as HistoryState;
-  }
-  return null;
-}
 
 /** Modules whose default tab should not appear in the URL (full-screen experiences) */
 // The Stage is one surface, not a set of tabs, so its single section never

@@ -23,7 +23,7 @@
 
   import { T, useTask } from "@threlte/core";
   import { Vector3, CanvasTexture, type Texture } from "three";
-  import type { Smoke3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+  import type { Smoke3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
   import { SampledCurlGrid2D } from "./smoke-curl-field";
 
   interface Props {

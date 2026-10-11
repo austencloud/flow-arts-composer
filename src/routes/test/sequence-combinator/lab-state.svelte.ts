@@ -26,26 +26,26 @@
  *      the answer to a question nobody asked.
  */
 
-import { ALL_FIXTURE_LOOPS } from "$lib/shared/combination/domain/demo-fixtures";
+import { ALL_FIXTURE_LOOPS } from "#lib/shared/combination/domain/demo-fixtures.js";
 import type {
   CombinationSearchReport,
   CombinatorOptions,
-} from "$lib/shared/combination/domain/types";
+} from "#lib/shared/combination/domain/types.js";
 import {
   DEFAULT_MAX_WORD_LENGTH,
   getSequenceCombinator,
-} from "$lib/shared/combination/get-sequence-combinator";
-import type { EnumerateResult } from "$lib/shared/combination/services/letter-calculus";
-import { getSimilarityCalculator } from "$lib/shared/comparison/get-similarity-calculator";
-import type { SimilarityReport } from "$lib/shared/comparison/services/types";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+} from "#lib/shared/combination/get-sequence-combinator.js";
+import type { EnumerateResult } from "#lib/shared/combination/services/letter-calculus.js";
+import { getSimilarityCalculator } from "#lib/shared/comparison/get-similarity-calculator.js";
+import type { SimilarityReport } from "#lib/shared/comparison/services/types.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export type SlotId = "A" | "B";
 

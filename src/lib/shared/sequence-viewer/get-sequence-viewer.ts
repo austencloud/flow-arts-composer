@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { SequenceViewer } from './services/sequence-viewer';
 
 let instance: SequenceViewer | null = null;

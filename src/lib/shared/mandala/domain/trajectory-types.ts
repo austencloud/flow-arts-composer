@@ -1,4 +1,4 @@
-import type { SpatialCameraFrame } from "$lib/shared/motion-composition/domain/motion-composition-types";
+import type { SpatialCameraFrame } from "#lib/shared/motion-composition/domain/motion-composition-types.js";
 
 export interface WorldTrajectorySample3D {
   beat: number;

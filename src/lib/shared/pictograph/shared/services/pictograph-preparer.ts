@@ -5,7 +5,7 @@ import type {
   PreparedRenderData,
 } from "../domain/models/prepared-pictograph-data";
 import type { PrepareOptions } from "./types";
-import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
+import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
 import type { ArrowLifecycleManager } from "../../arrow/orchestration/services/arrow-lifecycle-manager";
 import type { PropSvgLoader } from "../../prop/services/prop-svg-loader";
 import type { PropPlacer } from "../../prop/services/prop-placer";
@@ -18,7 +18,7 @@ import {
   HandSide,
   MotionType,
 } from "../domain/enums/pictograph-enums";
-import { getPictographGeometryRevision } from "$lib/shared/render/services/pictograph-key-hasher";
+import { getPictographGeometryRevision } from "#lib/shared/render/services/pictograph-key-hasher.js";
 import {
   fanAppearanceSignature,
   isFanPropType,
@@ -34,7 +34,7 @@ import {
   handPathMotionOverrides,
   isGridJoin,
 } from "@tka/render-core";
-import { getBetaOffsetSize } from "$lib/shared/render/core/constants/prop-classification";
+import { getBetaOffsetSize } from "#lib/shared/render/core/constants/prop-classification.js";
 // Prop-type defaults used when callers don't pass explicit options.
 // Formerly imported getSettings() from app-state.svelte, but that module chain
 // pulls in Firebase auth which accesses `window` — crashing in Web Workers.

@@ -19,8 +19,8 @@
  * reactive cache shared by every guide page + the companion, loaded once per
  * reader/print/book mount via loadOverrides().
  */
-import { loadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { loadedAuthState } from "#lib/shared/auth/state/loaded-auth-state.svelte.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 // Every Level 1 chapter imports this module, so it loads Firebase on first
 // use instead of with the page, which keeps Firebase off the chapters' first
@@ -28,13 +28,13 @@ import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 // build's small-chunk merge (vite.config.ts) can fold a small wrapper module
 // back into the page.
 async function loadFirestore() {
-  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+  const { getFirestoreInstance } = await import("#lib/shared/auth/firebase.js");
   return getFirestoreInstance();
 }
 
 async function loadEffectiveUserId(): Promise<string> {
   const { getEffectiveUserId } = await import(
-    "$lib/shared/auth/state/auth-state.svelte"
+    "#lib/shared/auth/state/auth-state.svelte.js"
   );
   return getEffectiveUserId() ?? "unknown";
 }

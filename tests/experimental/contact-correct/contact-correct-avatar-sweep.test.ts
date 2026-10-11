@@ -12,7 +12,7 @@ import {
 import {
   sampleStaffIsolation,
   ISOLATION_STAFF_CONTACT,
-} from "$lib/shared/3d/performers/staff-isolation";
+} from "#lib/shared/3d/performers/staff-isolation.js";
 
 const ORIGIN = new Vector3(0, 1.5621, 0.3);
 const HEIGHT = 1.905;

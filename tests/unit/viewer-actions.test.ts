@@ -3,12 +3,15 @@ import { describe, it, expect, vi } from "vitest";
 const { openCollectionPicker } = vi.hoisted(() => ({
   openCollectionPicker: vi.fn(),
 }));
-vi.mock("$lib/features/library/state/collection-picker-state.svelte", () => ({
-  openCollectionPicker,
-}));
+vi.mock(
+  "#lib/features/library/state/collection-picker-state.svelte.js",
+  () => ({
+    openCollectionPicker,
+  })
+);
 
-import { buildHeaderActions } from "$lib/shared/sequence-viewer/services/viewer-actions";
-import { VIDEO_UPLOAD_ENABLED } from "$lib/shared/sequence-viewer/config/viewer-feature-flags";
+import { buildHeaderActions } from "#lib/shared/sequence-viewer/services/viewer-actions.js";
+import { VIDEO_UPLOAD_ENABLED } from "#lib/shared/sequence-viewer/config/viewer-feature-flags.js";
 
 function makeCtx(over: Partial<Record<string, unknown>> = {}) {
   return {

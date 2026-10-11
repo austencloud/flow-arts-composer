@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { TextRenderer } from './services/text-renderer';
 
 let instance: TextRenderer | null = null;

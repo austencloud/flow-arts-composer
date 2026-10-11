@@ -9,22 +9,22 @@
  * Domain: Retro SCRIBE App
  */
 
-import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import type { GenerationOptions } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import {
   DifficultyLevel,
   GenerationMode,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-import type { SaveResult } from "$lib/features/library/services/types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-import { getLibrarySaveService } from "$lib/features/library/get-library-save-service";
-import { postSaveActivation } from "$lib/shared/onboarding/state/post-save-activation-state.svelte";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import type { SaveResult } from "#lib/features/library/services/types.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+import { getLibrarySaveService } from "#lib/features/library/get-library-save-service.js";
+import { postSaveActivation } from "#lib/shared/onboarding/state/post-save-activation-state.svelte.js";
 
-import { getGenerationOrchestrator } from "$lib/features/create/generate/shared/get-generation-orchestrator";
+import { getGenerationOrchestrator } from "#lib/features/create/generate/shared/get-generation-orchestrator.js";
 
 import type { RetroPictographData } from "../../shared/domain/pictograph-types";
 import {

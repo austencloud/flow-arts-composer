@@ -3,8 +3,8 @@
  * Extends base UserProfile with gamification and social data
  */
 
-import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { PinnedItem } from "./pinned-item";
 
 /**

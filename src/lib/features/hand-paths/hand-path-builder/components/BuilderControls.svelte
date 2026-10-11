@@ -10,11 +10,11 @@
 -->
 <script lang="ts">
 
-import { getHandPathSaveOrchestrator } from "$lib/features/library/get-hand-path-save-orchestrator";
+import { getHandPathSaveOrchestrator } from "#lib/features/library/get-hand-path-save-orchestrator.js";
   import { getBuilderContext } from "../context/builder-context";
-  import { createHandPath } from "$lib/shared/foundation/services/hand-path-factory";
-  import type { HandPathSaveOrchestrator } from "$lib/features/library/services/hand-path-save-orchestrator";
-  import type { HandPathData } from "$lib/shared/foundation/domain/models/hand-path-data";
+  import { createHandPath } from "#lib/shared/foundation/services/hand-path-factory.js";
+  import type { HandPathSaveOrchestrator } from "#lib/features/library/services/hand-path-save-orchestrator.js";
+  import type { HandPathData } from "#lib/shared/foundation/domain/models/hand-path-data.js";
 
   const builder = getBuilderContext();
 

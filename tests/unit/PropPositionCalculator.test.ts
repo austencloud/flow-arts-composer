@@ -11,8 +11,8 @@ import {
   calculatePropEndpoint,
   calculatePropEndpoints,
   type PropEndpointConfig,
-} from "$lib/shared/animation-engine/services/prop-position-calculator";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+} from "#lib/shared/animation-engine/services/prop-position-calculator.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 
 const defaultConfig: PropEndpointConfig = {
   canvasSize: 500,

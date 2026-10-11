@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildStripWindow, nextLoopOffset } from "./strip-window";
+import {
+  buildStripWindow,
+  nextLoopOffset,
+  stripGlideKey,
+} from "./strip-window";
 import { resolvePreviewCycleStep } from "./loop-cycle";
 
 const RAIL = {
@@ -264,5 +268,35 @@ describe("existing StepStrip consumers", () => {
     expect(focusCells.slice(cellCount, cellCount * 2)).toEqual(
       Array.from({ length: cellCount }, (_, i) => i)
     );
+  });
+});
+
+describe("stripGlideKey", () => {
+  const slot = (overrides: Partial<Parameters<typeof stripGlideKey>[0]>) =>
+    stripGlideKey({
+      transitionKey: "timing-qs-1",
+      leftPropType: "staff",
+      rightPropType: "staff",
+      generation: 1,
+      virtualIndex: 5,
+      ...overrides,
+    });
+
+  it("keeps one slot's identity while its step is edited in place", () => {
+    expect(slot({})).toBe(slot({}));
+  });
+
+  it("gives each repeated copy of a step its own identity", () => {
+    // A four-step looping rail shows step 1 in slots 1 and 5.
+    expect(slot({ virtualIndex: 1 })).not.toBe(slot({ virtualIndex: 5 }));
+  });
+
+  it("starts fresh after a jump and when the prop type changes", () => {
+    expect(slot({ generation: 2 })).not.toBe(slot({}));
+    expect(slot({ rightPropType: "hand" })).not.toBe(slot({}));
+  });
+
+  it("turns gliding off without a host identity", () => {
+    expect(slot({ transitionKey: null })).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-import { t } from "$lib/shared/i18n/i18n.svelte";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { localizeLevel1Text } from "./localize-level1-content";
 
 /**
@@ -27,9 +27,9 @@ export type GuidePageSeo = {
 
 export const GUIDE_PAGE_SEO: Record<string, GuidePageSeo> = {
   "hand-placements": {
-    h1: "Flow Arts Placements: Alpha, Beta, Gamma",
+    h1: "Hand Placements",
     tagline: "The three starting hand placements in The Kinetic Alphabet.",
-    title: "Flow Arts Placements: Alpha, Beta, Gamma · The Kinetic Alphabet",
+    title: "Hand Placements: Alpha, Beta, Gamma · Flow Arts Notation Guide",
     description:
       "The three starting hand placements in The Kinetic Alphabet notation. In Alpha the hands occupy the points across from each other; in Beta the same point; in Gamma they form a right angle.",
   },

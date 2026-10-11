@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import type { PictographBlobCacheStats } from "./types";
 
 const DB_NAME = "pictograph-blob-cache";

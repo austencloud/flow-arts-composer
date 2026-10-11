@@ -6,9 +6,9 @@
   import FormationPopover from "./controls/FormationPopover.svelte";
   import CameraPopover from "./CameraPopover.svelte";
   import SceneSelectorPopover from "./SceneSelectorPopover.svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import { loadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
-  import type { ViewerControlSink } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import { loadedAuthState } from "#lib/shared/auth/state/loaded-auth-state.svelte.js";
+  import type { ViewerControlSink } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
 
   interface Props {
     onSettingChange?: ViewerControlSink;

@@ -1,5 +1,5 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import { loopTypeLabel } from "$lib/features/create/generate/components/loop-component-presentation";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { loopTypeLabel } from "#lib/features/create/generate/components/loop-component-presentation.js";
 /**
  * Extension Flow Coordinator
  *
@@ -7,16 +7,16 @@ import { loopTypeLabel } from "$lib/features/create/generate/components/loop-com
  * with SequenceExtender for the actual operations.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import type {
   ExtensionFlowStart,
   BridgeAppendResult,
   ExtensionApplyResult,
 } from "./sequence-extender";
 import type { SequenceExtender } from "./sequence-extender";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { orientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { orientationCycleExtender } from "#lib/features/create/generate/circular/services/orientation-cycle-extender.js";
 
 export class ExtensionFlowCoordinator {
   constructor(private readonly sequenceExtender: SequenceExtender) {}

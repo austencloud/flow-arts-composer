@@ -1,11 +1,11 @@
 import type { Step } from "@tka/tka-types";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   INVERTED_LETTER_MAP,
   COMPOUND_LETTER_MAP,
   ALPHA_BETA_COUNTERPART_LETTER_MAP,
-} from "$lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps";
+} from "#lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps.js";
 import type { StepPairRelationship, LetterRelationshipInfo } from "./types";
 
 /**

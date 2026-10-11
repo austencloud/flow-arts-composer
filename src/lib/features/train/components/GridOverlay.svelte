@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
-  import type { DetectedPosition } from "$lib/shared/train/domain/detection-frame";
+  import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import type { DetectedPosition } from "#lib/shared/train/domain/detection-frame.js";
 
   interface Props {
     leftPosition: DetectedPosition | null;

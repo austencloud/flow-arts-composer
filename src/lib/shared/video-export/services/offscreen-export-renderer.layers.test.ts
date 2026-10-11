@@ -8,24 +8,27 @@ import { describe, it, expect, vi } from "vitest";
 const factoryState = vi.hoisted(() => ({
   handle: null as unknown,
 }));
-vi.mock("$lib/shared/animation-engine/services/render-context-factory", () => ({
-  RenderContextFactory: class {
-    async createOffscreenContext() {
-      return factoryState.handle;
-    }
-  },
-}));
+vi.mock(
+  "#lib/shared/animation-engine/services/render-context-factory.js",
+  () => ({
+    RenderContextFactory: class {
+      async createOffscreenContext() {
+        return factoryState.handle;
+      }
+    },
+  })
+);
 vi.mock("./export-engine-props", () => ({
   assembleExportEngineProps: () => ({ leftProp: null, rightProp: null }),
 }));
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-settings-state.svelte",
+  "#lib/shared/animation-engine/state/animation-settings-state.svelte.js",
   () => ({
     animationSettings: { trail: {} },
   })
 );
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte",
+  "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js",
   () => ({
     getAnimationVisibilityManager: () => ({
       effectsConfigState: {},

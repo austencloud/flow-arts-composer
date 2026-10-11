@@ -9,7 +9,7 @@
   - detailed (default): Shows all step indicators and beat progress
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   interface SaveStep {
     icon: string;
     label: string;

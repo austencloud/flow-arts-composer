@@ -1,5 +1,5 @@
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   /**
    * GuidePageHost - ONE guide topic rendered as its own page: the crawlable,
    * prerendered SEO surface AND the interactive reader for that topic, in one
@@ -17,18 +17,20 @@
    * between sibling prerendered routes.
    */
   import { onMount } from "svelte";
-  import { GUIDE_BODY_PAGES } from "../_data/guide-manifest";
+  import { GUIDE_BODY_PAGES, GROUP_TITLES } from "../_data/guide-manifest";
   import { BUILT } from "../_data/built-pages";
   import { GUIDE_CONTENT, hasReflowContent } from "../_data/guide-content";
   import { seoForSlug } from "../_data/guide-page-seo";
+  import { taglineInIntro } from "../_data/flow-intro";
   import FlowFrame from "./FlowFrame.svelte";
   import GuidePage from "./GuidePage.svelte";
   import GuideCompanionHost from "../../_components/GuideCompanionHost.svelte";
-  import { getConceptExperienceForGuideSlug } from "$lib/features/learn/domain/concept-experience-registry";
-  import { buildConceptPath } from "$lib/features/learn/domain/concept-routes";
+  import { getConceptExperienceForGuideSlug } from "#lib/features/learn/domain/concept-experience-registry.js";
+  import { buildConceptStartPath } from "#lib/features/learn/domain/concept-routes.js";
   import { setGuidePrintMode } from "../_data/guide-data-context";
   import { loadOverrides } from "../_data/guide-overrides.svelte";
   import "../_styles/guide.css";
+  import { TOPIC_PAGES } from "../_topics/topic-pages";
 
   let { slug }: { slug: string } = $props();
 
@@ -38,8 +40,22 @@
   const content = $derived(GUIDE_CONTENT[slug] ?? null);
   const Sheet = $derived(BUILT[slug]);
   const canFlow = $derived(hasReflowContent(slug));
+  // Most taglines open the page's own intro; show the line once, in the intro.
+  const heroTagline = $derived(
+    seo.tagline &&
+      canFlow &&
+      !(content && taglineInIntro(content, seo.tagline) === "contains")
+      ? seo.tagline
+      : null
+  );
   const useFlow = $derived(canFlow);
   const interactiveLesson = $derived(getConceptExperienceForGuideSlug(slug));
+  // Topics migrated to the shared-record template render their own page in
+  // place of the title band and FlowFrame (guide rethink pilot, 2026-10-10).
+  const TopicPage = $derived(TOPIC_PAGES[slug] ?? null);
+  const topicKicker = $derived(
+    meta ? `Level 1 · ${GROUP_TITLES[meta.group]}` : "Level 1"
+  );
 
   const prev = $derived(bodyIndex > 0 ? GUIDE_BODY_PAGES[bodyIndex - 1] : null);
   const next = $derived(
@@ -186,53 +202,63 @@
 
 <GuideCompanionHost pageTitle={meta?.title ?? ""} levelLabel="Level 1">
   <main class="guide-page-route">
-    <header class="topic-hero" class:sheet-topic={!canFlow}>
-      <!-- Built sheet fallbacks paint their own title. Reflow pages use this
-           compact title band so the topic begins without a stack of controls. -->
-      <div class="topic-title">
-        <h1 class:visually-hidden={!canFlow}>{seo.h1}</h1>
-        {#if seo.tagline && canFlow}<p class="hero-tagline">
-            {seo.tagline}
-          </p>{/if}
-      </div>
-      {#if interactiveLesson}
-        <span class="interactive-lesson">
-          <LinkChip href={buildConceptPath(interactiveLesson.conceptId)}
-            ><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-            Learn this interactively</LinkChip
-          >
-        </span>
-      {/if}
-    </header>
-
-    {#if useFlow && content}
-      <FlowFrame
-        {content}
+    {#if TopicPage}
+      <TopicPage
         darkMode={isDark}
-        tagline={seo.tagline ?? ""}
-        layout={slug === "the-grid" ? "grid-reference" : "default"}
+        kicker={topicKicker}
+        lessonHref={interactiveLesson
+          ? buildConceptStartPath(interactiveLesson.conceptId)
+          : null}
       />
-    {:else if Sheet}
-      <!-- Print-friendly fallback: the SAME built _pages sheet the book uses,
-           scaled to fit its available screen footprint. -->
-      <div
-        class="sheet-wrap"
-        bind:this={sheetWrap}
-        style="height: {1056 * scale}px"
-      >
-        <div
-          class="sheet-scale"
-          style="transform: translateX(-{sheetShiftPx}px) scale({scale})"
-        >
-          <GuidePage
-            title={meta?.title}
-            pageNumber={bodyIndex >= 0 ? bodyIndex + 1 : undefined}
-            fullBleed={true}
-          >
-            <Sheet />
-          </GuidePage>
+    {:else}
+      <header class="topic-hero" class:sheet-topic={!canFlow}>
+        <!-- Built sheet fallbacks paint their own title. Reflow pages use this
+           compact title band so the topic begins without a stack of controls. -->
+        <div class="topic-title">
+          <h1 class:visually-hidden={!canFlow}>{seo.h1}</h1>
+          {#if heroTagline}<p class="hero-tagline">
+              {heroTagline}
+            </p>{/if}
         </div>
-      </div>
+        {#if interactiveLesson}
+          <span class="interactive-lesson">
+            <LinkChip href={buildConceptStartPath(interactiveLesson.conceptId)}
+              ><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+              Learn this interactively</LinkChip
+            >
+          </span>
+        {/if}
+      </header>
+
+      {#if useFlow && content}
+        <FlowFrame
+          {content}
+          darkMode={isDark}
+          tagline={seo.tagline ?? ""}
+          layout={slug === "the-grid" ? "grid-reference" : "default"}
+        />
+      {:else if Sheet}
+        <!-- Print-friendly fallback: the SAME built _pages sheet the book uses,
+           scaled to fit its available screen footprint. -->
+        <div
+          class="sheet-wrap"
+          bind:this={sheetWrap}
+          style="height: {1056 * scale}px"
+        >
+          <div
+            class="sheet-scale"
+            style="transform: translateX(-{sheetShiftPx}px) scale({scale})"
+          >
+            <GuidePage
+              title={meta?.title}
+              pageNumber={bodyIndex >= 0 ? bodyIndex + 1 : undefined}
+              fullBleed={true}
+            >
+              <Sheet />
+            </GuidePage>
+          </div>
+        </div>
+      {/if}
     {/if}
 
     <nav class="topic-nav" aria-label="Guide navigation">
@@ -430,11 +456,21 @@
     .interactive-lesson {
       justify-self: center;
     }
+    /* On a phone the empty slot beside the first or last page would push
+       the two buttons to one side; let the buttons share the row instead. */
+    .nav-spacer {
+      display: none;
+    }
+    .nav-link.hub {
+      flex: 1 1 0;
+    }
   }
 
+  /* Dark mode lets the site's own navy backdrop show through, as the Guide
+     hub does, instead of painting a separate gray page over it. */
   @media (prefers-color-scheme: dark) {
     .guide-page-route {
-      background: #14141b;
+      background: transparent;
       color: #ececf2;
       --ink: #ececf2;
       --ink-dim: #a8a8b4;
@@ -449,7 +485,7 @@
     --glyph-invert: 0;
   }
   :global(:root[data-theme="dark"]) .guide-page-route {
-    background: #14141b;
+    background: transparent;
     color: #ececf2;
     --ink: #ececf2;
     --ink-dim: #a8a8b4;

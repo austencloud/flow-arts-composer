@@ -1,6 +1,6 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { SequenceImageSharer } from './services/sequence-image-sharer';
-import { getSequenceRenderer } from '$lib/shared/render/get-sequence-renderer';
+import { getSequenceRenderer } from '#lib/shared/render/get-sequence-renderer.js';
 
 let instance: SequenceImageSharer | null = null;
 

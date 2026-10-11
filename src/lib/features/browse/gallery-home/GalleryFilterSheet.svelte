@@ -13,10 +13,10 @@ GalleryTab so the composition exists exactly once — hosts that assembled
 their own copies drifted (dropdown popovers, stale search) within days.
 -->
 <script lang="ts">
-  import type { BrowseEngine } from "$lib/shared/browse/engine/types";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
+  import type { BrowseEngine } from "#lib/shared/browse/engine/types.js";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
   import GalleryDrill from "./GalleryDrill.svelte";
 
   let {

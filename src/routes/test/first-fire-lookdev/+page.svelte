@@ -6,10 +6,10 @@
    * registered to a graybox camera - it exists so the coal vocabulary can be
    * chosen before it is committed to the Cinder Court.
    */
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { Canvas } from "@threlte/core";
   import { AgXToneMapping } from "three";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import FirstFireCoalLookdev from "./FirstFireCoalLookdev.svelte";
   import { LOOKDEV_STATIONS, type LookdevStationId } from "./lookdev-stations";
 

@@ -2,10 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   PreparedQrCache,
   preparedQrUrl,
-} from "$lib/shared/qr/services/prepared-qr-cache";
-import { QrImageCache } from "$lib/shared/qr/services/qr-image-cache";
+} from "#lib/shared/qr/services/prepared-qr-cache.js";
+import { QrImageCache } from "#lib/shared/qr/services/qr-image-cache.js";
 import { TRANSITION_REVIEW_SEQUENCE as sequence } from "../../../src/routes/test/sequence-viewer-transitions/transition-review-fixture";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 afterEach(() => vi.unstubAllGlobals());
 

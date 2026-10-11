@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ConceptCategory } from "../domain/types";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     category,

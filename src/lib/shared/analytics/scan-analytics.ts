@@ -16,8 +16,8 @@
  * per-control instrumentation phase builds on it.
  */
 
-import { browser } from "$app/environment";
-import { getDeviceId } from "$lib/shared/foundation/services/device-id";
+import { browser } from "$app/env";
+import { getDeviceId } from "#lib/shared/foundation/services/device-id.js";
 import { scanPropProperties } from "./scan-prop-attribution";
 import type { CaptureOptions } from "posthog-js";
 import {

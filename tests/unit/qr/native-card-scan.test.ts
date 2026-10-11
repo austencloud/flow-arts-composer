@@ -1,17 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // The app posts anonymously in these tests.
-vi.mock("$lib/shared/auth/firebase", () => ({ auth: { currentUser: null } }));
-vi.mock("$lib/shared/auth/services/authed-fetch", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
+  auth: { currentUser: null },
+}));
+vi.mock("#lib/shared/auth/services/authed-fetch.js", () => ({
   authedFetch: vi.fn(),
 }));
 
-import { buildSerializedCardUrl } from "$lib/shared/qr/domain/physical-card";
+import { buildSerializedCardUrl } from "#lib/shared/qr/domain/physical-card.js";
 import {
   readCardScanLink,
   recordNativeCardScan,
-} from "$lib/shared/qr/services/native-card-scan";
-import { resolveNativeDeepLinkTarget } from "$lib/shared/platform/services/native-deep-link-target";
+} from "#lib/shared/qr/services/native-card-scan.js";
+import { resolveNativeDeepLinkTarget } from "#lib/shared/platform/services/native-deep-link-target.js";
 
 const PID = "k7Qm2XpR9aBc";
 const DEVICE_ID = "79312e84-8b18-4a43-bf8f-9cddc7816cf5";

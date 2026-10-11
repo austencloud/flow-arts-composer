@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { isViewerReadyToAutoplay } from "$lib/shared/sequence-viewer/services/viewer-autoplay-readiness";
-import { shouldAutoplayViewer } from "$lib/shared/sequence-viewer/services/viewer-autoplay-policy";
-import { createViewerInteractiveServicesState } from "$lib/shared/sequence-viewer/state/viewer-interactive-services-state.svelte";
+import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { isViewerReadyToAutoplay } from "#lib/shared/sequence-viewer/services/viewer-autoplay-readiness.js";
+import { shouldAutoplayViewer } from "#lib/shared/sequence-viewer/services/viewer-autoplay-policy.js";
+import { createViewerInteractiveServicesState } from "#lib/shared/sequence-viewer/state/viewer-interactive-services-state.svelte.js";
 
 const sequence = {
   id: "qr-autoplay",

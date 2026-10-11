@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { generateSequenceRoutePath } from "$lib/shared/navigation/services/sequence-encoder";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { generateSequenceRoutePath } from "#lib/shared/navigation/services/sequence-encoder.js";
 import {
   buildSequenceMessageAttachment,
   decodeLegacySequenceAttachment,
-} from "$lib/shared/inbox/domain/message-attachment-builders";
-import { buildSequenceSharePayload } from "$lib/shared/inbox/domain/build-sequence-share-payload";
+} from "#lib/shared/inbox/domain/message-attachment-builders.js";
+import { buildSequenceSharePayload } from "#lib/shared/inbox/domain/build-sequence-share-payload.js";
 import {
   buildReplyPreview,
   getMessagePreviewText,
   getReplyPreviewText,
-} from "$lib/shared/messaging/domain/message-preview";
+} from "#lib/shared/messaging/domain/message-preview.js";
 
 function findUndefinedPaths(value: unknown, path = "attachment"): string[] {
   if (value === undefined) return [path];

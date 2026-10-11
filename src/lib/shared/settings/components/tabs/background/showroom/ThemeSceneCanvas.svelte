@@ -4,13 +4,13 @@
   import { AgXToneMapping, PCFSoftShadowMap, WebGLRenderer } from "three";
   import { onDestroy, onMount, untrack } from "svelte";
 
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
-  import PerfMonitor from "$lib/shared/3d/components/PerfMonitor.svelte";
-  import { setAdaptiveQualityContext } from "$lib/shared/3d/context/adaptive-quality-context";
-  import { getQualityTierDetector } from "$lib/shared/3d/effects/quality/get-quality-tier-detector";
-  import { setSceneFeatureContext } from "$lib/shared/3d/scene-features/context/scene-feature-context";
-  import { createSceneFeatureState } from "$lib/shared/3d/scene-features/state/scene-feature-state.svelte";
-  import { createAdaptiveQualityState } from "$lib/shared/3d/state/adaptive-quality-state.svelte";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
+  import PerfMonitor from "#lib/shared/3d/components/PerfMonitor.svelte";
+  import { setAdaptiveQualityContext } from "#lib/shared/3d/context/adaptive-quality-context.js";
+  import { getQualityTierDetector } from "#lib/shared/3d/effects/quality/get-quality-tier-detector.js";
+  import { setSceneFeatureContext } from "#lib/shared/3d/scene-features/context/scene-feature-context.js";
+  import { createSceneFeatureState } from "#lib/shared/3d/scene-features/state/scene-feature-state.svelte.js";
+  import { createAdaptiveQualityState } from "#lib/shared/3d/state/adaptive-quality-state.svelte.js";
 
   import PreviewEnvironment from "./PreviewEnvironment.svelte";
   import { getShowroomTheme } from "./theme-showroom-data";

@@ -1,8 +1,8 @@
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { openSequenceOverlay } from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
-import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { openSequenceOverlay } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
+import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
 
 /** Shape shared by every collected art entry that can carry a lineage stamp
  *  (tunnel, 3D scene, mandala). See

@@ -1,25 +1,25 @@
-import { dev } from "$app/environment";
-import type { NetworkStatusMonitor } from "$lib/shared/sync/services/network-status-monitor";
+import { dev } from "$app/env";
+import type { NetworkStatusMonitor } from "#lib/shared/sync/services/network-status-monitor.js";
 import type { GalleryOfflineCache } from "./gallery-offline-cache";
 import type {
   DownloadForOfflineResult,
   OfflineCacheStats,
 } from "../domain/offline-cache-types";
-import type { ThumbnailLocalCache } from "$lib/shared/browse/services/thumbnail-local-cache";
+import type { ThumbnailLocalCache } from "#lib/shared/browse/services/thumbnail-local-cache.js";
 import {
   deriveKey,
   type ThumbnailRenderInput,
-} from "$lib/shared/browse/services/thumbnail-key-deriver";
+} from "#lib/shared/browse/services/thumbnail-key-deriver.js";
 import {
   getUrl,
   loadManifest,
   markMissing,
-} from "$lib/shared/browse/services/cloud-thumbnail-cache";
-import { getThumbnailRenderOrchestrator } from "$lib/shared/browse/get-thumbnail-render-orchestrator";
+} from "#lib/shared/browse/services/cloud-thumbnail-cache.js";
+import { getThumbnailRenderOrchestrator } from "#lib/shared/browse/get-thumbnail-render-orchestrator.js";
 import { sequenceGridJoinKey } from "@tka/render-core";
-import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 
 // A precached grid SVG that every diamond pictograph needs. Its presence in the
 // SW Cache Storage is a reliable proxy for "pictographs can render offline".

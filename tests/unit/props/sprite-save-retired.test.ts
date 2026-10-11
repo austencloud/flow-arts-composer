@@ -7,15 +7,15 @@ const fs = vi.hoisted(() => ({
   writeFileSync: vi.fn(),
 }));
 
-vi.mock("$app/environment", () => ({ dev: true }));
+vi.mock("$app/env", () => ({ dev: true }));
 vi.mock("node:fs", () => ({ ...fs, default: fs }));
 
 import { POST } from "../../../src/routes/test/prop-3d-studio/sprites/save/+server";
 import {
   RETIRED_MODEL_SPRITE_PROPS,
   isRetiredModelSprite,
-} from "$lib/shared/pictograph/prop/domain/retired-model-sprites";
-import { PROP_MODEL_SPRITES } from "$lib/shared/pictograph/prop/domain/prop-model-sprites.generated";
+} from "#lib/shared/pictograph/prop/domain/retired-model-sprites.js";
+import { PROP_MODEL_SPRITES } from "#lib/shared/pictograph/prop/domain/prop-model-sprites.generated.js";
 
 function capture(prop: string) {
   return {

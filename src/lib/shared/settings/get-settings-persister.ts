@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { FirebaseSettingsPersister } from './services/firebase-settings-persister';
 
 let instance: FirebaseSettingsPersister | null = null;

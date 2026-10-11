@@ -1,27 +1,27 @@
 <!-- Compact value editor. Matrix opens its level, notation and turn controls;
      Theory opens the same two-sided ratio builder used in the wide ribbon. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     localizedLevelDescription,
     localizedMatrixTurnSpokenLabel,
   } from "../../domain/shape-matrix-display";
   import { Popover } from "bits-ui";
-  import { flyFade, growFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import LevelSelector from "$lib/shared/components/LevelSelector.svelte";
-  import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
+  import { flyFade, growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import LevelSelector from "#lib/shared/components/LevelSelector.svelte";
+  import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
   import {
     matrixTurnVisibleLabel,
     type MatrixLabelMode,
-  } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
   import type {
     TurnLevel,
     TurnValue,
-  } from "$lib/shared/create/services/level-turn-values";
+  } from "#lib/shared/create/services/level-turn-values.js";
   import { SHAPE_MATRIX_LEVELS } from "../shape-matrix-levels";
-  import { theoryRatioLabel } from "$lib/shared/shape-matrix/domain/theory-ratio";
+  import { theoryRatioLabel } from "#lib/shared/shape-matrix/domain/theory-ratio.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import ShapeMatrixTheoryControls from "./ShapeMatrixTheoryControls.svelte";
   import ShapeMatrixTurnControls from "./ShapeMatrixTurnControls.svelte";

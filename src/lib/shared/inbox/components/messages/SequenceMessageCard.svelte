@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * SequenceMessageCard
    *
@@ -8,20 +8,20 @@
    * Shows deleted state if the sequence no longer exists.
    */
 
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
-  import type { MessageAttachment } from "$lib/shared/messaging/domain/models/message-models";
+  import type { MessageAttachment } from "#lib/shared/messaging/domain/models/message-models.js";
   import { inboxState } from "../../state/inbox-state.svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import SequenceMessagePreview from "./SequenceMessagePreview.svelte";
-  import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
-  import { getShortCodeShareMessage } from "$lib/shared/qr/domain/short-code-error";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
+  import { getShortCodeShareMessage } from "#lib/shared/qr/domain/short-code-error.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { decodeLegacySequenceAttachment } from "../../domain/message-attachment-builders";
   import { buildSequenceSharePayload } from "../../domain/build-sequence-share-payload";
   import type { SequenceSharePayload } from "../../domain/models/sequence-share-payload";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   interface Props {
     attachment: MessageAttachment;
@@ -121,7 +121,7 @@
     if (!sequence && !sequenceShortCode) {
       try {
         const { loadByIdentifier } =
-          await import("$lib/shared/sequence-viewer/services/sequence-data-provider");
+          await import("#lib/shared/sequence-viewer/services/sequence-data-provider.js");
         sequence = await loadByIdentifier(identifier);
       } catch (caught) {
         console.debug(
@@ -151,8 +151,8 @@
       }
 
       const [{ hydrateSequence }, { openSequenceViewer }] = await Promise.all([
-        import("$lib/shared/sequence-viewer/services/sequence-data-provider"),
-        import("$lib/shared/sequence-viewer/services/sequence-viewer-navigator"),
+        import("#lib/shared/sequence-viewer/services/sequence-data-provider.js"),
+        import("#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js"),
       ]);
       const viewerSequence = await hydrateSequence(sequence);
 

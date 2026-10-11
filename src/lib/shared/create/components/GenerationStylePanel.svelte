@@ -4,18 +4,18 @@ GenerationStylePanel.svelte - shared 3-axis generation style control
 Used by Generate and Fuse so both tools expose one style vocabulary and policy.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type {
     GenerationDashChoice,
     GenerationMotionTypeFilter,
     GenerationStyleAxis,
     GenerationStylePolicy,
-  } from "$lib/shared/create/domain/generation-style";
+  } from "#lib/shared/create/domain/generation-style.js";
   import {
     GENERATION_DASH_OPTIONS,
     GENERATION_STYLE_OPTIONS,
-  } from "$lib/shared/create/domain/generation-style-display";
+  } from "#lib/shared/create/domain/generation-style-display.js";
 
   let {
     constraintPreset,

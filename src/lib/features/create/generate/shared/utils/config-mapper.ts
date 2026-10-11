@@ -11,5 +11,5 @@ export {
   clampToAvailableLevel,
   uiConfigToGenerationOptions,
   generationOptionsToUIConfig,
-} from "$lib/shared/create/utils/config-mapper";
-export type { UIGenerationConfig } from "$lib/shared/create/utils/config-mapper";
+} from "#lib/shared/create/utils/config-mapper.js";
+export type { UIGenerationConfig } from "#lib/shared/create/utils/config-mapper.js";

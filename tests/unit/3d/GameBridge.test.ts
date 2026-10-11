@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { GameBridge } from "$lib/shared/3d/debug/game-bridge";
+import { GameBridge } from "#lib/shared/3d/debug/game-bridge.js";
 import type {
   GameBridgeBindings,
   PhysicsBindings,
@@ -9,7 +9,7 @@ import type {
   PerformerManager,
   BridgeRequest,
   BridgeResponse,
-} from "$lib/shared/3d/debug/game-bridge-types";
+} from "#lib/shared/3d/debug/game-bridge-types.js";
 
 
 function createMockPerformer(overrides: Partial<PerformerLike> = {}): PerformerLike {

@@ -7,8 +7,8 @@
    */
   import LinkedSequenceChip from "../../LinkedSequenceChip.svelte";
   import type { MatchedSequence, LinkedSequence } from "../../../types";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
   interface Props {
     linkedSequences: LinkedSequence[];

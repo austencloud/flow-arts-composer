@@ -1,14 +1,14 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import AvatarImage from "$lib/shared/browse/components/AvatarImage.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import AvatarImage from "#lib/shared/browse/components/AvatarImage.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import ProfileAdminSection from "./ProfileAdminSection.svelte";
-  import { getUserProfile } from "$lib/shared/community/services/user-repository";
+  import { getUserProfile } from "#lib/shared/community/services/user-repository.js";
   import type { AdminUserProfile } from "../domain/admin-user-profile";
-  import { auth } from "$lib/shared/auth/firebase";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { auth } from "#lib/shared/auth/firebase.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import UserActivityAnalytics from "./UserActivityAnalytics.svelte";
 
   type Tab = "profile" | "activity" | "admin";

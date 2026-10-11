@@ -1,39 +1,39 @@
 <script lang="ts">
   import { onMount, onDestroy, untrack } from "svelte";
-  import { replaceState } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import {
     AVATAR_DEFINITIONS,
     Plane,
     type AvatarId,
   } from "@austencloud/scene-3d";
-  import Viewer3DFullscreen from "$lib/shared/3d/components/Viewer3DFullscreen.svelte";
-  import SceneChromeButton from "$lib/shared/3d/components/controls/SceneChromeButton.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import PanelHeader from "$lib/shared/components/panel/PanelHeader.svelte";
-  import PanelContent from "$lib/shared/components/panel/PanelContent.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { COLOR_PRESETS } from "$lib/shared/ui/color-presets";
+  import Viewer3DFullscreen from "#lib/shared/3d/components/Viewer3DFullscreen.svelte";
+  import SceneChromeButton from "#lib/shared/3d/components/controls/SceneChromeButton.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import PanelHeader from "#lib/shared/components/panel/PanelHeader.svelte";
+  import PanelContent from "#lib/shared/components/panel/PanelContent.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { COLOR_PRESETS } from "#lib/shared/ui/color-presets.js";
   import {
     safeLocalStorageGet,
     safeLocalStorageSet,
-  } from "$lib/shared/foundation/services/storage-manager";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import { setCharacterCatalogContext } from "$lib/shared/3d/context/character-catalog-context";
+  } from "#lib/shared/foundation/services/storage-manager.js";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import { setCharacterCatalogContext } from "#lib/shared/3d/context/character-catalog-context.js";
   import {
     prepareCharacterForDisplay,
     getCharacterModelPath,
-  } from "$lib/shared/3d/domain/character-model";
-  import { SceneEnvironmentId } from "$lib/shared/3d/environments/domain/scene-environment";
-  import { ALL_FIXTURE_LOOPS } from "$lib/shared/combination/domain/demo-fixtures";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { createPlaybackControllerFactory } from "$lib/shared/animation-engine/create-playback-controller-factory";
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { setAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
-  import { createFullscreenController } from "$lib/shared/fullscreen/state/fullscreen-controller.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/3d/domain/character-model.js";
+  import { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
+  import { ALL_FIXTURE_LOOPS } from "#lib/shared/combination/domain/demo-fixtures.js";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { createPlaybackControllerFactory } from "#lib/shared/animation-engine/create-playback-controller-factory.js";
+  import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { setAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
+  import { createFullscreenController } from "#lib/shared/fullscreen/state/fullscreen-controller.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     loadAvailableCandidates,
     resolveCandidate,
@@ -449,7 +449,7 @@
     const url = new URL(window.location.href);
     if (url.searchParams.get("character") === selected) return;
     url.searchParams.set("character", selected);
-    replaceState(url, {});
+    goto(url, { shallow: true, replace: true });
   });
   onDestroy(() => {
     playback?.dispose(animation);

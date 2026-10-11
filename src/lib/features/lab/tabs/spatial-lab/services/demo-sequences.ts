@@ -1,4 +1,4 @@
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { Plane } from "@austencloud/scene-3d";
 
 export interface SequenceBeat {

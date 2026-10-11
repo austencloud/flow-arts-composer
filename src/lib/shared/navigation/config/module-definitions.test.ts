@@ -4,7 +4,7 @@ import {
   normalizeSectionId,
 } from "./module-definitions";
 import { SETTINGS_TABS } from "./tab-definitions";
-import { isTabAccessible } from "$lib/shared/auth/domain/guest-access-config";
+import { isTabAccessible } from "#lib/shared/auth/domain/guest-access-config.js";
 
 describe("settings language navigation migration", () => {
   it("lands old bookmarks and saved sections on Preferences", () => {

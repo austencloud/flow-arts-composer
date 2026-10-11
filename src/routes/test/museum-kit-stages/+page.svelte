@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Canvas } from "@threlte/core";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import MuseumKitStagesScene, { type Stage } from "./MuseumKitStagesScene.svelte";
 
   let stage = $state<Stage>("asis");

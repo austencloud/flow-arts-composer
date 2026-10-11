@@ -4,7 +4,7 @@ import {
   isFadeLeftoverMaterial,
   repairFadeLeftoverMaterials,
   sweepFlowFestAvatarMaterials,
-} from "$lib/features/flow-fest-sim/services/flow-fest-avatar-material-repair";
+} from "#lib/features/flow-fest-sim/services/flow-fest-avatar-material-repair.js";
 
 function material(overrides: Partial<MeshStandardMaterial>) {
   return Object.assign(new MeshStandardMaterial(), overrides);

@@ -3,7 +3,7 @@ import {
   isModuleAccessible,
   isTabAccessible,
   getAccessibleTabs,
-} from "$lib/shared/auth/domain/guest-access-config";
+} from "#lib/shared/auth/domain/guest-access-config.js";
 
 describe("isModuleAccessible", () => {
   it("allows create for guests", () => {

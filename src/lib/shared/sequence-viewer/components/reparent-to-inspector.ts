@@ -1,6 +1,6 @@
-import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
-import { motionDuration } from "$lib/shared/transitions/motion";
-import { DURATION } from "$lib/shared/transitions/transitions";
+import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
+import { motionDuration } from "#lib/shared/transitions/motion.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 
 export interface ReparentOptions {
   target: HTMLElement | null;

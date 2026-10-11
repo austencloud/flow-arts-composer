@@ -1,6 +1,6 @@
 import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
 import { VIDEO_UPLOAD_ENABLED } from "../config/viewer-feature-flags";
-import { openCollectionPicker } from "$lib/features/library/state/collection-picker-state.svelte";
+import { openCollectionPicker } from "#lib/features/library/state/collection-picker-state.svelte.js";
 
 // One profile since every viewer destination adopted SequenceViewerShell (the
 // same chrome verbatim) — the hand-rolled "scan" funnel profile is gone. The param

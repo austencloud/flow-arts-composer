@@ -5,8 +5,8 @@
  * Collection path: users/{userId}/recordings/{recordingId}
  */
 
-import { getFirestoreInstance, getAuthSync } from "$lib/shared/auth/firebase";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { getFirestoreInstance, getAuthSync } from "#lib/shared/auth/firebase.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import {
   collection,
   doc,

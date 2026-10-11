@@ -5,13 +5,13 @@
  * Handles letter mappings, categories, and validation.
  */
 
-import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type {
   CodexConfig,
   CodexLetterMapping,
   CodexLetterRow,
-} from "$lib/shared/learn/domain/codex-models";
-import { createLetterMapping } from "$lib/shared/learn/domain/codex-models";
+} from "#lib/shared/learn/domain/codex-models.js";
+import { createLetterMapping } from "#lib/shared/learn/domain/codex-models.js";
 
 /**
  * Raw shape of /data/learn/letter-mappings.json.

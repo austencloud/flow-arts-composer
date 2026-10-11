@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import SequenceActionsReviewFrame from "./_components/SequenceActionsReviewFrame.svelte";
 
   const REVIEW_STEPS = [

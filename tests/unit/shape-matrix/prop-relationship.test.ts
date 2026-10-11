@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   derivePropElementalType,
   derivePropRelationship,
-} from "$lib/shared/shape-matrix/domain/prop-relationship";
-import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+} from "#lib/shared/shape-matrix/domain/prop-relationship.js";
+import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
 
 function flower(turns: number, style: "pro" | "anti" = "pro"): Flower {
   return {

@@ -14,15 +14,15 @@
  * over. Import from "./fixtures" exactly as before.
  */
 
-import type { SeamState } from "$lib/shared/combination/domain/types";
-import { seamOf } from "$lib/shared/combination/services/placement-groups";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { SeamState } from "#lib/shared/combination/domain/types.js";
+import { seamOf } from "#lib/shared/combination/services/placement-groups.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 import {
   ALL_FIXTURE_LOOPS,
   PHI_PSI_LOOP,
-} from "$lib/shared/combination/domain/demo-fixtures";
+} from "#lib/shared/combination/domain/demo-fixtures.js";
 
 export {
   AAAA_CCW,
@@ -36,7 +36,7 @@ export {
   makeStep,
   PHI_PSI_LOOP,
   type MotionSpec,
-} from "$lib/shared/combination/domain/demo-fixtures";
+} from "#lib/shared/combination/domain/demo-fixtures.js";
 
 /**
  * Ψ alpha5>beta1 — verbatim: blue static n>n out>out, red dash s>n in>out.

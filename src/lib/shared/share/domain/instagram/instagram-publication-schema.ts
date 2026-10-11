@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { InstagramCapabilityRecoveryActionSchema } from "$lib/shared/share/domain/instagram/instagram-capability-schema";
+import { InstagramCapabilityRecoveryActionSchema } from "#lib/shared/share/domain/instagram/instagram-capability-schema.js";
 import {
   PostDeliveryDraftSchema,
   StorageTimestampSchema,
-} from "$lib/shared/share/domain/instagram/instagram-post-draft-schema";
+} from "#lib/shared/share/domain/instagram/instagram-post-draft-schema.js";
 
 export const InstagramPublicationStateSchema = z.enum([
   "draft",

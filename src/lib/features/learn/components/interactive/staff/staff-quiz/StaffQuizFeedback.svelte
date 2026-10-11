@@ -2,7 +2,7 @@
 StaffQuizFeedback - Feedback display after answer
 -->
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import type { AnswerInfo } from "../../../../domain/constants/staff-quiz-questions";
 
   let {

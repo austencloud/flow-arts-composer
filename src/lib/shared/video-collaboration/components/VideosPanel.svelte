@@ -10,15 +10,15 @@
   the other. See docs/architecture/canonical-capabilities.md.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { getSequenceVideosStore } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type { CollaborativeVideo } from "../domain/collaborative-video";
   import { onMount } from "svelte";
   import CollaboratorAvatars from "./CollaboratorAvatars.svelte";
   import VideoUploadSheet from "./VideoUploadSheet.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
 
   const {
     sequence,

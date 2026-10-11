@@ -5,7 +5,7 @@
   Scale-bounces on increment. Milestone effects at 5, 10, 25, 50, 100.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let { streak = 0 }: { streak: number } = $props();
 

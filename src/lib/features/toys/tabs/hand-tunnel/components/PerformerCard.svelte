@@ -8,16 +8,16 @@
   is on at beat 0, Ryan's "take two extra steps" move).
 -->
 <script lang="ts">
-  import PathMiniViz from "$lib/features/hand-paths/hand-path-explorer/components/PathMiniViz.svelte";
-  import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
+  import PathMiniViz from "#lib/features/hand-paths/hand-path-explorer/components/PathMiniViz.svelte";
+  import { TND_BY_FAMILY } from "#lib/features/choreo-card/domain/tnd-element.js";
   import {
     TND_FAMILY_ID,
     TND_ORDER,
     type Performer,
     type Segment,
     type Tnd,
-  } from "$lib/features/lab/hand-tunnel/domain/hand-tunnel-types";
-  import type { HandPathCycle } from "$lib/features/lab/hand-tunnel/services/build-hand-tunnel-sequence";
+  } from "#lib/features/lab/hand-tunnel/domain/hand-tunnel-types.js";
+  import type { HandPathCycle } from "#lib/features/lab/hand-tunnel/services/build-hand-tunnel-sequence.js";
 
   interface Props {
     performer: Performer;

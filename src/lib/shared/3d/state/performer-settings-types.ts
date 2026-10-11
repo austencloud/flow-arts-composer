@@ -1,7 +1,8 @@
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { Plane, PlaneMode, type PropBuild } from "@austencloud/scene-3d";
-import type { EffectType } from "$lib/shared/effects/domain/effects-config";
+import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
+import type { GridJoin } from "@tka/tka-types";
 
 export interface DefaultPerformerSettings {
   prop: PropType;
@@ -30,6 +31,8 @@ export interface PerformerSettings {
   handEffects: { left: EffectType; right: EffectType } | null;
   staffLengthCm: number | null;
   propBuild: Partial<PropBuild> | null;
+  /** Undefined follows the score; null explicitly uses one shared grid. */
+  gridJoin?: GridJoin | null;
 }
 
 export type CascadeCategory = "prop" | "propBuild" | "effects" | "effort" | "planes";

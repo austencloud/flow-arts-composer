@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
-  import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
-  import type { CollectionAccessRole } from "$lib/shared/library/domain/models/collection";
+  import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+  import type { CollectionAccessRole } from "#lib/shared/library/domain/models/collection.js";
 
   interface Props {
     collection: LibraryCollection;

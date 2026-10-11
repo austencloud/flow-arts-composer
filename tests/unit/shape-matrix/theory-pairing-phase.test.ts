@@ -4,17 +4,17 @@ import {
   handIndexAt,
   propIndexAt,
   traceScaledPath,
-} from "$lib/shared/notation/qft/qft-model";
+} from "#lib/shared/notation/qft/qft-model.js";
 import {
   buildTheoryAxis,
   theoryKnobs,
   theorySoloKnobs,
   type TheoryFlower,
-} from "$lib/shared/shape-matrix/domain/theory-flower";
+} from "#lib/shared/shape-matrix/domain/theory-flower.js";
 import {
   MODE_ORDER,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 
 /** Austen's report: 5:1 antispin, prop starting in, both hands the same. */
 const FIVE_ONE_ANTI_IN: TheoryFlower = {

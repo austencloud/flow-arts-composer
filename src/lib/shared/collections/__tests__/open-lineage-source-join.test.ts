@@ -6,15 +6,15 @@ const { openSequenceOverlay, getSequence } = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte",
+  "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js",
   () => ({ openSequenceOverlay })
 );
-vi.mock("$lib/shared/library/get-library-repository", () => ({
+vi.mock("#lib/shared/library/get-library-repository.js", () => ({
   getLibraryRepository: () => ({ getSequence }),
 }));
 
 import { openLineageSource } from "../open-lineage-source";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 const steps = [{ stepNumber: 1, letter: "A" }] as unknown as StepData[];
 

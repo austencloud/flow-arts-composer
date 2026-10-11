@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   compilePostProject,
   evaluatePresetFrame,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import { POST_STUDIO_PRESETS } from "@austencloud/video-editor/core";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { postCardHighlightedStepIndex } from "$lib/shared/post-studio-plugin/ui/post-card-highlight";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { postCardHighlightedStepIndex } from "#lib/shared/post-studio-plugin/ui/post-card-highlight.js";
 import { NOW, card, project, video } from "./post-project-fixtures";
 
 describe("post card playback highlight", () => {

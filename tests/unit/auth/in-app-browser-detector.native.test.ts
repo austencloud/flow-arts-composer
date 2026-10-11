@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { InAppBrowserDetector } from "$lib/shared/auth/services/in-app-browser-detector";
+import { InAppBrowserDetector } from "#lib/shared/auth/services/in-app-browser-detector.js";
 
 // The native shell IS a WebView; the carve-out must suppress detection there so
 // the packaged app never shows its own users an "open in browser" prompt.

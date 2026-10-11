@@ -7,10 +7,10 @@
   // the page instead of hidden behind a locked door.
   //
   // Chrome (nav + cosmic background) comes from +layout.svelte.
-  import ShopFrontDoor from "$lib/features/store/components/front-door/ShopFrontDoor.svelte";
-  import { deriveCatalogEntries } from "$lib/features/store/domain/catalog-listings";
-  import { SALES_LIVE } from "$lib/features/store/domain/purchase-state";
-  import type { Product } from "$lib/features/store/domain/models/product";
+  import ShopFrontDoor from "#lib/features/store/components/front-door/ShopFrontDoor.svelte";
+  import { deriveCatalogEntries } from "#lib/features/store/domain/catalog-listings.js";
+  import { SALES_LIVE } from "#lib/features/store/domain/purchase-state.js";
+  import type { Product } from "#lib/features/store/domain/models/product.js";
   import type { PageData } from "./$types";
 
   let { data }: { data: PageData } = $props();

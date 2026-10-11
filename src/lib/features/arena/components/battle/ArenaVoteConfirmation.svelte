@@ -5,7 +5,7 @@
   Visual feedback is handled by the panels themselves.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let { winner = "" }: { winner: string } = $props();
 </script>

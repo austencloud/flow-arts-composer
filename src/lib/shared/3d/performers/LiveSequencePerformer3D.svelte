@@ -16,34 +16,34 @@
     AvatarPoseDiagnostics,
     CollisionEvent,
   } from "@austencloud/scene-3d";
-  import type { CharacterId } from "$lib/shared/3d/domain/character-model";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     createCharacterInstanceState,
     makeStandaloneDeps,
-  } from "$lib/shared/3d/state/character-instance-state.svelte";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
+  } from "#lib/shared/3d/state/character-instance-state.svelte.js";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
   import {
     buildStanceYawTrackForSource,
     resolveTrackedUpperBodyStance,
     type StanceYawTrack,
-  } from "$lib/shared/3d/collision/stance-yaw-track";
-  import type { HardBeatTrack } from "$lib/shared/3d/collision/hard-beat-displacement";
-  import type { BodyClearanceTrack } from "$lib/shared/3d/collision/body-clearance";
-  import { resolvePerformerContact } from "$lib/shared/3d/domain/performer-contact-displacement";
-  import { performerScoreClock } from "$lib/shared/3d/domain/performer-score-clock";
+  } from "#lib/shared/3d/collision/stance-yaw-track.js";
+  import type { HardBeatTrack } from "#lib/shared/3d/collision/hard-beat-displacement.js";
+  import type { BodyClearanceTrack } from "#lib/shared/3d/collision/body-clearance.js";
+  import { resolvePerformerContact } from "#lib/shared/3d/domain/performer-contact-displacement.js";
+  import { performerScoreClock } from "#lib/shared/3d/domain/performer-score-clock.js";
   import {
     fitStaffLengthForHug,
     measurePerformerReach,
     type PerformerReachMeasurements,
-  } from "$lib/shared/3d/domain/performer-reach-measurements";
+  } from "#lib/shared/3d/domain/performer-reach-measurements.js";
   import {
     DEFAULT_PERFORMER_HAND_DISTANCE,
     type PerformerHandDistance,
-  } from "$lib/shared/3d/domain/performer-hand-distance";
-  import { buildTipEffectMap } from "$lib/shared/animation-engine/domain/tip-effect-map";
-  import EffectOrchestrator3D from "$lib/shared/3d/effects/EffectOrchestrator3D.svelte";
+  } from "#lib/shared/3d/domain/performer-hand-distance.js";
+  import { buildTipEffectMap } from "#lib/shared/animation-engine/domain/tip-effect-map.js";
+  import EffectOrchestrator3D from "#lib/shared/3d/effects/EffectOrchestrator3D.svelte";
 
   export interface AuthoredUpperBodyStance {
     yawRad: number;
@@ -149,10 +149,13 @@
   // rather than rendering a nonsense prop; the fit result says so explicitly.
   const propLength = $derived.by(() => {
     const pinned = props.propLengthCm;
-    if (pinned != null && Number.isFinite(pinned)) return cmToUnits(pinned);
-    return staffFit?.fits
-      ? cmToUnits(staffFit.recommendedStaffLengthCm)
-      : undefined;
+    const baseLength =
+      pinned != null && Number.isFinite(pinned)
+        ? cmToUnits(pinned)
+        : staffFit?.fits
+          ? cmToUnits(staffFit.recommendedStaffLengthCm)
+          : userProportionsState.staffLength;
+    return baseLength * performerState.gridScale;
   });
   // The turn's timing is planned once per sequence, not re-derived per frame:
   // the curve needs the whole score to know when to start leading.
@@ -184,7 +187,7 @@
     resolvePerformerContact(performerState, {
       displace: !authoredStanceActive,
       clearBody: props.bodyClearance != null,
-      staffLengthM: propLength ?? userProportionsState.staffLength,
+      staffLengthM: propLength,
       measurements: reachMeasurements,
     })
   );
@@ -287,6 +290,7 @@
   enableFootPlanting={props.enableFootPlanting ?? true}
   weldGrip={props.weldGrip ?? false}
   {propLength}
+  propScale={performerState.gridScale}
   headDodge={true}
   stanceYaw={renderedUpperBodyStance.yawRad}
   stanceSegments={renderedUpperBodyStance.segments ?? null}
@@ -334,6 +338,7 @@
         rightPropType={toScenePropType(props.propType)}
         {isPlaying}
         {staffHalfLength}
+        propScale={performerState.gridScale}
         {tipEffectMap}
         leftHandPos={blueHandPos}
         rightHandPos={redHandPos}

@@ -1367,8 +1367,8 @@ export class CharcoalSparkRenderer {
 import type { EffectPlugin } from "../effects/effect-plugin";
 import type { EffectRendererManager } from "../effect-renderer-manager";
 import type { EffectRendererLike } from "../effects/effect-renderer";
-import type { CharcoalIntent } from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { CharcoalIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 export const charcoalEffectPlugin: EffectPlugin<CharcoalIntent> = {
   id: "charcoal",

@@ -12,8 +12,8 @@
 -->
 <script lang="ts">
   import "./styles/config-page.css";
-  import * as singleBuyCheckoutCreator from "$lib/features/store/services/single-buy-checkout-creator";
-  import { getProductLoader } from "$lib/features/store/get-product-loader";
+  import * as singleBuyCheckoutCreator from "#lib/features/store/services/single-buy-checkout-creator.js";
+  import { getProductLoader } from "#lib/features/store/get-product-loader.js";
   import { createStoreState } from "./state/store-state.svelte";
   import { setStoreContext } from "./context/store-context";
   import ShopProductShell, {
@@ -26,23 +26,23 @@
   import BuyButton from "./components/BuyButton.svelte";
   import PreorderPriceNote from "./components/PreorderPriceNote.svelte";
   import { activePriceCents, preorderWindowOpen, formatUsd } from "./domain/preorder-pricing";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import ShopPropPicker from "./components/ShopPropPicker.svelte";
-  import StepperCard from "$lib/shared/components/stepper-card/StepperCard.svelte";
-  import BaseCard from "$lib/features/create/generate/components/cards/BaseCard.svelte";
-  import TurnIntensityCard from "$lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
-  import { DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
-  import { getCardColors } from "$lib/shared/create/domain/card-colors";
+  import StepperCard from "#lib/shared/components/stepper-card/StepperCard.svelte";
+  import BaseCard from "#lib/features/create/generate/components/cards/BaseCard.svelte";
+  import TurnIntensityCard from "#lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
+  import { DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
+  import { getCardColors } from "#lib/shared/create/domain/card-colors.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import LOOPExpandedOverlay from "$lib/features/create/generate/components/cards/LOOPExpandedOverlay.svelte";
-  import { LOOPType } from "$lib/features/create/generate/circular/domain/models/circular-models";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import LOOPExpandedOverlay from "#lib/features/create/generate/components/cards/LOOPExpandedOverlay.svelte";
+  import { LOOPType } from "#lib/features/create/generate/circular/domain/models/circular-models.js";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import {
     parseLoopComponents,
     generateLOOPType,
-  } from "$lib/shared/create/services/loop-type-utils";
-  import { LOOP_COMPONENT_MAP } from "$lib/features/create/generate/shared/domain/constants/loop-constants";
+  } from "#lib/shared/create/services/loop-type-utils.js";
+  import { LOOP_COMPONENT_MAP } from "#lib/features/create/generate/shared/domain/constants/loop-constants.js";
   import { scale, slide } from "svelte/transition";
   import { quintOut } from "svelte/easing";
   import { DEFAULT_SHOP_PROP } from "./domain/shop-prop-options";
@@ -64,11 +64,11 @@
     type LoopFlavor,
     type LoopConfig,
   } from "./domain/loop-config";
-  import { getActivityLogger } from "$lib/shared/analytics/get-activity-logger";
+  import { getActivityLogger } from "#lib/shared/analytics/get-activity-logger.js";
   import { trackVariantSelected, trackPropSelected } from "./analytics/shop-funnel";
   import { trackViewOnceLoaded } from "./analytics/shop-funnel-view.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   const store = createStoreState(getProductLoader(), singleBuyCheckoutCreator);
   setStoreContext({ state: store });
@@ -733,7 +733,7 @@
         <LazyMount
           loader={() =>
             import(
-              "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte"
+              "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte"
             )}
           active={sampleView !== null}
           props={{

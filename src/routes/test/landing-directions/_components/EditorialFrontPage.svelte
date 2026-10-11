@@ -1,8 +1,8 @@
 <script lang="ts">
-  import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import demoJson from "$lib/shared/landing/data/demo-sequence.json";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import demoJson from "#lib/shared/landing/data/demo-sequence.json";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   const demoSequence = demoJson as unknown as SequenceData;
 

@@ -7,8 +7,8 @@
  */
 
 import type { PropTipData } from "./fire-types";
-import type { CharcoalEmissionStyle } from "$lib/shared/effects/domain/effects-config";
-import { resolveCharcoal3DMotionProfile } from "$lib/shared/effects/translators/charcoal-3d-motion-profiles";
+import type { CharcoalEmissionStyle } from "#lib/shared/effects/domain/effects-config.js";
+import { resolveCharcoal3DMotionProfile } from "#lib/shared/effects/translators/charcoal-3d-motion-profiles.js";
 
 // Core Particle
 

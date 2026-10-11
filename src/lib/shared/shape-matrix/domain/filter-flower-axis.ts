@@ -1,5 +1,5 @@
-import { TURN_VALUES } from "$lib/features/choreo-card/domain/turn-pattern-parser";
-import type { TurnValue } from "$lib/shared/create/services/level-turn-values";
+import { TURN_VALUES } from "#lib/features/choreo-card/domain/turn-pattern-parser.js";
+import type { TurnValue } from "#lib/shared/create/services/level-turn-values.js";
 import {
   gridIsRedundant,
   type Flower,

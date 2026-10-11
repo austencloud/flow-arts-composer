@@ -18,9 +18,9 @@
   Other views still prepare their file in the share sheet.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import type { SequenceSendSession } from "$lib/shared/inbox/state/send-sequence-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import type { SequenceSendSession } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
   import SendSequenceWorkspace from "./SendSequenceWorkspace.svelte";
 
   interface Props {

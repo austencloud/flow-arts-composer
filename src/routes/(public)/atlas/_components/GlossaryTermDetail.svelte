@@ -1,6 +1,6 @@
 <script lang="ts">
   import GlossaryLetterPictographs from "./GlossaryLetterPictographs.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 
   /**
    * The full entry for one glossary term - the "detail" half of the lexicon's

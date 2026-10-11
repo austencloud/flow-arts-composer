@@ -28,7 +28,7 @@ type CanonicalLoader = () => Promise<PoseLabelsFile | null>;
 const defaultCanonicalLoader: CanonicalLoader = async () => {
   try {
     const mod = await import(
-      "$lib/shared/3d/data/pose-catalog/diamond-in-out-labels.json"
+      "#lib/shared/3d/data/pose-catalog/diamond-in-out-labels.json"
     );
     return (mod.default ?? mod) as PoseLabelsFile;
   } catch {

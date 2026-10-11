@@ -1,4 +1,4 @@
-import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import {
   renderLoopIconStrip,
   type LOOPComponentId,

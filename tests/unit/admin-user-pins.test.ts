@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildUserPins } from "$lib/features/admin/services/user-pins";
-import type { UserPresenceWithId } from "$lib/shared/presence/domain/models/presence-models";
+import { buildUserPins } from "#lib/features/admin/services/user-pins.js";
+import type { UserPresenceWithId } from "#lib/shared/presence/domain/models/presence-models.js";
 
 const mk = (over: Partial<UserPresenceWithId>): UserPresenceWithId =>
   ({

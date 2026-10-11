@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { WorkerSceneAssetPreloader } from "$lib/shared/3d/worker-renderer/services/worker-scene-assets";
+import { WorkerSceneAssetPreloader } from "#lib/shared/3d/worker-renderer/services/worker-scene-assets.js";
 
 function response(bytes: number, declared = bytes): Response {
   let sent = false;

@@ -4,12 +4,12 @@ import {
   MotionType,
   RotationDirection,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { calculatePropState } from "$lib/shared/3d/services/prop-state-interpolator";
-import { GRID_RADIUS_3D } from "$lib/shared/3d/domain/constants/plane-transforms";
-import type { MotionConfig3D } from "$lib/shared/3d/domain/models/motion-data-3d";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { calculatePropState } from "#lib/shared/3d/services/prop-state-interpolator.js";
+import { GRID_RADIUS_3D } from "#lib/shared/3d/domain/constants/plane-transforms.js";
+import type { MotionConfig3D } from "#lib/shared/3d/domain/models/motion-data-3d.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
 function antiConfig(turns: number, concaveDepth?: number): MotionConfig3D {
   return {

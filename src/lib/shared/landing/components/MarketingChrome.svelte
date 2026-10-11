@@ -15,17 +15,17 @@
   import { onMount } from "svelte";
   import { page } from "$app/state";
   import { fade } from "svelte/transition";
-  import { isNamedRouteMorphActive } from "$lib/shared/transitions/named-route-morph-state.svelte";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { isConstrainedConnection } from "$lib/shared/platform/network-conditions";
+  import { isNamedRouteMorphActive } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { isConstrainedConnection } from "#lib/shared/platform/network-conditions.js";
   import { marketingBackground } from "../state/marketing-background-state.svelte";
   import { pageSurface } from "../domain/page-surface";
-  import ToastContainer from "$lib/shared/toast/components/ToastContainer.svelte";
+  import ToastContainer from "#lib/shared/toast/components/ToastContainer.svelte";
   import SiteHeader from "./SiteHeader.svelte";
   import SiteFooter from "./SiteFooter.svelte";
 
   type BackgroundHostComponent =
-    (typeof import("$lib/shared/background/shared/components/BackgroundHost.svelte"))["default"];
+    (typeof import("#lib/shared/background/shared/components/BackgroundHost.svelte"))["default"];
 
   let { children }: { children: Snippet } = $props();
 
@@ -55,13 +55,13 @@
     // after that first useful frame instead of blocking it.
     const firstFrame = requestAnimationFrame(() => {
       secondFrame = requestAnimationFrame(() => {
-        void import("$lib/shared/background/shared/components/BackgroundHost.svelte").then(
+        void import("#lib/shared/background/shared/components/BackgroundHost.svelte").then(
           ({ default: BackgroundHost }) => {
             if (mounted) LiveBackground = BackgroundHost;
           }
         );
 
-        void import("$lib/shared/settings/utils/background-theme-calculator").then(
+        void import("#lib/shared/settings/utils/background-theme-calculator.js").then(
           ({ applyThemeForBackground }) => {
             if (mounted) applyTheme = applyThemeForBackground;
           }

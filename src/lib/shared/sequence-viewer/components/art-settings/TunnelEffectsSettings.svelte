@@ -1,8 +1,8 @@
 <script lang="ts">
-  import EffectsPanel from "$lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
+  import EffectsPanel from "#lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
   import { reportArtSetting } from "./art-setting-change";
   import type { ArtSettingChangeHandler } from "./art-settings-types";
-  import type { AnimationSettingsState } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  import type { AnimationSettingsState } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
 
   interface Props {
     dense: boolean;

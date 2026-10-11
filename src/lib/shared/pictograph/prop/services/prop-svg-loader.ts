@@ -40,7 +40,7 @@ import {
   parseTriangleRenderKey,
   triangleAppearanceArtwork,
 } from "../domain/triangle-appearance";
-import { orientModelSpriteToTips } from "$lib/shared/animation-engine/services/svg-generator";
+import { orientModelSpriteToTips } from "#lib/shared/animation-engine/services/svg-generator.js";
 import { applyModelSpriteColor } from "../domain/prop-preview-color";
 import { getMotionColor } from "../../../utils/svg-color-utils";
 import { getAnimationVisibilityManager } from "../../../animation-engine/state/animation-visibility-state.svelte";

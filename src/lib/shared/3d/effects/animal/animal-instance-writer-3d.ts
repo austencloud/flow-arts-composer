@@ -11,7 +11,7 @@ import {
   type ParticleInstanceWrite,
 } from "../instancing/particle-instance-pool-3d";
 import { setRgbFromHex, type MutableRgb } from "../instancing/particle-color";
-import type { Animal3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+import type { Animal3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 import type { AnimalSpineFrameBuffers3D } from "./animal-spine-3d";
 
 const BODY_CAPACITY = 4096;

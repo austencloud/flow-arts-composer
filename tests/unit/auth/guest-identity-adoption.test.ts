@@ -23,23 +23,23 @@ const currentUser = {
 vi.mock("firebase/auth", () => ({
   signInAnonymously: (...a: unknown[]) => signInAnonymouslyMock(...a),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthInstance: async () => ({ currentUser: currentUser.value }),
 }));
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureWhenReady: vi.fn(),
   captureExceptionWhenReady: vi.fn(),
 }));
 // NOT mocked: the ledger. Adoption is asserted through the real predicate.
 
 const { ensureGuestIdentity } =
-  await import("$lib/shared/auth/services/guest-identity");
+  await import("#lib/shared/auth/services/guest-identity.js");
 const {
   recordUnownedSequenceId,
   getUnownedSequenceIds,
   getOwnedSequenceIdSet,
   adoptUnownedSequenceIds,
-} = await import("$lib/shared/library/services/saved-sequence-ledger");
+} = await import("#lib/shared/library/services/saved-sequence-ledger.js");
 
 beforeEach(() => {
   vi.clearAllMocks();

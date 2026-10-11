@@ -6,8 +6,8 @@
  */
 
 import { collection, getDocs, getDoc, doc } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { getDailyActiveUsers, getEventCounts, queryEvents } from "$lib/shared/analytics/services/posthog-activity-logger";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { getDailyActiveUsers, getEventCounts, queryEvents } from "#lib/shared/analytics/services/posthog-activity-logger.js";
 import {
   getEventTypeDisplay,
   getModuleDisplay,

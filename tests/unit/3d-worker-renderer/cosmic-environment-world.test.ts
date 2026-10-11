@@ -6,12 +6,12 @@ import {
   Vector2,
   type WebGLRenderer,
 } from "three";
-import { createDefaultCosmicNightConfig } from "$lib/shared/3d/environments/domain/models/scene-configs";
+import { createDefaultCosmicNightConfig } from "#lib/shared/3d/environments/domain/models/scene-configs.js";
 import {
   createCosmicEnvironmentWorld,
   type CosmicEnvironmentWorldOptions,
-} from "$lib/shared/3d/environments/worlds/cosmic/cosmic-environment-world";
-import type { CosmicAudienceLoader } from "$lib/shared/3d/environments/worlds/cosmic/cosmic-audience";
+} from "#lib/shared/3d/environments/worlds/cosmic/cosmic-environment-world.js";
+import type { CosmicAudienceLoader } from "#lib/shared/3d/environments/worlds/cosmic/cosmic-audience.js";
 
 function renderer(): WebGLRenderer {
   return {

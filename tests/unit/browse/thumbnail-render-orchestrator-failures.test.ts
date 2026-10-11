@@ -1,21 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   deriveKey,
   type ThumbnailRenderInput,
-} from "$lib/shared/browse/services/thumbnail-key-deriver";
+} from "#lib/shared/browse/services/thumbnail-key-deriver.js";
 import type {
   RenderProgressCallback,
   ThumbnailRenderResult,
-} from "$lib/shared/browse/services/thumbnail-renderer";
+} from "#lib/shared/browse/services/thumbnail-renderer.js";
 
 const analyticsMocks = vi.hoisted(() => ({
   captureThumbnailRenderFailure: vi.fn(),
 }));
 
-vi.mock("$lib/shared/analytics/thumbnail-analytics", () => analyticsMocks);
-vi.mock("$lib/shared/browse/services/cloud-thumbnail-cache", () => ({
+vi.mock("#lib/shared/analytics/thumbnail-analytics.js", () => analyticsMocks);
+vi.mock("#lib/shared/browse/services/cloud-thumbnail-cache.js", () => ({
   getCachedUrl: () => null,
   getUrl: vi.fn(async () => null),
   upload: vi.fn(async () => null),
@@ -24,13 +24,13 @@ vi.mock("$lib/shared/browse/services/cloud-thumbnail-cache", () => ({
   markMissing: vi.fn(),
 }));
 
-import { ThumbnailMetricsCollector } from "$lib/shared/browse/services/thumbnail-metrics-collector";
-import { ThumbnailRenderOrchestrator } from "$lib/shared/browse/services/thumbnail-render-orchestrator";
+import { ThumbnailMetricsCollector } from "#lib/shared/browse/services/thumbnail-metrics-collector.js";
+import { ThumbnailRenderOrchestrator } from "#lib/shared/browse/services/thumbnail-render-orchestrator.js";
 import {
   ThumbnailRenderQueue,
   ThumbnailRenderTimeoutError,
-} from "$lib/shared/browse/services/thumbnail-render-queue";
-import * as cloudThumbnailCache from "$lib/shared/browse/services/cloud-thumbnail-cache";
+} from "#lib/shared/browse/services/thumbnail-render-queue.js";
+import * as cloudThumbnailCache from "#lib/shared/browse/services/cloud-thumbnail-cache.js";
 
 const sequence = {
   id: "seq-1",

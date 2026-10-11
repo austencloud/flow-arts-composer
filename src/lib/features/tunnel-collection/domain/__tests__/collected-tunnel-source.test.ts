@@ -1,24 +1,24 @@
 import { describe, it, expect } from "vitest";
-import { SNAPSHOT_VERSION } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
+import { SNAPSHOT_VERSION } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
 import {
   DEFAULT_CONFIG,
   type TunnelConfig,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { buildTunnelCompositionLayers } from "$lib/shared/sequence-viewer/tunnel/tunnel-layer-builder";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { buildTunnelCompositionLayers } from "#lib/shared/sequence-viewer/tunnel/tunnel-layer-builder.js";
 import {
   createIndependentTunnelPerformer,
   createTunnelComposition,
   resolveTunnelLayerPlans,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   collectedTunnelComposition,
   collectedTunnelSequence,

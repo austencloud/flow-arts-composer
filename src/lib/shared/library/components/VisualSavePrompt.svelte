@@ -1,17 +1,17 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import SavePropDialog from "./SavePropDialog.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { VisualSequenceSaveIntent } from "../services/contracts/IVisualSequenceSaveCoordinator";
   import {
     captureActivePropConfig,
     type ResolvedPropConfig,
-  } from "$lib/shared/foundation/services/recorded-prop-intent";
-  import { resolveViewingProps } from "$lib/shared/foundation/services/prop-viewing";
+  } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+  import { resolveViewingProps } from "#lib/shared/foundation/services/prop-viewing.js";
   import { parseCollectionProp } from "../domain/collection-prop";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { getVisualSequenceSaveCoordinator } from "../get-visual-sequence-save-coordinator";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   let value = $state<ResolvedPropConfig | null>(null);
   let finish: ((config: ResolvedPropConfig | null) => void) | null = null;

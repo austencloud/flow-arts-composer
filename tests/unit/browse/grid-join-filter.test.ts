@@ -1,18 +1,18 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { applyFilter } from "$lib/shared/browse/services/browse-filter";
-import { applyFilters } from "$lib/shared/browse/services/multi-filter";
-import { deriveSpecMembers } from "$lib/shared/browse/services/smart-filter-spec";
-import { localizeFilterChip } from "$lib/shared/browse/components/localize-filter-chip";
-import { groupRuleFilters } from "$lib/shared/browse/services/filter-rule-groups";
-import { SECTION_FOR_FILTER_TYPE } from "$lib/shared/browse/domain/workspace-sections";
-import { setLocale } from "$lib/shared/i18n/i18n.svelte";
+import { applyFilter } from "#lib/shared/browse/services/browse-filter.js";
+import { applyFilters } from "#lib/shared/browse/services/multi-filter.js";
+import { deriveSpecMembers } from "#lib/shared/browse/services/smart-filter-spec.js";
+import { localizeFilterChip } from "#lib/shared/browse/components/localize-filter-chip.js";
+import { groupRuleFilters } from "#lib/shared/browse/services/filter-rule-groups.js";
+import { SECTION_FOR_FILTER_TYPE } from "#lib/shared/browse/domain/workspace-sections.js";
+import { setLocale } from "#lib/shared/i18n/i18n.svelte.js";
 import {
   BrowseFilterType,
   GridJoinFilterValue,
-} from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ActiveFilter } from "$lib/shared/browse/domain/multi-filter-models";
-import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
+} from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ActiveFilter } from "#lib/shared/browse/domain/multi-filter-models.js";
+import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
 
 function seq(id: string, conjoined?: unknown, gridMode?: string): SequenceData {
   return {

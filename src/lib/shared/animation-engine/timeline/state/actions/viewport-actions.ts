@@ -5,8 +5,8 @@
  * Uses callback injection to preserve Svelte 5 reactivity.
  */
 
-import type { ViewportState, TimeSeconds } from "$lib/shared/animation-engine/domain/timeline-types";
-import { saveToStorage, TIMELINE_STORAGE_KEYS } from "$lib/shared/animation-engine/timeline/state/timeline-storage";
+import type { ViewportState, TimeSeconds } from "#lib/shared/animation-engine/domain/timeline-types.js";
+import { saveToStorage, TIMELINE_STORAGE_KEYS } from "#lib/shared/animation-engine/timeline/state/timeline-storage.js";
 
 export interface ViewportContext {
   getViewport: () => ViewportState;

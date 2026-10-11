@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { capturePostHogLifecycleEvent } from "$lib/server/analytics/posthog-lifecycle-capture";
+import { capturePostHogLifecycleEvent } from "#lib/server/analytics/posthog-lifecycle-capture.js";
 
 describe("PostHog lifecycle capture", () => {
   it("uses the verified UID, replay session, UUID, and original timestamp", async () => {

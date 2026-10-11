@@ -1,24 +1,24 @@
 <!-- FeedbackManageTab - Admin Kanban board for managing feedback -->
 <script lang="ts">
-  import AdminTwoPanelLayout from "$lib/shared/admin/components/AdminTwoPanelLayout.svelte";
-  import { createFeedbackManageState } from "$lib/shared/feedback/state/feedback-manage-state.svelte";
-  import { createVersionState } from "$lib/shared/feedback/state/version-state.svelte";
-  import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
+  import AdminTwoPanelLayout from "#lib/shared/admin/components/AdminTwoPanelLayout.svelte";
+  import { createFeedbackManageState } from "#lib/shared/feedback/state/feedback-manage-state.svelte.js";
+  import { createVersionState } from "#lib/shared/feedback/state/version-state.svelte.js";
+  import { featureFlagService } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
   import {
     notificationTargetState,
     getNotificationTargetFeedback,
     setNotificationTargetFeedback,
-  } from "$lib/shared/feedback/state/notification-action-state.svelte";
+  } from "#lib/shared/feedback/state/notification-action-state.svelte.js";
   import {
     mutateCurrentUrl,
     removeCurrentUrlParams,
-  } from "$lib/shared/navigation/services/url-state";
+  } from "#lib/shared/navigation/services/url-state.js";
   import { onMount } from "svelte";
   import FeedbackKanbanBoard from "./FeedbackKanbanBoard.svelte";
   import FeedbackDetailPanel from "./FeedbackDetailPanel.svelte";
   import PrepareReleasePanel from "./PrepareReleasePanel.svelte";
   import FeedbackArchiveView from "./FeedbackArchiveView.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // Create manage state with real-time subscription
   const manageState = createFeedbackManageState();

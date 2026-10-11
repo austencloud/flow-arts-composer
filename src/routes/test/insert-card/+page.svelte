@@ -7,7 +7,7 @@
   single-deck view.
 -->
 <script lang="ts">
-  import { renderInsertCardPair } from "$lib/features/choreo-card/services/PrintCardRenderer";
+  import { renderInsertCardPair } from "#lib/features/choreo-card/services/PrintCardRenderer.js";
 
   const THEMES = ["cosmic", "ocean", "ember"] as const;
 

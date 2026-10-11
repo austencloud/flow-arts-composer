@@ -1,14 +1,15 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { PostProjectSchema } from "#lib/shared/post-studio-plugin/index.js";
 import { PostPlanSchema } from "@austencloud/video-editor/core";
 import {
   readPostDraftRecords,
   type PostDraftRecord,
-} from "$lib/shared/media-composition/services/post-draft-storage";
-import { loadByIdentifier } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-import { auth } from "$lib/shared/auth/firebase";
-import { legacyPostOwner } from "$lib/shared/media-composition/services/post-project-store";
+} from "#lib/shared/media-composition/services/post-draft-storage.js";
+import { loadByIdentifier } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+import { auth } from "#lib/shared/auth/firebase.js";
+import { legacyPostOwner } from "#lib/shared/media-composition/services/post-project-store.js";
+import { isIndependentStudioProjectId } from "#lib/shared/media-composition/domain/studio-project-id.js";
 
 const SNAPSHOT_PREFIX = "tka:post:sequence:v1:";
 const RECENT_KEY = "tka:post:recent:v1";
@@ -42,6 +43,8 @@ export interface PostProjectChoice {
   word: string;
   updatedAt: number;
   hasDraft: boolean;
+  /** A sync problem that belongs to this project alone, shown on its card. */
+  problem?: string;
 }
 
 interface RecentSequence {
@@ -149,11 +152,16 @@ export async function resolvePostSequence(
 ): Promise<SequenceData | null> {
   const cached = cachedPostSequence(sequenceId);
   if (cached) return cached;
+  // Independent Studio aliases only exist in account/local snapshots. Sending
+  // one to the public gallery cannot find it and can surface a global error
+  // while a library card is loading in the background.
+  if (isIndependentStudioProjectId(sequenceId)) return null;
   const loaded = await loadByIdentifier(sequenceId, { wordFallback: false });
   return loaded?.id === sequenceId && loaded.steps?.length ? loaded : null;
 }
 
-function cachedPostSequence(sequenceId: string): SequenceData | null {
+/** Read a saved source snapshot without consulting the public sequence gallery. */
+export function cachedPostSequence(sequenceId: string): SequenceData | null {
   const memory = memorySnapshots.get(snapshotKey(sequenceId));
   if (memory?.id === sequenceId && memory.steps?.length) return memory;
   try {
@@ -228,18 +236,34 @@ function choicesFromRecords(
       continue;
     try {
       const parsed = PostProjectSchema.safeParse(JSON.parse(record.value));
+      if (!parsed.success) continue;
+      const project = parsed.data;
+      const studioId = isIndependentStudioProjectId(project.sequenceId);
+      const uid = accountId();
+      const studioKey =
+        studioId && uid
+          ? `${PROJECT_PREFIX}account:${uid}:${project.sequenceId}`
+          : studioId && legacyPostOwner()
+            ? `${PROJECT_PREFIX}guest:${project.sequenceId}`
+            : studioId
+              ? `${PROJECT_PREFIX}${project.sequenceId}`
+              : null;
+      const unclaimedStudio =
+        studioId &&
+        !legacyPostOwner() &&
+        record.key === `${PROJECT_PREFIX}${project.sequenceId}`;
       if (
-        !parsed.success ||
-        (record.key !== `${PROJECT_PREFIX}${parsed.data.sequenceId}` &&
-          record.key !== `${PROJECT_PREFIX}guest:${parsed.data.sequenceId}`)
+        studioId
+          ? record.key !== studioKey && !unclaimedStudio
+          : record.key !== `${PROJECT_PREFIX}${project.sequenceId}` &&
+            record.key !== `${PROJECT_PREFIX}guest:${project.sequenceId}`
       )
         continue;
-      const project = parsed.data;
       const current = choices.get(project.sequenceId);
       if (current && current.updatedAt >= project.updatedAt) continue;
       choices.set(project.sequenceId, {
         sequenceId: project.sequenceId,
-        title: project.sequenceId,
+        title: project.title ?? project.sequenceId,
         word: "",
         updatedAt: project.updatedAt,
         hasDraft: true,
@@ -270,7 +294,8 @@ export async function listPostProjects(): Promise<{
   const controller = new AbortController();
   let deadline: ReturnType<typeof setTimeout> | undefined;
   try {
-    if (guestAfterClaim) throw new Error("Account backups are private.");
+    if (guestAfterClaim && !accountId())
+      throw new Error("Account backups are private.");
     const archive = (async () => {
       const response = await fetch("/_local/post-studio-drafts", {
         cache: "no-store",
@@ -302,7 +327,11 @@ export async function listPostProjects(): Promise<{
         "key" in record &&
         typeof record.key === "string" &&
         "value" in record &&
-        typeof record.value === "string"
+        typeof record.value === "string" &&
+        (!guestAfterClaim ||
+          record.key.startsWith(
+            `${PROJECT_PREFIX}account:${accountId()}:studio-arrangement:`
+          ))
     );
   } catch {
     error = guestAfterClaim
@@ -324,7 +353,10 @@ export async function listPostProjects(): Promise<{
     const draft = choices.get(recent.sequenceId);
     choices.set(recent.sequenceId, {
       sequenceId: recent.sequenceId,
-      title: recent.title,
+      title:
+        draft?.title && draft.title !== draft.sequenceId
+          ? draft.title
+          : recent.title,
       word: recent.word,
       updatedAt: Math.max(draft?.updatedAt ?? 0, recent.openedAt),
       hasDraft: !!draft,

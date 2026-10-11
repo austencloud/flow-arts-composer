@@ -3,7 +3,7 @@ LandscapeTouchZone.svelte - Horizontal touch zone for landscape stepper
 Left side decrements, right side increments
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   let { type, disabled, onclick, onkeydown, title } = $props<{
     type: "increment" | "decrement";
     disabled: boolean;

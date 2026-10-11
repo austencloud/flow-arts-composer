@@ -14,7 +14,7 @@ import {
   applyDirectorStepChanges,
   type DirectorAppliedStepChange,
 } from "../../../src/routes/test/film-director/_lib/director-viewer-adapter";
-import type { Viewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
+import type { Viewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
 
 function film(scenes: Record<string, unknown>[]) {
   return {

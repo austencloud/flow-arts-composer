@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { TRAIL_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/trail-presets";
-  import { FIRE_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/fire-presets";
-  import { BLOOM_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/bloom-presets";
-  import TrailThumbnail from "$lib/shared/animation-engine/components/effects-panel/thumbnails/TrailThumbnail.svelte";
-  import FireThumbnail from "$lib/shared/animation-engine/components/effects-panel/thumbnails/FireThumbnail.svelte";
-  import BloomThumbnail from "$lib/shared/animation-engine/components/effects-panel/thumbnails/BloomThumbnail.svelte";
-  import { CHARCOAL_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/charcoal-presets";
-  import CoalThumbnail from "$lib/shared/animation-engine/components/effects-panel/thumbnails/CoalThumbnail.svelte";
+  import { TRAIL_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/trail-presets.js";
+  import { FIRE_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/fire-presets.js";
+  import { BLOOM_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/bloom-presets.js";
+  import TrailThumbnail from "#lib/shared/animation-engine/components/effects-panel/thumbnails/TrailThumbnail.svelte";
+  import FireThumbnail from "#lib/shared/animation-engine/components/effects-panel/thumbnails/FireThumbnail.svelte";
+  import BloomThumbnail from "#lib/shared/animation-engine/components/effects-panel/thumbnails/BloomThumbnail.svelte";
+  import { CHARCOAL_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/charcoal-presets.js";
+  import CoalThumbnail from "#lib/shared/animation-engine/components/effects-panel/thumbnails/CoalThumbnail.svelte";
 </script>
 
 <div class="page">

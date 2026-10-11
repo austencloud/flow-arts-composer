@@ -6,12 +6,12 @@
  */
 
 import type { LetterTransitionGraph } from "./letter-transition-graph";
-import type { ILetterQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getLetterType } from "$lib/shared/foundation/domain/models/letter";
-import { LetterType } from "$lib/shared/foundation/domain/models/letter-type";
+import type { ILetterQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { getLetterType } from "#lib/shared/foundation/domain/models/letter.js";
+import { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
 
 export class StartPlacementValidator {
   constructor(
@@ -102,7 +102,7 @@ export class StartPlacementValidator {
 // DIRECT SINGLETON EXPORT
 // ============================================================================
 import { letterTransitionGraph } from "./letter-transition-graph";
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
 
 export const startPlacementValidator = new StartPlacementValidator(
   letterTransitionGraph,

@@ -1,8 +1,9 @@
 <!--
   AccountSettingsSection Component
 
-  Orchestrator for editable personal details.
-  Each editor is a separate component with its own state and styles.
+  Orchestrator for editable personal details. Account passes in the saved
+  values it already reads, so the rows draw them at once; each editor owns
+  its own editing state and styles.
 -->
 <script lang="ts">
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
@@ -11,27 +12,29 @@
   import UsernameEditor from "./UsernameEditor.svelte";
   import InstagramUsernameEditor from "./InstagramUsernameEditor.svelte";
   import PronounsEditor from "./PronounsEditor.svelte";
-  import MyPropsCard from "$lib/shared/navigation/components/account/MyPropsCard.svelte";
-  import type { PropPreferenceState } from "$lib/shared/community/state/prop-preference-state.svelte";
 
   interface Props {
     user: User;
+    username: string;
+    pronouns: string;
+    instagramUsername: string;
     hapticService: HapticFeedback | null;
     onPronounsChanged?: (pronouns: string) => void;
     onUsernameChanged?: (username: string) => void;
+    onInstagramUsernameChanged?: (username: string) => void;
     displayNameEditRequest?: number;
-    propState: PropPreferenceState | null;
-    onOpenPropEditor: () => void;
   }
 
   let {
     user,
+    username,
+    pronouns,
+    instagramUsername,
     hapticService,
     onPronounsChanged,
     onUsernameChanged,
+    onInstagramUsernameChanged,
     displayNameEditRequest = 0,
-    propState,
-    onOpenPropEditor,
   }: Props = $props();
 </script>
 
@@ -45,26 +48,27 @@
   </div>
 
   <div class="field-cell">
-    <UsernameEditor {user} {hapticService} {onUsernameChanged} />
+    <UsernameEditor {user} {username} {hapticService} {onUsernameChanged} />
   </div>
 
   <div class="field-cell">
-    <InstagramUsernameEditor {user} {hapticService} />
+    <InstagramUsernameEditor
+      {instagramUsername}
+      {hapticService}
+      {onInstagramUsernameChanged}
+    />
   </div>
 
   <div class="field-cell">
-    <PronounsEditor {user} {hapticService} {onPronounsChanged} />
-  </div>
-
-  <div class="field-cell flow-identity-cell">
-    <MyPropsCard {propState} {onOpenPropEditor} />
+    <PronounsEditor {pronouns} {hapticService} {onPronounsChanged} />
   </div>
 </div>
 
 <style>
   .account-settings {
     display: grid;
-    grid-template-rows: repeat(4, minmax(5em, 1fr)) auto;
+    grid-template-rows: repeat(4, minmax(5em, auto));
+    align-content: start;
     width: 100%;
     min-height: 0;
   }
@@ -83,10 +87,19 @@
     width: min(100%, 34rem);
   }
 
+  /* In the three-column layout the rows may grow a little to share the
+     column's height, but never so far that a one-line value floats in an
+     empty band. */
+  @container profile-tab (min-width: 75rem) {
+    .account-settings {
+      grid-template-rows: repeat(4, minmax(5em, 6.25em));
+    }
+  }
+
   @container profile-tab (min-width: 105rem) {
     .account-settings {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-template-rows: repeat(2, minmax(8.5em, auto)) auto;
+      grid-template-rows: repeat(2, minmax(8.5em, auto));
       align-content: center;
       gap: 0.75em;
       padding-block: 0.4em;
@@ -137,11 +150,6 @@
 
     .field-cell :global(.edit-action .panel-btn) {
       min-width: 5.25em;
-    }
-
-    .flow-identity-cell {
-      grid-column: 1 / -1;
-      min-height: 0;
     }
   }
 

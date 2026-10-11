@@ -1,32 +1,32 @@
 <!-- Tunnel settings route each substantial rail section to its presentation owner. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, type Snippet } from "svelte";
-  import AnimatorInspectorShell from "$lib/shared/animation-panel/components/AnimatorInspectorShell.svelte";
-  import AnimatorInspectorFooter from "$lib/shared/animation-panel/components/AnimatorInspectorFooter.svelte";
-  import { createGlobalChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
-  import type { HandPropToolbarProps } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { getAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
+  import AnimatorInspectorShell from "#lib/shared/animation-panel/components/AnimatorInspectorShell.svelte";
+  import AnimatorInspectorFooter from "#lib/shared/animation-panel/components/AnimatorInspectorFooter.svelte";
+  import { createGlobalChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
+  import type { HandPropToolbarProps } from "#lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { viewingPropLabel } from "#lib/shared/foundation/services/prop-viewing.js";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import { EFFORTS } from "#lib/shared/effort/domain/effort-types.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { getAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
   import {
     computeDisplaySummary,
     computePlaybackSummary,
     speedRailCopy,
     tunnelRegionLabel,
-  } from "$lib/shared/animation-panel/pill-nav/pill-summaries";
-  import { RAIL_CATEGORY_ACCENTS } from "$lib/shared/animation-panel/pill-nav/rail-category-accents";
+  } from "#lib/shared/animation-panel/pill-nav/pill-summaries.js";
+  import { RAIL_CATEGORY_ACCENTS } from "#lib/shared/animation-panel/pill-nav/rail-category-accents.js";
   import ControlDock, {
     type ControlDockAction,
     type ControlDockTab,
   } from "../ControlDock.svelte";
   import type { TunnelViewController } from "../../tunnel/tunnel-view-controller.svelte";
-  import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import TunnelEffectsSettings from "./TunnelEffectsSettings.svelte";
   import TunnelDisplaySettings from "./TunnelDisplaySettings.svelte";
   import TunnelLookSettings from "./TunnelLookSettings.svelte";
@@ -39,13 +39,13 @@
     ArtSettingChangeHandler,
     ArtSettingValue,
   } from "./art-settings-types";
-  import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
+  import type { PropChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
   import {
     animationSettings,
     type AnimationSettingsState,
-  } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import { getOptionalViewerAnimatorInspectorContext } from "../../context/viewer-animator-inspector-context";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   type TunnelRailId =
     | "tunnel"

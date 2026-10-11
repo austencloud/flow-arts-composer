@@ -9,8 +9,8 @@ import {
   type SurfaceCapture,
   type SurfaceDrawInput,
 } from "@austencloud/video-editor/render";
-import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
-import { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
+import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "#lib/shared/media-composition/services/post-studio-dom-capture.js";
+import { PostStudioPictographCapture } from "#lib/shared/media-composition/services/post-studio-pictograph-capture.js";
 
 /**
  * The two DOM surfaces tka's preview mounts for a post: the sequence animation

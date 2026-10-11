@@ -20,10 +20,10 @@
  *
  * Output: static/images/grant-feature/pictograph-<letter>[-tnd][-dark].png
  *
- * How it runs: the render pipeline imports through `$lib`, `$app/*` and
- * `$env/*`, reads `import.meta.env`, and depends on rune-based .svelte.ts
- * state modules. tsx resolves none of that, so this launcher boots an
- * in-process Vite server with the SvelteKit plugin and SSR-loads
+ * How it runs: the render pipeline imports through `#lib` and `$app/*`
+ * (including `$app/env`), reads `import.meta.env`, and depends on
+ * rune-based .svelte.ts state modules. tsx resolves none of that, so this
+ * launcher boots an in-process Vite server with the SvelteKit plugin and SSR-loads
  * scripts/node/render-pictograph.ts through it. That is the same compile
  * path the app uses, so the CLI keeps working as the pipeline evolves.
  *

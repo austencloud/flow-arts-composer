@@ -3,7 +3,7 @@ import {
   getCardMetadata,
   type BackgroundCardMetadata,
 } from "@austencloud/backgrounds/card";
-import { PRIDE_BACKGROUND_TYPE } from "$lib/shared/settings/domain/background-type-migration";
+import { PRIDE_BACKGROUND_TYPE } from "#lib/shared/settings/domain/background-type-migration.js";
 
 export interface ThemeCameraFraming {
   position: [number, number, number];

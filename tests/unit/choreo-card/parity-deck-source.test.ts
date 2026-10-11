@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { HAND_PATH_REFERENCE_CARDS } from "$lib/features/choreo-card/domain/hand-path-reference-cards";
-import type { DeckRelease } from "$lib/features/choreo-card/domain/models/DeckRelease";
-import { getParityCardPresentation } from "$lib/features/choreo-card/services/parity-deck-source";
-import { buildFrontComposeOptions } from "$lib/features/choreo-card/services/build-front-compose-options";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { HAND_PATH_REFERENCE_CARDS } from "#lib/features/choreo-card/domain/hand-path-reference-cards.js";
+import type { DeckRelease } from "#lib/features/choreo-card/domain/models/DeckRelease.js";
+import { getParityCardPresentation } from "#lib/features/choreo-card/services/parity-deck-source.js";
+import { buildFrontComposeOptions } from "#lib/features/choreo-card/services/build-front-compose-options.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const HAND_PATH_RELEASE = {
   deckNumber: 10,

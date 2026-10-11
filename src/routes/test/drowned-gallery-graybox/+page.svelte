@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Canvas } from "@threlte/core";
   import { AgXToneMapping, PCFSoftShadowMap } from "three";
-  import GrayboxReviewShell from "$lib/features/museum/components/graybox/GrayboxReviewShell.svelte";
-  import { VULCAN_CAVE_WINGS } from "$lib/features/museum/data/wing-declarations/vulcan-cave-wings";
+  import GrayboxReviewShell from "#lib/features/museum/components/graybox/GrayboxReviewShell.svelte";
+  import { VULCAN_CAVE_WINGS } from "#lib/features/museum/data/wing-declarations/vulcan-cave-wings.js";
   import DrownedGalleryWalkScene from "./DrownedGalleryWalkScene.svelte";
 
   const declaration = VULCAN_CAVE_WINGS.find(

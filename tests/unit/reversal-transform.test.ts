@@ -5,7 +5,7 @@ import {
   cumulativeParities,
   resolvePattern,
   type ResolvedReversalPattern,
-} from "$lib/features/choreo-card/domain/reversal-transform";
+} from "#lib/features/choreo-card/domain/reversal-transform.js";
 
 describe("applyReversalToMotion", () => {
   it("flips pro↔anti when reversed", () => {

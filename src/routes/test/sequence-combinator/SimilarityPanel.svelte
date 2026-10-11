@@ -42,7 +42,7 @@
   because the calculator sums without dividing.
 -->
 <script lang="ts">
-  import type { SimilarityReport } from "$lib/shared/comparison/services/types";
+  import type { SimilarityReport } from "#lib/shared/comparison/services/types.js";
 
   import type { SimilarityWeights } from "./lab-state.svelte";
 

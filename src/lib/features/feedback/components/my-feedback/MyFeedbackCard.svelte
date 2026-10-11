@@ -4,12 +4,12 @@
     FeedbackItem,
     FeedbackType,
     FeedbackStatus,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import {
     STATUS_CONFIG,
     TYPE_CONFIG,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { getLocale, t } from "#lib/shared/i18n/i18n.svelte.js";
   import { feedbackStatusLabel } from "../../domain/feedback-display-labels";
 
   const { item, isSelected, onClick } = $props<{

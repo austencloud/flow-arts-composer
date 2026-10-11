@@ -20,8 +20,8 @@ Used in:
 3. Layered sequence preview
 -->
 <script lang="ts">
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
   import {
     getReflectionIconTransform,
     LOOP_ICON_COLORS,
@@ -32,9 +32,9 @@ Used in:
     type LoopReflectionAxis,
     type ReflectionIconTransform,
   } from "@tka/render-composition";
-  import CheckerboardCircleIcon from "$lib/shared/icons/CheckerboardCircleIcon.svelte";
-  import { loopComponentLabel } from "$lib/features/create/generate/components/loop-component-presentation";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import CheckerboardCircleIcon from "#lib/shared/icons/CheckerboardCircleIcon.svelte";
+  import { loopComponentLabel } from "#lib/features/create/generate/components/loop-component-presentation.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     activeComponents: Set<LOOPComponent>;

@@ -1,7 +1,7 @@
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { AnimationEngineProps } from "$lib/shared/animation-engine/services/animation-engine.svelte";
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { TrailSettings } from "$lib/shared/animation-engine/domain/types/trail-types";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { AnimationEngineProps } from "#lib/shared/animation-engine/services/animation-engine.svelte.js";
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { TrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 export interface ExportFrameContext {
   virtualTime: number;

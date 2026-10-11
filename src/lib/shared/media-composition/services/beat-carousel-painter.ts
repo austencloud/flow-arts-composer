@@ -1,8 +1,8 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { Canvas2DDirectRenderer } from "$lib/shared/render/services/canvas-2d-direct-renderer";
-import type { RenderCanvas } from "$lib/shared/render/services/types";
-import { buildNotationCells } from "$lib/shared/timeline/notation-cell";
-import type { NotationCell } from "$lib/shared/timeline/notation-cell";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { Canvas2DDirectRenderer } from "#lib/shared/render/services/canvas-2d-direct-renderer.js";
+import type { RenderCanvas } from "#lib/shared/render/services/types.js";
+import { buildNotationCells } from "#lib/shared/timeline/notation-cell.js";
+import type { NotationCell } from "#lib/shared/timeline/notation-cell.js";
 import {
   beatCarouselFocusSize,
   layoutBeatCarousel,
@@ -52,7 +52,7 @@ class BeatCarouselPainter implements PostStudioLayerPainter {
     // The direct renderer needs prepared arrows and props. Its global preparer
     // is optional, so pass the app's preparer explicitly here.
     const { pictographPreparer } =
-      await import("$lib/shared/pictograph/shared/services/pictograph-preparer");
+      await import("#lib/shared/pictograph/shared/services/pictograph-preparer.js");
     const images = new Map<BeatCarouselBeat, RenderCanvas>();
     for (const cell of this.cells) {
       const pictograph = await pictographPreparer.prepareSingle(cell.data, {

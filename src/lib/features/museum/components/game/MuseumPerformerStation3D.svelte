@@ -7,32 +7,32 @@
    * avatar and prop rig. Uses PerformerRig for the unified transform hierarchy
    * - no manual STAGE_LIFT math, no sibling Avatar3D/Prop3D/Grid3D calls.
    */
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { onDestroy, untrack } from "svelte";
   import { T } from "@threlte/core";
   import { Color } from "three";
   import { PerformerRig } from "@austencloud/scene-3d";
   import { Plane } from "@austencloud/scene-3d";
   import { PlaneMode } from "@austencloud/scene-3d";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     createCharacterInstanceState,
     makeStandaloneDeps,
-  } from "$lib/shared/3d/state/character-instance-state.svelte";
+  } from "#lib/shared/3d/state/character-instance-state.svelte.js";
   import { userProportionsState } from "@austencloud/scene-3d";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { GridMode } from "@austencloud/scene-3d";
   import {
     MUSEUM_EXHIBIT_SEQUENCES,
     type MuseumSequenceData,
   } from "../../data/museum-exhibit-sequences";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
-  import EffectOrchestrator3D from "$lib/shared/3d/effects/EffectOrchestrator3D.svelte";
-  import { buildTipEffectMap } from "$lib/shared/animation-engine/domain/tip-effect-map";
-  import { museumPropPair } from "$lib/features/museum/services/museum-prop-pair";
-  import type { ActivePropSettings } from "$lib/shared/foundation/services/recorded-prop-intent";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
+  import EffectOrchestrator3D from "#lib/shared/3d/effects/EffectOrchestrator3D.svelte";
+  import { buildTipEffectMap } from "#lib/shared/animation-engine/domain/tip-effect-map.js";
+  import { museumPropPair } from "#lib/features/museum/services/museum-prop-pair.js";
+  import type { ActivePropSettings } from "#lib/shared/foundation/services/recorded-prop-intent.js";
 
   interface Props {
     stationId: string;

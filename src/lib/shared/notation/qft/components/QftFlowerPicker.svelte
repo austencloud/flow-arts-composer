@@ -14,9 +14,9 @@
   import {
     ratioLabel,
     type Flower,
-  } from "$lib/shared/shape-matrix/domain/flower-signature";
-  import { flowerToKnobs } from "$lib/shared/notation/qft/qft-flower-bridge";
-  import { tracePath } from "$lib/shared/notation/qft/qft-model";
+  } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+  import { flowerToKnobs } from "#lib/shared/notation/qft/qft-flower-bridge.js";
+  import { tracePath } from "#lib/shared/notation/qft/qft-model.js";
 
   interface Props {
     label: string;

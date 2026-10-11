@@ -7,10 +7,10 @@
   - camera-canvas-grid: Camera + AnimatorCanvas + StepGrid (all three)
 -->
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { DetectionFrame } from "$lib/shared/train/domain/detection-frame";
-  import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { DetectionFrame } from "#lib/shared/train/domain/detection-frame.js";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { TrainMode } from "../../domain/enums/train-enums";
   import CameraSection from "./CameraSection.svelte";
   import GridSection from "./GridSection.svelte";

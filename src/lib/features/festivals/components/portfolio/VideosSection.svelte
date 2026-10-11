@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getFestivalContext } from "../../context/festival-context";
-  import { auth } from "$lib/shared/auth/firebase";
+  import { auth } from "#lib/shared/auth/firebase.js";
   import type { TeachingPortfolio } from "../../domain/models/teaching-portfolio";
 
   const { state: festivalState } = getFestivalContext();

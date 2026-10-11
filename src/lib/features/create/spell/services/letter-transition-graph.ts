@@ -5,17 +5,17 @@
  * Provides Letter-typed interface for type safety.
  */
 
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { TransitionGraph } from "$lib/shared/sequence-engine/services/transition-graph";
-import { BrowserDataProvider } from "$lib/shared/sequence-engine/data/browser-data-provider";
-import type { ILetterQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { GridPlacementGroup } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { TransitionGraph } from "#lib/shared/sequence-engine/services/transition-graph.js";
+import { BrowserDataProvider } from "#lib/shared/sequence-engine/data/browser-data-provider.js";
+import type { ILetterQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
 
 import type {
   LetterPlacementInfo,
   LetterCategory,
 } from "../domain/models/spell-models";
-import type { PlacementGroup } from "$lib/shared/sequence-engine/domain/models/sequence-engine-types";
+import type { PlacementGroup } from "#lib/shared/sequence-engine/domain/models/sequence-engine-types.js";
 
 /**
  * Browser-specific transition graph using the shared engine.

@@ -11,9 +11,9 @@ import {
   type Object3D,
   type WebGLRenderer,
 } from "three";
-import { createDefaultForestFireflyConfig } from "$lib/shared/3d/environments/domain/models/scene-configs";
-import { FOREST_FIREFLY_FIELDS } from "$lib/shared/3d/environments/scenes/forest/forest-firefly-fields";
-import { createForestEnvironmentWorld } from "$lib/shared/3d/environments/worlds/forest/forest-environment-world";
+import { createDefaultForestFireflyConfig } from "#lib/shared/3d/environments/domain/models/scene-configs.js";
+import { FOREST_FIREFLY_FIELDS } from "#lib/shared/3d/environments/scenes/forest/forest-firefly-fields.js";
+import { createForestEnvironmentWorld } from "#lib/shared/3d/environments/worlds/forest/forest-environment-world.js";
 
 function authoredMesh(name: string, role?: string): Mesh {
   const mesh = new Mesh(new BoxGeometry(), new MeshStandardMaterial());

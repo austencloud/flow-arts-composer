@@ -21,10 +21,10 @@
  * Rolls also need enough distinct letters to read as a real phrase rather
  * than wallpaper. A few retries, then the best-scoring roll ships anyway.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { yieldToScheduler } from "$lib/shared/foundation/utils/background-scheduling";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { yieldToScheduler } from "#lib/shared/foundation/utils/background-scheduling.js";
 
 const MAX_ROLLS = 10;
 /** Reject wallpaper draws. The favorite preset is a 16-count QUARTERED loop, so
@@ -71,11 +71,11 @@ export async function rollPerVisitDemo(
 ): Promise<SequenceData | null> {
   const [{ generationOrchestrator }, models, circular, grid, prop] =
     await Promise.all([
-      import("$lib/shared/create/services/generation-orchestrator"),
-      import("$lib/shared/foundation/domain/models/generation/generate-models"),
-      import("$lib/shared/foundation/domain/models/generation/circular-models"),
-      import("$lib/shared/pictograph/grid/domain/enums/grid-enums"),
-      import("$lib/shared/pictograph/prop/domain/enums/prop-type"),
+      import("#lib/shared/create/services/generation-orchestrator.js"),
+      import("#lib/shared/foundation/domain/models/generation/generate-models.js"),
+      import("#lib/shared/foundation/domain/models/generation/circular-models.js"),
+      import("#lib/shared/pictograph/grid/domain/enums/grid-enums.js"),
+      import("#lib/shared/pictograph/prop/domain/enums/prop-type.js"),
     ]);
 
   // Each sequence gets one level draw, with equal space devoted to levels

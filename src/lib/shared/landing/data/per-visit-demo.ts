@@ -18,13 +18,13 @@
  * only as the fallback when generation itself fails, as HomeHero's
  * pre-hydration frame, and as the static sequence for the notation prop pages.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import demoJson from "$lib/shared/landing/data/demo-sequence.json";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import demoJson from "#lib/shared/landing/data/demo-sequence.json";
 import {
   rollPerVisitDemo,
   type PerVisitDemoOptions,
-} from "$lib/shared/landing/data/per-visit-demo-core";
-import { rollInWorker } from "$lib/shared/landing/data/per-visit-demo-worker-client";
+} from "#lib/shared/landing/data/per-visit-demo-core.js";
+import { rollInWorker } from "#lib/shared/landing/data/per-visit-demo-worker-client.js";
 
 export const FALLBACK_DEMO = demoJson as unknown as SequenceData;
 

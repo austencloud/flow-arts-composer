@@ -5,12 +5,12 @@
   If not, loads version data and triggers the What's New modal.
 -->
 <script lang="ts">
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { appEntryState } from "$lib/shared/onboarding/state/app-entry-state.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { appEntryState } from "#lib/shared/onboarding/state/app-entry-state.svelte.js";
   import { whatsNewState } from "../state/whats-new-state.svelte";
-  import * as versionService from "$lib/shared/feedback/services/version-service";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import * as versionService from "#lib/shared/feedback/services/version-service.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import WhatsNewModal from "./WhatsNewModal.svelte";
 
   // Configuration
@@ -43,7 +43,7 @@
     // Without this, hasSeenVersion falls back to localStorage which is empty
     // on new devices, causing the modal to show every time.
     const { syncOnboardingFromCloud } = await import(
-      "$lib/shared/onboarding/config/storage-keys"
+      "#lib/shared/onboarding/config/storage-keys.js"
     );
     await syncOnboardingFromCloud();
 

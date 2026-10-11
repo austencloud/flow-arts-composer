@@ -7,8 +7,8 @@
  * of the animation the user is looking at.
  */
 
-import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export type FuseSide = "left" | "right";
 

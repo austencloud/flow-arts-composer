@@ -7,10 +7,10 @@ import {
   CARD_REGISTRY,
   getGeneratorCardHelp,
   getGeneratorCardTourLabel,
-} from "$lib/shared/create/domain/card-registry";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { localizedPropName } from "$lib/shared/settings/components/tabs/prop-type/localized-prop-name";
-import { SHOWROOM_THEMES } from "$lib/shared/settings/components/tabs/background/showroom/theme-showroom-data";
+} from "#lib/shared/create/domain/card-registry.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { localizedPropName } from "#lib/shared/settings/components/tabs/prop-type/localized-prop-name.js";
+import { SHOWROOM_THEMES } from "#lib/shared/settings/components/tabs/background/showroom/theme-showroom-data.js";
 
 const catalogs = { en, de } as const;
 

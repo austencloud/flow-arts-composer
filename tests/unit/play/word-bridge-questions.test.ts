@@ -11,7 +11,7 @@ import {
   findExactPictographChain,
   isRepairAnswerCorrect,
   type WordBridgeGraph,
-} from "$lib/features/learn/play/games/word-bridges/domain/word-bridge-questions";
+} from "#lib/features/learn/play/games/word-bridges/domain/word-bridge-questions.js";
 
 const LETTERS = {
   A: { startPlacementGroup: "alpha", endPlacementGroup: "alpha" },

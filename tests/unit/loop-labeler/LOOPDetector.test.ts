@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { loopDetector } from "$lib/features/loop-labeler/services/loop-detector";
-import type { SequenceEntry, RawStepData } from "$lib/shared/loop-labeler/domain/sequence-models";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { loopDetector } from "#lib/features/loop-labeler/services/loop-detector.js";
+import type { SequenceEntry, RawStepData } from "#lib/shared/loop-labeler/domain/sequence-models.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
 interface MotionAttrs {
   startLoc: string;

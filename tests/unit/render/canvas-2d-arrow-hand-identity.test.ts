@@ -1,28 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PreparedPictographData } from "$lib/shared/pictograph/shared/domain/models/prepared-pictograph-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { PreparedPictographData } from "#lib/shared/pictograph/shared/domain/models/prepared-pictograph-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 const { getImage, drawElementWithTransform } = vi.hoisted(() => ({
   getImage: vi.fn(async () => ({ width: 100, height: 100 })),
   drawElementWithTransform: vi.fn(),
 }));
 
-vi.mock("$lib/shared/render/services/svg-image-cache", () => ({
+vi.mock("#lib/shared/render/services/svg-image-cache.js", () => ({
   getSvgImageCache: () => ({ getImage }),
 }));
 
 vi.mock(
-  "$lib/shared/render/services/canvas-2d-transform-helper",
+  "#lib/shared/render/services/canvas-2d-transform-helper.js",
   async (importOriginal) => {
     const original =
       await importOriginal<
-        typeof import("$lib/shared/render/services/canvas-2d-transform-helper")
+        typeof import("#lib/shared/render/services/canvas-2d-transform-helper.js")
       >();
     return { ...original, drawElementWithTransform };
   }
 );
 
-import { Canvas2DDirectRenderer } from "$lib/shared/render/services/canvas-2d-direct-renderer";
+import { Canvas2DDirectRenderer } from "#lib/shared/render/services/canvas-2d-direct-renderer.js";
 
 const arrowAsset = {
   imageSrc: '<path d="M0 0 L10 10" />',

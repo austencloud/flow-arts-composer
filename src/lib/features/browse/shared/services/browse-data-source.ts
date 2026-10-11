@@ -7,10 +7,10 @@
  */
 
 import type { BrowseQueryResult } from "./types";
-import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-import type { SoloPropRepository } from "$lib/shared/foundation/services/solo-prop-repository-store";
-import type { HandPathRepository } from "$lib/shared/foundation/services/hand-path-repository-store";
-import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
+import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+import type { SoloPropRepository } from "#lib/shared/foundation/services/solo-prop-repository-store.js";
+import type { HandPathRepository } from "#lib/shared/foundation/services/hand-path-repository-store.js";
+import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
 
 export class BrowseDataSource {
   constructor(

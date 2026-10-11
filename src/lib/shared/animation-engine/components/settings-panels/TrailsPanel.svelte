@@ -1,22 +1,22 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { resolveTrailColors } from "../../domain/resolve-trail-colors";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { animationSettings } from "../../state/animation-settings-state.svelte";
   import type { AnimationSettingsState } from "../../state/animation-settings-state.svelte";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import {
     TrackingMode,
     TAIL_LENGTH_MIN,
     TAIL_LENGTH_MAX,
     DEFAULT_TRAIL_SETTINGS,
   } from "../../domain/types/trail-types";
-  import { isBilateralProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { isBilateralProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   let {
     animationSettingsState = animationSettings,

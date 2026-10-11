@@ -4,7 +4,7 @@
    *
    * Shows the thesis (Pro+Pro), antithesis (Anti+Anti), synthesis (Pro+Anti) pattern.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import {
     LETTER_TRIAD,
     createLetterAPictograph,

@@ -52,19 +52,19 @@ export interface EffectConfigMap {
   animal: AnimalIntent;
   pulse: PulseIntent;
 }
-import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 import { DEFAULT_EFFECTS_CONFIG } from "../domain/defaults";
 import {
   migrateEffectsConfig,
   normalizeLegacyEffectIntentColors,
 } from "../domain/migrations";
-import { migrateLedConfig } from "$lib/shared/animation-engine/domain/types/led-config-migration";
+import { migrateLedConfig } from "#lib/shared/animation-engine/domain/types/led-config-migration.js";
 import {
   getDefaultEffectLayer,
   type EffectLayerMode,
 } from "../domain/effect-layer-policy";
-import { getSceneUndoManager } from "$lib/shared/3d/undo/get-scene-undo-manager";
-import { charcoalParamsToSemantic } from "$lib/shared/animation-engine/domain/types/charcoal-spark-types";
+import { getSceneUndoManager } from "#lib/shared/3d/undo/get-scene-undo-manager.js";
+import { charcoalParamsToSemantic } from "#lib/shared/animation-engine/domain/types/charcoal-spark-types.js";
 
 const STORAGE_KEY = "tka_effects_config";
 /**

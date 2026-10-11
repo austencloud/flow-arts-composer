@@ -3,11 +3,11 @@
   Single $10/mo tier
 -->
 <script lang="ts">
-  import { getSubscriptionInfo, onSubscriptionChange, createPortalSession } from "$lib/shared/subscription/services/subscription-manager";
+  import { getSubscriptionInfo, onSubscriptionChange, createPortalSession } from "#lib/shared/subscription/services/subscription-manager.js";
   import { onMount, onDestroy } from "svelte";
   import { goto } from "$app/navigation";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getReactiveLocale } from "#lib/shared/i18n/locale-state.svelte.js";
   import type { SubscriptionInfo } from "../../../../subscription/services/types";
   import type { HapticFeedback } from "../../../../application/services/haptic-feedback";
 

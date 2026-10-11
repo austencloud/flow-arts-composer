@@ -16,13 +16,13 @@
   Design: docs/superpowers/specs/2026-07-26-profile-as-stage-design.md
 -->
 <script lang="ts">
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { getUserProfile } from "$lib/shared/community/services/user-repository";
-  import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-  import ProfileHeroSection from "$lib/features/creators/components/profile/ProfileHeroSection.svelte";
-  import ProfileStage from "$lib/features/creators/components/profile/stage/ProfileStage.svelte";
-  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
-  import ProfileWorkEmpty from "$lib/features/creators/components/profile/ProfileWorkEmpty.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { getUserProfile } from "#lib/shared/community/services/user-repository.js";
+  import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+  import ProfileHeroSection from "#lib/features/creators/components/profile/ProfileHeroSection.svelte";
+  import ProfileStage from "#lib/features/creators/components/profile/stage/ProfileStage.svelte";
+  import PanelState from "#lib/shared/components/panel/PanelState.svelte";
+  import ProfileWorkEmpty from "#lib/features/creators/components/profile/ProfileWorkEmpty.svelte";
 
   const uid = $derived(authState.user?.uid ?? null);
 

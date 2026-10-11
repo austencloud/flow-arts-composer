@@ -11,9 +11,9 @@
   // Inherits ssr=false + prerender=false from /test (+layout.ts). The tile
   // preview media mount CLIENT-ONLY through the grid's own IntersectionObserver
   // -> LazyMount, so nothing drags the heavy pictograph/zod graph through SSR.
-  import LaunchpadGrid from "$lib/shared/landing/components/launchpad/LaunchpadGrid.svelte";
+  import LaunchpadGrid from "#lib/shared/landing/components/launchpad/LaunchpadGrid.svelte";
   import { COMPOSER_TILES } from "../../(public)/composer/_launchpad/composer-launchpad-tiles";
-  import type { LaunchpadTileDef } from "$lib/shared/landing/components/launchpad/launchpad-tiles";
+  import type { LaunchpadTileDef } from "#lib/shared/landing/components/launchpad/launchpad-tiles.js";
 
   // Stands in for the eventual expanded-tile / takeover state. A later phase
   // turns this into the hash-synced dive; for now it's just a readout.

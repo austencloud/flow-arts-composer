@@ -14,7 +14,7 @@
   you scroll the grid.
 -->
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { shelfRank, type CatalogEntry } from "../../domain/catalog-listings";
   import { shelfChipLabel } from "./front-door-catalog";
 

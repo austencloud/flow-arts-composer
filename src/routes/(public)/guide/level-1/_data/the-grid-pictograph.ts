@@ -1,10 +1,10 @@
-import { startPlacementManager } from "$lib/shared/create/services/start-placement-manager";
+import { startPlacementManager } from "#lib/shared/create/services/start-placement-manager.js";
 import {
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 // The labelled Grid diagram and its responsive companion use one canonical
 // start-placement owner. ALPHA3 puts the blue hand at west and the red hand at

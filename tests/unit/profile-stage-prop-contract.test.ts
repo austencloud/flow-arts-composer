@@ -16,10 +16,10 @@ describe("profile stage sequence prop contract", () => {
     // stage; the visitor's settings are only a fallback for legacy records
     // with nothing recorded, and "staff" is the last-resort default.
     expect(artifactTile).toContain(
-      'import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";'
+      'import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";'
     );
     expect(artifactTile).toContain(
-      'import { resolveRecordedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";'
+      'import { resolveRecordedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";'
     );
     expect(artifactTile).toContain("resolveRecordedPropConfig(sequence)");
     expect(artifactTile).toMatch(

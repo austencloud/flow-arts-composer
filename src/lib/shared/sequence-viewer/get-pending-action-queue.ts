@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { PendingActionQueue } from './services/pending-action-queue';
 
 let instance: PendingActionQueue | null = null;

@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { ScreenshotUploadOrchestrator } from './services/screenshot-upload-orchestrator';
 import { uploadScreenshot } from './services/screenshot-uploader';

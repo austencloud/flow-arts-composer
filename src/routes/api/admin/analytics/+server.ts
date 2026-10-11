@@ -9,18 +9,18 @@
  * Requires admin role.
  */
 import type { RequestHandler } from "@sveltejs/kit";
-import { json, error } from "@sveltejs/kit";
-import { requireAdmin } from "$lib/server/auth/requireAdmin";
-import { env } from "$env/dynamic/private";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
-import { logAdminAction } from "$lib/server/security/audit-logger";
-import { getAdminAuth, getAdminDb } from "$lib/server/firebaseAdmin";
+import { error } from "@sveltejs/kit";
+import { requireAdmin } from "#lib/server/auth/requireAdmin.js";
+import * as env from "$app/env/private";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
+import { logAdminAction } from "#lib/server/security/audit-logger.js";
+import { getAdminAuth, getAdminDb } from "#lib/server/firebaseAdmin.js";
 import {
   escapeHogQL,
   personIdentityFilter,
   pulseProdFilter,
-} from "$lib/server/analytics/hogql-shared";
+} from "#lib/server/analytics/hogql-shared.js";
 
 const POSTHOG_API_BASE = "https://us.i.posthog.com/api";
 
@@ -728,7 +728,7 @@ function safeAnalyticsFailure(err: unknown, stage: AnalyticsStage): Response {
     message: err instanceof Error ? err.message : String(err),
   });
 
-  return json(
+  return Response.json(
     { success: false, message: clientMessage, code: stage },
     { status }
   );
@@ -893,7 +893,7 @@ export const POST: RequestHandler = async (event) => {
       },
       ip: event.getClientAddress(),
     });
-    return json({
+    return Response.json({
       success: true,
       type,
       data,

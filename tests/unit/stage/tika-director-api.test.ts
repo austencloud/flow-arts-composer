@@ -8,25 +8,29 @@ const mocks = vi.hoisted(() => ({
   plan: vi.fn(),
   review: vi.fn(),
 }));
-vi.mock("$app/environment", () => ({ dev: false }));
-vi.mock("$env/dynamic/private", () => ({
-  env: { ANTHROPIC_API_KEY: "test-only" },
-}));
-vi.mock("$lib/server/auth/requireAdmin", () => ({
+vi.mock("$app/env", () => ({ dev: false }));
+vi.mock("$app/env/private", async () => {
+  const { envModule } = await import("#test-helpers/env-module.js");
+  return envModule({ ANTHROPIC_API_KEY: "test-only" });
+});
+vi.mock("#lib/server/auth/requireAdmin.js", () => ({
   requireAdmin: mocks.requireAdmin,
 }));
-vi.mock("$lib/server/auth/requireFirebaseUser", () => ({
+vi.mock("#lib/server/auth/requireFirebaseUser.js", () => ({
   requireFirebaseUser: mocks.requireFirebaseUser,
 }));
-vi.mock("$lib/server/security/withRateLimit", () => ({
+vi.mock("#lib/server/security/withRateLimit.js", () => ({
   withRateLimit: mocks.withRateLimit,
 }));
-vi.mock("$lib/features/stage/services/server/tika-director-planner", () => ({
+vi.mock("#lib/features/stage/services/server/tika-director-planner.js", () => ({
   planStageDirection: mocks.plan,
 }));
-vi.mock("$lib/features/stage/services/server/tika-director-reviewer", () => ({
-  reviewStageDirection: mocks.review,
-}));
+vi.mock(
+  "#lib/features/stage/services/server/tika-director-reviewer.js",
+  () => ({
+    reviewStageDirection: mocks.review,
+  })
+);
 import { POST } from "../../../src/routes/api/tika/direct/+server";
 
 const body = {

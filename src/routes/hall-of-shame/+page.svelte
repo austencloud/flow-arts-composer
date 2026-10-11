@@ -5,7 +5,7 @@
   Deep-linking is prevented by requiring fresh verification.
 -->
 <script lang="ts">
-  import HallOfShameGallery from "$lib/features/hall-of-shame/components/HallOfShameGallery.svelte";
+  import HallOfShameGallery from "#lib/features/hall-of-shame/components/HallOfShameGallery.svelte";
 </script>
 
 <svelte:head>

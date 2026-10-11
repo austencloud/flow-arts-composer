@@ -8,8 +8,8 @@
   // a short label and a very long one, samples getBoundingClientRect across the
   // whole transition window, and reports whether the downstream marker ever
   // moved. DevTools evaluate_script can read window.__crossfadeProbe.
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   const labels = [
     "Red",

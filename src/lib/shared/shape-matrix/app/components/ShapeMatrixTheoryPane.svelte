@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
-  import { MANDALA_STANDARD_TIP_DX } from "$lib/shared/mandala/domain/mandala-constants";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import ShapeMatrixGrid from "#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
+  import { MANDALA_STANDARD_TIP_DX } from "#lib/shared/mandala/domain/mandala-constants.js";
   import {
     theoryFlowerKey,
     type TheoryFlower,
-  } from "$lib/shared/shape-matrix/domain/theory-flower";
-  import { localizedTheoryFlowerLabel } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
+  } from "#lib/shared/shape-matrix/domain/theory-flower.js";
+  import { localizedTheoryFlowerLabel } from "#lib/shared/shape-matrix/domain/shape-matrix-display.js";
   import {
     theoryCellArtworkSrc,
     theoryHeaderArtworkSrc,
-  } from "$lib/shared/shape-matrix/services/theory-matrix-artwork";
+  } from "#lib/shared/shape-matrix/services/theory-matrix-artwork.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { getShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
   import { customizeSection } from "../state/shape-matrix-customize";

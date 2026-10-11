@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   getFirestoreRest: vi.fn(),
 }));
 
-vi.mock("$lib/server/firestore/firestore-rest", async () => {
+vi.mock("#lib/server/firestore/firestore-rest.js", async () => {
   const actual = await vi.importActual<
     typeof import("../../../../lib/server/firestore/firestore-rest")
   >("../../../../lib/server/firestore/firestore-rest");
@@ -20,6 +20,7 @@ vi.mock("$lib/server/firestore/firestore-rest", async () => {
 import { load } from "../+page.server";
 import { PUBLISHED_META_TIMEOUT_MS } from "../published-meta";
 import type { SequenceRouteMeta, SequenceSeoDocument } from "../sequence-seo";
+import { setWorkerEnv } from "#test-helpers/worker-env.js";
 
 // svelte-check resolves `PageServerLoad`'s generic return type from the
 // generated `./$types` module only inside SvelteKit's own build graph; called
@@ -74,13 +75,13 @@ function catalogDoc() {
   };
 }
 
-function event(id: string, platformCredential?: string, query = "") {
+function event(id: string, credential?: string, query = "") {
+  setWorkerEnv(
+    credential ? { FIREBASE_SERVICE_ACCOUNT_JSON: credential } : {}
+  );
   return {
     params: { id },
     url: new URL(`https://tkaflowarts.com/sequence/${id}${query}`),
-    platform: platformCredential
-      ? { env: { FIREBASE_SERVICE_ACCOUNT_JSON: platformCredential } }
-      : undefined,
   } as never;
 }
 

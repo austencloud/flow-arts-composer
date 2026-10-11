@@ -1,5 +1,5 @@
 <script lang="ts">
-  import HorizontalTransportRow from "$lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
+  import HorizontalTransportRow from "#lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
   import { getQftAppContext } from "../_context/qft-app-context";
 
   let { compact = false }: { compact?: boolean } = $props();

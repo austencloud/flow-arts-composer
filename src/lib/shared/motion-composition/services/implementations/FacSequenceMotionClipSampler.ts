@@ -1,11 +1,11 @@
-import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-import { calculatePropCenter } from "$lib/shared/animation-engine/services/prop-position-calculator";
-import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { resolveRecordedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+import { calculatePropCenter } from "#lib/shared/animation-engine/services/prop-position-calculator.js";
+import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { resolveRecordedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type {
   LocalPropFrame,
   MotionClip,

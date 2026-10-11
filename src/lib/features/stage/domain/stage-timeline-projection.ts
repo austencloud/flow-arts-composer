@@ -1,4 +1,4 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 import { sampleFormationPerformance } from "./stage-formation-sampler";
 import { resolveStageTravel } from "./stage-travel-plan";

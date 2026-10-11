@@ -5,7 +5,7 @@
   Used in admin preview mode to view another user's linked accounts.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { PreviewAuthProvider } from "../../../debug/state/user-preview-state.svelte";
   import { PROVIDERS, type ProviderId } from "./connected-accounts.providers";
   import ProviderStatusRow from "./ProviderStatusRow.svelte";

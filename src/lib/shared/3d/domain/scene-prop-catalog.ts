@@ -1,13 +1,13 @@
 import type { PropFinish } from "@austencloud/scene-3d";
 
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { PropBuildPreviewOption } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { PropBuildPreviewOption } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 export {
   fanBuildPreviewOptions,
   fanCoverPreviewOptions,
   fanFramePreviewOptions,
-} from "$lib/shared/pictograph/prop/domain/fan-appearance";
-export type { PropBuildPreviewOption } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+} from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+export type { PropBuildPreviewOption } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
 export interface ScenePropVariant {
   id: PropType;

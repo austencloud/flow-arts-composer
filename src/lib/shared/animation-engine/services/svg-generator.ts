@@ -1,41 +1,41 @@
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { modelSpriteFacesAwayFromTips } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { PROP_MODEL_SPRITES } from "$lib/shared/pictograph/prop/domain/prop-model-sprites.generated";
-import { applyModelSpriteColor } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
-import type { PropSvgData } from "$lib/shared/animation-engine/domain/types/svg-types";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { modelSpriteFacesAwayFromTips } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import { PROP_MODEL_SPRITES } from "#lib/shared/pictograph/prop/domain/prop-model-sprites.generated.js";
+import { applyModelSpriteColor } from "#lib/shared/pictograph/prop/domain/prop-preview-color.js";
+import type { PropSvgData } from "#lib/shared/animation-engine/domain/types/svg-types.js";
 
-export type { PropSvgData } from "$lib/shared/animation-engine/domain/types/svg-types";
+export type { PropSvgData } from "#lib/shared/animation-engine/domain/types/svg-types.js";
 import {
   applyColorToSvg,
   SELECTIVE_COLOR_PROP_TYPES,
   getMotionColor,
   type ThemeMode,
-} from "$lib/shared/utils/svg-color-utils";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/utils/svg-color-utils.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   TORCH_CONTRAST_PALETTE,
   recolorMarkedPart,
-} from "$lib/shared/pictograph/prop/domain/torch-contrast";
+} from "#lib/shared/pictograph/prop/domain/torch-contrast.js";
 import {
   getAnimationVisibilityManager,
   type AnimationVisibilityStateManager,
-} from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+} from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import {
   applyFanFrameColor,
   scaleFanAppearanceForBigFan,
   fanAppearanceArtwork,
   parseFanRenderKey,
-} from "$lib/shared/pictograph/prop/domain/fan-appearance";
+} from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import {
   modelSpriteArtwork,
   parseModelRenderKey,
   propArtworkStem,
   type PropSpriteSide,
-} from "$lib/shared/pictograph/prop/domain/prop-look";
+} from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import {
   parseTriangleRenderKey,
   triangleAppearanceArtwork,
-} from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+} from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 
 /**
  * SVG Generator for creating prop staff images and grid

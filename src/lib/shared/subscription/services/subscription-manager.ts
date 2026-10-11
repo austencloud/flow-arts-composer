@@ -20,8 +20,8 @@ import {
   type Firestore,
 } from "firebase/firestore";
 import { auth, getFirestoreInstance } from "../../auth/firebase";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import { isPermissionDeniedError } from "$lib/shared/auth/utils/is-permission-denied-error";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { isPermissionDeniedError } from "#lib/shared/auth/utils/is-permission-denied-error.js";
 import type { SubscriptionInfo, SubscriptionStatus } from "./types";
 
 const DEFAULT_SUBSCRIPTION_INFO: SubscriptionInfo = {

@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { MediaSublayerProps } from "@austencloud/video-editor";
-  import PostStudioSequenceAnimationLayer from "$lib/shared/post-studio-plugin/ui/PostStudioSequenceAnimationLayer.svelte";
-  import PostStudioChoreoLayer from "$lib/shared/post-studio-plugin/ui/PostStudioChoreoLayer.svelte";
-  import PostStudioTunnelLayer from "$lib/shared/post-studio-plugin/ui/PostStudioTunnelLayer.svelte";
-  import PostStudioMandalaLayer from "$lib/shared/post-studio-plugin/ui/PostStudioMandalaLayer.svelte";
+  import PostStudioSequenceAnimationLayer from "#lib/shared/post-studio-plugin/ui/PostStudioSequenceAnimationLayer.svelte";
+  import PostStudioChoreoLayer from "#lib/shared/post-studio-plugin/ui/PostStudioChoreoLayer.svelte";
+  import PostStudioTunnelLayer from "#lib/shared/post-studio-plugin/ui/PostStudioTunnelLayer.svelte";
+  import PostStudioMandalaLayer from "#lib/shared/post-studio-plugin/ui/PostStudioMandalaLayer.svelte";
   import { useTkaEditor } from "./tka-editor-context";
   import {
     hookChromeOpacity,

@@ -29,9 +29,9 @@ import { page } from "vitest/browser";
 import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
 
 import SubtitleDrawerHarness from "./harnesses/SubtitleDrawerHarness.svelte";
-import LengthFilterChip from "$lib/shared/browse/components/filter-chips/LengthFilterChip.svelte";
+import LengthFilterChip from "#lib/shared/browse/components/filter-chips/LengthFilterChip.svelte";
 
-import { applyThemeForBackground } from "$lib/shared/settings/utils/background-theme-calculator";
+import { applyThemeForBackground } from "#lib/shared/settings/utils/background-theme-calculator.js";
 import { BackgroundType } from "@austencloud/backgrounds";
 
 import { readTextContrast, targetSize } from "./helpers/computed-a11y";

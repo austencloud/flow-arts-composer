@@ -8,7 +8,7 @@
  * across components, providing a clean separation of concerns.
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 // import type { StartPlacementManager } from "../../tool-panel/construct/start-placement-picker/services/contracts";
 // IStartPlacementSelectionService removed - using unified service
 import { constructTabEventService } from "./create-module-event-handler";

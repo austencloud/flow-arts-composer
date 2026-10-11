@@ -1,7 +1,7 @@
 import { flushSync, mount, unmount } from "svelte";
 import { PostStudioMediaLayer } from "@austencloud/video-editor/ui";
 import type { CompositionSourceBinding } from "@austencloud/video-editor";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { PreviewVideoController } from "@austencloud/video-editor/render";
 
 export function mountPlaybackMediaLayer() {

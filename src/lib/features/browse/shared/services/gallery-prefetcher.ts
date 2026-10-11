@@ -9,16 +9,16 @@
  * No skeleton loaders. No Firestore wait.
  */
 
-import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
+import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
 import type { GalleryOfflineCache } from "../../../../shared/offline/services/gallery-offline-cache";
 import {
   onLibraryMutated,
   onLibrarySequenceAdded,
   onLibrarySequenceUpdated,
-} from "$lib/shared/library/library-events";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { GalleryCacheEntry } from "$lib/shared/offline/domain/offline-cache-types";
-import { db } from "$lib/shared/persistence/database/tka-database";
+} from "#lib/shared/library/library-events.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { GalleryCacheEntry } from "#lib/shared/offline/domain/offline-cache-types.js";
+import { db } from "#lib/shared/persistence/database/tka-database.js";
 import { isGallerySyncStale } from "./gallery-sync-staleness";
 
 export class GalleryPrefetcher {

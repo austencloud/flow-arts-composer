@@ -11,7 +11,7 @@
   control for the active category, so both consumers share identical behavior.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import type { MandalaViewerController } from "../../state/mandala-viewer-controller.svelte";
@@ -19,14 +19,14 @@
     MandalaPathShape,
     MandalaPresetId,
     MandalaRenderOptions,
-  } from "$lib/shared/mandala/domain/mandala-types";
+  } from "#lib/shared/mandala/domain/mandala-types.js";
   import {
     PRESET_COLORS,
     mixColors,
     withAlpha,
-  } from "$lib/shared/mandala/domain/mandala-palette";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import LabeledColorPairPicker from "$lib/shared/ui/components/LabeledColorPairPicker.svelte";
+  } from "#lib/shared/mandala/domain/mandala-palette.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import LabeledColorPairPicker from "#lib/shared/ui/components/LabeledColorPairPicker.svelte";
   import MandalaPreviewOption from "./MandalaPreviewOption.svelte";
 
   /** "download" holds the export config (loops / fidelity / fps + estimate). */

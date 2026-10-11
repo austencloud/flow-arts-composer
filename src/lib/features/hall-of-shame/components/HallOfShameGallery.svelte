@@ -7,10 +7,10 @@
 -->
 <script lang="ts">
 
-import { getAgeVerifier } from "$lib/features/hall-of-shame/get-age-verifier";
-import { getHallOfShameLoader } from "$lib/features/hall-of-shame/get-hall-of-shame-loader";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { getAgeVerifier } from "#lib/features/hall-of-shame/get-age-verifier.js";
+import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-shame-loader.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import type { HallOfShameLoader } from "../services/hall-of-shame-loader";
   import type { AgeVerifier } from "../services/age-verifier";
   import type {
@@ -21,10 +21,10 @@ import { getHallOfShameLoader } from "$lib/features/hall-of-shame/get-hall-of-sh
   } from "../domain/models/hall-of-shame-models";
   import HallOfShameGate from "./HallOfShameGate.svelte";
   import ShameSequenceCard from "./ShameSequenceCard.svelte";
-  import PanelGrid from "$lib/shared/components/panel/PanelGrid.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import PanelGrid from "#lib/shared/components/panel/PanelGrid.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   // State
   let isVerified = $state(false);

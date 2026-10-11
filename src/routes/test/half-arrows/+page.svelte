@@ -14,18 +14,18 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { calculateArrowPoint } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator";
-  import { getArrowSvgPath } from "$lib/shared/pictograph/arrow/rendering/services/arrow-path-resolver";
-  import { calculateOrientationAt } from "$lib/shared/animation-engine/services/orientation-at";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-  import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { calculateArrowPoint } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator.js";
+  import { getArrowSvgPath } from "#lib/shared/pictograph/arrow/rendering/services/arrow-path-resolver.js";
+  import { calculateOrientationAt } from "#lib/shared/animation-engine/services/orientation-at.js";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     MotionType,
     HandSide,
     Orientation,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
   type Target = {
     name: string;

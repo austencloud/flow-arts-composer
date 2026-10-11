@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createAutumnPrototypeWorld } from "$lib/shared/3d/worker-renderer/worlds/autumn-prototype-world";
+import { createAutumnPrototypeWorld } from "#lib/shared/3d/worker-renderer/worlds/autumn-prototype-world.js";
 
 function source(path: string): string {
   return readFileSync(resolve(process.cwd(), path), "utf8");

@@ -11,11 +11,11 @@
  * frame keeps behavior deterministic when playback is paused or seeks.
  */
 
-import type { Bloom2DParams } from "$lib/shared/effects/translators/canvas2d-types";
+import type { Bloom2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
 import {
   Bloom2DRenderer,
   type BloomTipInput,
-} from "$lib/shared/effects/renderers/bloom-2d-renderer";
+} from "#lib/shared/effects/renderers/bloom-2d-renderer.js";
 import { EffectRenderer } from "./effects/effect-renderer";
 
 export class BloomOverlayRenderer extends EffectRenderer {
@@ -34,8 +34,8 @@ export class BloomOverlayRenderer extends EffectRenderer {
 }
 
 import type { EffectPlugin } from "./effects/effect-plugin";
-import type { BloomIntent } from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { BloomIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 export const bloomEffectPlugin: EffectPlugin<BloomIntent> = {
   id: "bloom",

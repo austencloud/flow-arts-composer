@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { createViewerState } from "./viewer-state.svelte";
 
 const gate = vi.hoisted(() => ({ fits: true }));
-vi.mock("$lib/shared/3d/capabilities/viewport-3d-gate.svelte", () => ({
+vi.mock("#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js", () => ({
   viewportFits3D: () => gate.fits,
 }));
 

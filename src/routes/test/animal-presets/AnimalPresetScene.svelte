@@ -1,9 +1,9 @@
 <script lang="ts">
   import { T } from "@threlte/core";
-  import SceneEffectsCoordinator3D from "$lib/shared/3d/effects/scene-effects/SceneEffectsCoordinator3D.svelte";
-  import { setSceneEffectsContext } from "$lib/shared/3d/effects/scene-effects/scene-effects-context";
-  import { SceneEffectsManager3D } from "$lib/shared/3d/effects/scene-effects/scene-effects-manager-3d";
-  import { ANIMAL_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/animal-presets";
+  import SceneEffectsCoordinator3D from "#lib/shared/3d/effects/scene-effects/SceneEffectsCoordinator3D.svelte";
+  import { setSceneEffectsContext } from "#lib/shared/3d/effects/scene-effects/scene-effects-context.js";
+  import { SceneEffectsManager3D } from "#lib/shared/3d/effects/scene-effects/scene-effects-manager-3d.js";
+  import { ANIMAL_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/animal-presets.js";
   import CellLabel3D from "../effect-grid/CellLabel3D.svelte";
   import AnimalPresetStation from "./AnimalPresetStation.svelte";
 

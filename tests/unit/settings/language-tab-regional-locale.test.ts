@@ -2,14 +2,14 @@
 
 import { flushSync, mount, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getLocale, setLocale } from "$lib/shared/i18n/i18n.svelte.js";
+import { getLocale, setLocale } from "#lib/shared/i18n/i18n.svelte.js";
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
 
 const { default: LanguagePreference } =
-  await import("$lib/shared/settings/components/tabs/preferences/LanguagePreference.svelte");
+  await import("#lib/shared/settings/components/tabs/preferences/LanguagePreference.svelte");
 
 // vitest-setup.ts swaps document.createElement for canvas stubs that are not
 // DOM nodes. Mounting a component needs jsdom's own, from document's prototype.

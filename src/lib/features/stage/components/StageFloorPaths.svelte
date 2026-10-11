@@ -14,7 +14,7 @@
   import { T } from "@threlte/core";
   import { CircleGeometry, DoubleSide, RingGeometry } from "three";
 
-  import { getViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
+  import { getViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
   import { getStageChoreographyContext } from "../context/stage-choreography-context";
   import { resolveActiveFormationIndex } from "../domain/active-formation";
   import { stageToWorld } from "../domain/stage-performance-sampler";

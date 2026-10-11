@@ -7,9 +7,9 @@
  * Domain: Create module - PWA Engagement Tracking
  */
 
-import { getPWAEngagementTracker } from "$lib/shared/mobile/get-pwa-engagement-tracker";
+import { getPWAEngagementTracker } from "#lib/shared/mobile/get-pwa-engagement-tracker.js";
 import type { createCreateModuleState as CreateModuleStateType } from "../create-module-state.svelte";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
 type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
 

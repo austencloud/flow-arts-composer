@@ -1,9 +1,9 @@
-import type { HandPathData } from "$lib/shared/foundation/domain/models/hand-path-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { handPathToName } from '$lib/shared/foundation/services/hand-path-namer';
-import { ensureComposition } from "$lib/shared/foundation/services/sequence-hydrator";
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { HandPathData } from "#lib/shared/foundation/domain/models/hand-path-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { handPathToName } from '#lib/shared/foundation/services/hand-path-namer.js';
+import { ensureComposition } from "#lib/shared/foundation/services/sequence-hydrator.js";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 export interface PathGroup {
   /** Content hash that uniquely identifies this hand path shape. */

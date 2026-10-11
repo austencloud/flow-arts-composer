@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
   let { pictographData }: { pictographData: PictographData } = $props();
 </script>

@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     getExportOptionsState,
     type VideoFps,
     type VideoResolution,
     type VideoQuality,
-  } from "$lib/shared/animation-panel/state/export-options-state.svelte";
+  } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
   import { slide } from "svelte/transition";
   import {
     reportViewerControlChange,

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   aggregateTurns,
   formatTurn,
-} from "$lib/features/create/shared/services/step-operations/turns-aggregation";
+} from "#lib/features/create/shared/services/step-operations/turns-aggregation.js";
 
 describe("aggregateTurns", () => {
   it("reports a shared value when all steps agree", () => {

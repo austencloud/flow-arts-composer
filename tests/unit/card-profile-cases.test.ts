@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { pickBestFitLayout } from "$lib/shared/render/services/container-aware-layout";
-import { calculatePhysicalCardLayout } from "$lib/features/choreo-card/services/physical-card-layout-calculator";
-import { CARD_SIZES } from "$lib/features/choreo-card/domain/card-sizes";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { pickBestFitLayout } from "#lib/shared/render/services/container-aware-layout.js";
+import { calculatePhysicalCardLayout } from "#lib/features/choreo-card/services/physical-card-layout-calculator.js";
+import { CARD_SIZES } from "#lib/features/choreo-card/domain/card-sizes.js";
 import {
   cardProfileCases,
   VIEWER_LANDSCAPE,

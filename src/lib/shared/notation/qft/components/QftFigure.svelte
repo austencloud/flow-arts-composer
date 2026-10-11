@@ -23,17 +23,17 @@
     PROP_LENGTH,
     type QftIncrement,
     type QftKnobs,
-  } from "$lib/shared/notation/qft/qft-model";
+  } from "#lib/shared/notation/qft/qft-model.js";
   import {
     traceTrajectory,
     trajectoryPosesAt,
     trajectoryPropIndexAt,
     type QftTrajectory,
-  } from "$lib/shared/notation/qft/qft-trajectory";
+  } from "#lib/shared/notation/qft/qft-trajectory.js";
   import {
     ALL_LAYERS,
     type QftLayers,
-  } from "$lib/shared/notation/qft/qft-layers";
+  } from "#lib/shared/notation/qft/qft-layers.js";
 
   interface Props {
     knobs?: QftKnobs;

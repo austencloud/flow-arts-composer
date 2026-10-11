@@ -5,12 +5,12 @@
  * for a given placement pair based on placement symmetry rules.
  */
 
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   LOOPType,
   LOOP_TYPE_LABELS,
   Period,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 /**
  * Describes a single LOOP option available for extension

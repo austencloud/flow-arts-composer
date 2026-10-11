@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generatePersonality } from "$lib/features/village/services/personality-generator";
+import { generatePersonality } from "#lib/features/village/services/personality-generator.js";
 
 describe("PersonalityGenerator", () => {
 	it("generates all five traits", () => {

@@ -9,8 +9,8 @@ Manages navigation through 5 pages:
 5. Quiz
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedbackType } from "$lib/shared/application/services/types";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedbackType } from "#lib/shared/application/services/types.js";
   import StaffIntroPage from "./pages/StaffIntroPage.svelte";
   import ThumbOrientationsPage from "./pages/ThumbOrientationsPage.svelte";
   import ProspinPage from "./pages/ProspinPage.svelte";
@@ -39,7 +39,7 @@ Manages navigation through 5 pages:
     : undefined;
 
   // Persistence for HMR/refresh survival
-  const persistence = getExperiencePersistence("staff");
+  const persistence = getExperiencePersistence("staff-placements");
 
   let currentPage = $state(persistence.load().step || 1);
   const totalPages = 5;

@@ -9,7 +9,7 @@
    */
   import WeeklyEngagement from "./analytics/WeeklyEngagement.svelte";
   import ActiveUsersPanel from "./ActiveUsersPanel.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 </script>
 
 <main class="users-dashboard" aria-label={t("admin_users_overview")}>

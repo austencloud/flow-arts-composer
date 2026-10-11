@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
   import {
     CARD_PRESENTATION_SCHEMA_VERSION,
     CARD_FOOTER_TEXT_MAX_LENGTH,
     normalizeCardPresentation,
     type CardFooterMode,
     type CardPresentation,
-  } from "$lib/shared/share/domain/models/card-presentation";
+  } from "#lib/shared/share/domain/models/card-presentation.js";
 
   interface Props {
     value: CardPresentation;

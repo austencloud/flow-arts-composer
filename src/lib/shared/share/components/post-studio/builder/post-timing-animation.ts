@@ -1,4 +1,4 @@
-import type { PostAnimationItem } from "$lib/shared/post-studio-plugin";
+import type { PostAnimationItem } from "#lib/shared/post-studio-plugin/index.js";
 import type { PostProject } from "@austencloud/video-editor/core";
 import {
   itemEnd,
@@ -7,8 +7,8 @@ import {
   timingVideoAt,
   postSecondsOfKeyframe,
 } from "@austencloud/video-editor/core";
-import type { ResolvedTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
-import type { TakeTiming } from "$lib/shared/media-composition/domain/take-timing";
+import type { ResolvedTakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
+import type { TakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
 
 export interface LayerTimingPart {
   clipId: string;

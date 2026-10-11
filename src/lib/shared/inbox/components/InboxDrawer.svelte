@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * InboxDrawer
    *
@@ -8,13 +8,13 @@
    * Includes bottom navigation on mobile for app navigation.
    */
 
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount, onDestroy } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import { inboxState } from "../state/inbox-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { notificationService } from "$lib/shared/feedback/services/notifier";
-  import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { notificationService } from "#lib/shared/feedback/services/notifier.js";
+  import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
   import { toast } from "../../toast/state/toast-state.svelte";
   import ConversationList from "./messages/ConversationList.svelte";
   import MessageThread from "./messages/MessageThread.svelte";
@@ -25,16 +25,16 @@
   import NotificationList from "./notifications/NotificationList.svelte";
   import { conversationService } from "../../messaging/services/conversation-manager";
   import { messagingService } from "../../messaging/services/messenger";
-  import BottomNavigation from "$lib/shared/navigation/components/layouts/BottomNavigation.svelte";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+  import BottomNavigation from "#lib/shared/navigation/components/layouts/BottomNavigation.svelte";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import {
     moduleSections,
     handleSectionChange,
     handleModuleChange,
-  } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import type { ModuleId } from "$lib/shared/navigation/domain/types";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { createKeyboardInset } from "$lib/shared/mobile/utils/keyboard-inset.svelte";
+  } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import type { ModuleId } from "#lib/shared/navigation/domain/types.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { createKeyboardInset } from "#lib/shared/mobile/utils/keyboard-inset.svelte.js";
   import { FULL_BLEED_DRAWER_QUERY } from "../domain/full-bleed-drawer";
   import { createMessageDeliveryState } from "../state/message-delivery-state.svelte";
   import { getMessageDeliveryRepository } from "../get-message-delivery-repository";
@@ -43,14 +43,14 @@
     setMessageDeliveryContext,
     unregisterMessageDeliveryState,
   } from "../context/message-delivery-context";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 
   const messageDeliveryState = createMessageDeliveryState({
     repository: getMessageDeliveryRepository(),
     coordinator: getMessageDeliveryCoordinator(),
   });
   setMessageDeliveryContext(messageDeliveryState);
-  import { getUserIdentityLabels } from "$lib/shared/community/domain/user-identity-labels";
+  import { getUserIdentityLabels } from "#lib/shared/community/domain/user-identity-labels.js";
 
   // Responsive placement. `isMobile` is really "the drawer owns the screen" —
   // true on any handheld, in either orientation, not merely on narrow ones.
@@ -399,7 +399,7 @@
     // Null for an ordinary in-app share; there is no intake record behind it.
     if (!receiptId) return;
     const { completeShareIntake } =
-      await import("$lib/shared/share-intake/services/share-intake-runner");
+      await import("#lib/shared/share-intake/services/share-intake-runner.js");
     await completeShareIntake(receiptId);
   }
 

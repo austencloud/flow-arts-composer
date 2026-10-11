@@ -41,7 +41,7 @@ import {
   POST_QR_URL_RULE,
   isPostCardQrUrl,
   type PostAnimationItem,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   addTitlesItem,
   addTunnelHook,
@@ -50,12 +50,12 @@ import {
   removeTunnelHook,
   setTunnelHookBackdropFrame,
   setTunnelHookSpeed,
-} from "$lib/shared/media-composition/domain/post-project-edits";
-import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 /**
  * Named edits for saved posts, in a form a command line can send. Each op is

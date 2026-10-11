@@ -9,13 +9,16 @@ import {
   TRIGENG_ARTWORK_GEOMETRY,
   TRIGENG_TIP_POINTS,
   type PropTipConfig,
-} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+} from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import {
   FAN_DAY_RIM_POINTS_M,
   FAN_FIRE_WICK_CENTERS_M,
   FAN_LOTUS_WICK_CENTERS_M,
 } from "./prop-build-tip-geometry-3d";
-import { resolvePropTipAnchors3D } from "./prop-tip-geometry-3d";
+import {
+  resolvePropTipAnchors3D,
+  resolveScaledPropTipAnchors3D,
+} from "./prop-tip-geometry-3d";
 
 const PICTOGRAPH = { fanBuild: "pictograph", finish: "day" } as const;
 const FIRE = { fanBuild: "fire", finish: "fire" } as const;
@@ -46,6 +49,25 @@ function expectSilhouette(
 }
 
 describe("resolvePropTipAnchors3D", () => {
+  it("scales fixed fan wick offsets and keeps an effective staff length exact", () => {
+    const scale = 2 / 3;
+    const fan = resolveScaledPropTipAnchors3D(PropType.FAN, 0.4, scale, FIRE);
+    const nominalFan = resolvePropTipAnchors3D(PropType.FAN, 0.6, FIRE);
+    expect(fan).toHaveLength(nominalFan.length);
+    fan.forEach((anchor, index) => {
+      expect(anchor.offset.x).toBeCloseTo(nominalFan[index]!.offset.x * scale);
+      expect(anchor.offset.y).toBeCloseTo(nominalFan[index]!.offset.y * scale);
+    });
+
+    const staff = resolveScaledPropTipAnchors3D(
+      PropType.STAFF,
+      0.4,
+      scale,
+      DAY
+    );
+    expect(staff.map((anchor) => anchor.offset.y)).toEqual([-0.4, 0.4]);
+  });
+
   it("places all five fire fan emitters at measured wick centres", () => {
     const anchors = resolvePropTipAnchors3D(PropType.FAN, 0.5, FIRE);
     expect(anchors).toEqual(

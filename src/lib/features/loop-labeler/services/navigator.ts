@@ -2,7 +2,7 @@ import type { LabeledSequence } from "./types";
 import {
   mutateCurrentUrl,
   writeUrl,
-} from "$lib/shared/navigation/services/url-state";
+} from "#lib/shared/navigation/services/url-state.js";
 
 /**
  * Navigation and utility functions for the LOOP labeler

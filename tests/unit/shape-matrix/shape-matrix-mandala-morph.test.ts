@@ -4,7 +4,7 @@ import {
   runMandalaMorph,
   SHAPE_MATRIX_MORPH_CLASS,
   type MandalaMorphDependencies,
-} from "$lib/shared/shape-matrix/app/services/shape-matrix-mandala-morph";
+} from "#lib/shared/shape-matrix/app/services/shape-matrix-mandala-morph.js";
 
 function createHarness(startMorph: MandalaMorphDependencies["startMorph"]) {
   const classes = new Set<string>();

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { growFade } from "$lib/shared/transitions/motion";
-  import type { ResolvedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import type { ResolvedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
   import { getPropTypeDisplayInfo } from "../domain/prop-type-display-registry";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import PropCompositionPreview from "./PropCompositionPreview.svelte";
 
   let {

@@ -9,16 +9,16 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { firestoreList } from "$lib/shared/firestore";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { firestoreList } from "#lib/shared/firestore/index.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 
-import type { FeedbackItem, AdminResponse, TesterConfirmation, TesterConfirmationStatus, FeedbackStatus, } from "$lib/shared/feedback/domain/models/feedback-models";
-import { FeedbackItemSchema } from "$lib/shared/feedback/domain/models/feedback-schemas";
-import type { FeedbackNotification } from "$lib/shared/feedback/domain/models/notification-models";
-import type { IFeedbackTesterWorkflow } from "$lib/shared/feedback/services/IFeedbackTesterWorkflow";
-import * as notificationTriggerService from "$lib/features/feedback/services/notification-trigger-service";
-import { getFeedback } from "$lib/shared/feedback/services/feedback-querier";
+import type { FeedbackItem, AdminResponse, TesterConfirmation, TesterConfirmationStatus, FeedbackStatus, } from "#lib/shared/feedback/domain/models/feedback-models.js";
+import { FeedbackItemSchema } from "#lib/shared/feedback/domain/models/feedback-schemas.js";
+import type { FeedbackNotification } from "#lib/shared/feedback/domain/models/notification-models.js";
+import type { IFeedbackTesterWorkflow } from "#lib/shared/feedback/services/IFeedbackTesterWorkflow.js";
+import * as notificationTriggerService from "#lib/features/feedback/services/notification-trigger-service.js";
+import { getFeedback } from "#lib/shared/feedback/services/feedback-querier.js";
 
 const COLLECTION_NAME = "feedback";
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import PropsShowroom from "$lib/features/museum/components/showroom/PropsShowroom.svelte";
+  import PropsShowroom from "#lib/features/museum/components/showroom/PropsShowroom.svelte";
 </script>
 
 <svelte:head>

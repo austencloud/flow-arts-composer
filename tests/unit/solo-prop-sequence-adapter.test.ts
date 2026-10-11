@@ -1,22 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { createSoloProp } from "$lib/shared/foundation/services/solo-prop-factory";
+import { createSoloProp } from "#lib/shared/foundation/services/solo-prop-factory.js";
 import {
   handPathToSequence,
   soloPropToSequence,
-} from "$lib/shared/foundation/services/solo-prop-sequence-adapter";
-import { createHandPath } from "$lib/shared/foundation/services/hand-path-factory";
-import { getSequenceMotionProfile } from "$lib/shared/foundation/services/sequence-motion-profile";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/foundation/services/solo-prop-sequence-adapter.js";
+import { createHandPath } from "#lib/shared/foundation/services/hand-path-factory.js";
+import { getSequenceMotionProfile } from "#lib/shared/foundation/services/sequence-motion-profile.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { hashSoloProp } from "$lib/shared/foundation/services/content-hasher";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { hashSoloProp } from "#lib/shared/foundation/services/content-hasher.js";
 import {
   extractLeftSoloProp,
   extractRightSoloProp,
-} from "$lib/shared/foundation/services/sequence-decomposer";
+} from "#lib/shared/foundation/services/sequence-decomposer.js";
 
 const SOLO = createSoloProp(
   [

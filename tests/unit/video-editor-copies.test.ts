@@ -4,8 +4,8 @@ import * as core from "@austencloud/video-editor/core";
 // absolute path. Step 4 removes the path: once the package installs from npm, import
 // cssCubicBezier another way or move this comparison.
 import * as packageEase from "E:/worktrees/shared-packages/video-editor/packages/video-editor/src/core/project/ease";
-import * as timing from "$lib/shared/animation-engine/domain/constants/timing";
-import * as tkaEase from "$lib/shared/transitions/ws-ease";
+import * as timing from "#lib/shared/animation-engine/domain/constants/timing.js";
+import * as tkaEase from "#lib/shared/transitions/ws-ease.js";
 
 describe("values the package copies from tka", () => {
   it("keeps the playback BPM and speed bounds", () => {

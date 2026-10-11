@@ -6,14 +6,14 @@
     AvatarPoseDiagnostics,
     CollisionEvent,
   } from "@austencloud/scene-3d";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { CharacterId } from "$lib/shared/3d/domain/character-model";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import Grid3D from "$lib/shared/3d/components/Grid3D.svelte";
-  import LiveSequencePerformer3D from "$lib/shared/3d/performers/LiveSequencePerformer3D.svelte";
-  import type { StanceYawTrack } from "$lib/shared/3d/collision/stance-yaw-track";
-  import type { BodyClearanceTrack } from "$lib/shared/3d/collision/body-clearance";
-  import type { PerformerHandDistance } from "$lib/shared/3d/domain/performer-hand-distance";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import Grid3D from "#lib/shared/3d/components/Grid3D.svelte";
+  import LiveSequencePerformer3D from "#lib/shared/3d/performers/LiveSequencePerformer3D.svelte";
+  import type { StanceYawTrack } from "#lib/shared/3d/collision/stance-yaw-track.js";
+  import type { BodyClearanceTrack } from "#lib/shared/3d/collision/body-clearance.js";
+  import type { PerformerHandDistance } from "#lib/shared/3d/domain/performer-hand-distance.js";
 
   interface Props {
     id: string;

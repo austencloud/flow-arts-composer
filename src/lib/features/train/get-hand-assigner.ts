@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { HandAssigner } from './services/hand-assigner';
 import { getHandTrackingStabilizer } from './get-hand-tracking-stabilizer';

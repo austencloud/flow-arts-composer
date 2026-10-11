@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolvePostHogApiHost } from "$lib/shared/analytics/services/posthog";
+import { resolvePostHogApiHost } from "#lib/shared/analytics/services/posthog.js";
 
 describe("resolvePostHogApiHost", () => {
   it("migrates the missing and legacy direct production hosts to the relay", () => {

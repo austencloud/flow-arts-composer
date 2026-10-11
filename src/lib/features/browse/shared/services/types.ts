@@ -2,10 +2,10 @@
  * Co-exported types from retired interface contracts.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
-import type { HandPathData } from "$lib/shared/foundation/domain/models/hand-path-data";
-import type { BrowseEngine } from "$lib/shared/browse/engine/types";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SoloPropData } from "#lib/shared/foundation/domain/models/solo-prop-data.js";
+import type { HandPathData } from "#lib/shared/foundation/domain/models/hand-path-data.js";
+import type { BrowseEngine } from "#lib/shared/browse/engine/types.js";
 
 
 export interface BrowseQueryResult {

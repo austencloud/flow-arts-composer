@@ -9,8 +9,8 @@
   import type { PathGroup } from "../state/explorer-state.svelte";
   import { getExplorerContext } from "../context/explorer-context";
   import PathMiniViz from "./PathMiniViz.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   interface Props {
     group: PathGroup;

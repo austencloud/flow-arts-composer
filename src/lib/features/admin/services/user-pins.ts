@@ -1,4 +1,4 @@
-import type { UserPresenceWithId } from "$lib/shared/presence/domain/models/presence-models";
+import type { UserPresenceWithId } from "#lib/shared/presence/domain/models/presence-models.js";
 
 /** A generic map pin matching GlobalUserMap's `scanMarkers` prop shape. */
 export interface UserMapPin {

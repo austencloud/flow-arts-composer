@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createPlacesCitySearch } from "$lib/features/community/services/places-city-search";
-import { CityResolutionError } from "$lib/features/community/domain/canonical-city";
-import type { IGoogleMapsLibraryLoader } from "$lib/shared/maps/services/contracts/IGoogleMapsLibraryLoader";
+import { createPlacesCitySearch } from "#lib/features/community/services/places-city-search.js";
+import { CityResolutionError } from "#lib/features/community/domain/canonical-city.js";
+import type { IGoogleMapsLibraryLoader } from "#lib/shared/maps/services/contracts/IGoogleMapsLibraryLoader.js";
 
 /**
  * Google's Places namespace, reduced to the four things this module touches.

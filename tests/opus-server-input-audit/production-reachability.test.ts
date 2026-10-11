@@ -4,8 +4,8 @@
  * Three things decide whether a `/test/**` or `/api/dev/**` endpoint is a
  * production surface:
  *
- *  1. `svelte.config.js` routes.exclude does not list `/test/*`, so those
- *     endpoints are compiled into the Cloudflare Worker.
+ *  1. The adapter's routes.exclude in `vite.config.ts` does not list
+ *     `/test/*`, so those endpoints are compiled into the Cloudflare Worker.
  *  2. `src/routes/test/+layout.ts` redirects away from `/test` when `!dev`,
  *     but it is a `LayoutLoad`. Layout loads do not run for standalone
  *     `+server.ts` endpoints, or for the `__data.json` request that serves a
@@ -22,10 +22,10 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { INTERNAL_ROUTE_FALLBACK } from "../../src/config/build-flags";
 
-/** Re-import a handler module with `$app/environment` reporting production. */
+/** Re-import a handler module with `$app/env` reporting production. */
 async function inProduction<T>(loader: () => Promise<T>): Promise<T> {
   vi.resetModules();
-  vi.doMock("$app/environment", () => ({
+  vi.doMock("$app/env", () => ({
     dev: false,
     browser: false,
     building: false,
@@ -39,7 +39,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  vi.doUnmock("$app/environment");
+  vi.doUnmock("$app/env");
   vi.resetModules();
 });
 

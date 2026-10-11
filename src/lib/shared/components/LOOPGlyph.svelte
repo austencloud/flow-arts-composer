@@ -17,7 +17,7 @@ Filled quadrant = LOOP component is active
 Empty quadrant = not present (freeform)
 -->
 <script lang="ts">
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
   interface Props {
     activeComponents: Set<LOOPComponent>;

@@ -1,7 +1,7 @@
 import { createReadStream, promises as fs } from "node:fs";
 import path from "node:path";
 import { Readable } from "node:stream";
-import { FEATURE_VIDEO_MEDIA_TYPES } from "$lib/shared/media-composition/domain/feature-video";
+import { FEATURE_VIDEO_MEDIA_TYPES } from "#lib/shared/media-composition/domain/feature-video.js";
 
 /**
  * Serves the files in a feature video's media folder to the editor's video

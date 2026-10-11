@@ -1,9 +1,9 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
 import {
   orbitKey,
   shapeKey,
-} from "$lib/shared/mandala/services/mandala-fingerprint";
+} from "#lib/shared/mandala/services/mandala-fingerprint.js";
 import type { MandalaPrimitiveRef } from "./sticker-types";
 
 export function sequenceDisplayName(sequence: SequenceData): string {

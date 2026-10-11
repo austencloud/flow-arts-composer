@@ -3,11 +3,11 @@ import { Vector3, type InstancedMesh } from "three";
 import {
   PovStripRenderer3D,
   shutterToPovPersistence,
-} from "$lib/shared/3d/effects/poi/pov-strip-renderer-3d";
-import { DEFAULT_LED_SHUTTER } from "$lib/shared/animation-engine/domain/led-photometry";
-import { QualityTier } from "$lib/shared/3d/effects/types";
-import { createEmptyPattern } from "$lib/shared/poi/domain/strip-pattern";
-import type { StripPattern } from "$lib/shared/poi/domain/strip-pattern";
+} from "#lib/shared/3d/effects/poi/pov-strip-renderer-3d.js";
+import { DEFAULT_LED_SHUTTER } from "#lib/shared/animation-engine/domain/led-photometry.js";
+import { QualityTier } from "#lib/shared/3d/effects/types.js";
+import { createEmptyPattern } from "#lib/shared/poi/domain/strip-pattern.js";
+import type { StripPattern } from "#lib/shared/poi/domain/strip-pattern.js";
 
 function createMockParent() {
   const children: unknown[] = [];

@@ -8,7 +8,7 @@ const clearDeletionIntentMock = vi.fn();
 const ledgerIdsMock = vi.fn().mockReturnValue([] as string[]);
 const reportLifecycleMock = vi.fn().mockResolvedValue(undefined);
 
-vi.mock("$lib/shared/persistence/database/tka-database", () => ({
+vi.mock("#lib/shared/persistence/database/tka-database.js", () => ({
   db: {
     sequences: {
       put: (...a: unknown[]) => dbPutMock(...a),
@@ -18,7 +18,7 @@ vi.mock("$lib/shared/persistence/database/tka-database", () => ({
     },
   },
 }));
-vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
+vi.mock("#lib/shared/library/services/saved-sequence-ledger.js", () => ({
   recordSavedSequenceId: vi.fn(),
   getSavedSequenceIds: (...a: unknown[]) => ledgerIdsMock(...a),
   getOwnedSequenceIdSet: (...a: unknown[]) =>
@@ -28,7 +28,7 @@ vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
   getUnownedSequenceIds: () => [],
   adoptUnownedSequenceIds: () => [],
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     isAuthenticated: true,
     isAnonymous: false,
@@ -36,51 +36,51 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
     effectiveUserId: "u1",
   },
 }));
-vi.mock("$lib/shared/auth/services/guest-identity", () => ({
+vi.mock("#lib/shared/auth/services/guest-identity.js", () => ({
   ensureGuestIdentity: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("$lib/shared/auth/state/auth-drawer-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-drawer-state.svelte.js", () => ({
   authDrawerState: { show: vi.fn(), offerGuestSaveNudge: vi.fn() },
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte.ts", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.ts", () => ({
   toast: { info: vi.fn(), warning: vi.fn(), error: vi.fn() },
 }));
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => ({ showUserError: vi.fn() }),
 }));
-vi.mock("$lib/shared/render/services/warm-sequence-cells", () => ({
+vi.mock("#lib/shared/render/services/warm-sequence-cells.js", () => ({
   warmSequenceCells: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("$lib/shared/share/state/image-composition-state.svelte.ts", () => ({
+vi.mock("#lib/shared/share/state/image-composition-state.svelte.ts", () => ({
   getImageCompositionManager: () => ({ darkMode: true }),
 }));
-vi.mock("$lib/features/library/services/tag-manager", () => ({
+vi.mock("#lib/features/library/services/tag-manager.js", () => ({
   findTagByName: vi.fn().mockResolvedValue(undefined),
   createUserTag: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("$lib/shared/library/services/sequence-content-hasher", () => ({
+vi.mock("#lib/shared/library/services/sequence-content-hasher.js", () => ({
   computeHash: vi.fn().mockResolvedValue("hash-1"),
 }));
-vi.mock("$lib/features/library/services/library-sync-retry", () => ({
+vi.mock("#lib/features/library/services/library-sync-retry.js", () => ({
   markSequenceSyncStatus: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock(
-  "$lib/shared/library/services/sequence-persistence-coordinator",
+  "#lib/shared/library/services/sequence-persistence-coordinator.js",
   () => ({
     clearSequenceDeletionIntent: (...args: unknown[]) =>
       clearDeletionIntentMock(...args),
   })
 );
-vi.mock("$lib/shared/analytics/services/posthog-lifecycle-reporter", () => ({
+vi.mock("#lib/shared/analytics/services/posthog-lifecycle-reporter.js", () => ({
   reportPostHogLifecycleEvent: (...args: unknown[]) =>
     reportLifecycleMock(...args),
 }));
 // Keep the real, Firestore-touching library-state module out of the test: the
 // service's refreshLibraryState() dynamic-imports it after a successful save.
-vi.mock("$lib/features/library/state/library-state.svelte", () => ({
+vi.mock("#lib/features/library/state/library-state.svelte.js", () => ({
   libraryState: { loadSequences: vi.fn().mockResolvedValue(undefined) },
 }));
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: {
     settings: {
       leftPropType: "club",
@@ -91,7 +91,7 @@ vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
   },
 }));
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-settings-state.svelte",
+  "#lib/shared/animation-engine/state/animation-settings-state.svelte.js",
   () => ({
     animationSettings: {
       trail: {
@@ -115,7 +115,7 @@ vi.mock(
     },
   })
 );
-vi.mock("$lib/shared/effects/state/effects-config-state.svelte", () => ({
+vi.mock("#lib/shared/effects/state/effects-config-state.svelte.js", () => ({
   loadPersistedEffectsConfig: () => ({
     version: 38,
     tipEffectMap: { "*": { effect: "sparkles" } },
@@ -128,13 +128,14 @@ vi.mock("$lib/shared/effects/state/effects-config-state.svelte", () => ({
 }));
 
 const { LibrarySaveService } =
-  await import("$lib/features/library/services/library-save-service");
+  await import("#lib/features/library/services/library-save-service.js");
 const { LibraryError } =
-  await import("$lib/shared/library/domain/library-error");
-const { authState } = await import("$lib/shared/auth/state/auth-state.svelte");
+  await import("#lib/shared/library/domain/library-error.js");
+const { authState } =
+  await import("#lib/shared/auth/state/auth-state.svelte.js");
 const { authDrawerState } =
-  await import("$lib/shared/auth/state/auth-drawer-state.svelte");
-const { toast } = await import("$lib/shared/toast/state/toast-state.svelte");
+  await import("#lib/shared/auth/state/auth-drawer-state.svelte.js");
+const { toast } = await import("#lib/shared/toast/state/toast-state.svelte.js");
 
 function makeSequence(o: Record<string, unknown> = {}) {
   return { id: "seq-1", steps: [{ letter: "A" }], thumbnails: [], ...o } as any;

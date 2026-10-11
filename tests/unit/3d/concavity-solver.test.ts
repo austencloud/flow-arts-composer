@@ -4,11 +4,11 @@ import {
   MotionType,
   RotationDirection,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { solveStepConcavity } from "$lib/shared/3d/services/concavity-solver";
-import { scanStepPair } from "$lib/shared/3d/services/wall-feasibility-scanner";
-import type { MotionConfig3D } from "$lib/shared/3d/domain/models/motion-data-3d";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { solveStepConcavity } from "#lib/shared/3d/services/concavity-solver.js";
+import { scanStepPair } from "#lib/shared/3d/services/wall-feasibility-scanner.js";
+import type { MotionConfig3D } from "#lib/shared/3d/domain/models/motion-data-3d.js";
 
 // Same shape as the scanner test's helper — copied intentionally, not
 // imported across test files.

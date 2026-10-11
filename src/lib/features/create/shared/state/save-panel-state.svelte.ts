@@ -1,38 +1,38 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { untrack } from "svelte";
-import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
-import { withSavedProps } from "$lib/shared/foundation/services/prop-viewing";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-import { libraryState } from "$lib/features/library/state/library-state.svelte";
-import { computeHash as computeSequenceHash } from "$lib/shared/library/services/sequence-content-hasher";
+import { captureActivePropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+import { withSavedProps } from "#lib/shared/foundation/services/prop-viewing.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+import { libraryState } from "#lib/features/library/state/library-state.svelte.js";
+import { computeHash as computeSequenceHash } from "#lib/shared/library/services/sequence-content-hasher.js";
 import {
   isEmptySequence,
   meetsCommunityMinimum,
   MIN_COMMUNITY_STEPS,
-} from "$lib/shared/library/domain/sequence-min-length";
-import type { ContentModerationResult } from "$lib/features/moderation/domain/models/content-moderation-models";
-import type { ShameCategory } from "$lib/features/hall-of-shame/domain/models/hall-of-shame-models";
-import type { HallOfShameSubmitter } from "$lib/features/hall-of-shame/services/hall-of-shame-submitter";
-import type { LibrarySaveService } from "$lib/features/library/services/library-save-service";
-import type { SaveProgress } from "$lib/shared/library/domain/library-contract-types";
-import { LibraryError } from "$lib/shared/library/domain/library-error";
+} from "#lib/shared/library/domain/sequence-min-length.js";
+import type { ContentModerationResult } from "#lib/features/moderation/domain/models/content-moderation-models.js";
+import type { ShameCategory } from "#lib/features/hall-of-shame/domain/models/hall-of-shame-models.js";
+import type { HallOfShameSubmitter } from "#lib/features/hall-of-shame/services/hall-of-shame-submitter.js";
+import type { LibrarySaveService } from "#lib/features/library/services/library-save-service.js";
+import type { SaveProgress } from "#lib/shared/library/domain/library-contract-types.js";
+import { LibraryError } from "#lib/shared/library/domain/library-error.js";
 import type { CreateModuleContext } from "../context/create-module-context";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-import { postSaveActivation } from "$lib/shared/onboarding/state/post-save-activation-state.svelte";
-import type { SoloPropSaveOrchestrator } from "$lib/features/library/services/solo-prop-save-orchestrator";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+import { postSaveActivation } from "#lib/shared/onboarding/state/post-save-activation-state.svelte.js";
+import type { SoloPropSaveOrchestrator } from "#lib/features/library/services/solo-prop-save-orchestrator.js";
 import {
   extractLeftSoloProp,
   extractRightSoloProp,
-} from "$lib/shared/foundation/services/sequence-decomposer";
-import { getSequenceMotionProfile } from "$lib/shared/foundation/services/sequence-motion-profile";
-import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
+} from "#lib/shared/foundation/services/sequence-decomposer.js";
+import { getSequenceMotionProfile } from "#lib/shared/foundation/services/sequence-motion-profile.js";
+import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
 import {
   normalizeCardPresentation,
   type CardPresentation,
-} from "$lib/shared/share/domain/models/card-presentation";
+} from "#lib/shared/share/domain/models/card-presentation.js";
 
 type ContentModerator = {
   checkWord: (word: string) => ContentModerationResult;
@@ -418,7 +418,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
       if (selectedCollectionIds.length > 0) {
         try {
           const { addSequenceToCollection } =
-            await import("$lib/shared/library/services/collection-manager");
+            await import("#lib/shared/library/services/collection-manager.js");
           for (const collectionId of selectedCollectionIds) {
             await addSequenceToCollection(collectionId, result.sequenceId);
           }

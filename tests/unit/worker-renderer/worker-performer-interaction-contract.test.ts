@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   WORKER_PERFORMER_BADGE_PICK_SCALE,
   WORKER_PERFORMER_PICK_PROXY,
-} from "$lib/shared/3d/worker-renderer/services/worker-performer-interaction";
+} from "#lib/shared/3d/worker-renderer/services/worker-performer-interaction.js";
 
 function source(path: string): string {
   return readFileSync(resolve(process.cwd(), path), "utf8");

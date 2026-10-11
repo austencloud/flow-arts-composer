@@ -1,6 +1,6 @@
-import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { explainLOOP } from "$lib/features/choreo-card/services/loop-explainer";
+import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { explainLOOP } from "#lib/features/choreo-card/services/loop-explainer.js";
 
 export interface StructuralCopyPart {
   text: string;

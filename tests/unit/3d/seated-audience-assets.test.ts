@@ -3,8 +3,8 @@ import {
   SEATED_AUDIENCE_ANIMATION_URLS,
   SEATED_AUDIENCE_CHARACTER_IDS,
   SEATED_AUDIENCE_CHARACTER_URLS,
-} from "$lib/shared/3d/config/seated-audience-assets";
-import { DEPLOYED_CHARACTER_DEFINITIONS } from "$lib/shared/3d/config/deployed-characters";
+} from "#lib/shared/3d/config/seated-audience-assets.js";
+import { DEPLOYED_CHARACTER_DEFINITIONS } from "#lib/shared/3d/config/deployed-characters.js";
 
 describe("seated audience assets", () => {
   it("resolves every seat model through the deployed character registry", () => {

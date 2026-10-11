@@ -10,17 +10,17 @@
  * Extracted from SequenceViewerOrchestrator.
  */
 
-import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import type { AnimationPanelState, AnimationStateKey, PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { lanSyncState } from "$lib/shared/lan-sync/state/lan-sync-state.svelte";
-import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-import { TempoPracticeOrchestrator, type TempoPracticeConfig } from "$lib/shared/sequence-viewer/services/tempo-practice-orchestrator";
-import { createTempoPracticeState } from "$lib/shared/sequence-viewer/state/tempo-practice-state.svelte";
-import { Metronome } from "$lib/shared/audio/metronome";
-import type { PracticeViewPrefs } from "$lib/shared/sequence-viewer/state/practice-view-prefs.svelte";
-import { createScreenWakeLockManager } from "$lib/shared/device/services/screen-wake-lock-manager";
+import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import type { AnimationPanelState, AnimationStateKey, PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { lanSyncState } from "#lib/shared/lan-sync/state/lan-sync-state.svelte.js";
+import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { TempoPracticeOrchestrator, type TempoPracticeConfig } from "#lib/shared/sequence-viewer/services/tempo-practice-orchestrator.js";
+import { createTempoPracticeState } from "#lib/shared/sequence-viewer/state/tempo-practice-state.svelte.js";
+import { Metronome } from "#lib/shared/audio/metronome.js";
+import type { PracticeViewPrefs } from "#lib/shared/sequence-viewer/state/practice-view-prefs.svelte.js";
+import { createScreenWakeLockManager } from "#lib/shared/device/services/screen-wake-lock-manager.js";
 
 export interface PlaybackControllerDeps {
   modalAnimationState: AnimationPanelState;

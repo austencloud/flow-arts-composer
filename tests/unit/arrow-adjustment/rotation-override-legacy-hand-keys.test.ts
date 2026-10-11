@@ -1,30 +1,30 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import { ArrowRotationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-rotation-calculator";
-import { rotationAngleOverrideKeyGenerator } from "$lib/shared/pictograph/arrow/positioning/key-generation/services/rotation-angle-override-key-generator";
-import { SpecialPlacementDataProvider } from "$lib/shared/pictograph/arrow/positioning/placement/services/special-placement-data-provider";
-import { SpecialPlacementLookup } from "$lib/shared/pictograph/arrow/positioning/placement/services/special-placement-lookup";
-import { SpecialPlacer } from "$lib/shared/pictograph/arrow/positioning/placement/services/special-placer";
-import { TurnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
-import { ROTATION_OVERRIDE_STORAGE_KEY } from "$lib/shared/pictograph/arrow/positioning/placement/services/rotation-override-store";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
+import { ArrowRotationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-rotation-calculator.js";
+import { rotationAngleOverrideKeyGenerator } from "#lib/shared/pictograph/arrow/positioning/key-generation/services/rotation-angle-override-key-generator.js";
+import { SpecialPlacementDataProvider } from "#lib/shared/pictograph/arrow/positioning/placement/services/special-placement-data-provider.js";
+import { SpecialPlacementLookup } from "#lib/shared/pictograph/arrow/positioning/placement/services/special-placement-lookup.js";
+import { SpecialPlacer } from "#lib/shared/pictograph/arrow/positioning/placement/services/special-placer.js";
+import { TurnsTupleGenerator } from "#lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator.js";
+import { ROTATION_OVERRIDE_STORAGE_KEY } from "#lib/shared/pictograph/arrow/positioning/placement/services/rotation-override-store.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
 import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { SimpleJsonCache } from "$lib/shared/pictograph/shared/services/simple-json-cache";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { SimpleJsonCache } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
 
 // The authored special-placement JSON still spells per-hand rotation flags
 // with the legacy colors (static/data/arrow_placement/special/from_layer1/

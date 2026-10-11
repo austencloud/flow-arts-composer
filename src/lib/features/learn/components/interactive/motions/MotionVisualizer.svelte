@@ -3,8 +3,8 @@ MotionVisualizer - Animated visualization of hand motions on 4-point diamond gri
 Shows shift (adjacent), dash (opposite), and static (stay) motions with animated arrows
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
   import {
     GRID_POINTS_4,

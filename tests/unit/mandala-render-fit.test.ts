@@ -2,22 +2,22 @@ import { describe, expect, it, vi } from "vitest";
 import type {
   MandalaPaths,
   MandalaRenderOptions,
-} from "$lib/shared/mandala/domain/mandala-types";
+} from "#lib/shared/mandala/domain/mandala-types.js";
 import {
   renderMandalaToCanvas,
   renderMandalaSVG,
   resolveMandalaRenderExtent,
-} from "$lib/shared/mandala/services/mandala-renderer";
+} from "#lib/shared/mandala/services/mandala-renderer.js";
 import {
   ENGINE_GRID_RADIUS,
   MANDALA_GRID_RADIUS,
   MANDALA_STANDARD_TIP_DX,
-} from "$lib/shared/mandala/domain/mandala-constants";
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { resolveMandalaTipOffsets } from "$lib/shared/mandala/services/mandala-path-preparer";
-import type { StepLike } from "$lib/shared/mandala/services/types";
-import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/mandala/domain/mandala-constants.js";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { resolveMandalaTipOffsets } from "#lib/shared/mandala/services/mandala-path-preparer.js";
+import type { StepLike } from "#lib/shared/mandala/services/types.js";
+import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const emptyPaths: MandalaPaths = { left: [], right: [], purple: [] };
 const standardExtent =

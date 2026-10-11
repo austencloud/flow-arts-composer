@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { opaqueFade, popIn } from "$lib/shared/transitions/motion";
+import { opaqueFade, popIn } from "#lib/shared/transitions/motion.js";
 
 const DIMMED = ["hidden-for-sequential"] as const;
 

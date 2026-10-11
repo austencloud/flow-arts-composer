@@ -9,39 +9,58 @@
    * step grid's stepCascade keyframes. The dice holds the lead slot, where
    * the step grid's start position sits.
    *
-   * Each turn shows a real sequence from drawMatrixRealization(), the
-   * Firebase-free source behind the home hero, drawn in the background
-   * between turns. When that source fails, turns step through the demo
-   * sequence instead.
+   * Each turn rolls once, and the roll washes in still, as the step grid
+   * shows it. Once its first step has landed, its first three steps play
+   * their moves one at a time, each from the pose before it, as the
+   * workspace's Play steps through a sequence, at the pace Construct's steps
+   * move (2026-10-11); Generate's turn runs longer to fit them. Turns rolled
+   * twice before; moves that rode the wave all at once matched nothing the
+   * tool does. The steps that will play land with their props at the start
+   * of their moves, so none jumps back to start.
    *
-   * Finished picture: the dice and the latest roll's opening steps. Before
+   * Each roll is a real sequence from drawMatrixRealization(), the Firebase-free
+   * source behind the home hero, drawn in the background between turns.
+   * When that source fails, rolls step through the demo sequence instead.
+   *
+   * Finished picture: the dice and the latest roll's opening steps, each at
+   * the end of its move. Before
    * the first turn, the demo sequence's from Generate's own start
    * (DEMO_STEP_START), so no other card rests on the same steps.
    */
   import { onDestroy, untrack } from "svelte";
   import { SvelteSet } from "svelte/reactivity";
-  import type { GhostState } from "$lib/shared/attract/services/attract-ghost.svelte";
-  import FontAwesomeIcon from "$lib/shared/foundation/ui/FontAwesomeIcon.svelte";
-  import { DEFAULT_ANIMATION_TIMING } from "$lib/features/create/shared/workspace-panel/sequence-display/domain/models/step-grid-display-models";
+  import type { GhostState } from "#lib/shared/attract/services/attract-ghost.svelte.js";
+  import FontAwesomeIcon from "#lib/shared/foundation/ui/FontAwesomeIcon.svelte";
+  import { DEFAULT_ANIMATION_TIMING } from "#lib/features/create/shared/workspace-panel/sequence-display/domain/models/step-grid-display-models.js";
   import MethodPreviewFinger from "./MethodPreviewFinger.svelte";
   import MethodPreviewPictograph from "./MethodPreviewPictograph.svelte";
-  import { cellCenter, generateLayout } from "./method-preview-compositions";
+  import {
+    cellCenter,
+    generateLayout,
+    type GenerateLayout,
+  } from "./method-preview-compositions";
   import {
     FIRST_ROLL,
     GENERATE_CLEAR_MS,
+    GENERATE_PLAYED_STEPS,
     GENERATE_READY_WAIT_MS,
     generateCellDelayMs,
+    generateFirstLandMs,
     generateRevealMs,
     nextRoll,
+    rollPoseBefore,
     rollStep,
     type GenerateRoll,
   } from "./method-preview-generate";
   import { createNextSequenceDraw } from "./method-preview-next-sequence";
   import {
+    PREVIEW_MOVE_MS,
     placeGhost,
+    playTravel,
     sceneGhost,
     tapAt,
     waitUntil,
+    type SceneFinger,
     type SceneRun,
   } from "./method-preview-run";
   import { playSceneTurns } from "./method-preview-scene-turns.svelte";
@@ -65,6 +84,8 @@
   let roll = $state.raw<GenerateRoll>(FIRST_ROLL);
   /** Bumped with each roll, so every cell reports ready for its new step. */
   let epoch = $state(0);
+  /** Each cell's move, 0 to 1. Null draws the cell still. */
+  let progress = $state.raw<(number | null)[]>([]);
 
   const layout = $derived(generateLayout(shape, width, height));
 
@@ -101,28 +122,41 @@
     });
   });
 
-  function settle(): void {
+  /** The turn's roll has landed. Its last move plays on. */
+  function rest(): void {
     pose = null;
     phase = "rest";
     nextRollDraw.request();
   }
 
-  async function play(run: SceneRun): Promise<void> {
-    const box = layout;
-    const last = box?.cells[box.cells.length - 1];
-    if (!box || !last) return;
-    // Nothing is drawn ahead under reduced motion. Turns that come back
-    // after it ask now, and fall back on the demo if the roll is late.
-    nextRollDraw.request();
-    const finger = sceneGhost(run, () => root);
-    pose = finger.ghost;
-    const start = cellCenter(last);
-    placeGhost(finger, start.x, start.y);
-    const dice = cellCenter(box.dice);
-    if (!(await tapAt(finger, run, dice.x, dice.y))) return;
+  function settle(): void {
+    rest();
+    // A move the turn cut short lands on its last frame.
+    progress = progress.map((value) => (value === null ? null : 1));
+  }
+
+  function setProgress(index: number, value: number): void {
+    progress = progress.map((current, cell) =>
+      cell === index ? value : current
+    );
+  }
+
+  /**
+   * Fade the shown roll and start washing in the next; the finger leaves as
+   * it does. True when the wash started.
+   */
+  async function rollIn(
+    run: SceneRun,
+    box: GenerateLayout,
+    finger: SceneFinger
+  ): Promise<boolean> {
     phase = "clearing";
-    if (!(await run.wait(GENERATE_CLEAR_MS))) return;
+    if (!(await run.wait(GENERATE_CLEAR_MS))) return false;
     roll = nextRoll(roll, nextRollDraw.take(), box.cells.length);
+    // The steps that will play wait at the start of their moves.
+    progress = box.cells.map((_, index) =>
+      index < GENERATE_PLAYED_STEPS ? 0 : null
+    );
     readyCells.clear();
     epoch += 1;
     // A cell still drawing after the wait washes in when it is ready.
@@ -131,13 +165,51 @@
       () => readyCells.size >= box.cells.length,
       GENERATE_READY_WAIT_MS
     );
-    if (run.aborted) return;
+    if (run.aborted) return false;
     finger.ghost.visible = false;
     phase = "entering";
-    if (!(await run.wait(generateRevealMs(box.cells.length, box.columns)))) {
-      return;
+    return true;
+  }
+
+  /**
+   * Once the first step has landed, the opening steps play their moves one
+   * at a time. True once the last one has started: it plays on into the
+   * turn's end, so a wait for it could only push the run past the turn and
+   * cut it when a slow draw delayed the roll.
+   */
+  async function playSteps(
+    run: SceneRun,
+    box: GenerateLayout
+  ): Promise<boolean> {
+    if (!(await run.wait(generateFirstLandMs(box.columns)))) return false;
+    const count = Math.min(GENERATE_PLAYED_STEPS, box.cells.length);
+    for (let index = 0; index < count; index++) {
+      const move = playTravel(run, PREVIEW_MOVE_MS, (value) =>
+        setProgress(index, value)
+      );
+      if (index < count - 1 && !(await move)) return false;
     }
-    settle();
+    return true;
+  }
+
+  async function play(run: SceneRun): Promise<void> {
+    const box = layout;
+    if (!box || box.cells.length === 0) return;
+    // Nothing is drawn ahead under reduced motion. Turns that come back
+    // after it ask now, and fall back on the demo if the roll is late.
+    nextRollDraw.request();
+    const finger = sceneGhost(run, () => root);
+    pose = finger.ghost;
+    // The finger starts on the dice, so the turn's time goes to the moves.
+    const dice = cellCenter(box.dice);
+    placeGhost(finger, dice.x, dice.y);
+    if (!(await tapAt(finger, run, dice.x, dice.y))) return;
+    if (!(await rollIn(run, box, finger))) return;
+    const washed = run.wait(generateRevealMs(box.cells.length, box.columns));
+    if (!(await playSteps(run, box))) return;
+    if (!(await washed)) return;
+    // The last move plays on into the turn's end, which settles the scene.
+    rest();
   }
 
   playSceneTurns(() => ({ playing, turn }), play, {
@@ -177,6 +249,8 @@
       >
         <MethodPreviewPictograph
           data={rollStep(roll, index)}
+          motionStartData={rollPoseBefore(roll, index)}
+          motionProgress={progress[index] ?? null}
           readyEpoch={epoch}
           onReady={() => handleCellReady(index)}
         />

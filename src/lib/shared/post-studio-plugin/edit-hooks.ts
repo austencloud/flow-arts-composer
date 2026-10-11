@@ -6,7 +6,7 @@ import type {
 import {
   rerecordedTakeTiming,
   shiftTakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import { isPostCardQrUrl } from "./card-qr";
 import { POST_MAX_SPOKEN_LENGTH } from "./item-kinds";
 

@@ -29,10 +29,10 @@
   the card genuinely static.
 -->
 <script lang="ts">
-	import Crossfade from "$lib/shared/components/Crossfade.svelte";
-	import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-	import { DURATION } from "$lib/shared/transitions/transitions";
-	import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+	import Crossfade from "#lib/shared/components/Crossfade.svelte";
+	import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+	import { DURATION } from "#lib/shared/transitions/transitions.js";
+	import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 	let {
 		steps,

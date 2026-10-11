@@ -4,23 +4,23 @@ import { resolve } from "node:path";
 import {
   deriveTnD,
   deriveTnDFromPictograph,
-} from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+} from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
 import {
   TnDMode,
   ElementalType,
   RotationDirection,
   MotionType,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridMode,
   type GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { calculateTnD } from "$lib/shared/pictograph/shared/domain/utils/tnd-calculator";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { calculateTnD } from "#lib/shared/pictograph/shared/domain/utils/tnd-calculator.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
 const { NORTH, EAST, SOUTH, WEST, NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST } =
   GridLocation;

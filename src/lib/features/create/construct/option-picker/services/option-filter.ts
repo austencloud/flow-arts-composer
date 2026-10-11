@@ -5,10 +5,10 @@
  * Extracted from OptionPickerService for better separation of concerns.
  */
 
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { getLetterType } from "$lib/shared/foundation/domain/models/letter";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { getLetterType } from "#lib/shared/foundation/domain/models/letter.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { GridPlacementGroup } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type {
   EndPlacementFilter,
   ReversalFilter,

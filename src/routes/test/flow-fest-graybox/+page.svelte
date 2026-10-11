@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { Canvas } from "@threlte/core";
   import { AgXToneMapping, PCFSoftShadowMap, WebGLRenderer } from "three";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
   import FlowFestGrayboxWalkScene from "./FlowFestGrayboxWalkScene.svelte";
   import type { FlowFestGrayboxReadyDetails } from "./flow-fest-graybox-types";
   import type { FlowFestBranchId } from "./flow-fest-runtime-contract";

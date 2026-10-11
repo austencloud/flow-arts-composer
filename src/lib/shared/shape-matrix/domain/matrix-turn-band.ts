@@ -1,11 +1,11 @@
 import type {
   TurnLevel,
   TurnValue,
-} from "$lib/shared/create/services/level-turn-values";
+} from "#lib/shared/create/services/level-turn-values.js";
 import {
   clampTurnToLevel,
   turnValuesForLevel,
-} from "$lib/shared/create/services/level-turn-values";
+} from "#lib/shared/create/services/level-turn-values.js";
 import type { AxisFilter, MatrixFilters } from "./filter-flower-axis";
 import { ratioLabel } from "./flower-signature";
 

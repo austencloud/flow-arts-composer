@@ -1,4 +1,4 @@
-import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
+import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
 import type { PostProject } from "@austencloud/video-editor/core";
 
 /**

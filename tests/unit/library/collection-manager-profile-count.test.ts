@@ -41,16 +41,16 @@ vi.mock("firebase/firestore", () => ({
   documentId: vi.fn(),
   where: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte.ts", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.ts", () => ({
   toast: { error: vi.fn() },
 }));
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureEvent: mocks.captureEvent,
 }));
-vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => {
+vi.mock("#lib/shared/library/services/collection-firestore-mapper.js", () => {
   class CollectionError extends Error {
     constructor(
       message: string,
@@ -87,7 +87,7 @@ import {
   createSmartUserCollection,
   createUserCollection,
   deleteCollection,
-} from "$lib/shared/library/services/collection-manager";
+} from "#lib/shared/library/services/collection-manager.js";
 
 describe("collection-manager server-owned profile counts", () => {
   beforeEach(() => {

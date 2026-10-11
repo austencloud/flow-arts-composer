@@ -3,7 +3,7 @@
   // The trilogy widget is browser-only (canvas + workers + firebase), so it
   // loads behind {#if browser}; the server renders the SEO head + a crawlable
   // shell only.
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
 
   const DESCRIPTION =
     "The TKA teaching trilogy: three printed decks, every card color-coded by its timing and direction family.";
@@ -51,7 +51,7 @@
 </svelte:head>
 
 {#if browser}
-  {#await import("$lib/features/store/TnDTrilogyPage.svelte") then { default: TnDTrilogyPage }}
+  {#await import("#lib/features/store/TnDTrilogyPage.svelte") then { default: TnDTrilogyPage }}
     <TnDTrilogyPage />
   {/await}
 {:else}

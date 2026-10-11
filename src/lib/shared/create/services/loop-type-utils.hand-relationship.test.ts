@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import {
   handModesBlockedByLoop,
   loopBlocksHandMode,

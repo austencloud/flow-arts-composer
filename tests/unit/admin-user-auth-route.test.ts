@@ -32,19 +32,19 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("$lib/server/auth/requireAdmin", () => ({
+vi.mock("#lib/server/auth/requireAdmin.js", () => ({
   requireAdmin: mocks.requireAdmin,
 }));
-vi.mock("$lib/server/security/withRateLimit", () => ({
+vi.mock("#lib/server/security/withRateLimit.js", () => ({
   withRateLimit: mocks.withRateLimit,
 }));
-vi.mock("$lib/server/security/rate-limiter", () => ({
+vi.mock("#lib/server/security/rate-limiter.js", () => ({
   RATE_LIMITS: { ADMIN: {} },
 }));
-vi.mock("$lib/server/security/audit-logger", () => ({
+vi.mock("#lib/server/security/audit-logger.js", () => ({
   logAdminAction: mocks.logAdminAction,
 }));
-vi.mock("$lib/server/firebaseAdmin", () => ({
+vi.mock("#lib/server/firebaseAdmin.js", () => ({
   getAdminAuth: () => mocks.auth,
   getAdminDb: () => ({
     runTransaction: mocks.runTransaction,
@@ -92,10 +92,10 @@ vi.mock("$lib/server/firebaseAdmin", () => ({
     }),
   }),
 }));
-vi.mock("$lib/server/auth/firebase-auth-rest", () => ({
+vi.mock("#lib/server/auth/firebase-auth-rest.js", () => ({
   getFirebaseAuthRest: () => ({ getUser: mocks.auth.getUser }),
 }));
-vi.mock("$lib/server/firestore/firestore-rest", () => {
+vi.mock("#lib/server/firestore/firestore-rest.js", () => {
   function toFirestoreValue(value: unknown): Record<string, unknown> {
     if (value === null || value === undefined) return { nullValue: null };
     if (typeof value === "string") return { stringValue: value };

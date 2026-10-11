@@ -1,5 +1,5 @@
-import type { StepLike } from "$lib/shared/mandala/services/types";
-import type { MandalaHandVisibility } from "$lib/shared/mandala/domain/mandala-types";
+import type { StepLike } from "#lib/shared/mandala/services/types.js";
+import type { MandalaHandVisibility } from "#lib/shared/mandala/domain/mandala-types.js";
 
 export interface DefaultMandala {
 	id: string;

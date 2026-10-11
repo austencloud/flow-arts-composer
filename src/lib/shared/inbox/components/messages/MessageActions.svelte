@@ -9,17 +9,17 @@
   - Pointer/tail connects bar to message bubble
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount, type Snippet } from "svelte";
-  import type { Message } from "$lib/shared/messaging/domain/models/message-models";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { layoutState } from "$lib/shared/layout/layout-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { messagingService } from "$lib/shared/messaging/services/messenger";
+  import type { Message } from "#lib/shared/messaging/domain/models/message-models.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { layoutState } from "#lib/shared/layout/layout-state.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { messagingService } from "#lib/shared/messaging/services/messenger.js";
   import { inboxState } from "../../state/inbox-state.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import MessageActionSheet from "./MessageActionSheet.svelte";
 
   const LONG_PRESS_MS = 400;

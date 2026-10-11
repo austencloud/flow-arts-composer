@@ -8,7 +8,7 @@
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
 
   let {
     heading,

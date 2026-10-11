@@ -26,14 +26,14 @@
  * switch, and guestFirstSaveGuard for the once-only guard.
  */
 
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-import { postHogFeatureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
-import { captureEvent } from "$lib/shared/analytics/services/posthog";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+import { postHogFeatureFlagService } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
+import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
 import {
   hasSeen,
   markSeen,
-} from "$lib/shared/onboarding/state/guest-first-save-guard";
+} from "#lib/shared/onboarding/state/guest-first-save-guard.js";
 
 // The single SP3-wide rollout flag (Part A + Part B), defaulted off. Registered
 // in onboarding-feature-flags.ts → DEFAULT_FEATURE_FLAGS, read via canAccess().

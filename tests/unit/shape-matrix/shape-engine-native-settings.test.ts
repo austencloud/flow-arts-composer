@@ -6,7 +6,7 @@ import {
   settingsService,
   updateSettings,
 } from "../../../apps/shape-engine/src/native-settings.svelte";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 afterEach(clearStoredSettings);
 

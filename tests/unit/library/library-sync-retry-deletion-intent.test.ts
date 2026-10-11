@@ -5,7 +5,7 @@ const updateMock = vi.fn().mockResolvedValue(1);
 const saveSequenceWithMetadataMock = vi.fn().mockResolvedValue({});
 const isDeletionIntendedMock = vi.fn();
 
-vi.mock("$lib/shared/persistence/database/tka-database", () => ({
+vi.mock("#lib/shared/persistence/database/tka-database.js", () => ({
   db: {
     sequences: {
       filter: vi.fn(() => ({
@@ -15,13 +15,13 @@ vi.mock("$lib/shared/persistence/database/tka-database", () => ({
     },
   },
 }));
-vi.mock("$lib/shared/library/get-library-repository", () => ({
+vi.mock("#lib/shared/library/get-library-repository.js", () => ({
   getLibraryRepository: () => ({
     saveSequenceWithMetadata: (...args: unknown[]) =>
       saveSequenceWithMetadataMock(...args),
   }),
 }));
-vi.mock("$lib/shared/offline/state/network-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/network-status-state.svelte.js", () => ({
   // onOffline is reached through this module's import graph; omitting it threw
   // at collection time and this whole file silently ran ZERO tests.
   networkStatusState: {
@@ -31,7 +31,7 @@ vi.mock("$lib/shared/offline/state/network-status-state.svelte", () => ({
 }));
 // The retry pass is scoped to rows the signed-in account owns, so these
 // fixtures have to be owned by someone for the pass to consider them at all.
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     isAuthenticated: true,
     isAnonymous: false,
@@ -39,7 +39,7 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
     effectiveUserId: "owner-uid",
   },
 }));
-vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
+vi.mock("#lib/shared/library/services/saved-sequence-ledger.js", () => ({
   getSavedSequenceIds: () => ["deleting-sequence", "live-sequence"],
   getOwnedSequenceIdSet: () => new Set(["deleting-sequence", "live-sequence"]),
   recordSavedSequenceId: vi.fn(),
@@ -48,11 +48,11 @@ vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
   getUnownedSequenceIds: () => [],
   adoptUnownedSequenceIds: () => [],
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { info: vi.fn() },
 }));
 vi.mock(
-  "$lib/shared/library/services/sequence-persistence-coordinator",
+  "#lib/shared/library/services/sequence-persistence-coordinator.js",
   () => ({
     isSequenceDeletionIntended: (...args: unknown[]) =>
       isDeletionIntendedMock(...args),
@@ -60,7 +60,7 @@ vi.mock(
 );
 
 const { retryPendingSyncs } =
-  await import("$lib/features/library/services/library-sync-retry");
+  await import("#lib/features/library/services/library-sync-retry.js");
 
 function makePendingSequence(id: string) {
   return {

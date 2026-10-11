@@ -5,7 +5,7 @@
  * Used to sync video playback position with sequence notation highlights.
  */
 
-import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
+import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 
 /** Everything below needs the closing arrival, so accept a whole-ish map. */
 type ReadableStepMap = Pick<

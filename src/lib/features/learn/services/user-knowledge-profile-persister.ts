@@ -12,7 +12,7 @@
  */
 
 import type { Unsubscribe } from "firebase/firestore";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
 import { getUserLearningProgressPath } from "../data/firestore-paths";
 import type { LearningProgress, ConceptProgress } from "../domain/types";
 import type { SerializedLearningProgress } from "./types";
@@ -34,7 +34,7 @@ export class UserKnowledgeProfilePersister {
    */
   private async getDocRef(userId: string) {
     const { doc } = await import("firebase/firestore");
-    const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+    const { getFirestoreInstance } = await import("#lib/shared/auth/firebase.js");
     const firestore = await getFirestoreInstance();
     return doc(firestore, getUserLearningProgressPath(userId));
   }

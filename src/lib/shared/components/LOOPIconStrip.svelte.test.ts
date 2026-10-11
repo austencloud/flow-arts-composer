@@ -1,7 +1,7 @@
 import { render } from "vitest-browser-svelte";
 import { describe, expect, it } from "vitest";
 import type { ReflectionAxis } from "@tka/sequence-engine/loop";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import LOOPIconStrip from "./LOOPIconStrip.svelte";
 
 const cases: Array<{

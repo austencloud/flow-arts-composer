@@ -8,11 +8,11 @@
 import {
   captureEvent,
   captureException,
-} from "$lib/shared/analytics/services/posthog";
+} from "#lib/shared/analytics/services/posthog.js";
 import type {
   ThumbnailMetricsSummary,
   ThumbnailRequestMetrics,
-} from "$lib/shared/browse/services/thumbnail-metrics-collector";
+} from "#lib/shared/browse/services/thumbnail-metrics-collector.js";
 
 export type ThumbnailFailureKind = "timeout" | "render_failed";
 

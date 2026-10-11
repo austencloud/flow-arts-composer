@@ -3,13 +3,13 @@ SemanticFeedback - Shows what the user built vs. what was requested.
 Teaches WHY the answer was wrong with geometric explanations and visual comparison.
 -->
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     PLACEMENT_TYPE_INFO,
     type PlacementType,
     type HandPosition,
   } from "../../../../domain/constants/placement-quiz-data";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import PlacementVisualizer from "../PlacementVisualizer.svelte";
   import PlacementGrid from "../PlacementGrid.svelte";
 

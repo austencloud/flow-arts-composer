@@ -5,7 +5,7 @@
  * Uses a blocklist approach: placements NOT in the blocked list are allowed.
  */
 
-import { GridMode, GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode, GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 /**
  * Available preset options for start placement selection

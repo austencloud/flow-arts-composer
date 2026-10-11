@@ -3,13 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockFirestoreGet = vi.fn();
 const mockFirestoreSet = vi.fn();
 
-vi.mock("$lib/shared/firestore/firestore-crud", () => ({
+vi.mock("#lib/shared/firestore/firestore-crud.js", () => ({
   firestoreGet: (...args: unknown[]) => mockFirestoreGet(...args),
   firestoreSet: (...args: unknown[]) => mockFirestoreSet(...args),
 }));
 
-import { createPlayProgressStore } from "$lib/features/learn/play/services/play-progress-store";
-import type { ArcadeSessionResult } from "$lib/features/learn/play/domain/arcade-types";
+import { createPlayProgressStore } from "#lib/features/learn/play/services/play-progress-store.js";
+import type { ArcadeSessionResult } from "#lib/features/learn/play/domain/arcade-types.js";
 
 function baseResult(
   overrides: Partial<Omit<ArcadeSessionResult, "isNewBest">> = {}

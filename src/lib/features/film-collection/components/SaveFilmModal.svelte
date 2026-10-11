@@ -4,8 +4,8 @@
   Spec: docs/superpowers/specs/active/2026-08-24-film-collection-design.md
 -->
 <script lang="ts">
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   import type { StoredFilmDocument } from "../domain/film-collection-types";
   import { filmCollectionState } from "../state/film-collection-state.svelte";

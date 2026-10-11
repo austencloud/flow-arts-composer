@@ -11,7 +11,7 @@ import {
   environmentReviewPresetFromPose,
   inspectEnvironmentReviewTarget,
   readEnvironmentReviewPose,
-} from "$lib/shared/3d/environments/review/environment-review-view-source";
+} from "#lib/shared/3d/environments/review/environment-review-view-source.js";
 
 describe("environment review view source", () => {
   it("round-trips a copied camera pose into an equivalent preset", () => {

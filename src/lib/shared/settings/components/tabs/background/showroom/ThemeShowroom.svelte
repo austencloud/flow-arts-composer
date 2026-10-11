@@ -2,15 +2,15 @@
   import { BackgroundType } from "@austencloud/backgrounds";
   import { getCardMetadata } from "@austencloud/backgrounds/card";
   import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { tryGetAccountSetupContext } from "$lib/shared/onboarding/context/account-setup-context";
-  import { prefersReducedData } from "$lib/shared/platform/network-conditions";
-  import type { AppSettings } from "$lib/shared/settings/domain/app-settings";
-  import { applyThemeFromColors } from "$lib/shared/settings/utils/background-theme-calculator";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { tryGetAccountSetupContext } from "#lib/shared/onboarding/context/account-setup-context.js";
+  import { prefersReducedData } from "#lib/shared/platform/network-conditions.js";
+  import type { AppSettings } from "#lib/shared/settings/domain/app-settings.js";
+  import { applyThemeFromColors } from "#lib/shared/settings/utils/background-theme-calculator.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   import ThemePreviewStage from "./ThemePreviewStage.svelte";
   import ThemeRail from "./ThemeRail.svelte";

@@ -5,9 +5,9 @@
  * or every joined scan misses the cloud cache.
  */
 import { describe, expect, it } from "vitest";
-import { canonicalCellKeyString } from "$lib/shared/render/services/cloud-cell-key";
-import { getCanonicalSequenceCells } from "$lib/shared/render/services/warm-sequence-cells";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { canonicalCellKeyString } from "#lib/shared/render/services/cloud-cell-key.js";
+import { getCanonicalSequenceCells } from "#lib/shared/render/services/warm-sequence-cells.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { TRANSITION_REVIEW_SEQUENCE } from "../../../src/routes/test/sequence-viewer-transitions/transition-review-fixture";
 
 const EAST_1 = { toward: "e", steps: 1 } as const;

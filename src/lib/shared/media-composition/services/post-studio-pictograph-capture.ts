@@ -1,5 +1,5 @@
 import type * as ModernScreenshot from "modern-screenshot";
-import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
+import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "#lib/shared/media-composition/services/post-studio-dom-capture.js";
 
 function resolvedStyleProperties(element: HTMLElement): string[] {
   const computed = getComputedStyle(element);

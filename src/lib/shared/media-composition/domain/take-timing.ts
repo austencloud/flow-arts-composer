@@ -14,7 +14,7 @@ import {
   createBeatClock,
   fitTapsToGrid,
   type TapFitResult,
-} from "$lib/shared/media-composition/domain/tap-fit";
+} from "#lib/shared/media-composition/domain/tap-fit.js";
 
 export { TAKE_MAX_BPM, TAKE_MIN_BPM };
 export type { TakeSample, TakeSampleOptions };

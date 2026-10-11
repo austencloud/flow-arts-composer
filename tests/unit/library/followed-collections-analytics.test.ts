@@ -15,11 +15,11 @@ vi.mock("firebase/firestore", () => ({
   setDoc: h.setDoc,
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({ id: "firestore" })),
 }));
 
-vi.mock("$lib/shared/library/data/firestore-paths", () => ({
+vi.mock("#lib/shared/library/data/firestore-paths.js", () => ({
   getFollowedCollectionPath: (
     userId: string,
     ownerId: string,
@@ -29,18 +29,18 @@ vi.mock("$lib/shared/library/data/firestore-paths", () => ({
     `users/${userId}/followedCollections`,
 }));
 
-vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => ({
+vi.mock("#lib/shared/library/services/collection-firestore-mapper.js", () => ({
   getAuthenticatedUserId: vi.fn(() => "current-user"),
 }));
 
-vi.mock("$lib/shared/analytics/social-events", () => ({
+vi.mock("#lib/shared/analytics/social-events.js", () => ({
   trackCollectionFollowChanged: h.trackCollectionFollowChanged,
 }));
 
 import {
   followCollection,
   unfollowCollection,
-} from "$lib/shared/library/services/followed-collections";
+} from "#lib/shared/library/services/followed-collections.js";
 
 describe("followed collection analytics completion boundary", () => {
   beforeEach(() => {

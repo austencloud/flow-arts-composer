@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeWordHeaderStep } from "$lib/shared/animation-engine/domain/word-header-highlight";
+import { activeWordHeaderStep } from "#lib/shared/animation-engine/domain/word-header-highlight.js";
 
 describe("word header highlight timing", () => {
   it("waits for arrival and holds the letter through the next travel", () => {

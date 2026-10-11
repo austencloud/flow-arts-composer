@@ -3,13 +3,13 @@
  * Handles prop type updates for individual steps and bulk operations.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { ICreateModuleState } from "../../types/create-module-types";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import {
   getStepDataFromState,
   START_PLACEMENT_BEAT_NUMBER,

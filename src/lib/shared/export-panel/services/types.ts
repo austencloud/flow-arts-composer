@@ -7,8 +7,8 @@
  * Domain: Export Panel - Export Orchestration
  */
 
-import type { AnimationPlaybackController } from '$lib/shared/animation-engine/services/animation-playback-controller';
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+import type { AnimationPlaybackController } from '#lib/shared/animation-engine/services/animation-playback-controller.js';
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 
 /** Result of an export operation */
 export interface ExportResult {
@@ -33,7 +33,7 @@ export interface AnimationExportDependencies {
  * Domain: Export Panel - URL State Management
  */
 
-import type { AnimationPanelState as URLAnimationState } from '$lib/shared/navigation/services/types';
+import type { AnimationPanelState as URLAnimationState } from '#lib/shared/navigation/services/types.js';
 
 /**
  * Animation state that can be persisted to/restored from URL

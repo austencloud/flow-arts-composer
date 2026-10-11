@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSoftwareSubmission } from "$lib/server/software-submissions/software-submission-input";
+import { parseSoftwareSubmission } from "#lib/server/software-submissions/software-submission-input.js";
 
 describe("parseSoftwareSubmission", () => {
   it("trims a valid submission", () => {

@@ -13,7 +13,7 @@ import {
   getLevelConstraints,
   getExplanationGuidance,
 } from "@tka/domain";
-import type { MasteryContext } from "$lib/features/learn/domain/quiz-history-types";
+import type { MasteryContext } from "#lib/features/learn/domain/quiz-history-types.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Main System Prompt Builder

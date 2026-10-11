@@ -11,7 +11,7 @@
   cqi units match the live card; set --card-text-muted for the labels.
 -->
 <script lang="ts">
-  import CheckerboardCircleIcon from "$lib/shared/icons/CheckerboardCircleIcon.svelte";
+  import CheckerboardCircleIcon from "#lib/shared/icons/CheckerboardCircleIcon.svelte";
 
   interface Col {
     kind: "swap" | "checkerboard" | "fa";

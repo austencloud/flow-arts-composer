@@ -4,7 +4,7 @@ import {
   createDesktopAssetResolver,
   createDesktopFetch,
   toBundlePath,
-} from "$lib/shared/desktop/desktop-asset-url";
+} from "#lib/shared/desktop/desktop-asset-url.js";
 
 const ORIGIN = "https://tka-assets.localhost";
 const PAGE = "https://tauri.localhost";

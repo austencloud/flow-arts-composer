@@ -4,13 +4,13 @@
    * Wraps UserCard with override count badge for feature flag management
    */
 
-  import UserCard from "$lib/shared/community/components/UserCard.svelte";
-  import type { UserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-  import type { UserFeatureOverrides } from "$lib/shared/auth/domain/models/feature-flag";
+  import UserCard from "#lib/shared/community/components/UserCard.svelte";
+  import type { UserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+  import type { UserFeatureOverrides } from "#lib/shared/auth/domain/models/feature-flag.js";
   import {
     getCachedOrFallbackColor,
     extractDominantColor,
-  } from "$lib/shared/foundation/utils/color-extractor";
+  } from "#lib/shared/foundation/utils/color-extractor.js";
 
   interface Props {
     user: UserProfile & { featureOverrides?: UserFeatureOverrides };

@@ -11,19 +11,19 @@
  * ✅ Each tab maintains its own independent sequence state
  */
 
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
-import type { SequenceStatsCalculator } from "$lib/features/create/shared/services/sequence-stats-calculator";
-import type { SequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
-import type { SequenceValidator } from "$lib/features/create/shared/services/sequence-validator";
-import { reversalDetector, type ReversalDetector } from "$lib/shared/create/services/reversal-detector";
-import { createSequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
-import type { SequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
+import type { SequenceStatsCalculator } from "#lib/features/create/shared/services/sequence-stats-calculator.js";
+import type { SequenceTransformer } from "#lib/features/create/shared/services/sequence-transforms/sequence-transformer.js";
+import type { SequenceValidator } from "#lib/features/create/shared/services/sequence-validator.js";
+import { reversalDetector, type ReversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import { createSequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
+import type { SequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
 import type { UndoMetadata } from "../../shared/services/undo-manager";
 import type { UndoOperationType } from "../../shared/services/undo-manager";
-import { createUndoController } from "$lib/features/create/shared/state/create-module/undo-controller.svelte";
-import { undoManager } from "$lib/features/create/shared/services/undo-manager";
-import { browser } from "$app/environment";
+import { createUndoController } from "#lib/features/create/shared/state/create-module/undo-controller.svelte.js";
+import { undoManager } from "#lib/features/create/shared/services/undo-manager.js";
+import { browser } from "$app/env";
 import type {
   LetterSource,
   SpellPreferences,
@@ -31,8 +31,8 @@ import type {
   LOOPType,
   CircularizationOption,
 } from "../domain/models/spell-models";
-import { DEFAULT_SPELL_PREFERENCES } from "$lib/shared/create/domain/spell-constants";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { DEFAULT_SPELL_PREFERENCES } from "#lib/shared/create/domain/spell-constants.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 const HAS_GENERATED_STORAGE_KEY = "spell-has-generated-once";
 const GRID_MODE_STORAGE_KEY = "spell-grid-mode";

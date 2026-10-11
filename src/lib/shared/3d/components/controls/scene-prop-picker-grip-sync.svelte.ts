@@ -1,7 +1,7 @@
 import { propFinishState } from "@austencloud/scene-3d";
 
-import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-import { normalizeTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 
 /**
  * The Grip pills live in BentoPropGrid and write AppSettings; the 3D studio's

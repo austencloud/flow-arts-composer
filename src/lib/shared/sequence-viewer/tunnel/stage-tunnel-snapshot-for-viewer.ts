@@ -1,12 +1,12 @@
-import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
 import {
   getAnimationVisibilityManager,
   type AnimationVisibilityStateManager,
-} from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { EFFECTS_CONFIG_STORAGE_KEY } from "$lib/shared/effects/state/effects-config-state.svelte";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+} from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { EFFECTS_CONFIG_STORAGE_KEY } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 import { saveTunnelViewState } from "./tunnel-view-state";
 import type { TunnelSnapshot } from "./tunnel-snapshot";
 import {

@@ -198,3 +198,35 @@ export function continuousCellScale(
     dist
   );
 }
+
+export interface StripGlideKeyOptions {
+  /** The host's lasting identity for the rail; null turns gliding off. */
+  transitionKey: string | null;
+  leftPropType: string | null;
+  rightPropType: string | null;
+  /** New for each rail and each time a rail jumps instead of sliding. */
+  generation: number;
+  virtualIndex: number;
+}
+
+/**
+ * Lasting identity for one rendered rail cell, so a step edited in place (a
+ * transform or a turn change) glides its props and arrows instead of being
+ * redrawn. It is keyed by rendered slot, not step number: a looping rail shows
+ * the same step more than once, and each copy needs its own remembered pose.
+ * Each rail, and each jump of a rail, uses a new generation, so a slot that
+ * comes back appears in place instead of gliding from a pose that predates a
+ * later edit. Prop types are part of the key so a staff never glides into a
+ * hand.
+ */
+export function stripGlideKey({
+  transitionKey,
+  leftPropType,
+  rightPropType,
+  generation,
+  virtualIndex,
+}: StripGlideKeyOptions): string | null {
+  if (transitionKey === null) return null;
+  const props = `${leftPropType ?? ""}-${rightPropType ?? ""}`;
+  return `${transitionKey}:strip:${props}:${generation}:${virtualIndex}`;
+}

@@ -1,23 +1,23 @@
 <script lang="ts">
-  import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import {
     BASE_COLOR_CURVE,
     BASE_FIRE_PHYSICS,
     intensityToPhysics,
     type FireOverlayConfig,
-  } from "$lib/shared/animation-engine/domain/types/fire-types";
+  } from "#lib/shared/animation-engine/domain/types/fire-types.js";
   import type {
     TipEffectMap,
     TipEffortMap,
-  } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-  import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import demoSequenceJson from "$lib/shared/landing/data/demo-sequence.json";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import { NOTATION_LOOP_TEASER_SEQUENCE } from "$lib/shared/loop-explorer/domain/notation-loop-teaser";
-  import { rotateSequenceGeometry } from "$lib/shared/create/services/sequence-derived-fields";
+  } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import demoSequenceJson from "#lib/shared/landing/data/demo-sequence.json";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import { NOTATION_LOOP_TEASER_SEQUENCE } from "#lib/shared/loop-explorer/domain/notation-loop-teaser.js";
+  import { rotateSequenceGeometry } from "#lib/shared/create/services/sequence-derived-fields.js";
 
   const INTENSITY = 0.7;
   type LabEffect = "fire" | "smoke";

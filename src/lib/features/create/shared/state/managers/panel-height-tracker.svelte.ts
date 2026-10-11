@@ -11,7 +11,7 @@ import { untrack } from "svelte";
 import {
   isInMovingPanelGroup,
   PANEL_SETTLE_EVENT,
-} from "$lib/shared/panels/panel-motion";
+} from "#lib/shared/panels/panel-motion.js";
 import type { PanelCoordinationState } from "../panel-coordination-state.svelte";
 
 export interface PanelHeightTrackerConfig {

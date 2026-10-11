@@ -4,15 +4,15 @@ import {
   TrailEffect,
   TrailMode,
   type TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import type { CreatorIntent } from "$lib/shared/foundation/domain/models/creator-intent";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import type { CreatorIntent } from "#lib/shared/foundation/domain/models/creator-intent.js";
 import {
   capturePresentation,
   neutralPresentation,
   resolvePresentation,
   summarizePresentation,
-} from "$lib/shared/foundation/services/presentation-intent";
+} from "#lib/shared/foundation/services/presentation-intent.js";
 
 const CUSTOM_COLORS = { left: "#00ff00", right: "#ff00ff" };
 

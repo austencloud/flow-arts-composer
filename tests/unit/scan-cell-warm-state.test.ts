@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { createScanCellWarmState } from "$lib/features/choreo-card/state/scan-cell-warm-state.svelte";
+import { createScanCellWarmState } from "#lib/features/choreo-card/state/scan-cell-warm-state.svelte.js";
 import type {
   CellWarmDeps,
   CellWarmProgress,
-} from "$lib/features/library/services/warm-all-scan-cells";
+} from "#lib/features/library/services/warm-all-scan-cells.js";
 
 function progress(overrides: Partial<CellWarmProgress> = {}): CellWarmProgress {
   return {

@@ -1,10 +1,10 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { ThumbnailRenderer } from './services/thumbnail-renderer';
-import { getCompositionDispatcher } from '$lib/shared/render/get-composition-dispatcher';
-import { startPlacementDeriver } from '$lib/shared/pictograph/shared/services/start-placement-deriver';
-import { getBrowseLoader } from '$lib/shared/browse/get-browse-loader';
-import { loopDetector } from '$lib/shared/create/services/loop-detector';
-import { getQRCodeGenerator } from '$lib/shared/qr/get-qr-code-generator';
+import { getCompositionDispatcher } from '#lib/shared/render/get-composition-dispatcher.js';
+import { startPlacementDeriver } from '#lib/shared/pictograph/shared/services/start-placement-deriver.js';
+import { getBrowseLoader } from '#lib/shared/browse/get-browse-loader.js';
+import { loopDetector } from '#lib/shared/create/services/loop-detector.js';
+import { getQRCodeGenerator } from '#lib/shared/qr/get-qr-code-generator.js';
 
 let instance: ThumbnailRenderer | null = null;
 

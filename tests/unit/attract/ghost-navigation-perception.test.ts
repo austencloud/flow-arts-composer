@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { transitionGhostHover } from "$lib/shared/attract/services/ghost-hover";
+import { transitionGhostHover } from "#lib/shared/attract/services/ghost-hover.js";
 import {
   chooseNavigationOption,
   readNavigationOptions,
-} from "$lib/shared/attract/intentions/explore";
+} from "#lib/shared/attract/intentions/explore.js";
 import {
   EMPTY_WORLD,
   type GhostContext,
-} from "$lib/shared/attract/domain/intention";
-import { createMemory } from "$lib/shared/attract/domain/scoring";
-import { createRng } from "$lib/shared/attract/services/rng";
-import { createTrail } from "$lib/shared/attract/services/trail";
+} from "#lib/shared/attract/domain/intention.js";
+import { createMemory } from "#lib/shared/attract/domain/scoring.js";
+import { createRng } from "#lib/shared/attract/services/rng.js";
+import { createTrail } from "#lib/shared/attract/services/trail.js";
 
 function context(): GhostContext {
   const rng = createRng(7);

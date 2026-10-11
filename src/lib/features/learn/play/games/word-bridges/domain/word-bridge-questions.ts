@@ -1,5 +1,5 @@
 import * as TkaDomain from "@tka/domain";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import type { BridgeTask } from "../../../domain/arcade-types";
 
 export interface WordBridgeGraphLetterInfo {

@@ -1,13 +1,13 @@
 <script lang="ts">
-  import CreatePanelDrawer from "$lib/features/create/shared/components/CreatePanelDrawer.svelte";
-  import PanelHeader from "$lib/shared/create/components/PanelHeader.svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
+  import CreatePanelDrawer from "#lib/features/create/shared/components/CreatePanelDrawer.svelte";
+  import PanelHeader from "#lib/shared/create/components/PanelHeader.svelte";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
   import { getFuseContext } from "../context/fuse-context";
-  import { loopStartPickTarget } from "$lib/features/create/shared/services/choose-start-analyzer";
+  import { loopStartPickTarget } from "#lib/features/create/shared/services/choose-start-analyzer.js";
 
   let {
     isOpen = $bindable(false),

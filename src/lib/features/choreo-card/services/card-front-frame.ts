@@ -1,6 +1,6 @@
 import { paintCardFrame, type CardFrameOptions } from "@tka/render-composition";
-import { createRenderCanvas } from "$lib/shared/render/services/create-render-canvas";
-import type { RenderCanvas } from "$lib/shared/render/services/types";
+import { createRenderCanvas } from "#lib/shared/render/services/create-render-canvas.js";
+import type { RenderCanvas } from "#lib/shared/render/services/types.js";
 
 export {
   getCardFrameContentInset,

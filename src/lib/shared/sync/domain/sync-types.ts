@@ -1,4 +1,4 @@
-import type { SequenceData } from '$lib/shared/foundation/domain/models/sequence-data';
+import type { SequenceData } from '#lib/shared/foundation/domain/models/sequence-data.js';
 
 /**
  * HLC combines wall-clock time with a logical counter to provide:

@@ -1,19 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
 import type { PostProject } from "@austencloud/video-editor/core";
 import {
   addTakeTap,
   createTakeTiming,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   createPostEditorHistoryStorage,
   loadPostEditorHistory,
   savePostEditorHistory,
-} from "$lib/shared/media-composition/services/post-editor-history-store";
-import type { PostEditorStore } from "$lib/shared/media-composition/services/post-editor-store";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+} from "#lib/shared/media-composition/services/post-editor-history-store.js";
+import type { PostEditorStore } from "#lib/shared/media-composition/services/post-editor-store.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 
 const NOW = 1_780_000_000_000;
 const FEATURE_PREFIX = "tka:feature-video:v1:promo:history:";

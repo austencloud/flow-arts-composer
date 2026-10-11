@@ -1,24 +1,24 @@
 <script lang="ts">
   import { onDestroy, tick, untrack } from "svelte";
-  import { growFade, motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
-  import { holdBackgroundFor } from "$lib/shared/background/shared/state/background-hold.svelte";
+  import { growFade, motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
+  import { holdBackgroundFor } from "#lib/shared/background/shared/state/background-hold.svelte.js";
   import {
     BREAKPOINTS,
     LANDSCAPE_THRESHOLDS,
-  } from "$lib/shared/device/domain/constants/device-constants";
-  import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
-  import { getLibrarySaveService } from "$lib/features/library/get-library-save-service";
-  import WorkspaceShareSheet from "$lib/features/create/shared/workspace-panel/shared/components/buttons/WorkspaceShareSheet.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/device/domain/constants/device-constants.js";
+  import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
+  import { getLibrarySaveService } from "#lib/features/library/get-library-save-service.js";
+  import WorkspaceShareSheet from "#lib/features/create/shared/workspace-panel/shared/components/buttons/WorkspaceShareSheet.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import {
     createSequenceData,
     type SequenceData,
-  } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { LibraryError } from "$lib/shared/library/domain/library-error";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { LibraryError } from "#lib/shared/library/domain/library-error.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     fitsFuseRecipeColumn,
     fitsFuseTallPortraitWorkspace,

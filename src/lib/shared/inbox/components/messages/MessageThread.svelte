@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * MessageThread
    *
@@ -12,11 +12,11 @@
   import type {
     Conversation,
     ConversationType,
-  } from "$lib/shared/messaging/domain/models/conversation-models";
-  import type { Message } from "$lib/shared/messaging/domain/models/message-models";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
-  import { messagingService } from "$lib/shared/messaging/services/messenger";
+  } from "#lib/shared/messaging/domain/models/conversation-models.js";
+  import type { Message } from "#lib/shared/messaging/domain/models/message-models.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+  import { messagingService } from "#lib/shared/messaging/services/messenger.js";
   import { inboxState } from "../../state/inbox-state.svelte";
   import MessageBubble from "./MessageBubble.svelte";
   import MessageComposer from "./MessageComposer.svelte";
@@ -24,12 +24,12 @@
   import DateSeparator from "./DateSeparator.svelte";
   import EmptyMessages from "../empty-states/EmptyMessages.svelte";
   import TypingIndicator from "./TypingIndicator.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { messageHasSequencePreview } from "../../domain/message-link-parts";
   import { createSequencePreviewCoordinator } from "../../state/sequence-preview-coordinator.svelte";
   import { getMessageDeliveryContext } from "../../context/message-delivery-context";
   import { buildOutgoingMessage } from "../../domain/outgoing-message-mapper";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 
   interface Props {
     conversation: Conversation;

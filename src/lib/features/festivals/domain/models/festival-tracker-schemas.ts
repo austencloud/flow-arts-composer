@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { firestoreDate } from "$lib/shared/firestore";
+import { firestoreDate } from "#lib/shared/firestore/index.js";
 
 export const UserFestivalTrackerSchema = z
   .object({

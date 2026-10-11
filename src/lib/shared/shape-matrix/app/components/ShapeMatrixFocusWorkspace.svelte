@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { tick } from "svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
-  import HandPropToolbar from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
-  import { localizedPropName } from "$lib/shared/settings/components/tabs/prop-type/localized-prop-name";
-  import type { PillId } from "$lib/shared/animation-panel/pill-nav/pill-types";
-  import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import HandPropToolbar from "#lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
+  import { localizedPropName } from "#lib/shared/settings/components/tabs/prop-type/localized-prop-name.js";
+  import type { PillId } from "#lib/shared/animation-panel/pill-nav/pill-types.js";
+  import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { getShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
-  import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
-  import { CANVAS2D_HOSTED_EFFECTS } from "$lib/shared/effects/services/canvas2d-effect-host";
+  import AnimationPanel from "#lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import { CANVAS2D_HOSTED_EFFECTS } from "#lib/shared/effects/services/canvas2d-effect-host.js";
 
   const app = getShapeMatrixAppContext();
   const animation = getShapeMatrixAnimationContext();

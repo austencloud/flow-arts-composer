@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { THUMBNAIL_RENDERER_VERSION } from "$lib/shared/browse/services/thumbnail-key-deriver";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { THUMBNAIL_RENDERER_VERSION } from "#lib/shared/browse/services/thumbnail-key-deriver.js";
 
 const mocks = vi.hoisted(() => {
   const auth = {
@@ -20,12 +20,12 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthInstance: mocks.getAuthInstance,
   getStorageInstance: mocks.getStorageInstance,
 }));
 
-vi.mock("$lib/shared/auth/services/guest-identity", () => ({
+vi.mock("#lib/shared/auth/services/guest-identity.js", () => ({
   ensureGuestIdentity: mocks.ensureGuestIdentity,
 }));
 
@@ -42,7 +42,7 @@ import {
   markMissing,
   upload,
   type CloudThumbnailKey,
-} from "$lib/shared/browse/services/cloud-thumbnail-cache";
+} from "#lib/shared/browse/services/cloud-thumbnail-cache.js";
 
 const key: CloudThumbnailKey = {
   sequenceName: "AAAA",
@@ -197,7 +197,7 @@ describe("cloud-thumbnail-cache missing-object memory", () => {
 
     vi.resetModules();
     const freshCache =
-      await import("$lib/shared/browse/services/cloud-thumbnail-cache");
+      await import("#lib/shared/browse/services/cloud-thumbnail-cache.js");
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({

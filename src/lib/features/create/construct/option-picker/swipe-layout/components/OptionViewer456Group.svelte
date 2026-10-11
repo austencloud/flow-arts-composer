@@ -10,13 +10,13 @@ Matches the desktop version exactly:
 -->
 <script lang="ts">
 
-import { calculateOptimalLayout as calculateAspectLayout } from "$lib/features/create/construct/option-picker/services/aspect-layout-planner";
-import { getAnimator } from "$lib/shared/application/get-animator";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import { calculateOptimalLayout as calculateAspectLayout } from "#lib/features/create/construct/option-picker/services/aspect-layout-planner.js";
+import { getAnimator } from "#lib/shared/application/get-animator.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     Letter,
     getLetterType,
-  } from "$lib/shared/foundation/domain/models/letter";
+  } from "#lib/shared/foundation/domain/models/letter.js";
   import { calculateFitSize as calculateGridFitSize } from "../../services/option-grid-fit-calculator";
   import type { TypeFilter } from "../../domain/option-picker-types";
   import OptionViewerSection from "./OptionViewerSection.svelte";

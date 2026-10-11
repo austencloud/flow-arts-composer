@@ -1,5 +1,6 @@
 import type { PageServerLoad } from "./$types";
-import { loadShopCatalogSnapshot } from "$lib/server/shop/shop-catalog-snapshot";
+import { loadShopCatalogSnapshot } from "#lib/server/shop/shop-catalog-snapshot.js";
+import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
 
 /**
  * The catalog, server-rendered.
@@ -10,8 +11,8 @@ import { loadShopCatalogSnapshot } from "$lib/server/shop/shop-catalog-snapshot"
  * cover cards behind; the page paints its text and prices from it, then swaps
  * in the full catalog (covers included) from the client once it mounts.
  */
-export const load: PageServerLoad = async ({ platform }) => ({
+export const load: PageServerLoad = async () => ({
   products: await loadShopCatalogSnapshot(
-    platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON
+    workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON
   ),
 });

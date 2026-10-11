@@ -12,8 +12,8 @@
   import { getKeyboardShortcutManager } from "../get-keyboard-shortcut-manager";
   import { getCommandPalette } from "../get-command-palette";
 
-  import type { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
-  import type { CommandPalette } from "$lib/shared/keyboard/services/command-palette";
+  import type { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
+  import type { CommandPalette } from "#lib/shared/keyboard/services/command-palette.js";
   import type { ShortcutContext } from "../domain/types/keyboard-types";
   import { keyboardShortcutState } from "../state/keyboard-shortcut-state.svelte";
   import { getActiveModule } from "../../application/state/ui/ui-state.svelte";

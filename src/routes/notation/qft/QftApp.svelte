@@ -2,7 +2,7 @@
   import {
     loadQftSession,
     saveQftSession,
-  } from "$lib/shared/notation/qft/qft-session";
+  } from "#lib/shared/notation/qft/qft-session.js";
   import { createQftAppState } from "./_state/qft-app-state.svelte";
   import { setQftAppContext } from "./_context/qft-app-context";
   import QftAppShell from "./_components/QftAppShell.svelte";

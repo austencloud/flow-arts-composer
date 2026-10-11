@@ -4,8 +4,8 @@ import {
   WALK_PATTERNS,
   stepOf,
   walkPattern,
-} from "$lib/shared/3d/diagnostics/gait/walk-patterns";
-import type { WalkPattern } from "$lib/shared/3d/diagnostics/gait/walk-patterns";
+} from "#lib/shared/3d/diagnostics/gait/walk-patterns.js";
+import type { WalkPattern } from "#lib/shared/3d/diagnostics/gait/walk-patterns.js";
 
 const DT = 1 / 60;
 

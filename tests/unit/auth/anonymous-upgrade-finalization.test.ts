@@ -37,55 +37,58 @@ vi.mock("firebase/auth", () => ({
   signInWithEmailLink: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthInstance: h.getAuthInstance,
 }));
 
-vi.mock("$lib/shared/auth/services/pending-credential-link", () => ({
+vi.mock("#lib/shared/auth/services/pending-credential-link.js", () => ({
   stashPendingLink: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/services/last-auth-method.svelte", () => ({
+vi.mock("#lib/shared/auth/services/last-auth-method.svelte.js", () => ({
   recordLastAuthMethod: vi.fn(),
 }));
 
-vi.mock("$lib/shared/gamification/get-prop-unlock-manager", () => ({
+vi.mock("#lib/shared/gamification/get-prop-unlock-manager.js", () => ({
   getPropUnlockManager: () => ({
     mergeGuestCollection: h.mergeGuestCollection,
   }),
 }));
 
-vi.mock("$lib/shared/library/get-library-repository", () => ({
+vi.mock("#lib/shared/library/get-library-repository.js", () => ({
   getLibraryRepository: vi.fn(),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { success: h.toastSuccess },
 }));
 
-vi.mock("$lib/shared/analytics/services/posthog-lifecycle-reporter", () => ({
+vi.mock("#lib/shared/analytics/services/posthog-lifecycle-reporter.js", () => ({
   reportPostHogLifecycleEvent: h.reportLifecycle,
 }));
 
-vi.mock("$lib/shared/persistence/services/dexie-persistence-service", () => ({
-  getAllSequences: vi.fn(async () => []),
-}));
+vi.mock(
+  "#lib/shared/persistence/services/dexie-persistence-service.js",
+  () => ({
+    getAllSequences: vi.fn(async () => []),
+  })
+);
 
-vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
+vi.mock("#lib/shared/library/services/saved-sequence-ledger.js", () => ({
   getSavedSequenceIds: vi.fn(() => []),
 }));
 
-vi.mock("$lib/shared/auth/get-user-document-manager", () => ({
+vi.mock("#lib/shared/auth/get-user-document-manager.js", () => ({
   getUserDocumentManager: () => ({
     createOrUpdateUserDocument: h.createOrUpdateUserDocument,
   }),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   refreshUser: h.refreshUser,
 }));
 
-import { notifyUpgradeSignup } from "$lib/shared/auth/services/anonymous-upgrade";
+import { notifyUpgradeSignup } from "#lib/shared/auth/services/anonymous-upgrade.js";
 
 beforeEach(() => {
   vi.clearAllMocks();

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+import { loadPostProject } from "#lib/shared/media-composition/services/post-project-store.js";
 import {
   projectDraftRecord,
   resolvePostStudioDraft,
-} from "$lib/shared/media-composition/services/post-project-backup";
+} from "#lib/shared/media-composition/services/post-project-backup.js";
 
 const sequenceId = "post-reload-regression";
 

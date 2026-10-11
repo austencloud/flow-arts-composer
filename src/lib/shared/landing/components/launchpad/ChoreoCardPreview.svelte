@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { buildCanonicalCardVisibility } from "$lib/features/choreo-card/domain/canonical-card-visibility";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { generateSequenceRoutePath } from "$lib/shared/navigation/services/sequence-encoder";
-  import { getUrlQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
-  import { getSequenceRenderer } from "$lib/shared/render/get-sequence-renderer";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { buildCanonicalCardVisibility } from "#lib/features/choreo-card/domain/canonical-card-visibility.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { generateSequenceRoutePath } from "#lib/shared/navigation/services/sequence-encoder.js";
+  import { getUrlQRCodeGenerator } from "#lib/shared/qr/get-qr-code-generator.js";
+  import { getSequenceRenderer } from "#lib/shared/render/get-sequence-renderer.js";
 
   let {
     sequence,

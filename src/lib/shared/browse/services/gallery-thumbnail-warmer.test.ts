@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ThumbnailResult } from "./thumbnail-render-orchestrator";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { expandCombos, startGalleryWarm, type WarmScope } from "./gallery-thumbnail-warmer";
 
 /** Minimal SequenceData — only identity + steps affect the warmer path.

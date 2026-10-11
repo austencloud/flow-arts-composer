@@ -34,12 +34,12 @@
   import Environment3D from "../environments/components/Environment3D.svelte";
   import StageTerrain from "./StageTerrain.svelte";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import type { PhysicsWorldState } from "$lib/shared/3d/physics/types";
+  import type { PhysicsWorldState } from "#lib/shared/3d/physics/types.js";
   import { Plane } from "@austencloud/scene-3d";
   import type { GridMode } from "@austencloud/scene-3d";
   import type { Snippet } from "svelte";
   import { WALL_OFFSET } from "@austencloud/scene-3d";
-  import { CameraMode } from "$lib/shared/3d/camera/types";
+  import { CameraMode } from "#lib/shared/3d/camera/types.js";
   import type { CharacterInstanceState } from "../state/character-instance-state.svelte";
   import { getCameraLayers } from "@austencloud/scene-3d";
   import { SCALE, STAGE } from "@austencloud/scene-3d";

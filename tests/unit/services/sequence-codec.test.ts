@@ -4,7 +4,7 @@ import {
   decompressFromURL,
   compressForQR,
   decompressFromQR,
-} from "$lib/shared/navigation/services/sequence-codec";
+} from "#lib/shared/navigation/services/sequence-codec.js";
 
 const SAMPLE_DATA =
   "noeak1pS:soeatupS|1snoiStDno2R|2sneaShDso1R|3ssoeaPrDwe1R|4sweaShDno1R|5snoiStDno2R|6sneaShDso1R|7ssoeaPrDwe1R|8sweaShDno1R|9snoiStDno2R|10sneaShDso1R";

@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { resolvePropTipAnchors3D } from "$lib/shared/3d/effects/prop-tip-geometry-3d";
+import { resolvePropTipAnchors3D } from "#lib/shared/3d/effects/prop-tip-geometry-3d.js";
 import { PropType, propFinishState } from "@austencloud/scene-3d";
-import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
-import { PropType as AppPropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
+import { PropType as AppPropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   HOOP_FAMILY_REACH_M,
   HOOP_HARDWARE_M,
   TRIANGLE_STATIONS_M,
-} from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
+} from "#lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.js";
 import {
   TRIANGLE_ARC_ANGLE,
   TRIANGLE_BOW_RADIUS_M,

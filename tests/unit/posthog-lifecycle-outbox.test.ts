@@ -5,7 +5,7 @@ import {
   enqueueLifecycleEvent,
   readLifecycleOutbox,
   type LifecycleOutboxStorage,
-} from "$lib/shared/analytics/services/posthog-lifecycle-outbox";
+} from "#lib/shared/analytics/services/posthog-lifecycle-outbox.js";
 
 function createStorage(): LifecycleOutboxStorage {
   let value: string | null = null;

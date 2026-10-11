@@ -6,23 +6,23 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { browser } from "$app/environment";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { getCameraManager } from "$lib/shared/train/get-camera-manager";
+  import { browser } from "$app/env";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { getCameraManager } from "#lib/shared/train/get-camera-manager.js";
   import {
     isCameraAcquisitionCancelled,
     type CameraAcquisition,
-  } from "$lib/shared/train/services/camera-manager";
+  } from "#lib/shared/train/services/camera-manager.js";
   import { getVideoRecorder } from "../services/video-recorder";
   import type {
     RecordingProgress,
     RecordingResult,
   } from "../services/types";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { createVideoRecordSettings } from "../state/video-record-settings.svelte";
   import GridPreview from "./GridPreview.svelte";
   import VideoRecordSettingsSheet from "./VideoRecordSettingsSheet.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
 
   let {
     sequence = null,
@@ -397,7 +397,7 @@
           </div>
           <div class="reference-wrapper">
             {#if activeReferenceView === "animation"}
-              {#await import("$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte") then mod}
+              {#await import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte") then mod}
                 <mod.default
                   {sequence}
                   autoPlay={true}

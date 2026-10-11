@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { compareVersions } from "$lib/shared/versioning/domain/models/version-models";
+import { compareVersions } from "#lib/shared/versioning/domain/models/version-models.js";
 
 describe("compareVersions", () => {
   it("orders by major.minor.patch numerically", () => {

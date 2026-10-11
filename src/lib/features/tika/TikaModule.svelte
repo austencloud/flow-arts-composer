@@ -9,23 +9,23 @@
   Pictographs render inline in message bubbles (no side panel).
 -->
 <script lang="ts">
-  import { getConceptProgressTracker } from "$lib/features/learn/get-concept-progress-tracker";
-  import * as quizHistoryRecorderModule from "$lib/features/learn/services/quiz-history-recorder";
-  import * as conceptRecommenderModule from "$lib/features/learn/services/concept-recommender";
-  import { getRecurringMisconceptions } from "$lib/features/learn/services/gap-detector";
+  import { getConceptProgressTracker } from "#lib/features/learn/get-concept-progress-tracker.js";
+  import * as quizHistoryRecorderModule from "#lib/features/learn/services/quiz-history-recorder.js";
+  import * as conceptRecommenderModule from "#lib/features/learn/services/concept-recommender.js";
+  import { getRecurringMisconceptions } from "#lib/features/learn/services/gap-detector.js";
   import { Chat, type UIMessage } from "@ai-sdk/svelte";
   import { DefaultChatTransport } from "ai";
-  import { browser } from "$app/environment";
-  import { trackTikaQuestionSubmitted } from "$lib/features/tika/analytics/tika-events";
+  import { browser } from "$app/env";
+  import { trackTikaQuestionSubmitted } from "#lib/features/tika/analytics/tika-events.js";
   import { onMount } from "svelte";
   import TikaConversation from "./components/TikaConversation.svelte";
   import TikaReviewPanel from "./components/TikaReviewPanel.svelte";
   import TikaCompareView from "./components/TikaCompareView.svelte";
   import TikaHistoryDrawer from "./components/TikaHistoryDrawer.svelte";
-  import { getEffectiveUserId, authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { auth } from "$lib/shared/auth/firebase";
-  import type { ConceptProgressTracker } from "$lib/features/learn/services/concept-progress-tracker";
-  import type { MasteryContext } from "$lib/features/learn/domain/quiz-history-types";
+  import { getEffectiveUserId, authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { auth } from "#lib/shared/auth/firebase.js";
+  import type { ConceptProgressTracker } from "#lib/features/learn/services/concept-progress-tracker.js";
+  import type { MasteryContext } from "#lib/features/learn/domain/quiz-history-types.js";
   import * as tikaSessionRepository from "./services/tika-session-repository";
   import { ConversationMemoryRetriever } from "./services/conversation-memory-retriever";
   import { TikaInteractionTracker } from "./services/tika-interaction-tracker";

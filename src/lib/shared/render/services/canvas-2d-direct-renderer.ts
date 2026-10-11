@@ -4,7 +4,7 @@ import type {
   RenderTiming,
 } from "./IDirectRenderer";
 import type { PictographData } from "../../pictograph/shared/domain/models/pictograph-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { PreparedPictographData } from "../../pictograph/shared/domain/models/prepared-pictograph-data";
 import { GridMode } from "../../pictograph/grid/domain/enums/grid-enums";
 import { getSvgImageCache } from "./svg-image-cache";
@@ -34,9 +34,9 @@ import {
 import { createRenderCanvas } from "./create-render-canvas";
 import { drawTintedImage } from "@tka/render-composition";
 import type { RenderCanvas } from "./types";
-import { captureException } from "$lib/shared/analytics/services/posthog";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { applyModelSpriteColor } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
+import { captureException } from "#lib/shared/analytics/services/posthog.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { applyModelSpriteColor } from "#lib/shared/pictograph/prop/domain/prop-preview-color.js";
 import {
   getGridJoinLayout,
   getGridPoints,
@@ -56,7 +56,7 @@ import {
   applyColorToSvg,
   getMotionColor,
   SELECTIVE_COLOR_PROP_TYPES,
-} from "$lib/shared/utils/svg-color-utils";
+} from "#lib/shared/utils/svg-color-utils.js";
 
 const VIEWBOX_SIZE = 950;
 

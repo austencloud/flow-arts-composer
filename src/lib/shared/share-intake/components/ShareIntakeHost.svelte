@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { scheduleIntakeRun } from "../services/share-intake-runner";
   import { shareIntakeSignal } from "../state/share-intake-signal.svelte";
 

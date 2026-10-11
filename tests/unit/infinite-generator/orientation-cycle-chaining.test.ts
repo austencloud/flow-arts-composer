@@ -1,16 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { detectOrientationCycle } from "$lib/shared/create/services/orientation-cycle-detector";
-import { OrientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { detectOrientationCycle } from "#lib/shared/create/services/orientation-cycle-detector.js";
+import { OrientationCycleExtender } from "#lib/features/create/generate/circular/services/orientation-cycle-extender.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   MotionType,
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 function makeStep(
   stepNumber: number,

@@ -1,14 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 // Deterministic orientation: "in" at 0 turns, "out" otherwise — lets us assert
 // that turns flow through to an end-orientation recompute.
-vi.mock("$lib/shared/pictograph/prop/services/orientation-calculator", () => ({
+vi.mock("#lib/shared/pictograph/prop/services/orientation-calculator.js", () => ({
   calculateEndOrientation: (m: { turns: number | "fl" }) =>
     m.turns === 0 || m.turns === "fl" ? "in" : "out",
 }));

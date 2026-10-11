@@ -4,14 +4,15 @@
    *
    * One pictograph in a Create method preview, drawn by the real
    * PictographContainer with every glyph, label, and step number off, so a
-   * small cell shows the grid, props, and arrows only. Transitions are off:
+   * small cell shows the grid, props, and arrows only. A scene can turn the
+   * letter on (Assemble's beats). Transitions are off:
    * a scene moves its cells itself and must never wait on a fade. The grid,
    * prop artwork, and colors follow the user's settings, as everywhere else.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
   let {
     data,
@@ -20,6 +21,7 @@
     motionStep = null,
     motionProgress = null,
     arrowOpacity = 1,
+    showLetter = false,
     transparentBackground = false,
     readyEpoch = 0,
     onReady,
@@ -34,6 +36,8 @@
     motionProgress?: number | null;
     /** Arrows fade in with the travel, as on Fuse's own cards. */
     arrowOpacity?: number;
+    /** Draw the letter glyph, as the workspace's beats do. */
+    showLetter?: boolean;
     /**
      * Skip the pictograph's own background fill, so the cell behind it
      * shows through (Fuse's half that floats over the other).
@@ -53,7 +57,7 @@
   pictographData={data}
   disableTransitions
   disableContentTransitions
-  showTKA={false}
+  showTKA={showLetter}
   showReversals={false}
   showNonRadialPoints={false}
   showHandPoints={false}

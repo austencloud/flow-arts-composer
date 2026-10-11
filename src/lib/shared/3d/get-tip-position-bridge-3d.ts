@@ -1,4 +1,4 @@
-import { TipPositionBridge3D } from '$lib/shared/3d/effects/tip-position-bridge-3d';
+import { TipPositionBridge3D } from '#lib/shared/3d/effects/tip-position-bridge-3d.js';
 
 let instance: TipPositionBridge3D | null = null;
 

@@ -1,9 +1,9 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { BrowseDataSource } from './services/browse-data-source';
-import { getBrowseLoader } from '$lib/shared/browse/get-browse-loader';
-import { soloPropRepository } from '$lib/shared/foundation/services/solo-prop-repository-store';
-import { handPathRepository } from '$lib/shared/foundation/services/hand-path-repository-store';
+import { getBrowseLoader } from '#lib/shared/browse/get-browse-loader.js';
+import { soloPropRepository } from '#lib/shared/foundation/services/solo-prop-repository-store.js';
+import { handPathRepository } from '#lib/shared/foundation/services/hand-path-repository-store.js';
 
 let instance: BrowseDataSource | null = null;
 

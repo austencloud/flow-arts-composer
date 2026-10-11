@@ -18,7 +18,7 @@
   import type { PropState3D } from "@austencloud/scene-3d";
   import { userProportionsState } from "@austencloud/scene-3d";
   import { LAYER_VIEWMODEL, reactivePropHandPalette } from "@austencloud/scene-3d";
-  import { CameraMode } from "$lib/shared/3d/camera/types";
+  import { CameraMode } from "#lib/shared/3d/camera/types.js";
 
   interface Props {
     /** Blue prop state (left hand) */

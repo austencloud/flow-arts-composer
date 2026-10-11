@@ -12,6 +12,7 @@
    */
   import { page } from "$app/state";
   import { afterNavigate, preloadData } from "$app/navigation";
+  import { isShallowGoto } from "#lib/shared/navigation/services/url-state.js";
   import { LAUNCHPAD_TILES } from "./launchpad/launchpad-tiles";
   import { onMount, type Component } from "svelte";
   import RobustAvatar from "../../components/avatar/RobustAvatar.svelte";
@@ -25,10 +26,10 @@
     startAuthState,
     type AuthStateApi,
   } from "../../auth/services/deferred-sign-in";
-  import { trackCtaClick } from "$lib/shared/analytics/landing-events";
-  import { analyticsRoute } from "$lib/shared/analytics/analytics-context";
-  import type { AuthCta } from "$lib/shared/analytics/auth-events";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { trackCtaClick } from "#lib/shared/analytics/landing-events.js";
+  import { analyticsRoute } from "#lib/shared/analytics/analytics-context.js";
+  import type { AuthCta } from "#lib/shared/analytics/auth-events.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { siteCopy } from "../site-copy";
 
   let scrolled = $state(false);
@@ -117,7 +118,7 @@
 
   async function openSignIn(cta: AuthCta) {
     const { trackAuthModalOpened } =
-      await import("$lib/shared/analytics/auth-events");
+      await import("#lib/shared/analytics/auth-events.js");
     trackAuthModalOpened(analyticsRoute(), cta);
     accountOpen = false;
     mobileOpen = false;
@@ -144,7 +145,7 @@
   $effect(() => {
     if (authModalOpen && authApi?.isFullAccount) {
       authModalOpen = false;
-      void import("$lib/shared/auth/services/auth-analytics-bridge")
+      void import("#lib/shared/auth/services/auth-analytics-bridge.js")
         .then(({ clearAuthSubmissionBridge }) => clearAuthSubmissionBridge())
         .catch((error) =>
           console.warn("[SiteHeader] Auth analytics cleanup failed:", error)
@@ -335,7 +336,8 @@
   // the page you left flash back before the transition. Holding the overlay up
   // through navigation lets it stay covering the old page and fade away onto
   // the NEW one — straight from the menu into the destination.
-  afterNavigate(() => {
+  afterNavigate((navigation) => {
+    if (isShallowGoto(navigation)) return;
     mobileOpen = false;
     accountOpen = false;
     desktopOpenGroup = null;
@@ -437,44 +439,52 @@
           </a>
         {/if}
       {/each}
-      {#if !authReady}
-        <span class="auth-slot" aria-hidden="true"></span>
-      {:else if isFullAccount}
-        <div class="account" bind:this={accountEl}>
-          <button
-            class="avatar-btn"
-            aria-haspopup="menu"
-            aria-expanded={accountOpen}
-            aria-label={siteCopy("Account menu")}
-            onclick={() => (accountOpen = !accountOpen)}
-          >
-            <RobustAvatar src={photoURL} name={displayName} customSize={32} />
-          </button>
-          {#if accountOpen}
-            <div class="account-menu" role="menu">
-              <div class="acct-identity">
-                <span class="acct-name">{displayName}</span>
-                {#if email}<span class="acct-email">{email}</span>{/if}
-              </div>
-              <button
-                class="acct-signout"
-                role="menuitem"
-                onclick={handleSignOut}
-              >
-                <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-                {siteCopy("Sign out")}
-              </button>
-            </div>
-          {/if}
-        </div>
-      {:else}
-        <button
-          type="button"
-          class="signin auth-slot"
-          onclick={() => openSignIn("header_desktop_signin")}
-          >{siteCopy("Sign in")}</button
+      <!-- One cell sized to the slot's widest state, the "Sign in" label or
+           the avatar's touch target, so resolving the placeholder to either
+           never moves the menu beside it. -->
+      <div class="auth-cell">
+        <span class="signin auth-sizer" aria-hidden="true"
+          >{siteCopy("Sign in")}</span
         >
-      {/if}
+        {#if !authReady}
+          <span class="auth-slot" aria-hidden="true"></span>
+        {:else if isFullAccount}
+          <div class="account" bind:this={accountEl}>
+            <button
+              class="avatar-btn"
+              aria-haspopup="menu"
+              aria-expanded={accountOpen}
+              aria-label={siteCopy("Account menu")}
+              onclick={() => (accountOpen = !accountOpen)}
+            >
+              <RobustAvatar src={photoURL} name={displayName} customSize={32} />
+            </button>
+            {#if accountOpen}
+              <div class="account-menu" role="menu">
+                <div class="acct-identity">
+                  <span class="acct-name">{displayName}</span>
+                  {#if email}<span class="acct-email">{email}</span>{/if}
+                </div>
+                <button
+                  class="acct-signout"
+                  role="menuitem"
+                  onclick={handleSignOut}
+                >
+                  <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+                  {siteCopy("Sign out")}
+                </button>
+              </div>
+            {/if}
+          </div>
+        {:else}
+          <button
+            type="button"
+            class="signin auth-slot"
+            onclick={() => openSignIn("header_desktop_signin")}
+            >{siteCopy("Sign in")}</button
+          >
+        {/if}
+      </div>
       <a
         class="cta"
         href="/create"
@@ -796,12 +806,26 @@
   .signin:focus-visible {
     color: #fff;
   }
-  /* Reserve the auth slot at the avatar's footprint so swapping
-     placeholder → Sign in / avatar never nudges the CTA. */
+  /* The placeholder, Sign in and the avatar share one grid cell. A hidden
+     copy of the Sign in label, at least the avatar's touch target wide, sets
+     its size in every language, so no state change moves the nav. */
+  .auth-cell {
+    display: grid;
+    align-items: center;
+    justify-items: center;
+  }
+  .auth-cell > * {
+    grid-area: 1 / 1;
+  }
+  .auth-sizer {
+    visibility: hidden;
+    min-width: var(--min-touch-target, 44px);
+    text-align: center;
+    pointer-events: none;
+  }
   .auth-slot {
     display: inline-flex;
     align-items: center;
-    min-width: 36px;
     min-height: var(--min-touch-target, 44px);
   }
 

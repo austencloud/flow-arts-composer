@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createScreenWakeLockManager } from "$lib/shared/device/services/screen-wake-lock-manager";
+import { createScreenWakeLockManager } from "#lib/shared/device/services/screen-wake-lock-manager.js";
 
 class FakeDocument extends EventTarget {
   visibilityState: DocumentVisibilityState = "visible";

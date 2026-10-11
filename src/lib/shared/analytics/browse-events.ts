@@ -4,8 +4,8 @@
  * concepts, never display copy, sequence words, collection ids, or creator ids.
  */
 
-import { withRoute } from "$lib/shared/analytics/analytics-context";
-import { captureWhenReady } from "$lib/shared/analytics/services/posthog";
+import { withRoute } from "#lib/shared/analytics/analytics-context.js";
+import { captureWhenReady } from "#lib/shared/analytics/services/posthog.js";
 
 export type BrowseDestination =
   | "gallery"

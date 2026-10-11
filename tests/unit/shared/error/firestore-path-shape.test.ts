@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toFirestorePathShape } from "$lib/shared/error/domain/firestore-path-shape";
+import { toFirestorePathShape } from "#lib/shared/error/domain/firestore-path-shape.js";
 
 describe("toFirestorePathShape", () => {
   it("replaces document IDs while retaining collection names", () => {

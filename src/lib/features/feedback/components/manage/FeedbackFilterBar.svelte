@@ -1,19 +1,19 @@
 <!-- FeedbackFilterBar - Responsive filters composed of child components -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { FeedbackManageState } from "$lib/shared/feedback/state/feedback-manage-state.svelte";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { FeedbackManageState } from "#lib/shared/feedback/state/feedback-manage-state.svelte.js";
   import { createFilterBarUIState } from "../../state/filter-bar-ui-state.svelte";
   import {
     TYPE_CONFIG,
     STATUS_CONFIG,
     PRIORITY_CONFIG,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
-  import type { FeedbackType } from "$lib/shared/feedback/domain/models/feedback-models";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import type { FeedbackType } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import FilterButton from "./FilterButton.svelte";
   import FilterMobileSheet from "./FilterMobileSheet.svelte";
   import FilterDesktopDrawers from "./FilterDesktopDrawers.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     manageState: FeedbackManageState;

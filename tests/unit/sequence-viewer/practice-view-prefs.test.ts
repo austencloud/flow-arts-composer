@@ -3,7 +3,7 @@ import {
   SPLIT_PRESETS,
   READ_AHEAD_TO_CELL_SIZE,
   cellSizeForReadAhead,
-} from "$lib/shared/sequence-viewer/state/practice-view-prefs.svelte";
+} from "#lib/shared/sequence-viewer/state/practice-view-prefs.svelte.js";
 
 describe("practice view-pref maps", () => {
   it("exposes the three split presets in order", () => {

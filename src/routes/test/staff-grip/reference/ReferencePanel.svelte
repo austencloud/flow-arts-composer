@@ -3,11 +3,11 @@
   performance, see how each one synced, and nudge or re-aim it.
 -->
 <script lang="ts">
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import ScrubbableNumber from "$lib/shared/ui/components/ScrubbableNumber.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import ScrubbableNumber from "#lib/shared/ui/components/ScrubbableNumber.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   import LabSection from "../LabSection.svelte";
 

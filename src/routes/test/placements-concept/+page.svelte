@@ -13,12 +13,12 @@
   import { onMount, tick } from "svelte";
   import { slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
-  import { propSvgLoader } from "$lib/shared/pictograph/prop/services/prop-svg-loader";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-  import type { PropPlacementData } from "$lib/shared/pictograph/prop/domain/models/prop-placement-data";
-  import LessonGridDisplay from "$lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
+  import { propSvgLoader } from "#lib/shared/pictograph/prop/services/prop-svg-loader.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import type { PropPlacementData } from "#lib/shared/pictograph/prop/domain/models/prop-placement-data.js";
+  import LessonGridDisplay from "#lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
 
   type SvgData = {
     svgContent: string;

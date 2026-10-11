@@ -2,13 +2,13 @@ import {
   createAccountSetupState,
   type AccountSetupIdentity,
   type AccountSetupTaskId,
-} from "$lib/shared/onboarding/state/account-setup-state.svelte";
+} from "#lib/shared/onboarding/state/account-setup-state.svelte.js";
 import {
   createDefaultAccountSetupProgress,
   normalizeAccountSetupProgress,
   type AccountSetupProgress,
-} from "$lib/shared/onboarding/domain/account-setup-progress";
-import type { OnboardingStatus } from "$lib/shared/onboarding/services/types";
+} from "#lib/shared/onboarding/domain/account-setup-progress.js";
+import type { OnboardingStatus } from "#lib/shared/onboarding/services/types.js";
 
 export type FirstVisitScene =
   | "arrival"

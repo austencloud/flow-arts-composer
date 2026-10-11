@@ -11,8 +11,8 @@
   import InlineSequencePlayer from "./InlineSequencePlayer.svelte";
   import InlineStepGrid from "./InlineStepGrid.svelte";
   import InlineQuiz from "./InlineQuiz.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import SanitizedHtml from "$lib/shared/foundation/ui/SanitizedHtml.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import SanitizedHtml from "#lib/shared/foundation/ui/SanitizedHtml.svelte";
   import { parseMarkdown } from "../services/tika-markdown-parser";
   import { getTextFromParts as _getTextFromParts, getToolOutputFromParts as _getToolOutputFromParts } from "../services/tika-message-extractor";
   import type {

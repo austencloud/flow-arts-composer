@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ContextMenuItem } from "$lib/shared/components/context-menu/context-menu-types";
+import type { ContextMenuItem } from "#lib/shared/components/context-menu/context-menu-types.js";
 import {
   contextMenuCloseCounts,
   instrumentContextMenuEntries,
-} from "$lib/shared/sequence-viewer/services/context-menu-analytics";
+} from "#lib/shared/sequence-viewer/services/context-menu-analytics.js";
 
 describe("context menu analytics", () => {
   it("reports nested card controls and preserves the original action", () => {

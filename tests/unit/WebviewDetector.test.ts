@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { isInAppWebview } from "$lib/shared/sequence-viewer/services/webview-detector";
+import { isInAppWebview } from "#lib/shared/sequence-viewer/services/webview-detector.js";
 
 function setUa(ua: string | undefined) {
 	Object.defineProperty(globalThis, "navigator", {

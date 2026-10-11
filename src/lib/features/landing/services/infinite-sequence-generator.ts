@@ -14,28 +14,28 @@
 import {
   GridMode,
   type GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   GenerationMode,
   DifficultyLevel,
   PropContinuity,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { getAllPlacements } from "$lib/features/create/generate/shared/domain/start-placement-presets";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { getAllPlacements } from "#lib/features/create/generate/shared/domain/start-placement-presets.js";
 import {
   LOOPType,
   Period,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { VERTICAL_MIRROR_PLACEMENT_MAP } from "$lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps";
-import type { GenerationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-import type { OrientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { VERTICAL_MIRROR_PLACEMENT_MAP } from "#lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps.js";
+import type { GenerationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
+import type { OrientationCycleExtender } from "#lib/features/create/generate/circular/services/orientation-cycle-extender.js";
 import type {
   GeneratedSequenceInfo,
   GenerationSettings,
 } from "../domain/models/spinner-models";
-import type { EndState } from "$lib/shared/landing/domain/types";
+import type { EndState } from "#lib/shared/landing/domain/types.js";
 import type { SpinnerMetricsRepository } from "./spinner-metrics-repository";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /**
  * LOOP types that compose rotation + mirroring.

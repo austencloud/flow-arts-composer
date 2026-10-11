@@ -10,7 +10,7 @@
     type Object3D,
     type Texture,
   } from "three";
-  import ForestGroundDetail from "$lib/shared/3d/environments/scenes/forest/ForestGroundDetail.svelte";
+  import ForestGroundDetail from "#lib/shared/3d/environments/scenes/forest/ForestGroundDetail.svelte";
   import type { FlowFestGroundFamilyMask } from "./flow-fest-ground-surface";
 
   interface Props {

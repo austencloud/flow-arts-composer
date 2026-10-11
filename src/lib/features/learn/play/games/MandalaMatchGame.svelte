@@ -12,9 +12,9 @@
   signal for whole-sequence matching.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onDestroy, onMount } from "svelte";
   import { generateSequenceMatchQuestion } from "../../quiz/services/sequence-question-generator";
   import { QuizType } from "../../quiz/domain/enums/quiz-enums";
@@ -22,17 +22,17 @@
     QuizAnswerOption,
     QuizQuestionData,
   } from "../../quiz/domain/models/quiz-models";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import QuizContainer from "../../quiz/components/shared/QuizContainer.svelte";
   import QuizLoadingState from "../../quiz/components/shared/QuizLoadingState.svelte";
   import QuizErrorState from "../../quiz/components/shared/QuizErrorState.svelte";
   import QuizPrompt from "../../quiz/components/shared/QuizPrompt.svelte";
   import QuizFeedbackBanner from "../../quiz/components/shared/QuizFeedbackBanner.svelte";
   import ScorePopAnimation from "../../quiz/components/shared/ScorePopAnimation.svelte";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import ChoreoCard from "$lib/features/choreo-card/components/ChoreoCard.svelte";
-  import { reducedMotion } from "$lib/shared/transitions/motion";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import ChoreoCard from "#lib/features/choreo-card/components/ChoreoCard.svelte";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import { getArcadeSession } from "../state/arcade-session-state.svelte";
   import type { QuestionConstraints } from "../domain/arcade-types";
 

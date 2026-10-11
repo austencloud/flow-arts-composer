@@ -18,7 +18,7 @@ const glyphCacheMock = vi.hoisted(() => {
 });
 
 // Mock getGlyphCache before importing TextRenderer
-vi.mock("$lib/shared/render/get-glyph-cache", () => ({
+vi.mock("#lib/shared/render/get-glyph-cache.js", () => ({
   getGlyphCache: () => {
     if (glyphCacheMock.throwOnAccess) {
       throw new Error("browser-only glyph cache accessed");
@@ -41,7 +41,7 @@ vi.stubGlobal("Image", MockImage);
 
 // Import AFTER mocks are set up
 const { TextRenderer } =
-  await import("$lib/shared/render/services/text-renderer");
+  await import("#lib/shared/render/services/text-renderer.js");
 
 describe("TextRenderer glyph methods", () => {
   let renderer: InstanceType<typeof TextRenderer>;

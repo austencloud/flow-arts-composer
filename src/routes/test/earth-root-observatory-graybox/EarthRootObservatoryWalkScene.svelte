@@ -3,17 +3,17 @@
   import { CameraMode, UnifiedCameraController } from "@austencloud/camera-3d";
   import type { AvatarState, PhysicsProvider } from "@austencloud/camera-3d";
   import { Mesh, type Object3D } from "three";
-  import MuseumPerformerStation3D from "$lib/features/museum/components/game/MuseumPerformerStation3D.svelte";
-  import GltfAsset from "$lib/shared/3d/environments/primitives/GltfAsset.svelte";
-  import { buildEarthRootObservatoryBlenderContract } from "$lib/features/museum/data/earth-root-observatory-blender-contract";
+  import MuseumPerformerStation3D from "#lib/features/museum/components/game/MuseumPerformerStation3D.svelte";
+  import GltfAsset from "#lib/shared/3d/environments/primitives/GltfAsset.svelte";
+  import { buildEarthRootObservatoryBlenderContract } from "#lib/features/museum/data/earth-root-observatory-blender-contract.js";
   import {
     buildEarthRootObservatoryPlanForGrid,
     type EarthRootObservatoryPlan,
     type EarthRootObservatoryStop,
-  } from "$lib/features/museum/data/earth-root-observatory-plan";
-  import { createEarthRootObservatoryGrayboxReviewGrid } from "$lib/features/museum/data/earth-root-observatory-graybox-terrain";
-  import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
-  import { createMuseumPhysicsProvider } from "$lib/features/museum/services/museum-physics-provider";
+  } from "#lib/features/museum/data/earth-root-observatory-plan.js";
+  import { createEarthRootObservatoryGrayboxReviewGrid } from "#lib/features/museum/data/earth-root-observatory-graybox-terrain.js";
+  import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
+  import { createMuseumPhysicsProvider } from "#lib/features/museum/services/museum-physics-provider.js";
 
   interface Props {
     selectedStopId: string;

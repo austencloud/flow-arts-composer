@@ -4,7 +4,7 @@
   state; GalleryWorkspaceFrame owns the responsive rules shared by all editors.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import GalleryWorkspaceFrame from "./GalleryWorkspaceFrame.svelte";
   import GalleryChooserEditor from "./value-editors/GalleryChooserEditor.svelte";

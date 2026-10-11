@@ -4,16 +4,16 @@ import { Plane, PlaneMode } from "@austencloud/scene-3d";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
 import {
   buildStanceYawTrackForSource,
   resolveTrackedUpperBodyStance,
-} from "$lib/shared/3d/collision/stance-yaw-track";
+} from "#lib/shared/3d/collision/stance-yaw-track.js";
 import {
   buildHardBeatTrack,
   displaceProp,
   sampleHardBeatTrack,
-} from "$lib/shared/3d/collision/hard-beat-displacement";
+} from "#lib/shared/3d/collision/hard-beat-displacement.js";
 import {
   BODY_CLEARANCE_RAMP_STEPS,
   BODY_CLEARANCE_TORSO,
@@ -30,9 +30,9 @@ import {
   type BodyClearanceTrack,
   type BodyMove,
   type StaffLine,
-} from "$lib/shared/3d/collision/body-clearance";
-import { propStateToStaffTarget } from "$lib/shared/3d/services/swept-volume/swept-volume-builder";
-import { fixedHandDistance } from "$lib/shared/3d/domain/performer-hand-distance";
+} from "#lib/shared/3d/collision/body-clearance.js";
+import { propStateToStaffTarget } from "#lib/shared/3d/services/swept-volume/swept-volume-builder.js";
+import { fixedHandDistance } from "#lib/shared/3d/domain/performer-hand-distance.js";
 import { propContinuityCorpus } from "../../tools/prop-continuity-corpus";
 
 /**

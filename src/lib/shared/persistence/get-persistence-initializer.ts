@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { PersistenceInitializer } from './services/persistence-initializer';
 
 let instance: PersistenceInitializer | null = null;

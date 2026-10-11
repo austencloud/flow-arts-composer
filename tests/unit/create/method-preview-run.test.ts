@@ -11,7 +11,7 @@ import {
   tapAt,
   waitUntil,
   type SceneFinger,
-} from "$lib/features/create/shared/components/method-previews/method-preview-run";
+} from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
 
 beforeEach(() => {
   vi.useFakeTimers();

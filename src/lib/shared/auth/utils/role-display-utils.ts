@@ -3,8 +3,8 @@
  * Shared utilities for displaying user roles
  */
 
-import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
-import { ROLE_DISPLAY } from "$lib/shared/auth/domain/models/user-role";
+import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
+import { ROLE_DISPLAY } from "#lib/shared/auth/domain/models/user-role.js";
 
 export function getRoleColor(role: UserRole): string {
   return ROLE_DISPLAY[role].color;

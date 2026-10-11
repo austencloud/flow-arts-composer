@@ -1,4 +1,4 @@
-import type { VTGMode } from "$lib/features/learn/domain/constants/vtg-experience-data";
+import type { VTGMode } from "#lib/features/learn/domain/constants/vtg-experience-data.js";
 
 /**
  * The 6 VTG modes map 1:1 to the 6 TnD families used by the deck releaser

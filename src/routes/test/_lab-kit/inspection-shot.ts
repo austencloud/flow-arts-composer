@@ -3,7 +3,7 @@
  *
  * An inspection lab frames a REGION — a grip zone, a reach envelope — rather
  * than a performer, so it cannot use
- * `$lib/shared/3d/camera/compute-framing-shot`, which bakes in a 1.2 m
+ * `#lib/shared/3d/camera/compute-framing-shot.js`, which bakes in a 1.2 m
  * per-performer horizontal extent and a 2 m minimum distance. The vocabulary
  * here is the one `test/film-director/_lib/camera-language.ts` uses: declare a
  * subject box, an azimuth and an elevation, and solve the distance.

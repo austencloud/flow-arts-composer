@@ -11,18 +11,18 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createOceanFishBoids,
   type OceanFishBoidsDependencies,
-} from "$lib/shared/3d/environments/worlds/ocean/ocean-fish-boids";
-import type { FishComputeSystem } from "$lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/fish-compute";
+} from "#lib/shared/3d/environments/worlds/ocean/ocean-fish-boids.js";
+import type { FishComputeSystem } from "#lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/fish-compute.js";
 import type {
   ExtractedModel,
   FishRenderSystem,
-} from "$lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/fish-render";
+} from "#lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/fish-render.js";
 import {
   RESIDENT_SPECIES,
   VISITOR_SPECIES,
   type FishSpeciesConfig,
   type VisitorGroup,
-} from "$lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/fish-species";
+} from "#lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/fish-species.js";
 
 function createFishMaterial(): ShaderMaterial {
   return new ShaderMaterial({

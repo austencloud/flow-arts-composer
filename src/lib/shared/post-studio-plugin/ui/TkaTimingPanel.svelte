@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { VideoEditorState } from "@austencloud/video-editor";
-  import PostTimingPanel from "$lib/shared/share/components/post-studio/builder/PostTimingPanel.svelte";
-  import PostTimingAnimationSettings from "$lib/shared/share/components/post-studio/builder/PostTimingAnimationSettings.svelte";
+  import PostTimingPanel from "#lib/shared/share/components/post-studio/builder/PostTimingPanel.svelte";
+  import PostTimingAnimationSettings from "#lib/shared/share/components/post-studio/builder/PostTimingAnimationSettings.svelte";
   import { useTkaEditor } from "./tka-editor-context";
 
   /**

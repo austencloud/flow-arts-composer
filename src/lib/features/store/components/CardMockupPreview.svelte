@@ -1,8 +1,8 @@
 <script lang="ts">
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
   import DeckFanCover from "./DeckFanCover.svelte";
   import type { CoverCard } from "../domain/models/product";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   interface Props {
     coverImageUrl?: string;

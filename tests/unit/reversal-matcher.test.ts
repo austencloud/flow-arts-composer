@@ -4,7 +4,7 @@ import {
   findMatchingReversalPattern,
   matchReversalPatternId,
   stepToReversalSymbol,
-} from "$lib/features/choreo-card/domain/reversal-matcher";
+} from "#lib/features/choreo-card/domain/reversal-matcher.js";
 
 type StepLite = { leftReversal: boolean; rightReversal: boolean };
 

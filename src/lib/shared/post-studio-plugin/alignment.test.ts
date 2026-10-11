@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { takeRole } from "@austencloud/video-editor/core";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   createTakeTiming,
   resolveTakeTiming,
   takeSampleAt,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   createEmptyPostProject,
   createTkaAlignment,
   tkaFrameAlignment,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 
 const SPB = 60 / 87;
 

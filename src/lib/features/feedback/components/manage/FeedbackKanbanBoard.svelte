@@ -1,18 +1,18 @@
 <!-- FeedbackKanbanBoard - Kanban board layout for feedback management -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { FeedbackManageState } from "$lib/shared/feedback/state/feedback-manage-state.svelte";
+  import type { FeedbackManageState } from "#lib/shared/feedback/state/feedback-manage-state.svelte.js";
   import type { KanbanBoardState } from "../../state/kanban-board-state.svelte";
   import { createKanbanBoardState } from "../../state/kanban-board-state.svelte";
-  import { getFeedbackSorter } from "$lib/features/feedback/get-feedback-sorter";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { STATUS_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
+  import { getFeedbackSorter } from "#lib/features/feedback/get-feedback-sorter.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { STATUS_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import KanbanMobileView from "./KanbanMobileView.svelte";
   import KanbanDesktopView from "./KanbanDesktopView.svelte";
   import DeferFeedbackDialog from "./DeferFeedbackDialog.svelte";
   import TrashFeedbackDialog from "./TrashFeedbackDialog.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
   import FeedbackFilterBar from "./FeedbackFilterBar.svelte";
   import {
     getFeedbackManageLayoutMode,

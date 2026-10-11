@@ -5,7 +5,7 @@
  * Uses callback injection to preserve Svelte 5 reactivity.
  */
 
-import type { PlayheadState, TimeSeconds } from "$lib/shared/animation-engine/domain/timeline-types";
+import type { PlayheadState, TimeSeconds } from "#lib/shared/animation-engine/domain/timeline-types.js";
 
 export interface PlayheadContext {
   getPlayhead: () => PlayheadState;

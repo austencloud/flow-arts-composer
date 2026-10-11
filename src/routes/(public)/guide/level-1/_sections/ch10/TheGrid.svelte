@@ -1,6 +1,6 @@
 <script lang="ts">
   import GuideSection from "../../_components/GuideSection.svelte";
-  import LessonGridDisplay from "$lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
+  import LessonGridDisplay from "#lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
 </script>
 
 <GuideSection id="the-grid" title="The Grid">

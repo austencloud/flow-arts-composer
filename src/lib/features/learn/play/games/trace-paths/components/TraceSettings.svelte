@@ -20,7 +20,7 @@ challenge on their own terms — they simply don't claim a traced score.
     getTracePaths,
     type TraceSettingKey,
   } from "../state/trace-paths-state.svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   const trace = getTracePaths();
 

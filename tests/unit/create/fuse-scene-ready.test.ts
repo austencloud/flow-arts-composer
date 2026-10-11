@@ -2,16 +2,29 @@
  * The Fuse preview scene reports ready once, when every fused cell and every
  * one-hand source it shows has drawn: six reports in all. A cell that is
  * still drawing holds the announcement back, a resize neither announces early
- * nor strands it, and a box with no layout announces nothing. Its
- * pictographs are stand-ins, so this checks only the readiness bookkeeping.
+ * nor strands it, and a box with no layout announces nothing. Fuse's path
+ * maker loads only after that report. Every cell draws its arrows at full,
+ * the halves included. When a turn ends, each fused step rests on the last
+ * frame of its travel. Its pictographs and maker are stand-ins, so this
+ * checks only that bookkeeping and what each cell is given.
  */
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakePictograph } from "./FakeMethodPictograph.svelte";
 import { mountFuseScene } from "./fuse-scene-ready-harness.svelte";
 
+// The next pair never arrives, so the scene keeps the demo's hands.
+const swap = vi.hoisted(() => ({
+  demoFusePair: vi.fn(() => ({})),
+  swapFuseHand: vi.fn(() => new Promise(() => {})),
+}));
 vi.mock(
-  "$lib/features/create/shared/components/method-previews/MethodPreviewPictograph.svelte",
+  "#lib/features/create/shared/components/method-previews/method-preview-fuse-swap.js",
+  () => swap
+);
+
+vi.mock(
+  "#lib/features/create/shared/components/method-previews/MethodPreviewPictograph.svelte",
   async () => ({
     default: (await import("./FakeMethodPictograph.svelte")).default,
   })
@@ -32,6 +45,7 @@ let stubbedCreateElement: typeof document.createElement;
 let scene: ReturnType<typeof mountFuseScene> | null = null;
 
 beforeEach(() => {
+  swap.swapFuseHand.mockClear();
   stubbedCreateElement = document.createElement;
   document.createElement = realCreateElement.bind(document);
   host = document.createElement("div");
@@ -54,6 +68,16 @@ describe("Fuse scene readiness", () => {
     expect(host.querySelectorAll(".fused .cell")).toHaveLength(2);
     expect(host.querySelectorAll(".source")).toHaveLength(4);
     expect(onready).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows every half's arrows from the start, as Fuse's source cards do", () => {
+    scene = mountFuseScene(host, STRIP, vi.fn());
+    const opacities = (selector: string) =>
+      [
+        ...host.querySelectorAll<HTMLElement>(`${selector} .fake-pictograph`),
+      ].map((cell) => cell.dataset.arrowOpacity);
+    expect(opacities(".source")).toEqual(["1", "1", "1", "1"]);
+    expect(opacities(".fused .cell")).toEqual(["1", "1"]);
   });
 
   it("marks each source with its key, which a turn finds it by", () => {
@@ -99,11 +123,60 @@ describe("Fuse scene readiness", () => {
     expect(onready).toHaveBeenCalledTimes(1);
   });
 
+  it("makes its next pair only once it has drawn, red first", async () => {
+    fakePictograph.reportBudget = 4;
+    scene = mountFuseScene(host, STRIP, vi.fn());
+    await vi.dynamicImportSettled();
+    expect(swap.swapFuseHand).not.toHaveBeenCalled();
+    for (const report of [...fakePictograph.deferred]) report();
+    flushSync();
+    await vi.waitFor(() => expect(swap.swapFuseHand).toHaveBeenCalledTimes(1));
+    expect(swap.swapFuseHand).toHaveBeenCalledWith(expect.anything(), "right");
+  });
+
   it("does not report again when the box resizes afterwards", () => {
     const onready = vi.fn();
     scene = mountFuseScene(host, SQUARE, onready);
     scene.resize(STRIP);
     scene.resize(SQUARE);
     expect(onready).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Fuse scene turn", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // The still picture can draw a prop a full turn from where its travel ends
+  // (90° against -270°), and the prop's own rotation easing spun it round
+  // once when a finished step handed back to the still picture.
+  it("rests each fused step on its travel's last frame when a turn ends", async () => {
+    vi.useFakeTimers({
+      toFake: [
+        "setTimeout",
+        "clearTimeout",
+        "requestAnimationFrame",
+        "cancelAnimationFrame",
+        "performance",
+      ],
+    });
+    scene = mountFuseScene(host, STRIP, vi.fn());
+    const progress = () =>
+      [
+        ...host.querySelectorAll<HTMLElement>(".fused .cell .fake-pictograph"),
+      ].map((cell) => cell.dataset.motionProgress);
+    expect(progress()).toEqual(["null", "null"]);
+
+    scene.play(1);
+    await vi.advanceTimersByTimeAsync(4000);
+    flushSync();
+    expect(host.querySelector<HTMLElement>(".scene")?.dataset.phase).toBe(
+      "rest"
+    );
+    expect(progress()).toEqual(["1", "1"]);
+
+    scene.stop();
+    expect(progress()).toEqual(["1", "1"]);
   });
 });

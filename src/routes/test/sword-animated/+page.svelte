@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
   const styles = [
     { id: "sword-knight", label: "Knight" },

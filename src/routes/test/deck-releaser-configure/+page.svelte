@@ -5,23 +5,23 @@
    * remains the single presentation owner.
    */
   import { onMount } from "svelte";
-  import ConfigureStep from "$lib/features/choreo-card/components/deck-releaser/ConfigureStep.svelte";
-  import { runDeckReleaserTransition } from "$lib/features/choreo-card/components/deck-releaser/deck-releaser-motion";
-  import { createDeckReleaserState } from "$lib/features/choreo-card/components/deck-releaser/state/deck-releaser-state.svelte";
-  import { setDeckReleaserContext } from "$lib/features/choreo-card/components/deck-releaser/context/deck-releaser-context";
+  import ConfigureStep from "#lib/features/choreo-card/components/deck-releaser/ConfigureStep.svelte";
+  import { runDeckReleaserTransition } from "#lib/features/choreo-card/components/deck-releaser/deck-releaser-motion.js";
+  import { createDeckReleaserState } from "#lib/features/choreo-card/components/deck-releaser/state/deck-releaser-state.svelte.js";
+  import { setDeckReleaserContext } from "#lib/features/choreo-card/components/deck-releaser/context/deck-releaser-context.js";
   import {
     initializeTkaTheme,
     applyThemeForBackground,
     applyTkaPropColors,
-  } from "$lib/shared/theme/config/tka-theme-config";
+  } from "#lib/shared/theme/config/tka-theme-config.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import { getTnDTurnPatternOptions } from "$lib/features/choreo-card/services/deck-composer";
+  import { getTnDTurnPatternOptions } from "#lib/features/choreo-card/services/deck-composer.js";
   import type {
     StartOriMode,
     VariationConfig,
-  } from "$lib/features/choreo-card/services/deck-variation";
-  import type { ResolvedReversalPattern } from "$lib/features/choreo-card/domain/reversal-transform";
-  import type { TnDFamilyOption } from "$lib/features/choreo-card/services/deck-composer";
+  } from "#lib/features/choreo-card/services/deck-variation.js";
+  import type { ResolvedReversalPattern } from "#lib/features/choreo-card/domain/reversal-transform.js";
+  import type { TnDFamilyOption } from "#lib/features/choreo-card/services/deck-composer.js";
 
   const deckState = createDeckReleaserState({
     storage: null,

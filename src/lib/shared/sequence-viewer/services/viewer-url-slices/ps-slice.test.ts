@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 const { capturePsSlice, seedFromPsSlice, persistedPsSlice } =
   await import("./ps-slice");
 const { PropType } =
-  await import("$lib/shared/pictograph/prop/domain/enums/prop-type");
+  await import("#lib/shared/pictograph/prop/domain/enums/prop-type.js");
 
 afterEach(() => {
   vi.restoreAllMocks();

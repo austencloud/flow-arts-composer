@@ -2,12 +2,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   registerDrawer,
   unregisterDrawer,
-} from "$lib/shared/foundation/ui/drawer/drawer-stack";
+} from "#lib/shared/foundation/ui/drawer/drawer-stack.js";
 import {
   registerModal,
   unregisterModal,
-} from "$lib/shared/foundation/ui/modal/modal-stack";
-import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
+} from "#lib/shared/foundation/ui/modal/modal-stack.js";
+import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
 
 const MODAL_ID = "escape-routing-modal";
 const DRAWER_ID = "escape-routing-drawer";

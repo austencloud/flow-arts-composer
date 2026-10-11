@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_CHARACTER_ID } from "$lib/shared/3d/domain/character-model";
-import { createPerformerManager } from "$lib/shared/3d/state/performer-manager.svelte";
+import { DEFAULT_CHARACTER_ID } from "#lib/shared/3d/domain/character-model.js";
+import { createPerformerManager } from "#lib/shared/3d/state/performer-manager.svelte.js";
 
 describe("performer manager count transitions", () => {
   let now = 1_000;

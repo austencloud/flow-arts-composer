@@ -1,7 +1,7 @@
 import {
   Orientation,
   type Orientation as OrientationValue,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 const RADIAL_START_ORIENTATIONS = [
   Orientation.IN,

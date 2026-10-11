@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { MediaBundler } from './services/media-bundler';
 import { getSharer } from './get-sharer';
 

@@ -1,19 +1,19 @@
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
-  import SortPopover from "$lib/features/browse/shared/components/SortPopover.svelte";
-  import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-  import { sortSequences } from "$lib/shared/browse/services/browse-sorter";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-  import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
-  import SectionHeader from "$lib/shared/browse/components/SectionHeader.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import PanelState from "#lib/shared/components/panel/PanelState.svelte";
+  import SortPopover from "#lib/features/browse/shared/components/SortPopover.svelte";
+  import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+  import { sortSequences } from "#lib/shared/browse/services/browse-sorter.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+  import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
+  import SectionHeader from "#lib/shared/browse/components/SectionHeader.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     userSequences = [],

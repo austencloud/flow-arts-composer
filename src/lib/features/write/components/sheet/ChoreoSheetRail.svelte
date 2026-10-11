@@ -1,10 +1,10 @@
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import ResizeHandle from "$lib/shared/panels/ResizeHandle.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import ShimmerBlock from "$lib/shared/components/loading/ShimmerBlock.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import ResizeHandle from "#lib/shared/panels/ResizeHandle.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import ShimmerBlock from "#lib/shared/components/loading/ShimmerBlock.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import {
     getChoreoSheetContext,
     type RosterRow,

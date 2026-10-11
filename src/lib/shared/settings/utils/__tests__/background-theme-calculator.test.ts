@@ -6,7 +6,7 @@ import {
   generateMatteTheme,
   getThemeMode,
 } from "../background-theme-calculator";
-import { BACKGROUND_THEME_COLORS } from "$lib/shared/theme/config/tka-theme-config";
+import { BACKGROUND_THEME_COLORS } from "#lib/shared/theme/config/tka-theme-config.js";
 
 // The calculator's own light-mode surfaces (generateMatteTheme "light" branch).
 const LIGHT_SURFACES = ["#d0d0ca", "#d8d8d2", "#c8c8c2"];

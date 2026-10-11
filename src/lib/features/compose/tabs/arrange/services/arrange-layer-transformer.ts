@@ -6,9 +6,9 @@
  */
 
 import type { TransformResult } from "./types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { TransformType } from "$lib/shared/animation-engine/domain/compose-types";
-import { sequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { TransformType } from "#lib/shared/animation-engine/domain/compose-types.js";
+import { sequenceTransformer } from "#lib/features/create/shared/services/sequence-transforms/sequence-transformer.js";
 
 export async function applyTransform(
   sequence: SequenceData,

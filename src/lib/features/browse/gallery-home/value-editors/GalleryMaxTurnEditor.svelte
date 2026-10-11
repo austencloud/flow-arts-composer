@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Slider } from "bits-ui";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
   import type {
     GalleryValueHeadSnippet,
     GalleryWorkspaceProps,

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   GRID_LAST_STEP,
   normalizeGridStep,
-} from "$lib/features/learn/components/interactive/grid-concept/grid-experience-state.svelte";
+} from "#lib/features/learn/components/interactive/grid-concept/grid-experience-state.svelte.js";
 
 describe("grid experience persistence migration", () => {
   it("keeps current progress and clamps steps from the removed ending", () => {

@@ -5,9 +5,9 @@ import {
   type ArtifactPublicationSummary,
   type PublicationOwner,
   type PublishArtifactResult,
-} from "$lib/shared/artifact-revisions/services/artifact-publication-service";
+} from "#lib/shared/artifact-revisions/services/artifact-publication-service.js";
 import { renderMandalaPosterDataUrl } from "../../export/services/mandala-export";
-import type { StepLike } from "$lib/shared/mandala/services/types";
+import type { StepLike } from "#lib/shared/mandala/services/types.js";
 import {
   prepareMandalaRevision,
   currentMandalaRevisionRef,

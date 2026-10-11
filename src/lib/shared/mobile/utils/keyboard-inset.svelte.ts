@@ -15,7 +15,7 @@
  * the moments a surface is actually on screen; listeners attach only while it
  * returns true and detach (restoring `overlaysContent`) when it flips false.
  */
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 
 const VISIBLE_THRESHOLD = 100; // px — below this the keyboard is treated as hidden
 const STABLE_DELTA = 20; // px — ignore sub-threshold jitter during the open/close animation

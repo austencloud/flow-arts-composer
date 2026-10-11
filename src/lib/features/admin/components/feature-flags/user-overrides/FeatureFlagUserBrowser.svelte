@@ -22,13 +22,13 @@
     startAfter,
     type DocumentSnapshot,
   } from "firebase/firestore";
-  import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-  import type { UserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-  import type { UserFeatureOverrides } from "$lib/shared/auth/domain/models/feature-flag";
-  import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
-  import PanelGrid from "$lib/shared/components/panel/PanelGrid.svelte";
-  import PanelSearch from "$lib/shared/components/panel/PanelSearch.svelte";
-  import RoleFilterButtons from "$lib/shared/community/components/RoleFilterButtons.svelte";
+  import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+  import type { UserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+  import type { UserFeatureOverrides } from "#lib/shared/auth/domain/models/feature-flag.js";
+  import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
+  import PanelGrid from "#lib/shared/components/panel/PanelGrid.svelte";
+  import PanelSearch from "#lib/shared/components/panel/PanelSearch.svelte";
+  import RoleFilterButtons from "#lib/shared/community/components/RoleFilterButtons.svelte";
   import OverrideUserCard from "./OverrideUserCard.svelte";
 
   type UserWithOverrides = UserProfile & {

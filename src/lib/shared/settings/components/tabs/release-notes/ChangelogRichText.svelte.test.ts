@@ -13,12 +13,12 @@ vi.mock("$app/navigation", () => ({
   goto: navigation.goto,
 }));
 
-vi.mock("$lib/shared/navigation/services/sheet-router", () => ({
+vi.mock("#lib/shared/navigation/services/sheet-router.js", () => ({
   openSheet: navigation.openSheet,
 }));
 
 vi.mock(
-  "$lib/shared/navigation-coordinator/navigation-coordinator.svelte",
+  "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js",
   () => ({
     handleModuleChange: navigation.handleModuleChange,
   })
@@ -47,10 +47,10 @@ describe("ChangelogRichText navigation", () => {
       tabId: "construct",
     },
     {
-      label: "Gallery",
-      href: "/browse/gallery",
+      label: "Explore",
+      href: "/browse/explore",
       moduleId: "browse",
-      tabId: "gallery",
+      tabId: "explore",
     },
     {
       label: "Creators",
@@ -169,5 +169,22 @@ describe("ChangelogRichText navigation", () => {
     expect(navigation.goto).not.toHaveBeenCalled();
     expect(navigation.handleModuleChange).not.toHaveBeenCalled();
     expect(onNavigate).toHaveBeenCalledOnce();
+  });
+});
+
+describe("ChangelogRichText bold text", () => {
+  it("renders **bold** runs as strong text without the markers", () => {
+    const { container } = render(ChangelogRichText, {
+      text: "**Stick props.** Choose **Stick** in [Prop settings](/settings/props).",
+    });
+
+    const strong = [...container.querySelectorAll("strong")].map(
+      (element) => element.textContent
+    );
+    expect(strong).toEqual(["Stick props.", "Stick"]);
+    expect(container.textContent).not.toContain("**");
+    expect(container.querySelector("a.entry-link")?.textContent).toBe(
+      "Prop settings"
+    );
   });
 });

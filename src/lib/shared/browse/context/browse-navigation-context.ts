@@ -1,5 +1,5 @@
 import { getContext, setContext } from "svelte";
-import type { BrowseNavigationState } from "$lib/shared/browse/state/browse-navigation-state.svelte";
+import type { BrowseNavigationState } from "#lib/shared/browse/state/browse-navigation-state.svelte.js";
 
 const BROWSE_NAVIGATION_CONTEXT = Symbol("browse-navigation");
 

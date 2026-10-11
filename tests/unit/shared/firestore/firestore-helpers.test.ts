@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { effectiveUserId: null },
 }));
 
@@ -14,7 +14,7 @@ vi.mock("firebase/firestore", () => ({
 }));
 
 import { stripUndefined, requireAuth, firestoreDate } from "../../../../src/lib/shared/firestore/firestore-helpers";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 
 describe("stripUndefined", () => {
   it("removes top-level undefined values", () => {

@@ -1,6 +1,6 @@
 import { flushSync } from "svelte";
-import { createViewerPropVisibilityState } from "$lib/shared/sequence-viewer/state/viewer-prop-visibility-state.svelte";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { createViewerPropVisibilityState } from "#lib/shared/sequence-viewer/state/viewer-prop-visibility-state.svelte.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 type Settings = {
   leftPropType: PropType;

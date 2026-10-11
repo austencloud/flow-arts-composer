@@ -14,9 +14,9 @@
  * Everything here is pure geometry: no DOM, no canvas, unit-testable.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-import { computeCardFrontLayout } from "$lib/shared/render/services/card-front-assembler";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+import { computeCardFrontLayout } from "#lib/shared/render/services/card-front-assembler.js";
 
 /** A rectangle in image space, all values fractions of the full image (0..1). */
 export interface SheetRegion {

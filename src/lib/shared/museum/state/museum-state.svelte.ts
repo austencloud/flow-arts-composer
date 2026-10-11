@@ -2,7 +2,7 @@ import type {
   MuseumExhibit,
   MuseumGroundsLayout,
   ExhibitSlot,
-} from "$lib/shared/museum/domain/museum-types";
+} from "#lib/shared/museum/domain/museum-types.js";
 
 export function createMuseumState() {
   let layout = $state<MuseumGroundsLayout | null>(null);

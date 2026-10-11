@@ -7,24 +7,24 @@
   Shares state with FeedbackSubmitTab so drafts persist between panel and tab.
 -->
 <script lang="ts">
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
-  import { quickFeedbackState } from "$lib/shared/feedback/state/quick-feedback-state.svelte";
+  import { quickFeedbackState } from "#lib/shared/feedback/state/quick-feedback-state.svelte.js";
   import {
     getSharedFeedbackSubmitState,
     resetSharedFeedbackSubmitState,
   } from "../../state/feedback-submit-state.svelte";
   import FeedbackForm from "../submit/FeedbackForm.svelte";
-  import { TYPE_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
-  import type { FeedbackType } from "$lib/shared/feedback/domain/models/feedback-models";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
-  import type { ResponsiveSettings } from "$lib/shared/device/domain/models/device-models";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { detectPlatform } from "$lib/shared/mobile/services/platform-detector";
+  import { TYPE_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import type { FeedbackType } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+  import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
+  import type { ResponsiveSettings } from "#lib/shared/device/domain/models/device-models.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
   import { computeQuickFeedbackInputMode } from "./quick-feedback-input-mode";
 
   const debug = createComponentLogger("QuickFeedbackPanel");

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
+import { DEFAULT_CONFIG } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
 import {
   balancedTunnelStageArms,
   createExplicitTunnelStage,
   fitTunnelStageToFormation,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-stage";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-stage.js";
 
 describe("tunnel stage", () => {
   it("balances three occupied positions across a four-position frame", () => {

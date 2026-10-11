@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import type { SilkIntent } from "$lib/shared/effects/domain/effects-config";
-  import { SILK_INTENSITY_MAX } from "$lib/shared/effects/domain/effects-config";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import type { SilkIntent } from "#lib/shared/effects/domain/effects-config.js";
+  import { SILK_INTENSITY_MAX } from "#lib/shared/effects/domain/effects-config.js";
   import OptionChipRow from "../OptionChipRow.svelte";
-  import AdvancedControls from "$lib/shared/effects/components/AdvancedControls.svelte";
+  import AdvancedControls from "#lib/shared/effects/components/AdvancedControls.svelte";
 
   interface Props {
     onBack: () => void;

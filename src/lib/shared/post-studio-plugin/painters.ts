@@ -11,15 +11,15 @@ import type {
   PainterFactory,
   PostStudioLayerPainter,
 } from "@austencloud/video-editor/render";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-import type { StaffTipTrack } from "$lib/shared/media-composition/domain/staff-tip-track";
-import type { StripMode } from "$lib/shared/media-composition/domain/strip-view";
-import { createBeatCarouselPainter } from "$lib/shared/media-composition/services/beat-carousel-painter";
-import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
-import { createStaffEffectPainter } from "$lib/shared/media-composition/services/staff-effect-painter";
-import { createTunnelTitlesPainter } from "$lib/shared/media-composition/services/tunnel-titles-painter";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+import type { StaffTipTrack } from "#lib/shared/media-composition/domain/staff-tip-track.js";
+import type { StripMode } from "#lib/shared/media-composition/domain/strip-view.js";
+import { createBeatCarouselPainter } from "#lib/shared/media-composition/services/beat-carousel-painter.js";
+import { createSequenceStripPainter } from "#lib/shared/media-composition/services/sequence-strip-painter.js";
+import { createStaffEffectPainter } from "#lib/shared/media-composition/services/staff-effect-painter.js";
+import { createTunnelTitlesPainter } from "#lib/shared/media-composition/services/tunnel-titles-painter.js";
 import { itemIdFromStaffEffectRole } from "./compile-hooks";
 
 /** The app state tka's painters read, owned by the editor that hosts them. */

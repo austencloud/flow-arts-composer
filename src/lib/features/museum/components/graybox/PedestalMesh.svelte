@@ -27,7 +27,7 @@
   import {
     PEDESTAL_EDGE,
     PEDESTAL_FACE_INSET,
-  } from "$lib/features/museum/domain/pedestal-standard";
+  } from "#lib/features/museum/domain/pedestal-standard.js";
 
   interface Props {
     /** Centre of the pedestal in scene space, at its BASE. */

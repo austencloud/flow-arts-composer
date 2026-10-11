@@ -11,12 +11,12 @@
  * The mcp-server module is externalized and cached by Node.js.
  */
 
-import { json, type RequestHandler } from "@sveltejs/kit";
-import { dev } from "$app/environment";
+import type { RequestHandler } from "@sveltejs/kit";
+import { dev } from "$app/env";
 import fs from "fs";
 import path from "path";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
 
 // Get absolute path to mcp-server renderer using process.cwd() (more reliable in Vite SSR)
 const MCP_RENDERER_PATH = path.join(
@@ -133,7 +133,7 @@ function getPictographsForMode(gridMode: "diamond" | "box"): PictographData[] {
 export const POST: RequestHandler = async (event) => {
   // This API only works in development - production uses pre-rendered static files
   if (!dev) {
-    return json(
+    return Response.json(
       { error: "Pictograph API is only available in development mode" },
       { status: 503 }
     );
@@ -154,7 +154,10 @@ export const POST: RequestHandler = async (event) => {
     } = await request.json();
 
     if (!letter) {
-      return json({ error: "Missing letter parameter" }, { status: 400 });
+      return Response.json(
+        { error: "Missing letter parameter" },
+        { status: 400 }
+      );
     }
 
     ensureDataLoaded();
@@ -166,7 +169,7 @@ export const POST: RequestHandler = async (event) => {
     const variations = pictographs.filter((p) => p.letter === letter);
 
     if (variations.length === 0) {
-      return json(
+      return Response.json(
         {
           error: `No pictograph found for letter: ${letter} in ${gridMode} mode`,
         },
@@ -175,7 +178,7 @@ export const POST: RequestHandler = async (event) => {
     }
 
     if (variation >= variations.length) {
-      return json(
+      return Response.json(
         {
           error: `Variation ${variation} not found. Letter ${letter} has ${variations.length} ${gridMode} variations (0-${variations.length - 1})`,
         },
@@ -185,7 +188,7 @@ export const POST: RequestHandler = async (event) => {
 
     const csvRow = variations[variation];
     if (!csvRow) {
-      return json({ error: "Variation not found" }, { status: 404 });
+      return Response.json({ error: "Variation not found" }, { status: 404 });
     }
 
     // Dynamic import of MCP server's standalone renderer (dev only)
@@ -266,7 +269,7 @@ export const POST: RequestHandler = async (event) => {
         themeable: true,
         inline: true,
       });
-      return json({
+      return Response.json({
         svgMarkup,
         motionData,
         variationCount: variations.length,
@@ -277,7 +280,7 @@ export const POST: RequestHandler = async (event) => {
         pictographInput,
         visibilityOptions
       );
-      return json({
+      return Response.json({
         imageBase64: base64,
         motionData,
         variationCount: variations.length,
@@ -286,7 +289,7 @@ export const POST: RequestHandler = async (event) => {
     }
   } catch (error) {
     console.error("[Tika API] Pictograph generation error:", error);
-    return json(
+    return Response.json(
       {
         error: `Failed to generate pictograph: ${error instanceof Error ? error.message : String(error)}`,
       },
@@ -299,7 +302,7 @@ export const POST: RequestHandler = async (event) => {
 export const GET: RequestHandler = async (event) => {
   // This API only works in development - production uses pre-rendered static files
   if (!dev) {
-    return json(
+    return Response.json(
       { error: "Pictograph API is only available in development mode" },
       { status: 503 }
     );
@@ -318,7 +321,10 @@ export const GET: RequestHandler = async (event) => {
     | "box";
 
   if (!letter) {
-    return json({ error: "Missing letter parameter" }, { status: 400 });
+    return Response.json(
+      { error: "Missing letter parameter" },
+      { status: 400 }
+    );
   }
 
   ensureDataLoaded();
@@ -329,14 +335,14 @@ export const GET: RequestHandler = async (event) => {
   );
 
   if (variations.length === 0) {
-    return json(
+    return Response.json(
       { error: `No pictograph found for letter: ${letter}` },
       { status: 404 }
     );
   }
 
   if (variation >= variations.length) {
-    return json(
+    return Response.json(
       {
         error: `Variation ${variation} not found. Letter ${letter} has ${variations.length} variations (0-${variations.length - 1})`,
       },
@@ -346,7 +352,7 @@ export const GET: RequestHandler = async (event) => {
 
   const csvRow = variations[variation];
   if (!csvRow) {
-    return json({ error: "Variation not found" }, { status: 404 });
+    return Response.json({ error: "Variation not found" }, { status: 404 });
   }
 
   try {
@@ -398,7 +404,7 @@ export const GET: RequestHandler = async (event) => {
     });
   } catch (error) {
     console.error("[Tika API] Pictograph render error:", error);
-    return json(
+    return Response.json(
       {
         error: `Failed to render pictograph: ${error instanceof Error ? error.message : String(error)}`,
       },

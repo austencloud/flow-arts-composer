@@ -6,13 +6,13 @@
   with an Advanced toggle to access all individual parameters.
 -->
 <script lang="ts">
-  import type { CharcoalSparkParams } from "$lib/shared/animation-engine/domain/types/charcoal-spark-types";
+  import type { CharcoalSparkParams } from "#lib/shared/animation-engine/domain/types/charcoal-spark-types.js";
   import {
     CHARCOAL_SLIDER_GROUPS,
     charcoalParamsToSemantic,
     semanticToCharcoalParams,
     DEFAULT_CHARCOAL_SEMANTIC,
-  } from "$lib/shared/animation-engine/domain/types/charcoal-spark-types";
+  } from "#lib/shared/animation-engine/domain/types/charcoal-spark-types.js";
 
   interface Props {
     params: CharcoalSparkParams;

@@ -1,5 +1,5 @@
-import { t } from "$lib/shared/i18n/i18n.svelte";
-import type { TranslationKey } from "$lib/shared/i18n/i18n-types";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 import { AUTH_NUDGE_TEXTS, type AuthNudgeTrigger } from "./auth-nudge-trigger";
 
 // Prompt content is shared as English domain data. Resolve its visible copy

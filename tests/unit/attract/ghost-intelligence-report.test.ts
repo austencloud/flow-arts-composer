@@ -72,7 +72,7 @@ import { describe, expect, it, vi } from "vitest";
 // jsdom has no layout, so the real visibility sensors reject every element and
 // the ghost finds nothing to do. Same mock the fleet uses — without it every
 // session dies after the first press.
-vi.mock("$lib/shared/attract/services/sensors", () => ({
+vi.mock("#lib/shared/attract/services/sensors.js", () => ({
   isVisible: () => true,
   visibleAll: (selector: string) => [
     ...document.querySelectorAll<HTMLElement>(selector),

@@ -10,8 +10,8 @@
  *   window.runCacheBenchmark(100, true)  // Deep test with L1 clear
  */
 
-import { browser } from "$app/environment";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { browser } from "$app/env";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 interface SequenceRenderResult {
   name: string;
@@ -297,7 +297,7 @@ async function runPass(
  */
 async function loadRealSequences(count: number): Promise<SequenceData[]> {
   try {
-    const { getBrowseLoader } = await import("$lib/shared/browse/get-browse-loader");
+    const { getBrowseLoader } = await import("#lib/shared/browse/get-browse-loader.js");
     const browseLoader = getBrowseLoader() as {
       loadSequenceMetadata: () => Promise<SequenceData[]>;
       loadFullSequenceData: (name: string) => Promise<SequenceData | null>;

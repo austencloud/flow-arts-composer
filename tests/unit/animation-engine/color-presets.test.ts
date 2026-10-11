@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   BUILT_IN_COLOR_PRESETS,
   validatePreset,
-} from "$lib/shared/animation-engine/domain/types/led-color-presets";
+} from "#lib/shared/animation-engine/domain/types/led-color-presets.js";
 
 describe("Color Presets", () => {
   it("has 8 built-in presets", () => {

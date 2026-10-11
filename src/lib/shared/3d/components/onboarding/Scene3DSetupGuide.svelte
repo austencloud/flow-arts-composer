@@ -3,21 +3,21 @@
   import SceneSelectorPopover from "../SceneSelectorPopover.svelte";
   import FormationPopover from "../controls/FormationPopover.svelte";
   import { getViewer3DContext } from "../../context/viewer-3d-context";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     reportViewerControlChange,
     type ViewerControlSink,
-  } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
-  import { markSceneStudioSetupSeen } from "$lib/shared/onboarding/state/viewer3d-intro-state";
-  import { scene3dCollectionState } from "$lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte";
-  import { applyScene3DLookLive } from "$lib/features/scene-3d-collection/services/open-3d-scene";
-  import type { Collected3DScene } from "$lib/features/scene-3d-collection/domain/scene-3d-collection-types";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { resolveSceneControlLayout } from "$lib/shared/3d/domain/scene-control-layout";
+  } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
+  import { markSceneStudioSetupSeen } from "#lib/shared/onboarding/state/viewer3d-intro-state.js";
+  import { scene3dCollectionState } from "#lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte.js";
+  import { applyScene3DLookLive } from "#lib/features/scene-3d-collection/services/open-3d-scene.js";
+  import type { Collected3DScene } from "#lib/features/scene-3d-collection/domain/scene-3d-collection-types.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { resolveSceneControlLayout } from "#lib/shared/3d/domain/scene-control-layout.js";
 
   interface Props {
     onSettingChange?: ViewerControlSink;

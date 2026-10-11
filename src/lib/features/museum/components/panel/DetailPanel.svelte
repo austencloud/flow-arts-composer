@@ -3,7 +3,7 @@
   import { getMuseumContext } from "../../state/museum-context";
   import PlaqueView from "./PlaqueView.svelte";
   import SequenceView from "./SequenceView.svelte";
-  import SequenceBrowserOverlay from "$lib/features/museum/scenes/procedural/overlay/SequenceBrowserOverlay.svelte";
+  import SequenceBrowserOverlay from "#lib/features/museum/scenes/procedural/overlay/SequenceBrowserOverlay.svelte";
 
   const { state: museum } = getMuseumContext();
 

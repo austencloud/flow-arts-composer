@@ -8,13 +8,13 @@ import {
   postProjectEditStatus,
   queuePostProjectOps,
   readPostProjectSession,
-} from "$lib/server/post-project-dev-bridge";
+} from "#lib/server/post-project-dev-bridge.js";
 import { POST_BOX } from "@austencloud/video-editor/core";
-import type { PostAnimationItem } from "$lib/shared/post-studio-plugin";
-import { findTunnelHook } from "$lib/shared/media-composition/domain/post-project-edits";
-import { applyPostProjectOps } from "$lib/shared/media-composition/domain/post-project-ops";
+import type { PostAnimationItem } from "#lib/shared/post-studio-plugin/index.js";
+import { findTunnelHook } from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { applyPostProjectOps } from "#lib/shared/media-composition/domain/post-project-ops.js";
 import { NOW, overlay, project, video } from "./post-project-fixtures";
-import { editContext } from "$lib/shared/post-studio-plugin";
+import { editContext } from "#lib/shared/post-studio-plugin/index.js";
 
 const ctx = editContext(NOW + 1);
 

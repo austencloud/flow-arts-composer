@@ -1,8 +1,8 @@
-import type { CsvEdge } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SVGPathData } from "$lib/shared/mandala/domain/mandala-types";
+import type { CsvEdge } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SVGPathData } from "#lib/shared/mandala/domain/mandala-types.js";
 import type { ShapeMatrixTipPair } from "../domain/prop-pair";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { Flower } from "../domain/flower-signature";
 import { derivePropRelationship } from "../domain/prop-relationship";
 import { findExactParityCandidates } from "./verify-realization-parity";

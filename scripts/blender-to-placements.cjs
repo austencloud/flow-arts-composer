@@ -31,7 +31,7 @@ const lines = placements.map((p) => {
   return `\t{ id: "${p.id}", objectKey: "${p.objectKey}", position: ${fmtArr(p.position)}, rotation: ${fmtArr(p.rotation)}, scale: ${fmtArr(p.scale)} },`;
 });
 
-const output = `import type { ComposerPlacement } from "$lib/shared/3d/scene-composer/types";
+const output = `import type { ComposerPlacement } from "#lib/shared/3d/scene-composer/types.js";
 
 // Exported from Blender ocean_scene.blend — exact world-space transforms.
 // Source: scripts/blender-export-placements.py → scripts/ocean-blender-placements.json

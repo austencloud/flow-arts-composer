@@ -7,7 +7,7 @@ vi.mock("firebase/firestore", () => ({
   onSnapshot: vi.fn(),
 }));
 vi.mock("firebase/functions", () => ({ httpsCallable: vi.fn() }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthInstance: vi.fn(),
   getFirestoreInstance: vi.fn(),
   getFunctionsInstance: vi.fn(),
@@ -20,7 +20,7 @@ const {
   metaErrorMessage,
   readMetaConnectState,
   readMetaPublishStatus,
-} = await import("$lib/shared/share/services/meta-publish");
+} = await import("#lib/shared/share/services/meta-publish.js");
 
 describe("connection status reader", () => {
   it("reads an empty status from a missing document", () => {

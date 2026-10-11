@@ -3,11 +3,11 @@ import {
   toFirestoreFields,
   type FirestoreDocument,
   type FirestoreQuery,
-} from "$lib/server/firestore/firestore-rest";
+} from "#lib/server/firestore/firestore-rest.js";
 import {
   createShopCatalogSnapshotLoader,
   toSnapshotProducts,
-} from "$lib/server/shop/shop-catalog-snapshot";
+} from "#lib/server/shop/shop-catalog-snapshot.js";
 
 function productDoc(id: string, fields: Record<string, unknown>): FirestoreDocument {
   return {

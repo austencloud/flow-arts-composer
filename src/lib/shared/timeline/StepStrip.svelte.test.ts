@@ -131,6 +131,38 @@ describe("StepStrip loop boundary", () => {
   });
 });
 
+describe("StepStrip sizing", () => {
+  it("resizes its cells with the column without an inherited size variable", async () => {
+    const { container } = render(StepStrip, {
+      cells: makeCells(),
+      currentStep: 1,
+      bpm: 60,
+      fillHeight: true,
+    });
+    const host = container as HTMLElement;
+    host.style.width = "600px";
+    host.style.height = "160px";
+    const viewport = host.querySelector<HTMLElement>(".step-viewport")!;
+    const cellWidth = () =>
+      parseFloat(
+        getComputedStyle(host.querySelector<HTMLElement>(".step-cell")!).width
+      );
+    await expect.poll(cellWidth).toBe(64);
+
+    host.style.height = "400px";
+    await expect.poll(cellWidth).toBeGreaterThan(100);
+    const frame = host.querySelector<HTMLElement>(".step-focus")!;
+    expect(parseFloat(getComputedStyle(frame).width)).toBeGreaterThan(
+      cellWidth()
+    );
+
+    // Set on the viewport, the size would be inherited by every element of
+    // every pictograph, and each resize frame would restyle them all.
+    expect(viewport.style.getPropertyValue("--cell")).toBe("");
+    expect(viewport.style.getPropertyValue("--frame")).toBe("");
+  });
+});
+
 describe("StepStrip without loop", () => {
   it("clamps to its real cells and still cuts on a backward scrub", async () => {
     const cells = makeCells();

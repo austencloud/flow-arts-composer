@@ -1,9 +1,9 @@
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import type {
   MandalaPathShape,
   MandalaRenderOptions,
-} from "$lib/shared/mandala/domain/mandala-types";
+} from "#lib/shared/mandala/domain/mandala-types.js";
 import type { CollectedMandala } from "./mandala-collection-types";
 
 export interface SaveMandalaInput {

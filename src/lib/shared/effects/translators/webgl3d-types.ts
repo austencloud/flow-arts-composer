@@ -32,7 +32,7 @@ import type { WaterPalette } from "../domain/water-palettes";
 import type { BubblePalette } from "../domain/bubble-palettes";
 import type { PetalPalette } from "../domain/petal-palettes";
 import type { SmokePalette } from "../domain/smoke-palettes";
-import type { InkPalette } from "$lib/shared/3d/effects/ink/ink-palettes";
+import type { InkPalette } from "#lib/shared/3d/effects/ink/ink-palettes.js";
 import type { FrostPalette } from "../domain/frost-palettes";
 import type { SilkPalette } from "../domain/silk-palettes";
 import type { AnimalPalette } from "../domain/animal-palettes";
@@ -97,14 +97,14 @@ export interface Charcoal3DParams extends CharcoalIntent {
 }
 
 export interface Zap3DParams extends ZapIntent {
-  /** Segment count along each arc. */
-  segments: number;
-  /** 0-1 world-space jitter displacement per segment. */
-  jitterAmount: number;
-  /** Point light intensity when intensity > 0.5. */
-  pointLightIntensity: number;
-  /** Path regeneration interval in frames. */
-  regenerateEveryFrames: number;
+  /** Metres - half-width of a main channel's ribbon, colored halo included (Glow). */
+  haloWidth: number;
+  /** 0-1 - share of the ribbon that burns white-hot at full flash. */
+  coreFraction: number;
+  /** 0-1.2 - overall brightness multiplier (Intensity). */
+  brightness: number;
+  /** Peak scene-light intensity a strike adds; 0 keeps the scene unlit. */
+  lightIntensity: number;
 }
 
 export interface Sparkles3DParams extends SparklesIntent {
@@ -263,11 +263,7 @@ export interface SmokeVolumeProfile3D {
 }
 
 export interface Ink3DParams extends InkIntent {
-  /**
-   * Resolved palette (pigment + edge + splatter + pool + behavior flags).
-   * Sprint 1 3D renderer (not yet wired) reads pigment + edge + the
-   * emissive/watercolor flags; splatter/pool tints are sprint-2 consumers.
-   */
+  /** Resolved pigment, wet-edge, and droplet colors plus palette behavior. */
   resolvedPalette: InkPalette;
   /**
    * Resolved effective ambient after the motion-dominant hard cap.
@@ -275,19 +271,17 @@ export interface Ink3DParams extends InkIntent {
    */
   effectiveAmbient: number;
   /**
-   * World-units - base stroke radius (tube radius for 3D ribbon mesh).
-   * Watercolor palette doubles this (wider bleed). Slow tip presses to
-   * this maximum; fast tip lifts to strokeWidthMinWorld.
+   * World units - pressure input for the stroke cross-section. The 3D Ink
+   * renderer scales it down to keep the performer and prop readable.
    */
   strokeWidthMaxWorld: number;
-  /** World-units - min stroke radius at high tip speed (brush lifting). */
+  /** World units - pressure input at high tip speed (brush lifting). */
   strokeWidthMinWorld: number;
   /** Max alpha at peak (0-1). Watercolor palette caps this at 0.4. */
   opacityMax: number;
   /**
-   * Material flag: when true, use emissive/additive blend (neon only).
-   * Default false → opaque flat-shaded pigment (the #1 differentiator
-   * from trails, which are all emissive).
+   * Material flag: neon and acid strokes use additive blending and a brighter
+   * wet glint; ordinary pigment uses normal blending.
    */
   emissiveMaterial: boolean;
   /** Seconds - stroke-point lifetime. */

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import FestivalSamplerPrintView from "$lib/features/choreo-card/components/deck-releaser/FestivalSamplerPrintView.svelte";
+  import FestivalSamplerPrintView from "#lib/features/choreo-card/components/deck-releaser/FestivalSamplerPrintView.svelte";
 </script>
 
 <svelte:head>

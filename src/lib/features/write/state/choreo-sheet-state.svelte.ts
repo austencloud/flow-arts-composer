@@ -50,7 +50,7 @@ import {
   type LoopStatus,
 } from "../services/sheet-continuity";
 import type { ActData } from "../domain/types/write";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   ResolveFailure,
   ResolveOutcome,

@@ -27,7 +27,7 @@
     consoleFaceY,
     consoleRowY,
     type ConsoleVerb,
-  } from "$lib/features/museum/domain/exhibit-console";
+  } from "#lib/features/museum/domain/exhibit-console.js";
 
   interface Props {
     /** Centre of the console in scene space, at its BASE. */

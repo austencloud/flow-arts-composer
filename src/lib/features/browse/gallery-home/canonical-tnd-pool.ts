@@ -13,21 +13,21 @@
  * card was fronted by a sequence whose printed badge said 3.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { updateSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { TND_ELEMENTS } from "$lib/features/choreo-card/domain/tnd-element";
-import { resolveTnDFamilyCards } from "$lib/features/lab/vtg-lab/services/resolve-tnd-family-cards";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { updateSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { TND_ELEMENTS } from "#lib/features/choreo-card/domain/tnd-element.js";
+import { resolveTnDFamilyCards } from "#lib/features/lab/vtg-lab/services/resolve-tnd-family-cards.js";
 import {
   buildTnDSeedClasses,
   getTnDFamilyOptions,
-} from "$lib/features/choreo-card/services/deck-composer";
-import { loadTndBaseWords } from "$lib/features/choreo-card/services/tnd-base-word-snapshot";
-import { calculateDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
-import { processReversals } from "$lib/shared/create/services/reversal-detector";
-import { transformSequence } from "$lib/features/choreo-card/services/reversal-seed-service";
-import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import { getReversalPattern } from "$lib/features/choreo-card/domain/reversal-patterns";
-import type { ResolvedReversalPattern } from "$lib/features/choreo-card/domain/reversal-transform";
+} from "#lib/features/choreo-card/services/deck-composer.js";
+import { loadTndBaseWords } from "#lib/features/choreo-card/services/tnd-base-word-snapshot.js";
+import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
+import { processReversals } from "#lib/shared/create/services/reversal-detector.js";
+import { transformSequence } from "#lib/features/choreo-card/services/reversal-seed-service.js";
+import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import { getReversalPattern } from "#lib/features/choreo-card/domain/reversal-patterns.js";
+import type { ResolvedReversalPattern } from "#lib/features/choreo-card/domain/reversal-transform.js";
 
 /** Reserved author for the defined T&D alphabet, so it is filterable and
  *  isolatable from user-submitted community sequences. */

@@ -8,13 +8,13 @@
 import type {
   GridPlacement,
   GridLocation,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   RotationDirection,
   MotionType,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { LOCATION_MAP_EIGHTH_CW } from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { LOCATION_MAP_EIGHTH_CW } from "#lib/shared/foundation/domain/models/generation/circular-placement-maps.js";
 
 /**
  * Normalize rotation steps to a positive count within a single revolution (0-7).

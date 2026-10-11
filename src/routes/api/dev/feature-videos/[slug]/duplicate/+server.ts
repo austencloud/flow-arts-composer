@@ -1,9 +1,9 @@
-import { error, json, type RequestHandler } from "@sveltejs/kit";
-import { authorizeLoopback, readJsonBody } from "$lib/server/dev-loopback";
+import { error, type RequestHandler } from "@sveltejs/kit";
+import { authorizeLoopback, readJsonBody } from "#lib/server/dev-loopback.js";
 import {
   featureVideoFailure,
   featureVideos,
-} from "$lib/server/feature-video-store";
+} from "#lib/server/feature-video-store.js";
 
 /** Dev only: copies a feature video under a new name. */
 export const POST: RequestHandler = async ({
@@ -28,7 +28,7 @@ export const POST: RequestHandler = async ({
       ...(typeof input.title === "string" ? { title: input.title } : {}),
       ...(input.shareMedia === true ? { shareMedia: true } : {}),
     });
-    return json(copied, { status: 201 });
+    return Response.json(copied, { status: 201 });
   } catch (cause) {
     featureVideoFailure(cause);
   }

@@ -9,7 +9,7 @@
  * The client's ConceptProgressTracker picks up changes via onSnapshot.
  */
 
-import { getAdminDb } from "$lib/server/firebaseAdmin";
+import { getAdminDb } from "#lib/server/firebaseAdmin.js";
 import {
   getConceptById,
   KNOWLEDGE_GRAPH,

@@ -1,4 +1,4 @@
-import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
+import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
 import { COMPOSER_3D_DEMO_SEED } from "../../src/routes/(public)/composer/_components/composer-3d-demo-state";
 
 export function createComposerViewerStateForTest() {

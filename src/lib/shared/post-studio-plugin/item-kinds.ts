@@ -9,15 +9,15 @@ import {
   type PostItemKind,
   type ShapeExtension,
 } from "@austencloud/video-editor/core";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { PROP_LOOKS } from "$lib/shared/pictograph/prop/domain/prop-look";
-import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { PROP_LOOKS } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import type { EffectsConfig } from "#lib/shared/effects/domain/effects-config.js";
 import {
   TrackingMode,
   TrailEffect,
   TrailMode,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
-import type { TunnelTitlesPlan } from "$lib/shared/media-composition/domain/tunnel-titles";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import type { TunnelTitlesPlan } from "#lib/shared/media-composition/domain/tunnel-titles.js";
 import type { tkaProjectShape } from "./project-extension";
 import { compileSequenceItem, compileTitlesItem } from "./compile-hooks";
 import { POST_QR_URL_RULE, isPostCardQrUrl } from "./card-qr";

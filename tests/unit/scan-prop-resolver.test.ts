@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   parsePropsFromURL,
   parsePropTypeFromURLValue,
-} from "$lib/shared/navigation/services/sequence-encoder";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { resolveScanPropConfig } from "$lib/shared/qr/services/scan-prop-resolver";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { resolveScanPropConfig } from "#lib/shared/qr/services/scan-prop-resolver.js";
 
 describe("scan prop resolution", () => {
   it("accepts compact and full-value prop parameters from printed cards", () => {

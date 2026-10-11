@@ -5,16 +5,16 @@
   Toggle between Playback and Visual settings panes.
 -->
 <script lang="ts">
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type {
     PlaybackMode,
     StepPlaybackStepSize,
-  } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import ModeTabBar, {
     type SettingsMode,
-  } from "$lib/shared/animation-engine/components/ModeTabBar.svelte";
-  import PlaybackPane from "$lib/shared/animation-engine/components/controls/settings-panel/PlaybackPane.svelte";
-  import VisualPane from "$lib/shared/animation-engine/components/controls/settings-panel/VisualPane.svelte";
+  } from "#lib/shared/animation-engine/components/ModeTabBar.svelte";
+  import PlaybackPane from "#lib/shared/animation-engine/components/controls/settings-panel/PlaybackPane.svelte";
+  import VisualPane from "#lib/shared/animation-engine/components/controls/settings-panel/VisualPane.svelte";
 
   let {
     propType = null,

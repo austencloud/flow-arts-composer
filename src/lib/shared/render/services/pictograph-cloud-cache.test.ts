@@ -10,7 +10,7 @@ const authMocks = vi.hoisted(() => ({
   authStateReady: vi.fn(() => Promise.resolve()),
   currentUser: {} as object | null,
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthInstance: vi.fn(() => Promise.resolve(authMocks)),
   getStorageInstance: vi.fn(() => Promise.resolve({})),
 }));

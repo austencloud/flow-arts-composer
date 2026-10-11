@@ -8,7 +8,7 @@ const firestore = vi.hoisted(() => ({
   doc: vi.fn((_database: unknown, path: string) => ({ path })),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => firestore.database),
 }));
 
@@ -18,7 +18,7 @@ vi.mock("firebase/firestore", () => ({
   setDoc: firestore.setDoc,
 }));
 
-import { claimPushPermissionPrompt } from "$lib/shared/push/services/push-permission-prompt-marker";
+import { claimPushPermissionPrompt } from "#lib/shared/push/services/push-permission-prompt-marker.js";
 
 const USER_ID = "user-1";
 const LOCAL_MARKER = `tka-push-permission-prompt-seen:${USER_ID}`;

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$app/environment", () => ({ dev: false }));
+vi.mock("$app/env", () => ({ dev: false }));
 
 // Vitest loads vite.config.ts, so the `define` map inlines __FEATURE_COVEN__ as
 // `true` under NODE_ENV=test. Mocking the reader is what makes the disabled

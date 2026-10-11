@@ -6,13 +6,13 @@
  * the selected example will show a visible change when transformed.
  */
 
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createMotionData, isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { GridMode, GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { MotionType, RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { calculateAllArrowPoints } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createMotionData, isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { MotionType, RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { calculateAllArrowPoints } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator.js";
 
 export type TransformId = "mirror" | "flip" | "invert" | "rotate" | "swap" | "rewind";
 

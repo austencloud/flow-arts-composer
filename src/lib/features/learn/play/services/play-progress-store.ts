@@ -17,7 +17,7 @@ import { z } from "zod";
 import {
   firestoreGet,
   firestoreSet,
-} from "$lib/shared/firestore/firestore-crud";
+} from "#lib/shared/firestore/firestore-crud.js";
 import { getUserPlayProgressPath } from "../../data/firestore-paths";
 import {
   applyResult,

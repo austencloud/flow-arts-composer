@@ -1,17 +1,17 @@
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick } from "svelte";
-  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { CARD_SIZES } from "$lib/features/choreo-card/domain/card-sizes";
-  import { HAND_PATH_REFERENCE_SCAN_URLS } from "$lib/features/choreo-card/domain/hand-path-reference-card-manifest";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { CARD_SIZES } from "#lib/features/choreo-card/domain/card-sizes.js";
+  import { HAND_PATH_REFERENCE_SCAN_URLS } from "#lib/features/choreo-card/domain/hand-path-reference-card-manifest.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import HandMotionPlayer from "../foundations/HandMotionPlayer.svelte";
   import type {
     TimingDirectionMode,

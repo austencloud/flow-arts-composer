@@ -19,23 +19,23 @@
   (fewer dots than cells when dashes are present) reads as intentional.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import PatternStripEditor from "$lib/shared/create/components/pattern-strip/PatternStripEditor.svelte";
+  import PatternStripEditor from "#lib/shared/create/components/pattern-strip/PatternStripEditor.svelte";
   import type {
     StripBinding,
     StripValue,
-  } from "$lib/shared/create/components/pattern-strip/pattern-strip-types";
-  import { PER_HAND_RHYTHMS } from "$lib/shared/create/domain/rhythm/rhythm-catalog";
+  } from "#lib/shared/create/components/pattern-strip/pattern-strip-types.js";
+  import { PER_HAND_RHYTHMS } from "#lib/shared/create/domain/rhythm/rhythm-catalog.js";
   import {
     stampPerHand,
     tilePeriod,
-  } from "$lib/shared/create/domain/rhythm/rhythm-mask";
-  import { applyReversalMatrix } from "$lib/features/choreo-card/services/reversal-seed-service";
-  import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
+  } from "#lib/shared/create/domain/rhythm/rhythm-mask.js";
+  import { applyReversalMatrix } from "#lib/features/choreo-card/services/reversal-seed-service.js";
+  import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
   import { reversalStripStore } from "./reversal-strip-store.svelte";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   interface Props {
     sequence: SequenceData | null;

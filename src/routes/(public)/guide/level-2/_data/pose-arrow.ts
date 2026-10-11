@@ -15,7 +15,7 @@
  * bounds to get A→B and map the glyph's tail→A / head→B. Same engine the printed
  * poses already use, so the arrow lands where playback puts the end.
  */
-import { MotionType, RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { MotionType, RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { poseAt, type HalfwayMotion, type StaffPose } from "./halfway-pose";
 
 const CENTER = 475; // 950 viewBox center (matches halfway-pose)

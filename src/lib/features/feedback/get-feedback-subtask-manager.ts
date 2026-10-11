@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import * as feedbackSubtaskManager from './services/feedback-subtask-manager';
 
 export function getFeedbackSubtaskManager() {

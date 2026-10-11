@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   generateSpecialOverrideKey,
   parseSpecialOverrideKey,
-} from "$lib/shared/pictograph/arrow/positioning/special-override/domain/special-arrow-placement";
+} from "#lib/shared/pictograph/arrow/positioning/special-override/domain/special-arrow-placement.js";
 
 /**
  * Regression: WASD-nudging one arrow's Special JSON override moved BOTH arrows.

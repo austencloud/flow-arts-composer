@@ -24,8 +24,8 @@ import DrawerUnderModalHarness from "./harnesses/DrawerUnderModalHarness.svelte"
 import ModalOnlyHarness from "./harnesses/ModalOnlyHarness.svelte";
 import NestedDrawersHarness from "./harnesses/NestedDrawersHarness.svelte";
 
-import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
-import { registerEscapeShortcut } from "$lib/shared/keyboard/registration/register-escape-shortcut";
+import { getKeyboardShortcutManager } from "#lib/shared/keyboard/get-keyboard-shortcut-manager.js";
+import { registerEscapeShortcut } from "#lib/shared/keyboard/registration/register-escape-shortcut.js";
 
 /**
  * Install the same global Escape owner the running app installs through

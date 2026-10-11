@@ -4,7 +4,7 @@ import {
   getSectionedGridItemKey,
   getSectionedGridRowMaxSteps,
   type SectionedGridMeasurementItem,
-} from "$lib/shared/browse/components/sectioned-grid-measurements";
+} from "#lib/shared/browse/components/sectioned-grid-measurements.js";
 
 function row(
   key: string,

@@ -1,5 +1,5 @@
-import type { ActivePropSettings } from "$lib/shared/foundation/services/recorded-prop-intent";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { ActivePropSettings } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export function parseCollectionProp(value: unknown): PropType | null {
   return typeof value === "string" &&

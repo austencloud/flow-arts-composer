@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getQualityTierDetector } from "$lib/shared/3d/effects/quality/get-quality-tier-detector";
+  import { getQualityTierDetector } from "#lib/shared/3d/effects/quality/get-quality-tier-detector.js";
   import { tryGetAdaptiveQualityContext } from "../context/adaptive-quality-context";
   /**
    * Central coordinator that reads TipEffectMap assignments and routes each
@@ -40,18 +40,18 @@
     TipPositionBridge3D,
     type TrailSourceId3D,
   } from "./tip-position-bridge-3d";
-  import { resolvePropTipAnchors3D } from "./prop-tip-geometry-3d";
+  import { resolveScaledPropTipAnchors3D } from "./prop-tip-geometry-3d";
   import {
     PovStripRenderer3D,
     shutterToPovPersistence,
   } from "./poi/pov-strip-renderer-3d";
-  import type { StripPattern } from "$lib/shared/poi/domain/strip-pattern";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  import type { StripPattern } from "#lib/shared/poi/domain/strip-pattern.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import {
     resolveEffect,
     type TipEffectMap,
     type EffectType,
-  } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+  } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import { type QualityTier, type TipPositionData3D } from "./types";
   import {
     PROP_COLORS,
@@ -61,10 +61,10 @@
     type PropState3D,
     type PropBuild,
   } from "@austencloud/scene-3d";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { resolveTrailColors } from "$lib/shared/animation-engine/domain/resolve-trail-colors";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { resolveTrailColors } from "#lib/shared/animation-engine/domain/resolve-trail-colors.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import {
     resolveTrails3D,
     resolveLed3D,
@@ -80,11 +80,11 @@
     resolveAnimal3D,
     resolvePulse3D,
     resolveBloom3D,
-  } from "$lib/shared/effects/translators/webgl3d-translator";
-  import { LedPatternMaterializer } from "$lib/shared/animation-engine/services/led/led-pattern-materializer";
-  import { patternFrameIndex } from "$lib/shared/animation-engine/services/led-sampler";
-  import { getPixel } from "$lib/shared/poi/domain/strip-pattern";
-  import { ledBrightnessToFloat } from "$lib/shared/animation-engine/domain/types/led-types";
+  } from "#lib/shared/effects/translators/webgl3d-translator.js";
+  import { LedPatternMaterializer } from "#lib/shared/animation-engine/services/led/led-pattern-materializer.js";
+  import { patternFrameIndex } from "#lib/shared/animation-engine/services/led-sampler.js";
+  import { getPixel } from "#lib/shared/poi/domain/strip-pattern.js";
+  import { ledBrightnessToFloat } from "#lib/shared/animation-engine/domain/types/led-types.js";
   import { getSceneEffectsContext } from "./scene-effects/scene-effects-context";
   import type { SceneEffectsManager3D } from "./scene-effects/scene-effects-manager-3d";
   import type {
@@ -115,6 +115,7 @@
     rightPropType?: PropType;
     isPlaying: boolean;
     staffHalfLength?: number;
+    propScale?: number;
     propBuild?: PropBuild;
     /**
      * Fractional animation step index. Only Ghost (inside EffectsLayer) reads
@@ -159,6 +160,7 @@
     rightPropType = PropType.STAFF,
     isPlaying,
     staffHalfLength = 0.5,
+    propScale = 1,
     propBuild: propBuildOverride,
     currentStep = 0,
     totalSteps = 0,
@@ -191,14 +193,20 @@
    * exist on the prop in hand.
    */
   const leftTipEffectKeys = $derived(
-    resolvePropTipAnchors3D(leftPropType, staffHalfLength, propBuild).map(
-      (anchor) => anchor.effectKeyIndex
-    )
+    resolveScaledPropTipAnchors3D(
+      leftPropType,
+      staffHalfLength,
+      propScale,
+      propBuild
+    ).map((anchor) => anchor.effectKeyIndex)
   );
   const rightTipEffectKeys = $derived(
-    resolvePropTipAnchors3D(rightPropType, staffHalfLength, propBuild).map(
-      (anchor) => anchor.effectKeyIndex
-    )
+    resolveScaledPropTipAnchors3D(
+      rightPropType,
+      staffHalfLength,
+      propScale,
+      propBuild
+    ).map((anchor) => anchor.effectKeyIndex)
   );
 
   /**
@@ -324,7 +332,12 @@
           };
           break;
         case "petals":
-          source = { ...base, effect, params: resolvedPetals };
+          source = {
+            ...base,
+            effect,
+            params: resolvedPetals,
+            collisionFloorY: userProportionsState.groundY,
+          };
           break;
         case "smoke":
           source = {
@@ -394,6 +407,9 @@
         break;
       case "petals":
         source.params = resolvedPetals;
+        pooledPosition.set(0, userProportionsState.groundY, 0);
+        if (effectsParentRef) effectsParentRef.localToWorld(pooledPosition);
+        source.collisionFloorY = pooledPosition.y;
         break;
       case "smoke":
         source.params = resolvedSmoke;
@@ -882,7 +898,8 @@
         staffHalfLength,
         dt,
         leftPropType,
-        propBuild
+        propBuild,
+        propScale
       );
       leftEffectTips = result.tips;
       result.tips.forEach((tip, emitterIndex) => {
@@ -984,7 +1001,8 @@
         staffHalfLength,
         dt,
         rightPropType,
-        propBuild
+        propBuild,
+        propScale
       );
       rightEffectTips = result.tips;
       result.tips.forEach((tip, emitterIndex) => {
@@ -1109,7 +1127,7 @@
         rigLocalCenter: leftRigCenter,
         ledColors: moonLedColors,
         brightness: ledBrightness,
-        scale: leftPropType === PropType.BIGFAN ? 1.4 : 1,
+        scale: (leftPropType === PropType.BIGFAN ? 1.4 : 1) * propScale,
       });
     } else {
       leftMoonDiffuser?.reset();
@@ -1126,7 +1144,7 @@
         rigLocalCenter: rightRigCenter,
         ledColors: moonLedColors,
         brightness: ledBrightness,
-        scale: rightPropType === PropType.BIGFAN ? 1.4 : 1,
+        scale: (rightPropType === PropType.BIGFAN ? 1.4 : 1) * propScale,
       });
     } else {
       rightMoonDiffuser?.reset();
@@ -1356,6 +1374,7 @@
   {rightPropType}
   {isPlaying}
   staffLength={staffHalfLength * 2}
+  {propScale}
   activeEffects={layerActiveEffects}
   {leftHandPos}
   {rightHandPos}

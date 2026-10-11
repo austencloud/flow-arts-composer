@@ -1,28 +1,28 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { setLocale } from "$lib/shared/i18n/i18n.svelte";
+import { setLocale } from "#lib/shared/i18n/i18n.svelte.js";
 import {
   CARD_REGISTRY,
   getGeneratorCardHelp,
   getGeneratorCardTourLabel,
-} from "$lib/shared/create/domain/card-registry";
-import { localizedModeWords } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
-import { describeCreateTnDSelection } from "$lib/features/create/generate/components/cards/tnd-presentation";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/create/domain/card-registry.js";
+import { localizedModeWords } from "#lib/shared/shape-matrix/domain/shape-matrix-display.js";
+import { describeCreateTnDSelection } from "#lib/features/create/generate/components/cards/tnd-presentation.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { describePictograph } from "$lib/shared/pictograph/shared/domain/utils/pictograph-description";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { describePictograph } from "#lib/shared/pictograph/shared/domain/utils/pictograph-description.js";
 
-import { loopTypeLabel } from "$lib/features/create/generate/components/loop-component-presentation";
+import { loopTypeLabel } from "#lib/features/create/generate/components/loop-component-presentation.js";
 import {
   feedbackStatusLabel,
   feedbackTypePlaceholder,
-} from "$lib/features/feedback/domain/feedback-display-labels";
-import { mapAuthError } from "$lib/shared/auth/services/auth-error-messages";
-import { localizeFilterChip } from "$lib/shared/browse/components/localize-filter-chip";
-import { effectUiLabel } from "$lib/shared/animation-engine/components/effects-panel/effect-ui-label";
+} from "#lib/features/feedback/domain/feedback-display-labels.js";
+import { mapAuthError } from "#lib/shared/auth/services/auth-error-messages.js";
+import { localizeFilterChip } from "#lib/shared/browse/components/localize-filter-chip.js";
+import { effectUiLabel } from "#lib/shared/animation-engine/components/effects-panel/effect-ui-label.js";
 
 afterEach(async () => {
   await setLocale("en");

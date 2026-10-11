@@ -1,5 +1,5 @@
 import { getContext, setContext } from "svelte";
-import type { PostDeliveryState } from "$lib/shared/share/state/post-delivery-state.svelte";
+import type { PostDeliveryState } from "#lib/shared/share/state/post-delivery-state.svelte.js";
 
 export interface PostDeliveryContext {
   state: PostDeliveryState;

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Vector3, Quaternion } from "three";
-import { computeClavicleRotation } from "$lib/shared/3d/services/clavicle-raiser";
+import { computeClavicleRotation } from "#lib/shared/3d/services/clavicle-raiser.js";
 
 function angleDegrees(q: Quaternion): number {
   const angle = 2 * Math.acos(Math.min(1, Math.abs(q.w)));

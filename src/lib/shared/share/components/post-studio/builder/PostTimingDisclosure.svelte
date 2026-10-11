@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import { growFade } from "#lib/shared/transitions/motion.js";
 
   let {
     title,

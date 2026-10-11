@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   createDefaultForestFireflyConfig,
   shouldShowForestNearFrame,
-} from "$lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config";
-import { QualityTier } from "$lib/shared/3d/effects/types";
+} from "#lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config.js";
+import { QualityTier } from "#lib/shared/3d/effects/types.js";
 import {
   getForestGrassTierFromName,
   isForestGrassTierVisible,
-} from "$lib/shared/3d/environments/scenes/forest/forest-grass-tier";
+} from "#lib/shared/3d/environments/scenes/forest/forest-grass-tier.js";
 
 describe("Forest close-frame visibility", () => {
   it("shows the production composition in Scene Lab and omits it for widened callers", () => {

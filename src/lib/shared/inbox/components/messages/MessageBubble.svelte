@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * MessageBubble
    *
@@ -13,8 +13,8 @@
    * - No absolute positioning - reactions stay in document flow
    */
 
-  import type { Message } from "$lib/shared/messaging/domain/models/message-models";
-  import type { ParticipantInfo } from "$lib/shared/messaging/domain/models/conversation-models";
+  import type { Message } from "#lib/shared/messaging/domain/models/message-models.js";
+  import type { ParticipantInfo } from "#lib/shared/messaging/domain/models/conversation-models.js";
   import { formatTime } from "../../utils/format";
   import FeedbackMessageCard from "./FeedbackMessageCard.svelte";
   import SequenceMessageCard from "./SequenceMessageCard.svelte";
@@ -24,7 +24,7 @@
   import MessageReactions from "./MessageReactions.svelte";
   import EditHistorySheet from "./EditHistorySheet.svelte";
   import MessageActions from "./MessageActions.svelte";
-  import { messagingService } from "$lib/shared/messaging/services/messenger";
+  import { messagingService } from "#lib/shared/messaging/services/messenger.js";
   import RobustAvatar from "../../../components/avatar/RobustAvatar.svelte";
   import { toast } from "../../../toast/state/toast-state.svelte";
   import { getMessagePreviewText } from "../../utils/message-preview";
@@ -35,7 +35,7 @@
     messageHasSequencePreview,
   } from "../../domain/message-link-parts";
   import type { MessageOutboxRecord } from "../../domain/message-delivery-models";
-  import { getUserIdentityLabels } from "$lib/shared/community/domain/user-identity-labels";
+  import { getUserIdentityLabels } from "#lib/shared/community/domain/user-identity-labels.js";
 
   interface Props {
     message: Message;

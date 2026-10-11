@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   InstagramPublishOptionsSchema,
   StorageTimestampSchema,
-} from "$lib/shared/share/domain/instagram/instagram-post-draft-schema";
+} from "#lib/shared/share/domain/instagram/instagram-post-draft-schema.js";
 
 const NonEmptyIdSchema = z.string().trim().min(1);
 

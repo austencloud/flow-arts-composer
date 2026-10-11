@@ -8,16 +8,16 @@
  * from propSvgLoader (bundled static prop SVGs), never user or external
  * input.
  */
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { normalizeFanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-import type { PropRenderData } from "$lib/shared/pictograph/prop/domain/models/prop-render-data";
-import { applyHandColorOverride } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
-import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-import { normalizeTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
-import { propSvgLoader } from "$lib/shared/pictograph/prop/services/prop-svg-loader";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { AppSettings } from "$lib/shared/settings/domain/app-settings";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import type { PropRenderData } from "#lib/shared/pictograph/prop/domain/models/prop-render-data.js";
+import { applyHandColorOverride } from "#lib/shared/pictograph/prop/domain/prop-preview-color.js";
+import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+import { propSvgLoader } from "#lib/shared/pictograph/prop/services/prop-svg-loader.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { AppSettings } from "#lib/shared/settings/domain/app-settings.js";
 
 /** The settings Assemble's prop artwork follows. */
 export type BuilderPropSettings = Pick<

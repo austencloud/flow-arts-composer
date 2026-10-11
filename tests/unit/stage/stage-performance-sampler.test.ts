@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { sampleSequencePlayback } from "$lib/features/stage/domain/stage-performance-sampler";
+import { sampleSequencePlayback } from "#lib/features/stage/domain/stage-performance-sampler.js";
 import {
   samplePerformerPerformance,
   type LegacyPerformer,
   type Mark,
-} from "$lib/features/stage/domain/formation-migration";
-import type { StageChoreography } from "$lib/features/stage/domain/stage-types";
+} from "#lib/features/stage/domain/formation-migration.js";
+import type { StageChoreography } from "#lib/features/stage/domain/stage-types.js";
 
 const CHOREOGRAPHY = {
   bpm: 120,

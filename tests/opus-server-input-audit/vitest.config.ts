@@ -26,27 +26,29 @@ export default defineConfig({
     globals: true,
     include: ["tests/opus-server-input-audit/**/*.test.ts"],
     alias: {
-      $lib: path.resolve(projectRoot, "src/lib"),
       $shared: path.resolve(projectRoot, "src/lib/shared"),
-      // dev:true exercises the dev-guarded write endpoints; browser:false is the
-      // real server condition for anything that asks "am I in the browser?".
-      "$app/environment": path.resolve(
-        projectRoot,
-        "tests/opus-server-input-audit/helpers/app-environment-stub.ts"
-      ),
-      // SvelteKit generates these at build time. Empty stubs keep the audit
-      // offline and push the handlers onto their "not configured" branches.
-      "$env/static/public": path.resolve(
+      // SvelteKit supplies the variables from src/env.ts at build time. Stubs
+      // keep the audit offline and push the handlers onto their "not
+      // configured" branches. Listed before `$app/env`, which would otherwise
+      // match them as a prefix.
+      "$app/env/public": path.resolve(
         projectRoot,
         "tests/opus-server-input-audit/helpers/env-static-public-stub.ts"
       ),
-      "$env/dynamic/private": path.resolve(
+      // The Worker module server code reads bindings from; see the stub.
+      "cloudflare:workers": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/cloudflare-workers.ts"
+      ),
+      "$app/env/private": path.resolve(
         projectRoot,
         "tests/opus-server-input-audit/helpers/env-dynamic-stub.ts"
       ),
-      "$env/dynamic/public": path.resolve(
+      // dev:true exercises the dev-guarded write endpoints; browser:false is the
+      // real server condition for anything that asks "am I in the browser?".
+      "$app/env": path.resolve(
         projectRoot,
-        "tests/opus-server-input-audit/helpers/env-dynamic-stub.ts"
+        "tests/opus-server-input-audit/helpers/app-environment-stub.ts"
       ),
     },
     pool: "forks",

@@ -18,12 +18,12 @@
   the 0 buttons. Both were chrome that restated a control already on screen.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import LevelSelector from "$lib/shared/components/LevelSelector.svelte";
-  import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { growFade, popIn, flyFade } from "$lib/shared/transitions/motion";
-  import { DURATION, STAGGER } from "$lib/shared/transitions/transitions";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import LevelSelector from "#lib/shared/components/LevelSelector.svelte";
+  import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { growFade, popIn, flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION, STAGGER } from "#lib/shared/transitions/transitions.js";
   import {
     formatTurnValue,
     keyToTurnValue,
@@ -31,7 +31,7 @@
     turnValuesForLevel,
     type TurnLevel,
     type TurnValue,
-  } from "$lib/shared/create/services/level-turn-values";
+  } from "#lib/shared/create/services/level-turn-values.js";
 
   interface Props {
     layout?: "wide" | "compact";

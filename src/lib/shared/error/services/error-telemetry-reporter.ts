@@ -18,10 +18,10 @@ import {
 import {
   getFirestoreInstance,
   getAuthInstance,
-} from "$lib/shared/auth/firebase";
-import { captureExceptionWhenReady } from "$lib/shared/analytics/services/posthog";
-import type { ShowErrorOptions } from "$lib/shared/error/domain/error-models";
-import { toFirestorePathShape } from "$lib/shared/error/domain/firestore-path-shape";
+} from "#lib/shared/auth/firebase.js";
+import { captureExceptionWhenReady } from "#lib/shared/analytics/services/posthog.js";
+import type { ShowErrorOptions } from "#lib/shared/error/domain/error-models.js";
+import { toFirestorePathShape } from "#lib/shared/error/domain/firestore-path-shape.js";
 
 const COLLECTION = "errorTelemetry";
 

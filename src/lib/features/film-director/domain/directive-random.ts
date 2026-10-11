@@ -1,7 +1,7 @@
 import {
   hashString,
   mulberry32,
-} from "$lib/shared/3d/procedural-engine/generation/seed-generator";
+} from "#lib/shared/3d/procedural-engine/generation/seed-generator.js";
 
 export interface FilmSeed {
   base: number;

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { BLOOM_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/bloom-presets";
-import { Bloom2DRenderer } from "$lib/shared/effects/renderers/bloom-2d-renderer";
-import type { Bloom2DParams } from "$lib/shared/effects/translators/canvas2d-types";
-import { EFFECT_CONTROLS } from "$lib/shared/effects/domain/effect-control-manifest";
+import { BLOOM_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/bloom-presets.js";
+import { Bloom2DRenderer } from "#lib/shared/effects/renderers/bloom-2d-renderer.js";
+import type { Bloom2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
+import { EFFECT_CONTROLS } from "#lib/shared/effects/domain/effect-control-manifest.js";
 
 function makeParams(): Bloom2DParams {
   return {

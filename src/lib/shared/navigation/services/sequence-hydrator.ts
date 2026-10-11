@@ -19,18 +19,18 @@
  * Pure. No Firestore, no fetch. Motion primitives carry everything.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   isVisibleMotion,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { ensureStepPlacement } from "$lib/shared/pictograph/shared/services/motion-placement";
-import { deriveLettersForSequence } from "$lib/shared/navigation/services/letter-deriver";
-import { derivePositionsForSequence } from "$lib/shared/navigation/services/position-deriver";
-import type { ILOOPDetector } from "$lib/shared/create/services/ILOOPDetector";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { ensureStepPlacement } from "#lib/shared/pictograph/shared/services/motion-placement.js";
+import { deriveLettersForSequence } from "#lib/shared/navigation/services/letter-deriver.js";
+import { derivePositionsForSequence } from "#lib/shared/navigation/services/position-deriver.js";
+import type { ILOOPDetector } from "#lib/shared/create/services/ILOOPDetector.js";
 import { deriveGridMode } from "../../pictograph/grid/services/grid-mode-deriver";
-import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
+import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
 
 export interface SequenceHydratorDeps {
   loopDetector: ILOOPDetector | null;

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { organizeSections } from "$lib/shared/browse/services/browse-section-manager";
-import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-import type { SectionConfig } from "$lib/shared/browse/domain/models/browse-models";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { organizeSections } from "#lib/shared/browse/services/browse-section-manager.js";
+import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+import type { SectionConfig } from "#lib/shared/browse/domain/models/browse-models.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 // Founding-deck grouping: the three TKA decks are the canonical T&D alphabet, so
 // their detail view groups cards by canonical TnD family (read from each pool

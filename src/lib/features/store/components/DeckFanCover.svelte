@@ -37,10 +37,10 @@
 
 <script lang="ts">
   import type { CoverCard } from "../domain/models/product";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { renderCoverFront, renderCoverBack, prewarmCovers } from "../services/cover-front-renderer";
   import { DEFAULT_SHOP_PROP, bakedCoverUrl } from "../domain/shop-prop-options";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   interface Props {
     cards: readonly CoverCard[];

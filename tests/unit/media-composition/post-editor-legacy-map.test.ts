@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 import type { PostProject } from "@austencloud/video-editor/core";
 import {
   createPostEditorState,
   type CatalogTakeSource,
-} from "$lib/shared/media-composition/state/post-editor-state.svelte";
+} from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 
 const sequence = () =>
   ({

@@ -1,18 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { deriveSteps, deriveStartPlacement } from "$lib/shared/foundation/services/step-deriver";
-import { GridLocation, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { deriveSteps, deriveStartPlacement } from "#lib/shared/foundation/services/step-deriver.js";
+import { GridLocation, GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   Orientation,
   MotionType,
   RotationDirection,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
-import type { SoloPropStepData } from "$lib/shared/foundation/domain/models/solo-prop-step-data";
-import type { StepPairingData } from "$lib/shared/foundation/domain/models/step-pairing-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { SoloPropData } from "#lib/shared/foundation/domain/models/solo-prop-data.js";
+import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
+import type { StepPairingData } from "#lib/shared/foundation/domain/models/step-pairing-data.js";
 
 function makeStep(
   startLocation: GridLocation,

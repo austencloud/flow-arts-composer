@@ -17,44 +17,44 @@
   thing to look at, a meaningless thing to link to, and a second way to do what
   the grid already does. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { spinRatioKey } from "@vtg/domain";
-  import { MANDALA_STANDARD_TIP_DX } from "$lib/shared/mandala/domain/mandala-constants";
-  import { traceScaledPath } from "$lib/shared/notation/qft/qft-model";
-  import { propReachInHandRadii } from "$lib/shared/shape-matrix/services/theory-matrix-artwork";
-  import { shapeMatrixTipPoint } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-  import { foldUntraceablePropPair } from "$lib/shared/shape-matrix/domain/prop-pair";
+  import { MANDALA_STANDARD_TIP_DX } from "#lib/shared/mandala/domain/mandala-constants.js";
+  import { traceScaledPath } from "#lib/shared/notation/qft/qft-model.js";
+  import { propReachInHandRadii } from "#lib/shared/shape-matrix/services/theory-matrix-artwork.js";
+  import { shapeMatrixTipPoint } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+  import { foldUntraceablePropPair } from "#lib/shared/shape-matrix/domain/prop-pair.js";
   import {
     isStationaryRatio,
     theoryKnobs,
     theorySoloKnobs,
     type TheoryFlower,
-  } from "$lib/shared/shape-matrix/domain/theory-flower";
-  import { tryGetViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
-  import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-  import { theoryPropRelationship } from "$lib/shared/shape-matrix/domain/theory-prop-relationship";
-  import { theoryRatioLabel } from "$lib/shared/shape-matrix/domain/theory-ratio";
+  } from "#lib/shared/shape-matrix/domain/theory-flower.js";
+  import { tryGetViewerVisibilityContext } from "#lib/shared/sequence-viewer/context/viewer-visibility-context.js";
+  import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+  import { theoryPropRelationship } from "#lib/shared/shape-matrix/domain/theory-prop-relationship.js";
+  import { theoryRatioLabel } from "#lib/shared/shape-matrix/domain/theory-ratio.js";
   import {
     FAMILY_BY_MODE,
     propModeOf,
-  } from "$lib/shared/shape-matrix/services/build-mode-realizations";
-  import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
-  import ElementChipRow from "$lib/shared/shape-matrix/components/ElementChipRow.svelte";
+  } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
+  import { TND_BY_FAMILY } from "#lib/features/choreo-card/domain/tnd-element.js";
+  import ElementChipRow from "#lib/shared/shape-matrix/components/ElementChipRow.svelte";
   import PropRelationshipChipRow, {
     type RelationshipBridgeEntry,
-  } from "$lib/shared/shape-matrix/components/PropRelationshipChipRow.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
-  import ShapeMatrixStageActions from "$lib/shared/shape-matrix/components/ShapeMatrixStageActions.svelte";
-  import UnifiedTimeline from "$lib/shared/timeline/UnifiedTimeline.svelte";
-  import type { UnifiedPlaybackContext } from "$lib/shared/timeline/unified-playback-context";
+  } from "#lib/shared/shape-matrix/components/PropRelationshipChipRow.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import AnimationPanel from "#lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import ShapeMatrixStageActions from "#lib/shared/shape-matrix/components/ShapeMatrixStageActions.svelte";
+  import UnifiedTimeline from "#lib/shared/timeline/UnifiedTimeline.svelte";
+  import type { UnifiedPlaybackContext } from "#lib/shared/timeline/unified-playback-context.js";
   import { registerShapeMatrixPlaybackShortcut } from "../services/shape-matrix-playback-shortcut";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { CANVAS2D_HOSTED_EFFECTS } from "$lib/shared/effects/services/canvas2d-effect-host";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { CANVAS2D_HOSTED_EFFECTS } from "#lib/shared/effects/services/canvas2d-effect-host.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { getShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import ShapeMatrixLiveRatioStage, {
     type LiveHand,
   } from "./ShapeMatrixLiveRatioStage.svelte";

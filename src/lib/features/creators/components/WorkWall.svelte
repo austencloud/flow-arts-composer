@@ -13,11 +13,11 @@
   strands the last one (4k-native-layout.md).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import WorkTile from "./WorkTile.svelte";
   import { fitColumns } from "../domain/fit-columns";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
 
   interface Props {
     items: { sequence: SequenceData; creator: EnhancedUserProfile }[];

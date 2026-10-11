@@ -31,15 +31,15 @@
   Standard/Mirrored implied a deviation from a norm that does not exist.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import {
     resolveViewerCustomColorPair,
     type ViewerCustomColorPair,
-  } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import type {
     ChiralityHand,
     PropChiralityHandState,

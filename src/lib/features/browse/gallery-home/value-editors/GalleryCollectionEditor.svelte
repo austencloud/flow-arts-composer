@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { openShareCollectionSheet } from "$lib/shared/inbox/state/send-sequence-state.svelte";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { openShareCollectionSheet } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
   import type { CollectionOption } from "../gallery-drill-catalog.svelte";
   import { valueDisabled } from "../gallery-value-editor";
   import type {

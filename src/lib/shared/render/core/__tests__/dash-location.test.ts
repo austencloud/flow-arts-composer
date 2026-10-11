@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   calculateDashLocation,
   type DashLocationInput,
-} from "$lib/shared/render/core/calculations/dash-location";
+} from "#lib/shared/render/core/calculations/dash-location.js";
 
 /**
  * Dash arrows are NOT drawn at their start or end location — their location is

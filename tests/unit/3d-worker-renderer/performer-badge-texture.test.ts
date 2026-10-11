@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createPerformerBadgeTexture } from "$lib/shared/3d/rendering/performer-badge-texture";
+import { createPerformerBadgeTexture } from "#lib/shared/3d/rendering/performer-badge-texture.js";
 
 describe("createPerformerBadgeTexture", () => {
   it("paints the exact numbered badge through an injected canvas owner", () => {

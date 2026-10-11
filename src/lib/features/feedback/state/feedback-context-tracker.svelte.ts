@@ -7,7 +7,7 @@
  * 2. Feedback module - user navigated away, use previous module
  */
 
-import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 
 /**
  * Update the tracked context.

@@ -5,4 +5,4 @@ export {
   reassignMotionHand,
   invertMotion,
   rewindMotion,
-} from "$lib/shared/create/services/motion-transforms";
+} from "#lib/shared/create/services/motion-transforms.js";

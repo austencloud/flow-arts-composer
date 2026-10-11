@@ -15,11 +15,11 @@ import {
   MoonFanDiffuserRenderer3D,
   createMoonFanDiffuserGeometry,
   moonFanZoneSampleIndices,
-} from "$lib/shared/3d/effects/led/moon-fan-diffuser-renderer-3d";
+} from "#lib/shared/3d/effects/led/moon-fan-diffuser-renderer-3d.js";
 import {
   FAN_MOON_RIM_POINTS_M,
   resolveBuildTipAnchors3D,
-} from "$lib/shared/3d/effects/prop-build-tip-geometry-3d";
+} from "#lib/shared/3d/effects/prop-build-tip-geometry-3d.js";
 
 describe("Moon fan LED surface", () => {
   it("samples the center of both 39-emitter control zones", () => {

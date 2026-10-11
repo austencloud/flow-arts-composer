@@ -5,16 +5,16 @@
   Displayed when user has no last-used sequence saved.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { fade, fly } from "svelte/transition";
   import {
     getTrainPracticeState,
     type RecentSequence,
   } from "../../state/train-practice-state.svelte";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     onSequenceSelect: (sequence: SequenceData) => void;

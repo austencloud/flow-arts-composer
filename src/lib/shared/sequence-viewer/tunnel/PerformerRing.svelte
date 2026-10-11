@@ -12,7 +12,7 @@
   count/twin structure comes from performer-ring-model.
 -->
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { scale } from "svelte/transition";
   import type { TunnelConfig } from "./tunnel-config";
   import { performerRing, depthRadiusFraction } from "./performer-ring-model";

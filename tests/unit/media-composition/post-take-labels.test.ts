@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   findItem,
   type PostProject,
   takeDisplayLabel,
   updateItem,
 } from "@austencloud/video-editor/core";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 import {
   loadPostProject,
   savePostProject,
-} from "$lib/shared/media-composition/services/post-project-store";
+} from "#lib/shared/media-composition/services/post-project-store.js";
 import { project, take, video } from "./post-project-fixtures";
 
 const sequence = {

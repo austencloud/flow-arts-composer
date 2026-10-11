@@ -15,7 +15,7 @@
  * decision made in `feature-flags.ts`.
  */
 
-import { dev } from "$app/environment";
+import { dev } from "$app/env";
 import { redirect } from "@sveltejs/kit";
 
 /** True when this build ships the unfinished Coven hub route. */

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { flyFade } from "$lib/shared/transitions/motion";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
   /**
    * Creation Tool Panel Slot
    *
@@ -13,13 +13,13 @@
    * Domain: Create module - Tool panel presentation
    */
 
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { IToolPanelMethods } from "../types/create-module-types";
   import { getCreateModuleContext } from "../context/create-module-context";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import ConstructTabContent from "./ConstructTabContent.svelte";
-  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
   // GeneratePanel (136-file subtree), AssembleToolPanel (21), FuseTab (235!)
   // and ShapeEngineTab are deferred via LazyMount — only the active build-mode
   // tab's chunk loads. Construct is the default tab so ConstructTabContent
@@ -299,7 +299,7 @@
           {:else if activeToolPanel === "fuse"}
             <!-- Fuse Mode - Combine two sequences into one (deferred chunk) -->
             <LazyMount
-              loader={() => import("$lib/features/fuse/FuseTab.svelte")}
+              loader={() => import("#lib/features/fuse/FuseTab.svelte")}
               active
             />
           {:else if activeToolPanel === "tunnel"}

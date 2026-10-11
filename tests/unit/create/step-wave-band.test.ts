@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculateStepWaveBand,
   waveBandAt,
-} from "$lib/shared/create/utils/grid-calculations";
+} from "#lib/shared/create/utils/grid-calculations.js";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");

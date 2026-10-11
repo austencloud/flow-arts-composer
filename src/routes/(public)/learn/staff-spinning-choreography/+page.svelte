@@ -10,8 +10,8 @@
   update the focused review-gate contract test.
 -->
 <script lang="ts">
-  import { dev } from "$app/environment";
-  import UnderConstruction from "$lib/shared/landing/components/UnderConstruction.svelte";
+  import { dev } from "$app/env";
+  import UnderConstruction from "#lib/shared/landing/components/UnderConstruction.svelte";
   import StaffSpinningChoreographyDraft from "./_components/StaffSpinningChoreographyDraft.svelte";
 </script>
 

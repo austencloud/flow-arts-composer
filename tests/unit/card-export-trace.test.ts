@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CardExportTrace } from "$lib/shared/render/services/card-export-trace";
+import { CardExportTrace } from "#lib/shared/render/services/card-export-trace.js";
 
 afterEach(() => vi.restoreAllMocks());
 

@@ -1,32 +1,32 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { onMount } from "svelte";
   import { Canvas } from "@threlte/core";
   import { AgXToneMapping, PCFSoftShadowMap, WebGLRenderer } from "three";
-  import PerfMonitor from "$lib/shared/3d/components/PerfMonitor.svelte";
-  import { setAdaptiveQualityContext } from "$lib/shared/3d/context/adaptive-quality-context";
-  import { getQualityTierDetector } from "$lib/shared/3d/effects/quality/get-quality-tier-detector";
-  import { createAdaptiveQualityState } from "$lib/shared/3d/state/adaptive-quality-state.svelte";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
-  import { sceneAudioState } from "$lib/shared/3d/state/scene-audio-state.svelte";
-  import { getFlowFestFireJamSoundscape } from "$lib/features/flow-fest-sim/getFlowFestFireJamSoundscape";
-  import { getFlowFestFieldPositioning } from "$lib/features/flow-fest-sim/getFlowFestFieldPositioning";
-  import { setFlowFestFieldPositioningContext } from "$lib/features/flow-fest-sim/context/flow-fest-field-positioning-context";
+  import PerfMonitor from "#lib/shared/3d/components/PerfMonitor.svelte";
+  import { setAdaptiveQualityContext } from "#lib/shared/3d/context/adaptive-quality-context.js";
+  import { getQualityTierDetector } from "#lib/shared/3d/effects/quality/get-quality-tier-detector.js";
+  import { createAdaptiveQualityState } from "#lib/shared/3d/state/adaptive-quality-state.svelte.js";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
+  import { sceneAudioState } from "#lib/shared/3d/state/scene-audio-state.svelte.js";
+  import { getFlowFestFireJamSoundscape } from "#lib/features/flow-fest-sim/getFlowFestFireJamSoundscape.js";
+  import { getFlowFestFieldPositioning } from "#lib/features/flow-fest-sim/getFlowFestFieldPositioning.js";
+  import { setFlowFestFieldPositioningContext } from "#lib/features/flow-fest-sim/context/flow-fest-field-positioning-context.js";
   import {
     auditFlowFestGnssRoundTrip,
     createFlowFestGnssReplayTrack,
     type FlowFestFieldReference,
     type FlowFestGnssRoundTripAudit,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-field-positioning";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-field-positioning.js";
   import {
     FLOW_FEST_FIRE_JAM_CONTRACT,
     observeFlowFestFireJam,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-fire-jam";
-  import type { FlowFestSiteAudioLayout } from "$lib/features/flow-fest-sim/domain/flow-fest-site-audio";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-fire-jam.js";
+  import type { FlowFestSiteAudioLayout } from "#lib/features/flow-fest-sim/domain/flow-fest-site-audio.js";
   import {
     buildFlowFestAudioFieldSources,
     type FlowFestAudioSource,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-audio-field";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-audio-field.js";
   import {
     auditFlowFestIntegratedJourney,
     createFlowFestIntegratedJourney,
@@ -36,30 +36,30 @@
     restoreFlowFestIntegratedJourney,
     setFlowFestIntegratedJourneyBranch,
     type FlowFestIntegratedJourneyState,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-integrated-world";
-  import type { FlowFestFireJamSoundscapeSnapshot } from "$lib/features/flow-fest-sim/services/contracts/IFlowFestFireJamSoundscape";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-integrated-world.js";
+  import type { FlowFestFireJamSoundscapeSnapshot } from "#lib/features/flow-fest-sim/services/contracts/IFlowFestFireJamSoundscape.js";
   import {
     FLOW_FEST_GAMEPLAY_JUMP_FORCE,
     FLOW_FEST_GAMEPLAY_GROUND_ACCELERATION_METERS_PER_SECOND_SQUARED,
     FLOW_FEST_GAMEPLAY_GROUND_DECELERATION_METERS_PER_SECOND_SQUARED,
     FLOW_FEST_GAMEPLAY_SPRINT_MULTIPLIER,
     FLOW_FEST_GAMEPLAY_WALK_SPEED_METERS_PER_SECOND,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-simulation-contract";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-simulation-contract.js";
   import {
     flowFestEucSpeedKilometresPerHour,
     flowFestEucSpeedMilesPerHour,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle.js";
   import {
     createFlowFestMobilityState,
     type FlowFestMobilityCarRuntime,
     type FlowFestMobilityRuntimeUpdate,
-  } from "$lib/features/flow-fest-sim/state/flow-fest-mobility-state.svelte";
-  import { createFlowFestFieldPositioningState } from "$lib/features/flow-fest-sim/state/flow-fest-field-positioning-state.svelte";
+  } from "#lib/features/flow-fest-sim/state/flow-fest-mobility-state.svelte.js";
+  import { createFlowFestFieldPositioningState } from "#lib/features/flow-fest-sim/state/flow-fest-field-positioning-state.svelte.js";
   import {
     parseGeospatialTerrainManifest,
     type GeospatialTerrainManifestV2,
-  } from "$lib/shared/3d/procedural-engine/generation/geospatial-terrain";
-  import type { InstanceFrustumCullingStats } from "$lib/shared/3d/rendering/instance-frustum-culling";
+  } from "#lib/shared/3d/procedural-engine/generation/geospatial-terrain.js";
+  import type { InstanceFrustumCullingStats } from "#lib/shared/3d/rendering/instance-frustum-culling.js";
   import {
     advanceFlowFestProgress,
     createFlowFestGate4ReviewProgress,
@@ -71,14 +71,14 @@
     type FlowFestMoment,
     type FlowFestProgressAction,
     type FlowFestProgressState,
-  } from "$lib/features/flow-fest-sim/state/flow-fest-progress";
+  } from "#lib/features/flow-fest-sim/state/flow-fest-progress.js";
   import {
     flowFestDepartureProfile,
     flowFestDrivingEnergyDrainPercent,
     type FlowFestLoadout,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-loadout";
-  import { FLOW_FEST_CAR_CONFIG } from "$lib/features/flow-fest-sim/domain/flow-fest-car";
-  import type { FlowFestProductionCollisionSet } from "$lib/features/flow-fest-sim/domain/flow-fest-simulation-contract";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-loadout.js";
+  import { FLOW_FEST_CAR_CONFIG } from "#lib/features/flow-fest-sim/domain/flow-fest-car.js";
+  import type { FlowFestProductionCollisionSet } from "#lib/features/flow-fest-sim/domain/flow-fest-simulation-contract.js";
   import FlowFestGrayboxWalkScene from "../flow-fest-graybox/FlowFestGrayboxWalkScene.svelte";
   import type { FlowFestGrayboxReadyDetails } from "../flow-fest-graybox/flow-fest-graybox-types";
   import type {

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RequestEvent } from "@sveltejs/kit";
 
 const env = vi.hoisted(() => ({ dev: true }));
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   get dev() {
     return env.dev;
   },

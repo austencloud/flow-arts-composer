@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SequenceViewerVisibilityState } from "$lib/shared/sequence-viewer/state/viewer-visibility-state.svelte";
+import { SequenceViewerVisibilityState } from "#lib/shared/sequence-viewer/state/viewer-visibility-state.svelte.js";
 
 describe("SequenceViewerVisibilityState", () => {
   it("starts with both motions visible", () => {

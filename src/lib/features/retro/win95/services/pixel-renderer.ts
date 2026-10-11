@@ -19,12 +19,12 @@
  */
 
 import type { RetroPictographData } from "../../shared/domain/pictograph-types";
-import type { PictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import type { PreparedRenderData } from "$lib/shared/pictograph/shared/domain/models/prepared-pictograph-data";
+import type { PictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import type { PreparedRenderData } from "#lib/shared/pictograph/shared/domain/models/prepared-pictograph-data.js";
 import { EraRendererBase } from "../../shared/services/era-renderer-base";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { DrawableImage } from '$lib/shared/render/services/svg-image-cache';
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { DrawableImage } from '#lib/shared/render/services/svg-image-cache.js';
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 
 interface PaletteColor {

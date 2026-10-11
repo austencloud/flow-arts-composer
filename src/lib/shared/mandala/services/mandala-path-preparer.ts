@@ -13,7 +13,7 @@ import {
   MANDALA_GRID_RADIUS,
   ENGINE_GRID_RADIUS,
 } from "../domain/mandala-constants";
-import { VIEWBOX_SIZE } from "$lib/shared/render/core/constants/viewbox";
+import { VIEWBOX_SIZE } from "#lib/shared/render/core/constants/viewbox.js";
 import type {
   MandalaHandVisibility,
   SVGPathData,
@@ -26,19 +26,19 @@ import type {
   StepLike,
 } from "./types";
 import { calculate as calculateMandalaGeometry } from "./mandala-geometry-calculator";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   getTipPoints,
   getTipPointsBaseline,
   type TipPoint,
-} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+} from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import {
   getDefaultTrailPointConfig,
   resolveTrailPointConfig,
   type TrailPointSource,
-} from "$lib/shared/animation-engine/domain/types/trail-point-types";
-import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
+} from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
+import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { propTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
 
 /**
  * Measures the total length of an SVG path string by creating a temporary

@@ -19,7 +19,7 @@
   directly, see flower.ts for why the Matrix's own turn axis can't.
 -->
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import {
     buildSkewedRatioBeats,
     verifyChain,

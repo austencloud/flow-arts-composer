@@ -9,7 +9,7 @@
  * frames integrate under, and the glare weight.
  */
 
-import type { LedShutter } from "$lib/shared/animation-engine/domain/led-photometry";
+import type { LedShutter } from "#lib/shared/animation-engine/domain/led-photometry.js";
 
 export interface LedSegment {
   /** Position in NDC. */

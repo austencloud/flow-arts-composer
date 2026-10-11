@@ -1,4 +1,4 @@
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 // "idle" is the pre-load state: no load has been attempted yet, so an empty
 // option list means "nothing fetched", NOT "nothing matches". Consumers must

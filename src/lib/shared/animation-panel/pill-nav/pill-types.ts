@@ -1,5 +1,5 @@
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
 /**
  * Pill-nav contract for AnimationPanel.

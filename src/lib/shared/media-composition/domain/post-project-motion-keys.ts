@@ -10,8 +10,8 @@ import {
   MOVE_START_SHARE,
   boxAt,
 } from "@austencloud/video-editor/core";
-import type { PostAnimationItem } from "$lib/shared/post-studio-plugin";
-import { pipHandoffOf } from "$lib/shared/media-composition/domain/pip-handoff";
+import type { PostAnimationItem } from "#lib/shared/post-studio-plugin/index.js";
+import { pipHandoffOf } from "#lib/shared/media-composition/domain/pip-handoff.js";
 
 /**
  * The opening tunnel's move from full frame into the animation's box, and the

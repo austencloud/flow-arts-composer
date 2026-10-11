@@ -9,7 +9,7 @@ import {
   buildTransferredPublicProjection,
   parseSequenceTransferArgs,
 } from "../../../scripts/transfer-sequence";
-import { computeStoredProjectionDigest } from "$lib/shared/library/services/public-sequence-projection";
+import { computeStoredProjectionDigest } from "#lib/shared/library/services/public-sequence-projection.js";
 
 const projectRoot = path.resolve(import.meta.dirname, "../../..");
 

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { QualityTierDetector } from "$lib/shared/3d/effects/quality/quality-tier-detector";
-import { QualityTier } from "$lib/shared/3d/effects/types";
+import { QualityTierDetector } from "#lib/shared/3d/effects/quality/quality-tier-detector.js";
+import { QualityTier } from "#lib/shared/3d/effects/types.js";
 
 describe("QualityTierDetector", () => {
   afterEach(() => {

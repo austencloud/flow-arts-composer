@@ -10,9 +10,9 @@
 -->
 <script lang="ts">
   import type { Component } from "svelte";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { ARENA_TABS } from "$lib/shared/navigation/config/tab-definitions";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { ARENA_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   const tabComponents: Record<string, () => Promise<{ default: Component }>> = {
     battle: () => import("./components/battle/ArenaBattleView.svelte"),

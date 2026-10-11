@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { resolveShowcasePropPair } from "$lib/shared/sequence-preview/services/showcase-prop-pair";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { resolveShowcasePropPair } from "#lib/shared/sequence-preview/services/showcase-prop-pair.js";
 
 const viewerFans = {
   leftPropType: PropType.FAN,

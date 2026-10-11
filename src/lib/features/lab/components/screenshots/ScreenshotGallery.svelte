@@ -8,10 +8,10 @@
   - gallery-capture-state (capture + upload pipeline)
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { DeviceCategory } from "../../services/types";
   import type { ScreenshotMetadata } from "../../services/types";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type { ScreenshotTagController } from "../../services/screenshot-tag-controller";
   import type { GalleryItem } from "../../services/types";
   import { getScreenshotOrchestrator } from "../../get-screenshot-orchestrator";
@@ -20,7 +20,7 @@
   import { getScreenshotLoader } from "../../get-screenshot-loader";
   import { toMediaItems } from "../../services/gallery-item-adapter";
   import { onMount } from "svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import {
     MediaSpotlight,
     type MediaItem as SpotlightMediaItem,
@@ -30,11 +30,11 @@
     TagCreatorModal,
     TagPickerPanel,
   } from "@austencloud/media-tagging-ui";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import GalleryGrid from "./GalleryGrid.svelte";
   import CaptureProgress from "./CaptureProgress.svelte";
   import UploadProgressCard from "./UploadProgress.svelte";
-  import SelectionToolbar from "$lib/shared/components/selection/SelectionToolbar.svelte";
+  import SelectionToolbar from "#lib/shared/components/selection/SelectionToolbar.svelte";
   import TagSidebar from "./TagSidebar.svelte";
   import TagContextPanel from "./TagContextPanel.svelte";
   import { createGalleryTagFilterState } from "./state/gallery-tag-filter-state.svelte";

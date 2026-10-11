@@ -19,7 +19,7 @@ let releaseFirestore: (() => void) | null = null;
 let firestoreGate: Promise<void> | null = null;
 const setDocMock = vi.fn().mockResolvedValue(undefined);
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: async () => {
     if (firestoreGate) await firestoreGate;
     return {} as any;
@@ -27,7 +27,7 @@ vi.mock("$lib/shared/auth/firebase", () => ({
 }));
 // The REAL requireAuth() is used — it simply reads authState — so the uid the
 // repository resolves after its await is the one this mock reports.
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     get effectiveUserId() {
       return liveUid.value;
@@ -42,9 +42,9 @@ vi.mock("firebase/firestore", () => ({
 }));
 
 const { HandPathRepository } =
-  await import("$lib/shared/foundation/services/hand-path-repository-store");
+  await import("#lib/shared/foundation/services/hand-path-repository-store.js");
 const { SoloPropRepository } =
-  await import("$lib/shared/foundation/services/solo-prop-repository-store");
+  await import("#lib/shared/foundation/services/solo-prop-repository-store.js");
 
 const provenance = {
   sourceSequenceIds: ["seq-1"],

@@ -1,20 +1,20 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import type { PreviewCellRenderOptions } from "./preview-cell-renderer";
 import { resolvePreviewCellRender } from "./preview-cell-render-contract";
 
 export type PreWarmPriority = "background" | "user-visible" | "user-blocking";
 import { deriveCacheKey } from "./cell-cache-key-deriver";
-import { pictographBlobCache } from "$lib/shared/render/services/pictograph-blob-cache";
-import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import { getWorkerRenderPool } from "$lib/shared/render/services/worker-render-pool";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import { buildRenderOptions as buildCellRenderOptions } from "$lib/shared/choreo-card/services/choreo-card-cell-pipeline";
-import { isCatDogMode } from "$lib/shared/browse/utils/prop-mode-helpers";
-import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+import { pictographBlobCache } from "#lib/shared/render/services/pictograph-blob-cache.js";
+import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import { getWorkerRenderPool } from "#lib/shared/render/services/worker-render-pool.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import { buildRenderOptions as buildCellRenderOptions } from "#lib/shared/choreo-card/services/choreo-card-cell-pipeline.js";
+import { isCatDogMode } from "#lib/shared/browse/utils/prop-mode-helpers.js";
+import { createStartPlacementFromBeatStart } from "#lib/shared/create/services/sequence-transforms.js";
 import { gridJoinCellResolver } from "@tka/render-core";
-import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
+import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
 
 interface CellTask {
   pictographData: PictographData;

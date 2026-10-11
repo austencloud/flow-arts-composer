@@ -4,10 +4,10 @@ import { Mesh, MeshStandardMaterial } from "three";
 import {
   configureAutumnShadowMesh,
   resolveAutumnShadowRole,
-} from "$lib/shared/3d/environments/scenes/autumn/runtime/lighting/autumn-shadow-roles";
-import { AUTUMN_MOON_DIRECTION } from "$lib/shared/3d/environments/scenes/autumn/runtime/lighting/autumn-moon";
-import { resolveMotionScale } from "$lib/shared/3d/environments/primitives/motion-preference";
-import { allocateAutumnFireflies } from "$lib/shared/3d/environments/scenes/autumn/runtime/atmosphere/autumn-ground-life-layout";
+} from "#lib/shared/3d/environments/scenes/autumn/runtime/lighting/autumn-shadow-roles.js";
+import { AUTUMN_MOON_DIRECTION } from "#lib/shared/3d/environments/scenes/autumn/runtime/lighting/autumn-moon.js";
+import { resolveMotionScale } from "#lib/shared/3d/environments/primitives/motion-preference.js";
+import { allocateAutumnFireflies } from "#lib/shared/3d/environments/scenes/autumn/runtime/atmosphere/autumn-ground-life-layout.js";
 
 describe("Autumn shadow budget", () => {
   it("casts from authored near-field geometry", () => {

@@ -36,7 +36,7 @@
     type PerformerHandDistance,
   } from "../domain/performer-hand-distance";
   import { getHandPoints } from "../domain/constants/grid-layout";
-  import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+  import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
   import {
     getGridMarkerGeometry,
     getGridMaterial,

@@ -10,7 +10,7 @@
  * Calls existing singleton services internally.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   BrowseEngine,
   BrowseEngineConfig,
@@ -20,59 +20,60 @@ import type {
   SectionGroupBy,
 } from "./types";
 
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
-import { resolvePersistedFilterType } from "$lib/shared/browse/services/legacy-filter-type-aliases";
-import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { BrowseFilterValue } from "#lib/shared/persistence/domain/types/filtering-types.js";
+import { resolvePersistedFilterType } from "#lib/shared/browse/services/legacy-filter-type-aliases.js";
+import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
 import {
   DEFAULT_BROWSE_VIEW_MODE,
   normalizeBrowseViewMode,
   type BrowseViewMode,
-} from "$lib/shared/browse/domain/browse-view-mode";
+} from "#lib/shared/browse/domain/browse-view-mode.js";
 import type {
   SectionConfig,
   SequenceSection,
-} from "$lib/shared/browse/domain/models/browse-models";
+} from "#lib/shared/browse/domain/models/browse-models.js";
 
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
-import { detectRotationPeriod } from "$lib/shared/create/domain/detect-rotation-period";
-import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-import { networkStatusState } from "$lib/shared/offline/state/network-status-state.svelte";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
+import { detectRotationPeriod } from "#lib/shared/create/domain/detect-rotation-period.js";
+import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+import { networkStatusState } from "#lib/shared/offline/state/network-status-state.svelte.js";
 import {
   applyFilter as applyBrowseFilter,
   getSequenceMaxTurn,
-} from "$lib/shared/browse/services/browse-filter";
+} from "#lib/shared/browse/services/browse-filter.js";
 import {
   applyFilters as applyMultiFilters,
   getFilteredCount as getMultiFilteredCount,
   OR_STACKING_TYPES,
   CONNECTIVE_STACKING_TYPES,
   type FilterConnective,
-} from "$lib/shared/browse/services/multi-filter";
-import { sortSequences as browseSortSequences } from "$lib/shared/browse/services/browse-sorter";
-import { withLibraryBrowseDate } from "$lib/shared/browse/services/browse-date";
-import { organizeSections as organizeBrowseSections } from "$lib/shared/browse/services/browse-section-manager";
-import { toggleFavorite as doToggleFavorite } from "$lib/shared/library/services/collection-manager";
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-import { getSavedSequenceIds } from "$lib/shared/library/services/saved-sequence-ledger";
+} from "#lib/shared/browse/services/multi-filter.js";
+import { sortSequences as browseSortSequences } from "#lib/shared/browse/services/browse-sorter.js";
+import { withLibraryBrowseDate } from "#lib/shared/browse/services/browse-date.js";
+import { organizeSections as organizeBrowseSections } from "#lib/shared/browse/services/browse-section-manager.js";
+import { toggleFavorite as doToggleFavorite } from "#lib/shared/library/services/collection-manager.js";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+import { getLibraryPageLoader } from "#lib/shared/browse/get-library-page-loader.js";
+import { getSavedSequenceIds } from "#lib/shared/library/services/saved-sequence-ledger.js";
 
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { isPreviewReadOnly } from "$lib/shared/debug/state/user-preview-state.svelte";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { isPreviewReadOnly } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 import {
   onLibraryMutated,
   onLibrarySequenceAdded,
-} from "$lib/shared/library/library-events";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+} from "#lib/shared/library/library-events.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import {
   MIN_COLUMNS as MIN_COLUMNS_DEFAULT,
   getMaxColumnsForWidth,
   getDefaultColumnsForWidth,
   getWidthBucketKey,
   clampColumnsToWidth,
-} from "$lib/shared/browse/services/grid-column-breakpoints";
+} from "#lib/shared/browse/services/grid-column-breakpoints.js";
 
 // Helpers
 
@@ -219,6 +220,9 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
   }
 
   let isLoading = $state(false);
+  let isLoadingMore = $state(false);
+  let loadMoreError = $state<string | null>(null);
+  let libraryComplete = $state(!config.progressiveLibrary);
   let error = $state<string | null>(null);
   // A persisted source the config no longer offers (e.g. the gallery dropped
   // its toggle) would strand the user in a scope they can't leave — sanitize
@@ -310,6 +314,7 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
   // switch without ever carrying one account's rows into another preview).
   let libraryCache: SequenceData[] | null = null;
   let libraryCacheUserId: string | null = null;
+  let unsubscribeLibraryPages: (() => void) | null = null;
   // Every async producer of allSequences shares one revision. Source changes,
   // host-owned pools, and teardown invalidate older work before it can publish.
   let poolLoadRevision = 0;
@@ -523,9 +528,16 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
 
   // --- Library mutation listeners ---
 
+  const usesSharedLibraryPages = (): boolean =>
+    !!config.progressiveLibrary &&
+    source === "my-library" &&
+    authState.isFullAccount &&
+    _viewMode.granularity !== "solo";
+
   const cleanupMutated = $effect.root(() => {
     $effect(() => {
       return onLibraryMutated((sequenceId) => {
+        if (usesSharedLibraryPages()) return;
         libraryCache = libraryCache?.filter((s) => s.id !== sequenceId) ?? null;
         loaderService.removeFromCache(sequenceId);
         allSequences = allSequences.filter((s) => s.id !== sequenceId);
@@ -534,6 +546,7 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
 
     $effect(() => {
       return onLibrarySequenceAdded((sequence) => {
+        if (usesSharedLibraryPages()) return;
         if (source === "my-library") {
           const librarySequence = withLibraryBrowseDate(sequence);
           if (libraryCache) {
@@ -563,6 +576,11 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
       lastFullAccount = currentFullAccount;
       libraryCache = null;
       libraryCacheUserId = null;
+      unsubscribeLibraryPages?.();
+      unsubscribeLibraryPages = null;
+      if (config.progressiveLibrary && !currentFullAccount) {
+        getLibraryPageLoader().clear();
+      }
       if (source === "my-library") {
         // Public community requests are independent of account identity. Only
         // invalidate a request here when replacing the account-owned pool.
@@ -644,8 +662,12 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
       });
   }
 
-  async function loadLibrarySequences(): Promise<void> {
+  async function loadLibrarySequences(refresh = false): Promise<void> {
     const requestRevision = ++poolLoadRevision;
+    unsubscribeLibraryPages?.();
+    unsubscribeLibraryPages = null;
+    isLoadingMore = false;
+    loadMoreError = null;
     const requestedUserId = authState.effectiveUserId;
     const requestedFullAccount = authState.isFullAccount;
     const requestedViewMode = { ..._viewMode };
@@ -657,6 +679,7 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
       sameViewMode(_viewMode, requestedViewMode);
 
     if (!requestedUserId) {
+      libraryComplete = true;
       allSequences = [];
       libraryCache = null;
       libraryCacheUserId = null;
@@ -699,7 +722,11 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     }
 
     // Fast path: use cached data
-    if (libraryCache && libraryCacheUserId === requestedUserId) {
+    if (
+      !config.progressiveLibrary &&
+      libraryCache &&
+      libraryCacheUserId === requestedUserId
+    ) {
       allSequences = libraryCache;
       sectionsReady = true;
       isLoading = false;
@@ -717,7 +744,7 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
         const savedIds = new Set(getSavedSequenceIds(requestedUserId));
         const rows = savedIds.size
           ? await (
-              await import("$lib/shared/persistence/services/dexie-persistence-service")
+              await import("#lib/shared/persistence/services/dexie-persistence-service.js")
             ).getAllSequences()
           : [];
         const local = deduplicateById(
@@ -727,6 +754,7 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
         );
         if (!isCurrentRequest()) return;
         allSequences = local;
+        libraryComplete = true;
         libraryCache = local;
         libraryCacheUserId = requestedUserId;
         sectionsReady = true;
@@ -755,6 +783,35 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
       allSequences = [];
       sectionsReady = false;
       isLoading = false;
+      return;
+    }
+
+    if (config.progressiveLibrary) {
+      // A newer load may have subscribed during the awaits above, so widen
+      // the null this function narrowed it to at its start.
+      (unsubscribeLibraryPages as (() => void) | null)?.();
+      const pageLoader = getLibraryPageLoader();
+      isLoading = true;
+      isLoadingMore = false;
+      loadMoreError = null;
+      error = null;
+      sectionsReady = false;
+      unsubscribeLibraryPages = pageLoader.subscribe(
+        requestedUserId,
+        (snapshot) => {
+          if (!isCurrentRequest()) return;
+          allSequences = deduplicateById(
+            snapshot.rows.map(withLibraryBrowseDate)
+          );
+          libraryComplete = snapshot.complete;
+          sectionsReady = snapshot.rows.length > 0 || snapshot.complete;
+          isLoading = !sectionsReady && snapshot.loading;
+          isLoadingMore = sectionsReady && snapshot.loading;
+          loadMoreError = sectionsReady ? snapshot.error : null;
+          error = !sectionsReady ? snapshot.error : null;
+        }
+      );
+      await pageLoader.load(requestedUserId, refresh);
       return;
     }
 
@@ -811,6 +868,20 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     // Reactive getters
     get isLoading() {
       return isLoading;
+    },
+    get isLoadingMore() {
+      return isLoadingMore;
+    },
+    get loadMoreError() {
+      return loadMoreError;
+    },
+    get isLibraryComplete() {
+      return (
+        source !== "my-library" ||
+        !config.progressiveLibrary ||
+        _viewMode.granularity === "solo" ||
+        libraryComplete
+      );
     },
     get error() {
       return error;
@@ -929,7 +1000,7 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     async refresh(): Promise<void> {
       libraryCache = null;
       libraryCacheUserId = null;
-      if (source === "my-library") await loadLibrarySequences();
+      if (source === "my-library") await loadLibrarySequences(true);
       else await loadCommunitySequences(true);
     },
 
@@ -1148,6 +1219,7 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     // --- Cleanup ---
     destroy(): void {
       poolLoadRevision += 1;
+      unsubscribeLibraryPages?.();
       cleanupMutated();
       if (transitionTimeout) {
         clearTimeout(transitionTimeout);

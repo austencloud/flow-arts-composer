@@ -57,8 +57,8 @@ export interface AnimationSettings {
   trail: TrailSettings;
 }
 
-import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 export const DEFAULT_TRAIL_APPEARANCE: TrailAppearance = {
   lineWidth: 3.5,
@@ -82,7 +82,7 @@ export const DEFAULT_ANIMATION_SETTINGS: AnimationSettings = {
   trail: { ...DEFAULT_TRAIL_SETTINGS },
 };
 
-import { createPersistenceHelper } from "$lib/shared/state/utils/persistent-state";
+import { createPersistenceHelper } from "#lib/shared/state/utils/persistent-state.js";
 
 const ANIMATION_SETTINGS_STORAGE_KEY = "tka_animation_settings";
 const BOTH_ENDS_DEFAULT_VERSION = 2;

@@ -13,26 +13,26 @@
  * started one row past it.
  */
 import { describe, expect, it } from "vitest";
-import { buildMuseumGrid } from "$lib/features/museum/services/museum-grid-builder";
-import { GRID_CONFIG } from "$lib/features/museum/data/museum-room-graph";
+import { buildMuseumGrid } from "#lib/features/museum/services/museum-grid-builder.js";
+import { GRID_CONFIG } from "#lib/features/museum/data/museum-room-graph.js";
 import {
   MUSEUM_WALK_ROOMS,
   MUSEUM_WALK_EDGES,
   attachMuseumWalkTerrain,
-} from "$lib/features/museum/data/museum-walk";
-import { buildEarthRootTerraceLayout } from "$lib/features/museum/data/earth-root-terrace-terrain";
+} from "#lib/features/museum/data/museum-walk.js";
+import { buildEarthRootTerraceLayout } from "#lib/features/museum/data/earth-root-terrace-terrain.js";
 import {
   buildAirChimneyLayout,
   AIR_FLOOR_Y,
   AIR_ROOM_ID,
   EARTH_ROOM_ID,
-} from "$lib/features/museum/data/air-chimney-layout";
+} from "#lib/features/museum/data/air-chimney-layout.js";
 import {
   inRectClosed,
   TILE_METRES,
-} from "$lib/features/museum/data/drowned-gallery-terrain";
-import { SOLID_TYPES } from "$lib/features/museum/services/museum-physics-provider";
-import { tileKey } from "$lib/features/museum/domain/museum-grid-types";
+} from "#lib/features/museum/data/drowned-gallery-terrain.js";
+import { SOLID_TYPES } from "#lib/features/museum/services/museum-physics-provider.js";
+import { tileKey } from "#lib/features/museum/domain/museum-grid-types.js";
 
 const TILE = TILE_METRES;
 const QUARTER = TILE / 2;

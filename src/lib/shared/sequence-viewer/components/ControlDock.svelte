@@ -16,8 +16,8 @@
   a tray Snippet that renders the active tab's body, and the trailing action.
 -->
 <script lang="ts" module>
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
   export interface ControlDockTab {
     id: string;
@@ -68,13 +68,13 @@
 </script>
 
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { untrack } from "svelte";
   import { slide, fly, fade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import type { Snippet } from "svelte";
-  import { SwipeToDismiss } from "$lib/shared/foundation/ui/drawer/swipe-to-dismiss";
-  import RailPropGlyph from "$lib/shared/components/RailPropGlyph.svelte";
+  import { SwipeToDismiss } from "#lib/shared/foundation/ui/drawer/swipe-to-dismiss.js";
+  import RailPropGlyph from "#lib/shared/components/RailPropGlyph.svelte";
 
   interface Props {
     tabs: ControlDockTab[];

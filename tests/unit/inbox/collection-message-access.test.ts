@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createCollectionDetailIntent } from "$lib/features/browse/state/pending-browse-intent.svelte";
-import { resolveCollectionMessageRole } from "$lib/shared/inbox/domain/collection-message-access";
+import { createCollectionDetailIntent } from "#lib/features/browse/state/pending-browse-intent.svelte.js";
+import { resolveCollectionMessageRole } from "#lib/shared/inbox/domain/collection-message-access.js";
 
 describe("collection message access", () => {
   it("replaces the sent role with the current grant role", () => {

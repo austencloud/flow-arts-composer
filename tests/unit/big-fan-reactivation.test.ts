@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { UNLOCKABLE_POOL } from "$lib/shared/gamification/domain/prop-pool";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getCompositionRecipe } from "$lib/shared/pictograph/prop/domain/prop-composition-recipes";
+import { UNLOCKABLE_POOL } from "#lib/shared/gamification/domain/prop-pool.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getCompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
 import {
   PROP_PICKER_SECTIONS,
   getAllVariations,
@@ -12,7 +12,7 @@ import {
   isBigVariant,
   isPropActive,
   toggleBigVariant,
-} from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+} from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 
 describe("Big Fan reactivation", () => {
   it("is a size of Fan, reached from the dial rather than its own tile", () => {

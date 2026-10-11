@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   getHandPointCoordinates,
   getLayer2PointCoordinates,
-} from "$lib/shared/render/core/calculations/grid-placement";
-import type { GridMode } from "$lib/shared/render/core/types";
+} from "#lib/shared/render/core/calculations/grid-placement.js";
+import type { GridMode } from "#lib/shared/render/core/types.js";
 
 /**
  * Grid coordinate lookups place every prop and arrow. A transposed or wrong

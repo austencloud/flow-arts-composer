@@ -2,18 +2,18 @@ import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   getGridLocationsFromPlacement,
   getGridPlacementFromLocations,
-} from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import { getPlacementGridPoints } from "$lib/shared/pictograph/grid/services/placement-grid-points";
-import { buildPlacementPictographData } from "$lib/shared/pictograph/grid/services/prop-placement-view-model";
-import { rotateLocation } from "$lib/shared/create/services/rotation-helpers";
-import { mirrorLocation } from "$lib/shared/pictograph/shared/domain/geometry/mirror-vertical";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import { getPlacementGridPoints } from "#lib/shared/pictograph/grid/services/placement-grid-points.js";
+import { buildPlacementPictographData } from "#lib/shared/pictograph/grid/services/prop-placement-view-model.js";
+import { rotateLocation } from "#lib/shared/create/services/rotation-helpers.js";
+import { mirrorLocation } from "#lib/shared/pictograph/shared/domain/geometry/mirror-vertical.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   PLACEMENT_TYPE_INFO,
   type PlacementType,

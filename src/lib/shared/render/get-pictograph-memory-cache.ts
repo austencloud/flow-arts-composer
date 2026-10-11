@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { PictographMemoryCache } from './services/pictograph-memory-cache';
 
 let instance: PictographMemoryCache | null = null;

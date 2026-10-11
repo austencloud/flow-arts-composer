@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
+import { LOOPComponent } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
 import {
   buildLoopOverlayModel,
   normalizeReflectionSelection,
   type LoopRhythmValue,
-} from "$lib/features/create/generate/components/cards/loop-expanded-overlay-model";
+} from "#lib/features/create/generate/components/cards/loop-expanded-overlay-model.js";
 
 const HALVED_RHYTHM: LoopRhythmValue = {
   rotationInterval: 2,

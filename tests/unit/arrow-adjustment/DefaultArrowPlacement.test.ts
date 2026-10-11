@@ -5,7 +5,7 @@ import {
   flattenPlacements,
   unflattenValue,
   DefaultArrowPlacementDocSchema,
-} from "$lib/shared/pictograph/arrow/positioning/default-override/domain/default-arrow-placement";
+} from "#lib/shared/pictograph/arrow/positioning/default-override/domain/default-arrow-placement.js";
 
 describe("DefaultArrowPlacement domain", () => {
   it("generates a doc id from placementFrame + propType + motionType", () => {

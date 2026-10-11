@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   ARROW_ORIENTATION_CYCLE,
   getArrowOrientationTransitionDirection,
-} from "$lib/shared/pictograph/arrow/rendering/services/arrow-orientation-transition";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/arrow/rendering/services/arrow-orientation-transition.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 describe("quarter-orientation arrow transitions", () => {
   it("contains every relative orientation exactly once", () => {

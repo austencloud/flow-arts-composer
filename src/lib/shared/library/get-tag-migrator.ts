@@ -1,5 +1,5 @@
 import type { LibrarySequence } from "./domain/models/library-sequence";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { SequenceTag } from "./domain/models/sequence-tag";
 
 export interface TagMigrationResult {

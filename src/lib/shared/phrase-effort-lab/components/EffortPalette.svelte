@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { EffortId } from "$lib/shared/effort/domain/effort-types";
-  import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
+  import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
+  import { EFFORTS } from "#lib/shared/effort/domain/effort-types.js";
 
   interface Props {
     selectedEffort: EffortId | null;

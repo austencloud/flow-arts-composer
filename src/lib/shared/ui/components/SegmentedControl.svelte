@@ -14,7 +14,7 @@
    * while the visible label remains the cue for anyone who cannot read color.
    */
   import { flip } from "svelte/animate";
-  import { flipDuration, popIn } from "$lib/shared/transitions/motion";
+  import { flipDuration, popIn } from "#lib/shared/transitions/motion.js";
   import type { Snippet } from "svelte";
   import { Icon, type IconDefinition } from "@austencloud/video-editor/icons";
 
@@ -404,6 +404,19 @@
 
   .indicator[data-tone="accent"] {
     background: color-mix(in srgb, var(--theme-accent, #8b6cff) 45%, black);
+  }
+
+  /* The light theme's accent is already dark, and mixed with black it put the
+     selected name, drawn in the theme's dark text, on a near-black fill. There
+     the accent gets the same wash and ring as the motion tones. */
+  :global(html[data-theme-luminance="bright"]) .indicator[data-tone="accent"] {
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b6cff) 22%,
+      transparent
+    );
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--theme-accent, #8b6cff) 52%, transparent);
   }
 
   .compact .indicator {

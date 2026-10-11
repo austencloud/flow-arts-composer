@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { StripPatternEngine } from "$lib/features/poi/services/strip-pattern-engine";
-import { getPixel, setPixel, createEmptyPattern } from "$lib/shared/poi/domain/strip-pattern";
-import type { PatternParams, RGBColor } from "$lib/shared/poi/domain/strip-pattern";
+import { StripPatternEngine } from "#lib/features/poi/services/strip-pattern-engine.js";
+import { getPixel, setPixel, createEmptyPattern } from "#lib/shared/poi/domain/strip-pattern.js";
+import type { PatternParams, RGBColor } from "#lib/shared/poi/domain/strip-pattern.js";
 
 // Polyfill ImageData for Node environment
 if (typeof globalThis.ImageData === "undefined") {

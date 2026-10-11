@@ -11,49 +11,49 @@ batched Firestore reads return them shuffled. If the collection disappears or
 becomes private while open, we bail back to the list instead of showing a ghost.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { untrack, onDestroy } from "svelte";
   import type {
     CollectionAccessRole,
     LibraryCollection,
-  } from "$lib/shared/library/domain/models/collection";
-  import { isSystemCollection } from "$lib/shared/library/domain/models/collection";
-  import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/library/domain/models/collection.js";
+  import { isSystemCollection } from "#lib/shared/library/domain/models/collection.js";
+  import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     subscribeToCollection,
     getCollectionSequences,
-  } from "$lib/shared/library/services/collection-manager";
+  } from "#lib/shared/library/services/collection-manager.js";
   import {
     getUserCollectionSequences,
     subscribeToPublicCollection,
-  } from "$lib/features/library/services/public-collection-loader";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
-  import { followedCollectionsState } from "$lib/features/library/state/followed-collections-state.svelte";
+  } from "#lib/features/library/services/public-collection-loader.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+  import { followedCollectionsState } from "#lib/features/library/state/followed-collections-state.svelte.js";
   import { communityCollectionsState } from "../state/community-collections-state.svelte";
-  import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
-  import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
-  import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
-  import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
+  import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
+  import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
+  import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuEntry,
     ContextMenuState,
-  } from "$lib/shared/components/context-menu/context-menu-types";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import AddSequencesSheet from "./AddSequencesSheet.svelte";
   import ScanCardSheet from "./ScanCardSheet.svelte";
-  import { consumePendingScanIntent } from "$lib/features/browse/state/pending-scan-intent.svelte";
-  import SelectionToolbar from "$lib/shared/components/selection/SelectionToolbar.svelte";
-  import { createMultiSelectionState } from "$lib/shared/selection/state/create-multi-selection-state.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { openCollectionPickerForSequences } from "$lib/features/library/state/collection-picker-state.svelte";
-  import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { getCollectionCollaborationManager } from "$lib/shared/library/get-collection-collaboration-manager";
-  import { openShareCollectionSheet } from "$lib/shared/inbox/state/send-sequence-state.svelte";
+  import { consumePendingScanIntent } from "#lib/features/browse/state/pending-scan-intent.svelte.js";
+  import SelectionToolbar from "#lib/shared/components/selection/SelectionToolbar.svelte";
+  import { createMultiSelectionState } from "#lib/shared/selection/state/create-multi-selection-state.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { openCollectionPickerForSequences } from "#lib/features/library/state/collection-picker-state.svelte.js";
+  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { getCollectionCollaborationManager } from "#lib/shared/library/get-collection-collaboration-manager.js";
+  import { openShareCollectionSheet } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
 
   let {
     collectionId,

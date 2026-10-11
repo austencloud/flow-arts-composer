@@ -6,8 +6,8 @@
  * suppresses native notifications when the page is focused.
  */
 import { getMessaging, isSupported, onMessage } from "firebase/messaging";
-import { app } from "$lib/shared/auth/firebase";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { app } from "#lib/shared/auth/firebase.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 let unsubscribe: (() => void) | null = null;
 // Bumped by every start/stop so a support check that resolves after the caller

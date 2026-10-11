@@ -8,7 +8,7 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
   import TikaHistoryItem from "./TikaHistoryItem.svelte";
   import type { TikaSessionPreview, TikaSessionQueryOptions } from "../domain/models/tika-conversation-models";
 

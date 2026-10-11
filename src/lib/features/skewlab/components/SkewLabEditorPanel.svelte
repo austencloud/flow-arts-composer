@@ -14,22 +14,22 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import ArrowAdjustmentPanel from "$lib/features/create/shared/components/sequence-actions/ArrowAdjustmentPanel.svelte";
-  import TurnsEditMode from "$lib/features/create/shared/components/sequence-actions/TurnsEditMode.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import ArrowAdjustmentPanel from "#lib/features/create/shared/components/sequence-actions/ArrowAdjustmentPanel.svelte";
+  import TurnsEditMode from "#lib/features/create/shared/components/sequence-actions/TurnsEditMode.svelte";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     HandSide,
     MotionType,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { isAdmin } from "$lib/shared/auth/state/auth-state.svelte";
-  import { selectedArrowState } from "$lib/shared/create/state/selected-arrow-state.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { isAdmin } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
 
   interface Props {
     isOpen: boolean;

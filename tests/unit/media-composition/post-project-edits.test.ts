@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { PostProjectSchema, normalizeProject, compilePostProject, editContext } from "$lib/shared/post-studio-plugin";
+import { PostProjectSchema, normalizeProject, compilePostProject, editContext } from "#lib/shared/post-studio-plugin/index.js";
 import { POST_BOX, POST_MAX_SPEED, POST_MIN_ITEM_SECONDS, findItem, type PostItem, type PostProject, type PostVideoItem, framingAt, isAnimated, opacityAt, setKeyframe, addOverlayItem, addTake, appendCardClip, appendVideoClip, deleteItem, duplicateItem, editItemKeyframes, clearProjectKeyframes, moveMainItem, moveOverlayItem, moveSelectedItems, placeMainItem, removeTake, replaceTakeMedia, resetFraming, setMainCutCrossfade, setTrackCutCrossfade, setItemFill, setProjectAudio, setProjectBackground, setTrackFlag, setVideoSpeed, splitItemAt, trimItem, trimItemToSource, updateItem, updateItemAt } from "@austencloud/video-editor/core";
 import {
   createTakeTiming,
   resolveTakeTiming,
   takePositionAt,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   projectDraftRecord,
   resolvePostStudioDraft,
-} from "$lib/shared/media-composition/services/post-project-backup";
+} from "#lib/shared/media-composition/services/post-project-backup.js";
 import {
   NOW,
   card,

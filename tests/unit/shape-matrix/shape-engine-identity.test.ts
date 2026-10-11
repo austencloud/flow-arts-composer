@@ -10,7 +10,7 @@ import {
   ORIGINAL_SHAPE_MATRIX_VTG_RATIOS,
   SHAPE_ENGINE_SHORT_NAME,
   SHAPE_MATRIX_EXPLORER_LEGACY_NAME,
-} from "$lib/shared/shape-matrix/app/shape-engine-identity";
+} from "#lib/shared/shape-matrix/app/shape-engine-identity.js";
 
 function read(path: string): string {
   return readFileSync(resolve(path), "utf8");

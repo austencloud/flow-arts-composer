@@ -9,4 +9,4 @@ export {
   type CustomizeOverlayProps,
   type PanelCoordinationState,
   type TargetHand,
-} from "$lib/shared/create/state/panel-coordination-state.svelte";
+} from "#lib/shared/create/state/panel-coordination-state.svelte.js";

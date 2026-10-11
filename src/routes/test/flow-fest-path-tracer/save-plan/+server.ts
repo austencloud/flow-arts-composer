@@ -1,5 +1,5 @@
-import { dev } from "$app/environment";
-import { json, type RequestHandler } from "@sveltejs/kit";
+import { dev } from "$app/env";
+import type { RequestHandler } from "@sveltejs/kit";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { parseFlowFestRuntimeContract } from "../../flow-fest-graybox/flow-fest-runtime-contract";
@@ -17,7 +17,7 @@ const OUTPUT_PATH = join(
 
 export const POST: RequestHandler = async ({ request }) => {
   if (!dev) {
-    return json(
+    return Response.json(
       {
         ok: false,
         error: "This authoring endpoint is available only in development.",
@@ -30,7 +30,7 @@ export const POST: RequestHandler = async ({ request }) => {
   try {
     body = await request.json();
   } catch {
-    return json(
+    return Response.json(
       { ok: false, error: "The correction payload is not valid JSON." },
       { status: 400 }
     );
@@ -47,7 +47,10 @@ export const POST: RequestHandler = async ({ request }) => {
       contract.coordinateContentFingerprint.canonicalPayloadSha256
     );
     if (!validation.valid) {
-      return json({ ok: false, error: validation.error }, { status: 400 });
+      return Response.json(
+        { ok: false, error: validation.error },
+        { status: 400 }
+      );
     }
     const temporaryPath = `${OUTPUT_PATH}.tmp`;
     mkdirSync(dirname(OUTPUT_PATH), { recursive: true });
@@ -57,7 +60,7 @@ export const POST: RequestHandler = async ({ request }) => {
       "utf8"
     );
     renameSync(temporaryPath, OUTPUT_PATH);
-    return json({
+    return Response.json({
       ok: true,
       path: relative(process.cwd(), OUTPUT_PATH).replaceAll("\\", "/"),
       proposalCount: validation.value.proposals.length,
@@ -65,6 +68,6 @@ export const POST: RequestHandler = async ({ request }) => {
   } catch (cause) {
     const error =
       cause instanceof Error ? cause.message : "Unknown write failure";
-    return json({ ok: false, error }, { status: 500 });
+    return Response.json({ ok: false, error }, { status: 500 });
   }
 };

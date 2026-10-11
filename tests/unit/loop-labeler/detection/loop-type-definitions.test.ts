@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   LOOP_TYPE_DEFINITIONS,
   ALL_DEFINITION_TARGETS,
-} from "$lib/features/loop-labeler/domain/constants/loop-type-definitions";
-import { TRANSFORMATION_PRIORITY } from "$lib/features/loop-labeler/domain/constants/transformation-priority";
+} from "#lib/features/loop-labeler/domain/constants/loop-type-definitions.js";
+import { TRANSFORMATION_PRIORITY } from "#lib/features/loop-labeler/domain/constants/transformation-priority.js";
 
 describe("LOOP_TYPE_DEFINITIONS", () => {
   it("covers every entry in TRANSFORMATION_PRIORITY", () => {

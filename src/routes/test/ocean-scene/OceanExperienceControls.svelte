@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SceneControlWorkspace from "$lib/shared/3d/components/controls/SceneControlWorkspace.svelte";
+  import SceneControlWorkspace from "#lib/shared/3d/components/controls/SceneControlWorkspace.svelte";
 
   let {
     isPlaying,

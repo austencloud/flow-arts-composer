@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 
 const DB_NAME = "deck-card-cache";
 const STORE_NAME = "cards";

@@ -27,21 +27,21 @@
   import {
     GridLocation,
     GridMode,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     joinedGridFitTransform,
     joinedGridMarkup,
-  } from "$lib/shared/pictograph/grid/services/joined-grid-markup";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { getAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
+  } from "#lib/shared/pictograph/grid/services/joined-grid-markup.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { getAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
   import {
     HandSide,
     Orientation,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
-  import type { GridHitTarget } from "$lib/shared/assemble-lab/domain/types";
-  import { getHitTargets } from "$lib/shared/assemble-lab/services/grid-hit-target-calculator";
-  import HitTargetOverlay from "$lib/shared/interactive-canvas/components/HitTargetOverlay.svelte";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import type { GridHitTarget } from "#lib/shared/assemble-lab/domain/types.js";
+  import { getHitTargets } from "#lib/shared/assemble-lab/services/grid-hit-target-calculator.js";
+  import HitTargetOverlay from "#lib/shared/interactive-canvas/components/HitTargetOverlay.svelte";
   import {
     BUILDER_HOP_MS,
     getBuilderMotionPathD,
@@ -59,12 +59,12 @@
   // (bundled static prop SVGs), never user or external input, so it is a
   // trusted, non-XSS surface with no sanitization pass.
   import { loadBuilderPropArt } from "../services/builder-prop-art";
-  import { PropRotAngleManager } from "$lib/shared/pictograph/prop/services/prop-rot-angle-manager";
-  import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PropRenderData } from "$lib/shared/pictograph/prop/domain/models/prop-render-data";
-  import { motionDuration } from "$lib/shared/transitions/motion";
+  import { PropRotAngleManager } from "#lib/shared/pictograph/prop/services/prop-rot-angle-manager.js";
+  import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PropRenderData } from "#lib/shared/pictograph/prop/domain/models/prop-render-data.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
 
   let {
     builderState,

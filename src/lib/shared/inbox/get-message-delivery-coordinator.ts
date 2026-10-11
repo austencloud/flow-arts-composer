@@ -1,6 +1,6 @@
-import { getMessageImageSender } from "$lib/shared/messaging/get-message-image-sender";
-import { messagingService } from "$lib/shared/messaging/services/messenger";
-import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
+import { getMessageImageSender } from "#lib/shared/messaging/get-message-image-sender.js";
+import { messagingService } from "#lib/shared/messaging/services/messenger.js";
+import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
 import type { IMessageDeliveryCoordinator } from "./services/contracts/IMessageDeliveryCoordinator";
 import { MessageDeliveryCoordinator } from "./services/implementations/MessageDeliveryCoordinator";
 

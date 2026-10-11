@@ -4,8 +4,8 @@ import { Group, Quaternion, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import { GripType } from "@austencloud/scene-3d";
 import { createAvatarServices } from "../../../node_modules/@austencloud/scene-3d/src/lib/services/implementations/AvatarServicesFactory";
-import { auditFireStaffProfile } from "$lib/shared/3d/diagnostics/contact-correct/fire-staff-mesh-audit";
-import { runContactCorrectSweep } from "$lib/shared/3d/diagnostics/contact-correct/contact-sweep-runner";
+import { auditFireStaffProfile } from "#lib/shared/3d/diagnostics/contact-correct/fire-staff-mesh-audit.js";
+import { runContactCorrectSweep } from "#lib/shared/3d/diagnostics/contact-correct/contact-sweep-runner.js";
 import {
   avatar,
   avatarAssetsPresent,
@@ -14,7 +14,7 @@ import {
 import {
   sampleStaffIsolation,
   ISOLATION_STAFF_CONTACT,
-} from "$lib/shared/3d/performers/staff-isolation";
+} from "#lib/shared/3d/performers/staff-isolation.js";
 
 const ORIGIN = new Vector3(0, 1.5621, 0.3);
 const HEIGHT_M = 1.905;

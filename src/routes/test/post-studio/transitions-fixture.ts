@@ -1,4 +1,4 @@
-import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
 import type { PostCardItem, PostProject } from "@austencloud/video-editor/core";
 
 /** In-memory cuts for transition inspection without changing a saved post. */

@@ -6,8 +6,8 @@
    * Sections are collapsible to avoid content overflow.
    */
 
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { CharacterId } from "$lib/shared/3d/domain/character-model";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
   import EffectsSettingsPanel from "../controls/EffectsSettingsPanel.svelte";
   import EnvironmentSettingsPanel from "../controls/EnvironmentSettingsPanel.svelte";
   import CharacterSettingsPanel from "../controls/CharacterSettingsPanel.svelte";

@@ -1,8 +1,8 @@
 <script lang="ts">
-  import GenerationSettingsOverlay from "$lib/features/create/generate/components/cards/GenerationSettingsOverlay.svelte";
+  import GenerationSettingsOverlay from "#lib/features/create/generate/components/cards/GenerationSettingsOverlay.svelte";
   import SettingsDrillPanel, {
     type SettingsDrillItem,
-  } from "$lib/shared/ui/components/settings-drill/SettingsDrillPanel.svelte";
+  } from "#lib/shared/ui/components/settings-drill/SettingsDrillPanel.svelte";
   import { getFuseContext } from "../context/fuse-context";
   import {
     isFuseRecipeDestination,

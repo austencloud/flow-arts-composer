@@ -5,7 +5,7 @@
   Standard transport: first, prev, play/pause, next, last + scrubber.
 -->
 <script lang="ts">
-	import { t } from '$lib/shared/i18n/i18n.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
 
 	interface Props {
 		isPlaying: boolean;

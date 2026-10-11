@@ -19,9 +19,9 @@
  * were already inside async functions.
  */
 
-import { jsonCache } from "$lib/shared/pictograph/shared/services/simple-json-cache";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { jsonCache } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   hydrateCuratedSequence,
   type CuratedSequenceWire,

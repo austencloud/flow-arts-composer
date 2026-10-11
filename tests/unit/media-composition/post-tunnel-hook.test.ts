@@ -6,7 +6,7 @@ import {
   compilePostProject,
   evaluatePresetFrame,
   editContext,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   POST_BOX,
   takeRole,
@@ -28,7 +28,7 @@ import {
   removeTunnelHook,
   setTunnelHookBackdropFrame,
   setTunnelHookSpeed,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
 import {
   createTakeTiming,
   resolveTakeTiming,
@@ -38,8 +38,8 @@ import {
   takeTimingMoveBeats,
   takeTimingMovesKey,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   NOW,
   overlay,

@@ -16,8 +16,8 @@
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { browser } from "$app/environment";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { browser } from "$app/env";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { GAME_REGISTRY } from "../domain/game-registry";
   import { emptyGameProgress } from "../domain/progression";
   import type {
@@ -33,10 +33,10 @@
   } from "../state/arcade-session-state.svelte";
   import { withViewTransition } from "../state/view-transition";
   import { getPlayProgressStore } from "../get-play-progress-store";
-  import { getEffectiveUserId } from "$lib/shared/auth/state/auth-state.svelte";
-  import { getDelightOrchestrator } from "$lib/shared/delight/get-delight-orchestrator";
-  import * as quizHistoryRecorder from "$lib/features/learn/services/quiz-history-recorder";
-  import * as letterToConceptMapper from "$lib/features/learn/services/letter-to-concept-mapper";
+  import { getEffectiveUserId } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { getDelightOrchestrator } from "#lib/shared/delight/get-delight-orchestrator.js";
+  import * as quizHistoryRecorder from "#lib/features/learn/services/quiz-history-recorder.js";
+  import * as letterToConceptMapper from "#lib/features/learn/services/letter-to-concept-mapper.js";
   import GameCard from "./GameCard.svelte";
   import GameShell from "./GameShell.svelte";
   import ChallengePicker from "./ChallengePicker.svelte";

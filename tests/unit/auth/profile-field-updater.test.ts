@@ -24,16 +24,16 @@ vi.mock("firebase/firestore", () => ({
   setDoc: h.setDoc,
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: h.getFirestoreInstance,
 }));
 
-vi.mock("$lib/shared/auth/services/username-validator", () => ({
+vi.mock("#lib/shared/auth/services/username-validator.js", () => ({
   claimUsername: vi.fn(),
   releaseUsername: vi.fn(),
 }));
 
-import { updateDisplayName } from "$lib/shared/auth/services/profile-field-updater";
+import { updateDisplayName } from "#lib/shared/auth/services/profile-field-updater.js";
 
 function authenticatedUser(): User {
   return {

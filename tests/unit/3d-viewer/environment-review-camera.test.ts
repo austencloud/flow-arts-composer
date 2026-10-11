@@ -6,7 +6,7 @@ import {
   resolveEnvironmentReviewOrbitLift,
   resolveEnvironmentReviewWalkPose,
   sampleEnvironmentCameraSurfaceY,
-} from "$lib/shared/3d/environments/review/environment-review-camera";
+} from "#lib/shared/3d/environments/review/environment-review-camera.js";
 
 describe("environment review walk camera", () => {
   it("preserves the approved eye position when switching from a fixed shot", () => {

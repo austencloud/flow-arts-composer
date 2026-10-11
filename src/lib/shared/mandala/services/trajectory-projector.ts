@@ -4,8 +4,8 @@ import {
   Vector3,
   type Camera,
 } from "three";
-import type { SpatialCameraFrame } from "$lib/shared/motion-composition/domain/motion-composition-types";
-import { interpolateVector3 } from "$lib/shared/motion-composition/domain/motion-composition-transform";
+import type { SpatialCameraFrame } from "#lib/shared/motion-composition/domain/motion-composition-types.js";
+import { interpolateVector3 } from "#lib/shared/motion-composition/domain/motion-composition-transform.js";
 import type {
   ProjectedTrajectoryPoint,
   ProjectedTrajectorySet,

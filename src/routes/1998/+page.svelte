@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { ERA_CONFIGS } from "$lib/features/retro/shared/domain/era-types";
-	import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+	import { ERA_CONFIGS } from "#lib/features/retro/shared/domain/era-types.js";
+	import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 	const era = ERA_CONFIGS.win98;
 </script>
 

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   filterSequencesByExactLetter,
   sequenceContainsExactLetter,
-} from "$lib/shared/browse/services/sequence-letter-occurrence";
-import { applyFilter } from "$lib/shared/browse/services/browse-filter";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+} from "#lib/shared/browse/services/sequence-letter-occurrence.js";
+import { applyFilter } from "#lib/shared/browse/services/browse-filter.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 
 function sequence(
   id: string,

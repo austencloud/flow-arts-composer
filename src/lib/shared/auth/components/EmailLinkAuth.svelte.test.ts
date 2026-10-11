@@ -43,7 +43,7 @@ vi.mock("../firebase", () => ({
 
 // The real English catalog, so the assertions below follow copy changes
 // instead of a hand-kept list of strings.
-vi.mock("$lib/shared/i18n/i18n.svelte", async () => {
+vi.mock("#lib/shared/i18n/i18n.svelte.js", async () => {
   const english: Record<string, string> = (
     await import("../../../../../messages/en.json")
   ).default;
@@ -56,7 +56,7 @@ vi.mock("$lib/shared/i18n/i18n.svelte", async () => {
   };
 });
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: mocks.toastError, success: mocks.toastSuccess },
 }));
 
@@ -64,38 +64,38 @@ vi.mock("../services/last-auth-method.svelte", () => ({
   recordLastAuthMethod: mocks.recordLastAuthMethod,
 }));
 
-vi.mock("$lib/shared/onboarding/state/first-run-state.svelte", () => ({
+vi.mock("#lib/shared/onboarding/state/first-run-state.svelte.js", () => ({
   firstRunState: { markSkipped: mocks.markSkipped },
 }));
 
-vi.mock("$lib/shared/auth/services/auth-analytics-bridge", () => ({
+vi.mock("#lib/shared/auth/services/auth-analytics-bridge.js", () => ({
   recordAuthSubmission: mocks.recordAuthSubmission,
 }));
 
-vi.mock("$lib/shared/auth/get-in-app-browser-detector", () => ({
+vi.mock("#lib/shared/auth/get-in-app-browser-detector.js", () => ({
   getInAppBrowserDetector: () => ({
     isInAppBrowserOrForced: () => false,
     getPlatform: () => "other",
   }),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { isAnonymous: false },
 }));
 
-vi.mock("$lib/shared/persistence/database/tka-database", () => ({
+vi.mock("#lib/shared/persistence/database/tka-database.js", () => ({
   db: { sequences: { count: vi.fn().mockResolvedValue(0) } },
 }));
 
-vi.mock("$lib/shared/mobile/services/platform-detector", () => ({
+vi.mock("#lib/shared/mobile/services/platform-detector.js", () => ({
   isRunningAsStandalone: () => mocks.standalone,
 }));
 
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureWhenReady: mocks.captureWhenReady,
 }));
 
-vi.mock("$lib/shared/analytics/auth-events", () => ({
+vi.mock("#lib/shared/analytics/auth-events.js", () => ({
   trackAuthProviderResult: mocks.trackAuthProviderResult,
 }));
 

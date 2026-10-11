@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { PATH_SHAPE_COLORS } from "$lib/shared/animation-engine/domain/path-shape-colors";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import { PATH_SHAPE_COLORS } from "#lib/shared/animation-engine/domain/path-shape-colors.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { onDestroy, type Snippet } from "svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
   import type { AnimationVisibilityStateManager } from "../../state/animation-visibility-state.svelte";

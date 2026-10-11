@@ -3,7 +3,7 @@ import {
   formatPostSpeed,
   formatTakeClock,
   parseClock,
-} from "$lib/shared/share/components/post-studio/builder/post-builder-format";
+} from "#lib/shared/share/components/post-studio/builder/post-builder-format.js";
 
 describe("formatPostSpeed", () => {
   it("rounds a clip speed to two decimals", () => {

@@ -8,13 +8,13 @@ import {
   inspectContactFrame,
   sampleTwoBallPalmspin,
   type ContactPalmspinProfile,
-} from "$lib/features/contact-lab/domain/contact-motion-profile";
+} from "#lib/features/contact-lab/domain/contact-motion-profile.js";
 import {
   CONTACT_PROOF_SEQUENCE_ID,
   selectContactProofSequence,
-} from "$lib/features/contact-lab/domain/contact-proof-sequence";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { selectStaticSequence } from "$lib/shared/foundation/services/static-sequence-catalog";
+} from "#lib/features/contact-lab/domain/contact-proof-sequence.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { selectStaticSequence } from "#lib/shared/foundation/services/static-sequence-catalog.js";
 
 const catalogPayload: unknown = JSON.parse(
   readFileSync(

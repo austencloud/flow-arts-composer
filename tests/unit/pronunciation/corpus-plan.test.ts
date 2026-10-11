@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { getLetterPronunciation, PRONUNCIATION_POSITIONS } from "$lib/shared/pronunciation/pronunciation-plan";
-import { cellsCoveredBy, coverageKey, planWords, TARGET_DEPTH } from "$lib/features/lab/pronunciation-recorder/domain/corpus-plan";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { getLetterPronunciation, PRONUNCIATION_POSITIONS } from "#lib/shared/pronunciation/pronunciation-plan.js";
+import { cellsCoveredBy, coverageKey, planWords, TARGET_DEPTH } from "#lib/features/lab/pronunciation-recorder/domain/corpus-plan.js";
 
 const ALL_LETTERS = Object.values(Letter);
 

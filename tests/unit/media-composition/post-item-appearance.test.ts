@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   PostProjectSchema,
   editContext,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import { findItem, updateItem } from "@austencloud/video-editor/core";
-import { animationAppearanceForItem, cardOptionsForItem } from "$lib/shared/post-studio-plugin/ui/post-item-render-options";
+import { animationAppearanceForItem, cardOptionsForItem } from "#lib/shared/post-studio-plugin/ui/post-item-render-options.js";
 import { card, overlay, project } from "./post-project-fixtures";
 
 const ctx = editContext(1_700_000_000_001);

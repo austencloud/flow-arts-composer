@@ -8,7 +8,7 @@
  */
 
 import type { PreparedPictographData } from "../../pictograph/shared/domain/models/prepared-pictograph-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { LayerRenderOptions } from "../services/types";
 import { renderedPropLook } from "../../pictograph/prop/domain/prop-look";
 import { renderedTriangleGrip } from "../../pictograph/prop/domain/triangle-appearance";

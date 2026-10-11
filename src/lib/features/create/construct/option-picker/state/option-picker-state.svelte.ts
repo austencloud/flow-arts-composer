@@ -5,16 +5,16 @@
  * Follows the same pattern as the simplified start placement picker.
  */
 
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import type {
   OptionPickerState,
   SortMethod,
 } from "../domain/option-picker-types";
 import type { OptionPickerLayout } from "../domain/option-viewer-models";
-import type { OptionFilter } from "$lib/features/create/construct/option-picker/services/option-filter";
-import type { OptionLoader } from "$lib/features/create/construct/option-picker/services/option-loader";
-import type { OptionSorter } from "$lib/features/create/construct/option-picker/services/option-sorter";
+import type { OptionFilter } from "#lib/features/create/construct/option-picker/services/option-filter.js";
+import type { OptionLoader } from "#lib/features/create/construct/option-picker/services/option-loader.js";
+import type { OptionSorter } from "#lib/features/create/construct/option-picker/services/option-sorter.js";
 
 export interface OptionPickerStateConfig {
   optionLoader: OptionLoader;

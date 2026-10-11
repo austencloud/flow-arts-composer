@@ -1,12 +1,12 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { WordSequenceGenerator } from './services/word-sequence-generator';
 import { getLetterTransitionGraph } from './get-letter-transition-graph';
-import { letterQueryHandler } from '$lib/shared/pictograph/tka-glyph/services/letter-query-handler';
-import { getStepConverter } from '$lib/features/create/generate/shared/get-step-converter';
-import { getSequenceExtender } from '$lib/features/create/shared/get-sequence-extender';
+import { letterQueryHandler } from '#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js';
+import { getStepConverter } from '#lib/features/create/generate/shared/get-step-converter.js';
+import { getSequenceExtender } from '#lib/features/create/shared/get-sequence-extender.js';
 import { getStartPlacementValidator } from './get-start-placement-validator';
 import * as orientationContinuityValidator from './services/orientation-continuity-validator';
-import { reversalDetector } from '$lib/shared/create/services/reversal-detector';
+import { reversalDetector } from '#lib/shared/create/services/reversal-detector.js';
 
 let instance: WordSequenceGenerator | null = null;
 

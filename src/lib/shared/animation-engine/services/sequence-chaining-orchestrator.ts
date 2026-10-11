@@ -6,26 +6,26 @@
  * and hot-swapping sequences into the playback controller.
  */
 
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { EndState } from "$lib/shared/landing/domain/types";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { EndState } from "#lib/shared/landing/domain/types.js";
 import type {
   IEndlessSpinnerOrchestrator,
   IInfiniteSequenceGenerator,
   PlaybackHistoryEntry,
   SourceMode,
-} from "$lib/shared/animation-engine/domain/chaining-types";
+} from "#lib/shared/animation-engine/domain/chaining-types.js";
 // re-export for existing consumers
 export type { SourceMode };
 
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import * as propTypeApplierModule from "$lib/shared/landing/services/prop-type-applier";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import * as propTypeApplierModule from "#lib/shared/landing/services/prop-type-applier.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 interface SequenceChainingOptions {
   historyCapacity?: number;

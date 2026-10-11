@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   canReplaceOverlayVideoWithAnimation,
   replaceOverlayVideoWithAnimation,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
 import {
   compilePostProject,
   normalizeProject,
   PostProjectSchema,
   editContext,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import { type PostProject, takeRole } from "@austencloud/video-editor/core";
 import { NOW, project, take, video } from "./post-project-fixtures";
 

@@ -5,11 +5,11 @@ import type { Plane } from "@austencloud/scene-3d";
 import {
   gridLocationToPosition3D,
   calculatePropRotation,
-} from "$lib/shared/3d/services/plane-coordinate-mapper";
-import { mapOrientationToAngle } from "$lib/shared/3d/services/orientation-mapper";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+} from "#lib/shared/3d/services/plane-coordinate-mapper.js";
+import { mapOrientationToAngle } from "#lib/shared/3d/services/orientation-mapper.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
 import { STAGE } from "@austencloud/scene-3d";
 import { STANCE_BOUNDS } from "../domain/types";
 import { Vector3, Quaternion, Euler } from "three";

@@ -5,11 +5,11 @@ and shows counts + explanations on the results screen.
 Only renders if there are actual type-confusion gaps to report.
 -->
 <script lang="ts">
-  import { compare } from "$lib/features/learn/services/letter-breakdown-generator";
+  import { compare } from "#lib/features/learn/services/letter-breakdown-generator.js";
   import type { DetectedGap } from "../../services/types";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { browser } from "$app/environment";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { browser } from "$app/env";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   let { gaps }: { gaps: DetectedGap[] } = $props();
 

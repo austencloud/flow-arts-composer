@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { UserMetricsAnalyzer } from './services/user-metrics-analyzer';
 import { getSystemStateManager } from './get-system-state-manager';
 

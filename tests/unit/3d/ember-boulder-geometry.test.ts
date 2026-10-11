@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Vector3 } from "three";
-import { createEmberBoulderGeometry } from "$lib/shared/3d/environments/scenes/ember/ember-boulder-geometry";
+import { createEmberBoulderGeometry } from "#lib/shared/3d/environments/scenes/ember/ember-boulder-geometry.js";
 
 describe("ember boulder geometry", () => {
   it("is a lumpy, bedded rock rather than a sphere", () => {

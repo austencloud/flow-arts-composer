@@ -28,11 +28,11 @@
  *    same trace identically.
  */
 
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   getPathPoints,
   isOpposite,
-} from "$lib/features/hand-paths/hand-path-builder/services/hand-path-animator";
+} from "#lib/features/hand-paths/hand-path-builder/services/hand-path-animator.js";
 import type { NormalizedPoint } from "../domain/trace-types";
 import { TRACE_PATH_SAMPLE_COUNT } from "../domain/trace-config";
 

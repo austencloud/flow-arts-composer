@@ -3,7 +3,7 @@ import { effect_root } from "svelte/internal/client";
 import {
   createPanelCoordinationState,
   type PanelCoordinationState,
-} from "$lib/shared/create/state/panel-coordination-state.svelte";
+} from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 
 let cleanup: (() => void) | undefined;
 

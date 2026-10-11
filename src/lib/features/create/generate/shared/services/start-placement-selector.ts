@@ -7,14 +7,14 @@
  *
  * MIGRATION NOTE: Now returns StartPlacementData instead of StepData with stepNumber===0
  */
-import { calculateAllArrowPoints } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator";
+import { calculateAllArrowPoints } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator.js";
 import type {
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { ILetterQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { stepConverter as StepConverterType } from "$lib/features/create/generate/shared/services/step-converter";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { ILetterQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { stepConverter as StepConverterType } from "#lib/features/create/generate/shared/services/step-converter.js";
 import type { pictographFilter as PictographFilterType } from "./pictograph-filter";
 
 // Local aliases so the constructor param annotations are readable
@@ -78,7 +78,7 @@ export class StartPlacementSelector {
 // ============================================================================
 // DIRECT SINGLETON EXPORT
 // ============================================================================
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
 import { pictographFilter } from "./pictograph-filter";
 import { stepConverter } from "./step-converter";
 

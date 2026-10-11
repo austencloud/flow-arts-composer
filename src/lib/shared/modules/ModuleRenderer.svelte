@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * ModuleRenderer
    * Domain: Module Content Rendering
@@ -23,13 +23,13 @@
   import type { Component } from "svelte";
   import { onMount, onDestroy } from "svelte";
   import { SvelteMap } from "svelte/reactivity";
-  import ModuleSkeleton from "$lib/shared/modules/skeletons/ModuleSkeleton.svelte";
+  import ModuleSkeleton from "#lib/shared/modules/skeletons/ModuleSkeleton.svelte";
   import { authState } from "../auth/state/auth-state.svelte";
   import {
     resolveAccessTier,
     resolveOptimisticAccessTier,
   } from "../auth/domain/access-tier";
-  import { readBootSnapshot } from "$lib/shared/application/services/boot-snapshot";
+  import { readBootSnapshot } from "#lib/shared/application/services/boot-snapshot.js";
   import {
     isModuleAccessible,
     isTabAccessible,
@@ -308,7 +308,7 @@
 
     // Import completion precedes the module's own data, layout and asset work.
     // Keep this milestone separate from actual route readiness.
-    import("$lib/shared/analytics/boot-profiler").then(({ bootProfiler }) =>
+    import("#lib/shared/analytics/boot-profiler.js").then(({ bootProfiler }) =>
       bootProfiler.milestone(`module:${moduleName}:chunk-ready`)
     );
 

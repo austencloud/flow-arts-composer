@@ -27,33 +27,33 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { BackgroundType } from "@austencloud/backgrounds";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     PROP_PICKER_SECTIONS,
     getPropTypeDisplayInfo,
     isPropActive,
-  } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { ensureGuestIdentity } from "$lib/shared/auth/services/guest-identity";
-  import { getAuthInstance } from "$lib/shared/auth/firebase";
+  } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
+  import { getAuthInstance } from "#lib/shared/auth/firebase.js";
   import {
     startGalleryWarm,
     type WarmHandle,
     type WarmProgress,
     type WarmScope,
-  } from "$lib/shared/browse/services/gallery-thumbnail-warmer";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SettingToggleButton from "$lib/shared/settings/components/SettingToggleButton.svelte";
-  import { loadCanonicalTnDSequences } from "$lib/features/browse/gallery-home/canonical-tnd-pool";
+  } from "#lib/shared/browse/services/gallery-thumbnail-warmer.js";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SettingToggleButton from "#lib/shared/settings/components/SettingToggleButton.svelte";
+  import { loadCanonicalTnDSequences } from "#lib/features/browse/gallery-home/canonical-tnd-pool.js";
   import {
     startScanCellWarm,
     type CellWarmHandle,
     type CellWarmProgress,
-  } from "$lib/features/library/services/warm-all-scan-cells";
-  import { growFade } from "$lib/shared/transitions/motion";
+  } from "#lib/features/library/services/warm-all-scan-cells.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
 
   type BackgroundHostComponent =
-    (typeof import("$lib/shared/background/shared/components/BackgroundHost.svelte"))["default"];
+    (typeof import("#lib/shared/background/shared/components/BackgroundHost.svelte"))["default"];
 
   // Every prop a visitor can actually pick, kept in picker sections so the page
   // reads like the picker instead of one undifferentiated wall of chips.
@@ -102,13 +102,13 @@
 
     // Interface colors first, then the animated canvas — the renderer graph is
     // large and the tool is fully usable before it lands.
-    void import("$lib/shared/settings/utils/background-theme-calculator").then(
+    void import("#lib/shared/settings/utils/background-theme-calculator.js").then(
       ({ ensureThemeApplied, getSavedBackgroundType }) => {
         if (!mounted) return;
         ensureThemeApplied();
         backgroundType = getSavedBackgroundType();
         void import(
-          "$lib/shared/background/shared/components/BackgroundHost.svelte"
+          "#lib/shared/background/shared/components/BackgroundHost.svelte"
         ).then(({ default: BackgroundHost }) => {
           if (mounted) LiveBackground = BackgroundHost;
         });

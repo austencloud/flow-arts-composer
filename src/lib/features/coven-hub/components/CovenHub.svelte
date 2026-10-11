@@ -4,14 +4,14 @@
   import {
     readyEffectIds,
     getRegistration,
-  } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-  import { computeCovenLayout } from "$lib/features/coven-hub/domain/coven-hub-layout";
-  import { computeCovenLods, type LodBand } from "$lib/features/coven-hub/domain/coven-lod";
+  } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+  import { computeCovenLayout } from "#lib/features/coven-hub/domain/coven-hub-layout.js";
+  import { computeCovenLods, type LodBand } from "#lib/features/coven-hub/domain/coven-lod.js";
   import CovenStation from "./CovenStation.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import SceneEffectsCoordinator3D from "$lib/shared/3d/effects/scene-effects/SceneEffectsCoordinator3D.svelte";
-  import { SceneEffectsManager3D } from "$lib/shared/3d/effects/scene-effects/scene-effects-manager-3d";
-  import { setSceneEffectsContext } from "$lib/shared/3d/effects/scene-effects/scene-effects-context";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import SceneEffectsCoordinator3D from "#lib/shared/3d/effects/scene-effects/SceneEffectsCoordinator3D.svelte";
+  import { SceneEffectsManager3D } from "#lib/shared/3d/effects/scene-effects/scene-effects-manager-3d.js";
+  import { setSceneEffectsContext } from "#lib/shared/3d/effects/scene-effects/scene-effects-context.js";
 
   interface Props { sequence: SequenceData | null; }
   const props: Props = $props();

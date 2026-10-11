@@ -13,8 +13,8 @@
   - Available letter types: 1 (Dual-Shift), 2 (Shift), 6 (Static)
 -->
 <script lang="ts">
-  import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { TriGridMode, TriGridMotionType } from "./domain/trigrid-types";
   import { getTriGridLocations } from "./domain/trigrid-coordinates";
   import TriGridPictograph from "./components/TriGridPictograph.svelte";

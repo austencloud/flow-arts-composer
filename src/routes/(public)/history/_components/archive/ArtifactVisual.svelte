@@ -7,7 +7,7 @@
   near-static by construction.
 -->
 <script lang="ts">
-	import type { CatalogEntry } from "$lib/shared/notation/notation-catalog";
+	import type { CatalogEntry } from "#lib/shared/notation/notation-catalog.js";
 	// The CAPs artifact still lives with the CAPs page under /notation/caps;
 	// only the archive itself moved to /history.
 	import CapsAssembly from "../../../notation/caps/_components/CapsAssembly.svelte";

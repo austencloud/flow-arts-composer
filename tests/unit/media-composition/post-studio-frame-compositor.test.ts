@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { POST_STUDIO_PRESETS } from "@austencloud/video-editor/core";
-import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
+import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "#lib/shared/media-composition/services/post-studio-dom-capture.js";
 import {
   resolveFrameLayerGeometry,
   renderPostStudioFrame,
@@ -13,7 +13,7 @@ import {
   compilePostProject,
   evaluatePresetFrame,
   createTkaSurfaces,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   NOW,
   card,

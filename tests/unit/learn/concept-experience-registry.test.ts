@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   CONCEPT_EXPERIENCES,
@@ -24,7 +26,59 @@ const expectedPublishedIds = [
   "words-alpha-beta",
 ];
 
+const learnDomainDir = resolve(process.cwd(), "src/lib/features/learn/domain");
+const registrySource = readFileSync(
+  resolve(learnDomainDir, "concept-experience-registry.ts"),
+  "utf8"
+);
+
+/** Save names a lesson component passes to getExperiencePersistence, read
+ * from the component and the files it imports by relative path. */
+function lessonSaveNames(conceptId: string): string[] {
+  const entry = registrySource.match(
+    new RegExp(`conceptId: "${conceptId}"[\\s\\S]*?import\\("([^"]+)"\\)`)
+  );
+  if (!entry) return [];
+  const component = resolve(learnDomainDir, entry[1]);
+  const source = readFileSync(component, "utf8");
+  const files = [source];
+  for (const [, path] of source.matchAll(/from "(\.{1,2}\/[^"]+)"/g)) {
+    // Svelte rune modules are imported without their trailing .ts.
+    for (const candidate of [path, `${path}.ts`]) {
+      try {
+        files.push(
+          readFileSync(resolve(dirname(component), candidate), "utf8")
+        );
+        break;
+      } catch {
+        // Not this spelling; try the next.
+      }
+    }
+  }
+  const names = new Set<string>();
+  for (const text of files) {
+    for (const [, call] of text.matchAll(
+      /getExperiencePersistence\(([^)]*)\)/g
+    )) {
+      for (const [, name] of call.matchAll(/["']([^"']+)["']/g))
+        names.add(name);
+    }
+    for (const [, name] of text.matchAll(/conceptId="([^"]+)"/g))
+      names.add(name);
+  }
+  return [...names];
+}
+
 describe("concept experience registry", () => {
+  // Continue and the Guide's start-over link clear a lesson's saved place by
+  // its concept id, so each lesson must save under that same id.
+  it.each(expectedPublishedIds)(
+    "%s saves lesson progress under its own concept id",
+    (conceptId) => {
+      expect(lessonSaveNames(conceptId)).toContain(conceptId);
+    }
+  );
+
   it("lists only lessons that have a real published experience", () => {
     expect(getAvailableConcepts().map((concept) => concept.id)).toEqual(
       expectedPublishedIds

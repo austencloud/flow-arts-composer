@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
 import {
   addCatalogShapeMembers,
   createCatalogShapeMembers,
   sortCatalogShapeGroups,
-} from "$lib/features/sticker-lab/services/catalog-shape-index";
+} from "#lib/features/sticker-lab/services/catalog-shape-index.js";
 
 function sequence(id: string): SequenceData {
   return { id, word: id, steps: [] } as unknown as SequenceData;

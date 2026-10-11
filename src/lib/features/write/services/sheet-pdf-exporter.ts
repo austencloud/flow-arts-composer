@@ -47,15 +47,15 @@ import {
   formatSheetRunningTimestamp,
   formatSheetTitleBlock,
 } from "../domain/sheet-title-block";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { RenderCanvas } from "$lib/shared/render/services/types";
-import { Canvas2DDirectRenderer } from "$lib/shared/render/services/canvas-2d-direct-renderer";
-import { drawStepNumber } from "$lib/shared/render/services/step-number-renderer";
-import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import { settingsService as propSettings } from "$lib/shared/settings/state/settings-state.svelte";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { normalizeFanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { RenderCanvas } from "#lib/shared/render/services/types.js";
+import { Canvas2DDirectRenderer } from "#lib/shared/render/services/canvas-2d-direct-renderer.js";
+import { drawStepNumber } from "#lib/shared/render/services/step-number-renderer.js";
+import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import { settingsService as propSettings } from "#lib/shared/settings/state/settings-state.svelte.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
 const PRINT_DPI = 300;
 

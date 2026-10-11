@@ -8,8 +8,8 @@
    * the same forms family as the locked Level 1 cover - instead of decoding
    * each composite stroke-for-stroke.
    */
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
 
   const S = 816 / 612; // pt → px
 

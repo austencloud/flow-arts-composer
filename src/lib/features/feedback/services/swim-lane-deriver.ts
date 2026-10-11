@@ -1,5 +1,5 @@
-import type { FeedbackItem } from "$lib/shared/feedback/domain/models/feedback-models";
-import type { SwimLane } from "$lib/shared/feedback/domain/feedback-contract-types";
+import type { FeedbackItem } from "#lib/shared/feedback/domain/models/feedback-models.js";
+import type { SwimLane } from "#lib/shared/feedback/domain/feedback-contract-types.js";
 
 export function deriveLane(item: FeedbackItem): SwimLane {
   // Critical: High-priority bugs that need immediate attention

@@ -7,7 +7,7 @@
  * datum-0 when the layout and the walkable grid disagree.
  */
 import { describe, it, expect } from "vitest";
-import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
+import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
 import {
   buildDrownedGalleryLayout,
   createDrownedGalleryTerrain,
@@ -24,9 +24,9 @@ import {
   SHELF_Y,
   TILE_METRES,
   WATERLINE_Y,
-} from "$lib/features/museum/data/drowned-gallery-terrain";
-import { SOLID_TYPES } from "$lib/features/museum/services/museum-physics-provider";
-import { tileKey } from "$lib/features/museum/domain/museum-grid-types";
+} from "#lib/features/museum/data/drowned-gallery-terrain.js";
+import { SOLID_TYPES } from "#lib/features/museum/services/museum-physics-provider.js";
+import { tileKey } from "#lib/features/museum/domain/museum-grid-types.js";
 
 const TILE = TILE_METRES;
 

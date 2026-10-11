@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { TunnelComposition } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-import { createLegacyTunnelStage } from "$lib/shared/sequence-viewer/tunnel/tunnel-stage";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { TunnelComposition } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import { DEFAULT_CONFIG } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import { createLegacyTunnelStage } from "#lib/shared/sequence-viewer/tunnel/tunnel-stage.js";
 import {
   TUNNEL_CREATOR_DRAFT_VERSION,
   type TunnelCreatorDraft,
@@ -12,12 +12,12 @@ import {
   type TunnelCreatorDependencies,
 } from "./tunnel-creator-state.svelte";
 import type { TunnelPresentationState } from "./tunnel-presentation-state.svelte";
-import type { TunnelSnapshot } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
-import type { ShapeMatrixTunnelSourceProvenance } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import { resolveTunnelLayerPlans } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import type { CollectedTunnel } from "$lib/features/tunnel-collection/domain/tunnel-collection-types";
-import { collectedTunnelComposition } from "$lib/features/tunnel-collection/domain/collected-tunnel-source";
-import { tunnelRevisionPayload } from "$lib/features/tunnel-collection/domain/tunnel-revision";
+import type { TunnelSnapshot } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
+import type { ShapeMatrixTunnelSourceProvenance } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import { resolveTunnelLayerPlans } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import type { CollectedTunnel } from "#lib/features/tunnel-collection/domain/tunnel-collection-types.js";
+import { collectedTunnelComposition } from "#lib/features/tunnel-collection/domain/collected-tunnel-source.js";
+import { tunnelRevisionPayload } from "#lib/features/tunnel-collection/domain/tunnel-revision.js";
 
 const sequence = {
   id: "sequence-lead",

@@ -5,8 +5,8 @@
   import { toDate } from "../../domain/models/timestamp-utils";
   import { getFestivalContext } from "../../context/festival-context";
   import TrackerControls from "./TrackerControls.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
 
   interface Props {
     open: boolean;

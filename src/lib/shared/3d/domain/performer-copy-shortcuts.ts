@@ -1,4 +1,4 @@
-import { isLayerOwnedKeyboardTarget } from "$lib/shared/keyboard/domain/shortcut-target-resolution";
+import { isLayerOwnedKeyboardTarget } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
 
 export function handlePerformerCopyShortcut(
   event: KeyboardEvent,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildTipEffectMap } from "$lib/features/coven-hub/domain/coven-effect-map";
+import { buildTipEffectMap } from "#lib/features/coven-hub/domain/coven-effect-map.js";
 
 describe("buildTipEffectMap", () => {
   it("maps a valid effect id onto the wildcard tip key", () => {

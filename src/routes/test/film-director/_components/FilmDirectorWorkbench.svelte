@@ -1,16 +1,16 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
 
-  import { replaceState } from "$app/navigation";
-  import SaveFilmModal from "$lib/features/film-collection/components/SaveFilmModal.svelte";
+  import { goto } from "$app/navigation";
+  import SaveFilmModal from "#lib/features/film-collection/components/SaveFilmModal.svelte";
   import type {
     CollectedFilm,
     StoredFilmDocument,
-  } from "$lib/features/film-collection/domain/film-collection-types";
-  import { captureFilmPoster } from "$lib/features/film-collection/services/capture-film-poster";
-  import { filmCollectionState } from "$lib/features/film-collection/state/film-collection-state.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  } from "#lib/features/film-collection/domain/film-collection-types.js";
+  import { captureFilmPoster } from "#lib/features/film-collection/services/capture-film-poster.js";
+  import { filmCollectionState } from "#lib/features/film-collection/state/film-collection-state.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
   import { setFilmDirectorContext } from "../_lib/film-director-context";
   import { createFilmDirectorState } from "../_lib/film-director-state.svelte";
   import type { FilmDirectorInput } from "../_lib/film-director-schema";
@@ -84,7 +84,7 @@
 
   // Takes the origin rather than a bare key so the URL can never disagree with
   // what Save will do. The soloed scene rides along in the same write: two
-  // separate replaceState calls would race, and the second would drop whatever
+  // separate shallow `goto` calls would race, and the second would drop whatever
   // the first had just put in the address bar.
   function syncFilmToUrl(next: FilmOrigin): void {
     if (typeof window === "undefined") return;
@@ -96,7 +96,7 @@
         : (director.film.scenes[director.soloSceneIndex]?.id ?? null);
     if (soloed) url.searchParams.set("scene", soloed);
     else url.searchParams.delete("scene");
-    replaceState(url, {});
+    goto(url, { shallow: true, replace: true });
   }
 
   // Solo is reachable from the index, the timeline, and the exit button, so the

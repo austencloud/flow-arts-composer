@@ -17,10 +17,10 @@ vi.mock("firebase/firestore", () => ({
   writeBatch: vi.fn(),
   Timestamp: { now: vi.fn(), fromDate: vi.fn() },
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
-vi.mock("$lib/shared/firestore", async () => {
+vi.mock("#lib/shared/firestore/index.js", async () => {
   const { z } = await import("zod");
   return {
     firestoreGet: vi.fn(),
@@ -30,9 +30,9 @@ vi.mock("$lib/shared/firestore", async () => {
   };
 });
 
-import { loadFullSequenceData } from "$lib/features/arena/services/arena-repository";
+import { loadFullSequenceData } from "#lib/features/arena/services/arena-repository.js";
 import { sequenceGridJoinKey } from "@tka/render-core";
-import { ensureComposition } from "$lib/shared/foundation/services/sequence-hydrator";
+import { ensureComposition } from "#lib/shared/foundation/services/sequence-hydrator.js";
 import {
   buildJoinFixture,
   joinOf,

@@ -19,9 +19,9 @@ import {
   limit as firestoreLimit,
 } from "firebase/firestore";
 import type { Timestamp, DocumentData } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import type {
   ConnectionInfo,
   MutualFollowInfo,

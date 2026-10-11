@@ -13,38 +13,38 @@
 -->
 <script lang="ts">
 
-import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
-  import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+import { getStepOperator } from "#lib/features/create/shared/get-step-operator.js";
+  import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import StepEditorPanel from "../sequence-actions/StepEditorPanel.svelte";
-  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
   import BatchStepEditor from "../sequence-actions/BatchStepEditor.svelte";
   import MandalaViewerPanel from "../sequence-actions/MandalaViewerPanel.svelte";
   import StepControlsZone from "../sequence-actions/StepControlsZone.svelte";
   import CreatePanelDrawer from "../CreatePanelDrawer.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { selectedArrowState } from "$lib/shared/create/state/selected-arrow-state.svelte";
-  import PropSelectionSheet from "$lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
-  import { createGlobalChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
+  import PropSelectionSheet from "#lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
+  import { createGlobalChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
   import { getCreateModuleContext } from "../../context/create-module-context";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { StepOperator } from "$lib/features/create/shared/services/step-operator";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { StepOperator } from "#lib/features/create/shared/services/step-operator.js";
   import { canShowStepEditorDrawer } from "../../services/step-editor-availability";
-  import { getSequenceOverlayState } from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
+  import { getSequenceOverlayState } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
   import {
     HandSide,
     MotionType,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { PathShapeValue } from "../../services/step-operations/path-shape-handler";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     getSettings,
     updateSettings,
-  } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/application/state/app-state.svelte.js";
   import { UndoOperationType } from "../../services/undo-manager";
 
   const logger = createComponentLogger("StepEditorCoordinator");

@@ -1,4 +1,4 @@
-import { getTTSProvider } from "$lib/shared/voice-control/get-tts-provider";
+import { getTTSProvider } from "#lib/shared/voice-control/get-tts-provider.js";
 import { selectTokenPath } from "../domain/token-selection";
 import { parsePronunciationManifest } from "../pronunciation-manifest";
 import {

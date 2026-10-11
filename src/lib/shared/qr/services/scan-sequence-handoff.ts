@@ -1,5 +1,5 @@
-import { encodePropForURL } from "$lib/shared/navigation/services/sequence-encoder";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { encodePropForURL } from "#lib/shared/navigation/services/sequence-encoder.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export interface ScanSequencePropFallback {
   leftPropType: PropType;

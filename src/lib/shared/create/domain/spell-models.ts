@@ -5,11 +5,11 @@
  * Handles converting typed words into valid TKA sequences with bridge letters.
  */
 
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { GridPlacement, GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import type { ConstraintPresetId } from "$lib/shared/sequence-engine/constraints";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { GridPlacement, GridPlacementGroup } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import type { ConstraintPresetId } from "#lib/shared/sequence-engine/constraints/index.js";
 
 /**
  * Describes a single LOOP option available for extension.

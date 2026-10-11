@@ -11,10 +11,10 @@
   re-rasterizes. During a shared-element handoff the floor is forced fully
   visible with no transition so the transition snapshot has artwork in it. -->
 <script lang="ts">
-  import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     pathsArtworkSrc,
     shapeMatrixArtworkPainterForColors,

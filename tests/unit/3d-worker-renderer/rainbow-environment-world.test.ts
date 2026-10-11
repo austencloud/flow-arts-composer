@@ -12,13 +12,13 @@ import {
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { Reflector } from "three/examples/jsm/objects/Reflector.js";
 import { BackgroundType } from "@austencloud/backgrounds";
-import { createDefaultRainbowConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/rainbow-scene-config";
-import { getStageCoordinateFrame } from "$lib/shared/3d/environments/domain/stage-coordinate-frame";
+import { createDefaultRainbowConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/rainbow-scene-config.js";
+import { getStageCoordinateFrame } from "#lib/shared/3d/environments/domain/stage-coordinate-frame.js";
 import {
   createRainbowEnvironmentWorld,
   getRainbowVenueScale,
-} from "$lib/shared/3d/environments/worlds/rainbow/rainbow-environment-world";
-import { createRainbowPrototypeWorld } from "$lib/shared/3d/worker-renderer/worlds/rainbow-prototype-world";
+} from "#lib/shared/3d/environments/worlds/rainbow/rainbow-environment-world.js";
+import { createRainbowPrototypeWorld } from "#lib/shared/3d/worker-renderer/worlds/rainbow-prototype-world.js";
 
 function fixture() {
   const venue = new Group();

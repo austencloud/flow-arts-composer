@@ -4,7 +4,7 @@
 -->
 <script lang="ts">
 	import { T, useTask } from "@threlte/core";
-	import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
+	import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
 	import VillageAvatar from "./VillageAvatar.svelte";
 	import VillageDeathMark from "./VillageDeathMark.svelte";
 	import VillageEventToast from "./VillageEventToast.svelte";

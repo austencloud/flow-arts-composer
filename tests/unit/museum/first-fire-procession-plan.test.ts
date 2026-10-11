@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
-import { computeRoomDimensions } from "$lib/features/museum/domain/wall-segment-types";
+import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
+import { computeRoomDimensions } from "#lib/features/museum/domain/wall-segment-types.js";
 import {
   FIRST_FIRE_PROCESSION_AUTHORING_MINIMUM,
   FIRST_FIRE_PROCESSION_MIN_INTERIOR_METRES,
@@ -12,7 +12,7 @@ import {
   sampleProcessionPath,
   type FireProcessionPathSection,
   type FireProcessionShrine,
-} from "$lib/features/museum/data/first-fire-procession-plan";
+} from "#lib/features/museum/data/first-fire-procession-plan.js";
 
 const plan = buildNominalFirstFireProcessionPlan();
 const EPSILON = 1e-6;

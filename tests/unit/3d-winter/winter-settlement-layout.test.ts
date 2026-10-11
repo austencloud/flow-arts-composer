@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createDefaultWinterConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/winter-scene-config";
+import { createDefaultWinterConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/winter-scene-config.js";
 
 interface WinterSettlementLayout {
   stage: { center: [number, number]; radius: number; height: number };

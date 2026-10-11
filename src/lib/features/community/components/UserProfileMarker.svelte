@@ -6,8 +6,8 @@
 -->
 <script lang="ts">
   import type { UserLocationWithProfile } from "../domain/models/user-location";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     user,

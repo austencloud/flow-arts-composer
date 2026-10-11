@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Quaternion, Vector3 } from "three";
-import { startInertialize, applyInertialize } from "$lib/features/stage/locomotion/motion-matching/inertialization";
+import { startInertialize, applyInertialize } from "#lib/features/stage/locomotion/motion-matching/inertialization.js";
 
 function angleOf(q: Quaternion): number {
   return 2 * Math.acos(Math.min(1, Math.abs(q.w)));

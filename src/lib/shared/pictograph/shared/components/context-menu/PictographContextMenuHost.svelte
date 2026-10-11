@@ -4,15 +4,15 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuState,
     ContextMenuEntry,
-  } from "$lib/shared/components/context-menu/context-menu-types";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
   import { buildPictographContextMenuItems } from "./pictograph-context-menu-builder";
   import { getVisibilityStateManager } from "../../state/visibility-state.svelte";
   import type { HandSide } from "../../domain/enums/pictograph-enums";
-  import { followGridJoin } from "$lib/shared/grid-join/grid-join-follower.svelte";
+  import { followGridJoin } from "#lib/shared/grid-join/grid-join-follower.svelte.js";
 
   interface Props {
     onAdjustArrow?: (hand: HandSide) => void;

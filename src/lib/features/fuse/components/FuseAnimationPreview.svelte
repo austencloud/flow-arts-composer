@@ -4,23 +4,23 @@
 -->
 <script lang="ts">
   import { onDestroy, onMount, untrack } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import SplitCanvasView from "$lib/shared/animation-engine/components/SplitCanvasView.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { createPlaybackControllerFactory } from "$lib/shared/animation-engine/create-playback-controller-factory";
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import SplitCanvasView from "#lib/shared/animation-engine/components/SplitCanvasView.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { createPlaybackControllerFactory } from "#lib/shared/animation-engine/create-playback-controller-factory.js";
+  import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import {
     AnimationVisibilityStateManager,
     getAnimationVisibilityManager,
-  } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     FUSE_PREVIEW_TIP_EFFECT_MAP,
     resolveFusePreviewTrackingMode,
-  } from "$lib/features/fuse/services/fuse-preview-trail-config";
-  import { ensureMotionData } from "$lib/shared/sequence-viewer/services/sequence-motion-loader";
+  } from "#lib/features/fuse/services/fuse-preview-trail-config.js";
+  import { ensureMotionData } from "#lib/shared/sequence-viewer/services/sequence-motion-loader.js";
 
   let {
     sequence,

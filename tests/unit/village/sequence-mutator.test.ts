@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { tryInventFrom } from "$lib/features/village/services/sequence-mutator";
+import { tryInventFrom } from "#lib/features/village/services/sequence-mutator.js";
 
 afterEach(() => {
   vi.restoreAllMocks();

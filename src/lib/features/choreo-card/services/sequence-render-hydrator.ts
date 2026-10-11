@@ -1,19 +1,19 @@
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   createMotionData,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
-import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
+import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
 
 function letterFromGridPlacement(gridPlacement: unknown): Letter | null {
   if (!gridPlacement) return null;

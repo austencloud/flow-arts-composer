@@ -13,9 +13,9 @@
  * covers the guard (see explanation-builder.test.ts).
  */
 
-import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { generateExplanationText } from "$lib/features/create/generate/shared/services/loop-explanation-text-generator";
-import { expanderMultiplier } from "$lib/shared/create/services/loop-type-utils";
+import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { generateExplanationText } from "#lib/features/create/generate/shared/services/loop-explanation-text-generator.js";
+import { expanderMultiplier } from "#lib/shared/create/services/loop-type-utils.js";
 import type { LOOPSpecWire, PairComponentId, RotationAngle } from "@tka/sequence-engine/loop";
 import type { StepPairRelation } from "./relation-extractor";
 import type { LoopSlice } from "../domain/legality";

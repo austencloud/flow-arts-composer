@@ -19,19 +19,19 @@ export interface AngleCalculatorLike {
   lerpAngleDirectional(startAngle: number, endAngle: number, direction: RotationDirection, progress: number): number;
 }
 
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   HALF_PI,
   LOCATION_ANGLES,
   PI,
   TWO_PI,
-} from "$lib/shared/foundation/domain/math-constants";
+} from "#lib/shared/foundation/domain/math-constants.js";
 import {
   orientationToStaffAngle,
   RADIAL_CYCLE,
-} from "$lib/shared/render/core/calculations/orientation-angle";
+} from "#lib/shared/render/core/calculations/orientation-angle.js";
 
 export function normalizeAnglePositive(angle: number): number {
   const norm = angle % TWO_PI;

@@ -11,18 +11,18 @@
  * - Rendering via CompositionDispatcher (worker pool with main-thread fallback)
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { CompositionDispatcher } from "$lib/shared/render/services/composition-dispatcher";
-import type { StartPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-import type { ILOOPDetector } from "$lib/shared/create/services/ILOOPDetector";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { CompositionDispatcher } from "#lib/shared/render/services/composition-dispatcher.js";
+import type { StartPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+import type { ILOOPDetector } from "#lib/shared/create/services/ILOOPDetector.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import type {
   ThumbnailRenderInput,
   CompositionDefaults,
-} from "$lib/shared/browse/services/thumbnail-key-deriver";
-import type { QRCodeGenerator } from "$lib/shared/qr/services/qr-code-generator";
+} from "#lib/shared/browse/services/thumbnail-key-deriver.js";
+import type { QRCodeGenerator } from "#lib/shared/qr/services/qr-code-generator.js";
 import type { ThumbnailStage } from "./thumbnail-metrics-collector";
 
 /** Result of a thumbnail render. `qrConsistent` is false only when a QR was

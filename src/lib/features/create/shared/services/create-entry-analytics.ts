@@ -1,5 +1,5 @@
-import { captureEvent } from "$lib/shared/analytics/services/posthog";
-import type { CreateFrontDoorSource } from "$lib/shared/navigation/state/navigation-state.svelte";
+import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
+import type { CreateFrontDoorSource } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 
 export function logCreateFrontDoorViewed(props: {
   source: CreateFrontDoorSource;

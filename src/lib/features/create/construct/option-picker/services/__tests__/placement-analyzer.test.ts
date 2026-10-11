@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GridPlacement, GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridPlacement, GridPlacementGroup } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { PlacementAnalyzer } from "../placement-analyzer";
 
 const analyzer = new PlacementAnalyzer();

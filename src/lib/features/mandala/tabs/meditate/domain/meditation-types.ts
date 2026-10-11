@@ -1,4 +1,4 @@
-import type { UndulationEasing } from "$lib/shared/mandala/domain/mandala-types";
+import type { UndulationEasing } from "#lib/shared/mandala/domain/mandala-types.js";
 
 export type BreathPhase = "inhale" | "hold-in" | "exhale" | "hold-out";
 

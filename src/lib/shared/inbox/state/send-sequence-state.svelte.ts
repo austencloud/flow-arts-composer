@@ -1,10 +1,10 @@
 import type { SequenceSharePayload } from "../domain/models/sequence-share-payload";
 import type { PendingMessageAttachment } from "../domain/pending-message-attachment";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
 import { inboxState } from "./inbox-state.svelte";
-import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { buildSequenceSharePayload } from "../domain/build-sequence-share-payload";
 export { buildSequenceSharePayload };
 

@@ -17,7 +17,7 @@
  * Role hierarchy (highest to lowest): admin > tester > premium > user
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { type UserRole, hasRolePrivilege } from "../domain/models/user-role";
 import {
   type FeatureId,
@@ -39,7 +39,7 @@ import {
 import { GlobalFeatureFlagPersister } from "./global-feature-flag-persister";
 import { UserFeatureFlagPersister } from "./user-feature-flag-persister";
 import type { GlobalFlagOverrides } from "./types";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import { DEFAULT_FEATURE_FLAGS, getDefaultFeatureConfig } from "../domain/default-feature-flags";
 import { createPostHogFlagAdminService } from "./posthog-flag-admin-service";
 

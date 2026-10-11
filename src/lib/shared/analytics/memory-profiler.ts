@@ -5,7 +5,7 @@
  * Uses Performance API memory metrics when available.
  *
  * Usage:
- *   import { memoryProfiler } from '$lib/shared/analytics/memory-profiler';
+ *   import { memoryProfiler } from '#lib/shared/analytics/memory-profiler.js';
  *   memoryProfiler.startTracking();
  *   memoryProfiler.takeSnapshot('after-mount');
  *   memoryProfiler.report();

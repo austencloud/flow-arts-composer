@@ -1,14 +1,14 @@
-import type { ReversalDetector } from "$lib/shared/create/services/reversal-detector";
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
-import { withLoopCertificateCleared } from "$lib/shared/create/services/loop-certificate";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { ReversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import { withLoopCertificateCleared } from "#lib/shared/create/services/loop-certificate.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   updateEndOrientations,
   updateStartOrientations,
-} from "$lib/shared/pictograph/prop/services/orientation-calculator";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 export interface BuiltAppendedOption {
   readonly sequence: SequenceData;

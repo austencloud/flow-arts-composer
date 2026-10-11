@@ -6,8 +6,8 @@
   Visual height: 32px. Touch target: 48px via invisible padding.
 -->
 <script lang="ts">
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { TargetHand } from "$lib/shared/create/domain/panel-types";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { TargetHand } from "#lib/shared/create/domain/panel-types.js";
 
   interface HandOption {
     hand: TargetHand;

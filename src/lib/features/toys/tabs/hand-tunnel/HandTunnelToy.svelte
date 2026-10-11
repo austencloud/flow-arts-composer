@@ -19,29 +19,29 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
-  import { interpolatePropAngles } from "$lib/shared/animation-engine/services/prop-interpolator";
-  import { tunnelPropColor } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
+  import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
+  import { tunnelPropColor } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import {
     LOOP_BEATS,
     MAX_PERFORMERS,
     type Performer,
     type Segment,
-  } from "$lib/features/lab/hand-tunnel/domain/hand-tunnel-types";
+  } from "#lib/features/lab/hand-tunnel/domain/hand-tunnel-types.js";
   import {
     HAND_TUNNEL_PRESETS,
     clonePerformers,
     presetById,
-  } from "$lib/features/lab/hand-tunnel/domain/hand-tunnel-presets";
+  } from "#lib/features/lab/hand-tunnel/domain/hand-tunnel-presets.js";
   import {
     buildPerformerSequence,
     cycleForSegment,
     describeHands,
-  } from "$lib/features/lab/hand-tunnel/services/build-hand-tunnel-sequence";
+  } from "#lib/features/lab/hand-tunnel/services/build-hand-tunnel-sequence.js";
   import PerformerCard from "./components/PerformerCard.svelte";
 
   const STORAGE_KEY = "tka_hand_tunnel_lab";

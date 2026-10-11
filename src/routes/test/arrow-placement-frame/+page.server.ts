@@ -3,17 +3,17 @@ import path from "node:path";
 
 import { Point } from "fabric";
 import type { PageServerLoad } from "./$types";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { generatePlacementKey } from "$lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator";
-import { arrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
-import { directionalTupleProcessor } from "$lib/shared/pictograph/arrow/positioning/calculation/services/directional-tuple-processor";
-import { rotatePlacementVectorToDisplayed } from "$lib/shared/pictograph/arrow/positioning/calculation/services/canonical-placement-frame";
-import { getInitialPosition } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-grid-coordinator";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { generatePlacementKey } from "#lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator.js";
+import { arrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
+import { directionalTupleProcessor } from "#lib/shared/pictograph/arrow/positioning/calculation/services/directional-tuple-processor.js";
+import { rotatePlacementVectorToDisplayed } from "#lib/shared/pictograph/arrow/positioning/calculation/services/canonical-placement-frame.js";
+import { getInitialPosition } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-grid-coordinator.js";
 import {
   buildPlacementFixture,
   type PlacementMap,

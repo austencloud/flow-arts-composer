@@ -7,10 +7,10 @@
  * off (or neither hand is poi), it is the identity.
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-import { isAdmin } from "$lib/shared/auth/state/auth-state.svelte";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+import { isAdmin } from "#lib/shared/auth/state/auth-state.svelte.js";
 import { getPoiOptionFilterDecorator } from "../get-poi-option-filter-decorator";
 
 /** Poi composer filtering is dark in production; on in dev or for admins/testers. */

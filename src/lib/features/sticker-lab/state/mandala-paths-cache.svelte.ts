@@ -1,6 +1,6 @@
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { getSequenceRepository } from "$lib/shared/create/get-sequence-repository";
+import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { getSequenceRepository } from "#lib/shared/create/get-sequence-repository.js";
 import type { MandalaPrimitiveRef } from "../domain/sticker-types";
 
 const cache = $state<Record<string, MandalaPaths>>({});

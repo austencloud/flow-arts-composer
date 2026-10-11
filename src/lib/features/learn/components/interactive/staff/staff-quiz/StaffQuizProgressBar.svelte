@@ -2,7 +2,7 @@
 StaffQuizProgressBar - Progress indicator for staff quiz
 -->
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   let {
     currentQuestion,
     totalQuestions,

@@ -8,16 +8,16 @@
  * answers (why a chip is disabled, whether the slice control may offer
  * quartered) so the picker never re-derives the algebra.
  *
- * Source of truth: `$lib/shared/create/services/loop-type-utils.ts`.
+ * Source of truth: `#lib/shared/create/services/loop-type-utils.ts`.
  */
 
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { LOOPType, ROTATED_LOOP_TYPES } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { LOOPType, ROTATED_LOOP_TYPES } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   canExtendCombo,
   generateLOOPType,
   isImplementedCombo,
-} from "$lib/shared/create/services/loop-type-utils";
+} from "#lib/shared/create/services/loop-type-utils.js";
 
 export type LoopSlice = "halved" | "quartered";
 

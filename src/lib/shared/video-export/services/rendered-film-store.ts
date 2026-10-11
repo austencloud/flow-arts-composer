@@ -13,7 +13,7 @@
  *
  * Raw IndexedDB, no new dependency, mirroring the video-cache structure.
  */
-import type { Scene3DFilmRender } from "$lib/features/scene-3d-collection/domain/scene-3d-collection-types";
+import type { Scene3DFilmRender } from "#lib/features/scene-3d-collection/domain/scene-3d-collection-types.js";
 
 const DB_NAME = "tka-rendered-films";
 const DB_VERSION = 1;

@@ -21,25 +21,25 @@
     configureAuthPersistence,
     getFunctionsInstance,
   } from "../firebase";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { recordAuthSubmission } from "$lib/shared/auth/services/auth-analytics-bridge";
-  import { recordLastAuthMethod } from "$lib/shared/auth/services/last-auth-method.svelte";
-  import { trackAuthProviderResult } from "$lib/shared/analytics/auth-events";
-  import { getInAppBrowserDetector } from "$lib/shared/auth/get-in-app-browser-detector";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { db } from "$lib/shared/persistence/database/tka-database";
-  import { captureWhenReady } from "$lib/shared/analytics/services/posthog";
-  import { firstRunState } from "$lib/shared/onboarding/state/first-run-state.svelte";
-  import { isRunningAsStandalone } from "$lib/shared/mobile/services/platform-detector";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { recordAuthSubmission } from "#lib/shared/auth/services/auth-analytics-bridge.js";
+  import { recordLastAuthMethod } from "#lib/shared/auth/services/last-auth-method.svelte.js";
+  import { trackAuthProviderResult } from "#lib/shared/analytics/auth-events.js";
+  import { getInAppBrowserDetector } from "#lib/shared/auth/get-in-app-browser-detector.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { db } from "#lib/shared/persistence/database/tka-database.js";
+  import { captureWhenReady } from "#lib/shared/analytics/services/posthog.js";
+  import { firstRunState } from "#lib/shared/onboarding/state/first-run-state.svelte.js";
+  import { isRunningAsStandalone } from "#lib/shared/mobile/services/platform-detector.js";
   import {
     clearPendingEmailCode,
     persistPendingEmailCode,
     readPendingEmailCode,
-  } from "$lib/shared/auth/services/pending-email-code";
+  } from "#lib/shared/auth/services/pending-email-code.js";
 
   let {
     compact = false,

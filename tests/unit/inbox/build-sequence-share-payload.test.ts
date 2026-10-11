@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildSequenceSharePayload } from "$lib/shared/inbox/domain/build-sequence-share-payload";
-import type { SequenceShareSource } from "$lib/shared/inbox/domain/models/sequence-share-payload";
+import { buildSequenceSharePayload } from "#lib/shared/inbox/domain/build-sequence-share-payload.js";
+import type { SequenceShareSource } from "#lib/shared/inbox/domain/models/sequence-share-payload.js";
 
 function source(overrides: Partial<SequenceShareSource>): SequenceShareSource {
   return {

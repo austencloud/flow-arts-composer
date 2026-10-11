@@ -9,14 +9,14 @@ import {
   type BrowsePrimary,
   type BrowseVisualType,
   type PersistedBrowseNavigation,
-} from "$lib/shared/browse/navigation/browse-route-resolver";
+} from "#lib/shared/browse/navigation/browse-route-resolver.js";
 import {
   pruneParamsForNavigation,
   pruneRouteScopedParams,
-} from "$lib/shared/navigation/services/url-parameter-policy";
-import { writeUrl } from "$lib/shared/navigation/services/url-state";
+} from "#lib/shared/navigation/services/url-parameter-policy.js";
+import { writeUrl } from "#lib/shared/navigation/services/url-state.js";
 
-export type { BrowseLocation } from "$lib/shared/browse/navigation/browse-route-resolver";
+export type { BrowseLocation } from "#lib/shared/browse/navigation/browse-route-resolver.js";
 
 interface BrowseNavigationStateData {
   history: BrowseLocation[];

@@ -5,17 +5,17 @@ to three rows. Click opens the expanded overlay.
 (Rhythm was removed pending a finished rhythm-preset design.)
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type {
     StartEndOptions,
     PanelCoordinationState,
-  } from "$lib/shared/create/state/panel-coordination-state.svelte";
+  } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
   import { onMount, getContext } from "svelte";
-  import { customizeOverlayWasOpen } from "$lib/shared/create/state/customize-overlay-hmr";
+  import { customizeOverlayWasOpen } from "#lib/shared/create/state/customize-overlay-hmr.js";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import CardHeader from "./shared/CardHeader.svelte";
   import {
     buildCustomizeSummary,

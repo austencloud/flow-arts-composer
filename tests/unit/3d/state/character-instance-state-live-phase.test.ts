@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
-import { FALG } from "$lib/shared/combination/domain/demo-fixtures";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
+import { FALG } from "#lib/shared/combination/domain/demo-fixtures.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /**
  * Live performers address beats by a motion-relative phase (0.00 = start of

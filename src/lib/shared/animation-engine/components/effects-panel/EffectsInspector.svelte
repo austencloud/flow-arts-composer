@@ -1,20 +1,22 @@
 <script lang="ts">
   import { tick } from "svelte";
   import { effectUiLabel } from "./effect-ui-label";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     EffectId,
     EffectsConfigState,
-  } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import type { EffectControlOverrides } from "$lib/shared/effects/effect-control-fields";
+  } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import type { EffectControlOverrides } from "#lib/shared/effects/effect-control-fields.js";
   import {
     advancedControls,
     primaryControls,
-  } from "$lib/shared/effects/domain/effect-control-manifest";
-  import EffectControlStack from "$lib/shared/effects/components/EffectControlStack.svelte";
+  } from "#lib/shared/effects/domain/effect-control-manifest.js";
+  import EffectControlStack from "#lib/shared/effects/components/EffectControlStack.svelte";
   import EffectPresetsSection from "./EffectPresetsSection.svelte";
   import LedCustomize from "./customize/LedCustomize.svelte";
   import type { EffectRegistration } from "./effect-registry";
+  import { effectInk } from "./effect-ink";
+  import { getThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
 
   type SettingValue = string | number | boolean | null;
 
@@ -67,6 +69,8 @@
     onSettingChange,
   }: Props = $props();
 
+  const accent = $derived(effectInk(registration.meta.color, getThemeMode()));
+
   let fineTuningOpen = $state(false);
   let selectedFineControl = $state(0);
   let tuningSection = $state<HTMLElement | null>(null);
@@ -107,8 +111,8 @@
   class:fine-open={fineTuningOpen}
   class:compact-presets={compactPresets}
   class:bounded-fine={boundedFine}
-  style:--effect-accent={registration.meta.color}
-  style:--effect-accent-soft={`${registration.meta.color}22`}
+  style:--effect-accent={accent}
+  style:--effect-accent-soft={`${accent}22`}
 >
   <header class="inspector-header" class:without-back={!showBack}>
     {#if showBack}<button class="back-action" type="button" onclick={onBack}>
@@ -149,7 +153,7 @@
         {customColors}
         {onSelectPreset}
         effectLabel={registration.meta.label}
-        accentColor={registration.meta.color}
+        accentColor={accent}
         {summary}
         showSummary={false}
         onCustomize={focusTuning}

@@ -26,11 +26,11 @@ import type {
   DocumentData,
   DocumentSnapshot,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { PUBLIC_PROFILE_VERSION } from "$lib/shared/community/domain/models/public-profile-contract";
-import { firestoreGet, firestoreList } from "$lib/shared/firestore";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { PUBLIC_PROFILE_VERSION } from "#lib/shared/community/domain/models/public-profile-contract.js";
+import { firestoreGet, firestoreList } from "#lib/shared/firestore/index.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
 import type { PaginatedUsersResult, PaginatedQueryOptions } from "./types";
 import type {
   EnhancedUserProfile,
@@ -38,8 +38,8 @@ import type {
   CreatorQueryOptions,
   CreatorSortCriteria,
 } from "../domain/models/enhanced-user-profile";
-import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   UserFirestoreDataSchema,
   FollowDocSchema,
@@ -48,7 +48,7 @@ import type { UserFirestoreDataParsed } from "../domain/models/user-firestore-sc
 import {
   trackUserFollowChanged,
   type UserFollowSource,
-} from "$lib/shared/analytics/social-events";
+} from "#lib/shared/analytics/social-events.js";
 
 
 interface FirestoreUserData extends DocumentData {

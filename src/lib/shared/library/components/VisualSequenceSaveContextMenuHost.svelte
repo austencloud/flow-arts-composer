@@ -1,14 +1,14 @@
 <script lang="ts">
   import VisualSavePrompt from "./VisualSavePrompt.svelte";
   let savePrompt: VisualSavePrompt | undefined = $state();
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuEntry,
     ContextMenuState,
-  } from "$lib/shared/components/context-menu/context-menu-types";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { VisualSequenceSaveIntent } from "$lib/shared/library/services/contracts/IVisualSequenceSaveCoordinator";
-  import { buildVisualSequenceSaveMenuItem } from "$lib/shared/library/services/visual-sequence-save-menu-item";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { VisualSequenceSaveIntent } from "#lib/shared/library/services/contracts/IVisualSequenceSaveCoordinator.js";
+  import { buildVisualSequenceSaveMenuItem } from "#lib/shared/library/services/visual-sequence-save-menu-item.js";
 
   interface Props {
     sequence: SequenceData;

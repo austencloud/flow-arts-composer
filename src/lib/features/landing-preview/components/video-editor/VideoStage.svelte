@@ -7,7 +7,7 @@
    */
   import CroppedVideoPlayer from "../CroppedVideoPlayer.svelte";
   import type { ShowcaseVideo } from "../../types";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
 
   interface Props {
     video: ShowcaseVideo;

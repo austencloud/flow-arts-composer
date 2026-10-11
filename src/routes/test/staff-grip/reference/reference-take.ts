@@ -9,7 +9,7 @@ import {
   isTakeTimingMapped,
   resolveTakeTiming,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 export interface PickedFileIdentity {
   readonly name: string;

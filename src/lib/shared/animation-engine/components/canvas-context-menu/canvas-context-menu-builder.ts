@@ -26,24 +26,26 @@
  * left the menu showing nothing checked for two thirds of the effects.
  */
 
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type {
   ContextMenuEntry,
   ContextMenuItem,
-} from "$lib/shared/components/context-menu/context-menu-types";
+} from "#lib/shared/components/context-menu/context-menu-types.js";
 import type {
   AnimationVisibilityStateManager,
   GridMode,
 } from "../../state/animation-visibility-state.svelte";
-import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
+import { EFFORTS } from "#lib/shared/effort/domain/effort-types.js";
 import { animationSettings } from "../../state/animation-settings-state.svelte";
-import { fits3DViewportNow } from "$lib/shared/3d/capabilities/viewport-3d-gate.svelte";
+import { fits3DViewportNow } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js";
 import { TrackingMode } from "../../domain/types/trail-types";
 import type { EffectType } from "../../domain/types/tip-effect-types";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import { EFFECTS, getRegistration } from "../effects-panel/effect-registry";
-import type { GridJoinController } from "$lib/shared/grid-join/grid-join-controller";
-import { buildGridJoinMenuItem } from "$lib/shared/grid-join/grid-join-menu";
+import { effectInk } from "../effects-panel/effect-ink";
+import { getThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
+import type { GridJoinController } from "#lib/shared/grid-join/grid-join-controller.js";
+import { buildGridJoinMenuItem } from "#lib/shared/grid-join/grid-join-menu.js";
 
 interface CanvasContextMenuDeps {
   visibilityManager: AnimationVisibilityStateManager;
@@ -84,7 +86,7 @@ function buildEffectChildren(
       id: `effect-${effect.id}`,
       label: effect.label,
       icon: effect.icon,
-      iconColor: effect.color,
+      iconColor: effectInk(effect.color, getThemeMode()),
       checked: active === effect.id,
       action: () => setEffect(effect.id as EffectType),
     })),

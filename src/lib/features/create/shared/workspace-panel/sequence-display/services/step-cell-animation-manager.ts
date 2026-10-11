@@ -8,8 +8,8 @@
  * spread across multiple $effect blocks and state variables in StepCell.svelte.
  */
 
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { StepCellAnimationState } from "./types";
 
 /**

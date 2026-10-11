@@ -8,18 +8,18 @@
  * - Shared animation state (for workspace beat grid sync)
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
-import type { RenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
-import type { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
+import type { RenderActivityGate } from "#lib/shared/render-gating/render-activity-gate.js";
+import type { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
 import type {
   PreparedSequenceHandoff,
   SequenceBoundaryProvider,
-} from "$lib/shared/animation-engine/domain/chaining-types";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-import { sharedAnimationState } from "$lib/shared/animation-engine/state/shared-animation-state.svelte";
+} from "#lib/shared/animation-engine/domain/chaining-types.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+import { sharedAnimationState } from "#lib/shared/animation-engine/state/shared-animation-state.svelte.js";
 
 export interface AnimationPlaybackControllerOptions {
   /**

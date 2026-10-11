@@ -11,7 +11,7 @@
 
 import { describe, it, expect } from "vitest";
 import { computeCardBackLayout } from "../card-back-layout";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import type { CardBackData } from "../../../components/card-back/card-back-data";
 
 // ── Render geometry (proof mode) ────────────────────────────────────────────

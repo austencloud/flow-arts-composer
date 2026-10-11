@@ -5,7 +5,7 @@ import {
 import {
   clearLoopDisplayCache,
   resolveLoopDisplay,
-} from "$lib/features/loop-labeler/services/loop-display-resolver";
+} from "#lib/features/loop-labeler/services/loop-display-resolver.js";
 
 /**
  * Wire the canonical LOOP display service into an isolated composition worker.

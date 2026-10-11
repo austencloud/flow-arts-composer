@@ -1,9 +1,9 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   hashSequenceContent,
   hashString,
-} from "$lib/shared/foundation/services/content-hasher";
-import { canonicalJSON } from "$lib/shared/foundation/utils/canonical-json";
+} from "#lib/shared/foundation/services/content-hasher.js";
+import { canonicalJSON } from "#lib/shared/foundation/utils/canonical-json.js";
 import type { TunnelSnapshot } from "../tunnel/tunnel-snapshot";
 import type { TunnelComposition } from "../tunnel/tunnel-composition";
 

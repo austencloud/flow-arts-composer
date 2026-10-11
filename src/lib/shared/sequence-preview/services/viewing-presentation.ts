@@ -1,9 +1,9 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   neutralPresentation,
   resolvePresentation,
   type ResolvedPresentationValue,
-} from "$lib/shared/foundation/services/presentation-intent";
+} from "#lib/shared/foundation/services/presentation-intent.js";
 
 /**
  * The look a public surface renders a sequence with. Mode-free by design:

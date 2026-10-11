@@ -7,13 +7,13 @@ import ExpandedCardStage from "./ExpandedCardStage.svelte";
 import {
   createPanelCoordinationState,
   type PanelCoordinationState,
-} from "$lib/shared/create/state/panel-coordination-state.svelte";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   countViewTransitionNameClaims,
   resetViewTransitionNameRegistry,
-} from "$lib/shared/transitions/view-transition-name-registry";
-import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
+} from "#lib/shared/transitions/view-transition-name-registry.js";
+import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
 import type { FavoriteState } from "../../state/favorite-state.svelte";
 import {
   lastGenerateCardMorphRan,

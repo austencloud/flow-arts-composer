@@ -6,7 +6,7 @@
  * and Swapped"). Pure functions; FilterRuleStrip.svelte owns the rendering.
  */
 
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 import {
   OR_STACKING_TYPES,
   CONNECTIVE_STACKING_TYPES,

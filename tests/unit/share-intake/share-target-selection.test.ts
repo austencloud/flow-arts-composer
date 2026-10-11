@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   selectShareTargets,
   MAX_SHARE_TARGETS,
-} from "$lib/shared/share-intake/domain/share-target-selection";
-import type { ConversationPreview } from "$lib/shared/messaging/domain/models/conversation-models";
+} from "#lib/shared/share-intake/domain/share-target-selection.js";
+import type { ConversationPreview } from "#lib/shared/messaging/domain/models/conversation-models.js";
 
 function direct(
   id: string,

@@ -18,12 +18,12 @@
 -->
 <script lang="ts">
 	import { onMount } from "svelte";
-	import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-	import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-	import { BASE_SEQUENCES } from "$lib/shared/combination/domain/base-sequence-registry";
-	import { findLOOPCombinations } from "$lib/shared/combination/services/loop-combinator";
-	import type { LOOPCombinatorReport } from "$lib/shared/combination/services/loop-combinator";
-	import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+	import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+	import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+	import { BASE_SEQUENCES } from "#lib/shared/combination/domain/base-sequence-registry.js";
+	import { findLOOPCombinations } from "#lib/shared/combination/services/loop-combinator.js";
+	import type { LOOPCombinatorReport } from "#lib/shared/combination/services/loop-combinator.js";
+	import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
 	// Roster-confirmed bases first; placeholders stay selectable but read as
 	// provisional, because their letter data is canon-grounded and only their

@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "../../application/services/haptic-feedback";
 import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // A 404 passes its own heading and no retry: reloading a missing page
   // cannot help. Everything else keeps the initialization failure screen.

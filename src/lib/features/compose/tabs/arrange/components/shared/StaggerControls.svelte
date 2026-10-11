@@ -5,8 +5,8 @@
   Shown in a popover/modal when user clicks the timing button on a layer.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
 
   let {
     open = false,

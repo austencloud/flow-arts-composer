@@ -4,7 +4,7 @@ import {
   EMBER_ATMOSPHERE_LOOK_IDS,
   createDefaultEmberConfig,
   type EmberPlumeConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs";
+} from "#lib/shared/3d/environments/domain/models/scene-configs.js";
 import {
   advancePlumePuff,
   createPlumePuff,
@@ -15,7 +15,7 @@ import {
   PLUME_FOG_ALPHA_BITE,
   PLUME_FOG_BLEND_CAP,
   type PlumePuff,
-} from "$lib/shared/3d/environments/scenes/ember/ember-plume-motion";
+} from "#lib/shared/3d/environments/scenes/ember/ember-plume-motion.js";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 

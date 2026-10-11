@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 
   interface Props {
     label: string;
@@ -36,7 +36,7 @@
     <span class="edit-action">
       <PanelButton
         bind:ref={buttonRef}
-        variant="secondary"
+        variant="quiet"
         onclick={onEdit}
         ariaLabel={editLabel}
       >
@@ -102,16 +102,6 @@
 
   .edit-action :global(.panel-btn) {
     min-width: 5.25em;
-    border-color: var(--theme-stroke);
-    color: var(--theme-text-dim);
-    background: color-mix(in srgb, var(--theme-text) 4%, transparent);
-    box-shadow: none;
-  }
-
-  .edit-action :global(.panel-btn:hover:not(:disabled)) {
-    border-color: var(--theme-stroke-strong);
-    color: var(--theme-text);
-    background: color-mix(in srgb, var(--theme-text) 8%, transparent);
   }
 
   @container profile-tab (max-width: 28rem) {

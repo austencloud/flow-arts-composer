@@ -5,11 +5,11 @@
   placement. Location changes transform the prop through the whole sequence.
 -->
 <script lang="ts">
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { TargetHand } from "$lib/shared/create/domain/panel-types";
-  import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { TargetHand } from "#lib/shared/create/domain/panel-types.js";
+  import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import PropControlPair from "./PropControlPair.svelte";
   import MobileHandSelector from "./MobileHandSelector.svelte";
   import PropLocationControl from "./PropLocationControl.svelte";

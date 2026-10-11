@@ -6,10 +6,10 @@
  */
 
 import * as SequenceQuestionGenerator from "./sequence-question-generator";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   QuizAnswerFormat,
   QuizQuestionFormat,

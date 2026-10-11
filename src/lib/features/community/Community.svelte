@@ -12,12 +12,12 @@
   factory owns the write.
 -->
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { onMount } from "svelte";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { page } from "$app/state";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import GlobalUserMap from "./components/GlobalUserMap.svelte";
   import CommunityInvitationSlot from "./components/CommunityInvitationSlot.svelte";
   import { setCommunityMapContext } from "./context/community-map-context";
@@ -25,7 +25,7 @@
   import { createFirestoreCommunityMapPort } from "./services/community-map-port";
   import { createEdgeCitySuggestion } from "./services/edge-city-suggestion";
   import { getGeocodingService } from "./get-geocoding-service";
-  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$lib/shared/maps/google-maps-api-key";
+  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "#lib/shared/maps/google-maps-api-key.js";
 
   // Not named `state`: a variable of that name in scope turns every
   // `$state(...)` in this module into a store subscription.

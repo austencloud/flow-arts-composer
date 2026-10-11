@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateProductionVerification } from "$lib/server/analytics/production-verification";
+import { evaluateProductionVerification } from "#lib/server/analytics/production-verification.js";
 
 function observation(
   overrides: Partial<Parameters<typeof evaluateProductionVerification>[0]> = {}

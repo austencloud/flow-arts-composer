@@ -13,7 +13,7 @@
     SKEW_BRACE_FONT_FAMILY,
     SKEW_BRACE_FONT_WEIGHT,
   } from "../utils/skew-brace-layout";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
   const FILL_LIGHT = "#231f20";
   const FILL_DARK = "#d9d9d9";

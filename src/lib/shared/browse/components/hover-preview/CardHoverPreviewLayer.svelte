@@ -14,36 +14,36 @@
 	AnimationEngine exists at a time no matter how big the grid is.
 -->
 <script lang="ts">
-  import { resolveViewingProps } from "$lib/shared/foundation/services/prop-viewing";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { resolveViewingProps } from "#lib/shared/foundation/services/prop-viewing.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { onDestroy, untrack } from "svelte";
-  import { flyFade, popIn } from "$lib/shared/transitions/motion";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import WordHeader from "$lib/shared/animation-engine/components/layers/WordHeader.svelte";
-  import { calculateDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
+  import { flyFade, popIn } from "#lib/shared/transitions/motion.js";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import WordHeader from "#lib/shared/animation-engine/components/layers/WordHeader.svelte";
+  import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
   import {
     tryGetLoopDisplayResolver,
     type LoopDisplay,
-  } from "$lib/shared/loop-labeler/get-loop-display-resolver";
-  import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-  import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
-  import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-  import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { ensureMotionData } from "$lib/shared/sequence-viewer/services/sequence-motion-loader";
+  } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+  import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+  import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
+  import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+  import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { ensureMotionData } from "#lib/shared/sequence-viewer/services/sequence-motion-loader.js";
   import {
     performsStartSlot,
     resolveCycleBeatIndex,
     resolvePreviewCycleStep,
-  } from "$lib/shared/timeline/loop-cycle";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  } from "#lib/shared/timeline/loop-cycle.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import {
     DURATION,
     SLIDE,
     STAGGER,
-  } from "$lib/shared/transitions/transitions";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/transitions/transitions.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   const {
     sequence,
@@ -372,7 +372,7 @@
              seamlessly loopable sequence, whose cadence must not gain a beat —
              the same forward slide carries the Start cell through the focus in
              one step, marking the seam without costing playback time. -->
-        {#await import("$lib/shared/timeline/StepStrip.svelte") then mod}
+        {#await import("#lib/shared/timeline/StepStrip.svelte") then mod}
           <mod.default
             sequence={playback.sequence}
             currentStep={frame.step}

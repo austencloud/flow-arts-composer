@@ -11,9 +11,9 @@
   - Last deactivated -> reactivate both (combined)
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
-  import MotionColorChips from "$lib/shared/components/MotionColorChips.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
+  import MotionColorChips from "#lib/shared/components/MotionColorChips.svelte";
 
   interface Props {
     viewMode: BrowseViewMode;

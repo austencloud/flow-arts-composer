@@ -1,14 +1,14 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import ToastContainer from "$lib/shared/toast/components/ToastContainer.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import ToastContainer from "#lib/shared/toast/components/ToastContainer.svelte";
   import {
     clearToasts,
     showToast,
     toastQueue,
-  } from "$lib/shared/toast/state/toast-state.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import FirstVisitAppFrame from "./FirstVisitAppFrame.svelte";
   import {
     createFirstVisitSimulationState,

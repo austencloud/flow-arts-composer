@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { PostProjectSchema, editContext } from "$lib/shared/post-studio-plugin";
+import {
+  PostProjectSchema,
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   POST_BOX,
   POST_DEFAULT_CARD_SECONDS,
@@ -17,7 +20,7 @@ import {
   applyTutorialPreset,
   applyTutorialTemplate,
   lookOf,
-} from "$lib/shared/media-composition/domain/post-project-looks";
+} from "#lib/shared/media-composition/domain/post-project-looks.js";
 import {
   NOW,
   card,

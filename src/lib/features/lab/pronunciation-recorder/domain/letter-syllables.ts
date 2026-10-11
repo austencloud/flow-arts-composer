@@ -1,4 +1,4 @@
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
 /**
  * Syllables in each letter's SHORT name — `getLetterPronunciation().shortName`,

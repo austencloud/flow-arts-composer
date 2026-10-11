@@ -2,8 +2,8 @@ import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { describe, expect, it, vi } from "vitest";
 import ScanCellWarmControls from "./ScanCellWarmControls.svelte";
-import type { ScanCellWarmState } from "$lib/features/choreo-card/state/scan-cell-warm-state.svelte";
-import type { CellWarmProgress } from "$lib/features/library/services/warm-all-scan-cells";
+import type { ScanCellWarmState } from "#lib/features/choreo-card/state/scan-cell-warm-state.svelte.js";
+import type { CellWarmProgress } from "#lib/features/library/services/warm-all-scan-cells.js";
 
 function fakeState(
   options: {

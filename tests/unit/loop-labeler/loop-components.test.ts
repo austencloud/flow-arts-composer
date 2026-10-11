@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BASE_COMPONENTS } from "$lib/features/loop-labeler/domain/constants/loop-components";
+import { BASE_COMPONENTS } from "#lib/features/loop-labeler/domain/constants/loop-components.js";
 
 describe("LOOP reflection component colors", () => {
   it("uses the same purple for Mirrored and legacy Flipped", () => {

@@ -1,9 +1,9 @@
 import { find } from "linkifyjs";
-import { extractScanCode } from "$lib/shared/qr/services/extract-scan-code";
+import { extractScanCode } from "#lib/shared/qr/services/extract-scan-code.js";
 import type {
   Message,
   MessageAttachment,
-} from "$lib/shared/messaging/domain/models/message-models";
+} from "#lib/shared/messaging/domain/models/message-models.js";
 
 export type MessageTextPart =
   | { kind: "text"; text: string }

@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   TIKA_CAPABILITIES,
   TikaDirectorActionSchema,
-} from "$lib/features/stage/domain/tika-capabilities";
-import { TikaDirectorResponseSchema } from "$lib/features/stage/domain/tika-director";
-import { TIKA_EXECUTED_ACTION_TYPES } from "$lib/features/stage/services/tika-director-executor";
+} from "#lib/features/stage/domain/tika-capabilities/index.js";
+import { TikaDirectorResponseSchema } from "#lib/features/stage/domain/tika-director.js";
+import { TIKA_EXECUTED_ACTION_TYPES } from "#lib/features/stage/services/tika-director-executor.js";
 
 describe("TIKA capability registry contract", () => {
   it("lists every verb exactly once", () => {

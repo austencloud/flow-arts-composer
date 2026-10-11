@@ -3,7 +3,7 @@ import {
   normalizeTyped,
   parseTypedNumber,
   splitReading,
-} from "$lib/shared/ui/typed-number";
+} from "#lib/shared/ui/typed-number.js";
 
 describe("parseTypedNumber", () => {
   it("reads the first number, whatever unit follows it", () => {

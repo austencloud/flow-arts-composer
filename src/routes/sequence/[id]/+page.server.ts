@@ -1,22 +1,23 @@
 import type { PageServerLoad } from "./$types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   parseSequenceRouteId,
   decodeSequenceFromQR,
   decodeSequenceWithCompression,
-} from "$lib/shared/navigation/services/sequence-encoder";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
 import {
   buildSequenceSeo,
   cleanSequenceText,
   toPositiveInteger,
   type SequenceRouteMeta,
 } from "./sequence-seo";
-import { readScanSequenceCode } from "$lib/shared/qr/services/scan-sequence-handoff";
+import { readScanSequenceCode } from "#lib/shared/qr/services/scan-sequence-handoff.js";
 import {
   emptySequenceMeta,
   firstTrustedThumbnail,
   loadPublishedMeta,
 } from "./published-meta";
+import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
 
 function createUnverifiedMeta(url: URL): SequenceRouteMeta {
   return {
@@ -47,7 +48,7 @@ function buildInlineMeta(
   };
 }
 
-export const load: PageServerLoad = async ({ params, url, platform }) => {
+export const load: PageServerLoad = async ({ params, url }) => {
   const fallback = createUnverifiedMeta(url);
   let meta = fallback;
 
@@ -87,7 +88,7 @@ export const load: PageServerLoad = async ({ params, url, platform }) => {
       meta = await loadPublishedMeta(
         parsed.legacyId,
         fallback,
-        platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON
+        workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON
       );
     }
   } catch {

@@ -4,14 +4,14 @@
  * Duration is a beat-level property (not per-color like turns).
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ICreateModuleState } from "../../types/create-module-types";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { getStepDataFromState, START_PLACEMENT_BEAT_NUMBER } from "./step-data-helpers";
 import {
   withLoopCertificateCleared,
   invalidateLoopDisplayCache,
-} from "$lib/shared/create/services/loop-certificate";
+} from "#lib/shared/create/services/loop-certificate.js";
 
 const logger = createComponentLogger("DurationHandler");
 

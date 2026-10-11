@@ -9,11 +9,11 @@
  * by tracking pointer position and using a generous movement threshold.
  */
 
-import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-import { attachRipple } from "$lib/shared/application/services/ripple-effect";
-import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-import type { DeviceDetector } from '$lib/shared/device/services/device-detector'
-import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+import { attachRipple } from "#lib/shared/application/services/ripple-effect.js";
+import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+import type { DeviceDetector } from '#lib/shared/device/services/device-detector.js'
+import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
 
 // Touch tolerance constants
 // 75px is very generous for lazy/casual taps on mobile

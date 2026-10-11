@@ -29,11 +29,11 @@ import {
   TrailEffect,
   DEFAULT_TRAIL_SETTINGS,
   type TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import {
   setCellWide,
   type TipEffectMap,
-} from "$lib/shared/animation-engine/services/tip-effect-resolver";
+} from "#lib/shared/animation-engine/services/tip-effect-resolver.js";
 
 /**
  * Trail settings alone do NOT make trails render. The render loop's

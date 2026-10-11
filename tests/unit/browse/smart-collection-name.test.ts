@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
+import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
 import {
   SMART_COLLECTION_NAME_MAX_LENGTH,
   suggestSmartCollectionName,
-} from "$lib/shared/browse/services/smart-collection-name";
+} from "#lib/shared/browse/services/smart-collection-name.js";
 
 function spec(...labels: string[]): SmartFilterSpec {
   return {

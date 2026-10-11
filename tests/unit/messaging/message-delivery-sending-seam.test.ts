@@ -14,13 +14,13 @@
  * handle, the short-code mint, and the image upload.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ShortCodeManager } from "$lib/shared/qr/services/short-code-manager";
+import type { ShortCodeManager } from "#lib/shared/qr/services/short-code-manager.js";
 import type {
   IMessageImageSender,
   MessageImageSendHandle,
   MessageImageSendRequest,
-} from "$lib/shared/messaging/services/contracts/IMessageImageSender";
-// Relative, not `$test-helpers`: that alias exists only in the browser
+} from "#lib/shared/messaging/services/contracts/IMessageImageSender.js";
+// Relative, not `#test-helpers`: that alias exists only in the browser
 // component config, not in the jsdom unit config.
 import { MemoryDeliveryRepository } from "../../helpers/inbox/memory-delivery-repository";
 
@@ -32,7 +32,7 @@ const mocks = vi.hoisted(() => ({
   toastError: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: async () => ({ name: "firestore" }),
   getFunctionsInstance: async () => {
     if (mocks.functionsGate) await mocks.functionsGate;
@@ -64,7 +64,7 @@ vi.mock("firebase/firestore", () => ({
   Timestamp: { fromDate: vi.fn(), now: vi.fn() },
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     get user() {
       return mocks.currentUid
@@ -77,12 +77,12 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   getEffectiveUserId: () => mocks.currentUid,
 }));
 
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   userPreviewState: { isActive: false, data: {} },
   isPreviewReadOnly: () => false,
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: {
     info: vi.fn(),
     success: vi.fn(),
@@ -91,9 +91,9 @@ vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
   },
 }));
 
-import { messagingService } from "$lib/shared/messaging/services/messenger";
-import { MessageDeliveryCoordinator } from "$lib/shared/inbox/services/implementations/MessageDeliveryCoordinator";
-import { createMessageDeliveryState } from "$lib/shared/inbox/state/message-delivery-state.svelte";
+import { messagingService } from "#lib/shared/messaging/services/messenger.js";
+import { MessageDeliveryCoordinator } from "#lib/shared/inbox/services/implementations/MessageDeliveryCoordinator.js";
+import { createMessageDeliveryState } from "#lib/shared/inbox/state/message-delivery-state.svelte.js";
 
 /** Deferred short-code mint, the coordinator's first await for a sequence. */
 function createShortCodeDouble() {

@@ -52,7 +52,7 @@ import {
   type UpperBodyStancePlan,
   type UpperBodyStanceTargets,
 } from "./upper-body-stance-planner";
-import type { PerformerReachMeasurements } from "$lib/shared/3d/domain/performer-reach-measurements";
+import type { PerformerReachMeasurements } from "#lib/shared/3d/domain/performer-reach-measurements.js";
 import type { PlaneMode } from "@austencloud/scene-3d";
 
 /** Geometry samples taken per motion step while building the curve. */

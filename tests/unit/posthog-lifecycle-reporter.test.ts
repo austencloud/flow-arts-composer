@@ -9,20 +9,20 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("$lib/shared/auth/services/authed-fetch", () => ({
+vi.mock("#lib/shared/auth/services/authed-fetch.js", () => ({
   authedFetch: mocks.authedFetch,
 }));
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   getCurrentPostHogSessionId: mocks.getSessionId,
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({ auth: mocks.auth }));
+vi.mock("#lib/shared/auth/firebase.js", () => ({ auth: mocks.auth }));
 vi.mock("firebase/auth", () => ({ onAuthStateChanged: vi.fn() }));
 
-import { reportPostHogLifecycleEvent } from "$lib/shared/analytics/services/posthog-lifecycle-reporter";
+import { reportPostHogLifecycleEvent } from "#lib/shared/analytics/services/posthog-lifecycle-reporter.js";
 import {
   readLifecycleOutbox,
   resetLifecycleOutboxForTests,
-} from "$lib/shared/analytics/services/posthog-lifecycle-outbox";
+} from "#lib/shared/analytics/services/posthog-lifecycle-outbox.js";
 
 describe("PostHog lifecycle reporter", () => {
   beforeEach(() => {

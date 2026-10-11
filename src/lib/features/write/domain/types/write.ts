@@ -4,7 +4,7 @@
  * Types for the Act creation and choreography writing features.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /**
  * Sequence placement within an act

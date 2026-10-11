@@ -6,11 +6,11 @@
   Replay re-runs transcripts through the current interpreter to detect regressions.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { VoiceSession, VoiceSessionEvent, ResolutionTier } from "$lib/shared/voice-control/domain/voice-session-types";
-  import type * as VoiceSessionFormatterModule from "$lib/features/voice-sessions/services/voice-session-formatter";
-  import type { VoiceSessionReplayer } from "$lib/features/voice-sessions/services/voice-session-replayer";
-  import type { ReplayResult, ReplayDiffType } from "$lib/features/voice-sessions/domain/replay-types";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { VoiceSession, VoiceSessionEvent, ResolutionTier } from "#lib/shared/voice-control/domain/voice-session-types.js";
+  import type * as VoiceSessionFormatterModule from "#lib/features/voice-sessions/services/voice-session-formatter.js";
+  import type { VoiceSessionReplayer } from "#lib/features/voice-sessions/services/voice-session-replayer.js";
+  import type { ReplayResult, ReplayDiffType } from "#lib/features/voice-sessions/domain/replay-types.js";
 
   let {
     session,

@@ -1,17 +1,17 @@
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import "$lib/shared/landing/styles/public-editorial.css";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import "#lib/shared/landing/styles/public-editorial.css";
   import { onMount, tick } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import GlossaryNav from "./GlossaryNav.svelte";
   import GlossaryTermDetail from "./GlossaryTermDetail.svelte";
   import KineticAtlasOverview from "./KineticAtlasOverview.svelte";
   import LetterCodex from "./LetterCodex.svelte";
   import CodexBoardSwitcher from "./codex-boards/CodexBoardSwitcher.svelte";
   import { readBoard, type BoardKey } from "./codex-boards/board-choice";
-  import { mutateCurrentUrl } from "$lib/shared/navigation/services/url-state";
+  import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
   import {
     matchesGlossaryTerm,
     normalizeGlossarySearchText,
@@ -21,8 +21,8 @@
     writeLetterExplorerRoute,
     type LetterExplorerRouteState,
   } from "./codex-boards/letter-explorer-url";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { PageData } from "../$types";
 
   let { data }: { data: PageData } = $props();

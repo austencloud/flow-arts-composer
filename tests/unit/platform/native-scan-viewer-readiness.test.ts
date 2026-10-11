@@ -12,7 +12,7 @@ import {
   subscribeNativeScanViewerTransition,
   waitForNativeScanLoadingSurfaceReady,
   waitForNativeScanViewerReady,
-} from "$lib/shared/platform/services/native-scan-viewer-readiness";
+} from "#lib/shared/platform/services/native-scan-viewer-readiness.js";
 
 describe("native scan viewer readiness", () => {
   it("waits for the matching viewer card instead of an older open sequence", async () => {

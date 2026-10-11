@@ -9,7 +9,7 @@
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import { growFade } from "#lib/shared/transitions/motion.js";
 
   interface Props {
     /** Stable id: names the storage key and the header/body ids. */

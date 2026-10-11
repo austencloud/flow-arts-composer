@@ -5,11 +5,11 @@ import {
   type RestoredEditorHistory,
 } from "@austencloud/video-editor";
 import type { PostProject } from "@austencloud/video-editor/core";
-import { tkaPlugin } from "$lib/shared/post-studio-plugin";
+import { tkaPlugin } from "#lib/shared/post-studio-plugin/index.js";
 import {
   TakeTimingSchema,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 /**
  * Keeps each post's recent undo history in this tab, so Undo still works

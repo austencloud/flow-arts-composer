@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
+import { inboxState } from "#lib/shared/inbox/state/inbox-state.svelte.js";
 
 // The send picker reads an empty recents list as "no conversations" and
 // focuses the search, so it must be able to tell "none" from "not loaded yet".

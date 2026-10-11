@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
 
 const mocks = vi.hoisted(() => ({
   buildFlowerSequence: vi.fn(),
@@ -9,21 +9,24 @@ const mocks = vi.hoisted(() => ({
   resolveRotationStyleMatrices: vi.fn(),
 }));
 
-vi.mock("$lib/features/lab/vtg-lab/services/build-flower-sequence", () => ({
+vi.mock("#lib/features/lab/vtg-lab/services/build-flower-sequence.js", () => ({
   buildFlowerSequence: mocks.buildFlowerSequence,
 }));
-vi.mock("$lib/features/choreo-card/services/pictograph-letter-lookup", () => ({
-  loadDiamondEdges: mocks.loadDiamondEdges,
-}));
-vi.mock("$lib/shared/shape-matrix/services/flower-archetype", () => ({
+vi.mock(
+  "#lib/features/choreo-card/services/pictograph-letter-lookup.js",
+  () => ({
+    loadDiamondEdges: mocks.loadDiamondEdges,
+  })
+);
+vi.mock("#lib/shared/shape-matrix/services/flower-archetype.js", () => ({
   resolveFlowerArchetype: mocks.resolveFlowerArchetype,
 }));
 vi.mock(
-  "$lib/features/lab/vtg-lab/services/resolve-rotation-style-matrices",
+  "#lib/features/lab/vtg-lab/services/resolve-rotation-style-matrices.js",
   () => ({ resolveRotationStyleMatrices: mocks.resolveRotationStyleMatrices })
 );
 
-import { buildFuseFlowerPath } from "$lib/features/fuse/services/fuse-flower-path-source";
+import { buildFuseFlowerPath } from "#lib/features/fuse/services/fuse-flower-path-source.js";
 
 const flower: Flower = {
   style: "pro",

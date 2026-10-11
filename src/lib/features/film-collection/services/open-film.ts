@@ -1,6 +1,6 @@
 import { goto } from "$app/navigation";
 
-import { savedFilmHref } from "$lib/features/film-director/domain/film-director-link";
+import { savedFilmHref } from "#lib/features/film-director/domain/film-director-link.js";
 
 import type { CollectedFilm } from "../domain/film-collection-types";
 

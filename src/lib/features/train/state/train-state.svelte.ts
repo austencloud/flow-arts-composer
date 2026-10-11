@@ -5,8 +5,8 @@
  * @example
  * ```svelte
  * <script lang="ts">
- *   import { initTrainState, getTrainState } from '$lib/features/train/state';
- *   import { TrainMode } from '$lib/features/train/domain/enums/train-enums';
+ *   import { initTrainState, getTrainState } from '#lib/features/train/state';
+ *   import { TrainMode } from '#lib/features/train/domain/enums/train-enums.js';
  *
  *   // Initialize state in root component
  *   const trainState = initTrainState({ defaultBpm: 120 });
@@ -35,9 +35,9 @@
  * ```
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { DetectionFrame } from "$lib/shared/train/domain/detection-frame";
-import type { PerformanceData } from "$lib/shared/train/domain/performance-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { DetectionFrame } from "#lib/shared/train/domain/detection-frame.js";
+import type { PerformanceData } from "#lib/shared/train/domain/performance-data.js";
 import {
   TrainMode,
   VisualizationMode,

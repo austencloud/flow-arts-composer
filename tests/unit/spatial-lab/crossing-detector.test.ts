@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectCrossing } from "$lib/features/lab/tabs/spatial-lab/services/crossing-detector";
+import { detectCrossing } from "#lib/features/lab/tabs/spatial-lab/services/crossing-detector.js";
 
 describe("detectCrossing", () => {
   it("detects X-shaped crossing", () => {

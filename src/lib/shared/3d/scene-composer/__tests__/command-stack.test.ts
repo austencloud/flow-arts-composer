@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { CommandStack, type Command } from "$lib/shared/history/command-stack.svelte";
+import { CommandStack, type Command } from "#lib/shared/history/command-stack.svelte.js";
 
 // State is tracked in closure variables rather than on `this`. The CommandStack
 // stores commands in `$state([])` arrays, which deep-proxy their contents — so

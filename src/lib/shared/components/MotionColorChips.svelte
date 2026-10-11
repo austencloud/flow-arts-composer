@@ -12,7 +12,7 @@
   - ViewModeToggle (browse toolbar)
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   interface Props {
     showLeft: boolean;
     showRight: boolean;

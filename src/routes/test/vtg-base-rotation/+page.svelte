@@ -8,18 +8,18 @@
    * every effort to static/mandala-rosetta/<effort>/ via the dev write endpoint.
    */
   import { onMount } from "svelte";
-  import { page } from "$app/stores";
+  import { page } from "$app/state";
   import {
     resolveRotationStyleMatrices,
     type RotationStyleMatrix,
-  } from "$lib/features/lab/vtg-lab/services/resolve-rotation-style-matrices";
-  import { TURN_VALUES } from "$lib/features/choreo-card/domain/turn-pattern-parser";
-  import { TND_TURNS_RATIO_MAP } from "$lib/features/choreo-card/domain/tnd-element";
-  import { bakeMandalaClips, type BakeJob } from "$lib/features/lab/vtg-lab/services/bake-mandala-clips";
-  import { EFFORTS, type EffortId } from "$lib/shared/effort/domain/effort-types";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import SeamlessLoopVideo from "$lib/features/lab/vtg-lab/components/SeamlessLoopVideo.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/features/lab/vtg-lab/services/resolve-rotation-style-matrices.js";
+  import { TURN_VALUES } from "#lib/features/choreo-card/domain/turn-pattern-parser.js";
+  import { TND_TURNS_RATIO_MAP } from "#lib/features/choreo-card/domain/tnd-element.js";
+  import { bakeMandalaClips, type BakeJob } from "#lib/features/lab/vtg-lab/services/bake-mandala-clips.js";
+  import { EFFORTS, type EffortId } from "#lib/shared/effort/domain/effort-types.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import SeamlessLoopVideo from "#lib/features/lab/vtg-lab/components/SeamlessLoopVideo.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   type Style = "iso" | "antispin";
   type PathShape = "arc" | "linear" | "concave";
@@ -64,9 +64,9 @@
   // Optional ?efforts=elastic,bounce filters which effort sets to (re)bake — keeps
   // a single Chrome run well under the per-instance WebGL-context ceiling when
   // resuming a partial bake.
-  let bakeMode = $derived($page.url.searchParams.has("bake"));
+  let bakeMode = $derived(page.url.searchParams.has("bake"));
   let bakeEfforts = $derived(
-    ($page.url.searchParams.get("efforts") || "")
+    (page.url.searchParams.get("efforts") || "")
       .split(",").map((s) => s.trim()).filter(Boolean),
   );
   let baking = $state(false);
@@ -77,7 +77,7 @@
   // continuous mandala curve), which flashes at every MSE loop seam. Decode→drop
   // frame 0→re-mux fixes the seam without re-rendering (no WebGL → no crash).
   // ?efforts=… filters which effort sets to repair, same as bake.
-  let transcodeMode = $derived($page.url.searchParams.has("transcode"));
+  let transcodeMode = $derived(page.url.searchParams.has("transcode"));
   let transcoding = $state(false);
   let transcodeStatus = $state("");
 
@@ -89,7 +89,7 @@
       ? EFFORTS.filter((e) => bakeEfforts.includes(e.id))
       : EFFORTS).map((e) => e.id);
     const { rotateClipToBestSeam } = await import(
-      "$lib/features/lab/vtg-lab/services/transcode-mandala-clips"
+      "#lib/features/lab/vtg-lab/services/transcode-mandala-clips.js"
     );
     transcoding = true;
     let done = 0;
@@ -215,7 +215,7 @@
 
   {#if err}<p class="err">{err}</p>{/if}
 
-  {#if !bakeMode && !transcodeMode && !$page.url.searchParams.has("inspect")}
+  {#if !bakeMode && !transcodeMode && !page.url.searchParams.has("inspect")}
   <div class="boards">
   {#each SPINS as spin}
     <section>

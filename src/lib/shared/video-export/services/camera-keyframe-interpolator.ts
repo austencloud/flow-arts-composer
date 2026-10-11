@@ -1,4 +1,4 @@
-import type { CameraKeyframe } from "$lib/shared/video-export/domain/camera-keyframe";
+import type { CameraKeyframe } from "#lib/shared/video-export/domain/camera-keyframe.js";
 import type { InterpolatedCamera } from "./types";
 
 function lerpVec3(

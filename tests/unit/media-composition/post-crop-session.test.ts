@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   PostVideoItem,
 } from "@austencloud/video-editor/core";
 import { editItemKeyframes, setKeyframe } from "@austencloud/video-editor/core";
 import { englishString } from "@austencloud/video-editor/strings";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 import { isCovered, createCropSession } from "@austencloud/video-editor/ui";
 
 function sequence(): SequenceData {

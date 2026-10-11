@@ -1,7 +1,7 @@
 import {
   MAX_IMAGE_BYTES,
   isAllowedImageType,
-} from "$lib/shared/inbox/domain/image-attachment-limits";
+} from "#lib/shared/inbox/domain/image-attachment-limits.js";
 import type {
   IntakeProblem,
   SharedFileDescriptor,

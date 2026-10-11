@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import type { Product } from "../domain/models/product";
 import type { LoopConfig } from "../domain/loop-config";
 import { trackCheckoutStarted } from "../analytics/shop-funnel";

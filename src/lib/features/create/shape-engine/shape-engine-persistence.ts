@@ -6,11 +6,11 @@
  * Shape Engine lived in the Toys module until 2026-09-18. The legacy key is
  * read once so nobody loses their settings, then dropped on the next persist.
  */
-import { SHAPE_MATRIX_LEVELS } from "$lib/shared/shape-matrix/app/shape-matrix-levels";
+import { SHAPE_MATRIX_LEVELS } from "#lib/shared/shape-matrix/app/shape-matrix-levels.js";
 import type {
   ShapeMatrixAppPersistence,
   ShapeMatrixAppSnapshot,
-} from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
+} from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
 
 export const SHAPE_ENGINE_STORAGE_KEY = "create-shape-engine-state-v1";
 export const SHAPE_ENGINE_LEGACY_STORAGE_KEY = "toys-shape-matrix-state-v1";

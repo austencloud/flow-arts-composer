@@ -3,8 +3,8 @@
  * joined cells: same stamped data, therefore the same cache keys the card reads.
  */
 import { describe, it, expect } from "vitest";
-import { CellPreWarmer } from "$lib/shared/sequence-viewer/services/cell-pre-warmer";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { CellPreWarmer } from "#lib/shared/sequence-viewer/services/cell-pre-warmer.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 type Tasks = { pictographData: { conjoined?: unknown }; cacheKey: string }[];
 

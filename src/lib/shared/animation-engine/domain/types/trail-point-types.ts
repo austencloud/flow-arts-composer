@@ -12,10 +12,10 @@
 import {
   getTipPoints,
   type TipPoint,
-} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
-import { basePropTypeOfRenderKey } from "$lib/shared/pictograph/prop/domain/prop-look";
-import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import { propTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
+import { basePropTypeOfRenderKey } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 /**
  * The prop center in prop-local coordinates. A custom source at (0,0) resolves

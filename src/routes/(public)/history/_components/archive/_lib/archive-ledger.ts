@@ -2,7 +2,7 @@ import {
 	NOTATION_CATALOG,
 	type CatalogEntry,
 	type CatalogSource,
-} from "$lib/shared/notation/notation-catalog";
+} from "#lib/shared/notation/notation-catalog.js";
 
 export type ArchiveLaneId = "notation" | "languages" | "teaching" | "research";
 

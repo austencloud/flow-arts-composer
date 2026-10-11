@@ -6,7 +6,7 @@ import {
   describeRejection,
   nameableCityFromEdge,
   type PlaceAddressComponent,
-} from "$lib/features/community/domain/city-canonicalization";
+} from "#lib/features/community/domain/city-canonicalization.js";
 
 function component(
   types: string[],

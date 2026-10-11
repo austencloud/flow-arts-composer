@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-  import { authedFetch } from "$lib/shared/auth/services/authed-fetch";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+  import { authedFetch } from "#lib/shared/auth/services/authed-fetch.js";
   import {
     parseSeoHistoryRows,
     seoDashboardSnapshotSchema,
     type SeoDashboardSnapshot,
     type SeoHistoryPoint,
-  } from "$lib/features/admin/domain/models/seo-dashboard-model";
+  } from "#lib/features/admin/domain/models/seo-dashboard-model.js";
   import SeoEvidenceGates from "./SeoEvidenceGates.svelte";
   import SeoExperimentClock from "./SeoExperimentClock.svelte";
   import SeoHistoryChart from "./SeoHistoryChart.svelte";

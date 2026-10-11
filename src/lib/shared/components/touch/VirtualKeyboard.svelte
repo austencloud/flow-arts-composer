@@ -8,12 +8,12 @@
   - Header-based management (Clear / Display / Close)
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import { fly, fade } from "svelte/transition";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import {
     getLastLetter,
     getValidNextLetters,

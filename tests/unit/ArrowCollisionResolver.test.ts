@@ -9,10 +9,10 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { resolveCollisions } from "$lib/features/choreo-card/services/arrow-collision-resolver";
-import { buildFromTrace } from "$lib/features/choreo-card/services/hand-path-data-builder";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { HandPathTrace } from "$lib/features/choreo-card/services/contracts/IHandPathDataBuilder";
+import { resolveCollisions } from "#lib/features/choreo-card/services/arrow-collision-resolver.js";
+import { buildFromTrace } from "#lib/features/choreo-card/services/hand-path-data-builder.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { HandPathTrace } from "#lib/features/choreo-card/services/contracts/IHandPathDataBuilder";
 
 const { N, E, S, W } = {
   N: GridLocation.NORTH,

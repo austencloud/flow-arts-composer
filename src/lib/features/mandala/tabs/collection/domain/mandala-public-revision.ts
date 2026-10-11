@@ -1,10 +1,10 @@
-import { canonicalDigest } from "$lib/shared/foundation/utils/canonical-digest";
+import { canonicalDigest } from "#lib/shared/foundation/utils/canonical-digest.js";
 import {
   createArtifactRevisionRef,
   type ArtifactRevisionRef,
-} from "$lib/shared/artifact-revisions/domain/artifact-revision";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
+} from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { MandalaPathShape } from "#lib/shared/mandala/domain/mandala-types.js";
 import type { CollectedMandala } from "./mandala-collection-types";
 
 /**

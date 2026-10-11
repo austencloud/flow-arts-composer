@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { buildActSequence } from "$lib/features/write/services/sheet-act-sequence";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { buildActSequence } from "#lib/features/write/services/sheet-act-sequence.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 type FakeStep = { letter: string; start: string; end: string };
 function seq(

@@ -14,7 +14,7 @@
   import { cubicOut } from "svelte/easing";
   import type { Snippet } from "svelte";
   import { onMount, tick } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     title: string;

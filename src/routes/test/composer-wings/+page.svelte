@@ -22,16 +22,16 @@
   // pictograph graph (incl. special-arrow-placement -> zod) through the dev SSR
   // module runner, which throws "Cannot find module 'zod'". Lazy client import
   // is how /composer avoids the same trap.
-  import "$lib/shared/landing/styles/public-editorial.css";
+  import "#lib/shared/landing/styles/public-editorial.css";
   import type { Component } from "svelte";
   import { onMount } from "svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
   import FanSkeleton from "../../(public)/composer/_components/FanSkeleton.svelte";
   import PlayWithItSkeleton from "../../landing/components/PlayWithItSkeleton.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { generatePerVisitDemo } from "$lib/shared/landing/data/per-visit-demo";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { generatePerVisitDemo } from "#lib/shared/landing/data/per-visit-demo.js";
 
   // The five-wing section components, loaded once each slot scrolls near.
   // Sections graduated into the live composer route (2026-07-20); the harness

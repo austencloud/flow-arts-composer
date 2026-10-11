@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import {
   clearLoopDisplayCache,
   resolveLoopDisplay,
-} from "$lib/features/loop-labeler/services/loop-display-resolver";
-import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/features/loop-labeler/services/loop-display-resolver.js";
+import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 const workerSource = readFileSync(
   resolve(process.cwd(), "src/lib/shared/render/workers/composition.worker.ts"),
@@ -15,7 +15,7 @@ const workerSource = readFileSync(
 describe("composition worker LOOP display registration", () => {
   it("boots the canonical resolver before composing card headers", () => {
     expect(workerSource).toContain(
-      'import("$lib/shared/composition-root/worker-loop-display-resolver")'
+      'import("#lib/shared/composition-root/worker-loop-display-resolver.js")'
     );
     expect(workerSource).toContain("registerWorkerLoopDisplayResolver()");
   });

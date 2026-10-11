@@ -1,18 +1,18 @@
 import { onDestroy } from "svelte";
-import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
-import { calculateDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
+import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
+import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
 import {
   DEFAULT_DIFFICULTY_STYLE,
   DIFFICULTY_LEVELS,
-} from "$lib/shared/config/difficulty-styles";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/config/difficulty-styles.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   tryGetLoopDisplayResolver,
   type LoopDisplay,
-} from "$lib/shared/loop-labeler/get-loop-display-resolver";
-import type { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+} from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+import type { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
 
 export interface ChoreoCardDisplayDeps {
   readonly sequence: SequenceData;

@@ -7,11 +7,11 @@
    * button. This route mounts the same component against a fake session so all
    * four states can be judged at every viewport without either.
    */
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import CorpusSessionScreen from "$lib/features/lab/pronunciation-recorder/components/CorpusSessionScreen.svelte";
-  import type { ReadState } from "$lib/features/lab/pronunciation-recorder/state/corpus-session-state.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import CorpusSessionScreen from "#lib/features/lab/pronunciation-recorder/components/CorpusSessionScreen.svelte";
+  import type { ReadState } from "#lib/features/lab/pronunciation-recorder/state/corpus-session-state.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 
   type State =
     | "idle"

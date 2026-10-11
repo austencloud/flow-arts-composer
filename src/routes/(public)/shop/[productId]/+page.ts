@@ -1,6 +1,6 @@
 import type { PageLoad } from "./$types";
-import { browser } from "$app/environment";
-import type { Product } from "$lib/features/store/domain/models/product";
+import { browser } from "$app/env";
+import type { Product } from "#lib/features/store/domain/models/product.js";
 
 export const prerender = false;
 export const ssr = true;
@@ -16,7 +16,7 @@ export const load: PageLoad = async ({ params, data }) => {
   const serverProduct = (data?.serverProduct ?? null) as Product | null;
   if (browser) {
     const { getProductLoader } = await import(
-      "$lib/features/store/get-product-loader"
+      "#lib/features/store/get-product-loader.js"
     );
     const product = await getProductLoader().loadProduct(params.productId);
     return { product: product ?? serverProduct, productId: params.productId };

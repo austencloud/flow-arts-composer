@@ -6,8 +6,8 @@
   Tapping opens the LOOP completion popover.
 -->
 <script lang="ts">
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import { LOOP_COMPONENT_MAP } from "$lib/features/create/generate/shared/domain/constants/loop-constants";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { LOOP_COMPONENT_MAP } from "#lib/features/create/generate/shared/domain/constants/loop-constants.js";
 
   interface Props {
     /** Components that are active (sequence already satisfies) */

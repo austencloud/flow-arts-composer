@@ -27,18 +27,18 @@
 import {
   GridPlacement,
   GridLocation,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   RotationDirection,
   Orientation,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createPictographData } from "$lib/shared/pictograph/shared/domain/factories/create-pictograph-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createPictographData } from "#lib/shared/pictograph/shared/domain/factories/create-pictograph-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
 
 export const TURNS_PER_BEAT = 0.25;
 export const ARC_DEGREES = 135;

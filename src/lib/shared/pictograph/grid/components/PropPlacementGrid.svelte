@@ -8,36 +8,36 @@
   import { untrack } from "svelte";
   import type { GridJoin } from "@tka/tka-types";
   import { getGridJoinLayout, toJoinedHandPoint } from "@tka/render-core";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     GridLocation,
     GridMode,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PropPlacementChange } from "$lib/shared/pictograph/grid/domain/prop-placement";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PropPlacementChange } from "#lib/shared/pictograph/grid/domain/prop-placement.js";
   import {
     getPlacementGridPoints,
     type PlacementGridPoint,
-  } from "$lib/shared/pictograph/grid/services/placement-grid-points";
+  } from "#lib/shared/pictograph/grid/services/placement-grid-points.js";
   import {
     buildPlacementPictographData,
     buildPlacementPrompt,
     computeGammaGuideArc,
     getPlacementGuideCoordinates,
-  } from "$lib/shared/pictograph/grid/services/prop-placement-view-model";
-  import { createPropPlacementAimState } from "$lib/shared/pictograph/grid/state/prop-placement-aim-state.svelte";
+  } from "#lib/shared/pictograph/grid/services/prop-placement-view-model.js";
+  import { createPropPlacementAimState } from "#lib/shared/pictograph/grid/state/prop-placement-aim-state.svelte.js";
   import {
     createPropPlacementMotionState,
     type PlacementMotionMove,
-  } from "$lib/shared/pictograph/grid/state/prop-placement-motion.svelte";
-  import { createPropPlacementState } from "$lib/shared/pictograph/grid/state/prop-placement-state.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/pictograph/grid/state/prop-placement-motion.svelte.js";
+  import { createPropPlacementState } from "#lib/shared/pictograph/grid/state/prop-placement-state.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     HandSide,
     Orientation,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import PropPlacementInteractionOverlay from "./PropPlacementInteractionOverlay.svelte";
 
   interface Props {

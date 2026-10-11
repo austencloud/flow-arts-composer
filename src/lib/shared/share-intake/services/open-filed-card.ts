@@ -1,9 +1,9 @@
-import { getLoopDetector } from "$lib/shared/create/get-loop-detector";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
-import { openSequenceOverlay } from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { getLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
+import { openSequenceOverlay } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 /**
  * Trace 1's terminal state: the user looking at the sequence they shared.

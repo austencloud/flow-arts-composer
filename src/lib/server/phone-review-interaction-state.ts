@@ -2,7 +2,7 @@ import {
   emptyPhoneReviewInteractionState,
   parsePhoneReviewInteractionState,
   type PhoneReviewInteractionState,
-} from "$lib/shared/dev/phone-review-interactions";
+} from "#lib/shared/dev/phone-review-interactions.js";
 
 async function gitCommonDirectory(): Promise<string> {
   const { execFile } = await import("node:child_process");

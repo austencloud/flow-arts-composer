@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { EffectSystem } from "$lib/shared/animation-engine/services/managers/effect-system";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { EffectSystem } from "#lib/shared/animation-engine/services/managers/effect-system.js";
 
 describe("EffectSystem fire brightness", () => {
   it("copies semantic brightness into the 2D renderer config during initialization", () => {

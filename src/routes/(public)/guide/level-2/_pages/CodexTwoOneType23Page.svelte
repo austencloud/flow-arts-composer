@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Codex 2/1 - Type 2/3 - Level 2 body page 30 (manifest `codex-2-1-t23`), faithful
    * to old p30. p21 split-column layout with 2 turns on the high slot and 1 on the

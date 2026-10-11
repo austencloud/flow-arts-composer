@@ -73,7 +73,7 @@ vi.mock("firebase/auth", () => ({
 // The authenticator's static `auth` export + the lazy getAuthInstance both come
 // from the HMR-heavy firebase module. Replace with a controllable fake.
 const authRef = vi.hoisted(() => ({ current: { currentUser: null as any } }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: authRef.current,
   getAuthInstance: async () => authRef.current,
   getStorageInstance: async () => ({}),
@@ -87,7 +87,7 @@ const upgradeRef = vi.hoisted(() => ({
   captureAnonymousDrafts: vi.fn(async () => []),
   notifyUpgradeSignup: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/services/anonymous-upgrade", () => ({
+vi.mock("#lib/shared/auth/services/anonymous-upgrade.js", () => ({
   upgradeAnonymousWithGoogleCredential:
     upgradeRef.upgradeAnonymousWithGoogleCredential,
   upgradeAnonymousWithFacebook: upgradeRef.upgradeAnonymousWithFacebook,
@@ -96,16 +96,16 @@ vi.mock("$lib/shared/auth/services/anonymous-upgrade", () => ({
 }));
 
 const promptRef = vi.hoisted(() => ({ promptAnonymousImport: vi.fn() }));
-vi.mock("$lib/shared/auth/state/anonymous-import-prompt.svelte", () => ({
+vi.mock("#lib/shared/auth/state/anonymous-import-prompt.svelte.js", () => ({
   promptAnonymousImport: promptRef.promptAnonymousImport,
 }));
 
-vi.mock("$lib/shared/auth/services/instagram-auth", () => ({
+vi.mock("#lib/shared/auth/services/instagram-auth.js", () => ({
   authenticateWithInstagram: vi.fn(),
   disconnectInstagramAccount: vi.fn(),
 }));
 
-import { signInWithGoogleCredential } from "$lib/shared/auth/services/authenticator";
+import { signInWithGoogleCredential } from "#lib/shared/auth/services/authenticator.js";
 
 beforeEach(() => {
   vi.clearAllMocks();

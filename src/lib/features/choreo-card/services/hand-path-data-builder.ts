@@ -17,20 +17,20 @@
  * is derived from these core fields at creation time via createMotionData defaults.
  */
 
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   HandSide,
   HandPath,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { HandPathTrace, HandSkew } from "./types";
 
 // The 8 compass points in clockwise order. Any step from point[i] to point[i+1]
@@ -149,6 +149,24 @@ export function buildFromHandPathId(
   }
 
   return buildFromTrace(trace);
+}
+
+/**
+ * The hand-path ID of a sequence's actual steps: each hand's start location,
+ * then every end location. The two hands are sorted, the same dedup order the
+ * stored `metadata.handPathId` uses, so sequences that differ only in props,
+ * turns, or which hand leads share one ID. Computed from the steps, it stays
+ * right after a transform or a grid change that leaves stored metadata stale.
+ */
+export function handPathIdFor(sequence: SequenceData): string {
+  const steps = sequence.steps;
+  if (steps.length === 0) return "";
+  const trace = (hand: "left" | "right") =>
+    [
+      steps[0]!.motions[hand].startLocation,
+      ...steps.map((step) => step.motions[hand].endLocation),
+    ].join("→");
+  return [trace("left"), trace("right")].sort().join("|");
 }
 
 // ============================================================================

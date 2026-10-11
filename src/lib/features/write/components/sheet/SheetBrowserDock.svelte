@@ -17,18 +17,18 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { dockSlide } from "$lib/shared/transitions/dock-slide";
-  import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
-  import GalleryFilterSheet from "$lib/features/browse/gallery-home/GalleryFilterSheet.svelte";
-  import CollectionChipsRow from "$lib/features/library/components/collection-picker/CollectionChipsRow.svelte";
-  import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
-  import { getCollectionSequences } from "$lib/shared/library/services/collection-manager";
-  import { getUserCollectionSequences } from "$lib/features/library/services/public-collection-loader";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
-  import { communityCollectionsState } from "$lib/features/browse/collections/state/community-collections-state.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { dockSlide } from "#lib/shared/transitions/dock-slide.js";
+  import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
+  import GalleryFilterSheet from "#lib/features/browse/gallery-home/GalleryFilterSheet.svelte";
+  import CollectionChipsRow from "#lib/features/library/components/collection-picker/CollectionChipsRow.svelte";
+  import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
+  import { getCollectionSequences } from "#lib/shared/library/services/collection-manager.js";
+  import { getUserCollectionSequences } from "#lib/features/library/services/public-collection-loader.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+  import { communityCollectionsState } from "#lib/features/browse/collections/state/community-collections-state.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { ResolveOutcome } from "../../services/sheet-sequence-resolver";
   import { getChoreoSheetContext } from "../../state/choreo-sheet-state.svelte";
 

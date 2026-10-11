@@ -1,24 +1,24 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     GridLocation,
     GridMode,
     GridPlacement,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     MotionType,
     RotationDirection,
     Orientation,
     HandSide,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     floatClockwiseHandpathMap,
     floatCounterClockwiseHandpathMap,
-  } from "$lib/shared/pictograph/arrow/positioning/calculation/config/float-rotation-maps";
+  } from "#lib/shared/pictograph/arrow/positioning/calculation/config/float-rotation-maps.js";
 
   type Loc = (typeof GridLocation)[keyof typeof GridLocation];
   type Handpath = "cw" | "ccw";

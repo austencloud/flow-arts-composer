@@ -5,7 +5,7 @@
  * Festivals live at festivals/{festivalId}.
  */
 
-import { firestoreGet, firestoreSet, firestoreDelete } from "$lib/shared/firestore";
+import { firestoreGet, firestoreSet, firestoreDelete } from "#lib/shared/firestore/index.js";
 import { FestivalSchema } from "../domain/models/festival-schemas";
 import type { Festival } from "../domain/models/festival";
 

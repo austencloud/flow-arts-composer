@@ -14,8 +14,8 @@
   import RetroButton from "../../primitives/RetroButton.svelte";
   import RetroStatusBar from "../../primitives/RetroStatusBar.svelte";
   import { RETRO_ICONS } from "../../rendering/retro-icons";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
   import { desktopState } from "../../../state/desktop-state.svelte";
 
   /* Props                                                               */

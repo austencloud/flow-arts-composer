@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+  import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
   import type { EffortTimeline, EffortPhrase } from "../domain/effort-timeline-types";
   import { createEffortPhrase, insertPhrase } from "../domain/effort-timeline-types";
   import PhraseRegion from "./PhraseRegion.svelte";

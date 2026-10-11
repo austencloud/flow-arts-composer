@@ -1,24 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureWhenReady: vi.fn(),
 }));
 
-vi.mock("$lib/shared/analytics/analytics-context", () => ({
+vi.mock("#lib/shared/analytics/analytics-context.js", () => ({
   withRoute: (properties: Record<string, unknown>) => ({
     page: "/browse/gallery",
     ...properties,
   }),
 }));
 
-import { captureWhenReady } from "$lib/shared/analytics/services/posthog";
+import { captureWhenReady } from "#lib/shared/analytics/services/posthog.js";
 import {
   trackSequenceRemixStarted,
   trackSequenceViewed,
   trackViewerAction,
   trackViewerSettingChanged,
   trackViewerViewChanged,
-} from "$lib/shared/sequence-viewer/analytics/viewer-events";
+} from "#lib/shared/sequence-viewer/analytics/viewer-events.js";
 
 const context = {
   sequenceId: "sequence-1",

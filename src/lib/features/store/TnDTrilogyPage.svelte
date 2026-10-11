@@ -11,8 +11,8 @@
 -->
 <script lang="ts">
   import "./styles/config-page.css";
-  import * as singleBuyCheckoutCreator from "$lib/features/store/services/single-buy-checkout-creator";
-  import { getProductLoader } from "$lib/features/store/get-product-loader";
+  import * as singleBuyCheckoutCreator from "#lib/features/store/services/single-buy-checkout-creator.js";
+  import { getProductLoader } from "#lib/features/store/get-product-loader.js";
   import { createStoreState } from "./state/store-state.svelte";
   import { setStoreContext } from "./context/store-context";
   import ShopProductShell from "./components/shell/ShopProductShell.svelte";
@@ -22,13 +22,13 @@
   import PreorderPriceNote from "./components/PreorderPriceNote.svelte";
   import { activePriceCents, preorderWindowOpen, formatUsd } from "./domain/preorder-pricing";
   import { deriveCrossSell } from "./domain/catalog-listings";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { TND_ELEMENTS } from "$lib/features/choreo-card/domain/tnd-element";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { TND_ELEMENTS } from "#lib/features/choreo-card/domain/tnd-element.js";
   import { prewarmCovers } from "./services/cover-front-renderer";
   import { DEFAULT_SHOP_PROP } from "./domain/shop-prop-options";
   import { trackPropSelected } from "./analytics/shop-funnel";
   import { trackViewOnceLoaded } from "./analytics/shop-funnel-view.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   // Named `store`, not `state`: a local binding called `state` collides with the
   // $state rune (svelte store_rune_conflict).

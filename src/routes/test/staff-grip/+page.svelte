@@ -23,35 +23,35 @@
   } from "@austencloud/scene-3d";
   import { userProportionsState } from "@austencloud/scene-3d";
   import { page } from "$app/state";
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
   import {
     scenePropDrawnLengthCm,
     scenePropFixedLengthCm,
-  } from "$lib/shared/3d/domain/scene-prop-catalog";
+  } from "#lib/shared/3d/domain/scene-prop-catalog.js";
   import {
     fixedHandDistance,
     largestHandDistance,
     type PerformerHandDistance,
-  } from "$lib/shared/3d/domain/performer-hand-distance";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/3d/domain/performer-hand-distance.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     describeStanceYawTrack,
     stanceYawAngularVelocity,
     type StanceYawTrack,
-  } from "$lib/shared/3d/collision/stance-yaw-track";
+  } from "#lib/shared/3d/collision/stance-yaw-track.js";
   import {
     sampleBodyClearanceTrack,
     type BodyClearanceTrack,
-  } from "$lib/shared/3d/collision/body-clearance";
+  } from "#lib/shared/3d/collision/body-clearance.js";
 
   import type { BackgroundType } from "@austencloud/backgrounds";
   import {
     holdBackground,
     releaseBackground,
-  } from "$lib/shared/background/shared/state/background-hold.svelte";
-  import PanelContent from "$lib/shared/components/panel/PanelContent.svelte";
-  import PanelHeader from "$lib/shared/components/panel/PanelHeader.svelte";
-  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
+  } from "#lib/shared/background/shared/state/background-hold.svelte.js";
+  import PanelContent from "#lib/shared/components/panel/PanelContent.svelte";
+  import PanelHeader from "#lib/shared/components/panel/PanelHeader.svelte";
+  import PanelState from "#lib/shared/components/panel/PanelState.svelte";
 
   import LabTransport from "../_lab-kit/LabTransport.svelte";
   import { labScrubMax, type ScrubMarker } from "../_lab-kit/phase-transport";
@@ -390,7 +390,7 @@
   }
 
   type BackgroundHostComponent =
-    (typeof import("$lib/shared/background/shared/components/BackgroundHost.svelte"))["default"];
+    (typeof import("#lib/shared/background/shared/components/BackgroundHost.svelte"))["default"];
 
   let LiveBackground = $state<BackgroundHostComponent | null>(null);
   let backgroundType = $state<BackgroundType | null>(null);
@@ -410,13 +410,13 @@
     // variables the shared pickers and chips paint with, or the background
     // every module sits on. Reading the device's own saved background keeps
     // the lab in the app's palette and on the app's scene.
-    void import("$lib/shared/settings/utils/background-theme-calculator").then(
+    void import("#lib/shared/settings/utils/background-theme-calculator.js").then(
       ({ ensureThemeApplied, getSavedBackgroundType }) => {
         ensureThemeApplied();
         backgroundType = getSavedBackgroundType();
       }
     );
-    void import("$lib/shared/settings/utils/background-preloader").then(
+    void import("#lib/shared/settings/utils/background-preloader.js").then(
       ({ ensureBackgroundApplied }) => ensureBackgroundApplied()
     );
 
@@ -425,7 +425,7 @@
     // The animated scene is an enhancement: its renderer graph loads after
     // the lab's first frame, the way the marketing shell loads it.
     const frame = requestAnimationFrame(() => {
-      void import("$lib/shared/background/shared/components/BackgroundHost.svelte").then(
+      void import("#lib/shared/background/shared/components/BackgroundHost.svelte").then(
         ({ default: BackgroundHost }) => {
           if (mounted) LiveBackground = BackgroundHost;
         }

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { parsePronunciationManifest } from "$lib/shared/pronunciation/pronunciation-manifest";
+import { parsePronunciationManifest } from "#lib/shared/pronunciation/pronunciation-manifest.js";
 import type {
   PronunciationPosition,
   PronunciationToken,
-} from "$lib/shared/pronunciation/pronunciation-plan";
+} from "#lib/shared/pronunciation/pronunciation-plan.js";
 
 const baseToken: PronunciationToken = {
   path: "a/0f3a.wav",

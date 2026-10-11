@@ -10,8 +10,8 @@
  * Ensures panels are mutually exclusive and handles pin state
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
 const debug = createComponentLogger("SequencePanelState");
 

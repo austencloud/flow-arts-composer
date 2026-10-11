@@ -1,6 +1,6 @@
 <script lang="ts" module>
   import { getLetterImagePath as getPath } from "../utils/letter-image-getter";
-  import { Letter as LetterType } from "$lib/shared/foundation/domain/models/letter";
+  import { Letter as LetterType } from "#lib/shared/foundation/domain/models/letter.js";
 
   // Restore caches from HMR data if available, otherwise create fresh
   const globalDimensionsCache: Map<string, { width: number; height: number }> =
@@ -160,14 +160,14 @@
 
 <script lang="ts">
   import type { PictographData } from "../../shared/domain/models/pictograph-data";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import {
     getLetterImagePath,
     isDashLetter,
   } from "../utils/letter-image-getter";
   import { onMount } from "svelte";
   import Dash from "./Dash.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
   let {
     letter,

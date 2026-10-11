@@ -1,5 +1,5 @@
 import {
-  CylinderGeometry,
+  Mesh,
   type Object3D,
   Quaternion,
   SphereGeometry,
@@ -15,14 +15,19 @@ import {
   isTrackedTip,
   type InkTipSource3D,
 } from "../scene-effects/scene-effect-source-3d";
-import type { Ink3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+import type { Ink3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
+import {
+  InkStrokeGeometry3D,
+  type InkStrokeFrame3D,
+} from "./ink-stroke-geometry-3d";
+import { createInkStrokeMaterial3D } from "./ink-stroke-material-3d";
 
-const SEGMENT_CAPACITY = 4096;
 const DROPLET_CAPACITY = 1024;
 const PATH_CAPACITY = 96;
+const RING_CAPACITY = 4096;
 const UP = new Vector3(0, 1, 0);
 
-interface InkStrokeState {
+interface InkStrokeState extends InkStrokeFrame3D {
   path: BoundedSourcePath3D;
   params: Ink3DParams;
   lastSeen: number;
@@ -32,17 +37,15 @@ interface InkStrokeState {
 }
 
 export class InkRenderer3D {
-  private readonly segmentNormal = new ParticleInstancePool3D({
-    capacity: SEGMENT_CAPACITY,
-    geometry: new CylinderGeometry(1, 1, 1, 8, 1),
-    renderOrder: 104,
-  });
-  private readonly segmentEmissive = new ParticleInstancePool3D({
-    capacity: SEGMENT_CAPACITY,
-    geometry: new CylinderGeometry(1, 1, 1, 8, 1),
-    additive: true,
-    renderOrder: 105,
-  });
+  private readonly stroke = new InkStrokeGeometry3D();
+  private readonly strokeMaterials = [
+    createInkStrokeMaterial3D(),
+    createInkStrokeMaterial3D(true),
+  ];
+  private readonly strokeMesh = new Mesh(
+    this.stroke.geometry,
+    this.strokeMaterials
+  );
   private readonly dropletNormal = new ParticleInstancePool3D({
     capacity: DROPLET_CAPACITY,
     geometry: new SphereGeometry(1, 7, 6),
@@ -72,7 +75,6 @@ export class InkRenderer3D {
   private readonly direction = new Vector3();
   private readonly orientation = new Quaternion();
   private readonly pigment: MutableRgb = { right: 1, green: 1, left: 1 };
-  private readonly edge: MutableRgb = { right: 1, green: 1, left: 1 };
   private readonly writeState: ParticleInstanceWrite = {
     x: 0,
     y: 0,
@@ -88,10 +90,19 @@ export class InkRenderer3D {
   private clock = 0;
   private epoch = 0;
   private cursor = 0;
+  private parent: Object3D | null = null;
+
+  constructor() {
+    this.strokeMesh.frustumCulled = false;
+    this.strokeMesh.renderOrder = 104;
+  }
 
   initialize(parent: Object3D): void {
-    this.segmentNormal.initialize(parent);
-    this.segmentEmissive.initialize(parent);
+    if (this.parent !== parent) {
+      this.parent?.remove(this.strokeMesh);
+      this.parent = parent;
+      parent.add(this.strokeMesh);
+    }
     this.dropletNormal.initialize(parent);
     this.dropletEmissive.initialize(parent);
   }
@@ -112,22 +123,52 @@ export class InkRenderer3D {
           seenEpoch: this.epoch,
           lastSpeed: source.speed,
           dropletAccumulator: 0,
+          headSideX: 0,
+          headSideY: 0,
+          headSideZ: 1,
+          hasHeadSide: false,
         };
         this.states.set(source.sourceId, state);
       }
       state.params = source.params;
       state.lastSeen = this.clock;
       state.seenEpoch = this.epoch;
+      if (state.path.count > 0) {
+        const newest = state.path.indexFromNewest(0);
+        if (
+          Math.hypot(
+            source.position.x - state.path.xAt(newest),
+            source.position.y - state.path.yAt(newest),
+            source.position.z - state.path.zAt(newest)
+          ) > 1.25
+        ) {
+          state.path.clear();
+          state.hasHeadSide = false;
+        }
+      }
       state.path.push(source.position, this.clock, source.speed, 0.018);
       this.emitDroplets(state, source, dt);
       state.lastSpeed = source.speed;
     }
 
-    this.segmentNormal.beginFrame();
-    this.segmentEmissive.beginFrame();
+    this.stroke.beginFrame();
+    let activeCount = 0;
+    for (const state of this.states.values()) {
+      if (state.path.count >= 2) activeCount++;
+    }
+    const ringBudget = Math.max(
+      4,
+      Math.floor(RING_CAPACITY / Math.max(1, activeCount))
+    );
     for (const [sourceId, state] of this.states) {
       state.path.trimBefore(this.clock - state.params.lifetimeSeconds);
-      this.writeStroke(sourceId, state);
+      this.stroke.writeStroke(
+        state.path,
+        state.params,
+        this.clock,
+        ringBudget,
+        state
+      );
       if (
         state.seenEpoch !== this.epoch &&
         state.path.count === 0 &&
@@ -136,119 +177,28 @@ export class InkRenderer3D {
         this.states.delete(sourceId);
       }
     }
-    this.segmentNormal.commit();
-    this.segmentEmissive.commit();
+    this.stroke.commit();
+    this.strokeMesh.visible = this.stroke.drawCount > 0;
     this.updateDroplets(dt);
   }
 
   clear(): void {
     this.states.clear();
     this.active.fill(0);
-    this.segmentNormal.clear();
-    this.segmentEmissive.clear();
+    this.stroke.clear();
+    this.strokeMesh.visible = false;
     this.dropletNormal.clear();
     this.dropletEmissive.clear();
   }
 
   dispose(): void {
-    this.segmentNormal.dispose();
-    this.segmentEmissive.dispose();
+    this.clear();
+    this.parent?.remove(this.strokeMesh);
+    this.parent = null;
+    this.stroke.dispose();
+    for (const material of this.strokeMaterials) material.dispose();
     this.dropletNormal.dispose();
     this.dropletEmissive.dispose();
-  }
-
-  private writeStroke(sourceId: number, state: InkStrokeState): void {
-    const { path, params } = state;
-    if (path.count < 2) return;
-    setRgbFromHex(this.pigment, params.resolvedPalette.pigment);
-    setRgbFromHex(this.edge, params.resolvedPalette.edge);
-    const pool = params.emissiveMaterial
-      ? this.segmentEmissive
-      : this.segmentNormal;
-    const maxSegments = Math.min(path.count - 1, params.maxPointsPerTip - 1);
-
-    for (let offset = 0; offset < maxSegments; offset++) {
-      const newer = path.indexFromNewest(offset);
-      const older = path.indexFromNewest(offset + 1);
-      const age = this.clock - path.birthAt(newer);
-      const life = Math.min(1, age / params.lifetimeSeconds);
-      const speedScale = Math.min(
-        1,
-        path.speedAt(newer) / params.motionReferenceSpeed
-      );
-      const breakup = params.viscosity * speedScale;
-      const hash = Math.abs(Math.sin(sourceId * 12.9898 + offset * 78.233));
-      if (breakup > 0.35 && hash < (breakup - 0.35) * 0.32) continue;
-
-      const radius =
-        (params.strokeWidthMaxWorld +
-          (params.strokeWidthMinWorld - params.strokeWidthMaxWorld) *
-            speedScale) *
-        (0.45 + params.intensity * 0.55);
-      const alpha =
-        params.opacityMax *
-        params.intensity *
-        Math.pow(1 - life, params.resolvedPalette.watercolor ? 1.45 : 0.7);
-      this.writeSegment(
-        pool,
-        path.xAt(older),
-        path.yAt(older),
-        path.zAt(older),
-        path.xAt(newer),
-        path.yAt(newer),
-        path.zAt(newer),
-        radius * 1.34,
-        this.edge,
-        alpha * 0.32
-      );
-      this.writeSegment(
-        pool,
-        path.xAt(older),
-        path.yAt(older),
-        path.zAt(older),
-        path.xAt(newer),
-        path.yAt(newer),
-        path.zAt(newer),
-        radius,
-        this.pigment,
-        alpha
-      );
-    }
-  }
-
-  private writeSegment(
-    pool: ParticleInstancePool3D,
-    ax: number,
-    ay: number,
-    az: number,
-    bx: number,
-    by: number,
-    bz: number,
-    radius: number,
-    color: MutableRgb,
-    alpha: number
-  ): void {
-    this.direction.set(bx - ax, by - ay, bz - az);
-    const length = this.direction.length();
-    if (length < 1e-5 || alpha < 0.004) return;
-    this.direction.multiplyScalar(1 / length);
-    this.orientation.setFromUnitVectors(UP, this.direction);
-    const write = this.writeState;
-    write.x = (ax + bx) * 0.5;
-    write.y = (ay + by) * 0.5;
-    write.z = (az + bz) * 0.5;
-    write.scaleX = radius;
-    write.scaleY = length;
-    write.scaleZ = radius;
-    write.quaternionX = this.orientation.x;
-    write.quaternionY = this.orientation.y;
-    write.quaternionZ = this.orientation.z;
-    write.quaternionW = this.orientation.w;
-    write.right = color.right;
-    write.green = color.green;
-    write.left = color.left;
-    write.alpha = alpha;
-    pool.write(write);
   }
 
   private emitDroplets(
@@ -270,21 +220,23 @@ export class InkRenderer3D {
     while (state.dropletAccumulator >= 1) {
       const slot = this.takeDropletSlot();
       if (slot < 0) return;
-      const spread = 0.18 + params.splatterIntensity * 0.75;
+      const spread = 0.08 + params.splatterIntensity * 0.28;
       this.active[slot] = 1;
       this.x[slot] = source.position.x;
       this.y[slot] = source.position.y;
       this.z[slot] = source.position.z;
-      this.vx[slot] = source.velocity.x * 0.22 + (Math.random() - 0.5) * spread;
+      this.vx[slot] = source.velocity.x * 0.16 + (Math.random() - 0.5) * spread;
       this.vy[slot] =
-        source.velocity.y * 0.22 + (Math.random() - 0.25) * spread;
-      this.vz[slot] = source.velocity.z * 0.22 + (Math.random() - 0.5) * spread;
+        source.velocity.y * 0.16 + (Math.random() - 0.25) * spread;
+      this.vz[slot] = source.velocity.z * 0.16 + (Math.random() - 0.5) * spread;
       this.age[slot] = 0;
       this.lifetime[slot] = 0.45 + Math.random() * 0.7;
-      this.size[slot] =
+      this.size[slot] = Math.min(
+        0.017,
         params.strokeWidthMinWorld *
-        (0.8 + Math.random() * 2.6) *
-        (0.5 + params.intensity * 0.5);
+          (0.12 + Math.random() * 0.28) *
+          (0.5 + params.intensity * 0.5)
+      );
       setRgbFromHex(this.pigment, params.resolvedPalette.splatterTint);
       this.right[slot] = this.pigment.right;
       this.green[slot] = this.pigment.green;
@@ -313,13 +265,19 @@ export class InkRenderer3D {
       write.x = this.x[index]!;
       write.y = this.y[index]!;
       write.z = this.z[index]!;
-      write.scaleX = this.size[index]!;
-      write.scaleY = this.size[index]!;
-      write.scaleZ = this.size[index]!;
-      write.quaternionX = 0;
-      write.quaternionY = 0;
-      write.quaternionZ = 0;
-      write.quaternionW = 1;
+      this.direction.set(this.vx[index]!, this.vy[index]!, this.vz[index]!);
+      const speed = this.direction.length();
+      if (speed > 1e-5) {
+        this.direction.multiplyScalar(1 / speed);
+        this.orientation.setFromUnitVectors(UP, this.direction);
+      } else this.orientation.identity();
+      write.scaleX = this.size[index]! * 0.64;
+      write.scaleY = this.size[index]! * Math.min(2.6, 1.3 + speed * 0.7);
+      write.scaleZ = this.size[index]! * 0.64;
+      write.quaternionX = this.orientation.x;
+      write.quaternionY = this.orientation.y;
+      write.quaternionZ = this.orientation.z;
+      write.quaternionW = this.orientation.w;
       write.right = this.right[index]!;
       write.green = this.green[index]!;
       write.left = this.left[index]!;

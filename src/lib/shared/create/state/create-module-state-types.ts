@@ -6,10 +6,10 @@
  * The actual implementations in features/create satisfy these interfaces.
  */
 
-import type { UndoOperationType } from "$lib/shared/create/domain/undo-operation-types";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { UndoOperationType } from "#lib/shared/create/domain/undo-operation-types.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 /**
  * SequenceState interface covering what shared/ consumers access.

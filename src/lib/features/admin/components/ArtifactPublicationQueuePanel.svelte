@@ -7,20 +7,20 @@
   publications and take down anything that breaks the rules.
 -->
 <script lang="ts">
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { onMount } from "svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
-  import ModalFooter from "$lib/shared/foundation/ui/modal/ModalFooter.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import ModalFooter from "#lib/shared/foundation/ui/modal/ModalFooter.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import {
     PUBLIC_ARTIFACT_TYPES,
     publicationRequestId,
     type PublicArtifactEnvelope,
-  } from "$lib/shared/artifact-revisions/domain/public-artifact";
-  import { removePublication } from "$lib/shared/artifact-revisions/services/artifact-publication-review";
-  import { listPublicArtifacts } from "$lib/shared/artifact-revisions/services/public-artifact-loader";
+  } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
+  import { removePublication } from "#lib/shared/artifact-revisions/services/artifact-publication-review.js";
+  import { listPublicArtifacts } from "#lib/shared/artifact-revisions/services/public-artifact-loader.js";
 
   let liveArtifacts = $state<PublicArtifactEnvelope[]>([]);
   let isLoading = $state(true);

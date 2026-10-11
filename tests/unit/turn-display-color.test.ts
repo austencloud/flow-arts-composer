@@ -3,9 +3,9 @@ import {
   BLUE_HEX,
   RED_HEX,
   resolveTurnDisplayColor,
-} from "$lib/shared/pictograph/tka-glyph/services/turn-color-interpreter";
-import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/tka-glyph/services/turn-color-interpreter.js";
+import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 /**
  * A turn number is painted in the same color as the prop and arrow of the hand

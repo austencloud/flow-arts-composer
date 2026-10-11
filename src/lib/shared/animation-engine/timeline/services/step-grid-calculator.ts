@@ -9,8 +9,8 @@ import {
   TIME_SIGNATURES,
   type TimeSignatureKey,
   isCompoundMeter,
-} from "$lib/shared/foundation/domain/models/time-signature";
-import type { TimeSeconds } from "$lib/shared/animation-engine/domain/timeline-types";
+} from "#lib/shared/foundation/domain/models/time-signature.js";
+import type { TimeSeconds } from "#lib/shared/animation-engine/domain/timeline-types.js";
 
 // Types
 

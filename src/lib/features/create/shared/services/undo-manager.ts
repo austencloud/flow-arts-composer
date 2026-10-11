@@ -7,10 +7,10 @@
  * Uses Svelte 5 runes for reactive state management.
  */
 
-import { browser } from "$app/environment";
-import { runAtBackgroundPriority } from "$lib/shared/foundation/utils/background-scheduling";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ActiveCreateModule } from "$lib/shared/foundation/ui/ui-types";
+import { browser } from "$app/env";
+import { runAtBackgroundPriority } from "#lib/shared/foundation/utils/background-scheduling.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ActiveCreateModule } from "#lib/shared/foundation/ui/ui-types.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
 
 /**

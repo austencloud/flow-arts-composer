@@ -12,38 +12,38 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import StepMapEditor from "$lib/shared/sequence-viewer/components/step-mapping/StepMapEditor.svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import { createHandLabeledCard } from "$lib/shared/sequence-viewer/services/hand-labeled-card.svelte";
-  import SequenceVideos from "$lib/shared/sequence-viewer/components/sequence-videos/SequenceVideos.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
+  import StepMapEditor from "#lib/shared/sequence-viewer/components/step-mapping/StepMapEditor.svelte";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import { createHandLabeledCard } from "#lib/shared/sequence-viewer/services/hand-labeled-card.svelte.js";
+  import SequenceVideos from "#lib/shared/sequence-viewer/components/sequence-videos/SequenceVideos.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { hydrateSequence } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
   import {
     getStepIndexFromVideo,
     passCountFromStepMap,
-  } from "$lib/shared/video-collaboration/utils/step-map-utils";
+  } from "#lib/shared/video-collaboration/utils/step-map-utils.js";
   import {
     createVideoPlayheadBridge,
     setVideoPlayheadContext,
-  } from "$lib/shared/sequence-viewer/context/video-playhead-context";
+  } from "#lib/shared/sequence-viewer/context/video-playhead-context.js";
   import {
     getSequenceVideosStore,
     resetSequenceVideoStores,
-  } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { formatTime } from "$lib/shared/sequence-viewer/utils/format-time";
-  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
-  import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
+  } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { formatTime } from "#lib/shared/sequence-viewer/utils/format-time.js";
+  import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
+  import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
   // The gallery read is a cold Firestore fetch and takes several seconds on a
   // bare route; the meta line shows auth so a slow load is legible as a load.
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type {
     CollaborativeVideo,
     StepMap,
-  } from "$lib/shared/video-collaboration/domain/collaborative-video";
-  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+  } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
 
   /** OmLam-XJ: the published LOOP whose word simplifies to ΩΛ-XJ. */
   const SEQUENCE_WORD = "ΩΛ-XJΩΛ-XJΩΛ-XJΩΛ-XJ";

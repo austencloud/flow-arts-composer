@@ -1,4 +1,4 @@
-import { hashDeckContent } from "$lib/shared/foundation/services/content-hasher";
+import { hashDeckContent } from "#lib/shared/foundation/services/content-hasher.js";
 import type {
   DeckRelease,
   DeckReleaseCard,

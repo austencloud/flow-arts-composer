@@ -14,7 +14,7 @@ import {
 import {
 	getDatabaseInstance,
 	createHMRSafeDatabaseListener
-} from '$lib/shared/auth/firebase';
+} from '#lib/shared/auth/firebase.js';
 import type { SyncRoom, SyncRoomWithId } from '../domain/models/lan-sync-models';
 import { localSyncSessionId } from '../domain/models/lan-sync-models';
 

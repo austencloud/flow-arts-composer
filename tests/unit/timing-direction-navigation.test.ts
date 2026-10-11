@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { navigationMorphs } from "$lib/shared/transitions/navigation-morphs";
+import { navigationMorphs } from "#lib/shared/transitions/navigation-morphs.js";
 import { TIMING_DIRECTION_ARTICLES } from "../../src/routes/(public)/timing-and-direction/_data/timing-direction-articles";
 
 const location = (pathname: string) => ({

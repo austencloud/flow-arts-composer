@@ -38,11 +38,11 @@ const runtime = vi.hoisted(() => {
   };
 });
 
-vi.mock("$app/environment", () => ({ browser: true }));
-vi.mock("$lib/shared/foundation/services/device-id", () => ({
+vi.mock("$app/env", () => ({ browser: true }));
+vi.mock("#lib/shared/foundation/services/device-id.js", () => ({
   getDeviceId: () => "device-1",
 }));
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureEvent: runtime.captureEvent,
   captureEventWithPostHog: runtime.captureEventWithPostHog,
   getPostHogInstance: () => (runtime.ready ? runtime.instance : null),
@@ -65,7 +65,7 @@ import {
   endScanViewerSession,
   scanBaseProperties,
   updateScanAttribution,
-} from "$lib/shared/analytics/scan-analytics";
+} from "#lib/shared/analytics/scan-analytics.js";
 
 describe("scan analytics runtime delivery", () => {
   beforeEach(() => {

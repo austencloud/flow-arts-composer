@@ -6,10 +6,10 @@
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { searchUsers } from "$lib/shared/user-search/services/user-searcher";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import type { UserSearchResult } from "$lib/shared/user-search/services/types";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { searchUsers } from "#lib/shared/user-search/services/user-searcher.js";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
+  import type { UserSearchResult } from "#lib/shared/user-search/services/types.js";
   import type { VideoPerformer } from "../types";
 
   interface Props {

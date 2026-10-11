@@ -19,11 +19,11 @@ import {
 	serverTimestamp,
 	type Unsubscribe,
 } from "firebase/firestore";
-import { auth, getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { auth, getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import type { EffectPoint } from "./types";
-import type { TrailPointConfig, TrailPointSource } from "$lib/shared/animation-engine/domain/types/trail-point-types";
+import type { TrailPointConfig, TrailPointSource } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
 
 const LOG_PREFIX = "[EffectPointsPersister]";
 const FIRESTORE_DOC_PATH = "config/effectPoints";

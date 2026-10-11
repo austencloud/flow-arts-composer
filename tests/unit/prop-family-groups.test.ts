@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   getAllVariations,
   getBasePropType,
   getFamilyTileDisplayProp,
   getPropTypeDisplayInfo,
-} from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+} from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 import {
   encodePropForURL,
   parsePropTypeFromURLValue,
-} from "$lib/shared/navigation/services/sequence-encoder";
-import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
+import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
 import { PropType as ScenePropType } from "@austencloud/scene-3d";
 
 describe("prop family groups", () => {

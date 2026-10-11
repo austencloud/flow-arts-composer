@@ -4,14 +4,14 @@ import type { SoloPropData } from "../domain/models/solo-prop-data";
 import type { SoloPropStepData } from "../domain/models/solo-prop-step-data";
 import { createSequenceData } from "../domain/models/sequence-data";
 import { createStepData } from "../domain/factories/create-step-data";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { AuthoredHand } from "../domain/models/authored-hand";
 import { motionHandForAuthoredHand } from "./sequence-motion-profile";
 import { hashSoloProp } from "./content-hasher";

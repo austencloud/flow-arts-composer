@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
+  import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
   import {
     ROLE_DISPLAY,
     ROLE_HIERARCHY,
-  } from "$lib/shared/auth/domain/models/user-role";
+  } from "#lib/shared/auth/domain/models/user-role.js";
 
   interface Props {
     role: UserRole;

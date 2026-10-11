@@ -1,24 +1,25 @@
 <script lang="ts">
   import PropViewingControl from "./PropViewingControl.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { onMount, onDestroy } from "svelte";
-  import { getBrowseThumbnailProvider } from "$lib/shared/browse/get-browse-thumbnail-provider";
-  import { PinchZoomGridController } from "$lib/shared/browse/services/pinch-zoom-grid-controller";
-  import { getSequenceOverlayState } from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
-  import { browseScrollState } from "$lib/shared/browse/state/browse-scroll-state.svelte";
-  import BrowseThumbnailSkeleton from "$lib/shared/browse/components/BrowseThumbnailSkeleton.svelte";
-  import type { BrowseThumbnailProvider } from "$lib/shared/browse/services/browse-thumbnail-provider";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { getBrowseThumbnailProvider } from "#lib/shared/browse/get-browse-thumbnail-provider.js";
+  import { PinchZoomGridController } from "#lib/shared/browse/services/pinch-zoom-grid-controller.js";
+  import { getSequenceOverlayState } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
+  import { browseScrollState } from "#lib/shared/browse/state/browse-scroll-state.svelte.js";
+  import BrowseThumbnailSkeleton from "#lib/shared/browse/components/BrowseThumbnailSkeleton.svelte";
+  import type { BrowseThumbnailProvider } from "#lib/shared/browse/services/browse-thumbnail-provider.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { BrowseEngine } from "../engine/types";
   import BrowseToolbar from "./BrowseToolbar.svelte";
   import BrowseFilterBar from "./BrowseFilterBar.svelte";
   import BrowseSidebar from "./BrowseSidebar.svelte";
   import BrowseGrid from "./BrowseGrid.svelte";
   import type { SectionedGridApi } from "./SectionedVirtualGrid.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SelectionToolbar from "$lib/shared/components/selection/SelectionToolbar.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { withResultsMorph } from "$lib/shared/transitions/results-morph";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SelectionToolbar from "#lib/shared/components/selection/SelectionToolbar.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { withResultsMorph } from "#lib/shared/transitions/results-morph.js";
+  import { createDestinationFade } from "#lib/shared/transitions/motion.js";
 
   interface Props {
     collectionPropType?: PropType | null;
@@ -147,6 +148,18 @@
   let contentEl: HTMLElement | null = $state(null);
   let containerEl: HTMLElement | null = $state(null);
   let activeSection = $state<string | undefined>(undefined);
+  let gridContentEl: HTMLElement | null = $state(null);
+  let destinationFade: ReturnType<typeof createDestinationFade> | null = null;
+
+  $effect(() => {
+    if (!gridContentEl) return;
+    const fade = createDestinationFade(gridContentEl);
+    destinationFade = fade;
+    return () => {
+      fade.destroy();
+      destinationFade = null;
+    };
+  });
   // Set once the sectioned virtual grid mounts. When present, it owns
   // section-jump + active-section (the DOM-offset scan can't see off-screen,
   // virtualized headers).
@@ -161,6 +174,7 @@
   const isEmpty = $derived(
     !warming &&
       !isInitializing &&
+      engine.isLibraryComplete &&
       !engine.error &&
       engine.sequences.length === 0
   );
@@ -249,7 +263,9 @@
   function scrollToSection(sectionTitle: string) {
     // Virtualized: delegate to the grid (target header may be unmounted).
     if (sectionApi) {
+      activeSection = sectionTitle;
       sectionApi.scrollToSectionTitle(sectionTitle);
+      destinationFade?.play();
       return;
     }
     if (!contentEl) return;
@@ -261,6 +277,8 @@
     const elRect = el.getBoundingClientRect();
     const targetScroll = elRect.top - containerRect.top + contentEl.scrollTop;
     contentEl.scrollTo({ top: targetScroll, behavior: "instant" });
+    activeSection = sectionTitle;
+    destinationFade?.play();
   }
 
   const overlayState = getSequenceOverlayState();
@@ -340,6 +358,7 @@
         dangerIcon={selection.openDangerAction ? "fa-trash" : undefined}
         onDangerAction={selection.openDangerAction}
         onSelectAll={selection.selectAll}
+        selectAllDisabled={!engine.isLibraryComplete}
         onClearSelection={selection.clear}
         onExitSelection={selection.exit}
       />
@@ -370,6 +389,16 @@
     <BrowseFilterBar {engine} chipsOnly={!!onOpenFilters} {onSaveSmart} />
   {/if}
 
+  {#if engine.isLoadingMore}
+    <div role="status" class="library-load-progress">
+      Loading more saved sequences…
+    </div>
+  {:else if engine.loadMoreError}
+    <div role="status" class="library-load-progress">
+      Some saved sequences have not loaded yet.
+      <button onclick={() => engine.refresh()}>Try again</button>
+    </div>
+  {/if}
   <div
     class="panel-content"
     class:internal-grid-scroll={usesInternalGridScroller}
@@ -443,7 +472,7 @@
           />
         {/if}
         {#if hasSequences}
-          <div class="grid-area">
+          <div class="grid-area" bind:this={gridContentEl}>
             <BrowseGrid
               {engine}
               {thumbnailService}
@@ -495,6 +524,35 @@
     margin: 0;
     font-size: var(--font-size-base, 16px);
     color: var(--theme-text, white);
+  }
+
+  .library-load-progress {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm, 8px);
+    flex-shrink: 0;
+    padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+    color: var(--theme-text, white);
+    background: var(--theme-panel-bg);
+    font-size: var(--font-size-min, 14px);
+  }
+
+  .library-load-progress button {
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+    border: 1px solid var(--theme-stroke);
+    border-radius: var(--radius-md, 8px);
+    background: var(--theme-card-bg);
+    color: var(--theme-text, white);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .library-load-progress button:focus-visible {
+    outline: 2px solid var(--theme-text, white);
+    outline-offset: 2px;
   }
 
   .panel-content {

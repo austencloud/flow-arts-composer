@@ -1,9 +1,9 @@
-import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
+import { PostProjectSchema } from "#lib/shared/post-studio-plugin/index.js";
 import type { PostProject, PostTake } from "@austencloud/video-editor/core";
 import {
   TakeTimingSchema,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 const PROJECT_PREFIX = "tka:post-studio:project:v2:";
 const TIMING_PREFIX = "tka:post-studio:take-timing:v1:";

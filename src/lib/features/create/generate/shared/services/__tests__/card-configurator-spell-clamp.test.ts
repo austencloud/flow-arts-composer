@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { buildCardDescriptors } from "../card-configurator";
 import { DifficultyLevel } from "../../domain/models/generate-models";
 import type { UIGenerationConfig } from "../../utils/config-mapper";
-import type { CardHandlers } from "$lib/shared/create/domain/generator-contract-types";
+import type { CardHandlers } from "#lib/shared/create/domain/generator-contract-types.js";
 
 /**
  * In spell mode the length card's `currentLength` is the word's own natural

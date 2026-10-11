@@ -2,22 +2,22 @@ import { describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrackingMode,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import {
   flameColorToHex,
   hexToFlameColor,
-} from "$lib/shared/animation-engine/domain/types/fire-types";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+} from "#lib/shared/animation-engine/domain/types/fire-types.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   EFFECT_CONTROLS,
   resolveEffectControlOptions,
   type ControlDescriptor,
-} from "$lib/shared/effects/domain/effect-control-manifest";
+} from "#lib/shared/effects/domain/effect-control-manifest.js";
 import {
   createEffectControlOverrides,
   formatEffectSliderValue,
-} from "$lib/shared/effects/effect-control-fields";
-import type { EffectId } from "$lib/shared/effects/state/effects-config-state.svelte";
+} from "#lib/shared/effects/effect-control-fields.js";
+import type { EffectId } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 
 type ControlConfig = Parameters<typeof createEffectControlOverrides>[1];
 type ControlAnimation = Parameters<typeof createEffectControlOverrides>[2];

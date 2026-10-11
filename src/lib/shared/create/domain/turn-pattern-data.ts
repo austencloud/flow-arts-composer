@@ -8,7 +8,7 @@
 
 import type { Timestamp } from "firebase/firestore";
 import { getTurnPool, type TurnLanes } from "@tka/sequence-engine/generation";
-import { clampTurnToLevel } from "$lib/shared/create/services/level-turn-values";
+import { clampTurnToLevel } from "#lib/shared/create/services/level-turn-values.js";
 
 /**
  * Turn value type - can be a number (0, 0.5, 1, etc.) or "fl" for float

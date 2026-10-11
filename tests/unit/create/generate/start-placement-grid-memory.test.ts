@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createStartEndOptionsState } from "$lib/features/create/generate/state/start-end-options-state.svelte";
+import { createStartEndOptionsState } from "#lib/features/create/generate/state/start-end-options-state.svelte.js";
 import {
   getBlockedPlacementsForPreset,
   StartPlacementPreset,
-} from "$lib/features/create/generate/shared/domain/start-placement-presets";
+} from "#lib/features/create/generate/shared/domain/start-placement-presets.js";
 import {
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 const { settings, updateSettings } = vi.hoisted(() => {
   const settings: Record<string, unknown> = {};
@@ -20,7 +20,7 @@ const { settings, updateSettings } = vi.hoisted(() => {
   };
 });
 
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: { settings, updateSettings },
 }));
 

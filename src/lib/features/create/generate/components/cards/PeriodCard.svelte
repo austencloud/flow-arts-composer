@@ -9,7 +9,7 @@ The generator owns this choice inside its Rotated transformation card so the
 same setting is not exposed in two places.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import ToggleCard from "./ToggleCard.svelte";
 
   let {

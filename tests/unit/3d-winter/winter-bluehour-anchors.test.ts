@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createDefaultWinterConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/winter-scene-config";
-import { WINTER_ENVIRONMENT_URL } from "$lib/shared/3d/environments/worlds/winter/winter-environment-world";
+import { createDefaultWinterConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/winter-scene-config.js";
+import { WINTER_ENVIRONMENT_URL } from "#lib/shared/3d/environments/worlds/winter/winter-environment-world.js";
 
 /**
  * Winter's production venue is the Blue Hour Lodge, which replaced Moonlit

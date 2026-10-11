@@ -1,11 +1,11 @@
 <script lang="ts">
   import { Popover } from "bits-ui";
   import type { UnifiedPlaybackContext } from "./unified-playback-context";
-  import { formatTime } from "$lib/shared/sequence-viewer/utils/format-time";
+  import { formatTime } from "#lib/shared/sequence-viewer/utils/format-time.js";
   import { onDestroy, type Snippet } from "svelte";
-  import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
-  import PlaybackModeToggle from "$lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
+  import PlaybackModeToggle from "#lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   const BPM_PRESETS = [15, 30, 60, 90, 120, 150];
 

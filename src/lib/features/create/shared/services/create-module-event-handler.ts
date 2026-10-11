@@ -6,19 +6,19 @@
  * that was previously scattered throughout the massive ConstructTab component.
  */
 
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
-import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
 import type { SequenceData } from "../../../../shared/foundation/domain/models/sequence-data";
 
 import type { ConstructCoordinator } from "./construct-coordinator";
 import type { PictographData } from "../../../../shared/pictograph/shared/domain/models/pictograph-data";
-import type { ReversalDetector } from "$lib/shared/create/services/reversal-detector";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { ReversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
-import { getConstructCoordinator } from "$lib/features/create/shared/get-construct-coordinator";
-import { buildAppendedOptionSequence } from "$lib/features/create/construct/option-picker/services/build-appended-option-sequence";
-import { invalidateLoopDisplayCache } from "$lib/shared/create/services/loop-certificate";
+import { getConstructCoordinator } from "#lib/features/create/shared/get-construct-coordinator.js";
+import { buildAppendedOptionSequence } from "#lib/features/create/construct/option-picker/services/build-appended-option-sequence.js";
+import { invalidateLoopDisplayCache } from "#lib/shared/create/services/loop-certificate.js";
 import { UndoOperationType } from "./undo-manager";
 
 export class CreateModuleEventHandler {

@@ -1,13 +1,13 @@
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
+import type { CreateModuleContext } from "#lib/features/create/shared/context/create-module-context.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createStartPlacementData } from "#lib/shared/foundation/domain/factories/create-start-placement-data.js";
 import ButtonPanel from "./ButtonPanel.svelte";
 
-vi.mock("$lib/shared/mobile/share-action.svelte", () => ({
+vi.mock("#lib/shared/mobile/share-action.svelte.js", () => ({
   shareTarget: {
     get isMobile() {
       return true;
@@ -15,17 +15,17 @@ vi.mock("$lib/shared/mobile/share-action.svelte", () => ({
   },
 }));
 
-vi.mock("$lib/shared/navigation/state/navigation-state.svelte", () => ({
+vi.mock("#lib/shared/navigation/state/navigation-state.svelte.js", () => ({
   navigationState: {
     activeTab: "construct",
   },
 }));
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => null,
 }));
 
-vi.mock("$lib/shared/share/get-sharer", () => ({
+vi.mock("#lib/shared/share/get-sharer.js", () => ({
   getSharer: () => ({
     getCardImageBlob: vi.fn().mockResolvedValue(
       new Blob(["card"], {
@@ -36,7 +36,7 @@ vi.mock("$lib/shared/share/get-sharer", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
+vi.mock("#lib/shared/share/state/image-composition-state.svelte.js", () => ({
   getImageCompositionManager: () => ({
     darkMode: true,
     registerObserver: vi.fn(),
@@ -44,14 +44,17 @@ vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/pictograph/shared/state/visibility-state.svelte", () => ({
-  getVisibilityStateManager: () => ({
-    registerObserver: vi.fn(),
-    unregisterObserver: vi.fn(),
-  }),
-}));
+vi.mock(
+  "#lib/shared/pictograph/shared/state/visibility-state.svelte.js",
+  () => ({
+    getVisibilityStateManager: () => ({
+      registerObserver: vi.fn(),
+      unregisterObserver: vi.fn(),
+    }),
+  })
+);
 
-vi.mock("$lib/shared/qr/get-short-code-manager", () => ({
+vi.mock("#lib/shared/qr/get-short-code-manager.js", () => ({
   getShortCodeManager: () => ({
     createShortCode: vi.fn().mockResolvedValue({
       url: "https://tka.run/A",

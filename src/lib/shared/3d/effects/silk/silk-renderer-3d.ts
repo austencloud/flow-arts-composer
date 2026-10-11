@@ -4,7 +4,7 @@ import {
   isTrackedTip,
   type SilkTipSource3D,
 } from "../scene-effects/scene-effect-source-3d";
-import type { Silk3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+import type { Silk3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 import {
   SilkRibbonGeometry3D,
   type SilkRibbonFrame3D,

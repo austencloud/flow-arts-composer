@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { resolveMotionPathEntryStep } from "../../../src/routes/(public)/guide/motion-paths/_data/motion-path-entry-step";
-import { loadShapeMatrix } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-import { flowerKey } from "$lib/shared/shape-matrix/domain/flower-signature";
-import { buildModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { loadShapeMatrix } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+import { flowerKey } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { buildModeRealization } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const STATIC = path.resolve(process.cwd(), "static");
 vi.stubGlobal("fetch", async (input: string | URL | Request) => {

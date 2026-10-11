@@ -5,7 +5,7 @@
  */
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, getFirestoreInstance } from "../../auth/firebase";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   applyClaim,
   defaultCollection,
@@ -19,7 +19,7 @@ import {
   saveGuestCollection,
 } from "./prop-collection-persistence";
 import { setPropCollection } from "../state/prop-collection-state.svelte";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 function propCollectionPath(uid: string): string {
   return `users/${uid}/gamification/propCollection`;

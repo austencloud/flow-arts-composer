@@ -1,6 +1,6 @@
-import type { FeedbackTypeConfig } from "$lib/shared/feedback/domain/feedback-contract-types";
-import type { FeedbackType } from "$lib/shared/feedback/domain/models/feedback-models";
-import { TYPE_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
+import type { FeedbackTypeConfig } from "#lib/shared/feedback/domain/feedback-contract-types.js";
+import type { FeedbackType } from "#lib/shared/feedback/domain/models/feedback-models.js";
+import { TYPE_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
 
 /**
  * Resolves type-specific configuration for feedback forms.

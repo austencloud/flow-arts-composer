@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const persister = vi.hoisted(() => ({
   loadPropPreferences: vi.fn(),
@@ -7,11 +7,14 @@ const persister = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  "$lib/shared/community/services/prop-preference-persister",
+  "#lib/shared/community/services/prop-preference-persister.js",
   () => persister
 );
 
-import { createPropPreferenceState } from "$lib/shared/community/state/prop-preference-state.svelte";
+import {
+  createPropPreferenceState,
+  loadAndRememberPropPreferences,
+} from "#lib/shared/community/state/prop-preference-state.svelte.js";
 
 function deferred() {
   let resolve!: () => void;
@@ -146,5 +149,44 @@ describe("prop preference state", () => {
       favoriteProp: null,
       favoriteCatdog: null,
     });
+  });
+
+  it("draws an account's last loaded preferences at once on a new mount", async () => {
+    persister.loadPropPreferences.mockResolvedValue({
+      propsISpinWith: [PropType.CLUB, PropType.TRIAD],
+      favoriteProp: PropType.CLUB,
+      favoriteCatdog: null,
+    });
+    await createPropPreferenceState("returning-user").reload();
+
+    persister.loadPropPreferences.mockReturnValueOnce(new Promise(() => {}));
+    const remounted = createPropPreferenceState("returning-user");
+
+    expect(remounted.loading).toBe(false);
+    expect(remounted.propsISpinWith).toEqual([PropType.CLUB, PropType.TRIAD]);
+    expect(remounted.favoriteProp).toBe(PropType.CLUB);
+  });
+
+  it("still shows loading for an account it has not loaded yet", () => {
+    persister.loadPropPreferences.mockReturnValueOnce(new Promise(() => {}));
+    const state = createPropPreferenceState("first-visit-user");
+
+    expect(state.loading).toBe(true);
+    expect(state.propsISpinWith).toEqual([]);
+  });
+
+  it("draws preferences the app loaded at sign-in on the first mount", async () => {
+    persister.loadPropPreferences.mockResolvedValueOnce({
+      propsISpinWith: [PropType.FAN],
+      favoriteProp: null,
+      favoriteCatdog: null,
+    });
+    await loadAndRememberPropPreferences("signed-in-user");
+
+    persister.loadPropPreferences.mockReturnValueOnce(new Promise(() => {}));
+    const state = createPropPreferenceState("signed-in-user");
+
+    expect(state.loading).toBe(false);
+    expect(state.propsISpinWith).toEqual([PropType.FAN]);
   });
 });

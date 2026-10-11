@@ -8,8 +8,8 @@ import {
 import type {
   PostAnimationItem,
   PostMovesItem,
-} from "$lib/shared/post-studio-plugin";
-import { withMotionKeys } from "$lib/shared/media-composition/domain/post-project-motion-keys";
+} from "#lib/shared/post-studio-plugin/index.js";
+import { withMotionKeys } from "#lib/shared/media-composition/domain/post-project-motion-keys.js";
 import { overlay, project, video } from "./post-project-fixtures";
 
 const CORNER = { x: 0.6, y: 0.78, width: 0.4, height: 0.22 };

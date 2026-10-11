@@ -11,7 +11,7 @@
     Vector3,
   } from "three";
   import { onDestroy } from "svelte";
-  import FallingParticles from "$lib/shared/3d/environments/primitives/FallingParticles.svelte";
+  import FallingParticles from "#lib/shared/3d/environments/primitives/FallingParticles.svelte";
   import type { WingRegion } from "../../domain/museum-grid-types";
   import type { AuthoredPointLightPlanChange } from "../../services/museum-room-light-pool";
 

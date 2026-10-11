@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/server/auth/firebase-auth-handler-proxy", () => ({
+vi.mock("#lib/server/auth/firebase-auth-handler-proxy.js", () => ({
   isFirebaseAuthHandlerPath: (pathname: string) =>
     pathname.startsWith("/__/auth/"),
   proxyFirebaseAuthHandler: vi.fn(async () => new Response("auth handler")),
 }));
 
-vi.mock("$lib/server/auth/meta-oauth-proxy", () => ({
+vi.mock("#lib/server/auth/meta-oauth-proxy.js", () => ({
   isMetaOAuthProxyPath: () => false,
   proxyMetaOAuthRequest: vi.fn(),
 }));
@@ -14,7 +14,7 @@ vi.mock("$lib/server/auth/meta-oauth-proxy", () => ({
 import {
   MODULE_DEFINITIONS,
   MODULE_ID_MIGRATIONS,
-} from "$lib/shared/navigation/config/module-definitions";
+} from "#lib/shared/navigation/config/module-definitions.js";
 import {
   handle,
   rejectUnknownAppPath,
@@ -153,8 +153,10 @@ describe("handle() wiring", () => {
 });
 
 describe("robotsTagForRoute", () => {
-  it("noindexes only the [...appPath] app shell", () => {
+  it("noindexes the [...appPath] app shell and the phone sign-in pages", () => {
     expect(robotsTagForRoute("/[...appPath]")).toBe("noindex");
+    expect(robotsTagForRoute("/phone-sign-in")).toBe("noindex");
+    expect(robotsTagForRoute("/sign-in/[id]")).toBe("noindex");
     expect(robotsTagForRoute("/(public)/shop/loop-deck")).toBeUndefined();
     expect(robotsTagForRoute("/")).toBeUndefined();
     expect(robotsTagForRoute(null)).toBeUndefined();

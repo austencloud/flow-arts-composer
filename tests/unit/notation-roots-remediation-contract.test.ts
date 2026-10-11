@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { NOTATION_CATALOG } from "$lib/shared/notation/notation-catalog";
+import { NOTATION_CATALOG } from "#lib/shared/notation/notation-catalog.js";
 
 const readSource = (path: string): string =>
   readFileSync(resolve(process.cwd(), path), "utf-8");
@@ -45,7 +45,7 @@ const componentManifest = readSource("scripts/component-manifest.json");
 
 describe("notation catalog", () => {
   it("is un-gated: no dev branch, no noindex, and back in the sitemap", () => {
-    expect(notationRoute).not.toContain('from "$app/environment"');
+    expect(notationRoute).not.toContain('from "$app/env"');
     expect(notationRoute).not.toContain("UnderConstruction");
     expect(notationRoute).not.toContain('content="noindex');
     expect(sitemap).toMatch(/\{ url: "history" \}/);
@@ -124,14 +124,14 @@ describe("notation catalog", () => {
 
   it("keeps the interactive Shape Engine at the /shape-engine destination", () => {
     expect(shapeMatrixDestination).toContain(
-      "$lib/shared/shape-matrix/app/ShapeMatrixApp.svelte"
+      "#lib/shared/shape-matrix/app/ShapeMatrixApp.svelte"
     );
     expect(shapeMatrixDestination).toContain(
       "<ShapeMatrixApp {persistence} />"
     );
     expect(shapeMatrixApp).toContain("loadShapeMatrix");
     expect(shapeMatrixMatrixPane).toContain(
-      "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte"
+      "#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte"
     );
   });
 

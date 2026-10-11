@@ -1,7 +1,7 @@
 import type { AppSettings } from "../../../settings/domain/app-settings";
-import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-import { browser } from "$app/environment";
+import type { SettingsState } from "#lib/shared/settings/state/settings-state.svelte.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+import { browser } from "$app/env";
 
 const _debug = createComponentLogger("VisibilityManager");
 

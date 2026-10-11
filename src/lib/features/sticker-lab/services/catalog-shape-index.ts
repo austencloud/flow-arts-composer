@@ -1,18 +1,18 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   MandalaPaths,
   SVGPathData,
-} from "$lib/shared/mandala/domain/mandala-types";
+} from "#lib/shared/mandala/domain/mandala-types.js";
 import {
   orbitKey,
   shapeKey,
-} from "$lib/shared/mandala/services/mandala-fingerprint";
+} from "#lib/shared/mandala/services/mandala-fingerprint.js";
 import {
   createMandalaPrimitiveRef,
   sequenceDisplayName,
 } from "../domain/mandala-primitive-reference";
 import type { MandalaPrimitiveRef } from "../domain/sticker-types";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
 export type CatalogShapeScope = "solo" | "combined";
 export type SoloProp = "left" | "right";

@@ -3,12 +3,12 @@ LOOPFilterChip.svelte - Dropdown chip for LOOP component filtering.
 Color-coded icons per primitive. Rotated splits into halved/quartered.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import FilterChipBase from "./FilterChipBase.svelte";
   import ChipPopoverOption from "./ChipPopoverOption.svelte";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import { LOOP_COMPONENT_MAP } from "$lib/shared/browse/domain/constants/loop-constants";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { LOOP_COMPONENT_MAP } from "#lib/shared/browse/domain/constants/loop-constants.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
 
   interface Props {

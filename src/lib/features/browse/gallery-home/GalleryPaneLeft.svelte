@@ -10,7 +10,7 @@
   Split out of GalleryDrill.svelte 2026-08-05 (Task 9).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import CategoryRail from "./CategoryRail.svelte";
   import { heightBudget } from "./pane-height-budget";

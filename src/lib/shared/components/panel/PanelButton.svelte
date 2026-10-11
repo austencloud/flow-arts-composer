@@ -1,11 +1,12 @@
 <script lang="ts">
   /**
-   * PanelButton - Button component with primary/secondary variants
+   * PanelButton - Button component with primary/secondary/quiet variants
    */
 
   import type { Snippet } from "svelte";
 
-  type ButtonVariant = "primary" | "secondary";
+  /** `quiet` is a low-emphasis action that sits beside a value it edits. */
+  type ButtonVariant = "primary" | "secondary" | "quiet";
 
   interface Props {
     /** Button variant */
@@ -117,7 +118,8 @@
     cursor: pointer;
     transition:
       background-color var(--transition-normal),
-      border-color var(--transition-normal);
+      border-color var(--transition-normal),
+      color var(--transition-normal);
     min-height: var(--min-touch-target);
   }
 
@@ -152,6 +154,19 @@
   .panel-btn--secondary:hover:not(:disabled) {
     background: var(--theme-card-hover-bg);
     border-color: var(--theme-stroke-strong);
+  }
+
+  /* Quiet variant - a bounded edit action beside the value it changes */
+  .panel-btn--quiet {
+    background: color-mix(in srgb, var(--theme-text) 4%, transparent);
+    border: 1px solid var(--theme-stroke);
+    color: var(--theme-text-dim);
+  }
+
+  .panel-btn--quiet:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--theme-text) 8%, transparent);
+    border-color: var(--theme-stroke-strong);
+    color: var(--theme-text);
   }
 
   .panel-btn--tinted {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { localizePrintLabel } from "../_components/localize-print-label";
   import { guideTurnDisplayWord } from "../../level-1/_data/guide-turn-display-word";
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * 2-Turns (Dashes / Static) - Level 2 body page (manifest
    * `two-turns-dash-static`), faithful to the source artboard (level-2.pdf page
@@ -32,26 +32,26 @@
    * combined frame of each strip is the real full-motion pictograph (system
    * arrow) and the click-to-animate target.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
-  import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import SelectionHit from "#lib/shared/selection/SelectionHit.svelte";
+  import { getSequenceSelection } from "#lib/shared/selection/sequence-selection.svelte.js";
   import {
     createMotionData,
     createPlaceholderMotion,
-  } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-  import { buildHalvedStep } from "$lib/shared/animation-engine/services/build-halved-step";
+  } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import { buildHalvedStep } from "#lib/shared/animation-engine/services/build-halved-step.js";
   import {
     MotionType,
     HandSide,
     Orientation,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     GridMode,
     GridLocation,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { HalfwayMotion } from "../_data/halfway-pose";
   import PoseFrame from "../_components/PoseFrame.svelte";
   import { bakeReversals } from "../../level-1/_data/guide-sequence-adapter";

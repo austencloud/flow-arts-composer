@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import demo from "$lib/shared/landing/data/demo-sequence.json";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import demo from "#lib/shared/landing/data/demo-sequence.json";
 import {
   computeAutoOrbitShot,
   computeChoreographerShot,

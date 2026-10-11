@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   staticRadialClockwiseMap,
   staticRadialOverrideMap,
-} from "$lib/shared/pictograph/arrow/positioning/calculation/config/static-rotation-maps";
+} from "#lib/shared/pictograph/arrow/positioning/calculation/config/static-rotation-maps.js";
 
 function normalizeDegrees(angle: number): number {
   return ((angle % 360) + 360) % 360;

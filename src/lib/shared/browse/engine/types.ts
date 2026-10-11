@@ -12,13 +12,13 @@
  * - `persistKey` controls localStorage persistence (null = ephemeral)
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
-import type { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-import type { SequenceSection } from "$lib/shared/browse/domain/models/browse-models";
-import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
-import type { FilterConnective } from "$lib/shared/browse/services/multi-filter";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { BrowseFilterValue } from "#lib/shared/persistence/domain/types/filtering-types.js";
+import type { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+import type { SequenceSection } from "#lib/shared/browse/domain/models/browse-models.js";
+import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
+import type { FilterConnective } from "#lib/shared/browse/services/multi-filter.js";
 
 // Sequence Source
 
@@ -87,6 +87,8 @@ export interface PersistedEngineState {
  * Sensible defaults are applied for every optional field.
  */
 export interface BrowseEngineConfig {
+  /** Use the shared paged account loader for the Saved sequences shelf. */
+  progressiveLibrary?: boolean;
   /**
    * localStorage key prefix for persisting engine state.
    * `null` = ephemeral (modal pickers that shouldn't remember state).
@@ -161,6 +163,11 @@ export interface BrowseEngine {
 
   /** True while loading sequences from Firestore / library. */
   readonly isLoading: boolean;
+  /** The first library page is visible while remaining pages arrive. */
+  readonly isLoadingMore: boolean;
+  readonly loadMoreError: string | null;
+  /** Whether every sequence in the current source has arrived. */
+  readonly isLibraryComplete: boolean;
   /** Error message from the last failed operation, or null. */
   readonly error: string | null;
   /** Current sequence source. */
@@ -235,7 +242,6 @@ export interface BrowseEngine {
   readonly availableMaxTurnIntensities: readonly number[];
   /** LOOP type counts: { loopType: count, _total, _circular, _non_circular }. */
   readonly loopTypeCounts: Readonly<Record<string, number>>;
-
 
   /** Load initial data for current source. Call on mount. */
   initialize(): Promise<void>;

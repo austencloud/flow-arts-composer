@@ -3,7 +3,7 @@ import {
   parseCloudflareGeo,
   formatLocationLabel,
   locationsEqual,
-} from "$lib/shared/presence/domain/models/presence-models";
+} from "#lib/shared/presence/domain/models/presence-models.js";
 
 describe("parseCloudflareGeo", () => {
   const h = (entries: Record<string, string>) => new Headers(entries);

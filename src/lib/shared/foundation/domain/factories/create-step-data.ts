@@ -12,12 +12,12 @@
 import type {
   StepData,
   StepMotions,
-} from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   createPlaceholderMotion,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { normalizeLegacyStep } from "@tka/tka-types";
 
 export type CreateStepDataInput = Omit<Partial<StepData>, "motions"> & {

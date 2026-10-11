@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   changeArtSetting,
   reportArtSetting,
-} from "$lib/shared/sequence-viewer/components/art-settings/art-setting-change";
+} from "#lib/shared/sequence-viewer/components/art-settings/art-setting-change.js";
 
 describe("art setting change helpers", () => {
   it("suppresses reports when the value did not change", () => {

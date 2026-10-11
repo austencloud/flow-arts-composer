@@ -22,28 +22,28 @@
   matrix entirely.
 -->
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import {
     createMotionData,
     createPlaceholderMotion,
     type MotionData,
-  } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-  import { createArrowPlacementData } from "$lib/shared/pictograph/arrow/positioning/placement/domain/create-arrow-placement-data";
-  import { calculateSegmentRotation } from "$lib/shared/pictograph/arrow/positioning/calculation/services/segment-rotation";
-  import { buildHalvedStep } from "$lib/shared/animation-engine/services/build-halved-step";
-  import { HALF_ASSET_TURNS } from "$lib/shared/pictograph/arrow/rendering/services/half-asset-manifest";
+  } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import { createArrowPlacementData } from "#lib/shared/pictograph/arrow/positioning/placement/domain/create-arrow-placement-data.js";
+  import { calculateSegmentRotation } from "#lib/shared/pictograph/arrow/positioning/calculation/services/segment-rotation.js";
+  import { buildHalvedStep } from "#lib/shared/animation-engine/services/build-halved-step.js";
+  import { HALF_ASSET_TURNS } from "#lib/shared/pictograph/arrow/rendering/services/half-asset-manifest.js";
   import {
     MotionType,
     HandSide,
     Orientation,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     GridMode,
     GridLocation,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
   const { NORTH: N, EAST: E, SOUTH: S, WEST: W } = GridLocation;
   const { IN, OUT } = Orientation;

@@ -1,4 +1,4 @@
-import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 
 export interface TheoryPlaybackTick {
   advanceMs: number;

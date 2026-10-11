@@ -1,29 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   LEARNING_LETTERS_CORE_WORDS,
   LEARNING_LETTERS_SCHEMA_VERSION,
   LEARNING_LETTERS_TOTAL_STEPS,
   normalizeLearningLettersProgress,
-} from "$lib/features/learn/components/interactive/words/learning-letters-progress";
+} from "#lib/features/learn/components/interactive/words/learning-letters-progress.js";
 import {
   LEARNING_LETTERS_DECK_WORDS,
   LEARNING_LETTER_TEACHING_CONTENT,
-} from "$lib/features/learn/components/interactive/words/learning-letter-teaching-content";
+} from "#lib/features/learn/components/interactive/words/learning-letter-teaching-content.js";
 
 const { canonicalPool, loadCanonicalTnDBaseSequences } = vi.hoisted(() => ({
   canonicalPool: [] as SequenceData[],
   loadCanonicalTnDBaseSequences: vi.fn(),
 }));
 
-vi.mock("$lib/features/browse/gallery-home/canonical-tnd-pool", () => ({
+vi.mock("#lib/features/browse/gallery-home/canonical-tnd-pool.js", () => ({
   CANONICAL_TND_AUTHOR: "T&D Alphabet",
   loadCanonicalTnDBaseSequences,
   loadCanonicalTnDSequences: vi.fn(async () => []),
   loadCanonicalBookVariations: vi.fn(async () => []),
 }));
 
-import { loadFoundingCollectionSequences } from "$lib/features/browse/collections/config/founding-collections";
+import { loadFoundingCollectionSequences } from "#lib/features/browse/collections/config/founding-collections.js";
 
 const WORDS_BY_FAMILY: Readonly<Record<string, readonly string[]>> = {
   "split-same": ["AAAA", "BBBB", "CCCC"],

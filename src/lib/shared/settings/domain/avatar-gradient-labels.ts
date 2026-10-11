@@ -1,5 +1,5 @@
-import { t } from "$lib/shared/i18n/i18n.svelte";
-import type { TranslationKey } from "$lib/shared/i18n/i18n-types";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 
 const labels: Record<string, TranslationKey> = {
   Warm: "settings_avatar_gradient_warm",

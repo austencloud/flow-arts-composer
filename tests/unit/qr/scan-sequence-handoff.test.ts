@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   buildScanSequenceDestination,
   readScanSequenceCode,
-} from "$lib/shared/qr/services/scan-sequence-handoff";
+} from "#lib/shared/qr/services/scan-sequence-handoff.js";
 
 describe("scan sequence handoff", () => {
   it("hands a physical scan to the canonical sequence route", () => {

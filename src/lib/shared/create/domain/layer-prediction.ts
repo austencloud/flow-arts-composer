@@ -21,7 +21,7 @@ import {
   layerOf,
   type FlipVector,
   type LayerId,
-} from "$lib/shared/foundation/domain/layer-signature";
+} from "#lib/shared/foundation/domain/layer-signature.js";
 import type { TurnValue } from "./turn-pattern-data";
 
 export interface LayerPredictionInput {

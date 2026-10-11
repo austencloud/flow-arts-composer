@@ -1,6 +1,6 @@
 <script lang="ts">
 
-import { getPoiSequenceValidator } from "$lib/features/levels/poi-lab/get-poi-sequence-validator";
+import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-sequence-validator.js";
   /**
    * Validator Tab - Validate sequences for poi legality
    *
@@ -8,13 +8,13 @@ import { getPoiSequenceValidator } from "$lib/features/levels/poi-lab/get-poi-se
    * and transition for poi physics constraints.
    */
 
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import type { PoiValidationResult } from "../domain/poi-models";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
   // Services
   const sequenceValidator = getPoiSequenceValidator();

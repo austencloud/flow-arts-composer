@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it } from "vitest";
-import { motionDuration, reducedMotion } from "$lib/shared/transitions/motion";
+import {
+  motionDuration,
+  reducedMotion,
+} from "#lib/shared/transitions/motion.js";
 
 describe("explicit reduced-motion preference", () => {
   afterEach(() => {

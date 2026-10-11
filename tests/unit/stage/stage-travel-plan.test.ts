@@ -4,15 +4,15 @@ import {
   compileStageTravel,
   resolveStageTravel,
   sampleCompiledStageTravel,
-} from "$lib/features/stage/domain/stage-travel-plan";
+} from "#lib/features/stage/domain/stage-travel-plan.js";
 import type {
   FormationSpot,
   StageChoreography,
-} from "$lib/features/stage/domain/stage-types";
+} from "#lib/features/stage/domain/stage-types.js";
 import {
   chooseAutomaticExactSteps,
   exactStepRange,
-} from "$lib/shared/3d/locomotion/straight-travel-constraints";
+} from "#lib/shared/3d/locomotion/straight-travel-constraints.js";
 
 function spot(
   x: number,

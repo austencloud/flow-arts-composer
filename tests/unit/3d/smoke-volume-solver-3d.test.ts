@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import type { SmokeIntent } from "$lib/shared/effects/domain/effects-config";
-import { resolveSmoke3D } from "$lib/shared/effects/translators/webgl3d-translator";
-import type { SmokeTipSource3D } from "$lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
-import { QualityTier } from "$lib/shared/3d/effects/types";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import type { SmokeIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { resolveSmoke3D } from "#lib/shared/effects/translators/webgl3d-translator.js";
+import type { SmokeTipSource3D } from "#lib/shared/3d/effects/scene-effects/scene-effect-source-3d.js";
+import { QualityTier } from "#lib/shared/3d/effects/types.js";
 import {
   SMOKE_VOLUME_BRICK_SIZE,
   SmokeVolumeSolver3D,
   resolveSmokePlumeHalfExtent3D,
   resolveSmokePressureIterations3D,
   shiftSmokeVolumeField3D,
-} from "$lib/shared/3d/effects/smoke/smoke-volume-solver-3d";
-import { resolveSmokeVolumeRaySteps3D } from "$lib/shared/3d/effects/smoke/smoke-volume-renderer-3d";
+} from "#lib/shared/3d/effects/smoke/smoke-volume-solver-3d.js";
+import { resolveSmokeVolumeRaySteps3D } from "#lib/shared/3d/effects/smoke/smoke-volume-renderer-3d.js";
 
 function smokeSource(
   sourceId = 1,

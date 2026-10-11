@@ -2,7 +2,7 @@
 ModeQuizSection - Identify diamond vs box grid
 -->
 <script lang="ts">
-  import LessonGridDisplay from "$lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
+  import LessonGridDisplay from "#lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
 
   let {
     question,

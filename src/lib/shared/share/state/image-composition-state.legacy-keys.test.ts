@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Same mocking shape as cd-slice.test.ts: the jsdom stub pins `browser` to
 // false, which short-circuits the manager's constructor entirely.
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: true,
   building: false,
@@ -42,12 +42,12 @@ const visibility = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({ getAuthSync: () => auth }));
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({ getAuthSync: () => auth }));
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: settingsMock,
 }));
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte",
+  "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js",
   () => ({ getAnimationVisibilityManager: () => visibility })
 );
 

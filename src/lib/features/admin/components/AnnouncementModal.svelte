@@ -4,13 +4,13 @@
   Shows important announcements that require user dismissal.
 -->
 <script lang="ts">
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { dismissAnnouncement } from "$lib/features/admin/services/announcement-manager";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { dismissAnnouncement } from "#lib/features/admin/services/announcement-manager.js";
   import type { Announcement } from "../domain/models/announcement-models";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import type { ModuleId } from "$lib/shared/navigation/domain/types";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import type { ModuleId } from "#lib/shared/navigation/domain/types.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     announcement: Announcement;

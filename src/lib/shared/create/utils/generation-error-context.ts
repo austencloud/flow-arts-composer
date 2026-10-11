@@ -1,4 +1,4 @@
-import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import type { GenerationOptions } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import type { UIGenerationConfig } from "./config-mapper";
 
 export function captureGenerationErrorContext(

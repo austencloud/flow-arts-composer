@@ -4,27 +4,27 @@ import {
   compressForQR,
   decompressFromQR,
 } from "./sequence-codec";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import { createStartPlacementData } from "#lib/shared/foundation/domain/factories/create-start-placement-data.js";
 import {
   gridJoinToken,
   parseGridJoinToken,
-} from "$lib/shared/foundation/domain/models/grid-join-token";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createPlaceholderMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/foundation/domain/models/grid-join-token.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createPlaceholderMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   RotationDirection,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { ArrowPlacementData } from "$lib/shared/pictograph/arrow/positioning/placement/domain/arrow-placement-data";
-import type { PropPlacementData } from "$lib/shared/pictograph/prop/domain/models/prop-placement-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { ArrowPlacementData } from "#lib/shared/pictograph/arrow/positioning/placement/domain/arrow-placement-data.js";
+import type { PropPlacementData } from "#lib/shared/pictograph/prop/domain/models/prop-placement-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type {
   CompressionResult,
   ShareURLResult,
@@ -38,7 +38,7 @@ import {
   calculateEndOrientation,
   deriveMotionType,
   getHandpathDirection,
-} from "$lib/shared/render/core/calculations/orientation";
+} from "#lib/shared/render/core/calculations/orientation.js";
 import {
   decodeLegacySequence,
   detectLegacySequenceFormat,
@@ -959,7 +959,7 @@ export async function encodeSequenceForQR(
 
   try {
     const { CompositionalEncoder } =
-      await import("$lib/shared/qr/services/compositional-encoder");
+      await import("#lib/shared/qr/services/compositional-encoder.js");
     const encoder = new CompositionalEncoder(
       { encode: (s) => encodeSequence(s) },
       { decode: (s) => decodeSequence(s) },
@@ -986,7 +986,7 @@ export async function decodeSequenceFromQR(
 
   if (data.startsWith("r1:")) {
     const { CompositionalDecoder } =
-      await import("$lib/shared/qr/services/compositional-decoder");
+      await import("#lib/shared/qr/services/compositional-decoder.js");
     // A recipe's hash covers the flat wire representation, not just its
     // motions. Recipes printed before 2026-05-30 therefore have to be
     // reconstructed with the matching historical encoder before the hash can

@@ -1,7 +1,7 @@
 import {
   PLAYBACK_MAX_BPM,
   PLAYBACK_MIN_BPM,
-} from "$lib/shared/animation-engine/domain/constants/timing";
+} from "#lib/shared/animation-engine/domain/constants/timing.js";
 
 export const NUMERIC_TEMPO_PRESETS: readonly number[] = [
   15, 30, 60, 90, 120, 150,

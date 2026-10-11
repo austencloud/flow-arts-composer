@@ -56,13 +56,13 @@
 -->
 <script lang="ts">
   import { fade, type TransitionConfig } from "svelte/transition";
-  import { focusFirstOrContainer } from "$lib/shared/foundation/ui/modal/helpers/focus-restore";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { focusFirstOrContainer } from "#lib/shared/foundation/ui/modal/helpers/focus-restore.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     flyFade,
     reducedMotion as prefersReducedMotion,
     STEP_DRIFT_PX,
-  } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/transitions/motion.js";
   import type { Snippet } from "svelte";
 
   type Mode = "crossfade" | "swap";
@@ -304,7 +304,26 @@
     // and save a pending key-change ease for the first measurement that can be
     // seen. The ResizeObserver fires again once the layer renders.
     if (liveLayer.getClientRects().length === 0) return;
-    applyHeight(liveLayer.offsetHeight);
+    applyHeight(layoutHeight(liveLayer));
+  }
+
+  /**
+   * The layer's exact layout height. offsetHeight rounds to whole pixels, so a
+   * 49.6px layer wrote a 50px box: the box grew a fraction of a pixel just
+   * after mount and nudged everything centred around it by one.
+   */
+  function layoutHeight(node: HTMLElement): number {
+    const style = getComputedStyle(node);
+    const height = Number.parseFloat(style.height);
+    if (!Number.isFinite(height)) return node.offsetHeight;
+    if (style.boxSizing === "border-box") return height;
+    return (
+      height +
+      Number.parseFloat(style.paddingTop) +
+      Number.parseFloat(style.paddingBottom) +
+      Number.parseFloat(style.borderTopWidth) +
+      Number.parseFloat(style.borderBottomWidth)
+    );
   }
 
   function cancelScheduledMeasure(): void {

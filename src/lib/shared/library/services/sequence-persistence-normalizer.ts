@@ -35,27 +35,27 @@
  * sentinels.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { isHandPathSequence } from "$lib/shared/foundation/domain/models/sequence-kind";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-import type { WordDerivationStatus } from "$lib/shared/foundation/services/word-deriver";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { isHandPathSequence } from "#lib/shared/foundation/domain/models/sequence-kind.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import type { WordDerivationStatus } from "#lib/shared/foundation/services/word-deriver.js";
 import {
   ensureComposition,
   hydrate,
-} from "$lib/shared/foundation/services/sequence-hydrator";
+} from "#lib/shared/foundation/services/sequence-hydrator.js";
 import {
   deriveWordStatus,
   IncompleteWordError,
-} from "$lib/shared/foundation/services/word-deriver";
+} from "#lib/shared/foundation/services/word-deriver.js";
 import {
   getPersistedStepCount,
   isEmptySequence,
   withCanonicalStepCount,
-} from "$lib/shared/library/domain/sequence-min-length";
+} from "#lib/shared/library/domain/sequence-min-length.js";
 import {
   CONTENT_HASH_VERSION,
   computeHash,
-} from "$lib/shared/library/services/sequence-content-hasher";
+} from "#lib/shared/library/services/sequence-content-hasher.js";
 
 // Types
 
@@ -396,7 +396,7 @@ export async function trySequenceNormalization<T extends SequenceData>(
  * Deep `undefined` removal for a validated domain payload.
  *
  * This is NOT a duplicate of `stripUndefined` in
- * `$lib/shared/firestore/firestore-helpers` — it is the same cleanup at a
+ * `#lib/shared/firestore/firestore-helpers.js` — it is the same cleanup at a
  * different layer, and it cannot import that one:
  *
  *   1. Layer. The Firestore helper's one distinguishing behavior is preserving

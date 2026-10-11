@@ -3,15 +3,15 @@
  * Under reduced motion no turn ever plays, so nothing is fetched.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createNextSequenceDraw } from "$lib/features/create/shared/components/method-previews/method-preview-next-sequence";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createNextSequenceDraw } from "#lib/features/create/shared/components/method-previews/method-preview-next-sequence.js";
 
 const SEQUENCE = { id: "drawn", steps: [{}] } as unknown as SequenceData;
 
 const drawMatrixRealization = vi.hoisted(() =>
   vi.fn(async (): Promise<{ sequence: SequenceData } | null> => null)
 );
-vi.mock("$lib/shared/landing/data/shape-matrix-hero-pool", () => ({
+vi.mock("#lib/shared/landing/data/shape-matrix-hero-pool.js", () => ({
   drawMatrixRealization,
 }));
 
@@ -74,6 +74,36 @@ describe("next sequence draw", () => {
     } finally {
       warn.mockRestore();
     }
+  });
+
+  it("keeps as many ready as asked, drawing one at a time", async () => {
+    const second = { id: "second", steps: [{}] } as unknown as SequenceData;
+    let landFirst: (draw: { sequence: SequenceData }) => void = () => {};
+    drawMatrixRealization
+      .mockImplementationOnce(
+        () => new Promise((resolve) => (landFirst = resolve))
+      )
+      .mockResolvedValueOnce({ sequence: second });
+    const draw = createNextSequenceDraw({
+      emptyWarning: "empty",
+      errorWarning: "failed",
+      capacity: 2,
+      reducedMotion: () => false,
+    });
+    draw.request();
+    draw.request();
+    await flushDraw();
+    // The second draw waits for the first.
+    expect(drawMatrixRealization).toHaveBeenCalledTimes(1);
+    landFirst({ sequence: SEQUENCE });
+    await vi.waitFor(() =>
+      expect(drawMatrixRealization).toHaveBeenCalledTimes(2)
+    );
+    await flushDraw();
+    expect(draw.take()).toBe(SEQUENCE);
+    expect(draw.take()).toBe(second);
+    expect(draw.take()).toBeNull();
+    expect(drawMatrixRealization).toHaveBeenCalledTimes(2);
   });
 
   it("drops a draw that lands after the scene has gone", async () => {

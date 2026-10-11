@@ -5,7 +5,7 @@
   import FeedbackSubmitTab from "./submit/FeedbackSubmitTab.svelte";
   import FeedbackManageTab from "./manage/FeedbackManageTab.svelte";
   import MyFeedbackTab from "./my-feedback/MyFeedbackTab.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // Track active tab for this module
   const activeTab = $derived(navigationState.activeTab);

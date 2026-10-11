@@ -6,9 +6,9 @@
 	 * prefers-reduced-motion (static single mandala, no crossfade).
 	 */
 	import { onMount } from "svelte";
-	import Crossfade from "$lib/shared/components/Crossfade.svelte";
+	import Crossfade from "#lib/shared/components/Crossfade.svelte";
 	import SequenceMandala from "./SequenceMandala.svelte";
-	import IndeterminateBar from "$lib/shared/components/loading/IndeterminateBar.svelte";
+	import IndeterminateBar from "#lib/shared/components/loading/IndeterminateBar.svelte";
 	import { mandalaPool } from "../services/mandala-pool.svelte";
 	import { flowPalette, flowGradientColors, PRESET_COLORS } from "../domain/mandala-palette";
 	import {

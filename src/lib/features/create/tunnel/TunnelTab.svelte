@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import CreatePanelDrawer from "$lib/features/create/shared/components/CreatePanelDrawer.svelte";
-  import { tunnelCollectionState } from "$lib/features/tunnel-collection/state/tunnel-collection-state.svelte";
-  import type { CollectedTunnel } from "$lib/features/tunnel-collection/domain/tunnel-collection-types";
-  import type { PublicArtifactEnvelope } from "$lib/shared/artifact-revisions/domain/public-artifact";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { setPendingBrowseIntent } from "$lib/features/browse/state/pending-browse-intent.svelte";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import CreatePanelDrawer from "#lib/features/create/shared/components/CreatePanelDrawer.svelte";
+  import { tunnelCollectionState } from "#lib/features/tunnel-collection/state/tunnel-collection-state.svelte.js";
+  import type { CollectedTunnel } from "#lib/features/tunnel-collection/domain/tunnel-collection-types.js";
+  import type { PublicArtifactEnvelope } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { setPendingBrowseIntent } from "#lib/features/browse/state/pending-browse-intent.svelte.js";
   import {
     consumeTunnelCreatorHandoff,
     createTunnelCreatorHandoff,

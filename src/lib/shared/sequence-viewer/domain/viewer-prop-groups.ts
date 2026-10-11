@@ -1,9 +1,9 @@
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
 export interface ViewerPlaybackState {
   animationState: AnimationPanelState;

@@ -5,13 +5,13 @@ import {
   createCharacterInstanceState,
   makeStandaloneDeps,
   type CharacterInstanceState,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
 import {
   ScoreSeekDetector,
   resolvePerformerContact,
-} from "$lib/shared/3d/domain/performer-contact-displacement";
-import { fixedHandDistance } from "$lib/shared/3d/domain/performer-hand-distance";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+} from "#lib/shared/3d/domain/performer-contact-displacement.js";
+import { fixedHandDistance } from "#lib/shared/3d/domain/performer-hand-distance.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import { propContinuityCorpus } from "../../tools/prop-continuity-corpus";
 
 describe("score seek detector", () => {

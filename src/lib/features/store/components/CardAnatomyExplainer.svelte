@@ -15,13 +15,13 @@
   modal, whose content box is narrower than the screen.
 -->
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { activateWhenNear } from "$lib/actions/activate-when-near";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import SkeletonLoader from "$lib/shared/foundation/ui/SkeletonLoader.svelte";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { activateWhenNear } from "#lib/actions/activate-when-near.js";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import SkeletonLoader from "#lib/shared/foundation/ui/SkeletonLoader.svelte";
   import type { CoverCard } from "../domain/models/product";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     bakedCoverUrl,
     DEFAULT_SHOP_PROP,

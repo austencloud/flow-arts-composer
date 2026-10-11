@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   FEATURE_VIDEO_FILE_FORMAT,
   FeatureVideoFileSchema,
-} from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   POST_MUSIC_MAX_SECONDS,
   type PostMusic,
@@ -14,7 +14,7 @@ import {
   PostProjectSchema,
   normalizeProject,
   editContext,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import { NOW, project, video } from "./post-project-fixtures";
 
 function music(fields: Partial<PostMusic> = {}): PostMusic {

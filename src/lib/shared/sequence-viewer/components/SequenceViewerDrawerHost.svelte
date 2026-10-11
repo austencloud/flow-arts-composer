@@ -9,13 +9,13 @@
   shell, overlay open/close/dismiss routing, and URL bootstrap.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick, untrack, type ComponentProps } from "svelte";
   import type SequenceViewerDrawerContent from "./SequenceViewerDrawerContent.svelte";
   import { afterNavigate, goto } from "$app/navigation";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ScanSequenceLoader from "./ScanSequenceLoader.svelte";
   import { loadSequenceViewerContent } from "../services/prefetch-sequence-viewer";
   import {
@@ -23,23 +23,26 @@
     closeSequenceOverlay,
     openSequenceOverlay,
   } from "../state/sequence-viewer-overlay-state.svelte";
-  import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
-  import { resolveScanPropConfig } from "$lib/shared/qr/services/scan-prop-resolver";
+  import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
+  import { resolveScanPropConfig } from "#lib/shared/qr/services/scan-prop-resolver.js";
   import {
     fetchPhysicalCardProps,
     physicalCardIdNeedingProps,
-  } from "$lib/shared/qr/services/physical-card-props";
-  import { isNative } from "$lib/shared/platform/services/platform-detector";
+  } from "#lib/shared/qr/services/physical-card-props.js";
+  import { isNative } from "#lib/shared/platform/services/platform-detector.js";
   import { APP_DOMAIN } from "../../../../config/domains";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { updateSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { parsePropsFromURL } from "$lib/shared/navigation/services/sequence-encoder";
-  import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
-  import { getLoopDetector } from "$lib/shared/create/get-loop-detector";
-  import { removeCurrentUrlParams } from "$lib/shared/navigation/services/url-state";
-  import { getGlyphCache } from "$lib/shared/render/get-glyph-cache";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { getSequenceMotionProfile } from "$lib/shared/foundation/services/sequence-motion-profile";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { updateSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { parsePropsFromURL } from "#lib/shared/navigation/services/sequence-encoder.js";
+  import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
+  import { getLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+  import {
+    isShallowGoto,
+    removeCurrentUrlParams,
+  } from "#lib/shared/navigation/services/url-state.js";
+  import { getGlyphCache } from "#lib/shared/render/get-glyph-cache.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { getSequenceMotionProfile } from "#lib/shared/foundation/services/sequence-motion-profile.js";
   import { getScanLoaderBaseLetters } from "../services/scan-sequence-loader";
   import {
     clearNativeScanViewerReady,
@@ -49,7 +52,7 @@
     markNativeScanViewerFailed,
     markNativeScanViewerReady,
     subscribeNativeScanViewerTransition,
-  } from "$lib/shared/platform/services/native-scan-viewer-readiness";
+  } from "#lib/shared/platform/services/native-scan-viewer-readiness.js";
 
   const overlay = getSequenceOverlayState();
 
@@ -241,8 +244,9 @@
   // The host stays mounted while someone moves around the app. A QR scan can
   // therefore arrive long after its first URL check, so every completed app
   // navigation gets a chance to hand off a new sequence code.
-  afterNavigate(({ to }) => {
-    requestedCode = to?.url.searchParams.get("v") ?? null;
+  afterNavigate((navigation) => {
+    if (isShallowGoto(navigation)) return;
+    requestedCode = navigation.to?.url.searchParams.get("v") ?? null;
   });
 
   $effect(() => {
@@ -394,7 +398,7 @@
     if (reason === "navigate") return;
 
     if (path) {
-      goto(path, { replaceState: true });
+      goto(path, { replace: true });
     } else if (wasOpen && !wasFromUrl) {
       window.history.back();
     }

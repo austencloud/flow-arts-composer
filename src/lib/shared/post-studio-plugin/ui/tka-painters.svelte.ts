@@ -1,6 +1,6 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
 import {
   POST_STUDIO_ROLE,
   ANIMATION_OVERLAY_ROLE,
@@ -14,8 +14,8 @@ import {
   itemIdFromMovesAnimationRole,
   itemIdFromStaffEffectRole,
   staffEffectRole,
-} from "$lib/shared/post-studio-plugin";
-import type { StripMode } from "$lib/shared/media-composition/domain/strip-view";
+} from "#lib/shared/post-studio-plugin/index.js";
+import type { StripMode } from "#lib/shared/media-composition/domain/strip-view.js";
 import type {
   CompositionSourceBinding,
   PluginBindings,
@@ -23,13 +23,13 @@ import type {
   VideoEditorState,
 } from "@austencloud/video-editor";
 import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
-import { createBeatCarouselPainter } from "$lib/shared/media-composition/services/beat-carousel-painter";
-import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { createStaffEffectPainter } from "$lib/shared/media-composition/services/staff-effect-painter";
-import { createTunnelTitlesPainter } from "$lib/shared/media-composition/services/tunnel-titles-painter";
-import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
-import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
+import { createBeatCarouselPainter } from "#lib/shared/media-composition/services/beat-carousel-painter.js";
+import { createSequenceStripPainter } from "#lib/shared/media-composition/services/sequence-strip-painter.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { createStaffEffectPainter } from "#lib/shared/media-composition/services/staff-effect-painter.js";
+import { createTunnelTitlesPainter } from "#lib/shared/media-composition/services/tunnel-titles-painter.js";
+import { createStaffTipAnalysis } from "#lib/shared/media-composition/state/staff-tip-analysis.svelte.js";
+import { loadAnimationOverlayPainter } from "#lib/shared/media-composition/services/animation-overlay-painter-registry.js";
 import { qrImageForAppearance } from "./post-qr-image-appearance";
 import { useTkaEditor } from "./tka-editor-context";
 

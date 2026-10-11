@@ -17,7 +17,7 @@ import {
   decodeShortcutSettings,
   encodeShortcutSettings,
 } from "../domain/shortcut-settings-codec";
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 
 export interface ShortcutHelpLaunchOptions {
   view?: "current" | "all" | "changed";

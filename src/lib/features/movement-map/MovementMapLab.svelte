@@ -7,10 +7,10 @@
   reads the StepMap it produces. Annotate is the new work.
 -->
 <script lang="ts">
-  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
   import { onDestroy, onMount } from "svelte";
-  import StepMapEditor from "$lib/shared/sequence-viewer/components/step-mapping/StepMapEditor.svelte";
-  import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
+  import StepMapEditor from "#lib/shared/sequence-viewer/components/step-mapping/StepMapEditor.svelte";
+  import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
   import { getMovementAnnotationStore } from "./services/movement-annotation-store";
   import { createMovementMapState } from "./state/movement-map-state.svelte";
   import { setMovementMapContext } from "./context/movement-map-context";

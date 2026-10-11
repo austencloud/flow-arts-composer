@@ -1,6 +1,6 @@
-import { SequenceAnimationOrchestrator } from '$lib/shared/animation-engine/services/sequence-animation-orchestrator';
-import { getAnimationStateManager } from '$lib/shared/animation-engine/get-animation-state-manager';
-import { getViewerAnimationPropConfig } from '$lib/shared/animation-engine/get-viewer-animation-prop-config';
+import { SequenceAnimationOrchestrator } from '#lib/shared/animation-engine/services/sequence-animation-orchestrator.js';
+import { getAnimationStateManager } from '#lib/shared/animation-engine/get-animation-state-manager.js';
+import { getViewerAnimationPropConfig } from '#lib/shared/animation-engine/get-viewer-animation-prop-config.js';
 
 let instance: SequenceAnimationOrchestrator | null = null;
 export function getSequenceAnimationOrchestrator(): SequenceAnimationOrchestrator {

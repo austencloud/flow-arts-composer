@@ -11,12 +11,12 @@
  * mandala path set.
  */
 
-import type { TnDElement } from "$lib/features/choreo-card/domain/tnd-element";
+import type { TnDElement } from "#lib/features/choreo-card/domain/tnd-element.js";
 import {
   STICKER_ART_RADIUS_PX,
   STICKER_BLEED_PX,
   STICKER_TILE_SIZE_PX,
-} from "$lib/features/sticker-lab/domain/sticker-constants";
+} from "#lib/features/sticker-lab/domain/sticker-constants.js";
 
 export type StickerBgStyle = "white" | "tint" | "gradient";
 export type StickerRingColor = "accent" | "dark";

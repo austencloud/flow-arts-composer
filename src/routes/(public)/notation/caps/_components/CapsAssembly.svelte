@@ -13,7 +13,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
+  import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
   import { buildYutaCapSequence } from "./yuta-cap-sequence";
 
   const EXT_COLOR = "#38bdf8"; // extension half (PRO)

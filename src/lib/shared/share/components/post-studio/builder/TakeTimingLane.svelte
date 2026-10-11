@@ -4,10 +4,10 @@
   import type {
     ResolvedTakeTiming,
     TakeTiming,
-  } from "$lib/shared/media-composition/domain/take-timing";
-  import { MIN_MOVE_SECONDS } from "$lib/shared/media-composition/domain/take-timing";
-  import { landingName } from "$lib/shared/media-composition/domain/timing-summary";
-  import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
+  } from "#lib/shared/media-composition/domain/take-timing.js";
+  import { MIN_MOVE_SECONDS } from "#lib/shared/media-composition/domain/take-timing.js";
+  import { landingName } from "#lib/shared/media-composition/domain/timing-summary.js";
+  import TimeRuler from "#lib/shared/timeline/TimeRuler.svelte";
   import {
     POST_TIMELINE_MAX_PIXELS_PER_SECOND,
     revealPlayheadScrollLeft,

@@ -4,7 +4,7 @@ import {
   type PropFinish,
 } from "@austencloud/scene-3d";
 
-import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
 /**
  * The parts of a build one control changed. A performer override stores only

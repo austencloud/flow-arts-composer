@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { OrientationCycleExtender } from './services/orientation-cycle-extender';
 
 let instance: OrientationCycleExtender | null = null;

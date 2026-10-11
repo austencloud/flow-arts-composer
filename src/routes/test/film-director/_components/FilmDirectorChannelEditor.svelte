@@ -19,7 +19,7 @@
    *
    * Design: docs/superpowers/specs/active/2026-09-02-film-director-channel-architecture-design.md
    */
-  import { flyFade } from "$lib/shared/transitions/motion";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
   import { getFilmDirectorContext } from "../_lib/film-director-context";
   import {
     cameraChannelGroup,

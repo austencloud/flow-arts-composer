@@ -7,7 +7,7 @@
    */
   import type { TnDFamilyOption } from "../../services/deck-composer";
   import { TND_BY_FAMILY } from "../../domain/tnd-element";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
 
   interface Props {
     families: TnDFamilyOption[];

@@ -63,7 +63,7 @@ vi.mock("firebase/firestore", () => ({
   Timestamp: { fromDate: vi.fn(), now: vi.fn() },
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: async () => {
     if (mocks.firestoreGate) await mocks.firestoreGate;
     if (mocks.firestoreFails) throw new Error("Firestore unavailable");
@@ -74,17 +74,17 @@ vi.mock("$lib/shared/auth/firebase", () => ({
 
 vi.mock("firebase/functions", () => ({ httpsCallable: vi.fn(() => vi.fn()) }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { initialized: true, loading: false },
   getEffectiveUserId: () => mocks.effectiveUserId,
 }));
 
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   userPreviewState: { isActive: false, data: {} },
   isPreviewReadOnly: () => false,
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: {
     info: vi.fn(),
     success: vi.fn(),
@@ -93,7 +93,7 @@ vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
   },
 }));
 
-import { messagingService } from "$lib/shared/messaging/services/messenger";
+import { messagingService } from "#lib/shared/messaging/services/messenger.js";
 import { onSnapshot } from "firebase/firestore";
 
 /** Hold `getFirestoreInstance` open so disposal can land mid-attach. */

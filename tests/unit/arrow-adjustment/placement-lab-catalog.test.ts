@@ -2,22 +2,22 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { generatePlacementKey } from "$lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import { createCanonicalPlacementContext } from "$lib/shared/pictograph/arrow/positioning/calculation/services/canonical-placement-frame";
-import { arrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
-import { applyRotationMatrix } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-coordinate-transformer";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { generatePlacementKey } from "#lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import { createCanonicalPlacementContext } from "#lib/shared/pictograph/arrow/positioning/calculation/services/canonical-placement-frame.js";
+import { arrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
+import { applyRotationMatrix } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-coordinate-transformer.js";
 import {
   getInitialPosition,
   getSceneCenter,
-} from "$lib/shared/pictograph/arrow/orchestration/services/arrow-grid-coordinator";
+} from "#lib/shared/pictograph/arrow/orchestration/services/arrow-grid-coordinator.js";
 import {
   buildPlacementCatalog,
   buildPlacementFixture,

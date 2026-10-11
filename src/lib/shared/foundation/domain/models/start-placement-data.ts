@@ -11,8 +11,8 @@
  *
  * Start placements only show WHERE and HOW props are held initially.
  */
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export interface StartPlacementData extends PictographData {
   // Type discriminator for TypeScript type guards

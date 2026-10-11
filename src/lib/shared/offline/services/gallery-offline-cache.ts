@@ -6,10 +6,10 @@
  * that PublicSequencesLoader uses for online data.
  */
 
-import { db } from "$lib/shared/persistence/database/tka-database";
+import { db } from "#lib/shared/persistence/database/tka-database.js";
 import type { GallerySequenceConverter } from "./types";
-import type { PublicSequenceIndex } from "$lib/shared/foundation/domain/models/public-sequence-index";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { PublicSequenceIndex } from "#lib/shared/foundation/domain/models/public-sequence-index.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { GalleryCacheEntry } from "../domain/offline-cache-types";
 
 /**

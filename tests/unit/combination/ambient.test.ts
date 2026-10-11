@@ -36,14 +36,14 @@ import type {
   CombinationResult,
   SeamState,
   WalkBlock,
-} from "$lib/shared/combination/domain/types";
-import { findCombinations } from "$lib/shared/combination/services/sequence-combinator";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/combination/domain/types.js";
+import { findCombinations } from "#lib/shared/combination/services/sequence-combinator.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 import {
   AAAA_CCW,

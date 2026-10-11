@@ -2,7 +2,8 @@
  * The Create front door's method cards take turns playing their previews.
  *
  * One turn passes around the cards in board order. A turn plays one card's
- * scene for about three seconds, then a short gap passes it on. After two
+ * scene for about three seconds (Generate's runs longer), then a short gap
+ * passes it on. After two
  * rounds every card rests on its finished picture. A pointer resting on a
  * card, or keyboard focus, plays that card now; those extra turns do not
  * count toward the rounds and keep working after them. Automatic turns wait
@@ -14,9 +15,9 @@
  * drawing, and the front door's render gate calls setActive().
  */
 import { untrack } from "svelte";
-import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-import { DURATION } from "$lib/shared/transitions/transitions";
-import { reducedMotion as systemReducedMotion } from "$lib/shared/transitions/motion";
+import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
+import { reducedMotion as systemReducedMotion } from "#lib/shared/transitions/motion.js";
 
 /**
  * Reduced motion for previews. `reducedMotion()` covers the system setting
@@ -31,6 +32,8 @@ export function previewMotionReduced(): boolean {
 export interface MethodPreviewTiming {
   /** How long one card's scene plays. */
   turnMs: number;
+  /** Cards whose scene needs a longer turn, by method id. */
+  longTurnsMs: Readonly<Record<string, number>>;
   /** The pause between one card's turn and the next. */
   gapMs: number;
   /** How long a pointer rests on a card, or focus stays, before it plays. */
@@ -43,16 +46,30 @@ export interface MethodPreviewTiming {
   rounds: number;
 }
 
-/** The one owner of preview timing. Six cards take about 42 seconds. */
+/** The one owner of preview timing. Six cards take about 43 seconds. */
 export const METHOD_PREVIEW_TIMING: Readonly<MethodPreviewTiming> =
   Object.freeze({
     turnMs: 3000,
+    // Generate lands a roll still, then plays three steps' moves one after
+    // another, as Play does (2026-10-11).
+    longTurnsMs: Object.freeze({ generate: 3700 }),
     gapMs: 500,
     hoverDelayMs: 350,
     readyWaitMs: 2500,
     startDelayMs: DURATION.emphasis,
     rounds: 2,
   });
+
+/** How long a card's turn plays. */
+export function methodPreviewTurnMs(
+  id: string,
+  timing: Pick<
+    MethodPreviewTiming,
+    "turnMs" | "longTurnsMs"
+  > = METHOD_PREVIEW_TIMING
+): number {
+  return timing.longTurnsMs[id] ?? timing.turnMs;
+}
 
 export interface MethodPreviewTurnOptions {
   /** Method ids in board order, read before each turn. */
@@ -155,7 +172,7 @@ export function createMethodPreviewTurns(
     playingId = id;
     playingKind = kind;
     turn += 1;
-    schedule(timing.turnMs, endTurn);
+    schedule(methodPreviewTurnMs(id, timing), endTurn);
   }
 
   function endTurn(): void {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { T } from "@threlte/core";
   import { HTML } from "@threlte/extras";
-  import { popIn } from "$lib/shared/transitions/motion";
+  import { popIn } from "#lib/shared/transitions/motion.js";
 
   interface Props {
     position: { x: number; z: number };

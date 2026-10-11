@@ -1,20 +1,20 @@
 <script lang="ts">
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import MessageMarkup from "$lib/shared/i18n/MessageMarkup.svelte";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import MessageMarkup from "#lib/shared/i18n/MessageMarkup.svelte";
   import { onMount } from "svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { loadFoundingCollectionSequences } from "$lib/features/browse/collections/config/founding-collections";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { loadFoundingCollectionSequences } from "#lib/features/browse/collections/config/founding-collections.js";
   import {
     TND_ELEMENTS,
     type TnDElement,
-  } from "$lib/features/choreo-card/domain/tnd-element";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+  } from "#lib/features/choreo-card/domain/tnd-element.js";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
   import type { ExperienceViewMode } from "../../../domain/types";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
   import LessonStageControls from "../LessonStageControls.svelte";

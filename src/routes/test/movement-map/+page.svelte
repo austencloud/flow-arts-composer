@@ -1,5 +1,5 @@
 <script lang="ts">
-  import MovementMapLab from "$lib/features/movement-map/MovementMapLab.svelte";
+  import MovementMapLab from "#lib/features/movement-map/MovementMapLab.svelte";
 </script>
 
 <svelte:head>

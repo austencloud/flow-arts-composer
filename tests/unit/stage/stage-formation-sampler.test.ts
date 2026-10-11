@@ -3,14 +3,14 @@ import { describe, expect, it } from "vitest";
 import {
   sampleFormationPerformance,
   sampleStageFormations,
-} from "$lib/features/stage/domain/stage-formation-sampler";
+} from "#lib/features/stage/domain/stage-formation-sampler.js";
 import type {
   Formation,
   FormationSpot,
   Performer,
   StageChoreography,
-} from "$lib/features/stage/domain/stage-types";
-import { SceneEnvironmentId } from "$lib/shared/3d/environments/domain/scene-environment";
+} from "#lib/features/stage/domain/stage-types.js";
+import { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
 
 function spot(
   x: number,

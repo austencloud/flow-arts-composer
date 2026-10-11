@@ -4,17 +4,22 @@
  * must land exactly on its fused cell, and the beats must fit in one turn.
  */
 import { describe, expect, it } from "vitest";
-import { METHOD_PREVIEW_TIMING } from "$lib/features/create/shared/state/method-preview-turns.svelte";
-import { fuseLayout } from "$lib/features/create/shared/components/method-previews/method-preview-compositions";
+import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
+import { fuseLayout } from "#lib/features/create/shared/components/method-previews/method-preview-compositions.js";
+import { PREVIEW_MOVE_MS } from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
 import {
   DEMO_SEQUENCE,
+  DEMO_STEP_START,
   startPictograph,
-} from "$lib/features/create/shared/components/method-previews/method-preview-demo";
+} from "#lib/features/create/shared/components/method-previews/method-preview-demo.js";
 import {
+  FUSE_PREVIEW_DRAW_WAIT_MS,
+  FUSE_PREVIEW_STEPS,
   FUSE_PREVIEW_TIMING,
   fuseFrames,
+  fusePreviewFrames,
   fuseSources,
-} from "$lib/features/create/shared/components/method-previews/method-preview-fuse";
+} from "#lib/features/create/shared/components/method-previews/method-preview-fuse.js";
 
 const at = (x: number, y: number, size: number) => ({ x, y, size });
 
@@ -39,6 +44,12 @@ describe("Fuse preview frames", () => {
     expect(frames[0]?.motionStartData).toBe(DEMO_SEQUENCE.steps[2]);
     expect(frames[1]?.motionStartData).toBe(DEMO_SEQUENCE.steps[3]);
     expect(frames.map((frame) => frame.motionProgress)).toEqual([0, 0]);
+  });
+
+  it("shows any pair's steps from Fuse's place in the demo", () => {
+    expect(fusePreviewFrames(DEMO_SEQUENCE)).toEqual(
+      fuseFrames(DEMO_SEQUENCE, FUSE_PREVIEW_STEPS, DEMO_STEP_START.fuse)
+    );
   });
 });
 
@@ -143,14 +154,35 @@ describe("Fuse preview slides", () => {
 });
 
 describe("Fuse preview beats", () => {
-  it("plays both fused steps with half a second of the turn to spare", () => {
+  it("plays both fused steps at the other previews' pace, inside the turn", () => {
     const timing = FUSE_PREVIEW_TIMING;
+    expect(timing.stepMs).toBe(PREVIEW_MOVE_MS);
     const end =
       timing.clearMs +
       timing.sourcesInMs +
       timing.slideMs +
       timing.mergeMs +
-      2 * timing.stepMs;
-    expect(end).toBeLessThanOrEqual(METHOD_PREVIEW_TIMING.turnMs - 500);
+      FUSE_PREVIEW_STEPS * timing.stepMs;
+    expect(end).toBeLessThanOrEqual(METHOD_PREVIEW_TIMING.turnMs - 200);
+  });
+
+  it("pops a new path in within the sources' fade", () => {
+    const timing = FUSE_PREVIEW_TIMING;
+    expect(timing.newHandMs).toBeGreaterThan(0);
+    expect(timing.newHandMs).toBeLessThan(timing.sourcesInMs);
+  });
+
+  it("still ends its run within the turn after waiting on a slow draw", () => {
+    // The run ends as the last step starts; that step plays on into the
+    // turn's end, so the wait costs only its end, never a cut.
+    const timing = FUSE_PREVIEW_TIMING;
+    const lastStepStarts =
+      FUSE_PREVIEW_DRAW_WAIT_MS +
+      timing.clearMs +
+      timing.sourcesInMs +
+      timing.slideMs +
+      timing.mergeMs +
+      (FUSE_PREVIEW_STEPS - 1) * timing.stepMs;
+    expect(lastStepStarts).toBeLessThan(METHOD_PREVIEW_TIMING.turnMs);
   });
 });

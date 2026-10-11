@@ -5,13 +5,13 @@ import type {
   VideoEditorState,
 } from "@austencloud/video-editor";
 import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
-import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
-import type { PostTimingSession } from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
+import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+import type { StaffTipAnalysis } from "#lib/shared/media-composition/state/staff-tip-analysis.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { CollaborativeVideo } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+import type { PostTimingSession } from "#lib/shared/share/components/post-studio/builder/post-timing-session.svelte.js";
 import type { PostStudioShareExport } from "@austencloud/video-editor/ui";
 import type { TimingUi } from "./tka-timing-ui.svelte";
 

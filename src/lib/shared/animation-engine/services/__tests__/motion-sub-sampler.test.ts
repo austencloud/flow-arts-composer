@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import {
   MotionSubSampler,
   motionBeatSpan,

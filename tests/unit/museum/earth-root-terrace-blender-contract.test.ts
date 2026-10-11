@@ -6,7 +6,7 @@ import {
   buildCompiledEarthRootTerraceBlenderContract,
   buildCompiledEarthRootTerraceGrid,
   earthPlanPointToBlender,
-} from "$lib/features/museum/data/earth-root-terrace-blender-contract";
+} from "#lib/features/museum/data/earth-root-terrace-blender-contract.js";
 import {
   BED_Y,
   DOOR_Y,
@@ -15,10 +15,10 @@ import {
   OVERLOOK_Y,
   RAIL_HEIGHT,
   buildEarthRootTerraceLayout,
-} from "$lib/features/museum/data/earth-root-terrace-terrain";
-import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
-import { TILE_METRES } from "$lib/features/museum/data/drowned-gallery-terrain";
-import { canonicalJSON } from "$lib/shared/foundation/utils/canonical-json";
+} from "#lib/features/museum/data/earth-root-terrace-terrain.js";
+import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
+import { TILE_METRES } from "#lib/features/museum/data/drowned-gallery-terrain.js";
+import { canonicalJSON } from "#lib/shared/foundation/utils/canonical-json.js";
 
 const contract = buildCompiledEarthRootTerraceBlenderContract();
 const layout = buildEarthRootTerraceLayout(buildCompiledEarthRootTerraceGrid())!;

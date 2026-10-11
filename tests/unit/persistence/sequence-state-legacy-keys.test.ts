@@ -3,7 +3,7 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import {
   loadCurrentSequenceState,
   migrateLegacySequenceStateBlob,
-} from "$lib/shared/persistence/services/dexie-persistence-service";
+} from "#lib/shared/persistence/services/dexie-persistence-service.js";
 
 const STORAGE_KEY = "tka-construct-sequence-state-v1";
 

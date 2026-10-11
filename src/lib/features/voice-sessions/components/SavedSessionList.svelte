@@ -6,11 +6,11 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type * as VoiceSessionRepositoryModule from "$lib/shared/voice-sessions/services/voice-session-repository";
-  import type * as VoiceSessionFormatterModule from "$lib/features/voice-sessions/services/voice-session-formatter";
-  import type { VoiceSessionReplayer } from "$lib/features/voice-sessions/services/voice-session-replayer";
-  import type { VoiceSessionPreview, VoiceSession } from "$lib/shared/voice-control/domain/voice-session-types";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type * as VoiceSessionRepositoryModule from "#lib/shared/voice-sessions/services/voice-session-repository.js";
+  import type * as VoiceSessionFormatterModule from "#lib/features/voice-sessions/services/voice-session-formatter.js";
+  import type { VoiceSessionReplayer } from "#lib/features/voice-sessions/services/voice-session-replayer.js";
+  import type { VoiceSessionPreview, VoiceSession } from "#lib/shared/voice-control/domain/voice-session-types.js";
   import SavedSessionItem from "./SavedSessionItem.svelte";
   import SessionDetailView from "./SessionDetailView.svelte";
 

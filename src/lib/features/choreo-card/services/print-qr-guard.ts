@@ -16,8 +16,8 @@ import {
 import {
   createTkaQrDetector,
   type TkaQrDetector,
-} from "$lib/shared/qr/services/tka-qr-detector";
-import { extractScanCode } from "$lib/shared/qr/services/extract-scan-code";
+} from "#lib/shared/qr/services/tka-qr-detector.js";
+import { extractScanCode } from "#lib/shared/qr/services/extract-scan-code.js";
 import { getPageLayout, type CardSizeId } from "../domain/card-sizes";
 import {
   getSerializedQrPlacement,

@@ -13,16 +13,16 @@
  *
  * Spec: docs/superpowers/specs/2026-08-16-museum-pedestal-and-console-design.md
  */
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { renderMandalaSVG } from "$lib/shared/mandala/services/mandala-renderer";
-import { MANDALA_STANDARD_TIP_DX } from "$lib/shared/mandala/domain/mandala-constants";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { renderMandalaSVG } from "#lib/shared/mandala/services/mandala-renderer.js";
+import { MANDALA_STANDARD_TIP_DX } from "#lib/shared/mandala/domain/mandala-constants.js";
 import type {
   MandalaPalette,
   MandalaPaths,
-} from "$lib/shared/mandala/domain/mandala-types";
-import { MUSEUM_EXHIBIT_SEQUENCES } from "$lib/features/museum/data/museum-exhibit-sequences";
-import { faceTraceCount } from "$lib/features/museum/domain/pedestal-standard";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/mandala/domain/mandala-types.js";
+import { MUSEUM_EXHIBIT_SEQUENCES } from "#lib/features/museum/data/museum-exhibit-sequences.js";
+import { faceTraceCount } from "#lib/features/museum/domain/pedestal-standard.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 /** Rendered face resolution. Square, and a power of two for GPU sampling. */
 const FACE_PX = 1024;

@@ -9,13 +9,13 @@
  * Domain: Retro File Manager
  */
 
-import type { LibraryQueryOptions } from "$lib/features/library/services/types";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+import type { LibraryQueryOptions } from "#lib/features/library/services/types.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 import { convertFileName } from "../services/file-name-converter";
 
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-import type { LibraryRepository } from "$lib/shared/library/services/library-repository";
-import { toDate } from "$lib/shared/library/services/collection-firestore-mapper";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+import type { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
+import { toDate } from "#lib/shared/library/services/collection-firestore-mapper.js";
 
 export interface RetroFile {
 	id: string;

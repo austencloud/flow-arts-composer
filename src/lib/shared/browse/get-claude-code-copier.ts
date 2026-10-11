@@ -1,6 +1,6 @@
-import { browser } from '$app/environment';
-import { ClaudeCodeCopier } from '$lib/shared/browse/services/claude-code-copier';
-import { getSequenceDetailLoader } from '$lib/shared/browse/get-sequence-detail-loader';
+import { browser } from '$app/env';
+import { ClaudeCodeCopier } from '#lib/shared/browse/services/claude-code-copier.js';
+import { getSequenceDetailLoader } from '#lib/shared/browse/get-sequence-detail-loader.js';
 
 let instance: ClaudeCodeCopier | null = null;
 

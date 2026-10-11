@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { PromoOrchestrator } from './services/promo-orchestrator';
 import { getPromoSceneManager } from './get-promo-scene-manager';
 import { getScreenshotInjector } from './get-screenshot-injector';

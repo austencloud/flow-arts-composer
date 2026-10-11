@@ -10,7 +10,7 @@ import {
   staffTipsAt,
   type StaffTipSeries,
   type StaffTipTrack,
-} from "$lib/shared/media-composition/domain/staff-tip-track";
+} from "#lib/shared/media-composition/domain/staff-tip-track.js";
 
 /** One end moving right 0.1 per sample, with the given states. */
 function series(states: number[]): StaffTipSeries {

@@ -15,12 +15,12 @@
  */
 import { untrack } from "svelte";
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { page } from "$app/state";
 
-import { writeUrl } from "$lib/shared/navigation/services/url-state";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { CharacterId } from "$lib/shared/3d/domain/character-model";
+import { writeUrl } from "#lib/shared/navigation/services/url-state.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
 
 import {
   LAB_FRAME_STEP,
@@ -132,15 +132,16 @@ export class StaffLabState {
    * It cannot be `page.url`. Every write here goes through SvelteKit shallow
    * routing, and `pushState`/`replaceState` deliberately update only
    * `page.state` — `page.url` keeps naming the last real navigation
-   * (`@sveltejs/kit` 2.61.1, `client.js`: `page.state = state` with no url
-   * assignment). Deriving the axes from `page.url` therefore produced a lab
-   * whose address bar moved while the page ignored it: the link was right and
-   * the instrument was a frame behind, which is the exact opposite of the
-   * point. This mirror is written by `#write` before the history call and
-   * re-seeded from `popstate` and from real navigations, so reads follow the
-   * address bar in every direction — clicks, Back, Forward, paste, reload.
+   * (`@sveltejs/kit` 3.0.1, `client.js` `update_state`: it sets `page.state`
+   * and `page.shallow`, never `page.url`). Deriving the axes from `page.url`
+   * therefore produced a lab whose address bar moved while the page ignored
+   * it: the link was right and the instrument was a frame behind, which is
+   * the exact opposite of the point. This mirror is written by `#write`
+   * before the history call and re-seeded from `popstate` and from real
+   * navigations, so reads follow the address bar in every direction —
+   * clicks, Back, Forward, paste, reload.
    */
-  #url = $state(new URL(page.url));
+  #url = $state(new URL(page.url.href));
 
   /**
    * Phase is the one axis that changes continuously, so it cannot be read

@@ -15,7 +15,7 @@
   import {
     PETAL_PALETTES,
     type PetalPalette,
-  } from "$lib/shared/effects/domain/petal-palettes";
+  } from "#lib/shared/effects/domain/petal-palettes.js";
 
   const RES = 520; // internal canvas resolution (CSS scales the element)
 

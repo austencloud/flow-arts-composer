@@ -10,42 +10,42 @@
   Mobile: Swipe left from left edge to exit (matches portal animation direction)
 -->
 <script lang="ts">
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
   import {
     getSettings,
     updateSetting,
-  } from "$lib/shared/application/state/app-state.svelte";
-  import { areServicesInitialized } from "$lib/shared/application/state/services.svelte";
-  import IOSSkeletonLoader from "$lib/shared/settings/components/IOSSkeletonLoader.svelte";
-  import Toast from "$lib/shared/settings/components/Toast.svelte";
+  } from "#lib/shared/application/state/app-state.svelte.js";
+  import { areServicesInitialized } from "#lib/shared/application/state/services.svelte.js";
+  import IOSSkeletonLoader from "#lib/shared/settings/components/IOSSkeletonLoader.svelte";
+  import Toast from "#lib/shared/settings/components/Toast.svelte";
   import {
     handleModuleChange,
     handleSectionChange,
-  } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import type { ModuleId } from "$lib/shared/navigation/domain/types";
-  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
-  import type { ResponsiveSettings } from "$lib/shared/device/domain/models/device-models";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { applyThemeForBackground } from "$lib/shared/settings/utils/background-theme-calculator";
-  import type { AppSettings } from "$lib/shared/settings/domain/app-settings";
+  } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import type { ModuleId } from "#lib/shared/navigation/domain/types.js";
+  import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
+  import type { ResponsiveSettings } from "#lib/shared/device/domain/models/device-models.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { applyThemeForBackground } from "#lib/shared/settings/utils/background-theme-calculator.js";
+  import type { AppSettings } from "#lib/shared/settings/domain/app-settings.js";
 
   // Navigation state - use global activeTab
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { isTabAccessible } from "$lib/shared/auth/domain/guest-access-config";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { isTabAccessible } from "#lib/shared/auth/domain/guest-access-config.js";
 
   // Import all tab components directly
-  import ProfileTab from "$lib/shared/settings/components/tabs/ProfileTab.svelte";
-  import ReleaseNotesTab from "$lib/shared/settings/components/tabs/ReleaseNotesTab.svelte";
-  import PropTypeTab from "$lib/shared/settings/components/tabs/PropTypeTab.svelte";
-  import BackgroundTab from "$lib/shared/settings/components/tabs/background/BackgroundTab.svelte";
-  import PreferencesTab from "$lib/shared/settings/components/tabs/PreferencesTab.svelte";
-  import LanguagePreference from "$lib/shared/settings/components/tabs/preferences/LanguagePreference.svelte";
-  import ShortcutCenter from "$lib/shared/keyboard/components/ShortcutCenter.svelte";
-  import NotificationPreferencesPanel from "$lib/features/feedback/components/NotificationPreferencesPanel.svelte";
+  import ProfileTab from "#lib/shared/settings/components/tabs/ProfileTab.svelte";
+  import ReleaseNotesTab from "#lib/shared/settings/components/tabs/ReleaseNotesTab.svelte";
+  import PropTypeTab from "#lib/shared/settings/components/tabs/PropTypeTab.svelte";
+  import BackgroundTab from "#lib/shared/settings/components/tabs/background/BackgroundTab.svelte";
+  import PreferencesTab from "#lib/shared/settings/components/tabs/PreferencesTab.svelte";
+  import LanguagePreference from "#lib/shared/settings/components/tabs/preferences/LanguagePreference.svelte";
+  import ShortcutCenter from "#lib/shared/keyboard/components/ShortcutCenter.svelte";
+  import NotificationPreferencesPanel from "#lib/features/feedback/components/NotificationPreferencesPanel.svelte";
 
   // Reactive settings - derives from getSettings() to maintain reactivity
   let settings = $derived(getSettings());
@@ -258,32 +258,18 @@
       <IOSSkeletonLoader variant="toggle" count={8} />
     </div>
   {:else}
-    <div
-      class="settings-module-body"
-      class:theme-background-active={activeTab === "theme"}
-    >
-      <section
-        class="panel"
-        class:theme-background-active={activeTab === "theme"}
-      >
-        {#if activeTab === "keyboard" || activeTab === "release-notes"}
-          <button
-            type="button"
-            class="subpage-back"
-            onclick={() => handleSectionChange("preferences")}
-            aria-label={t("action_go_back")}
-          >
-            <i class="fas fa-chevron-left" aria-hidden="true"></i>
-            {t("settings_preferences")}
-          </button>
-        {/if}
+    <div class="settings-module-body">
+      <section class="panel">
         {#if activeTab === "profile"}
           <ProfileTab
             currentSettings={settings}
             onSettingUpdate={handleSettingUpdate}
           />
         {:else if activeTab === "release-notes"}
-          <ReleaseNotesTab />
+          <ReleaseNotesTab
+            backLabel={t("settings_preferences")}
+            onBack={() => handleSectionChange("preferences")}
+          />
         {:else if activeTab === "props"}
           <PropTypeTab {settings} onUpdate={handleSettingUpdate} />
         {:else if activeTab === "theme"}
@@ -296,7 +282,10 @@
             onSettingUpdate={handleSettingUpdate}
           />
         {:else if activeTab === "keyboard"}
-          <ShortcutCenter />
+          <ShortcutCenter
+            backLabel={t("settings_preferences")}
+            onBack={() => handleSectionChange("preferences")}
+          />
         {:else}
           <!-- Fallback to account if unknown tab -->
           <ProfileTab
@@ -324,27 +313,6 @@
     color: var(--foreground, #ffffff);
     font-family:
       -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  }
-
-  .subpage-back {
-    display: inline-flex;
-    align-self: flex-start;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0.75rem 1rem;
-    min-height: 44px;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--theme-stroke);
-    border-radius: 999px;
-    background: var(--theme-card-bg);
-    color: var(--theme-text);
-    font-size: var(--font-size-min);
-    cursor: pointer;
-  }
-
-  .subpage-back:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
   }
 
   /* Remove tap highlight across all settings buttons */
@@ -442,11 +410,6 @@
     border-radius: 3px;
   }
 
-  .settings-module-body.theme-background-active {
-    overflow: hidden;
-    padding: 0;
-  }
-
   /* Panel - content card - fills available space, allows internal scrolling */
   .panel {
     border-radius: 16px;
@@ -462,9 +425,137 @@
     align-items: stretch;
   }
 
-  .panel.theme-background-active {
-    padding: 0;
-    border-radius: 0;
+  /* The shared tab view transition (navigation coordinator) animates the
+     element with this name when the section changes. Named only while a tab
+     slide runs, so the Settings portal still zooms the panel with the page. */
+  :global(html.tab-slide-left) .panel,
+  :global(html.tab-slide-right) .panel {
+    view-transition-name: tab-content;
+  }
+
+  /* Every tab sits on the same dark surface, so the surface gets its own
+     name: it reshapes from one tab's panel to the next while only its
+     contents crossfade. Fading two dark panels out and in let the
+     background flash through between them. Each tab renders at most one. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.tab-slide-left)
+      .panel
+      :global(
+        :is(
+          .account-workspace,
+          .preferences-workspace,
+          .notification-workspace,
+          .props-workspace,
+          .theme-workspace
+        )
+      ),
+    :global(html.tab-slide-right)
+      .panel
+      :global(
+        :is(
+          .account-workspace,
+          .preferences-workspace,
+          .notification-workspace,
+          .props-workspace,
+          .theme-workspace
+        )
+      ) {
+      view-transition-name: settings-surface;
+    }
+
+    /* The morphing box is the panel itself: it carries the surface fill,
+       border and shadow while it reshapes, and clips both snapshots to its
+       rounded corners. Tabs differ in height far more than in width, so the
+       snapshots keep their own height and only the box grows or shrinks
+       around them; stretching them to fit made the outgoing tab swell or
+       shrink as it faded. */
+    :global(html:has(.settings-module))::view-transition-group(
+      settings-surface
+    ) {
+      overflow: clip;
+      border-radius: 1.25em;
+      outline: 1px solid var(--theme-stroke-strong, var(--theme-stroke));
+      outline-offset: -1px;
+      background: color-mix(
+        in srgb,
+        var(--theme-panel-bg, rgba(0, 0, 0, 0.88)) 14%,
+        #070b10 86%
+      );
+      box-shadow: var(--theme-panel-shadow, 0 1rem 3rem rgba(0, 0, 0, 0.35));
+      animation-duration: var(--duration-emphasis);
+      animation-timing-function: var(--ease-out);
+    }
+
+    :global(
+        html[data-theme-luminance="bright"]:has(.settings-module)
+      )::view-transition-group(settings-surface) {
+      background: color-mix(
+        in srgb,
+        var(--theme-panel-bg, rgba(255, 255, 255, 0.88)) 14%,
+        #f6f7f9 86%
+      );
+    }
+  }
+
+  /* Settings' own take on the shared tab slide: the outgoing tab drifts away
+     and fades fast, the incoming one rises from the side of the tab that was
+     picked (later tabs from below, earlier from above) with a little depth,
+     overlapping the exit so the panel is never empty. Scoped by :has so other
+     modules keep the shared slide once this stylesheet has loaded. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.tab-slide-left:has(.settings-module))::view-transition-old(
+      tab-content
+    ) {
+      animation: var(--duration-fast) var(--ease-in) both settings-tab-out-up;
+    }
+
+    :global(html.tab-slide-left:has(.settings-module))::view-transition-new(
+      tab-content
+    ) {
+      animation: var(--duration-emphasis) var(--ease-out)
+        calc(var(--duration-fast) / 2) both settings-tab-in-up;
+    }
+
+    :global(html.tab-slide-right:has(.settings-module))::view-transition-old(
+      tab-content
+    ) {
+      animation: var(--duration-fast) var(--ease-in) both settings-tab-out-down;
+    }
+
+    :global(html.tab-slide-right:has(.settings-module))::view-transition-new(
+      tab-content
+    ) {
+      animation: var(--duration-emphasis) var(--ease-out)
+        calc(var(--duration-fast) / 2) both settings-tab-in-down;
+    }
+  }
+
+  @keyframes -global-settings-tab-out-up {
+    to {
+      opacity: 0;
+      transform: translateY(-1.5rem) scale(0.98);
+    }
+  }
+
+  @keyframes -global-settings-tab-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(2.5rem) scale(0.98);
+    }
+  }
+
+  @keyframes -global-settings-tab-out-down {
+    to {
+      opacity: 0;
+      transform: translateY(1.5rem) scale(0.98);
+    }
+  }
+
+  @keyframes -global-settings-tab-in-down {
+    from {
+      opacity: 0;
+      transform: translateY(-2.5rem) scale(0.98);
+    }
   }
 
   /* Loading state */

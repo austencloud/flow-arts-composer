@@ -1,20 +1,20 @@
 <script lang="ts">
   import { Plane } from "@austencloud/scene-3d";
-  import PropPlacementGrid from "$lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
-  import type { PropPlacementChange } from "$lib/shared/pictograph/grid/domain/prop-placement";
+  import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
+  import type { PropPlacementChange } from "#lib/shared/pictograph/grid/domain/prop-placement.js";
   import {
     GridLocation,
     GridMode,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { normalizeOrientationForLocation } from "$lib/shared/pictograph/grid/domain/orientation-from-drag";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { normalizeOrientationForLocation } from "#lib/shared/pictograph/grid/domain/orientation-from-drag.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     HandSide,
     Orientation,
     type Orientation as OrientationValue,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import OrientationCycler from "$lib/features/create/construct/start-placement-picker/components/OrientationCycler.svelte";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import OrientationCycler from "#lib/features/create/construct/start-placement-picker/components/OrientationCycler.svelte";
   import FanRelationScene from "./components/FanRelationScene.svelte";
   import {
     FanViewpoint,

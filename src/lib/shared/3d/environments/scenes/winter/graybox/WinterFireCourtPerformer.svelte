@@ -3,10 +3,10 @@
    * One live fire-court performer composed from the canonical character, prop,
    * sequence-playback, and 3D effect owners.
    */
-  import type { CharacterId } from "$lib/shared/3d/domain/character-model";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import LiveSequencePerformer3D from "$lib/shared/3d/performers/LiveSequencePerformer3D.svelte";
+  import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import LiveSequencePerformer3D from "#lib/shared/3d/performers/LiveSequencePerformer3D.svelte";
 
   interface Props {
     stationId: string;

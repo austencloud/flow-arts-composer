@@ -5,11 +5,11 @@ import {
   localTakeKey,
   openTakeTiming,
   saveTakeTiming,
-} from "$lib/shared/media-composition/services/take-timing-store";
+} from "#lib/shared/media-composition/services/take-timing-store.js";
 import {
   resolveTakeTiming,
   takePositionAt,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 const EIGHT = [1, 1, 1, 1, 1, 1, 1, 1];
 const FILE = { name: "DCK.mp4", size: 1234, lastModified: 99 };

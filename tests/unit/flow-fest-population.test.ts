@@ -27,23 +27,26 @@ import {
   resolveFlowFestScheduleBlock,
   type FlowFestDayPhase,
   type FlowFestPopulationSite,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-population";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-population.js";
 import {
   isFlowFestCorridorCovered,
   routeFlowFestCorridor,
   flowFestCorridorAnchorNode,
   flowFestCorridorPathLength,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-corridor-graph";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-corridor-graph.js";
 import {
   auditFlowFestLivingCommunity,
   sampleFlowFestLivingCommunity,
   type FlowFestFestivalCommunityLayout,
   type FlowFestFestivalPersonPlacement,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-living-fire-jam";
-import { isEffectPreviewLoop } from "$lib/shared/effects/domain/effect-preview-loop-policy";
-import { GHGH, makeLoop } from "$lib/shared/combination/domain/demo-fixtures";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { FlowFestMoment } from "$lib/features/flow-fest-sim/state/flow-fest-progress";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-living-fire-jam.js";
+import { isEffectPreviewLoop } from "#lib/shared/effects/domain/effect-preview-loop-policy.js";
+import {
+  GHGH,
+  makeLoop,
+} from "#lib/shared/combination/domain/demo-fixtures.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { FlowFestMoment } from "#lib/features/flow-fest-sim/state/flow-fest-progress.js";
 
 const contract = parseFlowFestRuntimeContract(
   JSON.parse(

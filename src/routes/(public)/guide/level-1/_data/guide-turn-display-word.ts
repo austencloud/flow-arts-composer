@@ -1,4 +1,4 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 /** Localize descriptive guide titles without changing TKA sequence identity. */
 export function guideTurnDisplayWord(word: string): string {

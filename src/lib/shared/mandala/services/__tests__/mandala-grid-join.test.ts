@@ -4,11 +4,11 @@ import type { GridJoin } from "@tka/tka-types";
 import {
   gridJoinShiftUnits,
   resolveAnimationGridJoin,
-} from "$lib/shared/animation-engine/services/animation-grid-join";
+} from "#lib/shared/animation-engine/services/animation-grid-join.js";
 import {
   CENTERED_HAND_OFFSETS,
   gridJoinHandOffsets,
-} from "$lib/shared/grid-join/grid-join-tween";
+} from "#lib/shared/grid-join/grid-join-tween.js";
 import { MANDALA_GRID_RADIUS } from "../../domain/mandala-constants";
 import type { MandalaPaths } from "../../domain/mandala-types";
 import {

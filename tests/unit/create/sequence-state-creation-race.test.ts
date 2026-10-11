@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createSequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createSequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /**
  * Guards the construct race that produced "Something went wrong adding that

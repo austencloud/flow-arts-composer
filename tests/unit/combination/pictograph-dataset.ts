@@ -26,9 +26,9 @@
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
 
 const CSV_DIR = resolve(__dirname, "../../../static/data/pictographs");
 

@@ -11,13 +11,13 @@ Card-based architecture with integrated Generate button:
 - Tour: Guided tour offered first-run via GenerateEmptyState; also via voice
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { SequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
-  import { tryGetCreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
-  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { SequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
+  import { tryGetCreateModuleContext } from "#lib/features/create/shared/context/create-module-context.js";
+  import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
   import { createDeviceState } from "../state/generate-device.svelte";
   import {
@@ -37,34 +37,34 @@ Card-based architecture with integrated Generate button:
     type SetupSnapshot,
   } from "../domain/setup-snapshot";
   import type { ActiveSetupSource } from "../domain/models/favorite-config";
-  import type { GeneratorHelpId } from "$lib/shared/create/domain/generator-help-content";
-  import { generateTourState } from "$lib/shared/onboarding/state/generate-tour-state.svelte";
-  import GeneratePanelTour from "$lib/shared/onboarding/components/generate-tour/GeneratePanelTour.svelte";
+  import type { GeneratorHelpId } from "#lib/shared/create/domain/generator-help-content.js";
+  import { generateTourState } from "#lib/shared/onboarding/state/generate-tour-state.svelte.js";
+  import GeneratePanelTour from "#lib/shared/onboarding/components/generate-tour/GeneratePanelTour.svelte";
   import {
     setGeneratorVoiceRef,
     type GeneratorVoiceRef,
-  } from "$lib/shared/create/state/generator-voice-ref.svelte";
+  } from "#lib/shared/create/state/generator-voice-ref.svelte.js";
   import { uiConfigToGenerationOptions } from "../shared/utils/config-mapper";
-  import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-  import type { StartFeasibilityResult } from "$lib/shared/create/domain/start-feasibility";
+  import { generationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
+  import type { StartFeasibilityResult } from "#lib/shared/create/domain/start-feasibility.js";
   import type { GenerationOptions } from "../shared/domain/models/generate-models";
   import { LOOPType, Period } from "../circular/domain/models/circular-models";
-  import { handModesBlockedByLoop } from "$lib/shared/create/services/loop-type-utils";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { PropType as PropTypeEnum } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { handModesBlockedByLoop } from "#lib/shared/create/services/loop-type-utils.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { PropType as PropTypeEnum } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import {
     authState,
     getEffectiveUserId,
-  } from "$lib/shared/auth/state/auth-state.svelte";
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-  import type { GuestLoopLockKind } from "$lib/shared/create/services/loop-guest-gate";
-  import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
+  } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+  import type { GuestLoopLockKind } from "#lib/shared/create/services/loop-guest-gate.js";
+  import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
   import {
     resolveAccessTier,
     getMaxSteps,
-  } from "$lib/shared/auth/domain/access-tier";
-  import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
+  } from "#lib/shared/auth/domain/access-tier.js";
+  import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
   // Get context for panel coordination (optional - may not be available in all contexts)
   const context = tryGetCreateModuleContext();
   const panelState = context?.panelState;

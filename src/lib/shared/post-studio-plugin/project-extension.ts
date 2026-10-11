@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ShapeExtension } from "@austencloud/video-editor/core";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { TakeTimingSchema } from "$lib/shared/media-composition/domain/take-timing";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { TakeTimingSchema } from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   POST_MAX_SEQUENCE_ACTIONS,
   POST_SEQUENCE_ACTIONS,

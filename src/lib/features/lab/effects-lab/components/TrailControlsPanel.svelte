@@ -6,9 +6,9 @@
   Being in Trails mode = trails enabled; no separate toggle needed.
 -->
 <script lang="ts">
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-  import { isBilateralProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import { isBilateralProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
 
   let trail = $derived(animationSettings.trail);
   let propType = $derived(animationSettings.currentPropType);

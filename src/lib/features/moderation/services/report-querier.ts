@@ -18,7 +18,7 @@ import {
 	getCountFromServer
 } from 'firebase/firestore';
 import type { Timestamp, DocumentData, DocumentSnapshot, QueryConstraint } from 'firebase/firestore';
-import { getFirestoreInstance } from '$lib/shared/auth/firebase';
+import { getFirestoreInstance } from '#lib/shared/auth/firebase.js';
 import type {
 	ReportFilters,
 	ReportStatus,

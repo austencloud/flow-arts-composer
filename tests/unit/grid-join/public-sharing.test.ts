@@ -24,28 +24,28 @@ vi.mock("firebase/firestore", () => ({
   query: vi.fn((reference: unknown) => reference),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 
-vi.mock("$lib/shared/offline/state/network-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/network-status-state.svelte.js", () => ({
   networkStatusState: { isOnline: true },
 }));
 
 import { isGridJoin, sequenceGridJoinKey } from "@tka/render-core";
 import { GridLocation } from "@tka/tka-types";
-import { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
+import { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
 import {
   parsePublicSequenceWireDocument,
   toPublicSequenceProjection,
-} from "$lib/shared/foundation/domain/models/public-sequence-wire-schema";
+} from "#lib/shared/foundation/domain/models/public-sequence-wire-schema.js";
 import {
   buildPublicSequenceProjection,
   computeStoredProjectionDigest,
   type ProjectionSourceSequence,
   type PublicSequenceProjectionWrite,
-} from "$lib/shared/library/services/public-sequence-projection";
-import { normalizeSequenceForPersistence } from "$lib/shared/library/services/sequence-persistence-normalizer";
+} from "#lib/shared/library/services/public-sequence-projection.js";
+import { normalizeSequenceForPersistence } from "#lib/shared/library/services/sequence-persistence-normalizer.js";
 import {
   buildJoinFixture,
   joinOf,

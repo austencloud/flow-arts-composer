@@ -1,8 +1,8 @@
 <!-- ContributorPicker - Search existing user accounts to tag as contributors on changelog entries -->
 <script lang="ts">
-	import { t } from '$lib/shared/i18n/i18n.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
 	import { onDestroy } from 'svelte';
-	import type { Contributor } from '$lib/shared/versioning/domain/models/contributor-models';
+	import type { Contributor } from '#lib/shared/versioning/domain/models/contributor-models.js';
 	import ContributorBadge from './ContributorBadge.svelte';
 
 	let {

@@ -10,7 +10,7 @@ import {
   itemIdFromMovesAnimationRole,
   evaluatePresetLayers,
   createTkaSurfaces,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   type PostProject,
   POST_STUDIO_ROLE,
@@ -20,7 +20,7 @@ import {
 import {
   resolveTakeTiming,
   takeSampleAt,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   createPainterRegistry,
   isVisibleLayer,
@@ -30,7 +30,7 @@ import {
   renderPostStudioFrame,
 } from "@austencloud/video-editor/render";
 import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   NL,
   buildLayerRoot,

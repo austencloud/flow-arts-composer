@@ -6,7 +6,7 @@
  */
 
 import type { Timestamp } from 'firebase/firestore';
-import type { FlaggedTerm } from '$lib/features/moderation/domain/models/content-moderation-models';
+import type { FlaggedTerm } from '#lib/features/moderation/domain/models/content-moderation-models.js';
 
 // Enums & Constants
 

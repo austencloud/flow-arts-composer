@@ -1,29 +1,29 @@
 <script lang="ts">
-  import type { PrintRenderOptions } from "$lib/features/choreo-card/services/types";
-  import { buildFrontComposeOptions } from "$lib/features/choreo-card/services/build-front-compose-options";
-  import { wrapContentInCardFrame } from "$lib/features/choreo-card/services/card-front-frame";
+  import type { PrintRenderOptions } from "#lib/features/choreo-card/services/types.js";
+  import { buildFrontComposeOptions } from "#lib/features/choreo-card/services/build-front-compose-options.js";
+  import { wrapContentInCardFrame } from "#lib/features/choreo-card/services/card-front-frame.js";
   import {
     loadParityDeck,
     listParityDecks,
     type ParityDeck,
     type ParityDeckSummary,
-  } from "$lib/features/choreo-card/services/parity-deck-source";
-  import { getImageComposer } from "$lib/shared/render/get-image-composer";
-  import { getCompositionDispatcher } from "$lib/shared/render/get-composition-dispatcher";
-  import { seedCardPool } from "$lib/shared/render/services/card-pool-prewarm";
+  } from "#lib/features/choreo-card/services/parity-deck-source.js";
+  import { getImageComposer } from "#lib/shared/render/get-image-composer.js";
+  import { getCompositionDispatcher } from "#lib/shared/render/get-composition-dispatcher.js";
+  import { seedCardPool } from "#lib/shared/render/services/card-pool-prewarm.js";
   import { onMount } from "svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import CardParityViewer from "$lib/shared/parity/CardParityViewer.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import CardParityViewer from "#lib/shared/parity/CardParityViewer.svelte";
   import {
     diff,
     normalizeToCanvas,
     AA_TOLERANCE,
-  } from "$lib/shared/parity/image-diff";
+  } from "#lib/shared/parity/image-diff.js";
   import type {
     ParityRun,
     ParityRow,
     ParityVerdict,
-  } from "$lib/shared/parity/parity-types";
+  } from "#lib/shared/parity/parity-types.js";
 
   // Full framed print-card dimensions, shared by the main and worker paths.
   const LOGICAL_W = 822;

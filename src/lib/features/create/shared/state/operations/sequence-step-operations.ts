@@ -10,18 +10,18 @@
  * RESPONSIBILITY: Step operations coordinator, orchestrates state + services
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import type { SequenceAnimationState } from "../animation/sequence-animation-state.svelte";
 import type { SequenceCoreState } from "../core/sequence-core-state.svelte";
 import type { SequenceSelectionState } from "../selection/sequence-selection-state.svelte";
-import type { ReversalDetector } from "$lib/shared/create/services/reversal-detector";
+import type { ReversalDetector } from "#lib/shared/create/services/reversal-detector.js";
 import {
   withLoopCertificateCleared,
   invalidateLoopDisplayCache,
-} from "$lib/shared/create/services/loop-certificate";
-import { DURATION } from "$lib/shared/transitions/transitions";
+} from "#lib/shared/create/services/loop-certificate.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 
 /**
  * How long a leaving cell recedes before the grid takes its new step list.

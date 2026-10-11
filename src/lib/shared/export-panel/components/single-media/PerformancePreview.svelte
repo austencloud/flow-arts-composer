@@ -14,22 +14,22 @@
   Domain: Export Panel - Single Media - Performance Video Format
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { getExportPanelState } from "../../state/export-panel-state.svelte";
-  import { getCameraManager } from "$lib/shared/train/get-camera-manager";
+  import { getCameraManager } from "#lib/shared/train/get-camera-manager.js";
   import {
     isCameraAcquisitionCancelled,
     type CameraAcquisition,
     type CameraManager,
-  } from "$lib/shared/train/services/camera-manager";
-  import { getVideoRecorder } from "$lib/shared/video-record/services/video-recorder";
+  } from "#lib/shared/train/services/camera-manager.js";
+  import { getVideoRecorder } from "#lib/shared/video-record/services/video-recorder.js";
   import type {
     RecordingProgress,
     RecordingResult,
-  } from "$lib/shared/video-record/services/types";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  } from "#lib/shared/video-record/services/types.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
 
   const hubState = getExportPanelState();
 

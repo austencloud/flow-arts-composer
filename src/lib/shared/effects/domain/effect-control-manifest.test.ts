@@ -6,8 +6,8 @@ import {
   type EffectView,
 } from "./effect-control-manifest";
 import { DEFAULT_EFFECTS_CONFIG } from "./defaults";
-import { EFFECTS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-import { GOO_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/goo-presets";
+import { EFFECTS } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+import { GOO_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/goo-presets.js";
 
 describe("effect-control-manifest", () => {
   const crossStoreFields = new Set([
@@ -82,6 +82,15 @@ describe("effect-control-manifest", () => {
     expect(fields("2d")).not.toContain("gravity");
     expect(fields("3d")).toContain("ambientEmission");
     expect(fields("3d")).toEqual(expect.arrayContaining(["viscosity", "surfaceTension", "gravity"]));
+  });
+
+  // The 2D ink renderer only lays a point when the tip moves past the brush
+  // spacing, so ambient emission at rest leaves no visible mark there.
+  it("ink shows Ambient only where it drips (3D)", () => {
+    const fields = (view: EffectView) =>
+      primaryControls("ink", view).map((c) => c.field);
+    expect(fields("2d")).not.toContain("ambientEmission");
+    expect(fields("3d")).toContain("ambientEmission");
   });
 
   it("control ids are unique within each effect", () => {

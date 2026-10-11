@@ -3,7 +3,7 @@
  */
 import type { VideoUpdateData } from "./types";
 import type { VideoCategory, UserProfile } from "../types";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 
 export async function saveCategories(categories: VideoCategory[]): Promise<void> {
   const { doc, setDoc } = await import("firebase/firestore");

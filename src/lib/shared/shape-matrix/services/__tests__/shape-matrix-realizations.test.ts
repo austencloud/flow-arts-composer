@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { filterRealizations, MODE_ORDER } from "../shape-matrix-realizations";
-import type { CsvEdge } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
+import type { CsvEdge } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
 
 const edge = (over: Partial<CsvEdge>): CsvEdge =>
   ({

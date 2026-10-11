@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 // The columns submenu reads the image-composition singleton; fake it so the
 // test never touches $state/localStorage.
 const getColumnCountForStepCount = vi.fn<(n: number) => number | null>(() => null);
 const setColumnCountForStepCount = vi.fn();
-vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
+vi.mock("#lib/shared/share/state/image-composition-state.svelte.js", () => ({
   getImageCompositionManager: () => ({
     getColumnCountForStepCount,
     setColumnCountForStepCount,
@@ -13,7 +13,7 @@ vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
 }));
 
 const frame = vi.hoisted(() => ({ inAnotherSite: false }));
-vi.mock("$lib/shared/foundation/utils/embedded-in-another-site", () => ({
+vi.mock("#lib/shared/foundation/utils/embedded-in-another-site.js", () => ({
   isEmbeddedInAnotherSite: () => frame.inAnotherSite,
 }));
 

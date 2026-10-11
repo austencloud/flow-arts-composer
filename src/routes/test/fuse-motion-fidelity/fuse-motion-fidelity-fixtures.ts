@@ -1,22 +1,22 @@
 import { Plane } from "@tka/tka-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
-import type { SoloPropStepData } from "$lib/shared/foundation/domain/models/solo-prop-step-data";
-import { createSoloProp } from "$lib/shared/foundation/services/solo-prop-factory";
-import { fuseSequences } from "$lib/features/fuse/services/sequence-fuser";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SoloPropData } from "#lib/shared/foundation/domain/models/solo-prop-data.js";
+import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
+import { createSoloProp } from "#lib/shared/foundation/services/solo-prop-factory.js";
+import { fuseSequences } from "#lib/features/fuse/services/sequence-fuser.js";
 import {
   GridLocation,
   GridMode,
   type GridLocation as GridLocationValue,
   type GridMode as GridModeValue,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandPath,
   MotionType,
   Orientation,
   RotationDirection,
   SkewDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 export interface FuseProofCheck {
   readonly label: string;

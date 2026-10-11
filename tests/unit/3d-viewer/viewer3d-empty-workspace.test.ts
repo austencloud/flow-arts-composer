@@ -10,7 +10,7 @@ import {
   vi,
 } from "vitest";
 
-import { __resetWebGL2CapabilityForTests } from "$lib/shared/3d/capabilities/webgl-capabilities";
+import { __resetWebGL2CapabilityForTests } from "#lib/shared/3d/capabilities/webgl-capabilities.js";
 import { createViewer3DStateForTest } from "./viewer3d-test-helpers.svelte";
 
 let restoreCreateElement: (() => void) | undefined;

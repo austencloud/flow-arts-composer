@@ -5,17 +5,17 @@
  * Follows the same simplification pattern as OptionPickerService.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { createPictographData } from "$lib/shared/pictograph/shared/domain/factories/create-pictograph-data";
-import { updateSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { createPictographData } from "#lib/shared/pictograph/shared/domain/factories/create-pictograph-data.js";
+import { updateSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 import {
   saveSequence as persistSaveSequence,
-} from "$lib/shared/persistence/services/dexie-persistence-service";
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
+} from "#lib/shared/persistence/services/dexie-persistence-service.js";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
 export class Workbench {
   constructor(
     private sequenceService: SequenceRepository,
@@ -150,6 +150,6 @@ export class Workbench {
 // ============================================================================
 // DIRECT SINGLETON EXPORT
 // ============================================================================
-import { sequenceRepository } from "$lib/shared/create/services/sequence-repository";
+import { sequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
 
 export const workbench = new Workbench(sequenceRepository);

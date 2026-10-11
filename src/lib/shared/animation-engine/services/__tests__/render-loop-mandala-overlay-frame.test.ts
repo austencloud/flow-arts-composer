@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { AnimationRenderLoop } from "../animation-render-loop";
 import type { RenderLoopConfig } from "../IAnimationRenderLoop";
-import type { MandalaOverlayCanvas } from "$lib/shared/mandala/services/mandala-overlay-canvas";
+import type { MandalaOverlayCanvas } from "#lib/shared/mandala/services/mandala-overlay-canvas.js";
 
 // Regression guard for the "Shape Engine mandala is much bigger than the trail"
 // bug.

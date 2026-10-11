@@ -48,22 +48,22 @@ import {
   calculateStaffAngleAt,
   type OrientationAtInput,
 } from "./orientation-at";
-import { staffAngleToCenterOrientation } from "$lib/shared/render/core/calculations/orientation-angle";
+import { staffAngleToCenterOrientation } from "#lib/shared/render/core/calculations/orientation-angle.js";
 import {
   createMotionData,
   isVisibleMotion,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   type HandSide,
   type Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type {
   StepData,
   StepMotions,
-} from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/foundation/domain/models/step-data.js";
 
 /**
  * Order-independent lookup: the arc midpoint between two 45deg-adjacent grid

@@ -36,22 +36,25 @@ const vm = {
 const appSettings = {
   primaryPropColors: { left: "#00ff88", right: "#ff8800" },
 };
-vi.mock("$lib/shared/application/state/app-state.svelte", () => ({
+vi.mock("#lib/shared/application/state/app-state.svelte.js", () => ({
   getSettings: () => appSettings,
 }));
 
-vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
+vi.mock("#lib/shared/share/state/image-composition-state.svelte.js", () => ({
   getImageCompositionManager: () => ic,
 }));
-vi.mock("$lib/shared/pictograph/shared/state/visibility-state.svelte", () => ({
-  getVisibilityStateManager: () => vm,
-}));
+vi.mock(
+  "#lib/shared/pictograph/shared/state/visibility-state.svelte.js",
+  () => ({
+    getVisibilityStateManager: () => vm,
+  })
+);
 // The resolver reads auth to gate the guest QR degrade; stub a signed-in user.
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthSync: () => ({ currentUser: { uid: "u" } }),
 }));
 
-import { buildCardRenderOptions } from "$lib/shared/share/services/card-render-options";
+import { buildCardRenderOptions } from "#lib/shared/share/services/card-render-options.js";
 
 const seq = {
   steps: [{ letter: "A" }, { letter: "B" }, { letter: "C" }],

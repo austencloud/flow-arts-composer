@@ -1,7 +1,7 @@
 <script lang="ts">
   // Nav + cosmic background come from +layout.svelte.
-  import OrderConfirmation from "$lib/features/store/components/OrderConfirmation.svelte";
-  import Seo from "$lib/shared/components/Seo.svelte";
+  import OrderConfirmation from "#lib/features/store/components/OrderConfirmation.svelte";
+  import Seo from "#lib/shared/components/Seo.svelte";
 </script>
 
 <Seo

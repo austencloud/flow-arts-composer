@@ -7,9 +7,9 @@
 
 import type { LetterVariationData } from "./types";
 import type { LetterMappingsJson } from "../domain/models/sequence-engine-types";
-import type { ILetterQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { ILetterQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

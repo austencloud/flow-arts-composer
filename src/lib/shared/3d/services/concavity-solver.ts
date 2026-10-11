@@ -5,7 +5,7 @@
  * hands (ANTI motions, or explicit pathShape "concave") participate — pro
  * conflicts bail to the dual-wheel fallback.
  */
-import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { scanStepPair } from "./wall-feasibility-scanner";
 import type { MotionConfig3D } from "../domain/models/motion-data-3d";
 

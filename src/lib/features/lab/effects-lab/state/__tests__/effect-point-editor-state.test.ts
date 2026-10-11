@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   getTipPointsBaseline,
   setTipPointOverrideProvider,
-} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+} from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import { TipPointOverrideProvider } from "../../services/tip-point-override-provider";
 import type { EffectPointsPersister } from "../../services/effect-points-persister";
 import type { EffectPoint } from "../../services/types";

@@ -6,7 +6,7 @@
     TrackerStatusFilter,
   } from "../../state/feedback-tracker-state.svelte";
   import TrackerCard from "./TrackerCard.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   const { trackerState }: {
     trackerState: FeedbackTrackerState;

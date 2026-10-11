@@ -9,14 +9,14 @@
     userProportionsState,
   } from "@austencloud/scene-3d";
   import type { Group } from "three";
-  import Scene3D from "$lib/shared/3d/components/Scene3D.svelte";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
+  import Scene3D from "#lib/shared/3d/components/Scene3D.svelte";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
   import type {
     GridLocation,
     GridMode,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { FanViewpoint } from "../domain/fan-relation-types";
   import {
     VIEWPOINT_CAMERA,

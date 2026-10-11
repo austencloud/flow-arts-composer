@@ -1,19 +1,19 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { recalculateAllOrientations } from "$lib/shared/create/services/orientation-propagation";
-import { deriveSequenceLetters } from "$lib/shared/create/services/sequence-transforms";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { recalculateAllOrientations } from "#lib/shared/create/services/orientation-propagation.js";
+import { deriveSequenceLetters } from "#lib/shared/create/services/sequence-transforms.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   updateSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
-import { deriveMotionType } from "$lib/shared/render/core/calculations/orientation";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
+import { deriveMotionType } from "#lib/shared/render/core/calculations/orientation.js";
 
 import { getAllLetterVariants } from "../../helpers/real-pictograph-loader";
 import {

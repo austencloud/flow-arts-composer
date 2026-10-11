@@ -8,9 +8,9 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
   import { loadPreviewSequence } from "./preview-sequences";
 
   let { accent }: { accent: string } = $props();

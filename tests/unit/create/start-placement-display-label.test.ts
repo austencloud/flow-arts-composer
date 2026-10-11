@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getStartPlacementDisplayLabel } from "$lib/features/create/construct/start-placement-picker/services/start-placement-display-label";
+import { getStartPlacementDisplayLabel } from "#lib/features/create/construct/start-placement-picker/services/start-placement-display-label.js";
 
 describe("start placement display label", () => {
   it("combines the canonical Greek letter and placement number", () => {

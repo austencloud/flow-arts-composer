@@ -10,7 +10,7 @@ import type {
   VoiceCommandCategory,
   CommandResult,
 } from "../../domain/voice-command-types";
-import { getCreateModuleRef } from "$lib/shared/create/state/create-module-state-ref.svelte";
+import { getCreateModuleRef } from "#lib/shared/create/state/create-module-state-ref.svelte.js";
 import type { IVoiceCommandHandler } from "../types";
 
 export class CreateCommandHandler implements IVoiceCommandHandler {

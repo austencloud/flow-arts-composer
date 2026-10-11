@@ -1,7 +1,7 @@
 <!-- FeedbackStatusHistory - Simple timeline of status changes -->
 <script lang="ts">
-  import type { StatusHistoryEntry } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { STATUS_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
+  import type { StatusHistoryEntry } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { STATUS_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
 
   const { history = [] } = $props<{
     history?: StatusHistoryEntry[];

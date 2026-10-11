@@ -13,9 +13,9 @@
     buildIncrements,
     buildPendulum,
     type QftKnobs
-  } from "$lib/shared/notation/qft/qft-model";
-  import QftStage from "$lib/shared/notation/qft/components/QftStage.svelte";
-  import QftTable from "$lib/shared/notation/qft/components/QftTable.svelte";
+  } from "#lib/shared/notation/qft/qft-model.js";
+  import QftStage from "#lib/shared/notation/qft/components/QftStage.svelte";
+  import QftTable from "#lib/shared/notation/qft/components/QftTable.svelte";
   import QftFrames from "./QftFrames.svelte";
 
   interface Props {

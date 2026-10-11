@@ -10,10 +10,10 @@
   No auth. Empty until picks are chosen; points at the picker until then.
 -->
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { onMount } from "svelte";
-  import { browser } from "$app/environment";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import { browser } from "$app/env";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import { CHOSEN_MANDALAS } from "./chosen-mandalas";
 
   let reducedMotion = $state(false);
@@ -60,7 +60,7 @@
                 : "Play this mandala"}
             ></button>
             <LazyMount
-              loader={() => import("$lib/shared/mandala/components/SequenceMandala.svelte")}
+              loader={() => import("#lib/shared/mandala/components/SequenceMandala.svelte")}
               active={browser && sizes[i] > 0}
               props={{
                 sequence: { steps: m.steps },

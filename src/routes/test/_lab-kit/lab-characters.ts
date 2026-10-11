@@ -25,11 +25,11 @@ import {
   CHARACTER_DEFINITIONS,
   type CharacterDefinition,
   type CharacterId,
-} from "$lib/shared/3d/domain/character-model";
+} from "#lib/shared/3d/domain/character-model.js";
 import {
   registerProportionSweepCharacters,
   type ProportionSweepCharacter,
-} from "$lib/shared/3d/domain/proportion-sweep-characters";
+} from "#lib/shared/3d/domain/proportion-sweep-characters.js";
 
 /**
  * Rigs that exist on this machine under `static/models/avatars/bakeoff/` but

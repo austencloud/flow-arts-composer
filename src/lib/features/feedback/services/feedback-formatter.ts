@@ -5,7 +5,7 @@
  * Handles date/time formatting, module/tab label resolution.
  */
 
-import { MODULE_DEFINITIONS } from "$lib/shared/navigation/state/navigation-state.svelte";
+import { MODULE_DEFINITIONS } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 
 /**
  * Format date as "Jan 15, 2024 at 3:45 PM"

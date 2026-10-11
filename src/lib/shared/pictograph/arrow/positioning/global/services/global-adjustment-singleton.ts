@@ -9,7 +9,7 @@
  */
 
 import type { GlobalArrowAdjustmentRepository } from "./global-arrow-adjustment-repository";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { setGlobalAdjustmentResolver } from "../../placement/services/override-resolvers";
 
 const logger = createComponentLogger("GlobalAdjustmentSingleton");

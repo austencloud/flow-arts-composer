@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { TrainingDataPersister } from './services/training-data-persister';
 
 let instance: TrainingDataPersister | null = null;

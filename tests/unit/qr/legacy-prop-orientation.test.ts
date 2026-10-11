@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { PropRotAngleManager } from "$lib/shared/pictograph/prop/services/prop-rot-angle-manager";
+import { PropRotAngleManager } from "#lib/shared/pictograph/prop/services/prop-rot-angle-manager.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getPictographGeometryRevision } from "$lib/shared/render/services/pictograph-key-hasher";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { getPictographGeometryRevision } from "#lib/shared/render/services/pictograph-key-hasher.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 describe("saved QR prop orientation casing", () => {
   it("invalidates only the images whose saved orientation spelling was broken", () => {

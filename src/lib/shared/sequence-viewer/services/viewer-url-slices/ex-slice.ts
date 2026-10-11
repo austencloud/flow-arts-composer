@@ -44,12 +44,12 @@ import type {
   VideoExportOptions,
   SplitExportOptions,
   ImageExportOptions,
-} from "$lib/shared/animation-panel/state/export-options-state.svelte";
+} from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
 import {
   DEFAULT_VIDEO_OPTIONS,
   DEFAULT_SPLIT_OPTIONS,
   DEFAULT_IMAGE_OPTIONS,
-} from "$lib/shared/animation-panel/state/export-options-state.svelte";
+} from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
 import { deepEqual } from "../viewer-url-state-codec";
 
 /** `quality` is hardcoded to "standard" everywhere on the split sub-store — schema shape, never user state. */

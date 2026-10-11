@@ -1,7 +1,7 @@
 <!-- PrepareReleasePanel - Admin UI for preparing a new release version -->
 <script lang="ts">
-  import type { VersionState } from "$lib/shared/feedback/state/version-state.svelte";
-  import { PRE_RELEASE_VERSION } from "$lib/shared/feedback/domain/models/version-models";
+  import type { VersionState } from "#lib/shared/feedback/state/version-state.svelte.js";
+  import { PRE_RELEASE_VERSION } from "#lib/shared/feedback/domain/models/version-models.js";
 
   const { versionState, onClose } = $props<{
     versionState: VersionState;

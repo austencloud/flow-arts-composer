@@ -14,16 +14,16 @@
   import type {
     EffectsConfigState,
     EffectId,
-  } from "$lib/shared/effects/state/effects-config-state.svelte";
+  } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import {
     controlsForView,
     type ControlDescriptor,
     type EffectView,
-  } from "$lib/shared/effects/domain/effect-control-manifest";
+  } from "#lib/shared/effects/domain/effect-control-manifest.js";
   import {
     formatEffectSliderValue,
     type EffectControlOverrides,
-  } from "$lib/shared/effects/effect-control-fields";
+  } from "#lib/shared/effects/effect-control-fields.js";
   import EffectControlStack from "./EffectControlStack.svelte";
 
   interface Props {

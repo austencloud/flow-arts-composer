@@ -6,15 +6,15 @@
 import {
   describeTnDSelection,
   type TnDSelection,
-} from "$lib/shared/create/domain/hand-relationship";
+} from "#lib/shared/create/domain/hand-relationship.js";
 import {
   MODE_FAMILY_ID,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import {
   TND_BY_FAMILY,
   type TnDElement,
-} from "$lib/features/choreo-card/domain/tnd-element";
+} from "#lib/features/choreo-card/domain/tnd-element.js";
 
 /** The element a selection wears, or null for Free. */
 export function tndSelectionElement(

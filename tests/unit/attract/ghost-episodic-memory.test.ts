@@ -5,15 +5,15 @@ import {
   navigationSignature,
   playbackWouldRepeat,
   recognizesNavigation,
-} from "$lib/shared/attract/domain/episodic-memory";
+} from "#lib/shared/attract/domain/episodic-memory.js";
 import {
   EMPTY_WORLD,
   type GhostContext,
   type GhostNavigationOption,
-} from "$lib/shared/attract/domain/intention";
-import { createMemory } from "$lib/shared/attract/domain/scoring";
-import { createRng } from "$lib/shared/attract/services/rng";
-import { createTrail } from "$lib/shared/attract/services/trail";
+} from "#lib/shared/attract/domain/intention.js";
+import { createMemory } from "#lib/shared/attract/domain/scoring.js";
+import { createRng } from "#lib/shared/attract/services/rng.js";
+import { createTrail } from "#lib/shared/attract/services/trail.js";
 
 function context(at = 10_000): GhostContext {
   const rng = createRng(7);

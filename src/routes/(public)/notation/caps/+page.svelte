@@ -1,11 +1,11 @@
 <script lang="ts">
-  import Seo from "$lib/shared/components/Seo.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
-  import { NOTATION_LOOP_TEASER_SEQUENCE } from "$lib/shared/loop-explorer/domain/notation-loop-teaser";
+  import Seo from "#lib/shared/components/Seo.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
+  import { NOTATION_LOOP_TEASER_SEQUENCE } from "#lib/shared/loop-explorer/domain/notation-loop-teaser.js";
   import CapsAssembly from "./_components/CapsAssembly.svelte";
   import YutaCapLiveDemo from "./_components/YutaCapLiveDemo.svelte";
-  import "$lib/shared/landing/styles/public-editorial.css";
+  import "#lib/shared/landing/styles/public-editorial.css";
 
   // Suffix is deliberately NOT "| The Kinetic Alphabet". CAPs are not TKA's,
   // and a brand suffix on a title is the strongest ownership signal a reader

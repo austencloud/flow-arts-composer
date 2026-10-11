@@ -1,11 +1,11 @@
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import Seo from "$lib/shared/components/Seo.svelte";
-  import OpenChapter from "$lib/shared/landing/components/OpenChapter.svelte";
-  import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
-  import demoJson from "$lib/shared/landing/data/demo-sequence.json";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import "$lib/shared/landing/styles/public-editorial.css";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import Seo from "#lib/shared/components/Seo.svelte";
+  import OpenChapter from "#lib/shared/landing/components/OpenChapter.svelte";
+  import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
+  import demoJson from "#lib/shared/landing/data/demo-sequence.json";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import "#lib/shared/landing/styles/public-editorial.css";
 
   const demoSequence = demoJson as unknown as SequenceData;
 

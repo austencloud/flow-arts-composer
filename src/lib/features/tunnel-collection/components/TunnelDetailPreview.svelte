@@ -8,14 +8,14 @@
   viewer state.
 -->
 <script lang="ts">
-  import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
-  import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { createAnimationSettingsState } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import type { ViewerPlaybackState } from "$lib/shared/sequence-viewer/domain/viewer-prop-groups";
+  import TunnelArtView from "#lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
+  import { TunnelViewController } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { createAnimationSettingsState } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import type { ViewerPlaybackState } from "#lib/shared/sequence-viewer/domain/viewer-prop-groups.js";
   import type { CollectedTunnel } from "../domain/tunnel-collection-types";
   import { collectedTunnelViewerSequence } from "../domain/collected-tunnel-source";
 

@@ -8,7 +8,7 @@ import {
   LOOPType,
   Period,
 } from "@tka/sequence-engine/loop";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 import { corpus } from "./harness/corpus";
 import {

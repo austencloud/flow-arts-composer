@@ -1,5 +1,5 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { pickBestFitLayout } from "$lib/shared/render/services/container-aware-layout";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { pickBestFitLayout } from "#lib/shared/render/services/container-aware-layout.js";
 import { getCatalogLayoutPolicy } from "../domain/catalog-layout-policy";
 import { getCardFrameContentInset } from "./card-front-frame";
 

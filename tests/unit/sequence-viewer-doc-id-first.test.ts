@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-import { loopDetector } from "$lib/shared/create/services/loop-detector";
-import { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import { loadByIdentifier } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
+import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+import { loopDetector } from "#lib/shared/create/services/loop-detector.js";
+import { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+import { loadByIdentifier } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
 
 // A legacy word: the id under which the library document is stored, and the
 // stem of a bundled PNG the Create-module importer knows how to read.
@@ -23,18 +23,18 @@ const persistence = vi.hoisted(() => ({
   saveSequence: vi.fn(),
   loadAllSequences: vi.fn(),
 }));
-vi.mock("$lib/shared/persistence/services/dexie-persistence-service", () => persistence);
+vi.mock("#lib/shared/persistence/services/dexie-persistence-service.js", () => persistence);
 
 const localRepository = vi.hoisted(() => ({ getSequence: vi.fn() }));
-vi.mock("$lib/shared/create/get-sequence-repository", () => ({
+vi.mock("#lib/shared/create/get-sequence-repository.js", () => ({
   getSequenceRepository: () => localRepository,
 }));
 
 const browseLoader = vi.hoisted(() => ({ loadFullSequenceData: vi.fn() }));
-vi.mock("$lib/shared/browse/get-browse-loader", () => ({
+vi.mock("#lib/shared/browse/get-browse-loader.js", () => ({
   getBrowseLoader: () => browseLoader,
 }));
-vi.mock("$lib/shared/sequence-viewer/services/cell-pre-warmer", () => ({
+vi.mock("#lib/shared/sequence-viewer/services/cell-pre-warmer.js", () => ({
   cellPreWarmer: { preWarmSequence: vi.fn() },
 }));
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { AnimationRenderLoop } from "$lib/shared/animation-engine/services/animation-render-loop";
-import type { MandalaOverlayCanvas } from "$lib/shared/mandala/services/mandala-overlay-canvas";
+import { AnimationRenderLoop } from "#lib/shared/animation-engine/services/animation-render-loop.js";
+import type { MandalaOverlayCanvas } from "#lib/shared/mandala/services/mandala-overlay-canvas.js";
 
 describe("AnimationRenderLoop mandala attachment", () => {
   it("sizes a lazily attached guide to the already-measured render frame", () => {

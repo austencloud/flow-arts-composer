@@ -8,7 +8,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import {
   isPublicArtifactEnvelope,
   type PublicArtifactEnvelope,

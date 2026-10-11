@@ -9,7 +9,7 @@
  * Info cards: delegates to InfoCardCanvasRenderer.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ImageComposer } from "../../../shared/render/services/image-composer";
 import type { PrintRenderOptions } from "./types";
 import {
@@ -25,10 +25,10 @@ import { resolveCardBackAppearance } from "./card-back/card-back-appearance";
 import { paintBackJob } from "./card-back/card-back-raster";
 import { buildFrontComposeOptions } from "./build-front-compose-options";
 import { wrapContentInCardFrame } from "./card-front-frame";
-import { CompositionDispatcher } from "$lib/shared/render/services/composition-dispatcher";
-import { getCompositionDispatcher } from "$lib/shared/render/get-composition-dispatcher";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-import type { CompositionProgressCallback } from "$lib/shared/render/services/types";
+import { CompositionDispatcher } from "#lib/shared/render/services/composition-dispatcher.js";
+import { getCompositionDispatcher } from "#lib/shared/render/get-composition-dispatcher.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+import type { CompositionProgressCallback } from "#lib/shared/render/services/types.js";
 import { CARD_SIZES, type CardSizeId } from "../domain/card-sizes";
 
 // MPC poker card defaults

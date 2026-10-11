@@ -21,14 +21,14 @@
 
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { csvParser } from "$lib/shared/foundation/services/implementations/data/csv-parser";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { csvParser } from "#lib/shared/foundation/services/implementations/data/csv-parser.js";
 import {
   csvPictographParser,
   type CSVRow,
-} from "$lib/shared/pictograph/shared/services/csv-pictograph-parser";
+} from "#lib/shared/pictograph/shared/services/csv-pictograph-parser.js";
 
 const CSV_FILES: Partial<Record<GridMode, string>> = {
   [GridMode.DIAMOND]: "../../static/data/pictographs/DiamondPictographDataframe.csv",

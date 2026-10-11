@@ -339,6 +339,7 @@ function domainsForOperationType(type: SceneUndoOperationType): DomainKey[] {
     case "change-prop-build":
     case "change-character":
     case "change-sequence":
+    case "change-grid-join":
     case "change-staff-length":
     case "change-effort":
     case "set-hand-plane":

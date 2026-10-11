@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { GlyphCache } from './services/glyph-cache';
 
 let instance: GlyphCache | null = null;

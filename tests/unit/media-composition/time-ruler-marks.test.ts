@@ -1,6 +1,6 @@
 import { mount, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
+import TimeRuler from "#lib/shared/timeline/TimeRuler.svelte";
 
 // vitest-setup.ts swaps document.createElement for canvas stubs that are not
 // DOM nodes. Mounting a component needs jsdom's own, from document's prototype.

@@ -11,32 +11,32 @@
   LOOPExpandedOverlay, TransformPanel, SegmentedControl.
 -->
 <script lang="ts">
-  import BaseCard from "$lib/features/create/generate/components/cards/BaseCard.svelte";
-  import StepperCard from "$lib/features/create/generate/components/cards/StepperCard/StepperCard.svelte";
-  import TurnIntensityCard from "$lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
-  import GridModeCard from "$lib/features/create/generate/components/cards/GridModeCard.svelte";
-  import PeriodCard from "$lib/features/create/generate/components/cards/PeriodCard.svelte";
-  import { getCardColors } from "$lib/shared/create/domain/card-colors";
+  import BaseCard from "#lib/features/create/generate/components/cards/BaseCard.svelte";
+  import StepperCard from "#lib/features/create/generate/components/cards/StepperCard/StepperCard.svelte";
+  import TurnIntensityCard from "#lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
+  import GridModeCard from "#lib/features/create/generate/components/cards/GridModeCard.svelte";
+  import PeriodCard from "#lib/features/create/generate/components/cards/PeriodCard.svelte";
+  import { getCardColors } from "#lib/shared/create/domain/card-colors.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import LOOPExpandedOverlay from "$lib/features/create/generate/components/cards/LOOPExpandedOverlay.svelte";
+  import LOOPExpandedOverlay from "#lib/features/create/generate/components/cards/LOOPExpandedOverlay.svelte";
   import {
     LOOPType,
     LOOP_TYPE_LABELS,
-  } from "$lib/features/create/generate/circular/domain/models/circular-models";
-  import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
-  import ModalFooter from "$lib/shared/foundation/ui/modal/ModalFooter.svelte";
+  } from "#lib/features/create/generate/circular/domain/models/circular-models.js";
+  import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import ModalFooter from "#lib/shared/foundation/ui/modal/ModalFooter.svelte";
   import TransformPanel from "./TransformPanel.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import OrientationCycler from "$lib/features/create/construct/start-placement-picker/components/OrientationCycler.svelte";
-  import { startPlacementManager } from "$lib/shared/create/services/start-placement-manager";
-  import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import OrientationCycler from "#lib/features/create/construct/start-placement-picker/components/OrientationCycler.svelte";
+  import { startPlacementManager } from "#lib/shared/create/services/start-placement-manager.js";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
   import {
     type VariationConfig,
     type StartOriMode,

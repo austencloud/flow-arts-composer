@@ -28,11 +28,11 @@ vi.mock("firebase/firestore", () => ({
   serverTimestamp: vi.fn(() => "server-timestamp"),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: () => getFirestoreInstance(),
 }));
 
-vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/sync-status-state.svelte.js", () => ({
   trackWrite: vi.fn((write: () => Promise<unknown>) => write()),
 }));
 
@@ -43,7 +43,7 @@ const { UserKnowledgeProfilePersister } =
 // the mocks here so that one-time cost doesn't land inside a test's
 // one-second waitFor.
 await import("firebase/firestore");
-await import("$lib/shared/auth/firebase");
+await import("#lib/shared/auth/firebase.js");
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

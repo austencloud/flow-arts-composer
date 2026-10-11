@@ -14,9 +14,9 @@
   this page have never met one; the question mark opens the full four-level
   explanation in About, where the rest of the vocabulary already lives. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import LevelSelector from "$lib/shared/components/LevelSelector.svelte";
-  import { flyFade } from "$lib/shared/transitions/motion";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import LevelSelector from "#lib/shared/components/LevelSelector.svelte";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { localizedLevelDescription } from "../../domain/shape-matrix-display";
   import { SHAPE_MATRIX_LEVELS } from "../shape-matrix-levels";

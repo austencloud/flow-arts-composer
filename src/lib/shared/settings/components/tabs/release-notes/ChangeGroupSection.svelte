@@ -1,14 +1,14 @@
 <!-- ChangeGroupSection - Single changelog category with admin editing -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     ChangelogCategory,
     ChangelogEntry,
-  } from "$lib/shared/versioning/domain/models/version-models";
-  import type { Contributor } from "$lib/shared/versioning/domain/models/contributor-models";
+  } from "#lib/shared/versioning/domain/models/version-models.js";
+  import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
   import {
     CATEGORY_ICONS,
-  } from "$lib/shared/versioning/domain/constants/changelog-constants";
+  } from "#lib/shared/versioning/domain/constants/changelog-constants.js";
   import EditableChangelogItem from "./EditableChangelogItem.svelte";
 
   let {
@@ -128,7 +128,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 0 0 10px 0;
+    margin: 0 0 4px 0;
     font-size: var(--font-size-sm);
     font-weight: 600;
   }
@@ -170,11 +170,9 @@
     padding: 0;
     list-style: none;
   }
-  .change-list li {
-    margin-bottom: 6px;
-  }
-  .change-list li:last-child {
-    margin-bottom: 0;
+  /* Plain rows split by hairlines, like every other settings list. */
+  .change-list li + li {
+    border-top: 1px solid var(--theme-stroke);
   }
 
   .add-entry-btn {

@@ -18,7 +18,7 @@ import {
 import {
   getFirestoreInstance,
   getAuthSync,
-} from "$lib/shared/auth/firebase";
+} from "#lib/shared/auth/firebase.js";
 
 // NOTE: This is intentionally a stateful class accessed through the
 // `getScreenshotTagController()` singleton getter — NOT a pure-function module

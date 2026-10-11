@@ -1,8 +1,8 @@
 import type { ShortcutContext } from "./types/keyboard-types";
 import type { ShortcutWithBinding } from "../services/types";
 import { buildKeyCombo } from "../utils/key-combo-utils";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import type { TranslationKey } from "$lib/shared/i18n/i18n-types.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 
 export type ShortcutCenterView = "current" | "all" | "changed";
 

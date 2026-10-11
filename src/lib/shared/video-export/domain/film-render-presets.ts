@@ -2,7 +2,7 @@ import type {
   VideoFps,
   VideoQuality,
   VideoResolution,
-} from "$lib/shared/animation-panel/state/export-options-state.svelte";
+} from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
 
 export type FilmRenderPresetId = "draft" | "final" | "cinema";
 

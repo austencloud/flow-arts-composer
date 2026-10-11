@@ -3,7 +3,7 @@ import {
   decodeViewMode,
   encodeViewMode,
   normalizeBrowseViewMode,
-} from "$lib/shared/browse/domain/browse-view-mode";
+} from "#lib/shared/browse/domain/browse-view-mode.js";
 
 describe("browse view mode hand identity", () => {
   it("keeps historical compact URLs stable while exposing performer hands", () => {

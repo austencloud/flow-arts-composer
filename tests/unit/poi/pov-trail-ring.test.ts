@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { PovTrailRing, type PovTrailSnapshot } from "$lib/shared/3d/effects/poi/pov-trail-ring";
+import { PovTrailRing, type PovTrailSnapshot } from "#lib/shared/3d/effects/poi/pov-trail-ring.js";
 
 describe("PovTrailRing", () => {
   it("starts empty", () => {

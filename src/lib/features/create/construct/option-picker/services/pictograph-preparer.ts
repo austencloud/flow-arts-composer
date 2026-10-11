@@ -4,5 +4,5 @@
 
 export type {
   PreparedPictographData,
-} from "$lib/shared/pictograph/shared/services/types";
-export { PictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
+} from "#lib/shared/pictograph/shared/services/types.js";
+export { PictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";

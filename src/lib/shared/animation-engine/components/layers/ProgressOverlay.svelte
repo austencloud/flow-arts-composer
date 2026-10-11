@@ -5,9 +5,9 @@ Progress indicators for AnimatorCanvas.
 Shows pre-render progress and perfect playback badge.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PreRenderProgress } from "$lib/shared/animation-engine/services/sequence-frame-pre-renderer";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PreRenderProgress } from "#lib/shared/animation-engine/services/sequence-frame-pre-renderer.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
 
   let {
     isPreRendering = false,

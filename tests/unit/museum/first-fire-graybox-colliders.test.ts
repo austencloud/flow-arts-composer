@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFirstFireBlenderContract } from "$lib/features/museum/data/first-fire-blender-contract";
+import { buildFirstFireBlenderContract } from "#lib/features/museum/data/first-fire-blender-contract.js";
 import {
   buildFirstFireGrayboxColliders,
   FIRST_FIRE_GRAYBOX_SPAWN,

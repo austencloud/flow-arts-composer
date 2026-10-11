@@ -5,16 +5,16 @@
  * complete guide, no reveal, at progress 1.
  */
 import { describe, expect, it, vi } from "vitest";
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
+import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
 import {
   createMandalaGuideRevealFrame,
   type MandalaGuideImageDependencies,
-} from "$lib/shared/mandala/services/mandala-guide-image";
+} from "#lib/shared/mandala/services/mandala-guide-image.js";
 import type {
   MandalaGuidePaintOptions,
   MandalaGuidePaintTarget,
-} from "$lib/shared/mandala/services/mandala-guide-painter";
-import type { PreparedMandalaPath } from "$lib/shared/mandala/services/types";
+} from "#lib/shared/mandala/services/mandala-guide-painter.js";
+import type { PreparedMandalaPath } from "#lib/shared/mandala/services/types.js";
 import {
   createCellRevealFrame,
   mergeCellPaths,
@@ -22,7 +22,7 @@ import {
   shapeMatrixGuideOptions,
   SHAPE_MATRIX_GUIDE_COLORS,
   SHAPE_MATRIX_GUIDE_STROKE_WIDTH,
-} from "$lib/shared/shape-matrix/services/shape-matrix-render";
+} from "#lib/shared/shape-matrix/services/shape-matrix-render.js";
 
 const left: MandalaPaths = {
   left: [{ d: "M 0 0 C 10 0 10 10 20 10", tipIndex: 0 }],

@@ -1,10 +1,10 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { replaceState } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import { onMount } from "svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { fits3DViewport } from "$lib/shared/3d/capabilities/viewport-3d-gate.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { fits3DViewport } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import SequenceViewerTransitionReviewFrame from "./_components/SequenceViewerTransitionReviewFrame.svelte";
   import RailPropGlyphReview from "./_components/RailPropGlyphReview.svelte";
   import TransitionGeometryTrace from "./_components/TransitionGeometryTrace.svelte";
@@ -18,7 +18,7 @@
     isWorkspaceReplayCommand,
   } from "./workspace-review-replays";
   import type {
-    TransitionGeometryTrace,
+    TransitionGeometryTrace as TraceData,
     TransitionTraceCommand,
   } from "./transition-geometry-trace";
 
@@ -231,7 +231,7 @@
   let motionPreference = $state<"full" | "reduce">("full");
   let frameElement = $state<HTMLIFrameElement | null>(null);
   let frameMetrics = $state<FrameMetrics | null>(null);
-  let lastTrace = $state<TransitionGeometryTrace | null>(null);
+  let lastTrace = $state<TraceData | null>(null);
   let replayStatus = $state<ReplayStatus>("loading");
   let replayDetail = $state("Loading the production viewer…");
   let frameVersion = $state(0);
@@ -325,9 +325,9 @@
 
   function selectGate(gateId: TransitionReviewGateId): void {
     review.selectGate(gateId);
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     url.searchParams.set("gate", gateId);
-    replaceState(url, page.state);
+    goto(url, { shallow: true, replace: true, state: page.state });
     frameMetrics = null;
     lastTrace = null;
     pendingReplay = null;
@@ -400,9 +400,7 @@
       };
       if (message.source !== "sequence-viewer-transition-frame") return;
       if (message.status === "trace") {
-        const trace = message.trace as
-          | Partial<TransitionGeometryTrace>
-          | undefined;
+        const trace = message.trace as Partial<TraceData> | undefined;
         if (
           trace &&
           (isWorkspaceReplayCommand(trace.command) ||
@@ -426,7 +424,7 @@
           typeof trace.duration === "number" &&
           Array.isArray(trace.samples)
         ) {
-          lastTrace = trace as TransitionGeometryTrace;
+          lastTrace = trace as TraceData;
         }
         return;
       }

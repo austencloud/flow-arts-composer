@@ -6,9 +6,9 @@
  * Organized by motion pattern: Pro-Pro, Anti-Anti, and Hybrid
  */
 
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { GridPlacementGroup } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { Type1LetterData } from "../type1-letter-data";
 
 /**

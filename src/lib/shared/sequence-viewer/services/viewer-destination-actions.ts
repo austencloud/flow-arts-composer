@@ -1,6 +1,6 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { saveSequenceHandoff } from "$lib/shared/coordinators/sequence-handoff.svelte";
-import type { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { saveSequenceHandoff } from "#lib/shared/coordinators/sequence-handoff.svelte.js";
+import type { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import type { PlaybackControllerState } from "../components/playback-controller.svelte";
 import type { ViewerInteractiveServicesState } from "../state/viewer-interactive-services-state.svelte";
 
@@ -51,8 +51,8 @@ export function createViewerDestinationActions(
     dependencies.showToast({
       message:
         preset === "combo-export"
-          ? "Opening in Compose for combined export..."
-          : "Opening in Compose...",
+          ? "Opening in Studio for combined export..."
+          : "Opening in Studio...",
       type: "info",
       duration: 2000,
     });

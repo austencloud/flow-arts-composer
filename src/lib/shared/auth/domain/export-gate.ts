@@ -1,8 +1,8 @@
 import {
   authState,
   awaitAuthSettled,
-} from "$lib/shared/auth/state/auth-state.svelte";
-import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
+} from "#lib/shared/auth/state/auth-state.svelte.js";
+import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
 
 /**
  * Take-it-home gate.

@@ -1,16 +1,16 @@
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { applyVariationDescriptor } from "$lib/features/choreo-card/services/deck-variation";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { CsvEdge } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import type { SVGPathData } from "$lib/shared/mandala/domain/mandala-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { CsvEdge } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import type { SVGPathData } from "#lib/shared/mandala/domain/mandala-types.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ShapeMatrixTipPair } from "../domain/prop-pair";
 import {
   flowerStartOrientation,
   flowerTurnPattern,
   type Flower,
 } from "../domain/flower-signature";
-import { closeSequenceOrientationCycle } from "$lib/shared/create/services/sequence-orientation-cycle";
+import { closeSequenceOrientationCycle } from "#lib/shared/create/services/sequence-orientation-cycle.js";
 
 /**
  * Geometric parity check between a cell's overlay mandala and a mode's

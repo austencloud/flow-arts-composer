@@ -15,18 +15,18 @@ import type {
 } from "../domain/types/keyboard-types";
 import { Shortcut } from "../domain/models/shortcut";
 import { NormalizedKeyboardEvent } from "../domain/models/keyboard-event";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-import { selectedArrowState } from "$lib/shared/create/state/selected-arrow-state.svelte";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
 import {
   hasOpenDrawers,
   dismissTopDrawer,
-} from "$lib/shared/foundation/ui/drawer/drawer-stack";
-import { getActiveModule } from "$lib/shared/application/state/ui/ui-state.svelte";
+} from "#lib/shared/foundation/ui/drawer/drawer-stack.js";
+import { getActiveModule } from "#lib/shared/application/state/ui/ui-state.svelte.js";
 import { isEditableKeyboardTarget } from "../domain/shortcut-target-resolution";
 import {
   logKeyboardShortcutExecuted,
   logKeyboardShortcutFailed,
-} from "$lib/shared/keyboard/keyboard-shortcut-analytics";
+} from "#lib/shared/keyboard/keyboard-shortcut-analytics.js";
 
 const debug = createComponentLogger("KeyboardShortcutManager");
 

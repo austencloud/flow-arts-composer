@@ -10,14 +10,14 @@ import {
 import type {
   PostAnimationItem,
   PostMovesItem,
-} from "$lib/shared/post-studio-plugin";
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   compilePostProject,
   evaluatePresetFrame,
-} from "$lib/shared/post-studio-plugin";
-import { pipHandoffOf } from "$lib/shared/media-composition/domain/pip-handoff";
-import type { TakeSample } from "$lib/shared/media-composition/domain/take-timing";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/post-studio-plugin/index.js";
+import { pipHandoffOf } from "#lib/shared/media-composition/domain/pip-handoff.js";
+import type { TakeSample } from "#lib/shared/media-composition/domain/take-timing.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import { NOW, overlay, project, video } from "./post-project-fixtures";
 
 const MOVES = 16;

@@ -11,7 +11,7 @@
   import Level2TopicBody from "../_components/Level2TopicBody.svelte";
   import { LEVEL2_TOPIC_PAGES } from "../_data/level2-topic-routes";
   import { localizedLevel2Topic } from "../_data/localize-level2-topic";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import type { PageData } from "./$types";
 
   let { data }: { data: PageData } = $props();

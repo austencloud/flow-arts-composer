@@ -2,48 +2,48 @@ import {
   createDefaultAutumnConfig,
   normalizeAutumnConfig,
   type AutumnSceneConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs/autumn-scene-config";
+} from "#lib/shared/3d/environments/domain/models/scene-configs/autumn-scene-config.js";
 import {
   createDefaultBlossomConfig,
   type BlossomSceneConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs/blossom-scene-config";
+} from "#lib/shared/3d/environments/domain/models/scene-configs/blossom-scene-config.js";
 import {
   createDefaultCelestialConfig,
   type CelestialSceneConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs/celestial-scene-config";
+} from "#lib/shared/3d/environments/domain/models/scene-configs/celestial-scene-config.js";
 import {
   createDefaultCosmicAuroraConfig,
   createDefaultCosmicNightConfig,
   type CosmicSceneConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs/cosmic-scene-config";
+} from "#lib/shared/3d/environments/domain/models/scene-configs/cosmic-scene-config.js";
 import {
   createDefaultEmberConfig,
   type EmberSceneConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs/ember-scene-config";
+} from "#lib/shared/3d/environments/domain/models/scene-configs/ember-scene-config.js";
 import {
   createDefaultForestFireflyConfig,
   type ForestSceneConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config";
+} from "#lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config.js";
 import {
   createDefaultOceanReefConfig,
   type OceanSceneConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs/ocean-scene-config";
+} from "#lib/shared/3d/environments/domain/models/scene-configs/ocean-scene-config.js";
 import {
   createDefaultRainbowConfig,
   type RainbowSceneConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs/rainbow-scene-config";
+} from "#lib/shared/3d/environments/domain/models/scene-configs/rainbow-scene-config.js";
 import {
   createDefaultVoidConfig,
   type VoidSceneConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs/void-scene-config";
+} from "#lib/shared/3d/environments/domain/models/scene-configs/void-scene-config.js";
 import {
   createDefaultWinterConfig,
   type WinterSceneConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs/winter-scene-config";
+} from "#lib/shared/3d/environments/domain/models/scene-configs/winter-scene-config.js";
 import type { SceneId } from "../domain/scene-lab-types";
 import type { CosmicVariant } from "../services/scene-lab-persistence";
 import { loadSceneLabState } from "../services/scene-lab-persistence";
-import { getSceneUndoManager } from "$lib/shared/3d/undo/get-scene-undo-manager";
+import { getSceneUndoManager } from "#lib/shared/3d/undo/get-scene-undo-manager.js";
 
 export function createSceneLabState() {
   const persisted = loadSceneLabState();

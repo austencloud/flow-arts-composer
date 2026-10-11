@@ -6,7 +6,7 @@
   and responsive card layout.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { LETTER_TYPE_DESCRIPTORS } from "../services/section-title-formatter";
 
   const letterTypes = Object.values(LETTER_TYPE_DESCRIPTORS);

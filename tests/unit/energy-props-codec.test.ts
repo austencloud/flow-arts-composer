@@ -9,21 +9,21 @@
 
 import { describe, it, expect } from "vitest";
 
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   encodeSequence,
   decodeSequence,
   encodePropForURL,
   parsePropTypeFromURLValue,
   decodeSequenceFromQR,
-} from "$lib/shared/navigation/services/sequence-encoder";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
 import {
   encodeLegacySequence,
   decodeLegacySequence,
   detectLegacySequenceFormat,
   type LegacySequenceFormat,
-} from "$lib/shared/navigation/services/legacy-sequence-codec";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/navigation/services/legacy-sequence-codec.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const PRODUCTION_FLAT_QR =
   "s~q1:9O5/166CQPYL*25*4NKYPGQG:RDJMKRIPXMFQ56W257R5YNI*O4AYS/*COVM1VC9S3:T9J*4HQ13H0";

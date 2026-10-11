@@ -13,7 +13,7 @@ import type {
   EffectType,
   TipEffectMap,
 } from "../domain/types/tip-effect-types";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 
 /**
  * All visibility settings as a single object

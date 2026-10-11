@@ -18,13 +18,13 @@ import type { Firestore } from "firebase/firestore";
 import {
   getSystemCatalogPath,
   getSystemCatalogSequencePath,
-} from "$lib/shared/library/data/firestore-paths";
+} from "#lib/shared/library/data/firestore-paths.js";
 import { loadCatalogSequences } from "./catalog-loader";
 import { loadDiamondEdges } from "./pictograph-letter-lookup";
 import type { ResolvedReversalPattern } from "../domain/reversal-transform";
 import { transformSequence } from "./reversal-transform-apply";
 import type { Catalog } from "../domain/models/Catalog";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 // Firebase-free transform half — re-exported for backward compatibility so
 // consumers keep importing these from reversal-seed-service.
@@ -73,7 +73,7 @@ export async function seedReversalPattern(
   // The atlas reaches this module through the transform re-exports above, and
   // only an admin ever seeds. Loading Firebase here keeps it off the atlas's
   // first download.
-  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+  const { getFirestoreInstance } = await import("#lib/shared/auth/firebase.js");
   const db = await getFirestoreInstance();
   const edges = await loadDiamondEdges();
   const writtenIds: string[] = [];

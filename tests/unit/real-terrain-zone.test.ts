@@ -8,7 +8,7 @@ import {
   sampleRealHeight,
   type ImportedTerrainDataV2,
   type LegacyImportedTerrainData,
-} from "$lib/shared/3d/procedural-engine/generation/real-terrain-zone";
+} from "#lib/shared/3d/procedural-engine/generation/real-terrain-zone.js";
 
 function geospatialFixture(): ImportedTerrainDataV2 {
   return {

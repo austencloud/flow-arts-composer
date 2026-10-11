@@ -6,7 +6,7 @@ import ProfileAdminSection from "./ProfileAdminSection.svelte";
 const mocks = vi.hoisted(() => ({
   getIdToken: vi.fn().mockResolvedValue("token"),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: { currentUser: { getIdToken: mocks.getIdToken } },
 }));
 

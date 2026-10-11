@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildMotionDatabase } from "$lib/features/stage/locomotion/motion-matching/feature-extractor";
-import { FEATURE_STRIDE, DEFAULT_WEIGHTS, type PoseSample } from "$lib/features/stage/locomotion/motion-matching/feature-types";
+import { buildMotionDatabase } from "#lib/features/stage/locomotion/motion-matching/feature-extractor.js";
+import { FEATURE_STRIDE, DEFAULT_WEIGHTS, type PoseSample } from "#lib/features/stage/locomotion/motion-matching/feature-types.js";
 
 // A stationary clip: feet fixed relative to hips, no root translation or turn.
 function stationarySampler(_clipId: string, _time: number): PoseSample {

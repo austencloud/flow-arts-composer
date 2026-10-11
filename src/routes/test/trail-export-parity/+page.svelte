@@ -20,26 +20,26 @@
    * to window.__trailParityResult for headless inspection.
    */
   import { onMount, onDestroy } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { getSequenceRepository } from "$lib/shared/create/get-sequence-repository";
-  import { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-  import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
-  import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-  import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
-  import { getVideoExportOrchestrator } from "$lib/shared/animation-engine/get-video-export-orchestrator";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { getRenderContextRegistry } from "$lib/shared/animation-engine/get-render-context-registry";
-  import { assembleExportEngineProps } from "$lib/shared/video-export/services/export-engine-props";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { getSequenceRepository } from "#lib/shared/create/get-sequence-repository.js";
+  import { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+  import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
+  import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+  import { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
+  import { getVideoExportOrchestrator } from "#lib/shared/animation-engine/get-video-export-orchestrator.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { getRenderContextRegistry } from "#lib/shared/animation-engine/get-render-context-registry.js";
+  import { assembleExportEngineProps } from "#lib/shared/video-export/services/export-engine-props.js";
   import { Input, BufferSource, ALL_FORMATS, VideoSampleSink } from "mediabunny";
-  import ParityHarness from "$lib/shared/parity/ParityHarness.svelte";
-  import { diff, bodyDiff, flattenToCanvas, AA_TOLERANCE } from "$lib/shared/parity/image-diff";
-  import type { ParityRun, ParityRow, ParityVerdict } from "$lib/shared/parity/parity-types";
+  import ParityHarness from "#lib/shared/parity/ParityHarness.svelte";
+  import { diff, bodyDiff, flattenToCanvas, AA_TOLERANCE } from "#lib/shared/parity/image-diff.js";
+  import type { ParityRun, ParityRow, ParityVerdict } from "#lib/shared/parity/parity-types.js";
 
   // Bit-exact parity vs a lossy codec is impossible — residual lives on hard
   // edges (4:2:0 chroma). The meaningful test is BODY parity: diff only the

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { PerspectiveCamera } from "three";
-import { createOceanJellyfishSwarm } from "$lib/shared/3d/environments/worlds/ocean/ocean-jellyfish-swarm";
+import { createOceanJellyfishSwarm } from "#lib/shared/3d/environments/worlds/ocean/ocean-jellyfish-swarm.js";
 import {
   buildPentatonicNotes,
   midiName,
   midiToFreq,
-} from "$lib/shared/3d/environments/worlds/ocean/ocean-jellyfish-notes";
+} from "#lib/shared/3d/environments/worlds/ocean/ocean-jellyfish-notes.js";
 
 describe("Ocean jellyfish world", () => {
   it("preserves the production pentatonic note assignment", () => {

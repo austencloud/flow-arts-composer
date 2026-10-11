@@ -12,7 +12,7 @@ vi.mock("./services/user-searcher", () => ({
   searchUsers: mocks.searchUsers,
 }));
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
 

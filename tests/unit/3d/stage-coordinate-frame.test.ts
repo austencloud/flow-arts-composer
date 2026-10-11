@@ -8,8 +8,8 @@ import {
   getNativeStageSurfaceY,
   getStageCoordinateFrame,
   isRenderable3DEnvironment,
-} from "$lib/shared/3d/environments/domain/stage-coordinate-frame";
-import { createBlossomStageTransform } from "$lib/shared/3d/environments/scenes/cherry-blossom/blossom-runtime";
+} from "#lib/shared/3d/environments/domain/stage-coordinate-frame.js";
+import { createBlossomStageTransform } from "#lib/shared/3d/environments/scenes/cherry-blossom/blossom-runtime.js";
 
 const BACKGROUNDS = [
   BackgroundType.FOREST,

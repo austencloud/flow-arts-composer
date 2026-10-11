@@ -1,8 +1,8 @@
 <!-- EditableChangelogItem - A changelog entry with inline editing for admins -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { ChangelogEntry } from "$lib/shared/versioning/domain/models/version-models";
-  import type { Contributor } from "$lib/shared/versioning/domain/models/contributor-models";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { ChangelogEntry } from "#lib/shared/versioning/domain/models/version-models.js";
+  import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
   import { fly, scale } from "svelte/transition";
   import ContributorBadge from "./ContributorBadge.svelte";
   import ContributorPicker from "./ContributorPicker.svelte";
@@ -324,10 +324,10 @@
     align-items: flex-start;
     gap: 10px;
     flex: 1;
-    padding: 10px 12px;
-    background: var(--theme-card-bg);
+    padding: 10px 4px;
+    background: transparent;
     border: none;
-    border-radius: 8px;
+    border-radius: 0;
     text-align: left;
     cursor: default;
     transition:
@@ -341,7 +341,7 @@
   }
 
   .change-item.clickable:hover {
-    background: var(--theme-card-hover-bg);
+    background: color-mix(in srgb, var(--theme-text) 4%, transparent);
   }
 
   .change-item.clickable:active {
@@ -385,9 +385,9 @@
   .feedback-link-icon {
     flex-shrink: 0;
     padding: 8px 10px;
-    background: var(--theme-card-bg);
+    background: transparent;
     border: none;
-    color: var(--theme-stroke-strong);
+    color: var(--theme-text-dim);
     font-size: var(--font-size-compact);
     cursor: pointer;
     border-radius: 8px;

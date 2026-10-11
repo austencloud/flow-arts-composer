@@ -1,6 +1,7 @@
 import type { PostProject } from "@austencloud/video-editor/core";
-import { auth } from "$lib/shared/auth/firebase";
+import { auth } from "#lib/shared/auth/firebase.js";
 import { legacyPostOwner } from "./post-project-store";
+import { isIndependentStudioProjectId } from "../domain/studio-project-id";
 import {
   projectDraftRecord,
   resolvePostStudioDraft,
@@ -12,6 +13,30 @@ const PREFIXES = [
   "tka:post-studio:project:v2:",
   "tka:post-studio:take-timing:v1:",
 ];
+
+function archiveSequenceId(sequenceId: string): string {
+  if (!isIndependentStudioProjectId(sequenceId)) return sequenceId;
+  const uid =
+    auth.currentUser && !auth.currentUser.isAnonymous
+      ? auth.currentUser.uid
+      : null;
+  return uid
+    ? `account:${uid}:${sequenceId}`
+    : legacyPostOwner()
+      ? `guest:${sequenceId}`
+      : sequenceId;
+}
+
+/** Account-scoped archive record for newly imported Studio arrangements. */
+export function postDraftArchiveRecord(
+  project: PostProject,
+  archiveId = archiveSequenceId(project.sequenceId)
+): PostDraftRecord {
+  return {
+    ...projectDraftRecord(project),
+    key: `${PREFIXES[0]}${archiveId}`,
+  };
+}
 
 export interface PostDraftRecord {
   key: string;
@@ -30,13 +55,24 @@ export function shouldSubmitPostDraft(
   project: PostProject,
   revision: number
 ): boolean {
-  return revision > 0 || !isEmptyPostProject(project);
+  return (
+    revision > 0 ||
+    project.sourceKind === "none" ||
+    !isEmptyPostProject(project)
+  );
 }
 
 function recordsForSequence(
   sequenceId: string,
-  records: readonly PostDraftRecord[]
+  records: readonly PostDraftRecord[],
+  archiveId = sequenceId
 ): PostDraftRecord[] {
+  if (isIndependentStudioProjectId(sequenceId))
+    return records.filter(
+      (record) =>
+        record.key === `${PREFIXES[0]}${archiveId}` &&
+        typeof record.value === "string"
+    );
   return records.filter(
     (record) =>
       typeof record.key === "string" &&
@@ -77,7 +113,10 @@ export async function loadPostDraft(sequenceId: string): Promise<{
   diskAvailable: boolean;
   error: string | null;
 }> {
+  const archiveId = archiveSequenceId(sequenceId);
+  const studioSource = isIndependentStudioProjectId(sequenceId);
   if (
+    !studioSource &&
     legacyPostOwner() &&
     legacyPostOwner() !==
       (auth.currentUser?.isAnonymous ? null : auth.currentUser?.uid)
@@ -96,7 +135,13 @@ export async function loadPostDraft(sequenceId: string): Promise<{
   let error: string | null = null;
   const browserRecords = (): PostDraftRecord[] => {
     try {
-      records = recordsForSequence(sequenceId, readPostDraftRecords());
+      if (studioSource) {
+        const key = `${PREFIXES[0]}${archiveId}`;
+        const value = localStorage.getItem(key);
+        records = value === null ? [] : [{ key, value }];
+      } else {
+        records = recordsForSequence(sequenceId, readPostDraftRecords());
+      }
     } catch {
       error =
         "Browser storage is unavailable. Keep this editor open until a backup is saved.";
@@ -105,7 +150,11 @@ export async function loadPostDraft(sequenceId: string): Promise<{
   };
   browserRecords();
   try {
-    const archived = await readArchiveRecords(sequenceId);
+    const archived = await readArchiveRecords(archiveId);
+    if (studioSource && archiveSequenceId(sequenceId) !== archiveId)
+      throw new Error(
+        "The account changed while reading this arrangement draft."
+      );
     if (archived === null) {
       return {
         project: resolvePostStudioDraft(sequenceId, browserRecords()),
@@ -116,12 +165,18 @@ export async function loadPostDraft(sequenceId: string): Promise<{
     return {
       project: resolvePostStudioDraft(sequenceId, [
         ...browserRecords(),
-        ...recordsForSequence(sequenceId, archived),
+        ...recordsForSequence(sequenceId, archived, archiveId),
       ]),
       diskAvailable: true,
       error,
     };
   } catch (cause) {
+    if (studioSource && archiveSequenceId(sequenceId) !== archiveId)
+      return {
+        project: null,
+        diskAvailable: true,
+        error: "The account changed while reading this arrangement draft.",
+      };
     return {
       project: resolvePostStudioDraft(sequenceId, browserRecords()),
       diskAvailable: true,
@@ -131,6 +186,37 @@ export async function loadPostDraft(sequenceId: string): Promise<{
           : "Could not read the draft archive.",
     };
   }
+}
+
+/** Read a pre-claim Studio draft by its original unscoped key. */
+export async function loadUnclaimedStudioDraft(sequenceId: string): Promise<{
+  project: PostProject | null;
+  error: string | null;
+}> {
+  if (!isIndependentStudioProjectId(sequenceId) || legacyPostOwner())
+    return { project: null, error: "The device draft is already claimed." };
+  const records: PostDraftRecord[] = [];
+  let error: string | null = null;
+  try {
+    const key = `${PREFIXES[0]}${sequenceId}`;
+    const value = localStorage.getItem(key);
+    if (value !== null) records.push({ key, value });
+  } catch {
+    error = "Browser storage is unavailable. The original draft was kept.";
+  }
+  if (import.meta.env.DEV) {
+    try {
+      const archived = await readArchiveRecords(sequenceId);
+      if (archived)
+        records.push(...recordsForSequence(sequenceId, archived, sequenceId));
+    } catch (cause) {
+      error =
+        cause instanceof Error
+          ? cause.message
+          : "The device draft archive could not be read.";
+    }
+  }
+  return { project: resolvePostStudioDraft(sequenceId, records), error };
 }
 
 /** The archive's saves of one post, or null when this server keeps none. */
@@ -184,12 +270,14 @@ export async function loadDiskPostDraft(
   sequenceId: string
 ): Promise<PostProject | null> {
   if (!import.meta.env.DEV) return null;
+  const archiveId = archiveSequenceId(sequenceId);
   try {
-    const archived = await readArchiveRecords(sequenceId);
+    const archived = await readArchiveRecords(archiveId);
+    if (archiveSequenceId(sequenceId) !== archiveId) return null;
     return archived
       ? resolvePostStudioDraft(
           sequenceId,
-          recordsForSequence(sequenceId, archived)
+          recordsForSequence(sequenceId, archived, archiveId)
         )
       : null;
   } catch {
@@ -198,7 +286,13 @@ export async function loadDiskPostDraft(
 }
 
 export async function savePostDraft(project: PostProject): Promise<void> {
-  await savePostDraftRecords([projectDraftRecord(project)]);
+  const archiveId = archiveSequenceId(project.sequenceId);
+  await savePostDraftRecords([postDraftArchiveRecord(project, archiveId)]);
+  if (
+    isIndependentStudioProjectId(project.sequenceId) &&
+    archiveSequenceId(project.sequenceId) !== archiveId
+  )
+    throw new Error("The account changed while saving this arrangement draft.");
 }
 
 /** Writes draft records to the dev server's draft folder. */

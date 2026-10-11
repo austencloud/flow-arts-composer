@@ -41,38 +41,38 @@ vi.mock("firebase/firestore", () => ({
   setDoc: h.setDoc,
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: h.getFirestoreInstance,
 }));
 
-vi.mock("$lib/shared/auth/services/profile-picture-manager", () => ({
+vi.mock("#lib/shared/auth/services/profile-picture-manager.js", () => ({
   getProviderIds: h.getProviderIds,
 }));
 
-vi.mock("$lib/shared/auth/services/username-validator", () => ({
+vi.mock("#lib/shared/auth/services/username-validator.js", () => ({
   claimUsername: h.claimUsername,
   generateUniqueUsername: h.generateUniqueUsername,
   getUsernameOwner: h.getUsernameOwner,
 }));
 
-vi.mock("$lib/shared/foundation/utils/avatar-generator", () => ({
+vi.mock("#lib/shared/foundation/utils/avatar-generator.js", () => ({
   generateAvatarUrl: h.generateAvatarUrl,
 }));
 
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureWhenReady: h.captureWhenReady,
   getCurrentPostHogSessionId: h.getCurrentPostHogSessionId,
 }));
 
-vi.mock("$lib/shared/error/services/error-telemetry-reporter", () => ({
+vi.mock("#lib/shared/error/services/error-telemetry-reporter.js", () => ({
   reportErrorTelemetry: h.reportErrorTelemetry,
 }));
 
-vi.mock("$lib/shared/library/services/public-sequence-persister", () => ({
+vi.mock("#lib/shared/library/services/public-sequence-persister.js", () => ({
   refreshPublicSequenceOwnerProfile: h.refreshPublicSequenceOwnerProfile,
 }));
 
-import { UserDocumentManager } from "$lib/shared/auth/services/user-document-manager";
+import { UserDocumentManager } from "#lib/shared/auth/services/user-document-manager.js";
 
 function fullUser(): User {
   return {

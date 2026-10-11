@@ -7,7 +7,7 @@ import {
   getAuthInstance,
   getFirestoreInstance,
   getFunctionsInstance,
-} from "$lib/shared/auth/firebase";
+} from "#lib/shared/auth/firebase.js";
 
 export type InstagramAuthIntent = "signin" | "link" | "reauth";
 
@@ -247,7 +247,7 @@ export async function authenticateWithInstagram(
   }
 
   const { isNative } =
-    await import("$lib/shared/platform/services/platform-detector");
+    await import("#lib/shared/platform/services/platform-detector.js");
   if (isNative()) {
     throw new InstagramAuthError("instagram/unsupported-platform");
   }

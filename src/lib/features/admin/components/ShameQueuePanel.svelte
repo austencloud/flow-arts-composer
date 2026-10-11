@@ -12,18 +12,18 @@
     setEntryFeatured,
     setEntryHidden,
     getReportedEntries,
-  } from "$lib/features/hall-of-shame/services/shame-queue-manager";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  } from "#lib/features/hall-of-shame/services/shame-queue-manager.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { onMount } from "svelte";
   import type {
     HallOfShameEntry,
     ShameCategory,
-  } from "$lib/features/hall-of-shame/domain/models/hall-of-shame-models";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
-  import ModalFooter from "$lib/shared/foundation/ui/modal/ModalFooter.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  } from "#lib/features/hall-of-shame/domain/models/hall-of-shame-models.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import ModalFooter from "#lib/shared/foundation/ui/modal/ModalFooter.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
 
   // State
   let pendingEntries = $state<HallOfShameEntry[]>([]);

@@ -5,7 +5,7 @@ import {
   uniqueCities,
   uniqueCountries,
   toArcs,
-} from "$lib/shared/qr/journey/journey-stats";
+} from "#lib/shared/qr/journey/journey-stats.js";
 
 describe("journey-stats", () => {
   const CHICAGO = { lat: 41.88, lng: -87.63 };

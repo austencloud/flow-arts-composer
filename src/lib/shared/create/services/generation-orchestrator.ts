@@ -12,10 +12,10 @@
  * 4. Convert the engine's BuildResult to the app's SequenceData via BuildResultTransformer
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { GenerationMode } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { sequenceMetadataManager as SequenceMetadataManagerSingleton } from "$lib/shared/create/services/sequence-metadata-manager";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { GenerationOptions } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { GenerationMode } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { sequenceMetadataManager as SequenceMetadataManagerSingleton } from "#lib/shared/create/services/sequence-metadata-manager.js";
 type SequenceMetadataManager = typeof SequenceMetadataManagerSingleton;
 import { SequenceBuilder } from "@tka/sequence-engine/generation";
 import type {
@@ -34,25 +34,25 @@ import {
   setLetterTransitionGraph,
   type ISequenceDataProvider,
 } from "@tka/sequence-engine";
-import { BrowserDataProvider } from "$lib/shared/sequence-engine/data/browser-data-provider";
-import { letterQueryHandler as globalLetterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
+import { BrowserDataProvider } from "#lib/shared/sequence-engine/data/browser-data-provider.js";
+import { letterQueryHandler as globalLetterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
 import {
   expanderMultiplier,
   parseLoopComponents,
   specHasExpandInversion,
-} from "$lib/shared/create/services/loop-type-utils";
+} from "#lib/shared/create/services/loop-type-utils.js";
 import {
   handModeToEngine,
   propModeToEngine,
-} from "$lib/shared/create/domain/hand-relationship";
+} from "#lib/shared/create/domain/hand-relationship.js";
 import {
   assessStartFeasibility,
   type StartFeasibilityResult,
-} from "$lib/shared/create/domain/start-feasibility";
-import { GenerationRequestError } from "$lib/shared/create/domain/generation-request-error";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { getGridLocationsFromPlacement } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/create/domain/start-feasibility.js";
+import { GenerationRequestError } from "#lib/shared/create/domain/generation-request-error.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { getGridLocationsFromPlacement } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 // The engine's word-based generation path reads from a global transition
 // graph singleton (mirrors mcp-server/src/shared/server-context.ts which
@@ -457,11 +457,11 @@ export class GenerationOrchestrator {
   }
 }
 
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-import { BrowserVariationProvider } from "$lib/shared/create/services/browser-variation-provider";
-import { BuildResultTransformer } from "$lib/shared/create/services/build-result-transformer";
-import { sequenceMetadataManager } from "$lib/shared/create/services/sequence-metadata-manager";
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+import { BrowserVariationProvider } from "#lib/shared/create/services/browser-variation-provider.js";
+import { BuildResultTransformer } from "#lib/shared/create/services/build-result-transformer.js";
+import { sequenceMetadataManager } from "#lib/shared/create/services/sequence-metadata-manager.js";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
 
 const browserVariationProvider = new BrowserVariationProvider(
   letterQueryHandler

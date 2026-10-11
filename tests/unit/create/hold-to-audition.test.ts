@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createHoldToAuditionAttachment } from "$lib/features/create/construct/option-picker/services/hold-to-audition";
+import { createHoldToAuditionAttachment } from "#lib/features/create/construct/option-picker/services/hold-to-audition.js";
 
 function pointer(
   type: string,

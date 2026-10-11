@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getSceneUndoManager } from "$lib/shared/3d/undo/get-scene-undo-manager";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getSceneUndoManager } from "#lib/shared/3d/undo/get-scene-undo-manager.js";
 
 function makeConfig() {
   return { id: "p1", positionX: 0 };

@@ -9,8 +9,8 @@
 -->
 <script lang="ts">
   import type { QuizAnswerOption } from "../../quiz/domain/models/quiz-models";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
 
   let {
     options,

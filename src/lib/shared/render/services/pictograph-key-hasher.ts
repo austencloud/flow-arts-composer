@@ -1,22 +1,22 @@
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PictographVisibilityOptions } from "$lib/shared/render/utils/pictograph-to-svg";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PictographVisibilityOptions } from "#lib/shared/render/utils/pictograph-to-svg.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { isBuugengFamilyProp } from "$lib/shared/render/core/constants/prop-classification";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { isBuugengFamilyProp } from "#lib/shared/render/core/constants/prop-classification.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   isFanPropType,
   fanAppearanceSignature,
   normalizeFanAppearance,
-} from "$lib/shared/pictograph/prop/domain/fan-appearance";
-import { renderedPropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-import { renderedTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+} from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import { renderedPropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import { renderedTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import { gridJoinKey, isGridJoin } from "@tka/render-core";
-// getSettings loaded dynamically to avoid pulling $app/environment into worker bundle
+// getSettings loaded dynamically to avoid pulling $app/env into worker bundle
 
 interface MotionKeyData {
   isVisible?: boolean;
@@ -303,7 +303,7 @@ export class PictographKeyHasher {
     // Callers (ImageComposer.getVisibilitySettings) always resolve prop types before
     // calling deriveKey, so visibility.leftPropType/rightPropType are always set.
     // Default to "staff" for safety. Previously this called getSettings() which pulled
-    // $app/environment into the worker bundle via the static import chain.
+    // $app/env into the worker bundle via the static import chain.
     const resolvedLeftProp = visibility.leftPropType ?? "staff";
     const resolvedRightProp = visibility.rightPropType ?? "staff";
     const includeMotionVisibility =

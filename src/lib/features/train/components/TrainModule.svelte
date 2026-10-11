@@ -5,8 +5,8 @@
   Syncs with global navigation state and provides smooth transitions.
 -->
 <script lang="ts">
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import type { Section } from "$lib/shared/navigation/domain/types";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import type { Section } from "#lib/shared/navigation/domain/types.js";
 
   import PracticePanel from "./practice/PracticePanel.svelte";
   import ProgressPanel from "./progress/ProgressPanel.svelte";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { SCENE_FEATURES } from "$lib/shared/3d/scene-features/domain/scene-feature-registry";
-import { hasExactWorkerSceneFeatures } from "$lib/shared/3d/worker-renderer/domain/worker-scene-feature-capability";
+import { SCENE_FEATURES } from "#lib/shared/3d/scene-features/domain/scene-feature-registry.js";
+import { hasExactWorkerSceneFeatures } from "#lib/shared/3d/worker-renderer/domain/worker-scene-feature-capability.js";
 
 function reader(overrides: Record<string, boolean> = {}) {
   const defaults = Object.fromEntries(

@@ -1,7 +1,7 @@
-import type { AnonymousDraft } from "$lib/shared/auth/services/anonymous-upgrade";
-import { importDrafts } from "$lib/shared/auth/services/anonymous-upgrade";
-import { getAuthInstance } from "$lib/shared/auth/firebase";
-import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+import type { AnonymousDraft } from "#lib/shared/auth/services/anonymous-upgrade.js";
+import { importDrafts } from "#lib/shared/auth/services/anonymous-upgrade.js";
+import { getAuthInstance } from "#lib/shared/auth/firebase.js";
+import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 interface ImportPromptState {
   isOpen: boolean;

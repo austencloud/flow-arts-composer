@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
   // get-create-module-initializer (64-file subtree) and get-extension-flow-coordinator
   // (10-file subtree) are imported dynamically at their only call sites (onMount /
   // LOOP action) so they stay OUT of the Create module's eager first-paint graph.
   // See scripts/trace-create-three.cjs. getLibraryRepository stays static — it's
   // read synchronously by a context getter children rely on.
-  import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
+  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
 
   /**
    * CreateModule.svelte - COMPOSITION ROOT
@@ -42,15 +42,15 @@
    * Domain: Create module - Composition Root
    */
 
-  import { settingsService as settingsServiceSingleton } from "$lib/shared/settings/state/settings-state.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { CREATE_TABS } from "$lib/shared/navigation/config/tab-definitions";
-  import { handleSectionChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { setSideBySideLayout } from "$lib/shared/application/state/animation-visibility-state.svelte";
+  import { settingsService as settingsServiceSingleton } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { CREATE_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
+  import { handleSectionChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { setSideBySideLayout } from "#lib/shared/application/state/animation-visibility-state.svelte.js";
   import { onMount, setContext, tick, untrack } from "svelte";
   import ErrorBanner from "./ErrorBanner.svelte";
   import type { CreateModuleOrchestrators } from "../types/create-module-services";
@@ -61,60 +61,60 @@
   import type { createCreateModuleState as CreateModuleStateType } from "../state/create-module-state.svelte";
   import type { createConstructTabState as ConstructTabStateType } from "../state/construct-tab-state.svelte";
   import { createPanelCoordinationState } from "../state/panel-coordination-state.svelte";
-  import { setCreateModuleStateRef } from "$lib/shared/create/state/create-module-state-ref.svelte";
+  import { setCreateModuleStateRef } from "#lib/shared/create/state/create-module-state-ref.svelte.js";
   import type { IToolPanelMethods } from "../types/create-module-types";
   import TransferConfirmDialog from "./TransferConfirmDialog.svelte";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import CreateFrontDoor from "./CreateFrontDoor.svelte";
-  import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { setCreateModuleContext } from "../context/create-module-context";
   import {
     createGridJoinController,
     setGridJoinContext,
-  } from "$lib/shared/grid-join/grid-join-controller";
-  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+  } from "#lib/shared/grid-join/grid-join-controller.js";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
   import LOOPCoordinator from "./coordinators/LOOPCoordinator.svelte";
   import StartEndCoordinator from "./coordinators/StartEndCoordinator.svelte";
   import SequenceDrawerLauncher from "./coordinators/SequenceDrawerLauncher.svelte";
   // Deferred (loaded on first open via LazyMount) — keeps their ~110-file
   // dependency subtrees out of the Create module's eager first-paint graph.
   // See scripts/trace-create-three.cjs for the deferral analysis.
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import IndeterminateBar from "$lib/shared/components/loading/IndeterminateBar.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import IndeterminateBar from "#lib/shared/components/loading/IndeterminateBar.svelte";
   import { SessionManager } from "../services/session-manager.svelte";
   import { Autosaver } from "../services/autosaver";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import {
     featureFlagService,
     featureFlagState,
-  } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-  import { appEntryState } from "$lib/shared/onboarding/state/app-entry-state.svelte";
-  import { resolveAccessTier } from "$lib/shared/auth/domain/access-tier";
-  import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
-  import { isTabAccessible } from "$lib/shared/auth/domain/guest-access-config";
-  import { createMethodNudgeTrigger } from "$lib/shared/auth/domain/auth-nudge-trigger";
+  } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+  import { appEntryState } from "#lib/shared/onboarding/state/app-entry-state.svelte.js";
+  import { resolveAccessTier } from "#lib/shared/auth/domain/access-tier.js";
+  import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
+  import { isTabAccessible } from "#lib/shared/auth/domain/guest-access-config.js";
+  import { createMethodNudgeTrigger } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
   import {
     createPanelHeightTracker,
     type PanelHeightTrackerCleanup,
   } from "../state/managers/panel-height-tracker.svelte";
-  import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
-  import type { LetterSource } from "$lib/shared/create/domain/spell-models";
-  import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-  import { loopTypeLabel } from "$lib/features/create/generate/components/loop-component-presentation";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import type { SettingsState } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
+  import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+  import { loopTypeLabel } from "#lib/features/create/generate/components/loop-component-presentation.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { UndoOperationType } from "../services/undo-manager";
-  import PropUnlockCelebration from "$lib/shared/gamification/components/PropUnlockCelebration.svelte";
-  import { getPropUnlockManager } from "$lib/shared/gamification/get-prop-unlock-manager";
+  import PropUnlockCelebration from "#lib/shared/gamification/components/PropUnlockCelebration.svelte";
+  import { getPropUnlockManager } from "#lib/shared/gamification/get-prop-unlock-manager.js";
   import { createConstructTutorialState } from "../../construct/tutorial/state/construct-tutorial-state.svelte";
   import { logConstructOptionApplied } from "../../construct/services/construct-analytics";
-  import { tryGetAccountSetupContext } from "$lib/shared/onboarding/context/account-setup-context";
+  import { tryGetAccountSetupContext } from "#lib/shared/onboarding/context/account-setup-context.js";
   import {
     createSequenceTransformActionDispatcher,
     type SequenceTransformActionDispatcher,
   } from "../services/sequence-transform-action-dispatcher";
-  import { setGridRotationDirection } from "$lib/shared/pictograph/grid/state/grid-rotation-state.svelte";
+  import { setGridRotationDirection } from "#lib/shared/pictograph/grid/state/grid-rotation-state.svelte.js";
 
   const logger = createComponentLogger("CreateModule");
   const accountSetupState = tryGetAccountSetupContext();
@@ -487,7 +487,7 @@
         const { getCreateModuleInitializer } = await bootProfiler.measureAsync(
           "create:initializer-import",
           () =>
-            import("$lib/features/create/shared/get-create-module-initializer")
+            import("#lib/features/create/shared/get-create-module-initializer.js")
         );
         const initService = getCreateModuleInitializer();
 
@@ -836,7 +836,7 @@
     if (!CreateModuleState) return;
 
     const { getExtensionFlowCoordinator } =
-      await import("$lib/features/create/shared/get-extension-flow-coordinator");
+      await import("#lib/features/create/shared/get-extension-flow-coordinator.js");
     const extensionFlowCoordinator = getExtensionFlowCoordinator();
     if (!extensionFlowCoordinator) return;
 
@@ -874,7 +874,7 @@
     if (!pendingLoopType || isApplyingLoop || !CreateModuleState) return;
 
     const { getExtensionFlowCoordinator } =
-      await import("$lib/features/create/shared/get-extension-flow-coordinator");
+      await import("#lib/features/create/shared/get-extension-flow-coordinator.js");
     const extensionFlowCoordinator = getExtensionFlowCoordinator();
     if (!extensionFlowCoordinator) return;
 

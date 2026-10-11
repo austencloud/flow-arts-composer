@@ -15,7 +15,7 @@
 -->
 <script lang="ts">
   import { flushSync, tick } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { parseTypedNumber, splitReading } from "../typed-number";
 
   interface Props {

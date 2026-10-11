@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveAccessTier, getMaxSteps, ACCESS_TIER_LABELS } from "$lib/shared/auth/domain/access-tier";
+import { resolveAccessTier, getMaxSteps, ACCESS_TIER_LABELS } from "#lib/shared/auth/domain/access-tier.js";
 
 describe("resolveAccessTier", () => {
   it("unauthenticated → guest", () => {

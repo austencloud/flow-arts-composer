@@ -11,13 +11,13 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 
 // The util reads navigator.connection, which only happens in the browser, so the
 // module's `browser` guard must be true for these tests to exercise the logic.
-vi.mock("$app/environment", () => ({ browser: true }));
+vi.mock("$app/env", () => ({ browser: true }));
 
 import {
 	getNetworkConditions,
 	isConstrainedConnection,
 	shouldReduceBackgroundResolution,
-} from "$lib/shared/platform/network-conditions";
+} from "#lib/shared/platform/network-conditions.js";
 
 type Conn = {
 	saveData?: boolean;

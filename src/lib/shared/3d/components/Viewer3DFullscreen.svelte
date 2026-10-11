@@ -11,23 +11,20 @@
    * The parent must have called setViewer3DContext() before mounting this.
    */
 
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import Viewer3DCanvas from "./Viewer3DCanvas.svelte";
   import type { SceneControlLayout } from "../domain/scene-control-layout";
   import { onMount, type Snippet } from "svelte";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { createScene3DRenderState } from "$lib/shared/3d/scene-features/state/scene-3d-render-state.svelte";
-  import { setScene3DRenderContext } from "$lib/shared/3d/scene-features/state/scene-3d-render-context";
+  import {
+    createEffectsConfigState,
+    type EffectsConfigState,
+  } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createScene3DRenderState } from "#lib/shared/3d/scene-features/state/scene-3d-render-state.svelte.js";
+  import { setScene3DRenderContext } from "#lib/shared/3d/scene-features/state/scene-3d-render-context.js";
   import SceneChromeButton from "./controls/SceneChromeButton.svelte";
   import { warmSelectedSceneAssets } from "../scene-boot/scene-prefetch";
-  import type { PlaybackMode } from "$lib/shared/timeline/unified-playback-context";
-
-  // Canonical effects config - single source of truth for both 2D canvas
-  // and 3D viewer effect parameters. One-time migration from the old VM
-  // localStorage key happens inside createEffectsConfigState.
-  const effectsConfigState = createEffectsConfigState();
-  setEffectsConfigContext(effectsConfigState);
+  import type { PlaybackMode } from "#lib/shared/timeline/unified-playback-context.js";
 
   // Scene-wide 3D render modifiers (motion blur + speed lines).
   // Separate from per-tip EffectsConfig because these are whole-scene passes.
@@ -35,6 +32,8 @@
   setScene3DRenderContext(scene3DRenderState);
 
   interface Props {
+    /** Optional host-owned config, e.g. an isolated effect review session. */
+    effectsConfig?: EffectsConfigState;
     sequenceData: SequenceData | null;
     currentStep: number;
     isPlaying: boolean;
@@ -114,6 +113,7 @@
   }
 
   let {
+    effectsConfig,
     sequenceData,
     currentStep,
     isPlaying,
@@ -160,11 +160,16 @@
     onCompactSceneSheetChange,
   }: Props = $props();
 
+  // Canonical config shared by controls and renderer. Review hosts can supply
+  // an isolated instance at mount; ordinary viewers retain persisted settings.
+  const effectsConfigState = effectsConfig ?? createEffectsConfigState();
+  setEffectsConfigContext(effectsConfigState);
+
   let hostEl = $state<HTMLElement | null>(null);
   type SceneControlWorkspaceComponent =
     typeof import("./controls/SceneControlWorkspace.svelte").default;
   type WordGlyphComponent =
-    typeof import("$lib/shared/choreo-card/components/TKAWordGlyph.svelte").default;
+    typeof import("#lib/shared/choreo-card/components/TKAWordGlyph.svelte").default;
 
   let SceneControls = $state<SceneControlWorkspaceComponent | null>(null);
   let WordGlyph = $state<WordGlyphComponent | null>(null);
@@ -190,7 +195,7 @@
         if (active) SceneControls = component;
       }
     );
-    void import("$lib/shared/choreo-card/components/TKAWordGlyph.svelte").then(
+    void import("#lib/shared/choreo-card/components/TKAWordGlyph.svelte").then(
       ({ default: component }) => {
         if (active) WordGlyph = component;
       }

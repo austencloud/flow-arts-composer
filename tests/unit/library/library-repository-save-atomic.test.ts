@@ -44,33 +44,33 @@ vi.mock("firebase/firestore", () => ({
   writeBatch: vi.fn(() => firestoreMocks.batch),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     effectiveUserId: "user-1",
     user: { uid: "user-1", displayName: "Test User" },
     isFullAccount: true,
   },
 }));
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   isPreviewReadOnly: () => firestoreMocks.previewReadOnly,
 }));
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => ({ showUserError: firestoreMocks.showUserError }),
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte.ts", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.ts", () => ({
   toast: { info: vi.fn(), error: vi.fn() },
 }));
-vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/sync-status-state.svelte.js", () => ({
   trackWrite: (operation: () => Promise<unknown>) => operation(),
 }));
-vi.mock("$lib/shared/foundation/services/sequence-hydrator", () => ({
+vi.mock("#lib/shared/foundation/services/sequence-hydrator.js", () => ({
   hydrate: (sequence: unknown) => sequence,
   ensureComposition: (sequence: unknown) => sequence,
 }));
-vi.mock("$lib/shared/firestore", () => ({
+vi.mock("#lib/shared/firestore/index.js", () => ({
   firestoreGet: firestoreMocks.firestoreGet,
   // The repository reads through firestoreGetDetailed so it can tell "absent"
   // apart from "we never reached the server". Derive it from the same stub the
@@ -87,46 +87,49 @@ vi.mock("$lib/shared/firestore", () => ({
       Object.entries(value).filter(([, fieldValue]) => fieldValue !== undefined)
     ),
 }));
-vi.mock("$lib/shared/create/services/orientation-cycle-detector", () => ({
+vi.mock("#lib/shared/create/services/orientation-cycle-detector.js", () => ({
   detectOrientationCycle: vi.fn(),
 }));
-vi.mock("$lib/shared/library/services/sequence-content-hasher", () => ({
+vi.mock("#lib/shared/library/services/sequence-content-hasher.js", () => ({
   computeHash: vi.fn().mockResolvedValue("content-hash"),
   CONTENT_HASH_VERSION: 1,
   HASH_VERSION_V1: 1,
 }));
-vi.mock("$lib/shared/library/services/fork-decision", () => ({
+vi.mock("#lib/shared/library/services/fork-decision.js", () => ({
   decideFork: vi.fn(),
 }));
-vi.mock("$lib/shared/library/get-tag-migrator", () => ({
+vi.mock("#lib/shared/library/get-tag-migrator.js", () => ({
   getTagMigrator: () =>
     vi.fn().mockResolvedValue({ sequenceTags: [], tagIds: [] }),
 }));
-vi.mock("$lib/shared/library/library-events", () => ({
+vi.mock("#lib/shared/library/library-events.js", () => ({
   notifyLibraryMutated: firestoreMocks.notifyLibraryMutated,
   notifyLibrarySequenceAdded: vi.fn(),
   notifyLibrarySequenceUpdated: firestoreMocks.notifyLibrarySequenceUpdated,
 }));
-vi.mock("$lib/shared/library/services/library-recycle-bin", () => ({
+vi.mock("#lib/shared/library/services/library-recycle-bin.js", () => ({
   LibraryRecycleBin: class {},
 }));
-vi.mock("$lib/shared/library/services/library-batch-operations", () => ({
+vi.mock("#lib/shared/library/services/library-batch-operations.js", () => ({
   LibraryBatchOperations: class {
     deleteSequences = firestoreMocks.deleteSequences;
   },
 }));
-vi.mock("$lib/shared/persistence/services/dexie-persistence-service", () => ({
-  deleteSequences: firestoreMocks.deleteLocalSequences,
-}));
-vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
+vi.mock(
+  "#lib/shared/persistence/services/dexie-persistence-service.js",
+  () => ({
+    deleteSequences: firestoreMocks.deleteLocalSequences,
+  })
+);
+vi.mock("#lib/shared/library/services/saved-sequence-ledger.js", () => ({
   removeSavedSequenceIds: firestoreMocks.removeSavedSequenceIds,
 }));
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureEvent: firestoreMocks.captureEvent,
   captureException: firestoreMocks.captureException,
 }));
 
-import { LibraryRepository } from "$lib/shared/library/services/library-repository";
+import { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
 
 function makeSequence() {
   return {

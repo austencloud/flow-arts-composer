@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SCENE_FEATURES } from "$lib/shared/3d/scene-features/domain/scene-feature-registry";
+import { SCENE_FEATURES } from "#lib/shared/3d/scene-features/domain/scene-feature-registry.js";
 
 describe("SCENE_FEATURES", () => {
   it("does not include a 'grid' entry", () => {

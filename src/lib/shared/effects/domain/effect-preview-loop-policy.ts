@@ -1,5 +1,5 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
 
 /**
  * A short clip can technically close and still be a miserable effect preview.

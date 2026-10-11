@@ -1,4 +1,5 @@
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { svelteOptions } from "../../src/config/svelte-options.js";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { playwright } from "@vitest/browser-playwright";
@@ -23,7 +24,7 @@ const projectRoot = path.resolve(
  *   RENDER_PARITY_MODE=compare  diff current renders against the baseline
  */
 export default defineConfig({
-  plugins: [svelte()],
+  plugins: [svelte(svelteOptions)],
 
   // Canvas2DDirectRenderer fetches grid/arrow/prop/glyph SVGs from /images/*.
   publicDir: path.resolve(projectRoot, "static"),
@@ -41,21 +42,25 @@ export default defineConfig({
   resolve: {
     conditions: ["browser"],
     alias: {
-      $lib: path.resolve(projectRoot, "src/lib"),
       $shared: path.resolve(projectRoot, "src/lib/shared"),
       // browser:true stub — the render pipeline's singletons gate on it, and
       // this project genuinely runs in Chromium (unlike the shared stub's false).
-      "$app/environment": path.resolve(
+      // Listed before `$app/env`, which would otherwise match these as a prefix.
+      "$app/env/public": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-public.ts"
+      ),
+      "$app/env/private": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-private.ts"
+      ),
+      "$app/env": path.resolve(
         projectRoot,
         "tests/render-parity/stubs/app-environment.ts"
       ),
       "$app/navigation": path.resolve(
         projectRoot,
         "tests/render-parity/stubs/app-navigation.ts"
-      ),
-      "$app/stores": path.resolve(
-        projectRoot,
-        "tests/setup/stubs/app-stores.ts"
       ),
     },
   },

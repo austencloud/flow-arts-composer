@@ -14,7 +14,7 @@ import {
   shouldPreloadRouteAsset,
   stripDeferredHomeStylesheets,
   stripRootAppOnlyBlocks,
-} from "$lib/server/performance/landing-preload-policy";
+} from "#lib/server/performance/landing-preload-policy.js";
 
 function source(path: string): string {
   return readFileSync(path, "utf8");
@@ -258,14 +258,14 @@ describe("homepage constrained enhancement boundaries", () => {
     );
 
     expect(player).not.toContain(
-      'import { getSequenceRepository } from "$lib/shared/create/get-sequence-repository"'
+      'import { getSequenceRepository } from "#lib/shared/create/get-sequence-repository.js"'
     );
     expect(player).toMatch(
       /const \{ getSequenceRepository \}\s*=\s*await import\(/
     );
     expect(player.indexOf("if (hasMotionData(seq))")).toBeLessThan(
       player.search(
-        /await import\(\s*"\$lib\/shared\/create\/get-sequence-repository"/
+        /await import\(\s*"#lib\/shared\/create\/get-sequence-repository\.js"/
       )
     );
   });

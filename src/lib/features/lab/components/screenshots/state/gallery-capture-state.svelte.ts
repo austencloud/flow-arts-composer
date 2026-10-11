@@ -8,7 +8,7 @@
 
 import type { DeviceInfo, RouteNode, CaptureJobStatus, CaptureStartResult } from "../../../services/types";
 import type { ScreenshotUploadOrchestrator } from "../../../services/screenshot-upload-orchestrator";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 interface ScreenshotOrchestratorLike {
   getRoutes(): RouteNode[];

@@ -6,8 +6,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CREATE_TABS,
   TOYS_TABS,
-} from "$lib/shared/navigation/config/tab-definitions";
-import { normalizeNavigationTarget } from "$lib/shared/navigation/config/module-definitions";
+} from "#lib/shared/navigation/config/tab-definitions.js";
+import { normalizeNavigationTarget } from "#lib/shared/navigation/config/module-definitions.js";
 
 function readMessages(locale: string): Record<string, string> {
   return JSON.parse(
@@ -21,25 +21,26 @@ const LOCALES_WITH_FUSE = readdirSync(resolve(process.cwd(), "messages"))
   .map((file) => file.replace(/\.json$/, ""))
   .filter((locale) => Boolean(readMessages(locale).tab_create_fuse));
 
-vi.mock("$lib/shared/analytics/services/posthog-activity-logger", () => ({
+vi.mock("#lib/shared/analytics/services/posthog-activity-logger.js", () => ({
   logModuleView: vi.fn(async () => {}),
 }));
-vi.mock("$lib/shared/hmr-helper", () => ({
+vi.mock("#lib/shared/hmr-helper.js", () => ({
   hasMimeErrorOccurred: () => false,
   verifyTabSwitch: vi.fn(),
 }));
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: true,
   building: false,
   version: "test",
 }));
 vi.mock("$app/navigation", () => ({
-  pushState: (destination: string | URL, state: App.PageState) => {
-    history.pushState(state, "", destination);
-  },
-  replaceState: (destination: string | URL, state: App.PageState) => {
-    history.replaceState(state, "", destination);
+  goto: (
+    destination: string | URL,
+    options: { replace?: boolean; state?: App.PageState } = {}
+  ) => {
+    const write = options.replace ? history.replaceState : history.pushState;
+    write.call(history, options.state ?? {}, "", destination);
   },
 }));
 
@@ -47,7 +48,7 @@ async function createStateAt(pathname: string) {
   history.replaceState({}, "", pathname);
   vi.resetModules();
   const { createNavigationState } =
-    await import("$lib/shared/navigation/state/navigation-state.svelte");
+    await import("#lib/shared/navigation/state/navigation-state.svelte.js");
   return createNavigationState();
 }
 
@@ -127,7 +128,7 @@ describe("Shape Engine as a Create tab", () => {
     vi.resetModules();
 
     const { initializeNavigationHistory } =
-      await import("$lib/shared/navigation-coordinator/navigation-coordinator.svelte");
+      await import("#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js");
     initializeNavigationHistory();
 
     expect(location.pathname).toBe("/create/shape-engine");

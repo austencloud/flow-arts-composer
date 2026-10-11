@@ -6,9 +6,9 @@ import {
   configureViewerOrbitNavigation,
   resolveCameraControlsRightAction,
   VIEWER_ORBIT_REST_DISTANCE,
-} from "$lib/shared/3d/camera/camera-controls-runtime";
-import type { ApplicationThreadCameraFrameScheduler } from "$lib/shared/3d/worker-renderer/domain/application-thread-camera";
-import { ApplicationThreadCameraController } from "$lib/shared/3d/worker-renderer/services/application-thread-camera-controller";
+} from "#lib/shared/3d/camera/camera-controls-runtime.js";
+import type { ApplicationThreadCameraFrameScheduler } from "#lib/shared/3d/worker-renderer/domain/application-thread-camera.js";
+import { ApplicationThreadCameraController } from "#lib/shared/3d/worker-renderer/services/application-thread-camera-controller.js";
 
 class ManualFrameScheduler implements ApplicationThreadCameraFrameScheduler {
   private nextHandle = 1;

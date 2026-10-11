@@ -5,8 +5,8 @@
  * Bridges the coordinator service with Svelte's reactivity system.
  */
 
-import type { LanSyncCoordinator } from '$lib/shared/lan-sync/services/lan-sync-coordinator'
-import type { SyncRoomDiscovery } from '$lib/shared/lan-sync/services/sync-room-discovery'
+import type { LanSyncCoordinator } from '#lib/shared/lan-sync/services/lan-sync-coordinator.js'
+import type { SyncRoomDiscovery } from '#lib/shared/lan-sync/services/sync-room-discovery.js'
 import type { SyncedPlaybackState, PeerConnectionState, SyncRoomWithId } from '../domain/models/lan-sync-models';
 import { createInitialConnectionState, createInitialPlaybackState } from '../domain/models/lan-sync-models';
 

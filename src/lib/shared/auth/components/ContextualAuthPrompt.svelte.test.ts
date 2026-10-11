@@ -15,19 +15,19 @@ vi.mock("./SocialAuthCompact.svelte", async () => ({
     .default,
 }));
 
-vi.mock("$lib/shared/components/LastUsedBadge.svelte", async () => ({
+vi.mock("#lib/shared/components/LastUsedBadge.svelte", async () => ({
   default: (await import("./__test-stubs__/EmailAuthMethodStub.svelte"))
     .default,
 }));
 
-vi.mock("$lib/shared/i18n/i18n.svelte", async () => {
+vi.mock("#lib/shared/i18n/i18n.svelte.js", async () => {
   const english: Record<string, string> = (
     await import("../../../../../messages/en.json")
   ).default;
   return { t: (key: string) => english[key] ?? key };
 });
 
-vi.mock("$lib/shared/auth/services/last-auth-method.svelte", () => ({
+vi.mock("#lib/shared/auth/services/last-auth-method.svelte.js", () => ({
   getLastAuthMethod: () => mocks.lastMethod,
 }));
 

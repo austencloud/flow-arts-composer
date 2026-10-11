@@ -5,22 +5,22 @@
   docs/superpowers/specs/2026-07-10-save-scene-modal-design.md
 -->
 <script lang="ts">
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import { tryGetViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import { tryGetViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import {
     captureScene3DSnapshot,
     captureScene3DPoster,
   } from "../services/capture-3d-scene";
   import { scene3dCollectionState } from "../state/scene-3d-collection-state.svelte";
   import { SCENE_3D_GROUPS } from "../domain/scene-3d-collection-types";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
   import {
     SceneEnvironmentId,
     getSceneEnvironmentDefinition,
-  } from "$lib/shared/3d/environments/domain/scene-environment";
+  } from "#lib/shared/3d/environments/domain/scene-environment.js";
   import type {
     Scene3DGroupId,
     StepData,
@@ -29,7 +29,7 @@
     reportViewerControlChange,
     type ViewerActionSink,
     type ViewerControlSink,
-  } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
+  } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
 
   let {
     open = $bindable(false),

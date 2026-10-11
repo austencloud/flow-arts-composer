@@ -18,20 +18,20 @@
 -->
 <script lang="ts">
 
-import { getVoiceSessionRepository } from "$lib/shared/voice-sessions/get-voice-session-repository";
-import { getCommandDispatcher } from "$lib/shared/voice-control/get-command-dispatcher";
-import { getCommandInterpreter } from "$lib/shared/voice-control/get-command-interpreter";
-import { resolveIntent } from "$lib/shared/voice-control/services/llm-intent-resolver";
-import { getTTSProvider } from "$lib/shared/voice-control/get-tts-provider";
-import { getVoiceSessionRecorder } from "$lib/shared/voice-control/get-voice-session-recorder";
-import { getWakeWordDetector } from "$lib/shared/voice-control/get-wake-word-detector";
+import { getVoiceSessionRepository } from "#lib/shared/voice-sessions/get-voice-session-repository.js";
+import { getCommandDispatcher } from "#lib/shared/voice-control/get-command-dispatcher.js";
+import { getCommandInterpreter } from "#lib/shared/voice-control/get-command-interpreter.js";
+import { resolveIntent } from "#lib/shared/voice-control/services/llm-intent-resolver.js";
+import { getTTSProvider } from "#lib/shared/voice-control/get-tts-provider.js";
+import { getVoiceSessionRecorder } from "#lib/shared/voice-control/get-voice-session-recorder.js";
+import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-detector.js";
   import { onMount } from "svelte";
-  import type { WakeWordDetector } from "$lib/shared/voice-control/services/wake-word-detector";
-  import type { CommandInterpreter } from "$lib/shared/voice-control/services/command-interpreter";
+  import type { WakeWordDetector } from "#lib/shared/voice-control/services/wake-word-detector.js";
+  import type { CommandInterpreter } from "#lib/shared/voice-control/services/command-interpreter.js";
   import type { CommandDispatcher } from "../services/command-dispatcher";
-  import type { WebSpeechTTSProvider } from "$lib/shared/voice-control/services/web-speech-tts-provider";
+  import type { WebSpeechTTSProvider } from "#lib/shared/voice-control/services/web-speech-tts-provider.js";
   import type { VoiceSessionRecorder } from "../services/voice-session-recorder";
-  import type * as VoiceSessionRepositoryModule from "$lib/shared/voice-sessions/services/voice-session-repository";
+  import type * as VoiceSessionRepositoryModule from "#lib/shared/voice-sessions/services/voice-session-repository.js";
   import { navigationState } from "../../navigation/state/navigation-state.svelte";
   import { voiceControlState } from "../state/voice-control-state.svelte";
   import { classifyTier } from "../ai/tier-classifier";

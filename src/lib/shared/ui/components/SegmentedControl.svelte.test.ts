@@ -2,7 +2,7 @@ import { render } from "vitest-browser-svelte";
 import { page, userEvent } from "vitest/browser";
 import { describe, expect, it, vi } from "vitest";
 import SegmentedControl from "./SegmentedControl.svelte";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 
 const OPTIONS = [
   { value: "a", label: "Alpha" },
@@ -209,6 +209,49 @@ describe("SegmentedControl", () => {
     const selected = page.getByRole("button", { name: "Alpha" }).element();
     expect(getComputedStyle(selected).color).toBe("rgb(255, 255, 255)");
     expect(contrastRatio("#ffffff", "#692705")).toBeGreaterThanOrEqual(7);
+  });
+
+  it("keeps the selected name readable on the light theme's accent", async () => {
+    const root = document.documentElement;
+    root.setAttribute("data-theme-luminance", "bright");
+    try {
+      render(SegmentedControl, {
+        options: OPTIONS,
+        value: "a",
+        onchange: vi.fn(),
+        color: "accent",
+      });
+      const control =
+        document.querySelector<HTMLElement>(".segmented-control")!;
+      control.style.setProperty("--theme-accent", "#004eb4");
+      control.style.setProperty("--theme-card-bg", "#d8d8d2");
+      control.style.setProperty("--theme-text", "#0f172a");
+
+      // The fill is a wash over the control's surface: composite it there.
+      const indicator = document.querySelector<HTMLElement>(".indicator")!;
+      const fill = getComputedStyle(indicator).backgroundColor;
+      const [r, g, b, a = 1] = fill.startsWith("color(")
+        ? fill
+            .replace(/color\(srgb |\)/g, "")
+            .split(/[\s/]+/)
+            .filter(Boolean)
+            .map((part, i) => (i < 3 ? Number(part) * 255 : Number(part)))
+        : fill.match(/[\d.]+/g)!.map(Number);
+      const surface = [0xd8, 0xd8, 0xd2];
+      const hex = (channels: number[]) =>
+        `#${channels
+          .map((c) => Math.round(c).toString(16).padStart(2, "0"))
+          .join("")}`;
+      const shown = hex(
+        [r!, g!, b!].map((c, i) => c * a + surface[i]! * (1 - a))
+      );
+
+      const selected = page.getByRole("button", { name: "Alpha" }).element();
+      expect(getComputedStyle(selected).color).toBe("rgb(15, 23, 42)");
+      expect(contrastRatio("#0f172a", shown)).toBeGreaterThanOrEqual(7);
+    } finally {
+      root.removeAttribute("data-theme-luminance");
+    }
   });
 
   it("supports an automatically activated tablist with roving keyboard focus", async () => {

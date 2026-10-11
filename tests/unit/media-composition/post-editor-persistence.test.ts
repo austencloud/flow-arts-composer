@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { addTakeTap } from "#lib/shared/media-composition/domain/take-timing.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+import { loadPostProject } from "#lib/shared/media-composition/services/post-project-store.js";
 
 const sequence = () =>
   ({

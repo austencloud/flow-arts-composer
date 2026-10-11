@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
+  import { featureFlagService } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
   import { TUTORIAL_SCRIPTS } from "./_data/tutorial-scripts";
 
   const groups = $derived(() => {

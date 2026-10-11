@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { tick } from "svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { getHandPathReferenceCards } from "$lib/features/choreo-card/domain/hand-path-reference-cards";
-  import { HAND_PATH_REFERENCE_SCAN_URLS } from "$lib/features/choreo-card/domain/hand-path-reference-card-manifest";
-  import CardAnatomyExplainer from "$lib/features/store/components/CardAnatomyExplainer.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { getHandPathReferenceCards } from "#lib/features/choreo-card/domain/hand-path-reference-cards.js";
+  import { HAND_PATH_REFERENCE_SCAN_URLS } from "#lib/features/choreo-card/domain/hand-path-reference-card-manifest.js";
+  import CardAnatomyExplainer from "#lib/features/store/components/CardAnatomyExplainer.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import type { ExperienceViewMode } from "../../../domain/types";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
   import LessonStageControls from "../LessonStageControls.svelte";

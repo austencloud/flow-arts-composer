@@ -6,7 +6,7 @@
  */
 
 import type { Timestamp } from "firebase/firestore";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import { normalizePlacementFrame } from "../../placement/domain/placement-frame";
 import {
   generateAdjustmentKeyString,
@@ -21,7 +21,7 @@ import {
   createGlobalArrowAdjustmentState,
   type GlobalArrowAdjustmentState,
 } from "../state/global-arrow-adjustment-state.svelte";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { globalAdjustmentVersion } from "../state/global-adjustment-version.svelte";
 import { normalizeLegacyHandSide } from "@tka/tka-types";
 

@@ -1,16 +1,17 @@
-import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
+import type { EffectsConfig } from "#lib/shared/effects/domain/effects-config.js";
 import type { Scene3DRenderConfig } from "../scene-features/state/scene-3d-render-state.svelte";
 import type { FormationPreset } from "@austencloud/scene-3d";
 import type { Plane } from "@austencloud/scene-3d";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
-import type { EffectType } from "$lib/shared/effects/domain/effects-config";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
+import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
 import type { BackgroundType } from "@austencloud/backgrounds";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { SceneId } from "$lib/features/lab/tabs/scene-lab/domain/scene-lab-types";
-import type { CosmicVariant } from "$lib/features/lab/tabs/scene-lab/services/scene-lab-persistence";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { SceneId } from "#lib/features/lab/tabs/scene-lab/domain/scene-lab-types.js";
+import type { CosmicVariant } from "#lib/features/lab/tabs/scene-lab/services/scene-lab-persistence.js";
 import type { PlaneMode } from "@austencloud/scene-3d";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { GridJoin } from "@tka/tka-types";
 import type { CharacterId } from "../domain/character-model";
 
 // Operation Types
@@ -23,6 +24,7 @@ export type SceneUndoOperationType =
   | "spatial-edit"
   | "change-character"
   | "change-sequence"
+  | "change-grid-join"
   | "change-prop"
   | "change-prop-build"
   | "change-staff-length"
@@ -88,6 +90,7 @@ export interface PerformerDomainSnapshot {
     handEffects: { left: EffectType; right: EffectType } | null;
     staffLengthCm: number | null;
     propBuild: Partial<import("@austencloud/scene-3d").PropBuild> | null;
+    gridJoin?: GridJoin | null;
   };
   planes: {
     customLeftPlane: Plane | null;

@@ -2,8 +2,8 @@
 LetterChip.svelte - Re-exports from shared for backwards compatibility
 -->
 <script lang="ts">
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import SharedLetterChip from "$lib/shared/components/letter-constraints/LetterChip.svelte";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import SharedLetterChip from "#lib/shared/components/letter-constraints/LetterChip.svelte";
 
   let {
     letter,

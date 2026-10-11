@@ -9,8 +9,8 @@
  * riding shows low rates and near-zero reversals; a twitch shows up as a rate
  * spike and a reversal burst long before it is obvious in a screenshot.
  */
-import type { FlowFestElectricUnicycleDynamics, FlowFestElectricUnicycleInput } from "$lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle";
-import type { FlowFestEucMountedPoseDiagnostic } from "$lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose";
+import type { FlowFestElectricUnicycleDynamics, FlowFestElectricUnicycleInput } from "#lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle.js";
+import type { FlowFestEucMountedPoseDiagnostic } from "#lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose.js";
 
 export const EUC_RIDE_CAMERA_IDS = ["chase", "side"] as const;
 export type EucRideCameraId = (typeof EUC_RIDE_CAMERA_IDS)[number];

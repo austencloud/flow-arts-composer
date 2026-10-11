@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { mapCompositionBeat } from "$lib/shared/motion-composition/domain/motion-composition-time";
-import { IDENTITY_TRANSFORM } from "$lib/shared/motion-composition/domain/motion-composition-transform";
+import { mapCompositionBeat } from "#lib/shared/motion-composition/domain/motion-composition-time.js";
+import { IDENTITY_TRANSFORM } from "#lib/shared/motion-composition/domain/motion-composition-transform.js";
 import type {
   CoordinateOrientationMode,
   MotionCompositionV3,
   QuaternionTuple,
   SpatialTransform,
   TimeMapping,
-} from "$lib/shared/motion-composition/domain/motion-composition-types";
-import { sampleMotionCompositionAt } from "$lib/shared/motion-composition/services/motion-composition-sampler";
+} from "#lib/shared/motion-composition/domain/motion-composition-types.js";
+import { sampleMotionCompositionAt } from "#lib/shared/motion-composition/services/motion-composition-sampler.js";
 
 const HOLD: TimeMapping = {
   offsetBeats: 0,

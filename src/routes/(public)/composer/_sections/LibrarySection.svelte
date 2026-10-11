@@ -9,15 +9,15 @@
   //                   real production TKA 1/2/3 + Book decks, zero Firestore round-trip.
   // On the live /composer the grid/chips bind to a BrowseEngine; here the chips
   // are a visual tease (local state) so the section evaluates signed-out.
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import CollectionCard from "$lib/features/browse/collections/components/CollectionCard.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import CollectionCard from "#lib/features/browse/collections/components/CollectionCard.svelte";
   import {
     FOUNDING_SMART_COLLECTIONS,
     toSyntheticCollection,
-  } from "$lib/features/browse/collections/config/founding-collections";
+  } from "#lib/features/browse/collections/config/founding-collections.js";
   import GuidePictograph from "../../guide/level-1/_components/GuidePictograph.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import { CHOSEN_MANDALAS } from "./chosen-mandalas";
 
   // One representative pictograph per curated sequence → a browse-grid tease.

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getSettings, updateSettings } from "./native-settings.svelte";
   import type { ComponentProps } from "svelte";
-  import PropGrid from "$lib/shared/settings/components/tabs/prop-type/PropGrid.svelte";
+  import PropGrid from "#lib/shared/settings/components/tabs/prop-type/PropGrid.svelte";
 
   let props: Omit<
     ComponentProps<typeof PropGrid>,
