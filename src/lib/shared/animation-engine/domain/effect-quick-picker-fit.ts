@@ -155,15 +155,17 @@ export function stripTilePitch(portrait: number): number {
 }
 
 /** How far in from a faded end of the strip a tile must start, or stop, to
- *  be clear of the fade and of the arrow over it. */
+ *  be clear of the fade and of the arrow over it. The strip's scroll padding,
+ *  so its snap positions start a tile here too. */
 export const QUICK_PICKER_STRIP_EDGE_CLEAR = 40;
 
 /**
- * Where an arrow scrolls the strip to. Forward, the first tile still under
- * the end's fade comes to rest just clear of the start's; back, the last tile
- * under the start's fade comes to rest just clear of the end's. Either way
- * the tile that was cut is the one fully in view, and the view always moves
- * at least one tile.
+ * Where an arrow scrolls the strip to. Every stop starts a tile just clear of
+ * the start's fade, the strip's own snap positions, so a swipe and an arrow
+ * settle alike. Forward, the first tile still under the end's fade starts the
+ * new view. Back, the view goes as far as it can while the last tile under
+ * the start's fade stays clear of the end's. Either way the tile that was cut
+ * is fully in view, and the view moves at least one tile.
  */
 export function stripPageTarget({
   portrait,
@@ -181,20 +183,24 @@ export function stripPageTarget({
   const pitch = stripTilePitch(portrait);
   const tile = pitch - CATALOG_GAP;
   const clear = QUICK_PICKER_STRIP_EDGE_CLEAR;
-  const target =
-    direction > 0
-      ? Math.max(
-          scrollLeft + pitch,
-          (Math.floor((scrollLeft + viewWidth - clear - tile) / pitch) + 1) *
-            pitch -
-            clear
-        )
-      : Math.min(
-          scrollLeft - pitch,
-          (Math.ceil((scrollLeft + clear) / pitch) - 1) * pitch +
-            tile -
-            (viewWidth - clear)
-        );
+  /** The scroll that starts tile `index` just clear of the start's fade. */
+  const startAt = (index: number) => index * pitch - clear;
+  let target: number;
+  if (direction > 0) {
+    const cut = Math.floor((scrollLeft + viewWidth - clear - tile) / pitch) + 1;
+    target = Math.max(scrollLeft + pitch, startAt(cut));
+  } else {
+    const cut = Math.ceil((scrollLeft + clear) / pitch) - 1;
+    /** The least scroll that keeps the cut tile clear of the end's fade. */
+    const least = cut * pitch + tile - (viewWidth - clear);
+    target =
+      least <= 0
+        ? 0
+        : Math.min(
+            scrollLeft - pitch,
+            startAt(Math.ceil((least + clear) / pitch))
+          );
+  }
   return Math.min(Math.max(0, scrollWidth - viewWidth), Math.max(0, target));
 }
 

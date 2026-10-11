@@ -269,12 +269,28 @@ describe("stripPageTarget", () => {
     expect(cut * pitch - left).toBe(clear);
   });
 
-  it("brings the tile cut at the start to rest clear of the end's fade", () => {
+  it("goes back as far as keeps the tile cut at the start in clear view", () => {
     const first = 12; // The first tile clear of the start's fade.
-    const scrollLeft = first * pitch - clear;
-    const left = stripPageTarget({ ...row, scrollLeft, direction: -1 });
-    const cut = first - 1;
-    expect(cut * pitch + tile - left).toBe(row.viewWidth - clear);
+    const left = stripPageTarget({
+      ...row,
+      scrollLeft: first * pitch - clear,
+      direction: -1,
+    });
+    const cutRight = (first - 1) * pitch + tile;
+    expect(cutRight - left).toBeLessThanOrEqual(row.viewWidth - clear);
+    // One tile further back would push it under the end's fade.
+    expect(cutRight - (left - pitch)).toBeGreaterThan(row.viewWidth - clear);
+  });
+
+  it("stops where a swipe would settle: a tile clear of the start's fade", () => {
+    for (const direction of [1, -1] as const) {
+      const left = stripPageTarget({
+        ...row,
+        scrollLeft: 8 * pitch - clear,
+        direction,
+      });
+      expect((left + clear) % pitch).toBe(0);
+    }
   });
 
   it("stops at either end of the row", () => {

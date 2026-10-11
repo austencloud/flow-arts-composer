@@ -38,6 +38,7 @@
     pictureTileHeight,
     QUICK_PICKER_EDGE,
     QUICK_PICKER_OFFSET,
+    QUICK_PICKER_STRIP_EDGE_CLEAR,
     QUICK_PICKER_STRIP_GAP,
     stripPageTarget,
     type EffectQuickPickerFit,
@@ -494,6 +495,7 @@
                     class="fx-quick-scroller"
                     class:fade-start={edges.start}
                     class:fade-end={edges.end}
+                    style:scroll-padding-inline="{QUICK_PICKER_STRIP_EDGE_CLEAR}px"
                     bind:this={scrollerEl}
                     use:wheelScrollsSideways
                     use:scrollEdges={(next) => (edges = next)}
