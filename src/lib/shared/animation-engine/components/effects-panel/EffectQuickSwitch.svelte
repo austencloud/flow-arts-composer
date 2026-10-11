@@ -220,6 +220,11 @@
   function focusSelected(event: Event) {
     event.preventDefault();
     centerSelected();
+    // The first open sizes the panel a frame late, once the popover has
+    // measured the room around it: centering against the panel's first,
+    // short height scrolled the top row out of view. The panel is still
+    // transparent then, so the second pass never shows.
+    requestAnimationFrame(centerSelected);
     const target =
       contentEl?.querySelector<HTMLElement>(
         '[role="radio"][aria-checked="true"]'
