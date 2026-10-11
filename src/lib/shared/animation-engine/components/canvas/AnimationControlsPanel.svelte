@@ -213,7 +213,7 @@
 >
   <!-- Mobile Compact Mode -->
   {#if !isSideBySideLayout && !isExpanded}
-    {#await import("#lib/features/compose/components/controls/CompactMobileRow.svelte") then mod}
+    {#await import("#lib/shared/animation-engine/components/controls/CompactMobileRow.svelte") then mod}
       <mod.default
         {mobileToolView}
         {isPlaying}
@@ -296,7 +296,7 @@
 </div>
 
 <!-- Settings Sheet (Compact mobile - all settings) -->
-{#await import("#lib/features/compose/components/controls/AnimationSettingsSheet.svelte") then mod}
+{#await import("#lib/shared/animation-engine/components/controls/AnimationSettingsSheet.svelte") then mod}
   <mod.default
     bind:isOpen={isSettingsSheetOpen}
     bind:bpm
