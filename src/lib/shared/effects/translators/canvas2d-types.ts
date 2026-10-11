@@ -70,14 +70,14 @@ export interface Charcoal2DParams extends CharcoalIntent {
 }
 
 export interface Zap2DParams extends ZapIntent {
-  /** Segment count along each arc. Derived from intensity + distance. */
-  segments: number;
-  /** px - random jitter radius per segment midpoint. */
-  jitterAmount: number;
-  /** px - shadowBlur for the glow pass. */
-  glowBlur: number;
-  /** px - core line width. */
-  lineWidth: number;
+  /** px at reference size - white-hot core width of a main channel. */
+  coreWidth: number;
+  /** px at reference size - colored halo width around a channel (Glow). */
+  haloWidth: number;
+  /** 0-1 - halo opacity at full flash (Glow). */
+  haloAlpha: number;
+  /** 0-1.2 - overall brightness multiplier (Intensity). */
+  brightness: number;
 }
 
 export interface Sparkles2DParams extends SparklesIntent {
