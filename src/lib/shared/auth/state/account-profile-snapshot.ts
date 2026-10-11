@@ -3,13 +3,14 @@
  *
  * Sign-in reads users/{uid} and userPrivateProfiles/{uid} to keep them in
  * step with the provider. Keeping what it saw lets Settings › Account draw
- * the username, pronouns and color on its first open instead of popping
- * them in after a second read of the same documents.
+ * the username, Instagram handle, pronouns and color on its first open
+ * instead of popping them in after a second read of the same documents.
  */
 
 export interface AccountProfileSnapshot {
   userId: string;
   username: string;
+  instagramUsername: string;
   pronouns: string;
   profileColor: string | null;
   googlePhotoUrl: string | null;

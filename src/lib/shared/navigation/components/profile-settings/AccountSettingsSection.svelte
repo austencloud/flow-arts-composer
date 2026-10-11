@@ -1,8 +1,9 @@
 <!--
   AccountSettingsSection Component
 
-  Orchestrator for editable personal details.
-  Each editor is a separate component with its own state and styles.
+  Orchestrator for editable personal details. Account passes in the saved
+  values it already reads, so the rows draw them at once; each editor owns
+  its own editing state and styles.
 -->
 <script lang="ts">
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
@@ -14,17 +15,25 @@
 
   interface Props {
     user: User;
+    username: string;
+    pronouns: string;
+    instagramUsername: string;
     hapticService: HapticFeedback | null;
     onPronounsChanged?: (pronouns: string) => void;
     onUsernameChanged?: (username: string) => void;
+    onInstagramUsernameChanged?: (username: string) => void;
     displayNameEditRequest?: number;
   }
 
   let {
     user,
+    username,
+    pronouns,
+    instagramUsername,
     hapticService,
     onPronounsChanged,
     onUsernameChanged,
+    onInstagramUsernameChanged,
     displayNameEditRequest = 0,
   }: Props = $props();
 </script>
@@ -39,15 +48,19 @@
   </div>
 
   <div class="field-cell">
-    <UsernameEditor {user} {hapticService} {onUsernameChanged} />
+    <UsernameEditor {user} {username} {hapticService} {onUsernameChanged} />
   </div>
 
   <div class="field-cell">
-    <InstagramUsernameEditor {user} {hapticService} />
+    <InstagramUsernameEditor
+      {instagramUsername}
+      {hapticService}
+      {onInstagramUsernameChanged}
+    />
   </div>
 
   <div class="field-cell">
-    <PronounsEditor {user} {hapticService} {onPronounsChanged} />
+    <PronounsEditor {pronouns} {hapticService} {onPronounsChanged} />
   </div>
 </div>
 

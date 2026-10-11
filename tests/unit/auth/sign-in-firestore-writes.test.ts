@@ -408,7 +408,11 @@ describe("a signed-in page load for an existing profile", () => {
     holdClaim(UID);
     fake.docs.set(
       `users/${UID}`,
-      storedProfile({ pronouns: "they/them", profileColor: "#22c55e" })
+      storedProfile({
+        pronouns: "they/them",
+        profileColor: "#22c55e",
+        instagramUsername: "matty.moves",
+      })
     );
     fake.docs.set(
       PRIVATE_PROFILE_PATH,
@@ -420,6 +424,7 @@ describe("a signed-in page load for an existing profile", () => {
     expect(knownAccountProfile(UID)).toEqual({
       userId: UID,
       username: "matty",
+      instagramUsername: "matty.moves",
       pronouns: "they/them",
       profileColor: "#22c55e",
       googlePhotoUrl: "https://photos.example/g.png",

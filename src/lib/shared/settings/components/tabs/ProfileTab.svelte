@@ -7,6 +7,7 @@
     userId: string;
     pronouns: string;
     username: string;
+    instagramUsername: string;
     profileColor: string;
     googlePhotoUrl: string | null;
     instagramLinked: boolean;
@@ -126,6 +127,7 @@
         };
   let userPronouns = $state(knownDetails?.pronouns ?? "");
   let userUsername = $state(knownDetails?.username ?? "");
+  let instagramUsername = $state(knownDetails?.instagramUsername ?? "");
   let profileColor = $state(knownDetails?.profileColor ?? "#8b5cf6");
   let savedGooglePhotoUrl = $state<string | null>(
     knownDetails?.googlePhotoUrl ?? null
@@ -213,6 +215,7 @@
       userId: detailsLoadedFor,
       pronouns: userPronouns,
       username: userUsername,
+      instagramUsername,
       profileColor,
       googlePhotoUrl: savedGooglePhotoUrl,
       instagramLinked,
@@ -240,6 +243,7 @@
         const data = userDoc.data();
         userPronouns = data?.pronouns || "";
         userUsername = data?.username || "";
+        instagramUsername = data?.instagramUsername || "";
         if (data?.profileColor) profileColor = data.profileColor;
       }
       if (privateDoc.exists()) {
@@ -599,6 +603,11 @@
               {hapticService}
               onPronounsChanged={(pronouns) => (userPronouns = pronouns)}
               onUsernameChanged={(username) => (userUsername = username)}
+              username={userUsername}
+              pronouns={userPronouns}
+              {instagramUsername}
+              onInstagramUsernameChanged={(username) =>
+                (instagramUsername = username)}
               {displayNameEditRequest}
             />
           </div>
