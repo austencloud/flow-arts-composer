@@ -266,7 +266,9 @@ describe("canonical concept lesson composition", () => {
     );
     expect(timingIntro).toContain("SegmentedControl");
     expect(timingIntro).toContain('semantics="radiogroup"');
-    expect(timingIntro).toContain('let timing = $state<TimingMode>("together");');
+    expect(timingIntro).toContain(
+      'let timing = $state<TimingMode>("together");'
+    );
     expect(timingIntro).toContain(
       'rotations[0] === rotations[1] ? "same" : "opposite"'
     );
@@ -296,6 +298,26 @@ describe("canonical concept lesson composition", () => {
     expect(rotation).not.toContain("StaffPlacementVisualizer");
     expect(type1).not.toContain("TYPE1_ALPHABET");
     expect(type1).not.toContain("Type1ProspinPage");
+  });
+
+  it("runs Timing and Direction as its own lesson", () => {
+    const timing = readSource(
+      "src/lib/features/learn/components/interactive/motions/TimingDirectionConceptExperience.svelte"
+    );
+
+    expect(timing).toContain("TimingDirectionExamples");
+    expect(timing).toContain("TimingDirectionBoard");
+    expect(timing).toContain("TND_ELEMENTS");
+    expect(timing).toContain(
+      'getExperiencePersistence("timing-and-direction")'
+    );
+    expect(timing).toContain("migrateTimingLessonSavedStep");
+    expect(timing).toContain('onComplete?.("reading-choreo-cards")');
+    expect(timing).toContain('viewMode === "scroll"\n      ? comparisonIndex');
+    expect(timing).toContain("LessonStageFrame");
+    expect(timing).not.toContain("MotionsConceptExperience");
+    expect(timing).not.toContain("HandMotionPlayer");
+    expect(timing).not.toContain("HAND_PATH_STEPS");
   });
 
   it("publishes motion, timing/direction, and anatomy before letters", () => {
