@@ -85,7 +85,10 @@
   let phase = $state<"rest" | "fusing">("rest");
   /** True while the halves slide together: the floating half's box dissolves. */
   let sliding = $state(false);
-  /** Each fused step's travel, 0 to 1. Null rests on the finished step. */
+  /**
+   * Each fused step's travel, 0 to 1. Null draws the finished step still,
+   * until the first turn; after a turn each step rests at 1 (see settle).
+   */
   let progress = $state.raw<(number | null)[]>(
     Array.from({ length: FUSE_PREVIEW_STEPS }, () => null)
   );
@@ -221,7 +224,13 @@
   function settle(): void {
     for (const animation of animations) animation.cancel();
     animations = [];
-    progress = fusedFrames.map(() => null);
+    // A step that traveled rests on its travel's last frame. Its prop can end
+    // there a full turn from the still picture's angle (-270° against 90°),
+    // and handing back to the still picture let the prop's own rotation
+    // easing spin it round once as the turn ended (2026-10-10).
+    progress = fusedFrames.map((_, index) =>
+      (progress[index] ?? null) === null ? null : 1
+    );
     sliding = false;
     phase = "rest";
     stageUpcoming();

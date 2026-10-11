@@ -21,7 +21,6 @@ function makeParams(overrides: Partial<Ink2DParams> = {}): Ink2DParams {
     splatterIntensity: 0.1,
     trackingMode: "both_ends",
     resolvedPalette: INK_PALETTES.watercolor,
-    blendMode: "source-over",
     effectiveAmbient: 0,
     ambientSpawnRate: 2,
     motionSpawnRate: 60,
@@ -32,8 +31,6 @@ function makeParams(overrides: Partial<Ink2DParams> = {}): Ink2DParams {
     lifetimeSeconds: 2.2,
     maxPointsPerTip: 84,
     strokeLengthPx: 320,
-    stampScaleMin: 0.3,
-    stampScaleMax: 1.2,
     gravityPx: 36,
     strokeGravityPx: 0,
     breakStretchMax: 80,
@@ -680,7 +677,7 @@ describe("Ink2DRenderer", () => {
     expect(neon.strokeLengthPx).toBe(220);
     expect(neon.lifetimeSeconds).toBe(1.55);
     expect(neon.strokeGravityPx).toBe(0);
-    expect(neon.blendMode).toBe("lighter");
+    expect(neon.resolvedPalette.emissive).toBe(true);
   });
 
   it("applies attached-mark gravity only to deliberately viscous dense ink", () => {

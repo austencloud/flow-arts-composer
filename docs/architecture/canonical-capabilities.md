@@ -473,6 +473,18 @@ watches, because the timing session reads the video's play and pause events
 as the creator's own. Searches: black video, blackout, retained frame, video
 surface, video to canvas, frame copy.
 
+A media element taken off the page keeps playing, and keeps its download open
+until its source goes. Over HTTP/2 a few such paused downloads hold the
+connection's shared receive window, so a later fetch gets its headers but never
+its body (seen 2026-10-10: a remounted Studio stuck on "Opening project…").
+`releaseMediaDownload` in `media-composition/services/media-download-release.ts`
+pauses the element, removes its source and calls `load()`. Post Studio's media
+layer, music preview and timing session call it when their element goes. The
+older inline copies in `post-video-color-grade.ts`, `video-source-provider.ts`
+and `SeamlessLoopVideo.svelte` move to it when next touched. Searches: release
+download, stop video download, video teardown, removeAttribute src, HTTP/2
+receive window, stalled fetch, pending request, Opening project.
+
 A Post Studio clip opens out only over footage its take's file holds:
 `trimItem` stops at the file's first and last frames, so a clip linked to a
 pre-cut file has nothing to reveal. `replaceTakeMedia` in

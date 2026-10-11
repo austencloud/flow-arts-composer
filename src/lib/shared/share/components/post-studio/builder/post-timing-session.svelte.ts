@@ -31,6 +31,7 @@ import {
 import { shownLanding } from "./timing-lane-landings";
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { nextMappedLanding } from "./post-timing-animation";
+import { releaseMediaDownload } from "#lib/shared/media-composition/services/media-download-release.js";
 
 export interface LandingRef {
   sectionId: string;
@@ -106,6 +107,13 @@ export function createPostTimingSession(
       cancelStepReview();
       video?.pause();
     };
+  });
+  $effect(() => {
+    const element = video;
+    if (!element) return;
+    // A remounted editor would otherwise wait behind this take's download for
+    // its project.
+    return () => releaseMediaDownload(element);
   });
   let zoom = $state<TimingZoom>("8");
   let showSquare = $state(true);
