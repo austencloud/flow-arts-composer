@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
   import { untrack } from "svelte";
+  import type { Snippet } from "svelte";
   import type { GridJoin } from "@tka/tka-types";
   import { getGridJoinLayout, toJoinedHandPoint } from "@tka/render-core";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
@@ -79,6 +80,14 @@
      * on its own grid. Absent or null keeps one grid for both hands.
      */
     gridJoin?: GridJoin | null;
+    /** "left" keeps one blue hand on the grid; the right hand is never placed. */
+    hands?: "both" | "left";
+    /** False hides the hands and shows the grid alone, as a self-building figure starts. */
+    showProps?: boolean;
+    /** Fires once the pictograph has drawn (PictographContainer onReady). */
+    onReady?: () => void;
+    /** Figure art drawn over the pictograph and under the touch targets, in the grid's own square. */
+    figureLayer?: Snippet;
     onChange?: (change: PropPlacementChange) => void;
     onPlacementComplete?: (leftLocation, rightLocation) => void;
     onOrientationChange?: (color: HandSide, orientation: Orientation) => void;
@@ -113,6 +122,10 @@
     guideLineType,
     guideLineLocations = null,
     gridJoin = null,
+    hands = "both",
+    showProps = true,
+    onReady,
+    figureLayer,
     onChange = () => {},
     onPlacementComplete,
     onOrientationChange,
@@ -175,6 +188,7 @@
       getLeftNoun: () => leftNoun,
       getRightNoun: () => rightNoun,
       getActivePoints: () => activePoints,
+      getHands: () => hands,
     },
     {
       triggerHaptic,
@@ -387,8 +401,16 @@
           motionStartData={withJoin(motion.startData)}
           motionProgress={motion.active ? motion.progress : null}
           arrowOpacity={motion.active ? 0 : 1}
+          {showProps}
+          {onReady}
         />
       </div>
+
+      {#if figureLayer}
+        <div class="figure-layer" aria-hidden="true">
+          {@render figureLayer()}
+        </div>
+      {/if}
 
       <PropPlacementInteractionOverlay
         {placement}
@@ -507,6 +529,13 @@
   .pictograph-layer {
     width: 100%;
     height: 100%;
+  }
+
+  /* Figure art shares the pictograph's square and never takes a pointer. */
+  .figure-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
 
   .dragging-left :global(.left-prop-svg),
