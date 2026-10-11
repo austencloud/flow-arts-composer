@@ -231,7 +231,12 @@ describe("homepage public-links contract", () => {
     // footer's scrim and hairline finish making the bottom of the page look
     // like a different site.
     expect(marketingChrome).toContain("pageSurface(path)");
-    expect(pageSurface).toContain('path === "/history" ? ARCHIVE_INK');
+    expect(pageSurface).toContain(
+      'if (path === "/history") return ARCHIVE_INK'
+    );
+    expect(pageSurface).toContain(
+      'if (path.startsWith("/guide/")) return GUIDE_CANVAS'
+    );
     expect(siteFooter).toContain("surface?: string");
     expect(siteFooter).toContain("immersive?: boolean");
     expect(siteFooter).toContain("class:surfaced={Boolean(surface)}");

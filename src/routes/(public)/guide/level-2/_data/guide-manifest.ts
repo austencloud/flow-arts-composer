@@ -106,7 +106,7 @@ export function level2BodyPagesByGroup(): {
  * (LEVEL2_BODY_PAGES splits pages the print pagination hasn't built yet - e.g.
  * one-one-t1/t23/t456 are three manifest rows but only one live section,
  * `one-one-turns`, exists today). This is the ground truth for anything that
- * links `#id` into a live level-2 page (the unified GuideSidebar). Verified
+ * links `#id` into a live level-2 page (the guide contents, guide-toc.ts). Verified
  * against every `_sections/ch20/*.svelte` and `_sections/ch21/*.svelte`
  * `GuideSection id=` prop (2026-07-16) - the same list the retired
  * `nav-config.ts` carried, ported forward here since it was accurate.
