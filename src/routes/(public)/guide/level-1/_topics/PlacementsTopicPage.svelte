@@ -193,10 +193,12 @@
     width: auto;
     filter: invert(var(--glyph-invert, 0));
   }
+  /* Section headings in the book's serif, as on the reflow pages. */
   .placements-topic .family h2 {
     margin: 0;
     color: var(--ink, #1a1a1a);
-    font-size: clamp(1.4rem, 2.6cqw, 1.9rem);
+    font-family: var(--guide-display, "Cormorant Garamond", Georgia, serif);
+    font-size: clamp(1.6rem, 3cqw, 2.1rem);
     font-weight: 700;
   }
   .definition {
