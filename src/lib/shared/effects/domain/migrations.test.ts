@@ -579,6 +579,51 @@ describe("migrateEffectsConfig", () => {
     expect(out.pulse.palette).toBe("sonar");
   });
 
+  describe("v39 → v40 Pulse solid tint", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const migrate = (pulse: Record<string, unknown>, activePresets: any = {}) =>
+      migrateEffectsConfig({ version: 39, pulse, activePresets } as never);
+
+    it("moves the untouched factory look to prop colors", () => {
+      const out = migrate({ colorMode: "solid", palette: "sonar", color: "#38BDF8" });
+      expect(out.pulse.colorMode).toBe("prop-matched");
+      expect("color" in out.pulse).toBe(false);
+    });
+
+    it("keeps a tint someone picked as the custom shade", () => {
+      const out = migrate({ colorMode: "solid", palette: "ember", color: "#ff00aa" });
+      expect(out.pulse.colorMode).toBe("solid");
+      expect(out.pulse.palette).toBe("custom");
+      expect(out.pulse.customColor).toBe("#ff00aa");
+      expect("color" in out.pulse).toBe(false);
+    });
+
+    it("keeps a chosen palette or look solid", () => {
+      expect(migrate({ colorMode: "solid", palette: "ember", color: "#38bdf8" }).pulse).toMatchObject({
+        colorMode: "solid",
+        palette: "ember",
+      });
+      const look = migrate(
+        { colorMode: "solid", palette: "sonar", color: "#38bdf8" },
+        { pulse: "pulse-sonar" },
+      );
+      expect(look.pulse.colorMode).toBe("solid");
+    });
+
+    it("treats a block without a color mode as the old solid default", () => {
+      const out = migrate({ palette: "void", color: "#38bdf8" });
+      expect(out.pulse.colorMode).toBe("solid");
+      expect(out.pulse.palette).toBe("void");
+    });
+
+    it("leaves other color modes alone", () => {
+      const out = migrate({ colorMode: "rainbow", palette: "sonar", color: "#ff00aa" });
+      expect(out.pulse.colorMode).toBe("rainbow");
+      expect(out.pulse.palette).toBe("sonar");
+      expect("color" in out.pulse).toBe(false);
+    });
+  });
+
   it("migrates v21 → v22 by seeding fire.brightness default", () => {
     const v21 = {
       version: 21,
