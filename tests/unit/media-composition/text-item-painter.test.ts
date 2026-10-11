@@ -3,6 +3,10 @@ import { createTextItemPainter } from "#lib/shared/media-composition/services/te
 import type { CompiledTextItem } from "#lib/shared/media-composition/domain/post-project-compiler.js";
 import { TEXT_BOX_WIDTH } from "#lib/shared/media-composition/domain/post-project.js";
 import {
+  CALLOUT_BORDER,
+  CALLOUT_FILL,
+} from "#lib/shared/media-composition/domain/callout-layout.js";
+import {
   CAPTION_LINE_HEIGHT_FRACTION,
   CAPTION_SIZE_FRACTION,
 } from "#lib/shared/media-composition/domain/caption-layout.js";
@@ -431,5 +435,83 @@ describe("createTextItemPainter", () => {
     expect(spaced.map((mark) => mark.alpha)).toEqual(
       adjacent.map((mark) => mark.alpha)
     );
+  });
+});
+
+/** The recording context plus the path calls a callout's plate makes. */
+class PathContext extends FakeContext {
+  paths: { op: string; style: string }[] = [];
+  shadowColor = "";
+  shadowBlur = 0;
+  shadowOffsetX = 0;
+  shadowOffsetY = 0;
+  beginPath(): void {
+    this.paths.push({ op: "begin", style: "" });
+  }
+  moveTo(): void {}
+  lineTo(): void {}
+  arcTo(): void {}
+  closePath(): void {}
+  fill(): void {
+    this.paths.push({ op: "fill", style: this.fillStyle });
+  }
+  stroke(): void {
+    this.paths.push({ op: "stroke", style: this.strokeStyle });
+  }
+}
+
+describe("createTextItemPainter callouts", () => {
+  // A 1920 by 1080 frame: the box is 25% by 10% of it, drawn at its own size.
+  const box = { x: 0.5, y: 0.5, width: 0.25, height: 0.1 };
+  const rect: PaintRect = { x: 0, y: 0, width: 480, height: 108 };
+
+  function paintCallout(text: string) {
+    const painter = createTextItemPainter(() =>
+      makeText({ text, box, callout: { x: 0.6, y: 0.3 } })
+    );
+    const context = new PathContext();
+    painter.paint(context as unknown as CanvasRenderingContext2D, rect, FRAME);
+    return { painter, context };
+  }
+
+  it("fills its plate once, strokes its border once and writes plain words", () => {
+    const { context } = paintCallout("Level 2 adds turns.");
+    expect(context.paths).toEqual([
+      { op: "begin", style: "" },
+      { op: "fill", style: CALLOUT_FILL },
+      { op: "stroke", style: CALLOUT_BORDER },
+    ]);
+    expect(context.marks.every((mark) => mark.type === "fill")).toBe(true);
+    expect(context.marks[0]).toMatchObject({
+      text: "Level 2 adds turns.",
+      align: "left",
+      x: 24,
+    });
+    expect(context.marks[0]!.fontPx).toBeCloseTo(0.0315 * 1080);
+  });
+
+  it("shrinks words that do not fit, but not below 80%", () => {
+    const { context } = paintCallout(
+      "A very long line that cannot possibly fit inside this small plate at its normal size at all"
+    );
+    const sizes = context.marks.map((mark) => mark.fontPx);
+    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(
+      0.0315 * 1080 * 0.8 - 1e-9
+    );
+    expect(Math.max(...sizes)).toBeLessThan(0.0315 * 1080);
+  });
+
+  it("asks for room outside its box only when it is a callout", () => {
+    const { painter } = paintCallout("Hi");
+    expect(
+      painter.paintOverflow?.({ width: 480, height: 108 }).top
+    ).toBeGreaterThan(0);
+    const plain = createTextItemPainter(() => makeText({ box }));
+    expect(plain.paintOverflow?.({ width: 480, height: 108 })).toEqual({
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+    });
   });
 });

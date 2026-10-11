@@ -5,7 +5,7 @@ effort: L
 work_state: ready
 remaining: "Extract the tile paint kit from Fire/Coal/Bloom, then port the eleven approved prototype portraits (Zap, Sparkle, Ghost, Goo, Bubbles, Petals, Smoke, Ink, Silk, Animal, Pulse) into Svelte tiles, wire the dispatcher, add look copy, and review every tile in the picker at 304x114."
 depends_on: ""
-plan_path: ""
+plan_path: "docs/superpowers/plans/active/2026-10-11-effect-tile-portraits.md"
 tags: [effects, create, ui]
 last_triaged: "2026-10-11"
 ---
@@ -98,6 +98,11 @@ if someone wants to re-check a look.
 
 Target size per tile is about 100 to 200 lines of art direction on top of the
 kit and the renderer helpers it borrows.
+
+Plan note (2026-10-11): the eleven Svelte shells would be identical, so the
+plan uses one `PortraitTile.svelte` shell plus one `<effect>-tile.ts` module
+per effect, and a `tile-registry.ts` that maps effect type to painter. The
+dispatcher branches on that registry instead of eleven `{:else if}` arms.
 
 ### Dispatcher
 
@@ -320,15 +325,15 @@ The tiles must not fork renderer geometry. Where a helper is private today,
 export it; where a drawing routine is bound to a renderer instance, lift it
 into a pure function the renderer calls too. Expected export work:
 
-| Module                                    | Needed by | Export                                                                      |
-| ----------------------------------------- | --------- | --------------------------------------------------------------------------- |
-| `ghost-2d-renderer.ts`                    | Ghost     | treatment layer builders (frost, rim) and the age curve                     |
-| `petal-palettes.ts`, `petal-airflow.ts`   | Petals    | already exported                                                            |
-| `smoke-curl-field.ts`                     | Smoke     | `curl2D`, already exported                                                  |
-| `ink-2d-renderer.ts`                      | Ink       | ribbon build, pigment stamp, bristle cut, droplet                           |
-| `silk-2d-renderer.ts`, `ribbon-trace.ts`  | Silk      | already exported (see `silk-entry.ts`)                                      |
-| `animal-2d-renderer.ts`                   | Animal    | body width profile, `resampleAlongPath`, layer painters, head and ornaments |
-| `pulse-2d-renderer.ts`, `pulse-rhythm.ts` | Pulse     | ring painter, flash, charge; rhythm helpers already exported                |
+| Module                                    | Needed by | Export                                                                                                                                                                          |
+| ----------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ghost-2d-renderer.ts`                    | Ghost     | `buildGhostSpriteTreatment`, `blitGhostPose`, `GhostSpriteTreatment`; age curve already exported                                                                                |
+| `petal-palettes.ts`, `petal-airflow.ts`   | Petals    | already exported                                                                                                                                                                |
+| `smoke-curl-field.ts`                     | Smoke     | `curl2D`, already exported                                                                                                                                                      |
+| `ink-2d-renderer.ts`                      | Ink       | `BrushStampCache`; the ribbon, stamp, bristle and droplet passes are instance-bound, so the tile keeps the reference page's port of them                                        |
+| `silk-2d-renderer.ts`, `ribbon-trace.ts`  | Silk      | already exported (see `silk-entry.ts`)                                                                                                                                          |
+| `animal-2d-renderer.ts`                   | Animal    | `bodyWidth`, `resampleAlongPath`; layer, head and ornament painters are instance-bound, so the tile keeps the reference page's port                                             |
+| `pulse-2d-renderer.ts`, `pulse-rhythm.ts` | Pulse     | `drawPulseRing`, `drawPulseFlash`, `drawPulseCharge` (with a `lineUnit` parameter defaulting to `unit`), `PulseRing`, `ChargeTip`, `rotateHue`; rhythm helpers already exported |
 
 Renderer exports are additive; no renderer behavior changes. The renderer
 test files next to each module guard that.
@@ -339,8 +344,10 @@ test files next to each module guard that.
   preset in its group (plus the default intent for Ghost) on an offscreen
   canvas, and that two paints with the same inputs produce identical pixels
   (seeded random). `preset-data.test.ts` stays the shape guard.
-- Dispatcher: a Svelte component test that every preset group's effect type
-  resolves to a dedicated tile, and Frost still gets the fallback.
+- Dispatcher: a unit test on `tile-registry.ts` that every effect type in the
+  defaults map other than the five legacy tiles resolves to a painter, and
+  Frost resolves to none (so it keeps the fallback). Component tests run in
+  browser mode here, so the pure registry is the cheaper guard.
 - Visual: every new tile reviewed in the real picker at 304x114 in both the
   quick-switch popover and the Effects panel catalog, dark and light theme,
   against its prototype page. The review is a side-by-side screenshot set

@@ -2866,7 +2866,7 @@ function placeOnOrAbove(
 }
 
 /** A fresh clip of a take at speed 1 with its span cut to the take. */
-function newVideoFields(
+export function newVideoFields(
   take: PostTake,
   sourceIn: number,
   sourceOut: number
