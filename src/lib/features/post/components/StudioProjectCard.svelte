@@ -3,7 +3,10 @@
   import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { isTkaWord } from "#lib/shared/foundation/utils/word-simplifier.js";
-  import type { StudioLibraryEntry } from "./studio-library-entry.js";
+  import {
+    studioKindLabels,
+    type StudioLibraryEntry,
+  } from "./studio-library-entry.js";
   import type { StudioProjectPreview } from "../services/studio-project-library.js";
 
   let {
@@ -30,11 +33,6 @@
   let mediaFailed = $state(false);
   let moving = $state(false);
   let prefersReducedMotion = $state(reducedMotion());
-  const labels = {
-    tutorial: "Sequence video",
-    showcase: "Software showcase",
-    arrangement: "Arrangement",
-  };
   const duration = $derived(
     preview?.duration
       ? `${Math.floor(preview.duration / 60)}:${String(Math.floor(preview.duration % 60)).padStart(2, "0")}`
@@ -143,7 +141,7 @@
     onmouseenter={activate}
     onfocus={activate}
     onblur={() => active && onpreview(null)}
-    aria-label={`Open ${entry.title}`}
+    aria-label={`Open ${entry.title}${entry.subtitle ? `, ${entry.subtitle}` : ""}${entry.problem ? ", not synced" : ""}`}
   >
     <div class="cover">
       {#if preview?.cover && !mediaFailed}
@@ -167,13 +165,6 @@
             onerror={() => (mediaFailed = true)}
           ></video>
         {/if}
-        <span class="preview-label"
-          >{moving
-            ? preview.cover.kind === "video"
-              ? "Playing source clip"
-              : "Sequence preview"
-            : "Source preview"}</span
-        >
       {:else if preview?.sequence?.steps?.length}
         <div class="sequence-cover">
           {#await import("#lib/shared/browse/components/PropAwareThumbnail.svelte") then module}
@@ -184,9 +175,6 @@
             />
           {/await}
         </div>
-        <span class="preview-label"
-          >{moving ? "Sequence preview" : "Source sequence"}</span
-        >
       {:else}
         <div class="unavailable">
           <i
@@ -214,7 +202,13 @@
       {#if duration}<span class="duration">{duration}</span>{/if}
     </div>
     <div class="card-text">
-      <span class="kind">{labels[entry.kind]}</span>
+      <span class="kind-row"
+        ><span class="kind">{studioKindLabels[entry.kind].one}</span
+        >{#if entry.problem}<span class="problem-badge"
+            ><i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+            Not synced</span
+          >{/if}</span
+      >
       <div class="title" title={entry.title}>
         {#if isTkaWord(entry.title)}<TKAWordGlyph
             word={entry.title}
@@ -222,7 +216,9 @@
             darkMode
           />{:else}{entry.title}{/if}
       </div>
+      {#if entry.subtitle}<span class="subtitle">{entry.subtitle}</span>{/if}
       <span class="details">{details}</span>
+      {#if entry.problem}<span class="problem">{entry.problem}</span>{/if}
     </div>
   </button>
   <div class="card-footer">
@@ -320,24 +316,18 @@
     font-size: 30px;
     opacity: 0.55;
   }
-  .duration,
-  .preview-label {
+  .duration {
     position: absolute;
     bottom: 10px;
+    right: 10px;
     padding: 4px 7px;
     border-radius: 4px;
     background: #14161dee;
     color: #fff;
     font-size: 12px;
     line-height: 1.2;
-    z-index: 2;
-  }
-  .duration {
-    right: 10px;
     font-variant-numeric: tabular-nums;
-  }
-  .preview-label {
-    left: 10px;
+    z-index: 2;
   }
   .card-text {
     display: grid;
@@ -347,6 +337,37 @@
   .kind {
     color: var(--theme-text-secondary);
     font-size: 12px;
+  }
+  .kind-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 20px;
+  }
+  /* A status tag, not a control: tinted, no border, no hover. */
+  .problem-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--semantic-warning) 16%, transparent);
+    color: var(--semantic-warning-text, var(--semantic-warning));
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  .subtitle {
+    margin-top: -4px;
+    font-size: 13px;
+    color: var(--theme-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .problem {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--semantic-warning-text, var(--semantic-warning));
   }
   .title {
     font-size: 17px;

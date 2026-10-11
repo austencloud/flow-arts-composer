@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { arrangementSnapshotSchema } from "#lib/shared/media-composition/domain/arrangement.js";
+import {
+  arrangementSnapshotSchema,
+  type ArrangementSnapshot,
+} from "#lib/shared/media-composition/domain/arrangement.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { PROP_LOOKS } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import {
@@ -483,12 +486,18 @@ export const PostVideoItemSchema = z
 
 export type PostVideoItem = z.infer<typeof PostVideoItemSchema>;
 
+// The schema checks a snapshot's JSON shape; its parsed value is the editor's
+// own ArrangementSnapshot (layers carry full SequenceData, which an interface
+// cannot express as the schema's string-keyed record).
+const ArrangementSnapshotFieldSchema =
+  arrangementSnapshotSchema as unknown as z.ZodType<ArrangementSnapshot>;
+
 /** An editable Arrange grid, sampled on its own beat clock. */
 export const PostArrangementItemSchema = z
   .object({
     ...itemBase,
     kind: z.literal("arrangement"),
-    snapshot: arrangementSnapshotSchema,
+    snapshot: ArrangementSnapshotFieldSchema,
     sourceIn: SecondsSchema,
     sourceOut: z.number().finite().positive(),
     speed: z.number().finite().min(POST_MIN_SPEED).max(POST_MAX_SPEED),

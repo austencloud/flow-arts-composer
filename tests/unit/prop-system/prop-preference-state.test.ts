@@ -147,4 +147,28 @@ describe("prop preference state", () => {
       favoriteCatdog: null,
     });
   });
+
+  it("draws an account's last loaded preferences at once on a new mount", async () => {
+    persister.loadPropPreferences.mockResolvedValue({
+      propsISpinWith: [PropType.CLUB, PropType.TRIAD],
+      favoriteProp: PropType.CLUB,
+      favoriteCatdog: null,
+    });
+    await createPropPreferenceState("returning-user").reload();
+
+    persister.loadPropPreferences.mockReturnValueOnce(new Promise(() => {}));
+    const remounted = createPropPreferenceState("returning-user");
+
+    expect(remounted.loading).toBe(false);
+    expect(remounted.propsISpinWith).toEqual([PropType.CLUB, PropType.TRIAD]);
+    expect(remounted.favoriteProp).toBe(PropType.CLUB);
+  });
+
+  it("still shows loading for an account it has not loaded yet", () => {
+    persister.loadPropPreferences.mockReturnValueOnce(new Promise(() => {}));
+    const state = createPropPreferenceState("first-visit-user");
+
+    expect(state.loading).toBe(true);
+    expect(state.propsISpinWith).toEqual([]);
+  });
 });
