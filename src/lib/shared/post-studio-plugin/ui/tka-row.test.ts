@@ -126,6 +126,7 @@ describe("tka tool rows are today's rows", () => {
   });
   it("the add panel keeps today's order", () => {
     expect(tkaAddOrder(["text", "card"])).toEqual([
+      "arrangement",
       "animation",
       "moves",
       "mandala",

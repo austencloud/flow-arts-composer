@@ -6,13 +6,18 @@ import {
   POST_MIN_ITEM_SECONDS,
   POST_TIME_EPSILON,
   addOverlayItem,
+  appendToMain,
   clampBox,
+  createIdAllocator,
   findItem,
   finish,
   finiteOr,
   itemEnd,
   mainItemAt,
   replaceItem,
+  trackHasRoom,
+  withNewTrackOnTop,
+  withTrackItems,
   timingVideoAt,
   videoPostSeconds,
   type EditContext,
@@ -34,6 +39,27 @@ import {
   type TakeTiming,
 } from "#lib/shared/media-composition/domain/take-timing.js";
 import { openingTitlesSpan } from "#lib/shared/media-composition/domain/tunnel-titles.js";
+import {
+  arrangementDurationSeconds,
+  createArrangementItem,
+} from "#lib/shared/media-composition/domain/post-arrangement-item.js";
+import {
+  validateArrangementSnapshot,
+  type ArrangementSnapshot,
+} from "#lib/shared/media-composition/domain/arrangement.js";
+import {
+  clearCell,
+  moveCell,
+  resizeCell,
+  setCellAppearance,
+  setCellLayers,
+  setCellOffset,
+  setGrid,
+  setSkipStartPlacement,
+  staggerCells,
+  type ArrangementCellOffset,
+} from "#lib/shared/media-composition/domain/arrangement-edits.js";
+import type { TunnelLayerConfig } from "#lib/shared/animation-engine/domain/compose-types.js";
 
 /**
  * tka's own timeline edits: the titles clip, the opening tunnel hook and the
@@ -544,4 +570,212 @@ export function replaceOverlayVideoWithAnimation(
       : {}),
   };
   return finish(replaceItem(project, itemId, animation), ctx);
+}
+
+// ---------------------------------------------------------------------------
+// Arrangements
+// ---------------------------------------------------------------------------
+
+/** A new arrangement joins the main track when it is empty, otherwise it overlays the playhead. */
+export function addArrangementItem(
+  project: PostProject,
+  snapshot: ArrangementSnapshot,
+  at: number,
+  ctx: EditContext
+): { project: PostProject; itemId: string } {
+  const valid = validateArrangementSnapshot(snapshot);
+  const nextId = createIdAllocator(project);
+  const main = project.tracks[MAIN_TRACK_INDEX]!;
+  const onMain = main.items.length === 0;
+  const itemId = nextId("arrangement");
+  const item = createArrangementItem(
+    valid,
+    itemId,
+    onMain ? 0 : Math.max(0, at),
+    onMain
+  );
+  if (onMain)
+    return { project: finish(appendToMain(project, item), ctx), itemId };
+  const under = mainItemAt(project, item.start);
+  const overlay = {
+    ...item,
+    anchor: under
+      ? { itemId: under.id, offset: item.start - under.start }
+      : null,
+  };
+  const top = project.tracks.length - 1;
+  const track = project.tracks[top]!;
+  const next =
+    top > MAIN_TRACK_INDEX &&
+    !track.hidden &&
+    !track.locked &&
+    trackHasRoom(track, overlay.start, itemEnd(overlay))
+      ? withTrackItems(project, top, [...track.items, overlay])
+      : withNewTrackOnTop(project, overlay, nextId);
+  return { project: finish(next, ctx), itemId };
+}
+
+/** The Arrangement editor applies its complete grid as one timeline edit. */
+export function setArrangementSnapshot(
+  project: PostProject,
+  itemId: string,
+  snapshot: ArrangementSnapshot,
+  ctx: EditContext
+): PostProject {
+  const located = findItem(project, itemId);
+  if (located?.item.kind !== "arrangement") return project;
+  const valid = validateArrangementSnapshot(snapshot);
+  if (JSON.stringify(valid) === JSON.stringify(located.item.snapshot))
+    return project;
+  const total = arrangementDurationSeconds(valid);
+  const sourceIn = Math.min(
+    located.item.sourceIn,
+    Math.max(0, total - POST_MIN_ITEM_SECONDS)
+  );
+  const previousTotal = arrangementDurationSeconds(located.item.snapshot);
+  const keptEnd =
+    Math.abs(located.item.sourceOut - previousTotal) < POST_TIME_EPSILON
+      ? total
+      : located.item.sourceOut;
+  const sourceOut = Math.min(
+    total,
+    Math.max(sourceIn + POST_MIN_ITEM_SECONDS, keptEnd)
+  );
+  return finish(
+    replaceItem(project, itemId, {
+      ...located.item,
+      snapshot: valid,
+      sourceIn,
+      sourceOut,
+      duration: (sourceOut - sourceIn) / located.item.speed,
+    }),
+    ctx
+  );
+}
+
+/** One grid edit on an arrangement item; the clip's length follows through `setArrangementSnapshot`. */
+function editArrangement(
+  project: PostProject,
+  itemId: string,
+  ctx: EditContext,
+  edit: (snapshot: ArrangementSnapshot) => ArrangementSnapshot
+): PostProject {
+  const located = findItem(project, itemId);
+  if (located?.item.kind !== "arrangement") return project;
+  const next = edit(located.item.snapshot);
+  return next === located.item.snapshot
+    ? project
+    : setArrangementSnapshot(project, itemId, next, ctx);
+}
+
+/** Rows × cols of the visible grid, clamped to 1..8; see `setGrid`. */
+export function setArrangementGrid(
+  project: PostProject,
+  itemId: string,
+  rows: number,
+  cols: number,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setGrid(snapshot, rows, cols)
+  );
+}
+
+export function setArrangementSkipStartPlacement(
+  project: PostProject,
+  itemId: string,
+  skipStartPlacement: boolean,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setSkipStartPlacement(snapshot, skipStartPlacement)
+  );
+}
+
+/** Swaps a cell with the one at `row`,`col`; an invalid drop changes nothing. */
+export function moveArrangementCell(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  row: number,
+  col: number,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    moveCell(snapshot, cellId, row, col)
+  );
+}
+
+/** Spans clamped to the grid and to empty neighbours; see `resizeCell`. */
+export function resizeArrangementCell(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  colSpan: number,
+  rowSpan: number,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    resizeCell(snapshot, cellId, colSpan, rowSpan)
+  );
+}
+
+export function setArrangementCellLayers(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  layers: TunnelLayerConfig[],
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellLayers(snapshot, cellId, layers)
+  );
+}
+
+export function setArrangementCellOffset(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  offset: ArrangementCellOffset,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellOffset(snapshot, cellId, offset)
+  );
+}
+
+/** A cell's look, or the grid's when `cellId` is null. */
+export function setArrangementCellAppearance(
+  project: PostProject,
+  itemId: string,
+  cellId: string | null,
+  appearance: PostAnimationAppearance | undefined,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellAppearance(snapshot, cellId, appearance)
+  );
+}
+
+export function clearArrangementCell(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    clearCell(snapshot, cellId)
+  );
+}
+
+/** Offsets the filled cells by `beatsPerCell` each, in reading order. */
+export function staggerArrangement(
+  project: PostProject,
+  itemId: string,
+  beatsPerCell: number,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    staggerCells(snapshot, beatsPerCell)
+  );
 }

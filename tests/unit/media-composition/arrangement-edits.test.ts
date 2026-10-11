@@ -25,6 +25,7 @@ import {
   setArrangementGrid,
   staggerArrangement,
 } from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { editContext } from "#lib/shared/post-studio-plugin/index.js";
 
 const NOW = 1_700_000_000_000;
 
@@ -252,7 +253,7 @@ describe("arrangement edits on a project", () => {
     const before = start.tracks[0]!.items[0]!;
     expect(before.kind).toBe("arrangement");
     expect(before.duration).toBeCloseTo(6);
-    const next = setArrangementGrid(start, itemId, 1, 1, { now: NOW + 1 });
+    const next = setArrangementGrid(start, itemId, 1, 1, editContext(NOW + 1));
     const after = next.tracks[0]!.items[0]!;
     expect(after.kind).toBe("arrangement");
     if (after.kind !== "arrangement") return;
@@ -264,10 +265,10 @@ describe("arrangement edits on a project", () => {
 
   it("returns the same project for a no-op or another kind of item", () => {
     const { project: start, itemId } = project(grid(2, 2, [filled(0, 0), filled(1, 1)]));
-    expect(setArrangementGrid(start, itemId, 2, 2, { now: NOW + 1 })).toBe(start);
-    expect(clearArrangementCell(start, itemId, "cell-0-1", { now: NOW + 1 })).toBe(start);
-    expect(staggerArrangement(start, "missing", 1, { now: NOW + 1 })).toBe(start);
-    const staggered = staggerArrangement(start, itemId, 1, { now: NOW + 1 });
+    expect(setArrangementGrid(start, itemId, 2, 2, editContext(NOW + 1))).toBe(start);
+    expect(clearArrangementCell(start, itemId, "cell-0-1", editContext(NOW + 1))).toBe(start);
+    expect(staggerArrangement(start, "missing", 1, editContext(NOW + 1))).toBe(start);
+    const staggered = staggerArrangement(start, itemId, 1, editContext(NOW + 1));
     const item = staggered.tracks[0]!.items[0]!;
     if (item.kind !== "arrangement") throw new Error("expected an arrangement");
     expect(cellAt(item.snapshot, 1, 1)?.beatOffset).toBe(1);

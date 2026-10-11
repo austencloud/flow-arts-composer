@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
-import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
+import type { PostFootageVault } from "@austencloud/video-editor";
+import type { PostTake } from "@austencloud/video-editor/core";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
 import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 import { loadPostProject } from "#lib/shared/media-composition/services/post-project-store.js";
-import type { PostFootageVault } from "#lib/shared/media-composition/services/local-footage-vault.js";
 
 const identity = "studio-project:showcase:footage-vault-test";
 
@@ -32,7 +32,7 @@ const open = (
         title: "Fire showcase",
         now: Date.now(),
       }),
-    footage,
+    services: { footage },
   });
 
 let urls = 0;

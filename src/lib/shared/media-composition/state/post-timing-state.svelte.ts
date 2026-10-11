@@ -62,7 +62,10 @@ type TakeHistoryEntry =
   | { kind: "appearance"; appearance: MappingAppearance | undefined };
 
 export interface PostTimingDeps {
-  getSequence: () => SequenceData;
+  /** Null for a post that starts from an arrangement or plain footage. */
+  getSequence: () => SequenceData | null;
+  /** The post's identity: its sequence's id, or the saved project's own. */
+  sequenceId: string;
   /** Catalog videos for the sequence, looked up by id. */
   getCatalogVideo?: (videoId: string) => CatalogTakeSource | null;
   /** True when a painter can draw the beat overlay on animation items. */
@@ -74,8 +77,11 @@ export interface PostTimingDeps {
 export function createPostTimingState(deps: PostTimingDeps) {
   const store = deps.store;
   const now = deps.now;
+  const sequenceId = deps.sequenceId;
   const sequence = $derived(deps.getSequence());
-  const moveBeats = $derived(sequence.steps.map((step) => step.duration ?? 1));
+  const moveBeats = $derived(
+    sequence?.steps.map((step) => step.duration ?? 1) ?? [1]
+  );
 
   /** The editor this timing rides along with, set when it builds the extension. */
   let editor = $state.raw<VideoEditorState<PostTimingEffect> | null>(null);
@@ -125,9 +131,9 @@ export function createPostTimingState(deps: PostTimingDeps) {
   /** The alignment the frame evaluator reads: the sequence and the take clocks. */
   const alignment = $derived<FrameAlignment>(
     tkaFrameAlignment({
-      steps: sequence.steps,
+      steps: sequence?.steps ?? [],
       startPlacementDuration: 1,
-      sequencePeriod: sequence.period ?? sequence.orientationCycleCount ?? 1,
+      sequencePeriod: sequence?.period ?? sequence?.orientationCycleCount ?? 1,
       clocks,
     })
   );
@@ -142,10 +148,10 @@ export function createPostTimingState(deps: PostTimingDeps) {
     legacy?: StepMap,
     sourceProject: PostProject = core().project
   ): TakeTiming {
-    const saved = store.loadTiming(sequence.id, take.takeKey);
+    const saved = store.loadTiming(sequenceId, take.takeKey);
     const embedded = sourceProject.timings?.[take.id];
     const validEmbedded =
-      embedded?.sequenceId === sequence.id &&
+      embedded?.sequenceId === sequenceId &&
       embedded.takeKey === take.takeKey &&
       TakeTimingSchema.safeParse(embedded).success
         ? embedded
@@ -158,7 +164,7 @@ export function createPostTimingState(deps: PostTimingDeps) {
     // A catalog video mapped in the older editor seeds its landings once.
     if (legacy && legacy.stepCount === moveBeats.length) {
       const seeded = takeTimingFromLegacyMarks({
-        sequenceId: sequence.id,
+        sequenceId,
         takeKey: take.takeKey,
         durationSeconds: take.durationSeconds,
         marks: legacy.beatTimestamps,
@@ -173,7 +179,7 @@ export function createPostTimingState(deps: PostTimingDeps) {
       }
     }
     return store.openTiming({
-      sequenceId: sequence.id,
+      sequenceId,
       takeKey: take.takeKey,
       durationSeconds: take.durationSeconds,
       movesPerPass: moveBeats.length,
@@ -380,7 +386,7 @@ export function createPostTimingState(deps: PostTimingDeps) {
   function isLoaded(take: PostTake): boolean {
     const loaded = timings[take.id];
     return (
-      loaded?.takeKey === take.takeKey && loaded.sequenceId === sequence.id
+      loaded?.takeKey === take.takeKey && loaded.sequenceId === sequenceId
     );
   }
 
@@ -430,7 +436,7 @@ export function createPostTimingState(deps: PostTimingDeps) {
           // map can still seed it when the catalog arrives.
           if (
             source.timings?.[take.id] ||
-            store.loadTiming(sequence.id, take.takeKey)
+            store.loadTiming(sequenceId, take.takeKey)
           ) {
             timings = {
               ...timings,
@@ -458,16 +464,26 @@ export function createPostTimingState(deps: PostTimingDeps) {
         const importedTimings = Object.fromEntries(
           Object.entries(next.timings ?? {}).map(([takeId, timing]) => [
             takeId,
-            { ...timing, sequenceId: sequence.id },
+            { ...timing, sequenceId: sequenceId },
           ])
         );
+        // A backup brings the timeline and its assets, not the destination's
+        // source. Older backups have no sourceKind or title at all.
+        const destination = core().project;
+        const { sourceKind: _sourceKind, title: importedTitle, ...content } =
+          next;
+        const title = importedTitle ?? destination.title;
         const validated = PostProjectSchema.parse({
-          ...next,
-          sequenceId: sequence.id,
+          ...content,
+          sequenceId,
+          ...(destination.sourceKind
+            ? { sourceKind: destination.sourceKind }
+            : {}),
+          ...(title ? { title } : {}),
           timings: importedTimings,
         });
         const currentSnapshot = core().snapshot;
-        const transfer = resolvePostStudioDraft(sequence.id, [
+        const transfer = resolvePostStudioDraft(sequenceId, [
           projectDraftRecord({
             ...validated,
             updatedAt: Math.max(
@@ -489,7 +505,7 @@ export function createPostTimingState(deps: PostTimingDeps) {
           const existing = timings[take.id];
           const imported = next.timings?.[take.id];
           if (
-            existing?.sequenceId !== sequence.id ||
+            existing?.sequenceId !== sequenceId ||
             existing.takeKey !== take.takeKey
           )
             continue;

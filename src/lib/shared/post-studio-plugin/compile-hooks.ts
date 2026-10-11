@@ -66,6 +66,16 @@ export function itemIdFromMovesAnimationRole(role: string): string | null {
   return role.startsWith(prefix) ? role.slice(prefix.length) : null;
 }
 
+/** An arrangement's live grid, which tka's media layer draws. */
+export function arrangementRole(itemId: string): string {
+  return `arrangement:${itemId}`;
+}
+
+export function itemIdFromArrangementRole(role: string): string | null {
+  const prefix = "arrangement:";
+  return role.startsWith(prefix) ? role.slice(prefix.length) : null;
+}
+
 export const STAFF_EFFECT_ROLE_PREFIX = "staff:";
 
 /** The painted layer that draws a video clip's staff effect. */
@@ -486,6 +496,45 @@ export function compileTitlesItem(
     ...(titlesMotion ? { motion: titlesMotion } : {}),
   });
   env.addOutput("titles", plan);
+  return true;
+}
+
+/**
+ * An arrangement plays its span of the grid's cycle as a clip plays its take:
+ * the media layer reads the source time as the grid's beat clock.
+ */
+export function compileArrangementItem(
+  item: PostItem,
+  env: CompileItemEnv
+): boolean {
+  if (item.kind !== "arrangement") return false;
+  const { output, box, zIndex, label } = env;
+  const { useRole, region, presetRole } = env;
+  const { regionKeyframesFor, motionFor, seconds } = env;
+  const roleKey = arrangementRole(item.id);
+  useRole(presetRole(roleKey, label, "manual", ["arrangement"]));
+  env.addRegion(region(item.id, label, box, "fill", zIndex));
+  const regionKeyframes = regionKeyframesFor(item, output);
+  if (regionKeyframes) env.addRegionKeyframes(regionKeyframes);
+  const motion = motionFor(item);
+  env.addClip({
+    id: item.id,
+    kind: "visual",
+    sourceRole: roleKey,
+    regionId: item.id,
+    start: seconds(item.start),
+    end: seconds(itemEnd(item)),
+    sourceIn: seconds(item.sourceIn),
+    sourceOut: seconds(item.sourceOut),
+    playbackRate: item.speed,
+    loop: false,
+    opacity: item.opacity,
+    ...(item.fadeIn > 0 ? { fadeInSeconds: item.fadeIn } : {}),
+    ...(item.fadeOut > 0 ? { fadeOutSeconds: item.fadeOut } : {}),
+    transform: IDENTITY_TRANSFORM,
+    useResolvedTimeMap: false,
+    ...(motion ? { motion } : {}),
+  });
   return true;
 }
 

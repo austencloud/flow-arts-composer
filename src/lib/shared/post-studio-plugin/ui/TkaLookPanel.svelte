@@ -9,7 +9,8 @@
   const tka = useTkaEditor();
 </script>
 
-<AnimationPanel
+{#if tka.displaySequence}
+  <AnimationPanel
   layout="sidebar"
   isExporting={false}
   isPlaying={editor.isPlaying}
@@ -20,3 +21,4 @@
   onPropChange={tka.choosePropType}
   sequence={tka.displaySequence}
 />
+{/if}

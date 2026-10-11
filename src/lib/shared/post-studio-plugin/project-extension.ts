@@ -16,6 +16,9 @@ const IdSchema = z.string().trim().min(1);
  */
 export const tkaProjectShape = {
   sequenceId: IdSchema,
+  /** Absent on legacy projects, which still require a real sequence. */
+  sourceKind: z.enum(["sequence", "none"]).optional(),
+  title: z.string().trim().min(1).max(120).optional(),
   /** Prop used by this post's card and animation when an item has no override. */
   propType: z.nativeEnum(PropType).optional(),
   /** Maps travel with a post, keyed by the take id they were edited against. */
@@ -44,6 +47,8 @@ export const TKA_PROJECT_EXTENSION: ShapeExtension = {
     "schemaVersion",
     "subjectId",
     "sequenceId",
+    "sourceKind",
+    "title",
     "propType",
     "takes",
     "timings",
@@ -62,12 +67,23 @@ export const TKA_PROJECT_EXTENSION: ShapeExtension = {
   ],
 };
 
-/** tka's fields on an empty project: the sequence it is about. */
+/**
+ * tka's fields on an empty project: the sequence it is about, or none for a
+ * post that starts from an arrangement or plain footage, and its title.
+ */
 export function emptyProjectFields(input: {
   sequenceId: string;
   now: number;
+  sourceKind?: "sequence" | "none";
+  title?: string;
 }): {
   sequenceId: string;
+  sourceKind?: "sequence" | "none";
+  title?: string;
 } {
-  return { sequenceId: input.sequenceId };
+  return {
+    sequenceId: input.sequenceId,
+    ...(input.sourceKind ? { sourceKind: input.sourceKind } : {}),
+    ...(input.title ? { title: input.title.trim() } : {}),
+  };
 }

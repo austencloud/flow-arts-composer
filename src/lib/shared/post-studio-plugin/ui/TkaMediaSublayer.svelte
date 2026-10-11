@@ -4,6 +4,7 @@
   import PostStudioChoreoLayer from "#lib/shared/post-studio-plugin/ui/PostStudioChoreoLayer.svelte";
   import PostStudioTunnelLayer from "#lib/shared/post-studio-plugin/ui/PostStudioTunnelLayer.svelte";
   import PostStudioMandalaLayer from "#lib/shared/post-studio-plugin/ui/PostStudioMandalaLayer.svelte";
+  import type PostStudioArrangementLayerType from "./PostStudioArrangementLayer.svelte";
   import { useTkaEditor } from "./tka-editor-context";
   import {
     hookChromeOpacity,
@@ -20,7 +21,7 @@
 
   /**
    * tka's sequence surfaces inside a media layer: the live animation, the
-   * choreo card, the tunnel and the mandala. Each value they take is the one
+   * choreo card, the tunnel, the mandala and an arrangement's grid. Each value they take is the one
    * the canvas passed the media layer before Task 14, derived here from the
    * layer, its items and the TKA context.
    */
@@ -33,6 +34,8 @@
     preset,
     sourceItem,
     playing,
+    exporting,
+    exportSize,
   }: MediaSublayerProps = $props();
 
   const tka = useTkaEditor();
@@ -68,9 +71,45 @@
     paintedLabelRegions(tka.bindingFor, preset).has(regionId)
   );
   const displayedBeatNumber = $derived(layer.displayedBeatNumber);
+
+  const arrangement = $derived(
+    sourceItem?.kind === "arrangement" ? sourceItem : null
+  );
+  /** The selected arrangement's marks; any other arrangement draws none. */
+  const arrangementMarks = $derived(
+    arrangement && arrangement.id === editor.selectedItemId
+      ? tka.arrangement.marks
+      : null
+  );
+  // A post without an arrangement should not load the grid's canvas engines.
+  let ArrangementLayer = $state.raw<typeof PostStudioArrangementLayerType | null>(
+    null
+  );
+  $effect(() => {
+    if (binding.renderMode !== "arrangement" || !arrangement || ArrangementLayer)
+      return;
+    let current = true;
+    void import("./PostStudioArrangementLayer.svelte").then((module) => {
+      if (current) ArrangementLayer = module.default;
+    });
+    return () => {
+      current = false;
+    };
+  });
 </script>
 
-{#if binding.renderMode === "sequence-animation" && sequencePosition !== undefined}
+{#if binding.renderMode === "arrangement" && arrangement}
+  {#if ArrangementLayer}
+    <ArrangementLayer
+      snapshot={arrangement.snapshot}
+      sourceTimeSeconds={layer.sourceTimeSeconds}
+      {playing}
+      {exporting}
+      {exportSize}
+      editing={arrangementMarks}
+    />
+  {/if}
+{:else if binding.renderMode === "sequence-animation" && sequence && sequencePosition !== undefined}
   <PostStudioSequenceAnimationLayer
     {sequence}
     {sequencePosition}
@@ -93,7 +132,7 @@
     rightPropType={cardRenderOptions?.rightPropTypeOverride ??
       cardRenderOptions?.propTypeOverride}
   />
-{:else if binding.renderMode === "choreo-card"}
+{:else if binding.renderMode === "choreo-card" && sequence}
   <PostStudioChoreoLayer
     {sequence}
     {displayedBeatNumber}
@@ -101,7 +140,7 @@
     {qrSequence}
     {qrUrl}
   />
-{:else if binding.renderMode === "tunnel"}
+{:else if binding.renderMode === "tunnel" && sequence}
   <PostStudioTunnelLayer
     {sequence}
     {playing}
@@ -111,7 +150,7 @@
     rightPropType={cardRenderOptions?.rightPropTypeOverride ??
       cardRenderOptions?.propTypeOverride}
   />
-{:else if binding.renderMode === "mandala"}
+{:else if binding.renderMode === "mandala" && sequence}
   <PostStudioMandalaLayer
     {sequence}
     leftPropType={cardRenderOptions?.leftPropTypeOverride ??

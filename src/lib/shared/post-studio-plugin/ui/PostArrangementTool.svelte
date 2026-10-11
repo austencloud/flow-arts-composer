@@ -20,7 +20,7 @@
     type ArrangementCellOffset,
   } from "#lib/shared/media-composition/domain/arrangement-edits.js";
   import { calculateArrangementCellBeats } from "#lib/shared/media-composition/domain/arrangement-timing.js";
-  import type { PostArrangementItem } from "#lib/shared/media-composition/domain/post-project.js";
+  import type { PostArrangementItem } from "#lib/shared/post-studio-plugin/index.js";
   import {
     setArrangementCellLayers,
     setArrangementCellOffset,
@@ -37,7 +37,7 @@
   import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
   import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
   import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import { formatPostSpeed } from "../builder/post-builder-format";
+  import { formatPostSpeed } from "@austencloud/video-editor/ui";
 
   /**
    * The panels of a selected arrangement. Grid is the item's own: its shape,

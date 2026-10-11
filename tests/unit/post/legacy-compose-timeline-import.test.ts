@@ -4,9 +4,9 @@ import {
   createProject,
   createTrack,
 } from "#lib/shared/animation-engine/domain/timeline-types.js";
-import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import type { PostProject } from "@austencloud/video-editor/core";
 import { arrangementDurationSeconds } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
-import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
+import { normalizeProject } from "#lib/shared/post-studio-plugin/index.js";
 
 const fake = vi.hoisted(() => ({
   uid: "account-a",

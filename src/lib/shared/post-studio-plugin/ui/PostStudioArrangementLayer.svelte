@@ -6,7 +6,7 @@
     cellAtPosition,
     openCells,
     type ArrangementEditingMarks,
-  } from "./editor/post-arrangement-hit";
+  } from "./post-arrangement-hit";
 
   let {
     snapshot,

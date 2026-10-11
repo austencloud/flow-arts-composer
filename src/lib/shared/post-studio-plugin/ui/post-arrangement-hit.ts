@@ -1,4 +1,3 @@
-import type { PostBox } from "#lib/shared/media-composition/domain/post-project.js";
 import type {
   ArrangementCell,
   ArrangementSnapshot,
@@ -8,7 +7,6 @@ import {
   isVisibleCell,
   occupiedPositions,
 } from "#lib/shared/media-composition/domain/arrangement-edits.js";
-import { boxTurn, intoTurnedBox } from "./post-box-drag";
 
 /**
  * Where a pointer over the preview lands inside an arrangement. The canvas
@@ -49,29 +47,6 @@ export interface ArrangementEditingMarks {
   dropTarget: GridPosition | null;
   /** The cell being dragged, drawn lifted while its ghost follows the pointer. */
   draggingCellId: string | null;
-}
-
-/**
- * A frame point as fractions of a box from its top left, read in the box's
- * own axes when it is turned (the inverse of `boxContains`). `aspect` is the
- * frame's width over its height, so a turned step stays square.
- */
-export function boxLocalPoint(
-  box: PostBox,
-  x: number,
-  y: number,
-  aspect = 1
-): { u: number; v: number } {
-  const wide = aspect > 0 && Number.isFinite(aspect) ? aspect : 1;
-  const [alongWidth, alongHeight] = intoTurnedBox(
-    (x - box.x - box.width / 2) * wide,
-    y - box.y - box.height / 2,
-    boxTurn(box)
-  );
-  return {
-    u: box.width > 0 ? alongWidth / (box.width * wide) + 0.5 : 0,
-    v: box.height > 0 ? alongHeight / box.height + 0.5 : 0,
-  };
 }
 
 /** The grid position under a box-local point, or null outside the box. */

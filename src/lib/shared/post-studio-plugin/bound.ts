@@ -53,6 +53,8 @@ export function compilePostProject(
 export function createEmptyPostProject(input: {
   sequenceId: string;
   now: number;
+  sourceKind?: "sequence" | "none";
+  title?: string;
 }): PostProject {
   return createEmptyCore(
     { now: input.now },

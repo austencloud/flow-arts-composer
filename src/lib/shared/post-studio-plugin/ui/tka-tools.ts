@@ -1,12 +1,16 @@
 import type { PluginTool } from "@austencloud/video-editor";
 import {
   faDrum,
+  faEraser,
   faHashtag,
   faHeading,
+  faLayerGroup,
   faPalette,
+  faPenToSquare,
   faShapes,
   faShuffle,
   faSliders,
+  faStopwatch,
   faTableCellsLarge,
 } from "@austencloud/video-editor/icons";
 import { canTapBeats } from "./tka-beats";
@@ -15,7 +19,9 @@ import { tkaEditorOf } from "./tka-editor-context";
 /**
  * tka's own tools on the row, with the names and icons the row shows today
  * (the package's ui/editor/post-editor-labels.ts, `toolLabel` and
- * `TOOL_ICON`). Beats acts at once; the rest open a panel.
+ * `TOOL_ICON`). Beats and Clear act at once; the rest open a panel. Grid and
+ * Edit arrangement are an arrangement's; Layers, Offset and Clear belong to
+ * its cell in hand.
  */
 export const TKA_TOOLS: readonly PluginTool[] = [
   {
@@ -67,5 +73,44 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     icon: faDrum,
     enabled: (editor) => canTapBeats(editor),
     run: (editor, context) => tkaEditorOf(editor)?.openBeats?.(context?.takeId),
+  },
+  {
+    id: "arrangement",
+    type: "panel",
+    label: () => "Edit arrangement",
+    icon: faPenToSquare,
+  },
+  {
+    id: "grid",
+    type: "panel",
+    label: () => "Grid",
+    icon: faTableCellsLarge,
+  },
+  {
+    id: "layers",
+    type: "panel",
+    label: () => "Layers",
+    icon: faLayerGroup,
+  },
+  {
+    id: "offset",
+    type: "panel",
+    label: () => "Offset",
+    icon: faStopwatch,
+  },
+  {
+    id: "clear",
+    type: "action",
+    label: () => "Clear",
+    icon: faEraser,
+    enabled: (editor) => {
+      const cell = tkaEditorOf(editor)?.wrapper.selectedCell;
+      return (
+        editor.selectionEditable &&
+        !!cell &&
+        (cell.layers.length > 0 || (cell.beatOffset ?? 0) !== 0)
+      );
+    },
+    run: (editor) => void tkaEditorOf(editor)?.wrapper.clearSelectedCell(),
   },
 ];

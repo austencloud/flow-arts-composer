@@ -9,9 +9,11 @@ import {
   faShapes,
   faSun,
   faTableCells,
+  faTableCellsLarge,
   faXmark,
 } from "@austencloud/video-editor/icons";
 import { newItemStart, overlayAt } from "@austencloud/video-editor/ui";
+import { createBlankArrangementSnapshot } from "./post-editor-arrangement";
 import { tkaEditorOf } from "./tka-editor-context";
 import { TKA_KIND_UI } from "./tka-kind-ui";
 
@@ -28,6 +30,23 @@ function overlay(
 const always = () => true;
 
 export const TKA_ADD_ITEMS: Readonly<Record<string, PluginAddItem>> = {
+  // A new arrangement opens straight in the arrangement editor.
+  arrangement: {
+    id: "arrangement",
+    icon: faTableCellsLarge,
+    label: () => "Arrangement",
+    available: always,
+    add: (e) => {
+      const tka = tkaEditorOf(e);
+      const itemId = tka?.wrapper.addArrangement(
+        createBlankArrangementSnapshot(),
+        newItemStart(e.durationSeconds, e.previewSeconds)
+      );
+      if (!tka || !itemId) return null;
+      tka.editArrangement(itemId);
+      return "arrangement";
+    },
+  },
   animation: {
     id: "animation",
     icon: faPersonRunning,
@@ -87,13 +106,20 @@ export const TKA_ADD_ITEMS: Readonly<Record<string, PluginAddItem>> = {
   },
 };
 
-/** Today's order around the core entries (`text`, `card`). */
+/**
+ * Today's order around the core entries (`text`, `card`). A post with no
+ * sequence offers only what needs none: an arrangement and text.
+ */
 export function tkaAddItems(
-  core: readonly string[]
+  core: readonly string[],
+  editor?: VideoEditorState
 ): readonly (string | PluginAddItem)[] {
   const has = (id: string) => (core.includes(id) ? [id] : []);
   const a = TKA_ADD_ITEMS;
+  if (editor && tkaEditorOf(editor)?.sequence === null)
+    return [a.arrangement!, ...has("text")];
   return [
+    a.arrangement!,
     a.animation!,
     a.moves!,
     a.mandala!,

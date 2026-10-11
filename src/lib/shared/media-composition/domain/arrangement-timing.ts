@@ -1,4 +1,8 @@
-import type { ArrangementCell } from "#lib/shared/media-composition/domain/arrangement.js";
+import { POST_MIN_ITEM_SECONDS } from "@austencloud/video-editor/core";
+import type {
+  ArrangementCell,
+  ArrangementSnapshot,
+} from "#lib/shared/media-composition/domain/arrangement.js";
 
 function gcd(a: number, b: number): number {
   return b === 0 ? a : gcd(b, a % b);
@@ -40,4 +44,28 @@ export function calculateArrangementTotalBeats(
   const firstCount = stepCounts[0];
   if (firstCount === undefined) return 0;
   return stepCounts.reduce((acc, count) => lcm(acc, count), firstCount);
+}
+
+/** One complete Arrange cycle, measured from the grid's own tempo. */
+export function arrangementDurationSeconds(
+  snapshot: ArrangementSnapshot
+): number {
+  const beats = calculateArrangementTotalBeats(
+    snapshot.cells,
+    snapshot.skipStartPlacement,
+    snapshot.gridRows,
+    snapshot.gridCols
+  );
+  return Math.max(
+    POST_MIN_ITEM_SECONDS,
+    (Math.max(1, beats) * 60) / snapshot.bpm
+  );
+}
+
+/** The same beat that Arrange's playback engine would show at this source time. */
+export function arrangementBeatAt(
+  snapshot: ArrangementSnapshot,
+  sourceTimeSeconds: number
+): number {
+  return (Math.max(0, sourceTimeSeconds) * snapshot.bpm) / 60;
 }

@@ -31,7 +31,7 @@ import {
 import { shownLanding } from "./timing-lane-landings";
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { nextMappedLanding } from "./post-timing-animation";
-import { releaseMediaDownload } from "#lib/shared/media-composition/services/media-download-release.js";
+import { releaseMediaDownload } from "@austencloud/video-editor/render";
 
 export interface LandingRef {
   sectionId: string;

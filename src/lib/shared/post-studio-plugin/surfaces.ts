@@ -11,19 +11,24 @@ import {
 } from "@austencloud/video-editor/render";
 import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "#lib/shared/media-composition/services/post-studio-dom-capture.js";
 import { PostStudioPictographCapture } from "#lib/shared/media-composition/services/post-studio-pictograph-capture.js";
+import { createArrangementSurface } from "./arrangement-surface";
 
 /**
- * The two DOM surfaces tka's preview mounts for a post: the sequence animation
- * and the choreo card. Each call returns fresh surfaces for one render; the
- * sequence animation keeps its screenshot setup across that render's frames
- * and frees it in `release()`.
+ * The DOM surfaces tka's preview mounts for a post: the sequence animation,
+ * the choreo card and an arrangement's grid. Each call returns fresh surfaces
+ * for one render; the sequence animation keeps its screenshot setup across
+ * that render's frames and frees it in `release()`.
  *
  * This module and everything it reaches must never import the plugin index by
  * value: the index re-exports this module.
  * tests/unit/video-editor-value-closure.test.ts guards it.
  */
 export function createTkaSurfaces(): SurfaceCapture[] {
-  return [createSequenceAnimationSurface(), createChoreoCardSurface()];
+  return [
+    createSequenceAnimationSurface(),
+    createChoreoCardSurface(),
+    createArrangementSurface(),
+  ];
 }
 
 function createSequenceAnimationSurface(): SurfaceCapture {

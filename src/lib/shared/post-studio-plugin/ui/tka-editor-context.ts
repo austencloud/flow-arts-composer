@@ -14,6 +14,7 @@ import type { CollaborativeVideo } from "#lib/shared/video-collaboration/domain/
 import type { PostTimingSession } from "#lib/shared/share/components/post-studio/builder/post-timing-session.svelte.js";
 import type { PostStudioShareExport } from "@austencloud/video-editor/ui";
 import type { TimingUi } from "./tka-timing-ui.svelte";
+import type { ArrangementEditingMarks } from "./post-arrangement-hit";
 
 /** What tka's plugin functions need beyond the generic state. */
 export interface TkaEditorFacts {
@@ -33,8 +34,15 @@ export interface TkaEditorFacts {
   openSaveMenu?(event: MouseEvent): void;
   /** The card options a QR image's poster look follows. */
   readonly cardRenderOptions?: Partial<SequenceExportOptions> | null;
-  /** The post's sequence as the host passed it, for the editor's label and the export file name. */
-  readonly sequence: SequenceData;
+  /**
+   * The post's sequence as the host passed it, for the editor's label and the
+   * export file name. Null for a post with no sequence, such as an arrangement.
+   */
+  readonly sequence: SequenceData | null;
+  /** The arrangement open in the arrangement editor, or null. */
+  readonly editingArrangementId: string | null;
+  /** Opens an arrangement in the arrangement editor over the workspace; null closes it. */
+  editArrangement(itemId: string | null): void;
 }
 
 const FACTS = new WeakMap<object, TkaEditorFacts>();
@@ -72,6 +80,11 @@ export interface TkaStripsHolder {
   painterFor: ((mode: string) => PostStudioLayerPainter | null) | null;
 }
 
+/** What the selected arrangement's layer asks the preview to mark; the selection layer sets it. */
+export interface TkaArrangementHolder {
+  marks: ArrangementEditingMarks | null;
+}
+
 /** What TkaEditorScope hands its `children` snippet. */
 export interface TkaScopeChildren {
   editor: PostEditorState;
@@ -98,10 +111,13 @@ export interface TkaEditorContext {
   readonly sequenceBusy: boolean;
   /** Why the post's changed notation could not be prepared, or null. */
   readonly sequenceError: string | null;
-  /** The sequence the post draws, with its labels and actions applied. */
-  readonly sequence: SequenceData;
+  /**
+   * The sequence the post draws, with its labels and actions applied. Null for
+   * a post with no sequence, such as an arrangement.
+   */
+  readonly sequence: SequenceData | null;
   /** The same sequence, by the name the workspace and the bindings read. */
-  readonly displaySequence: SequenceData;
+  readonly displaySequence: SequenceData | null;
   /** The record a scan of the card opens: the source, not a labeled copy. */
   readonly qrSequence: SequenceData | undefined;
   /** The workspace's source for a role; a layer reads another role's through it. The workspace sets it. */
@@ -119,6 +135,11 @@ export interface TkaEditorContext {
   readonly previews: TkaPreviewsHolder;
   readonly overlay: TkaOverlayHolder;
   readonly strips: TkaStripsHolder;
+  readonly arrangement: TkaArrangementHolder;
+  /** The arrangement open in the arrangement editor, or null. */
+  readonly editingArrangementId: string | null;
+  /** Opens an arrangement in the arrangement editor over the workspace; null closes it. */
+  editArrangement(itemId: string | null): void;
   /** The viewer's side inspector, where the tool panel goes; the viewer bridge sets it. */
   readonly inspectorTarget: HTMLElement | null;
   setInspectorTarget(element: HTMLElement | null): void;

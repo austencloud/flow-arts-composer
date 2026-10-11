@@ -21,11 +21,11 @@
     bind:ratio={timingUi.ratio}
     onOpenAnimation={() => void timingUi.openAnimation()}
   >
-    {#snippet preview()}<PostTimingAnimationPreview
-        editor={tka.editor}
-        {session}
-        sequence={tka.displaySequence}
-      />{/snippet}
+    {#snippet preview()}{#if tka.displaySequence}<PostTimingAnimationPreview
+          editor={tka.editor}
+          {session}
+          sequence={tka.displaySequence}
+        />{/if}{/snippet}
   </PostTimingStage>
 </div>
 

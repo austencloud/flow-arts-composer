@@ -1,4 +1,9 @@
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type {
+  ArrangementCell,
+  ArrangementSnapshot,
+} from "#lib/shared/media-composition/domain/arrangement.js";
+import { isVisibleCell } from "#lib/shared/media-composition/domain/arrangement-edits.js";
 import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 import {
   createVideoEditorState,
@@ -14,8 +19,10 @@ import {
   tkaPlugin,
 } from "#lib/shared/post-studio-plugin/index.js";
 import {
+  addArrangementItem,
   addTitlesItem,
   addTunnelHook as addProjectTunnelHook,
+  clearArrangementCell,
   findTunnelHook,
   removeTunnelHook as removeProjectTunnelHook,
 } from "#lib/shared/media-composition/domain/post-project-edits.js";
@@ -50,7 +57,7 @@ import { createPostTimingState } from "./post-timing-state.svelte";
  * still works after a reload.
  */
 
-export type PostEditorMode = "edit" | "timing";
+export type PostEditorMode = "edit" | "timing" | "arrangement";
 
 /** A catalog video as the editor needs it. */
 export interface CatalogTakeSource {
@@ -63,7 +70,8 @@ export interface CatalogTakeSource {
 }
 
 export interface PostEditorDeps {
-  getSequence: () => SequenceData;
+  /** Null for a post that starts from an arrangement or plain footage. */
+  getSequence: () => SequenceData | null;
   /** A recovered full draft to open in place of this browser's saved copy. */
   initialProject?: PostProject;
   /** Catalog videos for the sequence, looked up by id. */
@@ -79,7 +87,7 @@ export interface PostEditorDeps {
   /** The host services the screen adds (toasts, shortcuts, haptics, media library); see tka-host. */
   services?: Pick<
     VideoEditorHost<PostTimingEffect>,
-    "notify" | "shortcuts" | "haptics" | "mediaLibrary"
+    "notify" | "shortcuts" | "haptics" | "mediaLibrary" | "footage" | "confirmations"
   >;
 }
 
@@ -89,7 +97,10 @@ export type { PostEdit } from "@austencloud/video-editor";
 export function createPostEditorState(deps: PostEditorDeps) {
   const store = deps.store ?? devicePostEditorStore;
   const now = deps.now ?? (() => Date.now());
-  const timing = createPostTimingState({ ...deps, store, now });
+  const sequenceId =
+    deps.initialProject?.sequenceId ?? deps.getSequence()?.id ?? null;
+  if (!sequenceId) throw new Error("A Post Studio project needs an identity.");
+  const timing = createPostTimingState({ ...deps, sequenceId, store, now });
   const host: VideoEditorHost<PostTimingEffect> = {
     get ownerId() {
       return postOwnerId();
@@ -102,7 +113,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     ...deps.services,
   };
   const core = createVideoEditorState<PostTimingEffect>(host, tkaPlugin, {
-    subjectId: deps.getSequence().id,
+    subjectId: sequenceId,
     ...(deps.initialProject ? { initialProject: deps.initialProject } : {}),
     // Every catalog take that attaches is looked up here first, so its
     // older editor's map can seed the timing as the video arrives.
@@ -115,6 +126,60 @@ export function createPostEditorState(deps: PostEditorDeps) {
   });
   timing.selectedTakeId =
     core.takesInUse[0]?.id ?? core.project.takes[0]?.id ?? null;
+
+  /** The cell in hand, tied to its arrangement so any other selection drops it. */
+  let cellSelection = $state<{ itemId: string; cellId: string } | null>(null);
+  /** The selected arrangement's selected cell while it is on screen. */
+  const selectedCell = $derived.by((): ArrangementCell | null => {
+    const held = cellSelection;
+    const item = core.selectedItem;
+    if (!held || held.itemId !== item?.id || item.kind !== "arrangement")
+      return null;
+    const cell = item.snapshot.cells.find((c) => c.id === held.cellId);
+    return cell && isVisibleCell(cell, item.snapshot) ? cell : null;
+  });
+
+  /** Selects one of the selected arrangement's cells; null selects the grid. */
+  function selectCell(cellId: string | null): boolean {
+    if (cellId === null) {
+      cellSelection = null;
+      return true;
+    }
+    const item = core.selectedItem;
+    if (item?.kind !== "arrangement") return false;
+    const cell = item.snapshot.cells.find((c) => c.id === cellId);
+    if (!cell || !isVisibleCell(cell, item.snapshot)) return false;
+    cellSelection = { itemId: item.id, cellId };
+    return true;
+  }
+
+  /** Empties the selected cell in one undo step; the cell stays selected. */
+  function clearSelectedCell(): boolean {
+    const item = core.selectedItem;
+    const cell = selectedCell;
+    if (!item || !cell || core.isLocked(item.id)) return false;
+    return core.edit((current, ctx) =>
+      clearArrangementCell(current, item.id, cell.id, ctx)
+    );
+  }
+
+  /** A new arrangement, selected, from a blank or a saved grid. */
+  function addArrangement(
+    snapshot: ArrangementSnapshot,
+    at: number
+  ): string | null {
+    if (core.inGesture) return null;
+    const result = addArrangementItem(
+      core.project,
+      snapshot,
+      at,
+      editContext(now())
+    );
+    if (!core.commit(result.project)) return null;
+    core.selectedItemId = result.itemId;
+    cellSelection = null;
+    return result.itemId;
+  }
 
   /** Import through the same atomic history path as every other edit. */
   function importProject(
@@ -217,6 +282,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
   }
 
   function deleteSelected(): boolean {
+    // With a cell in hand, Delete empties the cell; the arrangement stays.
+    if (selectedCell) return clearSelectedCell();
     if (selectedPart() !== "tunnel") return core.deleteSelected();
     const target = core.selectedItem;
     if (!target || core.isLocked(target.id)) return false;
@@ -366,6 +433,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       return core.selectedItemId;
     },
     set selectedItemId(next: string | null) {
+      if (next !== core.selectedItemId) cellSelection = null;
       core.selectedItemId = next;
     },
     /** `"tunnel"` while an animation's opening tunnel is what is selected. */
@@ -374,6 +442,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     },
     /** Selects an animation's opening tunnel, which has a look of its own. */
     selectTunnel(itemId: string): void {
+      cellSelection = null;
       core.selectPart(itemId, "tunnel");
     },
     /** Package parts; tka's only part is the opening tunnel. */
@@ -384,6 +453,15 @@ export function createPostEditorState(deps: PostEditorDeps) {
     get selectedItem() {
       return core.selectedItem;
     },
+    /** The selected arrangement's cell in hand, or null for the whole grid. */
+    get selectedCellId() {
+      return selectedCell?.id ?? null;
+    },
+    get selectedCell() {
+      return selectedCell;
+    },
+    selectCell,
+    clearSelectedCell,
     get canUndo() {
       return core.canUndo;
     },
@@ -448,6 +526,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     deleteSelected,
     duplicateSelected: core.duplicateSelected,
     addOverlay: core.addOverlay,
+    addArrangement,
     addTitles,
     addCard: core.addCard,
     addTunnelHook,

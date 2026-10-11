@@ -1,14 +1,23 @@
 import { mount, unmount } from "svelte";
-import type {
-  EditorShortcuts,
-  EditorSync,
-  VideoEditorHost,
+import {
+  createLocalFootageVault,
+  type EditorConfirmations,
+  type EditorConfirmKey,
+  type EditorShortcuts,
+  type EditorSync,
+  type VideoEditorHost,
 } from "@austencloud/video-editor";
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
 import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
 import { getKeyboardShortcutManager } from "#lib/shared/keyboard/get-keyboard-shortcut-manager.js";
 import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import {
+  shouldConfirm,
+  stopAsking,
+  type SkippableConfirmation,
+} from "#lib/shared/settings/confirmations.js";
 import {
   removeToast,
   showToast,
@@ -81,18 +90,37 @@ function featureSync(featureVideo: FeatureVideoSync): EditorSync {
   };
 }
 
+/** The editor's skippable confirmations, kept in tka's settings. */
+const CONFIRMATION_SETTING: Record<EditorConfirmKey, SkippableConfirmation> = {
+  "clear-post-keyframes": "skipClearPostKeyframesConfirmation",
+};
+
+const confirmations: EditorConfirmations = {
+  shouldAsk: (key) => shouldConfirm(CONFIRMATION_SETTING[key]),
+  stopAsking: (key) => stopAsking(CONFIRMATION_SETTING[key]),
+};
+
 /**
  * The services tka hands the editor: its toasts, its shortcut managers, its haptics, when
  * the post has a sequence, that sequence's saved videos as the media library and, for a
- * feature video, its folder's sync.
+ * feature video, its folder's sync. Device videos are kept on this device
+ * for the account signed in (the Post page opens a new editor when it
+ * changes), so a reload brings them back without picking them again.
  */
 export function tkaEditorServices(
   library: SequenceVideosStore | null,
   featureVideo: FeatureVideoSync | null = null
 ): Pick<
   VideoEditorHost,
-  "notify" | "shortcuts" | "haptics" | "mediaLibrary" | "sync"
+  | "notify"
+  | "shortcuts"
+  | "haptics"
+  | "mediaLibrary"
+  | "sync"
+  | "footage"
+  | "confirmations"
 > {
+  const user = authState.user;
   return {
     notify: {
       success: (message) => void showToast({ message, type: "success" }),
@@ -111,5 +139,9 @@ export function tkaEditorServices(
     haptics: (kind) => getHapticFeedback().trigger(kind),
     ...(library ? { mediaLibrary: createTkaMediaLibrary(library) } : {}),
     ...(featureVideo ? { sync: featureSync(featureVideo) } : {}),
+    footage: createLocalFootageVault(
+      user && !user.isAnonymous ? `account:${user.uid}` : "guest"
+    ),
+    confirmations,
   };
 }

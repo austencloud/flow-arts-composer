@@ -1,5 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import {
+  createEmptyPostProject,
+} from "#lib/shared/post-studio-plugin/index.js";
 
 const account = vi.hoisted(() => ({ uid: "account-a" }));
 vi.mock("#lib/shared/auth/firebase.js", () => ({

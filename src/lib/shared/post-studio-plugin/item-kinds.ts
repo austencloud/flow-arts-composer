@@ -2,6 +2,8 @@ import { z } from "zod";
 import {
   POST_BOX,
   POST_ITEM_BASE_SHAPE,
+  POST_MAX_SPEED,
+  POST_MIN_SPEED,
   TunnelHookSchema,
   type CoreItemKind,
   type ItemKindDefinition,
@@ -9,17 +11,22 @@ import {
   type PostItemKind,
   type ShapeExtension,
 } from "@austencloud/video-editor/core";
-import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-import { PROP_LOOKS } from "#lib/shared/pictograph/prop/domain/prop-look.js";
-import type { EffectsConfig } from "#lib/shared/effects/domain/effects-config.js";
 import {
-  TrackingMode,
-  TrailEffect,
-  TrailMode,
-} from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  PostAnimationAppearanceSchema,
+  type PostAnimationAppearance,
+} from "#lib/shared/media-composition/domain/post-animation-appearance.js";
+import {
+  arrangementSnapshotSchema,
+  type ArrangementSnapshot,
+} from "#lib/shared/media-composition/domain/arrangement.js";
+import { arrangementDurationSeconds } from "#lib/shared/media-composition/domain/arrangement-timing.js";
 import type { TunnelTitlesPlan } from "#lib/shared/media-composition/domain/tunnel-titles.js";
 import type { tkaProjectShape } from "./project-extension";
-import { compileSequenceItem, compileTitlesItem } from "./compile-hooks";
+import {
+  compileArrangementItem,
+  compileSequenceItem,
+  compileTitlesItem,
+} from "./compile-hooks";
 import { POST_QR_URL_RULE, isPostCardQrUrl } from "./card-qr";
 
 /**
@@ -42,6 +49,7 @@ declare module "@austencloud/video-editor/core" {
     moves: PostMovesItem;
     carousel: PostCarouselItem;
     titles: PostTitlesItem;
+    arrangement: PostArrangementItem;
   }
   interface PluginVideoFields extends TkaVideoFields {}
   interface PluginCardFields extends TkaCardFields {}
@@ -124,98 +132,9 @@ export const POST_SEQUENCE_ACTIONS = [
 export type PostSequenceAction = (typeof POST_SEQUENCE_ACTIONS)[number];
 export const POST_MAX_SEQUENCE_ACTIONS = 64;
 
-/** Display flags for a live animation, independent of viewer settings. */
-export const PostAnimationAppearanceSchema = z
-  .object({
-    propType: z.nativeEnum(PropType).optional(),
-    propLook: z.enum(PROP_LOOKS).optional(),
-    gridMode: z.enum(["none", "8point", "auto"]).optional(),
-    props: z.boolean().optional(),
-    tkaGlyph: z.boolean().optional(),
-    elementalGlyph: z.boolean().optional(),
-    propElementalGlyph: z.boolean().optional(),
-    stepNumbers: z.boolean().optional(),
-    progressBar: z.boolean().optional(),
-    wordHeader: z.boolean().optional(),
-    wordHeaderHighlight: z.enum(["arrival", "travel"]).optional(),
-    mandala: z.boolean().optional(),
-    /** Line width of the mandala guide in canvas pixels; 2.5 when absent. */
-    mandalaThickness: z.number().min(1).max(12).optional(),
-    leftPathLines: z.boolean().optional(),
-    rightPathLines: z.boolean().optional(),
-    pathShape: z.enum(["arc", "linear", "concave"]).optional(),
-    motionAwarePaths: z.boolean().optional(),
-    effortPreset: z
-      .enum([
-        "linear",
-        "glide",
-        "dab",
-        "press",
-        "punch",
-        "elastic",
-        "bounce",
-        "anticipation",
-      ])
-      .optional(),
-    darkMode: z.boolean().optional(),
-    /** Full canonical effects snapshot, scoped to this timeline item. */
-    effects: z
-      .custom<EffectsConfig>(
-        (value) =>
-          value !== null &&
-          typeof value === "object" &&
-          typeof (value as EffectsConfig).version === "number" &&
-          typeof (value as EffectsConfig).activeEffect === "string" &&
-          typeof (value as EffectsConfig).tipEffectMap === "object"
-      )
-      .optional(),
-    trail: z
-      .object({
-        enabled: z.boolean(),
-        trackingMode: z.nativeEnum(TrackingMode),
-        thickness: z.number().finite().min(1).max(12),
-        brightness: z.number().finite().min(0.3).max(1),
-        tailLength: z.number().int().min(10).max(400),
-        leftColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-        rightColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-        /** Complete rendering settings; older projects retain the fields above. */
-        settings: z
-          .object({
-            mode: z.nativeEnum(TrailMode),
-            effect: z.nativeEnum(TrailEffect),
-            fadeDurationMs: z.number().finite().nonnegative(),
-            maxPoints: z.number().int().positive(),
-            lineWidth: z.number().finite().positive(),
-            glowBlur: z.number().finite().nonnegative(),
-            leftColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-            rightColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-            additionalLayerColors: z.array(
-              z
-                .object({
-                  left: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-                  right: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-                })
-                .strict()
-            ),
-            minOpacity: z.number().finite().min(0).max(1),
-            maxOpacity: z.number().finite().min(0).max(1),
-            trackingMode: z.nativeEnum(TrackingMode),
-            hideProps: z.boolean(),
-            usePathCache: z.boolean(),
-            previewMode: z.boolean(),
-            tailLength: z.number().int().min(10).max(400),
-          })
-          .strict()
-          .optional(),
-      })
-      .strict()
-      .optional(),
-  })
-  .strict();
-
-export type PostAnimationAppearance = z.infer<
-  typeof PostAnimationAppearanceSchema
->;
+// The appearance lives in its own module because an arrangement's cells carry
+// one too, and `arrangement.ts` must not import this file.
+export { PostAnimationAppearanceSchema, type PostAnimationAppearance };
 
 /** The sequence animation: the dual view's lower panel. */
 export const PostAnimationItemSchema = z
@@ -282,6 +201,30 @@ export const PostTitlesItemSchema = z
   .strict();
 
 export type PostTitlesItem = z.infer<typeof PostTitlesItemSchema>;
+
+// The schema checks a snapshot's JSON shape; its parsed value is the editor's
+// own ArrangementSnapshot (layers carry full SequenceData, which an interface
+// cannot express as the schema's string-keyed record).
+const ArrangementSnapshotFieldSchema =
+  arrangementSnapshotSchema as unknown as z.ZodType<ArrangementSnapshot>;
+
+/**
+ * An editable Arrange grid, sampled on its own beat clock. It plays a span of
+ * one grid cycle as a clip plays its take; normalize keeps the span inside the
+ * cycle and after its start.
+ */
+export const PostArrangementItemSchema = z
+  .object({
+    ...itemBase,
+    kind: z.literal("arrangement"),
+    snapshot: ArrangementSnapshotFieldSchema,
+    sourceIn: z.number().finite().nonnegative(),
+    sourceOut: z.number().finite().positive(),
+    speed: z.number().finite().min(POST_MIN_SPEED).max(POST_MAX_SPEED),
+  })
+  .strict();
+
+export type PostArrangementItem = z.infer<typeof PostArrangementItemSchema>;
 
 /** Kinds drawn from the sequence, which read the move of the footage under them. */
 export const SEQUENCE_ITEM_KINDS: readonly PostItemKind[] = [
@@ -440,6 +383,19 @@ export const TKA_ITEM_KINDS: readonly ItemKindDefinition[] = [
     defaultBox: () => ({ ...POST_BOX.stripCarousel }),
     transitionVisual: true,
     compile: compileSequenceItem,
+  },
+  {
+    kind: "arrangement",
+    schema: PostArrangementItemSchema,
+    label: "Arrangement",
+    defaultBox: () => ({ ...POST_BOX.full }),
+    transitionVisual: true,
+    mainTrack: true,
+    sourceLength: (item) =>
+      item.kind === "arrangement"
+        ? arrangementDurationSeconds(item.snapshot)
+        : item.duration,
+    compile: compileArrangementItem,
   },
   {
     kind: "titles",

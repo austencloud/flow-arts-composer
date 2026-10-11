@@ -12,33 +12,49 @@ import { NO_FACTS, tkaRow, tkaRowFacts } from "./tka-row";
 import { tkaTimelineJoin } from "./tka-timeline-join";
 import { TKA_TIMING_MODE } from "./tka-timing-mode";
 import { TKA_TOOLS } from "./tka-tools";
+import TkaArrangementCover from "./TkaArrangementCover.svelte";
 import TkaItemTools from "./TkaItemTools.svelte";
 import TkaLookPanel from "./TkaLookPanel.svelte";
 import TkaMediaSublayer from "./TkaMediaSublayer.svelte";
 import TkaStripGuide from "./TkaStripGuide.svelte";
 
 /**
- * The post's sequence name, else its derived word, with a repeated word
- * simplified; null when it has neither, so the editor shows its default name.
+ * The post's own title, else its sequence's name or derived word, with a
+ * repeated word simplified; null when it has none, so the editor shows its
+ * default name.
  */
 function subjectName(editor: VideoEditorState): string | null {
   const s = tkaEditorOf(editor)?.sequence;
-  const name = s ? s.displayName || deriveWord(s) : "";
+  const name =
+    editor.project.title || (s ? s.displayName || deriveWord(s) : "");
   return name ? simplifyRepeatedWord(name) : null;
 }
+
+/** Tools that need the post's sequence: its look and beat tapping. */
+const SEQUENCE_TOOLS = new Set(["look", "beats"]);
 
 /** tka's editor UI: its tools and panels, the timing mode and its backup. */
 export function createTkaPluginUi(): PluginUi {
   return {
     toolPanel: TkaItemTools,
     tools: TKA_TOOLS,
-    toolRow: (item, core, editor) =>
-      tkaRow(item, core, item ? tkaRowFacts(item, editor) : NO_FACTS),
+    toolRow: (item, core, editor) => {
+      const row = tkaRow(item, core, item ? tkaRowFacts(item, editor) : NO_FACTS);
+      return tkaEditorOf(editor)?.sequence === null
+        ? row.filter((id) => !SEQUENCE_TOOLS.has(id))
+        : row;
+    },
     addItems: tkaAddItems,
     cropSteps: tkaCropSteps,
     timelineJoin: tkaTimelineJoin,
     mediaSublayer: {
-      renderModes: ["sequence-animation", "choreo-card", "tunnel", "mandala"],
+      renderModes: [
+        "sequence-animation",
+        "choreo-card",
+        "tunnel",
+        "mandala",
+        "arrangement",
+      ],
       component: TkaMediaSublayer,
     },
     // A QR image in its own look, else the poster look of the card under it.
@@ -59,7 +75,23 @@ export function createTkaPluginUi(): PluginUi {
     layerContextMenu: (event, editor) =>
       tkaEditorOf(editor)?.openSaveMenu?.(event),
     canvasOverlays: [TkaStripGuide],
-    modes: [TKA_TIMING_MODE],
+    modes: [TKA_TIMING_MODE, { id: "arrangement", cover: TkaArrangementCover }],
+    // A post with no sequence starts from footage, text or an image.
+    emptyHint: (editor, where) => {
+      if (editor.project.sourceKind !== "none") return null;
+      if (where === "preview")
+        return "Add footage, text, or an image to see the post here";
+      return editor.project.tracks.some((track) => track.items.length > 0)
+        ? "Add footage to the main track"
+        : "Start with footage, text, or an image";
+    },
+    // From a cell, Back goes up to its arrangement, not out of it.
+    back: (editor) => {
+      const wrapper = tkaEditorOf(editor)?.wrapper;
+      if (!wrapper || wrapper.selectedCellId === null) return false;
+      wrapper.selectCell(null);
+      return true;
+    },
     panels: { look: TkaLookPanel },
     createBindings: createTkaBindings,
     backup: TKA_BACKUP,

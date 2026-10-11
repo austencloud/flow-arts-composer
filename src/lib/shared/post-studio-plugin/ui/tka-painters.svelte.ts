@@ -11,6 +11,7 @@ import {
   type PostVideoItem,
 } from "@austencloud/video-editor/core";
 import {
+  itemIdFromArrangementRole,
   itemIdFromMovesAnimationRole,
   itemIdFromStaffEffectRole,
   staffEffectRole,
@@ -36,8 +37,10 @@ import { useTkaEditor } from "./tka-editor-context";
 /**
  * The sources and painters of tka's own roles: the staff effects, the titles,
  * the moves and their strips, the beat carousel, the beat and letter overlay,
- * the sequence animation and the choreo card. The workspace answers the core
- * roles (images, take videos, text) and asks these second.
+ * the sequence animation, the choreo card and arrangements. The workspace
+ * answers the core roles (images, take videos, text) and asks these second.
+ * A post with no sequence, such as an arrangement, has none of the
+ * sequence's painters.
  */
 export function createTkaBindings(env: {
   editor: VideoEditorState;
@@ -55,8 +58,10 @@ export function createTkaBindings(env: {
   // ---- What each layer draws -----------------------------------------------
 
   const carouselPainter = $derived(
-    createBeatCarouselPainter(tka.displaySequence)
+    tka.displaySequence ? createBeatCarouselPainter(tka.displaySequence) : null
   );
+  /** The sequence has beats to draw. */
+  const hasSteps = $derived((tka.displaySequence?.steps.length ?? 0) > 0);
   const animationVisibility = getAnimationVisibilityManager();
   let progressBarVisible = $state(
     animationVisibility.getVisibility("progressBar")
@@ -65,18 +70,21 @@ export function createTkaBindings(env: {
     progressBarVisible = animationVisibility.getVisibility("progressBar");
   }
   animationVisibility.registerObserver(syncProgressBarVisibility);
-  const stripPainters = $derived(
-    new Map<StripMode, PostStudioLayerPainter>(
-      (["arrows", "mandala", "alternate"] as const).map((mode) => [
-        mode,
-        createSequenceStripPainter({
-          sequence: tka.displaySequence,
-          mode,
-          showProgressBar: () => progressBarVisible,
-        }),
-      ])
-    )
-  );
+  const stripPainters = $derived.by(() => {
+    const sequence = tka.displaySequence;
+    return new Map<StripMode, PostStudioLayerPainter>(
+      sequence
+        ? (["arrows", "mandala", "alternate"] as const).map((mode) => [
+            mode,
+            createSequenceStripPainter({
+              sequence,
+              mode,
+              showProgressBar: () => progressBarVisible,
+            }),
+          ])
+        : []
+    );
+  });
   tka.strips.painterFor = (mode) =>
     stripPainters.get(mode as StripMode) ?? null;
 
@@ -89,10 +97,12 @@ export function createTkaBindings(env: {
         () =>
           editor.compiled?.titles.find((plan) => plan.itemId === itemId) ??
           null,
-        () =>
-          simplifyRepeatedWord(
-            tka.displaySequence.word || deriveWord(tka.displaySequence)
-          )
+        () => {
+          const sequence = tka.displaySequence;
+          return sequence
+            ? simplifyRepeatedWord(sequence.word || deriveWord(sequence))
+            : (editor.project.title ?? "");
+        }
       );
       titlesPainters.set(itemId, painter);
     }
@@ -137,6 +147,11 @@ export function createTkaBindings(env: {
     const drawn = tka.displaySequence;
     const version = ++overlayVersion;
     tka.overlay.error = null;
+    if (!drawn) {
+      tka.overlay.painter = null;
+      tka.overlay.sequence = null;
+      return;
+    }
     void loadAnimationOverlayPainter(drawn)
       .then((painter) => {
         if (version === overlayVersion) {
@@ -166,7 +181,7 @@ export function createTkaBindings(env: {
       previewUrl: null,
       renderMode: "painted",
       painter,
-      status: tka.displaySequence.steps.length > 0 ? "ready" : "missing",
+      status: hasSteps ? "ready" : "missing",
     };
   }
 
@@ -199,7 +214,17 @@ export function createTkaBindings(env: {
         label: t("share_studio_deep_moves"),
         previewUrl: null,
         renderMode: "sequence-animation",
-        status: tka.displaySequence.steps.length > 0 ? "ready" : "missing",
+        status: hasSteps ? "ready" : "missing",
+      };
+    }
+    if (itemIdFromArrangementRole(role)) {
+      return {
+        roleKey: role,
+        kind: "arrangement",
+        label: "Arrangement",
+        previewUrl: null,
+        renderMode: "arrangement",
+        status: "ready",
       };
     }
     const strip = stripModeFromRole(role);
@@ -219,18 +244,20 @@ export function createTkaBindings(env: {
           previewType: tka.animationPreviewType,
           renderMode: "sequence-animation",
           status:
-            tka.displaySequence.steps.length > 0 || tka.animationPreviewUrl
+            hasSteps || tka.animationPreviewUrl
               ? "ready"
               : tka.isPreparingAnimation
                 ? "preparing"
                 : "missing",
         };
       case POST_STUDIO_ROLE.carousel:
-        return painted(
-          role,
-          t("share_studio_deep_beat_carousel"),
-          carouselPainter
-        );
+        return carouselPainter
+          ? painted(
+              role,
+              t("share_studio_deep_beat_carousel"),
+              carouselPainter
+            )
+          : null;
       case ANIMATION_OVERLAY_ROLE:
         return tka.overlay.painter
           ? painted(
@@ -248,7 +275,7 @@ export function createTkaBindings(env: {
           previewType: "image",
           renderMode: "choreo-card",
           status:
-            tka.displaySequence.steps.length > 0 || tka.cardPreviewUrl
+            hasSteps || tka.cardPreviewUrl
               ? "ready"
               : tka.isPreparingCard
                 ? "preparing"
@@ -277,7 +304,8 @@ export function createTkaBindings(env: {
         (!editor.project.tracks.some((track) =>
           track.items.some((item) => item.kind === "moves")
         ) ||
-          (tka.overlay.sequence === tka.displaySequence &&
+          (tka.displaySequence !== null &&
+            tka.overlay.sequence === tka.displaySequence &&
             !tka.overlay.error)) &&
         !tka.viewerMoving,
       error: tka.sequenceError ?? tka.overlay.error ?? null,
@@ -311,8 +339,12 @@ export function createTkaBindings(env: {
       : null;
   }
 
-  /** A take's beat timing, for the media panel's status line. */
-  function takeStatus(takeId: string): { id: string; text: string } {
+  /**
+   * A take's beat timing, for the media panel's status line. A post with no
+   * sequence has no beats to tap, so no line and no Tap beats.
+   */
+  function takeStatus(takeId: string): { id: string; text: string } | null {
+    if (!tka.displaySequence) return null;
     const status = editor.timingStatus(takeId);
     const text = {
       untapped: t("share_studio_timing_unmapped"),
@@ -326,6 +358,7 @@ export function createTkaBindings(env: {
   /** Takes whose beats are not checked yet, for the export panel's list. */
   function exportTodos(): { key: string; text: string; takeId: string }[] {
     const items: { key: string; text: string; takeId: string }[] = [];
+    if (!tka.displaySequence) return items;
     for (const take of editor.takesInUse) {
       // A take with no file is the panel's own step.
       if (!editor.mediaUrl(take.id)) continue;
@@ -346,9 +379,9 @@ export function createTkaBindings(env: {
 
   /** Every painter of these roles, keyed the way the exporter looks them up. */
   function exportPainters(): Map<string, PostStudioLayerPainter> {
-    const painters = new Map<string, PostStudioLayerPainter>([
-      [POST_STUDIO_ROLE.carousel, carouselPainter],
-    ]);
+    const painters = new Map<string, PostStudioLayerPainter>();
+    if (carouselPainter)
+      painters.set(POST_STUDIO_ROLE.carousel, carouselPainter);
     for (const [mode, painter] of stripPainters) {
       painters.set(stripRole(mode), painter);
     }

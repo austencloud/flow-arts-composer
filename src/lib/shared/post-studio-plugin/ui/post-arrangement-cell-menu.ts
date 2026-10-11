@@ -1,6 +1,5 @@
 import type { ContextMenuEntry } from "#lib/shared/components/context-menu/context-menu-types.js";
 import type { ArrangementCell } from "#lib/shared/media-composition/domain/arrangement.js";
-import { TOOL_ICON } from "./post-editor-labels";
 
 export type ArrangementCellMenuTool = "sequence" | "layers" | "offset";
 
@@ -29,26 +28,26 @@ export function buildArrangementCellMenu(
     {
       id: "sequence",
       label: "Sequence",
-      icon: TOOL_ICON.sequence,
+      icon: "fa-shuffle",
       action: () => callbacks.onOpenTool("sequence"),
     },
     {
       id: "layers",
       label: `Layers (${count})`,
-      icon: TOOL_ICON.layers,
+      icon: "fa-layer-group",
       action: () => callbacks.onOpenTool("layers"),
     },
     {
       id: "offset",
       label: "Offset",
-      icon: TOOL_ICON.offset,
+      icon: "fa-stopwatch",
       action: () => callbacks.onOpenTool("offset"),
     },
     { type: "separator" },
     {
       id: "clear",
       label: "Clear cell",
-      icon: TOOL_ICON.clear,
+      icon: "fa-eraser",
       danger: true,
       action: callbacks.onClear,
     },

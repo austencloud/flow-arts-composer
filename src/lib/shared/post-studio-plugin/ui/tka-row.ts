@@ -9,6 +9,8 @@ export interface TkaRowFacts {
   isTunnelHook: boolean;
   hasBackdrop: boolean;
   hasLayout: boolean;
+  /** One cell of the selected arrangement is in hand; the row is the cell's. */
+  cell: boolean;
 }
 
 export const NO_FACTS: TkaRowFacts = {
@@ -17,6 +19,7 @@ export const NO_FACTS: TkaRowFacts = {
   isTunnelHook: false,
   hasBackdrop: false,
   hasLayout: false,
+  cell: false,
 };
 
 export function tkaRowFacts(
@@ -41,6 +44,7 @@ export function tkaRowFacts(
     hasLayout:
       item.kind === "video" &&
       findItem(editor.project, item.id)?.trackIndex === 0,
+    cell: item.kind === "arrangement" && !!tka?.wrapper.selectedCell,
   };
 }
 
@@ -106,6 +110,9 @@ export function tkaRow(
       ];
     case "titles":
       return ["back", "titles", "timing", ...TAIL];
+    case "arrangement":
+      if (facts.cell) return ["back", "sequence", "layers", "offset", "clear"];
+      return ["back", "grid", "arrangement", "split", "timing", ...TAIL];
     default:
       return core;
   }

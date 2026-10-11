@@ -6,7 +6,7 @@ import {
   setArrangementGrid,
 } from "#lib/shared/media-composition/domain/post-project-edits.js";
 import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
-import { createBlankArrangementSnapshot } from "#lib/shared/share/components/post-studio/editor/post-editor-arrangement.js";
+import { createBlankArrangementSnapshot } from "#lib/shared/post-studio-plugin/ui/post-editor-arrangement.js";
 
 const sequence = {
   id: "seq-cell-selection",

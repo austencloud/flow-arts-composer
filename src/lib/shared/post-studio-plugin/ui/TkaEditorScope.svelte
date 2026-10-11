@@ -64,12 +64,14 @@
   import {
     provideTkaEditor,
     registerTkaEditor,
+    type TkaArrangementHolder,
     type TkaOverlayHolder,
     type TkaPreviewsHolder,
     type TkaScopeChildren,
     type TkaStripsHolder,
   } from "./tka-editor-context";
   import { createTimingUi } from "./tka-timing-ui.svelte";
+  import type { ArrangementEditingMarks } from "./post-arrangement-hit";
   import TkaViewerBridge from "./TkaViewerBridge.svelte";
 
   /**
@@ -78,13 +80,16 @@
    * sequence, the beat timing session and tka's plugin, provides the TKA
    * context the plugin's components read, keeps the viewer shell in step,
    * and renders the editor in `children`. A host keys the scope by the
-   * sequence, since a post plan belongs to exactly one.
+   * sequence, since a post plan belongs to at most one. A post with no
+   * sequence, such as an arrangement, has no notation of its own.
    */
   interface Props {
     /** Retain the draft while its host is hidden, without running playback. */
     active?: boolean;
-    sequence: SequenceData;
+    sequence: SequenceData | null;
     initialProject?: PostProject;
+    /** A post that is one arrangement opens in the arrangement editor. */
+    editArrangementOnOpen?: boolean;
     /**
      * A feature video. Its post saves to its folder on this computer, never
      * to this browser's Post Studio storage; see feature-video-client.ts.
@@ -110,6 +115,7 @@
     active = true,
     sequence,
     initialProject,
+    editArrangementOnOpen = false,
     feature,
     cardPreviewUrl,
     animationPreviewUrl,
@@ -145,7 +151,7 @@
   let urlPropType = $state<PropType | undefined>(psSeed?.propType);
   let projectPropType = $state<PropType | undefined>(initialProject?.propType);
   const sequencePropType = $derived(
-    sequence.steps
+    (sequence?.steps ?? [])
       .flatMap((step) => [step.motions.left, step.motions.right])
       .find((motion) => motion.isVisible)?.propType
   );
@@ -242,7 +248,7 @@
   // The per-sequence catalog, shared with the rest of the app, so a video
   // uploaded elsewhere shows up here without reopening.
   const videoLibrary = untrack(() =>
-    sequence.id ? getSequenceVideosStore(sequence.id) : null
+    sequence?.id ? getSequenceVideosStore(sequence.id) : null
   );
 
   const catalogVideos = $derived(videoLibrary?.videos ?? []);
@@ -284,6 +290,15 @@
     },
   };
   const previews: TkaPreviewsHolder = { resolve: null };
+  let arrangementMarks = $state.raw<ArrangementEditingMarks | null>(null);
+  const arrangement: TkaArrangementHolder = {
+    get marks() {
+      return arrangementMarks;
+    },
+    set marks(next) {
+      arrangementMarks = next;
+    },
+  };
   let stripPainterFor = $state.raw<TkaStripsHolder["painterFor"]>(null);
   const strips: TkaStripsHolder = {
     get painterFor() {
@@ -326,6 +341,7 @@
 
   /** Opens beat tapping on a clip's footage, starting at its first frame. */
   function openBeats(clip: PostVideoItem): void {
+    if (!sequence) return;
     editor.pause();
     session.openAt(clip.takeId, clip.sourceIn);
     editor.mode = "timing";
@@ -333,6 +349,7 @@
 
   /** From the video list: starts where the take's first clip does. */
   function openTakeBeats(takeId: string): void {
+    if (!sequence) return;
     let firstClip: PostVideoItem | null = null;
     for (const track of editor.project.tracks) {
       for (const item of track.items) {
@@ -349,6 +366,15 @@
   function tapBeatsHere(): void {
     const beatsClip = beatsClipOf(editor);
     if (beatsClip) openBeats(beatsClip);
+  }
+
+  /** The arrangement open in the arrangement editor over the workspace. */
+  let editingArrangementId = $state<string | null>(null);
+
+  function editArrangement(itemId: string | null): void {
+    editor.pause();
+    editingArrangementId = itemId;
+    editor.mode = itemId === null ? "edit" : "arrangement";
   }
 
   /** The save menu a right click on a media layer opens; mounted once below. */
@@ -368,6 +394,10 @@
     get sequence() {
       return sequence;
     },
+    get editingArrangementId() {
+      return editingArrangementId;
+    },
+    editArrangement,
   });
 
   $effect(() => onProjectPropChange(editor.project.propType));
@@ -396,13 +426,18 @@
     }
     return DEFAULT_HAND_LABELING;
   });
-  const labeledCard = createPostSequenceView({
-    getSequence: () => sequence,
-    getLabeling: () => handLabeling,
-    getMirrored: () => editor.project.mirrored ?? false,
-    getActions: () => editor.project.sequenceActions ?? [],
-  });
-  const displaySequence = $derived(labeledCard.sequence);
+  // The host keys the scope by the sequence, so whether there is one is
+  // read once.
+  const firstSequence = untrack(() => sequence);
+  const labeledCard = firstSequence
+    ? createPostSequenceView({
+        getSequence: () => sequence ?? firstSequence,
+        getLabeling: () => handLabeling,
+        getMirrored: () => editor.project.mirrored ?? false,
+        getActions: () => editor.project.sequenceActions ?? [],
+      })
+    : null;
+  const displaySequence = $derived(labeledCard?.sequence ?? null);
 
   // Set by the bindings and the workspace as the editor opens.
   let staffTips = $state.raw<StaffTipAnalysis | null>(null);
@@ -426,13 +461,13 @@
       return !!featureVideo;
     },
     get stepCount() {
-      return displaySequence.steps?.length ?? 0;
+      return displaySequence?.steps?.length ?? 0;
     },
     get sequenceBusy() {
-      return labeledCard.pending;
+      return labeledCard?.pending ?? false;
     },
     get sequenceError() {
-      return labeledCard.error;
+      return labeledCard?.error ?? null;
     },
     get sequence() {
       return displaySequence;
@@ -462,6 +497,11 @@
     previews,
     overlay,
     strips,
+    arrangement,
+    get editingArrangementId() {
+      return editingArrangementId;
+    },
+    editArrangement,
     get inspectorTarget() {
       return inspectorTarget;
     },
@@ -595,6 +635,13 @@
     }
   });
 
+  onMount(() => {
+    if (!editArrangementOnOpen) return;
+    const items = editor.project.tracks.flatMap((track) => track.items);
+    const only = items.length === 1 ? items[0] : undefined;
+    if (only?.kind === "arrangement") editArrangement(only.id);
+  });
+
   onDestroy(() => editor.dispose());
 </script>
 
@@ -612,7 +659,9 @@
   onAudioChange: setAudio,
 })}
 <!-- One save menu for every media layer; its menu and prompt portal out. -->
-<VisualSequenceSaveContextMenuHost
-  bind:this={saveMenuHost}
-  sequence={displaySequence}
-/>
+{#if displaySequence}
+  <VisualSequenceSaveContextMenuHost
+    bind:this={saveMenuHost}
+    sequence={displaySequence}
+  />
+{/if}
