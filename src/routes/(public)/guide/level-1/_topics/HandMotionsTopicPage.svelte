@@ -107,6 +107,7 @@
       <HandCombinationBoard
         showDescriptions
         {darkMode}
+        printMode={!darkMode}
         label={handMotionsTopicText("combinationsLead")}
       />
     </div>
