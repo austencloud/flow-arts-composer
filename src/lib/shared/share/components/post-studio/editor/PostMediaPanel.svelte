@@ -1,8 +1,10 @@
 <script lang="ts">
   import { useStrings } from "@austencloud/video-editor/strings";
   import type { PostTake } from "@austencloud/video-editor/core";
-  import type { LibraryTake } from "@austencloud/video-editor";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import type {
+    LibraryTake,
+    VideoEditorState,
+  } from "@austencloud/video-editor";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { formatPostClock } from "./post-format";
   import { readVideoFile, videoFileError } from "./post-editor-files";
@@ -15,13 +17,15 @@
    * Each video's beats are tapped once and every clip cut from it uses them.
    */
   interface Props {
-    editor: PostEditorState;
+    editor: VideoEditorState;
     catalog: readonly LibraryTake[];
     catalogLoading?: boolean;
     catalogError?: string | null;
     busy?: boolean;
     onAddDeviceVideo: () => void;
     onTapBeats: (takeId: string) => void;
+    /** A take's status line, from the plugin's bindings. Absent or null: no line. */
+    takeStatus?: (takeId: string) => { id: string; text: string } | null;
   }
 
   let {
@@ -32,6 +36,7 @@
     busy = false,
     onAddDeviceVideo,
     onTapBeats,
+    takeStatus,
   }: Props = $props();
 
   let relinkInput = $state<HTMLInputElement | null>(null);
@@ -47,13 +52,6 @@
         )
     )
   );
-
-  const STATUS_TEXT = $derived({
-    untapped: t("share_studio_timing_unmapped"),
-    unconfirmed: t("share_studio_timing_unchecked"),
-    confirmed: t("share_studio_timing_checked"),
-    stale: t("share_studio_sequence_changed"),
-  });
 
   function sourceText(take: PostTake): string {
     if (take.ref.kind === "catalog") return t("share_studio_saved_video");
@@ -99,7 +97,7 @@
   {#if takes.length > 0}
     <ul class="list">
       {#each takes as take (take.id)}
-        {@const status = editor.timingStatus(take.id)}
+        {@const status = takeStatus?.(take.id) ?? null}
         {@const loaded = Boolean(editor.mediaUrl(take.id))}
         {@const clips = clipCount(take.id)}
         {@const name = editor.takeDisplayLabel(take.id)}
@@ -120,9 +118,11 @@
                 ? t("post_editor_one_clip")
                 : t("post_editor_clip_count", { count: clips })}
           </p>
-          <p class="meta">
-            <span class="status status-{status}">{STATUS_TEXT[status]}</span>
-          </p>
+          {#if status}
+            <p class="meta">
+              <span class="status status-{status.id}">{status.text}</span>
+            </p>
+          {/if}
           {#if !loaded}
             <p class="warn">
               {take.ref.kind === "local"
@@ -133,7 +133,7 @@
           <div class="row">
             {#if loaded}
               <PanelButton
-                variant={status === "confirmed" ? "secondary" : "primary"}
+                variant={status?.id === "confirmed" ? "secondary" : "primary"}
                 onclick={() => onTapBeats(take.id)}
               >
                 <i class="fa-solid fa-drum" aria-hidden="true"></i>

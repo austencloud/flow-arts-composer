@@ -311,6 +311,39 @@ export function createTkaBindings(env: {
       : null;
   }
 
+  /** A take's beat timing, for the media panel's status line. */
+  function takeStatus(takeId: string): { id: string; text: string } {
+    const status = editor.timingStatus(takeId);
+    const text = {
+      untapped: t("share_studio_timing_unmapped"),
+      unconfirmed: t("share_studio_timing_unchecked"),
+      confirmed: t("share_studio_timing_checked"),
+      stale: t("share_studio_sequence_changed"),
+    }[status];
+    return { id: status, text };
+  }
+
+  /** Takes whose beats are not checked yet, for the export panel's list. */
+  function exportTodos(): { key: string; text: string; takeId: string }[] {
+    const items: { key: string; text: string; takeId: string }[] = [];
+    for (const take of editor.takesInUse) {
+      // A take with no file is the panel's own step.
+      if (!editor.mediaUrl(take.id)) continue;
+      const status = editor.timingStatus(take.id);
+      if (status !== "confirmed") {
+        items.push({
+          key: take.id,
+          text:
+            status === "untapped"
+              ? `${t("share_studio_map_timing_for")} ${take.label}`
+              : `${t("share_studio_check_timing_for")} ${take.label}`,
+          takeId: take.id,
+        });
+      }
+    }
+    return items;
+  }
+
   /** Every painter of these roles, keyed the way the exporter looks them up. */
   function exportPainters(): Map<string, PostStudioLayerPainter> {
     const painters = new Map<string, PostStudioLayerPainter>([
@@ -341,6 +374,8 @@ export function createTkaBindings(env: {
     prepareRender,
     notice,
     stageHeldElsewhere: () => tka.viewerActive,
+    takeStatus,
+    exportTodos,
     dispose() {
       animationVisibility.unregisterObserver(syncProgressBarVisibility);
       staffTips.dispose();

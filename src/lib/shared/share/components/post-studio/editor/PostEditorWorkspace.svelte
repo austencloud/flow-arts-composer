@@ -2156,6 +2156,7 @@
       busy={readingFile}
       onAddDeviceVideo={pickDeviceVideo}
       onTapBeats={(takeId) => runPluginAction("beats", { takeId })}
+      takeStatus={(takeId) => pluginBindings?.takeStatus?.(takeId) ?? null}
     />
   {:else if tool === "add"}
     <PostAddPanel
@@ -2209,6 +2210,7 @@
       onRender={() => void renderPost()}
       onCancel={cancelExport}
       onTapBeats={(takeId) => runPluginAction("beats", { takeId })}
+      exportTodos={() => pluginBindings?.exportTodos?.() ?? []}
       {onSharePost}
     />
   {:else if tool === "transition" && transitionCut}

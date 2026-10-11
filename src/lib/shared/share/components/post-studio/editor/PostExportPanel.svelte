@@ -1,6 +1,6 @@
 <script lang="ts">
   import { useStrings } from "@austencloud/video-editor/strings";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import type { VideoEditorState } from "@austencloud/video-editor";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { formatPostClock } from "./post-format";
@@ -12,7 +12,7 @@
    * what to do with the result.
    */
   interface Props {
-    editor: PostEditorState;
+    editor: VideoEditorState;
     canRender: boolean;
     exporting: boolean;
     exportPercent: number;
@@ -27,6 +27,12 @@
     savedTo?: string | null;
     /** Why a feature video's render did not reach exports/. */
     saveError?: string;
+    /** Extra steps from the plugin's bindings, listed after a take's missing-file step. */
+    exportTodos?: () => readonly {
+      key: string;
+      text: string;
+      takeId: string | null;
+    }[];
   }
 
   let {
@@ -43,6 +49,7 @@
     onSharePost,
     savedTo = null,
     saveError = "",
+    exportTodos,
   }: Props = $props();
 
   const output = $derived(editor.compiled?.preset.output ?? null);
@@ -51,10 +58,16 @@
    * export actually produces. */
   const exportDurationSeconds = $derived(editor.compiled?.durationSeconds ?? 0);
 
-  /** Takes whose beats are not checked yet, and takes with no file. */
+  /**
+   * Takes with no file, and the plugin's extra steps. Take by take: a take with
+   * no file is listed, and a take with a file is followed by the plugin's steps
+   * for it. Steps for no take in use come last.
+   */
   const todo = $derived.by(() => {
+    const extra = exportTodos?.() ?? [];
+    const inUse = editor.takesInUse;
     const items: { key: string; text: string; takeId: string | null }[] = [];
-    for (const take of editor.takesInUse) {
+    for (const take of inUse) {
       if (!editor.mediaUrl(take.id)) {
         items.push({
           key: `${take.id}:file`,
@@ -63,16 +76,16 @@
         });
         continue;
       }
-      const status = editor.timingStatus(take.id);
-      if (status !== "confirmed") {
-        items.push({
-          key: take.id,
-          text:
-            status === "untapped"
-              ? `${t("share_studio_map_timing_for")} ${take.label}`
-              : `${t("share_studio_check_timing_for")} ${take.label}`,
-          takeId: take.id,
-        });
+      for (const step of extra) {
+        if (step.takeId === take.id) items.push(step);
+      }
+    }
+    for (const step of extra) {
+      if (
+        step.takeId === null ||
+        !inUse.some((take) => take.id === step.takeId)
+      ) {
+        items.push(step);
       }
     }
     return items;
