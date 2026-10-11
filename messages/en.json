@@ -6696,6 +6696,8 @@
   "effect_deep_effects_off": "Effects off",
   "effect_deep_turn_off": "Turn off {effect}",
   "effect_deep_more": "More",
+  "effect_deep_more_effects": "More effects",
+  "effect_deep_earlier_effects": "Earlier effects",
   "effect_deep_back_to_effect": "Back to {effect}",
   "effect_deep_back_to_effect_presets": "Back to effect presets",
   "effect_deep_more_tuning": "More tuning",

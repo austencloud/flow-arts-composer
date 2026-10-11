@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   fitEffectQuickPicker,
+  QUICK_PICKER_CLOSE_WIDTH,
   QUICK_PICKER_EDGE,
   QUICK_PICKER_MAX_SIDE_WIDTH,
+  QUICK_PICKER_MAX_STRIP_PORTRAIT,
   QUICK_PICKER_MIN_NARROW_SIDE_WIDTH,
   QUICK_PICKER_OFF_WIDTH,
   QUICK_PICKER_OFFSET,
+  QUICK_PICKER_STRIP_GAP,
   QUICK_PICKER_STRIP_PAD,
   sidePanelHeight,
   stripHeight,
@@ -128,6 +131,9 @@ describe("fitEffectQuickPicker", () => {
   it.each([
     ["phone", 375, 343],
     ["tablet", 820, 770],
+    // Pictures at their largest: before, the last tile in view showed whole
+    // or nearly so, and the row read as complete.
+    ["wide window", 1180, 1100],
   ])(
     "lays one scrolling row over a %s player that fills the width",
     (_, viewportWidth, playerWidth) => {
@@ -150,7 +156,8 @@ describe("fitEffectQuickPicker", () => {
         playerWidth -
         2 * QUICK_PICKER_STRIP_PAD -
         QUICK_PICKER_OFF_WIDTH -
-        CATALOG_GAP;
+        QUICK_PICKER_CLOSE_WIDTH -
+        2 * CATALOG_GAP;
       const inView = room / (fit.catalog.portrait + 2 * INSET + CATALOG_GAP);
       const peek = inView - Math.floor(inView);
       expect(peek).toBeGreaterThan(0.25);
@@ -187,16 +194,38 @@ describe("fitEffectQuickPicker", () => {
     return fit;
   }
 
-  it("hangs the row under the controls where the room there holds it", () => {
+  it("floats the row under the controls where the room there holds it", () => {
     const fit = strip(tallPhone);
     expect(fit.side).toBe("below");
     expect(fit.height).toBe(stripHeight(fit.catalog.portrait));
+    expect(fit.height + QUICK_PICKER_STRIP_GAP).toBeLessThanOrEqual(
+      tallPhone.roomBelow
+    );
   });
 
-  it("covers a band under the controls whole instead of cutting it", () => {
+  it("floats the row over the notation rail it hides", () => {
     const fit = strip(tablet);
     expect(fit.side).toBe("below");
-    expect(fit.height).toBe(tablet.roomBelow);
+    expect(fit.height + QUICK_PICKER_STRIP_GAP).toBeLessThanOrEqual(
+      tablet.roomBelow
+    );
+  });
+
+  // Measured from a report at a 1050px window: the room under the controls
+  // held the row but not with the gap above it at the pictures' largest.
+  it("shrinks the pictures before it gives up the room under the controls", () => {
+    const box = {
+      bounds: { left: 0, top: 0, width: 1050, height: 1160 },
+      player: { left: 84, top: 83, width: 877, height: 939 },
+      roomBelow: 107,
+      count: COUNT,
+    };
+    const fit = strip(box);
+    expect(fit.side).toBe("below");
+    expect(fit.catalog.portrait).toBeLessThan(QUICK_PICKER_MAX_STRIP_PORTRAIT);
+    expect(fit.height + QUICK_PICKER_STRIP_GAP).toBeLessThanOrEqual(
+      box.roomBelow
+    );
   });
 
   it("docks along the bottom when the room under the controls is short", () => {
