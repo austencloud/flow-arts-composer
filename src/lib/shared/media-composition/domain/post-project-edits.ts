@@ -67,6 +67,7 @@ import {
   clearCell,
   moveCell,
   resizeCell,
+  setBpm,
   setCellAppearance,
   setCellLayers,
   setCellOffset,
@@ -192,6 +193,45 @@ export function setArrangementSnapshot(
       sourceIn,
       sourceOut,
       duration: (sourceOut - sourceIn) / located.item.speed,
+    }),
+    ctx
+  );
+}
+
+/**
+ * A new tempo for an arrangement, keeping the clip on the same beats: its
+ * trimmed-in and trimmed-out points scale by old ÷ new, so a clip cut at bar
+ * four still ends at bar four, and its length on the timeline follows. Not
+ * `setArrangementSnapshot`, which keeps source seconds instead.
+ */
+export function setArrangementBpm(
+  project: PostProject,
+  itemId: string,
+  bpm: number,
+  ctx: EditContext
+): PostProject {
+  const located = findItem(project, itemId);
+  if (located?.item.kind !== "arrangement") return project;
+  const item = located.item;
+  const snapshot = setBpm(item.snapshot, bpm);
+  if (snapshot === item.snapshot) return project;
+  const factor = item.snapshot.bpm / snapshot.bpm;
+  const total = arrangementDurationSeconds(snapshot);
+  const sourceOut = Math.min(
+    total,
+    Math.max(POST_MIN_ITEM_SECONDS, item.sourceOut * factor)
+  );
+  const sourceIn = Math.max(
+    0,
+    Math.min(item.sourceIn * factor, sourceOut - POST_MIN_ITEM_SECONDS)
+  );
+  return finish(
+    replaceItem(project, itemId, {
+      ...item,
+      snapshot,
+      sourceIn,
+      sourceOut,
+      duration: (sourceOut - sourceIn) / item.speed,
     }),
     ctx
   );

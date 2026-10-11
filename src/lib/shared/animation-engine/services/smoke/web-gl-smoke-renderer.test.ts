@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  SMOKE_EDGE_SPONGE,
   computeSmokeDensityDissipation,
+  computeSmokeLift,
   computeSmokeSimulationResolution,
   computeSmokeEmitterMetrics,
   hexToLinearRgb,
@@ -45,6 +47,32 @@ describe("fluid smoke quality", () => {
     expect(solo.motionReferenceSpeedPx).toBeCloseTo(
       hero.motionReferenceSpeedPx / 2,
       6
+    );
+  });
+
+  // Old Smoke barely rose: lift topped out near the slider speed and took
+  // seconds to get there, so smoke loitered at the props and filled the pane.
+  it("lifts warm smoke to a rise-driven speed with a floor for Fog", () => {
+    const fog = computeSmokeLift(0);
+    const classic = computeSmokeLift(18);
+    const genie = computeSmokeLift(65);
+    expect(fog.terminalVelocity).toBeGreaterThan(0);
+    expect(classic.terminalVelocity).toBeGreaterThan(fog.terminalVelocity);
+    expect(genie.terminalVelocity).toBeGreaterThan(classic.terminalVelocity);
+    // Typical warm air near the tip (0.2) reaches terminal speed within
+    // about a second rather than the old eight to ten.
+    for (const lift of [fog, classic, genie]) {
+      const approachRate = (lift.buoyancy * 0.2) / lift.terminalVelocity;
+      expect(1 / approachRate).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("thins smoke at the top wall faster than its own lifetime", () => {
+    const wallSurvivalPerSecond = Math.exp(-SMOKE_EDGE_SPONGE.rate);
+    const longestLifetime = computeSmokeDensityDissipation(7) ** 60;
+    expect(wallSurvivalPerSecond).toBeLessThan(longestLifetime / 10);
+    expect(SMOKE_EDGE_SPONGE.topBand).toBeGreaterThan(
+      SMOKE_EDGE_SPONGE.sideBand
     );
   });
 });

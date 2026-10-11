@@ -311,6 +311,95 @@ export function rowsYWithoutKeyLanes(
   return pointerYPx - lanes.heightPx;
 }
 
+/** The key-lane band and the cell-lane band as one span, for the measurements that skip both. */
+export function unionBand(
+  a: KeyLanesBand | null,
+  b: KeyLanesBand | null
+): KeyLanesBand | null {
+  if (!a) return b;
+  if (!b) return a;
+  const topPx = Math.min(a.topPx, b.topPx);
+  const bottomPx = Math.max(a.topPx + a.heightPx, b.topPx + b.heightPx);
+  return { topPx, heightPx: bottomPx - topPx };
+}
+
+/** The clip an arrangement's beats are measured against. */
+export interface ArrangementClipTiming {
+  start: number;
+  duration: number;
+  sourceIn: number;
+  speed: number;
+}
+
+/** Project seconds covered by one grid beat of a clip playing at `speed`. */
+export function arrangementBeatSeconds(bpm: number, speed: number): number {
+  return 60 / bpm / speed;
+}
+
+/** The project second at which grid beat `beat` of the arrangement plays in `clip`. */
+export function arrangementBeatToSeconds(
+  clip: Pick<ArrangementClipTiming, "start" | "sourceIn" | "speed">,
+  bpm: number,
+  beat: number
+): number {
+  return clip.start + ((beat * 60) / bpm - clip.sourceIn) / clip.speed;
+}
+
+export interface CellLaneSpan {
+  /** Project seconds, clamped to the clip. */
+  startSeconds: number;
+  endSeconds: number;
+  /** The cell's first beat is past the clip's end: the bar sits there as a stub. */
+  pinned: boolean;
+}
+
+/**
+ * Where a cell's bar sits: one cycle of the cell, `cycleBeats` long at the
+ * grid's rate, starting at its beat offset. A clip trimmed past that cycle
+ * shows the first cycle still playing at its trimmed-in point. The bar is
+ * clamped to the clip; when even its first beat is past the clip's end the
+ * bar is pinned there so it can still be dragged back.
+ */
+export function cellLaneSpan(
+  clip: ArrangementClipTiming,
+  bpm: number,
+  beatOffset: number,
+  cycleBeats: number
+): CellLaneSpan {
+  const clipEnd = clip.start + clip.duration;
+  const cycle = Math.max(cycleBeats, Number.EPSILON);
+  const sourceInBeats = (clip.sourceIn * bpm) / 60;
+  const cyclesBefore = Math.max(
+    0,
+    Math.floor((sourceInBeats - beatOffset) / cycle)
+  );
+  const firstBeat = beatOffset + cyclesBefore * cycle;
+  const startSeconds = arrangementBeatToSeconds(clip, bpm, firstBeat);
+  if (startSeconds >= clipEnd) {
+    return { startSeconds: clipEnd, endSeconds: clipEnd, pinned: true };
+  }
+  const endSeconds = arrangementBeatToSeconds(clip, bpm, firstBeat + cycle);
+  return {
+    startSeconds: Math.max(clip.start, startSeconds),
+    endSeconds: Math.min(clipEnd, endSeconds),
+    pinned: false,
+  };
+}
+
+/**
+ * A cell's beat offset after its bar has been dragged `deltaSeconds` along
+ * the timeline: snapped to `step` beats (1, or 0.25 with Alt), never below 0.
+ */
+export function cellOffsetAfterDrag(
+  originalOffset: number,
+  deltaSeconds: number,
+  beatSeconds: number,
+  step: number
+): number {
+  const raw = originalOffset + deltaSeconds / beatSeconds;
+  return Math.max(0, Math.round(raw / step) * step);
+}
+
 /**
  * The scroll position that brings the playhead back into a comfortable spot
  * once it has drifted past 90% of the visible width, settling it at 25%

@@ -1,0 +1,25 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Animal tiles</title>
+<link rel="stylesheet" href="tiles.css"></head>
+<body>
+<h1>Animal · six looks</h1>
+<p class="lede">The creature's head is the prop tip, and its body is the figure the tip just drew: a lead-in from the upper right into a coil the body wraps around, the tail leaving to the left. Short creatures make a hook, medium ones a C, and the longest close the loop so the neck passes over the coil (that patch is redrawn in depth order). The renderer's own build is ported as is: the fixed body length (short Inchworm, long Gilt Wyrm), the snout-to-tail width profile (plump grub vs slender snake), the travelling slither wave ramped from zero at the head to full at the tail (frozen mid-wag), contact shadow, cylinder shading, scale chevrons, the sheen down the lit edge, and each creature's ornaments: snake tongue mid-flick, dragon crest, horns and lagging whiskers (replayed along the path), caterpillar legs, bands and antennae. Ethereal grades body to bodyAlt head to tail; ember adds the aura and composites additively. Each creature is centered and zoomed to fit the frame (capped at 1.45x); widths are boosted 2.8x for tile size, length 1.35x, and intensity gets a floor of 0.62 so Wisp and Whisper are not threads at 304x114.</p>
+<div id="root"></div>
+<script type="module">
+import { W, H, lcg } from './kit.js';
+import { draw, PRESETS } from './animal-draw.js?v=3';
+
+const root = document.getElementById('root');
+for (const preset of PRESETS) {
+  const p = preset.patch;
+  const row = document.createElement('div'); row.className = 'card';
+  row.innerHTML = `<h3>${preset.name} <small>${p.creature} · ${p.palette} · width ${p.width} · length ${p.bodyLength} · slither ${p.slither} · intensity ${p.intensity}</small></h3><div class="row"></div>`;
+  for (const cls of ['small', 'large']) {
+    const c = document.createElement('canvas'); c.width = W; c.height = H; c.className = cls;
+    draw(c.getContext('2d'), p, lcg(0xa71 + preset.name.length * 311));
+    row.querySelector('.row').appendChild(c);
+  }
+  root.appendChild(row);
+}
+</script>
+</body></html>

@@ -11,9 +11,12 @@
    *
    * A picked step plays its move as it grows in, as the step grid's arrival
    * (PictographArrivalStage) plays each new step: its props travel from the
-   * pose before it, along its arrow. The finger moves on to the next box
-   * meanwhile, so two moves fit the turn (2026-10-10), and lifts away after
-   * the last tap so it never covers the last move.
+   * pose before it, along its arrow. Its arrows fade in as its props travel,
+   * as that arrival shows a step picked from the options (2026-10-11); the
+   * choices on offer show theirs whole, as the option picker does. The
+   * finger moves on to the next box meanwhile, so two moves fit the turn
+   * (2026-10-10), and lifts away after the last tap so it never covers the
+   * last move.
    *
    * Finished picture: the demo sequence's start position and its first two
    * steps, in a row in a strip, the last step centered under the two in a
@@ -105,6 +108,15 @@
     if (!cell || !spot || cell.size <= 0) return null;
     const scale = spot.size / cell.size;
     return `translate(${spot.x - cell.x}px, ${spot.y - cell.y}px) scale(${scale})`;
+  }
+
+  /**
+   * A step's arrows come in with its move, as PictographArrivalStage plays
+   * one: none at its start, all once it lands. The start position, a still
+   * step, or a choice waiting to be picked shows them all.
+   */
+  function arrowsShown(index: number): number {
+    return progress[index] ?? 1;
   }
 
   function handleReady(index: number): void {
@@ -221,6 +233,7 @@
           data={slotData(index)}
           motionStartData={index > 0 ? slotData(index - 1) : null}
           motionProgress={progress[index] ?? null}
+          arrowOpacity={arrowsShown(index)}
           onReady={() => handleReady(index)}
         />
       </div>
