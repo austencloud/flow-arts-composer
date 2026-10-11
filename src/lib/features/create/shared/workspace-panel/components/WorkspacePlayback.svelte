@@ -3,6 +3,7 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import StepStrip from "#lib/shared/timeline/StepStrip.svelte";
+  import EffectQuickSwitch from "#lib/shared/animation-engine/components/effects-panel/EffectQuickSwitch.svelte";
   import {
     createEffectsConfigState,
     type EffectsConfigState,
@@ -42,11 +43,32 @@
   // component. Subsequent Play runs only need their new sequence data loaded.
   let canvasInitialized = $state(false);
   let loadedRun = $state<number | null>(null);
+  let playerStage = $state<HTMLElement | null>(null);
+  let playbackArea = $state<HTMLElement | null>(null);
+  let notationRail = $state<HTMLElement | null>(null);
   const visibilityManager = getAnimationVisibilityManager();
   let effectsConfigState = $state<EffectsConfigState>(
     visibilityManager.effectsConfigState ?? createEffectsConfigState()
   );
   const loadIdentity = $derived(`${sequence.id}:${run}`);
+
+  /** Where the effect picker may sit: the app's content area, so it can cover
+   *  the settings panel beside the player or the idle toolbar under it, but
+   *  never the app's sidebar or bottom navigation. */
+  const effectPickerBounds = $derived(
+    playbackArea?.closest<HTMLElement>("#main-content") ?? playbackArea
+  );
+
+  /** What the effect picker may cover under the player's controls: the
+   *  notation rail when it is open, whole, otherwise the empty space down to
+   *  the workspace's toolbar. */
+  function effectPickerRoomBelow() {
+    if (!playbackArea || !playerStage) return 0;
+    const stageBottom = playerStage.getBoundingClientRect().bottom;
+    const rail = notationRail?.getBoundingClientRect();
+    if (rail && rail.height > 1) return rail.bottom - stageBottom;
+    return playbackArea.getBoundingClientRect().bottom - stageBottom;
+  }
 
   $effect(() => {
     const syncEffectsConfig = () => {
@@ -73,12 +95,25 @@
   });
 </script>
 
-<div class="workspace-playback" data-testid="workspace-playback">
+{#snippet effectSwitch()}
+  <EffectQuickSwitch
+    {effectsConfigState}
+    player={playerStage}
+    bounds={effectPickerBounds}
+    roomBelow={effectPickerRoomBelow}
+  />
+{/snippet}
+
+<div
+  class="workspace-playback"
+  data-testid="workspace-playback"
+  bind:this={playbackArea}
+>
   <div class="playback-layout">
     <!-- Foreground for the workspace's click-background-to-close: taps here
          pause, seek, or scrub instead. -->
     <div class="playback-media" data-playback-foreground>
-      <div class="player-stage">
+      <div class="player-stage" bind:this={playerStage}>
         <InlineAnimationPlayer
           {sequence}
           sequenceLoadKey={loadIdentity}
@@ -87,6 +122,7 @@
           scrubbable
           videoDownload
           showScrubberPlaybackControl
+          scrubberTrailing={effectSwitch}
           hoverHint="none"
           autoPlay={active}
           autoPlayDelay={0}
@@ -129,6 +165,7 @@
       </div>
       <div
         class="notation-rail"
+        bind:this={notationRail}
         role="group"
         aria-label={t("create_ui_sequence_pictographs")}
       >
