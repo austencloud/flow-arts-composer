@@ -11,6 +11,7 @@ import {
   getShortestRotationStepsBetweenLocations,
   rotateLocation,
 } from "#lib/shared/create/services/rotation-helpers.js";
+import { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 import {
@@ -18,6 +19,7 @@ import {
   GridMode,
 } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { LETTER_TYPE_COLORS } from "#lib/shared/pictograph/shared/domain/constants/pictograph-constants.js";
 import {
   HandSide,
   MotionType,
@@ -35,12 +37,23 @@ export const HAND_MOTIONS_TOPIC_UNITS = {
   staticName: "learn_motion_path_static_name",
   staticCaption: "learn_motion_path_static_caption",
   mapPrompt: "learn_motion_map_prompt",
+  pairsPrompt: "learn_motion_pairs_prompt",
+  mirrorPair: "learn_motion_pairs_mirror",
+  combinationsLead: "verified_level1_hand_motions_76",
 } as const satisfies Record<string, TranslationKey>;
 
 export type HandMotionsTopicUnit = keyof typeof HAND_MOTIONS_TOPIC_UNITS;
 
 export function handMotionsTopicText(unit: HandMotionsTopicUnit): string {
   return t(HAND_MOTIONS_TOPIC_UNITS[unit]);
+}
+
+/**
+ * A message as plain text: the Guide's proof copy breaks some lines with
+ * `<br>`, which a lesson reads as a space.
+ */
+export function plainTopicText(key: TranslationKey): string {
+  return t(key).replace(/\s*<br\s*\/?>\s*/gi, " ");
 }
 
 export type HandMove = "shift" | "dash" | "static";
@@ -116,21 +129,182 @@ export function motionMapTargets(
  */
 export function motionMapArrowData(
   from: GridLocation,
-  target: MotionMapTarget
+  target: MotionMapTarget,
+  hand: HandSide = HandSide.LEFT
 ): PictographData {
   return {
-    id: `motion-map-${target.slot}-${from}`,
+    id: `motion-map-${hand}-${target.slot}-${from}`,
     letter: null,
     gridMode: GridMode.DIAMOND,
     motions: {
-      [HandSide.LEFT]: createMotionData({
-        motionType: target.move === "dash" ? MotionType.DASH : MotionType.PRO,
-        startLocation: from,
-        endLocation: target.to,
-        hand: HandSide.LEFT,
-        propType: PropType.HAND,
-        gridMode: GridMode.DIAMOND,
+      [hand]: handMotion(hand, {
+        move: target.move,
+        from,
+        to: target.to,
       }),
+    },
+  };
+}
+
+/** Which way a quarter turn goes around the grid. */
+export function handMoveDirection(
+  from: GridLocation,
+  to: GridLocation
+): "clockwise" | "counterclockwise" {
+  const steps = getShortestRotationStepsBetweenLocations(from, to) ?? 0;
+  return steps < 0 ? "counterclockwise" : "clockwise";
+}
+
+interface ComboHand {
+  move: HandMove;
+  from: GridLocation;
+  to: GridLocation;
+}
+
+const HAND_MOTION_TYPES: Record<HandMove, MotionType> = {
+  shift: MotionType.PRO,
+  dash: MotionType.DASH,
+  static: MotionType.STATIC,
+};
+
+function handMotion(hand: HandSide, { move, from, to }: ComboHand) {
+  return createMotionData({
+    motionType: HAND_MOTION_TYPES[move],
+    startLocation: from,
+    endLocation: to,
+    hand,
+    propType: PropType.HAND,
+    gridMode: GridMode.DIAMOND,
+  });
+}
+
+export type HandCombinationId =
+  | "dual-shift"
+  | "shift"
+  | "cross-shift"
+  | "dash"
+  | "dual-dash"
+  | "static";
+
+export interface HandCombination {
+  id: HandCombinationId;
+  name: TranslationKey;
+  description: TranslationKey;
+  letterType: LetterType;
+  /** The Guide page that teaches it. */
+  guideSlug: string;
+  /** The book's two-hand example: blue makes the description's first move. */
+  demo: { left: ComboHand; right: ComboHand };
+}
+
+const { NORTH: N, EAST: E, SOUTH: S, WEST: W } = GridLocation;
+const hand = (move: HandMove, from: GridLocation, to: GridLocation) => ({
+  move,
+  from,
+  to,
+});
+
+/**
+ * Two hands, three moves each: nine pairs, six once mirror pairs count as
+ * one. They are the six letter types. The examples are the book's
+ * (COMBO_DEMOS in HandMotionsPage.svelte, which /print keeps for itself).
+ */
+export const HAND_COMBINATIONS: readonly HandCombination[] = [
+  {
+    id: "dual-shift",
+    name: "verified_level1_hand_motions_77",
+    description: "verified_level1_hand_motions_78",
+    letterType: LetterType.TYPE1,
+    guideSlug: "hm-type1",
+    demo: { left: hand("shift", W, N), right: hand("shift", E, S) },
+  },
+  {
+    id: "shift",
+    name: "verified_level1_hand_motions_79",
+    description: "verified_level1_hand_motions_80",
+    letterType: LetterType.TYPE2,
+    guideSlug: "hm-type2",
+    demo: { left: hand("shift", W, N), right: hand("static", E, E) },
+  },
+  {
+    id: "cross-shift",
+    name: "verified_level1_hand_motions_81",
+    description: "verified_level1_hand_motions_82",
+    letterType: LetterType.TYPE3,
+    guideSlug: "hm-type34",
+    demo: { left: hand("shift", W, N), right: hand("dash", E, W) },
+  },
+  {
+    id: "dash",
+    name: "verified_level1_hand_motions_83",
+    description: "verified_level1_hand_motions_84",
+    letterType: LetterType.TYPE4,
+    guideSlug: "hm-type56",
+    demo: { left: hand("dash", W, E), right: hand("static", N, N) },
+  },
+  {
+    id: "dual-dash",
+    name: "verified_level1_hand_motions_85",
+    description: "verified_level1_hand_motions_86",
+    letterType: LetterType.TYPE5,
+    guideSlug: "hm-type56",
+    demo: { left: hand("dash", W, E), right: hand("dash", E, W) },
+  },
+  {
+    id: "static",
+    name: "verified_level1_hand_motions_70",
+    description: "verified_level1_hand_motions_87",
+    letterType: LetterType.TYPE6,
+    guideSlug: "hm-type56",
+    demo: { left: hand("static", W, W), right: hand("static", E, E) },
+  },
+];
+
+const PAIR_COMBINATION: Record<string, HandCombinationId> = {
+  "shift+shift": "dual-shift",
+  "shift+static": "shift",
+  "dash+shift": "cross-shift",
+  "dash+static": "dash",
+  "dash+dash": "dual-dash",
+  "static+static": "static",
+};
+
+/** The combination two hands make, whichever hand makes which move. */
+export function combinationFor(blue: HandMove, red: HandMove): HandCombination {
+  const id = PAIR_COMBINATION[[blue, red].sort().join("+")];
+  const combination = HAND_COMBINATIONS.find((c) => c.id === id);
+  if (!combination) throw new Error(`No combination for ${blue} + ${red}`);
+  return combination;
+}
+
+/**
+ * A combination name in its letter-type colors, as the book prints it: a
+ * hyphenated name takes the first color up to the hyphen, the second after.
+ */
+export function combinationNameSegments(
+  name: string,
+  letterType: LetterType
+): readonly { text: string; color: string }[] {
+  const [first, second] = LETTER_TYPE_COLORS[letterType];
+  const hyphen = name.indexOf("-");
+  if (hyphen < 0) return [{ text: name, color: first }];
+  return [
+    { text: name.slice(0, hyphen + 1), color: first },
+    { text: name.slice(hyphen + 1), color: second },
+  ];
+}
+
+/** The combination's two-hand example as a pictograph. */
+export function combinationPictographData(
+  combination: HandCombination
+): PictographData {
+  return {
+    id: `hand-combination-${combination.id}`,
+    letter: null,
+    gridMode: GridMode.DIAMOND,
+    motions: {
+      [HandSide.LEFT]: handMotion(HandSide.LEFT, combination.demo.left),
+      [HandSide.RIGHT]: handMotion(HandSide.RIGHT, combination.demo.right),
     },
   };
 }
