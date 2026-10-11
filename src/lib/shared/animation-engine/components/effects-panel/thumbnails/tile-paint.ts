@@ -75,9 +75,14 @@ export function withAlpha(color: string, alpha: number): string {
   return color;
 }
 
-/** `hsl(h, s%, l%)` or hex to an Rgb triple. */
+/** `hsl(h, s%, l%)`, `rgb(r, g, b)` or hex to an Rgb triple. */
 export function cssToRgb(color: string): Rgb {
   if (color.startsWith("#")) return hexToRgb(color);
+  const rgb =
+    /rgba?\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)/.exec(color);
+  if (rgb) {
+    return [Number(rgb[1]) / 255, Number(rgb[2]) / 255, Number(rgb[3]) / 255];
+  }
   const m =
     /hsl\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%\)/.exec(
       color
