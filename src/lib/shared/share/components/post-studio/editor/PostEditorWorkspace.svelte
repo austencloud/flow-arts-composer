@@ -52,9 +52,10 @@
     LibraryTake,
     PostEdit,
     ToolRunContext,
+    VideoEditorHost,
     VideoEditorPlugin,
+    VideoEditorState,
   } from "@austencloud/video-editor";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
   import {
     createTextPainters,
@@ -148,7 +149,9 @@
    */
   interface Props {
     /** The post's editor, which TkaEditorScope creates. */
-    editor: PostEditorState;
+    editor: VideoEditorState;
+    /** The editor's host: its store, services and translations. */
+    host: VideoEditorHost;
     active: boolean;
     /** Saves elsewhere too; may hand back a later edit saved somewhere else. */
     onSaveDraft?: (project: PostProject) => Promise<PostProject | null | void>;
@@ -171,6 +174,7 @@
 
   let {
     editor,
+    host,
     active,
     onSaveDraft,
     draftLoadError = null,
@@ -185,8 +189,8 @@
     inspectorTarget = null,
   }: Props = $props();
 
-  const services = resolveServices(editor.host);
-  provideEditorUi({ editor, host: editor.host, plugin, services });
+  const services = resolveServices(host);
+  provideEditorUi({ editor, host, plugin, services });
   /** An outside keeper of the project (tka: a feature video's folder), or null. */
   const sync = services.sync;
 
@@ -405,7 +409,7 @@
   const pluginBindings =
     plugin?.ui?.createBindings?.({
       editor,
-      t: translatorFor(editor.host),
+      t: translatorFor(host),
       previewUrl: (takeId, url) => videoPreviews.resolve(takeId, url).url,
     }) ?? null;
   onDestroy(() => pluginBindings?.dispose());

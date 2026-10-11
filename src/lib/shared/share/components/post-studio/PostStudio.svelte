@@ -229,6 +229,7 @@
       {#snippet children(scope)}
         <PostEditorWorkspace
           editor={scope.editor}
+          host={scope.editor.host}
           plugin={scope.plugin}
           inspectorTarget={scope.inspectorTarget}
           {active}
