@@ -1,11 +1,9 @@
 <!--
-  Every move the blue hand can make from one point, drawn at once over the
-  grid: both shifts and the dash as real arrows (one arrow-only
-  pictograph each), plus a soft halo on the hand's own point for static,
-  which has no arrow in the book. A lit move stays bright and the others dim.
-  When `from` changes, each arrow's pictograph crossfades to its new path
-  through PictographContainer's own content transition, and the halo fades
-  across to the new point.
+  One move of the blue hand, drawn over the grid: a shift or the dash as a
+  real arrow (one arrow-only pictograph each), or, for static, a soft halo on
+  the hand's own point, which has no arrow in the book. Every move from `from`
+  stays mounted and hidden, so showing one is a fade, not a fresh render.
+  `to` null fades the shown move out.
 -->
 <script lang="ts">
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
@@ -19,26 +17,23 @@
   import {
     motionMapArrowData,
     motionMapTargets,
-    type HandMove,
   } from "./hand-motions-topic.js";
 
   interface Props {
     from: GridLocation;
-    lit: HandMove | null;
-    /** 0 to 1, for the build's fade-in. */
-    opacity: number;
+    /** Where the shown move ends; `from` itself for static, null for none. */
+    to: GridLocation | null;
   }
 
-  let { from, lit, opacity }: Props = $props();
+  let { from, to }: Props = $props();
 
   const targets = $derived(motionMapTargets(from));
   const handPoints = getPlacementGridPoints(GridMode.DIAMOND);
-  const dimmed = (move: HandMove) => lit !== null && lit !== move;
 </script>
 
-<div class="motion-map-arrows" style:opacity>
+<div class="motion-map-arrows">
   {#each targets as target (target.slot)}
-    <div class="layer" class:dim={dimmed(target.move)}>
+    <div class="layer" class:shown={target.to === to}>
       <PictographContainer
         pictographData={motionMapArrowData(from, target)}
         gridMode={GridMode.DIAMOND}
@@ -65,9 +60,7 @@
         cx={point.x}
         cy={point.y}
         r="78"
-        class:shown={point.location === from}
-        class:lit={lit === "static"}
-        class:dim={dimmed("static")}
+        class:shown={point.location === from && to === from}
       />
     {/each}
   </svg>
@@ -83,30 +76,20 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    transition: opacity var(--transition-normal);
   }
-  .layer.dim {
-    opacity: 0.3;
-  }
+  .layer:not(.halo),
   .halo circle {
     opacity: 0;
-    fill: color-mix(in srgb, var(--prop-blue, #3b82f6) 8%, transparent);
-    stroke: var(--prop-blue, #3b82f6);
-    stroke-width: 5;
-    stroke-opacity: 0.45;
-    transition:
-      opacity var(--transition-emphasis),
-      stroke-opacity var(--transition-normal),
-      fill var(--transition-normal);
+    transition: opacity var(--transition-normal);
   }
+  .layer.shown,
   .halo circle.shown {
     opacity: 1;
   }
-  .halo circle.lit {
-    stroke-opacity: 0.9;
-    fill: color-mix(in srgb, var(--prop-blue, #3b82f6) 18%, transparent);
-  }
-  .halo circle.dim {
-    stroke-opacity: 0.15;
+  .halo circle {
+    fill: color-mix(in srgb, var(--prop-blue, #3b82f6) 14%, transparent);
+    stroke: var(--prop-blue, #3b82f6);
+    stroke-width: 5;
+    stroke-opacity: 0.8;
   }
 </style>

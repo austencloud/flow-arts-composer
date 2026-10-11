@@ -88,6 +88,8 @@
     onReady?: () => void;
     /** Figure art drawn over the pictograph and under the touch targets, in the grid's own square. */
     figureLayer?: Snippet;
+    /** The point a dragged hand would land on now; null when no drag aims at one. */
+    onDragTarget?: (location: GridLocation | null) => void;
     onChange?: (change: PropPlacementChange) => void;
     onPlacementComplete?: (leftLocation, rightLocation) => void;
     onOrientationChange?: (color: HandSide, orientation: Orientation) => void;
@@ -126,6 +128,7 @@
     showProps = true,
     onReady,
     figureLayer,
+    onDragTarget,
     onChange = () => {},
     onPlacementComplete,
     onOrientationChange,
@@ -296,6 +299,11 @@
 
   $effect(() => {
     motion.synchronize();
+  });
+
+  $effect(() => {
+    const target = aim.locationTarget?.location ?? null;
+    untrack(() => onDragTarget?.(target));
   });
 
   $effect(() => {

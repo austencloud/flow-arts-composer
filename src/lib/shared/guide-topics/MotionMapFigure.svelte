@@ -1,14 +1,16 @@
 <!--
-  The motion map: one diamond grid, the blue hand, and every move it can make
-  from where it stands, drawn at once (two shifts, the dash, a halo for
-  static). It builds itself once it is drawn and on screen: the grid, then
-  the hand, then the arrows, then each move out and back along its own arrow,
-  then Static. Reduced motion shows the finished map.
+  The motion map: one diamond grid and the blue hand, showing one move at a
+  time (Austen, 2026-10-11: all three moves drawn at once was too many
+  arrows). It builds itself once it is drawn and on screen: the grid, then the
+  hand, then each move in turn, its arrow first and then the hand along it
+  (shift, dash, static). Reduced motion shows the hand at rest.
 
   With `interactive`, the hand can be grabbed at any time; that ends the
-  demonstration. A drop names the move: its arrows light, and after one beat
-  the map redraws around the point where the hand landed. Dragging and the
-  keyboard both come from PropPlacementGrid.
+  demonstration. While it is dragged, one arrow runs from its point to the
+  point it would land on and that move lights. A drop keeps the move lit for
+  one beat, then the arrow fades and the hand rests where it landed. Dragging
+  and the keyboard both come from PropPlacementGrid; the keyboard shows the
+  arrow once the hand is put down.
   Spec: docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md
 -->
 <script lang="ts">
@@ -65,12 +67,13 @@
    * "moved to" announcement.
    */
   let demoAt = $state<GridLocation>(MOTION_MAP_HOME);
-  /** The point the drawn moves start from. */
-  let mapFrom = $state<GridLocation>(MOTION_MAP_HOME);
+  /** The one move drawn: from where, to where (null: none). */
+  let arrowFrom = $state<GridLocation>(MOTION_MAP_HOME);
+  let arrowTo = $state<GridLocation | null>(null);
   let showHand = $state(false);
-  let arrowOpacity = $state(0);
   let motionMove = $state<PlacementMotionMove | null>(null);
   let building = true;
+  let previewing = false;
   let ready = false;
   let onScreen = false;
   let started = false;
@@ -78,77 +81,80 @@
   const build = createBuildSequence();
   const settle = createBuildSequence();
 
+  function showMove(from: GridLocation, to: GridLocation | null) {
+    arrowFrom = from;
+    arrowTo = to;
+  }
+
   function finishBuild() {
     building = false;
     showHand = true;
-    arrowOpacity = 1;
+    arrowTo = null;
     lit = null;
   }
 
-  function travel(
-    to: GridLocation,
-    direction: "clockwise" | "counterclockwise",
-    path: "arc" | "dash"
+  /** One move of the demonstration: its arrow, then the hand along it. */
+  function demonstrate(
+    move: HandMove,
+    target: MotionMapTarget | null
   ): BuildBeat[] {
     return [
       {
         act: () => {
-          motionMove = {
-            epoch: (motionMove?.epoch ?? 0) + 1,
-            color: HandSide.LEFT,
-            from: handAt,
-            to,
-            direction,
-            path,
-            durationMs: DURATION.scene,
-          };
-          handAt = to;
-          demoAt = to;
+          lit = move;
+          onMove?.(move, "demo");
+          showMove(handAt, target?.to ?? handAt);
         },
       },
-      { pause: DURATION.scene },
-    ];
-  }
-
-  function outAndBack(target: MotionMapTarget): BuildBeat[] {
-    const path = target.move === "dash" ? "dash" : "arc";
-    const back =
-      target.direction === "clockwise" ? "counterclockwise" : "clockwise";
-    return [
+      { pause: BUILD_BEAT_PAUSE_MS },
+      ...(target
+        ? [
+            {
+              act: () => {
+                motionMove = {
+                  epoch: (motionMove?.epoch ?? 0) + 1,
+                  color: HandSide.LEFT,
+                  from: handAt,
+                  to: target.to,
+                  direction: target.direction,
+                  path: target.move === "dash" ? "dash" : "arc",
+                  durationMs: DURATION.scene,
+                };
+                handAt = target.to;
+                demoAt = target.to;
+              },
+            },
+            { pause: DURATION.scene },
+          ]
+        : [{ pause: BUILD_BEAT_PAUSE_MS }]),
+      { pause: BUILD_BEAT_PAUSE_MS },
       {
         act: () => {
-          lit = target.move;
-          onMove?.(target.move, "demo");
+          arrowTo = null;
+          lit = null;
         },
       },
-      ...travel(target.to, target.direction, path),
-      { pause: BUILD_BEAT_PAUSE_MS },
-      ...travel(MOTION_MAP_HOME, back, path),
-      { pause: BUILD_BEAT_PAUSE_MS },
+      { pause: DURATION.normal },
     ];
   }
 
   function play() {
     if (started || !ready || !onScreen || !building) return;
     started = true;
-    const [shift, , dash] = motionMapTargets(MOTION_MAP_HOME);
+    // Shift out of West, dash across from where it lands, then static there.
+    const shift = motionMapTargets(MOTION_MAP_HOME)[0];
+    const dash = shift
+      ? motionMapTargets(shift.to).find((target) => target.move === "dash")
+      : undefined;
     if (!shift || !dash) return;
     build.play(
       [
         { pause: BUILD_BEAT_PAUSE_MS },
         { act: () => (showHand = true) },
         { pause: BUILD_BEAT_PAUSE_MS },
-        { tween: DURATION.emphasis, step: (t) => (arrowOpacity = t) },
-        { pause: BUILD_BEAT_PAUSE_MS },
-        ...outAndBack(shift),
-        ...outAndBack(dash),
-        {
-          act: () => {
-            lit = "static";
-            onMove?.("static", "demo");
-          },
-        },
-        { pause: BUILD_BEAT_PAUSE_MS * 2 },
+        ...demonstrate("shift", shift),
+        ...demonstrate("dash", dash),
+        ...demonstrate("static", null),
       ],
       finishBuild
     );
@@ -159,11 +165,27 @@
     if (!interactive || !building) return;
     build.cancel();
     finishBuild();
-    mapFrom = handAt;
   }
 
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === "Enter" || event.key === " ") takeOver();
+  }
+
+  /** A drag aims at a point: draw the one move that would make. */
+  function aimed(target: GridLocation | null) {
+    if (!interactive) return;
+    if (target === null) {
+      if (!previewing) return;
+      previewing = false;
+      arrowTo = null;
+      lit = null;
+      return;
+    }
+    takeOver();
+    settle.cancel();
+    previewing = true;
+    showMove(handAt, target);
+    lit = classifyHandMove(handAt, target);
   }
 
   function changed(change: PropPlacementChange) {
@@ -171,15 +193,17 @@
     takeOver();
     // Picked up (tap or Enter) but not yet put down.
     if (change.activeHand !== null || change.leftLocation === null) return;
+    previewing = false;
     const from = handAt;
     const to = change.leftLocation;
     handAt = to;
     const move = classifyHandMove(from, to);
     if (!move) return;
+    showMove(from, to);
     lit = move;
     onMove?.(move, "learner");
     settle.play([{ pause: BUILD_BEAT_PAUSE_MS }], () => {
-      mapFrom = to;
+      arrowTo = null;
       lit = null;
     });
   }
@@ -224,10 +248,11 @@
       ready = true;
       play();
     }}
+    onDragTarget={aimed}
     onChange={changed}
   >
     {#snippet figureLayer()}
-      <MotionMapArrows from={mapFrom} {lit} opacity={arrowOpacity} />
+      <MotionMapArrows from={arrowFrom} to={arrowTo} />
     {/snippet}
   </PropPlacementGrid>
 </div>

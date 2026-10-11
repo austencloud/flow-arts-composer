@@ -24,32 +24,35 @@ Austen called the current lesson "pedantic": it shows one motion at a time.
 
 ## Decisions
 
-| #   | Question                         | Decision                                                                                                                                              |
-| --- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | How the three motions are shown  | **Motion map.** One grid, one blue hand at West, all three moves drawn at once. It builds itself, and in the lesson you drag the hand to name a move. |
-| 2   | Where Timing and Direction lives | **Its own lesson.** Hand Motions ends on the six combinations. Continue opens the existing Timing and Direction lesson.                               |
-| 3   | Overall design                   | Approved as presented (lesson stages, Guide page, handbook page, one shared source).                                                                  |
+| #   | Question                         | Decision                                                                                                                                            |
+| --- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | How the three motions are shown  | **Motion map.** One grid, one blue hand at West. It builds itself, and in the lesson you drag the hand to name a move. One move is drawn at a time. |
+| 2   | Where Timing and Direction lives | **Its own lesson.** Hand Motions ends on the six combinations. Continue opens the existing Timing and Direction lesson.                             |
+| 3   | Overall design                   | Approved as presented (lesson stages, Guide page, handbook page, one shared source).                                                                |
 
 ## The two pictures
 
 ### Motion map (one hand)
 
-One diamond grid. The blue hand rests at West. All three moves are drawn at
-once with the real arrow renderer:
+One diamond grid. The blue hand rests at West. At rest nothing else is drawn;
+a move is shown one at a time with the real arrow renderer:
 
-- **Shift:** two arrows, West to North and West to South. The renderer draws
-  hand shifts as straight diagonals across the quadrant, as the book does; the
-  hand itself still travels around the center;
-- **Dash:** the short dash arrow beside the center line, West to East, as in
-  the book;
+- **Shift:** an arrow to a neighboring point. The renderer draws hand shifts
+  as straight diagonals across the quadrant, as the book does; the hand itself
+  still travels around the center;
+- **Dash:** the short dash arrow beside the center line, as in the book;
 - **Static:** no arrow, as in the book. A soft halo on the hand's own point
   marks it. The halo is a figure annotation in the Grid callout style, not
-  notation, and Austen judges it in the draft.
+  notation.
+
+The first draft drew all three moves at once (two shifts, the dash and the
+halo). Austen rejected it on 2026-10-11 as too many arrows at any given time
+and picked one arrow that follows the drag.
 
 The map builds itself once, like the Guide front page: grid, then hand, then
-arrows fade in, then the hand runs each move in turn (shift north and back,
-dash and back, static hold), each time lighting its caption beside the figure. Under reduced motion it
-shows the finished map with all arrows drawn.
+each move in turn, its arrow first and then the hand along it (shift from West
+to North, dash from North to South, static there), each time lighting its
+caption beside the figure. Under reduced motion it shows the hand at rest.
 
 ### Six combinations (two hands)
 
@@ -75,11 +78,12 @@ The six example pictographs start from the authored `COMBO_DEMOS` in
 Three stages replace the five. The lesson keeps its concept ID, place in the
 curriculum and registry entry.
 
-1. **Motion map.** Opens with the map drawn and the self-build playing. The
-   hand can be grabbed at once; grabbing it ends the demonstration. Dropping it
-   on a neighboring point plays a shift, on the opposite point a dash, and back
-   on its own point a static hold. The move's caption lights and gets a found
-   mark. Every drop is one of the three moves, so no answer is wrong. The hand
+1. **Motion map.** Opens with the self-build playing. The hand can be grabbed
+   at once; grabbing it ends the demonstration. While it is dragged, one arrow
+   runs from its point to the point it would land on, and that move's caption
+   lights. Dropping it on a neighboring point makes a shift, on the opposite
+   point a dash, and back on its own point a static hold. The move's caption
+   gets a found mark, and after a beat the arrow fades. Every drop is one of the three moves, so no answer is wrong. The hand
    stays where it lands, and the next drag starts from there. The stage is done
    once all three moves are found.
 2. **Two hands.** The stage starts with blue at West and red at East. The
