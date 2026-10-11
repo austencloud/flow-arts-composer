@@ -238,25 +238,24 @@ export interface BloomIntent {
 }
 
 /**
- * Goo: viscous luminous liquid streaming off the prop, its blobs merged by the
- * metaball blur+contrast threshold. Renamed from the earlier realistic-water
+ * Goo: thick glossy liquid hanging from each tip in a strand that stretches,
+ * necks and pinches off into drops. Renamed from the earlier realistic-water
  * effect (2026-06-28).
  *
  * The 2D and 3D renderers read different fields:
  * - 2D canvas (Goo2DRenderer) reads intensity, motionEmission, surfaceTension
- *   (as Viscosity), palette, customColor and trackingMode. It ignores
- *   ambientEmission, clarity, spewStyle, viscosity and gravity.
+ *   (as Viscosity), ambientEmission, gravity, palette, customColor and
+ *   trackingMode. It ignores clarity, spewStyle and viscosity.
  * - Pooled 3D viewer reads every field. The legacy WaterEmitter3D uses a
  *   simpler droplet path when the pooled scene-effects manager is absent.
  */
 export interface GooIntent {
-  /** 0-1. 3D only: a steady droplet rate that keeps flowing while the prop is
-   *  still. */
+  /** 0-1. A steady flow that keeps dripping while the prop is still. */
   ambientEmission: number;
-  /** 0-1. 2D: how thick the stream is. 3D: extra droplets that scale with tip
-   *  speed. */
+  /** 0-1. 2D: bulb size and how fast motion fills it. 3D: extra droplets that
+   *  scale with tip speed. */
   motionEmission: number;
-  /** 0-1. 2D: bead size and opacity. 3D: strand and droplet thickness. */
+  /** 0-1. 2D: bulb size and opacity. 3D: strand and droplet thickness. */
   intensity: number;
   /** Named color palette. "custom" uses customColor instead. */
   palette: "classic" | "mercury" | "acid" | "blood" | "spirit" | "custom";
@@ -264,11 +263,12 @@ export interface GooIntent {
   customColor: string;
   /** 0-1. 3D only: higher is more see-through. */
   clarity: number;
-  /** 0-1. 2D viscosity; 3D cohesion and resistance to strand breakup. */
+  /** 0-1. 2D viscosity (how long a strand clings before it drips); 3D
+   *  cohesion and resistance to strand breakup. */
   surfaceTension: number;
   /** 0-1. 3D resistance to stretching while liquid is connected. */
   viscosity: number;
-  /** 0-2. 3D downward gravity in Earth multiples. */
+  /** 0-2. Downward gravity in Earth multiples. */
   gravity: number;
   /** Which staff end(s) droplets track. */
   trackingMode: "left_end" | "right_end" | "both_ends";
