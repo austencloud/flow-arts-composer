@@ -198,8 +198,8 @@
 </div>
 
 <style>
-  /* The tab is the page's scroller while the panel stacks. Side by side, the
-     panel fills the tab and scrolls it only below its minimum height. */
+  /* The tab is the page's scroller. The panel always fills the tab's height
+     and scrolls it only below its minimum height. */
   .background-tab {
     display: flex;
     flex-direction: column;
@@ -223,7 +223,10 @@
       "band"
       "stage"
       "choices";
-    flex: 0 0 auto;
+    /* Stacked, the preview takes whatever height the band and choices leave,
+       so a tall window shows more preview instead of empty space. */
+    grid-template-rows: auto minmax(clamp(220px, 38dvh, 380px), 1fr) auto;
+    flex: 1 0 auto;
     min-width: 0;
     margin: clamp(0.75em, 1.4cqi, 1.75em) clamp(0.75em, 2cqi, 3em);
     overflow: hidden;
@@ -279,7 +282,6 @@
   .theme-stage {
     grid-area: stage;
     position: relative;
-    height: clamp(220px, 38dvh, 380px);
     min-width: 0;
     overflow: hidden;
     isolation: isolate;
@@ -484,8 +486,8 @@
   }
 
   @media (max-height: 650px) and (min-width: 760px) {
-    .theme-stage {
-      height: 220px;
+    .theme-workspace {
+      grid-template-rows: auto minmax(220px, 1fr) auto;
     }
   }
 
@@ -504,7 +506,6 @@
       }
 
       .theme-stage {
-        height: auto;
         min-height: 0;
         border-right: 1px solid var(--theme-stroke);
       }

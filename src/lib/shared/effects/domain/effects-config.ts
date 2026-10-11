@@ -334,9 +334,9 @@ export interface PetalsIntent {
 
 export interface InkIntent {
   /**
-   * 0-1. Ambient drip rate at rest. Hard-capped at 0.3 in the renderer -
-   * ink is motion-dominant. User can still dial up but even at max it
-   * stays subtle. This is ink, not rain.
+   * 0-1. Emission while the tip is still. Both translators cap it at 0.3 -
+   * ink is motion-dominant. 3D turns it into a slow drip; the 2D renderer
+   * only adds points once the tip moves, so 2D panels hide this control.
    */
   ambientEmission: number;
   /** 0-1. Velocity-reactive stroke emission. The star of the effect. */
@@ -356,14 +356,14 @@ export interface InkIntent {
   customColor: string;
   /**
    * 0-1. How easily strands break into droplets under stretch.
-   * 0 = continuous ribbon, 1 = shatters into drops. Shipped in the shape
-   * now; sprint 2 (1j.ii) wires it through the renderer.
+   * 0 = continuous ribbon, 1 = shatters into drops. In 2D only India, Neon,
+   * and Acid break up; above 0.55 it also lets dense attached ink sag. 3D
+   * scales its motion droplets by it.
    */
   viscosity: number;
   /**
-   * 0-1. Splatter burst intensity on velocity spikes.
-   * 0 = clean strokes, 1 = Jackson Pollock. Shipped in the shape now;
-   * sprint 2 (1j.iii) wires it through the renderer.
+   * 0-1. Splatter burst intensity on sharp acceleration.
+   * 0 = clean strokes, 1 = Jackson Pollock.
    */
   splatterIntensity: number;
   /** Explicit tracking. */

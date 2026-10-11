@@ -266,6 +266,13 @@ A tunnel plays. The dice on one performer is pressed, that performer gets a
 new sequence, and the tunnel redraws. In the Tunnel tool, a performer card's
 dice does exactly this.
 
+The redraw shows what a tunnel is (2026-10-10): the copies fold back into the
+one performer, which dips out over its tile and comes back alone with its new
+sequence, and its copies then bloom out around it with the viewer's own bloom
+(`revealTunnelCopies`, `TUNNEL_REVEAL_DURATION`). The tile stays; only the
+performer leaves. Before, the whole tile faded out and back, which read as a
+reload.
+
 The tunnel is drawn by the real `TunnelArtView`: one instance, for this card
 only, with a formation from `TUNNEL_PRESETS` and its trail overlay off. Its
 own `playing` prop follows the card's turn, so it is still between turns. It
