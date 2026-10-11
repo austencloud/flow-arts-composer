@@ -17,6 +17,7 @@ import {
 } from "./bloom-optics-3d";
 import { BoundedSourcePath3D } from "../scene-effects/bounded-source-path-3d";
 import type { Bloom3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
+import { resolveBloomRainbowHue } from "#lib/shared/effects/domain/bloom-optics.js";
 import type { BloomTipSource3D } from "../scene-effects/scene-effect-source-3d";
 import {
   DynamicLightManager,
@@ -350,7 +351,7 @@ export class BloomRenderer3D {
   private resolveColor(source: BloomTipSource3D): void {
     const params = source.params;
     if (params.colorMode === "rainbow") {
-      const hue = (this.clock * 0.12 + ((source.sourceId - 1) % 4) * 0.23) % 1;
+      const hue = resolveBloomRainbowHue(this.clock, source.sourceId - 1);
       this.color.setHSL(hue, 0.9, 0.62);
     } else if (params.colorMode === "prop-matched") {
       this.color.set(source.propColor);

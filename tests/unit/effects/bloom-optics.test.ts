@@ -1,25 +1,36 @@
 import { describe, expect, it } from "vitest";
 import {
-  resolveBloomAfterglowRetention,
-  resolveBloomHistoryDeposit,
+  resolveBloomHistoryLifetime,
+  resolveBloomRainbowHue,
+  resolveBloomSourceNormalization,
 } from "#lib/shared/effects/domain/bloom-optics.js";
 
-describe("Bloom afterglow energy", () => {
-  it("fully disables persistence at zero", () => {
-    expect(resolveBloomAfterglowRetention(0)).toBe(0);
-    expect(resolveBloomHistoryDeposit(0)).toBe(0);
+describe("Bloom light path timing", () => {
+  it("turns the history off at zero afterglow", () => {
+    expect(resolveBloomHistoryLifetime(0)).toBe(0);
   });
 
-  it("keeps steady accumulated scatter bounded as persistence rises", () => {
-    for (const afterglow of [0.1, 0.5, 0.9, 1]) {
-      const retention = resolveBloomAfterglowRetention(afterglow);
-      const deposit = resolveBloomHistoryDeposit(afterglow);
-      const steadyEnergy = deposit / (1 - retention);
+  it("lengthens with afterglow and clears within about a second", () => {
+    const short = resolveBloomHistoryLifetime(0.1);
+    const long = resolveBloomHistoryLifetime(1);
+    expect(short).toBeGreaterThan(0);
+    expect(long).toBeGreaterThan(short);
+    expect(long).toBeLessThanOrEqual(1.05);
+  });
+});
 
-      expect(retention).toBeGreaterThan(0);
-      expect(retention).toBeLessThan(1);
-      expect(steadyEnergy).toBeCloseTo(0.18 + afterglow * 0.82, 8);
-      expect(steadyEnergy).toBeLessThanOrEqual(1);
+describe("Bloom shared optics", () => {
+  it("normalizes energy by prop count", () => {
+    expect(resolveBloomSourceNormalization(0)).toBe(1);
+    expect(resolveBloomSourceNormalization(4)).toBe(0.5);
+  });
+
+  it("starts each tip of a pair on a different rainbow hue", () => {
+    const hues = [0, 1, 2, 3].map((tip) => resolveBloomRainbowHue(0, tip));
+    expect(new Set(hues).size).toBe(4);
+    for (const hue of hues) {
+      expect(hue).toBeGreaterThanOrEqual(0);
+      expect(hue).toBeLessThan(1);
     }
   });
 });

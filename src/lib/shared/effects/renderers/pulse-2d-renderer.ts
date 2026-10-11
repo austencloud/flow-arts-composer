@@ -12,6 +12,7 @@ import {
   pulseRingLife,
   smoothstep,
 } from "../domain/pulse-rhythm";
+import { mixRgb, parseCssRgb, rgba, WHITE, type Rgb } from "./css-rgb";
 
 export interface PulseTipInput {
   x: number;
@@ -25,8 +26,6 @@ export interface PulseTipInput {
   /** Resolved prop color (base trail color or tunnel spectrum) for "prop-matched". */
   color: string;
 }
-
-type Rgb = [number, number, number];
 
 interface PulseRing {
   active: boolean;
@@ -170,7 +169,7 @@ export class Pulse2DRenderer {
 
       if (showCharge) {
         const ring = this.rgb(ringHex);
-        this.charging.push({ x: tip.x, y: tip.y, ring, hot: mix(ring, WHITE, 0.7) });
+        this.charging.push({ x: tip.x, y: tip.y, ring, hot: mixRgb(ring, WHITE, 0.7) });
       }
     }
 
@@ -286,7 +285,7 @@ export class Pulse2DRenderer {
     ring.heading = Math.atan2(motion.vy, motion.vx);
     ring.ring = base;
     ring.wake = this.rgb(resolvePulseWakeColor(params, ringHex));
-    ring.hot = mix(base, WHITE, 0.72);
+    ring.hot = mixRgb(base, WHITE, 0.72);
     ring.warm = rotateHue(base, 38);
     ring.cool = rotateHue(base, -38);
   }
@@ -316,8 +315,8 @@ export class Pulse2DRenderer {
     const cx = r.x + r.vx * drift;
     const cy = r.y + r.vy * drift;
     const body =
-      params.resolvedPalette.hueShift && params.colorMode === "solid" ? mix(r.ring, r.wake, p) : r.ring;
-    const front = mix(r.hot, body, smoothstep(0.05, 0.55, p));
+      params.resolvedPalette.hueShift && params.colorMode === "solid" ? mixRgb(r.ring, r.wake, p) : r.ring;
+    const front = mixRgb(r.hot, body, smoothstep(0.05, 0.55, p));
     const frontWidth = Math.max(1, (1 + 2.4 * params.thickness) * unit * (1 - 0.45 * p));
 
     if (params.style === "glow") {
@@ -469,7 +468,7 @@ export class Pulse2DRenderer {
   private rgb(color: string): Rgb {
     let value = this.rgbCache.get(color);
     if (!value) {
-      value = parseRgb(color);
+      value = parseCssRgb(color);
       if (this.rgbCache.size > 512) this.rgbCache.clear();
       this.rgbCache.set(color, value);
     }
@@ -477,25 +476,12 @@ export class Pulse2DRenderer {
   }
 }
 
-const WHITE: Rgb = [255, 255, 255];
 const LEAD_SPANS = [0.35, 0.75, 1.2];
 const GLINT_TURNS = [0, Math.PI / 2];
 
 function isTracked(mode: Pulse2DParams["trackingMode"], end: number | undefined): boolean {
   if (end === undefined || mode === "both_ends") return true;
   return mode === "left_end" ? end === 0 : end === 1;
-}
-
-function rgba(c: Rgb, alpha: number): string {
-  return `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha < 0 ? 0 : alpha > 1 ? 1 : alpha})`;
-}
-
-function mix(a: Rgb, b: Rgb, t: number): Rgb {
-  return [
-    Math.round(a[0] + (b[0] - a[0]) * t),
-    Math.round(a[1] + (b[1] - a[1]) * t),
-    Math.round(a[2] + (b[2] - a[2]) * t),
-  ];
 }
 
 /** Rotate a color's hue around the gray axis, keeping its lightness close. */
@@ -510,38 +496,4 @@ function rotateHue(c: Rgb, degrees: number): Rgb {
   const channel = (x: number, y: number, z: number) =>
     Math.max(0, Math.min(255, Math.round(x * m0 + y * m1 + z * m2)));
   return [channel(c[0], c[1], c[2]), channel(c[1], c[2], c[0]), channel(c[2], c[0], c[1])];
-}
-
-/** Parse #rgb, #rrggbb, #rrggbbaa, rgb()/rgba() and hsl()/hsla(); anything else is white. */
-function parseRgb(color: string): Rgb {
-  const s = color.trim();
-  if (s.startsWith("#")) {
-    let h = s.slice(1);
-    if (h.length === 3 || h.length === 4) {
-      h = h
-        .slice(0, 3)
-        .split("")
-        .map((c) => c + c)
-        .join("");
-    }
-    const n = parseInt(h.slice(0, 6), 16);
-    if (h.length >= 6 && Number.isFinite(n)) return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-    return [...WHITE];
-  }
-  const nums = s.match(/-?\d*\.?\d+/g)?.map(Number) ?? [];
-  if (s.startsWith("rgb") && nums.length >= 3) {
-    return [nums[0]!, nums[1]!, nums[2]!].map((v) => Math.max(0, Math.min(255, Math.round(v)))) as Rgb;
-  }
-  if (s.startsWith("hsl") && nums.length >= 3) {
-    const h = ((((nums[0]! % 360) + 360) % 360) / 360) * 6;
-    const sat = clamp01(nums[1]! / 100);
-    const l = clamp01(nums[2]! / 100);
-    const c = (1 - Math.abs(2 * l - 1)) * sat;
-    const x = c * (1 - Math.abs((h % 2) - 1));
-    const m = l - c / 2;
-    const [r, g, b] =
-      h < 1 ? [c, x, 0] : h < 2 ? [x, c, 0] : h < 3 ? [0, c, x] : h < 4 ? [0, x, c] : h < 5 ? [x, 0, c] : [c, 0, x];
-    return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
-  }
-  return [...WHITE];
 }
