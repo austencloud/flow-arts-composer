@@ -6,12 +6,12 @@
  * bloom/echo/sparkles overlay pattern: position:absolute, pointer-events:none,
  * z-index above trails.
  *
- * Goo has persistent particle state (blob pool), so unlike bloom we do NOT
- * clear the accumulated blobs on each frame - only the canvas pixels. The pool
- * is cleared on dispose() or explicit clear().
+ * Goo has persistent strand and drop state, so unlike bloom we do NOT reset
+ * the simulation each frame - only the canvas pixels. The state is cleared on
+ * dispose() or explicit clear().
  *
  * Renamed from the realistic-water overlay (2026-06-28): the water effect was
- * replaced by the viscous luminous goo metaball look.
+ * replaced by goo, now strands that hang from each tip and drip.
  */
 
 import type { GooParams } from "#lib/shared/effects/translators/canvas2d-types.js";
