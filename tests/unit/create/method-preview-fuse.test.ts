@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 import { fuseLayout } from "#lib/features/create/shared/components/method-previews/method-preview-compositions.js";
+import { PREVIEW_MOVE_MS } from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
 import {
   DEMO_SEQUENCE,
   DEMO_STEP_START,
@@ -153,15 +154,16 @@ describe("Fuse preview slides", () => {
 });
 
 describe("Fuse preview beats", () => {
-  it("plays both fused steps with half a second of the turn to spare", () => {
+  it("plays both fused steps at the other previews' pace, inside the turn", () => {
     const timing = FUSE_PREVIEW_TIMING;
+    expect(timing.stepMs).toBe(PREVIEW_MOVE_MS);
     const end =
       timing.clearMs +
       timing.sourcesInMs +
       timing.slideMs +
       timing.mergeMs +
-      2 * timing.stepMs;
-    expect(end).toBeLessThanOrEqual(METHOD_PREVIEW_TIMING.turnMs - 500);
+      FUSE_PREVIEW_STEPS * timing.stepMs;
+    expect(end).toBeLessThanOrEqual(METHOD_PREVIEW_TIMING.turnMs - 200);
   });
 
   it("pops a new path in within the sources' fade", () => {
@@ -170,15 +172,17 @@ describe("Fuse preview beats", () => {
     expect(timing.newHandMs).toBeLessThan(timing.sourcesInMs);
   });
 
-  it("still ends within the turn after waiting on a slow draw", () => {
+  it("still ends its run within the turn after waiting on a slow draw", () => {
+    // The run ends as the last step starts; that step plays on into the
+    // turn's end, so the wait costs only its end, never a cut.
     const timing = FUSE_PREVIEW_TIMING;
-    const end =
+    const lastStepStarts =
       FUSE_PREVIEW_DRAW_WAIT_MS +
       timing.clearMs +
       timing.sourcesInMs +
       timing.slideMs +
       timing.mergeMs +
-      FUSE_PREVIEW_STEPS * timing.stepMs;
-    expect(end).toBeLessThan(METHOD_PREVIEW_TIMING.turnMs);
+      (FUSE_PREVIEW_STEPS - 1) * timing.stepMs;
+    expect(lastStepStarts).toBeLessThan(METHOD_PREVIEW_TIMING.turnMs);
   });
 });
