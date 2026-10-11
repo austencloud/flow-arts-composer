@@ -355,7 +355,7 @@ const keyByText = {
   "<strong>The Alphabet is primarily a system of <em>pictographs</em>,<br>organized by letters for convenient communication.</strong>": "verified_level1_words_311",
   "The letters do not give all of the information, and are merely intended to separate<br>motion combinations into categories which can be further clarified with detailed pictographs.": "verified_level1_words_312",
   "The three starting hand placements in The Kinetic Alphabet.": "verified_level1_guide_page_seo_2",
-  "Hand Placements: Alpha, Beta, Gamma · The Kinetic Alphabet": "verified_level1_guide_page_seo_3",
+  "Hand Placements: Alpha, Beta, Gamma · Flow Arts Notation Guide": "verified_level1_guide_page_seo_3",
   "The three starting hand placements in The Kinetic Alphabet notation. In Alpha the hands occupy the points across from each other; in Beta the same point; in Gamma they form a right angle.": "verified_level1_guide_page_seo_4",
   "The Grid · Flow Arts Notation Guide": "verified_level1_guide_page_seo_5",
   "There are three fundamental hand motions in the Alphabet.": "verified_level1_guide_page_seo_6",
