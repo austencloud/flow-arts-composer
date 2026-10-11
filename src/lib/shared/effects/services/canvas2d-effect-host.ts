@@ -116,8 +116,8 @@ function makeDrawers(): Record<Canvas2DHostedEffect, Drawer> {
   return {
     zap: (ctx, c, tips, dt, scale) =>
       zap().render(ctx, resolveZap2D(c.zap), tips, dt, scale),
-    bloom: (ctx, c, tips, _dt, scale) =>
-      bloom().render(ctx, resolveBloom2D(c.bloom), tips, scale),
+    bloom: (ctx, c, tips, dt, scale) =>
+      bloom().render(ctx, resolveBloom2D(c.bloom), tips, dt, scale),
     sparkles: (ctx, c, tips, dt, scale) =>
       sparkles().render(ctx, resolveSparkles2D(c.sparkles), tips, dt, scale),
     goo: (ctx, c, tips, dt, scale) =>

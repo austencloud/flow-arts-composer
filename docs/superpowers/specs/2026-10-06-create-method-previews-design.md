@@ -206,8 +206,10 @@ real button.
 Every box shows the roll's whole four-step loop (2026-10-11): a row of four,
 or a 2×2 in a square. The button sits centered under the steps, small and
 without a glow: the dice and the word Generate, as the real button sits under
-its settings. A strip is too short for the word at the canon's 12px floor, so
-its button shows just the dice. Before this, a green dice tile led the row and
+its settings. The word needs the canon's 12px floor, which makes the button
+about 90px wide, wider than two of a phone card's steps; so it shows only
+beside steps at least 64px, and strips, phones and the Fold's landscape grid
+show just the dice. Before this, a green dice tile led the row and
 the roll showed only its first three steps; Austen found the tile loud, and
 the composition review had already flagged it outweighing the card's title.
 

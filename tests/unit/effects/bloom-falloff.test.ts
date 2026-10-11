@@ -37,30 +37,32 @@ describe("Bloom falloff", () => {
   });
 
   it("renders a legacy ring value as a center-lit smooth halo in 2D", () => {
-    const offsets: number[] = [];
-    const gradient = {
-      addColorStop: vi.fn((offset: number) => offsets.push(offset)),
+    const haloStops = (falloff: Bloom2DParams["falloff"]) => {
+      const offsets: number[] = [];
+      const gradient = {
+        addColorStop: vi.fn((offset: number) => offsets.push(offset)),
+      };
+      const context = {
+        save: vi.fn(),
+        restore: vi.fn(),
+        createRadialGradient: vi.fn(() => gradient),
+        fillRect: vi.fn(),
+        globalCompositeOperation: "source-over",
+        globalAlpha: 1,
+        fillStyle: "",
+      } as unknown as CanvasRenderingContext2D;
+
+      new Bloom2DRenderer().render(
+        context,
+        { ...makeParams(), falloff, coreStrength: 0 },
+        [{ x: 100, y: 100, propIndex: 0, tipIndex: 0, color: "#e0e7ff" }],
+        1 / 60
+      );
+      return offsets;
     };
-    const context = {
-      save: vi.fn(),
-      restore: vi.fn(),
-      createRadialGradient: vi.fn(() => gradient),
-      fillRect: vi.fn(),
-      globalCompositeOperation: "source-over",
-      globalAlpha: 1,
-      fillStyle: "",
-    } as unknown as CanvasRenderingContext2D;
 
-    new Bloom2DRenderer().render(context, makeParams(), [
-      {
-        x: 100,
-        y: 100,
-        propIndex: 0,
-        tipIndex: 0,
-        color: "#e0e7ff",
-      },
-    ]);
-
-    expect(offsets.slice(0, 3)).toEqual([0, 0.4, 1]);
+    const ring = haloStops("ring");
+    expect(ring[0]).toBe(0);
+    expect(ring).toEqual(haloStops("smooth"));
   });
 });

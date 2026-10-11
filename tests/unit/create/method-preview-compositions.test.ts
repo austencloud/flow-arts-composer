@@ -144,6 +144,21 @@ describe("Generate", () => {
     });
   });
 
+  it("gives small steps a button with just the dice, so it stays quiet", () => {
+    // A phone's card.
+    expect(generateLayout("roomy", 151, 74)).toEqual({
+      button: { x: 76, y: 56, height: 14, labelled: false },
+      cells: [at(1, 11, 34), at(39, 11, 34), at(77, 11, 34), at(115, 11, 34)],
+      columns: 4,
+    });
+    // The Fold's landscape grid.
+    expect(generateLayout("square", 119, 119)).toEqual({
+      button: { x: 60, y: 111, height: 17, labelled: false },
+      cells: [at(11, 0, 45), at(62, 0, 45), at(11, 51, 45), at(62, 51, 45)],
+      columns: 2,
+    });
+  });
+
   it("wraps the four into a 2×2 in a square", () => {
     expect(generateLayout("square", 144, 144)).toEqual({
       button: { x: 72, y: 132, height: 24, labelled: true },
