@@ -62,9 +62,8 @@ export function gridCellSize(
 }
 
 /**
- * The wave band of a slot laid out row by row in `columns` columns. Slot 0
- * is the lead slot: the step grid's start position, the Generate preview's
- * dice. The front starts there, as it does in the step grid.
+ * The wave band of a slot laid out row by row in `columns` columns. The
+ * front starts at slot 0, as it does in the step grid.
  */
 export function slotWaveBand(slot: number, columns: number): number {
   const width = Math.max(1, Math.floor(columns));
