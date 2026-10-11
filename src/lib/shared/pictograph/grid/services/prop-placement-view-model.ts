@@ -191,8 +191,11 @@ export interface PlacementTransitionInput {
   fromLocation: GridLocation;
   toLocation: GridLocation;
   direction: "clockwise" | "counterclockwise";
-  leftLocation: GridLocation;
-  rightLocation: GridLocation;
+  /** "arc" (default) is the pro shift around the center; "dash" goes straight through it. */
+  path?: "arc" | "dash";
+  /** Null when the grid holds only the moving hand. */
+  leftLocation: GridLocation | null;
+  rightLocation: GridLocation | null;
   leftOrientation: Orientation;
   rightOrientation: Orientation;
   leftPropType: PropType;
@@ -251,7 +254,8 @@ export function buildPlacementTransformTransition(
 /**
  * Builds the pair of pictographs that let PictographContainer animate a start
  * placement location change in place: the moving prop travels a pro-zero-turns
- * arc around the grid center while the partner's beta offset resolves via the
+ * arc around the grid center (or a straight dash through it) while the
+ * partner, when there is one, resolves its beta offset via the
  * prepared-endpoint correction lerp in calculatePictographMotionPositions.
  */
 export function buildPlacementTransition(
@@ -271,10 +275,12 @@ export function buildPlacementTransition(
     previewPictographData: input.previewPictographData,
   });
 
+  const dash = input.path === "dash";
   const movingMotion = createMotionData({
-    motionType: MotionType.PRO,
-    rotationDirection:
-      input.direction === "clockwise"
+    motionType: dash ? MotionType.DASH : MotionType.PRO,
+    rotationDirection: dash
+      ? RotationDirection.NO_ROTATION
+      : input.direction === "clockwise"
         ? RotationDirection.CLOCKWISE
         : RotationDirection.COUNTER_CLOCKWISE,
     startLocation: input.fromLocation,
@@ -292,16 +298,23 @@ export function buildPlacementTransition(
     hand: input.movingColor,
     gridMode: input.gridMode,
     // Force the circular path around the grid center regardless of the global
-    // animation path-shape setting — this preview IS the pathway.
-    pathShape: "arc",
+    // animation path-shape setting — this preview IS the pathway. A dash is
+    // always straight, so it needs no override.
+    ...(dash ? {} : { pathShape: "arc" as const }),
   });
-  const partnerMotion = buildMotion(
-    isBlueMoving ? input.rightLocation : input.leftLocation,
-    isBlueMoving ? HandSide.RIGHT : HandSide.LEFT,
-    isBlueMoving ? input.rightOrientation : input.leftOrientation,
-    isBlueMoving ? input.rightPropType : input.leftPropType,
-    input.gridMode
-  );
+  const partnerColor = isBlueMoving ? HandSide.RIGHT : HandSide.LEFT;
+  const partnerLocation = isBlueMoving
+    ? input.rightLocation
+    : input.leftLocation;
+  const partnerMotion = partnerLocation
+    ? buildMotion(
+        partnerLocation,
+        partnerColor,
+        isBlueMoving ? input.rightOrientation : input.leftOrientation,
+        isBlueMoving ? input.rightPropType : input.leftPropType,
+        input.gridMode
+      )
+    : null;
 
   const base = input.previewPictographData;
   const stepBase = base && "stepNumber" in base ? base : null;
@@ -314,8 +327,8 @@ export function buildPlacementTransition(
     gridMode: input.gridMode,
     betaSwapped: input.betaSwapped,
     motions: {
-      [HandSide.LEFT]: isBlueMoving ? movingMotion : partnerMotion,
-      [HandSide.RIGHT]: isBlueMoving ? partnerMotion : movingMotion,
+      [input.movingColor]: movingMotion,
+      ...(partnerMotion ? { [partnerColor]: partnerMotion } : {}),
     },
     // The container only computes motion overrides for StepData ("stepNumber"
     // narrowing), so guarantee the beat fields even without a preview step.

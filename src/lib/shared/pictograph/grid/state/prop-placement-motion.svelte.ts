@@ -3,9 +3,10 @@
  *
  * When a start-placement location change commits (rotate arrows in the step
  * editor), the grid plays the move instead of snapping: the moving prop
- * travels a pro-with-zero-turns arc around the grid center and the partner
- * prop glides out of (or into) its beta offset. The animation is pure
- * presentation — the sequence data has already committed before it starts.
+ * travels a pro-with-zero-turns arc around the grid center (or a straight
+ * dash through it) and the partner prop, when there is one, glides out of (or
+ * into) its beta offset. The animation is pure presentation — the sequence
+ * data has already committed before it starts.
  *
  * Rendering rides PictographContainer's motionStartData/motionProgress seam
  * (calculatePictographMotionPositions), so progress 0 and 1 are pixel-identical
@@ -40,6 +41,10 @@ export interface PlacementMotionMove {
   from: GridLocation;
   to: GridLocation;
   direction: "clockwise" | "counterclockwise";
+  /** "arc" (default) is the pro shift; "dash" travels straight through the center. */
+  path?: "arc" | "dash";
+  /** Travel time; defaults to DURATION.dramatic. A teaching demo uses DURATION.scene. */
+  durationMs?: number;
 }
 
 interface PlacementMotionDeps {
@@ -89,7 +94,7 @@ export function createPropPlacementMotionState(deps?: PlacementMotionDeps) {
     onComplete = complete;
   }
 
-  function start() {
+  function start(durationMs: number = MOTION_DURATION_MS) {
     if (!transition || frame) return;
     if (reducedMotion()) {
       finish();
@@ -99,7 +104,7 @@ export function createPropPlacementMotionState(deps?: PlacementMotionDeps) {
     const tick = (now: number) => {
       const t = reducedMotion()
         ? 1
-        : Math.min(1, (now - startedAt) / MOTION_DURATION_MS);
+        : Math.min(1, (now - startedAt) / durationMs);
       progress = cubicInOut(t);
       if (t < 1) frame = requestAnimationFrame(tick);
       else finish();
@@ -118,10 +123,6 @@ export function createPropPlacementMotionState(deps?: PlacementMotionDeps) {
     const isBlueMoving = move.color === HandSide.LEFT;
     const leftLocation = isBlueMoving ? move.to : deps.getLeftLocation();
     const rightLocation = isBlueMoving ? deps.getRightLocation() : move.to;
-    if (!leftLocation || !rightLocation) {
-      finish();
-      return;
-    }
 
     prepare(
       buildPlacementTransition({
@@ -130,6 +131,7 @@ export function createPropPlacementMotionState(deps?: PlacementMotionDeps) {
         fromLocation: move.from,
         toLocation: move.to,
         direction: move.direction,
+        path: move.path ?? "arc",
         leftLocation,
         rightLocation,
         leftOrientation: deps.getLeftOrientation(),
@@ -140,7 +142,7 @@ export function createPropPlacementMotionState(deps?: PlacementMotionDeps) {
         previewPictographData: deps.getPreviewPictographData(),
       })
     );
-    start();
+    start(move.durationMs);
   }
 
   /**
