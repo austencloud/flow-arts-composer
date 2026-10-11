@@ -2,6 +2,11 @@
   import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
   import { arrangementBeatAt } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
   import CellCanvas from "#lib/shared/media-composition/components/ArrangementCellCanvas.svelte";
+  import {
+    cellAtPosition,
+    openCells,
+    type ArrangementEditingMarks,
+  } from "./editor/post-arrangement-hit";
 
   let {
     snapshot,
@@ -9,6 +14,7 @@
     playing = false,
     exporting = false,
     exportSize = null,
+    editing = null,
   }: {
     snapshot: ArrangementSnapshot;
     sourceTimeSeconds: number;
@@ -16,6 +22,12 @@
     exporting?: boolean;
     /** The pixel size this layer fills in the exported file. */
     exportSize?: { width: number; height: number } | null;
+    /**
+     * What to mark while the item is in hand in the editor: the selected
+     * cell, the open cells, a drag's drop target. The canvas owns the pointer
+     * and decides; this layer only draws. Null while playing back or exporting.
+     */
+    editing?: ArrangementEditingMarks | null;
   } = $props();
 
   let boxWidth = $state(0);
@@ -47,6 +59,24 @@
         (cell.layers.length > 0 || cell.mediaType !== "animation")
     )
   );
+  /** Positions with nothing in them, drawn as targets only while editing. */
+  const open = $derived(editing ? openCells(snapshot) : []);
+  /** The cell a dragged cell would swap with, with its span. */
+  const drop = $derived.by(() => {
+    const target = editing?.dropTarget;
+    if (!target) return null;
+    const cell = cellAtPosition(snapshot, target);
+    return {
+      col: (cell?.col ?? target.col) + 1,
+      row: (cell?.row ?? target.row) + 1,
+      colSpan: cell
+        ? Math.max(1, Math.min(cell.colSpan, snapshot.gridCols - cell.col))
+        : 1,
+      rowSpan: cell
+        ? Math.max(1, Math.min(cell.rowSpan, snapshot.gridRows - cell.row))
+        : 1,
+    };
+  });
 </script>
 
 <div
@@ -65,9 +95,14 @@
     style:transform={exportScale > 1 ? `scale(${1 / exportScale})` : undefined}
   >
     {#each cells as cell (cell.id)}
+      {@const selected = editing?.selectedCellId === cell.id}
       <div
         class="arrangement-cell"
+        class:selected
+        class:lifted={editing?.draggingCellId === cell.id}
         data-media-type={cell.mediaType}
+        data-arrangement-cell={cell.id}
+        data-arrangement-cell-selected={selected ? "true" : undefined}
         style:grid-column={`${cell.col + 1} / span ${Math.min(cell.colSpan, snapshot.gridCols - cell.col)}`}
         style:grid-row={`${cell.row + 1} / span ${Math.min(cell.rowSpan, snapshot.gridRows - cell.row)}`}
       >
@@ -81,8 +116,42 @@
           skipStartPlacement={snapshot.skipStartPlacement}
           onSelect={() => undefined}
         />
+        {#if selected}
+          <!-- A corner tab beside the ring, so the pick reads without colour. -->
+          <span class="cell-tab" aria-hidden="true"></span>
+        {/if}
       </div>
     {/each}
+    {#if editing}
+      {#each open as slot (slot.key)}
+        {@const selected =
+          slot.cellId !== null && editing.selectedCellId === slot.cellId}
+        <div
+          class="arrangement-open"
+          class:selected
+          data-arrangement-cell={slot.cellId ?? undefined}
+          data-arrangement-cell-selected={selected ? "true" : undefined}
+          style:grid-column={`${slot.col + 1} / span ${slot.colSpan}`}
+          style:grid-row={`${slot.row + 1} / span ${slot.rowSpan}`}
+        >
+          <span class="open-label">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            Add sequence
+          </span>
+          {#if selected}
+            <span class="cell-tab" aria-hidden="true"></span>
+          {/if}
+        </div>
+      {/each}
+      {#if drop}
+        <div
+          class="arrangement-drop"
+          aria-hidden="true"
+          style:grid-column={`${drop.col} / span ${drop.colSpan}`}
+          style:grid-row={`${drop.row} / span ${drop.rowSpan}`}
+        ></div>
+      {/if}
+    {/if}
   </div>
 </div>
 
@@ -101,6 +170,7 @@
     transform-origin: 0 0;
   }
   .arrangement-cell {
+    position: relative;
     min-width: 0;
     min-height: 0;
     overflow: hidden;
@@ -115,5 +185,73 @@
   .arrangement-surface :global(.media-type-badge),
   .arrangement-surface :global(.empty-cell) {
     display: none;
+  }
+
+  /* Editing marks. None of these move or fade: a drag's marks keep up with
+     the pointer, and a pick is shown the moment it is made. */
+
+  /* The selected cell: a full ring inside its edges, dark line outside the
+     accent so it holds on any cell. */
+  .arrangement-cell.selected::after,
+  .arrangement-open.selected::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    box-shadow:
+      inset 0 0 0 3px var(--theme-accent, #d4813a),
+      inset 0 0 0 5px rgb(0 0 0 / 0.55);
+    pointer-events: none;
+  }
+  .cell-tab {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 3;
+    width: 1.25rem;
+    height: 1.25rem;
+    background: var(--theme-accent, #d4813a);
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+    pointer-events: none;
+  }
+  /* The cell in hand while its ghost follows the pointer. */
+  .arrangement-cell.lifted {
+    opacity: 0.4;
+  }
+  /* A position with no sequence: a dashed target that says what a tap does.
+     The words go once the cell is too small to hold them. */
+  .arrangement-open {
+    position: relative;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 0;
+    border: 2px dashed rgb(255 255 255 / 0.35);
+    color: rgb(255 255 255 / 0.75);
+    container-type: size;
+  }
+  .open-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  @container (max-width: 96px) {
+    .open-label {
+      display: none;
+    }
+  }
+  /* Where a dragged cell lands if let go now. */
+  .arrangement-drop {
+    position: relative;
+    z-index: 4;
+    box-shadow:
+      inset 0 0 0 3px var(--theme-text, #fff),
+      inset 0 0 0 5px rgb(0 0 0 / 0.55);
+    background: rgb(255 255 255 / 0.14);
+    pointer-events: none;
   }
 </style>

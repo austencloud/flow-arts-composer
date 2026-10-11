@@ -59,12 +59,33 @@
     itemEnd,
     findItem,
     mainItemAt,
+    type PostArrangementItem,
     type PostBox,
     type PostItem,
     type PostSourceGeometry,
     type PostVideoItem,
   } from "#lib/shared/media-composition/domain/post-project.js";
-  import { updateItemAt } from "#lib/shared/media-composition/domain/post-project-edits.js";
+  import {
+    moveArrangementCell,
+    resizeArrangementCell,
+    updateItemAt,
+  } from "#lib/shared/media-composition/domain/post-project-edits.js";
+  import type { ArrangementCell } from "#lib/shared/media-composition/domain/arrangement.js";
+  import {
+    boxLocalPoint,
+    cellAtPosition,
+    cellFrame,
+    positionAtPoint,
+    type ArrangementEditingMarks,
+    type CellFrame,
+    type GridPosition,
+  } from "./post-arrangement-hit";
+  import {
+    buildArrangementCellMenu,
+    type ArrangementCellMenuTool,
+  } from "./post-arrangement-cell-menu";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
+  import type { ContextMenuState } from "#lib/shared/components/context-menu/context-menu-types.js";
   import { tunnelHookChromeOpacity } from "#lib/shared/media-composition/domain/tunnel-hook.js";
   import { posterQrAppearance } from "../post-qr-image-appearance";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
@@ -179,6 +200,11 @@
      * changed or the preview went away (false). The preview runs without it.
      */
     onMusicMissing?: (missing: boolean) => void;
+    /**
+     * A cell of the selected arrangement asks for one of its panels: a tap
+     * on an open cell wants Sequence, the cell menu names the others.
+     */
+    onOpenArrangementTool?: (tool: ArrangementCellMenuTool) => void;
     root?: HTMLElement | null;
   }
 
@@ -197,6 +223,7 @@
     keepSourceCropRatio = true,
     onSourceSize,
     onMusicMissing,
+    onOpenArrangementTool,
     root = $bindable(null),
   }: Props = $props();
 
@@ -700,6 +727,331 @@
         boxContains(shownItemBox(item, seconds), x, y, rect.width / rect.height)
       ) ?? null
     );
+  }
+
+  // ---- Cells of a selected arrangement -------------------------------------
+
+  /**
+   * A press inside the selected arrangement is a cell's, not the box's: it
+   * selects the cell and may drag it onto another cell (a swap) or, from the
+   * cell's own handles, change its span. Each step applies the pure edit to
+   * the gesture's base, so a pointer over nothing valid shows the grid as
+   * the drag found it: an invalid drop snaps back by itself.
+   */
+  interface CellDrag {
+    kind: "swap" | "resize";
+    pointerId: number;
+    itemId: string;
+    cellId: string;
+    /** The cell's place as the drag began. */
+    origin: GridPosition;
+    /** Its span as the drag began, which a one-way handle keeps. */
+    startColSpan: number;
+    startRowSpan: number;
+    /** Which edges a resize moves. */
+    handle: "e" | "s" | "se" | null;
+    /** The cell's frame in its item's box, which the ghost starts from. */
+    frame: CellFrame;
+    startX: number;
+    startY: number;
+    dx: number;
+    dy: number;
+    moved: boolean;
+    /** Where the content lands if let go now; null while nothing would change. */
+    target: GridPosition | null;
+    longPress: ReturnType<typeof setTimeout> | null;
+  }
+
+  /** A touch held this long without moving opens the cell's menu. */
+  const LONG_PRESS_MS = 500;
+
+  let cellDrag = $state.raw<CellDrag | null>(null);
+  let cellMenu = $state.raw<ContextMenuState>({ open: false });
+
+  /** The selected arrangement, while it is on screen at the playhead. */
+  const selectedArrangement = $derived(
+    selected?.kind === "arrangement" ? selected : null
+  );
+
+  const cellMenuItems = $derived.by(() => {
+    const cell = editor.selectedCell;
+    if (!cell || !selectedArrangement) return [];
+    return buildArrangementCellMenu(cell, {
+      onOpenTool: (tool) => onOpenArrangementTool?.(tool),
+      onClear: () => void editor.clearSelectedCell(),
+    });
+  });
+
+  /** What the arrangement layer marks while its item is in hand. */
+  const arrangementMarks = $derived.by((): ArrangementEditingMarks | null => {
+    if (!interactive || exporting || cropping || !selectedArrangement)
+      return null;
+    const current = cellDrag;
+    const swapping = current?.kind === "swap" && current.moved;
+    return {
+      selectedCellId: editor.selectedCellId,
+      dropTarget: swapping ? current.target : null,
+      // Lifted only while its content is still at home; once a step has
+      // landed, the grid itself shows where everything is.
+      draggingCellId: swapping && !current.target ? current.cellId : null,
+    };
+  });
+
+  interface ArrangementHit {
+    item: PostArrangementItem;
+    position: GridPosition;
+    cell: ArrangementCell | null;
+  }
+
+  /** The arrangement on top under the pointer, and the cell there. */
+  function arrangementHit(event: MouseEvent): ArrangementHit | null {
+    if (!root) return null;
+    const rect = root.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    const x = (event.clientX - rect.left) / rect.width;
+    const y = (event.clientY - rect.top) / rect.height;
+    const aspect = rect.width / rect.height;
+    const seconds = editor.previewSeconds;
+    const top = itemsHere.find((item) =>
+      boxContains(shownItemBox(item, seconds), x, y, aspect)
+    );
+    if (top?.kind !== "arrangement") return null;
+    const { u, v } = boxLocalPoint(shownItemBox(top, seconds), x, y, aspect);
+    const position = positionAtPoint(top.snapshot, u, v);
+    if (!position) return null;
+    return {
+      item: top,
+      position,
+      cell: cellAtPosition(top.snapshot, position),
+    };
+  }
+
+  /**
+   * The grid position under the pointer in an item's own box. A resize
+   * clamps to the grid's edges, so a pointer dragged past them keeps the
+   * span at its largest; a swap outside the box lands nowhere.
+   */
+  function gridPositionUnder(
+    item: PostArrangementItem,
+    event: PointerEvent,
+    clamp: boolean
+  ): GridPosition | null {
+    if (!root) return null;
+    const rect = root.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    const box = shownItemBox(item, editor.previewSeconds);
+    let { u, v } = boxLocalPoint(
+      box,
+      (event.clientX - rect.left) / rect.width,
+      (event.clientY - rect.top) / rect.height,
+      rect.width / rect.height
+    );
+    if (clamp) {
+      u = Math.min(1 - 1e-6, Math.max(0, u));
+      v = Math.min(1 - 1e-6, Math.max(0, v));
+    }
+    return positionAtPoint(item.snapshot, u, v);
+  }
+
+  function capturePointer(event: PointerEvent): void {
+    try {
+      (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    } catch {
+      // A synthetic pointer has no capture to take.
+    }
+  }
+
+  /**
+   * A press on the selected arrangement picks the cell under it. An open
+   * cell wants a sequence, so its panel opens; a filled cell is ready to be
+   * dragged onto another. True when the press was a cell's.
+   */
+  function pressArrangementCell(event: PointerEvent): boolean {
+    const item = selectedArrangement;
+    if (!interactive || event.button !== 0 || !item) return false;
+    const hit = arrangementHit(event);
+    if (!hit || hit.item.id !== item.id || !hit.cell) return false;
+    if (trackLocked(item.id)) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    releaseDrag(true);
+    releaseCellDrag(true);
+    editor.pause();
+    const cell = hit.cell;
+    if (!editor.selectCell(cell.id)) return false;
+    if (cell.layers.length === 0 && cell.mediaType === "animation") {
+      onOpenArrangementTool?.("sequence");
+      return true;
+    }
+    capturePointer(event);
+    const touch = event.pointerType !== "mouse";
+    cellDrag = {
+      kind: "swap",
+      pointerId: event.pointerId,
+      itemId: item.id,
+      cellId: cell.id,
+      origin: { row: cell.row, col: cell.col },
+      startColSpan: cell.colSpan,
+      startRowSpan: cell.rowSpan,
+      handle: null,
+      frame: cellFrame(item.snapshot, cell),
+      startX: event.clientX,
+      startY: event.clientY,
+      dx: 0,
+      dy: 0,
+      moved: false,
+      target: null,
+      // A mouse has right-click for the menu; a finger holds still for it.
+      longPress: touch
+        ? setTimeout(() => {
+            const held = cellDrag;
+            if (!held || held.moved) return;
+            cellDrag = null;
+            cellMenu = { open: true, x: held.startX, y: held.startY };
+          }, LONG_PRESS_MS)
+        : null,
+    };
+    return true;
+  }
+
+  /** A grip on the selected cell: drags its right or bottom edge over its neighbours. */
+  function startCellResize(
+    event: PointerEvent,
+    handle: "e" | "s" | "se"
+  ): void {
+    const item = selectedArrangement;
+    const cell = editor.selectedCell;
+    if (!interactive || event.button !== 0 || !item || !cell) return;
+    if (trackLocked(item.id)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    releaseDrag(true);
+    releaseCellDrag(true);
+    editor.pause();
+    capturePointer(event);
+    cellDrag = {
+      kind: "resize",
+      pointerId: event.pointerId,
+      itemId: item.id,
+      cellId: cell.id,
+      origin: { row: cell.row, col: cell.col },
+      startColSpan: cell.colSpan,
+      startRowSpan: cell.rowSpan,
+      handle,
+      frame: cellFrame(item.snapshot, cell),
+      startX: event.clientX,
+      startY: event.clientY,
+      dx: 0,
+      dy: 0,
+      moved: false,
+      target: null,
+      longPress: null,
+    };
+  }
+
+  /**
+   * One step of a cell drag on the gesture's base. True when the grid is
+   * now different from the base: the pointer is over a valid landing.
+   */
+  function stepCellEdit(
+    current: CellDrag,
+    position: GridPosition | null
+  ): boolean {
+    let landed = false;
+    if (!position) {
+      // Over nothing: the grid as the drag found it.
+      editor.gestureStep((base) => base);
+      return landed;
+    }
+    const { itemId, cellId, origin, handle } = current;
+    const colSpan =
+      handle === "s"
+        ? current.startColSpan
+        : Math.max(1, position.col - origin.col + 1);
+    const rowSpan =
+      handle === "e"
+        ? current.startRowSpan
+        : Math.max(1, position.row - origin.row + 1);
+    editor.gestureStep((base, context) => {
+      const next =
+        current.kind === "swap"
+          ? moveArrangementCell(
+              base,
+              itemId,
+              cellId,
+              position.row,
+              position.col,
+              context
+            )
+          : resizeArrangementCell(
+              base,
+              itemId,
+              cellId,
+              colSpan,
+              rowSpan,
+              context
+            );
+      landed = next !== base;
+      return next;
+    });
+    return landed;
+  }
+
+  function moveCellDrag(event: PointerEvent): void {
+    const current = cellDrag;
+    if (!current || event.pointerId !== current.pointerId) return;
+    const dx = event.clientX - current.startX;
+    const dy = event.clientY - current.startY;
+    if (!current.moved) {
+      if (Math.hypot(dx, dy) < TAP_PIXELS) return;
+      if (current.longPress !== null) clearTimeout(current.longPress);
+      editor.beginGesture();
+    }
+    const item = findItem(editor.project, current.itemId)?.item;
+    if (item?.kind !== "arrangement") return;
+    const position = gridPositionUnder(item, event, current.kind === "resize");
+    const landed = stepCellEdit(current, position);
+    cellDrag = {
+      ...current,
+      dx,
+      dy,
+      moved: true,
+      longPress: null,
+      target: landed ? position : null,
+    };
+  }
+
+  /** Ends the cell drag in progress, keeping its edit or putting it back. */
+  function releaseCellDrag(keep: boolean): void {
+    const current = cellDrag;
+    if (!current) return;
+    if (current.longPress !== null) clearTimeout(current.longPress);
+    cellDrag = null;
+    if (!current.moved) return;
+    if (!keep) {
+      editor.cancelGesture();
+      return;
+    }
+    editor.endGesture();
+    // After a swap the dragged content sits at the target: keep it in hand.
+    if (current.kind !== "swap" || !current.target) return;
+    const item = findItem(editor.project, current.itemId)?.item;
+    if (item?.kind !== "arrangement") return;
+    const now = cellAtPosition(item.snapshot, current.target);
+    if (now) editor.selectCell(now.id);
+  }
+
+  /** Right-click on a cell selects it and opens its menu. */
+  function onLayerContextMenu(event: MouseEvent): void {
+    if (!interactive || cropping) return;
+    const hit = arrangementHit(event);
+    if (!hit?.cell || trackLocked(hit.item.id)) return;
+    event.preventDefault();
+    releaseCellDrag(false);
+    if (editor.selectedItemId !== hit.item.id)
+      editor.selectedItemId = hit.item.id;
+    if (!editor.selectCell(hit.cell.id)) return;
+    cellMenu = { open: true, x: event.clientX, y: event.clientY };
   }
 
   /** The pointer's angle about a point, in degrees clockwise from east. */
@@ -2241,10 +2593,14 @@
     if (pinch || cropPinch) return;
     if (sourceCropping) return;
     if (cropping) pressCropStage(event);
-    else pressFrame(event);
+    else if (!pressArrangementCell(event)) pressFrame(event);
   }
 
   function onLayerPointerMove(event: PointerEvent): void {
+    if (cellDrag) {
+      moveCellDrag(event);
+      return;
+    }
     if (cropPinch) {
       stepCropPinch(event);
       return;
@@ -2270,6 +2626,10 @@
   }
 
   function onLayerPointerUp(event: PointerEvent): void {
+    if (cellDrag) {
+      if (event.pointerId === cellDrag.pointerId) releaseCellDrag(true);
+      return;
+    }
     if (cropPinch) {
       if (isPinchPointer(cropPinch, event)) releaseCropPinch(true);
       return;
@@ -2295,6 +2655,10 @@
   }
 
   function onLayerPointerCancel(event: PointerEvent): void {
+    if (cellDrag) {
+      if (event.pointerId === cellDrag.pointerId) releaseCellDrag(false);
+      return;
+    }
     if (cropPinch) {
       if (isPinchPointer(cropPinch, event)) releaseCropPinch(false);
       return;
@@ -2424,6 +2788,10 @@
                         height: rect.height * outputSize.height,
                       }
                     : null}
+                  arrangementEditing={arrangementMarks &&
+                  sourceItem?.id === selectedArrangement?.id
+                    ? arrangementMarks
+                    : null}
                   {sequence}
                   cardRenderOptions={cardOptionsForItem(
                     cardRenderOptions,
@@ -2552,6 +2920,7 @@
       onpointermove={onLayerPointerMove}
       onpointerup={onLayerPointerUp}
       onpointercancel={onLayerPointerCancel}
+      oncontextmenu={onLayerContextMenu}
     >
       {#if cropping && cropItem}
         {#if sourceCropping && sourceFrame}
@@ -2696,9 +3065,68 @@
             aria-label={labelFor(selected)}
             aria-describedby={hintId}
             onkeydown={nudge}
-            onpointerdown={(event) =>
-              locked ? undefined : startDrag(event, selected, "move")}
+            onpointerdown={(event) => {
+              if (pressArrangementCell(event) || locked) return;
+              startDrag(event, selected, "move");
+            }}
           >
+            {#if selectedArrangement && editor.selectedCell && !locked && !editor.isPlaying}
+              {@const cell = editor.selectedCell}
+              {@const grid = selectedArrangement.snapshot}
+              {@const frame = cellFrame(grid, cell)}
+              {@const colSpan = Math.round(frame.width * grid.gridCols)}
+              {@const rowSpan = Math.round(frame.height * grid.gridRows)}
+              {@const canGrowAcross =
+                colSpan > 1 || cell.col + colSpan < grid.gridCols}
+              {@const canGrowDown =
+                rowSpan > 1 || cell.row + rowSpan < grid.gridRows}
+              <!-- The cell's own grips, shown only where its span can change. -->
+              {#if canGrowAcross}
+                <span
+                  class="cell-handle e"
+                  aria-hidden="true"
+                  style:left={pct(frame.left + frame.width)}
+                  style:top={pct(frame.top + frame.height / 2)}
+                  onpointerdown={(event) => startCellResize(event, "e")}
+                ></span>
+              {/if}
+              {#if canGrowDown}
+                <span
+                  class="cell-handle s"
+                  aria-hidden="true"
+                  style:left={pct(frame.left + frame.width / 2)}
+                  style:top={pct(frame.top + frame.height)}
+                  onpointerdown={(event) => startCellResize(event, "s")}
+                ></span>
+              {/if}
+              {#if canGrowAcross && canGrowDown}
+                <span
+                  class="cell-handle se"
+                  aria-hidden="true"
+                  style:left={pct(frame.left + frame.width)}
+                  style:top={pct(frame.top + frame.height)}
+                  onpointerdown={(event) => startCellResize(event, "se")}
+                ></span>
+              {/if}
+            {/if}
+            {#if cellDrag?.kind === "swap" && cellDrag.moved}
+              {@const [ghostX, ghostY] = intoTurnedBox(
+                cellDrag.dx,
+                cellDrag.dy,
+                turn
+              )}
+              <!-- The dragged cell's outline under the pointer, moved as the
+                   pointer moves, with no easing. -->
+              <span
+                class="cell-ghost"
+                aria-hidden="true"
+                style:left={pct(cellDrag.frame.left)}
+                style:top={pct(cellDrag.frame.top)}
+                style:width={pct(cellDrag.frame.width)}
+                style:height={pct(cellDrag.frame.height)}
+                style:transform={`translate(${ghostX}px, ${ghostY}px)`}
+              ></span>
+            {/if}
             {#if !locked && !editor.isPlaying}
               {#each BOX_CORNERS as corner (corner)}
                 <span
@@ -2759,6 +3187,13 @@
     </div>
   {/if}
 </div>
+{#if interactive}
+  <ContextMenu
+    menuState={cellMenu}
+    items={cellMenuItems}
+    onClose={() => (cellMenu = { open: false })}
+  />
+{/if}
 
 <style>
   .transition-black {
@@ -3181,6 +3616,56 @@
     left: 0;
     top: 50%;
     cursor: ew-resize;
+  }
+  /* The selected cell's own grips: filled squares set just inside the
+     cell's right and bottom edges, clear of the box's round corner
+     handles, each with the same 44px grab area. They stay put as the
+     pointer moves; nothing here eases. */
+  .cell-handle {
+    position: absolute;
+    z-index: 1;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+  .cell-handle::after {
+    content: "";
+    position: absolute;
+    inset: 50%;
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 2px solid #fff;
+    border-radius: 0.1875rem;
+    background: var(--theme-accent, #d4813a);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.45);
+    transform: translate(-50%, -50%);
+  }
+  .cell-handle.e {
+    margin-left: -0.625rem;
+    cursor: ew-resize;
+  }
+  .cell-handle.s {
+    margin-top: -0.625rem;
+    cursor: ns-resize;
+  }
+  .cell-handle.se {
+    margin-left: -0.625rem;
+    margin-top: -0.625rem;
+    cursor: nwse-resize;
+  }
+  /* The dragged cell's outline, carried under the pointer. */
+  .cell-ghost {
+    position: absolute;
+    z-index: 2;
+    box-sizing: border-box;
+    border: 3px solid var(--theme-accent, #d4813a);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #d4813a) 22%,
+      transparent
+    );
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.55);
+    pointer-events: none;
   }
   /* A round grip past the box's edge, with a 44px grab area, that turns the
      whole box as the pointer goes round it. */

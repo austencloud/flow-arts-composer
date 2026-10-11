@@ -1,6 +1,10 @@
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+import type {
+  ArrangementCell,
+  ArrangementSnapshot,
+} from "#lib/shared/media-composition/domain/arrangement.js";
+import { isVisibleCell } from "#lib/shared/media-composition/domain/arrangement-edits.js";
 import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
 import { takeRole } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
@@ -29,6 +33,7 @@ import {
   cleanLabel,
   appendCardClip,
   appendVideoClip,
+  clearArrangementCell,
   deleteItem,
   duplicateItem,
   finish,
@@ -250,6 +255,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
   let selectedItemId = $state<string | null>(null);
   /** The animation whose opening tunnel, not the rest of it, is selected. */
   let tunnelSelectedFor = $state<string | null>(null);
+  /** The cell in hand, tied to its arrangement so any other selection drops it. */
+  let cellSelection = $state<{ itemId: string; cellId: string } | null>(null);
   let timingTakeId = $state<string | null>(null);
 
   const resolved = $derived.by(() => {
@@ -323,6 +330,16 @@ export function createPostEditorState(deps: PostEditorDeps) {
       ? ("tunnel" as const)
       : null
   );
+  /** The selected arrangement's selected cell while it is on screen. */
+  const selectedCell = $derived.by((): ArrangementCell | null => {
+    const held = cellSelection;
+    const item = selectedItem;
+    if (!held || held.itemId !== selectedItemId || item?.kind !== "arrangement")
+      return null;
+    const cell = item.snapshot.cells.find((c) => c.id === held.cellId);
+    return cell && isVisibleCell(cell, item.snapshot) ? cell : null;
+  });
+  const selectedCellId = $derived(selectedCell?.id ?? null);
 
   /** Takes the post's clips use, in timeline order: their timing matters. */
   const takesInUse = $derived.by((): PostTake[] => {
@@ -1230,6 +1247,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
   function deleteSelected(): boolean {
     const target = selectedItem;
     if (!target || isLocked(target.id)) return false;
+    // With a cell in hand, Delete empties the cell; the arrangement stays.
+    if (selectedCell) return clearSelectedCell();
     // With the opening tunnel in hand, only the tunnel goes; the animation stays.
     if (selectedPart === "tunnel") {
       if (gestureBase) return false;
@@ -1240,6 +1259,31 @@ export function createPostEditorState(deps: PostEditorDeps) {
       return true;
     }
     return edit((current, ctx) => deleteItem(current, target.id, ctx));
+  }
+
+  /** Selects one of the selected arrangement's cells; null selects the grid. */
+  function selectCell(cellId: string | null): boolean {
+    if (cellId === null) {
+      cellSelection = null;
+      return true;
+    }
+    const item = selectedItem;
+    if (item?.kind !== "arrangement") return false;
+    const cell = item.snapshot.cells.find((c) => c.id === cellId);
+    if (!cell || !isVisibleCell(cell, item.snapshot)) return false;
+    cellSelection = { itemId: item.id, cellId };
+    tunnelSelectedFor = null;
+    return true;
+  }
+
+  /** Empties the selected cell in one undo step; the cell stays selected. */
+  function clearSelectedCell(): boolean {
+    const item = selectedItem;
+    const cell = selectedCell;
+    if (!item || !cell || isLocked(item.id)) return false;
+    return edit((current, ctx) =>
+      clearArrangementCell(current, item.id, cell.id, ctx)
+    );
   }
 
   function duplicateSelected(): boolean {
@@ -1639,7 +1683,9 @@ export function createPostEditorState(deps: PostEditorDeps) {
       return selectedItemId;
     },
     set selectedItemId(next: string | null) {
-      selectedItemId = next && findItem(project, next) ? next : null;
+      const resolved = next && findItem(project, next) ? next : null;
+      if (resolved !== selectedItemId) cellSelection = null;
+      selectedItemId = resolved;
       tunnelSelectedFor = null;
     },
     /** `"tunnel"` while an animation's opening tunnel is what is selected. */
@@ -1650,6 +1696,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     selectTunnel(itemId: string) {
       selectedItemId = findItem(project, itemId) ? itemId : null;
       tunnelSelectedFor = selectedItemId;
+      cellSelection = null;
     },
     get tunnelHook() {
       return findTunnelHook(project);
@@ -1657,6 +1704,15 @@ export function createPostEditorState(deps: PostEditorDeps) {
     get selectedItem() {
       return selectedItem;
     },
+    /** The selected arrangement's cell in hand, or null for the whole grid. */
+    get selectedCellId() {
+      return selectedCellId;
+    },
+    get selectedCell() {
+      return selectedCell;
+    },
+    selectCell,
+    clearSelectedCell,
     get canUndo() {
       return (
         gestureBase !== null ||
