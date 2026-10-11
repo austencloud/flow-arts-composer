@@ -174,13 +174,16 @@ export const EFFECT_CONTROLS: Record<EffectId, ControlDescriptor[]> = {
     slider("charcoal", "glow", "Glow", { step: 0.02, tier: "primary" }),
   ],
   zap: [
-    { id: "zap-color", label: "Color", type: "colorPair", field: "leftColor", pairFields: ["leftColor", "rightColor"], tier: "primary" },
+    { id: "zap-colormode", label: "Color", type: "segmented", field: "colorMode", tier: "primary", options: [
+      { value: "prop", label: "Prop" }, { value: "custom", label: "Custom" },
+    ] },
+    { id: "zap-color", label: "Colors", type: "colorPair", field: "leftColor", pairFields: ["leftColor", "rightColor"], tier: "primary", showWhen: (i) => i.colorMode === "custom" },
     slider("zap", "intensity", "Intensity", { tier: "primary" }),
     { id: "zap-style", label: "Style", type: "segmented", field: "style", tier: "primary", options: [
       { value: "branching", label: "Storm" }, { value: "plasma", label: "Plasma" }, { value: "web", label: "Web" },
     ] },
     slider("zap", "frequency", "Frequency", { min: 1, max: 30, step: 1, pct: false, tier: "primary" }),
-    slider("zap", "branching", "Branching", { tier: "advanced", showWhen: (i) => i.style === "branching" }),
+    slider("zap", "branching", "Branching", { tier: "advanced", showWhen: (i) => i.style !== "plasma" }),
     slider("zap", "wobbleRate", "Wobble Rate", { tier: "advanced", showWhen: (i) => i.style === "plasma" }),
     slider("zap", "wobbleAmount", "Wobble Amount", { tier: "advanced", showWhen: (i) => i.style === "plasma" }),
     slider("zap", "glow", "Glow", { tier: "advanced" }),
