@@ -242,7 +242,8 @@
     max-width: calc(2 * var(--cell) + var(--gap));
     font-size: 1rem;
     line-height: 1.5;
-    text-wrap: balance;
+    /* Left-aligned, so fill the line and only keep the last word company. */
+    text-wrap: pretty;
   }
   .family.gamma .definition {
     max-width: none;

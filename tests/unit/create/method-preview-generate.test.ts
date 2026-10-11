@@ -1,7 +1,8 @@
 /**
  * The Generate preview's rolls and wave. Each turn shows a new real roll;
  * when none came, turns step through the demo sequence. Cells wash in with
- * the step grid's band and stagger, the dice holding the lead slot.
+ * the step grid's band and stagger, the dice holding the lead slot, and the
+ * roll's opening steps then play their moves inside the turn.
  */
 import { describe, expect, it } from "vitest";
 import { calculateStepWaveBand } from "#lib/shared/create/utils/grid-calculations.js";
@@ -11,10 +12,10 @@ import { DEMO_SEQUENCE } from "#lib/features/create/shared/components/method-pre
 import {
   FIRST_ROLL,
   GENERATE_CLEAR_MS,
-  GENERATE_LOOK_MS,
+  GENERATE_PLAYED_STEPS,
   GENERATE_READY_WAIT_MS,
-  GENERATE_ROLLS_PER_TURN,
   generateCellDelayMs,
+  generateFirstLandMs,
   generateRevealMs,
   nextRoll,
   rollPoseBefore,
@@ -116,39 +117,39 @@ describe("the Generate wave", () => {
   });
 });
 
-describe("two rolls a turn", () => {
-  it("fit one turn on the longest wave, with room to wait for a slow draw", () => {
-    // The longest waves: a five-slot strip and a 3×3 grid.
-    const wave = Math.max(generateRevealMs(4, 5), generateRevealMs(8, 3));
-    const roll =
-      SCENE_TAP.considerMs + SCENE_TAP.pressMs + GENERATE_CLEAR_MS + wave;
-    const looks = (GENERATE_ROLLS_PER_TURN - 1) * GENERATE_LOOK_MS;
-    expect(GENERATE_ROLLS_PER_TURN).toBe(2);
-    expect(GENERATE_ROLLS_PER_TURN * roll + looks).toBeLessThanOrEqual(
-      METHOD_PREVIEW_TIMING.turnMs - GENERATE_READY_WAIT_MS
-    );
+describe("a turn's roll and its moves", () => {
+  /** From the turn's start until the first step has landed. */
+  const untilFirstLand = (drawMs: number) =>
+    SCENE_TAP.considerMs +
+    SCENE_TAP.pressMs +
+    GENERATE_CLEAR_MS +
+    drawMs +
+    generateFirstLandMs(5);
+
+  it("lands its first step one band and one entrance into the wash", () => {
+    const landed =
+      DEFAULT_ANIMATION_TIMING.waveBandDelay +
+      DEFAULT_ANIMATION_TIMING.entranceDuration;
+    expect(generateFirstLandMs(4)).toBe(landed);
+    expect(generateFirstLandMs(3)).toBe(landed);
   });
 
-  it("let the first roll's moves land before the next tap clears them", () => {
-    // From a cell's entrance, the next clear waits for the rest of the wave,
-    // the look, and the tap; the last cell's move must land by then.
-    const untilClear =
-      DEFAULT_ANIMATION_TIMING.entranceDuration +
-      GENERATE_LOOK_MS +
-      SCENE_TAP.considerMs +
-      SCENE_TAP.pressMs;
-    expect(PREVIEW_MOVE_MS).toBeLessThanOrEqual(untilClear);
+  it("plays two steps, one at a time", () => {
+    expect(GENERATE_PLAYED_STEPS).toBe(2);
   });
 
-  it("let the last roll's moves land inside the turn", () => {
-    const wave = Math.max(generateRevealMs(4, 5), generateRevealMs(8, 3));
-    const roll =
-      SCENE_TAP.considerMs + SCENE_TAP.pressMs + GENERATE_CLEAR_MS + wave;
-    const looks = (GENERATE_ROLLS_PER_TURN - 1) * GENERATE_LOOK_MS;
-    // The last move starts with the last cell and outlasts its entrance.
-    const tail = PREVIEW_MOVE_MS - DEFAULT_ANIMATION_TIMING.entranceDuration;
-    expect(GENERATE_ROLLS_PER_TURN * roll + looks + tail).toBeLessThanOrEqual(
-      METHOD_PREVIEW_TIMING.turnMs
-    );
+  it("ends its run inside the turn even after the longest wait for a draw", () => {
+    // The run ends as its last move starts, so a slow draw is never cut.
+    const lastMoveStarts =
+      untilFirstLand(GENERATE_READY_WAIT_MS) +
+      (GENERATE_PLAYED_STEPS - 1) * PREVIEW_MOVE_MS;
+    expect(lastMoveStarts).toBeLessThanOrEqual(METHOD_PREVIEW_TIMING.turnMs);
+  });
+
+  it("plays both moves out inside the turn, with time for the roll to draw", () => {
+    // A phone took about 300 ms to draw a roll.
+    const movesEnd =
+      untilFirstLand(0) + GENERATE_PLAYED_STEPS * PREVIEW_MOVE_MS;
+    expect(METHOD_PREVIEW_TIMING.turnMs - movesEnd).toBeGreaterThanOrEqual(400);
   });
 });

@@ -48,6 +48,20 @@ timeline on every screen. CapCut and InShot are the models.
   playhead where it was: with the playhead at 0:00, selecting the
   "Mirror me!" text shows its settings while the preview shows a moment
   before that text appears.
+- (2026-10-11, same walkthrough, 707 by 772) The portrait preview is 108 by
+  192, a quarter of the height. There is no side panel; the 64-tall tool
+  row and an open keyframe lane push the timeline past the bottom edge, so
+  the main track is cut off.
+- (2026-10-11, same walkthrough, 412 by 915) Selecting a video clip turns
+  the row into 15 tools (Deselect, Split, Trim, Crop, Speed, Volume,
+  Layout, Position, Border, Fade, Effects, Beats, Rename, Duplicate,
+  Delete), of which 5 fit on screen; a title clip has 8. The keyframe strip
+  shrinks the preview from 169 by 301 to 113 by 202. Its "Clip actions"
+  button holds one item, "Remove all keyframes", which the more-actions
+  menu also has. Split is greyed with no reason given, because the
+  playhead sits at the clip's start. Add, Canvas, a clip's tool and Export
+  each open in place of the row and push the timeline down: the editor
+  scrolls (962 to 1063 tall in 899) and the main track leaves the screen.
 
 ## 1. Layout tiers
 
@@ -65,6 +79,9 @@ Medium places its panel beside the preview or below it, whichever leaves the
 larger preview. A portrait project on the Fold inner screen (707 by 772)
 gets the panel beside it; a landscape project on a tall window gets it
 below. The thresholds are starting values, checked at the verification sizes.
+Austen confirmed the Fold inner layout on 2026-10-11: the panel sits beside
+a portrait preview (about 420 by 450) and the timeline keeps the full width
+below, so the preview grows to about 224 by 398 from 108 by 192.
 
 Every tier is a fixed frame. The page never scrolls. Only the media grid,
 the details panel body and the timeline scroll inside their own areas.
@@ -132,10 +149,19 @@ selection has more than six. Each group stacks the existing panels it holds.
 - **Medium.** The panel shows the same tabs as desktop. The bottom toolbar
   holds Split, Duplicate, Delete and Sync moves for a selection, and the
   media and Project buttons when nothing is selected.
-- **Phone.** Today's row stays: back arrow first, horizontal scroll like
-  CapCut, most used first. Sync moves sits right after Split for a video
-  clip. A tool opens its panel as a sheet over the timeline with a check
-  button to close.
+- **Phone.** The row uses the same groups as the tabs above (Austen,
+  2026-10-11): back arrow first, then Split, Sync moves for a video clip,
+  the selection's tabs, then Duplicate and Delete. A video clip's row reads
+  Split, Sync moves, Trim, Frame, Speed, Sound, Look, Transition, Duplicate,
+  Delete: 10 buttons instead of 15, still scrolling sideways like CapCut
+  when they don't fit. A button opens its group as a sheet over the
+  timeline, with the group's panels as pill tabs inside (Frame holds crop,
+  layout, position, border and fade) and a check button to close. Rename
+  goes: tapping the name in the sheet header renames in place.
+- **Split, every tier.** Split never greys out. With the playhead at a
+  clip's edge, as it is right after selecting, pressing Split shows a short
+  note by the toolbar, "Slide the playhead into the clip to split it", and
+  changes nothing (Austen, 2026-10-11). S on a keyboard does the same.
 
 ## 4. Timeline
 
@@ -187,6 +213,16 @@ selection has more than six. Each group stacks the existing panels it holds.
   at each keyframe's time (CapCut). There is no separate keyframe strip, so
   selecting never changes the timeline's height or pushes a track out of
   view (Austen, 2026-10-11).
+- Keyframes are added from a diamond button beside the time in the play
+  row, shown while a clip is selected (Austen, 2026-10-11, for the phone;
+  desktop and medium use the same button in their transport so keyframes
+  work one way everywhere). Pressing it adds a keyframe at the playhead on
+  the channel the K key keys today (`keyframeChannelFor`: the open Frame
+  part's crop, position or fade, else crop for a video and position for
+  anything else). The diamond fills in when the playhead sits on a
+  keyframe, and pressing it then removes that one. Removing all of a clip's
+  keyframes lives in the Frame group. The "Clip actions" button goes; the
+  more-actions menu keeps its own Remove all keyframes.
 
 ## 5. Sync moves screen
 

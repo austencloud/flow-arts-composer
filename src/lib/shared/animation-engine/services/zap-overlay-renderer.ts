@@ -9,8 +9,8 @@
  *
  * The overlay canvas is fully cleared each frame before drawing - Zap2DRenderer
  * uses additive blending, so we don't want stale arcs from the previous frame
- * to fade in/out unpredictably. Procedural midpoint-displacement regenerates
- * arcs every few frames inside the renderer to produce the flicker.
+ * to fade in/out unpredictably. Strike timing and afterglow live inside the
+ * renderer and advance by the frame's dt in seconds.
  */
 
 import type { Zap2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
@@ -21,7 +21,7 @@ import { EffectRenderer } from "./effects/effect-renderer";
 export class ZapOverlayRenderer extends EffectRenderer {
   private renderer = new Zap2DRenderer();
 
-  renderFrame(params: Zap2DParams, tips: EmitterTip[]): void {
+  renderFrame(params: Zap2DParams, tips: EmitterTip[], dt: number): void {
     const ctx = this.ctx;
     if (!ctx) return;
 
@@ -34,7 +34,7 @@ export class ZapOverlayRenderer extends EffectRenderer {
       return;
     }
 
-    this.renderer.render(ctx, params, tips, this.scale);
+    this.renderer.render(ctx, params, tips, dt, this.scale);
   }
 
   protected override onDispose(): void {
