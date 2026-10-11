@@ -58,7 +58,7 @@ function meshAtRenderOrder(scene: Scene, renderOrder: number): InstancedMesh {
 }
 
 describe("native 3D full-roster renderers", () => {
-  it("renders pressure-reactive Ink segments and releases every pool", () => {
+  it("renders one connected Ink stroke and releases its mesh", () => {
     const scene = new Scene();
     const renderer = new InkRenderer3D();
     renderer.initialize(scene);
@@ -72,7 +72,13 @@ describe("native 3D full-roster renderers", () => {
     renderer.update([source], 1 / 60);
     source.position.x = 0.2;
     renderer.update([source], 1 / 60);
-    expect(visibleInstances(scene)).toBeGreaterThanOrEqual(2);
+    const stroke = scene.children.find(
+      (child): child is Mesh =>
+        child instanceof Mesh && child.renderOrder === 104
+    );
+    expect(stroke).toBeDefined();
+    expect(stroke?.geometry.drawRange.count).toBeGreaterThan(0);
+    expect(stroke?.geometry.drawRange.count % 48).toBe(0);
     renderer.dispose();
     expect(scene.children).toHaveLength(0);
   });
