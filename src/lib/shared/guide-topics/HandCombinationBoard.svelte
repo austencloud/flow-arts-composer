@@ -117,6 +117,13 @@
     }
   }
 
+  /* One row on a wide board, so the whole board fits a laptop screen. */
+  @container combination-board (min-width: 56rem) {
+    .combination-board {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
   @container combination-board (max-width: 23.99rem) {
     .names-only-narrow .art {
       display: none;

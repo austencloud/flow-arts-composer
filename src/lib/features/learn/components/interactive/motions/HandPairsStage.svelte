@@ -20,6 +20,7 @@
   import HandCombinationBoard from "#lib/shared/guide-topics/HandCombinationBoard.svelte";
   import MotionMapArrows from "#lib/shared/guide-topics/MotionMapArrows.svelte";
   import {
+    HAND_COMBINATIONS,
     combinationFor,
     handMoveDirection,
     plainTopicText,
@@ -92,6 +93,10 @@
 
   const hold = createBuildSequence();
   const foundIds = $derived(new Set(Object.keys(found) as HandCombinationId[]));
+  const strip = HAND_COMBINATIONS.map((combination) => ({
+    id: combination.id,
+    tones: LETTER_TYPE_COLORS[combination.letterType],
+  }));
 
   function setArrow(hand: HandSide, arrow: Arrow) {
     arrows = { ...arrows, [hand]: arrow };
@@ -289,6 +294,7 @@
           <Crossfade key={shown.key}>
             <div
               class="readout-copy"
+              class:mirrored={shown.mirror}
               style:--tone-a={tones[0]}
               style:--tone-b={tones[1]}
             >
@@ -306,7 +312,21 @@
           </Crossfade>
         {/if}
       </div>
-      <HandCombinationBoard found={foundIds} {lit} namesOnlyWhenNarrow />
+      <div class="board-slot">
+        <HandCombinationBoard found={foundIds} {lit} namesOnlyWhenNarrow />
+      </div>
+      <!-- Stacked on a phone, the board would fall under the lesson controls;
+           a row of six bars in the combinations' colors stands in for it. -->
+      <ul class="found-strip" aria-hidden="true">
+        {#each strip as { id, tones } (id)}
+          <li
+            class:found={foundIds.has(id)}
+            class:lit={lit === id}
+            style:--tone-a={tones[0]}
+            style:--tone-b={tones[1]}
+          ></li>
+        {/each}
+      </ul>
     </div>
   </div>
   <span class="sr-only" aria-live="polite">{announcement}</span>
@@ -319,49 +339,145 @@
   }
 
   .pairs-layout {
-    --pairs-grid: min(max(17rem, calc(100svh - 21rem)), 44rem);
+    --pairs-gap: clamp(1rem, 2.5vw, 2.5rem);
     display: grid;
     justify-items: center;
     align-items: center;
-    gap: clamp(1rem, 2.5vw, 2.5rem);
+    gap: var(--pairs-gap);
     width: 100%;
   }
 
+  /* Stacked, the result line and the bars sit under the grid and the lesson
+     controls are taller, so the grid gives up more of the window's height. */
   .figure {
-    width: min(100%, var(--pairs-grid));
+    width: min(100%, max(17rem, calc(100svh - 30rem)), 44rem);
     aspect-ratio: 1;
   }
 
   .results {
     display: grid;
-    gap: 1rem;
+    gap: 0.6rem;
     align-content: center;
-    width: min(100%, 30rem);
+    width: 100%;
     min-width: 0;
   }
 
-  @container hand-pairs (min-width: 50rem) {
+  .readout {
+    min-height: 4.4rem;
+  }
+
+  .readout-copy {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "name bar"
+      "description description"
+      "mirror mirror";
+    align-items: center;
+    justify-items: start;
+    gap: 0.25rem 0.6rem;
+  }
+
+  /* No room for both lines stacked: a mirrored pair's note replaces the
+     description it already showed. */
+  .readout-copy.mirrored .readout-description {
+    display: none;
+  }
+
+  .board-slot {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .found-strip {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .found-strip li {
+    height: 0.4rem;
+    border-radius: 999px;
+    background: linear-gradient(
+      90deg,
+      var(--tone-a) 0 50%,
+      var(--tone-b) 50% 100%
+    );
+    opacity: 0.2;
+    transition:
+      opacity var(--transition-normal),
+      box-shadow var(--transition-normal);
+  }
+
+  .found-strip li.found {
+    opacity: 1;
+  }
+
+  .found-strip li.lit {
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--tone-a) 35%, transparent);
+  }
+
+  @container hand-pairs (min-width: 40rem) {
     .pairs-layout {
-      grid-template-columns: minmax(0, var(--pairs-grid)) minmax(18rem, 30rem);
+      /* The grid takes its full size first; the results get what is left. */
+      --pairs-grid: min(
+        max(17rem, calc(100svh - 21rem)),
+        44rem,
+        calc(100% - 18rem - var(--pairs-gap))
+      );
+      grid-template-columns: var(--pairs-grid) minmax(18rem, 30rem);
       justify-content: center;
     }
 
     .figure {
       width: 100%;
     }
-  }
 
-  .readout {
-    min-height: 5.75rem;
-  }
+    .results {
+      gap: 1rem;
+    }
 
-  .readout-copy {
-    display: grid;
-    justify-items: start;
-    gap: 0.35rem;
+    .readout {
+      min-height: 5.75rem;
+    }
+
+    .readout-copy {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "name"
+        "bar"
+        "description"
+        "mirror";
+      gap: 0.35rem;
+    }
+
+    .readout-copy.mirrored .readout-description {
+      display: block;
+    }
+
+    .board-slot {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+      white-space: normal;
+    }
+
+    .found-strip {
+      display: none;
+    }
   }
 
   .readout-name {
+    grid-area: name;
     color: var(--theme-text);
     font-size: clamp(1.25rem, 1.8vw, 1.6rem);
     font-weight: 800;
@@ -369,6 +485,7 @@
   }
 
   .bar {
+    grid-area: bar;
     width: 3.5rem;
     height: 0.3rem;
     border-radius: 999px;
@@ -380,12 +497,14 @@
   }
 
   .readout-description {
+    grid-area: description;
     color: var(--theme-text-dim);
     line-height: 1.4;
     text-wrap: pretty;
   }
 
   .mirror {
+    grid-area: mirror;
     color: var(--theme-text);
     font-weight: 600;
   }

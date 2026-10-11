@@ -60,36 +60,26 @@
   }
 
   .map-layout {
+    --map-gap: clamp(1rem, 2.5vw, 2.5rem);
     display: grid;
     justify-items: center;
     align-items: center;
-    gap: clamp(1rem, 2.5vw, 2.5rem);
+    gap: var(--map-gap);
     width: 100%;
   }
 
-  /* Sized by the window's height too, so the heading, map and Next fit one
-     screen. */
+  /* Sized by the window's height too, so the heading, map, moves and the
+     lesson controls fit one screen. Stacked, the moves sit under the map and
+     the controls are taller, so the map gives up more height. */
   .figure {
-    width: min(100%, max(17rem, calc(100svh - 21rem)), 44rem);
-  }
-
-  @container hand-map (min-width: 48rem) {
-    .map-layout {
-      grid-template-columns:
-        minmax(0, min(max(17rem, calc(100svh - 21rem)), 44rem))
-        minmax(14rem, 22rem);
-      justify-content: center;
-    }
-
-    .figure {
-      width: 100%;
-    }
+    width: min(100%, max(17rem, calc(100svh - 30rem)), 44rem);
   }
 
   .moves {
     display: grid;
-    gap: 0.5rem;
-    width: min(100%, 22rem);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+    width: 100%;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -97,18 +87,52 @@
 
   .moves li {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 1.25rem;
+    grid-template-columns: minmax(0, 1fr) 1rem;
     grid-template-areas:
       "name check"
-      "caption check";
-    align-items: center;
-    column-gap: 0.75rem;
-    padding: 0.65rem 0.9rem;
+      "caption caption";
+    align-items: start;
+    gap: 0.2rem 0.25rem;
+    padding: 0.5rem 0.55rem;
     border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
     border-radius: 0.75rem;
     transition:
       background-color var(--transition-normal),
       border-color var(--transition-normal);
+  }
+
+  @container hand-map (min-width: 40rem) {
+    /* The map takes its full size first; the moves get what is left. */
+    .map-layout {
+      grid-template-columns:
+        min(
+          max(17rem, calc(100svh - 21rem)),
+          44rem,
+          calc(100% - 14rem - var(--map-gap))
+        )
+        minmax(14rem, 22rem);
+      justify-content: center;
+    }
+
+    .figure {
+      width: 100%;
+    }
+
+    .moves {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.5rem;
+      width: min(100%, 22rem);
+    }
+
+    .moves li {
+      grid-template-columns: minmax(0, 1fr) 1.25rem;
+      grid-template-areas:
+        "name check"
+        "caption check";
+      align-items: center;
+      gap: 0 0.75rem;
+      padding: 0.65rem 0.9rem;
+    }
   }
 
   .moves li.lit {
@@ -143,12 +167,6 @@
 
   .found .check {
     opacity: 1;
-  }
-
-  @media (max-width: 640px) {
-    .moves li {
-      padding: 0.5rem 0.75rem;
-    }
   }
 
   .sr-only {
