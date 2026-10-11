@@ -27,7 +27,7 @@ function createHarness() {
     rightOrientation: Orientation.IN,
     dragLocations: false,
     canAim: false,
-    hands: "both" as "both" | "left",
+    hands: "both" as "both" | "left" | "right",
   };
   const onChange = vi.fn();
   const onPlacementComplete = vi.fn();
@@ -358,5 +358,65 @@ describe("left-hand-only placement", () => {
     state.selectPoint(GridLocation.SOUTH, HandSide.RIGHT);
     expect(state.rightLocation).toBeNull();
     expect(state.historyLength).toBe(0);
+  });
+});
+
+describe("right-hand-only placement", () => {
+  function rightOnly(initialRight: GridLocation | null) {
+    const harness = createHarness();
+    harness.values.hands = "right";
+    harness.values.initialRightLocation = initialRight;
+    harness.state.synchronizeInputs();
+    return harness;
+  }
+
+  it("counts one placed hand as a complete placement", () => {
+    const { state } = rightOnly(GridLocation.EAST);
+    expect(state.activeHand).toBeNull();
+    expect(state.isComplete).toBe(true);
+  });
+
+  it("moves the hand without ever asking for the left hand", () => {
+    const { state, onChange, onPlacementComplete } = rightOnly(
+      GridLocation.EAST
+    );
+    state.edit(HandSide.RIGHT);
+    state.selectPoint(GridLocation.NORTH);
+    expect(state.rightLocation).toBe(GridLocation.NORTH);
+    expect(state.leftLocation).toBeNull();
+    expect(state.activeHand).toBeNull();
+    expect(state.liveAnnouncement).toBe("right prop moved to North.");
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        leftLocation: null,
+        rightLocation: GridLocation.NORTH,
+        activeHand: null,
+        placedHand: HandSide.RIGHT,
+        complete: true,
+      })
+    );
+    expect(onPlacementComplete).not.toHaveBeenCalled();
+  });
+
+  it("places a first hand and stops there", () => {
+    const { state } = rightOnly(null);
+    expect(state.activeHand).toBe(HandSide.RIGHT);
+    state.selectPoint(GridLocation.WEST);
+    expect(state.activeHand).toBeNull();
+    expect(state.isComplete).toBe(true);
+    expect(state.liveAnnouncement).toBe("right prop placed at West.");
+  });
+
+  it("ignores a left-hand selection", () => {
+    const { state } = rightOnly(GridLocation.EAST);
+    state.selectPoint(GridLocation.SOUTH, HandSide.LEFT);
+    expect(state.leftLocation).toBeNull();
+    expect(state.historyLength).toBe(0);
+  });
+
+  it("starts over on the right hand", () => {
+    const { state } = rightOnly(GridLocation.EAST);
+    state.reset();
+    expect(state.activeHand).toBe(HandSide.RIGHT);
   });
 });

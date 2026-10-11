@@ -31,8 +31,8 @@ interface PropPlacementStateInputs {
   getLeftNoun: () => string;
   getRightNoun: () => string;
   getActivePoints: () => PlacementGridPoint[];
-  /** "left" keeps one blue hand; the right hand is never asked for. */
-  getHands?: () => "both" | "left";
+  /** "left" keeps one blue hand, "right" one red hand; the other is never asked for. */
+  getHands?: () => "both" | "left" | "right";
 }
 
 interface PropPlacementStateDependencies {
@@ -56,8 +56,11 @@ export function createPropPlacementState(
   dependencies: PropPlacementStateDependencies
 ) {
   const leftOnly = () => inputs.getHands?.() === "left";
+  const rightOnly = () => inputs.getHands?.() === "right";
 
   function initialActiveHand(): HandSide | null {
+    if (rightOnly())
+      return inputs.getInitialRightLocation() ? null : HandSide.RIGHT;
     if (!inputs.getInitialLeftLocation()) return HandSide.LEFT;
     if (leftOnly() || inputs.getInitialRightLocation()) return null;
     return HandSide.RIGHT;
@@ -75,6 +78,7 @@ export function createPropPlacementState(
   let initializationKey = buildInitializationKey(inputs);
 
   function isComplete(): boolean {
+    if (rightOnly()) return rightLocation !== null;
     return leftLocation !== null && (leftOnly() || rightLocation !== null);
   }
 
@@ -154,6 +158,7 @@ export function createPropPlacementState(
   ): void {
     if (inputs.getDisabled() || color === null) return;
     if (color === HandSide.RIGHT && leftOnly()) return;
+    if (color === HandSide.LEFT && rightOnly()) return;
 
     const label = labelForLocation(location);
     pushHistory();
@@ -171,11 +176,13 @@ export function createPropPlacementState(
           ? `${inputs.getLeftNoun()} placed at ${label}. Place the ${inputs.getRightNoun()}.`
           : `${inputs.getLeftNoun()} moved to ${label}. Position ready.`;
     } else {
+      const previous = rightLocation;
       rightLocation = location;
-      activeHand = leftLocation === null ? HandSide.LEFT : null;
+      activeHand = leftLocation === null && !rightOnly() ? HandSide.LEFT : null;
       dependencies.triggerHaptic();
-      liveAnnouncement =
-        leftLocation === null
+      liveAnnouncement = rightOnly()
+        ? `${inputs.getRightNoun()} ${previous === null ? "placed at" : "moved to"} ${label}.`
+        : leftLocation === null
           ? `${inputs.getRightNoun()} placed at ${label}. Place the ${inputs.getLeftNoun()}.`
           : `${inputs.getRightNoun()} placed at ${label}. ${inputs.getLeftNoun()} at ${labelForLocation(leftLocation)}, ${inputs.getRightNoun()} at ${label}. Position ready.`;
     }
@@ -223,7 +230,7 @@ export function createPropPlacementState(
   function reset(): void {
     leftLocation = null;
     rightLocation = null;
-    activeHand = HandSide.LEFT;
+    activeHand = rightOnly() ? HandSide.RIGHT : HandSide.LEFT;
     history = [];
     liveAnnouncement = "";
     publishChange();

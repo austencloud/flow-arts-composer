@@ -5121,7 +5121,7 @@
   "learn_motion_path_static_caption": "Am selben Punkt bleiben",
   "learn_motion_path_aria": "{name}: {caption}",
   "learn_motion_map_prompt": "Ziehe die Hand auf einen Punkt.",
-  "learn_motion_pairs_prompt": "Ziehe beide Hände. Finde alle sechs.",
+  "learn_motion_pairs_prompt": "Bewege erst die blaue Hand, dann die rote. Finde alle sechs.",
   "learn_motion_pairs_mirror": "Dasselbe Paar, Hände vertauscht.",
   "learn_motion_combinations_lead": "Daraus lassen sich sechs Kombinationen bilden, die unten benannt sind.",
   "learn_motion_dash_description": "Eine Hand bewegt sich zum gegenüberliegenden Punkt, die andere bleibt stehen.",

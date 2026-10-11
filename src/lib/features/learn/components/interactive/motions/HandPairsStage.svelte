@@ -1,20 +1,22 @@
 <!--
-  Hand Motions, stage 2: two hands find the six combinations. Blue starts at
-  West and red at East. Each hand lands where it is dropped, and its one
-  arrow stays drawn from where the round began (dropping a hand back there
-  makes it static). Once both hands have moved, both moves replay together
-  from the round's start, the combination is named and its board cell fills.
-  A pair with the hands swapped lands on the cell it already filled. After a
-  short hold the arrows fade and the next round starts where the hands are;
-  grabbing a hand ends the hold early. Reduced motion names the result
-  without the replay.
+  Hand Motions, stage 2: two hands find the six combinations. Each hand has
+  its own grid, side by side, blue starting at West and red at East. Blue
+  moves first; red's grid waits until it has. Each arrow is drawn on its own
+  hand's grid, so no arrow lies over the other hand. Once both have moved,
+  the two grids slide together into one larger picture: both arrows, laid out
+  as the pair's own pictograph, and both hands travelling them from the
+  round's start. The combination is named and its board cell fills; a pair
+  with the hands swapped lands on the cell it already filled. After a short
+  hold the picture splits back into the two grids, and the next round starts
+  where the hands ended. A tap or Enter ends the hold early. Reduced motion
+  swaps the grids for the picture without the slide or the travel.
 
-  The spec put a ghost hand at each target; the grid commits a hand where it
-  is dropped, as stage 1 does, so the hands land instead (plan, "Deviation").
+  Austen, 2026-10-11: two grids that fuse into one picture, like Fuse,
+  instead of one grid where a hand's arrow could lie over the other hand.
   Spec: docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md
 -->
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import Crossfade from "#lib/shared/components/Crossfade.svelte";
   import HandCombinationBoard from "#lib/shared/guide-topics/HandCombinationBoard.svelte";
@@ -22,7 +24,7 @@
   import {
     HAND_COMBINATIONS,
     combinationFor,
-    handMoveDirection,
+    handPairPictographData,
     plainTopicText,
     type HandCombination,
     type HandCombinationId,
@@ -35,18 +37,22 @@
   } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { PlacementMotionMove } from "#lib/shared/pictograph/grid/state/prop-placement-motion.svelte.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { LETTER_TYPE_COLORS } from "#lib/shared/pictograph/shared/domain/constants/pictograph-constants.js";
   import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     BUILD_BEAT_PAUSE_MS,
     createBuildSequence,
-    type BuildBeat,
   } from "#lib/shared/transitions/build-sequence.js";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     isMirrorPair,
     placeHand,
+    roundHands,
     roundPair,
+    roundReplay,
     startRound,
     type HandPair,
     type PairRound,
@@ -60,27 +66,41 @@
 
   let { found, onFind }: Props = $props();
 
-  const HANDS = [HandSide.LEFT, HandSide.RIGHT] as const;
-  const START_LEFT = GridLocation.WEST;
-  const START_RIGHT = GridLocation.EAST;
+  type Spots = Record<HandSide, GridLocation>;
+  const BLUE = HandSide.LEFT;
+  const RED = HandSide.RIGHT;
+  const HANDS = [BLUE, RED] as const;
+  const START: Spots = {
+    [BLUE]: GridLocation.WEST,
+    [RED]: GridLocation.EAST,
+  };
+  /** The two grids sliding together into one picture, or apart again. */
+  const SLIDE_MS = DURATION.scene;
+  const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
   interface Arrow {
     from: GridLocation;
     to: GridLocation | null;
   }
 
-  let host: HTMLDivElement;
-  let handsAt: Record<HandSide, GridLocation> = {
-    [HandSide.LEFT]: START_LEFT,
-    [HandSide.RIGHT]: START_RIGHT,
-  };
-  let round: PairRound = startRound(START_LEFT, START_RIGHT);
+  let duo: HTMLDivElement;
+  let halvesBox: HTMLDivElement;
+  let fusedFrame: HTMLDivElement;
+  const halves: Partial<Record<HandSide, HTMLDivElement>> = {};
+
+  /** Where each hand stands now; the next round starts there. */
+  const handsAt: Spots = { ...START };
+  let round = $state<PairRound>(startRound(START[BLUE], START[RED]));
   let arrows = $state<Record<HandSide, Arrow>>({
-    [HandSide.LEFT]: { from: START_LEFT, to: null },
-    [HandSide.RIGHT]: { from: START_RIGHT, to: null },
+    [BLUE]: { from: START[BLUE], to: null },
+    [RED]: { from: START[RED], to: null },
   });
-  let aimingHand: HandSide | null = null;
-  let motionMove = $state<PlacementMotionMove | null>(null);
+  /** The two grids are one picture. */
+  let together = $state(false);
+  /** Where the picture's hands stand: the round's start, then its end. */
+  let fusedAt = $state<Spots>({ ...START });
+  let fusedMove = $state<PlacementMotionMove | null>(null);
+  let pairData = $state<PictographData | null>(null);
   let shown = $state<{
     combination: HandCombination;
     mirror: boolean;
@@ -90,8 +110,12 @@
   let announcement = $state("");
   let pending: { combination: HandCombination; pair: HandPair } | null = null;
   let holding = false;
+  let replayEpoch = 0;
+  let stillHold: ReturnType<typeof setTimeout> | undefined;
+  let flight: Animation[] = [];
 
   const hold = createBuildSequence();
+  const blueMoved = $derived(round.moves[BLUE] !== undefined);
   const foundIds = $derived(new Set(Object.keys(found) as HandCombinationId[]));
   const strip = HAND_COMBINATIONS.map((combination) => ({
     id: combination.id,
@@ -102,54 +126,8 @@
     arrows = { ...arrows, [hand]: arrow };
   }
 
-  /** A fresh round still shows the last round's arrows; the first aim clears them. */
-  function clearStaleArrows(except: HandSide) {
-    for (const hand of HANDS) {
-      if (hand === except || round.moves[hand]) continue;
-      if (arrows[hand].to !== null)
-        setArrow(hand, { ...arrows[hand], to: null });
-    }
-  }
-
-  function clearArrows() {
-    for (const hand of HANDS) setArrow(hand, { ...arrows[hand], to: null });
-  }
-
-  /** Both hands' moves from the round's start, the moving ones travelling. */
-  function replayMove(): PlacementMotionMove | null {
-    const travels = HANDS.flatMap((hand) => {
-      const made = round.moves[hand];
-      if (!made || made.move === "static") return [];
-      const from = round.start[hand];
-      return [
-        {
-          hand,
-          from,
-          to: made.to,
-          direction: handMoveDirection(from, made.to),
-          path: made.move === "dash" ? ("dash" as const) : ("arc" as const),
-        },
-      ];
-    });
-    const [first, second] = travels;
-    if (!first) return null;
-    return {
-      epoch: (motionMove?.epoch ?? 0) + 1,
-      color: first.hand,
-      from: first.from,
-      to: first.to,
-      direction: first.direction,
-      path: first.path,
-      durationMs: DURATION.scene,
-      partner: second
-        ? {
-            from: second.from,
-            to: second.to,
-            direction: second.direction,
-            path: second.path,
-          }
-        : undefined,
-    };
+  function roundArrow(hand: HandSide): Arrow {
+    return { from: round.start[hand], to: round.moves[hand]?.to ?? null };
   }
 
   function reveal() {
@@ -170,36 +148,147 @@
       : named;
   }
 
-  /** The next round starts where the hands are. */
-  function endHold() {
-    reveal();
-    round = startRound(handsAt[HandSide.LEFT], handsAt[HandSide.RIGHT]);
-    holding = false;
+  function cancelFlight() {
+    for (const animation of flight) animation.cancel();
+    flight = [];
   }
 
-  function resolve(pair: HandPair) {
+  /**
+   * Slides each grid between its own place and the picture's, growing to the
+   * picture's size, while the picture dissolves in (or out). Under reduced
+   * motion the swap is instant.
+   */
+  function fly(joining: boolean) {
+    cancelFlight();
+    if (reducedMotion()) return;
+    const picture = fusedFrame.getBoundingClientRect();
+    for (const hand of HANDS) {
+      const half = halves[hand];
+      const place = half?.getBoundingClientRect();
+      if (!half || !place?.width) continue;
+      const dx =
+        picture.left + picture.width / 2 - (place.left + place.width / 2);
+      const dy =
+        picture.top + picture.height / 2 - (place.top + place.height / 2);
+      const met = `translate(${dx}px, ${dy}px) scale(${picture.width / place.width})`;
+      const keyframes: Keyframe[] = [
+        { transform: "none", opacity: 1, offset: 0 },
+        { transform: met, opacity: 1, offset: 0.5 },
+        { transform: met, opacity: 0, offset: 0.8 },
+        { transform: met, opacity: 0, offset: 1 },
+      ];
+      flight.push(
+        half.animate(joining ? keyframes : reverse(keyframes), {
+          duration: SLIDE_MS,
+          easing: EASE,
+        })
+      );
+    }
+    const dissolve: Keyframe[] = [
+      { opacity: 0, offset: 0 },
+      { opacity: 0, offset: 0.45 },
+      { opacity: 1, offset: 0.85 },
+      { opacity: 1, offset: 1 },
+    ];
+    flight.push(
+      fusedFrame.animate(joining ? dissolve : reverse(dissolve), {
+        duration: SLIDE_MS,
+        easing: EASE,
+      })
+    );
+  }
+
+  /** The same keyframes played backwards. */
+  function reverse(keyframes: Keyframe[]): Keyframe[] {
+    return keyframes
+      .map((frame) => ({ ...frame, offset: 1 - (frame.offset ?? 0) }))
+      .reverse();
+  }
+
+  /**
+   * The grids go inert while they are one picture, so a keyboard user's focus
+   * waits on the picture and comes back to blue's grid after the split.
+   */
+  function join() {
+    if (halvesBox.contains(document.activeElement))
+      duo.focus({ preventScroll: true });
+    together = true;
+  }
+
+  async function part() {
+    const refocus = document.activeElement === duo;
+    together = false;
+    if (!refocus) return;
+    await tick();
+    halves[BLUE]?.querySelector<HTMLElement>(
+      'button, [role="button"][tabindex="0"]'
+    )?.focus({ preventScroll: true });
+  }
+
+  /** The picture's hands where this round's moves end. */
+  function settle() {
+    const hands = roundHands(round);
+    if (hands) fusedAt = { [BLUE]: hands.left.to, [RED]: hands.right.to };
+  }
+
+  function fuse() {
+    const pair = roundPair(round);
+    const hands = roundHands(round);
+    if (!pair || !hands) return;
     pending = { combination: combinationFor(pair.blue, pair.red), pair };
     holding = true;
-    const travel = replayMove();
-    const beats: BuildBeat[] = [
-      // Let the dropped hand land before both replay from the start.
-      { pause: DURATION.normal },
-      ...(travel
-        ? [{ act: () => (motionMove = travel) }, { pause: DURATION.scene }]
-        : []),
-      { act: reveal },
-      { pause: BUILD_BEAT_PAUSE_MS * 2 },
-      { act: clearArrows },
-    ];
-    hold.play(beats, endHold);
+    pairData = handPairPictographData(hands.left, hands.right);
+    fusedAt = { [BLUE]: hands.left.from, [RED]: hands.right.from };
+    const travel = roundReplay(round, ++replayEpoch, DURATION.scene);
+    if (reducedMotion()) {
+      join();
+      settle();
+      reveal();
+      stillHold = setTimeout(split, BUILD_BEAT_PAUSE_MS * 3);
+      return;
+    }
+    hold.play(
+      [
+        // Let the dropped hand land first.
+        { pause: DURATION.normal },
+        {
+          act: () => {
+            join();
+            fly(true);
+          },
+        },
+        { pause: SLIDE_MS + DURATION.normal },
+        {
+          act: () => {
+            settle();
+            fusedMove = travel;
+          },
+        },
+        { pause: travel ? DURATION.scene : 0 },
+        { act: reveal },
+        { pause: BUILD_BEAT_PAUSE_MS * 2 },
+      ],
+      split
+    );
   }
 
-  /** Grabbing a hand during the hold ends it at once. */
-  function takeOver() {
+  /** Back to two grids; the next round starts where the hands ended. */
+  function split() {
     if (!holding) return;
+    holding = false;
     hold.cancel();
-    clearArrows();
-    endHold();
+    clearTimeout(stillHold);
+    reveal();
+    settle();
+    round = startRound(handsAt[BLUE], handsAt[RED]);
+    for (const hand of HANDS) setArrow(hand, { from: handsAt[hand], to: null });
+    void part();
+    fly(false);
+  }
+
+  /** A tap or Enter on the picture ends the hold at once. */
+  function takeOver() {
+    if (holding && together) split();
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -207,84 +296,118 @@
   }
 
   /** A drag aims a hand at a point: draw the move it would make this round. */
-  function aimed(target: GridLocation | null, hand: HandSide | null) {
-    if (target === null || hand === null) {
-      if (aimingHand === null) return;
-      const was = aimingHand;
-      aimingHand = null;
-      setArrow(was, {
-        from: round.start[was],
-        to: round.moves[was]?.to ?? null,
-      });
-      return;
-    }
-    takeOver();
-    aimingHand = hand;
-    clearStaleArrows(hand);
-    setArrow(hand, { from: round.start[hand], to: target });
+  function aimed(hand: HandSide, target: GridLocation | null) {
+    setArrow(
+      hand,
+      target === null
+        ? roundArrow(hand)
+        : { from: round.start[hand], to: target }
+    );
   }
 
-  function changed(change: PropPlacementChange) {
-    takeOver();
-    if (change.leftLocation) handsAt[HandSide.LEFT] = change.leftLocation;
-    if (change.rightLocation) handsAt[HandSide.RIGHT] = change.rightLocation;
-    const hand = change.placedHand;
-    if (!hand) return;
-    aimingHand = null;
-    const to = handsAt[hand];
+  function changed(hand: HandSide, change: PropPlacementChange) {
+    const to = hand === BLUE ? change.leftLocation : change.rightLocation;
+    // Picked up (tap or Enter) but not yet put down.
+    if (change.placedHand !== hand || !to) return;
+    handsAt[hand] = to;
     round = placeHand(round, hand, to);
-    clearStaleArrows(hand);
-    setArrow(hand, {
-      from: round.start[hand],
-      to: round.moves[hand]?.to ?? null,
-    });
-    const pair = roundPair(round);
-    if (pair) resolve(pair);
+    setArrow(hand, roundArrow(hand));
+    if (roundPair(round)) fuse();
   }
 
   onMount(() => {
-    // Capture, so the hold ends before the grid starts a drag.
-    host.addEventListener("pointerdown", takeOver, { capture: true });
-    host.addEventListener("keydown", handleKeydown, { capture: true });
+    duo.addEventListener("pointerdown", takeOver, { capture: true });
+    duo.addEventListener("keydown", handleKeydown, { capture: true });
     return () => {
-      host.removeEventListener("pointerdown", takeOver, { capture: true });
-      host.removeEventListener("keydown", handleKeydown, { capture: true });
+      duo.removeEventListener("pointerdown", takeOver, { capture: true });
+      duo.removeEventListener("keydown", handleKeydown, { capture: true });
       hold.cancel();
+      clearTimeout(stillHold);
+      cancelFlight();
     };
   });
 </script>
 
 <div class="pairs-stage">
   <div class="pairs-layout">
-    <div class="figure" bind:this={host}>
-      <PropPlacementGrid
-        gridMode={GridMode.DIAMOND}
-        leftPropType={PropType.HAND}
-        rightPropType={PropType.HAND}
-        leftNoun="blue hand"
-        rightNoun="red hand"
-        promptText=""
-        renderTray={false}
-        showUndo={false}
-        initialLeftLocation={START_LEFT}
-        initialRightLocation={START_RIGHT}
-        {motionMove}
-        editAfterCompletion={true}
-        dragLocations={true}
-        animateContent={true}
-        onDragTarget={aimed}
-        onChange={changed}
-      >
-        {#snippet figureLayer()}
-          {#each HANDS as hand (hand)}
-            <MotionMapArrows
-              from={arrows[hand].from}
-              to={arrows[hand].to}
-              {hand}
-            />
-          {/each}
-        {/snippet}
-      </PropPlacementGrid>
+    <div class="duo" class:together bind:this={duo} tabindex="-1">
+      <div class="halves" inert={together} bind:this={halvesBox}>
+        {#each HANDS as hand (hand)}
+          {@const red = hand === RED}
+          <div class="half" bind:this={halves[hand]}>
+            <PropPlacementGrid
+              gridMode={GridMode.DIAMOND}
+              hands={red ? "right" : "left"}
+              leftPropType={PropType.HAND}
+              rightPropType={PropType.HAND}
+              leftNoun="blue hand"
+              rightNoun="red hand"
+              promptText=""
+              renderTray={false}
+              showUndo={false}
+              initialLeftLocation={red ? null : START[BLUE]}
+              initialRightLocation={red ? START[RED] : null}
+              disabled={red && !blueMoved}
+              editAfterCompletion={true}
+              dragLocations={true}
+              animateContent={true}
+              onDragTarget={(target) => aimed(hand, target)}
+              onChange={(change) => changed(hand, change)}
+            >
+              {#snippet figureLayer()}
+                <MotionMapArrows
+                  from={arrows[hand].from}
+                  to={arrows[hand].to}
+                  {hand}
+                />
+              {/snippet}
+            </PropPlacementGrid>
+          </div>
+        {/each}
+      </div>
+
+      <div class="fused" bind:this={fusedFrame} inert>
+        <PropPlacementGrid
+          gridMode={GridMode.DIAMOND}
+          leftPropType={PropType.HAND}
+          rightPropType={PropType.HAND}
+          leftNoun="blue hand"
+          rightNoun="red hand"
+          promptText=""
+          renderTray={false}
+          showUndo={false}
+          initialLeftLocation={fusedAt[BLUE]}
+          initialRightLocation={fusedAt[RED]}
+          motionMove={fusedMove}
+          editAfterCompletion={false}
+          dragLocations={false}
+          animateContent={true}
+        >
+          {#snippet figureLayer()}
+            {#if pairData}
+              <div class="pair-arrows">
+                <PictographContainer
+                  pictographData={pairData}
+                  gridMode={GridMode.DIAMOND}
+                  leftPropTypeOverride={PropType.HAND}
+                  rightPropTypeOverride={PropType.HAND}
+                  showGrid={false}
+                  showProps={false}
+                  transparentBackground={true}
+                  showTKA={false}
+                  showReversals={false}
+                  showTnD={false}
+                  showElemental={false}
+                  showPlacements={false}
+                  showNonRadialPoints={false}
+                  showHandPoints={false}
+                  stepNumberOverride={false}
+                />
+              </div>
+            {/if}
+          {/snippet}
+        </PropPlacementGrid>
+      </div>
     </div>
 
     <div class="results">
@@ -338,8 +461,21 @@
     width: 100%;
   }
 
+  /* Two grids side by side, and the larger picture they fuse into: 1.4 times
+     a grid. Stacked, the result line and the bars sit under the grids and the
+     lesson controls are taller, so the picture gives up more of the window's
+     height. */
   .pairs-layout {
     --pairs-gap: clamp(1rem, 2.5vw, 2.5rem);
+    --half-gap: clamp(0.75rem, 2cqi, 1.5rem);
+    --room: 100cqi;
+    --tall: max(17rem, calc(100svh - 30rem));
+    --half: min(
+      calc((var(--room) - var(--half-gap)) / 2),
+      calc(var(--tall) / 1.4),
+      30rem
+    );
+    --fused: min(calc(var(--half) * 1.4), var(--room));
     display: grid;
     justify-items: center;
     align-items: center;
@@ -347,11 +483,49 @@
     width: 100%;
   }
 
-  /* Stacked, the result line and the bars sit under the grid and the lesson
-     controls are taller, so the grid gives up more of the window's height. */
-  .figure {
-    width: min(100%, max(17rem, calc(100svh - 30rem)), 44rem);
+  .duo {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: calc(2 * var(--half) + var(--half-gap));
+    height: var(--fused);
+    outline: none;
+  }
+
+  .halves {
+    display: grid;
+    grid-template-columns: repeat(2, var(--half));
+    gap: var(--half-gap);
+  }
+
+  .half {
+    width: var(--half);
     aspect-ratio: 1;
+    transform-origin: center;
+  }
+
+  .fused {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--fused);
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .together .halves {
+    opacity: 0;
+  }
+
+  .together .fused {
+    opacity: 1;
+  }
+
+  .pair-arrows {
+    position: absolute;
+    inset: 0;
   }
 
   .results {
@@ -424,20 +598,13 @@
     box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--tone-a) 35%, transparent);
   }
 
-  @container hand-pairs (min-width: 40rem) {
+  @container hand-pairs (min-width: 52rem) {
     .pairs-layout {
-      /* The grid takes its full size first; the results get what is left. */
-      --pairs-grid: min(
-        max(17rem, calc(100svh - 21rem)),
-        44rem,
-        calc(100% - 18rem - var(--pairs-gap))
-      );
-      grid-template-columns: var(--pairs-grid) minmax(18rem, 30rem);
+      /* The grids take their full size first; the results get what is left. */
+      --room: calc(100cqi - 18rem - var(--pairs-gap));
+      --tall: max(17rem, calc(100svh - 21rem));
+      grid-template-columns: auto minmax(18rem, 30rem);
       justify-content: center;
-    }
-
-    .figure {
-      width: 100%;
     }
 
     .results {

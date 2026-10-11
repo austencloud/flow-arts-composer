@@ -95,6 +95,19 @@ curriculum and registry entry.
    six-cell board beside the grid fills. A mirrored pair lands on the cell it
    already filled, so the learner finds out without being told that it does not
    matter which hand does which move. The stage is done once all six are found.
+
+   **Redesign, 2026-10-11 (Austen).** On one grid a hand's arrow could lie
+   over the other hand while both travelled. Each hand now has its own grid,
+   side by side: blue's on the left, red's on the right. Blue moves first, and
+   red's grid waits until it has. Once both have moved, the two grids slide
+   together into one larger picture (about 1.4 times a grid) that draws the
+   pair as one pictograph, with both arrows laid out together, and plays both
+   moves from the round's start, much as Create's Fuse joins two cards. The
+   combination is named and its cell fills. After a short hold the picture
+   splits back into the two grids, and the next round starts where the hands
+   ended. A tap or Enter ends the hold early; reduced motion swaps the grids
+   for the picture without the slide or the travel.
+
 3. **Wrap-up.** The full six-cell board. The primary action continues to Timing
    and Direction.
 
@@ -181,7 +194,8 @@ Austen approved the three new lesson prompts as written on 2026-10-11 (copy
 gate in `docs/learn/copy-reviews/hand-motions-intro.md`):
 
 - Stage 1: "Drag the hand to a point."
-- Stage 2: "Drag both hands. Find all six."
+- Stage 2: "Move the blue hand, then the red hand. Find all six." (was
+  "Drag both hands. Find all six." until the 2026-10-11 two-grid redesign)
 - Mirror pair: "Same pair, hands swapped."
 
 **Static caption:** the book says "Stay at the current point" and the lesson
