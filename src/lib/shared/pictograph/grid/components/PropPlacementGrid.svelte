@@ -82,6 +82,11 @@
     gridJoin?: GridJoin | null;
     /** "left" keeps one blue hand on the grid, "right" one red hand; the other is never placed. */
     hands?: "both" | "left" | "right";
+    /**
+     * With one hand: a press on any point moves the hand there, and every
+     * point wears Assemble's ring so the choices show. Needs editAfterCompletion.
+     */
+    tapToMove?: boolean;
     /** False hides the hands and shows the grid alone, as a self-building figure starts. */
     showProps?: boolean;
     /** Fires once the pictograph has drawn (PictographContainer onReady). */
@@ -128,6 +133,7 @@
     guideLineLocations = null,
     gridJoin = null,
     hands = "both",
+    tapToMove = false,
     showProps = true,
     onReady,
     figureLayer,
@@ -195,6 +201,7 @@
       getRightNoun: () => rightNoun,
       getActivePoints: () => activePoints,
       getHands: () => hands,
+      getTapToMove: () => tapToMove,
     },
     {
       triggerHaptic,
