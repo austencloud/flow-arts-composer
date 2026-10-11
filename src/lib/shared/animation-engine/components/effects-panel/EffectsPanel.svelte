@@ -14,11 +14,7 @@
   import { EFFECTS, EFFECT_LABELS, getRegistration } from "./effect-registry";
   import type { EffectRegistration } from "./effect-registry";
   import EffectPresetThumbnail from "./EffectPresetThumbnail.svelte";
-  import {
-    createEffectLookPreview,
-    type EffectLookPreviewModel,
-  } from "./effect-look-preview";
-  import type { EffectPreset } from "./presets/types";
+  import { effectCatalogLooks } from "./effect-catalog-looks";
   import {
     fitEffectCatalog,
     fitEffectRoster,
@@ -203,46 +199,13 @@
       : null
   );
 
-  /** The look each tile shows: the one that effect is set to now, so the
-   *  picture shows what turning it on will look like (or, for the effect that
-   *  is on, the look you picked in the dock). An effect with no named looks
-   *  (Ghost) draws its motif from its defaults. */
-  const catalogLooks = $derived.by(() => {
-    // The list arrangement has names only.
-    if (!(catalogFit ? catalogFit.portrait : rosterFit)) return null;
-    void effectsConfigState.version;
-    const looks = new Map<
-      string,
-      { preset: EffectPreset; model: EffectLookPreviewModel }
-    >();
-    for (const meta of EFFECTS) {
-      const group = getRegistration(meta.id)?.presetGroup;
-      if (!group || !isEffectId(meta.id)) continue;
-      const config = effectsConfigState.effect(meta.id) as unknown as Record<
-        string,
-        unknown
-      >;
-      const current =
-        pickedPresetId(
-          group,
-          config,
-          effectsConfigState.activePresets[meta.id]
-        ) ?? matchPresetId(group, config);
-      const preset: EffectPreset = group.presets.find(
-        (candidate) => candidate.id === current
-      ) ??
-        group.presets[0] ?? {
-          id: `${meta.id}-default`,
-          name: meta.label,
-          previewColor: meta.color,
-        };
-      looks.set(meta.id, {
-        preset,
-        model: createEffectLookPreview(meta.id, preset),
-      });
-    }
-    return looks;
-  });
+  /** The look each tile shows (effect-catalog-looks). The list arrangement
+   *  has names only. */
+  const catalogLooks = $derived(
+    (catalogFit ? catalogFit.portrait : rosterFit)
+      ? effectCatalogLooks(effectsConfigState)
+      : null
+  );
 
   const sidebarView = $derived(
     !wideWorkspace &&
