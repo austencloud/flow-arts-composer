@@ -426,8 +426,11 @@
   ];
   let scope = $state<Scope>("cell");
   let tipKey = $state("0-0");
+  // Keyed on the id, not the cell object: every edit replaces the object,
+  // and the scope the user picked has to survive the edit it just made.
+  const scopeCellId = $derived(cell?.id ?? null);
   $effect(() => {
-    void cell?.id;
+    void scopeCellId;
     untrack(() => {
       scope = "cell";
       tipKey = "0-0";
@@ -664,6 +667,136 @@
       cell onto another to swap them; its grips change how many cells it
       covers.
     </p>
+  {:else if tool === "speed"}
+    <ValueSlider
+      label="Speed"
+      value={Math.log2(item.speed)}
+      min={Math.log2(POST_MIN_SPEED)}
+      max={Math.log2(POST_MAX_SPEED)}
+      step={SPEED_STEP}
+      origin={0}
+      marks={SPEED_MARKS}
+      onmark={setItemSpeedStop}
+      markLabel={speedLabel}
+      format={speedLabel}
+      fromTyped={Math.log2}
+      disabled={locked}
+      onchange={setItemSpeedStop}
+    />
+    <p class="hint">
+      Speed plays the whole grid faster or slower. Each cell keeps its own
+      speed inside it.
+    </p>
+  {:else if tool === "look" || tool === "effects" || (tool === "effort" && cell)}
+    {#if tool === "look" && cell}
+      <div class="group" role="group" aria-label="Hands shown">
+        <span class="group-name">Hands</span>
+        <div class="chips">
+          <FilterChipBase
+            mode="toggle"
+            emphasis="solid"
+            label="Left"
+            ariaLabel="Show the left hand"
+            active={leftShown}
+            disabled={locked}
+            onclick={() => showHand("left", !leftShown)}
+          />
+          <FilterChipBase
+            mode="toggle"
+            emphasis="solid"
+            label="Right"
+            ariaLabel="Show the right hand"
+            active={rightShown}
+            disabled={locked}
+            onclick={() => showHand("right", !rightShown)}
+          />
+        </div>
+      </div>
+    {/if}
+    {#if tool !== "look" && cell}
+      <div class="group" role="group" aria-label="Applies to">
+        <span class="group-name">Applies to</span>
+        <div class="chips">
+          {#each SCOPES as entry (entry.id)}
+            <FilterChipBase
+              mode="toggle"
+              emphasis="solid"
+              label={entry.label}
+              active={scope === entry.id}
+              disabled={locked}
+              onclick={() => (scope = entry.id)}
+            />
+          {/each}
+        </div>
+        {#if scope === "tips"}
+          <div class="chips">
+            {#each tipTargets as target (target.key)}
+              <FilterChipBase
+                mode="toggle"
+                emphasis="solid"
+                label={target.label}
+                active={tipKey === target.key}
+                disabled={locked}
+                onclick={() => (tipKey = target.key)}
+              />
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {/if}
+    {#if tool === "look" || scopeKey === null}
+      {#key `${tool}:${lookKey}`}
+        <PostAnimationAppearanceTool
+          {editor}
+          appearanceOverride={look}
+          onAppearanceChange={saveLook}
+          appearanceKey={lookKey}
+          scopeLabel={scopeName}
+          {locked}
+          {fill}
+          sections={LOOK_SECTIONS[tool]}
+        />
+      {/key}
+    {:else if tool === "effects"}
+      <p class="hint">{scopeEffectHint}</p>
+      <div class="chips">
+        <FilterChipBase
+          mode="toggle"
+          emphasis="solid"
+          label="Follow the cell"
+          active={scopeEffect === null}
+          disabled={locked}
+          onclick={() => pickScopeEffect(null)}
+        />
+      </div>
+      <EffectSelector
+        activeEffect={scopeEffect ?? "none"}
+        onSelect={pickScopeEffect}
+        disabled={locked}
+      />
+    {:else}
+      <p class="hint">{scopeEffortHint}</p>
+      <div class="chips">
+        <FilterChipBase
+          mode="toggle"
+          emphasis="solid"
+          label="Follow the cell"
+          active={scopeEffort === null}
+          disabled={locked}
+          onclick={() => pickScopeEffort(null)}
+        />
+        {#each EFFORTS as effort (effort.id)}
+          <FilterChipBase
+            mode="toggle"
+            emphasis="solid"
+            label={effort.label}
+            active={scopeEffort === effort.id}
+            disabled={locked}
+            onclick={() => pickScopeEffort(effort.id)}
+          />
+        {/each}
+      </div>
+    {/if}
   {:else if !cell}
     <p class="hint">Tap a cell in the preview first.</p>
   {:else if tool === "sequence"}
@@ -849,136 +982,6 @@
       disabled={locked}
       onchange={setSpeedStop}
     />
-  {:else if tool === "speed"}
-    <ValueSlider
-      label="Speed"
-      value={Math.log2(item.speed)}
-      min={Math.log2(POST_MIN_SPEED)}
-      max={Math.log2(POST_MAX_SPEED)}
-      step={SPEED_STEP}
-      origin={0}
-      marks={SPEED_MARKS}
-      onmark={setItemSpeedStop}
-      markLabel={speedLabel}
-      format={speedLabel}
-      fromTyped={Math.log2}
-      disabled={locked}
-      onchange={setItemSpeedStop}
-    />
-    <p class="hint">
-      Speed plays the whole grid faster or slower. Each cell keeps its own
-      speed inside it.
-    </p>
-  {:else if tool === "look" || tool === "effects" || tool === "effort"}
-    {#if tool === "look" && cell}
-      <div class="group" role="group" aria-label="Hands shown">
-        <span class="group-name">Hands</span>
-        <div class="chips">
-          <FilterChipBase
-            mode="toggle"
-            emphasis="solid"
-            label="Left"
-            ariaLabel="Show the left hand"
-            active={leftShown}
-            disabled={locked}
-            onclick={() => showHand("left", !leftShown)}
-          />
-          <FilterChipBase
-            mode="toggle"
-            emphasis="solid"
-            label="Right"
-            ariaLabel="Show the right hand"
-            active={rightShown}
-            disabled={locked}
-            onclick={() => showHand("right", !rightShown)}
-          />
-        </div>
-      </div>
-    {/if}
-    {#if tool !== "look" && cell}
-      <div class="group" role="group" aria-label="Applies to">
-        <span class="group-name">Applies to</span>
-        <div class="chips">
-          {#each SCOPES as entry (entry.id)}
-            <FilterChipBase
-              mode="toggle"
-              emphasis="solid"
-              label={entry.label}
-              active={scope === entry.id}
-              disabled={locked}
-              onclick={() => (scope = entry.id)}
-            />
-          {/each}
-        </div>
-        {#if scope === "tips"}
-          <div class="chips">
-            {#each tipTargets as target (target.key)}
-              <FilterChipBase
-                mode="toggle"
-                emphasis="solid"
-                label={target.label}
-                active={tipKey === target.key}
-                disabled={locked}
-                onclick={() => (tipKey = target.key)}
-              />
-            {/each}
-          </div>
-        {/if}
-      </div>
-    {/if}
-    {#if tool === "look" || scopeKey === null}
-      {#key `${tool}:${lookKey}`}
-        <PostAnimationAppearanceTool
-          {editor}
-          appearanceOverride={look}
-          onAppearanceChange={saveLook}
-          appearanceKey={lookKey}
-          scopeLabel={scopeName}
-          {locked}
-          {fill}
-          sections={LOOK_SECTIONS[tool]}
-        />
-      {/key}
-    {:else if tool === "effects"}
-      <p class="hint">{scopeEffectHint}</p>
-      <div class="chips">
-        <FilterChipBase
-          mode="toggle"
-          emphasis="solid"
-          label="Follow the cell"
-          active={scopeEffect === null}
-          disabled={locked}
-          onclick={() => pickScopeEffect(null)}
-        />
-      </div>
-      <EffectSelector
-        activeEffect={scopeEffect ?? "none"}
-        onSelect={pickScopeEffect}
-        disabled={locked}
-      />
-    {:else}
-      <p class="hint">{scopeEffortHint}</p>
-      <div class="chips">
-        <FilterChipBase
-          mode="toggle"
-          emphasis="solid"
-          label="Follow the cell"
-          active={scopeEffort === null}
-          disabled={locked}
-          onclick={() => pickScopeEffort(null)}
-        />
-        {#each EFFORTS as effort (effort.id)}
-          <FilterChipBase
-            mode="toggle"
-            emphasis="solid"
-            label={effort.label}
-            active={scopeEffort === effort.id}
-            disabled={locked}
-            onclick={() => pickScopeEffort(effort.id)}
-          />
-        {/each}
-      </div>
-    {/if}
   {/if}
 </div>
 

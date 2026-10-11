@@ -31,11 +31,12 @@
   ];
 
   // The 2D goo renderer reads surfaceTension (exposed as Viscosity — how much
-  // the liquid congeals), motionEmission (Amount — stream mass), intensity,
-  // palette and tracking. Drip rate is derived from viscosity rather than being
-  // its own knob: watery liquid sheds drops, thick liquid clings. It ignores
-  // ambientEmission and clarity, which only the 3D viewer's goo reads, and
-  // spewStyle, which nothing reads.
+  // the liquid clings before it drips), motionEmission (Amount — bulb size and
+  // how fast motion fills it), intensity, palette and tracking, plus the
+  // presets' ambientEmission (how fast a still tip drips) and gravity. Drip
+  // rate is derived rather than being its own knob: watery liquid sheds drops,
+  // thick liquid stretches and clings. Clarity is 3D only, and spewStyle is
+  // read by nothing.
 </script>
 
 <div class="customize-view">

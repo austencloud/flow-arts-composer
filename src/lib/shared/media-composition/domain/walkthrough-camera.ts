@@ -1,12 +1,15 @@
 import {
   DEFAULT_EASING,
+  EASING_PRESETS,
   framingAt,
+  sampleEasing,
 } from "@austencloud/video-editor/core";
-import type {
-  PostEasing,
-  PostFraming,
-  PostKeyframe,
-  PostVideoItem,
+import {
+  POST_FRAME_RATE,
+  type PostEasing,
+  type PostFraming,
+  type PostKeyframe,
+  type PostVideoItem,
 } from "@austencloud/video-editor/core";
 
 /**
@@ -38,6 +41,12 @@ export const WIDE: PostFraming = { zoom: 1, panX: 0, panY: 0, rotation: 0 };
 /** A close shot frames its target widened by these shares of the frame. */
 export const SHOT_PAD_X = 0.1;
 export const SHOT_PAD_Y = 0.3;
+/**
+ * A target this big a share of the frame, across or down, stands out without
+ * a zoom: Generate, at 40% of the width, does; a Level button, at 12%, sits in
+ * a row of others and does not.
+ */
+export const FOCUS_SHARE = 0.25;
 /** Close beats share a shot when their union still fits at this share of the zoom cap. */
 export const GROUP_ZOOM_SHARE = 0.8;
 /** ...and the next click comes within this many seconds. */
@@ -50,6 +59,19 @@ export const MIN_MOVE_SECONDS = 0.4;
 const END_KEY_GAP = 1 / 60;
 /** Keys closer than this are one key. */
 const SAME_KEY_GAP = 1 / 30;
+/**
+ * A zoom move gets a key this often. The engine blends zoom and pan each on
+ * its own, which between two far keys swings the view toward the centre and
+ * then slides it across; between close keys the swing is small.
+ */
+const PATH_STEP_SECONDS = 2 / POST_FRAME_RATE;
+/**
+ * A step whose middle strays further than this from the path, as a share of
+ * the frame (half a pixel at 1920 wide), is split once, down to a key each
+ * frame. Keys closer than half a frame would merge.
+ */
+const PATH_TOLERANCE = 1 / 4000;
+const LINEAR: PostEasing = EASING_PRESETS.linear;
 const EPSILON = 1e-6;
 
 const clamp = (value: number, low: number, high: number) =>
@@ -127,6 +149,20 @@ export function framingForRegion(
   );
 }
 
+/** Whether a target needs the camera to move in to be picked out. */
+export function needsFocus(region: ShareRect): boolean {
+  return region.width < FOCUS_SHARE && region.height < FOCUS_SHARE;
+}
+
+function containsRect(outer: ShareRect, inner: ShareRect): boolean {
+  return (
+    inner.x >= outer.x - EPSILON &&
+    inner.y >= outer.y - EPSILON &&
+    inner.x + inner.width <= outer.x + outer.width + EPSILON &&
+    inner.y + inner.height <= outer.y + outer.height + EPSILON
+  );
+}
+
 export function sameFraming(a: PostFraming, b: PostFraming): boolean {
   return (
     Math.abs(a.zoom - b.zoom) < EPSILON &&
@@ -140,7 +176,10 @@ export function sameFraming(a: PostFraming, b: PostFraming): boolean {
 // Shots
 // ---------------------------------------------------------------------------
 
-/** A moment the camera should serve: a click seen close, or a pull out. */
+/**
+ * A moment the camera should serve: a click seen close, a click that only
+ * has to be in view, or a pull out.
+ */
 export type CameraBeat =
   | {
       kind: "close";
@@ -149,6 +188,12 @@ export type CameraBeat =
       region: ShareRect;
       /** A chapter's first line starts its own shot. */
       newShot?: boolean;
+    }
+  | {
+      /** The camera stays if it shows the target and pulls out if not. */
+      kind: "see";
+      time: number;
+      region: ShareRect;
     }
   | {
       kind: "wide";
@@ -165,6 +210,8 @@ export type CameraShot =
       time: number;
       lastTime: number;
       region: ShareRect;
+      /** Clicks the shot was kept for, which must stay in view. */
+      seen: ShareRect[];
       framing: PostFraming;
     }
   | {
@@ -195,16 +242,36 @@ export function planShots(
       });
       continue;
     }
+    if (beat.kind === "see") {
+      if (current?.kind !== "close") continue;
+      if (containsRect(viewOfFraming(current.framing), beat.region)) {
+        current.seen.push(beat.region);
+        continue;
+      }
+      shots.push({
+        kind: "wide",
+        time: beat.time,
+        startAt: beat.time - ARRIVE_BEFORE_SECONDS - MOVE_SECONDS,
+        due: beat.time,
+        framing: WIDE,
+      });
+      continue;
+    }
     if (
       current?.kind === "close" &&
       !beat.newShot &&
       beat.time - current.lastTime < GROUP_GAP_SECONDS
     ) {
       const region = unionRect(current.region, beat.region);
-      if (regionZoom(region, maxZoom) >= GROUP_ZOOM_SHARE * maxZoom) {
+      const framing = framingForRegion(region, maxZoom);
+      const view = viewOfFraming(framing);
+      if (
+        regionZoom(region, maxZoom) >= GROUP_ZOOM_SHARE * maxZoom &&
+        current.seen.every((seen) => containsRect(view, seen))
+      ) {
         current.region = region;
         current.lastTime = beat.time;
-        current.framing = framingForRegion(region, maxZoom);
+        current.framing = framing;
         continue;
       }
     }
@@ -213,6 +280,7 @@ export function planShots(
       time: beat.time,
       lastTime: beat.time,
       region: beat.region,
+      seen: [],
       framing: framingForRegion(beat.region, maxZoom),
     });
   }
@@ -259,7 +327,100 @@ export function scheduleMoves(
   return { moves, warnings };
 }
 
-/** The moves as one framing keyframe list in take seconds, wide at the start. */
+function framingOfView(view: ShareRect): PostFraming {
+  return framingForView(
+    view.x + view.width / 2,
+    view.y + view.height / 2,
+    1 / view.width
+  );
+}
+
+function lerpRect(a: ShareRect, b: ShareRect, q: number): ShareRect {
+  const mix = (from: number, to: number) => from + (to - from) * q;
+  return {
+    x: mix(a.x, b.x),
+    y: mix(a.y, b.y),
+    width: mix(a.width, b.width),
+    height: mix(a.height, b.height),
+  };
+}
+
+/** What the engine shows a share `w` of the way between two linear keys. */
+function blendFraming(a: PostFraming, b: PostFraming, w: number): PostFraming {
+  const mix = (from: number, to: number) => from + (to - from) * w;
+  return {
+    zoom: mix(a.zoom, b.zoom),
+    panX: mix(a.panX, b.panX),
+    panY: mix(a.panY, b.panY),
+    rotation: mix(a.rotation, b.rotation),
+  };
+}
+
+/**
+ * The inside keys of a move that changes zoom, as [share of the move,
+ * framing]. The view keeps to the straight line between its two rectangles,
+ * growing or shrinking about one fixed point at an even rate of zoom, eased.
+ */
+function zoomPath(
+  move: CameraMove,
+  fromValue: PostFraming,
+  toValue: PostFraming
+): [number, PostFraming][] {
+  const from = viewOfFraming(move.from);
+  const to = viewOfFraming(move.to);
+  const at = (progress: number): PostFraming => {
+    if (progress <= 0) return fromValue;
+    if (progress >= 1) return toValue;
+    const q = sampleEasing(DEFAULT_EASING, progress);
+    // Even zoom: the width changes by one factor each equal step.
+    const width = from.width * (to.width / from.width) ** q;
+    const along = (width - from.width) / (to.width - from.width);
+    return framingOfView(lerpRect(from, to, along));
+  };
+  // How far a framing's view is from the line between the two rectangles.
+  const offPath = (framing: PostFraming) => {
+    const view = viewOfFraming(framing);
+    const along = (view.width - from.width) / (to.width - from.width);
+    return Math.max(
+      Math.abs(view.x - (from.x + (to.x - from.x) * along)),
+      Math.abs(view.y - (from.y + (to.y - from.y) * along))
+    );
+  };
+  const seconds = move.end - move.start;
+  const steps = Math.max(2, Math.ceil(seconds / PATH_STEP_SECONDS));
+  const canSplit = seconds / steps / 2 >= 1 / POST_FRAME_RATE - EPSILON;
+  const keys: [number, PostFraming][] = [];
+  let previous = fromValue;
+  for (let step = 1; step <= steps; step++) {
+    const progress = step / steps;
+    const next = at(progress);
+    if (
+      canSplit &&
+      offPath(blendFraming(previous, next, 0.5)) > PATH_TOLERANCE
+    ) {
+      const middle = (step - 0.5) / steps;
+      keys.push([middle, at(middle)]);
+    }
+    if (step < steps) keys.push([progress, next]);
+    previous = next;
+  }
+  return keys;
+}
+
+/**
+ * A wide end of a zoom move, given the pan of the move's other end. At zoom 1
+ * the pan shows nothing, and on the straight path out of the whole frame the
+ * pan never changes, so the step next to the wide end stays on the path.
+ */
+function wideEnd(other: PostFraming): PostFraming {
+  return { ...WIDE, panX: other.panX, panY: other.panY };
+}
+
+/**
+ * The moves as one framing keyframe list in take seconds, wide at the start.
+ * A move that changes zoom gets inside keys from `zoomPath` with linear steps
+ * between. A pan at one zoom is straight already and keeps two keys.
+ */
 export function cameraKeyframes(
   moves: readonly CameraMove[],
   rangeStart: number
@@ -269,10 +430,34 @@ export function cameraKeyframes(
   ];
   for (const move of moves) {
     const last = keys.at(-1)!;
+    const zooms = Math.abs(move.from.zoom - move.to.zoom) > EPSILON;
+    const isWide = (framing: PostFraming) => framing.zoom <= 1 + EPSILON;
+    const fromValue = zooms && isWide(move.from) ? wideEnd(move.to) : move.from;
+    const toValue = zooms && isWide(move.to) ? wideEnd(move.from) : move.to;
+    const easing = zooms ? LINEAR : DEFAULT_EASING;
+    let start = move.start;
     if (move.start - last.t > SAME_KEY_GAP) {
-      keys.push({ t: move.start, value: move.from, easing: DEFAULT_EASING });
+      keys.push({ t: start, value: fromValue, easing });
+    } else if (sameFraming(last.value, fromValue)) {
+      start = last.t;
+      last.easing = easing;
+    } else {
+      // A wide end with another pan, which shows the same view: hold it a
+      // frame so neither move's step next to it changes pan.
+      start = last.t + 1 / POST_FRAME_RATE;
+      keys.push({ t: start, value: fromValue, easing });
     }
-    keys.push({ t: move.end, value: move.to, easing: DEFAULT_EASING });
+    if (zooms) {
+      const timed = { ...move, start };
+      for (const [progress, value] of zoomPath(timed, fromValue, toValue)) {
+        keys.push({
+          t: start + (move.end - start) * progress,
+          value,
+          easing: LINEAR,
+        });
+      }
+    }
+    keys.push({ t: move.end, value: toValue, easing: DEFAULT_EASING });
   }
   return keys;
 }
