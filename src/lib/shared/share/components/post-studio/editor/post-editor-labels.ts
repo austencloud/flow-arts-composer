@@ -1,5 +1,5 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import type { VideoEditorPlugin } from "@austencloud/video-editor";
+import type { StringKey, Translate } from "@austencloud/video-editor/strings";
 import type {
   PostFraming,
   PostItem,
@@ -27,12 +27,13 @@ export const ITEM_KIND_ICON: Record<PostItemKind, string> = {
 
 export const MANDALA_ICON = "fa-sun";
 
-/** tka's `t` with a plain string key, the shape a plugin's `label(t)` takes. */
-export function translateKey(key: string): string {
-  return t(key as Parameters<typeof t>[0]);
+/** `t` with a plain string key, the shape a plugin's `label(t)` takes. */
+export function translateKey(t: Translate): (key: string) => string {
+  return (key) => t(key as StringKey);
 }
 
 export function itemKindLabel(
+  t: Translate,
   kind: PostItemKind,
   mode?: PostMovesMode,
   plugin: VideoEditorPlugin | null = null,
@@ -51,7 +52,7 @@ export function itemKindLabel(
       return (
         plugin?.itemKinds
           .find((d) => d.kind === kind)
-          ?.ui?.label?.(translateKey, item) ??
+          ?.ui?.label?.(translateKey(t), item) ??
         plugin?.itemKinds.find((d) => d.kind === kind)?.label ??
         kind
       );
@@ -99,6 +100,7 @@ export const TOOL_ICON: Record<PostToolId, string> = {
 
 /** The short name under a tool's icon, also its panel's title. */
 export function toolLabel(
+  t: Translate,
   id: PostToolId,
   plugin: VideoEditorPlugin | null = null
 ): string {
@@ -165,7 +167,7 @@ export function toolLabel(
       return (
         plugin?.ui?.tools
           ?.find((tool) => tool.id === id)
-          ?.label(translateKey) ?? id
+          ?.label(translateKey(t)) ?? id
       );
   }
 }
@@ -175,6 +177,7 @@ export function toolLabel(
  * words of a text, the take a clip is cut from, or its kind.
  */
 export function itemDisplayLabel(
+  t: Translate,
   item: PostItem,
   project: PostProject,
   plugin: VideoEditorPlugin | null = null
@@ -186,6 +189,7 @@ export function itemDisplayLabel(
     if (take) return take.label;
   }
   return itemKindLabel(
+    t,
     item.kind,
     item.kind === "moves" ? item.mode : undefined,
     plugin,
@@ -201,8 +205,11 @@ const CHANNEL_TOOL: Record<PostKeyframeChannel, PostToolId> = {
   opacity: "fade",
 };
 
-export function channelLabel(channel: PostKeyframeChannel): string {
-  return toolLabel(CHANNEL_TOOL[channel]);
+export function channelLabel(
+  t: Translate,
+  channel: PostKeyframeChannel
+): string {
+  return toolLabel(t, CHANNEL_TOOL[channel]);
 }
 
 export function channelIcon(channel: PostKeyframeChannel): string {
@@ -231,7 +238,10 @@ export function channelValueText<Ch extends PostKeyframeChannel>(
   return measure === null ? null : `${Math.round(measure * 100)}%`;
 }
 
-export function easingPresetLabel(id: PostEasingPresetId): string {
+export function easingPresetLabel(
+  t: Translate,
+  id: PostEasingPresetId
+): string {
   switch (id) {
     case "linear":
       return t("post_curve_preset_linear");

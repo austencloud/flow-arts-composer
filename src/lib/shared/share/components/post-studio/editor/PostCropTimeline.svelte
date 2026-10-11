@@ -13,7 +13,7 @@
 -->
 <script lang="ts">
   import { tick, untrack, type Snippet } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
   import {
     POST_FRAME_RATE,
@@ -23,7 +23,7 @@
     type PostVideoItem,
     moveKeyframe,
   } from "@austencloud/video-editor/core";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import type { VideoEditorState } from "@austencloud/video-editor";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import { formatTakeClock, parseClock } from "./post-format";
   import { channelLabel } from "./post-editor-labels";
@@ -43,8 +43,10 @@
     snapToTargets,
   } from "./timeline/post-timeline-geometry";
 
+  const t = useStrings();
+
   interface Props {
-    editor: PostEditorState;
+    editor: VideoEditorState;
     item: PostVideoItem;
     /** The take's beats inside the clip, in post seconds. */
     steps: readonly ClipStep[];
@@ -533,7 +535,7 @@
         >{t("post_editor_beats")}</span
       >
       <span class="head" style:height="{KEYS_HEIGHT_PX}px" aria-hidden="true"
-        >{channelLabel("framing")}</span
+        >{channelLabel(t, "framing")}</span
       >
     </div>
     <!-- Focusable so the keyboard lands here, not on the page, when the key

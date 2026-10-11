@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
@@ -17,6 +17,8 @@
     type MusicPatch,
   } from "@austencloud/video-editor/core";
   import { formatTakeClock, parseClock } from "./post-format";
+
+  const t = useStrings();
 
   /**
    * The music's settings: its beat grid, where it plays, its level and

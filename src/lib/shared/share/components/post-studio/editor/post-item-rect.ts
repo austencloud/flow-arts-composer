@@ -6,14 +6,14 @@ import {
   postOutputSize,
   spotAround,
 } from "@austencloud/video-editor/core";
-import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+import type { VideoEditorState } from "@austencloud/video-editor";
 
 /**
  * Where an item shows on the frame, and the box it keeps when that moves:
  * one answer for the preview's handles and the Position tool's typed values.
  */
 type Framed = Pick<
-  PostEditorState,
+  VideoEditorState,
   "project" | "previewSeconds" | "regionRects"
 >;
 

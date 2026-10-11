@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import type { PluginTool } from "@austencloud/video-editor";
   import {
     isPanelTool,
@@ -7,6 +7,8 @@
     type PostToolId,
   } from "./post-editor-tools";
   import { TOOL_ICON, toolLabel } from "./post-editor-labels";
+
+  const t = useStrings();
 
   /**
    * The editor's one row of tools: an icon over a short name, the way phone
@@ -45,13 +47,13 @@
   function titleFor(id: PostToolId): string {
     switch (id) {
       case "back":
-        return `${toolLabel(id)} (Esc)`;
+        return `${toolLabel(t, id)} (Esc)`;
       case "split":
         return t("post_editor_split_hint");
       case "beats":
         return t("post_editor_beats_hint");
       default:
-        return toolLabel(id);
+        return toolLabel(t, id);
     }
   }
 </script>
@@ -71,7 +73,7 @@
       onclick={() => onpick(id)}
     >
       <i class="fa-solid {TOOL_ICON[id]}" aria-hidden="true"></i>
-      <span class="label">{toolLabel(id)}</span>
+      <span class="label">{toolLabel(t, id)}</span>
     </button>
   {/each}
 </div>

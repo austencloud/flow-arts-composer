@@ -2,7 +2,9 @@
   import type { PostItem, PostItemKind } from "@austencloud/video-editor/core";
   import { Icon, type IconDefinition } from "@austencloud/video-editor/icons";
   import { formatPostClock, formatPostSpeed } from "../post-format";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
+
+  const t = useStrings();
 
   /**
    * One clip block on the timeline. Purely presentational: the parent does

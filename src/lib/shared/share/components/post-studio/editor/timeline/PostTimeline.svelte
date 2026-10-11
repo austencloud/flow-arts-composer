@@ -30,7 +30,7 @@
     keyframeIndexAt,
     moveKeyframe,
   } from "@austencloud/video-editor/core";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import { growFade } from "$lib/shared/transitions/motion";
   import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
   import { channelValueText, translateKey } from "../post-editor-labels";
@@ -64,6 +64,8 @@
     type KeyLanesBand,
     type OverlayRowHit,
   } from "./post-timeline-geometry";
+
+  const t = useStrings();
 
   /**
    * The Post Studio timeline strip: a ruler above a main track, with
@@ -1605,7 +1607,9 @@
                     block.end - block.start,
                     pixelsPerSecond
                   )}
-                  labelText={part ? part.label(translateKey) : labelFor(item)}
+                  labelText={part
+                    ? part.label(translateKey(t))
+                    : labelFor(item)}
                   selected={selection.ids.includes(item.id) &&
                     (part
                       ? selectedPart === part.id && item.id === selectedItemId
@@ -1617,7 +1621,7 @@
                   part={part
                     ? {
                         id: part.id,
-                        label: part.label(translateKey),
+                        label: part.label(translateKey(t)),
                         icon: part.icon,
                       }
                     : null}

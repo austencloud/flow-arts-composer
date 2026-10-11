@@ -1,9 +1,11 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import type { PostPanelToolId } from "./post-editor-tools";
   import { TOOL_ICON, toolLabel } from "./post-editor-labels";
+
+  const t = useStrings();
 
   /**
    * One tool's panel: its name, what it edits, and its controls. On a phone
@@ -52,7 +54,7 @@
   <header class="head" class:sr-only={bare}>
     <i class="fa-solid {TOOL_ICON[tool]} icon" aria-hidden="true"></i>
     <div class="titles">
-      <h3 id="{id}-title" class="title">{toolLabel(tool)}</h3>
+      <h3 id="{id}-title" class="title">{toolLabel(t, tool)}</h3>
       {#if subject}
         <p class="subject">{subject}</p>
       {/if}

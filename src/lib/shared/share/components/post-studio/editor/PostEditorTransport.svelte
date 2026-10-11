@@ -1,12 +1,14 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import {
   POST_FRAME_RATE,
 } from "@austencloud/video-editor/core";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import type { VideoEditorState } from "@austencloud/video-editor";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import { formatTakeClock, parseClock } from "./post-format";
   import { roundToFrameSeconds } from "./timeline/post-timeline-geometry";
+
+  const t = useStrings();
 
   /**
    * Play, one frame back or on, and the clock. The clock reads to the
@@ -14,7 +16,7 @@
    * to.
    */
   interface Props {
-    editor: PostEditorState;
+    editor: VideoEditorState;
     disabled?: boolean;
   }
 

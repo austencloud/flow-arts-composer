@@ -1,4 +1,4 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import type { Translate } from "@austencloud/video-editor/strings";
 import {
   POST_MAX_ZOOM,
   POST_MIN_ZOOM,
@@ -24,7 +24,7 @@ import {
   updateItem,
   updateItemAt,
 } from "@austencloud/video-editor/core";
-import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+import type { VideoEditorState } from "@austencloud/video-editor";
 import {
   STRAIGHTEN_LIMIT,
   clampToCoverage,
@@ -70,7 +70,9 @@ import {
 export type CropShapeKind = PostClipShapeKind | "fill";
 
 export interface CropSessionDeps {
-  editor: PostEditorState;
+  editor: VideoEditorState;
+  /** The editor's translate, for the screen-reader announcement. */
+  t: Translate;
   /** The clip on the crop screen, or null while none is. */
   getItemId: () => string | null;
   /** The footage's own size, once it has loaded. */
@@ -166,7 +168,7 @@ function samePlacement(a: CropPose, b: CropPose): boolean {
 }
 
 export function createCropSession(deps: CropSessionDeps) {
-  const { editor } = deps;
+  const { editor, t } = deps;
   const now = deps.now ?? (() => performance.now());
 
   const item = $derived.by((): PostVideoItem | null => {

@@ -1,18 +1,20 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import type { PostItem } from "@austencloud/video-editor/core";
   import { itemEnd, updateItem } from "@austencloud/video-editor/core";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import type { VideoEditorState } from "@austencloud/video-editor";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+
+  const t = useStrings();
 
   let {
     editor,
     outgoing,
     incoming,
   }: {
-    editor: PostEditorState;
+    editor: VideoEditorState;
     outgoing: PostItem;
     incoming: PostItem;
   } = $props();
@@ -57,7 +59,7 @@
     continuous = false
   ): void {
     editor.pause();
-    const apply: Parameters<PostEditorState["edit"]>[0] = (project, context) =>
+    const apply: Parameters<VideoEditorState["edit"]>[0] = (project, context) =>
       updateItem(
         project,
         outgoing.id,

@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import type { PostTake } from "@austencloud/video-editor/core";
   import type { LibraryTake } from "@austencloud/video-editor";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { formatPostClock } from "./post-format";
   import { readVideoFile, videoFileError } from "./post-editor-files";
+
+  const t = useStrings();
 
   /**
    * The raw videos the post cuts from. One recording can hold both the run
@@ -83,12 +85,12 @@
     if (!file || !takeId) return;
     error = "";
     try {
-      await readVideoFile(file);
+      await readVideoFile(t, file);
       if (!editor.relinkLocalTake(takeId, file)) {
         error = t("share_studio_wrong_file");
       }
     } catch (caught) {
-      error = videoFileError(caught);
+      error = videoFileError(t, caught);
     }
   }
 </script>

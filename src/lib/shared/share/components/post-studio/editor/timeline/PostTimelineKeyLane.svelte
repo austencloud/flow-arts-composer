@@ -11,7 +11,7 @@
     easingControlPoints,
     easingPresetOf,
   } from "@austencloud/video-editor/core";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import { formatPostClock } from "../post-format";
   import {
     channelLabel,
@@ -20,6 +20,8 @@
     easingPresetLabel,
   } from "../post-editor-labels";
   import { secondsToPixels } from "./post-timeline-geometry";
+
+  const t = useStrings();
 
   /**
    * One keyframe row under the selected clip: that channel's keys as large
@@ -70,7 +72,7 @@
    */
   const KEY_EDGE_INSET_PX = 12;
 
-  const name = $derived(channelLabel(channel));
+  const name = $derived(channelLabel(t, channel));
   const keys = $derived(channelKeyframeSeconds(item, channel));
   const spanLeftPx = $derived(secondsToPixels(item.start, pixelsPerSecond));
   const spanWidthPx = $derived(secondsToPixels(item.duration, pixelsPerSecond));
@@ -92,7 +94,7 @@
       const curveName =
         preset === "custom"
           ? t("post_curve_custom")
-          : easingPresetLabel(preset);
+          : easingPresetLabel(t, preset);
       return [
         {
           index: segment.index,

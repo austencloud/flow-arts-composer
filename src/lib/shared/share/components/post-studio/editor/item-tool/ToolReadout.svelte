@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import { parseClock } from "../post-format";
+
+  const t = useStrings();
 
   /**
    * A named time that takes a typed time, with an optional button that moves

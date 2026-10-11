@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import {
     POST_BOX,
     POST_CANVAS_RATIOS,
@@ -46,9 +46,9 @@
   } from "@austencloud/video-editor/core";
   import type {
     PostEdit,
-    PostEditorState,
-  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import type { VideoEditorPlugin } from "@austencloud/video-editor";
+    VideoEditorPlugin,
+    VideoEditorState,
+  } from "@austencloud/video-editor";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
@@ -74,6 +74,8 @@
   import ToolReadout from "./item-tool/ToolReadout.svelte";
   import ToolStatus from "./item-tool/ToolStatus.svelte";
 
+  const t = useStrings();
+
   /**
    * The body of one tool for the selected item. An amount is a slider, a
    * pick is a segmented control, an action is a button. Every change is an
@@ -81,7 +83,7 @@
    * values undoes in one step.
    */
   interface Props {
-    editor: PostEditorState;
+    editor: VideoEditorState;
     /**
      * The plugin whose kinds name an item with no name of its own, and whose
      * tool panels render after the core tool's own controls.
@@ -1100,6 +1102,7 @@
       class="field"
       value={item.label ?? ""}
       placeholder={itemDisplayLabel(
+        t,
         { ...item, label: undefined },
         editor.project,
         plugin

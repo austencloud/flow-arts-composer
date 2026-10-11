@@ -4,6 +4,7 @@ import type {
   PostVideoItem,
 } from "@austencloud/video-editor/core";
 import { editItemKeyframes, setKeyframe } from "@austencloud/video-editor/core";
+import { englishString } from "@austencloud/video-editor/strings";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import { isCovered } from "$lib/shared/share/components/post-studio/editor/post-crop-geometry";
 import { createCropSession } from "$lib/shared/share/components/post-studio/editor/post-crop-session.svelte";
@@ -38,6 +39,7 @@ describe("crop session", () => {
       .find((item): item is PostVideoItem => item.kind === "video")!;
     const session = createCropSession({
       editor,
+      t: englishString,
       getItemId: () => clip.id,
       getSource: () => ({ width: 1920, height: 1080 }),
       now: () => clock,

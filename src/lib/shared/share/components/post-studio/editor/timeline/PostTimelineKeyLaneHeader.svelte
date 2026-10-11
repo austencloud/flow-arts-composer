@@ -1,9 +1,11 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import type {
   PostKeyframeChannel,
 } from "@austencloud/video-editor/core";
   import { channelIcon, channelLabel } from "../post-editor-labels";
+
+  const t = useStrings();
 
   /**
    * The header cell for one keyframe row: the channel's name and its value
@@ -25,7 +27,7 @@
   let { channel, heightPx, valueText, focused, hasKeyHere, canKey, onFocus, onToggleKey }: Props =
     $props();
 
-  const name = $derived(channelLabel(channel));
+  const name = $derived(channelLabel(t, channel));
 </script>
 
 <div class="key-lane-header" class:focused style="height: {heightPx}px">

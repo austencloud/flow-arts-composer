@@ -13,7 +13,7 @@
   Clearing remains available wherever the playhead is.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import {
     POST_TIME_EPSILON,
     itemEnd,
@@ -31,18 +31,17 @@
     type PostEasingPresetId,
     editItemKeyframes,
   } from "@austencloud/video-editor/core";
-  import type {
-    PostEdit,
-    PostEditorState,
-  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import type { PostEdit, VideoEditorState } from "@austencloud/video-editor";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostCurveEditor from "./PostCurveEditor.svelte";
   import { formatPostClock } from "./post-format";
   import { easingPresetLabel } from "./post-editor-labels";
 
+  const t = useStrings();
+
   interface Props {
-    editor: PostEditorState;
+    editor: VideoEditorState;
     item: PostItem;
     channel: PostKeyframeChannel;
     locked: boolean;
@@ -96,7 +95,7 @@
   const chipLabel = $derived.by(() => {
     const id = presetId;
     if (id === null) return "";
-    return id === "custom" ? t("post_curve_custom") : easingPresetLabel(id);
+    return id === "custom" ? t("post_curve_custom") : easingPresetLabel(t, id);
   });
 
   let curveWrapperEl: HTMLDivElement | null = $state(null);
@@ -274,7 +273,7 @@
                     >
                       {#each PRESET_IDS as id (id)}
                         <ChipPopoverOption
-                          label={easingPresetLabel(id)}
+                          label={easingPresetLabel(t, id)}
                           selected={presetId === id}
                           onclick={() => choosePreset(id)}
                         />

@@ -29,6 +29,8 @@
   } from "$lib/shared/sequence-viewer/services/viewer-url-slices/ps-slice";
   import type { PostStudioShareExport } from "./post-studio-share-export";
   import { withPostStudioPropType } from "$lib/shared/post-studio-plugin/ui/post-studio-prop-render-options";
+  import { provideStrings } from "@austencloud/video-editor/strings";
+  import { tkaEditorTranslate } from "$lib/shared/media-composition/state/editor-strings";
   import PostEditorWorkspace from "./editor/PostEditorWorkspace.svelte";
   import TkaEditorScope from "$lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
 
@@ -93,6 +95,10 @@
     onRegisterShareExport,
     sharing = false,
   }: Props = $props();
+
+  // The moving editor files read their texts through the package context;
+  // tka answers them with its own translations.
+  provideStrings(tkaEditorTranslate);
 
   const effectsConfig =
     getEffectsConfigContext() ??

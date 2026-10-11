@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import type {
     PostItemKind,
     PostTextSize,
@@ -9,9 +9,9 @@
     LibraryTake,
     PluginAddItem,
     VideoEditorPlugin,
+    VideoEditorState,
   } from "@austencloud/video-editor";
   import { Icon } from "@austencloud/video-editor/icons";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { formatPostClock } from "./post-format";
   import {
@@ -21,12 +21,14 @@
   } from "./post-editor-labels";
   import { newItemStart, overlayAt } from "./post-editor-add";
 
+  const t = useStrings();
+
   /**
    * Everything a post can hold, one button each. Videos join the end of the
    * main track; the rest start at the playhead.
    */
   interface Props {
-    editor: PostEditorState;
+    editor: VideoEditorState;
     plugin: VideoEditorPlugin | null;
     catalog: readonly LibraryTake[];
     /** A picked file is being read. */
@@ -99,7 +101,7 @@
           id,
           icon: ITEM_KIND_ICON.text,
           svg: null,
-          label: itemKindLabel("text"),
+          label: itemKindLabel(t, "text"),
           run: () =>
             addOverlay({
               kind: "text",
@@ -125,7 +127,7 @@
                   id: entry.id,
                   icon: "",
                   svg: entry.icon,
-                  label: entry.label(translateKey),
+                  label: entry.label(translateKey(t)),
                   run: () => {
                     editor.pause();
                     const kind = entry.add(editor);

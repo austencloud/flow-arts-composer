@@ -1,4 +1,4 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import type { Translate } from "@austencloud/video-editor/strings";
 import { getVideoFileMetadata } from "$lib/shared/video-collaboration/helpers/create-video-from-upload";
 
 /** The largest video the editor opens: phones record big files. */
@@ -8,7 +8,7 @@ export const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
  * Checks a picked file is a video the editor can open and reads its length.
  * Throws with a message for Austen when it cannot.
  */
-export async function readVideoFile(file: File): Promise<number> {
+export async function readVideoFile(t: Translate, file: File): Promise<number> {
   if (!file.type.startsWith("video/")) {
     throw new Error(t("share_studio_choose_video_file"));
   }
@@ -22,7 +22,7 @@ export async function readVideoFile(file: File): Promise<number> {
   return metadata.duration;
 }
 
-export function videoFileError(caught: unknown): string {
+export function videoFileError(t: Translate, caught: unknown): string {
   return caught instanceof Error
     ? caught.message
     : t("share_studio_video_unreadable");

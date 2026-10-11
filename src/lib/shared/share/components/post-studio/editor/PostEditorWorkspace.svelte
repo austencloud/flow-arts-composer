@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import { onDestroy, tick, untrack } from "svelte";
   import { reparentToInspector } from "$lib/shared/sequence-viewer/components/reparent-to-inspector";
   import {
@@ -50,13 +50,11 @@
     CompositionSourceBinding,
     KeptExport,
     LibraryTake,
+    PostEdit,
     ToolRunContext,
     VideoEditorPlugin,
   } from "@austencloud/video-editor";
-  import type {
-    PostEditorState,
-    PostEdit,
-  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
   import {
     createTextPainters,
@@ -135,6 +133,8 @@
     type PostToolId,
     type PostToolSelection,
   } from "./post-editor-tools";
+
+  const t = useStrings();
 
   /**
    * One post on one screen, the way a phone video editor works: the preview,
@@ -490,7 +490,7 @@
   }
 
   const labelFor = (item: PostItem) =>
-    itemDisplayLabel(item, editor.project, plugin);
+    itemDisplayLabel(t, item, editor.project, plugin);
 
   // ---- Screen state ----------------------------------------------------------
 
@@ -781,6 +781,7 @@
 
   const crop = createCropSession({
     editor,
+    t,
     getItemId: () => (cropMode ? editor.selectedItemId : null),
     getSource: () => {
       const id = editor.selectedItemId;
@@ -1222,11 +1223,11 @@
     readingFile = true;
     fileError = "";
     try {
-      const duration = await readVideoFile(file);
+      const duration = await readVideoFile(t, file);
       editor.pause();
       if (editor.addLocalVideo(file, duration)) itemAdded("video");
     } catch (caught) {
-      fileError = videoFileError(caught);
+      fileError = videoFileError(t, caught);
     } finally {
       readingFile = false;
     }
@@ -2270,7 +2271,7 @@
       item={editor.selectedItem}
       channel={keyChannel}
       locked={editor.isLocked(editor.selectedItem.id)}
-      label={channelLabel(keyChannel)}
+      label={channelLabel(t, keyChannel)}
       bind:curveOpen={keyCurveOpen}
       onCleared={reportCleared}
     />

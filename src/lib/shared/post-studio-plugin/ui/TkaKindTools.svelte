@@ -26,6 +26,7 @@
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
   import { easingPresetLabel } from "$lib/shared/share/components/post-studio/editor/post-editor-labels";
+  import { tkaEditorTranslate } from "$lib/shared/media-composition/state/editor-strings";
   import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostCurveEditor from "$lib/shared/share/components/post-studio/editor/PostCurveEditor.svelte";
   import PostAnimationAppearanceTool from "$lib/shared/post-studio-plugin/ui/PostAnimationAppearanceTool.svelte";
@@ -226,7 +227,7 @@
         >
           {#each HOOK_SPEED_PRESETS as id (id)}
             <ChipPopoverOption
-              label={easingPresetLabel(id)}
+              label={easingPresetLabel(tkaEditorTranslate, id)}
               selected={easingPresetOf([...hookSpeed]) === id}
               onclick={() => commitHookSpeed([...EASING_PRESETS[id]])}
             />

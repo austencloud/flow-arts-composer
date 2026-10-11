@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, tick, untrack } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import {
     motionDuration,
@@ -12,6 +12,7 @@
     type CompositionSourceBinding,
     type ItemKindUi,
     type VideoEditorPlugin,
+    type VideoEditorState,
   } from "@austencloud/video-editor";
   import {
     resolvePresetTimePoint,
@@ -32,7 +33,6 @@
     PresetClip,
     LayoutRegion,
   } from "@austencloud/video-editor/core";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import {
     itemIdFromClipId,
     planMusicAudio,
@@ -116,6 +116,8 @@
   } from "./post-crop-glide";
   import type { CropSession } from "./post-crop-session.svelte";
 
+  const t = useStrings();
+
   /**
    * The post as it will render, drawn from the frame the evaluator produced
    * for the playhead, with the selected item's box on top to move and
@@ -123,7 +125,7 @@
    * element, so it must stay mounted while a render runs.
    */
   interface Props {
-    editor: PostEditorState;
+    editor: VideoEditorState;
     bindingFor: (role: string) => CompositionSourceBinding | null;
     labelFor: (item: PostItem) => string;
     /** Selecting and dragging boxes; off while a render or a share runs. */

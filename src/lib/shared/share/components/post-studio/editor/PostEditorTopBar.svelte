@@ -1,7 +1,9 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import { useStrings } from "@austencloud/video-editor/strings";
+  import type { VideoEditorState } from "@austencloud/video-editor";
+
+  const t = useStrings();
 
   /**
    * History on the left, the post's actions on the right. Undo and Redo are
@@ -9,7 +11,7 @@
    * agree. The actions are absent when the page shows them in its own header.
    */
   interface Props {
-    editor: PostEditorState;
+    editor: VideoEditorState;
     exporting: boolean;
     actions?: Snippet;
     draftStatus?: Snippet;

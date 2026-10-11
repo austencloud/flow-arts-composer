@@ -16,7 +16,7 @@
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import {
     POST_EASING_X_MAX,
     POST_EASING_X_MIN,
@@ -35,6 +35,8 @@
     plotWidth,
     type CurvePlotGeometry,
   } from "./post-curve-plot";
+
+  const t = useStrings();
 
   interface Props {
     /** The curve being edited. */

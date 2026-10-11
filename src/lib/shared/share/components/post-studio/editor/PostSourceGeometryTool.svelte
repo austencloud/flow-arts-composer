@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useStrings } from "@austencloud/video-editor/strings";
   import type { PostSourceGeometry } from "@austencloud/video-editor/core";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
+
+  const t = useStrings();
 
   interface Props {
     geometry: PostSourceGeometry;
