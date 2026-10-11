@@ -4,6 +4,8 @@ import type {
   ArrangementSnapshot,
 } from "#lib/shared/media-composition/domain/arrangement.js";
 import {
+  ARRANGEMENT_MAX_BPM,
+  ARRANGEMENT_MIN_BPM,
   canMoveCell,
   cellAt,
   clearCell,
@@ -11,6 +13,7 @@ import {
   moveCell,
   occupiedPositions,
   resizeCell,
+  setBpm,
   setCellAppearance,
   setCellLayers,
   setCellOffset,
@@ -271,5 +274,16 @@ describe("arrangement edits on a project", () => {
     const item = staggered.tracks[0]!.items[0]!;
     if (item.kind !== "arrangement") throw new Error("expected an arrangement");
     expect(cellAt(item.snapshot, 1, 1)?.beatOffset).toBe(1);
+  });
+});
+
+describe("setBpm", () => {
+  it("clamps to the arrangement's range and is identity on no change", () => {
+    const base = grid(1, 1, []);
+    expect(setBpm(base, 120)).toBe(base);
+    expect(setBpm(base, 90).bpm).toBe(90);
+    expect(setBpm(base, 1).bpm).toBe(ARRANGEMENT_MIN_BPM);
+    expect(setBpm(base, 9999).bpm).toBe(ARRANGEMENT_MAX_BPM);
+    expect(setBpm(base, Number.NaN)).toBe(base);
   });
 });

@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+import { createArrangementCell } from "#lib/shared/media-composition/domain/arrangement-edits.js";
+import { arrangementBeatAt } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
 import { PostProjectSchema } from "#lib/shared/media-composition/domain/post-project.js";
 import {
+  setArrangementBpm,
   setArrangementSnapshot,
   splitItemAt,
   trimItem,
@@ -120,5 +123,57 @@ describe("arrangements in the Post editor", () => {
     expect(PostProjectSchema.parse(trimmed).tracks[0]?.items[0]?.kind).toBe(
       "arrangement"
     );
+  });
+
+  it("changes the tempo and keeps the clip on the same beats", () => {
+    const editor = createPostEditorState({ getSequence: () => sequence });
+    const eight: ArrangementSnapshot = {
+      ...blank,
+      cells: [
+        {
+          ...createArrangementCell(0, 0),
+          layers: [
+            {
+              sequence,
+              beatOffset: 0,
+              propColors: { left: "#00f", right: "#f00" },
+              transformStack: [],
+            },
+          ],
+        },
+      ],
+      skipStartPlacement: true,
+    };
+    const id = editor.addArrangement(eight, 0)!;
+    // Eight beats at 120 BPM is four seconds. A main clip trimmed at the
+    // start slides back to 0, so the end trim is measured from there.
+    editor.edit((p, ctx) => trimItem(p, id, "start", 1, ctx));
+    editor.edit((p, ctx) => trimItem(p, id, "end", 2, ctx));
+    const before = editor.project.tracks[0]!.items[0]!;
+    if (before.kind !== "arrangement") throw new Error("not an arrangement");
+    expect(arrangementBeatAt(before.snapshot, before.sourceIn)).toBeCloseTo(2);
+    expect(arrangementBeatAt(before.snapshot, before.sourceOut)).toBeCloseTo(6);
+
+    expect(
+      editor.edit((p, ctx) => setArrangementBpm(p, id, 240, ctx))
+    ).toBe(true);
+    const after = editor.project.tracks[0]!.items[0]!;
+    if (after.kind !== "arrangement") throw new Error("not an arrangement");
+    expect(after.snapshot.bpm).toBe(240);
+    expect(after.sourceIn).toBeCloseTo(0.5);
+    expect(after.sourceOut).toBeCloseTo(1.5);
+    expect(after.duration).toBeCloseTo(1);
+    expect(arrangementBeatAt(after.snapshot, after.sourceIn)).toBeCloseTo(2);
+    expect(arrangementBeatAt(after.snapshot, after.sourceOut)).toBeCloseTo(6);
+    expect(after.start).toBe(before.start);
+
+    editor.undo();
+    expect(editor.project.tracks[0]!.items[0]).toMatchObject({
+      sourceIn: before.sourceIn,
+      sourceOut: before.sourceOut,
+    });
+    expect(
+      editor.edit((p, ctx) => setArrangementBpm(p, id, 120, ctx))
+    ).toBe(false);
   });
 });
