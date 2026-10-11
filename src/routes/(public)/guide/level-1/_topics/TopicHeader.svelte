@@ -1,7 +1,10 @@
 <!--
   The header every Guide topic page opens with: kicker, title, one-line
-  lede, on the page's centered axis. The Grid set these sizes (2026-10-10);
-  topic pages share this component so their headers stay identical.
+  lede, on the page's centered axis. The title and lede speak in the book's
+  voice, the calligraphic --guide-script and the italic --guide-display
+  serif, at the sizes the reflow pages' hero uses (Austen chose this as the
+  Guide's official header, 2026-10-11). Topic pages share this component so
+  their headers stay identical.
 -->
 <script lang="ts">
   let {
@@ -41,18 +44,21 @@
     padding: 0;
     text-align: center;
     color: var(--ink, #1a1a1a);
-    font-size: clamp(2.4rem, 5cqw, 3.6rem);
-    font-weight: 750;
-    line-height: 1.02;
-    letter-spacing: -0.03em;
+    font-family: var(--guide-script, "Cormorant Garamond", Georgia, serif);
+    font-size: clamp(3rem, 6cqw, 4.4rem);
+    font-weight: var(--guide-script-weight, 700);
+    line-height: 0.95;
+    letter-spacing: 0;
     text-wrap: balance;
   }
   .topic-head .lede {
     margin: 0;
-    color: var(--ink, #1a1a1a);
-    font-size: clamp(1.05rem, 1.6cqw, 1.25rem);
-    font-weight: 400;
-    line-height: 1.55;
+    color: var(--ink-dim, #555);
+    font-family: var(--guide-display, "Cormorant Garamond", Georgia, serif);
+    font-size: clamp(1.15rem, 2.6vw, 1.4rem);
+    font-style: italic;
+    font-weight: 500;
+    line-height: 1.4;
     text-wrap: balance;
   }
 </style>
