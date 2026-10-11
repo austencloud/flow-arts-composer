@@ -11,7 +11,10 @@ import {
   type WalkthroughCapture,
   type WalkthroughScript,
 } from "#lib/shared/media-composition/domain/post-walkthrough.js";
-import { rectToOutput } from "#lib/shared/media-composition/domain/walkthrough-camera.js";
+import {
+  rectToOutput,
+  viewOfFraming,
+} from "#lib/shared/media-composition/domain/walkthrough-camera.js";
 import {
   applyPostProjectOps,
   type PostProjectOp,
@@ -190,8 +193,10 @@ describe("buildWalkthrough", () => {
       const clip = clipAt(built, bubble.start);
       const end = bubble.start + bubble.duration;
       const still = framingAt(clip, bubble.start);
-      expect(framingAt(clip, (bubble.start + end) / 2)).toEqual(still);
-      expect(framingAt(clip, end)).toEqual(still);
+      // Still means the view holds; at zoom 1 the pan can change unseen.
+      const view = (t: number) => viewOfFraming(framingAt(clip, t));
+      expect(view((bubble.start + end) / 2)).toEqual(view(bubble.start));
+      expect(view(end)).toEqual(view(bubble.start));
       const { box } = bubble;
       expect(box.x).toBeGreaterThan(0);
       expect(box.y).toBeGreaterThan(0);
