@@ -265,10 +265,12 @@
                 type="button"
                 disabled={busy}
                 onclick={() => void copy(entry)}
-                aria-label={`Create a copy of ${entry.title}`}
+                aria-label={`Create a copy of ${entry.title}${entry.subtitle ? `, ${entry.subtitle}` : ""}`}
               >
                 <i class="far fa-copy" aria-hidden="true"></i><span
-                  >{entry.title}</span
+                  >{entry.title}{#if entry.subtitle}<small class="template-subtitle"
+                      >{entry.subtitle}</small
+                    >{/if}</span
                 ><span class="copy-label"
                   >Create copy <i class="fas fa-arrow-right" aria-hidden="true"
                   ></i></span
@@ -497,6 +499,11 @@
   .templates button > span:first-of-type {
     flex: 1;
     overflow-wrap: anywhere;
+  }
+  .template-subtitle {
+    display: block;
+    color: var(--theme-text-secondary);
+    font-size: 12px;
   }
   .copy-label {
     color: var(--theme-text-secondary);
