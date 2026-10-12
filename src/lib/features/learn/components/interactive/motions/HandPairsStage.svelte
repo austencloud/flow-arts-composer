@@ -208,10 +208,14 @@
     const picture = fusedFrame.getBoundingClientRect();
     const place = half.getBoundingClientRect();
     if (!place.width) return null;
+    // A zoomed lesson measures in screen pixels but moves in its own.
+    const zoom = place.width / (half.offsetWidth || place.width);
     const dx =
-      picture.left + picture.width / 2 - (place.left + place.width / 2);
+      (picture.left + picture.width / 2 - (place.left + place.width / 2)) /
+      zoom;
     const dy =
-      picture.top + picture.height / 2 - (place.top + place.height / 2);
+      (picture.top + picture.height / 2 - (place.top + place.height / 2)) /
+      zoom;
     return `translate(${dx}px, ${dy}px) scale(${picture.width / place.width})`;
   }
 
@@ -715,11 +719,11 @@
     --pairs-gap: clamp(1rem, 2.5vw, 2.5rem);
     --half-gap: clamp(0.75rem, 2cqi, 1.5rem);
     --room: 100cqi;
-    --tall: max(17rem, calc(100svh - 30rem));
+    --tall: max(17rem, calc(100 * var(--lesson-vh, 1svh) - 30rem));
     --half: min(
       calc((var(--room) - var(--half-gap)) / 2),
       calc(var(--tall) / 1.4),
-      30rem
+      40rem
     );
     --fused: min(calc(var(--half) * 1.4), var(--room));
     display: grid;
@@ -915,7 +919,13 @@
     .pairs-layout {
       /* The grids take their full size first; the results get what is left. */
       --room: calc(100cqi - 18rem - var(--pairs-gap));
-      --tall: max(17rem, calc(100svh - 21rem));
+      --tall: max(
+        20rem,
+        min(
+          calc(100 * var(--lesson-vh, 1svh) - 25rem),
+          calc(74 * var(--lesson-vh, 1svh))
+        )
+      );
       grid-template-columns: auto minmax(18rem, 30rem);
       justify-content: center;
     }
@@ -953,6 +963,26 @@
 
     .found-strip {
       display: none;
+    }
+  }
+
+  /* A phone on its side has the width for the board but not the height: it
+     keeps the strip, as a phone held upright does, so the grids stay in
+     view. */
+  @media (max-height: 35rem) {
+    @container hand-pairs (min-width: 52rem) {
+      .board-slot {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+      }
+
+      .found-strip {
+        display: grid;
+      }
     }
   }
 

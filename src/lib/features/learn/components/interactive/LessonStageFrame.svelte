@@ -5,6 +5,10 @@
   places while the lesson changes underneath them. The named regions let the
   browser carry those places across a concept handoff instead of replacing the
   whole screen in one frame.
+
+  A workshop lesson can set `--lesson-workshop-max` for its artifact's width
+  and `--lesson-controls-max` for its controls' span, which defaults to the
+  artifact's.
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
@@ -132,7 +136,10 @@
 
   .workshop .stage-controls {
     flex-shrink: 0;
-    width: min(100%, var(--lesson-workshop-max, 90rem));
+    width: min(
+      100%,
+      var(--lesson-controls-max, var(--lesson-workshop-max, 90rem))
+    );
     min-height: 0;
     align-self: center;
   }

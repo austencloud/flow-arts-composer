@@ -287,19 +287,23 @@
     container: hand-intro / inline-size;
     display: grid;
     justify-items: center;
-    gap: clamp(1rem, 2.5svh, 2rem);
+    gap: clamp(1rem, calc(2.5 * var(--lesson-vh, 1svh)), 2rem);
     width: 100%;
   }
 
   /* The book's chart: the start, a spine, and one branch per motion. */
   .flowchart {
     /* Three rows of pictures share the height left by the heading, the
-       book's lines and the controls; big screens grow them toward the map's
-       size in the next stage. */
-    --box: clamp(4.5rem, min(calc((100svh - 29rem) / 3), 22cqw), 15rem);
-    --line: 0.18rem;
+       book's lines and the controls; the lines and the words grow with
+       them. */
+    --box: clamp(
+      4.5rem,
+      min(calc((100 * var(--lesson-vh, 1svh) - 32rem) / 3), 21cqw),
+      22rem
+    );
+    --line: max(0.18rem, calc(var(--box) * 0.012));
     --line-color: color-mix(in srgb, currentColor 55%, transparent);
-    --head: 0.55rem;
+    --head: max(0.55rem, calc(var(--box) * 0.04));
     display: grid;
     grid-template-columns: var(--box) minmax(7rem, calc(var(--box) * 1.3)) auto;
     grid-template-rows: repeat(3, var(--box));
@@ -307,7 +311,7 @@
       ".     shift-branch  shift-pictures"
       "start dash-branch   dash-pictures"
       ".     static-branch static-pictures";
-    row-gap: clamp(0.75rem, 2svh, 1.5rem);
+    row-gap: clamp(0.75rem, calc(2 * var(--lesson-vh, 1svh)), 1.5rem);
     position: relative;
   }
 
@@ -360,7 +364,7 @@
     align-self: end;
     padding: 0 0 0.3rem 0.75rem;
     color: var(--theme-text);
-    font-size: clamp(1rem, calc(var(--box) * 0.1), 1.35rem);
+    font-size: clamp(1rem, calc(var(--box) * 0.1), 1.6rem);
     font-weight: 700;
     line-height: 1.2;
   }
@@ -389,8 +393,8 @@
     color: var(--theme-text-dim);
     font-size: clamp(
       var(--font-size-min, 0.875rem),
-      calc(var(--box) * 0.08),
-      1.1rem
+      calc(var(--box) * 0.075),
+      1.3rem
     );
     font-style: italic;
     line-height: 1.35;
