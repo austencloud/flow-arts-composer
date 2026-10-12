@@ -8,13 +8,20 @@ import {
   ANIMATION_GRID_GEOMETRY,
   animationGridJoinKey,
   buildJoinedGridSvg,
+  createLayerShiftPool,
   gridJoinShiftUnits,
   gridJoinShiftViewBox,
   gridPointOfElementId,
   resolveAnimationGridJoin,
+  shiftLayerProps,
   shiftPropState,
   shiftTrailPoints,
 } from "#lib/shared/animation-engine/services/animation-grid-join.js";
+import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
+import {
+  CENTERED_HAND_OFFSETS,
+  gridJoinHandOffsets,
+} from "#lib/shared/grid-join/grid-join-tween.js";
 import { calculatePropCenter } from "#lib/shared/animation-engine/services/prop-position-calculator.js";
 import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import { PIXELS_PER_UNIT } from "#lib/shared/multi-grid/domain/constants/grid-mode-offsets.js";
@@ -142,13 +149,13 @@ describe("which grids the animation draws", () => {
     });
     // The grid the animation draws wins over the sequence's stored mode.
     expect(
-      resolveAnimationGridJoin({ ...diagonal, gridMode: "diamond" }, 0, "box")
+      resolveAnimationGridJoin({ ...diagonal, gridMode: "diamond" }, "box")
     ).toEqual({ toward: "nw", steps: 2 });
     expect(
-      resolveAnimationGridJoin(
-        { conjoined: { toward: "e", steps: 1 }, gridMode: "box" },
-        0
-      )
+      resolveAnimationGridJoin({
+        conjoined: { toward: "e", steps: 1 },
+        gridMode: "box",
+      })
     ).toEqual({ toward: "se", steps: 1 });
   });
 
@@ -162,10 +169,18 @@ describe("which grids the animation draws", () => {
     }
   });
 
-  it("keeps tunnel layers on one grid", () => {
-    expect(
-      resolveAnimationGridJoin({ conjoined: { toward: "e", steps: 1 } }, 2)
-    ).toBeNull();
+  it("draws the sequence's join whatever is overlaid on it", () => {
+    // Tunnel copies and arrangement performers share the sequence's grids;
+    // the frame system moves each layer's hands onto them (shiftLayerProps).
+    const sequence = { conjoined: { toward: "e", steps: 1 } } as const;
+    expect(resolveAnimationGridJoin(sequence)).toEqual({
+      toward: "e",
+      steps: 1,
+    });
+    expect(resolveAnimationGridJoin(sequence, "box")).toEqual({
+      toward: "se",
+      steps: 1,
+    });
   });
 
   it("keys each join, and no join, distinctly", () => {
@@ -269,6 +284,107 @@ describe("shiftPropState", () => {
     // 475 + 150 - 75 and 475 - 150 + 75: the hand points the grids share.
     expect(blueEast.x).toBeCloseTo(550, 9);
     expect(redWest.x).toBeCloseTo(400, 9);
+  });
+});
+
+describe("shiftLayerProps", () => {
+  const join: GridJoin = { toward: "e", steps: 1 };
+  const offsets = gridJoinHandOffsets(join);
+
+  function layers(): AdditionalLayerProps[] {
+    return [
+      {
+        leftProp: { centerPathAngle: 0.3, staffRotationAngle: 1.1 },
+        rightProp: {
+          centerPathAngle: 2.0,
+          staffRotationAngle: 0.4,
+          x: 0.25,
+          y: -0.5,
+        },
+        opacity: 0.5,
+        leftPropType: "fan",
+        rightPropType: "staff",
+      },
+      {
+        leftProp: null,
+        rightProp: { centerPathAngle: 1.0, staffRotationAngle: 0 },
+        trailCaptureSuppressed: true,
+        formationTransitionActive: true,
+      },
+    ];
+  }
+
+  it("moves every layer's hands by the hand offsets", () => {
+    const shifted = shiftLayerProps(layers(), offsets, createLayerShiftPool());
+
+    expect(shifted).toHaveLength(2);
+    const blue = shifted[0]!.leftProp!;
+    expect(blue.x).toBeCloseTo(Math.cos(0.3) + offsets.left.x, 12);
+    expect(blue.y).toBeCloseTo(Math.sin(0.3) + offsets.left.y, 12);
+    expect(blue.staffRotationAngle).toBe(1.1);
+    const red = shifted[0]!.rightProp!;
+    expect(red.x).toBeCloseTo(0.25 + offsets.right.x, 12);
+    expect(red.y).toBeCloseTo(-0.5 + offsets.right.y, 12);
+    expect(shifted[1]!.leftProp).toBeNull();
+    expect(shifted[1]!.rightProp!.x).toBeCloseTo(
+      Math.cos(1.0) + offsets.right.x,
+      12
+    );
+  });
+
+  it("carries a layer's other fields and leaves the host's objects alone", () => {
+    const host = layers();
+    const before = JSON.stringify(host);
+    const shifted = shiftLayerProps(host, offsets, createLayerShiftPool());
+
+    expect(shifted).not.toBe(host);
+    expect(shifted[0]).not.toBe(host[0]);
+    expect(shifted[0]!.leftProp).not.toBe(host[0]!.leftProp);
+    expect(shifted[0]).toMatchObject({
+      opacity: 0.5,
+      leftPropType: "fan",
+      rightPropType: "staff",
+    });
+    expect(shifted[1]).toMatchObject({
+      trailCaptureSuppressed: true,
+      formationTransitionActive: true,
+    });
+    expect(shifted[1]!.opacity).toBeUndefined();
+    expect(JSON.stringify(host)).toBe(before);
+  });
+
+  it("reuses the pool across frames and drops a field a layer lost", () => {
+    const pool = createLayerShiftPool();
+    const first = shiftLayerProps(layers(), offsets, pool);
+    const firstSlot = first[0];
+    const firstLeft = first[0]!.leftProp;
+    const second = shiftLayerProps(
+      [
+        {
+          leftProp: { centerPathAngle: 0, staffRotationAngle: 0 },
+          rightProp: null,
+        },
+      ],
+      offsets,
+      pool
+    );
+
+    expect(second).toBe(first);
+    expect(second).toHaveLength(1);
+    expect(second[0]).toBe(firstSlot);
+    expect(second[0]!.leftProp).toBe(firstLeft);
+    expect(second[0]!.rightProp).toBeNull();
+    expect(second[0]!.opacity).toBeUndefined();
+    expect(second[0]!.leftPropType).toBeUndefined();
+  });
+
+  it("returns the host's array when there is nothing to shift", () => {
+    const host = layers();
+    expect(
+      shiftLayerProps(host, CENTERED_HAND_OFFSETS, createLayerShiftPool())
+    ).toBe(host);
+    const empty: AdditionalLayerProps[] = [];
+    expect(shiftLayerProps(empty, offsets, createLayerShiftPool())).toBe(empty);
   });
 });
 
