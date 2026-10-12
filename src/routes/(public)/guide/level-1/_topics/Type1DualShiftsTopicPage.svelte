@@ -36,7 +36,7 @@
     type DualShiftMode,
     type DualShiftModeId,
   } from "#lib/shared/guide-topics/dual-shifts-topic.js";
-  import type { TranslationKey } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import { getElementImagePath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import TopicHeader from "./TopicHeader.svelte";
   import type { TopicPageProps } from "./topic-pages";
