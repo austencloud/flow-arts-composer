@@ -218,8 +218,11 @@ describe("petal art direction", () => {
     const intent = DEFAULT_EFFECTS_CONFIG.petals;
     const canvas = resolvePetals2D(intent);
     const scene = resolvePetals3D(intent);
-    expect(canvas.baseSize).toBe(8);
-    expect(canvas.motionSpawnRate).toBeGreaterThan(canvas.ambientSpawnRate);
+    // The 2D rebuild draws petals, not 3 px specks: a 14 px half-size reads
+    // as a leaf at stage scale. Motion sheds per 100 px of tip travel, so a
+    // moving tip at ordinary swing speed outpaces a still tip's trickle.
+    expect(canvas.baseSize).toBe(14);
+    expect(canvas.motionDensity).toBeGreaterThan(canvas.ambientSpawnRate / 2);
     expect(scene.motionTipRate * intent.motionEmission).toBeGreaterThan(
       scene.ambientAboveRate * intent.ambientEmission
     );
