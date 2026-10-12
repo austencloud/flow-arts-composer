@@ -45,7 +45,9 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .back-btn:hover {
@@ -64,13 +66,17 @@
       color-mix(in srgb, var(--semantic-success, #50c878) 30%, transparent) 0%,
       color-mix(in srgb, var(--semantic-success, #50c878) 30%, transparent) 100%
     );
-    border: 2px solid color-mix(in srgb, var(--semantic-success, #50c878) 50%, transparent);
+    border: 2px solid
+      color-mix(in srgb, var(--semantic-success, #50c878) 50%, transparent);
     border-radius: 12px;
     color: white;
     font-size: 1.0625rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all var(--duration-emphasis);
+    transition:
+      background var(--duration-emphasis),
+      border-color var(--duration-emphasis),
+      transform var(--duration-emphasis);
     min-height: var(--min-touch-target);
     margin-left: auto;
   }
@@ -81,7 +87,11 @@
       color-mix(in srgb, var(--semantic-success, #50c878) 40%, transparent) 0%,
       color-mix(in srgb, var(--semantic-success, #50c878) 40%, transparent) 100%
     );
-    border-color: color-mix(in srgb, var(--semantic-success, #50c878) 80%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #50c878) 80%,
+      transparent
+    );
     transform: translateY(-2px);
   }
 

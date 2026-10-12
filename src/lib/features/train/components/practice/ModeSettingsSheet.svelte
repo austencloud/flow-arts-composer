@@ -65,25 +65,25 @@
       case PracticeMode.ADAPTIVE:
         return {
           icon: "fa-brain",
-          title: t('train_adaptive_mode_title'),
-          description: t('train_adaptive_mode_desc'),
+          title: t("train_adaptive_mode_title"),
+          description: t("train_adaptive_mode_desc"),
         };
       case PracticeMode.STEP_BY_STEP:
         return {
           icon: "fa-shoe-prints",
-          title: t('train_step_mode_title'),
-          description: t('train_step_mode_desc'),
+          title: t("train_step_mode_title"),
+          description: t("train_step_mode_desc"),
         };
       case PracticeMode.TIMED:
         return {
           icon: "fa-stopwatch",
-          title: t('train_timed_mode_title'),
-          description: t('train_timed_mode_desc'),
+          title: t("train_timed_mode_title"),
+          description: t("train_timed_mode_desc"),
         };
       default:
         return {
           icon: "fa-cog",
-          title: t('train_settings'),
+          title: t("train_settings"),
           description: "",
         };
     }
@@ -236,7 +236,9 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
   }
 

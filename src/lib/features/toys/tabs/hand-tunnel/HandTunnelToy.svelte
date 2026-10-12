@@ -446,9 +446,9 @@
     font-size: 0.82rem;
     cursor: pointer;
     transition:
-      background 0.15s,
-      border-color 0.15s,
-      transform 0.12s;
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      transform var(--duration-instant);
   }
   button:hover {
     background: rgba(255 255 255 / 0.12);

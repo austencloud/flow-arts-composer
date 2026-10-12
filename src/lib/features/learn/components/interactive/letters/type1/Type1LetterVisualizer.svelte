@@ -200,7 +200,9 @@ Shows letters A-V with their start/end placements and prospin/antispin motions
     <!-- Motion pattern badge -->
     <div class="pattern-info">
       {#if isHybrid && letterData.leaderRotation}
-        <span class="pattern-badge hybrid">Hybrid · leads {letterData.leaderRotation}</span>
+        <span class="pattern-badge hybrid"
+          >Hybrid · leads {letterData.leaderRotation}</span
+        >
       {:else if isHybrid}
         <span class="pattern-badge hybrid">Hybrid</span>
       {:else if letterData.leftMotion === MotionType.PRO}
@@ -227,7 +229,9 @@ Shows letters A-V with their start/end placements and prospin/antispin motions
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
     border: 1px solid var(--theme-stroke);
     border-radius: 12px;
-    transition: all var(--duration-emphasis) ease;
+    transition:
+      border-color var(--duration-emphasis) var(--ease-standard),
+      background var(--duration-emphasis) var(--ease-standard);
   }
 
   .type1-visualizer:hover {
@@ -295,7 +299,11 @@ Shows letters A-V with their start/end placements and prospin/antispin motions
     width: 100%;
     height: 100%;
     padding: 1rem;
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
     color: var(--semantic-error);
   }
 
@@ -349,8 +357,13 @@ Shows letters A-V with their start/end placements and prospin/antispin motions
   }
 
   .pattern-badge.pro {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent);
     color: var(--theme-accent, #22d3ee);
   }
 
@@ -381,5 +394,4 @@ Shows letters A-V with their start/end placements and prospin/antispin motions
     max-width: 252px;
     line-height: 1.4;
   }
-
 </style>

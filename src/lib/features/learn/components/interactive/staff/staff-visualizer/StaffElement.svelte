@@ -60,11 +60,16 @@ StaffElement - Renders a single staff prop with thumb marker
 
 <style>
   .staff {
-    transition: all var(--duration-emphasis) ease;
+    /* The group itself has no changing CSS properties; its SVG lines own the motion. */
   }
 
   .staff.animating line {
-    transition: all 0.5s ease;
+    transition:
+      x1 var(--duration-dramatic) var(--ease-standard),
+      y1 var(--duration-dramatic) var(--ease-standard),
+      x2 var(--duration-dramatic) var(--ease-standard),
+      y2 var(--duration-dramatic) var(--ease-standard),
+      stroke var(--duration-dramatic) var(--ease-standard);
   }
 
   @media (prefers-reduced-motion: reduce) {

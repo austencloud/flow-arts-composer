@@ -468,13 +468,13 @@
     color: rgba(200, 180, 140, 0.8);
     font-family: Georgia, "Times New Roman", serif;
     opacity: 1;
-    transition: opacity 0.6s ease;
+    transition: opacity var(--duration-scene) var(--ease-standard);
   }
 
   .museum-loading-overlay.fading {
     opacity: 0;
     pointer-events: none;
-    transition-duration: 0.8s;
+    transition-duration: var(--duration-scene);
   }
 
   .overlay-icon {

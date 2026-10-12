@@ -6,20 +6,20 @@ Builds automaticity through speed pressure and streak mechanics.
 <script lang="ts">
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
-  import PlacementVisualizer from './PlacementVisualizer.svelte';
-  import StreakDisplay from './construction-quiz/StreakDisplay.svelte';
-  import type { PlacementsExperienceStateManager } from './placement-experience-state.svelte';
+  import PlacementVisualizer from "./PlacementVisualizer.svelte";
+  import StreakDisplay from "./construction-quiz/StreakDisplay.svelte";
+  import type { PlacementsExperienceStateManager } from "./placement-experience-state.svelte";
   import type {
     PlacementType,
     PlacementQuestion,
-  } from '../../../domain/constants/placement-quiz-data';
+  } from "../../../domain/constants/placement-quiz-data";
   import {
     ALPHA_PLACEMENTS,
     BETA_PLACEMENTS,
     GAMMA_PLACEMENTS,
-  } from '../../../domain/constants/placement-quiz-data';
-  import { GridMode } from '#lib/shared/pictograph/grid/domain/enums/grid-enums.js';
-import { onDestroy } from 'svelte';
+  } from "../../../domain/constants/placement-quiz-data";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { onDestroy } from "svelte";
 
   // Props
 
@@ -36,19 +36,19 @@ import { onDestroy } from 'svelte';
 
   /** Obvious placements: opposite cardinals (alpha), same cardinal (beta), adjacent cardinals (gamma). */
   const OBVIOUS_POOL: PlacementQuestion[] = [
-    { left: 'N', right: 'S', gridMode: GridMode.DIAMOND, type: 'alpha' },
-    { left: 'E', right: 'W', gridMode: GridMode.DIAMOND, type: 'alpha' },
-    { left: 'N', right: 'N', gridMode: GridMode.DIAMOND, type: 'beta' },
-    { left: 'S', right: 'S', gridMode: GridMode.DIAMOND, type: 'beta' },
-    { left: 'N', right: 'E', gridMode: GridMode.DIAMOND, type: 'gamma' },
-    { left: 'S', right: 'W', gridMode: GridMode.DIAMOND, type: 'gamma' },
+    { left: "N", right: "S", gridMode: GridMode.DIAMOND, type: "alpha" },
+    { left: "E", right: "W", gridMode: GridMode.DIAMOND, type: "alpha" },
+    { left: "N", right: "N", gridMode: GridMode.DIAMOND, type: "beta" },
+    { left: "S", right: "S", gridMode: GridMode.DIAMOND, type: "beta" },
+    { left: "N", right: "E", gridMode: GridMode.DIAMOND, type: "gamma" },
+    { left: "S", right: "W", gridMode: GridMode.DIAMOND, type: "gamma" },
   ];
 
   /** Mixed pool: diamond + box placements. */
   const MIXED_POOL: PlacementQuestion[] = [
-    ...ALPHA_PLACEMENTS.map((p) => ({ ...p, type: 'alpha' as PlacementType })),
-    ...BETA_PLACEMENTS.map((p) => ({ ...p, type: 'beta' as PlacementType })),
-    ...GAMMA_PLACEMENTS.map((p) => ({ ...p, type: 'gamma' as PlacementType })),
+    ...ALPHA_PLACEMENTS.map((p) => ({ ...p, type: "alpha" as PlacementType })),
+    ...BETA_PLACEMENTS.map((p) => ({ ...p, type: "beta" as PlacementType })),
+    ...GAMMA_PLACEMENTS.map((p) => ({ ...p, type: "gamma" as PlacementType })),
   ];
 
   /** Full pool includes all placements (same as mixed for current data set). */
@@ -60,8 +60,8 @@ import { onDestroy } from 'svelte';
   let totalCorrect = $state(0);
   let streak = $state(0);
   let bestStreak = $state(0);
-  let feedbackState = $state<'idle' | 'correct' | 'wrong'>('idle');
-  let correctAnswer = $state<PlacementType>('alpha');
+  let feedbackState = $state<"idle" | "correct" | "wrong">("idle");
+  let correctAnswer = $state<PlacementType>("alpha");
   let selectedAnswer = $state<PlacementType | null>(null);
   let timeRemaining = $state(100);
   let showSummary = $state(false);
@@ -97,7 +97,7 @@ import { onDestroy } from 'svelte';
     currentQuestion = q;
     correctAnswer = q.type;
     selectedAnswer = null;
-    feedbackState = 'idle';
+    feedbackState = "idle";
     timeRemaining = 100;
     questionKey++;
     startTimer();
@@ -140,7 +140,7 @@ import { onDestroy } from 'svelte';
   // Answer Handling
 
   function handleAnswer(answer: PlacementType) {
-    if (feedbackState !== 'idle') return;
+    if (feedbackState !== "idle") return;
     cancelTimer();
     selectedAnswer = answer;
     totalAttempted++;
@@ -149,20 +149,20 @@ import { onDestroy } from 'svelte';
     experienceState.recordQuizAnswer(isCorrect);
 
     if (isCorrect) {
-      feedbackState = 'correct';
+      feedbackState = "correct";
       totalCorrect++;
       streak++;
       if (streak > bestStreak) bestStreak = streak;
-      hapticService?.trigger('success');
+      hapticService?.trigger("success");
 
       // Fast transition to next question
       setTimeout(() => {
         if (!showSummary) nextQuestion();
       }, 300);
     } else {
-      feedbackState = 'wrong';
+      feedbackState = "wrong";
       streak = 0;
-      hapticService?.trigger('error');
+      hapticService?.trigger("error");
 
       // Pause to show correct answer, then next
       setTimeout(() => {
@@ -172,12 +172,12 @@ import { onDestroy } from 'svelte';
   }
 
   function handleTimeout() {
-    if (feedbackState !== 'idle') return;
+    if (feedbackState !== "idle") return;
     totalAttempted++;
-    feedbackState = 'wrong';
+    feedbackState = "wrong";
     streak = 0;
     experienceState.recordQuizAnswer(false);
-    hapticService?.trigger('error');
+    hapticService?.trigger("error");
 
     setTimeout(() => {
       if (!showSummary) nextQuestion();
@@ -190,15 +190,15 @@ import { onDestroy } from 'svelte';
     if (showSummary) return;
 
     const key = event.key.toLowerCase();
-    if (key === 'a' || key === 'arrowleft') {
+    if (key === "a" || key === "arrowleft") {
       event.preventDefault();
-      handleAnswer('alpha');
-    } else if (key === 'b' || key === 'arrowup') {
+      handleAnswer("alpha");
+    } else if (key === "b" || key === "arrowup") {
       event.preventDefault();
-      handleAnswer('beta');
-    } else if (key === 'g' || key === 'arrowright') {
+      handleAnswer("beta");
+    } else if (key === "g" || key === "arrowright") {
       event.preventDefault();
-      handleAnswer('gamma');
+      handleAnswer("gamma");
     }
   }
 
@@ -225,12 +225,13 @@ import { onDestroy } from 'svelte';
   // Zone Feedback Classes
 
   function zoneClass(type: PlacementType): string {
-    if (feedbackState === 'correct' && selectedAnswer === type) return 'zone-correct';
-    if (feedbackState === 'wrong') {
-      if (selectedAnswer === type) return 'zone-wrong';
-      if (type === correctAnswer) return 'zone-highlight';
+    if (feedbackState === "correct" && selectedAnswer === type)
+      return "zone-correct";
+    if (feedbackState === "wrong") {
+      if (selectedAnswer === type) return "zone-wrong";
+      if (type === correctAnswer) return "zone-highlight";
     }
-    return '';
+    return "";
   }
 
   // Lifecycle
@@ -245,16 +246,27 @@ import { onDestroy } from 'svelte';
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="speed-rounds" role="application" aria-label={tDynamic("learn_placement_speed_aria")}>
+<div
+  class="speed-rounds"
+  role="application"
+  aria-label={tDynamic("learn_placement_speed_aria")}
+>
   {#if showSummary}
     <!-- Summary overlay -->
-    <div class="summary" role="dialog" aria-label={tDynamic("learn_placement_speed_summary")}>
-      <h2 class="summary-title">{tDynamic("learn_placement_speed_complete")}</h2>
+    <div
+      class="summary"
+      role="dialog"
+      aria-label={tDynamic("learn_placement_speed_summary")}
+    >
+      <h2 class="summary-title">
+        {tDynamic("learn_placement_speed_complete")}
+      </h2>
 
       <div class="summary-stats">
         <div class="stat">
           <span class="stat-value">{totalAttempted}</span>
-          <span class="stat-label">{tDynamic("learn_placement_attempted")}</span>
+          <span class="stat-label">{tDynamic("learn_placement_attempted")}</span
+          >
         </div>
         <div class="stat">
           <span class="stat-value">{accuracy}%</span>
@@ -262,7 +274,9 @@ import { onDestroy } from 'svelte';
         </div>
         <div class="stat">
           <span class="stat-value">{bestStreak}</span>
-          <span class="stat-label">{tDynamic("learn_placement_best_streak_label")}</span>
+          <span class="stat-label"
+            >{tDynamic("learn_placement_best_streak_label")}</span
+          >
         </div>
       </div>
 
@@ -275,9 +289,9 @@ import { onDestroy } from 'svelte';
     <div class="top-zone">
       <button
         class="zone-button zone-beta {zoneClass('beta')}"
-        onclick={() => handleAnswer('beta')}
+        onclick={() => handleAnswer("beta")}
         aria-label="Beta"
-        disabled={feedbackState !== 'idle'}
+        disabled={feedbackState !== "idle"}
       >
         <span class="zone-symbol">β</span>
         {#if labelsVisible}
@@ -290,9 +304,9 @@ import { onDestroy } from 'svelte';
     <div class="middle-row">
       <button
         class="zone-button zone-alpha {zoneClass('alpha')}"
-        onclick={() => handleAnswer('alpha')}
+        onclick={() => handleAnswer("alpha")}
         aria-label="Alpha"
-        disabled={feedbackState !== 'idle'}
+        disabled={feedbackState !== "idle"}
       >
         <span class="zone-symbol">α</span>
         {#if labelsVisible}
@@ -322,9 +336,9 @@ import { onDestroy } from 'svelte';
 
       <button
         class="zone-button zone-gamma {zoneClass('gamma')}"
-        onclick={() => handleAnswer('gamma')}
+        onclick={() => handleAnswer("gamma")}
         aria-label="Gamma"
-        disabled={feedbackState !== 'idle'}
+        disabled={feedbackState !== "idle"}
       >
         <span class="zone-symbol">γ</span>
         {#if labelsVisible}
@@ -337,7 +351,11 @@ import { onDestroy } from 'svelte';
     <div class="bottom-row">
       <StreakDisplay {streak} {bestStreak} />
 
-      <button class="done-button" onclick={handleDone} aria-label={tDynamic("learn_placement_finish_speed")}>
+      <button
+        class="done-button"
+        onclick={handleDone}
+        aria-label={tDynamic("learn_placement_finish_speed")}
+      >
         {tDynamic("learn_placement_done")}
       </button>
     </div>
@@ -355,7 +373,6 @@ import { onDestroy } from 'svelte';
     max-width: 480px;
     margin: 0 auto;
   }
-
 
   .top-zone {
     display: flex;
@@ -384,7 +401,10 @@ import { onDestroy } from 'svelte';
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     color: var(--theme-text, #ffffff);
     cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     user-select: none;
   }
@@ -420,7 +440,7 @@ import { onDestroy } from 'svelte';
     font-size: var(--font-size-compact, 12px);
     margin-top: 0.25rem;
     opacity: 0.7;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
   }
 
   /* Feedback states */
@@ -440,7 +460,6 @@ import { onDestroy } from 'svelte';
     box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
   }
 
-
   .pictograph-container {
     display: flex;
     flex-direction: column;
@@ -449,7 +468,6 @@ import { onDestroy } from 'svelte';
     width: 200px;
     flex-shrink: 0;
   }
-
 
   .countdown-track {
     width: 100%;
@@ -463,13 +481,12 @@ import { onDestroy } from 'svelte';
     height: 100%;
     border-radius: 2px;
     background: var(--theme-accent, #60a5fa);
-    transition: background 0.3s ease;
+    transition: background var(--duration-emphasis) var(--ease-standard);
   }
 
   .countdown-urgent {
     background: var(--semantic-error, #ef4444);
   }
-
 
   .bottom-row {
     display: flex;
@@ -488,14 +505,15 @@ import { onDestroy } from 'svelte';
     color: var(--theme-text, rgba(255, 255, 255, 0.5));
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition:
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .done-button:hover {
     color: var(--theme-text, #ffffff);
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
   }
-
 
   .summary {
     display: flex;
@@ -545,13 +563,12 @@ import { onDestroy } from 'svelte';
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .done-button-primary:hover {
     opacity: 0.9;
   }
-
 
   @media (prefers-reduced-motion: reduce) {
     .zone-button {

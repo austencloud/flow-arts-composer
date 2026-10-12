@@ -37,7 +37,7 @@ WordMotionArrow - Renders a curved motion arrow between positions
 
 <style>
   .motion-arrow {
-    animation: arrowDraw 1s ease-out;
+    animation: arrowDraw var(--duration-scene) var(--ease-standard-out);
   }
 
   @keyframes arrowDraw {

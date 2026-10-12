@@ -311,9 +311,9 @@ animations, exactly as the legacy quizzes did.
     color: var(--theme-text-dim);
     cursor: pointer;
     transition:
-      background var(--duration-fast) ease,
-      color var(--duration-fast) ease,
-      transform var(--duration-fast) ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .back-button:hover {
@@ -387,7 +387,7 @@ animations, exactly as the legacy quizzes did.
     border-radius: 50%;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.08));
     border: 1px solid var(--theme-stroke);
-    transition: background var(--duration-fast) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .pip.missed {

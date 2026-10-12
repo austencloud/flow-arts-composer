@@ -12,8 +12,8 @@
   <div class="container">
     <h2>Level 1: Grid Placements</h2>
     <p class="section-intro">
-      The grid has <strong>32 unique placements</strong> for where both hands can be.
-      These divide into three groups following the binary synthesis pattern.
+      The grid has <strong>32 unique placements</strong> for where both hands can
+      be. These divide into three groups following the binary synthesis pattern.
     </p>
 
     <div class="groups-grid">
@@ -53,9 +53,10 @@
 
       <div class="insight">
         <p>
-          Gamma has <strong>twice as many</strong> placements because it's the fusion.
-          It contains two internal halves (1-8 and 9-16) that are themselves opposites of each other-
-          mirroring the Alpha/Beta opposition <em>inside</em> itself.
+          Gamma has <strong>twice as many</strong> placements because it's the
+          fusion. It contains two internal halves (1-8 and 9-16) that are
+          themselves opposites of each other- mirroring the Alpha/Beta
+          opposition <em>inside</em> itself.
         </p>
       </div>
     </div>
@@ -102,7 +103,9 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 16px;
     padding: 24px;
-    transition: all var(--duration-normal) ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .group-card:hover {

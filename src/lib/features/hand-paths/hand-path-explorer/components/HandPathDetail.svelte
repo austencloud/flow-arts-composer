@@ -20,7 +20,8 @@
   const { state } = getExplorerContext();
 
   const sideColor = $derived.by(() => {
-    const hasBoth = group.sides.has(HandSide.LEFT) && group.sides.has(HandSide.RIGHT);
+    const hasBoth =
+      group.sides.has(HandSide.LEFT) && group.sides.has(HandSide.RIGHT);
     if (hasBoth) return "#a855f7";
     if (group.sides.has(HandSide.LEFT)) return "var(--prop-blue, #3b82f6)";
     return "var(--prop-red, #ef4444)";
@@ -28,16 +29,22 @@
 
   const gridModeLabel = $derived.by(() => {
     switch (group.handPath.impliedGridMode) {
-      case GridMode.DIAMOND: return "diamond";
-      case GridMode.BOX: return "box";
-      case GridMode.SKEWED: return "skewed";
-      case GridMode.CENTRIC: return "centric";
-      default: return group.handPath.impliedGridMode;
+      case GridMode.DIAMOND:
+        return "diamond";
+      case GridMode.BOX:
+        return "box";
+      case GridMode.SKEWED:
+        return "skewed";
+      case GridMode.CENTRIC:
+        return "centric";
+      default:
+        return group.handPath.impliedGridMode;
     }
   });
 
   const sidesLabel = $derived.by(() => {
-    const hasBoth = group.sides.has(HandSide.LEFT) && group.sides.has(HandSide.RIGHT);
+    const hasBoth =
+      group.sides.has(HandSide.LEFT) && group.sides.has(HandSide.RIGHT);
     if (hasBoth) return "left + right";
     if (group.sides.has(HandSide.LEFT)) return "left only";
     return "right only";
@@ -47,7 +54,12 @@
     state.selectPath(null);
   }
 
-  function displayName(seq: { name: string; displayName?: string; intendedWord?: string; word: string }): string {
+  function displayName(seq: {
+    name: string;
+    displayName?: string;
+    intendedWord?: string;
+    word: string;
+  }): string {
     return seq.displayName ?? seq.intendedWord ?? seq.word ?? seq.name ?? "-";
   }
 </script>
@@ -58,14 +70,20 @@
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
     <span class="detail__title">{group.name}</span>
-    <span class="detail__subtitle">{group.sequences.length} sequences · {sidesLabel}</span>
+    <span class="detail__subtitle"
+      >{group.sequences.length} sequences · {sidesLabel}</span
+    >
   </div>
 
   <div class="detail__body">
     <!-- Larger visualization -->
     <div class="detail__viz-wrapper">
       <div class="detail__viz">
-        <PathMiniViz locations={group.handPath.locations} color={sideColor} dotRadius={7} />
+        <PathMiniViz
+          locations={group.handPath.locations}
+          color={sideColor}
+          dotRadius={7}
+        />
       </div>
     </div>
 
@@ -81,11 +99,15 @@
       </div>
       <div class="detail__prop">
         <span class="detail__prop-label">Closed loop</span>
-        <span class="detail__prop-value">{group.handPath.isClosed ? "yes" : "no"}</span>
+        <span class="detail__prop-value"
+          >{group.handPath.isClosed ? "yes" : "no"}</span
+        >
       </div>
       <div class="detail__prop">
         <span class="detail__prop-label">Unique points</span>
-        <span class="detail__prop-value">{group.handPath.uniqueLocations.length}</span>
+        <span class="detail__prop-value"
+          >{group.handPath.uniqueLocations.length}</span
+        >
       </div>
       <div class="detail__prop detail__prop--full">
         <span class="detail__prop-label">Locations</span>
@@ -109,7 +131,10 @@
                 loading="lazy"
               />
             {:else}
-              <div class="detail__thumb detail__thumb--empty" aria-hidden="true">
+              <div
+                class="detail__thumb detail__thumb--empty"
+                aria-hidden="true"
+              >
                 <i class="fas fa-image"></i>
               </div>
             {/if}
@@ -151,7 +176,7 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.6));
     cursor: pointer;
     flex-shrink: 0;
-    transition: background 0.15s ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .detail__close:hover {
@@ -182,7 +207,8 @@
     flex-direction: column;
     gap: 20px;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2)) transparent;
+    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2))
+      transparent;
   }
 
   .detail__viz-wrapper {

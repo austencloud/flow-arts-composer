@@ -43,8 +43,8 @@ QuizErrorState - Error display with retry for quizzes
     font-size: 0.9375rem;
     cursor: pointer;
     transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease;
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .retry-btn:hover {

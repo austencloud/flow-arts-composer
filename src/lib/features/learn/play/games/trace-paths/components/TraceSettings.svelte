@@ -155,8 +155,8 @@ challenge on their own terms — they simply don't claim a traced score.
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.2));
     background: var(--theme-panel-bg, rgba(255, 255, 255, 0.06));
     transition:
-      background var(--duration-fast) ease,
-      border-color var(--duration-fast) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .switch.on::before {
@@ -177,7 +177,7 @@ challenge on their own terms — they simply don't claim a traced score.
     transform: translateY(-50%);
     border-radius: 50%;
     background: var(--theme-text, #fff);
-    transition: left var(--duration-fast) ease;
+    transition: left var(--duration-fast) var(--ease-standard);
   }
 
   .switch.on .thumb {

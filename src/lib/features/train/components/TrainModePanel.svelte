@@ -104,9 +104,7 @@
       }
     } catch (error) {
       console.error("Failed to initialize detection:", error);
-      trainState.setError(
-        t('train_detection_init_failed')
-      );
+      trainState.setError(t("train_detection_init_failed"));
     }
   }
 
@@ -143,7 +141,7 @@
       // Tracking failed to start: clear the active flag so it doesn't die
       // silently, and surface the failure on the panel's error state.
       trainState.setDetectionActive(false);
-      trainState.setError(t('train_detection_start_failed'));
+      trainState.setError(t("train_detection_start_failed"));
     }
   }
 
@@ -166,11 +164,7 @@
 
     // Restart with new mode
     const restartTimer = setTimeout(async () => {
-      if (
-        currentVideoElement &&
-        detectionService &&
-        trainState.isCameraReady
-      ) {
+      if (currentVideoElement && detectionService && trainState.isCameraReady) {
         try {
           trainState.setDetectionActive(true);
           await detectionService.startRealTimeDetection(
@@ -183,7 +177,7 @@
         } catch (error) {
           console.error("Detection restart error:", error);
           trainState.setDetectionActive(false);
-          trainState.setError(t('train_detection_start_failed'));
+          trainState.setError(t("train_detection_start_failed"));
         }
       }
     }, 50); // Small delay to ensure clean restart
@@ -527,7 +521,7 @@
     justify-content: space-between;
     gap: 0.75rem;
     z-index: 150;
-    animation: slideUp var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideUp var(--duration-emphasis) var(--ease-standard);
     box-shadow: 0 4px 20px
       color-mix(
         in srgb,

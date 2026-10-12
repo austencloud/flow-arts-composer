@@ -42,7 +42,7 @@
 <div class="settings-inline">
   <!-- Grid Mode Toggle -->
   <div class="setting-row">
-    <span class="setting-label">{t('train_grid_mode')}</span>
+    <span class="setting-label">{t("train_grid_mode")}</span>
     <div class="mode-toggle">
       <button
         class="toggle-option"
@@ -65,7 +65,7 @@
 
   <!-- Grid Scale -->
   <div class="setting-row">
-    <span class="setting-label">{t('train_grid_size')}</span>
+    <span class="setting-label">{t("train_grid_size")}</span>
     <div class="scale-controls">
       <button
         class="scale-btn"
@@ -95,7 +95,7 @@
   <!-- Props Visibility -->
   {#if onPropsVisibilityChange}
     <div class="setting-row">
-      <span class="setting-label">{t('train_props')}</span>
+      <span class="setting-label">{t("train_props")}</span>
       <button
         class="visibility-toggle"
         class:active={propsVisible}
@@ -106,7 +106,7 @@
           class="fas {propsVisible ? 'fa-eye' : 'fa-eye-slash'}"
           aria-hidden="true"
         ></i>
-        <span>{propsVisible ? t('train_visible') : t('train_hidden')}</span>
+        <span>{propsVisible ? t("train_visible") : t("train_hidden")}</span>
       </button>
     </div>
   {/if}
@@ -156,7 +156,9 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast);
   }
 
   .toggle-option:hover {
@@ -192,7 +194,12 @@
     color: color-mix(in srgb, var(--theme-text, white) 70%, transparent);
     font-size: 0.75rem;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      transform var(--duration-fast),
+      opacity var(--duration-fast);
   }
 
   .scale-btn:hover:not(:disabled) {
@@ -239,7 +246,9 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast);
   }
 
   .reset-btn:hover {
@@ -260,7 +269,10 @@
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast);
   }
 
   .visibility-toggle i {

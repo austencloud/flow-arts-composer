@@ -40,10 +40,10 @@
 <div class="poi-lab">
   <header class="header">
     <div class="title-row">
-      <h1>{t('poi_lab_title')}</h1>
-      <span class="badge">{t('poi_lab_admin_badge')}</span>
+      <h1>{t("poi_lab_title")}</h1>
+      <span class="badge">{t("poi_lab_admin_badge")}</span>
     </div>
-    <p class="subtitle">{t('poi_lab_subtitle')}</p>
+    <p class="subtitle">{t("poi_lab_subtitle")}</p>
     <nav class="tabs">
       <button
         class="tab"
@@ -51,7 +51,7 @@
         onclick={() => (activeTab = "browser")}
       >
         <i class="fas fa-th" aria-hidden="true"></i>
-        {t('poi_lab_tab_browser')}
+        {t("poi_lab_tab_browser")}
       </button>
       <button
         class="tab"
@@ -59,7 +59,7 @@
         onclick={() => (activeTab = "validator")}
       >
         <i class="fas fa-check-double" aria-hidden="true"></i>
-        {t('poi_lab_tab_validator')}
+        {t("poi_lab_tab_validator")}
       </button>
     </nav>
   </header>
@@ -140,7 +140,9 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   @media (pointer: coarse) {

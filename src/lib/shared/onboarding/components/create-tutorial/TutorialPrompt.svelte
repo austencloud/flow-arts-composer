@@ -84,15 +84,15 @@
     </div>
 
     <h2 id="tutorial-prompt-title" class="prompt-title">
-      {t('tutorial_construct_prompt')}
+      {t("tutorial_construct_prompt")}
     </h2>
     <p class="prompt-body">
-      {t('tutorial_construct_intro')}
+      {t("tutorial_construct_intro")}
     </p>
 
     <div class="prompt-actions">
       <button class="accept-button" onclick={handleAccept}>
-        {t('tutorial_start_guide')}
+        {t("tutorial_start_guide")}
         <i class="fas fa-arrow-right" aria-hidden="true"></i>
       </button>
       <!-- The presenter's way past an unsolicited overlay. This prompt is the
@@ -107,7 +107,7 @@
         data-ghost-label="Skip for now"
         onclick={handleSkip}
       >
-        {t('tutorial_skip_now')}
+        {t("tutorial_skip_now")}
       </button>
     </div>
   </div>
@@ -140,8 +140,8 @@
     opacity: 0;
     transform: translateY(16px) scale(0.97);
     transition:
-      opacity var(--duration-dramatic, 350ms) var(--ease-out),
-      transform var(--duration-dramatic, 350ms) var(--ease-out);
+      opacity var(--duration-dramatic) var(--ease-out),
+      transform var(--duration-dramatic) var(--ease-out);
   }
 
   .animate-in .prompt-card {
@@ -219,7 +219,10 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
   }
 
   .accept-button:hover {
@@ -253,7 +256,10 @@
     );
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
   }
 
   .skip-button:hover {

@@ -77,8 +77,8 @@
         <i class="fas fa-th" aria-hidden="true"></i>
       </div>
       <div class="header-content">
-        <h3 class="panel-title">{t('train_grid_settings')}</h3>
-        <p class="panel-subtitle">{t('train_grid_settings_subtitle')}</p>
+        <h3 class="panel-title">{t("train_grid_settings")}</h3>
+        <p class="panel-subtitle">{t("train_grid_settings_subtitle")}</p>
       </div>
       <button
         class="close-btn"
@@ -94,7 +94,7 @@
       <!-- Grid Mode Switcher -->
       <div class="setting-section">
         <span class="section-label" id="detection-mode-label"
-          >{t('train_detection_mode')}</span
+          >{t("train_detection_mode")}</span
         >
         <div
           class="mode-buttons"
@@ -107,7 +107,7 @@
             onclick={() => onModeChange(GridMode.BOX)}
           >
             <i class="fas fa-square" aria-hidden="true"></i>
-            <span>{t('train_box')}</span>
+            <span>{t("train_box")}</span>
           </button>
           <button
             class="mode-btn"
@@ -115,21 +115,21 @@
             onclick={() => onModeChange(GridMode.DIAMOND)}
           >
             <i class="fas fa-diamond" aria-hidden="true"></i>
-            <span>{t('train_diamond')}</span>
+            <span>{t("train_diamond")}</span>
           </button>
         </div>
         <p class="mode-hint">
           {#if gridMode === GridMode.BOX}
-            {t('train_box_hint')}
+            {t("train_box_hint")}
           {:else}
-            {t('train_diamond_hint')}
+            {t("train_diamond_hint")}
           {/if}
         </p>
       </div>
 
       <!-- Grid Scale Controls (using buttons to avoid swipe conflicts) -->
       <div class="setting-section">
-        <span class="section-label">{t('train_grid_size')}</span>
+        <span class="section-label">{t("train_grid_size")}</span>
         <div class="scale-controls">
           <button
             class="scale-btn"
@@ -149,7 +149,9 @@
             <i class="fas fa-plus" aria-hidden="true"></i>
           </button>
           {#if gridScale !== 1.0}
-            <button class="reset-btn" onclick={resetScale}>{t('train_reset')}</button>
+            <button class="reset-btn" onclick={resetScale}
+              >{t("train_reset")}</button
+            >
           {/if}
         </div>
       </div>
@@ -157,7 +159,8 @@
       <!-- Prop Visibility Toggle -->
       {#if onPropsVisibilityChange}
         <div class="setting-section">
-          <span class="section-label" id="prop-display-label">{t('train_prop_display')}</span
+          <span class="section-label" id="prop-display-label"
+            >{t("train_prop_display")}</span
           >
           <button
             class="toggle-btn"
@@ -169,7 +172,11 @@
               class="fas {propsVisible ? 'fa-eye' : 'fa-eye-slash'}"
               aria-hidden="true"
             ></i>
-            <span>{propsVisible ? t('train_props_visible') : t('train_props_hidden')}</span>
+            <span
+              >{propsVisible
+                ? t("train_props_visible")
+                : t("train_props_hidden")}</span
+            >
           </button>
         </div>
       {/if}
@@ -177,14 +184,14 @@
       <!-- Camera Switch -->
       {#if onSwitchCamera}
         <div class="setting-section">
-          <span class="section-label">{t('train_camera')}</span>
+          <span class="section-label">{t("train_camera")}</span>
           <button
             class="toggle-btn camera-btn"
             onclick={onSwitchCamera}
             aria-label="Switch camera"
           >
             <i class="fas fa-sync-alt" aria-hidden="true"></i>
-            <span>{t('train_switch_camera')}</span>
+            <span>{t("train_switch_camera")}</span>
           </button>
         </div>
       {/if}
@@ -292,7 +299,9 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: 0.8rem;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
   }
 
@@ -376,7 +385,10 @@
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal);
   }
 
   .mode-btn i {
@@ -430,7 +442,12 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      transform var(--duration-normal),
+      opacity var(--duration-normal);
   }
 
   .scale-btn:hover:not(:disabled) {
@@ -509,7 +526,9 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      color var(--duration-normal);
   }
 
   .reset-btn:hover {
@@ -537,7 +556,10 @@
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal);
   }
 
   .toggle-btn i {

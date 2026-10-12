@@ -12,8 +12,8 @@
 
   const modes: Array<{ mode: GridMode; label: string; hint: string }> = [
     { mode: GridMode.DIAMOND, label: "Diamond", hint: "N E S W" },
-    { mode: GridMode.BOX,     label: "Box",     hint: "Ne Se Sw Nw" },
-    { mode: GridMode.SKEWED,  label: "Skewed",  hint: "all 8 perimeter" },
+    { mode: GridMode.BOX, label: "Box", hint: "Ne Se Sw Nw" },
+    { mode: GridMode.SKEWED, label: "Skewed", hint: "all 8 perimeter" },
   ];
 </script>
 
@@ -48,7 +48,9 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     background: transparent;
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.5));
     border: none;

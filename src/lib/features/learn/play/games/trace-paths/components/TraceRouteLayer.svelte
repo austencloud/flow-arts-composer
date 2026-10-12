@@ -281,7 +281,7 @@ Three things it is careful about:
     stroke-linecap: round;
     stroke-linejoin: round;
     opacity: 0.32;
-    transition: opacity var(--duration-normal) ease-out;
+    transition: opacity var(--duration-normal) var(--ease-standard-out);
   }
 
   .rail.faded {

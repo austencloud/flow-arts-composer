@@ -19,23 +19,29 @@
   // Resolve focused definitions from their IDs
   let focusedExhibit = $derived(
     museum.focusedExhibitId
-      ? museum.grid.exhibits.find((e) => e.id === museum.focusedExhibitId) ?? null
+      ? (museum.grid.exhibits.find((e) => e.id === museum.focusedExhibitId) ??
+          null)
       : null
   );
 
   let focusedPerformer = $derived(
     museum.focusedPerformerId
-      ? museum.grid.performers.find((p) => p.id === museum.focusedPerformerId) ?? null
+      ? (museum.grid.performers.find(
+          (p) => p.id === museum.focusedPerformerId
+        ) ?? null)
       : null
   );
 
   let focusedTrigger = $derived(
     museum.focusedTriggerId
-      ? museum.grid.triggers.find((t) => t.id === museum.focusedTriggerId) ?? null
+      ? (museum.grid.triggers.find((t) => t.id === museum.focusedTriggerId) ??
+          null)
       : null
   );
 
-  let hasContent = $derived(!!focusedExhibit || !!focusedPerformer || !!focusedTrigger);
+  let hasContent = $derived(
+    !!focusedExhibit || !!focusedPerformer || !!focusedTrigger
+  );
 
   // Current wing for contextual display when nothing is focused
   let currentWing = $derived(museum.currentWing);
@@ -74,7 +80,10 @@
           <SequenceView sequenceId={focusedPerformer.sequenceId} />
         </div>
       {/if}
-      <button class="change-sequence-btn" onclick={() => (showSequencePicker = true)}>
+      <button
+        class="change-sequence-btn"
+        onclick={() => (showSequencePicker = true)}
+      >
         <i class="fas fa-exchange-alt" aria-hidden="true"></i>
         Change Sequence
       </button>
@@ -132,12 +141,18 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    animation: panel-slide-in 0.25s ease;
+    animation: panel-slide-in var(--duration-normal) var(--ease-standard);
   }
 
   @keyframes panel-slide-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .panel-section {
@@ -195,7 +210,9 @@
     color: rgba(140, 200, 140, 0.7);
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast);
   }
 
   .change-sequence-btn:hover {
@@ -216,7 +233,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    animation: panel-slide-in 0.25s ease;
+    animation: panel-slide-in var(--duration-normal) var(--ease-standard);
   }
 
   .wing-header {
@@ -303,5 +320,4 @@
     color: var(--museum-gold-25);
     line-height: 1.5;
   }
-
 </style>

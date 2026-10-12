@@ -23,10 +23,14 @@
   let fileError = $state<string | null>(null);
 
   const displayWord = $derived(
-    movementMap.sequence?.word ? simplifyRepeatedWord(movementMap.sequence.word) : ""
+    movementMap.sequence?.word
+      ? simplifyRepeatedWord(movementMap.sequence.word)
+      : ""
   );
 
-  const ready = $derived(!!movementMap.video && !!movementMap.sequence && movementMap.isLevelOne);
+  const ready = $derived(
+    !!movementMap.video && !!movementMap.sequence && movementMap.isLevelOne
+  );
 
   async function onFileChosen(event: Event): Promise<void> {
     const input = event.currentTarget as HTMLInputElement;
@@ -109,7 +113,11 @@
       />
       <button type="button" class="action" onclick={() => fileInput?.click()}>
         <i class="fas fa-film" aria-hidden="true"></i>
-        <span>{movementMap.video ? "Choose different footage" : "Choose footage"}</span>
+        <span
+          >{movementMap.video
+            ? "Choose different footage"
+            : "Choose footage"}</span
+        >
       </button>
 
       {#if movementMap.video}
@@ -144,7 +152,11 @@
 
       <button type="button" class="action" onclick={() => (pickerOpen = true)}>
         <i class="fas fa-list" aria-hidden="true"></i>
-        <span>{movementMap.sequence ? "Choose different sequence" : "Choose sequence"}</span>
+        <span
+          >{movementMap.sequence
+            ? "Choose different sequence"
+            : "Choose sequence"}</span
+        >
       </button>
 
       {#if movementMap.sequence}
@@ -179,13 +191,14 @@
           {:else}
             <p class="verdict blocked" role="alert">
               <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
-              Level {movementMap.difficulty?.level}{movementMap.difficulty?.trigger === "turns"
+              Level {movementMap.difficulty?.level}{movementMap.difficulty
+                ?.trigger === "turns"
                 ? " — this sequence carries turns."
                 : movementMap.difficulty?.trigger === "nonRadial"
                   ? " — this sequence uses non-radial orientations."
                   : "."}
-              Level 1 is the world being mapped first. Remove it and pick a
-              sequence with no turns and radial orientations only.
+              Level 1 is the world being mapped first. Remove it and pick a sequence
+              with no turns and radial orientations only.
             </p>
           {/if}
         </div>
@@ -283,8 +296,10 @@
     cursor: pointer;
     align-self: flex-start;
     transition:
-      background-color var(--transition-fast, 120ms) ease,
-      border-color var(--transition-fast, 120ms) ease;
+      background-color var(--transition-fast, var(--duration-instant))
+        var(--ease-standard),
+      border-color var(--transition-fast, var(--duration-instant))
+        var(--ease-standard);
   }
 
   .action:hover:not(:disabled) {
@@ -437,9 +452,11 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background-color var(--transition-fast, 120ms) ease,
-      border-color var(--transition-fast, 120ms) ease,
-      color var(--transition-fast, 120ms) ease;
+      background-color var(--transition-fast, var(--duration-instant))
+        var(--ease-standard),
+      border-color var(--transition-fast, var(--duration-instant))
+        var(--ease-standard),
+      color var(--transition-fast, var(--duration-instant)) var(--ease-standard);
   }
 
   .remove:hover {

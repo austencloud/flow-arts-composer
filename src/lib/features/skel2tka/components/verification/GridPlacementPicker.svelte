@@ -18,7 +18,9 @@
     onSelect: (location: GridLocation) => void;
   } = $props();
 
-  const handColor = $derived(hand === "left" ? "var(--prop-blue, #3b82f6)" : "var(--prop-red, #ef4444)");
+  const handColor = $derived(
+    hand === "left" ? "var(--prop-blue, #3b82f6)" : "var(--prop-red, #ef4444)"
+  );
 
   interface GridButton {
     location: GridLocation;
@@ -41,7 +43,11 @@
   ];
 </script>
 
-<div class="grid-picker" role="radiogroup" aria-label={t('skel2tka_hand_position_picker', { hand })}>
+<div
+  class="grid-picker"
+  role="radiogroup"
+  aria-label={t("skel2tka_hand_position_picker", { hand })}
+>
   <div class="compass-rose">
     {#each buttons as btn}
       <button
@@ -50,12 +56,14 @@
         style="
           left: {btn.x}%;
           top: {btn.y}%;
-          {selected === btn.location ? `border-color: ${handColor}; box-shadow: 0 0 8px color-mix(in srgb, ${handColor} 25%, transparent);` : ''}
+          {selected === btn.location
+          ? `border-color: ${handColor}; box-shadow: 0 0 8px color-mix(in srgb, ${handColor} 25%, transparent);`
+          : ''}
         "
         onclick={() => onSelect(btn.location)}
         role="radio"
         aria-checked={selected === btn.location}
-        aria-label={t('skel2tka_grid_placement', { position: btn.label })}
+        aria-label={t("skel2tka_grid_placement", { position: btn.label })}
       >
         {btn.label}
       </button>
@@ -63,10 +71,38 @@
 
     <!-- Crosshair lines -->
     <svg class="crosshairs" viewBox="0 0 100 100" aria-hidden="true">
-      <line x1="50" y1="5" x2="50" y2="95" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" />
-      <line x1="5" y1="50" x2="95" y2="50" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" />
-      <line x1="18" y1="18" x2="82" y2="82" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" />
-      <line x1="82" y1="18" x2="18" y2="82" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" />
+      <line
+        x1="50"
+        y1="5"
+        x2="50"
+        y2="95"
+        stroke="rgba(255,255,255,0.08)"
+        stroke-width="0.5"
+      />
+      <line
+        x1="5"
+        y1="50"
+        x2="95"
+        y2="50"
+        stroke="rgba(255,255,255,0.08)"
+        stroke-width="0.5"
+      />
+      <line
+        x1="18"
+        y1="18"
+        x2="82"
+        y2="82"
+        stroke="rgba(255,255,255,0.06)"
+        stroke-width="0.5"
+      />
+      <line
+        x1="82"
+        y1="18"
+        x2="18"
+        y2="82"
+        stroke="rgba(255,255,255,0.06)"
+        stroke-width="0.5"
+      />
     </svg>
   </div>
 </div>
@@ -109,7 +145,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      background var(--duration-fast);
     z-index: 1;
   }
 

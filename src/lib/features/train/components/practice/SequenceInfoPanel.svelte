@@ -37,12 +37,14 @@
   {#if sequence}
     <div class="sequence-content">
       <span class="sequence-name">{sequence.word || sequence.name}</span>
-      <span class="sequence-steps">{t('train_step_count', { count: totalSteps })}</span>
+      <span class="sequence-steps"
+        >{t("train_step_count", { count: totalSteps })}</span
+      >
     </div>
   {:else}
     <div class="sequence-content">
       <i class="fas fa-folder-open" aria-hidden="true"></i>
-      <span class="sequence-name">{t('train_select_sequence_short')}</span>
+      <span class="sequence-name">{t("train_select_sequence_short")}</span>
     </div>
   {/if}
 </button>
@@ -78,12 +80,9 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     transition:
-      background var(--duration-fast)
-        var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1)),
-      border-color var(--duration-fast)
-        var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1)),
-      transform var(--duration-instant)
-        var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1));
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-instant) var(--ease-out);
     color: color-mix(in srgb, var(--theme-text, white) 85%, transparent);
     width: 100%;
   }

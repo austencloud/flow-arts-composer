@@ -9,8 +9,7 @@
   Save calls HandPathFactory + HandPathRepository to persist both paths.
 -->
 <script lang="ts">
-
-import { getHandPathSaveOrchestrator } from "#lib/features/library/get-hand-path-save-orchestrator.js";
+  import { getHandPathSaveOrchestrator } from "#lib/features/library/get-hand-path-save-orchestrator.js";
   import { getBuilderContext } from "../context/builder-context";
   import { createHandPath } from "#lib/shared/foundation/services/hand-path-factory.js";
   import type { HandPathSaveOrchestrator } from "#lib/features/library/services/hand-path-save-orchestrator.js";
@@ -26,14 +25,19 @@ import { getHandPathSaveOrchestrator } from "#lib/features/library/get-hand-path
   // Phase instruction copy
   const instruction = $derived.by(() => {
     if (builder.phase === "left") {
-      if (builder.leftLocations.length === 0) return "Tap grid points to draw the left hand path.";
-      if (builder.leftLocations.length === 1) return "Tap at least one more point, then switch to red.";
+      if (builder.leftLocations.length === 0)
+        return "Tap grid points to draw the left hand path.";
+      if (builder.leftLocations.length === 1)
+        return "Tap at least one more point, then switch to red.";
       return `${builder.leftLocations.length} points - tap "Next Hand" when ready.`;
     }
     if (builder.phase === "right") {
-      const remaining = builder.leftLocations.length - builder.rightLocations.length;
-      if (builder.rightLocations.length === 0) return "Now draw the right hand path.";
-      if (remaining > 0) return `${remaining} more point${remaining > 1 ? "s" : ""} to match blue.`;
+      const remaining =
+        builder.leftLocations.length - builder.rightLocations.length;
+      if (builder.rightLocations.length === 0)
+        return "Now draw the right hand path.";
+      if (remaining > 0)
+        return `${remaining} more point${remaining > 1 ? "s" : ""} to match blue.`;
       return `Paths match - tap "Complete" to finish.`;
     }
     return "Both paths built.";
@@ -217,7 +221,10 @@ import { getHandPathSaveOrchestrator } from "#lib/features/library/get-hand-path
     font-weight: 500;
     cursor: pointer;
     border: none;
-    transition: background 0.15s ease, opacity 0.15s ease, color 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .btn:disabled {

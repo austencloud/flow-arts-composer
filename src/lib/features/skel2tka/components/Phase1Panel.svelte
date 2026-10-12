@@ -15,8 +15,15 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Phase1Result } from "../domain/models";
   import type { SanityCheckReport } from "../domain/verification-models";
-  import type { PhaseVerdict, UserCorrection } from "../domain/verification-models";
-  import type { TrainingPair, VerifiedStepPosition, VideoReference } from "../domain/training-models";
+  import type {
+    PhaseVerdict,
+    UserCorrection,
+  } from "../domain/verification-models";
+  import type {
+    TrainingPair,
+    VerifiedStepPosition,
+    VideoReference,
+  } from "../domain/training-models";
   import type { Phase1OverlayRenderer } from "../services/phase1-overlay-renderer";
   import { checkPhase1 } from "../services/sanity-checker";
   import type { TrainingDataPersister } from "../services/training-data-persister";
@@ -78,18 +85,14 @@
     try {
       // Step 0: Initialize MediaPipe if needed (~9MB download on first use)
       if (!landmarker.isInitialized) {
-        progressLabel = t('skel2tka_downloading_model');
+        progressLabel = t("skel2tka_downloading_model");
         await landmarker.initialize();
       }
 
       // Step 1: Extract frames
       pipelineState = "extracting";
-      progressLabel = t('skel2tka_extracting_frames');
-      const frames = await extractFrames(
-        file,
-        { fps: 15 },
-        onProgress
-      );
+      progressLabel = t("skel2tka_extracting_frames");
+      const frames = await extractFrames(file, { fps: 15 }, onProgress);
 
       if (frames.length === 0) {
         throw new Error("No frames could be extracted from the video");
@@ -100,12 +103,17 @@
 
       // Step 2: Analyze hands
       pipelineState = "analyzing";
-      progressLabel = t('skel2tka_analyzing_hands');
-      const timeline = await handAnalyzer.analyze(frames, 15, duration, onProgress);
+      progressLabel = t("skel2tka_analyzing_hands");
+      const timeline = await handAnalyzer.analyze(
+        frames,
+        15,
+        duration,
+        onProgress
+      );
 
       // Step 3: Detect beats
       pipelineState = "detecting-beats";
-      progressLabel = t('skel2tka_detecting_beats');
+      progressLabel = t("skel2tka_detecting_beats");
       const beats = detectBeats(timeline);
 
       const processingTimeMs = performance.now() - startTime;
@@ -118,12 +126,16 @@
       pipelineState = "complete";
     } catch (err) {
       console.error("[Skel2TKA] Phase 1 error:", err);
-      errorMessage = err instanceof Error ? err.message : t('skel2tka_analysis_failed');
+      errorMessage =
+        err instanceof Error ? err.message : t("skel2tka_analysis_failed");
       pipelineState = "error";
     }
   }
 
-  async function handleVerdict(verdict: PhaseVerdict, corrections: UserCorrection[]) {
+  async function handleVerdict(
+    verdict: PhaseVerdict,
+    corrections: UserCorrection[]
+  ) {
     if (!result || !videoFile) return;
 
     if (verdict === "rejected") {
@@ -158,7 +170,10 @@
         let rightLocation = rightPos?.location ?? null;
 
         for (const correction of corrections) {
-          if (correction.stepNumber === step.index && correction.field === "hand_position") {
+          if (
+            correction.stepNumber === step.index &&
+            correction.field === "hand_position"
+          ) {
             if (correction.hand === "left") {
               leftLocation = correction.correctedValue as typeof leftLocation;
             } else if (correction.hand === "right") {
@@ -199,11 +214,15 @@
       await trainingPersister.save(pair);
 
       const stats = await trainingPersister.getStats();
-      verificationMessage = t('skel2tka_training_saved', { total: String(stats.totalPairs), accepted: String(stats.acceptedPairs), corrected: String(stats.correctedPairs) });
+      verificationMessage = t("skel2tka_training_saved", {
+        total: String(stats.totalPairs),
+        accepted: String(stats.acceptedPairs),
+        corrected: String(stats.correctedPairs),
+      });
       pipelineState = "verified";
     } catch (err) {
       console.error("[Skel2TKA] Failed to save training pair:", err);
-      verificationMessage = t('skel2tka_training_save_failed');
+      verificationMessage = t("skel2tka_training_save_failed");
       pipelineState = "verified";
     }
   }
@@ -222,9 +241,9 @@
 
   const isProcessing = $derived(
     pipelineState === "initializing" ||
-    pipelineState === "extracting" ||
-    pipelineState === "analyzing" ||
-    pipelineState === "detecting-beats"
+      pipelineState === "extracting" ||
+      pipelineState === "analyzing" ||
+      pipelineState === "detecting-beats"
   );
 
   const progressPercent = $derived(
@@ -234,7 +253,10 @@
 
 <div class="phase1-panel">
   <div class="upload-section">
-    <VideoUploadDropzone onFileSelected={handleFileSelected} disabled={isProcessing} />
+    <VideoUploadDropzone
+      onFileSelected={handleFileSelected}
+      disabled={isProcessing}
+    />
   </div>
 
   {#if isProcessing}
@@ -243,7 +265,8 @@
         <i class="fas fa-circle-notch fa-spin"></i>
         <span>{progressLabel}...</span>
         {#if progressTotal > 0}
-          <span class="progress-count">{progressCurrent} / {progressTotal}</span>
+          <span class="progress-count">{progressCurrent} / {progressTotal}</span
+          >
         {/if}
       </div>
       {#if pipelineState === "initializing"}
@@ -268,9 +291,12 @@
   {#if (pipelineState === "complete" || pipelineState === "verified") && result}
     <div class="results-section">
       <div class="results-header">
-        <h3>{t('skel2tka_results')}</h3>
+        <h3>{t("skel2tka_results")}</h3>
         <span class="timing">
-          {t('skel2tka_frames_analyzed', { frames: String(result.timeline.frames.length), seconds: (result.processingTimeMs / 1000).toFixed(1) })}
+          {t("skel2tka_frames_analyzed", {
+            frames: String(result.timeline.frames.length),
+            seconds: (result.processingTimeMs / 1000).toFixed(1),
+          })}
         </span>
       </div>
 
@@ -282,11 +308,7 @@
       {/if}
 
       {#if videoFile && pipelineState === "complete"}
-        <FrameInspector
-          {videoFile}
-          {result}
-          renderer={overlayRenderer}
-        />
+        <FrameInspector {videoFile} {result} renderer={overlayRenderer} />
 
         <PhaseVerificationPanel
           beats={result.beats}
@@ -354,7 +376,7 @@
     height: 100%;
     background: var(--theme-accent, #3b82f6);
     border-radius: 3px;
-    transition: width 0.15s ease-out;
+    transition: width var(--duration-fast) var(--ease-standard-out);
   }
 
   .progress-fill-indeterminate {
@@ -366,8 +388,12 @@
   }
 
   @keyframes indeterminate {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(350%); }
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(350%);
+    }
   }
 
   .error-section {
@@ -375,8 +401,13 @@
     align-items: center;
     gap: 8px;
     padding: 12px 16px;
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
     border-radius: 8px;
     color: var(--semantic-error, #ef4444);
     font-size: var(--font-size-min, 14px);
@@ -412,8 +443,13 @@
     align-items: center;
     gap: 8px;
     padding: 10px 14px;
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-success, #22c55e) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 8%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-success, #22c55e) 20%, transparent);
     border-radius: 8px;
     font-size: var(--font-size-min, 14px);
     color: var(--semantic-success, #22c55e);

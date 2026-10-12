@@ -59,19 +59,37 @@
 <svelte:window onkeydown={handleKeyDown} />
 
 <!-- Teleport button -->
-<button class="teleport-btn" onclick={() => { open = !open; }} aria-label="Teleport to room">
+<button
+  class="teleport-btn"
+  onclick={() => {
+    open = !open;
+  }}
+  aria-label="Teleport to room"
+>
   <i class="fas fa-compass" aria-hidden="true"></i>
 </button>
 
 <!-- Overlay -->
 {#if open}
   <!-- Backdrop -->
-  <button class="backdrop" onclick={() => { open = false; }} aria-label="Close room picker"></button>
+  <button
+    class="backdrop"
+    onclick={() => {
+      open = false;
+    }}
+    aria-label="Close room picker"
+  ></button>
 
   <div class="room-overlay">
     <div class="overlay-header">
       <span class="overlay-title">Teleport to Room</span>
-      <button class="close-btn" onclick={() => { open = false; }} aria-label="Close">
+      <button
+        class="close-btn"
+        onclick={() => {
+          open = false;
+        }}
+        aria-label="Close"
+      >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
     </div>
@@ -82,7 +100,9 @@
         class:active={selectedRoom === null}
         onclick={() => handleSelect(null)}
       >
-        <span class="room-icon"><i class="fas fa-border-all" aria-hidden="true"></i></span>
+        <span class="room-icon"
+          ><i class="fas fa-border-all" aria-hidden="true"></i></span
+        >
         <span class="room-name">Full Museum</span>
       </button>
 
@@ -121,7 +141,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.15s, border-color 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast);
   }
 
   .teleport-btn:hover {
@@ -206,7 +228,9 @@
     color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
     font-family: inherit;
-    transition: background 0.12s, border-color 0.12s;
+    transition:
+      background var(--duration-instant),
+      border-color var(--duration-instant);
   }
 
   .room-card:hover {

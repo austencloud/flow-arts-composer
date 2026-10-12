@@ -71,18 +71,27 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
     // Phase 1 (Q1-3): Diamond grid only, one of each type
     const phase1Types = shuffleArray([...PLACEMENT_TYPES]);
     for (const type of phase1Types) {
-      questions.push({ targetType: type, gridMode: GridMode.DIAMOND, difficulty: 1 });
+      questions.push({
+        targetType: type,
+        gridMode: GridMode.DIAMOND,
+        difficulty: 1,
+      });
     }
 
     // Phase 2 (Q4-6): Box grid introduced, one of each type
     const phase2Types = shuffleArray([...PLACEMENT_TYPES]);
     for (const type of phase2Types) {
-      questions.push({ targetType: type, gridMode: GridMode.BOX, difficulty: 2 });
+      questions.push({
+        targetType: type,
+        gridMode: GridMode.BOX,
+        difficulty: 2,
+      });
     }
 
     // Phase 3 (Q7-8): Mixed grids, random types
     for (let i = 0; i < 2; i++) {
-      const type = PLACEMENT_TYPES[Math.floor(Math.random() * PLACEMENT_TYPES.length)]!;
+      const type =
+        PLACEMENT_TYPES[Math.floor(Math.random() * PLACEMENT_TYPES.length)]!;
       const grid = Math.random() < 0.5 ? GridMode.DIAMOND : GridMode.BOX;
       questions.push({ targetType: type, gridMode: grid, difficulty: 3 });
     }
@@ -111,7 +120,10 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
   let currentQuestion = $state(0);
   let questions = $state<ConstructionQuestion[]>(generateQuestions());
   let feedbackState = $state<"idle" | "correct" | "incorrect">("idle");
-  let userPlacement = $state<{ left: HandPosition; right: HandPosition } | null>(null);
+  let userPlacement = $state<{
+    left: HandPosition;
+    right: HandPosition;
+  } | null>(null);
   let builtType = $state<PlacementType | null>(null);
   let advanceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -121,7 +133,7 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
   const isComplete = $derived(currentQuestion >= questions.length);
   const passed = $derived(experienceState.quizScore >= 7);
   const currentQ = $derived(
-    currentQuestion < questions.length ? questions[currentQuestion]! : null,
+    currentQuestion < questions.length ? questions[currentQuestion]! : null
   );
 
   // Cleanup
@@ -186,7 +198,11 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
   }
 </script>
 
-<div class="construction-quiz" role="region" aria-label={tDynamic("learn_placement_construction_quiz")}>
+<div
+  class="construction-quiz"
+  role="region"
+  aria-label={tDynamic("learn_placement_construction_quiz")}
+>
   {#if !isComplete && currentQ}
     <!-- Header: progress + streak -->
     <div class="quiz-header">
@@ -197,7 +213,7 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
         <div class="progress-bar">
           <div
             class="progress-fill"
-            style="width: {((currentQuestion) / questions.length) * 100}%;"
+            style="width: {(currentQuestion / questions.length) * 100}%;"
           ></div>
         </div>
       </div>
@@ -228,7 +244,7 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
     <!-- Semantic feedback for wrong answers -->
     {#if feedbackState === "incorrect" && builtType && userPlacement}
       <SemanticFeedback
-        builtType={builtType}
+        {builtType}
         targetType={currentQ.targetType}
         leftHand={userPlacement.left}
         rightHand={userPlacement.right}
@@ -249,10 +265,14 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
       <div class="complete-header">
         {#if passed}
           <span class="complete-icon pass" aria-hidden="true">&#x2713;</span>
-          <h2 class="complete-title">{tDynamic("learn_placement_quiz_passed")}</h2>
+          <h2 class="complete-title">
+            {tDynamic("learn_placement_quiz_passed")}
+          </h2>
         {:else}
           <span class="complete-icon fail" aria-hidden="true">&#x21BB;</span>
-          <h2 class="complete-title">{tDynamic("learn_placement_keep_practicing")}</h2>
+          <h2 class="complete-title">
+            {tDynamic("learn_placement_keep_practicing")}
+          </h2>
         {/if}
       </div>
 
@@ -272,13 +292,18 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
 
       {#if experienceState.bestStreak > 0}
         <p class="best-streak-note">
-          {tDynamic("learn_placement_best_streak", { streak: experienceState.bestStreak })}
+          {tDynamic("learn_placement_best_streak", {
+            streak: experienceState.bestStreak,
+          })}
         </p>
       {/if}
 
       <div class="complete-actions">
         {#if passed}
-          <button class="action-button primary" onclick={handleAdvanceToSpeedRounds}>
+          <button
+            class="action-button primary"
+            onclick={handleAdvanceToSpeedRounds}
+          >
             {tDynamic("learn_placement_speed_rounds")}
           </button>
         {:else}
@@ -295,10 +320,18 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
     {#if feedbackState === "correct"}
       {tDynamic("learn_placement_correct_next")}
     {:else if feedbackState === "incorrect" && builtType}
-      {tDynamic("learn_placement_incorrect_aria", { built: PLACEMENT_TYPE_INFO[builtType].label, target: currentQ ? PLACEMENT_TYPE_INFO[currentQ.targetType].label : "" })}
+      {tDynamic("learn_placement_incorrect_aria", {
+        built: PLACEMENT_TYPE_INFO[builtType].label,
+        target: currentQ ? PLACEMENT_TYPE_INFO[currentQ.targetType].label : "",
+      })}
     {:else if isComplete}
-      {tDynamic("learn_placement_complete_aria", { score: experienceState.quizScore, total: questions.length })}
-      {passed ? tDynamic("learn_placement_pass_aria") : tDynamic("learn_placement_fail_aria")}
+      {tDynamic("learn_placement_complete_aria", {
+        score: experienceState.quizScore,
+        total: questions.length,
+      })}
+      {passed
+        ? tDynamic("learn_placement_pass_aria")
+        : tDynamic("learn_placement_fail_aria")}
     {/if}
   </div>
 </div>
@@ -349,7 +382,7 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
     height: 100%;
     background: var(--theme-accent, #60a5fa);
     border-radius: 2px;
-    transition: width 0.3s ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
 
   /* Grid area with flash overlays */
@@ -357,39 +390,45 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
     width: 100%;
     position: relative;
     border-radius: 12px;
-    transition: box-shadow 0.2s ease;
+    transition: box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .grid-area.flash-correct {
-    box-shadow: inset 0 0 0 2px var(--semantic-success, #22c55e),
+    box-shadow:
+      inset 0 0 0 2px var(--semantic-success, #22c55e),
       0 0 20px rgba(34, 197, 94, 0.2);
-    animation: flash-green 0.5s ease-out;
+    animation: flash-green var(--duration-dramatic) var(--ease-standard-out);
   }
 
   .grid-area.flash-incorrect {
-    box-shadow: inset 0 0 0 2px var(--semantic-error, #ef4444),
+    box-shadow:
+      inset 0 0 0 2px var(--semantic-error, #ef4444),
       0 0 20px rgba(239, 68, 68, 0.2);
-    animation: flash-red 0.3s ease-out;
+    animation: flash-red var(--duration-emphasis) var(--ease-standard-out);
   }
 
   @keyframes flash-green {
     0% {
-      box-shadow: inset 0 0 0 3px var(--semantic-success, #22c55e),
+      box-shadow:
+        inset 0 0 0 3px var(--semantic-success, #22c55e),
         0 0 30px rgba(34, 197, 94, 0.4);
     }
     100% {
-      box-shadow: inset 0 0 0 2px var(--semantic-success, #22c55e),
+      box-shadow:
+        inset 0 0 0 2px var(--semantic-success, #22c55e),
         0 0 20px rgba(34, 197, 94, 0.2);
     }
   }
 
   @keyframes flash-red {
     0% {
-      box-shadow: inset 0 0 0 3px var(--semantic-error, #ef4444),
+      box-shadow:
+        inset 0 0 0 3px var(--semantic-error, #ef4444),
         0 0 30px rgba(239, 68, 68, 0.4);
     }
     100% {
-      box-shadow: inset 0 0 0 2px var(--semantic-error, #ef4444),
+      box-shadow:
+        inset 0 0 0 2px var(--semantic-error, #ef4444),
         0 0 20px rgba(239, 68, 68, 0.2);
     }
   }
@@ -401,7 +440,7 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
     gap: 0.5rem;
     padding: 0.5rem 1rem;
     color: var(--semantic-success, #22c55e);
-    animation: fade-in 0.2s ease;
+    animation: fade-in var(--duration-normal) var(--ease-standard);
   }
 
   .correct-icon {
@@ -516,7 +555,9 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     color: var(--theme-text, #ffffff);
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .action-button:hover {

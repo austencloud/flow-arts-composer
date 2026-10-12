@@ -53,11 +53,11 @@ Teaches WHY the answer was wrong with geometric explanations and visual comparis
   const targetInfo = $derived(PLACEMENT_TYPE_INFO[targetType]);
   const builtColor = $derived(TYPE_COLORS[builtType]);
   const targetColor = $derived(TYPE_COLORS[targetType]);
-  const targetExplanation = $derived(tDynamic(`learn_placement_${targetType}_geometry`));
-
-  const gridKey = $derived(
-    gridMode === GridMode.DIAMOND ? "diamond" : "box",
+  const targetExplanation = $derived(
+    tDynamic(`learn_placement_${targetType}_geometry`)
   );
+
+  const gridKey = $derived(gridMode === GridMode.DIAMOND ? "diamond" : "box");
   const examplePlacement = $derived(EXAMPLE_PLACEMENTS[targetType][gridKey]!);
 
   // No-op handler for the guide-only PlacementGrid
@@ -78,7 +78,8 @@ Teaches WHY the answer was wrong with geometric explanations and visual comparis
         />
       </div>
       <span class="type-badge" style="--badge-color: {builtColor};">
-        {builtInfo.symbol} {builtInfo.label}
+        {builtInfo.symbol}
+        {builtInfo.label}
       </span>
     </div>
 
@@ -122,7 +123,7 @@ Teaches WHY the answer was wrong with geometric explanations and visual comparis
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    animation: slide-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: slide-up var(--duration-emphasis) var(--ease-out) both;
   }
 
   @keyframes slide-up {

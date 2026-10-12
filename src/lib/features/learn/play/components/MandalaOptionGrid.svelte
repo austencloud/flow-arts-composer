@@ -65,7 +65,9 @@
     return () => observer.disconnect();
   });
 
-  function tileState(option: QuizAnswerOption): "default" | "correct" | "incorrect" | "dimmed" {
+  function tileState(
+    option: QuizAnswerOption
+  ): "default" | "correct" | "incorrect" | "dimmed" {
     if (!isAnswered) return "default";
     if (option.isCorrect) return "correct";
     if (option.id === selectedId) return "incorrect";
@@ -124,13 +126,17 @@
     border: 2px solid rgba(255, 255, 255, 0.08);
     cursor: pointer;
     transition:
-      border-color var(--duration-normal, 200ms) ease,
-      opacity var(--duration-normal, 200ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .tile:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--game-accent, #fbbf24) 60%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--game-accent, #fbbf24) 60%,
+      transparent
+    );
     transform: translateY(-2px);
   }
 
@@ -153,7 +159,8 @@
 
   .tile.state-correct {
     border-color: var(--game-accent, #fbbf24);
-    box-shadow: 0 0 18px color-mix(in srgb, var(--game-accent, #fbbf24) 40%, transparent);
+    box-shadow: 0 0 18px
+      color-mix(in srgb, var(--game-accent, #fbbf24) 40%, transparent);
   }
 
   .tile.state-incorrect {

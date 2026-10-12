@@ -398,8 +398,8 @@
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.14);
     transition:
-      opacity var(--duration-normal, 200ms) ease,
-      box-shadow var(--duration-normal, 200ms) ease;
+      opacity var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .card-slot.state-correct {
