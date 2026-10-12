@@ -261,51 +261,53 @@
   <p class="intro">{@html t(DUAL_SHIFTS_WEB_COPY.modesLead)}</p>
 
   <!-- The four modes as timing x direction, in the lesson's words. -->
-  <table class="key">
-    <thead>
-      <tr>
-        <td></td>
-        {#each DIRECTIONS as direction (direction)}
-          <th scope="col">
-            <span class="axis"
-              >{t(DUAL_SHIFT_KEY.direction[direction].name)}</span
-            >
-            <span class="says"
-              >{t(DUAL_SHIFT_KEY.direction[direction].says)}</span
-            >
-          </th>
-        {/each}
-      </tr>
-    </thead>
-    <tbody>
-      {#each TIMINGS as timing (timing)}
+  <div class="key-wrap">
+    <table class="key">
+      <thead>
         <tr>
-          <th scope="row">
-            <span class="axis">{t(DUAL_SHIFT_KEY.timing[timing].name)}</span>
-            <span class="says">{t(DUAL_SHIFT_KEY.timing[timing].says)}</span>
-          </th>
+          <td></td>
           {#each DIRECTIONS as direction (direction)}
-            {@const mode = dualShiftModeAt(timing, direction)}
-            <td>
-              <a
-                class="mode-chip"
-                href="#dual-shift-{mode.id}"
-                style:--el={dualShiftElement(mode).accentColor}
-                style:--el-deep={dualShiftElement(mode).darkComplement}
+            <th scope="col">
+              <span class="axis"
+                >{t(DUAL_SHIFT_KEY.direction[direction].name)}</span
               >
-                <img
-                  class="element"
-                  src={getElementImagePath(dualShiftElement(mode).element)}
-                  alt=""
-                />
-                {t(mode.name)}
-              </a>
-            </td>
+              <span class="says"
+                >{t(DUAL_SHIFT_KEY.direction[direction].says)}</span
+              >
+            </th>
           {/each}
         </tr>
-      {/each}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {#each TIMINGS as timing (timing)}
+          <tr>
+            <th scope="row">
+              <span class="axis">{t(DUAL_SHIFT_KEY.timing[timing].name)}</span>
+              <span class="says">{t(DUAL_SHIFT_KEY.timing[timing].says)}</span>
+            </th>
+            {#each DIRECTIONS as direction (direction)}
+              {@const mode = dualShiftModeAt(timing, direction)}
+              <td>
+                <a
+                  class="mode-chip"
+                  href="#dual-shift-{mode.id}"
+                  style:--el={dualShiftElement(mode).accentColor}
+                  style:--el-deep={dualShiftElement(mode).darkComplement}
+                >
+                  <img
+                    class="element"
+                    src={getElementImagePath(dualShiftElement(mode).element)}
+                    alt=""
+                  />
+                  {t(mode.name)}
+                </a>
+              </td>
+            {/each}
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
 
   {@render pair("same")}
 
@@ -372,6 +374,11 @@
 
   /* The 2 x 2 key: timing down the side, direction across the top, each
      mode a chip in its element's colour that jumps to its loop. */
+  .key-wrap {
+    container-type: inline-size;
+    display: grid;
+    justify-items: center;
+  }
   .key {
     justify-self: center;
     border-collapse: separate;
@@ -402,6 +409,16 @@
     padding: 0;
     vertical-align: middle;
   }
+  /* On a light page the pale elements (air) need their deep colour mixed in
+     to be seen; on a dark page the element colour stands on its own. */
+  .mode-chip,
+  .mode {
+    --tint: color-mix(in srgb, var(--el) 70%, var(--el-deep));
+  }
+  .dark .mode-chip,
+  .dark .mode {
+    --tint: var(--el);
+  }
   /* The chip is a block link, not text: it reads as a tile. */
   .mode-chip {
     display: flex;
@@ -411,24 +428,56 @@
     min-width: 9.5rem;
     padding: 0.55rem 1rem;
     border-radius: 0.75rem;
-    border: 1px solid color-mix(in srgb, var(--el) 60%, transparent);
-    background: color-mix(in srgb, var(--el) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tint) 60%, transparent);
+    background: color-mix(in srgb, var(--tint) 14%, transparent);
     color: var(--el-deep);
     font-weight: 700;
     text-decoration: none;
   }
   .dark .mode-chip {
     color: var(--ink, #f4f4f8);
-    background: color-mix(in srgb, var(--el) 22%, transparent);
+    background: color-mix(in srgb, var(--tint) 22%, transparent);
   }
   .mode-chip:focus-visible {
-    outline: 2px solid var(--el);
+    outline: 2px solid var(--tint);
     outline-offset: 2px;
   }
   .element {
     width: 1.5em;
     height: 1.5em;
     flex: none;
+  }
+  /* Where the 2 x 2 will not fit, each timing heads its own row of two
+     chips: the direction words stay above, the timing words go between. */
+  @container (width < 38rem) {
+    .key {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+      width: 100%;
+      margin: 0;
+    }
+    .key thead,
+    .key tbody,
+    .key tr {
+      display: contents;
+    }
+    .key thead td {
+      display: none;
+    }
+    .key th,
+    .key td {
+      display: block;
+    }
+    .key th[scope="row"] {
+      grid-column: 1 / -1;
+      margin-top: 0.5rem;
+      text-align: center;
+    }
+    .mode-chip {
+      min-width: 0;
+      padding-inline: 0.5rem;
+    }
   }
   /* The book's two-tone Type 1 colour code for "Dual-Shift": Dual = cyan,
      -Shift = purple (LETTER_TYPE_COLORS), the purple lifted on dark. */
@@ -467,17 +516,17 @@
      choreo-card palette, as a wash, a border and the name's colour. */
   .mode {
     --pad: clamp(0.85rem, 2cqw, 1.25rem);
-    --seam: color-mix(in srgb, var(--el) 45%, var(--ink, #1a1a1a) 10%);
+    --seam: color-mix(in srgb, var(--tint) 45%, var(--ink, #1a1a1a) 10%);
     container-type: inline-size;
     display: grid;
     gap: 0.75rem;
     padding: var(--pad);
     border-radius: 1rem;
-    border: 1px solid color-mix(in srgb, var(--el) 55%, transparent);
-    background: color-mix(in srgb, var(--el) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tint) 55%, transparent);
+    background: color-mix(in srgb, var(--tint) 12%, transparent);
   }
   .dark .mode {
-    background: color-mix(in srgb, var(--el) 16%, transparent);
+    background: color-mix(in srgb, var(--tint) 16%, transparent);
   }
   /* Mode names in the book's serif, centered over the loop. */
   .dual-shifts-topic .mode-name {
