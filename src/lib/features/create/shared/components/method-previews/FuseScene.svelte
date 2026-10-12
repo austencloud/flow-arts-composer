@@ -40,6 +40,7 @@
    * arrows.
    */
   import { onDestroy, untrack } from "svelte";
+  import { EASE_OUT } from "#lib/shared/transitions/motion.js";
   import { SvelteSet } from "svelte/reactivity";
   import type { FuseSide } from "#lib/features/fuse/state/fuse-shuffle-pool.svelte.js";
   import MethodPreviewPictograph from "./MethodPreviewPictograph.svelte";
@@ -62,7 +63,7 @@
   import type { MethodPreviewSceneProps } from "./method-preview-scenes";
 
   /** The step grid's entrance easing. */
-  const EASE = "var(--ease-out)";
+  const EASE = EASE_OUT;
   /**
    * Where a new path's half pops in from: a little smaller, still centered
    * on its cell (sources scale from their top-left corner).

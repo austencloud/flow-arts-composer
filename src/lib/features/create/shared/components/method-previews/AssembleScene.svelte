@@ -35,6 +35,7 @@
    * artwork) are clipped at the frame.
    */
   import { onDestroy, untrack } from "svelte";
+  import { EASE_OUT } from "#lib/shared/transitions/motion.js";
   import { SvelteSet } from "svelte/reactivity";
   import { loadBuilderPropArt } from "#lib/features/assemble-lab/services/builder-prop-art.js";
   import {
@@ -87,7 +88,7 @@
   /** InteractiveGrid's fallback circle, shown when a prop's artwork is missing. */
   const FALLBACK_RADIUS = 28;
   /** The step grid's entrance easing. */
-  const EASE = "var(--ease-out)";
+  const EASE = EASE_OUT;
 
   /** A beat not written yet, written by blue alone, or whole. */
   type BeatStage = "empty" | "blue" | "whole";

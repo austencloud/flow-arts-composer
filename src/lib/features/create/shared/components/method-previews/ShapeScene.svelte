@@ -23,6 +23,7 @@
    * and that tile's mandala complete on the stage.
    */
   import { onDestroy, onMount, tick } from "svelte";
+  import { EASE_OUT } from "#lib/shared/transitions/motion.js";
   import type { GhostState } from "#lib/shared/attract/services/attract-ghost.svelte.js";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { yieldToScheduler } from "#lib/shared/foundation/utils/background-scheduling.js";
@@ -73,7 +74,7 @@
   } from "./method-preview-shape";
 
   /** The Matrix reveal's easing. */
-  const EASE = "var(--ease-out)";
+  const EASE = EASE_OUT;
 
   /** A page and its lit crossing; no spot yet means the layout's own. */
   interface ShapeRoll {
