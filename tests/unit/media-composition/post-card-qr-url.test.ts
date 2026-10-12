@@ -1,18 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
+  findItem,
+  type PostItem,
+  updateItem,
+} from "@austencloud/video-editor/core";
+import {
   POST_MAX_QR_URL_LENGTH,
   POST_QR_URL_RULE,
-  PostCardItemSchema,
-  findItem,
+  PostProjectSchema,
   isPostCardQrUrl,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import { updateItem } from "#lib/shared/media-composition/domain/post-project-edits.js";
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
 import { NOW, card, project, text } from "./post-project-fixtures";
 
 const LINK = "https://tka.run/s/abc123";
 /** Exactly as long as a card's link may be. */
 const LONGEST = `https://tka.run/${"a".repeat(POST_MAX_QR_URL_LENGTH - 16)}`;
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 
 describe("isPostCardQrUrl", () => {
   it("takes an https link up to the longest allowed", () => {
@@ -38,28 +42,34 @@ describe("isPostCardQrUrl", () => {
   });
 });
 
+/**
+ * A saved post whose main track is one end card with these fields, parsed the
+ * way a draft loads: the card's link lives in tka's card kind extension.
+ */
+function parseCard(fields: Partial<PostItem> = {}) {
+  return PostProjectSchema.safeParse(project([card("end", 5, fields)]));
+}
+
 describe("the card item's qrUrl", () => {
   it("is kept when it follows the rule and refused with the rule otherwise", () => {
-    expect(
-      PostCardItemSchema.parse({ ...card("end"), qrUrl: LINK })
-    ).toMatchObject({
-      qrUrl: LINK,
-    });
-    expect(
-      PostCardItemSchema.safeParse({
-        ...card("end"),
-        qrUrl: "http://tka.run/s/abc123",
-      }).success
-    ).toBe(false);
-    const tooLong = PostCardItemSchema.safeParse({
-      ...card("end"),
-      qrUrl: `${LONGEST}a`,
-    });
+    const linked = parseCard({ qrUrl: LINK });
+    expect(linked.success).toBe(true);
+    const item = linked.data && findItem(linked.data, "end")?.item;
+    expect(item).toMatchObject({ qrUrl: LINK });
+    // A saved card keeps its keys in order: the link comes right after kind.
+    const keys = Object.keys(item ?? {});
+    expect(keys.indexOf("qrUrl")).toBe(keys.indexOf("kind") + 1);
+    expect(parseCard({ qrUrl: "http://tka.run/s/abc123" }).success).toBe(false);
+    const tooLong = parseCard({ qrUrl: `${LONGEST}a` });
     expect(tooLong.error?.issues[0]?.message).toBe(POST_QR_URL_RULE);
   });
 
   it("is optional", () => {
-    expect(PostCardItemSchema.parse(card("end"))).not.toHaveProperty("qrUrl");
+    const plain = parseCard();
+    expect(plain.success).toBe(true);
+    expect(plain.data && findItem(plain.data, "end")?.item).not.toHaveProperty(
+      "qrUrl"
+    );
   });
 });
 

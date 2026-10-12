@@ -1058,8 +1058,43 @@ const svelteKitOptions: Parameters<typeof sveltekit>[0] = {
   },
 };
 
+const PRODUCTION_PURE_FUNCTIONS = [
+  "console.log",
+  "console.debug",
+  "console.info",
+];
+
 export default defineConfig(({ command, mode }) => ({
   cacheDir: command === "serve" ? dependencyCachePlan.cacheDir : undefined,
+  // On the server, Svelte's `onMount` and SvelteKit's `afterNavigate`,
+  // `beforeNavigate` and `onNavigate` are no-ops, so their callbacks never run
+  // during SSR. Rollup proved those calls dead and dropped the callbacks with
+  // every browser-only import() inside them. Rolldown keeps them, and those
+  // edges pulled the whole app shell into the Cloudflare worker (28.4 MB against
+  // the 25 MiB cap on 2026-10-11, even after the feature-gate fix). Declaring
+  // the calls pure in the server build restores the old graph (20.5 MB).
+  // Leave the server build unminified: Oxc's mangler shadowed a component's
+  // props with a hoisted snippet name and broke /shop/loop-deck with a 500.
+  environments:
+    mode === "production"
+      ? {
+          ssr: {
+            build: {
+              rolldownOptions: {
+                treeshake: {
+                  manualPureFunctions: [
+                    ...PRODUCTION_PURE_FUNCTIONS,
+                    "onMount",
+                    "afterNavigate",
+                    "beforeNavigate",
+                    "onNavigate",
+                  ],
+                },
+              },
+            },
+          },
+        }
+      : undefined,
   define: {
     __DEFINES__: JSON.stringify({}),
     __APP_VERSION__: JSON.stringify(packageJson.version),
@@ -1207,7 +1242,13 @@ export default defineConfig(({ command, mode }) => ({
     },
   ].filter(Boolean),
   resolve: {
-    dedupe: ["three", "@threlte/core"],
+    // svelte and mediabunny: @austencloud/video-editor ships .svelte files and
+    // a worker that import both; one copy must serve the app and the package.
+    // zod: the package builds its project schema with the host's plugin
+    // schemas, so both must come from one zod instance.
+    // dexie: Dexie throws when two versions load in one app, and tests set
+    // Dexie.dependencies on the app's copy, which the package must share.
+    dedupe: ["three", "@threlte/core", "svelte", "mediabunny", "zod", "dexie"],
     conditions: ["svelte", "module", "browser", "development|production"],
     alias: [
       {
@@ -1257,13 +1298,7 @@ export default defineConfig(({ command, mode }) => ({
       // unused. Vite 7 did this with `esbuild.pure`, which Oxc has no field for.
       treeshake:
         mode === "production"
-          ? {
-              manualPureFunctions: [
-                "console.log",
-                "console.debug",
-                "console.info",
-              ],
-            }
+          ? { manualPureFunctions: PRODUCTION_PURE_FUNCTIONS }
           : undefined,
       output: {
         // Strategic chunking — see classifyChunk() above the config for the
@@ -1488,6 +1523,8 @@ export default defineConfig(({ command, mode }) => ({
       // file: linked Svelte packages — esbuild can't parse .svelte exports
       "@austencloud/scene-3d",
       "@austencloud/camera-3d",
+      // Ships .svelte files and a module worker that this app's Vite compiles.
+      "@austencloud/video-editor",
       // ⚡ Lazy-load these heavy libraries on-demand
       "fabric", // ~500KB canvas library (loads when user uses animator)
       "page-flip", // PDF flipbook (loads in learn module)

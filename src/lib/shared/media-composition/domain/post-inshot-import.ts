@@ -1,14 +1,14 @@
-import {
-  PostProjectSchema,
-  type PostBox,
-  type PostEasing,
-  type PostImageItem,
-  type PostProject,
-  type PostSourceGeometry,
-  type PostTextItem,
-  type PostVideoItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import type { PostTakeRef } from "#lib/shared/media-composition/domain/post-plan.js";
+import { PostProjectSchema } from "#lib/shared/post-studio-plugin/index.js";
+import type {
+  PostBox,
+  PostEasing,
+  PostImageItem,
+  PostProject,
+  PostSourceGeometry,
+  PostTextItem,
+  PostVideoItem,
+  PostTakeRef,
+} from "@austencloud/video-editor/core";
 
 type Native = Record<string, unknown>;
 const US = 1_000_000;

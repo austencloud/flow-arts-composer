@@ -44,15 +44,16 @@ export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
   },
 
   zap: {
-    intensity: 0.7,
+    intensity: 0.75,
+    colorMode: "prop",
     leftColor: "#88ccff",
-    rightColor: "#88ccff",
-    frequency: 1,
+    rightColor: "#a25bff",
+    frequency: 6,
     mode: "arc",
-    branching: 0.35,
-    style: "plasma",
-    wobbleRate: 0.18,
-    wobbleAmount: 0.5,
+    branching: 0.1,
+    style: "branching",
+    wobbleRate: 0.3,
+    wobbleAmount: 0.45,
     glow: 0.5,
     jitter: 0.5,
   },
@@ -94,9 +95,9 @@ export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
   },
 
   // Goo (renamed from water 2026-06-28). In 2D, surfaceTension is the Viscosity
-  // knob: 0 is watery and sheds drips, 1 congeals and clings. motionEmission is
-  // Amount (stream mass). ambientEmission and clarity only reach the 3D
-  // viewer's goo. In 3D, surfaceTension controls strand breakup and spewStyle
+  // knob: 0 is watery and drips often, 1 stretches long and clings.
+  // motionEmission is Amount (bulb size). ambientEmission sets how fast a still
+  // tip drips; clarity only reaches the 3D viewer's goo. In 3D, surfaceTension controls strand breakup and spewStyle
   // selects connected flow, splashes, or fine mist. See GooIntent for the split.
   goo: {
     ambientEmission: 0.4,

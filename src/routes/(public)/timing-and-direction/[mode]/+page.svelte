@@ -33,7 +33,7 @@
   import {
     getTimingDirectionArticle,
     TIMING_DIRECTION_ARTICLES,
-    TIMING_DIRECTION_SOURCE,
+    TIMING_DIRECTION_READING,
   } from "../_data/timing-direction-articles";
   import {
     adjustModeLoops,
@@ -392,11 +392,11 @@
         description: article.metaDescription,
         url: canonical,
         inLanguage: "en-US",
-        citation: {
+        citation: TIMING_DIRECTION_READING.map((source) => ({
           "@type": "CreativeWork",
-          name: TIMING_DIRECTION_SOURCE.label,
-          url: TIMING_DIRECTION_SOURCE.url,
-        },
+          name: source.label,
+          url: source.url,
+        })),
         author: {
           "@type": "Person",
           name: "Austen Cloud",
@@ -697,16 +697,26 @@
 
   <div class="further">
     <section class="credit" aria-labelledby="credit-title">
-      <h2 id="credit-title">Where the names come from</h2>
-      <p>
-        These names come from Noel Yee's Vulcan Tech Gospel. It sorts two-hand
-        patterns by timing, together or split, and by direction, same or
-        opposite.{#if article.timing === "Quarter"}{" "}Quarter time sits
-          between together and split, with the hands a quarter cycle apart.{/if}
-      </p>
-      <LinkChip href={TIMING_DIRECTION_SOURCE.url}
-        >{TIMING_DIRECTION_SOURCE.label}</LinkChip
-      >
+      <div class="credit-origin">
+        <h2 id="credit-title">Where the names come from</h2>
+        <p>
+          Timing and direction come from the geometry of two hands sharing a
+          circle. Nobody invented them, and spinners used them long before they
+          had names. Noel Yee's Vulcan Tech Gospel standardized the names used
+          here. It sorts two-hand patterns by timing, together or split, and by
+          direction, same or opposite.{#if article.timing === "Quarter"}{" "}Quarter
+            time sits between together and split, with the hands a quarter cycle
+            apart.{/if}
+        </p>
+      </div>
+      <div class="credit-reading">
+        <h3 id="reading-title">Further reading</h3>
+        <ul class="reading-list" aria-labelledby="reading-title">
+          {#each TIMING_DIRECTION_READING as source (source.url)}
+            <li><LinkChip href={source.url} wrap>{source.label}</LinkChip></li>
+          {/each}
+        </ul>
+      </div>
     </section>
 
     <nav class="related" aria-label="Other timing and direction modes">
@@ -1030,8 +1040,53 @@
     padding-top: 1.5rem;
     border-top: 1px solid var(--theme-stroke);
   }
+  /* The headings are labels, set like the footer's column titles (Explore,
+     Learn); the reading list's chips echo the footer's link rows. */
+  .credit h2,
+  .credit h3 {
+    margin: 0 0 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8f8bb0;
+  }
   .credit p {
-    margin-bottom: 1rem;
+    max-width: 44rem;
+    margin: 0;
+  }
+  .credit-reading {
+    margin-top: 1.5rem;
+  }
+  .reading-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* Side by side once two columns hold a readable line: the text on the left,
+     the reading list on the right. */
+  @media (min-width: 1024px) {
+    .credit {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: clamp(32px, 3.5vw, 84px);
+      align-items: start;
+    }
+    .credit-reading {
+      margin-top: 0;
+    }
+  }
+  /* Once the left column still holds a comfortable line beside it, the list
+     takes the footer's link column: the footer sizes that column to its
+     longest link row (954.6px) inside a band 1.6px wider each side than this
+     page's, so 59.55rem starts the list where Explore starts. */
+  @media (min-width: 1680px) {
+    .credit {
+      grid-template-columns: minmax(15rem, 1fr) minmax(0, 59.55rem);
+    }
   }
   .related-modes {
     display: grid;

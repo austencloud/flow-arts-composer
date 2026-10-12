@@ -1,12 +1,14 @@
 import {
   itemEnd,
   type PostProject,
-  type PostTitlesItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import {
   LIFT_EASING,
-  MOVE_START_SHARE,
-} from "#lib/shared/media-composition/domain/tunnel-hook.js";
+  OPENING_TITLES_SHARE,
+  TUNNEL_TITLE_RISE,
+  titlesRole,
+  type TunnelTitlesLook,
+  type TunnelWordLook,
+} from "@austencloud/video-editor/core";
+import type { PostTitlesItem } from "#lib/shared/post-studio-plugin/index.js";
 
 /**
  * A titles clip: the sequence's name in its glyphs, with how to say it under
@@ -25,19 +27,6 @@ export interface TunnelTitlesPlan {
   /** Post seconds the clip ends. */
   end: number;
   spoken?: string;
-}
-
-/** Painted layers of titles clips carry this prefix and the clip's id. */
-export const TITLES_ROLE_PREFIX = "titles:";
-
-export function titlesRole(itemId: string): string {
-  return `${TITLES_ROLE_PREFIX}${itemId}`;
-}
-
-export function itemIdFromTitlesRole(role: string): string | null {
-  return role.startsWith(TITLES_ROLE_PREFIX)
-    ? role.slice(TITLES_ROLE_PREFIX.length)
-    : null;
 }
 
 /** What a titles clip draws. */
@@ -60,13 +49,6 @@ const LEAVE_SECONDS = 1;
 const SPOKEN_TRAIL_SECONDS = 0.15;
 /** Below this length a clip squeezes its arrival and leaving to fit. */
 const FULL_MOTION_SECONDS = ARRIVE_SECONDS + LEAVE_SECONDS + 0.5;
-
-/**
- * Share of the opening tunnel a titles clip over it spans: the words start to
- * lift as the tunnel starts to leave the frame and are gone partway into its
- * move, before it settles into its box.
- */
-export const OPENING_TITLES_SHARE = MOVE_START_SHARE + 0.23;
 
 /**
  * Where a titles clip for the post's opening tunnel goes, or null when the
@@ -94,20 +76,6 @@ type EasingSampler = (
 ) => number;
 
 type Window = readonly [number, number];
-
-/** How far, as a share of the frame's height, a word rises as it arrives and leaves. */
-export const TUNNEL_TITLE_RISE = { in: 0.012, out: 0.03 } as const;
-
-export interface TunnelWordLook {
-  opacity: number;
-  /** Share of the frame's height to draw it higher than its place. */
-  rise: number;
-}
-
-export interface TunnelTitlesLook {
-  name: TunnelWordLook;
-  spoken: TunnelWordLook;
-}
 
 function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));

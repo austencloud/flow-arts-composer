@@ -7,8 +7,8 @@ import {
   type FeatureVideoStore,
 } from "#lib/server/feature-video-store.js";
 import { featureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
-import { POST_QR_URL_RULE } from "#lib/shared/media-composition/domain/post-project.js";
-import { takeFileKey } from "#lib/shared/media-composition/domain/post-plan.js";
+import { POST_QR_URL_RULE } from "#lib/shared/post-studio-plugin/index.js";
+import { takeFileKey } from "@austencloud/video-editor/core";
 import { tempFeatureRoot } from "./feature-video-test-helpers";
 
 const NOW = 1_780_000_000_000;

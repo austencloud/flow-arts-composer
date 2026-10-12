@@ -4,15 +4,14 @@
  */
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import { DEFAULT_ANIMATION_TIMING } from "#lib/features/create/shared/workspace-panel/sequence-display/domain/models/step-grid-display-models.js";
-import { DEMO_SEQUENCE, DEMO_STEP_START } from "./method-preview-demo";
+import {
+  DEMO_SEQUENCE,
+  DEMO_STEP_START,
+  startPictograph,
+} from "./method-preview-demo";
 import { slotWaveBand } from "./method-preview-layout";
-
-/** Rolls in one turn: a second, different roll shows each tap is fresh. */
-export const GENERATE_ROLLS_PER_TURN = 2;
-
-/** How long a landed roll stays before the next tap, so it reads. */
-export const GENERATE_LOOK_MS = 250;
 
 /** How long the last roll fades before the next washes in. */
 export const GENERATE_CLEAR_MS = 150;
@@ -43,6 +42,20 @@ export function rollStep(roll: GenerateRoll, index: number): StepData | null {
 }
 
 /**
+ * The pose cell `index` moves from: the step before its own, or the start
+ * position before the sequence's first step.
+ */
+export function rollPoseBefore(
+  roll: GenerateRoll,
+  index: number
+): StepData | PictographData | null {
+  const steps = roll.sequence.steps;
+  if (steps.length === 0) return null;
+  const at = (roll.offset + index) % steps.length;
+  return at === 0 ? startPictograph(roll.sequence) : (steps[at - 1] ?? null);
+}
+
+/**
  * The roll a turn shows. A fresh draw shows from its first step. Without
  * one, turns step through the demo sequence a window at a time, starting
  * over at the resting picture after a fresh roll.
@@ -63,11 +76,16 @@ export function nextRoll(
 
 /**
  * When cell `index` starts entering: its wave band times the step grid's
- * stagger. The dice holds slot 0, so cell `index` sits in slot `index + 1`.
+ * stagger. The first step leads, so the wave starts with it.
  */
 export function generateCellDelayMs(index: number, columns: number): number {
+  return slotWaveBand(index, columns) * DEFAULT_ANIMATION_TIMING.waveBandDelay;
+}
+
+/** From the start of the wash until its first cell has landed. */
+export function generateFirstLandMs(columns: number): number {
   return (
-    slotWaveBand(index + 1, columns) * DEFAULT_ANIMATION_TIMING.waveBandDelay
+    generateCellDelayMs(0, columns) + DEFAULT_ANIMATION_TIMING.entranceDuration
   );
 }
 

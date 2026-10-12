@@ -37,8 +37,7 @@ describe("method preview demo data", () => {
   });
 
   it("gives each resting card its own steps, none shown twice", () => {
-    // Generate fills the most cells any of its layouts draws: a strip wide
-    // enough for its most slots, and the square's 3x3 grid.
+    // Generate shows its loop's four steps in every layout.
     const generate = range(
       DEMO_STEP_START.generate,
       Math.max(
@@ -61,15 +60,14 @@ describe("method preview demo data", () => {
     expect(Math.max(...shown)).toBeLessThan(DEMO_SEQUENCE.steps.length);
   });
 
-  it("gives Assemble's beats steps no card shares but Generate's biggest", () => {
+  it("gives Assemble's beats steps no other card shows", () => {
     const assemble = range(DEMO_STEP_START.assemble, ASSEMBLE_STEPS.count);
     expect(Math.max(...assemble)).toBeLessThan(DEMO_SEQUENCE.steps.length);
     expect(
       assemble.filter((step) => [...construct, ...fuse].includes(step))
     ).toEqual([]);
-    // Every N and M pair is some card's (see DEMO_STEP_START). Generate's
-    // usual strips and its 2x2 square show none of these; only its widest
-    // strip and its grid of eight do, until its first roll.
+    // Every N and M pair is some card's (see DEMO_STEP_START); Assemble's
+    // comes just after Generate's four, in every layout.
     for (const [shape, width, height] of [
       ["strip", 146, 48],
       ["roomy", 308, 96],

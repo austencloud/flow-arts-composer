@@ -22,7 +22,7 @@ export function buildLevel2ReaderNav(built: Record<string, Component>): ReaderNa
   const rows: ReaderNavRow[] = FRONT_ROWS.map((f) => ({ kind: "front", ...f }));
   // Grouping extracted to guide-manifest.ts's level2BodyPagesByGroup() (mirrors
   // level-1's bodyPagesByGroup()) so the same group buckets serve both the
-  // reader nav here and the unified GuideSidebar - no duplicated loop.
+  // reader nav here and the guide contents (guide-toc.ts) - no duplicated loop.
   for (const { group, entries } of level2BodyPagesByGroup()) {
     rows.push({ kind: "group", group, title: LEVEL2_GROUP_TITLES[group] });
     for (const { entry, page } of entries) {

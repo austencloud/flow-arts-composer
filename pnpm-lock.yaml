@@ -11,9 +11,6 @@ patchedDependencies:
   '@austencloud/scene-3d@0.1.6':
     hash: 14147126624f650bd6da459af4e09f685a89062579745c726217b10fd1a02991
     path: patches/@austencloud__scene-3d@0.1.6.patch
-  '@austencloud/sidebar@1.0.1':
-    hash: 2192b3d152a0161684740faf7c92bf7929b7ef1240c93d1dae4126925b9b2faf
-    path: patches/@austencloud__sidebar@1.0.1.patch
   rollup@4.57.1:
     hash: 6b60c20b3aab385a92f1669e15227e7bc9ad56e476a3847cadafd55aacf41847
     path: patches/rollup@4.57.1.patch
@@ -71,11 +68,14 @@ importers:
         specifier: ^0.1.6
         version: 0.1.6(patch_hash=14147126624f650bd6da459af4e09f685a89062579745c726217b10fd1a02991)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)
       '@austencloud/sidebar':
-        specifier: ^1.0.1
-        version: 1.0.1(patch_hash=2192b3d152a0161684740faf7c92bf7929b7ef1240c93d1dae4126925b9b2faf)(svelte@5.57.2(@typescript-eslint/types@8.59.4))
+        specifier: file:vendor/austencloud-sidebar-1.1.0.tgz
+        version: file:vendor/austencloud-sidebar-1.1.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/theme':
         specifier: ^0.1.0
         version: 0.1.0(svelte@5.57.2(@typescript-eslint/types@8.59.4))
+      '@austencloud/video-editor':
+        specifier: file:vendor/austencloud-video-editor-0.1.0.tgz
+        version: file:vendor/austencloud-video-editor-0.1.0.tgz(mediabunny@1.44.2)(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@capacitor-firebase/authentication':
         specifier: 8.3.0
         version: 8.3.0(@capacitor/core@8.4.2)(firebase@12.13.0)
@@ -886,14 +886,22 @@ packages:
       svelte: '>=5.0.0'
       three: '>=0.170.0'
 
-  '@austencloud/sidebar@1.0.1':
-    resolution: {integrity: sha512-cGpuVYJGdXVpNF6aq29ZuW0JJz5qzXL7gH7joA3iWr47czkt8Ol3L3roBqQlbYZa9VqjANl5wvrhdqcgBMg07w==}
+  '@austencloud/sidebar@file:vendor/austencloud-sidebar-1.1.0.tgz':
+    resolution: {integrity: sha512-3tQF29AWgs3xDiBWgLLo7CIcSqakXUr3uKSM/UfU51M/yNBJMAmiy5dCusfc1TSJBFdS7l0DqXCwQXUjx5NNRw==, tarball: file:vendor/austencloud-sidebar-1.1.0.tgz}
+    version: 1.1.0
     peerDependencies:
       svelte: ^5.0.0
 
   '@austencloud/theme@0.1.0':
     resolution: {integrity: sha512-3onQUJiQFNse6drO5aW4nz8URgilfTA++pjLBO74Fc5zLC39zzCQsE9NAf4rZ0PwxE75OvbQiMePDx1XW/MmGA==}
     peerDependencies:
+      svelte: ^5.0.0
+
+  '@austencloud/video-editor@file:vendor/austencloud-video-editor-0.1.0.tgz':
+    resolution: {integrity: sha512-SkBGnYCySFafRbho6k9Y2ETznLuqFmf1xbbsHnl5JFtwrIQQbcNKGQIRFYdVjJqmoIfBEuE6Xs3YzEuwqQdUyw==, tarball: file:vendor/austencloud-video-editor-0.1.0.tgz}
+    version: 0.1.0
+    peerDependencies:
+      mediabunny: ^1.44.0
       svelte: ^5.0.0
 
   '@babel/code-frame@7.29.0':
@@ -1962,6 +1970,14 @@ packages:
 
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
+
+  '@fortawesome/fontawesome-common-types@7.3.1':
+    resolution: {integrity: sha512-k0C0sdHmZtAo6dRDtd1Z/qcpyHbL0CKsjV8seMY/21xGhY5Wsv0XRmiI/xEEH4y2c9b1+jvgNs/3EqhV27yUEA==}
+    engines: {node: '>=6'}
+
+  '@fortawesome/free-solid-svg-icons@7.3.1':
+    resolution: {integrity: sha512-v0BLa0eqg7ubvVWeNSHVBs8fWH/GJicERZoJaxJ3FE/lj67VSqzoMg9pzfZVOfLMX10y0pGwQAuxoRVVH2patg==}
+    engines: {node: '>=6'}
 
   '@gltf-transform/cli@4.3.0':
     resolution: {integrity: sha512-JvmIlITGjkQLq44vkp1LGmIJNZZaC2LhCQq/Uua72Rg7FMz3006SMUHkni/+i3ml0k7gWu07wWJYREV4+aMVNQ==}
@@ -9668,13 +9684,24 @@ snapshots:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
       three: 0.182.0
 
-  '@austencloud/sidebar@1.0.1(patch_hash=2192b3d152a0161684740faf7c92bf7929b7ef1240c93d1dae4126925b9b2faf)(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
+  '@austencloud/sidebar@file:vendor/austencloud-sidebar-1.1.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
     dependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 
   '@austencloud/theme@0.1.0(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
     dependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
+
+  '@austencloud/video-editor@file:vendor/austencloud-video-editor-0.1.0.tgz(mediabunny@1.44.2)(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
+    dependencies:
+      '@fortawesome/free-solid-svg-icons': 7.3.1
+      dexie: 4.3.0
+      h264-mp4-encoder: 1.0.12
+      mediabunny: 1.44.2
+      realtime-bpm-analyzer: 5.0.0
+      svelte: 5.57.2(@typescript-eslint/types@8.59.4)
+      wavesurfer.js: 7.12.1
+      zod: 4.3.6
 
   '@babel/code-frame@7.29.0':
     dependencies:
@@ -10607,6 +10634,12 @@ snapshots:
       '@floating-ui/utils': 0.2.10
 
   '@floating-ui/utils@0.2.10': {}
+
+  '@fortawesome/fontawesome-common-types@7.3.1': {}
+
+  '@fortawesome/free-solid-svg-icons@7.3.1':
+    dependencies:
+      '@fortawesome/fontawesome-common-types': 7.3.1
 
   '@gltf-transform/cli@4.3.0':
     dependencies:

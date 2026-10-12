@@ -154,6 +154,43 @@ describe("signInWhenIdle", () => {
     await vi.waitFor(() => expect(auth.initialize).toHaveBeenCalledTimes(1));
   });
 
+  it("still starts within two seconds on a page that never goes idle", async () => {
+    // A looping sequence player keeps the main thread busy, and an idle
+    // callback without a timeout then waits as long as the animation runs: the
+    // header avatar took over 22 s on the timing mode guides, or never came.
+    // A busy browser runs an idle callback only when its timeout runs out.
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      vi.stubGlobal(
+        "requestIdleCallback",
+        (callback: () => void, options?: IdleRequestOptions) =>
+          options?.timeout === undefined
+            ? 0
+            : setTimeout(callback, options.timeout)
+      );
+      vi.stubGlobal("cancelIdleCallback", (handle: number) =>
+        clearTimeout(handle)
+      );
+      const onProbed = vi.fn();
+      const signIn = vi.fn(() => Promise.resolve());
+      signInWhenIdle({
+        hasSession: async () => true,
+        onProbed,
+        signIn,
+        label: "test",
+      });
+
+      await vi.advanceTimersByTimeAsync(0);
+      expect(onProbed).toHaveBeenCalledWith(true);
+      expect(signIn).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(signIn).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("schedules nothing for a visitor without a session", async () => {
     const onProbed = vi.fn();
     signInWhenIdle({ hasSession: async () => false, onProbed, label: "test" });

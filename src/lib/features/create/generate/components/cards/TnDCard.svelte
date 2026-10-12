@@ -1,8 +1,12 @@
 <!--
-  TnDCard: the timing-and-direction bento card. Two lines, Hands and Props,
-  each the mode's words with its element icon when one is set. The card wears
-  the hand element's accent, else the prop element's, else the neutral card
-  surface. Click grows it into TnDPanel through the card morph.
+  TnDCard: the timing-and-direction bento card. Two tiles, Hands and Props,
+  each tinted with its mode's element: a small H or P tag, the element icon,
+  the mode's words beneath. Free shows an empty dashed ring so it reads as a
+  choice, not a gap. A hand mode the LOOP cannot keep shows its icon greyed
+  under a LOOP tag. A link between the tiles says turns are matched.
+
+  Each tile is its own button: a tap grows the card into TnDPanel through the
+  card morph, with that tile's section spotlit.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -12,7 +16,6 @@
   import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
   import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
   import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
-  import CardHeader from "./shared/CardHeader.svelte";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import { buildTnDCardDisplay } from "./tnd-card-display";
   import { describeCreateTnDSelection } from "./tnd-presentation";
@@ -21,15 +24,17 @@
     handRelationship,
     propRelationship,
     matchHandTurns,
+    level = 2,
     blockedHandModes = {},
     cardIndex = 0,
-    headerFontSize = "9px",
   } = $props<{
     handRelationship: TnDSelection;
     propRelationship: TnDSelection;
     matchHandTurns: boolean;
+    level?: number;
     blockedHandModes?: Partial<Record<VtgMode, string>>;
     cardIndex?: number;
+    /** Kept for the bento's shared card props; the card has no title. */
     headerFontSize?: string;
   }>();
 
@@ -46,89 +51,78 @@
       propRelationship,
       matchHandTurns,
       blockedHandModes,
+      level,
     })
   );
-  const handValue = $derived(
-    `${describeCreateTnDSelection(handRelationship)}${display.handBlocked ? `, ${t("create_deep_off_with_loop")}` : ""}`
-  );
-  const propValue = $derived(describeCreateTnDSelection(propRelationship));
-  const ariaLabel = $derived(
-    t("create_deep_tnd_card_aria", {
-      hands: handValue,
-      props: propValue,
-      turns: matchHandTurns ? t("create_deep_turns_matched_suffix") : "",
-    })
+  const turnsSuffix = $derived(
+    display.turnsMatched ? t("create_deep_turns_matched_suffix") : ""
   );
 
-  // Icon size tracks the card, like the LOOP card's strip: a fixed 16px is
-  // punctuation on a 4K card and crowds the words on a phone.
-  // Read from the resize observer rather than `bind:clientHeight`, which also
-  // reads the height synchronously as the card mounts and forces a layout of
-  // the whole half-built Generate panel. The observer reports before the first
-  // paint, and the button has no border, so its border box is its client box.
-  let cardBox = $state<readonly ResizeObserverSize[]>();
-  const cardHeight = $derived(Math.round(cardBox?.[0]?.blockSize ?? 0));
-  const iconSize = $derived(
-    Math.min(28, Math.max(14, Math.round(cardHeight * 0.2)))
-  );
+  const tiles = $derived([
+    {
+      key: "hands" as const,
+      tag: t("create_ui_hands").charAt(0),
+      element: display.handBlockedElement ?? display.hands.element,
+      blocked: display.handBlocked,
+      words: describeCreateTnDSelection(handRelationship),
+      ariaLabel: t("create_deep_tnd_hands_tile_aria", {
+        value: `${describeCreateTnDSelection(handRelationship)}${display.handBlocked ? `, ${t("create_deep_off_with_loop")}` : ""}`,
+        turns: turnsSuffix,
+      }),
+    },
+    {
+      key: "props" as const,
+      tag: t("create_ui_props").charAt(0),
+      element: display.props.element,
+      blocked: false,
+      words: describeCreateTnDSelection(propRelationship),
+      ariaLabel: t("create_deep_tnd_props_tile_aria", {
+        value: describeCreateTnDSelection(propRelationship),
+        turns: turnsSuffix,
+      }),
+    },
+  ]);
 
-  function handleClick() {
+  function openSection(section: "hands" | "props") {
     hapticService?.trigger("selection");
-    morphGenerateCard("tnd", () => panelState.openTnDPanel());
-  }
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      handleClick();
-    }
+    morphGenerateCard("tnd", () => panelState.openTnDPanel(section));
   }
 </script>
 
-<div
-  class="tnd-card-wrapper"
-  class:active={display.active}
-  style="--card-index: {cardIndex}; --tnd-accent: {display.accent ??
-    'var(--theme-accent, #818cf8)'}; --tnd-dark: {display.darkComplement ??
-    'var(--theme-accent-strong, #6366f1)'};"
->
-  <button
-    class="tnd-card"
-    class:active={display.active}
-    bind:borderBoxSize={cardBox}
-    onclick={handleClick}
-    onkeydown={handleKeydown}
-    aria-label={ariaLabel}
-  >
-    <CardHeader title={t("create_ui_timing_and_direction")} {headerFontSize} />
-    <div class="tnd-body" aria-hidden="true">
-      {#each [display.hands, display.props] as line (line.label)}
-        <div
-          class="tnd-line"
-          class:blocked={line.label === "Hands" && display.handBlocked}
-        >
-          <span class="line-label"
-            >{line.label === "Hands"
-              ? t("create_ui_hands")
-              : t("create_ui_props")}</span
-          >
-          <span class="line-value">
-            {#if line.element}
-              <img
-                class="line-icon"
-                src={line.element.iconPath}
-                alt=""
-                style="width: {iconSize}px; height: {iconSize}px;"
-              />
+<div class="tnd-card-wrapper" style="--card-index: {cardIndex};">
+  <div class="tnd-card">
+    {#each tiles as tile (tile.key)}
+      <button
+        type="button"
+        class="tnd-tile"
+        class:set={tile.element && !tile.blocked}
+        class:blocked={tile.blocked}
+        style:--tile-accent={tile.element?.accentColor}
+        style:--tile-dark={tile.element?.darkComplement}
+        onclick={() => openSection(tile.key)}
+        aria-label={tile.ariaLabel}
+      >
+        <span class="tile-tag" aria-hidden="true">{tile.tag}</span>
+        <span class="tile-icon-slot" aria-hidden="true">
+          {#if tile.element}
+            <img class="tile-icon" src={tile.element.iconPath} alt="" />
+            {#if tile.blocked}
+              <span class="loop-badge">LOOP</span>
             {/if}
-            <span class="line-words"
-              >{line.label === "Hands" ? handValue : propValue}</span
-            >
-          </span>
-        </div>
-      {/each}
-    </div>
-  </button>
+          {:else}
+            <span class="free-ring"></span>
+          {/if}
+        </span>
+        <span class="tile-words" aria-hidden="true">{tile.words}</span>
+      </button>
+    {/each}
+
+    {#if display.turnsMatched}
+      <span class="turns-link" aria-hidden="true">
+        <i class="fas fa-link"></i>
+      </span>
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -139,192 +133,221 @@
     border-radius: 16px;
     overflow: visible;
 
-    /* Both free: the same muted surface as the LOOP card when it is off. */
+    /* A quiet frame; the tiles carry the color. */
     background: linear-gradient(
       135deg,
-      color-mix(in srgb, var(--theme-card-bg) 70%, #78716c) 0%,
-      color-mix(in srgb, var(--theme-card-bg) 60%, #57534e) 100%
+      color-mix(in srgb, var(--theme-card-bg) 78%, #44403c) 0%,
+      color-mix(in srgb, var(--theme-card-bg) 70%, #292524) 100%
     );
     box-shadow:
       0 0 0 1px rgba(0, 0, 0, 0.12),
       0 1px 2px rgba(0, 0, 0, 0.15),
       0 2px 4px rgba(0, 0, 0, 0.1),
       inset 0 1px 0 var(--theme-stroke);
-    transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Something set: the element's accent, shimmering like the LOOP card. */
-  .tnd-card-wrapper.active {
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--tnd-dark) 80%, var(--theme-card-bg)) 0%,
-      color-mix(in srgb, var(--tnd-accent) 60%, var(--theme-card-bg)) 50%,
-      color-mix(in srgb, var(--tnd-dark) 70%, var(--theme-card-bg)) 100%
-    );
-    background-size: 200% 200%;
-    animation: tndShimmer 6s ease-in-out infinite;
-    box-shadow: none;
-    border: 1px solid color-mix(in srgb, var(--tnd-accent) 40%, transparent);
-  }
-
-  @keyframes tndShimmer {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
   }
 
   .tnd-card {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(4px, 2.5cqw, 10px);
     width: 100%;
     height: 100%;
-    min-height: 0;
-    min-width: 0;
-    padding: clamp(6px, 2cqh, 12px) clamp(4px, 1.5cqw, 8px);
-    border-radius: 16px;
-    background: transparent;
-    border: none;
-    color: white;
-    text-align: center;
-    cursor: pointer;
-    font-family: inherit;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
+    padding: clamp(4px, 2.5cqw, 10px);
   }
 
-  /* Glossy sheen, as on the LOOP card. */
-  .tnd-card::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 60%;
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--theme-text) 20%, transparent) 0%,
-      color-mix(in srgb, var(--theme-text) 10%, transparent) 40%,
-      transparent 70%
-    );
-    border-radius: 16px 16px 0 0;
-    pointer-events: none;
-    z-index: 1;
+  .tnd-tile {
+    position: relative;
+    display: grid;
+    /* Tag, icon, words on fixed rows so the two tiles always line up. */
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    justify-items: center;
+    align-items: center;
+    gap: clamp(1px, 2cqh, 6px);
+    min-width: 0;
+    min-height: 0;
+    padding: clamp(4px, 4cqh, 10px) clamp(4px, 2cqw, 8px);
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, white 12%, transparent);
+    background: color-mix(in srgb, white 5%, transparent);
+    color: white;
+    font-family: inherit;
+    text-align: center;
+    cursor: pointer;
+    overflow: hidden;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      transform var(--duration-instant, 120ms) cubic-bezier(0.4, 0, 0.2, 1),
+      filter var(--duration-instant, 120ms) ease;
+  }
+
+  /* A mode is set: the tile wears its element, with a glossy top light. */
+  .tnd-tile.set {
+    border-color: color-mix(in srgb, var(--tile-accent) 55%, transparent);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, white 14%, transparent) 0%,
+        transparent 55%
+      ),
+      linear-gradient(
+        150deg,
+        color-mix(in srgb, var(--tile-accent) 55%, transparent) 0%,
+        color-mix(in srgb, var(--tile-dark) 70%, transparent) 100%
+      );
+  }
+
+  .tnd-tile.blocked {
+    border-style: dashed;
+    border-color: color-mix(in srgb, white 25%, transparent);
   }
 
   @media (hover: hover) {
-    .tnd-card-wrapper:hover {
-      transform: scale(1.02);
-      filter: brightness(1.08);
+    .tnd-tile:hover {
+      filter: brightness(1.12);
     }
   }
 
-  .tnd-card-wrapper:active {
-    transform: scale(0.97);
-    transition: transform var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
+  .tnd-tile:active {
+    transform: scale(0.96);
   }
 
-  .tnd-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: clamp(2px, 1cqh, 6px);
-    flex: 1;
+  .tnd-tile:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+  }
+
+  .tile-tag {
+    min-width: 1.6em;
+    padding: 0.15em 0.5em;
+    border-radius: 999px;
+    background: color-mix(in srgb, black 28%, transparent);
+    font-size: calc(var(--card-text-size) * 0.6);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 1.1;
+    color: color-mix(in srgb, white 88%, transparent);
+  }
+
+  /* The icon is sized by whichever side of the tile runs out first. */
+  .tile-icon-slot {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: clamp(20px, min(48cqh, 36cqw), 96px);
+    height: clamp(20px, min(48cqh, 36cqw), 96px);
     min-height: 0;
+  }
+
+  .tile-icon {
     width: 100%;
-    z-index: 2;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.35));
   }
 
-  .tnd-line {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: clamp(4px, 1.5cqw, 8px);
-    min-width: 0;
+  .tnd-tile.blocked .tile-icon {
+    filter: grayscale(1) brightness(0.8);
+    opacity: 0.55;
   }
 
-  .line-label {
-    font-size: calc(var(--card-text-size) * 0.8);
-    font-weight: var(--card-text-weight);
-    letter-spacing: var(--card-text-spacing);
-    color: color-mix(in srgb, white 75%, transparent);
-    text-transform: uppercase;
-  }
-
-  .line-value {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
-    max-width: 100%;
-    font-size: var(--card-text-size);
-    font-weight: var(--card-text-weight);
-    letter-spacing: var(--card-text-spacing);
+  .loop-badge {
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.1em 0.45em;
+    border-radius: 6px;
+    background: #f97316;
     color: white;
+    font-size: clamp(8px, calc(var(--card-text-size) * 0.45), 12px);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   }
 
-  .line-words {
+  /* Free: an empty ring where the icon would be. */
+  .free-ring {
+    width: 78%;
+    height: 78%;
+    border-radius: 50%;
+    border: 2px dashed color-mix(in srgb, white 40%, transparent);
+  }
+
+  .tile-words {
+    max-width: 100%;
+    font-size: calc(var(--card-text-size) * 0.62);
+    font-weight: var(--card-text-weight);
+    letter-spacing: var(--card-text-spacing);
+    line-height: 1.15;
+    color: color-mix(in srgb, white 92%, transparent);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
 
-  .line-icon {
-    flex: none;
-  }
-
-  .tnd-line.blocked .line-value {
-    color: color-mix(in srgb, white 70%, transparent);
+  .tnd-tile.blocked .tile-words {
+    color: color-mix(in srgb, white 65%, transparent);
     font-style: italic;
   }
 
-  /* Too short for two lines under the header: stacked, they rode up over the
-     title. A wide card puts Hands and Props side by side, each label over its
-     value, the way the panel lays them out. */
-  @container tnd-card (max-height: 88px) and (min-width: 240px) {
-    .tnd-body {
-      flex-direction: row;
-      align-items: center;
-      gap: clamp(12px, 6cqw, 28px);
+  /* Matched turns: a small link riding the seam between the tiles. */
+  .turns-link {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: grid;
+    place-items: center;
+    width: clamp(16px, 14cqh, 26px);
+    height: clamp(16px, 14cqh, 26px);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--theme-card-bg) 60%, #1c1917);
+    border: 1px solid color-mix(in srgb, white 30%, transparent);
+    color: white;
+    font-size: clamp(8px, 7cqh, 13px);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* A short card drops the words and sets the tag beside the icon; the icon
+     and ring carry the mode. */
+  @container tnd-card (max-height: 96px) {
+    .tnd-tile {
+      grid-template-rows: minmax(0, 1fr);
+      grid-auto-flow: column;
+      justify-content: center;
+      gap: clamp(3px, 3cqw, 8px);
+      padding: 2px 4px;
     }
 
-    .tnd-line {
-      flex: 0 1 auto;
-      flex-direction: column;
-      gap: 2px;
+    .tile-words {
+      display: none;
     }
 
-    .line-label {
-      font-size: calc(var(--card-text-size) * 0.65);
-      line-height: 1;
+    .tile-tag {
+      font-size: calc(var(--card-text-size) * 0.55);
     }
 
-    .line-value {
-      line-height: 1.15;
+    .tile-icon-slot {
+      width: clamp(16px, 62cqh, 52px);
+      height: clamp(16px, 62cqh, 52px);
     }
   }
 
-  /* A narrow one keeps the lines stacked, without labels, set tight enough to
-     clear the title; the icons and words still say it all. */
-  @container tnd-card (max-height: 88px) and (max-width: 239.98px) {
-    .tnd-body {
-      gap: 2px;
+  @media (prefers-reduced-motion: reduce) {
+    .tnd-tile {
+      transition: none;
     }
 
-    .tnd-line {
-      line-height: 1;
-    }
-
-    .line-label {
-      display: none;
+    .tnd-tile:active {
+      transform: none;
     }
   }
 </style>

@@ -14,7 +14,10 @@ import type { Section } from "#lib/shared/navigation/domain/types.js";
 import { CREATE_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { METHOD_PREVIEW_SCENES } from "#lib/features/create/shared/components/method-previews/method-preview-scenes.js";
-import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
+import {
+  METHOD_PREVIEW_TIMING,
+  methodPreviewTurnMs,
+} from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 import { __resetRenderGatingSharedState } from "#lib/shared/render-gating/render-activity-gate.js";
 
 const analytics = vi.hoisted(() => ({
@@ -510,7 +513,8 @@ describe("Create front door, method previews", () => {
     expect(playingMethod()).toBe("construct");
     advance(TURN_CYCLE_MS);
     expect(playingMethod()).toBe("generate");
-    advance(TURN_CYCLE_MS);
+    // Generate's turn runs longer than the others.
+    advance(methodPreviewTurnMs("generate") + METHOD_PREVIEW_TIMING.gapMs);
     expect(playingMethod()).toBe("construct");
   });
 });

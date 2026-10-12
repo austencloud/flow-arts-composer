@@ -1,0 +1,417 @@
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+import {
+  POST_STUDIO_ROLE,
+  ANIMATION_OVERLAY_ROLE,
+  stripModeFromRole,
+  stripRole,
+  findItem,
+  itemIdFromTitlesRole,
+  type PostVideoItem,
+} from "@austencloud/video-editor/core";
+import {
+  itemIdFromArrangementRole,
+  itemIdFromMovesAnimationRole,
+  itemIdFromStaffEffectRole,
+  staffEffectRole,
+} from "#lib/shared/post-studio-plugin/index.js";
+import type { StripMode } from "#lib/shared/media-composition/domain/strip-view.js";
+import type {
+  CompositionSourceBinding,
+  PluginBindings,
+  Translate,
+  VideoEditorState,
+} from "@austencloud/video-editor";
+import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
+import { createBeatCarouselPainter } from "#lib/shared/media-composition/services/beat-carousel-painter.js";
+import { createSequenceStripPainter } from "#lib/shared/media-composition/services/sequence-strip-painter.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { createStaffEffectPainter } from "#lib/shared/media-composition/services/staff-effect-painter.js";
+import { createTunnelTitlesPainter } from "#lib/shared/media-composition/services/tunnel-titles-painter.js";
+import { createStaffTipAnalysis } from "#lib/shared/media-composition/state/staff-tip-analysis.svelte.js";
+import { loadAnimationOverlayPainter } from "#lib/shared/media-composition/services/animation-overlay-painter-registry.js";
+import { qrImageForAppearance } from "./post-qr-image-appearance";
+import { useTkaEditor } from "./tka-editor-context";
+
+/**
+ * The sources and painters of tka's own roles: the staff effects, the titles,
+ * the moves and their strips, the beat carousel, the beat and letter overlay,
+ * the sequence animation, the choreo card and arrangements. The workspace
+ * answers the core roles (images, take videos, text) and asks these second.
+ * A post with no sequence, such as an arrangement, has none of the
+ * sequence's painters.
+ */
+export function createTkaBindings(env: {
+  editor: VideoEditorState;
+  t: Translate;
+  previewUrl(takeId: string, url: string | null): string | null;
+}): PluginBindings {
+  // createBindings runs during the workspace's initialisation, inside
+  // TkaEditorScope, so the context can be read here. Its editor is
+  // `env.editor` with tka's members typed. The labels below are tka keys,
+  // which the package's `t` does not carry, so they use tka's own `t`.
+  const tka = useTkaEditor();
+  const editor = tka.editor;
+  tka.previews.resolve = env.previewUrl;
+
+  // ---- What each layer draws -----------------------------------------------
+
+  const carouselPainter = $derived(
+    tka.displaySequence ? createBeatCarouselPainter(tka.displaySequence) : null
+  );
+  /** The sequence has beats to draw. */
+  const hasSteps = $derived((tka.displaySequence?.steps.length ?? 0) > 0);
+  const animationVisibility = getAnimationVisibilityManager();
+  let progressBarVisible = $state(
+    animationVisibility.getVisibility("progressBar")
+  );
+  function syncProgressBarVisibility(): void {
+    progressBarVisible = animationVisibility.getVisibility("progressBar");
+  }
+  animationVisibility.registerObserver(syncProgressBarVisibility);
+  const stripPainters = $derived.by(() => {
+    const sequence = tka.displaySequence;
+    return new Map<StripMode, PostStudioLayerPainter>(
+      sequence
+        ? (["arrows", "mandala", "alternate"] as const).map((mode) => [
+            mode,
+            createSequenceStripPainter({
+              sequence,
+              mode,
+              showProgressBar: () => progressBarVisible,
+            }),
+          ])
+        : []
+    );
+  });
+  tka.strips.painterFor = (mode) =>
+    stripPainters.get(mode as StripMode) ?? null;
+
+  /** One painter per titles clip: the sequence's name and how to say it. */
+  const titlesPainters = new Map<string, PostStudioLayerPainter>();
+  function titlesPainterFor(itemId: string): PostStudioLayerPainter {
+    let painter = titlesPainters.get(itemId);
+    if (!painter) {
+      painter = createTunnelTitlesPainter(
+        () =>
+          editor.compiled?.titles.find((plan) => plan.itemId === itemId) ??
+          null,
+        () => {
+          const sequence = tka.displaySequence;
+          return sequence
+            ? simplifyRepeatedWord(sequence.word || deriveWord(sequence))
+            : (editor.project.title ?? "");
+        }
+      );
+      titlesPainters.set(itemId, painter);
+    }
+    return painter;
+  }
+
+  /** Where each take's LED staffs are, found once per video. */
+  const staffTips = createStaffTipAnalysis();
+  $effect(() => {
+    for (const take of editor.takes) staffTips.ensure(take.takeKey);
+  });
+  tka.staffTips = staffTips;
+
+  function videoItem(itemId: string): PostVideoItem | null {
+    const found = findItem(editor.project, itemId)?.item;
+    return found?.kind === "video" ? found : null;
+  }
+
+  /** One painter per clip, reading its effect and its take's staff ends live. */
+  const staffPainters = new Map<string, PostStudioLayerPainter>();
+  function staffPainterFor(itemId: string): PostStudioLayerPainter {
+    let painter = staffPainters.get(itemId);
+    if (!painter) {
+      painter = createStaffEffectPainter({
+        track: () => {
+          const item = videoItem(itemId);
+          const take = item
+            ? editor.takes.find((entry) => entry.id === item.takeId)
+            : null;
+          return take ? staffTips.track(take.takeKey) : null;
+        },
+        effect: () => videoItem(itemId)?.staffEffect?.effect ?? null,
+        fit: () => videoItem(itemId)?.fit ?? "cover",
+      });
+      staffPainters.set(itemId, painter);
+    }
+    return painter;
+  }
+
+  let overlayVersion = 0;
+  $effect(() => {
+    const drawn = tka.displaySequence;
+    const version = ++overlayVersion;
+    tka.overlay.error = null;
+    if (!drawn) {
+      tka.overlay.painter = null;
+      tka.overlay.sequence = null;
+      return;
+    }
+    void loadAnimationOverlayPainter(drawn)
+      .then((painter) => {
+        if (version === overlayVersion) {
+          tka.overlay.painter = painter;
+          tka.overlay.sequence = drawn;
+        }
+      })
+      .catch((error: unknown) => {
+        console.error("[PostStudio] Beat overlay unavailable:", error);
+        if (version === overlayVersion) {
+          tka.overlay.painter = null;
+          tka.overlay.error =
+            "Could not prepare the animation. Reload the saved post to retry.";
+        }
+      });
+  });
+
+  function painted(
+    roleKey: string,
+    label: string,
+    painter: PostStudioLayerPainter
+  ): CompositionSourceBinding {
+    return {
+      roleKey,
+      kind: "image",
+      label,
+      previewUrl: null,
+      renderMode: "painted",
+      painter,
+      status: hasSteps ? "ready" : "missing",
+    };
+  }
+
+  function bindingFor(role: string): CompositionSourceBinding | null {
+    const staffItemId = itemIdFromStaffEffectRole(role);
+    if (staffItemId) {
+      return {
+        roleKey: role,
+        kind: "image",
+        label: t("post_staff_effect"),
+        previewUrl: null,
+        renderMode: "painted",
+        painter: staffPainterFor(staffItemId),
+        status: "ready",
+        bareWhileCropping: true,
+      };
+    }
+    const titlesItemId = itemIdFromTitlesRole(role);
+    if (titlesItemId) {
+      return painted(
+        role,
+        t("post_editor_kind_titles"),
+        titlesPainterFor(titlesItemId)
+      );
+    }
+    if (itemIdFromMovesAnimationRole(role)) {
+      return {
+        roleKey: role,
+        kind: "sequence-animation",
+        label: t("share_studio_deep_moves"),
+        previewUrl: null,
+        renderMode: "sequence-animation",
+        status: hasSteps ? "ready" : "missing",
+      };
+    }
+    if (itemIdFromArrangementRole(role)) {
+      return {
+        roleKey: role,
+        kind: "arrangement",
+        label: "Arrangement",
+        previewUrl: null,
+        renderMode: "arrangement",
+        status: "ready",
+      };
+    }
+    const strip = stripModeFromRole(role);
+    if (strip) {
+      const painter = stripPainters.get(strip);
+      return painter
+        ? painted(role, t("share_studio_deep_moves"), painter)
+        : null;
+    }
+    switch (role) {
+      case POST_STUDIO_ROLE.animation:
+        return {
+          roleKey: role,
+          kind: "sequence-animation",
+          label: t("share_studio_deep_animation"),
+          previewUrl: tka.animationPreviewUrl,
+          previewType: tka.animationPreviewType,
+          renderMode: "sequence-animation",
+          status:
+            hasSteps || tka.animationPreviewUrl
+              ? "ready"
+              : tka.isPreparingAnimation
+                ? "preparing"
+                : "missing",
+        };
+      case POST_STUDIO_ROLE.carousel:
+        return carouselPainter
+          ? painted(
+              role,
+              t("share_studio_deep_beat_carousel"),
+              carouselPainter
+            )
+          : null;
+      case ANIMATION_OVERLAY_ROLE:
+        return tka.overlay.painter
+          ? painted(
+              role,
+              t("share_studio_deep_beat_and_letter"),
+              tka.overlay.painter
+            )
+          : null;
+      case POST_STUDIO_ROLE.card:
+        return {
+          roleKey: role,
+          kind: "choreo-card",
+          label: t("share_studio_deep_choreo_card"),
+          previewUrl: tka.cardPreviewUrl,
+          previewType: "image",
+          renderMode: "choreo-card",
+          status:
+            hasSteps || tka.cardPreviewUrl
+              ? "ready"
+              : tka.isPreparingCard
+                ? "preparing"
+                : "missing",
+        };
+      default:
+        return null;
+    }
+  }
+
+  // tka's layers read another role's source through the context (the media
+  // sublayer asks whether the overlay paints the labels). Only these roles
+  // are asked, and the workspace's core roles never answer them.
+  tka.bindingFor = bindingFor;
+
+  /**
+   * The changed notation and the animation overlay are prepared, and the
+   * viewer's panels are still. A post with moves waits for the overlay of the
+   * sequence on screen.
+   */
+  function renderStatus(): { ready: boolean; error: string | null } {
+    return {
+      ready:
+        !tka.sequenceBusy &&
+        !tka.sequenceError &&
+        (!editor.project.tracks.some((track) =>
+          track.items.some((item) => item.kind === "moves")
+        ) ||
+          (tka.displaySequence !== null &&
+            tka.overlay.sequence === tka.displaySequence &&
+            !tka.overlay.error)) &&
+        !tka.viewerMoving,
+      error: tka.sequenceError ?? tka.overlay.error ?? null,
+    };
+  }
+
+  /** Both looks of every image, so a QR image's redraw is ready to capture. */
+  async function prepareRender(): Promise<void> {
+    await Promise.all(
+      editor.project.tracks.flatMap((track) =>
+        track.items.flatMap((item) => {
+          if (item.kind !== "image") return [];
+          const url = editor.imageUrl(item.imageId);
+          if (!url) return [];
+          return [
+            qrImageForAppearance(url, "light"),
+            qrImageForAppearance(url, "dark"),
+          ];
+        })
+      )
+    );
+  }
+
+  /** Beside Undo and Redo: the changed notation failed, or is being prepared. */
+  function notice(): { message: string; alert: boolean } | null {
+    if (tka.sequenceError) return { message: tka.sequenceError, alert: true };
+    return (editor.project.mirrored ||
+      editor.project.sequenceActions?.length) &&
+      tka.sequenceBusy
+      ? { message: "Preparing the changed animation and cards…", alert: false }
+      : null;
+  }
+
+  /**
+   * A take's beat timing, for the media panel's status line. A post with no
+   * sequence has no beats to tap, so no line and no Tap beats.
+   */
+  function takeStatus(takeId: string): { id: string; text: string } | null {
+    if (!tka.displaySequence) return null;
+    const status = editor.timingStatus(takeId);
+    const text = {
+      untapped: t("share_studio_timing_unmapped"),
+      unconfirmed: t("share_studio_timing_unchecked"),
+      confirmed: t("share_studio_timing_checked"),
+      stale: t("share_studio_sequence_changed"),
+    }[status];
+    return { id: status, text };
+  }
+
+  /** Takes whose beats are not checked yet, for the export panel's list. */
+  function exportTodos(): { key: string; text: string; takeId: string }[] {
+    const items: { key: string; text: string; takeId: string }[] = [];
+    if (!tka.displaySequence) return items;
+    for (const take of editor.takesInUse) {
+      // A take with no file is the panel's own step.
+      if (!editor.mediaUrl(take.id)) continue;
+      const status = editor.timingStatus(take.id);
+      if (status !== "confirmed") {
+        items.push({
+          key: take.id,
+          text:
+            status === "untapped"
+              ? `${t("share_studio_map_timing_for")} ${take.label}`
+              : `${t("share_studio_check_timing_for")} ${take.label}`,
+          takeId: take.id,
+        });
+      }
+    }
+    return items;
+  }
+
+  /** Every painter of these roles, keyed the way the exporter looks them up. */
+  function exportPainters(): Map<string, PostStudioLayerPainter> {
+    const painters = new Map<string, PostStudioLayerPainter>();
+    if (carouselPainter)
+      painters.set(POST_STUDIO_ROLE.carousel, carouselPainter);
+    for (const [mode, painter] of stripPainters) {
+      painters.set(stripRole(mode), painter);
+    }
+    if (tka.overlay.painter)
+      painters.set(ANIMATION_OVERLAY_ROLE, tka.overlay.painter);
+    for (const plan of editor.compiled?.titles ?? []) {
+      painters.set(plan.role, titlesPainterFor(plan.itemId));
+    }
+    for (const track of editor.project.tracks) {
+      for (const item of track.items) {
+        if (item.kind === "video" && item.staffEffect) {
+          painters.set(staffEffectRole(item.id), staffPainterFor(item.id));
+        }
+      }
+    }
+    return painters;
+  }
+
+  return {
+    bindingFor,
+    exportPainters,
+    renderStatus,
+    prepareRender,
+    notice,
+    stageHeldElsewhere: () => tka.viewerActive,
+    takeStatus,
+    exportTodos,
+    dispose() {
+      animationVisibility.unregisterObserver(syncProgressBarVisibility);
+      staffTips.dispose();
+    },
+  };
+}

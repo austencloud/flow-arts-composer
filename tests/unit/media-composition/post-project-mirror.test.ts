@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   PostProjectSchema,
-  type PostImageItem,
-  type PostItem,
-  type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import { mirrorPostProject } from "#lib/shared/media-composition/domain/post-project-mirror.js";
-import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
-import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
+  normalizeProject,
+  compilePostProject,
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
+import type {
+  PostImageItem,
+  PostItem,
+  PostProject,
+} from "@austencloud/video-editor/core";
+import { mirrorPostProject } from "@austencloud/video-editor/core";
 import {
   NOW,
   card,
@@ -113,7 +116,7 @@ function item(projectValue: PostProject, id: string): PostItem {
 describe("mirrorPostProject", () => {
   it("reflects every authored position and turn without moving keys in time", () => {
     const original = authoredProject();
-    const mirrored = mirrorPostProject(original, { now: NOW + 1 });
+    const mirrored = mirrorPostProject(original, editContext(NOW + 1));
     expect(mirrored.mirrored).toBe(true);
     expect(PostProjectSchema.safeParse(mirrored).success).toBe(true);
     const camera = item(mirrored, "camera");
@@ -170,8 +173,8 @@ describe("mirrorPostProject", () => {
     expect(original.mirrored).toBeUndefined();
     expect(PostProjectSchema.safeParse(original).success).toBe(true);
     const restored = mirrorPostProject(
-      mirrorPostProject(original, { now: NOW + 1 }),
-      { now: NOW + 2 }
+      mirrorPostProject(original, editContext(NOW + 1)),
+      editContext(NOW + 2)
     );
     expect(restored.mirrored).toBe(false);
     for (const initialTrack of original.tracks) {
@@ -213,7 +216,7 @@ describe("mirrorPostProject", () => {
   });
 
   it("compiles reflected camera and staff effect with the same flip", () => {
-    const mirrored = mirrorPostProject(authoredProject(), { now: NOW + 1 });
+    const mirrored = mirrorPostProject(authoredProject(), editContext(NOW + 1));
     const compiled = compilePostProject(mirrored, { now: NOW + 1 })!;
     const camera = compiled.preset.clips.find((clip) => clip.id === "camera");
     const staff = compiled.preset.clips.find(

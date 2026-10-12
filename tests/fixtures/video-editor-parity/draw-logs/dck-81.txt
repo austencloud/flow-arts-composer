@@ -1,0 +1,47 @@
+c1.getContext("2d",{alpha:false})
+c1.save()
+c1.globalCompositeOperation="source-over"
+c1.globalAlpha=1
+c1.fillStyle="#08080c"
+c1.fillRect(0,0,1080,1920)
+c1.restore()
+c1.save()
+c1.beginPath()
+c1.rect(0,0,1080,1920)
+c1.clip()
+c1.globalAlpha=1
+domToCanvas(.choreo-layer,{height:960,onCreateForeignObjectSvg:fn,scale:2,width:540})
+c1.translate(540,960)
+c1.rotate(0)
+c1.scale(1,1)
+c1.translate(-540,-960)
+c1.drawImage(canvas#dom-capture,0,0,1080,1920)
+c1.restore()
+c1.save()
+c1.beginPath()
+c1.rect(75.6,0,928.8,268.8)
+c1.clip()
+c1.globalAlpha=1
+c1.translate(540,134.4)
+c1.rotate(0)
+c1.scale(1,1)
+c1.translate(-540,-134.4)
+c1.font="900 81px system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
+c1.measureText("Created with")
+c1.measureText("Flow Arts")
+c1.measureText("Flow Arts Composer")
+c1.save()
+c1.font="900 81px system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
+c1.textAlign="center"
+c1.textBaseline="middle"
+c1.lineJoin="round"
+c1.miterLimit=2
+c1.strokeStyle="rgba(0, 0, 0, 0.85)"
+c1.lineWidth=14.58
+c1.fillStyle="#ffffff"
+c1.strokeText("Created with",540,85.8)
+c1.fillText("Created with",540,85.8)
+c1.strokeText("Flow Arts Composer",540,183)
+c1.fillText("Flow Arts Composer",540,183)
+c1.restore()
+c1.restore()

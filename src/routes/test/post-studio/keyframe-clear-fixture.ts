@@ -1,8 +1,5 @@
-import {
-  createEmptyPostProject,
-  type PostCardItem,
-  type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
+import type { PostCardItem, PostProject } from "@austencloud/video-editor/core";
 
 /** Disposable browser fixture: never reads or writes a creator's saved draft. */
 export function keyframeClearFixture(sequenceId: string): PostProject {

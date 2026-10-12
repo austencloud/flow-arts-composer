@@ -53,6 +53,17 @@ export function mountConstructScene(
       props.height = next.height;
       flushSync();
     },
+    /** Start a turn, as the coordinator does. */
+    play(turn: number): void {
+      props.turn = turn;
+      props.playing = true;
+      flushSync();
+    },
+    /** The turn passes to the next card. */
+    stop(): void {
+      props.playing = false;
+      flushSync();
+    },
     destroy(): void {
       unmount(component);
     },

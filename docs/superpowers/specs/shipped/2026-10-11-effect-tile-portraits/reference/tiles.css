@@ -1,0 +1,11 @@
+body { margin: 0; padding: 24px 32px; background: #0d0f16; color: #e6e8ef; font: 15px/1.45 system-ui, sans-serif; }
+h1 { font-size: 22px; margin: 0 0 6px; }
+.lede { color: #9aa0b2; max-width: 900px; margin: 0 0 20px; }
+.card { margin: 0 0 28px; }
+.card h3 { font-size: 16px; margin: 0 0 8px; }
+.card h3 small { color: #8e94a8; font-weight: normal; margin-left: 8px; }
+.note { color: #9aa0b2; margin: 0 0 8px; }
+.row { display: flex; gap: 24px; align-items: flex-start; }
+canvas { border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #050305; }
+canvas.small { width: 304px; height: 114px; }
+canvas.large { width: 720px; height: 270px; }

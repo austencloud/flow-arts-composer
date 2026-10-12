@@ -3,9 +3,9 @@ import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence
 import {
   findItem,
   type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import { updateItem } from "#lib/shared/media-composition/domain/post-project-edits.js";
-import { takeDisplayLabel } from "#lib/shared/media-composition/domain/post-take-labels.js";
+  takeDisplayLabel,
+  updateItem,
+} from "@austencloud/video-editor/core";
 import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 import {
   loadPostProject,

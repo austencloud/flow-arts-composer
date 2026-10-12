@@ -173,9 +173,10 @@
   // content transitions — no flash of the body's saved-theme gradient between
   // pages. App routes (everything else) render children exactly as before.
   // Exact marketing pages + whole subtrees (/shop/*) that all render the same
-  // persistent cosmic chrome. The exact /guide hub stays here so its homepage
-  // shared element can morph beneath a stationary header; deeper Guide routes
-  // own their standalone header/footer through GuideShell.
+  // persistent cosmic chrome. The whole /guide subtree joins it: the hub's
+  // homepage shared element morphs beneath a stationary header, and the deep
+  // guide pages get the same header, footer and theme instead of a second copy
+  // mounted by GuideShell.
   const MARKETING_EXACT = new Set([
     "/",
     "/about",
@@ -188,10 +189,6 @@
     // here. Wants the cosmic chrome and the .mkt-shell root ramp for 4K.
     "/start",
     "/composer",
-    // The Guide hub participates in the homepage shared-element morph, so it
-    // uses the persistent root chrome. Deeper /guide pages keep GuideShell's
-    // standalone header/footer and book canvas.
-    "/guide",
     "/atlas",
     "/faq",
     "/tricks",
@@ -208,6 +205,7 @@
     "/notation",
     "/learn/concepts",
     "/timing-and-direction",
+    "/guide",
   ];
   // Carve-outs inside those subtrees. The QfT app is an instrument, not a page
   // about one: it wants the whole viewport, owns its own bottom chrome, and
@@ -216,9 +214,16 @@
   // sit here as /notation/shape-matrix; it now owns /shape-engine, outside
   // every marketing subtree, so it needs no carve-out.
   const MARKETING_EXCLUDE = new Set(["/notation/qft"]);
+  // The guide's sheet surfaces stay chrome-free: the print, book, handbook and
+  // cover-lab pages (+page@(public)) render bare 8.5x11 sheets for printing,
+  // and the Codex pages are a sheet viewer with its own sticky print toolbar
+  // (/guide/codex) plus two noindex dev tools (poster, parity).
+  const MARKETING_EXCLUDE_PATTERN =
+    /^\/guide\/(?:codex(?:\/|$)|level-[12]\/(?:print|book|handbook|cover-lab)\/?$)/;
   const isMarketing = $derived.by(() => {
     const p = page.url.pathname;
     if (MARKETING_EXCLUDE.has(p)) return false;
+    if (MARKETING_EXCLUDE_PATTERN.test(p)) return false;
     if (MARKETING_EXACT.has(p)) return true;
     return MARKETING_SUBTREES.some(
       (root) => p === root || p.startsWith(root + "/")

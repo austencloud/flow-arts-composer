@@ -5,9 +5,9 @@ import {
   resolvePostStudioDraft,
   serializePostStudioBackup,
 } from "#lib/shared/media-composition/services/post-project-backup.js";
-import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
 import { createTakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
-import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
+import type { PostTake } from "@austencloud/video-editor/core";
 
 const SEQUENCE = "post-recovery";
 const PREFIX = `tka:post-studio:take-timing:v1:${SEQUENCE}:`;

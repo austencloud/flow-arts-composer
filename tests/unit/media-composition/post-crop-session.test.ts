@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-import type { PostVideoItem } from "#lib/shared/media-composition/domain/post-project.js";
-import { editItemKeyframes } from "#lib/shared/media-composition/domain/post-project-edits.js";
-import { setKeyframe } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+import type {
+  PostVideoItem,
+} from "@austencloud/video-editor/core";
+import { editItemKeyframes, setKeyframe } from "@austencloud/video-editor/core";
+import { englishString } from "@austencloud/video-editor/strings";
 import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
-import { isCovered } from "#lib/shared/share/components/post-studio/editor/post-crop-geometry.js";
-import { createCropSession } from "#lib/shared/share/components/post-studio/editor/post-crop-session.svelte.js";
+import { isCovered, createCropSession } from "@austencloud/video-editor/ui";
 
 function sequence(): SequenceData {
   return {
@@ -37,6 +38,7 @@ describe("crop session", () => {
       .find((item): item is PostVideoItem => item.kind === "video")!;
     const session = createCropSession({
       editor,
+      t: englishString,
       getItemId: () => clip.id,
       getSource: () => ({ width: 1920, height: 1080 }),
       now: () => clock,

@@ -28,6 +28,40 @@ timeline on every screen. CapCut and InShot are the models.
 - `post-editor-tools.ts` already gives each selection its own tool row, and a
   phone already opens one tool's panel in place of the row. That model stays;
   this design changes where the row and panels sit at each size.
+- (2026-10-11, project "ΩΛ-XJ", 412 by 915) The track header column (eye
+  and lock, no names) is 111 of the 412 pixels on every row. The main track
+  is 65 tall and each other layer 52, so four rows fill the timeline area.
+  Short text clips read "A N" and "A I".
+- (2026-10-11, same project, 2560 by 1350) The portrait preview is 462 by
+  821 inside a 1246-wide area, so about 780 pixels beside it are empty. Its
+  size is bound by height: under it sit the transport, a 64-tall tool row
+  and a 280-tall timeline.
+- The timeline fits the whole project once when it mounts
+  (`fitPixelsPerSecond` in `PostTimeline.svelte`) but never refits when its
+  width changes, so a window or panel resize leaves the project filling
+  part of the width or running off it.
+- (2026-10-11, walkthrough in `/test/post-studio?sequence=ΩΛ-XJ`, nothing
+  saved) Selecting a video clip adds a keyframe strip ("Position · 6
+  keyframes") above the timeline, which pushes the main track below the
+  timeline's bottom edge (its label at 1317, the timeline ending at 1306),
+  so the clip just selected leaves view. Selecting a clip leaves the
+  playhead where it was: with the playhead at 0:00, selecting the
+  "Mirror me!" text shows its settings while the preview shows a moment
+  before that text appears.
+- (2026-10-11, same walkthrough, 707 by 772) The portrait preview is 108 by
+  192, a quarter of the height. There is no side panel; the 64-tall tool
+  row and an open keyframe lane push the timeline past the bottom edge, so
+  the main track is cut off.
+- (2026-10-11, same walkthrough, 412 by 915) Selecting a video clip turns
+  the row into 15 tools (Deselect, Split, Trim, Crop, Speed, Volume,
+  Layout, Position, Border, Fade, Effects, Beats, Rename, Duplicate,
+  Delete), of which 5 fit on screen; a title clip has 8. The keyframe strip
+  shrinks the preview from 169 by 301 to 113 by 202. Its "Clip actions"
+  button holds one item, "Remove all keyframes", which the more-actions
+  menu also has. Split is greyed with no reason given, because the
+  playhead sits at the clip's start. Add, Canvas, a clip's tool and Export
+  each open in place of the row and push the timeline down: the editor
+  scrolls (962 to 1063 tall in 899) and the main track leaves the screen.
 
 ## 1. Layout tiers
 
@@ -45,6 +79,9 @@ Medium places its panel beside the preview or below it, whichever leaves the
 larger preview. A portrait project on the Fold inner screen (707 by 772)
 gets the panel beside it; a landscape project on a tall window gets it
 below. The thresholds are starting values, checked at the verification sizes.
+Austen confirmed the Fold inner layout on 2026-10-11: the panel sits beside
+a portrait preview (about 420 by 450) and the timeline keeps the full width
+below, so the preview grows to about 224 by 398 from 108 by 192.
 
 Every tier is a fixed frame. The page never scrolls. Only the media grid,
 the details panel body and the timeline scroll inside their own areas.
@@ -112,18 +149,40 @@ selection has more than six. Each group stacks the existing panels it holds.
 - **Medium.** The panel shows the same tabs as desktop. The bottom toolbar
   holds Split, Duplicate, Delete and Sync moves for a selection, and the
   media and Project buttons when nothing is selected.
-- **Phone.** Today's row stays: back arrow first, horizontal scroll like
-  CapCut, most used first. Sync moves sits right after Split for a video
-  clip. A tool opens its panel as a sheet over the timeline with a check
-  button to close.
+- **Phone.** The row uses the same groups as the tabs above (Austen,
+  2026-10-11): back arrow first, then Split, Sync moves for a video clip,
+  the selection's tabs, then Duplicate and Delete. A video clip's row reads
+  Split, Sync moves, Trim, Frame, Speed, Sound, Look, Transition, Duplicate,
+  Delete: 10 buttons instead of 15, still scrolling sideways like CapCut
+  when they don't fit. A button opens its group as a sheet over the
+  timeline, with the group's panels as pill tabs inside (Frame holds crop,
+  layout, position, border and fade) and a check button to close. Rename
+  goes: tapping the name in the sheet header renames in place.
+- **Split, every tier.** Split never greys out. With the playhead at a
+  clip's edge, as it is right after selecting, pressing Split shows a short
+  note by the toolbar, "Slide the playhead into the clip to split it", and
+  changes nothing (Austen, 2026-10-11). S on a keyboard does the same.
 
 ## 4. Timeline
 
-- Track headers (name, visibility, lock) stay on the left; phone shrinks them
-  to icons.
+- Desktop and medium keep the track headers (name, visibility, lock) in a
+  fixed column on the left.
+- Phone has no fixed header column (Austen, 2026-10-11). Each track's header
+  (name, hide, lock) sits in the empty space before 0:00 that the centered
+  playhead leaves, and scrolls away with the clips once the playhead moves
+  into the video (CapCut). Clips get the full width while editing.
+- Phone row heights: the main track is 64 tall with its thumbnail strip;
+  every other layer is a 40-tall row (Austen, 2026-10-11). Four tracks take
+  about 190 instead of 300, and the space goes to the preview. More tracks
+  scroll inside the timeline.
 - Main-track clips show a thumbnail strip with the name over it. A clip too
   narrow for its name shows the thumbnail alone and its full name when
   selected or hovered, never a one-letter stub.
+- A layer clip (text, animation, card) too short for its name lets the name
+  run past its end in secondary text when the track is empty up to the next
+  clip, and shows only its kind icon when another clip is in the way
+  (Austen, 2026-10-11). The selected clip's full name also shows in the
+  toolbar or details header. Never a one-letter stub.
 - Phone and medium keep the playhead fixed at the center; the timeline
   slides under it while playing or dragging. Pinch zooms. Holding a clip
   picks it up; the main track shrinks to tiles while it moves (CapCut), and
@@ -131,7 +190,39 @@ selection has more than six. Each group stacks the existing panels it holds.
   main track opens the Videos tab.
 - Desktop keeps a free playhead: click the ruler to seek, drag clips with the
   mouse, zoom controls at the right of the tool row.
+- Desktop and medium give height to the preview first (Austen,
+  2026-10-11). The timeline opens just tall enough for its tracks (ruler
+  plus rows; about 210 for a four-track project), and the tool row joins
+  the timeline's top edge as a 40-tall strip. On a 2560 by 1350 window a
+  portrait preview grows from 821 to about 925 tall; at 1920 by 1080 from
+  about 550 to 655. Dragging the timeline's top edge gives it more room,
+  and Studio remembers that height on the device.
+- Zoom on open (Austen, 2026-10-11). Desktop and medium fit the whole
+  project and keep refitting when the timeline's width changes, until the
+  person zooms by hand; after that their zoom stays. Fit returns to the
+  refitting state. Phone opens at about 10 seconds across the timeline
+  (CapCut), since fitting a long project into the half after a centered
+  playhead leaves clips a pixel or two per second. Pinch zooms, and the
+  pinched zoom is remembered per project on the device.
 - A video clip whose landings are tapped shows tick marks at each landing.
+- Selecting a clip whose time range does not hold the playhead moves the
+  playhead to the clip's start, so the preview shows what is being edited;
+  a playhead already inside the clip stays (Austen, 2026-10-11). Only the
+  playhead moves, so undo history is unchanged.
+- A selected clip shows its keyframes as small diamonds on the clip itself,
+  at each keyframe's time (CapCut). There is no separate keyframe strip, so
+  selecting never changes the timeline's height or pushes a track out of
+  view (Austen, 2026-10-11).
+- Keyframes are added from a diamond button beside the time in the play
+  row, shown while a clip is selected (Austen, 2026-10-11, for the phone;
+  desktop and medium use the same button in their transport so keyframes
+  work one way everywhere). Pressing it adds a keyframe at the playhead on
+  the channel the K key keys today (`keyframeChannelFor`: the open Frame
+  part's crop, position or fade, else crop for a video and position for
+  anything else). The diamond fills in when the playhead sits on a
+  keyframe, and pressing it then removes that one. Removing all of a clip's
+  keyframes lives in the Frame group. The "Clip actions" button goes; the
+  more-actions menu keeps its own Remove all keyframes.
 
 ## 5. Sync moves screen
 

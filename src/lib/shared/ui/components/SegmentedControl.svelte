@@ -16,6 +16,7 @@
   import { flip } from "svelte/animate";
   import { flipDuration, popIn } from "#lib/shared/transitions/motion.js";
   import type { Snippet } from "svelte";
+  import { Icon, type IconDefinition } from "@austencloud/video-editor/icons";
 
   interface Option {
     value: T;
@@ -24,7 +25,8 @@
     shortLabel?: string;
     /** More descriptive accessible name, such as a label plus result count. */
     ariaLabel?: string;
-    icon?: string; // FontAwesome class
+    /** A FontAwesome class, or an icon definition from the video editor package. */
+    icon?: string | IconDefinition;
     /** Optional trailing count badge (e.g. number of items in this group). */
     count?: number | null;
     /** Not selectable (e.g. a "coming soon" size). Still rendered, dimmed. */
@@ -297,7 +299,11 @@
           {@render optionContent(option.value)}
         </span>
       {:else if option.icon}
-        <i class={option.icon} aria-hidden="true"></i>
+        {#if typeof option.icon === "string"}
+          <i class={option.icon} aria-hidden="true"></i>
+        {:else}
+          <Icon icon={option.icon} />
+        {/if}
       {:else}
         <span class="segment-label">{option.shortLabel ?? option.label}</span>
       {/if}
@@ -398,6 +404,19 @@
 
   .indicator[data-tone="accent"] {
     background: color-mix(in srgb, var(--theme-accent, #8b6cff) 45%, black);
+  }
+
+  /* The light theme's accent is already dark, and mixed with black it put the
+     selected name, drawn in the theme's dark text, on a near-black fill. There
+     the accent gets the same wash and ring as the motion tones. */
+  :global(html[data-theme-luminance="bright"]) .indicator[data-tone="accent"] {
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b6cff) 22%,
+      transparent
+    );
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--theme-accent, #8b6cff) 52%, transparent);
   }
 
   .compact .indicator {
@@ -569,11 +588,13 @@
     color: var(--segmented-selected-ink);
   }
 
-  .segment i {
+  .segment i,
+  .segment :global(.ve-icon) {
     font-size: var(--font-size-sm, 0.875rem);
   }
 
-  .sm .segment i {
+  .sm .segment i,
+  .sm .segment :global(.ve-icon) {
     font-size: var(--font-size-compact, 0.75rem);
   }
 </style>

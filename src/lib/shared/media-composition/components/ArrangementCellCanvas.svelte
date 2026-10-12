@@ -12,15 +12,28 @@
   import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import { onMount, onDestroy, untrack } from "svelte";
   import type { ArrangementCell } from "../domain/arrangement.js";
+  import { migrateArrangementCell } from "../domain/arrangement-migration.js";
+  import { arrangementCellLook } from "../domain/arrangement-look.js";
+  import type { PostAnimationAppearance } from "../domain/post-animation-appearance.js";
+  import {
+    postAnimationEffectsConfig,
+    postAnimationTrailSettings,
+  } from "../domain/post-animation-effects.svelte";
+  import { arrangementLayerStep } from "../domain/arrangement-timing.js";
   import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
   import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
   import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
   import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import {
+    AnimationVisibilityStateManager,
+    getAnimationVisibilityManager,
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import type { AdditionalLayerProps } from "#lib/shared/animation-engine/services/trail-capturer.js";
-  import type { FireOverlayConfig } from "#lib/shared/animation-engine/domain/types/fire-types.js";
-  import { DEFAULT_CHARCOAL_PARAMS } from "#lib/shared/animation-engine/domain/types/charcoal-spark-types.js";
-  import type { LedOverlayConfig } from "#lib/shared/animation-engine/domain/types/led-types.js";
+  import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
   let {
     cell,
@@ -30,6 +43,7 @@
     animationPlaying = false,
     virtualTimeMs = undefined,
     skipStartPlacement = true,
+    gridAppearance = undefined,
     isSelected = false,
     isDragging = false,
     onSelect,
@@ -43,6 +57,8 @@
     virtualTimeMs?: number;
     /** When true, step 0 (start position) is skipped and beats map to steps 1..N */
     skipStartPlacement?: boolean;
+    /** The grid's default look, under the cell's own. */
+    gridAppearance?: PostAnimationAppearance;
     isSelected?: boolean;
     /** When true, click is suppressed (drag just ended) */
     isDragging?: boolean;
@@ -78,11 +94,62 @@
   const extraLayers = $derived(cell.layers.slice(1));
   const hasLayers = $derived(cell.layers.length > 0);
   const isAnimationType = $derived(cell.mediaType === "animation");
-  const effectiveTipEffectMap = $derived.by(() => {
-    if (cell.tipEffectMap && Object.keys(cell.tipEffectMap).length > 0)
-      return cell.tipEffectMap;
-    return cell.effect ? { "*": { effect: cell.effect } } : undefined;
+  // The look this cell draws with: the grid's default under the cell's own
+  // flags. The nested Arrange editor still writes the v1 fields on its working
+  // copy, so they are folded in the way the migration folds them; phase 5
+  // removes that editor and this fold with it.
+  const look = $derived(
+    arrangementCellLook(gridAppearance, migrateArrangementCell(cell))
+  );
+  // One effects state, visibility manager and trail look per cell, as the
+  // Studio animation layer keeps per item, so a cell's effect never leaks
+  // into its neighbours or the viewer's own settings.
+  const inheritedEffects = getEffectsConfigContext();
+  const fallbackEffects =
+    inheritedEffects?.snapshot() ?? DEFAULT_EFFECTS_CONFIG;
+  const cellEffects = createEffectsConfigState(fallbackEffects, {
+    persist: false,
   });
+  const cellVisibility = new AnimationVisibilityStateManager({
+    ephemeral: true,
+  });
+  let cellTrailSettings = $state(animationSettings.snapshot().trail);
+  $effect(() => {
+    const current = look;
+    untrack(() => {
+      cellVisibility.updateSettings({
+        ...getAnimationVisibilityManager().getSettings(),
+        wordHeader: false,
+        darkMode: true,
+        ...(current ?? {}),
+      });
+      const config = postAnimationEffectsConfig(current, fallbackEffects);
+      cellTrailSettings = postAnimationTrailSettings(
+        animationSettings.snapshot().trail,
+        config,
+        current?.trail
+      );
+      cellEffects.replace(config);
+    });
+  });
+  // The engine takes a cell map in place of the config's own, so the cell's
+  // per-hand and per-tip picks are laid over the look's cell-wide effect.
+  const cellTipEffects = $derived.by((): TipEffectMap | undefined => {
+    const own = cell.tipEffectMap;
+    if (!own || Object.keys(own).length === 0) return undefined;
+    return { ...cellEffects.tipEffectMap, ...own };
+  });
+  const motionVisibility = $derived({
+    left: cell.leftMotionVisible ?? true,
+    right: cell.rightMotionVisible ?? true,
+  });
+  /** The props each layer's engine places: the look's prop, else the viewer's pair. */
+  function cellPropConfig() {
+    const propType = look?.propType;
+    return propType
+      ? { leftPropType: propType, rightPropType: propType }
+      : getViewerAnimationPropConfig();
+  }
 
   // Media type display info
   const mediaTypeInfo = $derived.by(() => {
@@ -98,94 +165,20 @@
     }
   });
 
-  // Trail settings
-  const trailSettings = $derived(
-    cell.trailMode
-      ? { ...animationSettings.trail, mode: cell.trailMode }
-      : animationSettings.trail
+  // Each layer's orchestrator step at this grid beat: the cell's offset
+  // delays it, its speed scales it, and a layer's own offset shifts it. The
+  // orchestrator is 1-based (step 1 = steps[0]); see arrangementLayerStep.
+  const primaryCurrentStep = $derived(
+    primaryLayer
+      ? arrangementLayerStep(currentStep, cell, primaryLayer, skipStartPlacement)
+      : 0
   );
 
-  // Scan tipEffectMap for any assignments of a given effect type.
-  // When the user assigns effects per-tip or per-hand via the matrix,
-  // cell.effect stays empty but the renderers still need to be enabled.
-  function tipMapHasEffect(effectType: string): boolean {
-    const map = cell.tipEffectMap;
-    if (!map) return false;
-    return Object.values(map).some((v) => v.effect === effectType);
-  }
-
-  // Per-cell effect overrides - translate cell.effect AND tipEffectMap into
-  // fireConfig/ledConfig. The renderers must be enabled if ANY tip is assigned
-  // the effect, whether via the flat cell.effect or the per-tip matrix.
-  const cellFireConfig = $derived.by(
-    (): Partial<FireOverlayConfig> | undefined => {
-      const effect = cell.effect;
-      if (effect === "fire" || tipMapHasEffect("fire")) return {};
-      if (effect === "charcoal" || tipMapHasEffect("charcoal"))
-        return { charcoalParams: { ...DEFAULT_CHARCOAL_PARAMS } };
-      if (effect && effect !== "none") return undefined;
-      if (cell.tipEffectMap && Object.keys(cell.tipEffectMap).length > 0)
-        return undefined;
-      return undefined; // No per-cell override - global setting applies
-    }
+  const additionalCurrentSteps = $derived(
+    extraLayers.map((layer) =>
+      arrangementLayerStep(currentStep, cell, layer, skipStartPlacement)
+    )
   );
-
-  const cellLedConfig = $derived.by(
-    (): Partial<LedOverlayConfig> | undefined => {
-      const effect = cell.effect;
-      if (effect === "led" || tipMapHasEffect("led")) return { enabled: true };
-      if (effect && effect !== "none") return { enabled: false };
-      if (cell.tipEffectMap && Object.keys(cell.tipEffectMap).length > 0)
-        return { enabled: false };
-      return undefined; // No per-cell override - global setting applies
-    }
-  );
-
-  // Per-cell motion visibility overrides (undefined defaults to visible)
-  const leftVisible = $derived(cell.leftMotionVisible ?? true);
-  const rightVisible = $derived(cell.rightMotionVisible ?? true);
-  // TODO: Pass blueVisible/redVisible to AnimatorCanvas once the animation
-  // engine supports per-cell visibility overrides. Currently the global
-  // AnimationVisibilityStateManager controls visibility for the entire app.
-  // When per-cell support is added, these derived values should be passed as
-  // props to AnimatorCanvas to control per-hand opacity independently.
-
-  // Calculate effective beat for this cell (including cell-level offset and speed)
-  const effectiveBeat = $derived.by(() => {
-    const speed = cell.speedMultiplier ?? 1.0;
-    return (currentStep + cell.beatOffset) * speed;
-  });
-
-  // Calculate current step for each layer.
-  // The orchestrator uses 1-based steps: step=1 is beat 1 (steps[0]), step < 1 is start position.
-  // steps.length = number of motion beats (start position is stored separately).
-  //
-  // skipStartPlacement=true (seamless loop):
-  //   actualBeats = stepCount, wrapped ranges 0..stepCount-1, step = wrapped + 1
-  //   So orchestrator sees steps 1..stepCount (all motion beats, no start position)
-  //
-  // skipStartPlacement=false (show start pose):
-  //   actualBeats = stepCount + 1, wrapped ranges 0..stepCount
-  //   step = wrapped (0 = start position, 1..stepCount = motion beats)
-  const primaryCurrentStep = $derived.by(() => {
-    if (!primaryLayer) return 0;
-    const stepCount = primaryLayer.sequence.steps?.length || 1;
-    const actualBeats = skipStartPlacement ? stepCount : stepCount + 1;
-    const layerBeat = effectiveBeat + primaryLayer.beatOffset;
-    const wrapped = layerBeat % actualBeats;
-    return skipStartPlacement ? wrapped + 1 : wrapped;
-  });
-
-  // Current steps for each additional layer
-  const additionalCurrentSteps = $derived.by(() => {
-    return extraLayers.map((layer) => {
-      const stepCount = layer.sequence.steps?.length || 1;
-      const actualBeats = skipStartPlacement ? stepCount : stepCount + 1;
-      const layerBeat = effectiveBeat + layer.beatOffset;
-      const wrapped = layerBeat % actualBeats;
-      return skipStartPlacement ? wrapped + 1 : wrapped;
-    });
-  });
 
   // Get current step data. The orchestrator step is 1-based (step=1 uses steps[0]),
   // so subtract 1 before indexing into the array.
@@ -228,21 +221,24 @@
       disposeOrchestrators();
 
       if (layerCount > 0) {
-        // Each layer owns its prop state so one sequence cannot overwrite another.
-        primaryOrchestrator = new SequenceAnimationOrchestrator(
+        // Each layer owns its prop state so one sequence cannot overwrite
+        // another; each reads the cell's own look for its prop and effort.
+        const primary = new SequenceAnimationOrchestrator(
           new AnimationStateManager(),
-          getViewerAnimationPropConfig
+          cellPropConfig
         );
+        primary.setVisibilityManager(cellVisibility);
+        primaryOrchestrator = primary;
 
         const nextOrchestrators: SequenceAnimationOrchestrator[] = [];
         const nextStates: ReturnType<typeof createAnimationPanelState>[] = [];
         for (let i = 1; i < layerCount; i++) {
-          nextOrchestrators.push(
-            new SequenceAnimationOrchestrator(
-              new AnimationStateManager(),
-              getViewerAnimationPropConfig
-            )
+          const extra = new SequenceAnimationOrchestrator(
+            new AnimationStateManager(),
+            cellPropConfig
           );
+          extra.setVisibilityManager(cellVisibility);
+          nextOrchestrators.push(extra);
           nextStates.push(createAnimationPanelState());
         }
         additionalOrchestrators = nextOrchestrators;
@@ -407,7 +403,7 @@
         leftProp={primaryAnimationState.leftPropState}
         rightProp={primaryAnimationState.rightPropState}
         additionalLayers={additionalLayerProps}
-        gridVisible={true}
+        gridVisible={look?.gridMode !== "none"}
         gridMode={primaryLayer?.sequence.gridMode ?? null}
         letter={primaryStepData?.letter || null}
         stepData={primaryStepData}
@@ -417,15 +413,19 @@
         onInitialized={() => (canvasReady = true)}
         sequenceData={primaryLayer?.sequence || null}
         word={null}
-        {trailSettings}
+        leftPropType={look?.propType ?? null}
+        rightPropType={look?.propType ?? null}
+        propLook={look?.propLook}
+        previewDarkMode={look?.darkMode ?? true}
+        mandalaStrokeWidthOverride={look?.mandalaThickness}
+        trailSettings={cellTrailSettings}
         hideTkaGlyph={true}
         hideStepNumbers={true}
-        fireConfig={cell.effect || cell.tipEffectMap
-          ? cellFireConfig
-          : undefined}
-        ledConfig={cell.effect || cell.tipEffectMap ? cellLedConfig : undefined}
-        tipEffectMap={effectiveTipEffectMap}
+        visibilityManagerOverride={cellVisibility}
+        effectsConfigState={cellEffects}
+        tipEffectMap={cellTipEffects}
         tipEffortMap={cell.tipEffortMap}
+        {motionVisibility}
       />
     {:else}
       <div class="empty-cell">

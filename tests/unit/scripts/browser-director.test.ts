@@ -173,9 +173,71 @@ describe("createDirector shot", () => {
     expect(proof.url).toBeNull();
     expect(proof.snapshot).toBeNull();
   });
+
+  it("records the page size and pixel density in capture.json", async () => {
+    const { cdp, page } = fakes({ width: 720, height: 1280 });
+    await createDirector(page, cdp, root).shot("size", 0.05);
+    const proof = JSON.parse(
+      await fs.readFile(
+        path.join(root, "production", "frames", "size", "capture.json"),
+        "utf8"
+      )
+    );
+    expect(proof.viewport).toEqual({ width: 720, height: 1280 });
+  });
+
+  it("writes a null page size when the page cannot answer", async () => {
+    const { cdp, page } = fakes();
+    const answer = page.evaluate.getMockImplementation()!;
+    page.evaluate.mockImplementation(async (fn: () => unknown) => {
+      if (fn.toString().includes("devicePixelRatio"))
+        throw new Error("page gone");
+      return answer(fn);
+    });
+    await createDirector(page, cdp, root).shot("nosize", 0.05);
+    const proof = JSON.parse(
+      await fs.readFile(
+        path.join(root, "production", "frames", "nosize", "capture.json"),
+        "utf8"
+      )
+    );
+    expect(proof.viewport).toBeNull();
+  });
+});
+
+describe("createDirector click", () => {
+  it("logs the clicked element's box with the click", async () => {
+    const made = fakes();
+    const box = { x: 1180, y: 30, width: 102, height: 30 };
+    made.page.evaluate = vi.fn(async (fn: () => unknown, arg?: string) => {
+      if (arg === undefined) return { width: 1920, height: 1080 };
+      if (fn.toString().includes(":hover")) return true;
+      return { x: 1246, y: 49, rect: box };
+    });
+    const director = createDirector(made.page, made.cdp, root);
+    await director.shot("click", 0.05, async () => {
+      await director.click("Level 1: Base Motions");
+    });
+    const proof = JSON.parse(
+      await fs.readFile(
+        path.join(root, "production", "frames", "click", "capture.json"),
+        "utf8"
+      )
+    );
+    expect(proof.events).toEqual([
+      expect.objectContaining({
+        label: "Level 1: Base Motions",
+        x: 1246,
+        y: 49,
+        rect: box,
+      }),
+    ]);
+  });
 });
 
 describe("createDirector pick", () => {
+  const TILE = { x: 260, y: 380, width: 60, height: 30 };
+
   /** A page whose nth match sits at (300, 400) and takes the hover when `hovered`. */
   function pickFakes(hovered: boolean) {
     const made = fakes({ width: 432, height: 768 });
@@ -184,7 +246,7 @@ describe("createDirector pick", () => {
       async (fn: () => unknown, arg?: { hover?: boolean }) => {
         if (!arg) return { width: 432, height: 768 };
         asked.push(arg);
-        return arg.hover ? hovered : { x: 300, y: 400 };
+        return arg.hover ? hovered : { x: 300, y: 400, rect: TILE };
       }
     );
     return { ...made, asked };
@@ -220,8 +282,50 @@ describe("createDirector pick", () => {
         hover: true,
         x: 300,
         y: 400,
+        rect: TILE,
       }),
     ]);
+  });
+
+  it("types into a field a key at a time, then presses Enter", async () => {
+    const { cdp, page, sent } = pickFakes(true);
+    const director = createDirector(page, cdp, root);
+    await director.shot("type", 0.05, async () => {
+      await director.type('input[name="generation-word"]', "CAKE", {
+        perKeyMs: 0,
+        enter: true,
+      });
+    });
+    const keys = sent
+      .filter(([method]) => method === "Input.dispatchKeyEvent")
+      .map(([, params]) => params);
+    expect(keys.filter((event) => event.type === "keyDown")).toEqual([
+      { type: "keyDown", key: "C", text: "C" },
+      { type: "keyDown", key: "A", text: "A" },
+      { type: "keyDown", key: "K", text: "K" },
+      { type: "keyDown", key: "E", text: "E" },
+      {
+        type: "keyDown",
+        key: "Enter",
+        code: "Enter",
+        windowsVirtualKeyCode: 13,
+      },
+    ]);
+    // The field is clicked before the first key goes down.
+    const order = sent.map(([, params]) => params.type);
+    expect(order.indexOf("mouseReleased")).toBeLessThan(
+      order.indexOf("keyDown")
+    );
+    const proof = JSON.parse(
+      await fs.readFile(
+        path.join(root, "production", "frames", "type", "capture.json"),
+        "utf8"
+      )
+    );
+    expect(
+      proof.events.map((event: { action: string }) => event.action)
+    ).toEqual(["click", "type"]);
+    expect(proof.events[1]).toMatchObject({ value: "CAKE", x: 300, y: 400 });
   });
 
   it("refuses to click when the page's own hover misses the target", async () => {

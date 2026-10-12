@@ -10,7 +10,7 @@ import {
   readPostProjectSession,
 } from "#lib/server/post-project-dev-bridge.js";
 import { featureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
-import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import type { PostProject } from "@austencloud/video-editor/core";
 import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-project-bridge-guard.js";
 import { applyPostProjectOps } from "#lib/shared/media-composition/domain/post-project-ops.js";
 import { createTakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
@@ -20,8 +20,9 @@ import { createPostEditorState } from "#lib/shared/media-composition/state/post-
 import { POST as postProjectRoute } from "../../../src/routes/api/dev/post-project/+server";
 import { routeEvent, tempFeatureRoot } from "./feature-video-test-helpers";
 import { NOW, project, take } from "./post-project-fixtures";
+import { editContext } from "#lib/shared/post-studio-plugin/index.js";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 const FEATURE_URL = featureVideoMediaUrl("promo", "footage/a.mp4");
 const empty = () => project([], [], []);
 const withFeatureTake = () =>
@@ -252,7 +253,7 @@ describe("a take the bridge adds or points at a new file", () => {
     const next = applyPostProjectOps(
       base,
       [{ op: "add-take", url: FEATURE_URL, durationSeconds: 4, append: true }],
-      { now: NOW + 5 }
+      editContext(NOW + 5)
     );
     expect(editor.replaceManifestFromDev(next, base)).toEqual({ ok: true });
     const takeId = editor.takes[0]?.id ?? "";
@@ -294,7 +295,7 @@ describe("a take the bridge adds or points at a new file", () => {
           durationSeconds: 3,
         },
       ],
-      { now: NOW + 20 }
+      editContext(NOW + 20)
     );
     expect(editor.replaceManifestFromDev(next, base)).toEqual({ ok: true });
     expect(editor.mediaUrl(first.id)).toBe(shorter);

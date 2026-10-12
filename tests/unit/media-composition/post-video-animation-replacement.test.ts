@@ -3,13 +3,13 @@ import {
   canReplaceOverlayVideoWithAnimation,
   replaceOverlayVideoWithAnimation,
 } from "#lib/shared/media-composition/domain/post-project-edits.js";
-import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
-import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
 import {
+  compilePostProject,
+  normalizeProject,
   PostProjectSchema,
-  type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import { takeRole } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
+import { type PostProject, takeRole } from "@austencloud/video-editor/core";
 import { NOW, project, take, video } from "./post-project-fixtures";
 
 const cameraId = "inshot-123-main-1";
@@ -53,9 +53,11 @@ describe("replace recovered PIP with live animation", () => {
     const before = recoveredProject();
     expect(canReplaceOverlayVideoWithAnimation(before, pipId)).toBe(true);
 
-    const after = replaceOverlayVideoWithAnimation(before, pipId, {
-      now: NOW + 1,
-    });
+    const after = replaceOverlayVideoWithAnimation(
+      before,
+      pipId,
+      editContext(NOW + 1)
+    );
     expect(PostProjectSchema.safeParse(after).success).toBe(true);
     expect(after).not.toBe(before);
     expect(before.tracks[1]?.items[0]?.kind).toBe("video");
@@ -99,7 +101,7 @@ describe("replace recovered PIP with live animation", () => {
     };
     expect(canReplaceOverlayVideoWithAnimation(unrelated, pipId)).toBe(false);
     expect(
-      replaceOverlayVideoWithAnimation(unrelated, pipId, { now: NOW + 1 })
+      replaceOverlayVideoWithAnimation(unrelated, pipId, editContext(NOW + 1))
     ).toBe(unrelated);
     expect(canReplaceOverlayVideoWithAnimation(base, cameraId)).toBe(false);
 
@@ -128,9 +130,11 @@ describe("replace recovered PIP with live animation", () => {
       opacity: [{ t: 2, value: 0.5, easing: "linear" }],
     };
     const before = normalizeProject(draft);
-    const after = replaceOverlayVideoWithAnimation(before, pipId, {
-      now: NOW + 1,
-    });
+    const after = replaceOverlayVideoWithAnimation(
+      before,
+      pipId,
+      editContext(NOW + 1)
+    );
     const animation = after.tracks[1]!.items[0]!;
     expect(animation.kind).toBe("animation");
     expect(animation.keyframes?.opacity?.[0]?.t).toBe(1);

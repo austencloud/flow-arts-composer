@@ -11,6 +11,7 @@
   import { gridTopicText } from "#lib/shared/guide-topics/grid-topic.js";
   import LabeledGridFigure from "./LabeledGridFigure.svelte";
   import GridModesEquation from "./GridModesEquation.svelte";
+  import TopicHeader from "./TopicHeader.svelte";
   import type { TopicPageProps } from "./topic-pages";
 
   let { darkMode, kicker, lessonHref }: TopicPageProps = $props();
@@ -23,11 +24,11 @@
 </script>
 
 <article class="grid-topic">
-  <header class="topic-head">
-    <p class="kicker">{kicker}</p>
-    <h1>{gridTopicText("title")}</h1>
-    <p class="lede">{gridTopicText("intro")}</p>
-  </header>
+  <TopicHeader
+    {kicker}
+    title={gridTopicText("title")}
+    lede={gridTopicText("intro")}
+  />
 
   <section class="overview" aria-labelledby="grid-points-lead">
     <LabeledGridFigure {darkMode} />
@@ -96,39 +97,6 @@
   /* One centered axis: the header, the 8-point comparison, the closing line
      and the lesson link share the middle of the page; the overview pairs the
      figure with its definitions as one centered unit. */
-  .topic-head {
-    display: grid;
-    gap: 0.5rem;
-    justify-items: center;
-    max-width: 46rem;
-    margin: 0 auto;
-    text-align: center;
-  }
-  .kicker {
-    margin: 0;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--ink-dim, #555);
-  }
-  .grid-topic h1 {
-    grid-column: auto;
-    margin: 0;
-    padding: 0;
-    text-align: center;
-    color: var(--ink, #1a1a1a);
-    font-size: clamp(2.4rem, 5cqw, 3.6rem);
-    font-weight: 750;
-    line-height: 1.02;
-    letter-spacing: -0.03em;
-  }
-  .lede {
-    margin: 0;
-    font-size: clamp(1.05rem, 1.6cqw, 1.25rem);
-    line-height: 1.55;
-    text-wrap: balance;
-  }
   .overview {
     display: grid;
     gap: 1.75rem;
@@ -215,10 +183,12 @@
     max-width: none;
     margin-top: 0.75rem;
   }
+  /* Section headings in the book's serif, as on the reflow pages. */
   .grid-topic h2 {
     margin: 0;
     color: var(--ink, #1a1a1a);
-    font-size: clamp(1.4rem, 2.6cqw, 1.9rem);
+    font-family: var(--guide-display, "Cormorant Garamond", Georgia, serif);
+    font-size: clamp(1.6rem, 3cqw, 2.1rem);
     font-weight: 700;
   }
   .modes p {

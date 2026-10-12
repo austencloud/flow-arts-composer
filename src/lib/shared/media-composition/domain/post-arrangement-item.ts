@@ -1,38 +1,20 @@
-import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
-import { validateArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
-import { calculateArrangementTotalBeats } from "#lib/shared/media-composition/domain/arrangement-timing.js";
 import {
   POST_BOX,
-  POST_MIN_ITEM_SECONDS,
-  createEmptyPostProject,
-  type PostArrangementItem,
   type PostCanvasRatio,
   type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
+} from "@austencloud/video-editor/core";
+import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+import { validateArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+import { arrangementDurationSeconds } from "#lib/shared/media-composition/domain/arrangement-timing.js";
+import {
+  createEmptyPostProject,
+  type PostArrangementItem,
+} from "#lib/shared/post-studio-plugin/index.js";
 
-/** One complete Arrange cycle, measured from the grid's own tempo. */
-export function arrangementDurationSeconds(
-  snapshot: ArrangementSnapshot
-): number {
-  const beats = calculateArrangementTotalBeats(
-    snapshot.cells,
-    snapshot.skipStartPlacement,
-    snapshot.gridRows,
-    snapshot.gridCols
-  );
-  return Math.max(
-    POST_MIN_ITEM_SECONDS,
-    (Math.max(1, beats) * 60) / snapshot.bpm
-  );
-}
-
-/** The same beat that Arrange's playback engine would show at this source time. */
-export function arrangementBeatAt(
-  snapshot: ArrangementSnapshot,
-  sourceTimeSeconds: number
-): number {
-  return (Math.max(0, sourceTimeSeconds) * snapshot.bpm) / 60;
-}
+export {
+  arrangementBeatAt,
+  arrangementDurationSeconds,
+} from "#lib/shared/media-composition/domain/arrangement-timing.js";
 
 export function arrangementCanvasRatio(
   snapshot: ArrangementSnapshot

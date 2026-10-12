@@ -24,6 +24,10 @@ import {
   writeStills,
 } from "./feature-video/stills.mjs";
 import { parseTimeArg } from "./feature-video/time-args.mjs";
+import {
+  walkthroughReport,
+  walkthroughTake,
+} from "./feature-video/walkthrough-report.mjs";
 
 const [command, ...args] = process.argv.slice(2);
 const option = (name) => {
@@ -642,6 +646,49 @@ try {
       pollMs: Number(process.env.TKA_RENDER_POLL_MS) || 1000,
       findFeature: (slug) => request("GET", {}, undefined, featureRoute(slug)),
     });
+  } else if (command === "walkthrough") {
+    const feature = required("feature");
+    const { folder } = await request(
+      "GET",
+      {},
+      undefined,
+      featureRoute(feature)
+    );
+    // The lines file may sit in the project's folder rather than here.
+    const linesArg = required("lines");
+    const linesFile = await fs
+      .access(path.resolve(linesArg))
+      .then(() => path.resolve(linesArg))
+      .catch(() => path.resolve(folder, linesArg));
+    const captureFile = option("capture")
+      ? path.resolve(option("capture"))
+      : path.join(folder, "captures", "frames", feature, "capture.json");
+    const script = JSON.parse(await fs.readFile(linesFile, "utf8"));
+    const recording = JSON.parse(await fs.readFile(captureFile, "utf8"));
+    const before = await currentSnapshot();
+    const take =
+      option("take") ?? walkthroughTake(before.takes ?? [], recording.id);
+    const edit = await sendOps([
+      {
+        op: "build-walkthrough",
+        take,
+        // Only what the build reads; the frame list is long.
+        capture: {
+          events: recording.events,
+          viewport: recording.viewport ?? null,
+        },
+        script,
+        ...(option("chapter") ? { chapter: option("chapter") } : {}),
+      },
+    ]);
+    const landed = edit.status === "completed" || edit.status === "applied";
+    result = {
+      take,
+      lines: linesFile,
+      capture: captureFile,
+      edit,
+      ...(landed ? walkthroughReport(await currentSnapshot()) : {}),
+    };
   } else if (command === "stills") {
     result = {
       stills: await writeStills(
@@ -741,6 +788,7 @@ Feature videos, folders on the dev server's computer:
   contact-sheet <render.mp4> [--columns 10]   one frame a second on one sheet, in stills/ beside the render
   capture-info --feature SLUG   the project's folder, the recordings already in media/captures and its takes
   link-capture --feature SLUG --capture ID --media captures/ID.N.mp4 [--label "Name"]   puts a recording in the project: the take that plays an earlier recording of ID is pointed at it, else it becomes a new take
+  walkthrough --feature SLUG --lines walkthrough.json [--capture capture.json] [--take ID] [--chapter NAME]   cuts the recording to the lines: the camera moves in on each click, a bubble beside it; prints YouTube chapters and bubbles under 1.6 s
   T is seconds (12.5), a clock (1:02.5), or a bar of the music: @9 is bar 9, @9.3 is bar 9, beat 3.
   With --feature, show and every edit use the editor that has it open, else the file on disk.
   Add --no-wait to return before the editor confirms; --out file to write output.`

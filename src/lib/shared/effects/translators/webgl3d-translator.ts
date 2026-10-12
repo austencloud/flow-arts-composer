@@ -18,6 +18,7 @@ import type {
   PulseIntent,
 } from "../domain/effects-config";
 import { normalizeGooLiquidControls } from "../domain/effects-config";
+import { resolveBloomHistoryLifetime } from "../domain/bloom-optics";
 import type {
   Trails3DParams,
   Fire3DParams,
@@ -136,11 +137,16 @@ export function resolveZap3D(
   intent: ZapIntent,
   override: Partial<Zap3DParams> = {}
 ): Zap3DParams {
+  const haloWidth = 0.022 + intent.glow * 0.04;
   const defaults: Omit<Zap3DParams, keyof ZapIntent> = {
-    segments: Math.max(4, Math.round(5 + intent.intensity * 8)),
-    jitterAmount: 0.08 + intent.intensity * 0.14,
-    pointLightIntensity: intent.intensity > 0.5 ? intent.intensity * 2.0 : 0,
-    regenerateEveryFrames: 3,
+    haloWidth,
+    // A core about 7 mm wide at any glow, so a wide halo does not fatten it.
+    coreFraction: Math.min(
+      0.45,
+      (0.0025 + intent.intensity * 0.0015) / haloWidth
+    ),
+    brightness: 0.45 + intent.intensity * 0.65,
+    lightIntensity: intent.intensity > 0.4 ? intent.intensity * 2.5 : 0,
   };
   return { ...intent, ...defaults, ...override };
 }
@@ -192,8 +198,7 @@ export function resolveBloom3D(
     haloRadiusWorld:
       0.14 + ((Math.max(8, Math.min(90, intent.radius)) - 8) / 82) * 0.58,
     motionReferenceSpeed: 3,
-    historyLifetimeSeconds:
-      intent.afterglow <= 0.001 ? 0 : 0.08 + intent.afterglow * 0.95,
+    historyLifetimeSeconds: resolveBloomHistoryLifetime(intent.afterglow),
     historySampleDistanceWorld: 0.065 - intent.afterglow * 0.04,
     // Keep HDR headroom for post bloom without allowing every preset to clip
     // into the same white source. Core strength now owns that source directly.

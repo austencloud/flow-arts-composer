@@ -1,16 +1,17 @@
 import { describe, expect, it } from "vitest";
 import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
-import { MediaSourceSchema } from "#lib/shared/media-composition/domain/media-source-schema.js";
-import { PostProjectSchema } from "#lib/shared/media-composition/domain/post-project.js";
+import {
+  compilePostProject,
+  evaluatePresetFrame,
+  normalizeProject,
+  PostProjectSchema,
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   arrangementBeatAt,
   arrangementDurationSeconds,
   createArrangementItem,
   createArrangementProject,
 } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
-import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
-import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
-import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
 
 function cell(
   id: string,
@@ -40,7 +41,7 @@ function cell(
 }
 
 const snapshot: ArrangementSnapshot = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   cells: [cell("a", 0, 2), cell("b", 1, 3)],
   gridRows: 1,
   gridCols: 2,
@@ -64,9 +65,6 @@ describe("editable arrangement source", () => {
       sourceOut: 4,
       duration: 4,
     });
-    expect(
-      MediaSourceSchema.parse({ id: "source", kind: "arrangement", snapshot })
-    ).toMatchObject({ snapshot });
     expect(arrangementDurationSeconds(snapshot)).toBe(4);
     expect(arrangementBeatAt(snapshot, 2)).toBe(3);
   });

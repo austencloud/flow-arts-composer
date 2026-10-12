@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import {
+  createEmptyPostProject,
+} from "#lib/shared/post-studio-plugin/index.js";
 import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 import { loadPostProject } from "#lib/shared/media-composition/services/post-project-store.js";
 

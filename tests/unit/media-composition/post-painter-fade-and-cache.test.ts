@@ -14,9 +14,14 @@ vi.mock("#lib/shared/render/services/canvas-2d-direct-renderer.js", () => ({
     }
   },
 }));
-vi.mock("#lib/shared/pictograph/shared/services/pictograph-preparer.js", () => ({
-  pictographPreparer: { prepareSingle: async () => ({ _prepared: undefined }) },
-}));
+vi.mock(
+  "#lib/shared/pictograph/shared/services/pictograph-preparer.js",
+  () => ({
+    pictographPreparer: {
+      prepareSingle: async () => ({ _prepared: undefined }),
+    },
+  })
+);
 vi.mock("#lib/shared/timeline/notation-cell.js", () => ({
   buildNotationCells: () => [{ data: {} }, { data: {} }, { data: {} }],
 }));
@@ -65,8 +70,8 @@ import { createSequenceStripPainter } from "#lib/shared/media-composition/servic
 import {
   paintSizeBucket,
   type PaintFrame,
-} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
-import { PostAnimationOverlayPainter } from "#lib/features/compose/services/post-animation-overlay-painter.js";
+} from "@austencloud/video-editor/render";
+import { PostAnimationOverlayPainter } from "#lib/shared/media-composition/services/post-animation-overlay-painter.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const BEATS = [1, 1];
@@ -204,7 +209,9 @@ describe("legacy Moves progress", () => {
         }
       );
       const barHeight = getSequenceProgressStripHeight(500);
-      const barMarks = fillRect.mock.calls.filter((call) => call[3] === barHeight);
+      const barMarks = fillRect.mock.calls.filter(
+        (call) => call[3] === barHeight
+      );
       // First mark is the empty track. A filled bar exists only past opening.
       expect(barMarks).toHaveLength(expected! > 0 ? 2 : 1);
       if (expected! > 0) expect(barMarks[1]![2]).toBeCloseTo(500 * expected!);

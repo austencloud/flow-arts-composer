@@ -80,6 +80,17 @@ export default defineConfig({
         "packages/render-core/src/index.ts"
       ),
     },
+    // One copy of each, as in vite.config.ts: @austencloud/video-editor
+    // shares the app's svelte, mediabunny, zod and dexie.
+    dedupe: ["svelte", "mediabunny", "zod", "dexie"],
+  },
+
+  // As in vite.config.ts: in a worktree whose node_modules is a junction
+  // into the primary checkout, browser mode reads files outside the worktree.
+  server: {
+    fs: {
+      allow: [".", "../../", "../../../"],
+    },
   },
 
   test: {

@@ -1,10 +1,10 @@
 import type { Composition } from "#lib/shared/animation-engine/domain/compose-types.js";
 import { getTunnelLayerColors } from "#lib/shared/animation-engine/domain/compose-types.js";
-import { compositionSyncer } from "#lib/features/compose/services/composition-syncer.js";
-import { compositionToGridState } from "#lib/features/compose/tabs/arrange/services/arrange-composition-converter.js";
+import { compositionSyncer } from "#lib/features/post/compose-import/composition-syncer.js";
+import { compositionToGridState } from "#lib/shared/media-composition/arrangement/arrange-composition-converter.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
-import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import type { PostProject } from "@austencloud/video-editor/core";
 import { validateArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
 import { createArrangementProject } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
 import {
@@ -141,7 +141,7 @@ export async function openCompositionInStudio(
   if (!composition)
     throw new Error("This arrangement is unavailable for this account.");
   const snapshot = validateArrangementSnapshot({
-    schemaVersion: 1,
+    schemaVersion: 2,
     ...compositionToGridState(composition),
   });
   const sequence = firstPopulatedSequence(snapshot);
@@ -195,7 +195,7 @@ export async function createStudioArrangement(
     mediaType: "animation" as const,
   }));
   const snapshot = validateArrangementSnapshot({
-    schemaVersion: 1,
+    schemaVersion: 2,
     cells,
     gridRows: 2,
     gridCols: 2,

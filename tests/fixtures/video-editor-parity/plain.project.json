@@ -1,0 +1,283 @@
+{
+  "schemaVersion": 2,
+  "sequenceId": "seq",
+  "takes": [
+    {
+      "id": "a",
+      "label": "Take a",
+      "ref": {
+        "kind": "linked",
+        "url": "https://example.test/a.mp4"
+      },
+      "takeKey": "key-a",
+      "durationSeconds": 20
+    },
+    {
+      "id": "b",
+      "label": "Take b",
+      "ref": {
+        "kind": "linked",
+        "url": "https://example.test/b.mp4"
+      },
+      "takeKey": "key-b",
+      "durationSeconds": 20
+    }
+  ],
+  "images": [
+    {
+      "id": "img-1",
+      "label": "Logo",
+      "ref": {
+        "kind": "linked",
+        "url": "https://example.test/logo.png"
+      }
+    }
+  ],
+  "tracks": [
+    {
+      "id": "main",
+      "hidden": false,
+      "locked": false,
+      "items": [
+        {
+          "id": "v1",
+          "start": 0,
+          "duration": 5,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1
+          },
+          "opacity": 1,
+          "fadeIn": 0,
+          "fadeOut": 0,
+          "transitionOut": {
+            "duration": 0.8,
+            "type": "crossfade"
+          },
+          "anchor": null,
+          "fill": false,
+          "kind": "video",
+          "takeId": "a",
+          "sourceIn": 0,
+          "sourceOut": 5,
+          "speed": 1,
+          "fit": "cover",
+          "zoom": 1,
+          "panX": 0,
+          "panY": 0,
+          "rotation": 0,
+          "flip": true,
+          "volume": 1
+        },
+        {
+          "id": "v2",
+          "start": 0,
+          "duration": 6,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1
+          },
+          "opacity": 1,
+          "fadeIn": 0,
+          "fadeOut": 0,
+          "transitionOut": {
+            "duration": 1,
+            "type": "fade-black"
+          },
+          "anchor": null,
+          "fill": false,
+          "kind": "video",
+          "takeId": "b",
+          "sourceIn": 2,
+          "sourceOut": 8,
+          "speed": 1,
+          "fit": "cover",
+          "edge": {
+            "corners": 0.08,
+            "border": 0.01,
+            "borderColor": "gold",
+            "shadow": 0.6
+          },
+          "zoom": 1,
+          "panX": 0,
+          "panY": 0,
+          "rotation": 0,
+          "flip": false,
+          "volume": 1
+        },
+        {
+          "id": "c1",
+          "start": 0,
+          "duration": 2,
+          "box": {
+            "x": 0.1,
+            "y": 0.1,
+            "width": 0.8,
+            "height": 0.8
+          },
+          "opacity": 1,
+          "fadeIn": 0,
+          "fadeOut": 0,
+          "anchor": null,
+          "fill": false,
+          "keyframes": {
+            "box": [
+              {
+                "t": 0,
+                "value": {
+                  "x": 0.1,
+                  "y": 0.1,
+                  "width": 0.8,
+                  "height": 0.8
+                },
+                "easing": [
+                  0.42,
+                  0,
+                  0.58,
+                  1
+                ]
+              },
+              {
+                "t": 2,
+                "value": {
+                  "x": 0.2,
+                  "y": 0.2,
+                  "width": 0.6,
+                  "height": 0.6
+                },
+                "easing": "hold"
+              }
+            ]
+          },
+          "kind": "card"
+        }
+      ]
+    },
+    {
+      "id": "track-1",
+      "hidden": false,
+      "locked": false,
+      "items": [
+        {
+          "id": "t1",
+          "start": 0.5,
+          "duration": 3,
+          "box": {
+            "x": 0.07,
+            "y": 0.05,
+            "width": 0.86,
+            "height": 0.14
+          },
+          "opacity": 1,
+          "fadeIn": 0,
+          "fadeOut": 0,
+          "anchor": null,
+          "fill": false,
+          "kind": "text",
+          "text": "t1",
+          "size": "m"
+        },
+        {
+          "id": "t2",
+          "start": 6,
+          "duration": 4,
+          "box": {
+            "x": 0.07,
+            "y": 0.05,
+            "width": 0.86,
+            "height": 0.14
+          },
+          "opacity": 1,
+          "fadeIn": 0,
+          "fadeOut": 0,
+          "anchor": null,
+          "fill": false,
+          "keyframes": {
+            "opacity": [
+              {
+                "t": 0,
+                "value": 0,
+                "easing": [
+                  0.25,
+                  0.1,
+                  0.25,
+                  1
+                ]
+              },
+              {
+                "t": 1,
+                "value": 1,
+                "easing": "hold"
+              }
+            ]
+          },
+          "kind": "text",
+          "text": "t2",
+          "size": "m"
+        }
+      ]
+    },
+    {
+      "id": "track-2",
+      "hidden": false,
+      "locked": false,
+      "items": [
+        {
+          "id": "i1",
+          "start": 3,
+          "duration": 4,
+          "box": {
+            "x": 0.6,
+            "y": 0.1,
+            "width": 0.3,
+            "height": 0.3
+          },
+          "opacity": 1,
+          "fadeIn": 0.5,
+          "fadeOut": 0.5,
+          "anchor": null,
+          "fill": false,
+          "keyframes": {
+            "box": [
+              {
+                "t": 0,
+                "value": {
+                  "x": 0.6,
+                  "y": 0.1,
+                  "width": 0.3,
+                  "height": 0.3
+                },
+                "easing": [
+                  0.42,
+                  0,
+                  0.58,
+                  1
+                ]
+              },
+              {
+                "t": 3,
+                "value": {
+                  "x": 0.5,
+                  "y": 0.2,
+                  "width": 0.3,
+                  "height": 0.3
+                },
+                "easing": "hold"
+              }
+            ]
+          },
+          "kind": "image",
+          "imageId": "img-1"
+        }
+      ]
+    }
+  ],
+  "audio": "takes",
+  "canvas": "4:5",
+  "background": "blur",
+  "updatedAt": 1700000000000
+}

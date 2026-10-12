@@ -1,0 +1,117 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Goo tiles</title>
+<link rel="stylesheet" href="tiles.css"></head>
+<body>
+<h1>Goo · seven looks</h1>
+<p class="lede">A rope of liquid laid along the tip's last sweep, merged with the renderer's own metaball recipe (blur then contrast), so it gets a real gooey edge, a rim band in the palette's edge color, wet specular glints, and drips that hang off the body. Motion emission sets how thick the rope is, ambient emission how much it oozes and drips at rest, surface tension how long a drip necks, viscosity how slowly it falls, clarity how dark the interior stays, intensity the glow.</p>
+<div id="root"></div>
+<script type="module">
+import { W, H, lcg, ground, blob, hexToRgb, css, mix } from './kit.js';
+
+const PAL = {
+  classic: { core: '#3a7fd9', edge: '#6fb3ff', highlight: '#e8f4ff', puddle: '#2a5a9a' },
+  mercury: { core: '#9a9fa8', edge: '#d4d8df', highlight: '#ffffff', puddle: '#6a6e75' },
+  acid:    { core: '#7fd94a', edge: '#b8ff6f', highlight: '#e8ffc0', puddle: '#4a8a2a' },
+  blood:   { core: '#8a1818', edge: '#d93838', highlight: '#ff8080', puddle: '#4a0808' },
+  spirit:  { core: '#80ffe8', edge: '#c0fff4', highlight: '#ffffff', puddle: '#40c8a8' },
+};
+const PRESETS = [
+  { name: 'Classic',  patch: { palette: 'classic', ambientEmission: 0.4, motionEmission: 0.6, intensity: 0.6, clarity: 0.7, surfaceTension: 0.3, viscosity: 0 } },
+  { name: 'Fountain', patch: { palette: 'classic', ambientEmission: 0.9, motionEmission: 0.2, intensity: 0.7, clarity: 0.7, surfaceTension: 0.3, viscosity: 0 } },
+  { name: 'Whip',     patch: { palette: 'classic', ambientEmission: 0.0, motionEmission: 1.0, intensity: 0.8, clarity: 0.8, surfaceTension: 0.2, viscosity: 0 } },
+  { name: 'Mercury',  patch: { palette: 'mercury', ambientEmission: 0.3, motionEmission: 0.5, intensity: 0.7, clarity: 0.2, surfaceTension: 1.0, viscosity: 0.45 } },
+  { name: 'Acid',     patch: { palette: 'acid',    ambientEmission: 0.6, motionEmission: 0.6, intensity: 0.8, clarity: 0.6, surfaceTension: 0.5, viscosity: 0 } },
+  { name: 'Ritual',   patch: { palette: 'blood',   ambientEmission: 0.2, motionEmission: 0.3, intensity: 0.9, clarity: 0.4, surfaceTension: 0.8, viscosity: 0.3 } },
+  { name: 'Spirit',   patch: { palette: 'spirit',  ambientEmission: 0.7, motionEmission: 0.3, intensity: 0.5, clarity: 0.9, surfaceTension: 0.0, viscosity: 0 } },
+];
+
+// The sweep: tail lower-left, head (tip now) upper-right.
+const ARC = { x0: 110, y0: 190, cx: 330, cy: 20, x1: 600, y1: 120 };
+function arcAt(t) { const u = 1 - t; return { x: u*u*ARC.x0 + 2*u*t*ARC.cx + t*t*ARC.x1, y: u*u*ARC.y0 + 2*u*t*ARC.cy + t*t*ARC.y1 }; }
+
+/** Beads: the body rope along the path plus drips hanging below it. */
+function beads(p, rand) {
+  const out = [];
+  const thick = 14 + p.motionEmission * 24;           // head radius
+  const tailLen = 0.55 + p.motionEmission * 0.4;        // fraction of arc the body spans
+  const N = 70;
+  for (let i = 0; i <= N; i++) {
+    const t = 1 - (i / N) * tailLen;                    // 1 = head
+    const age = i / N;
+    const pos = arcAt(t);
+    // Taper: fat head necking to a thin tail; surface tension keeps beads rounder (lumpier).
+    const r = thick * (0.25 + 0.75 * Math.pow(1 - age, 0.9)) * (1 + (rand() - 0.5) * 0.3 * p.surfaceTension);
+    out.push({ x: pos.x, y: pos.y, r, body: true });
+  }
+  // Drips: ambient ooze lets beads leave the rope; viscosity/surface tension stretch them into teardrops.
+  const drips = Math.round(p.ambientEmission * 9);
+  for (let d = 0; d < drips; d++) {
+    const t = 0.15 + rand() * 0.8, pos = arcAt(1 - (1 - t) * tailLen);
+    const fall = 20 + rand() * 70 * (1 - p.viscosity * 0.6);
+    const neck = 1 + p.surfaceTension * 2.2 + p.viscosity * 1.5;
+    const r = Math.max(9, thick * (0.3 + rand() * 0.25));
+    // A teardrop is a chain of shrinking beads from the body down to the drop.
+    for (let k = 0; k <= 6; k++) {
+      const u = k / 6;
+      out.push({ x: pos.x + (rand() - 0.5) * 2, y: pos.y + fall * u, r: k === 6 ? r : r * (0.45 + 0.35 * (1 - u)) * Math.min(1.2, neck * 0.45), body: false });
+    }
+  }
+  return out;
+}
+
+function fieldPass(ctx, bs, blurPx, brightness, color) {
+  // The renderer's recipe runs on an opaque black field: blur bridges the
+  // beads, contrast snaps the result to a hard edge. Brightness becomes alpha.
+  const work = document.createElement('canvas'); work.width = W; work.height = H;
+  const w = work.getContext('2d');
+  w.fillStyle = '#000'; w.fillRect(0, 0, W, H); w.fillStyle = '#fff';
+  for (const b of bs) { w.beginPath(); w.arc(b.x, b.y, b.r, 0, Math.PI * 2); w.fill(); }
+  const thr = document.createElement('canvas'); thr.width = W; thr.height = H;
+  const t = thr.getContext('2d');
+  t.filter = `blur(${blurPx}px) brightness(${brightness}) contrast(14)`;
+  t.drawImage(work, 0, 0);
+  t.filter = 'none';
+  const img = t.getImageData(0, 0, W, H), d = img.data;
+  const [r, g, b] = (Array.isArray(color) ? color : hexToRgb(color)).map(v => Math.round(v * 255));
+  for (let i = 0; i < d.length; i += 4) { d[i + 3] = d[i]; d[i] = r; d[i + 1] = g; d[i + 2] = b; }
+  t.putImageData(img, 0, 0);
+  ctx.drawImage(thr, 0, 0);
+}
+
+function draw(ctx, p, rand) {
+  const pal = PAL[p.palette];
+  ground(ctx, [0.03, 0.03, 0.05]);
+  const bs = beads(p, rand);
+  // Glow under the body.
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (const b of bs) if (b.body) blob(ctx, b.x, b.y, b.r * 3.2, b.r * 3.2, hexToRgb(pal.edge), 0.05 * p.intensity);
+  ctx.restore();
+  // Three nested thresholds: rim band (edge), body (core), deep interior (darker as clarity drops).
+  fieldPass(ctx, bs, 10, 1.0, pal.edge);
+  fieldPass(ctx, bs, 10, 0.8, pal.core);
+  fieldPass(ctx, bs, 10, 0.62, mix(hexToRgb(pal.core), hexToRgb(pal.puddle), (1 - p.clarity) * 0.7));
+  // Wet specular glints: same offset on every bead, sparse.
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const hi = hexToRgb(pal.highlight);
+  bs.filter(b => b.body && b.r > 6 && rand() < 0.12).forEach(b => {
+    const k = 0.35 + rand() * 0.4;
+    blob(ctx, b.x - b.r * 0.35, b.y - b.r * 0.4, b.r * k, b.r * k * 0.7, hi, (0.6 + rand() * 0.4) * p.intensity);
+  });
+  bs.filter(b => !b.body && b.r > 7).forEach(b => blob(ctx, b.x - b.r * 0.3, b.y - b.r * 0.35, b.r * 0.35, b.r * 0.28, hi, 0.8 * p.intensity));
+  ctx.restore();
+}
+
+const root = document.getElementById('root');
+for (const preset of PRESETS) {
+  const p = preset.patch;
+  const row = document.createElement('div'); row.className = 'card';
+  row.innerHTML = `<h3>${preset.name} <small>${p.palette} · motion ${p.motionEmission} · ambient ${p.ambientEmission} · tension ${p.surfaceTension}</small></h3><div class="row"></div>`;
+  for (const cls of ['small', 'large']) {
+    const c = document.createElement('canvas'); c.width = W; c.height = H; c.className = cls;
+    draw(c.getContext('2d'), p, lcg(0x600 + preset.name.length * 977));
+    row.querySelector('.row').appendChild(c);
+  }
+  root.appendChild(row);
+}
+</script>
+</body></html>

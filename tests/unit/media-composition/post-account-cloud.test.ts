@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {

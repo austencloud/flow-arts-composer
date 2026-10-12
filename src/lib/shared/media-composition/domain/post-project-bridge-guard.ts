@@ -1,5 +1,5 @@
 import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
-import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import type { PostProject } from "@austencloud/video-editor/core";
 
 /**
  * Parts of a post the manifest bridge may not change: the media and timing

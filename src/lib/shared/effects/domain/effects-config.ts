@@ -15,7 +15,7 @@ import type {
 } from "#lib/shared/animation-engine/domain/types/fire-types.js";
 import type { LedSimulatorConfig } from "#lib/shared/animation-engine/domain/types/led-types.js";
 
-export const EFFECTS_CONFIG_VERSION = 40;
+export const EFFECTS_CONFIG_VERSION = 41;
 
 /** User-facing 2D Fire look. The renderer translates this into its internal profile. */
 export type FireRenderingStyle = "natural" | "liquid";
@@ -128,35 +128,39 @@ export interface CharcoalIntent {
 }
 
 export interface ZapIntent {
-  /** 0-1 - overall arc brightness + branch count. */
+  /** 0-1 - overall brightness, return strokes per strike, and plasma filament count. */
   intensity: number;
-  /** Hex string - color for the blue (left) hand's zap output. */
+  /**
+   * "prop" = each end of a bolt takes its prop's color, so the lightning
+   * blends from one prop to the other (default). "custom" = the two colors below.
+   */
+  colorMode: "prop" | "custom";
+  /** Hex string - the blue (left) hand's end when colorMode is "custom". */
   leftColor: string;
-  /** Hex string - color for the red (right) hand's zap output. */
+  /** Hex string - the red (right) hand's end when colorMode is "custom". */
   rightColor: string;
-  /** 1-30 strikes per second. */
+  /** 1-30 - roughly how many strikes per second each pair throws while still;
+   *  fast swings raise it. The rhythm is irregular, never a metronome. */
   frequency: number;
   /** Legacy topology toggle, superseded by `style`. Retained for back-compat. */
   mode: "arc" | "crackle";
-  /** 0-1 - fork probability per bolt (branching style). */
+  /** 0-1 - how readily a bolt forks (Storm and Web). */
   branching: number;
   /**
    * Discharge character:
    * "branching" = forking storm bolts between blue↔red tip pairs (default).
-   * "plasma" = thick Tesla-coil conduits shedding sputter sparks.
-   * "web" = live mesh across every tip with charge pulses on the edges.
+   * "plasma" = writhing plasma-globe filaments that snap and throw sparks.
+   * "web" = strike-lit mesh across every tip with a charge bead on each bolt.
    */
   style: "branching" | "plasma" | "web";
-  /** 0-1 - plasma conduit undulation SPEED. Low = slow calm bow, high = lively
-   *  (never the per-frame strobe the old hardcoded random gave). */
+  /** 0-1 - how fast the plasma filaments writhe. */
   wobbleRate: number;
-  /** 0-1 - plasma conduit bow AMPLITUDE (how far it bends off the axis). */
+  /** 0-1 - how far the plasma filaments sway off the straight line. */
   wobbleAmount: number;
-  /** 0-1 - glow halo size (drives shadowBlur). Decoupled from intensity so the
-   *  arc can be tightened or bloomed independently. */
+  /** 0-1 - width and strength of the colored glow around each bolt. */
   glow: number;
-  /** 0-1 - bolt-path roughness. Scales the jagged midpoint displacement
-   *  (storm/web) and the plasma crackle octave. */
+  /** 0-1 - bolt-path roughness: how jagged a Storm or Web bolt is, and how
+   *  finely a plasma filament crackles. */
   jitter: number;
 }
 
@@ -234,25 +238,24 @@ export interface BloomIntent {
 }
 
 /**
- * Goo: viscous luminous liquid streaming off the prop, its blobs merged by the
- * metaball blur+contrast threshold. Renamed from the earlier realistic-water
+ * Goo: thick glossy liquid hanging from each tip in a strand that stretches,
+ * necks and pinches off into drops. Renamed from the earlier realistic-water
  * effect (2026-06-28).
  *
  * The 2D and 3D renderers read different fields:
  * - 2D canvas (Goo2DRenderer) reads intensity, motionEmission, surfaceTension
- *   (as Viscosity), palette, customColor and trackingMode. It ignores
- *   ambientEmission, clarity, spewStyle, viscosity and gravity.
+ *   (as Viscosity), ambientEmission, gravity, palette, customColor and
+ *   trackingMode. It ignores clarity, spewStyle and viscosity.
  * - Pooled 3D viewer reads every field. The legacy WaterEmitter3D uses a
  *   simpler droplet path when the pooled scene-effects manager is absent.
  */
 export interface GooIntent {
-  /** 0-1. 3D only: a steady droplet rate that keeps flowing while the prop is
-   *  still. */
+  /** 0-1. A steady flow that keeps dripping while the prop is still. */
   ambientEmission: number;
-  /** 0-1. 2D: how thick the stream is. 3D: extra droplets that scale with tip
-   *  speed. */
+  /** 0-1. 2D: bulb size and how fast motion fills it. 3D: extra droplets that
+   *  scale with tip speed. */
   motionEmission: number;
-  /** 0-1. 2D: bead size and opacity. 3D: strand and droplet thickness. */
+  /** 0-1. 2D: bulb size and opacity. 3D: strand and droplet thickness. */
   intensity: number;
   /** Named color palette. "custom" uses customColor instead. */
   palette: "classic" | "mercury" | "acid" | "blood" | "spirit" | "custom";
@@ -260,11 +263,12 @@ export interface GooIntent {
   customColor: string;
   /** 0-1. 3D only: higher is more see-through. */
   clarity: number;
-  /** 0-1. 2D viscosity; 3D cohesion and resistance to strand breakup. */
+  /** 0-1. 2D viscosity (how long a strand clings before it drips); 3D
+   *  cohesion and resistance to strand breakup. */
   surfaceTension: number;
   /** 0-1. 3D resistance to stretching while liquid is connected. */
   viscosity: number;
-  /** 0-2. 3D downward gravity in Earth multiples. */
+  /** 0-2. Downward gravity in Earth multiples. */
   gravity: number;
   /** Which staff end(s) droplets track. */
   trackingMode: "left_end" | "right_end" | "both_ends";

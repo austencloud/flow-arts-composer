@@ -99,6 +99,35 @@ export function fitEffectRoster({
   };
 }
 
+/** Wider than any classic scrollbar (17px on Windows), so a scrollbar coming
+ *  and going cannot carry the roster across the picture threshold. */
+export const ROSTER_HOLD_WIDTH = 20;
+
+/**
+ * `fitEffectRoster` for a roster that already shows pictures. Pictures are
+ * taller than icons, so in a scrolling column they can bring in the scrollbar
+ * that narrows the card under the threshold, the shorter icons take it away
+ * again, and the grid swaps between the two every frame. So pictures stay until
+ * the card loses more than a scrollbar's width (or the names stop fitting), a
+ * few pixels smaller instead of turning back into icons.
+ */
+export function holdEffectRoster(
+  box: Parameters<typeof fitEffectRoster>[0]
+): EffectCatalogFit | null {
+  const fit = fitEffectRoster(box);
+  if (fit) return fit;
+  const held = fitEffectRoster({
+    ...box,
+    width: box.width + ROSTER_HOLD_WIDTH,
+  });
+  if (!held) return null;
+  const innerW =
+    (box.width - (held.cols - 1) * CATALOG_GAP) / held.cols - 2 * INSET;
+  // Two wide columns lose twice as much per tile, and the name stops fitting.
+  if (innerW < CATALOG_NAME_WIDTH) return null;
+  return { ...held, portrait: Math.floor(innerW) };
+}
+
 /** The roster with nothing on, filling the box. */
 export function fitEffectCatalog(
   box: EffectCatalogBox

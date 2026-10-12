@@ -210,4 +210,20 @@ export const staffMotionsContent: GuideBlock[] = [
     kind: "prose",
     html: "Halfway through the motion, the center of the staff is at the grid’s center point.",
   },
+
+  // Web only, not on the printed sheet: the note that was the standalone
+  // /guide/prospin-and-inspin page until 2026-10-11, in that page's words.
+  { kind: "heading", level: 2, text: "Prospin and Inspin" },
+  {
+    kind: "prose",
+    html: "Prospin and Inspin name the same motion: the prop rotates the same direction as the handpath. Most poi spinners say Inspin. The Kinetic Alphabet says Prospin.",
+  },
+  {
+    kind: "prose",
+    html: "Pro and anti are opposites, with and against, so the pair sorts every shift the way the motion does: with the handpath or against it.",
+  },
+  {
+    kind: "prose",
+    html: "In and out already name orientations here, like thumb in and thumb out, so Inspin reads like one of them. Pro isn't an orientation. Prospin only says which way the prop spins.",
+  },
 ];

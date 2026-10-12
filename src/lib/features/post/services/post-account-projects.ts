@@ -6,10 +6,8 @@ import {
   firestoreList,
 } from "#lib/shared/firestore/index.js";
 import { awaitAuthSettled } from "#lib/shared/auth/state/auth-state.svelte.js";
-import {
-  PostProjectSchema,
-  type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
+import { PostProjectSchema } from "#lib/shared/post-studio-plugin/index.js";
+import type { PostProject } from "@austencloud/video-editor/core";
 import {
   loadDiskPostDraft,
   loadPostDraft,

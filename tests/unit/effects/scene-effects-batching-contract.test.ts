@@ -37,7 +37,11 @@ const BLOOM_MATERIAL = readFileSync(
   "utf8"
 );
 const ZAP = readFileSync(
-  resolve("src/lib/shared/3d/effects/energy/ElectricityArc.svelte"),
+  resolve("src/lib/shared/3d/effects/energy/zap-discharge-3d.ts"),
+  "utf8"
+);
+const ZAP_MOUNT = readFileSync(
+  resolve("src/lib/shared/3d/effects/energy/ZapDischarge3D.svelte"),
   "utf8"
 );
 
@@ -112,11 +116,12 @@ describe("scene-level particle batching contract", () => {
   });
 
   it("rewrites Zap's fixed GPU buffers instead of replacing geometries", () => {
-    expect(ZAP).toContain("createDynamicGeometry");
-    expect(ZAP).toContain("writeLineStrip");
-    expect(ZAP).toContain("writeLineSegments");
-    expect(ZAP).toContain("<T.LineSegments geometry={branchGeometry}>");
+    expect(ZAP).toContain("DynamicDrawUsage");
+    expect(ZAP).toContain("addUpdateRange");
+    expect(ZAP).toContain("setDrawRange(0, this.indexCount)");
     expect(ZAP.match(/new BufferGeometry\(\)/g)).toHaveLength(1);
+    // Ribbons, not THREE.Line: WebGL ignores line width.
+    expect(ZAP).not.toMatch(/new Line(Segments)?\(/);
   });
 
   it("routes Bloom through one scene batch with real optical controls", () => {
@@ -161,7 +166,8 @@ describe("scene-level particle batching contract", () => {
     );
     expect(LAYER).toContain("enabled={zapEnabled && isPlaying}");
     expect(LAYER).toContain("{#if ghost3D}");
-    expect(ZAP).not.toContain("<T.PointLight");
+    expect(ZAP_MOUNT).not.toContain("<T.PointLight");
+    expect(ZAP).not.toContain("PointLight");
   });
 
   it("does not leave the retired duplicate fire emitter in the tree", () => {

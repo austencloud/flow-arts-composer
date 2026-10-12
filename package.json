@@ -1,6 +1,6 @@
 {
   "name": "@tka/composer",
-  "version": "0.45.0",
+  "version": "0.46.0",
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
@@ -175,7 +175,7 @@
     "protobufjs": ">=7.5.5",
     "fast-xml-parser": ">=4.5.4",
     "basic-ftp": ">=5.2.0",
-    "devalue": ">=5.6.4",
+    "devalue": "$devalue",
     "three": "$three",
     "zod": "$zod",
     "threlte-postprocessing": {
@@ -323,8 +323,9 @@
     "@austencloud/media-tagging-ui": "^0.1.0",
     "@austencloud/phone-sign-in": "file:vendor/austencloud-phone-sign-in-0.1.0.tgz",
     "@austencloud/scene-3d": "^0.1.6",
-    "@austencloud/sidebar": "^1.0.1",
+    "@austencloud/sidebar": "file:vendor/austencloud-sidebar-1.1.0.tgz",
     "@austencloud/theme": "^0.1.0",
+    "@austencloud/video-editor": "file:vendor/austencloud-video-editor-0.1.0.tgz",
     "@capacitor-firebase/authentication": "8.3.0",
     "@capacitor/android": "^8.4.2",
     "@capacitor/app": "^8.1.0",

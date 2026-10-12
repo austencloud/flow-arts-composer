@@ -1,5 +1,5 @@
 import type { SavedFeatureExport } from "#lib/shared/media-composition/domain/feature-video-export.js";
-import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import type { PostProject } from "@austencloud/video-editor/core";
 
 const ENDPOINT = "/api/dev/post-project";
 

@@ -20,6 +20,7 @@ import { SMOKE_PALETTES } from "../domain/smoke-palettes";
 describe("resolveZap2D - per-hand color", () => {
   const baseIntent = (): ZapIntent => ({
     intensity: 0.7,
+    colorMode: "custom",
     leftColor: "#ff0000",
     rightColor: "#0000ff",
     frequency: 12,
@@ -38,11 +39,14 @@ describe("resolveZap2D - per-hand color", () => {
     expect(out.rightColor).toBe("#0000ff");
   });
 
-  it("derives glowBlur from the glow knob, not intensity", () => {
+  it("derives the halo from the glow knob, not intensity", () => {
     const dim = resolveZap2D({ ...baseIntent(), glow: 0, intensity: 1 });
     const bright = resolveZap2D({ ...baseIntent(), glow: 1, intensity: 0 });
-    expect(bright.glowBlur).toBeGreaterThan(dim.glowBlur); // tracks glow…
-    expect(dim.glowBlur).toBe(6); // …and is independent of intensity (6 + glow*22)
+    expect(bright.haloWidth).toBeGreaterThan(dim.haloWidth);
+    expect(bright.haloAlpha).toBeGreaterThan(dim.haloAlpha);
+    expect(
+      resolveZap2D({ ...baseIntent(), glow: 0, intensity: 0 }).haloWidth
+    ).toBe(dim.haloWidth);
   });
 });
 
@@ -143,7 +147,7 @@ describe("resolvePetals2D - palette resolution + defaults", () => {
     expect(out.resolvedPalette.sprites.length).toBeGreaterThan(0);
     expect(out.poolSize).toBeGreaterThan(0);
     expect(out.ambientSpawnRate).toBeGreaterThan(0);
-    expect(out.motionSpawnRate).toBeGreaterThan(0);
+    expect(out.motionDensity).toBeGreaterThan(0);
     expect(out.fallBaseSpeed).toBeGreaterThan(0);
     // Airstream knobs pass through from intent.
     expect(out.carry).toBe(0.55);

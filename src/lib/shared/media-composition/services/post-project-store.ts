@@ -1,11 +1,20 @@
 import {
-  PostProjectSchema,
+  createDeviceStore,
+  type DeviceStoreKeys,
+  type SaveResult,
+  type StoreScope,
+} from "@austencloud/video-editor";
+import type { PostProject } from "@austencloud/video-editor/core";
+import {
   createEmptyPostProject,
-  type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
+  tkaPlugin,
+} from "#lib/shared/post-studio-plugin/index.js";
 import { migratePostPlan } from "#lib/shared/media-composition/domain/post-project-migration.js";
 import { loadPostPlan } from "#lib/shared/media-composition/services/post-plan-store.js";
+import {
+  parsePostTimingEffect,
+  type PostTimingEffect,
+} from "#lib/shared/media-composition/services/post-editor-history-store.js";
 import { auth } from "#lib/shared/auth/firebase.js";
 
 /**
@@ -16,22 +25,7 @@ import { auth } from "#lib/shared/auth/firebase.js";
 
 const PREFIX = "tka:post-studio:project:v2:";
 const CLAIM_KEY = "tka:post-studio:legacy-owner:v1";
-export type SaveResult = { ok: true } | { ok: false; error: string };
-
-/** Keep the previous edit recoverable across reloads when importing a draft. */
-export function backupPostProjectBeforeImport(project: PostProject): void {
-  const store = storage();
-  if (!store)
-    throw new Error(
-      "Device storage is unavailable. The current post was kept."
-    );
-  store.setItem(
-    auth.currentUser && !auth.currentUser.isAnonymous
-      ? `${projectKey(project.sequenceId)}:before-import`
-      : `${PREFIX}before-import:${project.sequenceId}`,
-    JSON.stringify(project)
-  );
-}
+export type { SaveResult };
 
 function storage(): Storage | null {
   try {
@@ -41,17 +35,40 @@ function storage(): Storage | null {
   }
 }
 
-function projectKey(sequenceId: string): string {
-  const uid = auth.currentUser && !auth.currentUser.isAnonymous ? auth.currentUser.uid : null;
-  return uid
-    ? `${PREFIX}account:${uid}:${sequenceId}`
-    : legacyPostOwner()
-      ? `${PREFIX}guest:${sequenceId}`
-      : `${PREFIX}${sequenceId}`;
+/** account:<uid> when signed in with an account, guest when device posts were claimed, else device. */
+export function postOwnerId(): string {
+  const user = auth.currentUser;
+  if (user && !user.isAnonymous) return `account:${user.uid}`;
+  return legacyPostOwner() ? "guest" : "device";
 }
 
+export const TKA_DEVICE_KEYS: DeviceStoreKeys = {
+  project: ({ ownerId, subjectId }) =>
+    ownerId === "device"
+      ? `${PREFIX}${subjectId}`
+      : `${PREFIX}${ownerId}:${subjectId}`,
+  previous: (scope) =>
+    scope.ownerId === "device"
+      ? `${PREFIX}previous:${scope.subjectId}`
+      : `${TKA_DEVICE_KEYS.project(scope)}:previous`,
+  beforeImport: (scope) =>
+    scope.ownerId.startsWith("account:")
+      ? `${TKA_DEVICE_KEYS.project(scope)}:before-import`
+      : `${PREFIX}before-import:${scope.subjectId}`,
+  history: ({ subjectId }) => `tka:post-studio:history:v1:${subjectId}`,
+  isSpareCopy: (key) =>
+    key.startsWith(PREFIX) &&
+    (key.endsWith(":previous") || key.startsWith(`${PREFIX}previous:`)),
+};
+
 export function legacyPostOwner(): string | null {
-  return storage()?.getItem(CLAIM_KEY) ?? null;
+  try {
+    return storage()?.getItem(CLAIM_KEY) ?? null;
+  } catch {
+    // A storage that throws on read counts as no claim, so a signed-out user
+    // can still open and save posts instead of every call throwing.
+    return null;
+  }
 }
 
 export function claimLegacyPosts(uid: string): void {
@@ -73,36 +90,32 @@ export function accountPostProjectKeys(uid: string): string[] {
       !key.endsWith(":previous") && !key.endsWith(":before-import"));
 }
 
+const device = createDeviceStore<PostTimingEffect>({
+  plugin: tkaPlugin,
+  keys: TKA_DEVICE_KEYS,
+  // Today's openPostProject after its loadPostProject call: a v1 plan migrated, else an empty post.
+  openFallback: ({ subjectId }, now) => {
+    const plan = loadPostPlan(subjectId);
+    return plan
+      ? migratePostPlan(plan, { now })
+      : createEmptyPostProject({ sequenceId: subjectId, now });
+  },
+  parseEffect: parsePostTimingEffect,
+  volatileFields: ["timings"],
+});
+
+const scopeFor = (sequenceId: string): StoreScope => ({
+  ownerId: postOwnerId(),
+  subjectId: sequenceId,
+});
+
+/** Keep the previous edit recoverable across reloads when importing a draft. */
+export function backupPostProjectBeforeImport(project: PostProject): void {
+  device.backupBeforeImport(scopeFor(project.sequenceId), project);
+}
+
 export function loadPostProject(sequenceId: string): PostProject | null {
-  const store = storage();
-  if (!store) return null;
-  try {
-    const raw = store.getItem(projectKey(sequenceId));
-    if (!raw) return null;
-    const parsed = PostProjectSchema.safeParse(JSON.parse(raw));
-    if (!parsed.success || parsed.data.sequenceId !== sequenceId) return null;
-    // A project saved before an edit that changes how normalizing works (or
-    // one written by hand for a test) may not already be laid out; every
-    // reader gets the current rules applied rather than stale positions.
-    return normalizeProject(parsed.data);
-  } catch {
-    return null;
-  }
-}
-
-/** Spare copies of earlier saves, which give way when storage is full. */
-function isSpareCopy(key: string): boolean {
-  return (
-    key.startsWith(PREFIX) &&
-    (key.endsWith(":previous") || key.startsWith(`${PREFIX}previous:`))
-  );
-}
-
-function dropSpareCopies(store: Storage, keep: string): void {
-  const spare = Array.from({ length: store.length }, (_, index) =>
-    store.key(index)
-  ).filter((key): key is string => !!key && key !== keep && isSpareCopy(key));
-  for (const key of spare) store.removeItem(key);
+  return device.loadProject(scopeFor(sequenceId));
 }
 
 /**
@@ -111,57 +124,10 @@ function dropSpareCopies(store: Storage, keep: string): void {
  * spare copy of this post is kept only when it still fits.
  */
 export function savePostProject(project: PostProject): SaveResult {
-  const store = storage();
-  if (!store) return { ok: false, error: "Device storage is unavailable." };
-  try {
-    const key = projectKey(project.sequenceId);
-    const spareKey =
-      (auth.currentUser && !auth.currentUser.isAnonymous) || legacyPostOwner()
-        ? `${key}:previous`
-        : `${PREFIX}previous:${project.sequenceId}`;
-    const next = JSON.stringify(project);
-    const previous = store.getItem(key);
-    try {
-      store.setItem(key, next);
-    } catch {
-      dropSpareCopies(store, spareKey);
-      store.removeItem(spareKey);
-      store.setItem(key, next);
-    }
-    if (previous !== null && previous !== next) {
-      try {
-        store.setItem(spareKey, previous);
-      } catch {
-        // No room for a spare copy; the post itself is saved.
-        store.removeItem(spareKey);
-      }
-    }
-    if (store.getItem(key) !== next) {
-      return {
-        ok: false,
-        error: "The post could not be verified in device storage.",
-      };
-    }
-    return { ok: true };
-  } catch (cause) {
-    return {
-      ok: false,
-      error:
-        cause &&
-        typeof cause === "object" &&
-        "message" in cause &&
-        typeof cause.message === "string"
-          ? cause.message
-          : "The post could not be saved on this device.",
-    };
-  }
+  return device.saveProject(scopeFor(project.sequenceId), project);
 }
 
 /** The saved v2 project, else a v1 plan migrated, else an empty project. */
 export function openPostProject(sequenceId: string, now: number): PostProject {
-  const saved = loadPostProject(sequenceId);
-  if (saved) return saved;
-  const plan = loadPostPlan(sequenceId);
-  if (plan) return migratePostPlan(plan, { now });
-  return createEmptyPostProject({ sequenceId, now });
+  return device.openProject(scopeFor(sequenceId), now);
 }

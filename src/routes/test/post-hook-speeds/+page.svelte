@@ -9,7 +9,7 @@
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import PostStudioSequenceAnimationLayer from "#lib/shared/share/components/post-studio/PostStudioSequenceAnimationLayer.svelte";
+  import PostStudioSequenceAnimationLayer from "#lib/shared/post-studio-plugin/ui/PostStudioSequenceAnimationLayer.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { hydrateSequence } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
   import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
@@ -18,12 +18,10 @@
   import {
     DEFAULT_TUNNEL_HOOK,
     tunnelHookArrival,
-  } from "#lib/shared/media-composition/domain/tunnel-hook.js";
-  import {
     sampleEasing,
     type PostEasingPresetId,
     EASING_PRESETS,
-  } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+  } from "@austencloud/video-editor/core";
 
   interface Variant {
     id: string;

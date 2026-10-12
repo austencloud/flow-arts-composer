@@ -7,8 +7,9 @@ const DEFAULT_SIZE = { width: 1920, height: 1080 };
 
 /**
  * Runs in the page: the `index`th element matching `selector` that is on
- * screen and not inert, as the point the pointer aims at. With `hover`, it
- * answers instead whether the page's own hover reached that element.
+ * screen and not inert, as the point the pointer aims at and the element's
+ * box. With `hover`, it answers instead whether the page's own hover reached
+ * that element.
  */
 function onScreenMatch({ selector, index, hover }) {
   const el = [...document.querySelectorAll(selector)].filter((e) => {
@@ -26,7 +27,11 @@ function onScreenMatch({ selector, index, hover }) {
   if (hover) return el?.matches(":hover") ?? false;
   if (!el) throw Error(`Missing visible target ${selector} #${index}`);
   const r = el.getBoundingClientRect();
-  return { x: r.x + r.width * 0.65, y: r.y + r.height * 0.65 };
+  return {
+    x: r.x + r.width * 0.65,
+    y: r.y + r.height * 0.65,
+    rect: { x: r.x, y: r.y, width: r.width, height: r.height },
+  };
 }
 
 /**
@@ -83,8 +88,12 @@ export function createDirector(page, cdp, root, options = {}) {
     } while (Date.now() < until);
   }
   let pointer = null;
+  // The box of the element the pointer last aimed at, in CSS pixels, logged
+  // with each event so an editor can frame the control that was used.
+  let aimed = null;
   let events = [];
   let started = 0;
+  const box = () => (aimed ? { rect: aimed } : {});
 
   async function restPoint() {
     const view = await page.evaluate(() => ({
@@ -133,8 +142,13 @@ export function createDirector(page, cdp, root, options = {}) {
       const r = el.getBoundingClientRect();
       if (!r.width || !r.height || el.closest("[inert]"))
         throw Error("Target is not visible");
-      return { x: r.x + r.width * 0.65, y: r.y + r.height * 0.65 };
+      return {
+        x: r.x + r.width * 0.65,
+        y: r.y + r.height * 0.65,
+        rect: { x: r.x, y: r.y, width: r.width, height: r.height },
+      };
     }, label);
+    aimed = rect.rect ?? null;
     await move(rect.x, rect.y);
     await wait(240);
     const hovered = await page.evaluate(
@@ -174,6 +188,7 @@ export function createDirector(page, cdp, root, options = {}) {
       action: "click",
       time: (Date.now() - started) / 1000,
       ...pointer,
+      ...box(),
       hover: true,
     });
     await press();
@@ -193,6 +208,7 @@ export function createDirector(page, cdp, root, options = {}) {
       value,
       time: (Date.now() - started) / 1000,
       ...pointer,
+      ...box(),
       hover: true,
     });
   }
@@ -216,6 +232,7 @@ export function createDirector(page, cdp, root, options = {}) {
   async function pick(selector, index = 0) {
     const label = `${selector} #${index}`;
     const rect = await page.evaluate(onScreenMatch, { selector, index });
+    aimed = rect.rect ?? null;
     await move(rect.x, rect.y);
     await wait(240);
     const hovered = await page.evaluate(onScreenMatch, {
@@ -229,9 +246,46 @@ export function createDirector(page, cdp, root, options = {}) {
       action: "click",
       time: (Date.now() - started) / 1000,
       ...pointer,
+      ...box(),
       hover: true,
     });
     await press();
+  }
+
+  /**
+   * Clicks the `index`th on-screen text field matching `selector`, types
+   * `text` into it a key at a time, `perKeyMs` apart, so the letters appear
+   * as a person would type them, and presses Enter when `enter` is set.
+   */
+  async function type(
+    selector,
+    text,
+    { index = 0, perKeyMs = 140, enter = false } = {}
+  ) {
+    await pick(selector, index);
+    for (const key of String(text)) {
+      await cdp.send("Input.dispatchKeyEvent", {
+        type: "keyDown",
+        key,
+        text: key,
+      });
+      await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", key });
+      await wait(perKeyMs);
+    }
+    events.push({
+      label: `${selector} #${index}`,
+      action: "type",
+      value: String(text),
+      time: (Date.now() - started) / 1000,
+      ...pointer,
+      ...box(),
+      hover: true,
+    });
+    if (!enter) return;
+    const enterKey = { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 };
+    await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", ...enterKey });
+    await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", ...enterKey });
+    await wait(200);
   }
 
   async function mountPointer() {
@@ -251,8 +305,13 @@ export function createDirector(page, cdp, root, options = {}) {
       );
       if (!el) throw Error("No visible animation canvas");
       const r = el.getBoundingClientRect();
-      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      return {
+        x: r.x + r.width / 2,
+        y: r.y + r.height / 2,
+        rect: { x: r.x, y: r.y, width: r.width, height: r.height },
+      };
     });
+    aimed = point.rect ?? null;
     await move(point.x, point.y);
     await wait(240);
     const hovered = await page.evaluate(
@@ -264,6 +323,7 @@ export function createDirector(page, cdp, root, options = {}) {
       action: "click",
       time: (Date.now() - started) / 1000,
       ...pointer,
+      ...box(),
       hover: true,
     });
     await press();
@@ -275,6 +335,7 @@ export function createDirector(page, cdp, root, options = {}) {
     const rest = await restPoint();
     await move(rest.x, rest.y);
     events = [];
+    aimed = null;
     const initial = await cdp.readEvents({ methods: ["Page.screencastFrame"] });
     const frames = [];
     recording = { dir, frames, cursor: initial.cursor };
@@ -313,6 +374,17 @@ export function createDirector(page, cdp, root, options = {}) {
       url: await Promise.resolve()
         .then(() => page.url())
         .catch(() => null),
+      // The page's size in CSS pixels and its pixel density, so event
+      // positions convert to shares of the recorded frame.
+      viewport: await Promise.resolve()
+        .then(() =>
+          page.evaluate(() => ({
+            width: innerWidth,
+            height: innerHeight,
+            deviceScaleFactor: devicePixelRatio,
+          }))
+        )
+        .catch(() => null),
       snapshot: await Promise.resolve()
         .then(() => page.snapshot())
         .catch(() => null),
@@ -328,5 +400,16 @@ export function createDirector(page, cdp, root, options = {}) {
       events: events.map(({ label, time, hover }) => ({ label, time, hover })),
     };
   }
-  return { wait, move, click, fill, cell, pick, canvas, mountPointer, shot };
+  return {
+    wait,
+    move,
+    click,
+    fill,
+    cell,
+    pick,
+    type,
+    canvas,
+    mountPointer,
+    shot,
+  };
 }

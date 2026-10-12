@@ -9,10 +9,7 @@ import {
   mappingPreviewAppearance,
   nextMappedLanding,
 } from "#lib/shared/share/components/post-studio/builder/post-timing-animation.js";
-import {
-  mainItems,
-  timingVideoAt,
-} from "#lib/shared/media-composition/domain/post-project.js";
+import { mainItems, timingVideoAt } from "@austencloud/video-editor/core";
 import { overlay, project, video } from "./post-project-fixtures";
 
 function mappedTiming(hold: number, split?: number) {

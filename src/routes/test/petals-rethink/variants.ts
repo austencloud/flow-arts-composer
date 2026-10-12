@@ -421,7 +421,7 @@ class BaselineVariant implements PetalVariant {
         poolSize: POOL_CAP,
         baseSize: opts.baseSize,
         ambientSpawnRate: 2 * opts.density,
-        motionSpawnRate: 34 * opts.density,
+        motionDensity: 9 * opts.density,
       }
     );
     const emitters: EmitterTip[] = [

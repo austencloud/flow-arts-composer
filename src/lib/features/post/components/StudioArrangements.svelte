@@ -1,14 +1,40 @@
 <script lang="ts">
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import type { Composition } from "#lib/shared/animation-engine/domain/compose-types.js";
+  import {
+    withoutImportedCompositions,
+    type StudioLibraryEntry,
+  } from "./studio-library-entry.js";
 
-  let { onopen }: { onopen: (id: string) => void } = $props();
+  /**
+   * Saved Compose arrangements that are not Studio projects yet, plus the
+   * older timeline import. Shown under the All and Arrangements filters;
+   * `oncount` reports its rows for the Arrangements chip whichever filter is on.
+   */
+  let {
+    onopen,
+    entries = [],
+    visible = true,
+    oncount,
+  }: {
+    onopen: (id: string) => void;
+    /** The Library's cards; a composition one of them came from is left out. */
+    entries?: readonly StudioLibraryEntry[];
+    visible?: boolean;
+    oncount?: (rows: number) => void;
+  } = $props();
   let owned = $state<Composition[]>([]);
   let legacy = $state<Composition[]>([]);
   let loading = $state(true);
   let busy = $state(false);
   let error = $state<string | null>(null);
   let hasTimeline = $state(false);
+  const shownOwned = $derived(withoutImportedCompositions(owned, entries));
+  const shownLegacy = $derived(withoutImportedCompositions(legacy, entries));
+
+  $effect(() => {
+    oncount?.(shownOwned.length + shownLegacy.length);
+  });
 
   $effect(() => {
     if (!authState.initialized) return;
@@ -81,7 +107,7 @@
   }
 </script>
 
-{#if owned.length || legacy.length || hasTimeline || error}
+{#if visible && (shownOwned.length || shownLegacy.length || hasTimeline || error)}
   <section aria-label="Older Compose projects" class="arrangements">
     <div class="arrangement-heading">
       <div>
@@ -94,9 +120,9 @@
         Loading saved arrangements…
       </p>{/if}
     {#if busy}<p class="status" role="status">Opening arrangement…</p>{/if}
-    {#if owned.length}
+    {#if shownOwned.length}
       <ul>
-        {#each owned as composition (composition.id)}
+        {#each shownOwned as composition (composition.id)}
           <li>
             <button
               type="button"
@@ -113,11 +139,11 @@
         {/each}
       </ul>
     {/if}
-    {#if legacy.length}
+    {#if shownLegacy.length}
       <h3>Older arrangements on this device</h3>
       <p>Choose one to import a copy into Studio. The original stays here.</p>
       <ul>
-        {#each legacy as composition (composition.id)}
+        {#each shownLegacy as composition (composition.id)}
           <li>
             <button
               type="button"

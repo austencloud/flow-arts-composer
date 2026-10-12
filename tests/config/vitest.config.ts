@@ -125,5 +125,8 @@ export default defineConfig({
 
   resolve: {
     conditions: ["browser"],
+    // One copy of each, as in vite.config.ts: @austencloud/video-editor
+    // shares the app's svelte, mediabunny, zod and dexie.
+    dedupe: ["svelte", "mediabunny", "zod", "dexie"],
   },
 });

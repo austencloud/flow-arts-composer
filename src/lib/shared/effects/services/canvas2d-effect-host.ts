@@ -77,9 +77,9 @@ export function isCanvas2DHostedEffect(
 }
 
 /**
- * The three shapes the renderers take. Zap and bloom read only the tips they
- * are handed; the rest advance an internal clock; pulse also wants a playback
- * position for its overtone schedule.
+ * The three shapes the renderers take. Bloom reads only the tips it is
+ * handed; the rest, Zap included, advance an internal clock; pulse also wants
+ * a playback position for its overtone schedule.
  */
 type Drawer = (
   ctx: CanvasRenderingContext2D,
@@ -114,10 +114,10 @@ function makeDrawers(): Record<Canvas2DHostedEffect, Drawer> {
   const pulse = lazily(() => new Pulse2DRenderer());
 
   return {
-    zap: (ctx, c, tips, _dt, scale) =>
-      zap().render(ctx, resolveZap2D(c.zap), tips, scale),
-    bloom: (ctx, c, tips, _dt, scale) =>
-      bloom().render(ctx, resolveBloom2D(c.bloom), tips, scale),
+    zap: (ctx, c, tips, dt, scale) =>
+      zap().render(ctx, resolveZap2D(c.zap), tips, dt, scale),
+    bloom: (ctx, c, tips, dt, scale) =>
+      bloom().render(ctx, resolveBloom2D(c.bloom), tips, dt, scale),
     sparkles: (ctx, c, tips, dt, scale) =>
       sparkles().render(ctx, resolveSparkles2D(c.sparkles), tips, dt, scale),
     goo: (ctx, c, tips, dt, scale) =>

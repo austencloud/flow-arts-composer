@@ -448,6 +448,7 @@ function createQuadTipEffect(
             ctx as unknown as CanvasRenderingContext2D,
             p as any,
             tips,
+            dt,
             scale
           );
           break;
@@ -467,7 +468,7 @@ function createBloomRenderer(canvasSize: number): WorkerEffectRenderer {
   const scale = computeEffectScale(canvasSize, canvasSize);
 
   return {
-    renderFrame(ctx, cs, left, right, leftVB, rightVB) {
+    renderFrame(ctx, cs, left, right, leftVB, rightVB, _frameIndex, dt) {
       const tips: BloomTipInput[] = [];
       const bt = computeTips(cs, left, leftVB);
       const rt = computeTips(cs, right, rightVB);
@@ -509,6 +510,7 @@ function createBloomRenderer(canvasSize: number): WorkerEffectRenderer {
         ctx as unknown as CanvasRenderingContext2D,
         params,
         tips,
+        dt,
         scale
       );
     },

@@ -14,10 +14,38 @@ type PosBag = {
 /** Convert the legacy 4-slot bag to the flat emitter contract (base props). */
 function toEmitters(s: PosBag): EmitterTip[] {
   const out: EmitterTip[] = [];
-  if (s.leftPosA) out.push({ ...s.leftPosA, propIndex: 0, tipIndex: 0, end: "A", color: "#3a7fd9" });
-  if (s.leftPosB) out.push({ ...s.leftPosB, propIndex: 0, tipIndex: 1, end: "B", color: "#3a7fd9" });
-  if (s.rightPosA) out.push({ ...s.rightPosA, propIndex: 1, tipIndex: 0, end: "A", color: "#d94f4f" });
-  if (s.rightPosB) out.push({ ...s.rightPosB, propIndex: 1, tipIndex: 1, end: "B", color: "#d94f4f" });
+  if (s.leftPosA)
+    out.push({
+      ...s.leftPosA,
+      propIndex: 0,
+      tipIndex: 0,
+      end: "A",
+      color: "#3a7fd9",
+    });
+  if (s.leftPosB)
+    out.push({
+      ...s.leftPosB,
+      propIndex: 0,
+      tipIndex: 1,
+      end: "B",
+      color: "#3a7fd9",
+    });
+  if (s.rightPosA)
+    out.push({
+      ...s.rightPosA,
+      propIndex: 1,
+      tipIndex: 0,
+      end: "A",
+      color: "#d94f4f",
+    });
+  if (s.rightPosB)
+    out.push({
+      ...s.rightPosB,
+      propIndex: 1,
+      tipIndex: 1,
+      end: "B",
+      color: "#d94f4f",
+    });
   return out;
 }
 
@@ -73,8 +101,7 @@ function makeParams(overrides: Partial<Petals2DParams> = {}): Petals2DParams {
     poolSize: 256,
     baseSize: 10,
     ambientSpawnRate: 5,
-    motionSpawnRate: 25,
-    motionReferenceSpeed: 3.0,
+    motionDensity: 9,
     fallBaseSpeed: 140,
     blendMode: "source-over",
     ...overrides,
@@ -110,9 +137,13 @@ describe("Petals2DRenderer", () => {
       r.render(ctx, params, ALL_TIPS, 1 / 60);
     }
     // Each petal draws a silhouette (fill) - we should have many fills.
-    expect((ctx.fill as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(0);
+    expect(
+      (ctx.fill as ReturnType<typeof vi.fn>).mock.calls.length
+    ).toBeGreaterThan(0);
     // setTransform called per petal per frame (replaces save/translate/rotate).
-    expect((ctx.setTransform as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(0);
+    expect(
+      (ctx.setTransform as ReturnType<typeof vi.fn>).mock.calls.length
+    ).toBeGreaterThan(0);
   });
 
   it("spawns from tunnel layer emitters (propIndex >= 2)", () => {
@@ -129,8 +160,10 @@ describe("Petals2DRenderer", () => {
       rBase.render(ctxBase, params, ALL_TIPS, 1 / 60);
       rLayered.render(ctxLayered, params, WITH_LAYER, 1 / 60);
     }
-    const baseFills = (ctxBase.fill as ReturnType<typeof vi.fn>).mock.calls.length;
-    const layeredFills = (ctxLayered.fill as ReturnType<typeof vi.fn>).mock.calls.length;
+    const baseFills = (ctxBase.fill as ReturnType<typeof vi.fn>).mock.calls
+      .length;
+    const layeredFills = (ctxLayered.fill as ReturnType<typeof vi.fn>).mock
+      .calls.length;
     // 4 base ends vs 4 base + 4 layer ends ⇒ strictly more silhouette fills.
     // Confirms layer emitters (propIndex >= 2) actually spawn petals.
     expect(layeredFills).toBeGreaterThan(baseFills);
@@ -172,7 +205,9 @@ describe("Petals2DRenderer", () => {
     for (let i = 0; i < 60; i++) {
       r.render(ctx, params, ALL_TIPS, 1 / 60);
     }
-    expect((ctx.fill as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(0);
+    expect(
+      (ctx.fill as ReturnType<typeof vi.fn>).mock.calls.length
+    ).toBeGreaterThan(0);
   });
 
   it("caps pool size", () => {
@@ -212,7 +247,9 @@ describe("Petals2DRenderer", () => {
     }
     // With 200 spawns/sec over 0.5s and 20% ember chance, we expect some
     // extra strokes beyond the zero baseline of non-ash palettes.
-    expect((ctx.stroke as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(0);
+    expect(
+      (ctx.stroke as ReturnType<typeof vi.fn>).mock.calls.length
+    ).toBeGreaterThan(0);
   });
 
   it("petals fall (positive vy - screen-space downward)", () => {
@@ -229,8 +266,9 @@ describe("Petals2DRenderer", () => {
     for (let i = 0; i < 10; i++) {
       r.render(ctx, params, ALL_TIPS, 1 / 60);
     }
-    const stCalls = (ctx.setTransform as ReturnType<typeof vi.fn>).mock.calls
-      .filter((c) => c.length >= 6);
+    const stCalls = (
+      ctx.setTransform as ReturnType<typeof vi.fn>
+    ).mock.calls.filter((c) => c.length >= 6);
     const ys = stCalls.map((c) => c[5] as number);
     const maxY = Math.max(...ys);
     // Tip y is 100; after several frames, petals should have moved down.

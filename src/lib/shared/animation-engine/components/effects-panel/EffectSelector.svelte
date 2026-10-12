@@ -4,6 +4,8 @@
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import type { Snippet } from "svelte";
   import { EFFECTS, type EffectMeta } from "./effect-registry";
+  import { effectInk } from "./effect-ink";
+  import { getThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
   import {
     CATALOG_CAPTION_HEIGHT,
     CATALOG_INNER_GAP,
@@ -123,7 +125,7 @@
           ? getActiveLabel(effect)
           : effectUiLabel(effect.label)}
         title={isActive ? getActiveLabel(effect) : effectUiLabel(effect.label)}
-        style:--effect-color={effect.color}
+        style:--effect-color={effectInk(effect.color, getThemeMode())}
         data-ghost="safe"
         data-ghost-kind="effect"
         data-ghost-id={effect.id}

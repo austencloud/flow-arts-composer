@@ -1,9 +1,26 @@
 import { describe, expect, it } from "vitest";
 import {
   PostProjectSchema,
-  POST_BOX,
   type PostAnimationItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
+  normalizeProject as finishProject,
+  compilePostProject,
+  evaluatePresetFrame,
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
+import {
+  POST_BOX,
+  takeRole,
+  MOVE_EASING,
+  tunnelHookArrival,
+  TUNNEL_HOOK_BACKDROP_OPACITY,
+  TUNNEL_HOOK_CHROME_SECONDS,
+  tunnelHookChromeOpacity,
+  tunnelHookCopyOpacity,
+  tunnelHookPanelOpacity,
+  itemEnd,
+  type PostVideoItem,
+  sampleEasing,
+} from "@austencloud/video-editor/core";
 import {
   addTunnelHook,
   findTunnelHook,
@@ -12,18 +29,6 @@ import {
   setTunnelHookBackdropFrame,
   setTunnelHookSpeed,
 } from "#lib/shared/media-composition/domain/post-project-edits.js";
-import { normalizeProject as finishProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
-import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
-import { takeRole } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
-import {
-  MOVE_EASING,
-  tunnelHookArrival,
-  TUNNEL_HOOK_BACKDROP_OPACITY,
-  TUNNEL_HOOK_CHROME_SECONDS,
-  tunnelHookChromeOpacity,
-  tunnelHookCopyOpacity,
-  tunnelHookPanelOpacity,
-} from "#lib/shared/media-composition/domain/tunnel-hook.js";
 import {
   createTakeTiming,
   resolveTakeTiming,
@@ -34,13 +39,7 @@ import {
   takeTimingMovesKey,
   type TakeTiming,
 } from "#lib/shared/media-composition/domain/take-timing.js";
-import { sampleEasing } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
-import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
-import {
-  itemEnd,
-  type PostVideoItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   NOW,
   overlay,
@@ -50,7 +49,7 @@ import {
   video,
 } from "./post-project-fixtures";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 
 function withAnimation() {
   return project(

@@ -896,13 +896,13 @@ export class AnimationRenderLoop {
 
   /** Dispatch registry — one entry per simple overlay effect. */
   private readonly effectDispatchRegistry: readonly EffectDispatchEntry[] = [
-    // --- Zap: 4-pos, no dt ---
+    // --- Zap: 4-pos, dt ---
     {
       effect: "zap",
       configKey: "zapConfig",
       getRenderer: (l) =>
         (l.renderers.get("zap") ?? null) as EffectRenderer | null,
-      needsDt: false,
+      needsDt: true,
       resetTimeOnInactive: false,
       buildInput: (ctx) =>
         AnimationRenderLoop.buildEmitterTips(
@@ -911,7 +911,7 @@ export class AnimationRenderLoop {
           "zap",
           ctx.params
         ),
-      render: (r, cfg, inp) => r.renderFrame(cfg, inp),
+      render: (r, cfg, inp, dt) => r.renderFrame(cfg, inp, dt),
     },
     // --- Sparkles: 4-pos, dt ---
     {
@@ -988,13 +988,13 @@ export class AnimationRenderLoop {
       },
       render: (r, cfg, inp, dt) => r.renderFrame(cfg, inp, dt),
     },
-    // --- Bloom: array-of-tips, no dt ---
+    // --- Bloom: array-of-tips, dt ---
     {
       effect: "bloom",
       configKey: "bloomConfig",
       getRenderer: (l) =>
         (l.renderers.get("bloom") ?? null) as EffectRenderer | null,
-      needsDt: false,
+      needsDt: true,
       resetTimeOnInactive: false,
       buildInput: (ctx) =>
         AnimationRenderLoop.buildArrayTips(
@@ -1004,7 +1004,7 @@ export class AnimationRenderLoop {
           ctx.params,
           ctx.renderedTransforms
         ),
-      render: (r, cfg, inp) => r.renderFrame(cfg, inp),
+      render: (r, cfg, inp, dt) => r.renderFrame(cfg, inp, dt),
     },
     // --- Goo: 4-pos, dt, resetTimeOnInactive ---
     {

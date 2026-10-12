@@ -70,14 +70,14 @@ export interface Charcoal2DParams extends CharcoalIntent {
 }
 
 export interface Zap2DParams extends ZapIntent {
-  /** Segment count along each arc. Derived from intensity + distance. */
-  segments: number;
-  /** px - random jitter radius per segment midpoint. */
-  jitterAmount: number;
-  /** px - shadowBlur for the glow pass. */
-  glowBlur: number;
-  /** px - core line width. */
-  lineWidth: number;
+  /** px at reference size - white-hot core width of a main channel. */
+  coreWidth: number;
+  /** px at reference size - colored halo width around a channel (Glow). */
+  haloWidth: number;
+  /** 0-1 - halo opacity at full flash (Glow). */
+  haloAlpha: number;
+  /** 0-1.2 - overall brightness multiplier (Intensity). */
+  brightness: number;
 }
 
 export interface Sparkles2DParams extends SparklesIntent {
@@ -146,12 +146,10 @@ export interface Petals2DParams extends PetalsIntent {
   poolSize: number;
   /** px - base petal half-size before `intensity` multiplier. */
   baseSize: number;
-  /** Petals/sec at `ambientEmission=1`. */
+  /** Petals/sec each still tip sheds at `ambientEmission=1`. */
   ambientSpawnRate: number;
-  /** Petals/sec at full velocity * `motionEmission=1`. */
-  motionSpawnRate: number;
-  /** World units/s that maps to full motion scalar. */
-  motionReferenceSpeed: number;
+  /** Petals shed per 100 px of tip travel at `motionEmission=1`. */
+  motionDensity: number;
   /** px/s - base downward velocity at `fallSpeed=1`. */
   fallBaseSpeed: number;
   /** Canvas composite op - `source-over` for bodies; ember rim uses `lighter` internally. */

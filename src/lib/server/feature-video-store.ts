@@ -21,11 +21,14 @@ import {
 import {
   POST_CANVAS_RATIOS,
   POST_DEFAULT_CANVAS,
-  PostProjectSchema,
-  createEmptyPostProject,
   type PostCanvasRatio,
   type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
+} from "@austencloud/video-editor/core";
+import {
+  PostProjectSchema,
+  createEmptyPostProject,
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
 
 /**
  * Feature videos on disk: one folder per project under a root folder,
@@ -445,9 +448,11 @@ export function createFeatureVideoStore(
         const current = await readFile(slug);
         let next: PostProject;
         try {
-          next = applyPostProjectOps(current.project, ops as PostProjectOp[], {
-            now,
-          });
+          next = applyPostProjectOps(
+            current.project,
+            ops as PostProjectOp[],
+            editContext(now)
+          );
         } catch (cause) {
           throw new FeatureVideoError(
             cause instanceof Error ? cause.message : String(cause),
