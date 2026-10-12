@@ -1021,18 +1021,6 @@
     white-space: normal;
     overflow: visible;
   }
-  /* Sparse Edit section (1–2 tiles): center them at tile width instead of
-     stretching across the panel, so the row reads intentional rather than a
-     lonely left-aligned tile with a wide gap. Transform/Patterns keep their
-     edge-to-edge auto-fit fill. */
-  .actions-container.desktop .edit-section .section-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .actions-container.desktop .edit-section .grid-btn {
-    flex: 0 1 clamp(140px, 30cqw, 264px);
-  }
   /* Grid + Edit share one tile grid with the sections above, so every tile
      keeps the same column width. At the 2-col tier the two sections stack
      (Grid join alone in the left slot, the two Edit tiles in one row). At
