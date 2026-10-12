@@ -4,7 +4,7 @@
     DeckRecipe,
   } from "../../domain/models/DeckRelease";
   import { flip } from "svelte/animate";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { flipDuration, growFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 

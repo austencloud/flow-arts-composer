@@ -7,9 +7,10 @@
 ## Decision
 
 There are two sanctioned crossfade primitives. Every _true crossfade_ of cheap
-content uses `src/lib/shared/components/Crossfade.svelte`. Heavy/stateful
-content uses `src/lib/shared/components/DualSourceCrossfade.svelte`, the
-dual-source no-remount path.
+content uses `Crossfade` from `#lib/shared/transitions/motion.js` (the
+`@austencloud/motion` component). Heavy/stateful content uses
+`src/lib/shared/components/DualSourceCrossfade.svelte`, the dual-source
+no-remount path.
 Single enter/exit fades stay plain `transition:fade`. The boundary between these
 three is recorded here so future work doesn't re-litigate it.
 
@@ -122,8 +123,8 @@ Rule + memory, deliberately NOT an automated lint/grep. A regex cannot reliably
 distinguish a true two-sibling crossfade from a single enter/exit fade without
 heavy false positives, and a noisy gate is worse than none (cross-ref
 `component-test-discipline.md`). The signal is carried by:
-`.claude/rules/crossfade-primitive.md`, the `Crossfade.svelte` header doc, and
-memory `feedback_crossfade_no_layout_shift`.
+`.claude/rules/crossfade-primitive.md`, the package's `Crossfade.svelte` header
+doc, and memory `feedback_crossfade_no_layout_shift`.
 
 ## Consequences
 

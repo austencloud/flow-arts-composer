@@ -10,7 +10,7 @@
 <script lang="ts">
   import "#lib/shared/selection/selection.css";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { getLoopExplorerContext } from "../state/loop-explorer-state.svelte";

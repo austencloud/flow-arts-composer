@@ -9,13 +9,17 @@
  * points show and turns the layout into circles.
  */
 import {
+  BOX_OUTER_RING_WIDTH,
   DIAMOND_OUTER_POINTS,
   JOIN_GRID_LOCATIONS,
   JOIN_HAND_RADIUS,
+  JOINED_POINT_RADIUS,
   gridPointsSvg,
   joinedPointColors,
   type GridJoinLayout,
   type JoinVec,
+  type JoinedGridMode,
+  type JoinedGridModes,
   type JoinedGridPoint,
 } from "@tka/render-core";
 
@@ -25,8 +29,8 @@ const GRID_POINT_COLOR_LIGHT = "#000000";
 
 export interface JoinedGridMarkupOptions {
   darkMode: boolean;
-  /** Box grids draw their outer points as rings. */
-  box: boolean;
+  /** The grid each hand draws; a box grid's outer points are rings. */
+  grids: JoinedGridModes;
   /** Each hand's color; the dots lean toward their own hand's. */
   handColors: Readonly<Record<"left" | "right", string>>;
   /**
@@ -45,10 +49,39 @@ export function joinedGridMarkup(
   return pointsMarkup(layout.points, options, true);
 }
 
+/**
+ * The joined layout's dots mid-turn: each outer dot is `ring` of the way
+ * from a filled diamond dot (0) to a box ring (1), the same fill and stroke
+ * fade the single grid's outer points make while GridSvg turns it. Every
+ * other dot is drawn as at rest.
+ */
+export function turningGridMarkup(
+  layout: Pick<GridJoinLayout, "points">,
+  ring: number,
+  options: JoinedGridMarkupOptions
+): string {
+  return pointsMarkup(layout.points, options, true, ring);
+}
+
+/**
+ * One outer dot between filled and ring, drawn as GridSvg draws its outer
+ * points (one circle whose fill and stroke opacities cross), so the midway
+ * look matches a single grid's turn.
+ */
+function morphingOuterPointSvg(
+  point: JoinedGridPoint,
+  color: string,
+  ring: number
+): string {
+  const clamped = ring <= 0 ? 0 : ring >= 1 ? 1 : ring;
+  return `<circle cx="${point.x}" cy="${point.y}" r="${JOINED_POINT_RADIUS.outer}" fill="${color}" fill-opacity="${(1 - clamped).toFixed(3)}" stroke="${color}" stroke-width="${BOX_OUTER_RING_WIDTH}" stroke-opacity="${clamped.toFixed(3)}"/>`;
+}
+
 function pointsMarkup(
   points: readonly JoinedGridPoint[],
   options: JoinedGridMarkupOptions,
-  tinted: boolean
+  tinted: boolean,
+  outerRing?: number
 ): string {
   const base = options.darkMode
     ? GRID_POINT_COLOR_DARK
@@ -66,27 +99,39 @@ function pointsMarkup(
           active[member.hand].has(member.location)
         )));
   return points
-    .map((point, index) =>
-      shown(point) ? gridPointsSvg([point], options.box, colors[index]!) : ""
-    )
+    .map((point, index) => {
+      if (!shown(point)) return "";
+      const color = colors[index]!;
+      if (outerRing !== undefined && point.kind === "outer") {
+        return morphingOuterPointSvg(point, color, outerRing);
+      }
+      return gridPointsSvg([point], point.ring, color);
+    })
     .join("");
 }
 
 const SCENE_CENTER = 475;
 const OUTER_RADIUS = DIAMOND_OUTER_POINTS.e!.x - SCENE_CENTER;
+const INTERCARDINAL: ReadonlySet<string> = new Set(JOIN_GRID_LOCATIONS.box);
 
 /** One hand's whole grid, centered `offset` from the scene center. */
 function handGridPoints(
   hand: "left" | "right",
   offset: JoinVec,
-  box: boolean
+  mode: JoinedGridMode
 ): JoinedGridPoint[] {
   const cx = SCENE_CENTER + offset.x;
   const cy = SCENE_CENTER + offset.y;
   const points: JoinedGridPoint[] = [
-    { kind: "center", x: cx, y: cy, members: [{ hand, location: "c" }] },
+    {
+      kind: "center",
+      x: cx,
+      y: cy,
+      members: [{ hand, location: "c" }],
+      ring: false,
+    },
   ];
-  for (const location of JOIN_GRID_LOCATIONS[box ? "box" : "diamond"]) {
+  for (const location of JOIN_GRID_LOCATIONS[mode]) {
     const unit = LOCATION_UNIT[location]!;
     for (const [kind, radius] of [
       ["hand", JOIN_HAND_RADIUS],
@@ -97,6 +142,7 @@ function handGridPoints(
         x: cx + unit.x * radius,
         y: cy + unit.y * radius,
         members: [{ hand, location }],
+        ring: kind === "outer" && INTERCARDINAL.has(location),
       });
     }
   }
@@ -127,8 +173,8 @@ export function slidingGridsMarkup(
   joined: number,
   options: JoinedGridMarkupOptions
 ): string {
-  const blue = handGridPoints("left", offsets.left, options.box);
-  const red = handGridPoints("right", offsets.right, options.box);
+  const blue = handGridPoints("left", offsets.left, options.grids.left);
+  const red = handGridPoints("right", offsets.right, options.grids.right);
   const layer = (markup: string, opacity: number): string =>
     opacity <= 0.001 ? "" : `<g opacity="${opacity.toFixed(3)}">${markup}</g>`;
   return [

@@ -53,7 +53,7 @@
   import ClearSequenceButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import UndoGlyph from "#lib/features/create/shared/workspace-panel/shared/components/buttons/UndoGlyph.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     motionDuration,

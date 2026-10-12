@@ -22,6 +22,10 @@
   } from "#lib/shared/performance/landing-marks.js";
   import { getIabBannerHeight } from "#lib/shared/auth/state/iab-banner-state.svelte.js";
   import type { LayoutData } from "./$types";
+  // The motion clock (durations, --ease-standard*, staggers), shared with
+  // Ringmaster and the website. app.css keeps the Composer's own ease and
+  // composite tokens on top of it.
+  import "@austencloud/motion/css/tokens.css";
   import "../app.css";
   // Chip toggle tokens - maps --chip-* to TKA design values
   import "@austencloud/chip-toggle/css/tka-tokens.css";

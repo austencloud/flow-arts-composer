@@ -9,6 +9,7 @@
   import type { Snippet } from "svelte";
   import type { GridJoin } from "@tka/tka-types";
   import { getGridJoinLayout, toJoinedHandPoint } from "@tka/render-core";
+  import { pictographJoinedGrids } from "#lib/shared/grid-join/joined-grid-modes.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     GridLocation,
@@ -166,9 +167,17 @@
   const activePoints = $derived(getPlacementGridPoints(gridMode, showCenter));
   // Joined grids: each hand's points sit where the renderer draws that hand,
   // on its own grid and shrunk with the joined fit (no expanded viewBox here,
-  // so the pictograph and this overlay share one 950-unit frame).
+  // so the pictograph and this overlay share one 950-unit frame). The grids
+  // are the preview's own, as the renderer draws them.
   const joinLayout = $derived(
-    gridJoin ? getGridJoinLayout(gridJoin, gridMode) : null
+    gridJoin
+      ? getGridJoinLayout(
+          gridJoin,
+          previewPictographData
+            ? pictographJoinedGrids(previewPictographData)
+            : gridMode
+        )
+      : null
   );
   const handPoints = $derived.by(
     (): Record<HandSide, PlacementGridPoint[]> | null => {

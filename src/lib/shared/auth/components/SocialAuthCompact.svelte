@@ -12,7 +12,7 @@
   import FacebookIcon from "./icons/FacebookIcon.svelte";
   import GoogleIcon from "./icons/GoogleIcon.svelte";
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import { browser } from "$app/env";
   import { configureAuthPersistence, getAuthInstance } from "../firebase";

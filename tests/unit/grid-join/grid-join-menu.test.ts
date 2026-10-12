@@ -78,10 +78,10 @@ const DIRECTION_ARROWS: Record<string, { x: number; y: number }> = {
 describe("grid join submenu items", () => {
   it.each([
     ["diamond", ["e", "w", "n", "s"]],
-    ["skewed", ["e", "w", "n", "s"]],
+    ["skewed", ["e", "w", "n", "s", "ne", "se", "sw", "nw"]],
     ["box", ["ne", "se", "sw", "nw"]],
   ])(
-    "lists one grid, both distances, then the %s grid's four directions",
+    "lists one grid, both distances, then the %s grid's directions",
     (gridMode, directions) => {
       const { controller } = holder(null, gridMode);
       const ids = buildGridJoinChildren(controller).map((c) => c.id);

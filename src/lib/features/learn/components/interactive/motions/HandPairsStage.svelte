@@ -28,7 +28,7 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { handGlides } from "#lib/features/create/shared/components/method-previews/method-preview-glide.js";
   import HandCombinationBoard from "#lib/shared/guide-topics/HandCombinationBoard.svelte";
   import MotionMapArrows from "#lib/shared/guide-topics/MotionMapArrows.svelte";

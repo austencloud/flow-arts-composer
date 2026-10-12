@@ -3,7 +3,7 @@
   import { onDestroy, onMount } from "svelte";
   import { cubicInOut } from "svelte/easing";
   import { fade } from "svelte/transition";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import LessonStageControls from "#lib/features/learn/components/interactive/LessonStageControls.svelte";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
