@@ -124,11 +124,10 @@ describe("tka tool rows are today's rows", () => {
       ...TAIL,
     ]);
   });
-  it("arrangement: Grid, Edit arrangement, Speed and the look tools; a cell's own tools", () => {
+  it("arrangement: Grid, Speed and the look tools; a cell's own tools", () => {
     expect(row("arrangement")).toEqual([
       "back",
       "grid",
-      "arrangement",
       "split",
       "speed",
       "look",

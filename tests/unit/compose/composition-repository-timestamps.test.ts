@@ -13,7 +13,7 @@ vi.mock("#lib/shared/persistence/database/tka-database.js", () => ({
   },
 }));
 
-import { saveComposition } from "#lib/features/compose/services/dexie-composition-repository.js";
+import { saveComposition } from "#lib/features/post/compose-import/dexie-composition-repository.js";
 
 describe("composition local timestamps", () => {
   it("preserves remote edit time during cloud hydration for later conflict decisions", async () => {

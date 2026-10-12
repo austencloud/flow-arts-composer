@@ -13,7 +13,6 @@ import { NO_FACTS, tkaRow, tkaRowFacts } from "./tka-row";
 import { tkaTimelineJoin } from "./tka-timeline-join";
 import { TKA_TIMING_MODE } from "./tka-timing-mode";
 import { TKA_TOOLS } from "./tka-tools";
-import TkaArrangementCover from "./TkaArrangementCover.svelte";
 import TkaItemTools from "./TkaItemTools.svelte";
 import TkaLookPanel from "./TkaLookPanel.svelte";
 import TkaMediaSublayer from "./TkaMediaSublayer.svelte";
@@ -84,7 +83,7 @@ export function createTkaPluginUi(): PluginUi {
     layerContextMenu: (event, editor) =>
       tkaEditorOf(editor)?.openSaveMenu?.(event),
     canvasOverlays: [TkaStripGuide],
-    modes: [TKA_TIMING_MODE, { id: "arrangement", cover: TkaArrangementCover }],
+    modes: [TKA_TIMING_MODE],
     // A post with no sequence starts from footage, text or an image.
     emptyHint: (editor, where) => {
       if (editor.project.sourceKind !== "none") return null;
