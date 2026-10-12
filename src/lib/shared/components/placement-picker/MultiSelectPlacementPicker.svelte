@@ -28,8 +28,10 @@ through two custom properties, --placement-grid-size (stacked) and
   import { onMount, type Snippet } from "svelte";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { getLetterBorderColorSafe } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
-  import { createStartPlacementVariations } from "./start-placement-utils";
-  import { startPlacementManager } from "#lib/shared/create/services/start-placement-manager.js";
+  import {
+    loadStartPlacementVariations,
+    orientStartPlacementVariations,
+  } from "./placement-variations";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import {
     blockAllExcept,
@@ -83,7 +85,7 @@ through two custom properties, --placement-grid-size (stacked) and
   function loadVariations(mode: GridMode) {
     selectionMode = null;
     customNeedsFirstPlacement = false;
-    variations = startPlacementManager.getAllStartPlacementVariations(mode);
+    variations = loadStartPlacementVariations(mode);
   }
 
   // React to gridMode prop changes
@@ -93,19 +95,10 @@ through two custom properties, --placement-grid-size (stacked) and
     }
   });
 
-  onMount(async () => {
-    try {
-      hapticService = getHapticFeedback() ?? null;
-      loadVariations(gridModeProp);
-    } catch (error) {
-      console.warn(
-        "MultiSelectPlacementPicker: Failed to load variations, using fallback:",
-        error
-      );
-      variations = createStartPlacementVariations(gridModeProp);
-    } finally {
-      isLoading = false;
-    }
+  onMount(() => {
+    hapticService = getHapticFeedback() ?? null;
+    loadVariations(gridModeProp);
+    isLoading = false;
   });
 
   /**
@@ -207,31 +200,15 @@ through two custom properties, --placement-grid-size (stacked) and
   );
   const activeSelection = $derived(selectionMode ?? inferredSelection);
 
-  // Re-orient each variation's props to the chosen start orientation. Start
-  // placements are static holds, so start == end orientation (mirrors how the
-  // engine seeds beat 0). Empty until variations load. New object identity per
-  // orientation change → PictographContainer re-renders.
+  // Re-orient each variation's props to the chosen start orientation (shared
+  // with the Customize overview, so its preview matches this grid). Empty
+  // until variations load.
   const displayVariations = $derived(
-    variations.map((p) => ({
-      ...p,
-      motions: {
-        ...p.motions,
-        left: p.motions?.left
-          ? {
-              ...p.motions.left,
-              startOrientation: leftStartOrientation,
-              endOrientation: leftStartOrientation,
-            }
-          : p.motions?.left,
-        right: p.motions?.right
-          ? {
-              ...p.motions.right,
-              startOrientation: rightStartOrientation,
-              endOrientation: rightStartOrientation,
-            }
-          : p.motions?.right,
-      },
-    }))
+    orientStartPlacementVariations(
+      variations,
+      leftStartOrientation,
+      rightStartOrientation
+    )
   );
 </script>
 
