@@ -6,7 +6,7 @@
   /**
    * An arrangement's panels. Grid and Speed are the item's own; Look and
    * Effects are the grid's, or the cell's over it when one is in hand;
-   * Sequence, Layers, Offset and Effort belong to the cell in hand.
+   * Sequence, Layers, Grids, Offset and Effort belong to the cell in hand.
    */
   let { item, tool, locked, appearanceFill = false }: ToolPanelProps = $props();
   const tka = useTkaEditor();
@@ -15,7 +15,7 @@
 
 {#if item?.kind === "arrangement"}
   {@const arrangement = item}
-  {#if tool === "grid" || tool === "speed" || tool === "look" || tool === "effects" || tool === "effort" || tool === "layers" || tool === "offset" || (tool === "sequence" && editor.selectedCell !== null)}
+  {#if tool === "grid" || tool === "speed" || tool === "look" || tool === "effects" || tool === "effort" || tool === "layers" || tool === "grids" || tool === "offset" || (tool === "sequence" && editor.selectedCell !== null)}
     <PostArrangementTool
       {editor}
       item={arrangement}
