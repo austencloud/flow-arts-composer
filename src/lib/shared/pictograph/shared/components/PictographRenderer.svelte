@@ -61,11 +61,13 @@ Usage:
     getGridJoinLayout,
     getHandKeyGlyphPath,
     getMotionColor,
+    joinedGridModes,
   } from "@tka/render-core";
   import {
     joinedGridFitTransform,
     joinedGridMarkup,
     slidingGridsMarkup,
+    turningGridMarkup,
   } from "../../grid/services/joined-grid-markup";
   import {
     followJoinSlide,
@@ -559,12 +561,15 @@ Usage:
 
   // Two joined grids, when the pictograph was prepared with the sequence's
   // join (`_prepared.join`, which already moved the props and arrows onto
-  // each hand's grid). Drawn as the cards draw them: tinted dots from the
-  // render-core layout, and grids, props and arrows shrunk together about the
-  // center so they clear the edge glyphs. One-grid pictographs keep GridSvg.
+  // each hand's grid, and `_prepared.joinedGrids`, the grid each hand draws:
+  // a skewed pictograph puts one hand on a diamond grid and the other on a
+  // box grid). Drawn as the cards draw them: tinted dots from the render-core
+  // layout, and grids, props and arrows shrunk together about the center so
+  // they clear the edge glyphs. One-grid pictographs keep GridSvg.
+  const joinGrids = $derived(pictograph._prepared?.joinedGrids ?? gridMode);
   const joinLayout = $derived(
     pictograph._prepared?.join
-      ? getGridJoinLayout(pictograph._prepared.join, gridMode)
+      ? getGridJoinLayout(pictograph._prepared.join, joinGrids)
       : null
   );
   const joinedGridOptions = $derived.by(() => {
@@ -572,7 +577,7 @@ Usage:
     const mode = dark ? "dark" : "light";
     return {
       darkMode: dark,
-      box: gridMode === GridMode.BOX,
+      grids: joinedGridModes(joinGrids),
       handColors: {
         left: effectiveLeftColor ?? getMotionColor(HandSide.LEFT, mode),
         right: effectiveRightColor ?? getMotionColor(HandSide.RIGHT, mode),
@@ -595,7 +600,7 @@ Usage:
   // snaps.
   const joinSlide = followJoinSlide(() => ({
     join: pictograph._prepared?.join ?? null,
-    gridMode,
+    gridMode: joinGrids,
     drawingKey: joinSlideDrawingKey(pictograph),
   }));
   const slide = $derived(joinSlide.current);
@@ -605,7 +610,7 @@ Usage:
   const slideOutgoingGrid = $derived(
     slide?.from
       ? joinedGridMarkup(
-          getGridJoinLayout(slide.from, gridMode),
+          getGridJoinLayout(slide.from, joinGrids),
           joinedGridOptions
         )
       : ""
@@ -627,14 +632,30 @@ Usage:
     const drawn = joinLayout?.offsets[side] ?? { x: 0, y: 0 };
     return `translate(${shown.x - drawn.x} ${shown.y - drawn.y})`;
   }
-  const slideScale = $derived(slide?.frame.scale ?? joinLayout?.scale ?? 1);
+  // A rotate of a joined sequence turns the joined grids 45° about the cell
+  // center (the join turned with the hands, so the new layout is the old one
+  // turned) while the outer dots morph between filled and ring, as GridSvg
+  // turns one grid. The props and arrows keep their own transitions, as on
+  // one grid; only the fit scale eases here with the grids.
+  const turn = $derived(joinSlide.turn);
+  const turningGrid = $derived(
+    turn && joinLayout
+      ? turningGridMarkup(joinLayout, turn.ring, joinedGridOptions)
+      : ""
+  );
+  const turnTransform = $derived(
+    turn ? `rotate(${turn.angle} ${BASE_SIZE / 2} ${BASE_SIZE / 2})` : undefined
+  );
+  const slideScale = $derived(
+    slide?.frame.scale ?? turn?.scale ?? joinLayout?.scale ?? 1
+  );
   // The joined dots are drawn in the same pass, with no grid file to load, so
   // they are ready as soon as they are in the DOM.
   $effect(() => {
     if (joinLayout && joinedGrid) onGridReady?.();
   });
   const coreContentTransform = $derived(
-    slide
+    slide || turn
       ? `translate(${coreContentOffset} 0) translate(${BASE_SIZE / 2} ${BASE_SIZE / 2}) scale(${slideScale}) translate(${-BASE_SIZE / 2} ${-BASE_SIZE / 2})`
       : joinLayout
         ? `translate(${coreContentOffset} 0) ${joinedGridFitTransform(joinLayout, BASE_SIZE)}`
@@ -702,7 +723,16 @@ Usage:
         </g>
       {/if}
       {#if joinLayout}
-        {#if showGrid}
+        {#if showGrid && turn}
+          <g
+            class="joined-grid turning"
+            opacity={joinedGridOpacity}
+            transform={turnTransform}
+            pointer-events="none"
+          >
+            {@html turningGrid}
+          </g>
+        {:else if showGrid}
           <g
             class="joined-grid"
             opacity={joinedGridOpacity * (slideLayers?.composite ?? 1)}

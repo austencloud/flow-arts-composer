@@ -9,7 +9,7 @@
   import type { SequenceActionId } from "#lib/shared/create/domain/sequence-action-types.js";
   import SwapIcon from "#lib/shared/icons/SwapIcon.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   type ActionCategory = "transform" | "patterns" | "grid" | "edit";

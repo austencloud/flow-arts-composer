@@ -25,7 +25,7 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { PillId } from "#lib/shared/animation-panel/pill-nav/pill-types.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import TurnNotationControls from "#lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";

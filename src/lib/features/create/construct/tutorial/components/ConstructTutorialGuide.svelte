@@ -3,7 +3,7 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { getCreateModuleContext } from "#lib/features/create/shared/context/create-module-context.js";
   import { WORKSPACE_BUTTON_ICON } from "#lib/features/create/shared/workspace-panel/shared/workspace-button-layout.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   const { constructTutorialState } = getCreateModuleContext();

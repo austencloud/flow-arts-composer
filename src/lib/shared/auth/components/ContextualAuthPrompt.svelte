@@ -6,7 +6,7 @@
   import { getLastAuthMethod } from "#lib/shared/auth/services/last-auth-method.svelte.js";
   import EmailAuthTabs from "./EmailAuthTabs.svelte";
   import LastUsedBadge from "#lib/shared/components/LastUsedBadge.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import SocialAuthCompact from "./SocialAuthCompact.svelte";
   import PhoneSignInLink from "../phone-sign-in/PhoneSignInLink.svelte";
   import { growFade, popIn } from "#lib/shared/transitions/motion.js";

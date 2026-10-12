@@ -2,7 +2,7 @@
   import { onDestroy, tick } from "svelte";
 
   import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import TempoControl from "#lib/shared/animation-panel/components/TempoControl.svelte";
   import TimeRuler from "#lib/shared/timeline/TimeRuler.svelte";

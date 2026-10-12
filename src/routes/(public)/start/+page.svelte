@@ -19,7 +19,7 @@
   import ContextualAuthPrompt from "#lib/shared/auth/components/ContextualAuthPrompt.svelte";
   import EnhancedPWAInstallGuide from "#lib/shared/mobile/components/EnhancedPWAInstallGuide.svelte";
   import { getMobileFullscreenManager } from "#lib/shared/mobile/get-mobile-fullscreen-manager.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";

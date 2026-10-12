@@ -24,10 +24,7 @@
     joinedHandTransform,
     toJoinedHandPoint,
   } from "@tka/render-core";
-  import {
-    GridLocation,
-    GridMode,
-  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     joinedGridFitTransform,
     joinedGridMarkup,
@@ -105,7 +102,7 @@
     const colors = getSettings().primaryPropColors;
     return joinedGridMarkup(joinLayout, {
       darkMode,
-      box: builderState.gridMode === GridMode.BOX,
+      grids: joinLayout.grids,
       handColors: {
         left: colors?.left ?? getMotionColor(HandSide.LEFT, mode),
         right: colors?.right ?? getMotionColor(HandSide.RIGHT, mode),

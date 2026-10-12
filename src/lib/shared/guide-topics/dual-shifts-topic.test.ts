@@ -6,6 +6,7 @@ import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js
 import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   DUAL_SHIFT_KEY,
+  DUAL_SHIFT_MODE_GUIDES,
   DUAL_SHIFT_MODES,
   DUAL_SHIFT_MODES_BY_PAIR,
   DUAL_SHIFTS_TOPIC_UNITS,
@@ -13,9 +14,9 @@ import {
   dualShiftElement,
   dualShiftModeAt,
   dualShiftSteps,
-  dualShiftsWebLeadLines,
   plainLine,
 } from "./dual-shifts-topic";
+import { TIMING_DIRECTION_ARTICLE_SLUGS } from "../../../routes/(public)/timing-and-direction/_data/timing-direction-articles";
 
 const english = en as Record<string, string>;
 const german = de as Record<string, string>;
@@ -44,13 +45,12 @@ describe("Type 1 Dual-Shifts topic record", () => {
     }
   });
 
-  it("keeps only the book's turn to α and β for the web lead", () => {
-    const lines = dualShiftsWebLeadLines();
-    expect(lines).toHaveLength(2);
-    expect(plainLine(lines[0]!)).toMatch(
-      /^Let’s try another type of Dual-Shift\.$/
-    );
-    expect(plainLine(lines[1]!)).toMatch(/α and β\?$/);
+  it("links each mode to a Timing and Direction mode guide that exists", () => {
+    for (const mode of DUAL_SHIFT_MODES) {
+      const href = DUAL_SHIFT_MODE_GUIDES[mode.id];
+      const slug = href.replace("/timing-and-direction/", "");
+      expect(TIMING_DIRECTION_ARTICLE_SLUGS, href).toContain(slug);
+    }
   });
 
   it("places each mode at one timing and direction with its element", () => {

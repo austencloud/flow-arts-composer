@@ -14,7 +14,7 @@
   import type { GridJoin } from "@tka/tka-types";
   import OptionPicker from "#lib/features/create/construct/option-picker/components/OptionPicker.svelte";
   import StartPlacementPicker from "#lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { SimplifiedStartPlacementState } from "#lib/shared/create/state/start-placement-state.svelte.js";
   import ConstructTutorialGuide from "../../construct/tutorial/components/ConstructTutorialGuide.svelte";

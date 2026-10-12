@@ -282,12 +282,6 @@ h6 {
      ============================================================================ */
 
   /* Duration Tiers - Progressively longer for different contexts */
-  --duration-instant: 100ms; /* Micro-feedback (hover states, toggles) */
-  --duration-fast: 150ms; /* Quick UI responses (buttons, inputs) */
-  --duration-normal: 200ms; /* Standard transitions (panels, tabs) */
-  --duration-emphasis: 280ms; /* Emphasized changes (module switches) */
-  --duration-dramatic: 350ms; /* Major transitions (drawers, modals) */
-  --duration-scene: 800ms; /* A whole scene moving. Never a control or panel. */
 
   /* Easing Curves - Physics-based for natural motion */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* Decelerate (entering) */
@@ -679,10 +673,6 @@ h6 {
   --space-2026-2xl: 48px;
 
   /* Transition Timing - Faster, more direct */
-  --duration-2026-instant: 100ms;
-  --duration-2026-fast: 150ms;
-  --duration-2026-normal: 250ms;
-  --duration-2026-slow: 400ms;
   --ease-2026: cubic-bezier(0.25, 0.1, 0.25, 1);
   --ease-2026-out: cubic-bezier(0.33, 1, 0.68, 1);
 

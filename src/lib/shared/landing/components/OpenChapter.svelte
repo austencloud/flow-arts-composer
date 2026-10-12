@@ -77,9 +77,9 @@
     font-weight: 600;
     text-decoration: none;
     transition:
-      background 0.2s ease,
-      border-color 0.2s ease,
-      transform 0.16s ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
   .write-btn:hover,
   .write-btn:focus-visible {

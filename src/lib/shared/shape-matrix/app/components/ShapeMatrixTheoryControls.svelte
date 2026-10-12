@@ -4,7 +4,7 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { spinRatioKey } from "@vtg/domain";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { theoryRatioLabel } from "#lib/shared/shape-matrix/domain/theory-ratio.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";

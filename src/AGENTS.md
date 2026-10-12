@@ -37,12 +37,12 @@ remain higher priority.
 
 Task routes:
 
-| Work                          | Guidance                                                                                                                         |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Layout, motion, responsive UI | `docs/architecture/visual-design-canon.md`, `.claude/rules/no-layout-shift.md`, `.claude/rules/visual-verification-mandatory.md` |
-| Shared UI primitive           | `.claude/rules/primitive-discovery.md`; search `docs/architecture/canonical-capabilities.md` with `rg`                           |
-| Sequence viewer shell         | `.claude/rules/sequence-viewer-shell.md`                                                                                         |
-| Effects                       | `.claude/rules/effects-earn-their-slot.md`                                                                                       |
-| Firestore access              | `.claude/rules/firestore-cost-discipline.md`                                                                                     |
+| Work                          | Guidance                                                                                                                                                                               |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layout, motion, responsive UI | `docs/architecture/visual-design-canon.md`, `.claude/rules/no-layout-shift.md`, `.claude/rules/visual-verification-mandatory.md`, `src/lib/shared/transitions/motion-coverage.test.ts` |
+| Shared UI primitive           | `.claude/rules/primitive-discovery.md`; search `docs/architecture/canonical-capabilities.md` with `rg`                                                                                 |
+| Sequence viewer shell         | `.claude/rules/sequence-viewer-shell.md`                                                                                                                                               |
+| Effects                       | `.claude/rules/effects-earn-their-slot.md`                                                                                                                                             |
+| Firestore access              | `.claude/rules/firestore-cost-discipline.md`                                                                                                                                           |
 
 Read only guidance matching the task. Historical rationale is non-normative.

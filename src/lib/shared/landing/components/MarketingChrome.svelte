@@ -14,9 +14,9 @@
   import type { BackgroundType } from "@austencloud/backgrounds";
   import { onMount } from "svelte";
   import { page } from "$app/state";
-  import { fade } from "svelte/transition";
   import { isNamedRouteMorphActive } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
-  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { isConstrainedConnection } from "#lib/shared/platform/network-conditions.js";
   import { marketingBackground } from "../state/marketing-background-state.svelte";
   import { pageSurface } from "../domain/page-surface";
@@ -136,8 +136,8 @@
       {#key contentKey}
         <div
           class="mkt-content"
-          in:fade|global={{
-            duration: suppressContentFade ? 0 : motionDuration(200),
+          in:opaqueFade|global={{
+            duration: suppressContentFade ? 0 : DURATION.normal,
           }}
         >
           {@render children()}
