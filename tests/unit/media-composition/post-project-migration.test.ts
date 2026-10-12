@@ -2,17 +2,15 @@ import { describe, expect, it } from "vitest";
 import { migratePostPlan } from "#lib/shared/media-composition/domain/post-project-migration.js";
 import {
   POST_BOX,
-  PostProjectSchema,
   findItem,
   itemEnd,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import {
   DEFAULT_FRAMING,
   POST_ACT,
   PostPlanSchema,
   addTakeToPlan,
   createDefaultPostPlan,
-} from "#lib/shared/media-composition/domain/post-plan.js";
+} from "@austencloud/video-editor/core";
+import { PostProjectSchema } from "#lib/shared/post-studio-plugin/index.js";
 import { NOW, spans, take } from "./post-project-fixtures";
 
 describe("migratePostPlan", () => {
@@ -128,7 +126,13 @@ describe("migratePostPlan", () => {
           carousel: false,
           framing: DEFAULT_FRAMING,
         },
-        { id: "card-1", kind: "card", label: "Card", enabled: true, seconds: 4 },
+        {
+          id: "card-1",
+          kind: "card",
+          label: "Card",
+          enabled: true,
+          seconds: 4,
+        },
       ],
       captions: [],
       audio: "takes",
@@ -225,12 +229,12 @@ describe("migratePostPlan", () => {
     expect(findItem(result, "video-1")!.item.label).toBe("Act");
 
     const allItems = result.tracks.flatMap((track) => track.items);
-    expect(allItems.some((item) => item.kind === "text" && item.text === "Ghost")).toBe(
-      false
-    );
-    expect(allItems.some((item) => item.kind === "text" && item.text.trim() === "")).toBe(
-      false
-    );
+    expect(
+      allItems.some((item) => item.kind === "text" && item.text === "Ghost")
+    ).toBe(false);
+    expect(
+      allItems.some((item) => item.kind === "text" && item.text.trim() === "")
+    ).toBe(false);
     expect(allItems.filter((item) => item.kind === "text")).toHaveLength(2);
 
     const cap1 = findItem(result, "text-1")!.item;

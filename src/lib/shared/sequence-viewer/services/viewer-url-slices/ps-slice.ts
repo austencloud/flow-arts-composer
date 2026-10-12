@@ -11,10 +11,10 @@
  *
  * `PostStudio.svelte` has no backing store of its own — its effects instance
  * is inherited from the sequence-viewer's `fx` context (see "fx inheritance"
- * below) and its whole video-composition layout (which source occupies which
- * slot, clip transforms, trims, tempo, playback mode — `createMediaCompositionState`)
- * is a per-mount object with NO existing seed seam. Wiring a seed into it
- * would mean designing a partial-patch/merge mechanism against a recursively
+ * below) and its whole video-composition layout (which source occupied which
+ * slot, clip transforms, trims, tempo, playback mode) lived in a per-mount
+ * composition state, since deleted, with NO existing seed seam. Wiring a seed
+ * into it would mean designing a partial-patch/merge mechanism against a recursively
  * Zod-validated preset schema (`MediaCompositionPresetSchema`,
  * `media-layout-schema.ts`) — a materially bigger undertaking than any other
  * Phase B store, and a genuinely new mini-feature rather than "clone the

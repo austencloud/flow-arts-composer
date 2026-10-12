@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { sequenceFrameAt } from "#lib/shared/media-composition/domain/sequence-frame.js";
-import type { PaintFrame } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+import type { PaintFrame } from "@austencloud/video-editor/render";
 import {
   createAnimationOverlayPainter,
   registerAnimationOverlayPainterFactory,

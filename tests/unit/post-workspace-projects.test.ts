@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
-import { createDefaultPostPlan } from "#lib/shared/media-composition/domain/post-plan.js";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
+import { createDefaultPostPlan } from "@austencloud/video-editor/core";
 import {
   lastSelectedPostSequenceId,
   listPostProjects,

@@ -24,19 +24,11 @@ const PREFIX = "tka:post-studio:take-timing:v1:";
 const LEGACY_STEP_MAP_PREFIX = "tka:post-studio-local-step-map:";
 const LEGACY_BPM_PREFIX = "tka:post-studio-bpm-alignment:";
 
-export interface LocalTakeIdentity {
-  readonly name: string;
-  readonly size: number;
-  readonly lastModified: number;
-}
-
-export function localTakeKey(file: LocalTakeIdentity): string {
-  return `local:${file.name}:${file.size}:${file.lastModified}`;
-}
-
-export function catalogTakeKey(videoId: string): string {
-  return `catalog:${videoId}`;
-}
+export {
+  libraryTakeKey as catalogTakeKey,
+  localTakeKey,
+  type LocalTakeIdentity,
+} from "@austencloud/video-editor/core";
 
 function storage(): Storage | null {
   try {

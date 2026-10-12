@@ -13,8 +13,7 @@ import {
   type PostProject,
   type PostTrack,
   type PostVideoItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import {
+  clearChannel,
   appendCardClip,
   appendVideoClip,
   cleanLabel,
@@ -24,8 +23,7 @@ import {
   withTrackItems,
   withoutItems,
   type EditContext,
-} from "#lib/shared/media-composition/domain/post-project-edits.js";
-import { clearChannel } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+} from "@austencloud/video-editor/core";
 
 /**
  * Looks are quick layouts for one main clip, built from ordinary items so

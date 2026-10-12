@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { featureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
-import { PostProjectSchema } from "#lib/shared/media-composition/domain/post-project.js";
+import {
+  PostProjectSchema,
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
 import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-project-bridge-guard.js";
 import { applyPostProjectOps } from "#lib/shared/media-composition/domain/post-project-ops.js";
-import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
+import type { PostTake } from "@austencloud/video-editor/core";
 import {
   TakeTimingSchema,
   createTakeTiming,
@@ -11,7 +14,7 @@ import {
 } from "#lib/shared/media-composition/domain/take-timing.js";
 import { NOW, project, spans, take, video } from "./post-project-fixtures";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 const FIRST = featureVideoMediaUrl("promo", "captures/builder.1.mp4");
 const SECOND = featureVideoMediaUrl("promo", "captures/builder.2.mp4");
 const empty = () => project([], [], []);
@@ -25,7 +28,7 @@ const relink = (before: ReturnType<typeof recorded>, durationSeconds: number) =>
   applyPostProjectOps(
     before,
     [{ op: "relink-take", take: "take-1", url: SECOND, durationSeconds }],
-    { now: NOW + 2 }
+    editContext(NOW + 2)
   );
 const clip = (p: ReturnType<typeof recorded>) =>
   p.tracks[0]?.items[0] as {

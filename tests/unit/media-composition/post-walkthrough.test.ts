@@ -3,8 +3,8 @@ import type {
   PostProject,
   PostTextItem,
   PostVideoItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import { framingAt } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+} from "@austencloud/video-editor/core";
+import { framingAt } from "@austencloud/video-editor/core";
 import {
   WALKTHROUGH_TRACK_ID,
   buildWalkthrough,
@@ -19,9 +19,10 @@ import {
   applyPostProjectOps,
   type PostProjectOp,
 } from "#lib/shared/media-composition/domain/post-project-ops.js";
+import { editContext } from "#lib/shared/post-studio-plugin/index.js";
 import { NOW, project, take } from "./post-project-fixtures";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 const VIEWPORT = { width: 1920, height: 1080, deviceScaleFactor: 2 };
 
 const GENERATE = { x: 1480, y: 855, width: 170, height: 40 };

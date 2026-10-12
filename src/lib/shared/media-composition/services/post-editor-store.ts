@@ -1,13 +1,16 @@
-import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import type { VideoEditorStore } from "@austencloud/video-editor";
+import type { PostProject } from "@austencloud/video-editor/core";
 import type { TakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   loadPostEditorHistory,
   savePostEditorHistory,
   type PostEditorHistory,
+  type PostTimingEffect,
   type RestoredPostEditorHistory,
 } from "#lib/shared/media-composition/services/post-editor-history-store.js";
 import {
   backupPostProjectBeforeImport,
+  loadPostProject,
   openPostProject,
   savePostProject,
   type SaveResult,
@@ -27,6 +30,11 @@ import {
 export interface PostEditorStore {
   /** The saved post for the sequence, or a new empty one. */
   openProject(sequenceId: string, now: number): PostProject;
+  /**
+   * The saved post for the sequence, or null when none is saved. The tab
+   * sync catches up through it; a feature video's store leaves it out.
+   */
+  loadProject?(sequenceId: string): PostProject | null;
   saveProject(project: PostProject): SaveResult;
   /** Keeps the current post before an import replaces it. */
   backupBeforeImport(project: PostProject): void;
@@ -47,6 +55,7 @@ export interface PostEditorStore {
 /** This device's storage, as the ordinary post has always used it. */
 export const devicePostEditorStore: PostEditorStore = {
   openProject: openPostProject,
+  loadProject: loadPostProject,
   saveProject: savePostProject,
   backupBeforeImport: backupPostProjectBeforeImport,
   loadTiming: loadTakeTiming,
@@ -55,3 +64,17 @@ export const devicePostEditorStore: PostEditorStore = {
   loadHistory: loadPostEditorHistory,
   saveHistory: savePostEditorHistory,
 };
+
+/** The package store port over a tka store, which finds its own owner. */
+export function editorStoreOf(
+  store: PostEditorStore
+): VideoEditorStore<PostTimingEffect> {
+  return {
+    openProject: ({ subjectId }, now) => store.openProject(subjectId, now),
+    loadProject: ({ subjectId }) => store.loadProject?.(subjectId) ?? null,
+    saveProject: (_scope, project) => store.saveProject(project),
+    backupBeforeImport: (_scope, project) => store.backupBeforeImport(project),
+    loadHistory: (_scope, head) => store.loadHistory(head),
+    saveHistory: (_scope, history) => store.saveHistory(history),
+  };
+}

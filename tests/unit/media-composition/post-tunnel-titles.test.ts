@@ -2,33 +2,34 @@ import { describe, expect, it } from "vitest";
 import {
   POST_BOX,
   POST_DEFAULT_OVERLAY_SECONDS,
-  POST_MAX_SPOKEN_LENGTH,
-  PostProjectSchema,
-  type PostAnimationItem,
   type PostItem,
   type PostProject,
-  type PostTitlesItem,
   type PostVideoItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
-import {
-  addTitlesItem,
-  findTunnelHook,
-  updateItem,
-} from "#lib/shared/media-composition/domain/post-project-edits.js";
-import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
-import { sampleEasing } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
-import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
-import {
   DEFAULT_TUNNEL_HOOK,
   MOVE_END_SHARE,
   MOVE_START_SHARE,
   type TunnelHook,
-} from "#lib/shared/media-composition/domain/tunnel-hook.js";
-import {
+  sampleEasing,
   OPENING_TITLES_SHARE,
-  titlesPlanOf,
   titlesRole,
+  updateItem,
+} from "@austencloud/video-editor/core";
+import {
+  POST_MAX_SPOKEN_LENGTH,
+  PostProjectSchema,
+  type PostAnimationItem,
+  type PostTitlesItem,
+  normalizeProject,
+  compilePostProject,
+  evaluatePresetFrame,
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
+import {
+  addTitlesItem,
+  findTunnelHook,
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import {
+  titlesPlanOf,
   tunnelTitlesLook,
 } from "#lib/shared/media-composition/domain/tunnel-titles.js";
 import {
@@ -40,7 +41,7 @@ import {
   video,
 } from "./post-project-fixtures";
 
-const ctx = { now: NOW };
+const ctx = editContext(NOW);
 
 /** Full speed for 12 s, half speed for 20 s, then the closing card. */
 function opening(legacyTitles?: TunnelHook["titles"]) {

@@ -1,9 +1,9 @@
-import {
-  createEmptyPostProject,
-  type PostCardItem,
-  type PostProject,
-  type PostTextItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
+import type {
+  PostCardItem,
+  PostProject,
+  PostTextItem,
+} from "@austencloud/video-editor/core";
 
 /** Disposable timeline for selection, collisions, and hidden-layer checks. */
 export function groupMoveFixture(sequenceId: string): PostProject {

@@ -1,13 +1,14 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { page } from "$app/state";
-  import PostStudio from "#lib/shared/share/components/post-studio/PostStudio.svelte";
+  import { VideoEditor } from "@austencloud/video-editor/ui";
+  import TkaEditorScope from "#lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
   import ToastContainer from "#lib/shared/toast/components/ToastContainer.svelte";
   import { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
   import { ShortcutRegistry } from "#lib/shared/keyboard/services/shortcut-registry.js";
   import { registerEditHistoryShortcuts } from "#lib/shared/keyboard/registration/register-edit-history-shortcuts.js";
   import { keyboardShortcutState } from "#lib/shared/keyboard/state/keyboard-shortcut-state.svelte.js";
-  import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+  import type { PostProject } from "@austencloud/video-editor/core";
   import { createStudioArrangementFixture } from "./fixture";
 
   const fixture = createStudioArrangementFixture();
@@ -45,11 +46,11 @@
     },
     get cellLanes() {
       return Array.from(
-        document.querySelectorAll<HTMLElement>("[data-cell-lane]")
+        document.querySelectorAll<HTMLElement>("[data-item-lane]")
       ).map((lane) => {
-        const bar = lane.querySelector<HTMLElement>(".cell-bar");
+        const bar = lane.querySelector<HTMLElement>(".lane-bar");
         return {
-          cellId: lane.dataset.cellLane ?? "",
+          cellId: lane.dataset.itemLane ?? "",
           beatOffset: Number(lane.dataset.beatOffset ?? 0),
           barLeftPx: bar ? bar.offsetLeft : -1,
           barWidthPx: bar ? bar.offsetWidth : -1,
@@ -93,16 +94,28 @@
 <svelte:head><title>Studio arrangement test harness</title></svelte:head>
 
 <main class="harness">
-  <PostStudio
+  <TkaEditorScope
     sequence={fixture.sequence}
     initialProject={fixture.project}
     {editArrangementOnOpen}
-    onSaveDraft={saveDraft}
     cardPreviewUrl={null}
     animationPreviewUrl={null}
-    onRequestAnimation={() => {}}
-    onExported={exported}
-  />
+    onRequestAnimation={() => undefined}
+  >
+    {#snippet children(scope)}
+      <VideoEditor
+        host={scope.editor.host}
+        plugin={scope.plugin}
+        editor={scope.editor}
+        inspectorTarget={scope.inspectorTarget}
+        registerExport={scope.registerExport}
+        audioSeed={scope.audioSeed}
+        onAudioChange={scope.onAudioChange}
+        onSaveDraft={saveDraft}
+        onExported={exported}
+      />
+    {/snippet}
+  </TkaEditorScope>
   {#if exportUrl}
     <a
       class="export-download"

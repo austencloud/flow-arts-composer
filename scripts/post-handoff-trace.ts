@@ -15,26 +15,24 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import {
   PostProjectSchema,
-  type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
-import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
-import { takeRole } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
+  normalizeProject,
+  compilePostProject,
+  evaluatePresetLayers,
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
+  type PostProject,
+  takeRole,
   PIP_HANDOFF_MAX_CLOCK_SECONDS,
-  pipHandoffOf,
   type PipHandoffStep,
-} from "#lib/shared/media-composition/domain/pip-handoff.js";
+} from "@austencloud/video-editor/core";
+import { pipHandoffOf } from "#lib/shared/media-composition/domain/pip-handoff.js";
 import {
   resolveTakeTiming,
   takeSampleAt,
   takeTimingMoveBeats,
   type TakeTiming,
 } from "#lib/shared/media-composition/domain/take-timing.js";
-import {
-  evaluatePresetLayers,
-  type TakeClock,
-} from "#lib/shared/media-composition/services/frame-evaluator.js";
+import type { TakeClock } from "@austencloud/video-editor/render";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 const args = process.argv.slice(2);

@@ -3,14 +3,14 @@ import {
   EASING_PRESETS,
   framingAt,
   sampleEasing,
-} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+} from "@austencloud/video-editor/core";
 import {
   POST_FRAME_RATE,
   type PostEasing,
   type PostFraming,
   type PostKeyframe,
   type PostVideoItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
+} from "@austencloud/video-editor/core";
 
 /**
  * The walkthrough's camera: where it looks at each click and when it moves,

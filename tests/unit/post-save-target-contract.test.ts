@@ -24,11 +24,14 @@ const repoRoot = path.resolve(
   "../.."
 );
 const read = (relative: string) =>
-  readFileSync(path.join(repoRoot, relative), "utf8");
+  readFileSync(path.resolve(repoRoot, relative), "utf8");
 
+// The workspace moved into @austencloud/video-editor (Task 20); this reads the
+// installed package.
 const WORKSPACE =
-  "src/lib/shared/share/components/post-studio/editor/PostEditorWorkspace.svelte";
+  "node_modules/@austencloud/video-editor/dist/ui/editor/PostEditorWorkspace.svelte";
 const POST_MODULE = "src/lib/features/post/PostModule.svelte";
+const TKA_HOST = "src/lib/shared/post-studio-plugin/ui/tka-host.ts";
 
 describe("where a waiting Post save goes", () => {
   it("the editor reads its save once, when it opens", () => {
@@ -58,7 +61,10 @@ describe("where a waiting Post save goes", () => {
       start,
       source.indexOf("fileInput?.click()", start)
     );
-    expect(pick).toContain("if (featureVideo)");
-    expect(pick).toContain("node scripts/post-project.mjs add-take");
+    // The workspace asks its sync; tka's feature sync names the command.
+    expect(pick).toContain("if (sync?.devicePickBlocked)");
+    expect(read(TKA_HOST)).toMatch(
+      /devicePickBlocked: `[^`]*node scripts\/post-project\.mjs add-take/
+    );
   });
 });

@@ -4,13 +4,13 @@ import type {
   ArrangementSnapshot,
 } from "#lib/shared/media-composition/domain/arrangement.js";
 import { createArrangementCell } from "#lib/shared/media-composition/domain/arrangement-edits.js";
+import { boxLocalPoint } from "@austencloud/video-editor/ui";
 import {
-  boxLocalPoint,
   cellAtPoint,
   cellFrame,
   openCells,
   positionAtPoint,
-} from "#lib/shared/share/components/post-studio/editor/post-arrangement-hit.js";
+} from "#lib/shared/post-studio-plugin/ui/post-arrangement-hit.js";
 
 const layer = {
   sequence: { id: "s", steps: [] },

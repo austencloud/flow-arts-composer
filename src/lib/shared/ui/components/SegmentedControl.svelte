@@ -16,6 +16,7 @@
   import { flip } from "svelte/animate";
   import { flipDuration, popIn } from "#lib/shared/transitions/motion.js";
   import type { Snippet } from "svelte";
+  import { Icon, type IconDefinition } from "@austencloud/video-editor/icons";
 
   interface Option {
     value: T;
@@ -24,7 +25,8 @@
     shortLabel?: string;
     /** More descriptive accessible name, such as a label plus result count. */
     ariaLabel?: string;
-    icon?: string; // FontAwesome class
+    /** A FontAwesome class, or an icon definition from the video editor package. */
+    icon?: string | IconDefinition;
     /** Optional trailing count badge (e.g. number of items in this group). */
     count?: number | null;
     /** Not selectable (e.g. a "coming soon" size). Still rendered, dimmed. */
@@ -297,7 +299,11 @@
           {@render optionContent(option.value)}
         </span>
       {:else if option.icon}
-        <i class={option.icon} aria-hidden="true"></i>
+        {#if typeof option.icon === "string"}
+          <i class={option.icon} aria-hidden="true"></i>
+        {:else}
+          <Icon icon={option.icon} />
+        {/if}
       {:else}
         <span class="segment-label">{option.shortLabel ?? option.label}</span>
       {/if}
@@ -582,11 +588,13 @@
     color: var(--segmented-selected-ink);
   }
 
-  .segment i {
+  .segment i,
+  .segment :global(.ve-icon) {
     font-size: var(--font-size-sm, 0.875rem);
   }
 
-  .sm .segment i {
+  .sm .segment i,
+  .sm .segment :global(.ve-icon) {
     font-size: var(--font-size-compact, 0.75rem);
   }
 </style>

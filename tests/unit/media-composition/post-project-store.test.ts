@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  legacyPostOwner,
   loadPostProject,
   openPostProject,
   savePostProject,
 } from "#lib/shared/media-composition/services/post-project-store.js";
 import { savePostPlan } from "#lib/shared/media-composition/services/post-plan-store.js";
 import { migratePostPlan } from "#lib/shared/media-composition/domain/post-project-migration.js";
-import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
-import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
-import { createDefaultPostPlan } from "#lib/shared/media-composition/domain/post-plan.js";
+import {
+  createEmptyPostProject,
+  normalizeProject,
+} from "#lib/shared/post-studio-plugin/index.js";
+import { createDefaultPostPlan } from "@austencloud/video-editor/core";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrailMode,
@@ -147,5 +150,27 @@ describe("openPostProject", () => {
     expect(opened).toEqual(
       createEmptyPostProject({ sequenceId: "fresh-seq", now: NOW })
     );
+  });
+});
+
+describe("a storage that throws when the owner claim is read", () => {
+  it("counts as no claim, so the post still loads and saves", () => {
+    const saved = normalizeProject(project([video("v1", { sourceOut: 4 })]));
+    savePostProject(saved);
+    const read = Storage.prototype.getItem;
+    const spy = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(function (this: Storage, key: string) {
+        if (key === "tka:post-studio:legacy-owner:v1")
+          throw new Error("storage denied");
+        return read.call(this, key);
+      });
+    try {
+      expect(legacyPostOwner()).toBeNull();
+      expect(loadPostProject(saved.sequenceId)).toEqual(saved);
+      expect(savePostProject(saved)).toEqual({ ok: true });
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

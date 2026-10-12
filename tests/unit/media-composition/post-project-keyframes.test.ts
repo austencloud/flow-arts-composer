@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { POST_MAX_ZOOM } from "#lib/shared/media-composition/domain/post-project.js";
 import {
+  POST_MAX_ZOOM,
   DEFAULT_EASING,
   EASING_PRESETS,
   adjacentKeyframeSeconds,
@@ -36,7 +36,7 @@ import {
   toggleKeyframe,
   writeChannelValue,
   type PostEasingPresetId,
-} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+} from "@austencloud/video-editor/core";
 import { text, video } from "./post-project-fixtures";
 
 describe("channelsOf", () => {

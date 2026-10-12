@@ -59,8 +59,10 @@ const HOSTS: Record<string, string> = {
     "src/lib/shared/shape-matrix/app/components/ShapeMatrixCustomizeWorkspace.svelte",
   "shape matrix focus":
     "src/lib/shared/shape-matrix/app/components/ShapeMatrixFocusWorkspace.svelte",
+  // In @austencloud/video-editor since Task 20; this reads the installed
+  // package.
   "post studio look panel":
-    "src/lib/shared/share/components/post-studio/editor/PostEditorWorkspace.svelte",
+    "node_modules/@austencloud/video-editor/dist/ui/editor/PostEditorWorkspace.svelte",
   "motion path explorer":
     "src/routes/(public)/guide/motion-paths/_components/MotionPathExplorer.svelte",
   "landing play with it":
@@ -92,7 +94,7 @@ const NON_HOSTS: Record<string, string> = {
 };
 
 function read(relativePath: string): string {
-  return readFileSync(path.join(repoRoot, relativePath), "utf8");
+  return readFileSync(path.resolve(repoRoot, relativePath), "utf8");
 }
 
 describe("the prop colour control is owned by the prop picker", () => {

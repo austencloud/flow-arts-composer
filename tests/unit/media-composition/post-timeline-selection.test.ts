@@ -1,18 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
   POST_BOX,
-  type PostAnimationItem,
   type PostItem,
-  type PostMovesItem,
   type PostVideoItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
+} from "@austencloud/video-editor/core";
+import type {
+  PostAnimationItem,
+  PostMovesItem,
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   selectTimelineItem,
   timelineGroupOf,
-  timelineHandoffPair,
   timelineItemOrder,
   type TimelineSelection,
-} from "#lib/shared/share/components/post-studio/editor/timeline/post-timeline-selection.js";
+} from "@austencloud/video-editor/ui";
+import { tkaTimelineJoin } from "#lib/shared/post-studio-plugin/ui/tka-timeline-join.js";
 import { overlay, project, text, video } from "./post-project-fixtures";
 
 describe("timeline selection", () => {
@@ -123,27 +125,25 @@ describe("the animation and the square it becomes", () => {
   }
 
   it("joins them across the stretch where one becomes the other", () => {
-    expect(timelineHandoffPair(handoffProject())).toEqual({
-      animationId: "anim",
-      movesId: "pip",
-      animationTrackIndex: 1,
-      movesTrackIndex: 2,
+    expect(tkaTimelineJoin(handoffProject())).toEqual({
+      fromId: "anim",
+      toId: "pip",
+      fromTrackIndex: 1,
+      toTrackIndex: 2,
       start: 9,
       end: 10,
     });
   });
 
   it("leaves them apart when a clip sits where the square would be drawn", () => {
-    expect(timelineHandoffPair(handoffProject([text("title", 15, 2)]))).toBe(
+    expect(tkaTimelineJoin(handoffProject([text("title", 15, 2)]))).toBe(null);
+    expect(tkaTimelineJoin(handoffProject([text("later", 22, 2)]))).not.toBe(
       null
     );
-    expect(
-      timelineHandoffPair(handoffProject([text("later", 22, 2)]))
-    ).not.toBe(null);
   });
 
   it("acts on both halves from either one", () => {
-    const pair = timelineHandoffPair(handoffProject());
+    const pair = tkaTimelineJoin(handoffProject());
     expect(timelineGroupOf(pair, "pip")).toEqual(["anim", "pip"]);
     expect(timelineGroupOf(pair, "anim")).toEqual(["anim", "pip"]);
     expect(timelineGroupOf(pair, "v1")).toEqual(["v1"]);

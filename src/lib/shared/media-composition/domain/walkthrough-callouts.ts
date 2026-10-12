@@ -3,9 +3,9 @@ import {
   CALLOUT_PAD_X,
   CALLOUT_PAD_Y,
   CALLOUT_SIZE_FRACTION,
-} from "#lib/shared/media-composition/domain/callout-layout.js";
-import { wrapCaptionText } from "#lib/shared/media-composition/domain/caption-layout.js";
-import type { PostTextSize } from "#lib/shared/media-composition/domain/post-project.js";
+} from "@austencloud/video-editor/core";
+import { wrapCaptionText } from "@austencloud/video-editor/core";
+import type { PostTextSize } from "@austencloud/video-editor/core";
 import type {
   CameraMove,
   SharePoint,

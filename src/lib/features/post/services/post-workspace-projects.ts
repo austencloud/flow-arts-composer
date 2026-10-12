@@ -1,7 +1,7 @@
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
-import { PostProjectSchema } from "#lib/shared/media-composition/domain/post-project.js";
-import { PostPlanSchema } from "#lib/shared/media-composition/domain/post-plan.js";
+import { PostProjectSchema } from "#lib/shared/post-studio-plugin/index.js";
+import { PostPlanSchema } from "@austencloud/video-editor/core";
 import {
   readPostDraftRecords,
   type PostDraftRecord,

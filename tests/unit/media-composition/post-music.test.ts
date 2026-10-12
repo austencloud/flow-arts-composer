@@ -5,15 +5,16 @@ import {
 } from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   POST_MUSIC_MAX_SECONDS,
-  PostMusicSchema,
   type PostMusic,
-} from "#lib/shared/media-composition/domain/post-music.js";
-import {
-  PostProjectSchema,
   type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import { setProjectAudio } from "#lib/shared/media-composition/domain/post-project-edits.js";
-import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
+  setProjectAudio,
+} from "@austencloud/video-editor/core";
+import {
+  PostMusicSchema,
+  PostProjectSchema,
+  normalizeProject,
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
 import { NOW, project, video } from "./post-project-fixtures";
 
 function music(fields: Partial<PostMusic> = {}): PostMusic {
@@ -105,7 +106,7 @@ describe("post music", () => {
     expect(normalizeProject(withMusic).music).toEqual(
       music({ startSeconds: 1 })
     );
-    const silent = setProjectAudio(withMusic, "silent", { now: NOW + 1 });
+    const silent = setProjectAudio(withMusic, "silent", editContext(NOW + 1));
     expect(silent.audio).toBe("silent");
     expect(silent.music).toEqual(music({ startSeconds: 1 }));
   });

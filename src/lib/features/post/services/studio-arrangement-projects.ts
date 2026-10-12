@@ -4,7 +4,7 @@ import { compositionSyncer } from "#lib/features/compose/services/composition-sy
 import { compositionToGridState } from "#lib/features/compose/tabs/arrange/services/arrange-composition-converter.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
-import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import type { PostProject } from "@austencloud/video-editor/core";
 import { validateArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
 import { createArrangementProject } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
 import {

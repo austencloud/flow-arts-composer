@@ -1,65 +1,57 @@
 import {
   POST_BACKGROUNDS,
   POST_CANVAS_RATIOS,
-  POST_QR_URL_RULE,
   findItem,
-  isPostCardQrUrl,
-  type PostAnimationItem,
   type PostItem,
   type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import {
+  PostTakeSchema,
+  takeFileKey,
+  TunnelHookSchema,
+  type TunnelHook,
+  resolvePostTime,
+  resolveTrackTime,
+  type PostTimeRef,
+  POST_MUSIC_LENGTH_SLACK,
+  POST_MUSIC_MAX_BEATS_PER_BAR,
+  POST_MUSIC_MAX_GAIN,
+  POST_MUSIC_MAX_SECONDS,
+  type PostMusic,
+  EASING_PRESETS,
   addTake,
-  addTitlesItem,
-  addTunnelHook,
   appendCardClip,
   appendVideoClip,
   deleteItem,
-  findTunnelHook,
-  lineUpTunnelHook,
   relinkTake,
   removeTake,
-  removeTunnelHook,
   setProjectAudio,
   setProjectBackground,
   setProjectCanvas,
-  setTunnelHookBackdropFrame,
-  setTunnelHookSpeed,
   trimItem,
   updateItem,
   type EditContext,
   type PostItemPatch,
-} from "#lib/shared/media-composition/domain/post-project-edits.js";
-import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
-import {
-  PostTakeSchema,
-  takeFileKey,
-} from "#lib/shared/media-composition/domain/post-plan.js";
-import { EASING_PRESETS } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
-import {
-  TunnelHookSchema,
-  type TunnelHook,
-} from "#lib/shared/media-composition/domain/tunnel-hook.js";
-import {
-  resolvePostTime,
-  resolveTrackTime,
-  type PostTimeRef,
-} from "#lib/shared/media-composition/domain/music-grid.js";
-import {
   POST_MUSIC_MIN_SECONDS,
   removeMusic,
   setMusic,
   syncedSourceIn,
   updateMusic,
   type MusicPatch,
-} from "#lib/shared/media-composition/domain/post-music-edits.js";
+} from "@austencloud/video-editor/core";
 import {
-  POST_MUSIC_LENGTH_SLACK,
-  POST_MUSIC_MAX_BEATS_PER_BAR,
-  POST_MUSIC_MAX_GAIN,
-  POST_MUSIC_MAX_SECONDS,
-  type PostMusic,
-} from "#lib/shared/media-composition/domain/post-music.js";
+  POST_QR_URL_RULE,
+  isPostCardQrUrl,
+  type PostAnimationItem,
+} from "#lib/shared/post-studio-plugin/index.js";
+import {
+  addTitlesItem,
+  addTunnelHook,
+  findTunnelHook,
+  lineUpTunnelHook,
+  removeTunnelHook,
+  setTunnelHookBackdropFrame,
+  setTunnelHookSpeed,
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,

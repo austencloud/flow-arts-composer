@@ -1,17 +1,19 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+import { splitItemAt, trimItem } from "@austencloud/video-editor/core";
+import {
+  editContext,
+  PostProjectSchema,
+} from "#lib/shared/post-studio-plugin/index.js";
 import { createArrangementCell } from "#lib/shared/media-composition/domain/arrangement-edits.js";
 import { arrangementBeatAt } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
-import { PostProjectSchema } from "#lib/shared/media-composition/domain/post-project.js";
 import {
   setArrangementBpm,
   setArrangementSnapshot,
-  splitItemAt,
-  trimItem,
 } from "#lib/shared/media-composition/domain/post-project-edits.js";
 import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
-import { createBlankArrangementSnapshot } from "#lib/shared/share/components/post-studio/editor/post-editor-arrangement.js";
+import { createBlankArrangementSnapshot } from "#lib/shared/post-studio-plugin/ui/post-editor-arrangement.js";
 
 const sequence = {
   id: "seq-arrangement",
@@ -97,7 +99,12 @@ describe("arrangements in the Post editor", () => {
     const id = editor.addArrangement(blank, 0)!;
     const original = editor.project.tracks[0]!.items[0]!;
     const half = original.duration / 2;
-    const split = splitItemAt(editor.project, id, half, { now: Date.now() });
+    const split = splitItemAt(
+      editor.project,
+      id,
+      half,
+      editContext(Date.now())
+    );
     expect(split).not.toBeNull();
     const [first, second] = split!.project.tracks[0]!.items;
     expect(first).toMatchObject({
@@ -111,9 +118,13 @@ describe("arrangements in the Post editor", () => {
       sourceOut: original.duration,
     });
 
-    const trimmed = trimItem(editor.project, id, "end", half, {
-      now: Date.now(),
-    });
+    const trimmed = trimItem(
+      editor.project,
+      id,
+      "end",
+      half,
+      editContext(Date.now())
+    );
     expect(trimmed.tracks[0]?.items[0]).toMatchObject({
       kind: "arrangement",
       sourceIn: 0,

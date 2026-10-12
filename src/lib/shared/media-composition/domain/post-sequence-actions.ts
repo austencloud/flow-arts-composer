@@ -1,13 +1,10 @@
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   POST_MAX_SEQUENCE_ACTIONS,
-  type PostProject,
   type PostSequenceAction,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import {
-  finish,
-  type EditContext,
-} from "#lib/shared/media-composition/domain/post-project-edits.js";
+} from "#lib/shared/post-studio-plugin/index.js";
+import type { PostProject } from "@austencloud/video-editor/core";
+import { finish, type EditContext } from "@austencloud/video-editor/core";
 
 /**
  * The whole-sequence changes a post makes to its notation, in the order they

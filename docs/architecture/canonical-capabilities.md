@@ -334,20 +334,25 @@ uses destinations for the same surfaces. The canvas flight captures its visual
 child before the transport changes allocation. Searches: Post Studio, persistent
 canvas, shared inspector, shared Choreo Card, shared playback bar, live handoff.
 
-Post Studio's editor keeps a post as a `PostProject` in
-`shared/media-composition/domain/post-project.ts`: a main track of clips and
+Post Studio's editor keeps a post as a `PostProject`, defined in
+`core/project/schema.ts` of `@austencloud/video-editor` (tka's own kinds and
+fields are in `shared/post-studio-plugin/`): a main track of clips and
 cards laid end to end, overlay tracks drawn above it, and anchors that tie an
 overlay to its clip. Searches: post editor, video timeline, clip, split, trim,
-overlay track, layer, look, Tutorial preset, raw take. `post-project-normalize.ts`
-owns layout and runs after every edit. `post-project-edits.ts` owns the pure
-edit operations, and `post-project-looks.ts` owns the dual, breakdown and
+overlay track, layer, look, Tutorial preset, raw take. The package's `core/project/normalize.ts`
+owns layout and runs after every edit. The package's `core/edit/project-edits.ts`
+owns the generic pure edit operations, and tka's `domain/post-project-edits.ts`
+the titles, opening tunnel and recovered-PIP edits only tka has;
+`post-project-looks.ts` owns the dual, breakdown and
 video-only looks plus the Tutorial preset. Looks are ordinary overlay items, so
-each part stays movable. `state/post-editor-state.svelte.ts` owns selection,
-drag gestures and undo steps over those operations;
-`services/post-editor-history-store.ts` keeps those steps in the tab's
-sessionStorage so a reload restores them for the same save.
-`post-project-compiler.ts` feeds the renderer, and `post-project-migration.ts` converts saved v1 act
-plans. `post-project.ts` `timingVideoAt` owns overlap clock selection: anchored
+each part stays movable. The package's `state/video-editor-state.svelte.ts`
+(`createVideoEditorState`) owns selection, drag gestures and undo steps over
+those operations, and tka's `state/post-editor-state.svelte.ts` wraps it with
+the timing. The package's `store/history-storage.ts` keeps those steps in the
+tab's sessionStorage so a reload restores them for the same save; tka's
+`services/post-editor-history-store.ts` gives it tka's key and timing effect.
+The package's `core/compile/compiler.ts` feeds the renderer, and `post-project-migration.ts` converts saved v1 act
+plans. `timingVideoAt` in the package's `core/project/schema.ts` owns overlap clock selection: anchored
 layers keep their own take while it covers them; unanchored layers follow the
 incoming take. The compiler and effort timing summary share it. The timeline
 UI is `share/components/post-studio/editor/timeline/`, and
@@ -355,8 +360,10 @@ its ruler is the shared `shared/timeline/TimeRuler.svelte`. Ctrl+Z and Ctrl+Y
 reach the editor through `data-edit-history-shortcut-scope` and
 `registerEditHistoryShortcuts`; do not bind them locally.
 
-Local development manifest edits use `state/post-editor-state.svelte.ts` for
-schema validation, normalization, undo and persistence. The dev-only
+Local development manifest edits go through `replaceManifestFromDev` in
+`state/post-editor-state.svelte.ts` for schema validation and normalization;
+the package state it wraps commits them, so undo and persistence are the
+package's. The dev-only
 `server/post-project-dev-bridge.ts` queues exact-session replacements and
 archives the previous snapshot; `services/post-project-dev-client.ts` polls
 from the open editor. `domain/post-project-ops.ts` maps named CLI edits
@@ -381,12 +388,13 @@ and the editor disagree, disk wins and Undo brings back the editor's version.
 Searches: feature video, promo video, project folder, media route, byte range,
 revision, disk wins.
 
-A feature video's music is one file under the whole post. `domain/post-music.ts`
-owns its schema, `domain/music-grid.ts` bars, beats and the times that name a
-bar, and `domain/post-music-edits.ts` its edits; `domain/post-audio-plan.ts`
-plans its sound with `planMusicAudio` for the export and the preview alike.
-`services/music-preview-sync.ts` and `PostMusicPreview.svelte` keep the
-preview's player and clock on the music; the timeline lane is
+A feature video's music is one file under the whole post. In
+`@austencloud/video-editor`, `core/music/post-music.ts` owns its schema,
+`core/music/music-grid.ts` bars, beats and the times that name a bar, and
+`core/music/audio-plan.ts` plans its sound with `planMusicAudio` for the export
+and the preview alike, and `core/edit/music-edits.ts` owns its edits.
+The package's `render/music-preview-sync.ts` and tka's `PostMusicPreview.svelte`
+keep the preview's player and clock on the music; the timeline lane is
 `timeline/PostTimelineMusicLane.svelte` and its panel `PostMusicTool.svelte`.
 The CLI's music commands use `scripts/feature-video/music-import.mjs`,
 `align-take.mjs`, `loudness.mjs` and `time-args.mjs`. Searches: music,
@@ -400,14 +408,17 @@ the one runner for them. It starts a private headless Chrome per recording
 `scripts/demo-capture/encode-frames.py` owns the encode, and
 `scripts/feature-video/capture-files.mjs` owns recording names. The project
 changes only through `post-project.mjs link-capture`, which sends
-`relink-take` (`relinkTake` in `domain/post-project-edits.ts`) or `add-take`.
+`relink-take` (`relinkTake` in the package's `core/edit/project-edits.ts`) or
+`add-take`.
 Scripts read a feature video media URL with `featureMediaUrlParts` in
 `align-take.mjs`. Do not add a second recorder; extend these.
 
 A feature video's end card keeps its scan link as `qrUrl` on the card item
-(`domain/post-project.ts`); the canvas hands it to the Choreo Card's own
-`qrUrl`, so the code opens that link for anyone, signed in or not. Renders use
-the editor's own exporter: `post-project.mjs render` queues a job on the dev
+(tka's card extension in `shared/post-studio-plugin/item-kinds.ts`, with the
+link rule in `shared/post-studio-plugin/card-qr.ts`); the canvas hands it to
+the Choreo Card's own `qrUrl`, so the code opens that link for anyone, signed
+in or not. Renders use the editor's own exporter: `post-project.mjs render`
+queues a job on the dev
 bridge (`server/post-project-dev-bridge.ts`), the editor's
 `services/post-project-dev-client.ts` runs it, and
 `services/feature-video-client.ts` sends the MP4 to
@@ -418,17 +429,18 @@ finds or opens the editor, `stills.mjs` writes stills and contact sheets, and
 a server-side encode; extend these. Searches: render, export, exports folder,
 end card, QR, scan link, stills, contact sheet.
 
-Post Studio keyframes live on the item: `post-project-keyframes.ts` owns
-content time, sampling, the auto-key rule, easing presets and every keyframe
-edit, and the compiler turns them into the preset's `motion` and
-`regionKeyframes` tracks, which `frame-evaluator.ts` samples for the preview
-and the export alike. Bezier easing goes through `cssCubicBezier` in
+Post Studio keyframes live on the item: `core/project/keyframes.ts` in
+`@austencloud/video-editor` owns content time, sampling, the auto-key rule,
+easing presets and every keyframe edit, and the compiler turns them into the
+preset's `motion` and `regionKeyframes` tracks, which the package's
+`render/frame-evaluator.ts` samples for the preview and the export alike.
+Bezier easing goes through `cssCubicBezier` in `core/project/ease.ts`, a copy of
 `shared/transitions/ws-ease.ts`. The editor's curve editor is
 `share/components/post-studio/editor/PostCurveEditor.svelte`, and
 `PostKeyframeControls.svelte` presents the previous, toggle and next keyframe
 actions. Searches: keyframe, animate, easing curve, bezier, zoom over time,
 auto-key, hold, overshoot. Painters that cache per size use `paintSizeBucket`
-from `post-studio-layer-painter.ts`, so a box that grows does not re-render
+from `render/layer-painter.ts` in the package, so a box that grows does not re-render
 every frame.
 
 Post Studio's editor shows the preview, the timeline and one row of tools that
@@ -457,14 +469,14 @@ speed badge, speed label.
 While a box, the picture or a pinch moves, `PostEditorCanvas.svelte` shows a
 rule-of-thirds grid and, on a 9:16 post, the part of a Reel that Instagram's
 header, buttons and caption leave clear. `postSafeArea` in
-`media-composition/domain/post-canvas.ts` owns that area, from Meta's Reels
+`core/project/canvas.ts` of `@austencloud/video-editor` owns that area, from Meta's Reels
 guide. `dragBox` in `editor/post-box-drag.ts` snaps a moved box to the frame's
 centre and edges and to the safe area's sides. Searches: safe area, safe zone,
 Reels overlay, thirds grid, snapping guides, drag guides.
 
 A Post Studio clip's rounded corners, border and drop shadow are its `edge`
-(`media-composition/domain/post-clip-edge.ts`), compiled onto the region and
-measured by `media-composition/services/region-edge-painter.ts`, so the export
+(`core/project/clip-edge.ts` in `@austencloud/video-editor`), compiled onto the
+region and measured by the package's `render/region-edge-painter.ts`, so the export
 canvas and the preview's CSS draw the same edge. Searches: rounded corners,
 border, stroke, drop shadow, picture in picture, PiP frame.
 
@@ -472,9 +484,9 @@ A Post Studio preview video keeps a canvas copy of its picture over it, so a
 browser that stops drawing the video's own layer (seen 2026-09-30: decoder
 healthy, slot black) still shows footage. The editor's media layer uses
 `PreviewVideoFrameRecovery` in
-`media-composition/services/preview-video-frame-recovery.ts`, which also primes
-and re-seeks the decoder. The timing screen uses `videoMirror` in
-`media-composition/services/video-mirror.ts`, kept separate on purpose: it only
+`render/preview-frame-recovery.ts` of `@austencloud/video-editor`, which also
+primes and re-seeks the decoder. The timing screen uses `videoMirror` in the
+package's `render/video-mirror.ts`, kept separate on purpose: it only
 watches, because the timing session reads the video's play and pause events
 as the creator's own. Searches: black video, blackout, retained frame, video
 surface, video to canvas, frame copy.
@@ -493,8 +505,8 @@ receive window, stalled fetch, pending request, Opening project.
 
 A Post Studio clip opens out only over footage its take's file holds:
 `trimItem` stops at the file's first and last frames, so a clip linked to a
-pre-cut file has nothing to reveal. `replaceTakeMedia` in
-`post-project-edits.ts` points a take at a longer copy of its video, such as the
+pre-cut file has nothing to reveal. `replaceTakeMedia` in the
+package's `core/edit/project-edits.ts` points a take at a longer copy of its video, such as the
 whole recording the clip was cut from, and moves every clip's source points,
 its keyframes and the take's timing (`shiftTakeTiming` in `take-timing.ts`) by
 the offset, so the post plays the same and each edge can then be dragged out.
@@ -503,9 +515,9 @@ it to a saved post. Searches: whole recording, replace media, relink, pre-cut
 clip, extend clip, trim won't extend, reveal hidden footage.
 
 A whole item turns with its box's `turn` (`PostBox` in
-`media-composition/domain/post-project.ts`): degrees clockwise about the box's
+`core/project/schema.ts` of `@austencloud/video-editor`): degrees clockwise about the box's
 centre, edge and all, compiled onto the region's `turn` and keyed like the
-rest of the box. `turnAboutCentre` in `region-edge-painter.ts` turns the
+rest of the box. `turnAboutCentre` in the package's `render/region-edge-painter.ts` turns the
 export's drawing, whose shadow still drops straight down the frame. The
 preview's turn handle, turned resizing, hit testing and handle cursors are
 `turnBox`, `dragBox`, `boxContains` and `handleCursor` in
@@ -514,7 +526,7 @@ turn inside its box is its framing's `rotation`, set on the crop screen.
 Searches: turn, rotate, rotation handle, tilt, spin a clip.
 
 Canvas rounded-rectangle paths use `traceRoundedRect` in
-`shared/render/utils/trace-rounded-rect.ts`, which keeps the radius within
+`render/rounded-rect.ts` of `@austencloud/video-editor`, which keeps the radius within
 half of each side and falls back to arcs without `roundRect`. Searches: round
 rect, rounded clip, pill path, corner radius. The choreo card's older
 `roundRect` in `info-card-canvas-renderer.ts` and `roundRectPath` in

@@ -12,16 +12,16 @@ import {
   type PostTextItem,
   type PostTrack,
   type PostVideoItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
+} from "@austencloud/video-editor/core";
 import {
   finish,
   newVideoFields,
   type EditContext,
-} from "#lib/shared/media-composition/domain/post-project-edits.js";
+} from "@austencloud/video-editor/core";
 import {
   postCanvasOf,
   postOutputSize,
-} from "#lib/shared/media-composition/domain/post-canvas.js";
+} from "@austencloud/video-editor/core";
 import {
   ARRIVE_BEFORE_SECONDS,
   MOVE_SECONDS,

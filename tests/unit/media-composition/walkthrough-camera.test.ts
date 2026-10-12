@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculateMediaFit,
   resolvePanOffset,
-} from "#lib/shared/media-composition/services/media-fit.js";
+} from "@austencloud/video-editor/render";
 import {
   WIDE,
   cameraKeyframes,

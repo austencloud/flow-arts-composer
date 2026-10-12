@@ -9,8 +9,6 @@ import {
   updateAct,
   type PostPlan,
   type PostTake,
-} from "#lib/shared/media-composition/domain/post-plan.js";
-import {
   ANIMATION_OVERLAY_ROLE,
   CAPTIONS_ROLE,
   actAtTime,
@@ -18,9 +16,9 @@ import {
   postTimeForTakeTime,
   stripRole,
   takeRole,
-} from "#lib/shared/media-composition/domain/post-plan-compiler.js";
-import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
-import { BREAKDOWN_GEOMETRY } from "#lib/shared/media-composition/domain/post-studio-presets.js";
+  BREAKDOWN_GEOMETRY,
+} from "@austencloud/video-editor/core";
+import { evaluatePresetFrame } from "#lib/shared/post-studio-plugin/index.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 const fast: PostTake = {

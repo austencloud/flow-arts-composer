@@ -1,17 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
   POST_DEFAULT_CARD_SECONDS,
-  POST_QR_URL_RULE,
   findItem,
   type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
+} from "@austencloud/video-editor/core";
+import {
+  POST_QR_URL_RULE,
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   applyPostProjectOps,
   type PostProjectOp,
 } from "#lib/shared/media-composition/domain/post-project-ops.js";
 import { NOW, card, project, video } from "./post-project-fixtures";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 const LINK = "https://tka.run/s/abc123";
 const apply = (before: PostProject, ...ops: PostProjectOp[]) =>
   applyPostProjectOps(before, ops, ctx);

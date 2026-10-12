@@ -3,17 +3,18 @@ import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-pr
 import type {
   PostProject,
   PostVideoItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
+  PostMusic,
+} from "@austencloud/video-editor/core";
 import { featureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video-url.js";
-import { NO_GRID_MESSAGE } from "#lib/shared/media-composition/domain/music-grid.js";
-import type { PostMusic } from "#lib/shared/media-composition/domain/post-music.js";
+import { NO_GRID_MESSAGE } from "@austencloud/video-editor/core";
 import {
   applyPostProjectOps,
   type PostProjectOp,
 } from "#lib/shared/media-composition/domain/post-project-ops.js";
 import { NOW, card, project, video } from "./post-project-fixtures";
+import { editContext } from "#lib/shared/post-studio-plugin/index.js";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 const URL = featureVideoMediaUrl("promo", "music/derail.wav");
 const GRID = { bpm: 120, downbeatSeconds: 5.25, beatsPerBar: 4 };
 

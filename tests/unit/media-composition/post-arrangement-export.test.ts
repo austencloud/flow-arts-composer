@@ -2,12 +2,25 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
 import { createArrangementProject } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
-import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
-import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
+import { renderPostStudioFrame } from "@austencloud/video-editor/render";
 import {
-  renderPostStudioFrame,
-  type RenderPostStudioFrameInput,
-} from "#lib/shared/media-composition/services/post-studio-frame-compositor.js";
+  compilePostProject,
+  createTkaSurfaces,
+  evaluatePresetFrame,
+} from "#lib/shared/post-studio-plugin/index.js";
+
+const { capture } = vi.hoisted(() => ({ capture: vi.fn() }));
+// The arrangement surface captures a grid of other cells through the
+// pictograph capture it creates on first use.
+vi.mock(
+  "#lib/shared/media-composition/services/post-studio-pictograph-capture.js",
+  () => ({
+    PostStudioPictographCapture: class {
+      capture = capture;
+      dispose = vi.fn();
+    },
+  })
+);
 
 const snapshot: ArrangementSnapshot = {
   schemaVersion: 2,
@@ -81,7 +94,7 @@ describe("arrangement frame export", () => {
     const captured = create("canvas");
     captured.width = 600;
     captured.height = 600;
-    const capture = vi.fn().mockResolvedValue(captured);
+    capture.mockReset().mockResolvedValue(captured);
     const drawImage = vi.fn();
     const context = new Proxy(
       { drawImage },
@@ -103,10 +116,8 @@ describe("arrangement frame export", () => {
       root,
       preset: compiled.preset,
       layers,
-      cardFrameCache: new Map(),
-      pictographCapture: {
-        capture,
-      } as unknown as RenderPostStudioFrameInput["pictographCapture"],
+      surfaceCache: new Map(),
+      surfaces: createTkaSurfaces(),
     });
 
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -181,16 +192,14 @@ describe("arrangement frame export", () => {
     vi.spyOn(canvas, "getContext").mockReturnValue(
       context as unknown as CanvasRenderingContext2D
     );
-    const capture = vi.fn();
+    capture.mockReset();
     await renderPostStudioFrame({
       canvas,
       root,
       preset: compiled.preset,
       layers,
-      cardFrameCache: new Map(),
-      pictographCapture: {
-        capture,
-      } as unknown as RenderPostStudioFrameInput["pictographCapture"],
+      surfaceCache: new Map(),
+      surfaces: createTkaSurfaces(),
     });
     expect(capture).not.toHaveBeenCalled();
     expect(
@@ -265,7 +274,8 @@ describe("arrangement frame export", () => {
       root,
       preset: compiled.preset,
       layers,
-      cardFrameCache: new Map(),
+      surfaceCache: new Map(),
+      surfaces: createTkaSurfaces(),
     });
 
     await new Promise((resolve) => setTimeout(resolve, 20));

@@ -23,7 +23,7 @@
   import InstagramPostReview from "#lib/shared/share/components/instagram/InstagramPostReview.svelte";
   import { createPostDeliveryState } from "#lib/shared/share/state/post-delivery-state.svelte.js";
   import { setPostDeliveryContext } from "#lib/shared/share/context/post-delivery-context.js";
-  import { hasDecodableAudioTrack } from "#lib/shared/media-composition/services/media-audio-inspector.js";
+  import { hasDecodableAudioTrack } from "@austencloud/video-editor/render";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";

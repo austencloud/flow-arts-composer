@@ -1,15 +1,19 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { POST_STUDIO_PRESETS } from "#lib/shared/media-composition/domain/post-studio-presets.js";
+import { POST_STUDIO_PRESETS } from "@austencloud/video-editor/core";
 import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "#lib/shared/media-composition/services/post-studio-dom-capture.js";
 import {
   resolveFrameLayerGeometry,
   renderPostStudioFrame,
-  waitForPictographMotion,
   type RenderPostStudioFrameInput,
-} from "#lib/shared/media-composition/services/post-studio-frame-compositor.js";
-import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
-import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
+  createTextItemPainter,
+} from "@austencloud/video-editor/render";
+import {
+  waitForPictographMotion,
+  compilePostProject,
+  evaluatePresetFrame,
+  createTkaSurfaces,
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   NOW,
   card,
@@ -18,10 +22,18 @@ import {
   text,
   video,
 } from "./post-project-fixtures";
-import { createTextItemPainter } from "#lib/shared/media-composition/services/text-item-painter.js";
 
 const { captureMotion } = vi.hoisted(() => ({ captureMotion: vi.fn() }));
-vi.mock("modern-screenshot", () => ({ domToCanvas: captureMotion }));
+// The sequence animation surface captures through a reused context, the card
+// surface straight from its element; both reach domToCanvas.
+vi.mock("modern-screenshot", () => ({
+  domToCanvas: captureMotion,
+  createContext: vi.fn(async (node: unknown, options: object) => ({
+    node,
+    ...options,
+  })),
+  destroyContext: vi.fn(),
+}));
 
 const preset = POST_STUDIO_PRESETS.find(
   (candidate) => candidate.id === "performance-breakdown"
@@ -45,7 +57,10 @@ describe("decoded video export surfaces", () => {
       restore: vi.fn(),
       fillStyle: "",
       globalAlpha: 1,
-      fillRect: vi.fn(function (this: { fillStyle: string; globalAlpha: number }) {
+      fillRect: vi.fn(function (this: {
+        fillStyle: string;
+        globalAlpha: number;
+      }) {
         fills.push({ color: this.fillStyle, alpha: this.globalAlpha });
       }),
     };
@@ -59,8 +74,12 @@ describe("decoded video export surfaces", () => {
       canvas,
       root: document.createElement("div"),
       preset: compiled.preset,
-      layers: evaluatePresetFrame(compiled.preset, compiled.durationSeconds, 3.5),
-      cardFrameCache: new Map(),
+      layers: evaluatePresetFrame(
+        compiled.preset,
+        compiled.durationSeconds,
+        3.5
+      ),
+      surfaceCache: new Map(),
       timeSeconds: 3.5,
     });
     expect(fills.at(-1)).toEqual({ color: "#000", alpha: 1 });
@@ -133,7 +152,7 @@ describe("decoded video export surfaces", () => {
         root,
         preset: compiled.preset,
         layers,
-        cardFrameCache: new Map(),
+        surfaceCache: new Map(),
         videoFrames: {
           has: () => true,
           frameFor,
@@ -218,9 +237,91 @@ describe("split animation export", () => {
       root,
       preset: compiled.preset,
       layers,
-      cardFrameCache: new Map(),
+      surfaceCache: new Map(),
+      surfaces: createTkaSurfaces(),
     });
     expect(fillRect).toHaveBeenCalledTimes(2);
+  });
+
+  it("names the layer when a mounted sequence animation has no surface", async () => {
+    const compiled = compilePostProject(
+      project(
+        [
+          video("first", { takeId: "a", sourceOut: 4 }),
+          video("second", { takeId: "b", start: 4, sourceOut: 3 }),
+        ],
+        [[overlay("motion", "animation", { start: 0, duration: 7 })]]
+      ),
+      { now: NOW }
+    )!;
+    const layers = evaluatePresetFrame(
+      compiled.preset,
+      compiled.durationSeconds,
+      4
+    ).filter((layer) => layer.regionId === "motion");
+    expect(layers.map((layer) => layer.clipId)).toEqual([
+      "motion~0",
+      "motion~1",
+    ]);
+    // The compositor names the layer by its region's label.
+    const label = compiled.preset.regions.find((r) => r.id === "motion")!.label;
+
+    const root = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    );
+    const mounted = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    );
+    mounted.className = "media-layer";
+    mounted.dataset.clipId = "motion~1";
+    mounted.dataset.renderMode = "sequence-animation";
+    const animation = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    ) as HTMLElement;
+    animation.dataset.sequenceProgressVisible = "false";
+    vi.spyOn(animation, "getBoundingClientRect").mockReturnValue({
+      width: 200,
+      height: 200,
+    } as DOMRect);
+    mounted.append(animation);
+    captureMotion
+      .mockReset()
+      .mockResolvedValue(document.createElement("canvas"));
+    root.append(mounted);
+    const fillRect = vi.fn();
+    const context = new Proxy(
+      { fillRect },
+      {
+        get(target, key) {
+          return Reflect.get(target, key) ?? vi.fn();
+        },
+      }
+    );
+    const canvas = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "canvas"
+    ) as HTMLCanvasElement;
+    vi.spyOn(canvas, "getContext").mockReturnValue(
+      context as unknown as CanvasRenderingContext2D
+    );
+
+    await expect(
+      renderPostStudioFrame({
+        canvas,
+        root,
+        preset: compiled.preset,
+        layers,
+        surfaceCache: new Map(),
+      })
+    ).rejects.toThrow(
+      new Error(
+        `The ${label} layer has no surface for its sequence-animation render mode.`
+      )
+    );
+    expect(captureMotion).not.toHaveBeenCalled();
   });
 
   it("covers a non-square region with the captured animation, not a centred square", async () => {
@@ -303,7 +404,8 @@ describe("split animation export", () => {
       root,
       preset: compiled.preset,
       layers,
-      cardFrameCache: new Map(),
+      surfaceCache: new Map(),
+      surfaces: createTkaSurfaces(),
     });
 
     expect(drawImage).toHaveBeenCalledWith(captured, ...expected);
@@ -358,7 +460,8 @@ describe("export capture options", () => {
         root,
         preset: compiled.preset,
         layers,
-        cardFrameCache: new Map(),
+        surfaceCache: new Map(),
+        surfaces: createTkaSurfaces(),
       });
     return { choreo, cardRoot, captured, render };
   }
@@ -476,7 +579,7 @@ describe("painted title overflow", () => {
         root: document.createElement("div"),
         preset: compiled.preset,
         layers,
-        cardFrameCache: new Map(),
+        surfaceCache: new Map(),
         painters: new Map([[title.role, painter]]),
         timeSeconds: seconds,
       });
@@ -817,14 +920,17 @@ describe("scoped Moves export", () => {
         root,
         preset: compiled.preset,
         layers,
-        cardFrameCache: new Map(),
+        surfaceCache: new Map(),
+        surfaces: createTkaSurfaces(),
       });
 
       expect(drawImage).toHaveBeenCalledTimes(1);
       expect(drawImage.mock.calls[0]![0]).toBe(captured);
       expect(captureMotion).toHaveBeenCalledTimes(1);
-      expect(captureMotion.mock.calls[0]![0]).toBe(animation);
-      expect(captureMotion.mock.calls[0]![1]).toMatchObject({
+      // The surface hands domToCanvas the context it made for the animation.
+      const captureContext = captureMotion.mock.calls[0]![0];
+      expect(captureContext.node).toBe(animation);
+      expect(captureContext).toMatchObject({
         width: 200,
         height: 250,
         onCreateForeignObjectSvg:

@@ -13,7 +13,7 @@ import {
   type LegacyArrangementCell,
 } from "#lib/shared/media-composition/domain/arrangement-migration.js";
 import { createArrangementProject } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
-import { PostProjectSchema } from "#lib/shared/media-composition/domain/post-project.js";
+import { PostProjectSchema } from "#lib/shared/post-studio-plugin/index.js";
 
 function layer(id: string, beats = 4): LegacyArrangementCell["layers"][number] {
   return {

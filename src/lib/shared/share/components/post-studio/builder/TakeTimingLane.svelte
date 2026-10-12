@@ -13,7 +13,7 @@
     revealPlayheadScrollLeft,
     rulerTickInterval,
     scrollLeftForStableAnchor,
-  } from "../editor/timeline/post-timeline-geometry";
+  } from "@austencloud/video-editor/ui";
   import { formatTakeClock } from "./post-builder-format";
   import { shownLandings } from "./timing-lane-landings";
 

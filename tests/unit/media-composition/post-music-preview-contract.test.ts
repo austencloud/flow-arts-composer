@@ -12,7 +12,8 @@
  *
  * This test locks the wiring: the canvas hands the preview's report on, the
  * workspace holds the flag and passes it to the timeline row and the panel,
- * and the workspace pauses both players when the tab turns hidden.
+ * and the workspace and tka's scope pause both players when the tab turns
+ * hidden.
  *
  * If this test fails, fix the component; do not loosen the assertions.
  */
@@ -26,12 +27,19 @@ const repoRoot = path.resolve(
   "../../.."
 );
 const read = (relative: string) =>
-  readFileSync(path.join(repoRoot, relative), "utf8");
+  readFileSync(path.resolve(repoRoot, relative), "utf8");
 
-const EDITOR = "src/lib/shared/share/components/post-studio/editor";
+// The canvas, workspace and timeline moved into @austencloud/video-editor
+// (Task 20). The installed package's .svelte files are its source verbatim.
+// The package indents with tabs.
+const EDITOR = path.resolve(
+  repoRoot,
+  "node_modules/@austencloud/video-editor/dist/ui/editor"
+);
 const CANVAS = `${EDITOR}/PostEditorCanvas.svelte`;
 const WORKSPACE = `${EDITOR}/PostEditorWorkspace.svelte`;
 const TIMELINE = `${EDITOR}/timeline/PostTimeline.svelte`;
+const SCOPE = "src/lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
 
 /**
  * Asserts a source holds a fragment. A failure names the fragment, not the
@@ -53,18 +61,26 @@ function tagOf(source: string, name: string): string {
 }
 
 describe("how the Post editor wires its music preview", () => {
-  it("the workspace pauses both players when the tab is hidden", () => {
-    const source = read(WORKSPACE);
-    const handler = /<svelte:document\s[^>]*onvisibilitychange=\{(\w+)\}/.exec(
-      source
-    )?.[1];
-    expect(handler, "<svelte:document onvisibilitychange={...}>").toBeDefined();
-    const start = source.indexOf(`function ${handler}(`);
-    expect(start, `function ${handler}`).toBeGreaterThanOrEqual(0);
-    const body = source.slice(start, source.indexOf("\n  }\n", start));
-    expect(body).toContain('document.visibilityState === "hidden"');
-    expect(body).toContain("editor.pause()");
-    expect(body).toContain("session.pause()");
+  it("the workspace and tka's scope pause both players when the tab is hidden", () => {
+    // The workspace pauses the editor; tka's scope pauses its beat-timing
+    // session.
+    for (const [file, player, bodyEnd] of [
+      [WORKSPACE, "editor.pause()", "\n\t}\n"],
+      [SCOPE, "session.pause()", "\n  }\n"],
+    ] as const) {
+      const source = read(file);
+      const handler =
+        /<svelte:document\s[^>]*onvisibilitychange=\{(\w+)\}/.exec(source)?.[1];
+      expect(
+        handler,
+        `${file}: <svelte:document onvisibilitychange={...}>`
+      ).toBeDefined();
+      const start = source.indexOf(`function ${handler}(`);
+      expect(start, `function ${handler}`).toBeGreaterThanOrEqual(0);
+      const body = source.slice(start, source.indexOf(bodyEnd, start));
+      expect(body).toContain('document.visibilityState === "hidden"');
+      expect(body).toContain(player);
+    }
   });
 
   it("the canvas hands the preview's missing-file report to its owner", () => {
@@ -73,7 +89,7 @@ describe("how the Post editor wires its music preview", () => {
       "onMissing={onMusicMissing}"
     );
     // The prop is read from the canvas's own props, not from thin air.
-    expectIn(source, /\n {4}onMusicMissing,\n/);
+    expectIn(source, /\n\t\tonMusicMissing,\n/);
   });
 
   it("the workspace keeps the flag and passes it to the canvas, the timeline and the panel", () => {
@@ -89,6 +105,6 @@ describe("how the Post editor wires its music preview", () => {
     expect(tagOf(source, "PostTimelineMusicLane")).toContain(
       "missing={musicMissing}"
     );
-    expectIn(source, /\n {4}musicMissing = false,\n/);
+    expectIn(source, /\n\t\tmusicMissing = false,\n/);
   });
 });

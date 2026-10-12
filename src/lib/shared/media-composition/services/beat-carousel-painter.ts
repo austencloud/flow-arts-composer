@@ -14,7 +14,7 @@ import {
   type PaintFrame,
   type PaintRect,
   type PostStudioLayerPainter,
-} from "./post-studio-layer-painter";
+} from "@austencloud/video-editor/render";
 
 const BACKGROUND = "#08080c";
 const FOCUS = "#d4813a";

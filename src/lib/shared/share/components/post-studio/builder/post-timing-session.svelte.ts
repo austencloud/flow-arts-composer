@@ -1,4 +1,4 @@
-import type { PaintFrame } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+import type { PaintFrame } from "@austencloud/video-editor/render";
 import {
   MIN_MOVE_SECONDS,
   TAKE_MAX_BPM,
@@ -21,7 +21,7 @@ import {
   type TakeTimingStatus,
   type TimingSection,
 } from "#lib/shared/media-composition/domain/take-timing.js";
-import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
+import type { PostTake } from "@austencloud/video-editor/core";
 import { untrack } from "svelte";
 import { sequenceFrameAt } from "#lib/shared/media-composition/domain/sequence-frame.js";
 import {
@@ -31,7 +31,7 @@ import {
 import { shownLanding } from "./timing-lane-landings";
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { nextMappedLanding } from "./post-timing-animation";
-import { releaseMediaDownload } from "#lib/shared/media-composition/services/media-download-release.js";
+import { releaseMediaDownload } from "@austencloud/video-editor/render";
 
 export interface LandingRef {
   sectionId: string;

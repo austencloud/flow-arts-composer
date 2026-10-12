@@ -2,22 +2,15 @@ import { Blob as NodeBlob } from "node:buffer";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { IDBFactory, IDBKeyRange } from "fake-indexeddb";
 import Dexie from "dexie";
-import { PreviewVideoLocalStore } from "../../src/lib/shared/media-composition/services/preview-video-store";
+import { PreviewVideoLocalStore } from "@austencloud/video-editor/render";
 import {
   previewVideoCacheKey,
   type PreviewVideoCopy,
-} from "../../src/lib/shared/media-composition/domain/preview-video";
+} from "@austencloud/video-editor/core";
 
-vi.mock(
-  "../../src/lib/shared/media-composition/domain/preview-video",
-  async (importOriginal) => ({
-    ...(await importOriginal<
-      typeof import("../../src/lib/shared/media-composition/domain/preview-video")
-    >()),
-    MAX_PREVIEW_CACHE_BYTES: 20,
-    MAX_PREVIEW_VIDEO_BYTES: 8,
-  })
-);
+/** Small byte limits so the eviction and per-video cases fit in a few bytes. */
+const limited = () =>
+  new PreviewVideoLocalStore({ maxCacheBytes: 20, maxVideoBytes: 8 });
 
 /** A key made under the current policy, as the cache makes them. */
 const key = (name: string) => previewVideoCacheKey(`/${name}.mp4`, name);
@@ -43,9 +36,9 @@ beforeEach(() => {
 
 describe("preview video device cache", () => {
   it("round-trips proxy bytes and source geometry across store instances", async () => {
-    const store = new PreviewVideoLocalStore();
+    const store = limited();
     await store.write(key("source"), "take", copy());
-    const restored = await new PreviewVideoLocalStore().read(key("source"));
+    const restored = await limited().read(key("source"));
     expect(restored).toMatchObject({
       sourceWidth: 1920,
       sourceHeight: 1080,
@@ -55,7 +48,7 @@ describe("preview video device cache", () => {
   });
 
   it("removes a replaced source's persisted copy without disturbing another take", async () => {
-    const store = new PreviewVideoLocalStore();
+    const store = limited();
     await store.write(key("old"), "take", copy());
     await store.write(key("other"), "other-take", copy());
     await store.write(key("new"), "take", copy());
@@ -67,7 +60,7 @@ describe("preview video device cache", () => {
   it("evicts the least recently read take when the byte budget fills", async () => {
     let time = 0;
     const now = vi.spyOn(Date, "now").mockImplementation(() => ++time);
-    const store = new PreviewVideoLocalStore();
+    const store = limited();
     try {
       await store.write(key("a"), "a", copy());
       await store.write(key("b"), "b", copy());
@@ -82,7 +75,7 @@ describe("preview video device cache", () => {
   });
 
   it("does not persist copies over the per-video budget", async () => {
-    const store = new PreviewVideoLocalStore();
+    const store = limited();
     await store.write(key("too-big"), "take", {
       ...copy(),
       blob: new NodeBlob(["123456789"]) as unknown as Blob,
@@ -91,14 +84,14 @@ describe("preview video device cache", () => {
   });
 
   it("removes proxy bytes and metadata after a playback failure", async () => {
-    const store = new PreviewVideoLocalStore();
+    const store = limited();
     await store.write(key("failed"), "take", copy());
     await store.remove(key("failed"));
-    expect(await new PreviewVideoLocalStore().read(key("failed"))).toBeNull();
+    expect(await limited().read(key("failed"))).toBeNull();
   });
 
   it("drops copies made under an older policy when it writes", async () => {
-    const store = new PreviewVideoLocalStore();
+    const store = limited();
     const old = JSON.stringify(["avc-720p-v1", "take", "/source.mp4"]);
     await store.write(old, "old-take", copy());
     await store.write(key("current"), "take", copy());

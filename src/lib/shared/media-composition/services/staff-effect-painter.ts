@@ -1,22 +1,22 @@
-import type { LayoutRegion } from "#lib/shared/media-composition/domain/media-layout-schema.js";
-import type { PostStaffEffectId } from "#lib/shared/media-composition/domain/post-project.js";
+import type { LayoutRegion } from "@austencloud/video-editor/core";
+import type { PostStaffEffectId } from "#lib/shared/post-studio-plugin/index.js";
 import {
   staffTipPath,
   staffTipsAt,
   type StaffColor,
   type StaffTipTrack,
 } from "#lib/shared/media-composition/domain/staff-tip-track.js";
-import type { EvaluatedFrameLayer } from "#lib/shared/media-composition/services/frame-evaluator.js";
+import type {
+  EvaluatedFrameLayer,
+  PaintRect,
+  PostStudioLayerPainter,
+} from "@austencloud/video-editor/render";
 import {
   calculateMediaFit,
   calculateSourceCropFit,
   resolvePanOffset,
   turnOf,
-} from "#lib/shared/media-composition/services/media-fit.js";
-import type {
-  PaintRect,
-  PostStudioLayerPainter,
-} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+} from "@austencloud/video-editor/render";
 import { Canvas2DTrailRenderer } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer.js";
 import {
   DEFAULT_TRAIL_SETTINGS,

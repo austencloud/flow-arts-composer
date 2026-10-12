@@ -1,6 +1,8 @@
 import { renderHeader } from "@tka/render-composition";
-import { CAPTION_STROKE_WIDTH_FRACTION } from "#lib/shared/media-composition/domain/caption-layout.js";
-import { sampleEasing } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+import {
+  CAPTION_STROKE_WIDTH_FRACTION,
+  sampleEasing,
+} from "@austencloud/video-editor/core";
 import {
   tunnelTitlesLook,
   type TunnelTitlesPlan,
@@ -9,7 +11,7 @@ import type {
   PaintFrame,
   PaintRect,
   PostStudioLayerPainter,
-} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+} from "@austencloud/video-editor/render";
 import { textRenderer } from "#lib/shared/render/services/text-renderer.js";
 
 /** Same ink as a caption, so the opening reads as one family with the post's words. */
