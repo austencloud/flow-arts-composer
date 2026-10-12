@@ -10,6 +10,8 @@ import {
   propPosesMatch,
   type MotionSampleSource,
 } from "../motion-sub-sampler";
+import { shiftPropState } from "../animation-grid-join";
+import type { HandOffsets } from "#lib/shared/grid-join/grid-join-tween.js";
 
 const TOTAL_BEATS = 4;
 
@@ -37,6 +39,20 @@ function poseAt(step: number): { left: PropState; right: PropState } {
     left: { centerPathAngle: step, staffRotationAngle: step * 2 },
     right: { centerPathAngle: -step, staffRotationAngle: -step * 2 },
   };
+}
+
+/** East, one point: blue half a hand radius west, red half east. */
+const EAST_ONE: HandOffsets = {
+  left: { x: -0.5, y: 0 },
+  right: { x: 0.5, y: 0 },
+};
+
+/** A pose as the frame system hands it to the loop on joined grids. */
+function onGrid(pose: PropState, shift: { x: number; y: number }): PropState {
+  return shiftPropState(pose, shift, {
+    centerPathAngle: 0,
+    staffRotationAngle: 0,
+  });
 }
 
 describe("motionSubStepCount", () => {
@@ -261,6 +277,82 @@ describe("MotionSubSampler", () => {
     expect(samples[0]!.layers[1]!.left).toBeNull();
     expect(samples[0]!.layers[1]!.right).toBeNull();
     expect(sampler.stats.layerGuardRejections).toBe(1);
+  });
+
+  it("shifts layer samples onto their grids and trusts live layers shifted the same way", () => {
+    const sampler = new MotionSubSampler();
+    const samples = sampler.plan({
+      source: circleSource(),
+      previousStep: 1,
+      currentStep: 2,
+      dtSeconds: 0.05,
+      isSeamlesslyLoopable: false,
+      loopDetected: false,
+      liveLeft: poseAt(2).left,
+      liveRight: poseAt(2).right,
+      layerCount: 2,
+      layersAt: (step) => [
+        { leftProp: poseAt(step + 1).left, rightProp: poseAt(step + 1).right },
+        { leftProp: poseAt(step + 2).left, rightProp: poseAt(step + 2).right },
+      ],
+      liveLayers: [
+        // The frame system shifted this copy onto the pair.
+        {
+          leftProp: onGrid(poseAt(3).left, EAST_ONE.left),
+          rightProp: onGrid(poseAt(3).right, EAST_ONE.right),
+        },
+        // A copy still at the center does not match a joined frame.
+        { leftProp: poseAt(4).left, rightProp: poseAt(4).right },
+      ],
+      gridJoinOffsets: EAST_ONE,
+      previousTimeMs: 0,
+      currentTimeMs: 50,
+    });
+
+    expect(samples.length).toBe(2);
+    const first = samples[0]!.layers[0]!;
+    const expectedLeft = onGrid(poseAt(1 + 1 / 3 + 1).left, EAST_ONE.left);
+    expect(first.left?.x).toBeCloseTo(expectedLeft.x!, 9);
+    expect(first.left?.y).toBeCloseTo(expectedLeft.y!, 9);
+    expect(first.left?.staffRotationAngle).toBeCloseTo(
+      expectedLeft.staffRotationAngle,
+      9
+    );
+    const expectedRight = onGrid(poseAt(1 + 1 / 3 + 1).right, EAST_ONE.right);
+    expect(first.right?.x).toBeCloseTo(expectedRight.x!, 9);
+    expect(first.right?.y).toBeCloseTo(expectedRight.y!, 9);
+    expect(samples[0]!.layers[1]!.left).toBeNull();
+    expect(samples[0]!.layers[1]!.right).toBeNull();
+    expect(sampler.stats.layerGuardRejections).toBe(1);
+  });
+
+  it("keeps raw layer samples when the frame has no grid offsets", () => {
+    const sampler = new MotionSubSampler();
+    const samples = sampler.plan({
+      source: circleSource(),
+      previousStep: 1,
+      currentStep: 2,
+      dtSeconds: 0.05,
+      isSeamlesslyLoopable: false,
+      loopDetected: false,
+      liveLeft: poseAt(2).left,
+      liveRight: poseAt(2).right,
+      layerCount: 1,
+      layersAt: (step) => [
+        { leftProp: poseAt(step + 1).left, rightProp: poseAt(step + 1).right },
+      ],
+      liveLayers: [{ leftProp: poseAt(3).left, rightProp: poseAt(3).right }],
+      gridJoinOffsets: null,
+      previousTimeMs: 0,
+      currentTimeMs: 50,
+    });
+    expect(samples.length).toBe(2);
+    expect(samples[0]!.layers[0]!.left?.x).toBeUndefined();
+    expect(samples[0]!.layers[0]!.left?.centerPathAngle).toBeCloseTo(
+      1 + 1 / 3 + 1,
+      6
+    );
+    expect(sampler.stats.layerGuardRejections).toBe(0);
   });
 
   it("sizes the plan by the beats covered when the frame clock is unknown", () => {

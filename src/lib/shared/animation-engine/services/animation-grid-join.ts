@@ -13,6 +13,8 @@
  */
 import type { GridJoin } from "@tka/tka-types";
 import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import type { AdditionalLayerProps } from "../domain/types/trail-capture-types.js";
+import type { HandOffsets } from "#lib/shared/grid-join/grid-join-tween.js";
 import { PIXELS_PER_UNIT } from "#lib/shared/multi-grid/domain/constants/grid-mode-offsets.js";
 import {
   JOINED_GRID_TINT,
@@ -43,18 +45,18 @@ type JoinedSequence = {
 };
 
 /**
- * The join the animation draws for a sequence, or null for one grid. Overlaid
- * tunnel layers share one grid, so they keep it single. The join is lined up
- * with the grid drawn (`gridMode`, else the sequence's own), as the cards
+ * The join the animation draws for a sequence, or null for one grid. Layers
+ * overlaid on the sequence (tunnel copies, arrangement performers) share it:
+ * the frame system moves every layer's hands onto the pair. The join is lined
+ * up with the grid drawn (`gridMode`, else the sequence's own), as the cards
  * line it up.
  */
 export function resolveAnimationGridJoin(
   sequence: JoinedSequence | null | undefined,
-  tunnelLayerCount = 0,
   gridMode?: string | null
 ): GridJoin | null {
   const join = sequence?.conjoined;
-  return tunnelLayerCount === 0 && isGridJoin(join)
+  return isGridJoin(join)
     ? alignGridJoin(join, gridMode ?? sequence?.gridMode)
     : null;
 }
@@ -143,6 +145,69 @@ export function shiftPropState(
   target.y =
     (cartesian ? source.y! : Math.sin(source.centerPathAngle)) + shift.y;
   return target;
+}
+
+/**
+ * Scratch for `shiftLayerProps`: one shifted layer, with its own left and
+ * right states, per slot. Created once per frame system and reused every
+ * frame, so shifting allocates nothing on the hot path.
+ */
+export interface LayerShiftPool {
+  readonly layers: AdditionalLayerProps[];
+  readonly left: PropState[];
+  readonly right: PropState[];
+}
+
+export function createLayerShiftPool(): LayerShiftPool {
+  return { layers: [], left: [], right: [] };
+}
+
+function newPropState(): PropState {
+  return { centerPathAngle: 0, staffRotationAngle: 0 };
+}
+
+/**
+ * The overlaid layers with each hand moved onto its grid by `offsets`, the
+ * way the base pair is moved. The copies live in `pool` and carry the
+ * layer's other fields (opacity, prop types, capture flags); the host's layer
+ * objects are never written. With nothing to shift (no layers, or both
+ * offsets at the center) the host's array comes back as it is.
+ */
+export function shiftLayerProps(
+  layers: AdditionalLayerProps[],
+  offsets: HandOffsets,
+  pool: LayerShiftPool
+): AdditionalLayerProps[] {
+  if (
+    layers.length === 0 ||
+    (offsets.left.x === 0 &&
+      offsets.left.y === 0 &&
+      offsets.right.x === 0 &&
+      offsets.right.y === 0)
+  ) {
+    return layers;
+  }
+  for (let i = 0; i < layers.length; i++) {
+    const source = layers[i]!;
+    const left = (pool.left[i] ??= newPropState());
+    const right = (pool.right[i] ??= newPropState());
+    const target = (pool.layers[i] ??= { leftProp: null, rightProp: null });
+    target.leftProp = source.leftProp
+      ? shiftPropState(source.leftProp, offsets.left, left)
+      : null;
+    target.rightProp = source.rightProp
+      ? shiftPropState(source.rightProp, offsets.right, right)
+      : null;
+    // Every other field is copied by name so a value from an earlier frame's
+    // layer cannot linger on a reused slot.
+    target.opacity = source.opacity;
+    target.trailCaptureSuppressed = source.trailCaptureSuppressed;
+    target.formationTransitionActive = source.formationTransitionActive;
+    target.leftPropType = source.leftPropType;
+    target.rightPropType = source.rightPropType;
+  }
+  pool.layers.length = layers.length;
+  return pool.layers;
 }
 
 /**
