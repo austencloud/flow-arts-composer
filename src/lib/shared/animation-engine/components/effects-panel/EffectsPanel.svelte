@@ -27,7 +27,7 @@
   } from "./presets/match-preset";
   import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { startMorph } from "#lib/shared/transitions/results-morph.js";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";

@@ -36,7 +36,7 @@
   import CardAnatomyExplainer from "./components/CardAnatomyExplainer.svelte";
   import PreorderPriceNote from "./components/PreorderPriceNote.svelte";
   import { activePriceCents, preorderWindowOpen, formatUsd } from "./domain/preorder-pricing";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import BaseCard from "#lib/features/create/generate/components/cards/BaseCard.svelte";
   import { LOOPType } from "#lib/features/create/generate/circular/domain/models/circular-models.js";
   import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";

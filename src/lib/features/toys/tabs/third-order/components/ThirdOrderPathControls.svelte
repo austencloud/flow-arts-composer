@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import SettingToggleButton from "#lib/shared/settings/components/SettingToggleButton.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {

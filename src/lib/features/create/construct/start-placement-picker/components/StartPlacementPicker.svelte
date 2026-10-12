@@ -12,7 +12,7 @@ Controls moved below the grid for better UX
   import type { GridJoin } from "@tka/tka-types";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onDestroy, onMount, type Snippet } from "svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     createSimplifiedStartPlacementState,

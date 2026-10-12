@@ -1,9 +1,35 @@
 import { cubicInOut, cubicOut } from "svelte/easing";
 import { fade, type TransitionConfig } from "svelte/transition";
-import { DURATION } from "./transitions";
+import {
+  DURATION,
+  EASE_STANDARD,
+  motionDuration,
+  popIn as packagePopIn,
+  reducedMotion,
+} from "@austencloud/motion";
 import { cssCubicBezier } from "./ws-ease";
 
-const STANDARD_MOTION_EASING = "cubic-bezier(0.4, 0, 0.2, 1)";
+// Shared owners come from the package (same code Ringmaster and the website
+// run). Rule: docs/architecture/visual-design-canon.md §9.
+export {
+  Crossfade,
+  STEP_DRIFT_PX,
+  arrive,
+  flipDuration,
+  flyFade,
+  leave,
+  motionDuration,
+  reducedMotion,
+} from "@austencloud/motion";
+
+// Composer also transitions SVG groups. The package implementation only
+// ignores this argument, so keep its identity while retaining that wider use.
+export const popIn = packagePopIn as (
+  node: Element,
+  params?: Parameters<typeof packagePopIn>[1]
+) => ReturnType<typeof packagePopIn>;
+
+const STANDARD_MOTION_EASING = EASE_STANDARD;
 
 /**
  * JS twin of `--ease-in-out`, the curve PanelGroup tracks move on. Give it to
@@ -19,22 +45,6 @@ export const standardEasing = cssCubicBezier(0.4, 0, 0.2, 1);
  * show/hide when the user asks for reduced motion. Reach for these instead of
  * raw `svelte/transition` imports in feature code.
  */
-
-/** True when the user prefers reduced motion. Safe on the server (false). */
-export function reducedMotion(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    ((typeof document !== "undefined" &&
-      document.documentElement.dataset.motionPreference === "reduce") ||
-      (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ??
-        false))
-  );
-}
-
-/** Clamp a duration (ms) to 0 under reduced motion — for flip/scale params. */
-export function motionDuration(ms: number): number {
-  return reducedMotion() ? 0 : ms;
-}
 
 /** A quiet arrival cue for an instant jump within a mounted content surface. */
 export function createDestinationFade(element: HTMLElement) {
@@ -76,17 +86,6 @@ export function createDestinationFade(element: HTMLElement) {
       observer.disconnect();
     },
   };
-}
-
-/**
- * Sideways drift of a stepped decision screen (Crossfade `motion="step"`).
- * Chrome that leaves or returns with a stepped screen drifts the same way.
- */
-export const STEP_DRIFT_PX = 12;
-
-/** Default duration for `animate:flip` list reordering. */
-export function flipDuration(): number {
-  return motionDuration(DURATION.normal);
 }
 
 /**
@@ -166,33 +165,6 @@ export function createIntrinsicHeightMotion(
       animation = null;
       element.style.height = "";
     },
-  };
-}
-
-interface FlyFadeParams {
-  duration?: number;
-  delay?: number;
-  /** Drift-in offsets in px (element eases from here to rest). */
-  x?: number;
-  y?: number;
-}
-
-/**
- * Fade + short translate drift. No layout animation — use for elements at the
- * end of a row or in reserved space (alerts, status text, badges) where the
- * mount itself doesn't shove siblings.
- */
-export function flyFade(
-  node: HTMLElement,
-  { duration = DURATION.normal, delay = 0, x = 0, y = 4 }: FlyFadeParams = {}
-): TransitionConfig {
-  void node;
-  return {
-    duration: motionDuration(duration),
-    delay,
-    easing: cubicOut,
-    css: (t) =>
-      `opacity: ${t}; transform: translate(${(1 - t) * x}px, ${(1 - t) * y}px);`,
   };
 }
 
@@ -348,29 +320,4 @@ export function opaqueFade(
     return fade(node, { duration: ms, delay, easing });
   }
   return { duration: ms, delay, easing, css: (t) => `opacity: ${t * opacity}` };
-}
-
-interface PopInParams {
-  duration?: number;
-  delay?: number;
-  /** Starting scale. */
-  start?: number;
-}
-
-/**
- * Scale + fade pop for small controls (icon buttons, badges). A `start` above 1
- * settles down to rest size instead. It never reads the node's style, unlike
- * Svelte's `scale`.
- */
-export function popIn(
-  node: Element,
-  { duration = DURATION.fast, delay = 0, start = 0.8 }: PopInParams = {}
-): TransitionConfig {
-  void node;
-  return {
-    duration: motionDuration(duration),
-    delay,
-    easing: cubicOut,
-    css: (t) => `opacity: ${t}; transform: scale(${start + (1 - start) * t});`,
-  };
 }

@@ -4,7 +4,7 @@
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { getCodexLetterMappingRepo } from "#lib/features/learn/codex/get-codex-letter-mapping-repo.js";
   import ArtifactRegionSpotlight from "#lib/shared/components/ArtifactRegionSpotlight.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
   import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";

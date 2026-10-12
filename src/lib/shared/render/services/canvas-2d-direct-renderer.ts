@@ -290,7 +290,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     // Two joined grids are wider than one: the grids, props and arrows shrink
     // together about the center, and the glyphs drawn after them stay put.
     const joinLayout = prepared?.join
-      ? getGridJoinLayout(prepared.join, gridMode)
+      ? getGridJoinLayout(prepared.join, prepared.joinedGrids ?? gridMode)
       : null;
     if (joinLayout) {
       ctx.save();
@@ -303,7 +303,6 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         ctx,
         size,
         isDarkMode,
-        gridMode,
         joinLayout,
         visibility.dotGrid
           ? (visibility.handPointVisibility ?? "all")
@@ -632,7 +631,6 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     ctx: CanvasRenderingContext2D,
     size: number,
     isDarkMode: boolean,
-    gridMode: GridMode,
     layout: GridJoinLayout,
     handPointVisibility: "all" | "active" | "none",
     pictograph: PreparedPictographData,
@@ -657,7 +655,6 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       ctx,
       layout,
       size,
-      gridMode === GridMode.BOX,
       colors,
       (point) =>
         point.kind !== "hand" ||

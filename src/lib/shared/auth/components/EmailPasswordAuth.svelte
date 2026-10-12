@@ -22,7 +22,7 @@
   import { recordAuthSubmission } from "#lib/shared/auth/services/auth-analytics-bridge.js";
   import { recordLastAuthMethod } from "#lib/shared/auth/services/last-auth-method.svelte.js";
   import { trackAuthProviderResult } from "#lib/shared/analytics/auth-events.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
 
   let {

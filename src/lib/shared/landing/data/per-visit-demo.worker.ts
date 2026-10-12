@@ -37,29 +37,36 @@ export type PerVisitDemoResponse =
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 
-scope.addEventListener("message", (event: MessageEvent<PerVisitDemoRequest>) => {
-  const { id, propType, startPlacement } = event.data ?? { id: -1 };
-  void (async () => {
-    try {
-      const sequence = await rollPerVisitDemo({
-        ...(propType ? { propType } : {}),
-        ...(startPlacement ? { startPlacement } : {}),
-      });
-      if (!sequence) {
+scope.addEventListener(
+  "message",
+  (event: MessageEvent<PerVisitDemoRequest>) => {
+    const { id, propType, startPlacement } = event.data ?? { id: -1 };
+    void (async () => {
+      try {
+        const sequence = await rollPerVisitDemo({
+          ...(propType ? { propType } : {}),
+          ...(startPlacement ? { startPlacement } : {}),
+        });
+        if (!sequence) {
+          scope.postMessage({
+            id,
+            ok: false,
+            error: "roll produced no sequence",
+          } satisfies PerVisitDemoResponse);
+          return;
+        }
+        scope.postMessage({
+          id,
+          ok: true,
+          sequence,
+        } satisfies PerVisitDemoResponse);
+      } catch (error) {
         scope.postMessage({
           id,
           ok: false,
-          error: "roll produced no sequence",
+          error: error instanceof Error ? error.message : String(error),
         } satisfies PerVisitDemoResponse);
-        return;
       }
-      scope.postMessage({ id, ok: true, sequence } satisfies PerVisitDemoResponse);
-    } catch (error) {
-      scope.postMessage({
-        id,
-        ok: false,
-        error: error instanceof Error ? error.message : String(error),
-      } satisfies PerVisitDemoResponse);
-    }
-  })();
-});
+    })();
+  }
+);

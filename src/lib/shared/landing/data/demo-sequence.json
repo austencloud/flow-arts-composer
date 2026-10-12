@@ -1321,11 +1321,7 @@
   "isCircular": true,
   "loopType": "rotated",
   "orientationCycleCount": 1,
-  "tags": [
-    "circular",
-    "cap",
-    "rotated"
-  ],
+  "tags": ["circular", "cap", "rotated"],
   "metadata": {
     "generated": true,
     "generatedAt": "2026-09-02T18:25:18.913Z",

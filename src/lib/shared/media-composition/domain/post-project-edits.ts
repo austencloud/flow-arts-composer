@@ -30,6 +30,7 @@ import {
   type TunnelBackdropFrame,
   type TunnelHook,
 } from "@austencloud/video-editor/core";
+import type { GridJoin } from "@tka/tka-types";
 import type {
   PostAnimationAppearance,
   PostAnimationItem,
@@ -55,6 +56,7 @@ import {
   resizeCell,
   setBpm,
   setCellAppearance,
+  setCellGridJoin,
   setCellLayers,
   setCellMotionVisibility,
   setCellOffset,
@@ -839,6 +841,19 @@ export function setArrangementCellMotionVisibility(
 ): PostProject {
   return editArrangement(project, itemId, ctx, (snapshot) =>
     setCellMotionVisibility(snapshot, cellId, visible)
+  );
+}
+
+/** A cell's own join: a pair, one grid (null), or `undefined` to follow its sequence. */
+export function setArrangementCellGridJoin(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  join: GridJoin | null | undefined,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellGridJoin(snapshot, cellId, join)
   );
 }
 

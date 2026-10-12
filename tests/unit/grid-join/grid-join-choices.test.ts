@@ -25,6 +25,27 @@ describe("offeredGridJoinDirections", () => {
   it("treats an unknown grid mode as diamond", () => {
     expect(towards(undefined)).toEqual(["e", "w", "n", "s"]);
   });
+
+  it("offers every direction on a skewed sequence, whose hands draw different grids", () => {
+    expect(towards("skewed")).toEqual([
+      "e",
+      "w",
+      "n",
+      "s",
+      "ne",
+      "se",
+      "sw",
+      "nw",
+    ]);
+  });
+
+  it("keeps a skewed sequence's join as stored, whichever way it points", () => {
+    expect(gridJoinSelection({ toward: "ne", steps: 1 }, "skewed")).toEqual({
+      current: { toward: "ne", steps: 1 },
+      toward: "ne",
+      steps: 1,
+    });
+  });
 });
 
 describe("gridJoinSelection", () => {

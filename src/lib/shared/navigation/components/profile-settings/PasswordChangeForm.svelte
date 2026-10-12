@@ -9,7 +9,7 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { getProfileSettingsContext } from "../../state/profile-settings-context.svelte";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { slide, fade } from "svelte/transition";

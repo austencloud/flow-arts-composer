@@ -3,7 +3,7 @@
   import ResizeHandle from "#lib/shared/panels/ResizeHandle.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import ShimmerBlock from "#lib/shared/components/loading/ShimmerBlock.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import {
     getChoreoSheetContext,
