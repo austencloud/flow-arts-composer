@@ -1,11 +1,11 @@
 ---
-status: active
+status: shipped
 value: 4
 effort: L
-work_state: verification
-remaining: "Austen reviews the evidence set; then move to shipped."
+work_state: complete
+remaining: "None. All eleven portraits, the look copy, the evidence set and the review fixes are on local main; Austen marked it shipped 2026-10-11."
 depends_on: ""
-plan_path: "docs/superpowers/plans/active/2026-10-11-effect-tile-portraits.md"
+plan_path: "docs/superpowers/plans/shipped/2026-10-11-effect-tile-portraits.md"
 tags: [effects, create, ui]
 last_triaged: "2026-10-11"
 ---
