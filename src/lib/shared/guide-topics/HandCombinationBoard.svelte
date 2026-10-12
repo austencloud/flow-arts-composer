@@ -19,6 +19,8 @@
   plays one; null draws the finished picture. `onCellPlay` reports a pointer
   entering or clicking a found cell, so the host can replay it. Both are off
   unless passed.
+
+  A host can set `--board-wide-columns` (6 by default) for a wide board.
 -->
 <script lang="ts">
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
@@ -175,7 +177,10 @@
   /* One row on a wide board, so the whole board fits a laptop screen. */
   @container combination-board (min-width: 56rem) {
     .combination-board {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(
+        var(--board-wide-columns, 6),
+        minmax(0, 1fr)
+      );
     }
   }
 

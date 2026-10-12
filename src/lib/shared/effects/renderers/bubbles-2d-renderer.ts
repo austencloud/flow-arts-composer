@@ -1,115 +1,134 @@
 import type { Bubbles2DParams } from "../translators/canvas2d-types";
-import type { BubblePalette } from "../domain/bubble-palettes";
-import { oilIridescentRim } from "../domain/bubble-palettes";
+import {
+  BUBBLE_MAX_DEFORMATION,
+  BUBBLE_MIN_REBOUND_DEFORMATION,
+  BUBBLE_POP_SECONDS,
+  BUBBLE_PX_PER_WORLD,
+  type BubbleFilmLook,
+  resolveBubbleDeformationTarget,
+  resolveBubbleFilmLook,
+  resolveBubbleRuptureOrigin,
+  resolveBubbleRuptureRadius,
+  resolveInheritedVelocity,
+} from "./bubble-film";
+import {
+  BUBBLE_DRAIN_START,
+  BUBBLE_FILM_SEEDS,
+  BUBBLE_FILM_STAGE_LIVES,
+  BUBBLE_SPRITE_RADIUS,
+  BUBBLE_SPRITE_SIDE,
+  BubbleFilmSpriteCache,
+} from "./bubble-film-sprites";
 import type { EmitterTip } from "./emitter-tip";
 import { emitterId } from "./emitter-tip";
 
-/**
- * A single live bubble. Lightweight state - position is integrated each
- * frame instead of closed-form like water droplets because bubbles pick
- * up a bit of horizontal drift and grow over lifetime.
- */
+/** One soap bubble. Position is integrated; sway is added at draw time. */
 interface Bubble {
-  /** Drift-free position (px). Wobble is added at draw time. */
   x: number;
   y: number;
-  /** Horizontal drift velocity (px/s). Small natural chaos. */
   vx: number;
-  /** Vertical velocity (px/s). Negative = rising (screen-up). */
   vy: number;
-  /** Seconds since spawn. */
+  /** Terminal rise speed (px/s, positive = up the screen). */
+  rise: number;
   age: number;
-  /** Seconds until pop. */
   maxAge: number;
-  /** Radius at spawn (px). Barely changes - see `currentRadius`. */
   baseR: number;
-  /** Sideways sway amplitude (px) - bubbles weave as they rise. */
+  sizeMul: number;
   wobbleAmp: number;
-  /** Sway frequency (rad/s). */
   wobbleFreq: number;
-  /** Sway phase offset so no two bubbles move in lockstep. */
   wobblePhase: number;
-  /** 0-1 seed for where this bubble sits in the thin-film hue sweep. */
-  filmPhase: number;
-  /** Pop state. 0 = alive, 1 = popping. */
-  popping: number;
-  /** Age in popping phase (seconds). Once this exceeds POP_DURATION the
-   *  bubble is removed. */
+  /** 0-1: which eddy layout its film has and where its burst starts. */
+  seed: number;
+  seedIndex: number;
+  /** Film drift direction and rate (rad/s). */
+  filmSpin: number;
+  /** Stretch along `dirX, dirY` (0 = round). */
+  deform: number;
+  deformVel: number;
+  dirX: number;
+  dirY: number;
+  ruptureX: number;
+  ruptureY: number;
+  popping: 0 | 1;
   popAge: number;
-  /** Radius frozen at pop-start so the pop animation has a stable base. */
   popR: number;
+  /** Droplets owed to the running rim, carried between frames. */
+  sprayAcc: number;
 }
 
-/**
- * A single pop-burst fragment. Short-lived tiny particles that radiate
- * outward from a bubble's pop point.
- */
-interface PopBurst {
+/** A droplet shed by the retracting rim of a burst. */
+interface Fleck {
   x: number;
   y: number;
   vx: number;
   vy: number;
   age: number;
   maxAge: number;
-  /** Size (px). */
-  r: number;
-  /** Film sliver orientation and angular velocity. */
-  angle: number;
-  spin: number;
-  /** Color cached at spawn - avoids per-frame palette lookup when iridescent. */
+  size: number;
   color: string;
 }
 
-interface BubbleGradientSet {
-  body: CanvasGradient;
-  specular: CanvasGradient;
-  bounce: CanvasGradient;
-}
+type Rand = () => number;
 
 const MAX_BUBBLES = 1024;
-const POP_DURATION = 0.18;
-const POP_RELAX_SCALE = 1.18;
-const BURST_COUNT_MIN = 4;
-const BURST_COUNT_MAX = 7;
-const BURST_LIFE_MIN = 0.18;
-const BURST_LIFE_VAR = 0.22;
-const GRADIENT_CACHE_ENTRIES_PER_CONTEXT = 8;
+const MAX_FLECKS = 512;
 const TAU = Math.PI * 2;
-
-/**
- * Total swell over a bubble's life. A real soap bubble in air holds its
- * volume until it bursts - it does not balloon. 8% is enough to read as
- * "under tension" without becoming the cartoon growth this replaced.
- */
+/** Longest step simulated at once; a stalled tab resumes calmly. */
+const MAX_STEP = 1 / 15;
+/** A tip that moves further than this in one frame jumped (loop seam, new sequence). */
+const JUMP_PX = 220;
+/** Swell over a life: a film bubble holds its volume. */
 const LIFETIME_SWELL = 0.08;
-/** Smallest bubble in the field, as a fraction of the intensity-scaled base. */
 const SIZE_FLOOR = 0.34;
-/** How hard the size roll biases toward small. 1 = uniform, higher = smaller. */
-const SIZE_BIAS = 2.0;
-/** Global opacity ceiling - bubbles are chrome, never the subject. */
-const MAX_OPACITY = 0.78;
+const SIZE_BIAS = 2;
+/** Overall opacity. Bubbles are chrome around the props, never the subject. */
+const OPACITY = 0.92;
+/** Air drag on sideways drift, and how fast inherited vertical speed hands over to buoyancy (3D values). */
+const HORIZONTAL_DRAG = 0.48;
+const VERTICAL_INHERITANCE_DRAG = 0.16;
+const DEFORMATION_STIFFNESS = 58;
+const DEFORMATION_DAMPING = 12;
+const DEFORMATION_DIRECTION_RESPONSE = 7;
+const FLECK_GRAVITY = 90;
+/** Droplets the running rim sheds over one burst, and the puncture's own. */
+const SPRAY_PER_POP = 14;
+const PUNCTURE_DROPLETS = 3;
+/** The torn lip is uneven: this many arcs, each its own brightness. */
+const RIM_SEGMENTS = 9;
+const SPRITE_HALF = BUBBLE_SPRITE_SIDE / 2 / BUBBLE_SPRITE_RADIUS;
+const SPRITE_UNIT = BUBBLE_SPRITE_SIDE / BUBBLE_SPRITE_RADIUS;
+const DRAIN_STAGES = BUBBLE_FILM_STAGE_LIVES.length - 1;
+/** Film sprites painted per frame (~3.5 ms each on desktop), so a new look fills in without a hitch. */
+const FILM_PAINTS_PER_FRAME = 2;
+/** Shared by every renderer, so toggling the effect does not repaint the film. */
+const SHARED_SPRITES = new BubbleFilmSpriteCache();
 
 /**
- * Canvas2D bubbles renderer - per-tip buoyant emitter.
+ * Canvas2D bubbles: soap film that matches the 3D bubbles.
  *
- * Each bubble is four layers: a Fresnel interior gradient (clear through
- * the middle, brightening to a band just inside the edge), a hairline rim,
- * a thin-film sheen arc, and two highlights - a tight specular upper-left
- * plus a soft bounce lower-right. Sizes follow a power law so the field is
- * mostly small bubbles with occasional large ones, rise speed scales with
- * radius for parallax, and each bubble sways on its own sine. Bubbles hold
- * their volume and pop on timeout.
+ * Each bubble is a pre-painted thin-film sprite (interference bands from
+ * film thickness, brighter toward the rim, draining clear across the top
+ * before it bursts) under a fixed key light. New bubbles carry a share of
+ * the tip's swing, so they draw its path, then rise; moving fast pulls them
+ * slightly out of round. A burst tears a hole from one point in the drained
+ * top that sweeps across the film in under a fifth of a second; its uneven
+ * lip sheds a spray of droplets as it runs.
  */
 export class Bubbles2DRenderer {
   private bubbles: Bubble[] = [];
-  private bursts: PopBurst[] = [];
+  private flecks: Fleck[] = [];
   private lastTipPos = new Map<string, { x: number; y: number }>();
   private smoothedVelocity = new Map<string, { vx: number; vy: number }>();
-  private gradientCache = new WeakMap<
-    CanvasRenderingContext2D,
-    Map<string, BubbleGradientSet>
-  >();
-  private burstCursor = 0;
+  private readonly sprites = SHARED_SPRITES;
+  private look: BubbleFilmLook | null = null;
+  private lookPalette: Bubbles2DParams["resolvedPalette"] | null = null;
+
+  constructor(private readonly rand: Rand = Math.random) {}
+
+  /** Live bubbles, including ones mid-burst. */
+  get count(): number {
+    return this.bubbles.length;
+  }
 
   render(
     ctx: CanvasRenderingContext2D,
@@ -118,466 +137,536 @@ export class Bubbles2DRenderer {
     dt: number,
     scale: number = 1
   ): void {
-    const palette = params.resolvedPalette;
+    const step = Math.max(0, Math.min(dt, MAX_STEP));
+    const look = this.resolveLook(params);
     const baseR = params.baseRadius * scale * (0.7 + 0.9 * params.intensity);
     const poolCap = Math.min(MAX_BUBBLES, params.poolSize ?? MAX_BUBBLES);
-    if (this.bursts.length > poolCap) this.bursts.length = poolCap;
 
-    // 1. Per-tip velocity smoothing + spawn.
     const seen = new Set<string>();
     for (const e of emitters) {
-      if (!this.isEndEnabled(e.end, params)) continue;
+      if (!isEndEnabled(e.end, params)) continue;
       const id = emitterId(e.propIndex, e.tipIndex);
       seen.add(id);
-      const last = this.lastTipPos.get(id);
-      let vx = 0;
-      let vy = 0;
-      if (last && dt > 0) {
-        vx = (e.x - last.x) / dt;
-        vy = (e.y - last.y) / dt;
-      }
-      const prev = this.smoothedVelocity.get(id);
-      const alpha = 1 - Math.pow(0.6, dt * 60);
-      const svx = prev ? prev.vx + (vx - prev.vx) * alpha : vx;
-      const svy = prev ? prev.vy + (vy - prev.vy) * alpha : vy;
-      if (prev) {
-        prev.vx = svx;
-        prev.vy = svy;
-      } else {
-        this.smoothedVelocity.set(id, { vx: svx, vy: svy });
-      }
-      const speedPx = Math.hypot(svx, svy);
-      this.spawnBubbles(params, e, speedPx, dt, scale, baseR, poolCap);
-      if (last) {
-        last.x = e.x;
-        last.y = e.y;
-      } else {
-        this.lastTipPos.set(id, { x: e.x, y: e.y });
-      }
+      this.emit(id, e, params, step, scale, baseR, poolCap);
     }
-
-    // Prune per-tip state for emitters that vanished this frame.
     for (const id of this.lastTipPos.keys())
       if (!seen.has(id)) this.lastTipPos.delete(id);
     for (const id of this.smoothedVelocity.keys())
       if (!seen.has(id)) this.smoothedVelocity.delete(id);
 
-    // 2. Integrate + age + cull.
-    this.integrateBubbles(dt, scale, params, poolCap);
-    this.integrateBursts(dt);
+    this.integrateBubbles(step, scale, look);
+    this.integrateFlecks(step, scale);
+    if (this.bubbles.length === 0 && this.flecks.length === 0) return;
 
-    if (this.bubbles.length === 0 && this.bursts.length === 0) return;
-
-    // 3. Draw bubbles (alive + popping).
-    this.drawBubbles(ctx, params, palette);
-
-    // 4. Draw pop bursts on top with additive blend.
-    this.drawBursts(ctx);
+    this.sprites.beginFrame(FILM_PAINTS_PER_FRAME);
+    ctx.save();
+    try {
+      ctx.globalCompositeOperation = "source-over";
+      for (const b of this.bubbles) this.drawBubble(ctx, b, look);
+      this.drawFlecks(ctx);
+    } finally {
+      ctx.restore();
+    }
   }
 
-  private spawnBubbles(
+  dispose(): void {
+    this.bubbles = [];
+    this.flecks = [];
+    this.lastTipPos.clear();
+    this.smoothedVelocity.clear();
+    this.look = null;
+    this.lookPalette = null;
+  }
+
+  private resolveLook(params: Bubbles2DParams): BubbleFilmLook {
+    if (!this.look || this.lookPalette !== params.resolvedPalette) {
+      this.look = resolveBubbleFilmLook(params.resolvedPalette);
+      this.lookPalette = params.resolvedPalette;
+    }
+    return this.look;
+  }
+
+  private emit(
+    id: string,
+    tip: EmitterTip,
     params: Bubbles2DParams,
-    tip: { x: number; y: number },
-    speedPx: number,
     dt: number,
     scale: number,
     baseR: number,
     poolCap: number
   ): void {
-    if (this.bubbles.length >= poolCap) return;
-    const PX_PER_WORLD = 60;
-    const refSpeed = params.motionReferenceSpeed * PX_PER_WORLD * scale;
-    const speedScalar = refSpeed > 0 ? Math.min(1, speedPx / refSpeed) : 0;
-    const ambient = params.ambientEmission * params.ambientSpawnRate;
-    const motion = params.motionEmission * speedScalar * params.motionSpawnRate;
-    const expected = (ambient + motion) * dt;
+    const last = this.lastTipPos.get(id);
+    let vx = 0;
+    let vy = 0;
+    let jumped = false;
+    if (last && dt > 0) {
+      const dx = tip.x - last.x;
+      const dy = tip.y - last.y;
+      if (Math.hypot(dx, dy) > JUMP_PX * scale) jumped = true;
+      else {
+        vx = dx / dt;
+        vy = dy / dt;
+      }
+    }
+    let smooth = this.smoothedVelocity.get(id);
+    if (!smooth || jumped) {
+      smooth = { vx, vy };
+      this.smoothedVelocity.set(id, smooth);
+    } else {
+      const alpha = 1 - Math.pow(0.6, dt * 60);
+      smooth.vx += (vx - smooth.vx) * alpha;
+      smooth.vy += (vy - smooth.vy) * alpha;
+    }
+    if (last) {
+      last.x = tip.x;
+      last.y = tip.y;
+    } else {
+      this.lastTipPos.set(id, { x: tip.x, y: tip.y });
+    }
+
+    if (this.bubbles.length >= poolCap || dt <= 0) return;
+    const refSpeed = params.motionReferenceSpeed * BUBBLE_PX_PER_WORLD * scale;
+    const speed = Math.hypot(smooth.vx, smooth.vy);
+    const speedScalar = refSpeed > 0 ? Math.min(1, speed / refSpeed) : 0;
+    const expected =
+      (params.ambientEmission * params.ambientSpawnRate +
+        params.motionEmission * speedScalar * params.motionSpawnRate) *
+      dt;
     let n = Math.floor(expected);
-    if (Math.random() < expected - n) n++;
-    const slots = poolCap - this.bubbles.length;
-    if (n > slots) n = slots;
+    if (this.rand() < expected - n) n++;
+    n = Math.min(n, poolCap - this.bubbles.length);
     if (n <= 0) return;
 
-    // Lifetime scales with intensity. Champagne-style palettes fizz out
-    // fast; soapy ones linger.
     const paletteId = params.resolvedPalette.id;
     const lifeMult =
-      paletteId === "champagne" || paletteId === "acid" ? 0.55 : 1.0;
-    const lifeBase = (1.0 + params.intensity * 2.0) * lifeMult;
-    // Size spread widens with sizeJitter but the floor stays put, so
-    // raising it adds big bubbles rather than inflating every bubble.
+      paletteId === "champagne" || paletteId === "acid" ? 0.55 : 1;
+    const lifeBase = (1 + params.intensity * 2) * lifeMult;
     const spread = 0.42 + params.sizeJitter * 1.55;
+    const inherited = resolveInheritedVelocity(smooth.vx, smooth.vy, scale);
+    const moveDir = speed > 0.0001 ? Math.atan2(smooth.vy, smooth.vx) : 0;
 
-    for (let i = 0; i < n; i++) {
-      // Power-law size roll. Real bubble fields are mostly small bubbles
-      // with the occasional large one - a uniform roll reads as a field of
-      // identical discs, which is what made this effect look cartoony.
-      const roll = Math.pow(Math.random(), SIZE_BIAS);
-      const sizeMul = SIZE_FLOOR + roll * spread;
+    for (let k = 0; k < n; k++) {
+      // Mostly small bubbles with the odd large one.
+      const sizeMul = SIZE_FLOOR + Math.pow(this.rand(), SIZE_BIAS) * spread;
       const r0 = baseR * sizeMul;
-      // Small origin offset so stacked spawns don't overlap perfectly.
-      const ox = (Math.random() - 0.5) * 4 * scale;
-      const oy = (Math.random() - 0.5) * 4 * scale;
-      const drift = (Math.random() - 0.5) * 22 * scale;
-      // Terminal rise velocity grows with radius (buoyancy ∝ volume, drag
-      // ∝ area), so the big ones lead and the small ones hang back. That
-      // parallax is most of what sells a bubble field as depth.
-      const upSpeed =
+      // Spread this frame's births back along the tip's path so a fast
+      // swing leaves a line of bubbles, not a clump at its end.
+      const lag = dt * (1 - (k + 1) / (n + 1));
+      const jitter = (0.5 + r0 * 0.25) * scale;
+      const seed = this.rand();
+      const rupture = resolveBubbleRuptureOrigin(seed);
+      // Rise grows with size, so big bubbles lead and small ones hang back.
+      const rise =
         (16 + params.buoyancy * 92) * scale * (0.55 + sizeMul * 0.75);
-      this.bubbles.push({
-        x: tip.x + ox,
-        y: tip.y + oy,
-        vx: drift,
-        vy: -upSpeed,
+      const calm = seed * TAU;
+      this.insertBySize({
+        x: tip.x - smooth.vx * lag + (this.rand() - 0.5) * jitter * 2,
+        y: tip.y - smooth.vy * lag + (this.rand() - 0.5) * jitter * 2,
+        vx: inherited.vx + (this.rand() - 0.5) * 3.6 * scale,
+        vy: inherited.vy - rise,
+        rise,
         age: 0,
-        maxAge: lifeBase * (0.7 + Math.random() * 0.6),
+        maxAge: lifeBase * (0.7 + this.rand() * 0.6),
         baseR: r0,
-        // Small bubbles get shoved around by their own wake more than big
-        // ones, so sway amplitude falls off as radius rises.
-        wobbleAmp: (1.6 + Math.random() * 2.6) * scale * (1.3 - sizeMul * 0.5),
-        wobbleFreq: 1.4 + Math.random() * 1.9,
-        wobblePhase: Math.random() * TAU,
-        filmPhase: Math.random(),
+        sizeMul,
+        wobbleAmp: (1.6 + this.rand() * 2.6) * scale * (1.3 - sizeMul * 0.5),
+        wobbleFreq: 1.4 + this.rand() * 1.9,
+        wobblePhase: this.rand() * TAU,
+        seed,
+        seedIndex: Math.min(
+          BUBBLE_FILM_SEEDS - 1,
+          Math.floor(seed * BUBBLE_FILM_SEEDS)
+        ),
+        filmSpin: (this.rand() < 0.5 ? -1 : 1) * (0.1 + this.rand() * 0.16),
+        deform: 0,
+        deformVel: 0,
+        dirX: speed > 0.0001 ? Math.cos(moveDir) : Math.cos(calm),
+        dirY: speed > 0.0001 ? Math.sin(moveDir) : Math.sin(calm),
+        ruptureX: rupture.x,
+        ruptureY: rupture.y,
         popping: 0,
         popAge: 0,
         popR: r0,
+        sprayAcc: 0,
       });
     }
+  }
+
+  /** Small bubbles first, so the big ones draw in front. */
+  private insertBySize(b: Bubble): void {
+    const list = this.bubbles;
+    let lo = 0;
+    let hi = list.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (list[mid]!.baseR <= b.baseR) lo = mid + 1;
+      else hi = mid;
+    }
+    list.splice(lo, 0, b);
   }
 
   private integrateBubbles(
     dt: number,
     scale: number,
-    params: Bubbles2DParams,
-    poolCap: number
+    look: BubbleFilmLook
   ): void {
-    let writeIdx = 0;
+    const hDrag = Math.pow(HORIZONTAL_DRAG, dt);
+    const vDrag = Math.pow(VERTICAL_INHERITANCE_DRAG, dt);
+    const dirBlend = 1 - Math.exp(-DEFORMATION_DIRECTION_RESPONSE * dt);
+    let w = 0;
     for (let i = 0; i < this.bubbles.length; i++) {
       const b = this.bubbles[i]!;
       if (b.popping === 1) {
         b.popAge += dt;
-        if (b.popAge >= POP_DURATION) continue;
-        b.x += b.vx * dt;
-        b.y += b.vy * dt;
-        if (i !== writeIdx) this.bubbles[writeIdx] = b;
-        writeIdx++;
-        continue;
+        if (b.popAge >= BUBBLE_POP_SECONDS) continue;
+        this.shedSpray(b, dt, scale, look);
+      } else {
+        b.age += dt;
       }
-      b.age += dt;
+      b.vx *= hDrag;
+      b.vy = -b.rise + (b.vy + b.rise) * vDrag;
       b.x += b.vx * dt;
       b.y += b.vy * dt;
-      // Horizontal drift bleeds off - the bubble settles into a pure
-      // buoyant rise plus its own sway.
-      b.vx *= Math.pow(0.55, dt);
-      if (b.age >= b.maxAge) {
-        b.popping = 1;
-        b.popAge = 0;
-        b.popR = this.currentRadius(b);
-        this.spawnBurst(b, params, scale, poolCap);
+
+      if (b.popping === 0) {
+        // Airflow past the shell stretches it along the flight.
+        const relX = b.vx;
+        const relY = b.vy + b.rise;
+        const rel = Math.hypot(relX, relY);
+        if (rel > 0.3 * scale) {
+          let dx = b.dirX + (relX / rel - b.dirX) * dirBlend;
+          let dy = b.dirY + (relY / rel - b.dirY) * dirBlend;
+          const len = Math.hypot(dx, dy);
+          if (len > 0.0001) {
+            dx /= len;
+            dy /= len;
+            b.dirX = dx;
+            b.dirY = dy;
+          }
+        }
+        const life = Math.min(1, b.age / b.maxAge);
+        const tension =
+          Math.sin(b.age * b.wobbleFreq * 1.35 + b.seed * TAU) *
+          0.009 *
+          (1 - life * 0.45);
+        const target =
+          resolveBubbleDeformationTarget(rel, b.sizeMul, scale) + tension;
+        b.deformVel +=
+          ((target - b.deform) * DEFORMATION_STIFFNESS -
+            b.deformVel * DEFORMATION_DAMPING) *
+          dt;
+        b.deform += b.deformVel * dt;
+        if (b.deform > BUBBLE_MAX_DEFORMATION) {
+          b.deform = BUBBLE_MAX_DEFORMATION;
+          b.deformVel = Math.min(0, b.deformVel);
+        } else if (b.deform < BUBBLE_MIN_REBOUND_DEFORMATION) {
+          b.deform = BUBBLE_MIN_REBOUND_DEFORMATION;
+          b.deformVel = Math.max(0, b.deformVel);
+        }
+
+        if (b.age >= b.maxAge) {
+          b.popping = 1;
+          b.popAge = 0;
+          b.popR = currentRadius(b);
+          this.spawnFlecks(b, scale, look);
+        }
       }
-      if (i !== writeIdx) this.bubbles[writeIdx] = b;
-      writeIdx++;
+      this.bubbles[w++] = b;
     }
-    this.bubbles.length = writeIdx;
+    this.bubbles.length = w;
   }
 
-  private integrateBursts(dt: number): void {
-    let writeIdx = 0;
-    for (let i = 0; i < this.bursts.length; i++) {
-      const p = this.bursts[i]!;
-      p.age += dt;
-      if (p.age >= p.maxAge) continue;
-      const damping = Math.pow(0.94, dt * 60);
-      p.vx *= damping;
-      p.vy *= damping;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.angle += p.spin * dt;
-      if (i !== writeIdx) this.bursts[writeIdx] = p;
-      writeIdx++;
-    }
-    this.bursts.length = writeIdx;
-  }
-
-  private spawnBurst(
-    b: Bubble,
-    params: Bubbles2DParams,
-    scale: number,
-    capacity: number
-  ): void {
-    if (capacity <= 0) return;
-    const count =
-      BURST_COUNT_MIN +
-      Math.floor(Math.random() * (BURST_COUNT_MAX - BURST_COUNT_MIN + 1));
-    const palette = params.resolvedPalette;
-    const staticColor = palette.popBurst;
-    const isIridescent = palette.iridescent === true;
-    const lifeT = Math.min(1, b.age / b.maxAge);
-    const color = isIridescent ? oilIridescentRim(lifeT) : staticColor;
-    // The film that bursts is the bubble's own - fragment spread and size
-    // both follow its radius, so a small bubble makes a small pop.
-    const sizeK = Math.min(2, b.popR / (6 * scale));
-    const speed = (55 + Math.random() * 85) * (0.6 + sizeK * 0.7);
-    const x = b.x + this.wobbleX(b);
-    for (let i = 0; i < count; i++) {
-      const theta = (i / count) * TAU + Math.random() * 0.4;
-      const mag = speed * (0.6 + Math.random() * 0.8);
-      const burst =
-        this.bursts.length < capacity
-          ? ({} as PopBurst)
-          : this.bursts[this.burstCursor % capacity]!;
-      burst.x = x;
-      burst.y = b.y;
-      burst.vx = Math.cos(theta) * mag * scale;
-      burst.vy = Math.sin(theta) * mag * scale;
-      burst.age = 0;
-      burst.maxAge = BURST_LIFE_MIN + Math.random() * BURST_LIFE_VAR;
-      burst.r = (0.6 + Math.random() * 0.7) * (0.5 + sizeK) * scale;
-      burst.angle = theta;
-      burst.spin = (Math.random() - 0.5) * 9;
-      burst.color = color;
-      if (this.bursts.length < capacity) this.bursts.push(burst);
-      this.burstCursor = (this.burstCursor + 1) % capacity;
+  /** The puncture itself throws a few droplets out through the break. */
+  private spawnFlecks(b: Bubble, scale: number, look: BubbleFilmLook): void {
+    const colors = this.sprites.flecks(look);
+    const r = b.popR;
+    const ox = b.x + wobbleX(b) + b.ruptureX * r;
+    const oy = b.y + b.ruptureY * r;
+    const out = Math.atan2(b.ruptureY, b.ruptureX);
+    for (let k = 0; k < PUNCTURE_DROPLETS; k++) {
+      const angle = out + (this.rand() - 0.5) * 1.5;
+      const speed =
+        (0.12 + this.rand() * 0.28) * BUBBLE_PX_PER_WORLD * scale * 1.6;
+      this.pushFleck(
+        ox,
+        oy,
+        b.vx + Math.cos(angle) * speed,
+        b.vy * 0.18 + Math.sin(angle) * speed,
+        r,
+        scale,
+        colors
+      );
     }
   }
 
   /**
-   * Current radius for an alive bubble. Nearly constant: a film bubble
-   * holds its volume and only thins slightly as it climbs, so this is a
-   * few percent of ease-in swell rather than the lifetime tripling it
-   * replaced.
+   * The rim gathers film as it runs and throws it off as droplets, so the
+   * spray follows the edge across the bubble instead of leaving one point.
    */
-  private currentRadius(b: Bubble): number {
-    const lifeT = Math.min(1, b.age / b.maxAge);
-    return b.baseR * (1 + LIFETIME_SWELL * lifeT * lifeT);
-  }
-
-  /** Sway offset - bubbles weave sideways instead of tracking straight up. */
-  private wobbleX(b: Bubble): number {
-    return Math.sin(b.age * b.wobbleFreq + b.wobblePhase) * b.wobbleAmp;
-  }
-
-  private drawBubbles(
-    ctx: CanvasRenderingContext2D,
-    params: Bubbles2DParams,
-    palette: BubblePalette
+  private shedSpray(
+    b: Bubble,
+    dt: number,
+    scale: number,
+    look: BubbleFilmLook
   ): void {
-    ctx.save();
-    try {
-      ctx.globalCompositeOperation = "source-over";
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      const iridescent = palette.iridescent === true;
-
-      // Three unit-radius gradients, built once and re-used for every
-      // bubble by scaling the CTM at paint time - zero per-particle
-      // allocation.
-
-      // Interior: transparent through the middle, brightening into a thin
-      // band just inside the edge. That Fresnel falloff is what reads as a
-      // curved film instead of a flat tinted disc, and it's the single
-      // biggest reason the old flat fill looked like a sticker.
-      const {
-        body: bodyGrad,
-        specular: specGrad,
-        bounce: bounceGrad,
-      } = this.getGradients(ctx, palette);
-
-      for (const b of this.bubbles) {
-        let r: number;
-        let alpha: number;
-        if (b.popping === 1) {
-          const t = b.popAge / POP_DURATION;
-          const relaxed = 1 - Math.pow(1 - t, 2);
-          r = b.popR * (1 + (POP_RELAX_SCALE - 1) * relaxed);
-          alpha = Math.pow(1 - t, 1.6);
-        } else {
-          r = this.currentRadius(b);
-          const lifeT = Math.min(1, b.age / b.maxAge);
-          const fadeIn = lifeT < 0.12 ? lifeT / 0.12 : 1;
-          const fadeOut = lifeT > 0.8 ? 1 - (lifeT - 0.8) / 0.2 : 1;
-          alpha = fadeIn * fadeOut;
-        }
-        alpha *= MAX_OPACITY;
-        if (alpha <= 0.02 || r < 0.5) continue;
-
-        const x = b.x + this.wobbleX(b);
-        const y = b.y;
-        const lifeT = Math.min(1, b.age / b.maxAge);
-        const rim = iridescent ? oilIridescentRim(lifeT) : palette.rim;
-
-        if (b.popping === 1) {
-          const t = b.popAge / POP_DURATION;
-          const rimWidth = Math.min(1.9, Math.max(0.65, r * 0.055)) * 1.45;
-          ctx.globalAlpha = alpha;
-          ctx.lineWidth = rimWidth;
-          ctx.strokeStyle = rim;
-          ctx.beginPath();
-          ctx.ellipse(
-            x,
-            y,
-            r * (1 + t * 0.12),
-            r * Math.max(0.16, 1 - t * 0.84),
-            0,
-            0,
-            TAU
-          );
-          ctx.stroke();
-          continue;
-        }
-
-        // Interior film.
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.scale(r, r);
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = bodyGrad;
-        ctx.beginPath();
-        ctx.arc(0, 0, 1.0, 0, TAU);
-        ctx.fill();
-        ctx.restore();
-
-        // Rim. Held to roughly a hairline regardless of radius - a rim
-        // that scales with r turns every large bubble into a cartoon outline.
-        const rimWidth = Math.min(1.9, Math.max(0.65, r * 0.055));
-        ctx.globalAlpha = alpha;
-        ctx.lineWidth = rimWidth;
-        ctx.strokeStyle = rim;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, TAU);
-        ctx.stroke();
-
-        // Thin-film interference: a hue-shifted sheen on the shadowed arc,
-        // opposite the specular. Every palette gets a whisper of it, the
-        // oil palette wears it openly - it's the same physics either way.
-        if (r > 2) {
-          const sheenT = (b.filmPhase + lifeT * 0.35) % 1;
-          ctx.globalAlpha = alpha * (iridescent ? 0.65 : 0.3);
-          ctx.lineWidth = rimWidth * 1.5;
-          ctx.strokeStyle = oilIridescentRim(sheenT);
-          ctx.beginPath();
-          ctx.arc(x, y, r * 0.92, TAU * 0.06, TAU * 0.42);
-          ctx.stroke();
-        }
-
-        // Primary specular, upper left.
-        const specR = r * 0.2;
-        ctx.save();
-        ctx.translate(x - r * 0.4, y - r * 0.44);
-        ctx.scale(specR, specR);
-        ctx.globalAlpha = alpha * 0.9;
-        ctx.fillStyle = specGrad;
-        ctx.beginPath();
-        ctx.arc(0, 0, 1.0, 0, TAU);
-        ctx.fill();
-        ctx.restore();
-
-        // Secondary bounce, lower right.
-        if (r > 3) {
-          const bounceR = r * 0.3;
-          ctx.save();
-          ctx.translate(x + r * 0.36, y + r * 0.42);
-          ctx.scale(bounceR, bounceR);
-          ctx.globalAlpha = alpha * 0.32;
-          ctx.fillStyle = bounceGrad;
-          ctx.beginPath();
-          ctx.arc(0, 0, 1.0, 0, TAU);
-          ctx.fill();
-          ctx.restore();
-        }
+    b.sprayAcc += (SPRAY_PER_POP * dt) / BUBBLE_POP_SECONDS;
+    if (b.sprayAcc < 1) return;
+    const colors = this.sprites.flecks(look);
+    const r = b.popR;
+    const holeR = resolveBubbleRuptureRadius(b.popAge);
+    const rimSpeed =
+      (resolveBubbleRuptureRadius(
+        Math.min(BUBBLE_POP_SECONDS, b.popAge + 0.01)
+      ) -
+        holeR) /
+      0.01;
+    const cx = b.x + wobbleX(b);
+    while (b.sprayAcc >= 1) {
+      b.sprayAcc -= 1;
+      // A point on the rim that is still on the film.
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const a = this.rand() * TAU;
+        const ux = b.ruptureX + Math.cos(a) * holeR;
+        const uy = b.ruptureY + Math.sin(a) * holeR;
+        if (ux * ux + uy * uy >= 0.96) continue;
+        const speed = rimSpeed * r * (0.3 + this.rand() * 0.35);
+        this.pushFleck(
+          cx + ux * r,
+          b.y + uy * r,
+          b.vx + Math.cos(a) * speed,
+          b.vy * 0.18 + Math.sin(a) * speed,
+          r,
+          scale,
+          colors
+        );
+        break;
       }
-    } finally {
-      ctx.restore();
     }
   }
 
-  private drawBursts(ctx: CanvasRenderingContext2D): void {
-    if (this.bursts.length === 0) return;
-    ctx.save();
-    try {
-      ctx.globalCompositeOperation = "lighter";
-      for (const p of this.bursts) {
-        const t = p.age / p.maxAge;
-        const alpha = 1 - t;
-        if (alpha <= 0.02) continue;
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.ellipse(p.x, p.y, p.r * 1.65, p.r * 0.34, p.angle, 0, TAU);
-        ctx.fill();
-      }
-    } finally {
-      ctx.restore();
-    }
+  private pushFleck(
+    x: number,
+    y: number,
+    vx: number,
+    vy: number,
+    r: number,
+    scale: number,
+    colors: readonly string[]
+  ): void {
+    if (this.flecks.length >= MAX_FLECKS) this.flecks.shift();
+    this.flecks.push({
+      x,
+      y,
+      vx,
+      vy,
+      age: 0,
+      maxAge: 0.16 + this.rand() * 0.2,
+      size: Math.max(0.55 * scale, r * (0.028 + this.rand() * 0.03)),
+      color: colors[Math.floor(this.rand() * colors.length)] ?? "#ffffff",
+    });
   }
 
-  private getGradients(
+  private integrateFlecks(dt: number, scale: number): void {
+    const drag = Math.pow(0.3, dt);
+    let w = 0;
+    for (let i = 0; i < this.flecks.length; i++) {
+      const p = this.flecks[i]!;
+      p.age += dt;
+      if (p.age >= p.maxAge) continue;
+      p.vx *= drag;
+      p.vy = p.vy * drag + FLECK_GRAVITY * scale * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      this.flecks[w++] = p;
+    }
+    this.flecks.length = w;
+  }
+
+  private drawBubble(
     ctx: CanvasRenderingContext2D,
-    palette: BubblePalette
-  ): BubbleGradientSet {
-    let contextCache = this.gradientCache.get(ctx);
-    if (!contextCache) {
-      contextCache = new Map();
-      this.gradientCache.set(ctx, contextCache);
+    b: Bubble,
+    look: BubbleFilmLook
+  ): void {
+    const popping = b.popping === 1;
+    const life = popping ? 1 : Math.min(1, b.age / b.maxAge);
+    const r = popping ? b.popR : currentRadius(b);
+    if (r < 0.5) return;
+    // Fade in at birth; a film bursts at full strength, it does not fade.
+    let alpha = OPACITY * (life < 0.12 ? life / 0.12 : 1);
+    if (popping) {
+      alpha *= Math.pow(1 - b.popAge / BUBBLE_POP_SECONDS, 0.72);
     }
-    const transform = ctx.getTransform();
-    const key = `${palette.fill}|${palette.highlight}|${transform.a},${transform.b},${transform.c},${transform.d},${transform.e},${transform.f}`;
-    const cached = contextCache.get(key);
-    if (cached) return cached;
+    if (alpha <= 0.01) return;
 
-    const body = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
-    body.addColorStop(0, withAlphaScale(palette.fill, 0));
-    body.addColorStop(0.6, withAlphaScale(palette.fill, 0.1));
-    body.addColorStop(0.9, withAlphaScale(palette.fill, 0.7));
-    body.addColorStop(1, withAlphaScale(palette.fill, 0.18));
-    const specular = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
-    specular.addColorStop(0, palette.highlight);
-    specular.addColorStop(0.45, withAlphaScale(palette.highlight, 0.55));
-    specular.addColorStop(1, withAlphaScale(palette.highlight, 0));
-    const bounce = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
-    bounce.addColorStop(0, withAlphaScale(palette.highlight, 0.4));
-    bounce.addColorStop(1, withAlphaScale(palette.highlight, 0));
-    const gradients = { body, specular, bounce };
-    if (contextCache.size >= GRADIENT_CACHE_ENTRIES_PER_CONTEXT) {
-      const oldestKey = contextCache.keys().next().value;
-      if (oldestKey !== undefined) contextCache.delete(oldestKey);
+    const x = b.x + wobbleX(b);
+    const y = b.y;
+    const gloss = this.sprites.gloss(look);
+
+    ctx.save();
+    ctx.translate(x, y);
+    if (!popping) {
+      const major = 1 + b.deform;
+      const minor = 1 / Math.sqrt(major);
+      if (Math.abs(b.deform) > 0.002) {
+        const a = Math.atan2(b.dirY, b.dirX);
+        ctx.rotate(a);
+        ctx.scale(major, minor);
+        ctx.rotate(-a);
+      }
+      const tension = Math.sin(b.age * 2.4 + b.seed * TAU) * 0.035;
+      ctx.scale(r * (1 + tension), r * (1 - tension * 0.72));
+    } else {
+      ctx.scale(r, r);
     }
-    contextCache.set(key, gradients);
-    return gradients;
+
+    if (!gloss) {
+      this.drawVectorBubble(ctx, look, alpha, r);
+      ctx.restore();
+      return;
+    }
+
+    let holeR = 0;
+    if (popping) {
+      holeR = resolveBubbleRuptureRadius(b.popAge);
+      ctx.beginPath();
+      ctx.arc(0, 0, 1.02, 0, TAU);
+      ctx.closePath();
+      ctx.moveTo(b.ruptureX + holeR, b.ruptureY);
+      ctx.arc(b.ruptureX, b.ruptureY, holeR, 0, TAU);
+      ctx.clip("evenodd");
+    }
+
+    // Film, turning slowly under the fixed light: the eddies drift.
+    ctx.save();
+    ctx.rotate(
+      b.age * b.filmSpin + Math.sin(b.age * 0.8 + b.wobblePhase) * 0.18
+    );
+    const drain = (life - BUBBLE_DRAIN_START) / (1 - BUBBLE_DRAIN_START);
+    if (drain <= 0) {
+      this.blitFilm(ctx, look, b.seedIndex, 0, alpha);
+    } else {
+      const s = Math.min(DRAIN_STAGES, drain * DRAIN_STAGES);
+      const i0 = Math.min(DRAIN_STAGES - 1, Math.floor(s));
+      const f = s - i0;
+      this.blitFilm(ctx, look, b.seedIndex, i0, alpha * (1 - f));
+      this.blitFilm(ctx, look, b.seedIndex, i0 + 1, alpha * f);
+    }
+    ctx.restore();
+
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(gloss, -SPRITE_HALF, -SPRITE_HALF, SPRITE_UNIT, SPRITE_UNIT);
+    ctx.restore();
+
+    if (popping) this.drawRuptureRim(ctx, b, x, y, r, holeR, alpha, look);
   }
 
-  private isEndEnabled(end: "A" | "B", params: Bubbles2DParams): boolean {
-    if (params.trackingMode === "both_ends") return true;
-    return params.trackingMode === "left_end" ? end === "A" : end === "B";
+  private blitFilm(
+    ctx: CanvasRenderingContext2D,
+    look: BubbleFilmLook,
+    seedIndex: number,
+    stage: number,
+    alpha: number
+  ): void {
+    if (alpha <= 0.004) return;
+    const film = this.sprites.film(look, seedIndex, stage);
+    if (!film) return;
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(film, -SPRITE_HALF, -SPRITE_HALF, SPRITE_UNIT, SPRITE_UNIT);
   }
 
-  dispose(): void {
-    this.bubbles = [];
-    this.bursts = [];
-    this.lastTipPos.clear();
-    this.smoothedVelocity.clear();
-    this.gradientCache = new WeakMap();
-    this.burstCursor = 0;
+  /**
+   * The torn edge: film gathered into a lip as the hole runs. Uneven along
+   * its length, so it reads as a tear rather than a drawn ring.
+   */
+  private drawRuptureRim(
+    ctx: CanvasRenderingContext2D,
+    b: Bubble,
+    x: number,
+    y: number,
+    r: number,
+    holeR: number,
+    alpha: number,
+    look: BubbleFilmLook
+  ): void {
+    const colors = this.sprites.flecks(look);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(r, r);
+    ctx.beginPath();
+    ctx.arc(0, 0, 1, 0, TAU);
+    ctx.clip();
+    ctx.strokeStyle = colors[b.seedIndex % colors.length] ?? "#ffffff";
+    const span = TAU / RIM_SEGMENTS;
+    const turn = b.seed * TAU;
+    for (let k = 0; k < RIM_SEGMENTS; k++) {
+      const lit = 0.25 + 0.75 * hash01(b.seed * 97.3 + k * 13.7);
+      const a0 = turn + k * span;
+      ctx.beginPath();
+      ctx.arc(b.ruptureX, b.ruptureY, holeR, a0, a0 + span * 1.04);
+      // Soft halo, then the lip itself.
+      ctx.globalAlpha = alpha * lit * 0.16;
+      ctx.lineWidth = Math.max(0.09, 3.4 / r);
+      ctx.stroke();
+      ctx.globalAlpha = alpha * lit * 0.62;
+      ctx.lineWidth = Math.max(0.035, 0.9 / r);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /** Where no sprite surface exists: a plain rim and highlight. */
+  private drawVectorBubble(
+    ctx: CanvasRenderingContext2D,
+    look: BubbleFilmLook,
+    alpha: number,
+    r: number
+  ): void {
+    const [tr, tg, tb] = look.tint;
+    ctx.globalAlpha = alpha * 0.7;
+    ctx.lineWidth = Math.max(0.05, 1 / r);
+    ctx.strokeStyle = `rgb(${Math.round(tr * 255)},${Math.round(tg * 255)},${Math.round(tb * 255)})`;
+    ctx.beginPath();
+    ctx.arc(0, 0, 1, 0, TAU);
+    ctx.stroke();
+    ctx.globalAlpha = alpha * 0.85;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(-0.3, -0.38, 0.14, 0, TAU);
+    ctx.fill();
+  }
+
+  private drawFlecks(ctx: CanvasRenderingContext2D): void {
+    for (const p of this.flecks) {
+      const a = Math.pow(1 - p.age / p.maxAge, 1.2);
+      if (a <= 0.02) continue;
+      // Drawn as a short streak along its flight, like a lit droplet.
+      const speed = Math.hypot(p.vx, p.vy);
+      const streak = p.size * (1 + Math.min(2.2, speed * 0.008));
+      ctx.globalAlpha = a * 0.85;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, streak, p.size, Math.atan2(p.vy, p.vx), 0, TAU);
+      ctx.fill();
+    }
   }
 }
 
-/**
- * Re-alpha a palette color by a MULTIPLIER of whatever alpha it already
- * carries. Palette `fill` slots arrive as `rgba(...)` and `rim`/`highlight`
- * as hex; both are handled, so gradient stops stay relative to the
- * palette's intended opacity instead of overriding it.
- */
-function withAlphaScale(color: string, factor: number): string {
-  const k = Math.max(0, Math.min(1, factor));
-  const rgba = color.match(
-    /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)/i
-  );
-  if (rgba) {
-    const a = rgba[4] === undefined ? 1 : parseFloat(rgba[4]);
-    return `rgba(${rgba[1]},${rgba[2]},${rgba[3]},${(a * k).toFixed(4)})`;
-  }
-  const s = color.replace("#", "");
-  const r = parseInt(s.slice(0, 2), 16);
-  const g = parseInt(s.slice(2, 4), 16);
-  const b = parseInt(s.slice(4, 6), 16);
-  return `rgba(${r},${g},${b},${k})`;
+function currentRadius(b: Bubble): number {
+  const life = Math.min(1, b.age / b.maxAge);
+  return b.baseR * (1 + LIFETIME_SWELL * life * life);
+}
+
+function wobbleX(b: Bubble): number {
+  return Math.sin(b.age * b.wobbleFreq + b.wobblePhase) * b.wobbleAmp;
+}
+
+function isEndEnabled(end: "A" | "B", params: Bubbles2DParams): boolean {
+  if (params.trackingMode === "both_ends") return true;
+  return params.trackingMode === "left_end" ? end === "A" : end === "B";
+}
+
+/** Stable 0-1 hash, so a bubble's torn lip keeps its pattern frame to frame. */
+function hash01(n: number): number {
+  const v = Math.sin(n * 12.9898) * 43758.5453;
+  return v - Math.floor(v);
 }

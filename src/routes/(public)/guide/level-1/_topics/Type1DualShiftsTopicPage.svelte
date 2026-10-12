@@ -1,10 +1,13 @@
 <!--
   Type 1 Dual-Shifts as a Guide web page, on the topic template The Grid set
-  (2026-10-10). The Dual-Shift definition opens the page; Split-Same and
-  Tog-Same stand side by side, each a start box and its four-count loop with
-  its name and travel word attached; the book's turn to moving between α and
-  β leads Split-Opp and Tog-Opp in the same shape. Every sentence and every
-  loop comes from the shared Dual-Shifts record the print sheet also reads.
+  (2026-10-10). The Dual-Shift definition opens the page; a 2 x 2 key names
+  the four modes by timing and direction in the lesson's words; Split-Same
+  and Tog-Same stand side by side, each a start box and its four-count loop
+  in its element's colour; the book's turn to moving between α and β leads
+  Split-Opp and Tog-Opp in the same shape. The loops and the book's lines
+  come from the shared Dual-Shifts record the print sheet also reads; the web
+  page sets one sentence per line, as the book does, and keeps the book's
+  modes and start-position sentences for print only.
 -->
 <script lang="ts">
   import { onMount } from "svelte";
@@ -17,24 +20,32 @@
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import {
+    DUAL_SHIFT_KEY,
     DUAL_SHIFT_MODES,
     DUAL_SHIFT_MODES_BY_PAIR,
+    DUAL_SHIFTS_WEB_COPY,
+    dualShiftElement,
+    dualShiftModeAt,
     dualShiftSteps,
     dualShiftsTopicHtml,
     dualShiftsTopicLines,
+    dualShiftsWebLeadLines,
     plainLine,
     type DualShiftMode,
     type DualShiftModeId,
   } from "#lib/shared/guide-topics/dual-shifts-topic.js";
+  import { getElementImagePath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import TopicHeader from "./TopicHeader.svelte";
   import type { TopicPageProps } from "./topic-pages";
 
   let { darkMode, kicker, lessonHref }: TopicPageProps = $props();
 
-  /** Austen's intro: the first sentence is the lede, the rest the intro. */
-  const introLines = dualShiftsTopicLines("intro");
-  const lede = plainLine(introLines[0] ?? "");
-  const introRest = introLines.slice(1).join(" ");
+  /** Austen's definition opens the page as its lede. */
+  const lede = plainLine(dualShiftsTopicLines("intro")[0] ?? "");
+  /** The book's turn to the Opp pair, one sentence per line as printed. */
+  const leadLines = dualShiftsWebLeadLines();
+  const TIMINGS = ["split", "tog"] as const;
+  const DIRECTIONS = ["same", "opp"] as const;
 
   /** Where a count's hands start, for the glide that plays the count. */
   function startPose(step: StepData): PictographData | null {
@@ -89,7 +100,10 @@
   function countProgress(id: DualShiftModeId, count: number): number | null {
     const ms = elapsed[id];
     if (ms === undefined) return null;
-    const linear = Math.min(1, Math.max(0, (ms - (count - 1) * COUNT_MS) / COUNT_MS));
+    const linear = Math.min(
+      1,
+      Math.max(0, (ms - (count - 1) * COUNT_MS) / COUNT_MS)
+    );
     return 1 - Math.pow(1 - linear, 3);
   }
 
@@ -118,7 +132,8 @@
   function playWhenReady(pair: "same" | "opp") {
     if (!armed || played.has(pair) || !inView.has(pair)) return;
     const loops = LOOPS[pair];
-    if (!loops.every((l) => l.counts.every((c) => drawn.has(c.step.id)))) return;
+    if (!loops.every((l) => l.counts.every((c) => drawn.has(c.step.id))))
+      return;
     played.add(pair);
     play(loops.map((l) => l.mode.id));
   }
@@ -202,14 +217,20 @@
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
         <li
           class="mode"
+          style:--el={dualShiftElement(mode).accentColor}
+          style:--el-deep={dualShiftElement(mode).darkComplement}
           aria-labelledby="dual-shift-{mode.id}"
           onpointerenter={() => replay(mode.id)}
           onclick={() => replay(mode.id)}
         >
-          <header class="mode-head">
-            <h2 id="dual-shift-{mode.id}">{t(mode.name)}</h2>
-            <span class="travel">{mode.travel}</span>
-          </header>
+          <h2 class="mode-name" id="dual-shift-{mode.id}">
+            <img
+              class="element"
+              src={getElementImagePath(dualShiftElement(mode).element)}
+              alt=""
+            />
+            {t(mode.name)}
+          </h2>
           <div class="loop">
             <div class="cell start">
               {@render pictograph(start, true, null, null)}
@@ -237,11 +258,64 @@
 <article class="dual-shifts-topic" class:dark={darkMode}>
   <TopicHeader {kicker} title={t("verified_level1_hm_type1_105")} {lede} />
 
-  <p class="intro">{@html introRest}</p>
+  <p class="intro">{@html t(DUAL_SHIFTS_WEB_COPY.modesLead)}</p>
+
+  <!-- The four modes as timing x direction, in the lesson's words. -->
+  <div class="key-wrap">
+    <table class="key">
+      <thead>
+        <tr>
+          <td></td>
+          {#each DIRECTIONS as direction (direction)}
+            <th scope="col">
+              <span class="axis"
+                >{t(DUAL_SHIFT_KEY.direction[direction].name)}</span
+              >
+              <span class="says"
+                >{t(DUAL_SHIFT_KEY.direction[direction].says)}</span
+              >
+            </th>
+          {/each}
+        </tr>
+      </thead>
+      <tbody>
+        {#each TIMINGS as timing (timing)}
+          <tr>
+            <th scope="row">
+              <span class="axis">{t(DUAL_SHIFT_KEY.timing[timing].name)}</span>
+              <span class="says">{t(DUAL_SHIFT_KEY.timing[timing].says)}</span>
+            </th>
+            {#each DIRECTIONS as direction (direction)}
+              {@const mode = dualShiftModeAt(timing, direction)}
+              <td>
+                <a
+                  class="mode-chip"
+                  href="#dual-shift-{mode.id}"
+                  style:--el={dualShiftElement(mode).accentColor}
+                  style:--el-deep={dualShiftElement(mode).darkComplement}
+                >
+                  <img
+                    class="element"
+                    src={getElementImagePath(dualShiftElement(mode).element)}
+                    alt=""
+                  />
+                  {t(mode.name)}
+                </a>
+              </td>
+            {/each}
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
 
   {@render pair("same")}
 
-  <p class="lead">{@html dualShiftsTopicHtml("betweenPositions")}</p>
+  <p class="lead">
+    {#each leadLines as line, n (n)}
+      <span class="line">{@html line}</span>
+    {/each}
+  </p>
 
   {@render pair("opp")}
 
@@ -293,6 +367,118 @@
     line-height: 1.55;
     text-wrap: balance;
   }
+  /* One sentence per line, as the book sets it. */
+  .lead .line {
+    display: block;
+  }
+
+  /* The 2 x 2 key: timing down the side, direction across the top, each
+     mode a chip in its element's colour that jumps to its loop. */
+  .key-wrap {
+    container-type: inline-size;
+    display: grid;
+    justify-items: center;
+  }
+  .key {
+    justify-self: center;
+    border-collapse: separate;
+    border-spacing: 0.5rem;
+    margin: -0.5rem;
+    font-size: clamp(0.95rem, 1.3cqw, 1.05rem);
+  }
+  .key th {
+    padding: 0.25rem 0.5rem;
+    text-align: center;
+    vertical-align: middle;
+    font-weight: 400;
+  }
+  .key th[scope="row"] {
+    text-align: right;
+  }
+  .key .axis {
+    display: block;
+    font-weight: 700;
+  }
+  .key .says {
+    display: block;
+    font-size: 0.86em;
+    color: color-mix(in srgb, var(--ink, #1a1a1a) 72%, transparent);
+    text-wrap: balance;
+  }
+  .key td {
+    padding: 0;
+    vertical-align: middle;
+  }
+  /* On a light page the pale elements (air) need their deep colour mixed in
+     to be seen; on a dark page the element colour stands on its own. */
+  .mode-chip,
+  .mode {
+    --tint: color-mix(in srgb, var(--el) 70%, var(--el-deep));
+  }
+  .dark .mode-chip,
+  .dark .mode {
+    --tint: var(--el);
+  }
+  /* The chip is a block link, not text: it reads as a tile. */
+  .mode-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 9.5rem;
+    padding: 0.55rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--tint) 60%, transparent);
+    background: color-mix(in srgb, var(--tint) 14%, transparent);
+    color: var(--el-deep);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .dark .mode-chip {
+    color: var(--ink, #f4f4f8);
+    background: color-mix(in srgb, var(--tint) 22%, transparent);
+  }
+  .mode-chip:focus-visible {
+    outline: 2px solid var(--tint);
+    outline-offset: 2px;
+  }
+  .element {
+    width: 1.5em;
+    height: 1.5em;
+    flex: none;
+  }
+  /* Where the 2 x 2 will not fit, each timing heads its own row of two
+     chips: the direction words stay above, the timing words go between. */
+  @container (width < 38rem) {
+    .key {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+      width: 100%;
+      margin: 0;
+    }
+    .key thead,
+    .key tbody,
+    .key tr {
+      display: contents;
+    }
+    .key thead td {
+      display: none;
+    }
+    .key th,
+    .key td {
+      display: block;
+    }
+    .key th[scope="row"] {
+      grid-column: 1 / -1;
+      margin-top: 0.5rem;
+      text-align: center;
+    }
+    .mode-chip {
+      min-width: 0;
+      padding-inline: 0.5rem;
+    }
+  }
   /* The book's two-tone Type 1 colour code for "Dual-Shift": Dual = cyan,
      -Shift = purple (LETTER_TYPE_COLORS), the purple lifted on dark. */
   .dual-shifts-topic :global(.cy),
@@ -326,35 +512,41 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
+  /* Each mode card wears its element: water, earth, fire or air, from the
+     choreo-card palette, as a wash, a border and the name's colour. */
   .mode {
     --pad: clamp(0.85rem, 2cqw, 1.25rem);
-    --seam: color-mix(in srgb, var(--ink, #1a1a1a) 16%, transparent);
+    --seam: color-mix(in srgb, var(--tint) 45%, var(--ink, #1a1a1a) 10%);
     container-type: inline-size;
     display: grid;
     gap: 0.75rem;
     padding: var(--pad);
     border-radius: 1rem;
-    border: 1px solid color-mix(in srgb, var(--ink, #1a1a1a) 14%, transparent);
-    background: color-mix(in srgb, var(--ink, #1a1a1a) 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tint) 55%, transparent);
+    background: color-mix(in srgb, var(--tint) 12%, transparent);
   }
-  .mode-head {
+  .dark .mode {
+    background: color-mix(in srgb, var(--tint) 16%, transparent);
+  }
+  /* Mode names in the book's serif, centered over the loop. */
+  .dual-shifts-topic .mode-name {
     display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 0.25rem 0.75rem;
-  }
-  /* Mode names in the book's serif, as on the reflow pages. */
-  .dual-shifts-topic .mode-head h2 {
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     margin: 0;
-    color: var(--ink, #1a1a1a);
+    color: var(--el-deep);
     font-family: var(--guide-display, "Cormorant Garamond", Georgia, serif);
     font-size: clamp(1.5rem, 4.5cqw, 2rem);
     font-weight: 700;
     line-height: 1.1;
   }
-  .travel {
-    font-size: clamp(0.95rem, 2.6cqw, 1.15rem);
-    color: color-mix(in srgb, var(--ink, #1a1a1a) 70%, transparent);
+  .dark .mode-name {
+    color: var(--ink, #f4f4f8);
+  }
+  .mode-name .element {
+    width: 1.15em;
+    height: 1.15em;
   }
 
   /* The start box leads in its own frame; the four counts fuse into one

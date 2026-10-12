@@ -403,11 +403,13 @@
     container-type: size;
   }
 
+  /* Rows grow with the drawer so a tall tablet drawer is not two short rows
+     over a void, capped so a phone-size tile stays a tile, not a billboard. */
   .mobile-toolbar.fill-available-height .action-grid {
     grid-auto-rows: clamp(
       calc(var(--min-touch-target) * 1.5),
-      18cqh,
-      calc(var(--min-touch-target) * 2)
+      26cqh,
+      calc(var(--min-touch-target) * 2.75)
     );
   }
 

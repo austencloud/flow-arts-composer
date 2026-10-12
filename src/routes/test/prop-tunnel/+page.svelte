@@ -36,6 +36,8 @@
   import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { EffectType, TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import { parseGridJoinToken } from "#lib/shared/foundation/domain/models/grid-join-token.js";
+  import { withSequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
 
   // Isolated effects config + the real per-effect tuning panels.
   import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
@@ -126,6 +128,11 @@
 
   let base = $state<SequenceData | null>(null);
   let rotated = $state<SequenceData[]>([]); // additional layers beyond base
+  /** `?join=e1` stamps the generated sequence so the copies draw on its pair. */
+  const requestedJoin =
+    typeof window === "undefined"
+      ? undefined
+      : parseGridJoinToken(new URLSearchParams(window.location.search).get("join") ?? "");
   let playheadBeat = $state(0);
 
   function rotAmountsFor(f: Fold): number[] {
@@ -164,7 +171,7 @@
         layers.push(mirroredBase, ...mirroredExtras);
       }
 
-      base = seq;
+      base = requestedJoin ? withSequenceGridJoin(seq, requestedJoin) : seq;
       rotated = layers;
       layerCount = layers.length + 1;
       playheadBeat = 0;
