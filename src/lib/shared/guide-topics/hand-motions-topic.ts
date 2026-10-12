@@ -11,6 +11,7 @@ import {
   getShortestRotationStepsBetweenLocations,
   rotateLocation,
 } from "#lib/shared/create/services/rotation-helpers.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
@@ -23,9 +24,11 @@ import { LETTER_TYPE_COLORS } from "#lib/shared/pictograph/shared/domain/constan
 import {
   HandSide,
   MotionType,
+  RotationDirection,
 } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
 
 export const HAND_MOTIONS_TOPIC_UNITS = {
   title: "verified_level1_hand_motions_71",
@@ -168,9 +171,19 @@ const HAND_MOTION_TYPES: Record<HandMove, MotionType> = {
   static: MotionType.STATIC,
 };
 
+/** A shift is PRO, and a pro prop turns the way its hand travels. */
+const SHIFT_ROTATION = {
+  clockwise: RotationDirection.CLOCKWISE,
+  counterclockwise: RotationDirection.COUNTER_CLOCKWISE,
+} as const;
+
 function handMotion(hand: HandSide, { move, from, to }: ComboHand) {
   return createMotionData({
     motionType: HAND_MOTION_TYPES[move],
+    rotationDirection:
+      move === "shift"
+        ? SHIFT_ROTATION[handMoveDirection(from, to)]
+        : RotationDirection.NO_ROTATION,
     startLocation: from,
     endLocation: to,
     hand,
@@ -196,6 +209,8 @@ export interface HandCombination {
   guideSlug: string;
   /** The book's two-hand example: blue makes the description's first move. */
   demo: { left: ComboHand; right: ComboHand };
+  /** The example's letter (handPairLetter), which lays out its arrows. */
+  demoLetter: Letter;
 }
 
 const { NORTH: N, EAST: E, SOUTH: S, WEST: W } = GridLocation;
@@ -220,6 +235,7 @@ export const HAND_COMBINATIONS: readonly HandCombination[] = [
     letterType: LetterType.TYPE1,
     guideSlug: "hm-type1",
     demo: { left: hand("shift", W, N), right: hand("shift", E, S) },
+    demoLetter: Letter.A,
   },
   {
     id: "shift",
@@ -228,6 +244,7 @@ export const HAND_COMBINATIONS: readonly HandCombination[] = [
     letterType: LetterType.TYPE2,
     guideSlug: "hm-type2",
     demo: { left: hand("shift", W, N), right: hand("static", E, E) },
+    demoLetter: Letter.SIGMA,
   },
   {
     id: "cross-shift",
@@ -236,6 +253,7 @@ export const HAND_COMBINATIONS: readonly HandCombination[] = [
     letterType: LetterType.TYPE3,
     guideSlug: "hm-type34",
     demo: { left: hand("shift", W, N), right: hand("dash", E, W) },
+    demoLetter: Letter.THETA_DASH,
   },
   {
     id: "dash",
@@ -244,6 +262,7 @@ export const HAND_COMBINATIONS: readonly HandCombination[] = [
     letterType: LetterType.TYPE4,
     guideSlug: "hm-type56",
     demo: { left: hand("dash", W, E), right: hand("static", S, S) },
+    demoLetter: Letter.LAMBDA,
   },
   {
     id: "dual-dash",
@@ -252,6 +271,7 @@ export const HAND_COMBINATIONS: readonly HandCombination[] = [
     letterType: LetterType.TYPE5,
     guideSlug: "hm-type56",
     demo: { left: hand("dash", W, E), right: hand("dash", E, W) },
+    demoLetter: Letter.PHI_DASH,
   },
   {
     id: "static",
@@ -260,6 +280,7 @@ export const HAND_COMBINATIONS: readonly HandCombination[] = [
     letterType: LetterType.TYPE6,
     guideSlug: "hm-type56",
     demo: { left: hand("static", W, W), right: hand("static", E, E) },
+    demoLetter: Letter.ALPHA,
   },
 ];
 
@@ -297,15 +318,42 @@ export function combinationNameSegments(
   ];
 }
 
-/** Two hands' moves as one pictograph: blue's move and red's. */
+/**
+ * The letter two hands' moves make, from the pictograph data. Drawn with its
+ * letter, a pair lays its arrows out by that letter's own rules: a
+ * Cross-Shift's dash goes on the side of its point away from where the
+ * shifting hand ends, so it never lies under that hand. Null when the data
+ * cannot load; the pair then draws each arrow by its own move alone.
+ */
+export async function handPairLetter(
+  left: ComboHand,
+  right: ComboHand
+): Promise<Letter | null> {
+  try {
+    const letter = await motionQueryHandler.findLetterByMotionConfiguration(
+      handMotion(HandSide.LEFT, left),
+      handMotion(HandSide.RIGHT, right),
+      GridMode.DIAMOND
+    );
+    return (letter as Letter | null) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Two hands' moves as one pictograph: blue's move and red's, laid out by
+ * their letter (handPairLetter) when one is given.
+ */
 export function handPairPictographData(
   left: ComboHand,
   right: ComboHand,
+  letter: Letter | null = null,
   id = `hand-pair-${left.from}-${left.to}-${right.from}-${right.to}`
 ): PictographData {
   return {
     id,
-    letter: null,
+    letter,
     gridMode: GridMode.DIAMOND,
     motions: {
       [HandSide.LEFT]: handMotion(HandSide.LEFT, left),
@@ -314,13 +362,14 @@ export function handPairPictographData(
   };
 }
 
-/** The combination's two-hand example as a pictograph. */
+/** The combination's two-hand example as a pictograph, laid out by its letter. */
 export function combinationPictographData(
   combination: HandCombination
 ): PictographData {
   return handPairPictographData(
     combination.demo.left,
     combination.demo.right,
+    combination.demoLetter,
     `hand-combination-${combination.id}`
   );
 }

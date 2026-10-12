@@ -31,6 +31,7 @@
   import {
     HAND_COMBINATIONS,
     combinationFor,
+    handPairLetter,
     handPairPictographData,
     plainTopicText,
     type HandCombination,
@@ -85,6 +86,13 @@
   /** Red's arrow shows, so both picks are seen before they play. */
   const LAND_MS = DURATION.dramatic;
   /**
+   * How far, in grid widths, an arrow moves when the picture draws it on the
+   * other side of the grid; a nudge moves it far less.
+   */
+  const SIDE_CHANGE = 0.1;
+  /** The longest the grids wait for the picture to lay out a new pair. */
+  const LAYOUT_WAIT_MS = DURATION.scene;
+  /**
    * The grids glide together and grow, and each arrow settles where the
    * combination's picture draws it.
    */
@@ -135,6 +143,11 @@
   /** The picture's static hands, which have a halo instead of an arrow. */
   let stillHands = $state<HandSide[]>([]);
   let pairData = $state<PictographData | null>(null);
+  /** Asks the picture to report once it has laid out the new pair. */
+  let pairEpoch = $state(0);
+  let pairLaidOut: (() => void) | null = null;
+  /** Counts fusions, so a pair laid out after the stage moved on is dropped. */
+  let fusion = 0;
   let shown = $state<{
     combination: HandCombination;
     mirror: boolean;
@@ -227,11 +240,33 @@
     }
   }
 
+  /** Where an element sits in a frame, in frame widths from its centre. */
+  function spotIn(element: Element, frame: Element): [number, number] {
+    const box = element.getBoundingClientRect();
+    const area = frame.getBoundingClientRect();
+    return [
+      (box.left + box.width / 2 - area.left - area.width / 2) / area.width,
+      (box.top + box.height / 2 - area.top - area.height / 2) / area.width,
+    ];
+  }
+
+  /**
+   * An arrow the picture draws across its grid's centre from where it lies
+   * alone, as a Cross-Shift's dash moving off the other hand's end point. A
+   * glide there would sweep it over both hands.
+   */
+  function crossesOver(arrow: Element, target: Element, half: Element) {
+    const [x0, y0] = spotIn(arrow, half);
+    const [x1, y1] = spotIn(target, fusedFrame);
+    return Math.hypot(x1 - x0, y1 - y0) > SIDE_CHANGE;
+  }
+
   /**
    * A grid lays its one hand out alone, and the picture lays the pair out by
    * the combination's own placement: an arrow on the other side of its
    * point, a hand nudged off the other hand's on a shared point. Each glides
-   * there while the grids fly, so the picture takes over without a jump.
+   * there while the grids fly, so the picture takes over without a jump. An
+   * arrow that changes sides fades out and back in on its new side instead.
    */
   function settleIntoPicture() {
     for (const hand of HANDS) {
@@ -249,7 +284,29 @@
       ];
       for (const [from, to] of pairs) {
         if (!from || !to) continue;
+        const arrow = `.${hand}-arrow-svg`;
+        const target = to.querySelector(arrow);
         for (const { element, keyframes } of handGlides(from, to, hand)) {
+          if (
+            target &&
+            element.matches(arrow) &&
+            crossesOver(element, target, half)
+          ) {
+            const [start, end] = keyframes;
+            flight.push(
+              element.animate(
+                [
+                  { ...start, opacity: 1, offset: 0, easing: EASE },
+                  { ...start, opacity: 0, offset: 0.35 },
+                  { ...end, opacity: 0, offset: 0.5, easing: EASE },
+                  { ...end, opacity: 1, offset: 0.85 },
+                  { ...end, opacity: 1, offset: 1 },
+                ],
+                { duration: FLIGHT_MS, fill: "forwards" }
+              )
+            );
+            continue;
+          }
           flight.push(
             element.animate(keyframes, {
               duration: FLIGHT_MS,
@@ -330,6 +387,28 @@
     if (refocus) void focusGrid(BLUE);
   }
 
+  /** Resolves once the picture has laid out its new pair, or after a wait. */
+  function layOutPair(data: PictographData): Promise<void> {
+    return new Promise((resolve) => {
+      const done = () => {
+        clearTimeout(giveUp);
+        pairLaidOut = null;
+        resolve();
+      };
+      const giveUp = setTimeout(done, LAYOUT_WAIT_MS);
+      pairLaidOut = done;
+      pairData = data;
+      pairEpoch += 1;
+    });
+  }
+
+  /**
+   * The picture draws the pair by its letter, which only the second pick
+   * settles: alone, blue's dash takes its usual side, and the letter can put
+   * it on the other, clear of where red's hand ends (a Cross-Shift). The
+   * letter and the picture's layout come first, so the glide carries each
+   * arrow to where the picture draws it.
+   */
   function fuse() {
     const pair = roundPair(round);
     const hands = roundHands(round);
@@ -337,9 +416,23 @@
     pending = { combination: combinationFor(pair.blue, pair.red), pair };
     holding = true;
     turn = null;
-    pairData = handPairPictographData(hands.left, hands.right);
     stillHands = HANDS.filter((hand) => round.moves[hand]?.move === "static");
     const ends: Spots = { [BLUE]: hands.left.to, [RED]: hands.right.to };
+    const current = ++fusion;
+    const picked = performance.now();
+    void handPairLetter(hands.left, hands.right).then(async (letter) => {
+      if (current !== fusion) return;
+      await layOutPair(handPairPictographData(hands.left, hands.right, letter));
+      if (current !== fusion) return;
+      playFusion(ends, Math.max(0, LAND_MS - (performance.now() - picked)));
+    });
+  }
+
+  /**
+   * After red's arrow has shown for `landMs`, the grids glide together, the
+   * picture takes over, and then both hands follow their arrows.
+   */
+  function playFusion(ends: Spots, landMs: number) {
     if (reducedMotion()) {
       fusedAt = ends;
       rest = ends;
@@ -351,7 +444,7 @@
     }
     hold.play(
       [
-        { pause: LAND_MS },
+        { pause: landMs },
         {
           act: () => {
             flying = true;
@@ -440,6 +533,7 @@
     return () => {
       duo.removeEventListener("pointerdown", takeOver, { capture: true });
       duo.removeEventListener("keydown", handleKeydown, { capture: true });
+      fusion += 1;
       hold.cancel();
       clearTimeout(stillHold);
       cancelFlight();
@@ -535,6 +629,8 @@
               <div class="pair-arrows">
                 <PictographContainer
                   pictographData={pairData}
+                  readyEpoch={pairEpoch}
+                  onReady={() => pairLaidOut?.()}
                   gridMode={GridMode.DIAMOND}
                   leftPropTypeOverride={PropType.HAND}
                   rightPropTypeOverride={PropType.HAND}
