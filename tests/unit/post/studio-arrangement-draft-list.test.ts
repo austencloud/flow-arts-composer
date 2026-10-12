@@ -2,6 +2,8 @@ import { afterEach, expect, it, vi } from "vitest";
 import {
   createEmptyPostProject,
 } from "#lib/shared/post-studio-plugin/index.js";
+import { createArrangementProject } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
+import { validateArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
 
 const account = vi.hoisted(() => ({ uid: "account-a" }));
 vi.mock("#lib/shared/auth/firebase.js", () => ({
@@ -90,4 +92,55 @@ it("shows an unclaimed guest Studio draft so the first account can claim it", as
   expect(listed.projects).toContainEqual(
     expect.objectContaining({ sequenceId: studio.sequenceId })
   );
+});
+
+it("summarizes an arrangement project's shown grid and populated cells", async () => {
+  const layer = {
+    sequence: { id: "seq", steps: [] },
+    beatOffset: 0,
+    propColors: { left: "#f00", right: "#00f" },
+    transformStack: [],
+  };
+  const cell = (row: number, col: number, layers: (typeof layer)[]) => ({
+    id: `cell-${row}-${col}`,
+    row,
+    col,
+    layers,
+    beatOffset: 0,
+    colSpan: 1,
+    rowSpan: 1,
+    mediaType: "animation" as const,
+  });
+  const project = createArrangementProject(
+    validateArrangementSnapshot({
+      schemaVersion: 2,
+      // Two populated cells show; the third sits outside the 2 × 2 grid.
+      cells: [
+        cell(0, 0, [layer]),
+        cell(0, 1, []),
+        cell(1, 1, [layer]),
+        cell(3, 3, [layer]),
+      ],
+      gridRows: 2,
+      gridCols: 2,
+      bpm: 120,
+      skipStartPlacement: true,
+    }),
+    "studio-arrangement:grid",
+    5
+  );
+  localStorage.setItem(
+    `tka:post-studio:project:v2:${project.sequenceId}`,
+    JSON.stringify(project)
+  );
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(new Response(JSON.stringify({ records: [] })))
+  );
+
+  const listed = await listPostProjects();
+  expect(
+    listed.projects.find((choice) => choice.sequenceId === project.sequenceId)
+      ?.arrangement
+  ).toEqual({ rows: 2, cols: 2, sequences: 2 });
 });

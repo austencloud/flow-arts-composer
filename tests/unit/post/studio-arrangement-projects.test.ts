@@ -24,7 +24,7 @@ vi.mock("#lib/shared/auth/firebase.js", () => ({
     },
   },
 }));
-vi.mock("#lib/features/compose/services/composition-syncer.js", () => ({
+vi.mock("#lib/features/post/compose-import/composition-syncer.js", () => ({
   compositionSyncer: {
     getCompositions: vi.fn(async () => fake.owned),
     getLegacyCompositions: vi.fn(async () => {
