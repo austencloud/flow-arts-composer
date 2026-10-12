@@ -309,8 +309,10 @@ list.
     color: var(--theme-text, white);
   }
 
+  /* Rows: name and hint beside the control. The columns arrangement also
+     takes this shape until it is wide enough for three real columns. */
   @container generation-style (min-width: 36rem) {
-    .style-panel:not(.columns) .style-axis {
+    .style-axis {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
       grid-template-areas:
         "name control"
@@ -331,11 +333,14 @@ list.
     }
 
     .columns .style-axis {
+      grid-template-columns: minmax(0, 1fr);
       grid-template-areas:
         "name"
         "control"
         "hint";
       align-content: start;
+      align-items: stretch;
+      column-gap: 0;
       padding-block: 0;
       border-top: 0;
     }
