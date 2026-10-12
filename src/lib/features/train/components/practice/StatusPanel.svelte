@@ -120,9 +120,9 @@
     border-radius: var(--radius-2026-md, 14px);
     box-shadow: var(--shadow-2026-md, 0 2px 8px rgba(0, 0, 0, 0.08));
     transition:
-      background var(--duration-2026-fast, 150ms)
+      background var(--duration-fast)
         var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1)),
-      border-color var(--duration-2026-fast, 150ms)
+      border-color var(--duration-fast)
         var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1));
   }
 
@@ -142,9 +142,9 @@
     border-radius: var(--radius-2026-sm, 10px);
     opacity: 0.5;
     transition:
-      opacity var(--duration-2026-fast, 150ms)
+      opacity var(--duration-fast)
         var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1)),
-      background var(--duration-2026-fast, 150ms)
+      background var(--duration-fast)
         var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1));
     color: color-mix(in srgb, var(--theme-text, white) 90%, transparent);
     font-size: var(--font-size-compact, 12px);
@@ -166,7 +166,7 @@
     height: 6px;
     border-radius: 50%;
     background: var(--theme-text-dim);
-    transition: all var(--duration-2026-fast, 150ms)
+    transition: all var(--duration-fast)
       var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1));
     flex-shrink: 0;
   }
