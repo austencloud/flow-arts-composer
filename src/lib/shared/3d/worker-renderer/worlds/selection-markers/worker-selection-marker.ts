@@ -24,6 +24,8 @@ export interface WorkerSelectionMarkerSnapshot {
   allPerformersSelected: boolean;
   present: boolean;
   pulsePhase: number;
+  hovered?: boolean;
+  dragging?: boolean;
 }
 
 export interface WorkerSelectionMarkerVisual {
@@ -34,7 +36,7 @@ export interface WorkerSelectionMarkerVisual {
 
 const INDIVIDUAL_GROUND_OFFSET = 0.015;
 const ALL_SELECTED_GROUND_OFFSET = 0.01;
-const ALL_SELECTED_COLOR = 0x6b7280;
+const ALL_SELECTED_COLOR = 0x8b5cf6;
 
 function namedMesh(
   name: string,
@@ -105,7 +107,7 @@ export function createWorkerSelectionMarker(
   });
   const allSelected = namedMesh(
     "worker-selection-marker-all",
-    new CircleGeometry(0.35, 32),
+    new RingGeometry(0.42, 0.58, 48),
     allSelectedMaterial
   );
   allSelected.position.y = ALL_SELECTED_GROUND_OFFSET;
@@ -133,8 +135,10 @@ export function createWorkerSelectionMarker(
       centerMaterial.color.setHex(snapshot.color);
 
       const pulse = 0.6 + 0.4 * Math.sin(snapshot.pulsePhase);
-      innerMaterial.opacity = pulse * 0.9;
-      outerMaterial.opacity = pulse * 0.3;
+      innerMaterial.opacity = snapshot.dragging ? 1 : pulse * 0.75;
+      outerMaterial.opacity = snapshot.dragging ? 0.45 : pulse * 0.18;
+      centerMaterial.opacity = 0.06;
+      allSelectedMaterial.opacity = snapshot.dragging ? 0.9 : 0.45;
     },
     dispose() {
       if (disposed) return;

@@ -42,6 +42,25 @@
   let reducedMotionQuery: MediaQuery | null = null;
   let world = $state.raw<BlossomEnvironmentWorld | null>(null);
   let generation = 0;
+  const pasteProbeEnabled =
+    import.meta.env.DEV &&
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("pasteProbe") === "1";
+
+  function tracePasteProbe(
+    event: string,
+    request: number,
+    details: string
+  ): void {
+    if (!pasteProbeEnabled) return;
+    untrack(() =>
+      window.dispatchEvent(
+        new CustomEvent("tka:paste-probe", {
+          detail: `blossom ${event} generation=${request} ${details}`,
+        })
+      )
+    );
+  }
 
   function getGpuRendererName(): string {
     const gl = renderer.getContext();
@@ -96,16 +115,21 @@
     let mounted: BlossomEnvironmentWorld | null = null;
     let detach: (() => void) | null = null;
     let restoreGlobals: (() => void) | null = null;
+    const initialLayout = untrack(() => ({
+      stageWidth,
+      stageDepth,
+      stageZOffset,
+      showDirectionCues,
+    }));
+    const dimensions = `width=${initialLayout.stageWidth.toFixed(3)} depth=${initialLayout.stageDepth.toFixed(3)} z=${initialLayout.stageZOffset.toFixed(3)} quality=${qualityTier}`;
+    tracePasteProbe("load-start", request, dimensions);
     sceneFeatures?.reportProgress("environment", 0);
 
     void createLoadedBlossomEnvironmentWorld({
       renderer,
       config,
       groundY: initialGroundY,
-      stageWidth,
-      stageDepth,
-      stageZOffset,
-      showDirectionCues,
+      ...initialLayout,
       qualityTier,
       reducedMotion: prefersReducedMotion,
       onProgress(fraction) {
@@ -116,6 +140,7 @@
     })
       .then((next) => {
         if (cancelled || request !== generation) {
+          tracePasteProbe("stale-load", request, dimensions);
           next.dispose();
           return;
         }
@@ -132,14 +157,21 @@
           }
         };
         world = next;
+        tracePasteProbe("mount", request, dimensions);
         sceneFeatures?.reportProgress("environment", 1);
         sceneFeatures?.reportReady("environment");
       })
       .catch((error: unknown) => {
+        tracePasteProbe("load-error", request, String(error));
         if (!cancelled) reportFailure(error);
       });
 
     return () => {
+      tracePasteProbe(
+        "cleanup",
+        request,
+        `${dimensions} mounted=${Boolean(mounted)}`
+      );
       cancelled = true;
       if (world === mounted) world = null;
       restoreGlobals?.();
@@ -150,6 +182,10 @@
 
   $effect(() => {
     world?.setGroundY(userProportionsState.groundY);
+  });
+
+  $effect(() => {
+    world?.setLayout(stageWidth, stageDepth, stageZOffset, showDirectionCues);
   });
 
   $effect(() => {

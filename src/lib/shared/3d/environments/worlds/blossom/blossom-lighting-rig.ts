@@ -13,6 +13,7 @@ import plan from "../../scenes/cherry-blossom/blossom-plan.json";
 export interface BlossomLightingRig {
   object: Group;
   setGroundY(groundY: number): void;
+  setStageZOffset(stageZOffset: number): void;
   dispose(): void;
 }
 
@@ -94,19 +95,22 @@ export function createBlossomLightingRig(
       return { light, definition };
     });
 
+  let currentGroundY = groundY;
+  let currentStageZOffset = stageZOffset;
   function setGroundY(nextGroundY: number): void {
+    currentGroundY = nextGroundY;
     key.position.set(
       keyPosition[0],
       keyPosition[1] + nextGroundY,
-      keyPosition[2] + stageZOffset
+      keyPosition[2] + currentStageZOffset
     );
-    warmFill.position.set(18, 8 + nextGroundY, 22 + stageZOffset);
-    coolFill.position.set(-12, 6 + nextGroundY, 18 + stageZOffset);
+    warmFill.position.set(18, 8 + nextGroundY, 22 + currentStageZOffset);
+    coolFill.position.set(-12, 6 + nextGroundY, 18 + currentStageZOffset);
     for (const { light, definition } of practicalLights) {
       light.position.set(
         definition.x,
         nextGroundY + definition.y,
-        definition.z + stageZOffset
+        definition.z + currentStageZOffset
       );
     }
   }
@@ -115,6 +119,10 @@ export function createBlossomLightingRig(
   return {
     object: root,
     setGroundY,
+    setStageZOffset(nextStageZOffset) {
+      currentStageZOffset = nextStageZOffset;
+      setGroundY(currentGroundY);
+    },
     dispose() {
       key.shadow.map?.dispose();
       root.clear();
