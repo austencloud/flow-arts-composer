@@ -21,6 +21,7 @@ export interface BlossomRiver {
   object: Reflector;
   update(deltaSeconds: number): void;
   setGroundY(groundY: number): void;
+  setStageZOffset(stageZOffset: number): void;
   setActive(active: boolean): void;
   dispose(): void;
 }
@@ -104,11 +105,14 @@ export function createBlossomRiver(
   }
 
   const surfaceElevation = getBlossomRiverSurfaceElevation();
+  let currentGroundY = groundY;
+  let currentStageZOffset = stageZOffset;
   function setGroundY(nextGroundY: number): void {
+    currentGroundY = nextGroundY;
     reflector.position.set(
       centerX,
       nextGroundY + surfaceElevation + 0.012,
-      stageZOffset + centerZ
+      currentStageZOffset + centerZ
     );
   }
   setGroundY(groundY);
@@ -119,6 +123,10 @@ export function createBlossomRiver(
       material.uniforms.uTime!.value += deltaSeconds * 0.28;
     },
     setGroundY,
+    setStageZOffset(nextStageZOffset) {
+      currentStageZOffset = nextStageZOffset;
+      setGroundY(currentGroundY);
+    },
     setActive(active) {
       reflector.visible = active;
     },

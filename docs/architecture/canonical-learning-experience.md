@@ -40,6 +40,12 @@ state machines stay.
   lesson links resume saved progress.
 - A test proves that one edit to a shared record changes the lesson, the
   web page and the handbook together.
+- One interactive explainer per concept (2026-10-12, Austen). Each concept's
+  interactive explainer lives in one route; every other view names the
+  concept in a sentence and links to that route instead of teaching it again.
+  Timing and direction are taught by the Timing and Direction lesson intro and
+  the `/timing-and-direction` mode guides, so the Type 1 Dual-Shifts Guide
+  page links its four mode chips there rather than adding its own stage.
 
 ## Product truth
 

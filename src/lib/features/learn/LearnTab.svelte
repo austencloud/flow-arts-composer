@@ -12,6 +12,7 @@ Navigation via bottom tabs (mobile-first UX pattern)
 <script lang="ts">
   import { getDelightOrchestrator } from "#lib/shared/delight/get-delight-orchestrator.js";
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { afterNavigate } from "$app/navigation";
   import { onMount, untrack } from "svelte";
   import { fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -24,6 +25,7 @@ Navigation via bottom tabs (mobile-first UX pattern)
   import {
     buildConceptPath,
     conceptIdFromPathname,
+    enteredCourseFromOutside,
     isConceptPath,
   } from "./domain/concept-routes";
   import {
@@ -41,7 +43,10 @@ Navigation via bottom tabs (mobile-first UX pattern)
   import { setDelightOrchestrator } from "#lib/shared/delight/context/delight-context.js";
   import ConfettiBurst from "#lib/shared/delight/components/ConfettiBurst.svelte";
   import AchievementToast from "#lib/shared/delight/components/AchievementToast.svelte";
-  import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
+  import {
+    isShallowGoto,
+    mutateCurrentUrl,
+  } from "#lib/shared/navigation/services/url-state.js";
   import { withViewTransition } from "./play/state/view-transition";
   import { getExperiencePersistence } from "./state/experience-persistence.svelte";
 
@@ -64,6 +69,20 @@ Navigation via bottom tabs (mobile-first UX pattern)
   // Provide delight orchestrator to child components via context
   setDelightOrchestrator(delightOrchestrator);
 
+  // A public course URL always owns the Concepts mode, even if the full app
+  // last persisted Play, TIKA, or Guide. This runs during setup, before the
+  // mode effects below: a mode switch closes any open lesson, and the switch
+  // from a saved Guide mode used to close the very lesson the URL names, so a
+  // lesson link showed the list instead. Other Learn entry points keep their
+  // saved tab behavior.
+  if (typeof window !== "undefined") {
+    const conceptRoute = isConceptPath(window.location.pathname);
+    const navMode = navigationState.currentLearnMode;
+    if (conceptRoute || !navMode) {
+      navigationState.setLearnMode("concepts");
+    }
+  }
+
   // Active mode synced with navigation state
   let activeMode = $state<LearnMode>("concepts");
 
@@ -79,6 +98,17 @@ Navigation via bottom tabs (mobile-first UX pattern)
   let selectedConcept = $state<LearnConcept | null>(null);
   let conceptOpenCount = $state(0); // Increments each open to force remount
   let returnPlaceId = $state<string | null>(null);
+
+  // A lesson reached from another page of the site (the Guide's "Start the
+  // first lesson", a topic's "Learn this interactively") keeps that page as
+  // its way out, so Back at the first step returns there rather than to the
+  // lesson list. Lesson switches and the from-start cleanup are shallow
+  // writes inside the course and leave the answer alone.
+  let enteredFromOutside = false;
+  afterNavigate((navigation) => {
+    if (isShallowGoto(navigation)) return;
+    enteredFromOutside = enteredCourseFromOutside(navigation);
+  });
 
   // Sync with navigation state (bottom nav controls this)
   $effect(() => {
@@ -232,15 +262,6 @@ Navigation via bottom tabs (mobile-first UX pattern)
   // Public lesson links own the destination. The catalog stays a catalog;
   // the full app can still restore its interrupted lesson on entry.
   onMount(() => {
-    // A public course URL always owns the Concepts mode, even if the full app
-    // last persisted Play, TIKA, or Guide. Other Learn entry points keep their
-    // saved tab behavior.
-    const conceptRoute = isConceptPath(window.location.pathname);
-    const navMode = navigationState.currentLearnMode;
-    if (conceptRoute || !navMode) {
-      navigationState.setLearnMode("concepts");
-    }
-
     syncConceptFromUrl(!publicCourse);
     const handlePopstate = () => syncConceptFromUrl(false);
     window.addEventListener("popstate", handlePopstate);
@@ -265,8 +286,15 @@ Navigation via bottom tabs (mobile-first UX pattern)
 
   // Handle back from detail view
   function handleBackToPath() {
-    selectedConcept = null;
     clearActiveConceptId();
+    // Back to the page that opened the lesson: the route change unmounts this
+    // tab, so the lesson stays on screen until that page is ready instead of
+    // flashing the list on the way out.
+    if (enteredFromOutside) {
+      window.history.back();
+      return;
+    }
+    selectedConcept = null;
     writeConceptUrl(undefined, "replace", returnPlaceId);
   }
 

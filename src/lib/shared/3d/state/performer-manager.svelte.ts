@@ -294,10 +294,7 @@ function buildPerformerManager(deps: PerformerManagerDeps) {
       return;
     }
 
-    departingPerformers = [
-      ...departingPerformers,
-      { performer, castIndex },
-    ];
+    departingPerformers = [...departingPerformers, { performer, castIndex }];
     beginPresenceTransition(
       performer,
       castIndex,
@@ -553,9 +550,13 @@ function buildPerformerManager(deps: PerformerManagerDeps) {
    * target preset doesn't cover an index, that performer stays at its
    * default row-pair slot instead of drifting.
    */
-  function updateFormationTransition(timestamp?: number) {
+  function updateFormationTransition(
+    timestamp?: number,
+    beforePresenceUpdate?: () => void
+  ) {
     const nowMs = timestamp ?? performance.now();
     sampleLayoutTransition(nowMs);
+    beforePresenceUpdate?.();
     samplePresenceTransitions(nowMs);
   }
 
