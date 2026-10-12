@@ -85,6 +85,7 @@
     view: View;
     tunnel: TunnelConfig;
     gridMode: GridVisibilityMode;
+    mandala: boolean;
     bpm: number;
     playing: boolean;
     propType: PropType;
@@ -122,6 +123,11 @@
   // user's saved visibility settings.
   const visibility = new AnimationVisibilityStateManager({ ephemeral: true });
   if (recovered?.gridMode) visibility.setGridMode(recovered.gridMode);
+  // The mandala guide (the whole sequence's path, drawn faintly behind the
+  // props) is on by default in the viewer, but here it reads as part of
+  // whatever effect is being judged. Start with it off; Visibility in the
+  // canvas menu still turns it on.
+  visibility.setVisibility("mandala", recovered?.mandala ?? false);
 
   // Trail tracking and length start from the shipped defaults, which is what a
   // new user sees, and never autosave.
@@ -294,6 +300,7 @@
         view,
         tunnel: $state.snapshot(controller.config) as TunnelConfig,
         gridMode: visibility.getGridMode(),
+        mandala: visibility.getVisibility("mandala"),
         bpm,
         playing,
         propType,
@@ -328,8 +335,8 @@
     if (!recovered) effectsConfig.setActiveEffect("bloom");
     if (!sequence) void generateSequence();
 
-    // The canvas menu's grid choice lives on the sandboxed manager; observe it
-    // so a refresh keeps it.
+    // The canvas menu's grid and mandala choices live on the sandboxed manager;
+    // observe it so a refresh keeps them.
     const onVisibility = () => persistRecovery();
     visibility.registerObserver(onVisibility);
     const onBeforeUnload = () => persistRecovery();
