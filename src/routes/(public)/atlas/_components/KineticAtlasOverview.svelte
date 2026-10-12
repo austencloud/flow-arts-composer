@@ -189,8 +189,8 @@
     font-size: 1rem;
     outline: none;
     transition:
-      border-color var(--duration-normal) ease,
-      box-shadow var(--duration-normal) ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .atlas-search input::placeholder {
@@ -265,8 +265,8 @@
     font-weight: 700;
     cursor: pointer;
     transition:
-      background-color var(--duration-normal) ease,
-      border-color var(--duration-normal) ease;
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .all-terms:hover {

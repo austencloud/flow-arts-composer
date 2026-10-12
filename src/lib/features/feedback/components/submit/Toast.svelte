@@ -24,7 +24,7 @@
     gap: 12px;
     padding: 12px;
     border-radius: 10px;
-    animation: toastIn var(--duration-emphasis) ease;
+    animation: toastIn var(--duration-emphasis) var(--ease-standard);
   }
 
   @keyframes toastIn {
@@ -127,7 +127,7 @@
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     .toast {
-      animation-duration: 0.01ms !important;
+      animation-duration: 0s !important;
     }
   }
 </style>

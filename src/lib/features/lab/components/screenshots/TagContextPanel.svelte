@@ -17,8 +17,14 @@
     onClose: () => void;
   }
 
-  const { target, allTags, position, onToggleTag, onCreateTag, onClose }: Props =
-    $props();
+  const {
+    target,
+    allTags,
+    position,
+    onToggleTag,
+    onCreateTag,
+    onClose,
+  }: Props = $props();
 
   function getTagHex(color: string): string {
     return TAG_COLORS.find((c) => c.value === color)?.hex ?? "#6b7280";
@@ -52,7 +58,9 @@
   >
     <div class="tag-panel-header">
       <span class="tag-panel-title">Tag screenshot</span>
-      <button class="tag-panel-close" aria-label="Close" onclick={onClose}>&times;</button>
+      <button class="tag-panel-close" aria-label="Close" onclick={onClose}
+        >&times;</button
+      >
     </div>
     <div class="tag-panel-tags">
       {#if allTags.length === 0}
@@ -167,7 +175,8 @@
     color: var(--tag-hex);
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
-    transition: background var(--duration-fast, 150ms) var(--ease-out, ease-out);
+    transition: background var(--duration-fast)
+      var(--ease-out, var(--ease-standard-out));
   }
 
   .tag-panel-chip:hover {
@@ -187,7 +196,7 @@
     cursor: pointer;
     font-family: inherit;
     text-align: left;
-    transition: background 150ms ease-out;
+    transition: background var(--duration-fast) var(--ease-standard-out);
   }
 
   .tag-panel-create:hover {

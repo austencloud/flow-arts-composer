@@ -134,7 +134,15 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: var(--radius-sm, 8px);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     min-height: var(--min-touch-target, 44px);
     width: 100%;
     text-align: left;
@@ -205,9 +213,9 @@
     align-items: center;
     justify-content: center;
     transition:
-      border-color 0.15s ease,
-      transform 0.15s ease,
-      box-shadow 0.15s ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     padding: 0;
     color: white;
     font-size: var(--font-size-compact, 12px);

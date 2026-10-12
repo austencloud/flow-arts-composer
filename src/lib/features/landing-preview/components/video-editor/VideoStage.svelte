@@ -160,7 +160,13 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     cursor: pointer;
     font-size: 14px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
   }
 
   .control-btn:hover:not(:disabled) {
@@ -174,12 +180,20 @@
   }
 
   .control-btn.active {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 30%,
+      transparent
+    );
     color: var(--theme-accent-light, #a5b4fc);
   }
 
   .control-btn.active:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 40%,
+      transparent
+    );
   }
 
   .control-label {
@@ -192,18 +206,34 @@
     height: 28px;
     border-radius: 50%;
     border: none;
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 30%,
+      transparent
+    );
     color: #fca5a5;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 10px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
   }
 
   .clear-btn:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 50%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 50%,
+      transparent
+    );
     color: white;
   }
 

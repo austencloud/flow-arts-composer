@@ -5,26 +5,35 @@ Discover all three to unlock the quiz.
 -->
 <script lang="ts">
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
-  import PlacementGrid from './PlacementGrid.svelte';
-  import type { PlacementsExperienceStateManager } from './placement-experience-state.svelte';
-  import type { HandPosition, PlacementType } from '../../../domain/constants/placement-quiz-data';
-  import { PLACEMENT_TYPE_INFO } from '../../../domain/constants/placement-quiz-data';
-  import { GridMode } from '#lib/shared/pictograph/grid/domain/enums/grid-enums.js';
-interface Props {
+  import PlacementGrid from "./PlacementGrid.svelte";
+  import type { PlacementsExperienceStateManager } from "./placement-experience-state.svelte";
+  import type {
+    HandPosition,
+    PlacementType,
+  } from "../../../domain/constants/placement-quiz-data";
+  import { PLACEMENT_TYPE_INFO } from "../../../domain/constants/placement-quiz-data";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  interface Props {
     experienceState: PlacementsExperienceStateManager;
   }
 
   let { experienceState }: Props = $props();
 
   const OPPOSITE_PAIRS: Record<string, string> = {
-    N: 'S', S: 'N', E: 'W', W: 'E',
-    NE: 'SW', SW: 'NE', NW: 'SE', SE: 'NW',
+    N: "S",
+    S: "N",
+    E: "W",
+    W: "E",
+    NE: "SW",
+    SW: "NE",
+    NW: "SE",
+    SE: "NW",
   };
 
   function detectPlacementType(left: string, right: string): PlacementType {
-    if (left === right) return 'beta';
-    if (OPPOSITE_PAIRS[left] === right) return 'alpha';
-    return 'gamma';
+    if (left === right) return "beta";
+    if (OPPOSITE_PAIRS[left] === right) return "alpha";
+    return "gamma";
   }
 
   let gridMode = $state<GridMode>(GridMode.DIAMOND);
@@ -36,12 +45,18 @@ interface Props {
 
   let hapticService: { trigger: (type: string) => void } | null = null;
   try {
-    hapticService = getHapticFeedback() as { trigger: (type: string) => void } | null;
-  } catch { /* desktop */ }
+    hapticService = getHapticFeedback() as {
+      trigger: (type: string) => void;
+    } | null;
+  } catch {
+    /* desktop */
+  }
 
-  const PLACEMENT_TYPES: PlacementType[] = ['alpha', 'beta', 'gamma'];
+  const PLACEMENT_TYPES: PlacementType[] = ["alpha", "beta", "gamma"];
   const TYPE_COLORS: Record<PlacementType, string> = {
-    alpha: '#22d3ee', beta: '#f59e0b', gamma: '#a78bfa',
+    alpha: "#22d3ee",
+    beta: "#f59e0b",
+    gamma: "#a78bfa",
   };
 
   const remainingCount = $derived(3 - experienceState.discoveredTypes.size);
@@ -54,9 +69,11 @@ interface Props {
     const isNew = !experienceState.discoveredTypes.has(type);
     if (isNew) {
       experienceState.discoverType(type);
-      hapticService?.trigger('success');
+      hapticService?.trigger("success");
       celebratingSlot = type;
-      setTimeout(() => { celebratingSlot = null; }, 800);
+      setTimeout(() => {
+        celebratingSlot = null;
+      }, 800);
     }
 
     discoveryCount++;
@@ -80,7 +97,7 @@ interface Props {
   }
 
   function handleAdvanceToQuiz() {
-    hapticService?.trigger('selection');
+    hapticService?.trigger("selection");
     experienceState.advanceToQuiz();
   }
 </script>
@@ -100,7 +117,10 @@ interface Props {
   {#if showResult && detectedType}
     {@const info = PLACEMENT_TYPE_INFO[detectedType]}
     <div class="result-section">
-      <div class="result-label" style="--type-color: {TYPE_COLORS[detectedType]}">
+      <div
+        class="result-label"
+        style="--type-color: {TYPE_COLORS[detectedType]}"
+      >
         <span class="result-symbol">{info.symbol}</span>
         <span class="result-name">{info.label}</span>
       </div>
@@ -114,7 +134,7 @@ interface Props {
 
       <!-- Secondary: switch grid mode -->
       <button class="secondary-btn" onclick={handleSwitchGrid}>
-        Switch to {gridMode === GridMode.DIAMOND ? 'box' : 'diamond'} grid
+        Switch to {gridMode === GridMode.DIAMOND ? "box" : "diamond"} grid
       </button>
     </div>
   {/if}
@@ -129,7 +149,9 @@ interface Props {
         class:discovered
         class:celebrating={celebratingSlot === type}
         style="--slot-color: {TYPE_COLORS[type]}"
-        aria-label={discovered ? `${info.label} discovered` : 'Undiscovered placement type'}
+        aria-label={discovered
+          ? `${info.label} discovered`
+          : "Undiscovered placement type"}
       >
         {#if discovered}
           <span class="slot-symbol">{info.symbol}</span>
@@ -170,7 +192,7 @@ interface Props {
     flex-direction: column;
     align-items: center;
     gap: 0.75rem;
-    animation: fade-slide-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: fade-slide-up var(--duration-dramatic) var(--ease-out) both;
   }
 
   .result-label {
@@ -194,8 +216,14 @@ interface Props {
   }
 
   @keyframes fade-slide-up {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   /* Primary action - clear, prominent */
@@ -208,7 +236,9 @@ interface Props {
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .primary-btn:hover {
@@ -226,7 +256,9 @@ interface Props {
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
     border-radius: 8px;
     cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .secondary-btn:hover {
@@ -251,7 +283,10 @@ interface Props {
     font-weight: 700;
     border: 2px solid var(--theme-stroke, rgba(255, 255, 255, 0.15));
     background: transparent;
-    transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+    transition:
+      transform var(--duration-emphasis) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard),
+      background var(--duration-emphasis) var(--ease-standard);
   }
 
   .slot-unknown {
@@ -266,13 +301,19 @@ interface Props {
   }
 
   .tracker-slot.celebrating {
-    animation: celebrate-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: celebrate-pop var(--duration-dramatic) var(--ease-spring);
   }
 
   @keyframes celebrate-pop {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.35); }
-    100% { transform: scale(1); }
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.35);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
 
   /* Advance button */
@@ -285,7 +326,9 @@ interface Props {
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .advance-btn:hover {
@@ -294,9 +337,21 @@ interface Props {
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .result-section { animation: none; opacity: 1; transform: none; }
-    .tracker-slot { transition: none; }
-    .tracker-slot.celebrating { animation: none; }
-    .primary-btn, .secondary-btn, .advance-btn { transition: none; }
+    .result-section {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+    .tracker-slot {
+      transition: none;
+    }
+    .tracker-slot.celebrating {
+      animation: none;
+    }
+    .primary-btn,
+    .secondary-btn,
+    .advance-btn {
+      transition: none;
+    }
   }
 </style>

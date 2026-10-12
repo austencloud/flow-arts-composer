@@ -1,18 +1,13 @@
 <!-- Trash drop zone for permanently deleting feedback items -->
 <script lang="ts">
-  const {
-    isDropTarget,
-    isDragActive,
-    onDragOver,
-    onDragLeave,
-    onDrop,
-  } = $props<{
-    isDropTarget: boolean;
-    isDragActive: boolean;
-    onDragOver: () => void;
-    onDragLeave: () => void;
-    onDrop: () => void;
-  }>();
+  const { isDropTarget, isDragActive, onDragOver, onDragLeave, onDrop } =
+    $props<{
+      isDropTarget: boolean;
+      isDragActive: boolean;
+      onDragOver: () => void;
+      onDragLeave: () => void;
+      onDrop: () => void;
+    }>();
 </script>
 
 <div
@@ -66,7 +61,13 @@
     border-top: 3px solid var(--column-color);
     border-radius: clamp(10px, 2.5cqi, 16px);
     overflow: hidden;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     box-shadow:
       0 4px 20px color-mix(in srgb, var(--column-color) 15%, transparent),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -133,7 +134,7 @@
     background: color-mix(in srgb, var(--column-color) 12%, transparent);
     backdrop-filter: blur(4px);
     pointer-events: none;
-    animation: pulseIn var(--duration-normal) ease;
+    animation: pulseIn var(--duration-normal) var(--ease-standard);
   }
 
   .drop-indicator i {

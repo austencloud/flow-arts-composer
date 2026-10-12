@@ -284,7 +284,7 @@
     background: transparent;
     backdrop-filter: none;
     box-shadow: none;
-    transition: background 0.5s ease;
+    transition: background var(--duration-dramatic) var(--ease-standard);
   }
 
   .board-viewport {
@@ -401,7 +401,7 @@
     font-size: var(--kb-text-sm);
     color: var(--theme-text);
     cursor: pointer;
-    animation: slideUpFade 0.3s var(--spring-bounce);
+    animation: slideUpFade var(--duration-emphasis) var(--spring-bounce);
     z-index: 100;
   }
 
@@ -427,7 +427,15 @@
     color: var(--theme-text-dim);
     font-size: clamp(10px, 2.5cqi, 12px);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
   }
 
   .undo-hint-dismiss:hover {

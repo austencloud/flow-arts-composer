@@ -1,6 +1,5 @@
 <script lang="ts">
-
-import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
+  import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
   /**
    * DuetCreatorPanel
    *
@@ -63,11 +62,15 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
   );
 
   const performer1Sequence = $derived(
-    performer1SequenceId ? sequences.find((s) => s.id === performer1SequenceId) : null
+    performer1SequenceId
+      ? sequences.find((s) => s.id === performer1SequenceId)
+      : null
   );
 
   const performer2Sequence = $derived(
-    performer2SequenceId ? sequences.find((s) => s.id === performer2SequenceId) : null
+    performer2SequenceId
+      ? sequences.find((s) => s.id === performer2SequenceId)
+      : null
   );
 
   const canSave = $derived(
@@ -113,7 +116,8 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
   }
 
   async function handleSave() {
-    if (!duetPersister || !performer1SequenceId || !performer2SequenceId) return;
+    if (!duetPersister || !performer1SequenceId || !performer2SequenceId)
+      return;
 
     isSaving = true;
     error = null;
@@ -145,8 +149,13 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
 
 <div class="duet-creator">
   <header class="header">
-    <h2>{t('duet_create')}</h2>
-    <button class="close-btn" onclick={onCancel} aria-label="Cancel and close" title="Cancel">
+    <h2>{t("duet_create")}</h2>
+    <button
+      class="close-btn"
+      onclick={onCancel}
+      aria-label="Cancel and close"
+      title="Cancel"
+    >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
   </header>
@@ -162,7 +171,10 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
         >
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
         </button>
-        <span>Select for Performer {activeSelector === "performer1" ? "1" : "2"}</span
+        <span
+          >Select for Performer {activeSelector === "performer1"
+            ? "1"
+            : "2"}</span
         >
       </div>
 
@@ -170,7 +182,7 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
         <i class="fas fa-search" aria-hidden="true"></i>
         <input
           type="text"
-          placeholder={t('duet_search_sequences')}
+          placeholder={t("duet_search_sequences")}
           bind:value={searchQuery}
         />
       </div>
@@ -178,7 +190,7 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
       {#if isLoadingSequences}
         <div class="loading">
           <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-          {t('loading_data')}
+          {t("loading_data")}
         </div>
       {:else}
         <div class="sequence-list">
@@ -189,7 +201,8 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
                 seq.id === performer2SequenceId}
               onclick={() => selectSequence(seq.id)}
               aria-label={`Select sequence: ${seq.word || seq.name || "Untitled"}`}
-              aria-pressed={seq.id === performer1SequenceId || seq.id === performer2SequenceId}
+              aria-pressed={seq.id === performer1SequenceId ||
+                seq.id === performer2SequenceId}
             >
               <span class="seq-word">{seq.word || seq.name || "Untitled"}</span>
               <span class="seq-meta">
@@ -220,21 +233,21 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
 
       <!-- Name -->
       <div class="form-group">
-        <label for="duet-name">{t('duet_name')}</label>
+        <label for="duet-name">{t("duet_name")}</label>
         <input
           id="duet-name"
           type="text"
-          placeholder={t('duet_name_placeholder')}
+          placeholder={t("duet_name_placeholder")}
           bind:value={name}
         />
       </div>
 
       <!-- Description -->
       <div class="form-group">
-        <label for="duet-desc">{t('duet_description')}</label>
+        <label for="duet-desc">{t("duet_description")}</label>
         <textarea
           id="duet-desc"
-          placeholder={t('duet_desc_placeholder')}
+          placeholder={t("duet_desc_placeholder")}
           rows="2"
           bind:value={description}
         ></textarea>
@@ -243,16 +256,20 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
       <!-- Sequence Pickers -->
       <div class="sequence-pickers">
         <div class="picker-group">
-          <span class="picker-label">{t('duet_performer1_sequence')}</span>
+          <span class="picker-label">{t("duet_performer1_sequence")}</span>
           <button
             class="picker-btn"
             class:has-selection={performer1Sequence}
             onclick={() => (activeSelector = "performer1")}
-            aria-label={performer1Sequence ? `Performer 1: ${performer1Sequence.word || performer1Sequence.name || "Untitled"} - click to change` : "Select sequence for Performer 1"}
+            aria-label={performer1Sequence
+              ? `Performer 1: ${performer1Sequence.word || performer1Sequence.name || "Untitled"} - click to change`
+              : "Select sequence for Performer 1"}
           >
             {#if performer1Sequence}
               <span class="selection-name">
-                {performer1Sequence.word || performer1Sequence.name || "Untitled"}
+                {performer1Sequence.word ||
+                  performer1Sequence.name ||
+                  "Untitled"}
               </span>
               <span class="selection-steps"
                 >{performer1Sequence.steps?.length || 0} steps</span
@@ -265,16 +282,20 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
         </div>
 
         <div class="picker-group">
-          <span class="picker-label">{t('duet_performer2_sequence')}</span>
+          <span class="picker-label">{t("duet_performer2_sequence")}</span>
           <button
             class="picker-btn"
             class:has-selection={performer2Sequence}
             onclick={() => (activeSelector = "performer2")}
-            aria-label={performer2Sequence ? `Performer 2: ${performer2Sequence.word || performer2Sequence.name || "Untitled"} - click to change` : "Select sequence for Performer 2"}
+            aria-label={performer2Sequence
+              ? `Performer 2: ${performer2Sequence.word || performer2Sequence.name || "Untitled"} - click to change`
+              : "Select sequence for Performer 2"}
           >
             {#if performer2Sequence}
               <span class="selection-name">
-                {performer2Sequence.word || performer2Sequence.name || "Untitled"}
+                {performer2Sequence.word ||
+                  performer2Sequence.name ||
+                  "Untitled"}
               </span>
               <span class="selection-steps"
                 >{performer2Sequence.steps?.length || 0} steps</span
@@ -289,7 +310,9 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
 
       <!-- Beat Offset -->
       <div class="form-group">
-        <span class="form-label">{t('character_beat_offset')} ({t('character_follower')})</span>
+        <span class="form-label"
+          >{t("character_beat_offset")} ({t("character_follower")})</span
+        >
         <div class="offset-control">
           <button
             class="offset-btn"
@@ -346,14 +369,22 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
 
     <!-- Footer -->
     <footer class="footer">
-      <button class="cancel-btn" onclick={onCancel} aria-label="Cancel">{t('action_cancel')}</button>
-      <button data-save-shortcut class="save-btn" disabled={!canSave} onclick={handleSave} aria-label="Save duet">
+      <button class="cancel-btn" onclick={onCancel} aria-label="Cancel"
+        >{t("action_cancel")}</button
+      >
+      <button
+        data-save-shortcut
+        class="save-btn"
+        disabled={!canSave}
+        onclick={handleSave}
+        aria-label="Save duet"
+      >
         {#if isSaving}
           <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-          {t('action_saving')}
+          {t("action_saving")}
         {:else}
           <i class="fas fa-check" aria-hidden="true"></i>
-          {t('duet_create')}
+          {t("duet_create")}
         {/if}
       </button>
     </footer>
@@ -392,7 +423,9 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-size: 1rem;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .close-btn:hover {
@@ -477,7 +510,9 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-size: var(--font-size-sm, 14px);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .picker-btn:hover {
@@ -525,7 +560,10 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
     color: var(--theme-text, #ffffff);
     font-size: 0.875rem;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .offset-btn:hover:not(:disabled) {
@@ -565,7 +603,10 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .pos-btn:hover {
@@ -603,7 +644,9 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
     font-size: var(--font-size-sm, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .cancel-btn {
@@ -637,7 +680,11 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem;
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
     border: 1px solid var(--semantic-error, #ef4444);
     border-radius: 8px;
     color: var(--semantic-error, #ef4444);
@@ -669,7 +716,9 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
     border-radius: 6px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .back-btn:hover {
@@ -717,7 +766,9 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
     border-radius: 8px;
     text-align: left;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .sequence-item:hover {

@@ -4,7 +4,7 @@ import OptionPickerDesktopLayoutHarness from "./OptionPickerDesktopLayoutHarness
 
 /**
  * Choosing a start placement expands the workspace, and StandardWorkspaceLayout
- * eases its grid columns over 450ms to do it. The picker mounts on the first
+ * eases its grid columns on the dramatic motion interval. The picker mounts on the first
  * frame of that ease, so its first measurement is the panel's PRE-expansion
  * width. Committing that width opened the 8-column desktop grid inside a panel
  * about to be half as wide, then swapped it for the swipe layout half a second

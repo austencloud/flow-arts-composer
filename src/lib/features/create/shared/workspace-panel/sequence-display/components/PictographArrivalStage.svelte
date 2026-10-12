@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { flushSync, onDestroy, onMount } from "svelte";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -548,7 +548,7 @@
       : motionProgress.toFixed(4)}
     data-arrow-opacity={arrowOpacity.toFixed(4)}
     aria-hidden="true"
-    out:fade={{ duration: reducedMotionEnabled ? 0 : DURATION.fast }}
+    out:opaqueFade={{ duration: reducedMotionEnabled ? 0 : DURATION.fast }}
   >
     <div
       class="arrival-scrim"

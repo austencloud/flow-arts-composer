@@ -25,9 +25,7 @@
   const trackerStatus = $derived(toTrackerStatus(item.status));
   const statusConfig = $derived(TRACKER_STATUS_CONFIG[trackerStatus]);
   const priorityConfig = $derived(
-    item.priority
-      ? PRIORITY_CONFIG[item.priority as FeedbackPriority]
-      : null
+    item.priority ? PRIORITY_CONFIG[item.priority as FeedbackPriority] : null
   );
 
   function formatRelativeDate(date: Date): string {
@@ -39,13 +37,16 @@
       const hours = Math.floor(diff / (1000 * 60 * 60));
       if (hours === 0) {
         const minutes = Math.floor(diff / (1000 * 60));
-        return minutes <= 1 ? t("feedback_just_now") : t("feedback_minutes_ago", { count: minutes });
+        return minutes <= 1
+          ? t("feedback_just_now")
+          : t("feedback_minutes_ago", { count: minutes });
       }
       return t("feedback_hours_ago", { count: hours });
     }
     if (days === 1) return t("feedback_yesterday");
     if (days < 7) return t("feedback_days_ago", { count: days });
-    if (days < 30) return t("feedback_weeks_ago", { count: Math.floor(days / 7) });
+    if (days < 30)
+      return t("feedback_weeks_ago", { count: Math.floor(days / 7) });
     return date.toLocaleDateString();
   }
 
@@ -84,7 +85,9 @@
 
     <div class="card-footer">
       <span class="meta">
-        {firstName(item.userDisplayName)} &middot; {formatRelativeDate(item.createdAt)}
+        {firstName(item.userDisplayName)} &middot; {formatRelativeDate(
+          item.createdAt
+        )}
       </span>
       {#if priorityConfig}
         <span
@@ -122,7 +125,14 @@
     border-radius: 10px;
     text-align: left;
     cursor: pointer;
-    transition: all var(--duration-normal, 200ms) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard);
     box-shadow:
       0 4px 16px rgba(0, 0, 0, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);

@@ -30,18 +30,14 @@
 -->
 <script lang="ts">
   import { tick } from "svelte";
-  import {
-    fade,
-    scale,
-    type FadeParams,
-    type ScaleParams,
-    type TransitionConfig,
-  } from "svelte/transition";
-  import { quintOut } from "svelte/easing";
   import { innerHeight, innerWidth } from "svelte/reactivity/window";
   import { portal } from "../modals/portal";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
-  import { reducedMotion } from "#lib/shared/transitions/motion.js";
+  import {
+    opaqueFade,
+    popIn,
+    reducedMotion,
+  } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
   import { isEditableKeyboardTarget } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
@@ -120,7 +116,7 @@
   function stageEntrance() {
     return lastGenerateCardMorphRan() || reducedMotion()
       ? { start: 1, duration: 0 }
-      : { start: 0.95, duration: 250, easing: quintOut };
+      : { start: 0.95, duration: DURATION.normal };
   }
 
   // The bottom panel's backdrop fades on a plain open. A morph's own
@@ -136,12 +132,15 @@
   // even at zero duration. After a morph that read lands inside the view
   // transition callback and lays out the panel it just mounted, so a
   // motionless entrance or exit skips the transition outright.
-  function stageScale(node: Element, params: ScaleParams): TransitionConfig {
-    return params.duration === 0 ? { duration: 0 } : scale(node, params);
+  function stageScale(
+    node: HTMLElement,
+    params: { duration: number; start: number }
+  ) {
+    return params.duration === 0 ? { duration: 0 } : popIn(node, params);
   }
 
-  function backdropFade(node: Element, params: FadeParams): TransitionConfig {
-    return params.duration === 0 ? { duration: 0 } : fade(node, params);
+  function backdropFade(node: Element, params: { duration: number }) {
+    return params.duration === 0 ? { duration: 0 } : opaqueFade(node, params);
   }
 
   // A pre-effect, not $effect: its teardown has to run before the {#if}

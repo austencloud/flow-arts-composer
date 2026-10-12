@@ -391,7 +391,7 @@
     background: var(--theme-card-bg);
     border: 1.5px solid var(--theme-stroke);
     border-radius: clamp(12px, 2.5cqi, 16px);
-    transition: border-color var(--duration-normal) ease;
+    transition: border-color var(--duration-normal) var(--ease-standard);
   }
 
   .feedback-form:hover {
@@ -438,7 +438,13 @@
     font-weight: 600;
 
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     touch-action: manipulation;
     overflow: hidden;
   }
@@ -455,7 +461,7 @@
     background: var(--theme-accent, #4a9eff);
     transform-origin: left center;
     transform: scaleX(calc(var(--progress) / 100));
-    transition: transform 200ms ease-out;
+    transition: transform var(--duration-normal) var(--ease-standard-out);
     border-radius: inherit;
   }
 
@@ -495,9 +501,9 @@
     *,
     *::before,
     *::after {
-      animation-duration: 0.01ms !important;
+      animation-duration: 0s !important;
       animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
+      transition-duration: 0s !important;
     }
 
     .toolbar-submit-button {

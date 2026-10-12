@@ -52,10 +52,14 @@
     let timeout: ReturnType<typeof setTimeout> | undefined;
     if (prevVisible === false && visible === true) {
       isAnimating = true;
-      timeout = setTimeout(() => { isAnimating = false; }, 180);
+      timeout = setTimeout(() => {
+        isAnimating = false;
+      }, 180);
     }
     prevVisible = visible;
-    return () => { if (timeout) clearTimeout(timeout); };
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
   });
 </script>
 
@@ -88,7 +92,7 @@
   .letter-dash {
     /* Match TKA glyph fade behavior */
     opacity: 0;
-    transition: opacity var(--duration-fast) ease-out;
+    transition: opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   .letter-dash.visible {
@@ -114,7 +118,7 @@
   }
 
   .dash-rect.animating {
-    animation: dash-pulse 180ms ease-in-out;
+    animation: dash-pulse var(--duration-fast) var(--ease-standard);
   }
 
   /* Respect reduced motion preference */

@@ -63,12 +63,16 @@
   // Get user's prop types from reactive settings (responds to Alt+number, P key)
   const leftPropType = $derived.by(() => {
     const settings = getSettings();
-    return (settings.leftPropType ?? settings.propType ?? PropType.STAFF) as PropType;
+    return (settings.leftPropType ??
+      settings.propType ??
+      PropType.STAFF) as PropType;
   });
 
   const rightPropType = $derived.by(() => {
     const settings = getSettings();
-    return (settings.rightPropType ?? settings.propType ?? PropType.STAFF) as PropType;
+    return (settings.rightPropType ??
+      settings.propType ??
+      PropType.STAFF) as PropType;
   });
 
   // Filtered and paginated data
@@ -111,7 +115,10 @@
   });
 
   // Handle clicking on a pictograph card - opens editor panel
-  function handlePictographCardClick(pictograph: PictographData, indexInPage: number) {
+  function handlePictographCardClick(
+    pictograph: PictographData,
+    indexInPage: number
+  ) {
     // Calculate the actual index in the filtered list
     const actualIndex = currentPage * perPage + indexInPage;
     selectedIndex = actualIndex;
@@ -267,36 +274,38 @@
         <p>No pictographs in this category</p>
       </div>
     {:else}
-    <div class="grid themed-scrollbar">
-      {#each paginated as pictograph, indexInPage (pictograph.id)}
-        {@const actualIndex = currentPage * perPage + indexInPage}
-        {@const isSelected = actualIndex === selectedIndex && editorOpen}
-        <div
-          class="card"
-          class:selected={isSelected}
-          role="button"
-          tabindex="0"
-          onclick={() => handlePictographCardClick(pictograph, indexInPage)}
-          onkeydown={(e) => (e.key === "Enter" || e.key === " ") && handlePictographCardClick(pictograph, indexInPage)}
-          aria-pressed={isSelected}
-          aria-label="Pictograph {pictograph.letter} - click to edit"
-        >
-          <div class="pictograph-area">
-            <PictographContainer
-              pictographData={pictograph}
-              gridMode={GridMode.SKEWED}
-              leftPropTypeOverride={leftPropType}
-              rightPropTypeOverride={rightPropType}
-            />
+      <div class="themed-scrollbar grid">
+        {#each paginated as pictograph, indexInPage (pictograph.id)}
+          {@const actualIndex = currentPage * perPage + indexInPage}
+          {@const isSelected = actualIndex === selectedIndex && editorOpen}
+          <div
+            class="card"
+            class:selected={isSelected}
+            role="button"
+            tabindex="0"
+            onclick={() => handlePictographCardClick(pictograph, indexInPage)}
+            onkeydown={(e) =>
+              (e.key === "Enter" || e.key === " ") &&
+              handlePictographCardClick(pictograph, indexInPage)}
+            aria-pressed={isSelected}
+            aria-label="Pictograph {pictograph.letter} - click to edit"
+          >
+            <div class="pictograph-area">
+              <PictographContainer
+                pictographData={pictograph}
+                gridMode={GridMode.SKEWED}
+                leftPropTypeOverride={leftPropType}
+                rightPropTypeOverride={rightPropType}
+              />
+            </div>
+            <!-- Minimal info bar -->
+            <div class="card-info-minimal">
+              <span class="letter">{pictograph.letter}</span>
+              <span class="position">{formatPosition(pictograph)}</span>
+            </div>
           </div>
-          <!-- Minimal info bar -->
-          <div class="card-info-minimal">
-            <span class="letter">{pictograph.letter}</span>
-            <span class="position">{formatPosition(pictograph)}</span>
-          </div>
-        </div>
-      {/each}
-    </div>
+        {/each}
+      </div>
     {/if}
 
     <!-- Bottom Pagination -->
@@ -344,7 +353,7 @@
     overflow: hidden;
     /* Push-over effect when drawer opens - matches SkewLabEditorPanel drawer width (40vw, min 450px) */
     --drawer-width: max(40vw, 450px);
-    transition: padding-right var(--duration-emphasis, 350ms) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: padding-right var(--duration-emphasis) var(--ease-standard);
   }
 
   .category-browser.panel-open {
@@ -410,11 +419,21 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .retry-btn:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
   }
 
   .retry-btn:focus-visible {
@@ -473,7 +492,13 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   @media (pointer: coarse) {
@@ -499,10 +524,18 @@
   }
 
   /* Category accent colors — scoped to skewlab; no global token exists for these. */
-  .chip.cat1 { --skewlab-cat-accent: #60a5fa; } /* blue — normal→skewed */
-  .chip.cat2 { --skewlab-cat-accent: #34d399; } /* emerald — both skew→normal */
-  .chip.cat3 { --skewlab-cat-accent: #fbbf24; } /* amber — skewed→skewed */
-  .chip.cat4 { --skewlab-cat-accent: #f87171; } /* red — skewed→normal */
+  .chip.cat1 {
+    --skewlab-cat-accent: #60a5fa;
+  } /* blue — normal→skewed */
+  .chip.cat2 {
+    --skewlab-cat-accent: #34d399;
+  } /* emerald — both skew→normal */
+  .chip.cat3 {
+    --skewlab-cat-accent: #fbbf24;
+  } /* amber — skewed→skewed */
+  .chip.cat4 {
+    --skewlab-cat-accent: #f87171;
+  } /* red — skewed→normal */
 
   .chip.cat1.active,
   .chip.cat2.active,
@@ -558,7 +591,13 @@
     color: var(--theme-text, #fff);
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   @media (pointer: coarse) {
@@ -617,9 +656,9 @@
     border-radius: 12px;
     cursor: pointer;
     transition:
-      border-color var(--duration-fast) ease,
-      box-shadow var(--duration-fast) ease,
-      transform var(--duration-fast) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .card:hover {
@@ -638,7 +677,8 @@
   /* Selected card (editor panel open for this card) */
   .card.selected {
     border-color: var(--theme-accent, #8b5cf6);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-accent, #8b5cf6) 20%, transparent);
+    box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--theme-accent, #8b5cf6) 20%, transparent);
   }
 
   .pictograph-area {

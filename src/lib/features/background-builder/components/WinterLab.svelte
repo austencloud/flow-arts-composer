@@ -1,7 +1,10 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { WinterBackgroundSystem, type QualityLevel } from "@austencloud/backgrounds";
-  import { ChipToggle, ChipGroup } from '@austencloud/chip-toggle';
+  import {
+    WinterBackgroundSystem,
+    type QualityLevel,
+  } from "@austencloud/backgrounds";
+  import { ChipToggle, ChipGroup } from "@austencloud/chip-toggle";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import LabPreviewCanvas from "./LabPreviewCanvas.svelte";
 
@@ -125,24 +128,77 @@
 
     <!-- Quality Chips -->
     <ChipGroup>
-      <ChipToggle label="High" active={quality === "high"} color="cyan" onclick={() => setQuality("high")} />
-      <ChipToggle label="Medium" active={quality === "medium"} color="cyan" onclick={() => setQuality("medium")} />
-      <ChipToggle label="Low" active={quality === "low"} color="cyan" onclick={() => setQuality("low")} />
+      <ChipToggle
+        label="High"
+        active={quality === "high"}
+        color="cyan"
+        onclick={() => setQuality("high")}
+      />
+      <ChipToggle
+        label="Medium"
+        active={quality === "medium"}
+        color="cyan"
+        onclick={() => setQuality("medium")}
+      />
+      <ChipToggle
+        label="Low"
+        active={quality === "low"}
+        color="cyan"
+        onclick={() => setQuality("low")}
+      />
     </ChipGroup>
 
     <!-- Layer Chips -->
     <ChipGroup>
-      <ChipToggle label="Sky Gradient" icon="moon" active={layers.gradient} color="cyan" onclick={() => toggleLayer("gradient")} />
-      <ChipToggle label="Snowflakes" icon="snowflake" active={layers.snowflakes} color="cyan" onclick={() => toggleLayer("snowflakes")} />
-      <ChipToggle label="Shooting Stars" icon="meteor" active={layers.shootingStars} color="cyan" onclick={() => toggleLayer("shootingStars")} />
+      <ChipToggle
+        label="Sky Gradient"
+        icon="moon"
+        active={layers.gradient}
+        color="cyan"
+        onclick={() => toggleLayer("gradient")}
+      />
+      <ChipToggle
+        label="Snowflakes"
+        icon="snowflake"
+        active={layers.snowflakes}
+        color="cyan"
+        onclick={() => toggleLayer("snowflakes")}
+      />
+      <ChipToggle
+        label="Shooting Stars"
+        icon="meteor"
+        active={layers.shootingStars}
+        color="cyan"
+        onclick={() => toggleLayer("shootingStars")}
+      />
     </ChipGroup>
 
     <!-- Density Chips -->
     <ChipGroup>
-      <ChipToggle label="Light" active={densityPreset === "light"} color="cyan" onclick={() => setDensity("light")} />
-      <ChipToggle label="Normal" active={densityPreset === "normal"} color="cyan" onclick={() => setDensity("normal")} />
-      <ChipToggle label="Heavy" active={densityPreset === "heavy"} color="cyan" onclick={() => setDensity("heavy")} />
-      <ChipToggle label="Blizzard" active={densityPreset === "blizzard"} color="cyan" onclick={() => setDensity("blizzard")} />
+      <ChipToggle
+        label="Light"
+        active={densityPreset === "light"}
+        color="cyan"
+        onclick={() => setDensity("light")}
+      />
+      <ChipToggle
+        label="Normal"
+        active={densityPreset === "normal"}
+        color="cyan"
+        onclick={() => setDensity("normal")}
+      />
+      <ChipToggle
+        label="Heavy"
+        active={densityPreset === "heavy"}
+        color="cyan"
+        onclick={() => setDensity("heavy")}
+      />
+      <ChipToggle
+        label="Blizzard"
+        active={densityPreset === "blizzard"}
+        color="cyan"
+        onclick={() => setDensity("blizzard")}
+      />
     </ChipGroup>
 
     <!-- Regenerate -->
@@ -211,8 +267,13 @@
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: color-mix(in srgb, var(--theme-error, #fb7185) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-error, #fb7185) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-error, #fb7185) 12%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-error, #fb7185) 40%, transparent);
     border-radius: 12px;
     color: var(--theme-error, #fb7185);
   }
@@ -239,8 +300,13 @@
   .retry-btn {
     flex-shrink: 0;
     padding: 6px 12px;
-    background: color-mix(in srgb, var(--theme-error, #fb7185) 18%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-error, #fb7185) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-error, #fb7185) 18%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-error, #fb7185) 40%, transparent);
     border-radius: 8px;
     color: var(--theme-error, #fb7185);
     font-size: var(--font-size-compact, 12px);
@@ -268,7 +334,11 @@
 
   .badge {
     padding: 4px 10px;
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.3), rgba(103, 232, 249, 0.3));
+    background: linear-gradient(
+      135deg,
+      rgba(6, 182, 212, 0.3),
+      rgba(103, 232, 249, 0.3)
+    );
     border: 1px solid rgba(103, 232, 249, 0.4);
     border-radius: 20px;
     font-size: var(--font-size-compact, 12px);
@@ -299,7 +369,13 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .action-btn:hover {
@@ -373,7 +449,11 @@
   }
 
   .pill.complete {
-    background: color-mix(in srgb, var(--theme-success, #34d399) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-success, #34d399) 15%,
+      transparent
+    );
     color: var(--theme-success, #34d399);
   }
 
@@ -384,8 +464,13 @@
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
   }
 
   @media (max-width: 800px) {

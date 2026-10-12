@@ -2,7 +2,10 @@
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { TURN_VALUES } from "#lib/features/choreo-card/domain/turn-pattern-parser.js";
   import { ratioLabel } from "#lib/shared/shape-matrix/domain/flower-signature.js";
-  import type { AxisFilter, MatrixFilters } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
+  import type {
+    AxisFilter,
+    MatrixFilters,
+  } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
   import type { TurnValue } from "#lib/shared/create/services/level-turn-values.js";
   import {
     HandSide,
@@ -31,7 +34,6 @@
     { value: "box" as const, label: "□" },
   ];
 
-
   function setAxis(which: HandSideValue, patch: Partial<AxisFilter>) {
     onchange({ ...filters, [which]: { ...filters[which], ...patch } });
   }
@@ -45,10 +47,21 @@
 
 {#snippet axisRow(which: HandSideValue, color: "blue" | "red")}
   {@const f = filters[which]}
-  <div class="group" class:blue={color === "blue"} class:red={color === "red"} role="group" aria-label={`${which} flower filters`}>
+  <div
+    class="group"
+    class:blue={color === "blue"}
+    class:red={color === "red"}
+    role="group"
+    aria-label={`${which} flower filters`}
+  >
     <span class="axis">{which}</span>
     <div class="seg s-style">
-      <SegmentedControl options={STYLE_OPTS} value={f.style} {color} onchange={(v) => setAxis(which, { style: v })} />
+      <SegmentedControl
+        options={STYLE_OPTS}
+        value={f.style}
+        {color}
+        onchange={(v) => setAxis(which, { style: v })}
+      />
     </div>
     <div class="turns" role="group" aria-label={`${which} VTG ratios`}>
       {#each TURN_VALUES as t (t)}
@@ -58,14 +71,28 @@
           class:on={f.turns.has(t)}
           aria-pressed={f.turns.has(t)}
           aria-label={`${which} ${ratioLabel(t)} ratio`}
-          onclick={() => toggleTurn(which, t)}>{ratioLabel(t)}</button>
+          onclick={() => toggleTurn(which, t)}>{ratioLabel(t)}</button
+        >
       {/each}
     </div>
     <div class="seg s-ori">
-      <SegmentedControl options={ORI_OPTS} value={f.ori} {color} onchange={(v) => setAxis(which, { ori: v })} />
+      <SegmentedControl
+        options={ORI_OPTS}
+        value={f.ori}
+        {color}
+        onchange={(v) => setAxis(which, { ori: v })}
+      />
     </div>
-    <div class="seg s-grid" title="Anchor: ◇ diamond (cardinal) · □ box (45° rotated)">
-      <SegmentedControl options={GRID_OPTS} value={f.grid} {color} onchange={(v) => setAxis(which, { grid: v })} />
+    <div
+      class="seg s-grid"
+      title="Anchor: ◇ diamond (cardinal) · □ box (45° rotated)"
+    >
+      <SegmentedControl
+        options={GRID_OPTS}
+        value={f.grid}
+        {color}
+        onchange={(v) => setAxis(which, { grid: v })}
+      />
     </div>
   </div>
 {/snippet}
@@ -80,7 +107,8 @@
       class:on={filters.collapse}
       role="switch"
       aria-checked={filters.collapse}
-      onclick={() => onchange({ ...filters, collapse: !filters.collapse })}>
+      onclick={() => onchange({ ...filters, collapse: !filters.collapse })}
+    >
       <span class="dot" class:on={filters.collapse} aria-hidden="true"></span>
       Collapse duplicate orientations
     </button>
@@ -164,9 +192,9 @@
     font-variant-numeric: tabular-nums;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 0.12s) ease,
-      border-color var(--duration-fast, 0.12s) ease,
-      color var(--duration-fast, 0.12s) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
   .t:hover {
     border-color: rgba(255, 255, 255, 0.55);
@@ -196,15 +224,15 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      border-color var(--duration-fast, 0.12s) ease,
-      color var(--duration-fast, 0.12s) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
   .collapse .dot {
     width: 11px;
     height: 11px;
     border-radius: 50%;
     border: 1.5px solid rgba(255, 255, 255, 0.32);
-    transition: background var(--duration-fast, 0.12s) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
   .collapse.on {
     border-color: rgba(52, 211, 153, 0.8);

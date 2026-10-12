@@ -433,12 +433,12 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
   /* Only disable opacity transition, allow filter transition for dark mode */
   .glyph-group :global(.tka-glyph) {
     opacity: 1 !important;
-    transition: filter var(--duration-fast) ease-out !important;
+    transition: filter var(--duration-fast) var(--ease-standard-out) !important;
   }
 
   .glyph-group :global(.turns-column) {
     opacity: 1 !important;
-    transition: filter var(--duration-fast) ease-out !important;
+    transition: filter var(--duration-fast) var(--ease-standard-out) !important;
   }
 
   /* The in:popIn settle transforms this SVG group; give it a real box and a

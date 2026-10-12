@@ -3,7 +3,7 @@
   import { onMount } from "svelte";
   import type { VoiceRecordingResult } from "#lib/shared/feedback/domain/feedback-contract-types.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-import type { VoiceRecorder } from "../../services/voice-recorder";
+  import type { VoiceRecorder } from "../../services/voice-recorder";
 
   const {
     voiceRecorder,
@@ -75,9 +75,13 @@ import type { VoiceRecorder } from "../../services/voice-recorder";
   class:recording={isRecording}
   onclick={toggleRecording}
   {disabled}
-  aria-label={isRecording ? t("feedback_stop_recording") : t("feedback_start_voice_input")}
+  aria-label={isRecording
+    ? t("feedback_stop_recording")
+    : t("feedback_start_voice_input")}
   aria-pressed={isRecording}
-  title={isRecording ? t("feedback_stop_recording") : t("feedback_speak_to_dictate")}
+  title={isRecording
+    ? t("feedback_stop_recording")
+    : t("feedback_speak_to_dictate")}
 >
   {#if isRecording}
     <span class="pulse-ring"></span>
@@ -109,7 +113,15 @@ import type { VoiceRecorder } from "../../services/voice-recorder";
     border-radius: 50%;
     color: var(--theme-accent-strong);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
   }
 

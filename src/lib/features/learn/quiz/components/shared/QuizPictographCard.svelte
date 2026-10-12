@@ -42,7 +42,7 @@ QuizPictographCard - Question pictograph display
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
-    animation: pictographEntrance var(--duration-dramatic) cubic-bezier(0.16, 1, 0.3, 1);
+    animation: pictographEntrance var(--duration-dramatic) var(--ease-out);
   }
 
   @keyframes pictographEntrance {
@@ -66,7 +66,8 @@ QuizPictographCard - Question pictograph display
     background: transparent;
     border-radius: 14px;
     /* Subtle glow effect instead of white background */
-    box-shadow: 0 0 60px -20px color-mix(in srgb, var(--theme-accent) 25%, transparent);
+    box-shadow: 0 0 60px -20px
+      color-mix(in srgb, var(--theme-accent) 25%, transparent);
     overflow: hidden;
   }
 
@@ -118,7 +119,8 @@ QuizPictographCard - Question pictograph display
       width: 280px;
       height: 280px;
       border-radius: 18px;
-      box-shadow: 0 0 100px -30px color-mix(in srgb, var(--theme-accent) 30%, transparent);
+      box-shadow: 0 0 100px -30px
+        color-mix(in srgb, var(--theme-accent) 30%, transparent);
     }
 
     .arrow-indicator svg {

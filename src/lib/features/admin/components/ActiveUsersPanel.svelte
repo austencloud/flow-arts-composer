@@ -339,7 +339,13 @@
     border: 1px solid var(--theme-stroke);
     border-radius: 0.5rem;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .stat-button:hover {
@@ -401,7 +407,7 @@
     color: var(--theme-text-secondary, var(--theme-text-dim));
     font-size: 0.75rem;
     cursor: pointer;
-    transition: color var(--duration-fast) ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
 
   .clear-filter:hover {

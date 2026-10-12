@@ -49,7 +49,8 @@
     rows = [];
     verdict = null;
     progress = { phase: "starting" };
-    (window as unknown as Record<string, unknown>)["__" + resultKey] = undefined;
+    (window as unknown as Record<string, unknown>)["__" + resultKey] =
+      undefined;
     try {
       const pipeline = run();
       const v = await pipeline.run({
@@ -58,7 +59,8 @@
         addRow: (r) => (rows = [...rows, r]),
       });
       verdict = v;
-      (window as unknown as Record<string, unknown>)["__" + resultKey] = v.result;
+      (window as unknown as Record<string, unknown>)["__" + resultKey] =
+        v.result;
     } catch (err) {
       verdict = {
         verdict: "FAIL",
@@ -76,7 +78,7 @@
   let pct = $derived(
     progress?.total
       ? Math.round(((progress.current ?? 0) / progress.total) * 100)
-      : null,
+      : null
   );
 </script>
 
@@ -86,7 +88,9 @@
 
   <div class="controls">
     {@render controls?.()}
-    <button onclick={start} disabled={running}>{running ? "running…" : "Run parity"}</button>
+    <button onclick={start} disabled={running}
+      >{running ? "running…" : "Run parity"}</button
+    >
   </div>
 
   {#if progress}
@@ -99,7 +103,8 @@
         ></div>
       </div>
       <span class="ptext">
-        {progress.phase}{#if progress.total} {progress.current ?? 0}/{progress.total}{/if}{#if progress.detail}: {progress.detail}{/if}
+        {progress.phase}{#if progress.total}
+          {progress.current ?? 0}/{progress.total}{/if}{#if progress.detail}: {progress.detail}{/if}
       </span>
     </div>
   {/if}
@@ -114,7 +119,9 @@
       {#if verdict.gates.length}
         <div class="gates">
           {#each verdict.gates as g (g.label)}
-            <span class="gate" class:gp={g.pass} class:gf={!g.pass}>{g.label}: {g.detail}</span>
+            <span class="gate" class:gp={g.pass} class:gf={!g.pass}
+              >{g.label}: {g.detail}</span
+            >
           {/each}
         </div>
       {/if}
@@ -122,19 +129,28 @@
   {/if}
 
   {#if verdict}
-    <pre class="json" id="parity-summary">{JSON.stringify(verdict.result, null, 2)}</pre>
+    <pre class="json" id="parity-summary">{JSON.stringify(
+        verdict.result,
+        null,
+        2
+      )}</pre>
   {/if}
 
   {#each rows as r (r.id)}
     <div class="row" class:bad={r.bad || !!r.error}>
       <div class="row-head">
         {r.title}
-        {#each Object.entries(r.metrics) as [k, v] (k)}<span class="metric"> · {k} {typeof v === "number" ? v.toFixed(3) : v}</span>{/each}
+        {#each Object.entries(r.metrics) as [k, v] (k)}<span class="metric">
+            · {k} {typeof v === "number" ? v.toFixed(3) : v}</span
+          >{/each}
         {#if r.error}<span class="err"> · {r.error}</span>{/if}
       </div>
       <div class="cells">
         {#each r.cells as cell (cell.label)}
-          <figure><div use:attach={cell.canvas}></div><figcaption>{cell.label}</figcaption></figure>
+          <figure>
+            <div use:attach={cell.canvas}></div>
+            <figcaption>{cell.label}</figcaption>
+          </figure>
         {/each}
       </div>
     </div>
@@ -194,7 +210,7 @@
   .fill {
     height: 100%;
     background: #4c6ef5;
-    transition: width 0.2s ease;
+    transition: width var(--duration-normal) var(--ease-standard);
   }
   .fill.indeterminate {
     width: 35%;

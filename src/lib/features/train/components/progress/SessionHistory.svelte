@@ -45,13 +45,13 @@
     });
 
     if (sessionDate.getTime() === today.getTime()) {
-      return `${t('train_time_today')} ${timeStr}`;
+      return `${t("train_time_today")} ${timeStr}`;
     }
 
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     if (sessionDate.getTime() === yesterday.getTime()) {
-      return `${t('train_time_yesterday')} ${timeStr}`;
+      return `${t("train_time_yesterday")} ${timeStr}`;
     }
 
     return `${date.toLocaleDateString()} ${timeStr}`;
@@ -116,7 +116,9 @@
     background: var(--theme-card-bg, var(--theme-card-bg));
     border: 1px solid var(--theme-stroke, var(--theme-stroke));
     border-radius: 0.75rem;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal);
     cursor: pointer;
   }
 

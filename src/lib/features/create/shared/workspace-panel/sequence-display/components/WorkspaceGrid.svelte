@@ -553,11 +553,13 @@
     const changesMembership =
       historyTransition.insertedStepIdentities.has(identity) ||
       historyTransition.removedStepIdentities.has(identity);
-    return changesMembership ? motionDuration(180) : 0;
+    return changesMembership ? motionDuration(DURATION.fast) : 0;
   }
 
   function getHistoryStartDuration(): number {
-    return historyTransition?.startPlacementChanged ? motionDuration(180) : 0;
+    return historyTransition?.startPlacementChanged
+      ? motionDuration(DURATION.fast)
+      : 0;
   }
 
   // Cells under these classes rest below full opacity, so their history fade
@@ -1335,8 +1337,8 @@
     margin: auto;
     padding: 0;
     transition:
-      opacity 300ms ease-out,
-      transform 300ms ease-out;
+      opacity var(--duration-emphasis) var(--ease-standard-out),
+      transform var(--duration-emphasis) var(--ease-standard-out);
   }
 
   .grid-surface.clearing {
@@ -1425,8 +1427,9 @@
     /* Tied to the cell, not to a fixed pixel count, so the bloom keeps its
        proportion when the cells grow on a 4K canvas. */
     --plate-bloom-radius: calc(var(--cell-size, 80px) * 0.17);
-    animation: plateCascade var(--step-entrance-duration, 380ms)
-      cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: plateCascade
+      var(--step-entrance-duration, var(--duration-dramatic)) var(--ease-out)
+      both;
     animation-delay: var(--reveal-delay, 0ms);
   }
 
@@ -1471,7 +1474,8 @@
      moment it is gone the layout transition carries every survivor to its new
      home, so the two halves read as one continuous gesture. */
   .step-container.deleting {
-    animation: fadeOutCollapse var(--duration-normal, 200ms) ease-out forwards;
+    animation: fadeOutCollapse var(--duration-normal) var(--ease-standard-out)
+      forwards;
   }
 
   .step-container.hidden-for-sequential {
@@ -1675,8 +1679,9 @@
      animation ends, so the cell's own hover scale still works afterwards. */
   .mandala-layout-item.cascading > .mandala-cell,
   .mandala-slot.cascading > .mandala-cell {
-    animation: mandalaCascade var(--step-entrance-duration, 380ms)
-      cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation: mandalaCascade
+      var(--step-entrance-duration, var(--duration-dramatic)) var(--ease-out)
+      backwards;
     animation-delay: var(--reveal-delay, 0ms);
   }
 
@@ -1719,9 +1724,9 @@
       transparent
     );
     transition:
-      background 350ms ease,
-      border-color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-dramatic) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .mandala-cell.viewer-enabled {
@@ -1764,7 +1769,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .mandala-cell {
-      transition: background 350ms ease;
+      transition: background var(--duration-dramatic) var(--ease-standard);
     }
 
     .mandala-cell.viewer-enabled:hover,
@@ -1798,13 +1803,13 @@
        plate has to reach its 100% frame, and `animation: none` would leave it
        transparent for good. */
     .cascading .history-layout-shell {
-      animation-duration: 0.01ms;
+      animation-duration: 0s;
       animation-delay: 0s;
     }
 
     .mandala-layout-item.cascading > .mandala-cell,
     .mandala-slot.cascading > .mandala-cell {
-      animation-duration: 0.01ms;
+      animation-duration: 0s;
       animation-delay: 0s;
     }
   }

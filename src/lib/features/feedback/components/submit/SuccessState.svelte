@@ -29,7 +29,7 @@
     text-align: center;
     padding: 40px 20px;
     min-height: 300px;
-    animation: successEnter var(--duration-emphasis) ease-out;
+    animation: successEnter var(--duration-emphasis) var(--ease-standard-out);
   }
 
   @keyframes successEnter {
@@ -117,7 +117,13 @@
     font-size: 0.9375rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .success-action:hover {
@@ -144,7 +150,7 @@
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     .success-state {
-      animation-duration: 0.01ms !important;
+      animation-duration: 0s !important;
     }
   }
 </style>

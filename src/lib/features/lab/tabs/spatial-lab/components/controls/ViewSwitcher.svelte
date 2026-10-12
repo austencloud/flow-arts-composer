@@ -33,22 +33,59 @@
 </div>
 
 <style>
-  .panel-section { display: flex; flex-direction: column; gap: 8px; }
+  .panel-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
   .panel-label {
-    font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
-    color: #666; font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #666;
+    font-weight: 600;
   }
-  .view-switcher { display: flex; gap: 4px; }
+  .view-switcher {
+    display: flex;
+    gap: 4px;
+  }
   .view-btn {
-    flex: 1; padding: 8px 4px; border: 1px solid #2a2a4a; background: #1a1a35;
-    color: #aaa; font-size: 11px; font-weight: 500; cursor: pointer; border-radius: 6px;
-    transition: all 0.2s; text-align: center; display: flex; flex-direction: column;
+    flex: 1;
+    padding: 8px 4px;
+    border: 1px solid #2a2a4a;
+    background: #1a1a35;
+    color: #aaa;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 6px;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
   }
-  .view-btn:hover { border-color: #4a4a6a; color: #ddd; }
+  .view-btn:hover {
+    border-color: #4a4a6a;
+    color: #ddd;
+  }
   .view-btn.active {
-    background: #2a2a5a; border-color: #6a6aff; color: #fff;
-    box-shadow: 0 0 12px rgba(106,106,255,0.15);
+    background: #2a2a5a;
+    border-color: #6a6aff;
+    color: #fff;
+    box-shadow: 0 0 12px rgba(106, 106, 255, 0.15);
   }
-  .view-axes { font-size: 9px; color: #666; margin-top: 2px; }
-  .view-btn.active .view-axes { color: #8888cc; }
+  .view-axes {
+    font-size: 9px;
+    color: #666;
+    margin-top: 2px;
+  }
+  .view-btn.active .view-axes {
+    color: #8888cc;
+  }
 </style>

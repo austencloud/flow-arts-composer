@@ -54,7 +54,14 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
     white-space: nowrap;
   }
 
@@ -99,7 +106,7 @@
       var(--theme-text-dim, var(--theme-text-dim)) 80%,
       transparent
     );
-    transition: transform var(--duration-normal) cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform var(--duration-normal) var(--ease-spring);
   }
 
   .filter-button.panel:hover .panel-arrow {
@@ -118,7 +125,7 @@
     color: white;
     font-size: var(--font-size-compact);
     font-weight: 700;
-    animation: popIn var(--duration-emphasis) cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: popIn var(--duration-emphasis) var(--ease-spring);
   }
 
   @keyframes popIn {

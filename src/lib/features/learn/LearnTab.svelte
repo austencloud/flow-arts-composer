@@ -14,8 +14,8 @@ Navigation via bottom tabs (mobile-first UX pattern)
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import { afterNavigate } from "$app/navigation";
   import { onMount, untrack } from "svelte";
-  import { fly } from "svelte/transition";
-  import { cubicOut } from "svelte/easing";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION, SLIDE } from "#lib/shared/transitions/transitions.js";
   import ConceptPathView from "./components/ConceptPathView.svelte";
   import ConceptDetailView from "./components/ConceptDetailView.svelte";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
@@ -91,8 +91,6 @@ Navigation via bottom tabs (mobile-first UX pattern)
   let previousMode = $state<LearnMode | null>(null);
 
   // Transition configuration
-  const SLIDE_DISTANCE = 30; // pixels
-  const SLIDE_DURATION = 200; // ms
 
   // Concept detail view state
   let selectedConcept = $state<LearnConcept | null>(null);
@@ -166,7 +164,9 @@ Navigation via bottom tabs (mobile-first UX pattern)
 
     if (activeMode === "concepts") {
       if (selectedConcept) {
-        header = localizedConcept(selectedConcept, "name") || t("learn_concept_details");
+        header =
+          localizedConcept(selectedConcept, "name") ||
+          t("learn_concept_details");
       } else {
         header = t("learn_ui_interactive_lessons");
       }
@@ -334,15 +334,13 @@ Navigation via bottom tabs (mobile-first UX pattern)
     {#key activeMode}
       <div
         class="mode-panel"
-        in:fly={{
-          x: slideDirection * SLIDE_DISTANCE,
-          duration: SLIDE_DURATION,
-          easing: cubicOut,
+        in:flyFade={{
+          x: slideDirection * SLIDE.md,
+          duration: DURATION.normal,
         }}
-        out:fly={{
-          x: -slideDirection * SLIDE_DISTANCE,
-          duration: SLIDE_DURATION,
-          easing: cubicOut,
+        out:flyFade={{
+          x: -slideDirection * SLIDE.md,
+          duration: DURATION.normal,
         }}
       >
         {#if isModeActive("concepts")}

@@ -24,7 +24,10 @@
   import type { MediaType, MediaFormat, ExportSettings } from "../domain/types";
   import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
   import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
-  import SequencePanel, { type PanelMode, type CreatorInfo } from "./SequencePanel.svelte";
+  import SequencePanel, {
+    type PanelMode,
+    type CreatorInfo,
+  } from "./SequencePanel.svelte";
   import { setAnimationExportContext } from "#lib/shared/export-panel/context/animation-export-context.svelte.js";
 
   let {
@@ -186,25 +189,63 @@
   if (getMode() === "edit") {
     setAnimationExportContext({
       state: {
-        get sequenceData() { return animationSequenceData; },
-        get isPlaying() { return isAnimationPlaying; },
-        get currentStep() { return animationCurrentBeat; },
-        get speed() { return animationSpeed; },
-        get leftPropState() { return animationLeftPropState; },
-        get rightPropState() { return animationRightPropState; },
-        get isCircular() { return isCircular; },
-        get exportLoopCount() { return exportLoopCount; },
-        get isExporting() { return isAnimationExporting; },
-        get exportProgress() { return animationExportProgress; },
-        get servicesReady() { return animationServicesReady; },
-        get loading() { return animationLoading; },
-        get playbackMode() { return playbackMode; },
-        get stepPlaybackPauseMs() { return stepPlaybackPauseMs; },
-        get stepPlaybackStepSize() { return stepPlaybackStepSize; },
-        get leftMotionVisible() { return leftMotionVisible; },
-        get rightMotionVisible() { return rightMotionVisible; },
-        get isSideBySideLayout() { return isSideBySideLayout; },
-        get selectedFormat() { return selectedFormat; },
+        get sequenceData() {
+          return animationSequenceData;
+        },
+        get isPlaying() {
+          return isAnimationPlaying;
+        },
+        get currentStep() {
+          return animationCurrentBeat;
+        },
+        get speed() {
+          return animationSpeed;
+        },
+        get leftPropState() {
+          return animationLeftPropState;
+        },
+        get rightPropState() {
+          return animationRightPropState;
+        },
+        get isCircular() {
+          return isCircular;
+        },
+        get exportLoopCount() {
+          return exportLoopCount;
+        },
+        get isExporting() {
+          return isAnimationExporting;
+        },
+        get exportProgress() {
+          return animationExportProgress;
+        },
+        get servicesReady() {
+          return animationServicesReady;
+        },
+        get loading() {
+          return animationLoading;
+        },
+        get playbackMode() {
+          return playbackMode;
+        },
+        get stepPlaybackPauseMs() {
+          return stepPlaybackPauseMs;
+        },
+        get stepPlaybackStepSize() {
+          return stepPlaybackStepSize;
+        },
+        get leftMotionVisible() {
+          return leftMotionVisible;
+        },
+        get rightMotionVisible() {
+          return rightMotionVisible;
+        },
+        get isSideBySideLayout() {
+          return isSideBySideLayout;
+        },
+        get selectedFormat() {
+          return selectedFormat;
+        },
       },
       actions: {
         onPlaybackToggle: () => onPlaybackToggle?.(),
@@ -214,15 +255,20 @@
         onStepFullBeatForward: () => onStepFullBeatForward?.(),
         onStepFullBeatBackward: () => onStepFullBeatBackward?.(),
         onLoopCountChange: (count: number) => onLoopCountChange?.(count),
-        onCanvasReady: (canvas: HTMLCanvasElement | null) => onCanvasReady?.(canvas),
+        onCanvasReady: (canvas: HTMLCanvasElement | null) =>
+          onCanvasReady?.(canvas),
         onCancelExport: () => onCancelExport?.(),
         onExportVideo: () => onExportVideo?.(),
-        onPlaybackModeChange: (m: "continuous" | "step") => onPlaybackModeChange?.(m),
-        onStepPlaybackPauseMsChange: (ms: number) => onStepPlaybackPauseMsChange?.(ms),
-        onStepPlaybackStepSizeChange: (size: 1 | 0.5) => onStepPlaybackStepSizeChange?.(size),
+        onPlaybackModeChange: (m: "continuous" | "step") =>
+          onPlaybackModeChange?.(m),
+        onStepPlaybackPauseMsChange: (ms: number) =>
+          onStepPlaybackPauseMsChange?.(ms),
+        onStepPlaybackStepSizeChange: (size: 1 | 0.5) =>
+          onStepPlaybackStepSizeChange?.(size),
         onToggleLeft: () => onToggleLeft?.(),
         onToggleRight: () => onToggleRight?.(),
-        onFormatChange: (format: "animation" | "static" | "performance") => onFormatChange?.(format),
+        onFormatChange: (format: "animation" | "static" | "performance") =>
+          onFormatChange?.(format),
       },
     });
   }
@@ -250,7 +296,11 @@
     class="{drawerClass} {isMobile && isNavVisible ? 'with-nav-offset' : ''}"
     showHandle={false}
     closeOnBackdrop={false}
-    backdropClass={!isMobile ? "transparent-backdrop" : isMobile && isNavVisible ? "nav-offset-backdrop" : ""}
+    backdropClass={!isMobile
+      ? "transparent-backdrop"
+      : isMobile && isNavVisible
+        ? "nav-offset-backdrop"
+        : ""}
     trapFocus={isMobile && !isNavVisible}
     focusContainerOnOpen
     setInertOnSiblings={isMobile && !isNavVisible}
@@ -271,7 +321,7 @@
           {isExporting}
           {exportProgress}
           {selectedFormat}
-          onClose={onClose}
+          {onClose}
           {onVariationSelect}
           {onFavorite}
           {onFork}
@@ -300,7 +350,11 @@
   /* Desktop right drawer styling (without side-by-side layout).
      Routed through Drawer.css --sheet-* API; top/height dropped as redundant
      (match the right-placement defaults). */
-  :global(.sequence-panel-drawer.drawer-content[data-placement="right"]:not(.side-by-side-layout)) {
+  :global(
+    .sequence-panel-drawer.drawer-content[data-placement="right"]:not(
+        .side-by-side-layout
+      )
+  ) {
     --sheet-width: var(--drawer-width, min(600px, 90vw));
     --sheet-transition:
       transform 350ms cubic-bezier(0.32, 0.72, 0, 1),
@@ -313,7 +367,9 @@
   }
 
   /* Desktop right drawer with side-by-side layout - use tracked panel dimensions */
-  :global(.sequence-panel-drawer.drawer-content[data-placement="right"].side-by-side-layout) {
+  :global(
+    .sequence-panel-drawer.drawer-content[data-placement="right"].side-by-side-layout
+  ) {
     --sheet-bg: color-mix(in srgb, var(--theme-panel-bg) 70%, transparent);
     --sheet-filter: blur(20px);
     --sheet-border: none;
@@ -322,7 +378,9 @@
   }
 
   /* Subtle vertical grip indicator on left edge */
-  :global(.sequence-panel-drawer.drawer-content[data-placement="right"]::before) {
+  :global(
+    .sequence-panel-drawer.drawer-content[data-placement="right"]::before
+  ) {
     content: "";
     position: absolute;
     left: 8px;
@@ -339,10 +397,12 @@
     );
     border-radius: 2px;
     opacity: 0.6;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
-  :global(.sequence-panel-drawer.drawer-content[data-placement="right"]:hover::before) {
+  :global(
+    .sequence-panel-drawer.drawer-content[data-placement="right"]:hover::before
+  ) {
     opacity: 1;
   }
 
@@ -365,7 +425,9 @@
 
   /* Mobile: Offset when bottom navigation visible. max-height via --sheet-*;
      bottom/height have no --sheet-* var and out-specify Drawer.css base. */
-  :global(.sequence-panel-drawer.with-nav-offset.drawer-content[data-placement="bottom"]) {
+  :global(
+    .sequence-panel-drawer.with-nav-offset.drawer-content[data-placement="bottom"]
+  ) {
     --sheet-max-height: calc(100dvh - var(--primary-nav-height, 64px));
     bottom: var(--primary-nav-height, 64px);
     height: calc(100vh - var(--primary-nav-height, 64px));

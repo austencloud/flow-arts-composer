@@ -25,11 +25,13 @@
     onchange,
   }: Props = $props();
 
-  const states: { id: OverrideState; icon: string; label: string }[] = $derived([
-    { id: "inherit", icon: "fa-link", label: inheritLabel },
-    { id: "grant", icon: "fa-check", label: "Grant" },
-    { id: "deny", icon: "fa-ban", label: "Deny" },
-  ]);
+  const states: { id: OverrideState; icon: string; label: string }[] = $derived(
+    [
+      { id: "inherit", icon: "fa-link", label: inheritLabel },
+      { id: "grant", icon: "fa-check", label: "Grant" },
+      { id: "deny", icon: "fa-ban", label: "Deny" },
+    ]
+  );
 </script>
 
 <div class="three-state-toggle" class:compact class:disabled>
@@ -41,8 +43,10 @@
       class:inherit={state.id === "inherit"}
       class:grant={state.id === "grant"}
       class:deny={state.id === "deny"}
-      class:resolves-granted={state.id === "inherit" && inheritResolvesTo === true}
-      class:resolves-denied={state.id === "inherit" && inheritResolvesTo === false}
+      class:resolves-granted={state.id === "inherit" &&
+        inheritResolvesTo === true}
+      class:resolves-denied={state.id === "inherit" &&
+        inheritResolvesTo === false}
       {disabled}
       onclick={() => onchange(state.id)}
       aria-pressed={value === state.id}
@@ -53,7 +57,11 @@
         <span class="label">{state.label}</span>
       {/if}
       {#if state.id === "inherit" && inheritResolvesTo !== undefined && !compact}
-        <span class="resolve-hint" class:granted={inheritResolvesTo} class:denied={!inheritResolvesTo}>
+        <span
+          class="resolve-hint"
+          class:granted={inheritResolvesTo}
+          class:denied={!inheritResolvesTo}
+        >
           {inheritResolvesTo ? "✓" : "✗"}
         </span>
       {/if}
@@ -89,7 +97,13 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     min-height: 44px; /* Accessibility: touch target */
   }
 

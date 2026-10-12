@@ -122,10 +122,10 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      box-shadow var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .auth-nudge-primary {
@@ -196,7 +196,7 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: color var(--duration-fast, 150ms) ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
 
   .auth-nudge-dismiss:hover {

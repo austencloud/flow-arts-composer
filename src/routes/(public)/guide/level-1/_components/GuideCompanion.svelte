@@ -191,7 +191,9 @@
     try {
       const ok = await revertOverride(stripKey);
       toast[ok ? "success" : "error"](
-        ok ? t("guide_companion_reverted") : t("guide_companion_nothing_to_revert")
+        ok
+          ? t("guide_companion_reverted")
+          : t("guide_companion_nothing_to_revert")
       );
     } catch (err) {
       console.error("[GuideCompanion] Revert failed:", err);
@@ -339,7 +341,11 @@
       />
     </div>
 
-    <div class="edit-actions" role="group" aria-label={t("guide_companion_edit_actions")}>
+    <div
+      class="edit-actions"
+      role="group"
+      aria-label={t("guide_companion_edit_actions")}
+    >
       <button
         class="admin-btn"
         type="button"
@@ -357,7 +363,11 @@
         disabled={editSaving}
       >
         <i class="fas fa-check" aria-hidden="true"></i>
-        <span>{editSaving ? t("guide_companion_saving") : t("guide_companion_save")}</span>
+        <span
+          >{editSaving
+            ? t("guide_companion_saving")
+            : t("guide_companion_save")}</span
+        >
       </button>
     </div>
   </div>
@@ -574,7 +584,8 @@
     {/if}
   {:else}
     <div class="head">
-      <span class="ttl">{isCodexMode && !sequence ? "Codex" : t("guide_paths_animation")}</span
+      <span class="ttl"
+        >{isCodexMode && !sequence ? "Codex" : t("guide_paths_animation")}</span
       >
       <div class="head-actions">
         {#if authState.isAdmin}
@@ -586,8 +597,10 @@
             disabled={!sequence}
           />
         {/if}
-        <button class="close" onclick={onClose} aria-label={t("guide_companion_close")}
-          >✕</button
+        <button
+          class="close"
+          onclick={onClose}
+          aria-label={t("guide_companion_close")}>✕</button
         >
       </div>
     </div>
@@ -698,9 +711,9 @@
     overflow: hidden;
     padding: 0 0.75rem;
     transition:
-      max-height var(--duration-normal, 260ms) ease,
-      opacity var(--duration-fast, 150ms) ease,
-      padding var(--duration-normal, 260ms) ease;
+      max-height var(--duration-emphasis) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      padding var(--duration-emphasis) var(--ease-standard);
   }
   .sheet-scroll.expanded {
     max-height: 36svh;
@@ -855,7 +868,7 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     -webkit-tap-highlight-color: transparent;
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
   .transform-item i {
     width: 1em;
@@ -903,8 +916,8 @@
     font-weight: 700;
     -webkit-tap-highlight-color: transparent;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      opacity var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
   @media (hover: hover) and (pointer: fine) {
     .admin-btn:hover:not(:disabled) {
@@ -962,7 +975,7 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
     -webkit-tap-highlight-color: transparent;
-    transition: border-color var(--duration-fast, 150ms) ease;
+    transition: border-color var(--duration-fast) var(--ease-standard);
   }
   .edit-cell.is-start {
     border-color: var(--theme-accent, #6366f1);

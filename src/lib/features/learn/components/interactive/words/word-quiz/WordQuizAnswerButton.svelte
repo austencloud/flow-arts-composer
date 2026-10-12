@@ -55,7 +55,11 @@ WordQuizAnswerButton - Single answer option with letter prefix
     color: white;
     font-size: 0.9375rem;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     text-align: left;
     position: relative;
     width: 100%;
@@ -91,13 +95,25 @@ WordQuizAnswerButton - Single answer option with letter prefix
   }
 
   .answer-btn.correct {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 15%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
-    animation: correctPulse 0.5s ease;
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 15%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 50%,
+      transparent
+    );
+    animation: correctPulse var(--duration-dramatic) var(--ease-standard);
   }
 
   .answer-btn.correct .option-letter {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 30%,
+      transparent
+    );
     color: var(--theme-accent, #22d3ee);
   }
 
@@ -116,7 +132,7 @@ WordQuizAnswerButton - Single answer option with letter prefix
   .answer-btn.incorrect {
     background: color-mix(in srgb, var(--semantic-error) 15%, transparent);
     border-color: color-mix(in srgb, var(--semantic-error) 50%, transparent);
-    animation: shake var(--duration-dramatic) ease;
+    animation: shake var(--duration-dramatic) var(--ease-standard);
   }
 
   .answer-btn.incorrect .option-letter {

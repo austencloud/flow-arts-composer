@@ -1,8 +1,7 @@
 <script lang="ts">
-
-import { getSequenceMatcher } from "#lib/features/landing-preview/get-sequence-matcher.js";
-import * as videoCuratorLoader from "#lib/features/landing-preview/services/video-curator-loader.js";
-import * as videoCuratorPersister from "#lib/features/landing-preview/services/video-curator-persister.js";
+  import { getSequenceMatcher } from "#lib/features/landing-preview/get-sequence-matcher.js";
+  import * as videoCuratorLoader from "#lib/features/landing-preview/services/video-curator-loader.js";
+  import * as videoCuratorPersister from "#lib/features/landing-preview/services/video-curator-persister.js";
   /**
    * VideoCurator
    *
@@ -53,11 +52,18 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
   let editTags = $state("");
   let saving = $state(false);
 
-  let editorController = $state<ReturnType<typeof createVideoEditorController> | null>(null);
+  let editorController = $state<ReturnType<
+    typeof createVideoEditorController
+  > | null>(null);
 
   // Initialize controller when data is loaded
   $effect(() => {
-    if (videos.length > 0 && categories.length >= 0 && quickPerformers.length >= 0 && !editorController) {
+    if (
+      videos.length > 0 &&
+      categories.length >= 0 &&
+      quickPerformers.length >= 0 &&
+      !editorController
+    ) {
       editorController = createVideoEditorController({
         videos,
         categories,
@@ -92,11 +98,15 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
   });
 
   const uncuratedVideos = $derived.by(() =>
-    videos.filter((v) => !v.excluded && (!v.category || v.performers.length === 0))
+    videos.filter(
+      (v) => !v.excluded && (!v.category || v.performers.length === 0)
+    )
   );
 
   const unlinkableVideos = $derived.by(() =>
-    videos.filter((v) => v.title && v.title.length > 0 && v.linkedSequences.length === 0)
+    videos.filter(
+      (v) => v.title && v.title.length > 0 && v.linkedSequences.length === 0
+    )
   );
 
   const unnamedVideos = $derived.by(() =>
@@ -112,7 +122,9 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
       result = result.filter((v) => v.featured === filterFeatured);
     }
     if (filterPerformer !== "all") {
-      result = result.filter((v) => v.performers.some((p) => p.id === filterPerformer));
+      result = result.filter((v) =>
+        v.performers.some((p) => p.id === filterPerformer)
+      );
     }
     if (filterHasWord === "yes") {
       result = result.filter((v) => v.title && v.title.length > 0);
@@ -125,8 +137,12 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
         (v) =>
           v.shortcode.toLowerCase().includes(query) ||
           v.title?.toLowerCase().includes(query) ||
-          v.linkedSequences.some((s) => stripWordNotation(s.word).toLowerCase().includes(query)) ||
-          v.performers.some((p) => p.displayName.toLowerCase().includes(query)) ||
+          v.linkedSequences.some((s) =>
+            stripWordNotation(s.word).toLowerCase().includes(query)
+          ) ||
+          v.performers.some((p) =>
+            p.displayName.toLowerCase().includes(query)
+          ) ||
           v.tags.some((t) => t.toLowerCase().includes(query))
       );
     }
@@ -224,7 +240,10 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
       const updates = {
         title: editTitle.trim() || null,
         category: editCategory || null,
-        tags: editTags.split(",").map((t) => t.trim()).filter(Boolean),
+        tags: editTags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
       };
       await persister.updateVideo(editingVideo.shortcode, updates);
       updateLocalVideo(editingVideo.shortcode, updates);
@@ -253,7 +272,10 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
   }
 
   // === UTILITY ===
-  function updateLocalVideo(shortcode: string, updates: Partial<ShowcaseVideo>) {
+  function updateLocalVideo(
+    shortcode: string,
+    updates: Partial<ShowcaseVideo>
+  ) {
     const index = videos.findIndex((v) => v.shortcode === shortcode);
     if (index !== -1) {
       videos[index] = { ...videos[index], ...updates } as ShowcaseVideo;
@@ -314,7 +336,9 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
   <header class="curator-header">
     <div class="header-content">
       <h1>Video Curator</h1>
-      <p>Review the catalog, tag performers, and link videos to TKA sequences</p>
+      <p>
+        Review the catalog, tag performers, and link videos to TKA sequences
+      </p>
     </div>
     <div class="stats-bar">
       <div class="stat">
@@ -344,7 +368,9 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
       {#if cacheStats.count > 0}
         <div class="stat cached">
           <span class="stat-value">{cacheStats.count}</span>
-          <span class="stat-label">Cached ({formatFileSize(cacheStats.totalSize)})</span>
+          <span class="stat-label"
+            >Cached ({formatFileSize(cacheStats.totalSize)})</span
+          >
         </div>
       {/if}
     </div>
@@ -454,7 +480,9 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
           <div class="video-info">
             <span class="video-title">{video.title || video.shortcode}</span>
             <span class="video-meta">
-              {formatDate(video.instagramDate)} · {formatFileSize(video.fileSize)}
+              {formatDate(video.instagramDate)} · {formatFileSize(
+                video.fileSize
+              )}
             </span>
           </div>
           <div class="quick-actions">
@@ -465,7 +493,9 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
                 e.stopPropagation();
                 toggleFeatured(video);
               }}
-              title={video.featured ? "Remove from featured" : "Add to featured"}
+              title={video.featured
+                ? "Remove from featured"
+                : "Add to featured"}
             >
               <i class="fas fa-star" aria-hidden="true"></i>
             </button>
@@ -505,10 +535,7 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
 
 <!-- Unified Video Editor Overlay -->
 {#if editorController}
-  <VideoEditorOverlay
-    controller={editorController}
-    {formatDate}
-  />
+  <VideoEditorOverlay controller={editorController} {formatDate} />
 
   <!-- Crop editor overlay -->
   {#if editorController.cropModeActive && editorController.currentVideo && editorController.videoUrl}
@@ -615,7 +642,14 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
     border-radius: 12px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      grid-template-columns var(--duration-normal);
     position: relative;
   }
 
@@ -709,7 +743,7 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
     display: flex;
     gap: 4px;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity var(--duration-normal);
   }
 
   .video-card:hover .quick-actions {
@@ -727,7 +761,15 @@ import * as videoCuratorPersister from "#lib/features/landing-preview/services/v
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
   }
 
   .action-btn:hover {

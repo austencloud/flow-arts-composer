@@ -29,10 +29,13 @@
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return t('voice_sessions_just_now');
-    if (diffMins < 60) return t('voice_sessions_minutes_ago', { count: String(diffMins) });
-    if (diffHours < 24) return t('voice_sessions_hours_ago', { count: String(diffHours) });
-    if (diffDays < 7) return t('voice_sessions_days_ago', { count: String(diffDays) });
+    if (diffMins < 1) return t("voice_sessions_just_now");
+    if (diffMins < 60)
+      return t("voice_sessions_minutes_ago", { count: String(diffMins) });
+    if (diffHours < 24)
+      return t("voice_sessions_hours_ago", { count: String(diffHours) });
+    if (diffDays < 7)
+      return t("voice_sessions_days_ago", { count: String(diffDays) });
 
     return date.toLocaleDateString(undefined, {
       month: "short",
@@ -79,8 +82,9 @@
   };
 
   let tierDots = $derived(
-    (Object.entries(preview.stats.tierBreakdown) as [ResolutionTier, number][])
-      .filter(([, count]) => count > 0)
+    (
+      Object.entries(preview.stats.tierBreakdown) as [ResolutionTier, number][]
+    ).filter(([, count]) => count > 0)
   );
 </script>
 
@@ -99,9 +103,21 @@
       <span class="item-duration">{formatDuration(preview.durationMs)}</span>
     </div>
     <div class="item-meta">
-      <span class="event-count">{t('voice_sessions_event_count', { count: String(preview.stats.totalEvents) })}</span>
+      <span class="event-count"
+        >{t("voice_sessions_event_count", {
+          count: String(preview.stats.totalEvents),
+        })}</span
+      >
       <span class="separator">·</span>
-      <span class="success-rate" style="color: {preview.stats.successCount === preview.stats.totalEvents ? 'var(--semantic-success, #22c55e)' : preview.stats.unresolvedCount > 0 ? 'var(--semantic-warning, #f59e0b)' : 'var(--theme-text-muted, #94a3b8)'}">{successRate(preview.stats)}</span>
+      <span
+        class="success-rate"
+        style="color: {preview.stats.successCount === preview.stats.totalEvents
+          ? 'var(--semantic-success, #22c55e)'
+          : preview.stats.unresolvedCount > 0
+            ? 'var(--semantic-warning, #f59e0b)'
+            : 'var(--theme-text-muted, #94a3b8)'}"
+        >{successRate(preview.stats)}</span
+      >
     </div>
     {#if tierDots.length > 0}
       <div class="tier-dots">
@@ -109,8 +125,8 @@
           <span
             class="tier-dot"
             style="background: {tierColors[tier]}"
-            title="{tierLabels[tier]}: {count}"
-          >{tierLabels[tier]} {count}</span>
+            title="{tierLabels[tier]}: {count}">{tierLabels[tier]} {count}</span
+          >
         {/each}
       </div>
     {/if}
@@ -119,8 +135,8 @@
   <button
     class="delete-btn"
     onclick={handleDeleteClick}
-    title={t('voice_sessions_delete_session')}
-    aria-label={t('voice_sessions_delete_session')}
+    title={t("voice_sessions_delete_session")}
+    aria-label={t("voice_sessions_delete_session")}
   >
     <i class="fas fa-times" aria-hidden="true"></i>
   </button>
@@ -136,7 +152,13 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .session-item:hover {
@@ -151,7 +173,11 @@
 
   .session-item.selected {
     border-color: var(--theme-accent, #6366f1);
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 10%,
+      transparent
+    );
   }
 
   .item-content {
@@ -227,7 +253,15 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.4));
     cursor: pointer;
     opacity: 0;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .session-item:hover .delete-btn,
@@ -236,7 +270,11 @@
   }
 
   .delete-btn:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
   }
 

@@ -273,7 +273,9 @@ icons when enabled. Click opens the expanded overlay.
       0 1px 2px rgba(0, 0, 0, 0.15),
       0 2px 4px rgba(0, 0, 0, 0.1),
       inset 0 1px 0 var(--theme-stroke);
-    transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      transform var(--duration-emphasis) var(--ease-standard),
+      filter var(--duration-emphasis) var(--ease-standard);
   }
 
   /* On state: accent gradient with shimmer, drawn by .loop-shimmer. The
@@ -407,7 +409,7 @@ icons when enabled. Click opens the expanded overlay.
 
   .loop-card-wrapper:active {
     transform: scale(0.97);
-    transition: transform var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .card-value {

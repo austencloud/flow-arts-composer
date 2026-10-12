@@ -494,10 +494,10 @@ Same functionality, different density.
     max-height: 200px;
     overflow: hidden;
     transition:
-      max-height 300ms cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 200ms ease 250ms,
-      padding 300ms ease,
-      margin 300ms ease;
+      max-height var(--duration-emphasis) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard) var(--duration-normal),
+      padding var(--duration-emphasis) var(--ease-standard),
+      margin var(--duration-emphasis) var(--ease-standard);
   }
 
   /* Collapsed state: all at once, no stagger - keeps chip expansion in sync */
@@ -512,10 +512,10 @@ Same functionality, different density.
     pointer-events: none;
     overflow: hidden;
     transition:
-      opacity 200ms ease,
-      max-height 300ms cubic-bezier(0.4, 0, 0.2, 1),
-      padding 300ms ease,
-      margin 300ms ease;
+      opacity var(--duration-normal) var(--ease-standard),
+      max-height var(--duration-emphasis) var(--ease-standard),
+      padding var(--duration-emphasis) var(--ease-standard),
+      margin var(--duration-emphasis) var(--ease-standard);
   }
 
   /* Collapse gap when Loop is taking over (prevents gap from collapsed items) */
@@ -543,9 +543,9 @@ Same functionality, different density.
        Those are handled by the loop-collapse rules above (lines 501-528).
        Using 'all' here would clobber the sequenced transition-delay timings. */
     transition:
-      background 150ms ease,
-      transform 150ms ease,
-      box-shadow 150ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     flex-shrink: 0;
@@ -578,7 +578,7 @@ Same functionality, different density.
 
   /* Generating state - shimmer sweep + initial pulse */
   .generate-button.generating {
-    animation: generatePulse 600ms ease-out;
+    animation: generatePulse var(--duration-dramatic) var(--ease-standard-out);
     pointer-events: none;
     overflow: hidden;
   }
@@ -677,7 +677,10 @@ Same functionality, different density.
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.6));
     cursor: pointer;
     flex-shrink: 0;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
   }
 
   .error-dismiss:hover {

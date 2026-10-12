@@ -111,7 +111,9 @@
   <section class="console museum-gold-scope" aria-label="Nomenclature console">
     <div class="console-head">
       <span class="console-title">NOMENCLATURE KEY · REV. 61</span>
-      <span class="console-status">{done ? "COMPLETE" : running ? "APPLYING…" : "READY"}</span>
+      <span class="console-status"
+        >{done ? "COMPLETE" : running ? "APPLYING…" : "READY"}</span
+      >
     </div>
 
     <div class="strip">
@@ -136,7 +138,9 @@
 
     <div class="readout" aria-live="polite">
       <span class="prompt">&gt;</span>
-      <span class="readout-text">{readout}{#if !done}<span class="cursor"></span>{/if}</span>
+      <span class="readout-text"
+        >{readout}{#if !done}<span class="cursor"></span>{/if}</span
+      >
     </div>
 
     {#if done}
@@ -152,16 +156,28 @@
 
     <div class="actions">
       {#if !done}
-        <button type="button" class="key-btn" disabled={running} onclick={applyKey}>
+        <button
+          type="button"
+          class="key-btn"
+          disabled={running}
+          onclick={applyKey}
+        >
           <i class="fas fa-key" aria-hidden="true"></i>
           Apply nomenclature key
         </button>
       {:else}
-        <button type="button" class="key-btn take-btn" disabled={opening} onclick={takeIt}>
+        <button
+          type="button"
+          class="key-btn take-btn"
+          disabled={opening}
+          onclick={takeIt}
+        >
           <i class="fas fa-hand" aria-hidden="true"></i>
           {opening ? "Opening the Composer…" : "Read it with your hands"}
         </button>
-        <button type="button" class="reset-btn" onclick={reset}>Run again</button>
+        <button type="button" class="reset-btn" onclick={reset}
+          >Run again</button
+        >
       {/if}
     </div>
   </section>
@@ -210,7 +226,9 @@
     height: 72px;
     background: #fff;
     border: 1px solid #1f3a2a;
-    transition: opacity 0.4s ease, filter 0.4s ease;
+    transition:
+      opacity var(--duration-dramatic) var(--ease-standard),
+      filter var(--duration-dramatic) var(--ease-standard);
   }
 
   .cell.hidden-letter {

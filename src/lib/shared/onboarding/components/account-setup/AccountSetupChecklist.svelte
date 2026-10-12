@@ -286,7 +286,7 @@
     min-width: 0;
     background: var(--theme-accent, #8b5cf6);
     border-radius: inherit;
-    transition: width var(--duration-normal, 200ms) ease;
+    transition: width var(--duration-normal) var(--ease-standard);
   }
 
   .task-grid {
@@ -356,8 +356,8 @@
     border-radius: 12px;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .task-row:hover {

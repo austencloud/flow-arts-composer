@@ -219,7 +219,12 @@
 
         {#if nextUpConcept()}
           <p class="next-lesson">
-            {t("learn_ui_after_this")} <span>{nextUpConcept() ? localizedConcept(nextUpConcept()!, "name") : ""}</span>
+            {t("learn_ui_after_this")}
+            <span
+              >{nextUpConcept()
+                ? localizedConcept(nextUpConcept()!, "name")
+                : ""}</span
+            >
           </p>
         {/if}
       {/if}
@@ -270,7 +275,9 @@
       onclick={() => (showCourseMap = !showCourseMap)}
       ariaExpanded={showCourseMap}
     >
-      {showCourseMap ? tDynamic("learn_map_hide") : tDynamic("learn_map_explore")}
+      {showCourseMap
+        ? tDynamic("learn_map_hide")
+        : tDynamic("learn_map_explore")}
       <i
         class="fa-solid {showCourseMap ? 'fa-chevron-up' : 'fa-chevron-down'}"
         aria-hidden="true"
@@ -386,7 +393,7 @@
   .concept-path::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
     border-radius: 3px;
-    transition: background var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .concept-path::-webkit-scrollbar-thumb:hover {

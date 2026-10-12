@@ -2,8 +2,8 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
-  import { scale } from "svelte/transition";
-  import { backOut, cubicOut } from "svelte/easing";
+  import { popIn } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   const viewer = getViewer3DContext();
   const open = $derived(viewer.activePopover === "info");
@@ -35,17 +35,23 @@
       class="info-popover"
       role="dialog"
       aria-label={t("viewer_detail_destination_explainer")}
-      in:scale={{ duration: 220, start: 0.92, opacity: 0, easing: backOut }}
-      out:scale={{ duration: 160, start: 0.95, opacity: 0, easing: cubicOut }}
+      in:popIn={{ duration: DURATION.normal, start: 0.92 }}
+      out:popIn={{ duration: DURATION.fast, start: 0.95 }}
     >
       <h3>{t("viewer_sequence_viewer")}</h3>
       <p>
-        {t("viewer_detail_watch_one_sequence_performed_by_1_to_n_versions_of_you_each_with_their_own_effort_prop_and_effects_same_choreography_different_interpretations")}
+        {t(
+          "viewer_detail_watch_one_sequence_performed_by_1_to_n_versions_of_you_each_with_their_own_effort_prop_and_effects_same_choreography_different_interpretations"
+        )}
       </p>
       <p class="aside">
-        {t("viewer_detail_want_different_sequences_per_performer_with_timing_and_music")}
+        {t(
+          "viewer_detail_want_different_sequences_per_performer_with_timing_and_music"
+        )}
       </p>
-      <PanelButton onclick={openStageStub}>{t("viewer_detail_open_in_stage")}</PanelButton>
+      <PanelButton onclick={openStageStub}
+        >{t("viewer_detail_open_in_stage")}</PanelButton
+      >
     </div>
   {/if}
 </div>

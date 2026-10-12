@@ -8,7 +8,10 @@
   const viewer = getViewer3DContext();
   let copiedCamera = $state(false);
 
-  const TIER_OPTIONS: Array<{ value: OceanQualityTier | "auto"; label: string }> = [
+  const TIER_OPTIONS: Array<{
+    value: OceanQualityTier | "auto";
+    label: string;
+  }> = [
     { value: "auto", label: "Auto" },
     { value: "ultra", label: "Ultra" },
     { value: "medium", label: "Medium" },
@@ -69,7 +72,9 @@
 
     navigator.clipboard.writeText(JSON.stringify(data, null, 2));
     copiedCamera = true;
-    setTimeout(() => { copiedCamera = false; }, 1500);
+    setTimeout(() => {
+      copiedCamera = false;
+    }, 1500);
   }
 
   function r(n: number): number {
@@ -79,13 +84,21 @@
 
 <div class="dev-tools">
   <button class="dev-action" onclick={copyCameraState}>
-    <i class="fas" class:fa-clipboard={!copiedCamera} class:fa-check={copiedCamera}></i>
+    <i
+      class="fas"
+      class:fa-clipboard={!copiedCamera}
+      class:fa-check={copiedCamera}
+    ></i>
     <span>{copiedCamera ? "Copied!" : "Copy Camera State"}</span>
   </button>
 
   <button class="dev-action" onclick={() => viewer.togglePerf()}>
     <i class="fas fa-gauge-high"></i>
-    <span>{viewer.showPerf ? "Hide Performance Stats" : "Show Performance Stats"}</span>
+    <span
+      >{viewer.showPerf
+        ? "Hide Performance Stats"
+        : "Show Performance Stats"}</span
+    >
   </button>
 
   <div class="tier-group" role="group" aria-label="Ocean quality tier">
@@ -149,9 +162,12 @@
         max="0.6"
         step="0.01"
         value={oceanDebugToggles.causticStrength}
-        oninput={(e) => (oceanDebugToggles.causticStrength = +e.currentTarget.value)}
+        oninput={(e) =>
+          (oceanDebugToggles.causticStrength = +e.currentTarget.value)}
       />
-      <span class="slider-val">{oceanDebugToggles.causticStrength.toFixed(2)}</span>
+      <span class="slider-val"
+        >{oceanDebugToggles.causticStrength.toFixed(2)}</span
+      >
     </label>
     <label class="slider-row">
       <span class="slider-name">Water Tint</span>
@@ -161,9 +177,12 @@
         max="2"
         step="0.05"
         value={oceanDebugToggles.waterTintStrength}
-        oninput={(e) => (oceanDebugToggles.waterTintStrength = +e.currentTarget.value)}
+        oninput={(e) =>
+          (oceanDebugToggles.waterTintStrength = +e.currentTarget.value)}
       />
-      <span class="slider-val">{oceanDebugToggles.waterTintStrength.toFixed(2)}</span>
+      <span class="slider-val"
+        >{oceanDebugToggles.waterTintStrength.toFixed(2)}</span
+      >
     </label>
   </div>
 </div>
@@ -186,7 +205,10 @@
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 160ms;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast);
   }
   .dev-action:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -230,7 +252,10 @@
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 140ms;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast);
   }
   .tier-pill:hover {
     background: rgba(255, 255, 255, 0.1);

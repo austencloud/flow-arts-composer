@@ -117,7 +117,11 @@
     padding: 14px;
     border-radius: 12px;
     border: 1px solid;
-    transition: all var(--duration-fast) ease;
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   /* Compact mode: tighter padding and gaps */

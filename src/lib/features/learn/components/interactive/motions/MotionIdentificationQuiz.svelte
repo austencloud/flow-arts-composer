@@ -175,13 +175,16 @@ User must play animation first, then identify the motion type (1-6)
       color-mix(in srgb, var(--theme-accent, #22d3ee) 25%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #06b6d4) 25%, transparent) 100%
     );
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent);
     border-radius: 10px;
     color: var(--theme-accent, #22d3ee);
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .next-button:hover {
@@ -190,7 +193,11 @@ User must play animation first, then identify the motion type (1-6)
       color-mix(in srgb, var(--theme-accent, #22d3ee) 35%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #06b6d4) 35%, transparent) 100%
     );
-    border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 60%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 60%,
+      transparent
+    );
   }
 
   @media (max-width: 480px) {

@@ -62,7 +62,9 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
       <i class="fa-solid {config.icon}" aria-hidden="true"></i>
     </div>
     <p class="motion-summary">
-      {#each parseStrongTags(config.motionSummary) as segment}{#if segment.bold}<strong>{segment.text}</strong>{:else}{segment.text}{/if}{/each}
+      {#each parseStrongTags(config.motionSummary) as segment}{#if segment.bold}<strong
+            >{segment.text}</strong
+          >{:else}{segment.text}{/if}{/each}
     </p>
     <span class="motion-badge">{config.badge}</span>
   </div>
@@ -71,7 +73,11 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
     <h3>{config.explanation.title}</h3>
     <ul>
       {#each config.explanation.points as point}
-        <li>{#each parseStrongTags(point) as segment}{#if segment.bold}<strong>{segment.text}</strong>{:else}{segment.text}{/if}{/each}</li>
+        <li>
+          {#each parseStrongTags(point) as segment}{#if segment.bold}<strong
+                >{segment.text}</strong
+              >{:else}{segment.text}{/if}{/each}
+        </li>
       {/each}
     </ul>
   </div>
@@ -174,7 +180,7 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
     max-width: 700px;
     margin: 0 auto;
     width: 100%;
-    animation: slideInUp var(--duration-dramatic) cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideInUp var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes slideInUp {
@@ -201,7 +207,11 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
 
   /* Theme-specific header gradients */
   .page:has(.motion-intro.pro) h2 {
-    background: linear-gradient(135deg, var(--theme-accent, #22d3ee) 0%, var(--theme-accent, #06b6d4) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #22d3ee) 0%,
+      var(--theme-accent, #06b6d4) 100%
+    );
   }
 
   .page:has(.motion-intro.anti) h2 {
@@ -211,7 +221,11 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
 
   .page:has(.motion-intro.hybrid) h2 {
     --anti-color: #a855f7;
-    background: linear-gradient(135deg, var(--theme-accent, #22d3ee) 0%, var(--anti-color) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #22d3ee) 0%,
+      var(--anti-color) 100%
+    );
   }
 
   h3 {
@@ -236,7 +250,8 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
       color-mix(in srgb, var(--theme-accent, #22d3ee) 10%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 2%, transparent) 100%
     );
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 20%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 20%, transparent);
   }
 
   .motion-intro.anti {
@@ -270,7 +285,11 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
   }
 
   .motion-intro.pro .motion-icon {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 20%,
+      transparent
+    );
     color: var(--theme-accent, #22d3ee);
   }
 
@@ -308,7 +327,11 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
   }
 
   .motion-intro.pro .motion-badge {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 20%,
+      transparent
+    );
     color: var(--theme-accent, #22d3ee);
   }
 
@@ -375,7 +398,10 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
     border-radius: 50%;
     color: white;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .nav-button:hover:not(:disabled) {
@@ -423,7 +449,10 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
     font-size: 1.125rem;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .letter-chip:hover {
@@ -432,8 +461,16 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
   }
 
   .letter-chip.active {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 20%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 50%,
+      transparent
+    );
     color: var(--theme-accent, #22d3ee);
   }
 
@@ -467,8 +504,13 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
   }
 
   .summary-card.pro {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 10%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 25%, transparent);
   }
 
   .summary-card.pro i,
@@ -534,7 +576,9 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
     font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all var(--duration-emphasis);
+    transition:
+      background var(--duration-emphasis),
+      border-color var(--duration-emphasis);
     min-height: var(--min-touch-target);
   }
 
@@ -544,7 +588,8 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #06b6d4) 30%, transparent) 100%
     );
-    border: 2px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
+    border: 2px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
     color: white;
   }
 
@@ -554,7 +599,11 @@ Eliminates ~1000 lines of duplicated code across the three letter type pages
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #06b6d4) 40%, transparent) 100%
     );
-    border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 80%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 80%,
+      transparent
+    );
     transform: translateY(-2px);
   }
 

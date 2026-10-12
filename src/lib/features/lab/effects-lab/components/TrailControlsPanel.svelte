@@ -84,8 +84,16 @@
     }
 
     return [
-      { mode: TrackingMode.LEFT_END, label: leftLabel, aria: `Track ${leftLabel.toLowerCase()} end only` },
-      { mode: TrackingMode.RIGHT_END, label: rightLabel, aria: `Track ${rightLabel.toLowerCase()} end only` },
+      {
+        mode: TrackingMode.LEFT_END,
+        label: leftLabel,
+        aria: `Track ${leftLabel.toLowerCase()} end only`,
+      },
+      {
+        mode: TrackingMode.RIGHT_END,
+        label: rightLabel,
+        aria: `Track ${rightLabel.toLowerCase()} end only`,
+      },
       { mode: TrackingMode.BOTH_ENDS, label: "Both", aria: "Track both ends" },
     ];
   });
@@ -134,98 +142,99 @@
 
   <!-- Appearance -->
   <div class="slider-section">
-      <span class="section-label">Appearance</span>
+    <span class="section-label">Appearance</span>
 
-      <div class="slider-group">
-        <div class="slider-row">
-          <label for="trail-line-width">Line width</label>
-          <input
-            id="trail-line-width"
-            type="range"
-            min="1"
-            max="10"
-            step="0.5"
-            value={lineWidth}
-            oninput={(e) => handleLineWidth(parseFloat(e.currentTarget.value))}
-            aria-label="Trail line width"
-          />
-          <span class="slider-value">{lineWidth.toFixed(1)}</span>
-        </div>
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-row">
-          <label for="trail-min-opacity">Min opacity</label>
-          <input
-            id="trail-min-opacity"
-            type="range"
-            min="0.0"
-            max="0.5"
-            step="0.05"
-            value={minOpacity}
-            oninput={(e) => handleMinOpacity(parseFloat(e.currentTarget.value))}
-            aria-label="Trail minimum opacity (tail)"
-          />
-          <span class="slider-value">{(minOpacity * 100).toFixed(0)}%</span>
-        </div>
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-row">
-          <label for="trail-max-opacity">Max opacity</label>
-          <input
-            id="trail-max-opacity"
-            type="range"
-            min="0.5"
-            max="1.0"
-            step="0.05"
-            value={maxOpacity}
-            oninput={(e) => handleMaxOpacity(parseFloat(e.currentTarget.value))}
-            aria-label="Trail maximum opacity (head)"
-          />
-          <span class="slider-value">{(maxOpacity * 100).toFixed(0)}%</span>
-        </div>
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-row">
-          <label for="trail-glow-blur">Glow blur</label>
-          <input
-            id="trail-glow-blur"
-            type="range"
-            min="0"
-            max="10"
-            step="1"
-            value={glowBlur}
-            oninput={(e) => handleGlowBlur(parseInt(e.currentTarget.value, 10))}
-            aria-label="Trail glow blur radius"
-          />
-          <span class="slider-value">{glowBlur}</span>
-        </div>
+    <div class="slider-group">
+      <div class="slider-row">
+        <label for="trail-line-width">Line width</label>
+        <input
+          id="trail-line-width"
+          type="range"
+          min="1"
+          max="10"
+          step="0.5"
+          value={lineWidth}
+          oninput={(e) => handleLineWidth(parseFloat(e.currentTarget.value))}
+          aria-label="Trail line width"
+        />
+        <span class="slider-value">{lineWidth.toFixed(1)}</span>
       </div>
     </div>
 
-    <!-- Behavior -->
-    <div class="slider-section">
-      <span class="section-label">Behavior</span>
-
-      <div class="slider-group">
-        <div class="slider-row">
-          <label for="trail-fade-duration">Fade duration</label>
-          <input
-            id="trail-fade-duration"
-            type="range"
-            min="500"
-            max="5000"
-            step="100"
-            value={fadeDuration}
-            oninput={(e) => handleFadeDuration(parseInt(e.currentTarget.value, 10))}
-            aria-label="Trail fade duration in milliseconds"
-          />
-          <span class="slider-value">{(fadeDuration / 1000).toFixed(1)}s</span>
-        </div>
+    <div class="slider-group">
+      <div class="slider-row">
+        <label for="trail-min-opacity">Min opacity</label>
+        <input
+          id="trail-min-opacity"
+          type="range"
+          min="0.0"
+          max="0.5"
+          step="0.05"
+          value={minOpacity}
+          oninput={(e) => handleMinOpacity(parseFloat(e.currentTarget.value))}
+          aria-label="Trail minimum opacity (tail)"
+        />
+        <span class="slider-value">{(minOpacity * 100).toFixed(0)}%</span>
       </div>
     </div>
+
+    <div class="slider-group">
+      <div class="slider-row">
+        <label for="trail-max-opacity">Max opacity</label>
+        <input
+          id="trail-max-opacity"
+          type="range"
+          min="0.5"
+          max="1.0"
+          step="0.05"
+          value={maxOpacity}
+          oninput={(e) => handleMaxOpacity(parseFloat(e.currentTarget.value))}
+          aria-label="Trail maximum opacity (head)"
+        />
+        <span class="slider-value">{(maxOpacity * 100).toFixed(0)}%</span>
+      </div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-row">
+        <label for="trail-glow-blur">Glow blur</label>
+        <input
+          id="trail-glow-blur"
+          type="range"
+          min="0"
+          max="10"
+          step="1"
+          value={glowBlur}
+          oninput={(e) => handleGlowBlur(parseInt(e.currentTarget.value, 10))}
+          aria-label="Trail glow blur radius"
+        />
+        <span class="slider-value">{glowBlur}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Behavior -->
+  <div class="slider-section">
+    <span class="section-label">Behavior</span>
+
+    <div class="slider-group">
+      <div class="slider-row">
+        <label for="trail-fade-duration">Fade duration</label>
+        <input
+          id="trail-fade-duration"
+          type="range"
+          min="500"
+          max="5000"
+          step="100"
+          value={fadeDuration}
+          oninput={(e) =>
+            handleFadeDuration(parseInt(e.currentTarget.value, 10))}
+          aria-label="Trail fade duration in milliseconds"
+        />
+        <span class="slider-value">{(fadeDuration / 1000).toFixed(1)}s</span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -282,13 +291,23 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     min-width: 56px;
     min-height: var(--min-touch-target);
   }
 
   .toggle-btn.active {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--trail-blue) 30%, transparent), color-mix(in srgb, var(--trail-blue) 15%, transparent));
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--trail-blue) 30%, transparent),
+      color-mix(in srgb, var(--trail-blue) 15%, transparent)
+    );
     border-color: var(--trail-blue-border-strong);
     color: var(--trail-blue-bright);
   }
@@ -333,7 +352,13 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     min-height: var(--min-touch-target);
   }
 

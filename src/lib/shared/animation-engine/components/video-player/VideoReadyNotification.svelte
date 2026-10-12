@@ -43,7 +43,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    animation: slideIn var(--duration-emphasis) ease;
+    animation: slideIn var(--duration-emphasis) var(--ease-standard);
   }
 
   @keyframes slideIn {

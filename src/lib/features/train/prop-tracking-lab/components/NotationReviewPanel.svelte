@@ -522,7 +522,7 @@
     border: 2px solid transparent;
     border-radius: 8px;
     cursor: pointer;
-    transition: border-color 0.15s;
+    transition: border-color var(--duration-fast);
   }
 
   .notation-cell:hover {
@@ -626,8 +626,8 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      border-color 0.15s,
-      opacity 0.15s;
+      border-color var(--duration-fast),
+      opacity var(--duration-fast);
   }
 
   .reset-btn:hover:not(:disabled) {
@@ -700,8 +700,8 @@
     font-weight: 700;
     cursor: pointer;
     transition:
-      border-color 0.15s,
-      opacity 0.15s;
+      border-color var(--duration-fast),
+      opacity var(--duration-fast);
   }
 
   .step-btn:hover:not(:disabled) {
@@ -770,8 +770,8 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      transform 0.15s,
-      opacity 0.15s;
+      transform var(--duration-fast),
+      opacity var(--duration-fast);
   }
 
   .score-btn:hover:not(:disabled) {

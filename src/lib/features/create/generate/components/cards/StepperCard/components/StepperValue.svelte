@@ -21,7 +21,7 @@ StepperValue.svelte - Displays the current value in the stepper
     line-height: 1;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: color var(--duration-dramatic) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color var(--duration-dramatic) var(--ease-standard);
   }
 
   /* Desktop optimization */

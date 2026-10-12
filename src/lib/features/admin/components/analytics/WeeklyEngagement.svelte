@@ -270,7 +270,7 @@
     color: var(--theme-text);
     font-size: var(--font-size-sm);
     cursor: pointer;
-    transition: background var(--duration-fast, 0.15s) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .retry-button:hover {

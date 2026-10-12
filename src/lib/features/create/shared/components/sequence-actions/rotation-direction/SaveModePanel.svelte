@@ -34,12 +34,14 @@
     </p>
   {:else}
     <div class="pattern-preview">
-      <h3>{t(
-        sequence.steps.length === 1
-          ? "create_rotation_current_pattern_one_step"
-          : "create_rotation_current_pattern_steps",
-        { count: sequence.steps.length }
-      )}</h3>
+      <h3>
+        {t(
+          sequence.steps.length === 1
+            ? "create_rotation_current_pattern_one_step"
+            : "create_rotation_current_pattern_steps",
+          { count: sequence.steps.length }
+        )}
+      </h3>
       <div class="preview-grid">
         {#each sequence.steps as beat, i}
           <!-- Invisible placeholder = hand not really there: null (no-motion
@@ -248,7 +250,9 @@
     color: white;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      filter var(--duration-fast),
+      opacity var(--duration-fast);
   }
 
   .save-btn:hover:not(:disabled) {

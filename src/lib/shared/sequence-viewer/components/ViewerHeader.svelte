@@ -718,11 +718,11 @@
     font-weight: 700;
     text-decoration: none;
     transition:
-      background 150ms ease,
-      border-color 150ms ease,
-      color 150ms ease,
-      box-shadow 150ms ease,
-      transform 150ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .viewer-header.labelled
@@ -908,8 +908,8 @@
     color: var(--theme-text, #ffffff);
     cursor: pointer;
     transition:
-      background 150ms ease,
-      border-color 150ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .header-word-action:hover,
@@ -944,7 +944,7 @@
     flex: 0 0 auto;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.55));
     font-size: 10px;
-    transition: transform 160ms ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .word-disclosure.open {

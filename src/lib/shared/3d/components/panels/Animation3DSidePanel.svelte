@@ -52,7 +52,11 @@
 <aside class="side-panel" class:collapsed>
   <!-- Load Sequence Button -->
   <div class="load-section">
-    <button class="load-btn" onclick={onLoadSequence} aria-label="Load sequence">
+    <button
+      class="load-btn"
+      onclick={onLoadSequence}
+      aria-label="Load sequence"
+    >
       <i class="fas fa-folder-open" aria-hidden="true"></i>
       {t("action_load")}
     </button>
@@ -85,7 +89,9 @@
           expandedSections = next;
         }}
         aria-expanded={expandedSections.has("character")}
-        aria-label={expandedSections.has("character") ? "Collapse character settings" : "Expand character settings"}
+        aria-label={expandedSections.has("character")
+          ? "Collapse character settings"
+          : "Expand character settings"}
       >
         <i class="fas fa-person" aria-hidden="true"></i>
         <span>{t("character_settings")}</span>
@@ -119,7 +125,9 @@
           expandedSections = next;
         }}
         aria-expanded={expandedSections.has("proportions")}
-        aria-label={expandedSections.has("proportions") ? "Collapse proportions" : "Expand proportions"}
+        aria-label={expandedSections.has("proportions")
+          ? "Collapse proportions"
+          : "Expand proportions"}
       >
         <i class="fas fa-ruler-vertical" aria-hidden="true"></i>
         <span>{t("character_proportions")}</span>
@@ -148,7 +156,9 @@
           expandedSections = next;
         }}
         aria-expanded={expandedSections.has("environment")}
-        aria-label={expandedSections.has("environment") ? "Collapse environment settings" : "Expand environment settings"}
+        aria-label={expandedSections.has("environment")
+          ? "Collapse environment settings"
+          : "Expand environment settings"}
       >
         <i class="fas fa-mountain-sun" aria-hidden="true"></i>
         <span>{t("viewer3d_environment")}</span>
@@ -175,7 +185,9 @@
           expandedSections = next;
         }}
         aria-expanded={expandedSections.has("effects")}
-        aria-label={expandedSections.has("effects") ? "Collapse effects settings" : "Expand effects settings"}
+        aria-label={expandedSections.has("effects")
+          ? "Collapse effects settings"
+          : "Expand effects settings"}
       >
         <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
         <span>{t("viewer3d_effects")}</span>
@@ -191,7 +203,6 @@
         </div>
       {/if}
     </section>
-
   </div>
 </aside>
 
@@ -204,8 +215,8 @@
     background: var(--theme-panel-bg);
     border-left: 1px solid var(--theme-stroke);
     transition:
-      width 0.3s ease,
-      opacity 0.3s ease;
+      width var(--duration-emphasis) var(--ease-standard),
+      opacity var(--duration-emphasis) var(--ease-standard);
   }
 
   .side-panel.collapsed {
@@ -233,7 +244,10 @@
     font-size: var(--font-size-sm, 0.875rem);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      transform var(--duration-fast),
+      outline-color var(--duration-fast);
   }
 
   .load-btn:hover {
@@ -316,7 +330,7 @@
     font-size: var(--font-size-sm, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: background var(--duration-fast) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .section-header:hover {
@@ -342,7 +356,7 @@
   .section-header .chevron {
     font-size: 0.75rem;
     opacity: 0.5;
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .section-header .chevron.rotated {

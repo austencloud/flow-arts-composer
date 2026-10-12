@@ -54,7 +54,12 @@
   gap: 4px;
   padding: 10px 8px;
   font-family: inherit;
-  transition: all 180ms cubic-bezier(0.2, 0, 0.13, 1.5);
+  transition:
+    border-color var(--duration-fast) var(--ease-spring),
+    background var(--duration-fast) var(--ease-spring),
+    color var(--duration-fast) var(--ease-spring),
+    outline var(--duration-fast) var(--ease-spring),
+    box-shadow var(--duration-fast) var(--ease-spring);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -70,10 +75,19 @@
 }
 
 .rt-tile[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--rail-accent, #4a9eff) 18%, rgba(20, 22, 32, 0.78));
-  border-color: color-mix(in srgb, var(--rail-accent, #4a9eff) 50%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--rail-accent, #4a9eff) 18%,
+    rgba(20, 22, 32, 0.78)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--rail-accent, #4a9eff) 50%,
+    transparent
+  );
   color: color-mix(in srgb, var(--rail-accent, #4a9eff) 62%, white);
-  box-shadow: 0 4px 20px color-mix(in srgb, var(--rail-accent, #4a9eff) 25%, transparent);
+  box-shadow: 0 4px 20px
+    color-mix(in srgb, var(--rail-accent, #4a9eff) 25%, transparent);
 }
 
 .rt-tile[aria-pressed="true"] .rt-icon,
@@ -127,8 +141,13 @@
 
 /* Effort tile - border/glow uses --effort-color */
 .rt-tile.rt-effort {
-  border-color: color-mix(in srgb, var(--effort-color, #94a3b8) 45%, rgba(255, 255, 255, 0.1));
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--effort-color, #94a3b8) 18%, rgba(0, 0, 0, 0.4));
+  border-color: color-mix(
+    in srgb,
+    var(--effort-color, #94a3b8) 45%,
+    rgba(255, 255, 255, 0.1)
+  );
+  box-shadow: 0 4px 16px
+    color-mix(in srgb, var(--effort-color, #94a3b8) 18%, rgba(0, 0, 0, 0.4));
 }
 
 .rt-tile.rt-effort .rt-val {
@@ -213,7 +232,11 @@
 }
 
 .rt-split-opt[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--rail-accent, #4a9eff) 32%, rgba(20, 22, 32, 0.8));
+  background: color-mix(
+    in srgb,
+    var(--rail-accent, #4a9eff) 32%,
+    rgba(20, 22, 32, 0.8)
+  );
   color: color-mix(in srgb, var(--rail-accent, #4a9eff) 34%, white);
   font-weight: 700;
 }
@@ -224,7 +247,8 @@
   min-height: 52px;
   border-radius: 14px;
   background: linear-gradient(135deg, var(--rail-accent, #4a9eff), #2b6fd4);
-  border: 1px solid color-mix(in srgb, var(--rail-accent, #4a9eff) 60%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--rail-accent, #4a9eff) 60%, transparent);
   color: white;
   display: flex;
   align-items: center;
@@ -232,11 +256,15 @@
   gap: 10px;
   font-weight: 700;
   font-size: 14px;
-  box-shadow: 0 4px 20px color-mix(in srgb, var(--rail-accent, #4a9eff) 35%, transparent);
+  box-shadow: 0 4px 20px
+    color-mix(in srgb, var(--rail-accent, #4a9eff) 35%, transparent);
   cursor: pointer;
   padding: 10px 16px;
   -webkit-tap-highlight-color: transparent;
-  transition: all 150ms ease;
+  transition:
+    filter var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard);
 }
 
 .rt-download:hover:not(:disabled) {
@@ -253,9 +281,14 @@
 }
 
 .rt-download.rt-secondary {
-  background: linear-gradient(135deg, var(--theme-accent-strong, #6366f1), var(--theme-accent, #8b5cf6));
+  background: linear-gradient(
+    135deg,
+    var(--theme-accent-strong, #6366f1),
+    var(--theme-accent, #8b5cf6)
+  );
   border-color: var(--theme-accent-strong, #7c3aed);
-  box-shadow: 0 4px 20px color-mix(in srgb, var(--theme-accent-strong, #6366f1) 30%, transparent);
+  box-shadow: 0 4px 20px
+    color-mix(in srgb, var(--theme-accent-strong, #6366f1) 30%, transparent);
   text-decoration: none;
 }
 
@@ -330,7 +363,11 @@
   gap: 6px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: all 150ms ease;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    outline var(--duration-fast) var(--ease-standard);
 }
 
 .rt-chip:hover:not([aria-pressed="true"]) {
@@ -340,8 +377,16 @@
 }
 
 .rt-chip[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--rail-accent, #4a9eff) 22%, rgba(20, 22, 32, 0.6));
-  border-color: color-mix(in srgb, var(--rail-accent, #4a9eff) 55%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--rail-accent, #4a9eff) 22%,
+    rgba(20, 22, 32, 0.6)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--rail-accent, #4a9eff) 55%,
+    transparent
+  );
   color: #ffffff;
 }
 

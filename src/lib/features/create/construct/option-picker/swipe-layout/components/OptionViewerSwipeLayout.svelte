@@ -535,9 +535,11 @@ Features:
               <!-- Empty feedback does not need measurements, so it appears on the first frame. -->
               <div class="empty-type-group" role="status">
                 <p>
-                  {t("create_construct_no_pictographs_prefix")} {getLocalizedGroupPresentation(
+                  {t("create_construct_no_pictographs_prefix")}
+                  {getLocalizedGroupPresentation(
                     getLetterTypeGroupDescriptor(section.title) ?? defaultGroup
-                  ).accessibleName} {t("create_construct_no_pictographs_suffix")}
+                  ).accessibleName}
+                  {t("create_construct_no_pictographs_suffix")}
                 </p>
                 <span
                   >{t(
@@ -598,7 +600,8 @@ Features:
     flex: 0 0 auto;
     width: min(calc(100% - 8px), 23rem);
     margin-inline: auto;
-    transition: width var(--duration-emphasis, 280ms) var(--ease-out, ease-out);
+    transition: width var(--duration-emphasis)
+      var(--ease-out, var(--ease-standard-out));
   }
 
   .utility-shell.expanded {
@@ -630,8 +633,10 @@ Features:
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
     border-radius: var(--radius-lg, 12px);
     transition:
-      border-radius var(--duration-normal, 200ms) var(--ease-out, ease-out),
-      border-color var(--duration-normal, 200ms) var(--ease-out, ease-out);
+      border-radius var(--duration-normal)
+        var(--ease-out, var(--ease-standard-out)),
+      border-color var(--duration-normal)
+        var(--ease-out, var(--ease-standard-out));
   }
 
   .expanded .type-navigation {
@@ -707,8 +712,8 @@ Features:
     border-radius: 0 0 var(--radius-xl, 16px) var(--radius-xl, 16px);
     opacity: 1;
     transition:
-      height var(--duration-emphasis, 280ms) var(--ease-out, ease-out),
-      opacity var(--duration-normal, 200ms) var(--ease-out, ease-out);
+      height var(--duration-emphasis) var(--ease-out, var(--ease-standard-out)),
+      opacity var(--duration-normal) var(--ease-out, var(--ease-standard-out));
   }
 
   .utility-disclosure[data-starting-style],
@@ -724,7 +729,8 @@ Features:
     height: min(var(--settings-utility-stage-height), calc(100cqh - 48px));
     min-height: 0;
     container-type: size;
-    transition: height var(--duration-emphasis, 280ms) var(--ease-out, ease-out);
+    transition: height var(--duration-emphasis)
+      var(--ease-out, var(--ease-standard-out));
   }
 
   /* Levels 2–3 need both turn rows. This height fits the complete Level 3

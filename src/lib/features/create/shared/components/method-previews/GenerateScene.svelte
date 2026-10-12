@@ -306,7 +306,7 @@
     white-space: nowrap;
     overflow: hidden;
     transform: translate(-50%, -50%);
-    transition: transform 140ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .generate-button.labelled {
@@ -325,13 +325,15 @@
      never fights the entrance below. */
   .scene[data-phase="clearing"] .cell {
     opacity: 0;
-    transition: opacity var(--clear-duration, 150ms) ease-in;
+    transition: opacity var(--clear-duration, var(--duration-fast))
+      var(--ease-standard-in);
   }
 
   /* The step grid's entrance, band by band (StepCell's .step-cell.animate). */
   .scene[data-phase="entering"] .cell {
-    animation: stepCascade var(--step-entrance-duration, 380ms)
-      cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: stepCascade
+      var(--step-entrance-duration, var(--duration-dramatic)) var(--ease-out)
+      both;
     animation-delay: var(--reveal-delay, 0ms);
   }
 </style>

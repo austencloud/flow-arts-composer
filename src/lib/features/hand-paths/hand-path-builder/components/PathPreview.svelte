@@ -21,23 +21,31 @@
       {/if}
     </div>
     <div class="location-count">
-      {builder.leftLocations.length} {builder.leftLocations.length === 1 ? "point" : "points"}
+      {builder.leftLocations.length}
+      {builder.leftLocations.length === 1 ? "point" : "points"}
     </div>
   </div>
 
   <div class="divider" aria-hidden="true">→</div>
 
-  <div class="hand-preview" class:active={builder.phase === "right"} class:locked={builder.phase === "left"}>
+  <div
+    class="hand-preview"
+    class:active={builder.phase === "right"}
+    class:locked={builder.phase === "left"}
+  >
     <div class="hand-label red-label">Right</div>
     <div class="path-name">
       {#if builder.rightPathName}
         <span class="name-text">{builder.rightPathName}</span>
       {:else}
-        <span class="placeholder">{builder.phase === "left" ? "next" : "tap to start"}</span>
+        <span class="placeholder"
+          >{builder.phase === "left" ? "next" : "tap to start"}</span
+        >
       {/if}
     </div>
     <div class="location-count">
-      {builder.rightLocations.length} {builder.rightLocations.length === 1 ? "point" : "points"}
+      {builder.rightLocations.length}
+      {builder.rightLocations.length === 1 ? "point" : "points"}
       {#if builder.phase === "right" && builder.leftLocations.length > 0}
         <span class="count-target"> / {builder.leftLocations.length}</span>
       {/if}
@@ -63,7 +71,7 @@
     flex-direction: column;
     gap: 4px;
     opacity: 0.5;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .hand-preview.active {

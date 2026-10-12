@@ -334,7 +334,9 @@
     <section class="section status-section">
       <div class="status-indicator" class:available={postHogAvailable}>
         <i
-          class="fas {postHogAvailable ? 'fa-check-circle' : 'fa-exclamation-circle'}"
+          class="fas {postHogAvailable
+            ? 'fa-check-circle'
+            : 'fa-exclamation-circle'}"
           aria-hidden="true"
         ></i>
         <span>
@@ -456,7 +458,7 @@
     color: var(--theme-text);
     font-size: var(--font-size-sm);
     cursor: pointer;
-    transition: background var(--duration-fast, 0.15s) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .retry-button:hover {
@@ -619,7 +621,16 @@
     text-decoration: none;
     color: inherit;
     border: 1px solid transparent;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard),
+      grid-template-columns var(--duration-fast) var(--ease-standard);
   }
 
   .dashboard-link:hover {
@@ -663,7 +674,9 @@
   .link-arrow {
     color: var(--theme-text-dim);
     opacity: 0;
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .dashboard-link:hover .link-arrow {

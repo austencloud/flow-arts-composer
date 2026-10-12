@@ -330,7 +330,7 @@
     align-items: center;
     justify-content: center;
     padding: 24px;
-    animation: backdrop-in 0.2s ease-out;
+    animation: backdrop-in var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes backdrop-in {
@@ -351,7 +351,7 @@
     border-radius: 16px;
     display: flex;
     flex-direction: column;
-    animation: panel-in 0.25s ease-out;
+    animation: panel-in var(--duration-normal) var(--ease-standard-out);
     overflow: hidden;
   }
 
@@ -417,7 +417,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     flex-shrink: 0;
   }
 

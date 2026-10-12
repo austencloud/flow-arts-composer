@@ -6,9 +6,8 @@
   Requires age verification before displaying content.
 -->
 <script lang="ts">
-
-import { getAgeVerifier } from "#lib/features/hall-of-shame/get-age-verifier.js";
-import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-shame-loader.js";
+  import { getAgeVerifier } from "#lib/features/hall-of-shame/get-age-verifier.js";
+  import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-shame-loader.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import type { HallOfShameLoader } from "../services/hall-of-shame-loader";
@@ -60,17 +59,19 @@ import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-sh
     console.warn("Failed to resolve Hall of Shame services:", error);
   }
 
-  const categories = $derived<{ value: ShameCategory | "all"; label: string }[]>([
-    { value: "all", label: t('hall_of_shame_cat_all') },
-    { value: "profanity", label: t('hall_of_shame_cat_profanity') },
-    { value: "sexual", label: t('hall_of_shame_cat_crude') },
-    { value: "creative", label: t('hall_of_shame_cat_creative') },
+  const categories = $derived<
+    { value: ShameCategory | "all"; label: string }[]
+  >([
+    { value: "all", label: t("hall_of_shame_cat_all") },
+    { value: "profanity", label: t("hall_of_shame_cat_profanity") },
+    { value: "sexual", label: t("hall_of_shame_cat_crude") },
+    { value: "creative", label: t("hall_of_shame_cat_creative") },
   ]);
 
   const sortOptions = $derived<{ value: ShameSortOption; label: string }[]>([
-    { value: "newest", label: t('hall_of_shame_sort_newest') },
-    { value: "mostVoted", label: t('hall_of_shame_sort_most_votes') },
-    { value: "mostViewed", label: t('hall_of_shame_sort_most_views') },
+    { value: "newest", label: t("hall_of_shame_sort_newest") },
+    { value: "mostVoted", label: t("hall_of_shame_sort_most_votes") },
+    { value: "mostViewed", label: t("hall_of_shame_sort_most_views") },
   ]);
 
   // Check verification when auth becomes initialized
@@ -101,7 +102,9 @@ import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-sh
     // Fail CLOSED: if the age verifier is unavailable, deny access rather than
     // silently granting it. The 18+ gate must never open on service failure.
     if (!ageVerifier) {
-      console.warn("[HallOfShameGallery] Age verifier service not available, denying access");
+      console.warn(
+        "[HallOfShameGallery] Age verifier service not available, denying access"
+      );
       isVerified = false;
       verificationError = true;
       isCheckingVerification = false;
@@ -218,19 +221,22 @@ import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-sh
   {#if !authState.initialized || isCheckingVerification}
     <div class="loading-state">
       <ProgressRing percent={-1} size={32} strokeWidth={3} />
-      <p>{t('hall_of_shame_checking_access')}</p>
+      <p>{t("hall_of_shame_checking_access")}</p>
     </div>
   {:else if !authState.user}
     <div class="access-denied">
       <i class="fas fa-lock" aria-hidden="true"></i>
-      <h2>{t('hall_of_shame_sign_in_required')}</h2>
-      <p>{t('hall_of_shame_sign_in_message')}</p>
+      <h2>{t("hall_of_shame_sign_in_required")}</h2>
+      <p>{t("hall_of_shame_sign_in_message")}</p>
     </div>
   {:else if verificationError}
     <div class="verification-required">
       <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-      <h2>{t('hall_of_shame_age_required')}</h2>
-      <p>We couldn't verify your age right now. Access is blocked until age verification is available. Please try again later.</p>
+      <h2>{t("hall_of_shame_age_required")}</h2>
+      <p>
+        We couldn't verify your age right now. Access is blocked until age
+        verification is available. Please try again later.
+      </p>
       <button
         class="verify-button"
         onclick={() => {
@@ -239,20 +245,20 @@ import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-sh
           checkVerification();
         }}
       >
-        {t('hall_of_shame_retry')}
+        {t("hall_of_shame_retry")}
       </button>
     </div>
   {:else if !isVerified}
     <div class="verification-required">
       <i class="fas fa-skull" aria-hidden="true"></i>
-      <h2>{t('hall_of_shame_age_required')}</h2>
-      <p>{t('hall_of_shame_age_required_message')}</p>
+      <h2>{t("hall_of_shame_age_required")}</h2>
+      <p>{t("hall_of_shame_age_required_message")}</p>
       <button class="verify-button" onclick={() => (showGate = true)}>
-        {t('hall_of_shame_verify_age')}
+        {t("hall_of_shame_verify_age")}
       </button>
       <div class="warning-notice">
         <i class="fas fa-ban" aria-hidden="true"></i>
-        <span>{t('hall_of_shame_hate_speech_warning')}</span>
+        <span>{t("hall_of_shame_hate_speech_warning")}</span>
       </div>
     </div>
   {:else}
@@ -261,12 +267,12 @@ import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-sh
       <div class="header-content">
         <h1>
           <i class="fas fa-skull" aria-hidden="true"></i>
-          {t('hall_of_shame_title')}
+          {t("hall_of_shame_title")}
         </h1>
-        <p class="subtitle">{t('hall_of_shame_subtitle')}</p>
+        <p class="subtitle">{t("hall_of_shame_subtitle")}</p>
         <div class="header-warning">
           <i class="fas fa-ban" aria-hidden="true"></i>
-          <span>{t('hall_of_shame_header_warning')}</span>
+          <span>{t("hall_of_shame_header_warning")}</span>
         </div>
       </div>
 
@@ -294,7 +300,7 @@ import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-sh
       <section class="featured-section">
         <h2 class="section-title">
           <i class="fas fa-star" aria-hidden="true"></i>
-          {t('hall_of_shame_featured')}
+          {t("hall_of_shame_featured")}
         </h2>
         <div class="featured-grid">
           {#each featuredEntries as entry (entry.id)}
@@ -309,22 +315,26 @@ import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-sh
       {#if isLoading}
         <div class="loading-state">
           <ProgressRing percent={-1} size={32} strokeWidth={3} />
-          <p>{t('hall_of_shame_loading')}</p>
+          <p>{t("hall_of_shame_loading")}</p>
         </div>
       {:else if error}
         <div class="error-state">
           <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
           <p>{error}</p>
-          <button class="retry-button" onclick={loadGallery}>{t('hall_of_shame_retry')}</button>
+          <button class="retry-button" onclick={loadGallery}
+            >{t("hall_of_shame_retry")}</button
+          >
         </div>
       {:else if entries.length === 0}
         <div class="empty-state">
           <i class="fas fa-ghost" aria-hidden="true"></i>
-          <h3>{t('hall_of_shame_no_entries')}</h3>
+          <h3>{t("hall_of_shame_no_entries")}</h3>
           <p>
             {selectedCategory === "all"
-              ? t('hall_of_shame_empty_all')
-              : t('hall_of_shame_empty_category', { category: selectedCategory })}
+              ? t("hall_of_shame_empty_all")
+              : t("hall_of_shame_empty_category", {
+                  category: selectedCategory,
+                })}
           </p>
         </div>
       {:else}
@@ -343,9 +353,9 @@ import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-sh
             >
               {#if isLoadingMore}
                 <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-                {t('hall_of_shame_loading_more')}
+                {t("hall_of_shame_loading_more")}
               {:else}
-                {t('hall_of_shame_load_more')}
+                {t("hall_of_shame_load_more")}
               {/if}
             </button>
           </div>
@@ -416,8 +426,13 @@ import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-sh
     gap: 10px;
     margin-top: 24px;
     padding: 12px 16px;
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
     border-radius: 8px;
     max-width: 450px;
   }
@@ -440,8 +455,13 @@ import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-sh
     gap: 8px;
     margin-top: 12px;
     padding: 8px 12px;
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 8%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
     border-radius: 6px;
   }
 
@@ -468,7 +488,13 @@ import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-sh
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .verify-button:hover,
@@ -568,7 +594,13 @@ import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-sh
     font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .load-more-button:hover:not(:disabled) {
@@ -602,5 +634,4 @@ import { getHallOfShameLoader } from "#lib/features/hall-of-shame/get-hall-of-sh
       font-size: 1.5rem;
     }
   }
-
 </style>

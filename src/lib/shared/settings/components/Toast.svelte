@@ -62,7 +62,7 @@
     z-index: var(--z-toast);
     pointer-events: none;
     /* iOS spring animation - exact curve */
-    animation: ios-toast-spring 0.5s cubic-bezier(0.36, 0.66, 0.04, 1);
+    animation: ios-toast-spring var(--duration-dramatic) var(--ease-spring);
   }
 
   .toast i {
@@ -102,7 +102,11 @@
   /* High contrast mode */
   @media (prefers-contrast: high) {
     .toast {
-      background: color-mix(in srgb, var(--semantic-success, #22c55e) 98%, transparent);
+      background: color-mix(
+        in srgb,
+        var(--semantic-success, #22c55e) 98%,
+        transparent
+      );
       border: 1px solid rgba(255, 255, 255, 0.3);
     }
   }

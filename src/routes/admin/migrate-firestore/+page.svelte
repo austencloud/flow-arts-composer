@@ -6,7 +6,10 @@
    * to normalize start position data.
    */
 
-  import { getAuthSync, getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+  import {
+    getAuthSync,
+    getFirestoreInstance,
+  } from "#lib/shared/auth/firebase.js";
   import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
   import { onMount } from "svelte";
 
@@ -34,7 +37,10 @@
         (beat: any) => beat?.stepNumber === 0 || beat?.isStartPlacement === true
       );
       if (!hasStartInBeats) {
-        return { steps: sequence.steps, startPlacement: sequence.startPlacement };
+        return {
+          steps: sequence.steps,
+          startPlacement: sequence.startPlacement,
+        };
       }
     }
 
@@ -471,7 +477,13 @@
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
   }
 
   button:disabled {

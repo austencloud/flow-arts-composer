@@ -27,10 +27,30 @@
   // Thumb end = the end nearest the performer's thumb (consistent grip reference).
   // Pinky end = the opposite end.
   const GUIDED_SEQUENCE: GuidedStep[] = [
-    { propIndex: 0, tipIndex: 0, label: "Left prop (blue) - thumb end", color: "#4a90d9" },
-    { propIndex: 0, tipIndex: 1, label: "Left prop (blue) - pinky end", color: "#4a90d9" },
-    { propIndex: 1, tipIndex: 0, label: "Right prop (red) - thumb end", color: "#d94a4a" },
-    { propIndex: 1, tipIndex: 1, label: "Right prop (red) - pinky end", color: "#d94a4a" },
+    {
+      propIndex: 0,
+      tipIndex: 0,
+      label: "Left prop (blue) - thumb end",
+      color: "#4a90d9",
+    },
+    {
+      propIndex: 0,
+      tipIndex: 1,
+      label: "Left prop (blue) - pinky end",
+      color: "#4a90d9",
+    },
+    {
+      propIndex: 1,
+      tipIndex: 0,
+      label: "Right prop (red) - thumb end",
+      color: "#d94a4a",
+    },
+    {
+      propIndex: 1,
+      tipIndex: 1,
+      label: "Right prop (red) - pinky end",
+      color: "#d94a4a",
+    },
   ];
 
   const { state: trailsState } = getVideoTrailsContext();
@@ -48,7 +68,7 @@
   let guidedStepIdx = $state(0);
   let guidedFrameStep = $state(5);
   let currentGuidedStep = $derived<GuidedStep | null>(
-    toolMode === "guided" ? (GUIDED_SEQUENCE[guidedStepIdx] ?? null) : null,
+    toolMode === "guided" ? (GUIDED_SEQUENCE[guidedStepIdx] ?? null) : null
   );
 
   let undoStack = $state<GuidedPlacementUndoEntry[]>([]);
@@ -88,7 +108,7 @@
       guidedStepIdx = 0;
       const nextFrame = Math.min(
         trailsState.totalFrames - 1,
-        trailsState.currentFrame + guidedFrameStep,
+        trailsState.currentFrame + guidedFrameStep
       );
       trailsState.setCurrentFrame(nextFrame);
     } else {
@@ -97,7 +117,11 @@
   }
 
   function undo(): void {
-    const result = undoGuidedPlacement(undoStack, trailsState, trailsState.source?.url ?? null);
+    const result = undoGuidedPlacement(
+      undoStack,
+      trailsState,
+      trailsState.source?.url ?? null
+    );
     undoStack = result.stack;
     const entry = result.entry;
     if (!entry) return;
@@ -126,9 +150,13 @@
       canvasHeight = videoElement.videoHeight;
     };
     // After each seek completes, bump the redraw counter so the canvas updates
-    videoElement.onseeked = () => { redrawTick++; };
+    videoElement.onseeked = () => {
+      redrawTick++;
+    };
     // Draw first frame as soon as video can display
-    videoElement.oncanplay = () => { redrawTick++; };
+    videoElement.oncanplay = () => {
+      redrawTick++;
+    };
   });
 
   // Seek the hidden video element to the current frame whenever it changes
@@ -144,7 +172,8 @@
   function handleKeydown(e: KeyboardEvent): void {
     // Don't capture keyboard events from the canvas/editor (it has its own handler)
     const target = e.target as HTMLElement;
-    if (target.tagName === "CANVAS" || target.closest("[role='application']")) return;
+    if (target.tagName === "CANVAS" || target.closest("[role='application']"))
+      return;
 
     const step = e.shiftKey ? 10 : 1;
     if (e.key === "ArrowLeft") {
@@ -153,7 +182,7 @@
     } else if (e.key === "ArrowRight") {
       e.preventDefault();
       trailsState.setCurrentFrame(
-        Math.min(trailsState.totalFrames - 1, trailsState.currentFrame + step),
+        Math.min(trailsState.totalFrames - 1, trailsState.currentFrame + step)
       );
     } else if (e.key === " ") {
       e.preventDefault();
@@ -171,12 +200,14 @@
   }
 
   function stepForward1(): void {
-    trailsState.setCurrentFrame(Math.min(trailsState.totalFrames - 1, trailsState.currentFrame + 1));
+    trailsState.setCurrentFrame(
+      Math.min(trailsState.totalFrames - 1, trailsState.currentFrame + 1)
+    );
   }
 
   function stepForward10(): void {
     trailsState.setCurrentFrame(
-      Math.min(trailsState.totalFrames - 1, trailsState.currentFrame + 10),
+      Math.min(trailsState.totalFrames - 1, trailsState.currentFrame + 10)
     );
   }
 
@@ -280,7 +311,10 @@
         <button
           class="tool-btn guide-btn"
           class:active={toolMode === "guided"}
-          onclick={() => { toolMode = "guided"; guidedStepIdx = 0; }}
+          onclick={() => {
+            toolMode = "guided";
+            guidedStepIdx = 0;
+          }}
           title="Guided placement: click 4 endpoints per frame, auto-advance"
           aria-label="Guided placement mode"
         >
@@ -291,7 +325,10 @@
 
       {#if toolMode === "guided"}
         <div class="guided-controls">
-          <span class="guided-step-label" style="color: {currentGuidedStep?.color ?? '#fff'}">
+          <span
+            class="guided-step-label"
+            style="color: {currentGuidedStep?.color ?? '#fff'}"
+          >
             {guidedStepIdx + 1}/4: {currentGuidedStep?.label ?? "Done"}
           </span>
           <span class="guided-sep">|</span>
@@ -300,7 +337,9 @@
             <button
               class="frame-step-pill"
               class:active={guidedFrameStep === step}
-              onclick={() => { guidedFrameStep = step; }}
+              onclick={() => {
+                guidedFrameStep = step;
+              }}
             >
               {step}f
             </button>
@@ -358,7 +397,7 @@
       <!-- Sidebar -->
       <div class="sidebar">
         <EndpointSidebar
-          selectedEndpointIdx={selectedEndpointIdx}
+          {selectedEndpointIdx}
           onSelectEndpoint={handleSelectEndpoint}
         />
       </div>
@@ -461,7 +500,11 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.5));
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: all 0.1s;
+    transition:
+      background var(--duration-instant),
+      border-color var(--duration-instant),
+      color var(--duration-instant),
+      padding var(--duration-instant);
   }
 
   .tool-btn:hover {
@@ -471,14 +514,21 @@
 
   .tool-btn.active {
     color: var(--theme-accent, #f43f5e);
-    background: color-mix(in srgb, var(--theme-accent, #f43f5e) 12%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #f43f5e) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #f43f5e) 12%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #f43f5e) 30%,
+      transparent
+    );
   }
 
   .tool-btn.compact {
     padding: 5px 8px;
   }
-
 
   .tool-label {
     font-weight: 500;
@@ -576,7 +626,8 @@
     padding: 8px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2)) transparent;
+    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2))
+      transparent;
   }
 
   /* Advanced panels */
@@ -589,7 +640,8 @@
     max-height: 300px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2)) transparent;
+    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2))
+      transparent;
   }
 
   /* Bottom controls */

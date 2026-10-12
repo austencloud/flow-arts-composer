@@ -16,7 +16,10 @@
 
   interface Props {
     params: CharcoalSparkParams;
-    onParamChange: (key: keyof CharcoalSparkParams, value: number | boolean) => void;
+    onParamChange: (
+      key: keyof CharcoalSparkParams,
+      value: number | boolean
+    ) => void;
     onParamsReplace: (params: CharcoalSparkParams) => void;
     onReset: () => void;
   }
@@ -27,15 +30,18 @@
 
   const semantic = $derived(charcoalParamsToSemantic(params));
 
-  function applySemanticValue(key: "intensity" | "spread" | "glow", value: number): void {
+  function applySemanticValue(
+    key: "intensity" | "spread" | "glow",
+    value: number
+  ): void {
     const updated = { ...semantic, [key]: value };
     onParamsReplace(semanticToCharcoalParams(updated));
   }
 
   const isDefault = $derived(
     Math.abs(semantic.intensity - DEFAULT_CHARCOAL_SEMANTIC.intensity) < 0.02 &&
-    Math.abs(semantic.spread - DEFAULT_CHARCOAL_SEMANTIC.spread) < 0.02 &&
-    Math.abs(semantic.glow - DEFAULT_CHARCOAL_SEMANTIC.glow) < 0.02
+      Math.abs(semantic.spread - DEFAULT_CHARCOAL_SEMANTIC.spread) < 0.02 &&
+      Math.abs(semantic.glow - DEFAULT_CHARCOAL_SEMANTIC.glow) < 0.02
   );
 </script>
 
@@ -66,7 +72,8 @@
       max="1"
       step="0.02"
       value={semantic.intensity}
-      oninput={(e) => applySemanticValue("intensity", Number(e.currentTarget.value))}
+      oninput={(e) =>
+        applySemanticValue("intensity", Number(e.currentTarget.value))}
     />
     <span class="slider-value">{Math.round(semantic.intensity * 100)}%</span>
   </div>
@@ -80,7 +87,8 @@
       max="1"
       step="0.02"
       value={semantic.spread}
-      oninput={(e) => applySemanticValue("spread", Number(e.currentTarget.value))}
+      oninput={(e) =>
+        applySemanticValue("spread", Number(e.currentTarget.value))}
     />
     <span class="slider-value">{Math.round(semantic.spread * 100)}%</span>
   </div>
@@ -103,10 +111,13 @@
   <button
     class="advanced-toggle"
     type="button"
-    onclick={() => advancedOpen = !advancedOpen}
+    onclick={() => (advancedOpen = !advancedOpen)}
     aria-expanded={advancedOpen}
   >
-    <i class="fas {advancedOpen ? 'fa-chevron-up' : 'fa-chevron-down'}" aria-hidden="true"></i>
+    <i
+      class="fas {advancedOpen ? 'fa-chevron-up' : 'fa-chevron-down'}"
+      aria-hidden="true"
+    ></i>
     Advanced
   </button>
 
@@ -126,7 +137,8 @@
                 max={slider.max}
                 step={slider.step}
                 {value}
-                oninput={(e) => onParamChange(slider.key, Number(e.currentTarget.value))}
+                oninput={(e) =>
+                  onParamChange(slider.key, Number(e.currentTarget.value))}
                 aria-label={slider.label}
               />
               <span class="slider-value">
@@ -143,8 +155,11 @@
         <button
           class="toggle-btn"
           class:active={params.shrinkOverLife}
-          onclick={() => onParamChange("shrinkOverLife", !params.shrinkOverLife)}
-          aria-label={params.shrinkOverLife ? "Disable shrink" : "Enable shrink"}
+          onclick={() =>
+            onParamChange("shrinkOverLife", !params.shrinkOverLife)}
+          aria-label={params.shrinkOverLife
+            ? "Disable shrink"
+            : "Enable shrink"}
           type="button"
         >
           {params.shrinkOverLife ? "ON" : "OFF"}
@@ -202,7 +217,13 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .reset-btn:hover:not(:disabled) {
@@ -260,7 +281,14 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
   }
 
   .advanced-toggle:hover {
@@ -323,7 +351,13 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     min-width: var(--min-touch-target);
   }
 

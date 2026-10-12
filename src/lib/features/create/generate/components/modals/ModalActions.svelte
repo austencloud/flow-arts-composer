@@ -43,7 +43,11 @@ Provides consistent, beautiful button layouts for modal actions
 </script>
 
 <div class="modal-actions">
-  <button class="action-button cancel-button" onclick={handleCancel} type="button">
+  <button
+    class="action-button cancel-button"
+    onclick={handleCancel}
+    type="button"
+  >
     {cancelLabel}
   </button>
   <button
@@ -72,7 +76,9 @@ Provides consistent, beautiful button layouts for modal actions
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      opacity var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
     border: none;
     position: relative;
     overflow: hidden;
@@ -89,7 +95,7 @@ Provides consistent, beautiful button layouts for modal actions
       transparent 70%
     );
     opacity: 0;
-    transition: opacity var(--duration-emphasis) ease;
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
   }
 
   .action-button:hover::before {

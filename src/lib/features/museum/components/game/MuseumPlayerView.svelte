@@ -4,7 +4,7 @@
   interface Props {
     x: number;
     y: number;
-    facing: string;  // 8-direction: north, northeast, east, southeast, south, southwest, west, northwest
+    facing: string; // 8-direction: north, northeast, east, southeast, south, southwest, west, northwest
     tileSize: number;
     isMoving: boolean;
     avatar: AvatarState;
@@ -25,7 +25,7 @@
 
   let posStyle = $derived(
     `transform: translate(${x * tileSize}px, ${y * tileSize}px); ` +
-    `width: ${tileSize}px; height: ${tileSize}px;`
+      `width: ${tileSize}px; height: ${tileSize}px;`
   );
 
   // All sizes relative to tileSize
@@ -34,7 +34,10 @@
 </script>
 
 <div class="museum-player" class:moving={isMoving} style={posStyle}>
-  <div class="figure-rotator" style="transform: rotate({facingDeg}deg); width: {ts}px; height: {ts}px;">
+  <div
+    class="figure-rotator"
+    style="transform: rotate({facingDeg}deg); width: {ts}px; height: {ts}px;"
+  >
     <!-- Hair: sits on top of head -->
     <div
       class="figure-hair"
@@ -88,7 +91,7 @@
 
   .figure-rotator {
     position: relative;
-    transition: transform 0.1s ease;
+    transition: transform var(--duration-instant) var(--ease-standard);
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
   }
 
@@ -114,8 +117,13 @@
   }
 
   @keyframes idle-breathe {
-    0%, 100% { transform: translateY(0) scale(1); }
-    50%      { transform: translateY(-0.4px) scale(1.02); }
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-0.4px) scale(1.02);
+    }
   }
 
   .moving .figure-head {
@@ -127,12 +135,22 @@
   }
 
   @keyframes walk-bob {
-    0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-1.5px); }
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-1.5px);
+    }
   }
 
   @keyframes walk-sway {
-    0%, 100% { transform: translateX(0) rotate(0deg); }
-    50%      { transform: translateX(0.5px) rotate(1deg); }
+    0%,
+    100% {
+      transform: translateX(0) rotate(0deg);
+    }
+    50% {
+      transform: translateX(0.5px) rotate(1deg);
+    }
   }
 </style>

@@ -70,9 +70,9 @@
     text-decoration: none;
     --codex-picto-size: 100%;
     transition:
-      border-color 140ms ease,
-      background 140ms ease,
-      transform 140ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .letter-pictograph:hover {

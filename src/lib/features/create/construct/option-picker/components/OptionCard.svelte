@@ -106,7 +106,7 @@ Receives pre-calculated data, just renders it.
        card — pictograph SVG included — on every frame of a 300ms hover, on a
        grid that mounts dozens of these. The lift now animates on the
        compositor and the brightness cue moved to the veil below. */
-    transition: transform 0.3s ease;
+    transition: transform var(--duration-emphasis) var(--ease-standard);
     touch-action: manipulation;
     -webkit-touch-callout: none;
     user-select: none;
@@ -120,7 +120,7 @@ Receives pre-calculated data, just renders it.
     background: #fff;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
   }
 
   .option-card:disabled {
@@ -142,7 +142,7 @@ Receives pre-calculated data, just renders it.
 
   .option-card:active {
     transform: scale(0.97);
-    transition: transform var(--duration-instant) ease;
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .option-card:global(.option-audition-active) {
@@ -154,12 +154,12 @@ Receives pre-calculated data, just renders it.
       0 14px 28px -14px
         color-mix(in srgb, var(--border-primary) 70%, transparent),
       var(--option-card-shadow-hover);
-    transition: transform 320ms cubic-bezier(0.2, 1.55, 0.35, 1);
+    transition: transform var(--duration-emphasis) var(--ease-spring);
   }
 
   .option-card:global(.option-audition-active)::after {
     opacity: 0.08;
-    transition: opacity 160ms ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .option-card:focus-visible {

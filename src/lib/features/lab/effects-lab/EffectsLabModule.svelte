@@ -22,8 +22,16 @@
   function loadMode(): EffectMode {
     try {
       const raw = sessionStorage.getItem(MODE_KEY);
-      if (raw === "trails" || raw === "fire" || raw === "charcoal" || raw === "led") return raw;
-    } catch { /* ignore */ }
+      if (
+        raw === "trails" ||
+        raw === "fire" ||
+        raw === "charcoal" ||
+        raw === "led"
+      )
+        return raw;
+    } catch {
+      /* ignore */
+    }
     return "trails";
   }
 
@@ -31,7 +39,9 @@
     try {
       const raw = sessionStorage.getItem(TAB_KEY);
       if (raw === "tuning" || raw === "points") return raw;
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return "tuning";
   }
 
@@ -45,7 +55,9 @@
   // Activate the effect for a given mode
   function activateMode(mode: EffectMode) {
     // "trails" maps to the "trails" effect type; others map directly
-    visibilityManager.setActiveEffect(mode as "fire" | "charcoal" | "led" | "trails");
+    visibilityManager.setActiveEffect(
+      mode as "fire" | "charcoal" | "led" | "trails"
+    );
   }
 
   // Deactivate all effects (clear to none)
@@ -63,7 +75,11 @@
   function setMode(mode: EffectMode) {
     activeMode = mode;
     activateMode(mode);
-    try { sessionStorage.setItem(MODE_KEY, mode); } catch { /* ignore */ }
+    try {
+      sessionStorage.setItem(MODE_KEY, mode);
+    } catch {
+      /* ignore */
+    }
   }
 
   // Clean up when the entire module unmounts (navigating away from Effects Lab)
@@ -73,7 +89,11 @@
 
   function setTab(tab: InnerTab) {
     activeTab = tab;
-    try { sessionStorage.setItem(TAB_KEY, tab); } catch { /* ignore */ }
+    try {
+      sessionStorage.setItem(TAB_KEY, tab);
+    } catch {
+      /* ignore */
+    }
   }
 
   // Lazy-load point editor (shared across fire/charcoal/LED)
@@ -202,7 +222,9 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: color 150ms ease, border-color 150ms ease;
+    transition:
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .tab:hover {

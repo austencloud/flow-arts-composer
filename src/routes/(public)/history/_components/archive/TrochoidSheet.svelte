@@ -65,7 +65,7 @@
 		box-shadow:
 			0 14px 34px oklch(0 0 0 / 0.45),
 			inset 0 0 60px oklch(0.8 0.05 250 / 0.15);
-		transition: box-shadow 400ms ease;
+		transition: box-shadow var(--duration-dramatic) var(--ease-standard);
 		overflow: hidden;
 	}
 

@@ -29,8 +29,7 @@
   import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
   import { createSequenceActionsPanelState } from "../../state/sequence-actions-panel-state.svelte";
   import { createSequenceActionsOrchestrator } from "../../services/sequence-actions-orchestrator";
-  import { quintOut } from "svelte/easing";
-  import { fly } from "svelte/transition";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   import CreatePanelDrawer from "../CreatePanelDrawer.svelte";
@@ -748,10 +747,9 @@
     {#key navigationKey}
       <div
         class="view-layer"
-        in:fly|local={{
+        in:flyFade|local={{
           x: navEnterX,
           duration: navDuration,
-          easing: quintOut,
         }}
       >
         {#if subView}
@@ -1198,7 +1196,10 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-min, 14px);
     font-weight: 650;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
     border: 1px solid var(--theme-stroke-strong);
     background: var(--theme-card-bg);
   }
@@ -1370,7 +1371,7 @@
   .dimmed {
     opacity: 0.3;
     pointer-events: none;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   /* Boost drawer z-index when help mode is active (above backdrop at 200) */

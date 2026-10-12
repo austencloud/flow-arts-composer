@@ -135,9 +135,7 @@
             mode="action"
             size="sm"
             onclick={() =>
-              movementMap.seek(
-                timeForPhase(position, anchor.phase, halfFrame)
-              )}
+              movementMap.seek(timeForPhase(position, anchor.phase, halfFrame))}
           />
         {/each}
       </div>
@@ -185,8 +183,10 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background-color var(--transition-fast, 120ms) ease,
-      border-color var(--transition-fast, 120ms) ease;
+      background-color var(--transition-fast, var(--duration-instant))
+        var(--ease-standard),
+      border-color var(--transition-fast, var(--duration-instant))
+        var(--ease-standard);
   }
 
   .control:hover {

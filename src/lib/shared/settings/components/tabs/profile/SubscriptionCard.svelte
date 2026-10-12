@@ -3,7 +3,11 @@
   Single $10/mo tier
 -->
 <script lang="ts">
-  import { getSubscriptionInfo, onSubscriptionChange, createPortalSession } from "#lib/shared/subscription/services/subscription-manager.js";
+  import {
+    getSubscriptionInfo,
+    onSubscriptionChange,
+    createPortalSession,
+  } from "#lib/shared/subscription/services/subscription-manager.js";
   import { onMount, onDestroy } from "svelte";
   import { goto } from "$app/navigation";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -30,11 +34,14 @@
 
   const formattedBillingDate = $derived(
     subscriptionInfo?.currentPeriodEnd
-      ? subscriptionInfo.currentPeriodEnd.toLocaleDateString(getReactiveLocale(), {
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        })
+      ? subscriptionInfo.currentPeriodEnd.toLocaleDateString(
+          getReactiveLocale(),
+          {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          }
+        )
       : null
   );
 
@@ -85,7 +92,8 @@
         </div>
         <div class="premium-info">
           <span class="premium-label">Flow Arts Composer Premium</span>
-          <span class="premium-status">{t("settings_subscription_active")}</span>
+          <span class="premium-status">{t("settings_subscription_active")}</span
+          >
         </div>
         <div class="active-badge">
           <i class="fas fa-check-circle" aria-hidden="true"></i>
@@ -96,10 +104,16 @@
         {#if subscriptionInfo?.cancelAtPeriodEnd}
           <p class="cancel-notice">
             <i class="fas fa-info-circle" aria-hidden="true"></i>
-            {t("settings_subscription_cancels_on", { date: formattedBillingDate ?? "" })}
+            {t("settings_subscription_cancels_on", {
+              date: formattedBillingDate ?? "",
+            })}
           </p>
         {:else}
-          <p>{t("settings_subscription_next_billing", { date: formattedBillingDate ?? "" })}</p>
+          <p>
+            {t("settings_subscription_next_billing", {
+              date: formattedBillingDate ?? "",
+            })}
+          </p>
         {/if}
       </div>
 
@@ -121,7 +135,9 @@
     <button class="subscribe-btn" onclick={handleLearnMore}>
       <div class="subscribe-content">
         <i class="fas fa-crown" aria-hidden="true"></i>
-        <span class="subscribe-text">{t("settings_subscription_go_premium")}</span>
+        <span class="subscribe-text"
+          >{t("settings_subscription_go_premium")}</span
+        >
         <span class="subscribe-price">{t("settings_subscription_price")}</span>
       </div>
     </button>
@@ -154,7 +170,14 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
   }
 
   .subscribe-btn:hover:not(:disabled) {
@@ -286,7 +309,14 @@
     font-size: var(--font-size-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
   }
 
   .manage-btn:hover:not(:disabled) {

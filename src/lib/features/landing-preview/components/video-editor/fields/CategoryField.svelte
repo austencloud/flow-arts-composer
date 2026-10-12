@@ -58,7 +58,12 @@
       </button>
     {/each}
     {#if !showAddForm}
-      <button class="chip add-chip" onclick={() => onToggleAddForm(true)} {disabled} aria-label="Add category">
+      <button
+        class="chip add-chip"
+        onclick={() => onToggleAddForm(true)}
+        {disabled}
+        aria-label="Add category"
+      >
         <i class="fas fa-plus" aria-hidden="true"></i>
       </button>
     {/if}
@@ -77,8 +82,12 @@
         value={newColor}
         oninput={(e) => onUpdateColor((e.target as HTMLInputElement).value)}
       />
-      <button class="add-form-btn" onclick={onAdd} disabled={!newLabel.trim()}>Add</button>
-      <button class="add-form-btn cancel" onclick={() => onToggleAddForm(false)}>Cancel</button>
+      <button class="add-form-btn" onclick={onAdd} disabled={!newLabel.trim()}
+        >Add</button
+      >
+      <button class="add-form-btn cancel" onclick={() => onToggleAddForm(false)}
+        >Cancel</button
+      >
     </div>
   {/if}
 </div>
@@ -126,7 +135,13 @@
     color: var(--theme-text, rgba(255, 255, 255, 0.8));
     cursor: pointer;
     font-size: 13px;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .chip:hover:not(:disabled) {
@@ -218,7 +233,15 @@
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast),
+      height var(--duration-fast);
   }
 
   .add-form-btn:disabled {

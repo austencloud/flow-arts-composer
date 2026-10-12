@@ -163,7 +163,7 @@
     opacity: 0;
     mix-blend-mode: screen;
     pointer-events: none;
-    transition: opacity var(--duration-normal, 220ms) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .fan-style-options :global(.option.selected .preview-frame)::after {

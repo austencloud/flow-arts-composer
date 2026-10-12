@@ -98,7 +98,7 @@
     font: inherit;
     font-size: max(0.875rem, var(--font-size-min));
     cursor: pointer;
-    transition: background var(--duration-fast) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .subpage-back:hover {

@@ -8,7 +8,12 @@
 <div class="grid">
   {#each LOOP_COMPONENTS as info (info.component)}
     {@const isActive = activeComponents.has(info.component)}
-    <div class="card" class:current={isActive} class:dim={!isActive} style:--comp-color={info.color}>
+    <div
+      class="card"
+      class:current={isActive}
+      class:dim={!isActive}
+      style:--comp-color={info.color}
+    >
       <div class="icon-badge">
         <i class="fas fa-{info.icon}" aria-hidden="true"></i>
       </div>
@@ -38,9 +43,9 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
     /* Named properties, not `all`: `all` tweened layout on every restyle. */
     transition:
-      opacity var(--duration-fast, 0.2s) ease,
-      background-color var(--duration-fast, 0.2s) ease,
-      border-color var(--duration-fast, 0.2s) ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
     text-align: center;
   }
 
@@ -83,7 +88,11 @@
 
   .card.current {
     background: color-mix(in srgb, var(--comp-color, #2196f3) 14%, transparent);
-    border-color: color-mix(in srgb, var(--comp-color, #2196f3) 35%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--comp-color, #2196f3) 35%,
+      transparent
+    );
   }
   .card.current .icon-badge {
     background: color-mix(in srgb, var(--comp-color, #2196f3) 25%, transparent);
@@ -97,6 +106,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .card { transition: none; }
+    .card {
+      transition: none;
+    }
   }
 </style>

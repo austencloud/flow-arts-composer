@@ -86,11 +86,11 @@
   }
 
   .dots-loader span:nth-child(2) {
-    animation-delay: 0.2s;
+    animation-delay: var(--duration-normal);
   }
 
   .dots-loader span:nth-child(3) {
-    animation-delay: 0.4s;
+    animation-delay: var(--duration-dramatic);
   }
 
   @keyframes word-pulse {

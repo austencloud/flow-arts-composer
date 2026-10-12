@@ -89,7 +89,7 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
-    transition: background var(--duration-fast) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 

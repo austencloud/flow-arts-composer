@@ -405,9 +405,9 @@
       var(--auth-input-inset-highlight, rgba(255, 255, 255, 0.1));
     cursor: text;
     transition:
-      border-color var(--duration-normal, 200ms) ease,
-      box-shadow var(--duration-normal, 200ms) ease,
-      background var(--duration-normal, 200ms) ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard);
   }
 
   .input::placeholder {

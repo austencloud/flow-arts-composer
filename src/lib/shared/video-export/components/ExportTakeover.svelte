@@ -68,7 +68,10 @@
 
   /** Cancel is offered only while work is actually in flight AND abortable. */
   const canCancel = $derived(
-    !!onCancel && phase !== "complete" && phase !== "error" && !cancelDisabledReason,
+    !!onCancel &&
+      phase !== "complete" &&
+      phase !== "error" &&
+      !cancelDisabledReason
   );
 
   // beforeunload guard — block accidental navigation while exporting.
@@ -94,7 +97,7 @@
 
   const headingId = `export-takeover-title-${Math.random().toString(36).slice(2, 9)}`;
   const dialogLabel = $derived(
-    label ?? (phase === "error" ? t('export_failed') : t('export_app_locked')),
+    label ?? (phase === "error" ? t("export_failed") : t("export_app_locked"))
   );
 </script>
 
@@ -123,12 +126,17 @@
       {/if}
       {#if phase === "error"}
         <p class="takeover-msg error" role="alert">
-          <i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {t('export_failed')}
+          <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+          {t("export_failed")}
         </p>
         <p class="takeover-sub">{error}</p>
         <div class="takeover-actions">
-          {#if onCancel}<button class="takeover-btn ghost" onclick={onCancel}>{t('action_close')}</button>{/if}
-          {#if onRetry}<button class="takeover-btn primary" onclick={onRetry}>{t('action_retry')}</button>{/if}
+          {#if onCancel}<button class="takeover-btn ghost" onclick={onCancel}
+              >{t("action_close")}</button
+            >{/if}
+          {#if onRetry}<button class="takeover-btn primary" onclick={onRetry}
+              >{t("action_retry")}</button
+            >{/if}
         </div>
       {:else}
         <div
@@ -138,24 +146,30 @@
           aria-valuenow={pct}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="{t('viewer_ui_export_progress')}"
+          aria-label={t("viewer_ui_export_progress")}
         >
           <div class="ring-hole">
             <span class="ring-pct">{pct}<small>%</small></span>
           </div>
         </div>
-        <p class="takeover-phase" aria-live="polite" aria-atomic="true">{phaseLabel}</p>
-        <p class="takeover-msg">{t('export_stay_here')}</p>
+        <p class="takeover-phase" aria-live="polite" aria-atomic="true">
+          {phaseLabel}
+        </p>
+        <p class="takeover-msg">{t("export_stay_here")}</p>
         {#if phase !== "complete" && onCancel}
           <button
             class="takeover-btn ghost"
             data-testid="export-takeover-cancel"
             disabled={!canCancel}
-            aria-describedby={cancelDisabledReason ? `${headingId}-cancel-note` : undefined}
-            onclick={onCancel}>{t('action_cancel')}</button
+            aria-describedby={cancelDisabledReason
+              ? `${headingId}-cancel-note`
+              : undefined}
+            onclick={onCancel}>{t("action_cancel")}</button
           >
           {#if cancelDisabledReason}
-            <p class="takeover-sub" id={`${headingId}-cancel-note`}>{cancelDisabledReason}</p>
+            <p class="takeover-sub" id={`${headingId}-cancel-note`}>
+              {cancelDisabledReason}
+            </p>
           {/if}
         {/if}
       {/if}
@@ -204,7 +218,7 @@
        on a transition. Only the scrim's paint eases in, and only when the
        viewer has not asked for reduced motion. */
     opacity: 0;
-    transition: opacity 200ms ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
     position: absolute;
     inset: 0;
     z-index: var(--z-overlay, 500);
@@ -219,7 +233,8 @@
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
-  :global(dialog.base-modal.export-takeover-modal[data-entered="true"]) .export-takeover {
+  :global(dialog.base-modal.export-takeover-modal[data-entered="true"])
+    .export-takeover {
     opacity: 1;
   }
 
@@ -264,7 +279,11 @@
       0 25px 80px rgba(0, 0, 0, 0.5),
       0 10px 30px rgba(0, 0, 0, 0.3),
       inset 0 1px 0 var(--theme-stroke-strong, rgba(255, 255, 255, 0.1)),
-      0 0 48px var(--theme-accent-glow, color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent));
+      0 0 48px
+        var(
+          --theme-accent-glow,
+          color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent)
+        );
   }
   .ring {
     width: 104px;
@@ -272,7 +291,7 @@
     border-radius: 50%;
     display: grid;
     place-items: center;
-    transition: background 180ms ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
   .ring-hole {
     width: 80px;
@@ -289,7 +308,12 @@
     font-variant-numeric: tabular-nums;
     line-height: 1;
   }
-  .ring-pct small { font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, 0.65); margin-left: 1px; }
+  .ring-pct small {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.65);
+    margin-left: 1px;
+  }
   .takeover-phase {
     margin: 0;
     font-size: 15px;
@@ -305,14 +329,21 @@
     line-height: 1.4;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
   }
-  .takeover-msg.error { color: #fca5a5; font-weight: 600; font-size: 15px; }
+  .takeover-msg.error {
+    color: #fca5a5;
+    font-weight: 600;
+    font-size: 15px;
+  }
   .takeover-sub {
     margin: 0;
     font-size: 12px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.68));
     word-break: break-word;
   }
-  .takeover-actions { display: flex; gap: 10px; }
+  .takeover-actions {
+    display: flex;
+    gap: 10px;
+  }
   .takeover-btn {
     min-height: 44px;
     min-width: 48px;
@@ -322,31 +353,56 @@
     font-weight: 600;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1), background 200ms ease, border-color 200ms ease;
+    transition:
+      transform var(--duration-fast) var(--ease-standard-out),
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
-  .takeover-btn:active { transform: scale(0.95); }
+  .takeover-btn:active {
+    transform: scale(0.95);
+  }
   .takeover-btn:disabled {
     cursor: not-allowed;
     opacity: 0.45;
   }
-  .takeover-btn:disabled:active { transform: none; }
+  .takeover-btn:disabled:active {
+    transform: none;
+  }
   .takeover-btn.ghost {
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.18));
     background: transparent;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
   }
   .takeover-btn.primary {
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #6366f1) 70%, transparent);
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 35%, var(--theme-card-bg, rgba(0, 0, 0, 0.4)));
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #6366f1) 70%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 35%,
+      var(--theme-card-bg, rgba(0, 0, 0, 0.4))
+    );
     color: white;
   }
   @media (hover: hover) {
-    .takeover-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 6px 18px color-mix(in srgb, var(--theme-accent, #6366f1) 35%, transparent); }
-    .takeover-btn.ghost:not(:disabled):hover { border-color: var(--theme-text-dim, rgba(255, 255, 255, 0.4)); color: var(--theme-text, #fff); }
+    .takeover-btn.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px
+        color-mix(in srgb, var(--theme-accent, #6366f1) 35%, transparent);
+    }
+    .takeover-btn.ghost:not(:disabled):hover {
+      border-color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
+      color: var(--theme-text, #fff);
+    }
   }
   @media (prefers-reduced-motion: reduce) {
-    .export-takeover { transition: none; }
-    .ring { transition: none; }
-    .takeover-btn:active { transform: none; }
+    .export-takeover {
+      transition: none;
+    }
+    .ring {
+      transition: none;
+    }
+    .takeover-btn:active {
+      transform: none;
+    }
   }
 </style>

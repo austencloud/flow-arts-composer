@@ -59,7 +59,7 @@
     );
     color: var(--preview-accent);
     box-shadow: 0 0 18cqh -8cqh var(--preview-accent);
-    animation: bridge-arrive 2.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+    animation: bridge-arrive 2.8s var(--ease-out) infinite;
   }
 
   .connector {

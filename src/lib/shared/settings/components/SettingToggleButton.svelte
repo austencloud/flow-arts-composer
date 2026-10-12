@@ -35,7 +35,9 @@
     density = "comfortable",
   }: Props = $props();
 
-  const stateLabel = $derived(checked ? (onLabel ?? t("settings_on")) : (offLabel ?? t("settings_off")));
+  const stateLabel = $derived(
+    checked ? (onLabel ?? t("settings_on")) : (offLabel ?? t("settings_off"))
+  );
 </script>
 
 <button
@@ -89,9 +91,9 @@
     text-align: left;
     cursor: pointer;
     transition:
-      background var(--duration-fast) ease,
-      border-color var(--duration-fast) ease,
-      color var(--duration-fast) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -162,9 +164,9 @@
     background: color-mix(in srgb, var(--theme-text) 4%, transparent);
     font-size: max(1rem, var(--font-size-base));
     transition:
-      color var(--duration-fast) ease,
-      background var(--duration-fast) ease,
-      transform var(--duration-fast) ease;
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .setting-toggle.active .state-mark {

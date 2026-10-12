@@ -520,7 +520,9 @@
     border-radius: 50%;
     color: white;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .clear-upload:hover {
@@ -551,7 +553,10 @@
     margin: 16px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .upload-dropzone:hover {
@@ -609,7 +614,7 @@
     color: var(--theme-text, white);
     font-size: var(--font-size-min);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .retry-button:hover {
@@ -668,7 +673,11 @@
     font-weight: 500;
     color: var(--theme-text);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard);
     white-space: nowrap;
   }
 

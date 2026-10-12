@@ -27,7 +27,9 @@
   const uncuratedCount = $derived(controller.uncuratedVideos.length);
   const currentIndex = $derived(controller.currentIndex);
   const progressPercent = $derived(
-    Math.round((controller.curationProgress.done / controller.stats.total) * 100)
+    Math.round(
+      (controller.curationProgress.done / controller.stats.total) * 100
+    )
   );
 
   // Editable title state
@@ -45,9 +47,16 @@
 
   // Greek letter substitution map
   const greekMap: Record<string, string> = {
-    sig: "Σ", del: "Δ", the: "Θ", ome: "Ω",
-    phi: "Φ", psi: "Ψ", lam: "Λ",
-    alp: "α", bet: "β", gam: "γ",
+    sig: "Σ",
+    del: "Δ",
+    the: "Θ",
+    ome: "Ω",
+    phi: "Φ",
+    psi: "Ψ",
+    lam: "Λ",
+    alp: "α",
+    bet: "β",
+    gam: "γ",
   };
   const greekPattern = /(sig|del|the|ome|phi|psi|lam|alp|bet|gam)(-?)/gi;
 
@@ -140,7 +149,10 @@
         return;
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        highlightedIndex = highlightedIndex <= 0 ? titleSuggestions.length - 1 : highlightedIndex - 1;
+        highlightedIndex =
+          highlightedIndex <= 0
+            ? titleSuggestions.length - 1
+            : highlightedIndex - 1;
         return;
       } else if (e.key === "Enter" && highlightedIndex >= 0) {
         e.preventDefault();
@@ -204,12 +216,15 @@
           placeholder="Enter TKA word..."
         />
         {#if titleSearching}
-          <i class="fas fa-spinner fa-spin title-loading" aria-hidden="true"></i>
+          <i class="fas fa-spinner fa-spin title-loading" aria-hidden="true"
+          ></i>
         {/if}
         {#if showTitleSuggestions && titleSuggestions.length > 0}
           <div class="title-suggestions" role="listbox">
             {#each titleSuggestions as seq, i (seq.id)}
-              {@const isExactMatch = stripWordNotation(seq.word).toUpperCase() === editedTitle.toUpperCase()}
+              {@const isExactMatch =
+                stripWordNotation(seq.word).toUpperCase() ===
+                editedTitle.toUpperCase()}
               <button
                 type="button"
                 class="title-suggestion"
@@ -228,17 +243,25 @@
                   </div>
                 {/if}
                 <div class="suggestion-info">
-                  <span class="suggestion-word"><TKAWordGlyph word={seq.word} height={13} /></span>
+                  <span class="suggestion-word"
+                    ><TKAWordGlyph word={seq.word} height={13} /></span
+                  >
                   <span class="suggestion-owner">by {seq.ownerName}</span>
                 </div>
-                <i class="fas fa-link suggestion-link-icon" aria-hidden="true"></i>
+                <i class="fas fa-link suggestion-link-icon" aria-hidden="true"
+                ></i>
               </button>
             {/each}
           </div>
         {/if}
       </div>
     {:else}
-      <button type="button" class="video-word-btn" onclick={startEditingTitle} title="Click to edit">
+      <button
+        type="button"
+        class="video-word-btn"
+        onclick={startEditingTitle}
+        title="Click to edit"
+      >
         {video.title || video.shortcode}
         <i class="fas fa-pencil-alt edit-hint" aria-hidden="true"></i>
       </button>
@@ -372,7 +395,13 @@
     cursor: pointer;
     padding: 4px 8px;
     border-radius: 8px;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .video-word-btn:hover {
@@ -383,7 +412,7 @@
     font-size: 12px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.3));
     opacity: 0;
-    transition: opacity 0.15s;
+    transition: opacity var(--duration-fast);
   }
 
   .video-word-btn:hover .edit-hint {
@@ -450,7 +479,15 @@
     border: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     cursor: pointer;
-    transition: all 0.1s;
+    transition:
+      background var(--duration-instant),
+      border-color var(--duration-instant),
+      color var(--duration-instant),
+      opacity var(--duration-instant),
+      transform var(--duration-instant),
+      box-shadow var(--duration-instant),
+      width var(--duration-instant),
+      max-height var(--duration-instant);
     text-align: left;
   }
 
@@ -464,13 +501,21 @@
   }
 
   .title-suggestion.exact {
-    background: color-mix(in srgb, var(--semantic-success, #10b981) 12%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 12%,
+      transparent
+    );
     border-left: 3px solid var(--semantic-success, #10b981);
   }
 
   .title-suggestion.exact:hover,
   .title-suggestion.exact.highlighted {
-    background: color-mix(in srgb, var(--semantic-success, #10b981) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 20%,
+      transparent
+    );
   }
 
   .suggestion-thumb,
@@ -554,7 +599,15 @@
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
   }
 
   .nav-btn:hover:not(:disabled) {
@@ -591,7 +644,13 @@
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .action-btn.secondary {
@@ -606,16 +665,28 @@
 
   .action-btn.primary {
     flex: 1;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 20%,
+      transparent
+    );
     color: var(--theme-accent-light, #a5b4fc);
   }
 
   .action-btn.primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 30%,
+      transparent
+    );
   }
 
   .action-btn.primary.complete {
-    background: linear-gradient(135deg, var(--theme-accent, #6366f1) 0%, #8b5cf6 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #6366f1) 0%,
+      #8b5cf6 100%
+    );
     color: white;
   }
 
@@ -635,7 +706,11 @@
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--semantic-success, #10b981), #06b6d4);
-    transition: width 0.5s ease;
+    background: linear-gradient(
+      90deg,
+      var(--semantic-success, #10b981),
+      #06b6d4
+    );
+    transition: width var(--duration-dramatic) var(--ease-standard);
   }
 </style>

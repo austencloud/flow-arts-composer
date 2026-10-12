@@ -52,13 +52,13 @@
   const viewLabel = $derived(() => {
     switch (displayView) {
       case "camera-canvas":
-        return t('train_view_canvas');
+        return t("train_view_canvas");
       case "camera-grid":
-        return t('train_view_grid');
+        return t("train_view_grid");
       case "camera-canvas-grid":
-        return t('train_view_both');
+        return t("train_view_both");
       default:
-        return t('train_view_label');
+        return t("train_view_label");
     }
   });
 
@@ -78,13 +78,13 @@
   const modeLabel = $derived(() => {
     switch (practiceMode) {
       case PracticeMode.ADAPTIVE:
-        return t('train_mode_adaptive');
+        return t("train_mode_adaptive");
       case PracticeMode.STEP_BY_STEP:
-        return t('train_mode_step');
+        return t("train_mode_step");
       case PracticeMode.TIMED:
-        return t('train_mode_timed');
+        return t("train_mode_timed");
       default:
-        return t('train_mode_label');
+        return t("train_mode_label");
     }
   });
 
@@ -181,7 +181,12 @@
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-emphasis) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-emphasis) var(--ease-standard),
+      transform var(--duration-emphasis) var(--ease-standard),
+      color var(--duration-emphasis) var(--ease-standard);
   }
 
   .btn-label {
@@ -213,7 +218,7 @@
   /* Active/pressed state */
   .floating-btn:active {
     transform: translateY(0) scale(0.95);
-    transition: transform var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   /* Sequence button with sequence loaded */

@@ -419,9 +419,9 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background var(--duration-normal, 200ms) ease,
-      box-shadow var(--duration-normal, 200ms) ease,
-      transform var(--duration-normal, 200ms) ease;
+      background var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     border: 1px solid #747775;
   }
 

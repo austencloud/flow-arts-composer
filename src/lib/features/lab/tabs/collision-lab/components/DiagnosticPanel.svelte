@@ -60,7 +60,8 @@
       <span class="label">Pose</span>
       <code class="id-code">{labCtx.state.currentPose?.id ?? "-"}</code>
       <span class="index">
-        {labCtx.state.currentPoseGlobalIndex + 1} / {labCtx.state.allPoses.length}
+        {labCtx.state.currentPoseGlobalIndex + 1} / {labCtx.state.allPoses
+          .length}
       </span>
     </div>
   </div>
@@ -180,7 +181,7 @@
     font-weight: 600;
     font-size: 12px;
     cursor: pointer;
-    transition: background 0.1s;
+    transition: background var(--duration-instant);
   }
   .copy-btn:hover {
     background: color-mix(in srgb, #8b5cf6 30%, var(--theme-panel-bg));
@@ -226,7 +227,7 @@
   .progress-fill {
     height: 100%;
     background: #8b5cf6;
-    transition: width 0.1s;
+    transition: width var(--duration-instant);
   }
   .nav-row {
     display: flex;

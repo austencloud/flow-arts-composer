@@ -414,8 +414,8 @@
     cursor: pointer;
     list-style: none;
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .measurement-details > summary::-webkit-details-marker {
@@ -464,7 +464,7 @@
 
   .summary-chevron {
     color: var(--theme-text-dim, rgba(248, 250, 252, 0.56));
-    transition: transform var(--duration-fast, 150ms) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .measurement-details[open] .summary-chevron {

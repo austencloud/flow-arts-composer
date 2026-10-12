@@ -310,9 +310,9 @@
     cursor: pointer;
     font-size: var(--font-size-lg);
     transition:
-      transform var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
-      background var(--duration-fast) ease,
-      box-shadow var(--duration-fast) ease;
+      transform var(--duration-emphasis) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -376,7 +376,7 @@
   }
 
   :global(.share-action-menu[data-state="open"]) {
-    animation: share-action-menu-enter 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: share-action-menu-enter var(--duration-fast) var(--ease-out) both;
   }
 
   :global(.share-action-item),

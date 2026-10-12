@@ -72,7 +72,10 @@ Displays modal title and close button
     border: 1px solid var(--theme-stroke-strong);
     border-radius: 8px;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;

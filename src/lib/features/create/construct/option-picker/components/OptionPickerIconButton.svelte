@@ -51,11 +51,11 @@
     color: color-mix(in srgb, var(--theme-accent, #22b8db) 76%, white);
     cursor: pointer;
     transition:
-      background var(--duration-normal, 200ms) ease,
-      border-color var(--duration-normal, 200ms) ease,
-      color var(--duration-normal, 200ms) ease,
-      box-shadow var(--duration-normal, 200ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 

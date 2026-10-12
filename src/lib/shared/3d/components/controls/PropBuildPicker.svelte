@@ -77,7 +77,11 @@
     </div>
   {/if}
 
-  <div class="option-grid" role="radiogroup" aria-label={label ?? t("prop_build_picker_options")}>
+  <div
+    class="option-grid"
+    role="radiogroup"
+    aria-label={label ?? t("prop_build_picker_options")}
+  >
     {#each options as option, index (option.id)}
       <button
         type="button"
@@ -86,10 +90,15 @@
         role="radio"
         aria-checked={value === option.id}
         aria-label={option.designCredit
-          ? t("prop_build_picker_design_credit_aria", { label: option.label, name: option.designCredit.originator })
+          ? t("prop_build_picker_design_credit_aria", {
+              label: option.label,
+              name: option.designCredit.originator,
+            })
           : option.label}
         title={option.designCredit
-          ? t("prop_build_picker_design_credit_title", { name: option.designCredit.originator })
+          ? t("prop_build_picker_design_credit_title", {
+              name: option.designCredit.originator,
+            })
           : undefined}
         tabindex={value === option.id ? 0 : -1}
         onclick={() => onchange(option.id)}
@@ -209,9 +218,9 @@
     color: rgba(255, 255, 255, 0.8);
     cursor: pointer;
     transition:
-      transform var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      box-shadow var(--duration-fast, 150ms) ease;
+      transform var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .preview-frame {
@@ -253,7 +262,7 @@
     object-fit: contain;
     pointer-events: none;
     transform: scale(var(--preview-scale));
-    transition: transform var(--duration-fast, 150ms) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   /* A crop ends at the painted edge; keep the art off the card's border. */
@@ -284,9 +293,9 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .option-label.with-credit {
@@ -314,7 +323,7 @@
     font-weight: 640;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    transition: color var(--duration-fast, 150ms) ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
 
   .option.selected .option-credit {

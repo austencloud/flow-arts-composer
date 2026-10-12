@@ -18,10 +18,7 @@
    */
 
   import CandidateThumbnailViewport from "./CandidateThumbnailViewport.svelte";
-  import type {
-    StanceCandidate,
-    PoseDefinition,
-  } from "../domain/types";
+  import type { StanceCandidate, PoseDefinition } from "../domain/types";
 
   interface Props {
     candidate: StanceCandidate;
@@ -93,7 +90,9 @@
   </div>
 
   <div class="card-footer">
-    <span class="candidate-label" title={candidate.label}>{candidate.label}</span>
+    <span class="candidate-label" title={candidate.label}
+      >{candidate.label}</span
+    >
     <span class="status-pill {statusClass}" title={statusLabel}>
       {statusLabel}
     </span>
@@ -101,7 +100,14 @@
 
   {#if picked}
     <span class="picked-badge" aria-hidden="true">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="3"
+      >
         <polyline points="20 6 9 17 4 12" />
       </svg>
     </span>
@@ -119,7 +125,10 @@
     background: var(--theme-card-bg, rgba(0, 0, 0, 0.25));
     overflow: hidden;
     cursor: pointer;
-    transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     font: inherit;
     color: inherit;
     text-align: left;

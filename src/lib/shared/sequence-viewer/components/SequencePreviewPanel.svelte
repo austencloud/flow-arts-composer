@@ -69,7 +69,9 @@
   // Child (SequenceViewer) is source of truth - it handles sessionStorage persistence
   // We initialize with a placeholder; the actual value comes from onMediaTypeChange callback
   let currentMediaType = $state<MediaType>("image" as MediaType);
-  $effect.pre(() => { currentMediaType = initialMediaType; });
+  $effect.pre(() => {
+    currentMediaType = initialMediaType;
+  });
 
   // Export format syncs with media type: image → static, animation → animation
   const selectedFormat = $derived<MediaFormat>(
@@ -205,7 +207,8 @@
                 type="text"
                 class="name-input"
                 bind:value={editedName}
-                placeholder={sequence?.word || t("viewer_detail_enter_custom_name")}
+                placeholder={sequence?.word ||
+                  t("viewer_detail_enter_custom_name")}
                 maxlength="50"
               />
               <div class="name-edit-actions">
@@ -228,7 +231,9 @@
           {:else}
             <div class="name-display-container">
               <span class="name-display">
-                {sequence?.displayName || sequence?.word || t("viewer_unnamed_sequence")}
+                {sequence?.displayName ||
+                  sequence?.word ||
+                  t("viewer_unnamed_sequence")}
               </span>
               <button
                 class="name-edit-btn"
@@ -351,7 +356,10 @@
     border-radius: 10px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .icon-btn svg {
@@ -443,7 +451,9 @@
     border-radius: 6px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .name-edit-btn:hover {
@@ -466,7 +476,7 @@
     color: var(--theme-text, white);
     font-size: var(--font-size-md, 15px);
     outline: none;
-    transition: border-color var(--duration-normal) ease;
+    transition: border-color var(--duration-normal) var(--ease-standard);
   }
 
   .name-input:focus {
@@ -494,7 +504,10 @@
     border-radius: 6px;
     color: var(--theme-text, white);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .name-action-btn.save {
@@ -584,7 +597,10 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .action-btn:hover {
@@ -625,7 +641,7 @@
   /* Accessibility: Respect user's motion preferences (WCAG AAA) */
   @media (prefers-reduced-motion: reduce) {
     * {
-      animation-duration: 0.01ms !important;
+      animation-duration: 0s !important;
       animation-iteration-count: 1 !important;
     }
   }

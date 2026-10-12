@@ -23,6 +23,7 @@
   import type { PerformerEditSink } from "./performer-hub-types";
   import { onMount, type Snippet } from "svelte";
   import { flyFade, growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     DIRECT_PERFORMER_SELECTION_EVENT,
     type DirectPerformerSelectionDetail,
@@ -459,7 +460,7 @@
         class="inspector-anchor"
         data-tool={activeTool}
         bind:this={panelEl}
-        transition:dockSlide={{ duration: 280, distance: 24 }}
+        transition:dockSlide={{ duration: DURATION.emphasis, distance: 24 }}
       >
         <SceneControlInspector
           tool={activeTool}
@@ -474,7 +475,7 @@
         class="inspector-anchor"
         data-tool={hostTool?.id ?? "host"}
         bind:this={panelEl}
-        transition:dockSlide={{ duration: 280, distance: 24 }}
+        transition:dockSlide={{ duration: DURATION.emphasis, distance: 24 }}
       >
         {@render hostPanel(closeHostPanel, false)}
       </div>

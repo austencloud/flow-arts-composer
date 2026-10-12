@@ -27,33 +27,29 @@
     {
       id: "welcome",
       icon: "fa-sliders-h",
-      title: t('tutorial_editor_title'),
-      description:
-        t('tutorial_editor_body'),
+      title: t("tutorial_editor_title"),
+      description: t("tutorial_editor_body"),
       highlight: "all",
     },
     {
       id: "preview",
       icon: "fa-image",
-      title: t('tutorial_preview_title'),
-      description:
-        t('tutorial_preview_body'),
+      title: t("tutorial_preview_title"),
+      description: t("tutorial_preview_body"),
       highlight: "preview",
     },
     {
       id: "turns",
       icon: "fa-redo",
-      title: t('tutorial_turns_title'),
-      description:
-        t('tutorial_turns_body'),
+      title: t("tutorial_turns_title"),
+      description: t("tutorial_turns_body"),
       highlight: "turns",
     },
     {
       id: "duration",
       icon: "fa-clock",
-      title: t('tutorial_duration_title'),
-      description:
-        t('tutorial_duration_body'),
+      title: t("tutorial_duration_title"),
+      description: t("tutorial_duration_body"),
       highlight: "duration",
     },
   ]);
@@ -109,7 +105,7 @@
     <button
       class="tour-backdrop"
       onclick={handleSkip}
-      aria-label="{t('tutorial_skip_tour')}"
+      aria-label={t("tutorial_skip_tour")}
       tabindex="-1"
     ></button>
 
@@ -154,10 +150,12 @@
           data-ghost="safe"
           data-ghost-kind="dismiss"
           data-ghost-label="Skip"
-          onclick={handleSkip}>{t('attribution_skip')}</button
+          onclick={handleSkip}>{t("attribution_skip")}</button
         >
         <button class="next-btn" onclick={handleNext}>
-          {stepEditorTourState.isLastStop ? t('action_understood') : t('action_next')}
+          {stepEditorTourState.isLastStop
+            ? t("action_understood")
+            : t("action_next")}
           {#if !stepEditorTourState.isLastStop}
             <i class="fas fa-arrow-right" aria-hidden="true"></i>
           {/if}
@@ -223,7 +221,7 @@
     text-align: center;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
     transform: translateY(0);
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-dramatic) var(--ease-standard);
   }
 
   /* Controls highlighted (lower area) → slide card into upper half */
@@ -274,7 +272,9 @@
     height: 8px;
     border-radius: 50%;
     background: var(--theme-stroke, rgba(255, 255, 255, 0.15));
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .dot.active {
@@ -303,7 +303,10 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     font-size: 0.85rem;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .skip-btn:hover {
@@ -329,7 +332,10 @@
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .next-btn:hover {

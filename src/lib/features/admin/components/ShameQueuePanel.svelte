@@ -107,9 +107,7 @@
       );
 
       // Remove from pending list
-      pendingEntries = pendingEntries.filter(
-        (e) => e.id !== entry.id
-      );
+      pendingEntries = pendingEntries.filter((e) => e.id !== entry.id);
       categoryOverride = null;
     } catch (e) {
       showModerationFailure(
@@ -176,9 +174,7 @@
       await setEntryHidden(entry.id, currentUser.uid, true);
 
       // Remove from reported list (it's now hidden)
-      reportedEntries = reportedEntries.filter(
-        (e) => e.id !== entry.id
-      );
+      reportedEntries = reportedEntries.filter((e) => e.id !== entry.id);
     } catch (e) {
       showModerationFailure(
         "Couldn't hide this entry. Try again.",
@@ -196,11 +192,7 @@
     processingId = entry.id;
 
     try {
-      await setEntryFeatured(
-        entry.id,
-        currentUser.uid,
-        featured
-      );
+      await setEntryFeatured(entry.id, currentUser.uid, featured);
 
       // Update in list
       reportedEntries = reportedEntries.map((e) =>
@@ -292,7 +284,10 @@
       {:else}
         <div class="entries-list themed-scrollbar">
           {#each pendingEntries as entry (entry.id)}
-            <div class="entry-card" class:processing={processingId === entry.id}>
+            <div
+              class="entry-card"
+              class:processing={processingId === entry.id}
+            >
               <div class="entry-header">
                 {#if entry.thumbnails?.[0]}
                   <img
@@ -357,74 +352,81 @@
           {/each}
         </div>
       {/if}
+    {:else if reportedEntries.length === 0}
+      <div class="empty">
+        <i class="fas fa-flag" aria-hidden="true"></i>
+        <span>No reported entries</span>
+        <p>No approved entries have been flagged by users.</p>
+      </div>
     {:else}
-      {#if reportedEntries.length === 0}
-        <div class="empty">
-          <i class="fas fa-flag" aria-hidden="true"></i>
-          <span>No reported entries</span>
-          <p>No approved entries have been flagged by users.</p>
-        </div>
-      {:else}
-        <div class="entries-list themed-scrollbar">
-          {#each reportedEntries as entry (entry.id)}
-            <div class="entry-card reported" class:processing={processingId === entry.id}>
-              <div class="entry-header">
-                {#if entry.thumbnails?.[0]}
-                  <img
-                    src={entry.thumbnails?.[0]}
-                    alt="Sequence thumbnail"
-                    class="entry-thumbnail"
-                  />
-                {:else}
-                  <div class="entry-thumbnail placeholder">
-                    <i class="fas fa-image" aria-hidden="true"></i>
-                  </div>
-                {/if}
-                <div class="entry-info">
-                  <h3 class="entry-word">{entry.word}</h3>
-                  <p class="entry-submitter">By {entry.ownerDisplayName}</p>
-                  <p class="report-count">
-                    <i class="fas fa-flag" aria-hidden="true"></i>
-                    {entry.reportCount || 0} reports
-                  </p>
+      <div class="entries-list themed-scrollbar">
+        {#each reportedEntries as entry (entry.id)}
+          <div
+            class="entry-card reported"
+            class:processing={processingId === entry.id}
+          >
+            <div class="entry-header">
+              {#if entry.thumbnails?.[0]}
+                <img
+                  src={entry.thumbnails?.[0]}
+                  alt="Sequence thumbnail"
+                  class="entry-thumbnail"
+                />
+              {:else}
+                <div class="entry-thumbnail placeholder">
+                  <i class="fas fa-image" aria-hidden="true"></i>
                 </div>
-              </div>
-
-              <div class="entry-actions">
-                <button
-                  class="action-btn feature"
-                  class:active={entry.featured}
-                  onclick={() => handleFeature(entry, !entry.featured)}
-                  disabled={processingId === entry.id}
-                >
-                  <i
-                    class="fas fa-star"
-                    class:fas={entry.featured}
-                    class:far={!entry.featured}
-                    aria-hidden="true"
-                  ></i>
-                  {entry.featured ? "Unfeature" : "Feature"}
-                </button>
-                <button
-                  class="action-btn hide"
-                  onclick={() => handleHide(entry)}
-                  disabled={processingId === entry.id}
-                >
-                  <i class="fas fa-eye-slash" aria-hidden="true"></i>
-                  Hide
-                </button>
+              {/if}
+              <div class="entry-info">
+                <h3 class="entry-word">{entry.word}</h3>
+                <p class="entry-submitter">By {entry.ownerDisplayName}</p>
+                <p class="report-count">
+                  <i class="fas fa-flag" aria-hidden="true"></i>
+                  {entry.reportCount || 0} reports
+                </p>
               </div>
             </div>
-          {/each}
-        </div>
-      {/if}
+
+            <div class="entry-actions">
+              <button
+                class="action-btn feature"
+                class:active={entry.featured}
+                onclick={() => handleFeature(entry, !entry.featured)}
+                disabled={processingId === entry.id}
+              >
+                <i
+                  class="fas fa-star"
+                  class:fas={entry.featured}
+                  class:far={!entry.featured}
+                  aria-hidden="true"
+                ></i>
+                {entry.featured ? "Unfeature" : "Feature"}
+              </button>
+              <button
+                class="action-btn hide"
+                onclick={() => handleHide(entry)}
+                disabled={processingId === entry.id}
+              >
+                <i class="fas fa-eye-slash" aria-hidden="true"></i>
+                Hide
+              </button>
+            </div>
+          </div>
+        {/each}
+      </div>
     {/if}
   </div>
 </div>
 
 <!-- Reject Modal -->
 {#if rejectingEntry}
-  <BaseModal bind:open={showRejectModal} onclose={closeRejectModal} size="sm" animation="pop" labelledBy="reject-modal-title">
+  <BaseModal
+    bind:open={showRejectModal}
+    onclose={closeRejectModal}
+    size="sm"
+    animation="pop"
+    labelledBy="reject-modal-title"
+  >
     {#snippet header()}
       <ModalHeader
         title="Reject Submission"
@@ -451,9 +453,7 @@
 
     {#snippet footer()}
       <ModalFooter align="end">
-        <button class="secondary" onclick={closeRejectModal}>
-          Cancel
-        </button>
+        <button class="secondary" onclick={closeRejectModal}> Cancel </button>
         <button
           class="danger"
           onclick={handleReject}
@@ -522,7 +522,13 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .tab-button:hover {
@@ -580,7 +586,14 @@
     border-radius: 0.5rem;
     color: var(--theme-text);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .retry-button:hover {
@@ -615,7 +628,14 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .entry-card.processing {
@@ -735,7 +755,13 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .action-btn:disabled {
@@ -848,5 +874,4 @@
       justify-content: center;
     }
   }
-
 </style>

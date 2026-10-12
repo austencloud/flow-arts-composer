@@ -267,7 +267,7 @@
     top: 12px;
     left: 12px;
     z-index: 50;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
   }
 
   .scene-audio-player.idle {
@@ -291,9 +291,9 @@
     padding: 0;
     text-align: left;
     transition:
-      width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-      height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-      border-radius 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      width var(--duration-dramatic) var(--ease-standard),
+      height var(--duration-dramatic) var(--ease-standard),
+      border-radius var(--duration-dramatic) var(--ease-standard);
   }
 
   .player-shell.expanded {
@@ -330,7 +330,8 @@
     justify-content: center;
     color: rgba(255, 255, 255, 0.7);
     font-size: 14px;
-    transition: opacity 0.2s ease 0.05s;
+    transition: opacity var(--duration-normal) var(--ease-standard)
+      var(--duration-instant);
   }
 
   .collapsed-icon.hidden {
@@ -342,13 +343,13 @@
   .expanded-content {
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.25s ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .expanded-content.visible {
     opacity: 1;
     pointer-events: auto;
-    transition-delay: 0.12s;
+    transition-delay: var(--duration-instant);
   }
 
   .header {
@@ -467,7 +468,9 @@
     padding: 4px 8px;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .track-item:hover {

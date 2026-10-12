@@ -868,7 +868,7 @@
     height: 100%;
     border-radius: inherit;
     background: var(--bar-color);
-    transition: width var(--duration-normal) ease;
+    transition: width var(--duration-normal) var(--ease-standard);
   }
 
   .activity-percent {

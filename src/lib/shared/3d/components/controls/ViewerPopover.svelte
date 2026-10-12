@@ -4,8 +4,12 @@
     getViewer3DContext,
     type PopoverId,
   } from "../../context/viewer-3d-context";
-  import { scale, fly, fade } from "svelte/transition";
-  import { backOut, cubicOut } from "svelte/easing";
+  import {
+    flyFade,
+    opaqueFade,
+    popIn,
+  } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { Snippet } from "svelte";
   import {
     reportViewerControlChange,
@@ -100,23 +104,19 @@
             {...props}
             class="viewer-popover-panel"
             style:--popover-width="{width}px"
-            in:scale={{
-              duration: 220,
+            in:popIn={{
+              duration: DURATION.normal,
               start: 0.92,
-              opacity: 0,
-              easing: backOut,
             }}
-            out:scale={{
-              duration: 160,
+            out:popIn={{
+              duration: DURATION.fast,
               start: 0.95,
-              opacity: 0,
-              easing: cubicOut,
             }}
           >
             <header
               class="pop-header"
-              in:fly={{ y: -6, duration: 180, delay: 40 }}
-              out:fade={{ duration: 80 }}
+              in:flyFade={{ y: -6, duration: DURATION.fast, delay: 40 }}
+              out:opaqueFade={{ duration: DURATION.instant }}
             >
               <span class="pop-title">{title}</span>
               {#if accentColor}
@@ -125,16 +125,16 @@
             </header>
             <div
               class="pop-body"
-              in:fly={{ y: 6, duration: 180, delay: 100 }}
-              out:fade={{ duration: 60 }}
+              in:flyFade={{ y: 6, duration: DURATION.fast, delay: 100 }}
+              out:opaqueFade={{ duration: DURATION.instant }}
             >
               {@render children()}
             </div>
             {#if footer}
               <div
                 class="pop-footer"
-                in:fly={{ y: 6, duration: 180, delay: 140 }}
-                out:fade={{ duration: 60 }}
+                in:flyFade={{ y: 6, duration: DURATION.fast, delay: 140 }}
+                out:opaqueFade={{ duration: DURATION.instant }}
               >
                 {@render footer()}
               </div>
@@ -204,7 +204,15 @@
     align-items: center;
     justify-content: center;
     position: relative;
-    transition: all 180ms cubic-bezier(0.2, 0, 0.13, 1.5);
+    transition:
+      background var(--duration-fast) var(--ease-spring),
+      border-color var(--duration-fast) var(--ease-spring),
+      color var(--duration-fast) var(--ease-spring),
+      transform var(--duration-fast) var(--ease-spring),
+      box-shadow var(--duration-fast) var(--ease-spring),
+      right var(--duration-fast) var(--ease-spring),
+      top var(--duration-fast) var(--ease-spring),
+      padding var(--duration-fast) var(--ease-spring);
   }
   .rail-chip:hover {
     transform: scale(1.08);
@@ -224,7 +232,8 @@
     letter-spacing: 0.04em;
     white-space: nowrap;
     pointer-events: none;
-    animation: tooltip-in 160ms cubic-bezier(0.2, 0, 0.13, 1.5) 180ms both;
+    animation: tooltip-in var(--duration-fast) var(--ease-spring)
+      var(--duration-fast) both;
   }
   @keyframes tooltip-in {
     from {

@@ -328,7 +328,7 @@
     );
     background-size: 200% 100%;
     animation: gallery-shimmer 1.6s ease-in-out infinite;
-    animation-delay: calc(var(--stagger) * 90ms);
+    animation-delay: calc(var(--stagger) * var(--duration-instant));
   }
   @keyframes gallery-shimmer {
     from {

@@ -260,7 +260,7 @@
     height: 100%;
     overflow: hidden;
     border-radius: inherit;
-    animation: fill-slot var(--duration-emphasis, 280ms) ease-out both;
+    animation: fill-slot var(--duration-emphasis) var(--ease-standard-out) both;
   }
 
   .ring {
@@ -291,7 +291,7 @@
     border: 2px solid var(--prop-blue, #3b82f6);
     border-radius: inherit;
     pointer-events: none;
-    animation: ping 600ms ease-out both;
+    animation: ping var(--duration-dramatic) var(--ease-standard-out) both;
   }
 
   @keyframes ping {

@@ -209,9 +209,9 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -247,7 +247,7 @@
       rgba(0, 0, 0, 0.24) 100%
     );
     opacity: 1;
-    transition: opacity var(--duration-normal, 200ms) ease-out;
+    transition: opacity var(--duration-normal) var(--ease-standard-out);
   }
 
   :global(.option-settings-overlay[data-starting-style]),

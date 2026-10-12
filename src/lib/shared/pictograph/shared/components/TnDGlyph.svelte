@@ -93,12 +93,20 @@ that adapt to dark/light mode automatically.
     let timeout: ReturnType<typeof setTimeout> | undefined;
     // Skip initial mount (prevVtgMode is undefined)
     // Animate when mode changes to a new value
-    if (prevTnDMode !== undefined && tndMode !== prevTnDMode && tndMode !== null) {
+    if (
+      prevTnDMode !== undefined &&
+      tndMode !== prevTnDMode &&
+      tndMode !== null
+    ) {
       isAnimating = true;
-      timeout = setTimeout(() => { isAnimating = false; }, 180);
+      timeout = setTimeout(() => {
+        isAnimating = false;
+      }, 180);
     }
     prevTnDMode = tndMode;
-    return () => { if (timeout) clearTimeout(timeout); };
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
   });
 </script>
 
@@ -126,7 +134,9 @@ that adapt to dark/light mode automatically.
       class:animating={isAnimating}
       text-anchor="end"
       dominant-baseline="text-bottom"
-      style="transform-origin: {xPosition}px {yPosition}px; {explicitFill ? `fill: ${explicitFill}` : ''}"
+      style="transform-origin: {xPosition}px {yPosition}px; {explicitFill
+        ? `fill: ${explicitFill}`
+        : ''}"
     >
       {tndMode}
     </text>
@@ -137,7 +147,7 @@ that adapt to dark/light mode automatically.
   .tnd-glyph {
     /* Beautiful fade in/out effect */
     opacity: 0;
-    transition: opacity var(--duration-normal, 200ms) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .tnd-glyph.visible {
@@ -165,13 +175,18 @@ that adapt to dark/light mode automatically.
   }
 
   .tnd-label {
-    font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family:
+      "Inter",
+      "SF Pro Display",
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
     font-size: 72px;
     font-weight: 600;
     letter-spacing: 0.02em;
     /* Light mode default - dark text */
     fill: rgba(0, 0, 0, 0.7);
-    transition: fill 150ms ease-out;
+    transition: fill var(--duration-fast) var(--ease-standard-out);
   }
 
   /* Scale-pulse animation when TnD mode changes */
@@ -188,7 +203,7 @@ that adapt to dark/light mode automatically.
   }
 
   .tnd-label.animating {
-    animation: tnd-pulse 180ms ease-in-out;
+    animation: tnd-pulse var(--duration-fast) var(--ease-standard);
   }
 
   /* Respect reduced motion preference */

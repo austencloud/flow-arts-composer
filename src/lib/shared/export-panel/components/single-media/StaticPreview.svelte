@@ -317,7 +317,10 @@
     color: var(--theme-text, white);
     font-size: var(--font-size-min);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
   }
 
   .retry-button:hover {

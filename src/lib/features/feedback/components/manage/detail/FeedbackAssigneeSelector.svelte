@@ -19,7 +19,8 @@
 
   const currentAssignee = $derived(
     detailState.item.assignedTo
-      ? contributors.find((c) => c.userId === detailState.item.assignedTo) ?? null
+      ? (contributors.find((c) => c.userId === detailState.item.assignedTo) ??
+          null)
       : null
   );
 
@@ -54,7 +55,10 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<section class="section assignee-selector" onpointerdown={handlePointerDownOutside}>
+<section
+  class="section assignee-selector"
+  onpointerdown={handlePointerDownOutside}
+>
   <h3 class="section-title">
     <i class="fas fa-user-check" aria-hidden="true"></i>
     Assigned To
@@ -65,11 +69,7 @@
     {#if currentAssignee}
       <div class="assignee-badge">
         {#if currentAssignee.avatarUrl}
-          <img
-            src={currentAssignee.avatarUrl}
-            alt=""
-            class="assignee-avatar"
-          />
+          <img src={currentAssignee.avatarUrl} alt="" class="assignee-avatar" />
         {:else}
           <div class="assignee-avatar placeholder">
             <i class="fas fa-user" aria-hidden="true"></i>
@@ -92,17 +92,14 @@
     <button
       type="button"
       class="assignee-trigger"
-      class:has-assignee={!!currentAssignee || !!detailState.item.assignedToName}
+      class:has-assignee={!!currentAssignee ||
+        !!detailState.item.assignedToName}
       onclick={() => (isOpen = !isOpen)}
       disabled={isSaving || contributors.length === 0}
     >
       {#if currentAssignee}
         {#if currentAssignee.avatarUrl}
-          <img
-            src={currentAssignee.avatarUrl}
-            alt=""
-            class="assignee-avatar"
-          />
+          <img src={currentAssignee.avatarUrl} alt="" class="assignee-avatar" />
         {:else}
           <div class="assignee-avatar placeholder">
             <i class="fas fa-user" aria-hidden="true"></i>
@@ -148,11 +145,7 @@
             onclick={() => assignTo(contributor)}
           >
             {#if contributor.avatarUrl}
-              <img
-                src={contributor.avatarUrl}
-                alt=""
-                class="dropdown-avatar"
-              />
+              <img src={contributor.avatarUrl} alt="" class="dropdown-avatar" />
             {:else}
               <div class="dropdown-avatar placeholder">
                 <i class="fas fa-user" aria-hidden="true"></i>
@@ -206,7 +199,13 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-sm, 0.875rem);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .assignee-trigger:hover:not(:disabled) {
@@ -300,7 +299,7 @@
     color: var(--theme-text);
     font-size: var(--font-size-sm, 0.875rem);
     cursor: pointer;
-    transition: background var(--duration-fast) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .dropdown-item:hover {

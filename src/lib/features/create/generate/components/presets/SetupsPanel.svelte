@@ -409,8 +409,8 @@
     );
     color: color-mix(in srgb, var(--theme-accent, #3b82f6) 72%, white);
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .save-button.primary-action {
@@ -521,8 +521,8 @@
     text-align: left;
     cursor: pointer;
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .favorite-item:hover {
