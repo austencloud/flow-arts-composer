@@ -75,6 +75,7 @@ describe("buildTnDCardDisplay", () => {
     expect(display.handBlocked).toBe(true);
     expect(display.hands.value).toBe("Quarter Same, off with LOOP");
     expect(display.hands.element).toBeNull();
+    expect(display.handBlockedElement?.element).toBe("sun");
     expect(display.accent).toBeNull();
     expect(display.active).toBe(false);
   });
@@ -90,5 +91,41 @@ describe("buildTnDCardDisplay", () => {
     expect(display.ariaLabel).toBe(
       "Timing and direction: hands Together Same, props Free, turns matched. Click to configure."
     );
+  });
+
+  it("links turns when switched on or forced by a prop timing, from level 2", () => {
+    const base = {
+      handRelationship: "TS" as const,
+      blockedHandModes: {},
+    };
+    expect(
+      buildTnDCardDisplay({
+        ...base,
+        propRelationship: "free",
+        matchHandTurns: false,
+      }).turnsMatched
+    ).toBe(false);
+    expect(
+      buildTnDCardDisplay({
+        ...base,
+        propRelationship: "free",
+        matchHandTurns: true,
+      }).turnsMatched
+    ).toBe(true);
+    expect(
+      buildTnDCardDisplay({
+        ...base,
+        propRelationship: "SO",
+        matchHandTurns: false,
+      }).turnsMatched
+    ).toBe(true);
+    expect(
+      buildTnDCardDisplay({
+        ...base,
+        propRelationship: "SO",
+        matchHandTurns: true,
+        level: 1,
+      }).turnsMatched
+    ).toBe(false);
   });
 });

@@ -4339,6 +4339,8 @@
   "create_deep_step_count_many": "{count} Schritte",
   "create_deep_step_count_one": "{count} Schritt",
   "create_deep_tnd_card_aria": "Timing und Richtung: Hände {hands}, Requisiten {props}{turns}. Klicken, um sie einzustellen.",
+  "create_deep_tnd_hands_tile_aria": "Hände: {value}{turns}. Klicken, um Timing und Richtung der Hände einzustellen.",
+  "create_deep_tnd_props_tile_aria": "Requisiten: {value}{turns}. Klicken, um Timing und Richtung der Requisiten einzustellen.",
   "create_deep_together_opposite": "Zusammen gegensinnig",
   "create_deep_together_same": "Zusammen gleichsinnig",
   "create_deep_toggle_card_aria": "{title}: {value}. Klicken, um umzuschalten.",
