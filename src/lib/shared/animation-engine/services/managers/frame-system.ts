@@ -31,7 +31,9 @@ import type { MandalaPathOptions } from "#lib/shared/mandala/services/types.js";
 import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import type { GridJoin } from "@tka/tka-types";
 import {
+  createLayerShiftPool,
   resolveAnimationGridJoin,
+  shiftLayerProps,
   shiftPropState,
 } from "../animation-grid-join";
 import {
@@ -56,6 +58,7 @@ export class FrameSystem {
     centerPathAngle: 0,
     staffRotationAngle: 0,
   };
+  private readonly layerShiftPool = createLayerShiftPool();
   /**
    * The slide between grid layouts. PlaybackSync starts it when the join
    * changes; every frame built while it runs places the hands part way.
@@ -131,11 +134,7 @@ export class FrameSystem {
     );
     this.applyGridJoin(
       params,
-      resolveAnimationGridJoin(
-        props.sequenceData,
-        params.props.additionalLayers.length,
-        props.gridMode
-      )
+      resolveAnimationGridJoin(props.sequenceData, props.gridMode)
     );
     if (this.motionSampleSource.isReady()) {
       this.motionSampleSource.setGridJoinOffsets(
@@ -157,9 +156,10 @@ export class FrameSystem {
 
   /**
    * Joined grids: each hand moves onto its own grid, set by the sequence's
-   * join. Overlaid tunnel layers share one grid, so they keep it single (the
-   * resolved join is null for them). While a layout change slides, the hands
-   * sit where the slide has them, even on the way back to one grid.
+   * join. Overlaid layers (tunnel copies, arrangement performers) move with
+   * the hand they copy, so every performer's blue hand sits on blue's grid.
+   * While a layout change slides, the hands sit where the slide has them,
+   * even on the way back to one grid.
    */
   private applyGridJoin(
     params: RenderFrameParams,
@@ -192,6 +192,14 @@ export class FrameSystem {
         this.joinedRightProp
       );
     }
+    // Trails, fire, LED and the other effects read the layers' tips off
+    // `params.props.additionalLayers` after this, so they follow the copies.
+    // The builder resets the array from the host's at the top of each frame.
+    params.props.additionalLayers = shiftLayerProps(
+      params.props.additionalLayers,
+      offsets,
+      this.layerShiftPool
+    );
     // The mandala guide reads `gridJoinOffsets` and draws each hand's figure
     // on its own grid, sliding with the props, so it stays visible.
   }

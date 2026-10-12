@@ -755,11 +755,9 @@ Last audit: 2025-12-27
   const effectiveRightPathLinesVisible = $derived(
     rightPathLinesVisible && !hidePathLines
   );
-  // The join belongs to the sequence. Tunnel layers keep the single grid (the
-  // engine makes the same call).
-  const gridJoin = $derived(
-    resolveAnimationGridJoin(sequenceData, additionalLayers.length, gridMode)
-  );
+  // The join belongs to the sequence; overlaid layers draw on its pair too
+  // (the engine makes the same call).
+  const gridJoin = $derived(resolveAnimationGridJoin(sequenceData, gridMode));
 
   function handleVisibilityChange() {
     tkaGlyphVisible = visibilityManager.getVisibility("tkaGlyph");

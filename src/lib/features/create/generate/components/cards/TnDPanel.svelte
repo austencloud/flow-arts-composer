@@ -16,6 +16,9 @@
   Each half of the TnD card opens its own side: `section` "hands" or "props"
   shows only that section, titled for it, with Match turns beneath either
   (it is a hand rule that prop timing forces). Without `section` both show.
+
+  A one-sided panel holds a single choice, so picking a mode or Free closes
+  it. Match turns is a separate switch and leaves it open.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -58,6 +61,16 @@
     onMatchHandTurnsChange: (value: boolean) => void;
     onClose: () => void;
   } = $props();
+
+  function pickHand(value: TnDSelection) {
+    onHandRelationshipChange(value);
+    if (section) onClose();
+  }
+
+  function pickProp(value: TnDSelection) {
+    onPropRelationshipChange(value);
+    if (section) onClose();
+  }
 
   const showHands = $derived(section !== "props");
   const showProps = $derived(section !== "hands");
@@ -118,7 +131,7 @@
               direction={t("create_deep_no_constraints")}
               active={handRelationship === "free"}
               ariaLabel={t("create_deep_free_hands")}
-              onpick={() => onHandRelationshipChange("free")}
+              onpick={() => pickHand("free")}
             />
             <TnDModeGrid
               fullLabels
@@ -126,7 +139,7 @@
               disabledModes={blockedModes}
               reasons={blockedHandModes}
               ariaLabel={t("create_deep_hand_tnd")}
-              onpick={onHandRelationshipChange}
+              onpick={pickHand}
             />
           </div>
         </section>
@@ -150,13 +163,13 @@
               direction={t("create_deep_no_constraints")}
               active={propRelationship === "free"}
               ariaLabel={t("create_deep_free_props")}
-              onpick={() => onPropRelationshipChange("free")}
+              onpick={() => pickProp("free")}
             />
             <TnDModeGrid
               fullLabels
               selected={propRelationship === "free" ? null : propRelationship}
               ariaLabel={t("create_deep_prop_tnd")}
-              onpick={onPropRelationshipChange}
+              onpick={pickProp}
             />
           </div>
         </section>
@@ -218,12 +231,9 @@
     }
   }
 
-  /* One side only: a single column, kept to a readable width. */
+  /* One side only: a single column across the whole panel. */
   .tnd-panel.single {
     grid-template-columns: minmax(0, 1fr);
-    width: 100%;
-    max-width: 640px;
-    margin-inline: auto;
   }
 
   .tnd-section {
@@ -430,5 +440,38 @@
       margin-top: 0;
       padding-top: clamp(12px, 1.5cqh, 20px);
     }
+  }
+  /* One side only: the section fills the panel top to bottom at every size,
+     the six modes sharing the height left under Free, so no band of empty
+     space sits above or below. Icons and words grow with the panel's height
+     to fill the taller tiles. Placed last so it wins over the size tiers. */
+  .tnd-panel.single {
+    grid-template-rows: minmax(0, 1fr);
+    grid-auto-rows: auto;
+    align-content: stretch;
+  }
+
+  .tnd-panel.single .tnd-section,
+  .tnd-panel.single .choice-stack {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .tnd-panel.single .choice-stack :global(.mode-grid) {
+    height: 100%;
+    min-height: 13rem;
+  }
+
+  .tnd-panel.single .choice-stack :global(.mode-grid .choice-icon) {
+    width: clamp(1.75rem, 7cqh, 4rem);
+    height: clamp(1.75rem, 7cqh, 4rem);
+  }
+
+  .tnd-panel.single .choice-stack :global(.mode-grid .choice-copy strong) {
+    font-size: clamp(
+      var(--font-size-min, 0.875rem),
+      2.4cqh,
+      var(--font-size-lg, 1.25rem)
+    );
   }
 </style>

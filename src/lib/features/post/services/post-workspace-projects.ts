@@ -10,6 +10,12 @@ import { loadByIdentifier } from "#lib/shared/sequence-viewer/services/sequence-
 import { auth } from "#lib/shared/auth/firebase.js";
 import { legacyPostOwner } from "#lib/shared/media-composition/services/post-project-store.js";
 import { isIndependentStudioProjectId } from "#lib/shared/media-composition/domain/studio-project-id.js";
+import {
+  arrangementSummaryOf,
+  type ArrangementSummary,
+} from "./arrangement-summary.js";
+
+export type { ArrangementSummary };
 
 const SNAPSHOT_PREFIX = "tka:post:sequence:v1:";
 const RECENT_KEY = "tka:post:recent:v1";
@@ -37,13 +43,6 @@ function snapshotKey(sequenceId: string): string {
   return `${scopedKey(SNAPSHOT_PREFIX)}${sequenceId}`;
 }
 
-/** The grid behind an arrangement project's card: its shown size and populated cells. */
-export interface ArrangementSummary {
-  rows: number;
-  cols: number;
-  sequences: number;
-}
-
 export interface PostProjectChoice {
   sequenceId: string;
   title: string;
@@ -54,28 +53,6 @@ export interface PostProjectChoice {
   arrangement?: ArrangementSummary;
   /** A sync problem that belongs to this project alone, shown on its card. */
   problem?: string;
-}
-
-function arrangementSummaryOf(
-  project: ReturnType<typeof PostProjectSchema.parse>
-): ArrangementSummary | undefined {
-  for (const track of project.tracks) {
-    for (const item of track.items) {
-      if (item.kind !== "arrangement") continue;
-      const { gridRows, gridCols, cells } = item.snapshot;
-      return {
-        rows: gridRows,
-        cols: gridCols,
-        sequences: cells.filter(
-          (cell) =>
-            cell.row < gridRows &&
-            cell.col < gridCols &&
-            cell.layers.length > 0
-        ).length,
-      };
-    }
-  }
-  return undefined;
 }
 
 interface RecentSequence {

@@ -8,6 +8,29 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { SequenceActionId } from "#lib/shared/create/domain/sequence-action-types.js";
   import SwapIcon from "#lib/shared/icons/SwapIcon.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+
+  type ActionCategory = "transform" | "patterns" | "grid" | "edit";
+
+  /** Fixed metrics of the fitted desktop layout, mirrored by the `.fitted`
+      CSS below so the height budget is arithmetic, not a guess. */
+  const FIT = {
+    tileMin: 76,
+    tileMax: 152,
+    /** Icon-beside-label rows for a box too short for two stacked tiles. */
+    rowMin: 48,
+    rowMax: 64,
+    tileGap: 10,
+    sectionGap: 20,
+    labelHeight: 14,
+    labelGap: 6,
+    tabsHeight: 48,
+    tabsGap: 12,
+    threeColumnWidth: 536,
+    threeColumnFloor: 300,
+  } as const;
 
   interface Props {
     hasSequence: boolean;
@@ -67,6 +90,13 @@
     onEditInConstructor?: () => void;
     /** Opens the Grid join page. Without it the Grid section is absent. */
     onGridJoin?: () => void;
+    /**
+     * Content box of the desktop panel's scroll area. When given, the tiles
+     * are sized from it instead of from container-query units: every section
+     * shows when the rows fit at a readable tile height, otherwise one category
+     * shows at a time behind tabs. Tiles grow with the box up to a cap.
+     */
+    fitBox?: { width: number; height: number } | null;
   }
 
   let {
@@ -108,6 +138,7 @@
     onShiftStart,
     onEditInConstructor,
     onGridJoin,
+    fitBox = null,
   }: Props = $props();
 
   // In help mode, clicking any action button shows help instead of applying
@@ -138,10 +169,187 @@
     !!(onTurns || (showEditInConstructor && onEditInConstructor))
   );
 
-  // Button height + icon + label all scale together off the panel's height via
-  // container-query units (see Approach A in the CSS). No row-stretching flex:
-  // that decoupling — elastic rows wrapping fixed-size content — was the bug
-  // that left giant buttons hugging tiny centered content on tall panels.
+  const transformCount = $derived(
+    1 +
+      (onFlip ? 1 : 0) +
+      (onSwap ? 1 : 0) +
+      (onInvert ? 1 : 0) +
+      (onRotateCW && onRotateCCW ? 2 : 0) +
+      (onShiftStart && shiftStartPlacement === "transform" ? 1 : 0) +
+      (onReset && resetPlacement === "transform" ? 1 : 0)
+  );
+  const patternsCount = $derived(
+    (onTurnPattern ? 1 : 0) +
+      (onRotationDirection ? 1 : 0) +
+      (onDuration ? 1 : 0) +
+      (onExtend && canExtend ? 1 : 0) +
+      (onShiftStart && shiftStartPlacement === "secondary" ? 1 : 0) +
+      (onRewind ? 1 : 0) +
+      (onReset && resetPlacement === "secondary" ? 1 : 0)
+  );
+  const gridCount = $derived(onGridJoin ? 1 : 0);
+  const editCount = $derived(
+    (onTurns ? 1 : 0) + (showEditInConstructor && onEditInConstructor ? 1 : 0)
+  );
+
+  // The active drill-down category shares the mobile toolbar's session key, so
+  // a layout change keeps the user on the same category.
+  const CATEGORY_KEY = "tka_sequence_actions_category";
+  function storedCategory(): ActionCategory {
+    if (typeof sessionStorage === "undefined") return "transform";
+    const stored = sessionStorage.getItem(CATEGORY_KEY);
+    return stored === "patterns" || stored === "grid" || stored === "edit"
+      ? stored
+      : "transform";
+  }
+  let chosenCategory = $state<ActionCategory>(storedCategory());
+  const categories = $derived<{ value: ActionCategory; label: string }[]>([
+    { value: "transform", label: t("create_transform_heading") },
+    ...(hasSecondaryActions
+      ? [{ value: "patterns" as const, label: secondarySectionLabel }]
+      : []),
+    ...(gridCount
+      ? [{ value: "grid" as const, label: t("create_transform_grid") }]
+      : []),
+    ...(hasEditActions
+      ? [{ value: "edit" as const, label: t("viewer_edit") }]
+      : []),
+  ]);
+  const activeCategory = $derived<ActionCategory>(
+    categories.some((category) => category.value === chosenCategory)
+      ? chosenCategory
+      : "transform"
+  );
+  function chooseCategory(category: ActionCategory) {
+    chosenCategory = category;
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem(CATEGORY_KEY, category);
+    }
+  }
+
+  type FitLayout = {
+    columns: 2 | 3;
+    tileHeight: number;
+    /** "column" stacks the glyph over the label; "row" puts them side by side
+        when the box is too short for stacked tiles. */
+    shape: "column" | "row";
+    /** "all" stacks every section; "one" shows the active category behind tabs. */
+    mode: "all" | "one";
+    /** Rows the one-category grid reserves, so switching tabs moves nothing. */
+    rows: number;
+  };
+
+  function rowsFor(count: number, columns: number) {
+    return Math.ceil(count / columns);
+  }
+
+  /** Tile rows the stacked layout needs, counting the shared Grid + Edit row. */
+  function stackedRows(columns: 2 | 3) {
+    const tail =
+      columns === 3
+        ? gridCount + editCount > 0
+          ? 1
+          : 0
+        : rowsFor(gridCount, 2) + rowsFor(editCount, 2);
+    return (
+      rowsFor(transformCount, columns) +
+      (hasSecondaryActions ? rowsFor(patternsCount, columns) : 0) +
+      tail
+    );
+  }
+
+  function stackedSections(columns: 2 | 3) {
+    const tailSections =
+      columns === 3
+        ? gridCount + editCount > 0
+          ? 1
+          : 0
+        : (gridCount ? 1 : 0) + (hasEditActions ? 1 : 0);
+    return 1 + (hasSecondaryActions ? 1 : 0) + tailSections;
+  }
+
+  function stackedOverhead(columns: 2 | 3) {
+    const rows = stackedRows(columns);
+    const sections = stackedSections(columns);
+    return (
+      sections * (FIT.labelHeight + FIT.labelGap) +
+      (sections - 1) * FIT.sectionGap +
+      (rows - sections) * FIT.tileGap
+    );
+  }
+
+  function clampTile(height: number) {
+    return Math.floor(Math.min(FIT.tileMax, Math.max(FIT.tileMin, height)));
+  }
+
+  /** Every section stacked at this column count, or null when the rows would
+      push the tiles below the readable minimum. */
+  function stackedFit(columns: 2 | 3, height: number): FitLayout | null {
+    const rows = stackedRows(columns);
+    const free = height - stackedOverhead(columns);
+    if (free < rows * FIT.tileMin) return null;
+    return {
+      columns,
+      tileHeight: clampTile(free / rows),
+      shape: "column",
+      mode: "all",
+      rows,
+    };
+  }
+
+  const fit = $derived.by<FitLayout | null>(() => {
+    if (!isDesktopPanel || !fitBox || fitBox.width <= 0 || fitBox.height <= 0) {
+      return null;
+    }
+    const wide = fitBox.width >= FIT.threeColumnWidth;
+    const canThree = fitBox.width >= FIT.threeColumnFloor;
+    // A wide box takes three columns; a narrow one prefers two wider tiles
+    // but still goes to three when that is what keeps every section in view.
+    const stacked =
+      stackedFit(wide ? 3 : 2, fitBox.height) ??
+      (!wide && canThree ? stackedFit(3, fitBox.height) : null);
+    if (stacked) return stacked;
+    // Drill down: one category at a time. A narrow box may still take three
+    // columns here, since two rows of six beat three.
+    const drillColumns: 2 | 3 = canThree ? 3 : 2;
+    const drillRows = Math.max(
+      rowsFor(transformCount, drillColumns),
+      hasSecondaryActions ? rowsFor(patternsCount, drillColumns) : 0,
+      rowsFor(gridCount, drillColumns),
+      rowsFor(editCount, drillColumns)
+    );
+    const drillFree =
+      fitBox.height -
+      FIT.tabsHeight -
+      FIT.tabsGap -
+      (drillRows - 1) * FIT.tileGap;
+    if (drillFree >= drillRows * FIT.tileMin) {
+      return {
+        columns: drillColumns,
+        tileHeight: clampTile(drillFree / drillRows),
+        shape: "column",
+        mode: "one",
+        rows: drillRows,
+      };
+    }
+    return {
+      columns: drillColumns,
+      tileHeight: Math.floor(
+        Math.min(FIT.rowMax, Math.max(FIT.rowMin, drillFree / drillRows))
+      ),
+      shape: "row",
+      mode: "one",
+      rows: drillRows,
+    };
+  });
+
+  const showsSection = (category: ActionCategory) =>
+    fit?.mode !== "one" || activeCategory === category;
+  const fitStyle = $derived(
+    fit
+      ? `--tile-height: ${fit.tileHeight}px; --fit-columns: ${fit.columns}; --fit-rows: ${fit.rows}; --fit-box: ${fitBox?.height ?? 0}px;`
+      : undefined
+  );
 </script>
 
 {#snippet lockBadge()}
@@ -199,6 +407,11 @@
   class="actions-container"
   class:disabled
   class:desktop={isDesktopPanel}
+  class:fitted={!!fit}
+  class:fit-three={fit?.columns === 3}
+  class:drill={fit?.mode === "one"}
+  class:fit-row={fit?.shape === "row"}
+  style={fitStyle}
   class:three-column={isDesktopPanel && desktopColumns === 3}
   class:mobile={!isDesktopPanel && !toolbar}
   class:four-column={!isDesktopPanel && !toolbar && mobileColumns === 4}
@@ -206,382 +419,447 @@
   class:compact={compactMode}
   class:help-mode={helpMode}
 >
-  <!-- TRANSFORM Section -->
-  <section class="section transform-section">
-    <span class="section-label">{t("create_transform_heading")}</span>
-    <div class="section-grid">
-      <button
-        class="grid-btn mirror"
-        class:help-active={helpMode}
-        onclick={() => handleActionClick("mirror", onMirror)}
-        data-ghost={disabled || helpMode ? undefined : "safe"}
-        data-ghost-kind="transform"
-        data-ghost-label={t("create_ui_mirror")}
-        disabled={disabled && !helpMode}
-        aria-label={helpMode
-          ? t("create_transform_learn_mirror")
-          : t("create_transform_mirror_aria", { subject: actionSubject })}
-      >
-        <div class="btn-icon">
-          <i class="fas fa-left-right" aria-hidden="true"></i>
-        </div>
-        <div class="btn-text">
-          <span class="btn-label">{t("create_ui_mirror")}</span>
-          <span class="btn-desc">{t("create_transform_mirror_desc")}</span>
-        </div>
-      </button>
-      {#if onFlip}
-        <button
-          class="grid-btn flip"
-          class:help-active={helpMode}
-          onclick={() => handleActionClick("flip", onFlip)}
-          data-ghost={disabled || helpMode ? undefined : "safe"}
-          data-ghost-kind="transform"
-          data-ghost-label={t("create_transform_flip")}
-          disabled={disabled && !helpMode}
-          aria-label={helpMode
-            ? t("create_transform_learn_flip")
-            : t("create_transform_flip_aria", { subject: actionSubject })}
-        >
-          <div class="btn-icon">
-            <i class="fas fa-up-down" aria-hidden="true"></i>
-          </div>
-          <div class="btn-text">
-            <span class="btn-label">{t("create_transform_flip")}</span>
-            <span class="btn-desc">{t("create_transform_flip_desc")}</span>
-          </div>
-        </button>
-      {/if}
-      {#if onSwap}
-        <button
-          class="grid-btn swap"
-          class:unavailable={swapDisabled && !helpMode}
-          class:help-active={helpMode}
-          onclick={() => handleActionClick("swap", onSwap)}
-          data-ghost={disabled || helpMode ? undefined : "safe"}
-          data-ghost-kind="transform"
-          data-ghost-label={t("create_transform_swap")}
-          disabled={(disabled || swapDisabled) && !helpMode}
-          aria-label={helpMode
-            ? t("create_transform_learn_swap")
-            : swapDisabled
-              ? t("create_transform_swap_requires_both")
-              : t("create_transform_swap_aria", { subject: actionSubject })}
-        >
-          <div class="btn-icon swap-icon-host">
-            <SwapIcon size="1em" monochrome={toolbar} />
-          </div>
-          <div class="btn-text">
-            <span class="btn-label">{t("create_transform_swap")}</span>
-            <span class="btn-desc"
-              >{swapDisabled ? t("create_transform_needs_both_hands") : t("create_transform_switch_hands")}</span
-            >
-          </div>
-        </button>
-      {/if}
-      {#if onInvert}
-        <button
-          class="grid-btn invert"
-          class:help-active={helpMode}
-          onclick={() => handleActionClick("invert", onInvert)}
-          data-ghost={disabled || helpMode ? undefined : "safe"}
-          data-ghost-kind="transform"
-          data-ghost-label={t("create_transform_invert")}
-          disabled={disabled && !helpMode}
-          aria-label={helpMode
-            ? t("create_transform_learn_invert")
-            : t("create_transform_invert_aria")}
-        >
-          <div class="btn-icon">
-            <i class="fas fa-repeat" aria-hidden="true"></i>
-          </div>
-          <div class="btn-text">
-            <span class="btn-label">{t("create_transform_invert")}</span>
-            <span class="btn-desc">{t("create_transform_reverse_turns")}</span>
-          </div>
-        </button>
-      {/if}
-      {#if onRotateCW && onRotateCCW}
-        <div class="rotation-pair">
-          <button
-            class="grid-btn rotate-ccw"
-            title={toolbar ? t("create_transform_rotate_left_title", { degrees: rotationDegrees }) : undefined}
-            class:help-active={helpMode}
-            onclick={() => handleActionClick("rotate", onRotateCCW)}
-            data-ghost={disabled || helpMode ? undefined : "safe"}
-            data-ghost-kind="transform"
-            data-ghost-label={t("create_action_rotate_left_short")}
-            disabled={disabled && !helpMode}
-            aria-label={helpMode
-              ? t("create_transform_learn_rotate")
-              : t("create_transform_rotate_left_aria", { subject: actionSubject, degrees: rotationDegrees })}
-          >
-            <div class="btn-icon">
-              <i class="fas fa-rotate-left" aria-hidden="true"></i>
-            </div>
-            <div class="btn-text">
-              <span class="btn-label">
-                {showRotationDegreesInLabel
-                  ? `${rotationDegrees}° L`
-                  : t("create_transform_rotate_left")}
-              </span>
-              <span class="btn-desc">{t("create_transform_pivot_degrees", { degrees: rotationDegrees })}</span>
-            </div>
-          </button>
-          <button
-            class="grid-btn rotate-cw"
-            title={toolbar ? t("create_transform_rotate_right_title", { degrees: rotationDegrees }) : undefined}
-            class:help-active={helpMode}
-            onclick={() => handleActionClick("rotate", onRotateCW)}
-            data-ghost={disabled || helpMode ? undefined : "safe"}
-            data-ghost-kind="transform"
-            data-ghost-label={t("create_action_rotate_right_short")}
-            disabled={disabled && !helpMode}
-            aria-label={helpMode
-              ? t("create_transform_learn_rotate")
-              : t("create_transform_rotate_right_aria", { subject: actionSubject, degrees: rotationDegrees })}
-          >
-            <div class="btn-icon">
-              <i class="fas fa-rotate-right" aria-hidden="true"></i>
-            </div>
-            <div class="btn-text">
-              <span class="btn-label">
-                {showRotationDegreesInLabel
-                  ? `${rotationDegrees}° R`
-                  : t("create_transform_rotate_right")}
-              </span>
-              <span class="btn-desc">{t("create_transform_pivot_degrees", { degrees: rotationDegrees })}</span>
-            </div>
-          </button>
-        </div>
-      {/if}
-      {#if onShiftStart && shiftStartPlacement === "transform"}
-        {@render shiftStartButton()}
-      {/if}
-      {#if onReset && resetPlacement === "transform"}
-        {@render resetButton(onReset)}
-      {/if}
+  {#if fit?.mode === "one"}
+    <div class="drill-tabs">
+      <SegmentedControl
+        options={categories}
+        value={activeCategory}
+        onchange={chooseCategory}
+        color="accent"
+        semantics="tabs"
+        ariaLabel={t("create_ui_action_categories")}
+      />
     </div>
-  </section>
-
-  <!-- PATTERNS Section -->
-  {#if hasSecondaryActions}
-    <section
-      class="section patterns-section"
-      class:source-section={!hasPatternTools}
-    >
-      <span class="section-label">{secondarySectionLabel}</span>
-      <div class="section-grid">
-        {#if onTurnPattern}
+  {/if}
+  <Crossfade
+    key={fit?.mode === "one" ? activeCategory : "all"}
+    duration={DURATION.fast}
+  >
+    <!-- TRANSFORM Section -->
+    {#if showsSection("transform")}
+      <section class="section transform-section">
+        <span class="section-label">{t("create_transform_heading")}</span>
+        <div class="section-grid">
           <button
-            class="grid-btn turn-pattern"
+            class="grid-btn mirror"
             class:help-active={helpMode}
-            class:locked={patternsLocked && !helpMode}
-            onclick={() => handleActionClick("turn-pattern", onTurnPattern)}
-            disabled={!hasSequence && !helpMode}
-            aria-label={helpMode
-              ? t("create_transform_learn_turn_pattern")
-              : patternsLocked
-                ? t("create_transform_turn_pattern_locked")
-                : t("create_transform_turn_pattern_aria")}
-          >
-            {@render lockBadge()}
-            <div class="btn-icon">
-              <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-            </div>
-            <div class="btn-text">
-              <span class="btn-label">{t("create_transform_turn_pattern")}</span>
-              <span class="btn-desc">{t("create_transform_apply_patterns")}</span>
-            </div>
-          </button>
-        {/if}
-        {#if onRotationDirection}
-          <button
-            class="grid-btn direction"
-            class:help-active={helpMode}
-            class:locked={patternsLocked && !helpMode}
-            onclick={() => handleActionClick("direction", onRotationDirection)}
-            disabled={!hasSequence && !helpMode}
-            aria-label={helpMode
-              ? t("create_transform_learn_direction")
-              : patternsLocked
-                ? t("create_transform_direction_locked")
-                : t("create_transform_direction_aria")}
-          >
-            {@render lockBadge()}
-            <div class="btn-icon">
-              <i class="fas fa-compass" aria-hidden="true"></i>
-            </div>
-            <div class="btn-text">
-              <span class="btn-label">{t("create_transform_direction")}</span>
-              <span class="btn-desc">{t("create_transform_direction_desc")}</span>
-            </div>
-          </button>
-        {/if}
-        {#if onDuration}
-          <button
-            class="grid-btn duration"
-            class:help-active={helpMode}
-            class:locked={patternsLocked && !helpMode}
-            onclick={() => handleActionClick("duration", onDuration)}
-            disabled={!hasSequence && !helpMode}
-            aria-label={helpMode
-              ? t("create_transform_learn_duration")
-              : patternsLocked
-                ? t("create_transform_duration_locked")
-                : t("create_transform_duration_aria")}
-          >
-            {@render lockBadge()}
-            <div class="btn-icon">
-              <i class="fas fa-stopwatch" aria-hidden="true"></i>
-            </div>
-            <div class="btn-text">
-              <span class="btn-label">{t("clip_duration")}</span>
-              <span class="btn-desc">{t("create_ui_step_timing")}</span>
-            </div>
-          </button>
-        {/if}
-        {#if onExtend && canExtend}
-          <button
-            class="grid-btn extend"
-            class:help-active={helpMode}
-            class:locked={patternsLocked && !helpMode}
-            onclick={() => handleActionClick("extend", onExtend)}
-            disabled={(!hasSequence || isExtending) && !helpMode}
-            data-ghost={!hasSequence ||
-            isExtending ||
-            helpMode ||
-            patternsLocked
-              ? undefined
-              : "safe"}
-            data-ghost-kind="extend"
-            data-ghost-label={t("create_transform_extend")}
-            aria-label={helpMode
-              ? t("create_transform_learn_extend")
-              : patternsLocked
-                ? t("create_transform_extend_locked")
-                : isExtending
-                  ? t("create_transform_extending")
-                  : t("create_transform_extend_aria")}
-          >
-            {@render lockBadge()}
-            <div class="btn-icon">
-              {#if isExtending}
-                <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-              {:else}
-                <i class="fas fa-circle-check" aria-hidden="true"></i>
-              {/if}
-            </div>
-            <div class="btn-text">
-              <span class="btn-label">{isExtending ? "..." : t("create_transform_extend")}</span>
-              <span class="btn-desc">{t("create_transform_complete_to_start")}</span>
-            </div>
-          </button>
-        {/if}
-        {#if onShiftStart && shiftStartPlacement === "secondary"}
-          {@render shiftStartButton()}
-        {/if}
-        {#if onRewind}
-          <button
-            class="grid-btn rewind"
-            class:help-active={helpMode}
-            class:locked={patternsLocked && !helpMode}
-            onclick={() => handleActionClick("rewind", onRewind)}
+            onclick={() => handleActionClick("mirror", onMirror)}
+            data-ghost={disabled || helpMode ? undefined : "safe"}
+            data-ghost-kind="transform"
+            data-ghost-label={t("create_ui_mirror")}
             disabled={disabled && !helpMode}
             aria-label={helpMode
-              ? t("create_transform_learn_rewind")
-              : patternsLocked
-                ? t("create_transform_rewind_locked")
-                : t("create_transform_rewind_aria")}
+              ? t("create_transform_learn_mirror")
+              : t("create_transform_mirror_aria", { subject: actionSubject })}
           >
-            {@render lockBadge()}
             <div class="btn-icon">
-              <i class="fas fa-backward" aria-hidden="true"></i>
+              <i class="fas fa-left-right" aria-hidden="true"></i>
             </div>
             <div class="btn-text">
-              <span class="btn-label">{t("create_transform_rewind")}</span>
-              <span class="btn-desc">{t("create_transform_rewind_desc")}</span>
+              <span class="btn-label">{t("create_ui_mirror")}</span>
+              <span class="btn-desc">{t("create_transform_mirror_desc")}</span>
             </div>
           </button>
-        {/if}
-        {#if onReset && resetPlacement === "secondary"}
-          {@render resetButton(onReset)}
-        {/if}
-      </div>
-    </section>
-  {/if}
+          {#if onFlip}
+            <button
+              class="grid-btn flip"
+              class:help-active={helpMode}
+              onclick={() => handleActionClick("flip", onFlip)}
+              data-ghost={disabled || helpMode ? undefined : "safe"}
+              data-ghost-kind="transform"
+              data-ghost-label={t("create_transform_flip")}
+              disabled={disabled && !helpMode}
+              aria-label={helpMode
+                ? t("create_transform_learn_flip")
+                : t("create_transform_flip_aria", { subject: actionSubject })}
+            >
+              <div class="btn-icon">
+                <i class="fas fa-up-down" aria-hidden="true"></i>
+              </div>
+              <div class="btn-text">
+                <span class="btn-label">{t("create_transform_flip")}</span>
+                <span class="btn-desc">{t("create_transform_flip_desc")}</span>
+              </div>
+            </button>
+          {/if}
+          {#if onSwap}
+            <button
+              class="grid-btn swap"
+              class:unavailable={swapDisabled && !helpMode}
+              class:help-active={helpMode}
+              onclick={() => handleActionClick("swap", onSwap)}
+              data-ghost={disabled || helpMode ? undefined : "safe"}
+              data-ghost-kind="transform"
+              data-ghost-label={t("create_transform_swap")}
+              disabled={(disabled || swapDisabled) && !helpMode}
+              aria-label={helpMode
+                ? t("create_transform_learn_swap")
+                : swapDisabled
+                  ? t("create_transform_swap_requires_both")
+                  : t("create_transform_swap_aria", { subject: actionSubject })}
+            >
+              <div class="btn-icon swap-icon-host">
+                <SwapIcon size="1em" monochrome={toolbar} />
+              </div>
+              <div class="btn-text">
+                <span class="btn-label">{t("create_transform_swap")}</span>
+                <span class="btn-desc"
+                  >{swapDisabled
+                    ? t("create_transform_needs_both_hands")
+                    : t("create_transform_switch_hands")}</span
+                >
+              </div>
+            </button>
+          {/if}
+          {#if onInvert}
+            <button
+              class="grid-btn invert"
+              class:help-active={helpMode}
+              onclick={() => handleActionClick("invert", onInvert)}
+              data-ghost={disabled || helpMode ? undefined : "safe"}
+              data-ghost-kind="transform"
+              data-ghost-label={t("create_transform_invert")}
+              disabled={disabled && !helpMode}
+              aria-label={helpMode
+                ? t("create_transform_learn_invert")
+                : t("create_transform_invert_aria")}
+            >
+              <div class="btn-icon">
+                <i class="fas fa-repeat" aria-hidden="true"></i>
+              </div>
+              <div class="btn-text">
+                <span class="btn-label">{t("create_transform_invert")}</span>
+                <span class="btn-desc"
+                  >{t("create_transform_reverse_turns")}</span
+                >
+              </div>
+            </button>
+          {/if}
+          {#if onRotateCW && onRotateCCW}
+            <div class="rotation-pair">
+              <button
+                class="grid-btn rotate-ccw"
+                title={toolbar
+                  ? t("create_transform_rotate_left_title", {
+                      degrees: rotationDegrees,
+                    })
+                  : undefined}
+                class:help-active={helpMode}
+                onclick={() => handleActionClick("rotate", onRotateCCW)}
+                data-ghost={disabled || helpMode ? undefined : "safe"}
+                data-ghost-kind="transform"
+                data-ghost-label={t("create_action_rotate_left_short")}
+                disabled={disabled && !helpMode}
+                aria-label={helpMode
+                  ? t("create_transform_learn_rotate")
+                  : t("create_transform_rotate_left_aria", {
+                      subject: actionSubject,
+                      degrees: rotationDegrees,
+                    })}
+              >
+                <div class="btn-icon">
+                  <i class="fas fa-rotate-left" aria-hidden="true"></i>
+                </div>
+                <div class="btn-text">
+                  <span class="btn-label">
+                    {showRotationDegreesInLabel
+                      ? `${rotationDegrees}° L`
+                      : t("create_transform_rotate_left")}
+                  </span>
+                  <span class="btn-desc"
+                    >{t("create_transform_pivot_degrees", {
+                      degrees: rotationDegrees,
+                    })}</span
+                  >
+                </div>
+              </button>
+              <button
+                class="grid-btn rotate-cw"
+                title={toolbar
+                  ? t("create_transform_rotate_right_title", {
+                      degrees: rotationDegrees,
+                    })
+                  : undefined}
+                class:help-active={helpMode}
+                onclick={() => handleActionClick("rotate", onRotateCW)}
+                data-ghost={disabled || helpMode ? undefined : "safe"}
+                data-ghost-kind="transform"
+                data-ghost-label={t("create_action_rotate_right_short")}
+                disabled={disabled && !helpMode}
+                aria-label={helpMode
+                  ? t("create_transform_learn_rotate")
+                  : t("create_transform_rotate_right_aria", {
+                      subject: actionSubject,
+                      degrees: rotationDegrees,
+                    })}
+              >
+                <div class="btn-icon">
+                  <i class="fas fa-rotate-right" aria-hidden="true"></i>
+                </div>
+                <div class="btn-text">
+                  <span class="btn-label">
+                    {showRotationDegreesInLabel
+                      ? `${rotationDegrees}° R`
+                      : t("create_transform_rotate_right")}
+                  </span>
+                  <span class="btn-desc"
+                    >{t("create_transform_pivot_degrees", {
+                      degrees: rotationDegrees,
+                    })}</span
+                  >
+                </div>
+              </button>
+            </div>
+          {/if}
+          {#if onShiftStart && shiftStartPlacement === "transform"}
+            {@render shiftStartButton()}
+          {/if}
+          {#if onReset && resetPlacement === "transform"}
+            {@render resetButton(onReset)}
+          {/if}
+        </div>
+      </section>
+    {/if}
 
-  <!-- GRID and EDIT share the last row on the desktop panel, so the Grid
+    <!-- PATTERNS Section -->
+    {#if hasSecondaryActions && showsSection("patterns")}
+      <section
+        class="section patterns-section"
+        class:source-section={!hasPatternTools}
+      >
+        <span class="section-label">{secondarySectionLabel}</span>
+        <div class="section-grid">
+          {#if onTurnPattern}
+            <button
+              class="grid-btn turn-pattern"
+              class:help-active={helpMode}
+              class:locked={patternsLocked && !helpMode}
+              onclick={() => handleActionClick("turn-pattern", onTurnPattern)}
+              disabled={!hasSequence && !helpMode}
+              aria-label={helpMode
+                ? t("create_transform_learn_turn_pattern")
+                : patternsLocked
+                  ? t("create_transform_turn_pattern_locked")
+                  : t("create_transform_turn_pattern_aria")}
+            >
+              {@render lockBadge()}
+              <div class="btn-icon">
+                <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+              </div>
+              <div class="btn-text">
+                <span class="btn-label"
+                  >{t("create_transform_turn_pattern")}</span
+                >
+                <span class="btn-desc"
+                  >{t("create_transform_apply_patterns")}</span
+                >
+              </div>
+            </button>
+          {/if}
+          {#if onRotationDirection}
+            <button
+              class="grid-btn direction"
+              class:help-active={helpMode}
+              class:locked={patternsLocked && !helpMode}
+              onclick={() =>
+                handleActionClick("direction", onRotationDirection)}
+              disabled={!hasSequence && !helpMode}
+              aria-label={helpMode
+                ? t("create_transform_learn_direction")
+                : patternsLocked
+                  ? t("create_transform_direction_locked")
+                  : t("create_transform_direction_aria")}
+            >
+              {@render lockBadge()}
+              <div class="btn-icon">
+                <i class="fas fa-compass" aria-hidden="true"></i>
+              </div>
+              <div class="btn-text">
+                <span class="btn-label">{t("create_transform_direction")}</span>
+                <span class="btn-desc"
+                  >{t("create_transform_direction_desc")}</span
+                >
+              </div>
+            </button>
+          {/if}
+          {#if onDuration}
+            <button
+              class="grid-btn duration"
+              class:help-active={helpMode}
+              class:locked={patternsLocked && !helpMode}
+              onclick={() => handleActionClick("duration", onDuration)}
+              disabled={!hasSequence && !helpMode}
+              aria-label={helpMode
+                ? t("create_transform_learn_duration")
+                : patternsLocked
+                  ? t("create_transform_duration_locked")
+                  : t("create_transform_duration_aria")}
+            >
+              {@render lockBadge()}
+              <div class="btn-icon">
+                <i class="fas fa-stopwatch" aria-hidden="true"></i>
+              </div>
+              <div class="btn-text">
+                <span class="btn-label">{t("clip_duration")}</span>
+                <span class="btn-desc">{t("create_ui_step_timing")}</span>
+              </div>
+            </button>
+          {/if}
+          {#if onExtend && canExtend}
+            <button
+              class="grid-btn extend"
+              class:help-active={helpMode}
+              class:locked={patternsLocked && !helpMode}
+              onclick={() => handleActionClick("extend", onExtend)}
+              disabled={(!hasSequence || isExtending) && !helpMode}
+              data-ghost={!hasSequence ||
+              isExtending ||
+              helpMode ||
+              patternsLocked
+                ? undefined
+                : "safe"}
+              data-ghost-kind="extend"
+              data-ghost-label={t("create_transform_extend")}
+              aria-label={helpMode
+                ? t("create_transform_learn_extend")
+                : patternsLocked
+                  ? t("create_transform_extend_locked")
+                  : isExtending
+                    ? t("create_transform_extending")
+                    : t("create_transform_extend_aria")}
+            >
+              {@render lockBadge()}
+              <div class="btn-icon">
+                {#if isExtending}
+                  <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+                {:else}
+                  <i class="fas fa-circle-check" aria-hidden="true"></i>
+                {/if}
+              </div>
+              <div class="btn-text">
+                <span class="btn-label"
+                  >{isExtending ? "..." : t("create_transform_extend")}</span
+                >
+                <span class="btn-desc"
+                  >{t("create_transform_complete_to_start")}</span
+                >
+              </div>
+            </button>
+          {/if}
+          {#if onShiftStart && shiftStartPlacement === "secondary"}
+            {@render shiftStartButton()}
+          {/if}
+          {#if onRewind}
+            <button
+              class="grid-btn rewind"
+              class:help-active={helpMode}
+              class:locked={patternsLocked && !helpMode}
+              onclick={() => handleActionClick("rewind", onRewind)}
+              disabled={disabled && !helpMode}
+              aria-label={helpMode
+                ? t("create_transform_learn_rewind")
+                : patternsLocked
+                  ? t("create_transform_rewind_locked")
+                  : t("create_transform_rewind_aria")}
+            >
+              {@render lockBadge()}
+              <div class="btn-icon">
+                <i class="fas fa-backward" aria-hidden="true"></i>
+              </div>
+              <div class="btn-text">
+                <span class="btn-label">{t("create_transform_rewind")}</span>
+                <span class="btn-desc">{t("create_transform_rewind_desc")}</span
+                >
+              </div>
+            </button>
+          {/if}
+          {#if onReset && resetPlacement === "secondary"}
+            {@render resetButton(onReset)}
+          {/if}
+        </div>
+      </section>
+    {/if}
+
+    <!-- GRID and EDIT share the last row on the desktop panel, so the Grid
        section costs no extra tile row. Elsewhere the row wrapper is
        display: contents and the sections stack as before. -->
-  <div class="tail-row">
-  {#if onGridJoin}
-    <section class="section grid-section" class:help-dimmed={helpMode}>
-      <span class="section-label">{t("create_transform_grid")}</span>
-      <div class="section-grid">
-        <button
-          class="grid-btn grid-join"
-          onclick={onGridJoin}
-          disabled={!hasSequence}
-        >
-          <div class="btn-icon">
-            <i class="fas fa-border-all" aria-hidden="true"></i>
+    <div class="tail-row">
+      {#if onGridJoin && showsSection("grid")}
+        <section class="section grid-section" class:help-dimmed={helpMode}>
+          <span class="section-label">{t("create_transform_grid")}</span>
+          <div class="section-grid">
+            <button
+              class="grid-btn grid-join"
+              onclick={onGridJoin}
+              disabled={!hasSequence}
+            >
+              <div class="btn-icon">
+                <i class="fas fa-border-all" aria-hidden="true"></i>
+              </div>
+              <div class="btn-text">
+                <span class="btn-label">{t("animation_menu_grid_join")}</span>
+              </div>
+            </button>
           </div>
-          <div class="btn-text">
-            <span class="btn-label">{t("animation_menu_grid_join")}</span>
-          </div>
-        </button>
-      </div>
-    </section>
-  {/if}
+        </section>
+      {/if}
 
-  <!-- EDIT Section - dimmed in help mode since these don't have help content -->
-  {#if hasEditActions}
-    <section class="section edit-section" class:help-dimmed={helpMode}>
-      <span class="section-label">{t("viewer_edit")}</span>
-      <div class="section-grid">
-        {#if onTurns}
-          <button
-            class="grid-btn edit-turns"
-            class:highlighted={hasSelection}
-            onclick={onTurns}
-            disabled={!hasSelection}
-            aria-label={hasSelection
-              ? t("create_transform_edit_turns_aria")
-              : t("create_transform_edit_turns_disabled_aria")}
-          >
-            <div class="btn-icon">
-              <i class="fas fa-sliders-h" aria-hidden="true"></i>
-            </div>
-            <div class="btn-text">
-              <span class="btn-label">{t("create_transform_edit_turns")}</span>
-              <span class="btn-desc"
-                >{hasSelection ? t("create_transform_adjust_rotation") : t("create_transform_select_step_first")}</span
+      <!-- EDIT Section - dimmed in help mode since these don't have help content -->
+      {#if hasEditActions && showsSection("edit")}
+        <section class="section edit-section" class:help-dimmed={helpMode}>
+          <span class="section-label">{t("viewer_edit")}</span>
+          <div class="section-grid">
+            {#if onTurns}
+              <button
+                class="grid-btn edit-turns"
+                class:highlighted={hasSelection}
+                onclick={onTurns}
+                disabled={!hasSelection}
+                aria-label={hasSelection
+                  ? t("create_transform_edit_turns_aria")
+                  : t("create_transform_edit_turns_disabled_aria")}
               >
-            </div>
-          </button>
-        {/if}
-        {#if showEditInConstructor && onEditInConstructor}
-          <button
-            class="grid-btn construct"
-            onclick={onEditInConstructor}
-            disabled={!hasSequence}
-            data-testid="edit-in-construct"
-            aria-label={t("create_transform_edit_construct_aria")}
-          >
-            <div class="btn-icon">
-              <i class="fas fa-pen-to-square" aria-hidden="true"></i>
-            </div>
-            <div class="btn-text">
-              <span class="btn-label">{t("create_transform_edit_in_construct")}</span>
-              <span class="btn-desc">{t("create_transform_full_editor")}</span>
-            </div>
-          </button>
-        {/if}
-      </div>
-    </section>
-  {/if}
-  </div>
+                <div class="btn-icon">
+                  <i class="fas fa-sliders-h" aria-hidden="true"></i>
+                </div>
+                <div class="btn-text">
+                  <span class="btn-label"
+                    >{t("create_transform_edit_turns")}</span
+                  >
+                  <span class="btn-desc"
+                    >{hasSelection
+                      ? t("create_transform_adjust_rotation")
+                      : t("create_transform_select_step_first")}</span
+                  >
+                </div>
+              </button>
+            {/if}
+            {#if showEditInConstructor && onEditInConstructor}
+              <button
+                class="grid-btn construct"
+                onclick={onEditInConstructor}
+                disabled={!hasSequence}
+                data-testid="edit-in-construct"
+                aria-label={t("create_transform_edit_construct_aria")}
+              >
+                <div class="btn-icon">
+                  <i class="fas fa-pen-to-square" aria-hidden="true"></i>
+                </div>
+                <div class="btn-text">
+                  <span class="btn-label"
+                    >{t("create_transform_edit_in_construct")}</span
+                  >
+                  <span class="btn-desc"
+                    >{t("create_transform_full_editor")}</span
+                  >
+                </div>
+              </button>
+            {/if}
+          </div>
+        </section>
+      {/if}
+    </div>
+  </Crossfade>
 </div>
 
 <style>
@@ -1088,6 +1366,135 @@
   }
   .actions-container.desktop .source-section .grid-btn {
     flex: 0 1 clamp(140px, 30cqw, 264px);
+  }
+
+  /* ===================================================================
+     FITTED (desktop panel with a measured box, see `fitBox`)
+     The owner measures its content box; the script picks columns, tile
+     height, and whether every section fits or one category shows behind
+     tabs. These px gaps are the FIT constants in the script: keep them in
+     step or the budget stops being arithmetic.
+     =================================================================== */
+  .actions-container.desktop.fitted {
+    gap: 20px;
+    /* The box's integer height, not 100% of a fractional parent: a rounded-up
+       fraction is enough for the parent to grow a scrollbar for nothing. */
+    min-height: 0;
+    height: var(--fit-box);
+  }
+  .actions-container.desktop.fitted .section {
+    gap: 6px;
+  }
+  .actions-container.desktop.fitted .section-label {
+    font-size: 0.68rem;
+    line-height: 14px;
+    height: 14px;
+  }
+  .actions-container.desktop.fitted .section-grid {
+    grid-template-columns: repeat(var(--fit-columns), 1fr);
+    gap: 10px;
+  }
+  .actions-container.desktop.fitted .grid-btn {
+    aspect-ratio: auto;
+    height: var(--tile-height);
+    min-height: 0;
+    max-height: none;
+    justify-self: normal;
+    gap: clamp(4px, calc(var(--tile-height) * 0.08), 12px);
+    padding: clamp(6px, calc(var(--tile-height) * 0.09), 14px);
+  }
+  /* Glyph and label follow the tile, so a short tile stays legible and a
+     tall one reads as one block instead of a small mark in a void. */
+  .actions-container.desktop.fitted .grid-btn .btn-icon i,
+  .actions-container.desktop.fitted .swap-icon-host {
+    font-size: clamp(22px, calc(var(--tile-height) * 0.3), 38px);
+  }
+  .actions-container.desktop.fitted .btn-label {
+    font-size: clamp(11px, calc(var(--tile-height) * 0.1), 13.5px);
+    line-height: 1.2;
+  }
+  /* Grid + Edit tail: the script's column choice decides this row, not the
+     container width, so both tiers are written out. */
+  .actions-container.desktop.fitted .tail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .actions-container.desktop.fitted .grid-section .section-grid,
+  .actions-container.desktop.fitted .edit-section .section-grid {
+    grid-template-columns: repeat(var(--fit-columns), 1fr);
+  }
+  .actions-container.desktop.fitted.fit-three .tail-row {
+    display: grid;
+    grid-template-columns: calc((100% - 20px) / 3) 1fr;
+    gap: 10px;
+  }
+  .actions-container.desktop.fitted.fit-three .grid-section .section-grid {
+    grid-template-columns: 1fr;
+  }
+  .actions-container.desktop.fitted.fit-three .edit-section .section-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .actions-container.desktop.fitted.fit-three
+    .tail-row
+    .edit-section:first-child {
+    grid-column: 1 / -1;
+  }
+  .actions-container.desktop.fitted.fit-three
+    .tail-row
+    .edit-section:first-child
+    .section-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  /* Drill-down: tabs name the category, the grid reserves the tallest
+     category's rows, and the tail row stacks like any other section. */
+  .actions-container.desktop.fitted.drill {
+    gap: 12px;
+  }
+  .actions-container.desktop.fitted.drill .drill-tabs {
+    flex-shrink: 0;
+    height: 48px;
+  }
+  .actions-container.desktop.fitted.drill .section-label {
+    display: none;
+  }
+  .actions-container.desktop.fitted.drill .section-grid,
+  .actions-container.desktop.fitted.drill.fit-three .grid-section .section-grid,
+  .actions-container.desktop.fitted.drill.fit-three
+    .edit-section
+    .section-grid {
+    grid-template-columns: repeat(var(--fit-columns), 1fr);
+    grid-template-rows: repeat(var(--fit-rows), var(--tile-height));
+  }
+  .actions-container.desktop.fitted.drill .tail-row,
+  .actions-container.desktop.fitted.drill.fit-three .tail-row {
+    display: contents;
+  }
+  /* Short box: glyph beside label, the way the compact desktop rows read. */
+  .actions-container.desktop.fitted.fit-row .grid-btn {
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: left;
+    gap: 8px;
+    padding: 4px 10px;
+  }
+  .actions-container.desktop.fitted.fit-row .grid-btn .btn-icon i,
+  .actions-container.desktop.fitted.fit-row .swap-icon-host {
+    font-size: clamp(18px, calc(var(--tile-height) * 0.4), 24px);
+  }
+  .actions-container.desktop.fitted.fit-row .btn-text {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .actions-container.desktop.fitted.fit-row .btn-label {
+    font-size: 12px;
+  }
+  .actions-container.desktop.fitted.fit-row .lock-badge {
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    font-size: 9px;
   }
 
   .grid-btn.mirror {
