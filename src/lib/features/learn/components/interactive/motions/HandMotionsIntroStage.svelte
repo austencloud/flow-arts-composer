@@ -5,7 +5,9 @@
   the blue hand's start, then a branch to each motion with its name and
   caption, ending at real pictographs of the move from that start: both
   shifts, the dash, and static. Once on screen each plays in turn, its arrow
-  first and then the hand along it; a tap on one plays it again. Under the
+  first and then the hand along it. A pointer over one, or a tap, plays it
+  again once it has finished, as the Guide's six cards do (Austen,
+  2026-10-12, preferred hover to clicking). Under the
   chart, the book's own two lines say what the arrow and the hand show.
   Reduced motion shows the finished pictures.
   Spec: docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md
@@ -132,10 +134,13 @@
   /** Counts each static picture's plays, so its ring settles in each time. */
   let pulses = $state<Record<string, number>>({});
   const frames = new Map<string, number>();
+  /** When each picture last started, so a replay waits for it to finish. */
+  const lastPlayed = new Map<string, number>();
   const timers: ReturnType<typeof setTimeout>[] = [];
   let host: HTMLDivElement;
 
   function play(entry: Picture, move: HandMove) {
+    lastPlayed.set(entry.id, performance.now());
     if (move === "static") {
       pulses[entry.id] = (pulses[entry.id] ?? 0) + 1;
       playing[entry.id] = SHOWN;
@@ -165,11 +170,21 @@
     frames.set(entry.id, requestAnimationFrame(step));
   }
 
+  /**
+   * Plays a picture again unless it is still playing. A tap on a touch screen
+   * both enters and clicks, so it plays once.
+   */
+  function replay(entry: Picture, move: HandMove) {
+    const last = lastPlayed.get(entry.id);
+    if (last !== undefined && performance.now() - last < PLAY_MS) return;
+    play(entry, move);
+  }
+
   function playAll() {
     let delay = DURATION.dramatic;
     for (const branch of branches) {
       for (const entry of branch.pictures) {
-        timers.push(setTimeout(() => play(entry, branch.id), delay));
+        timers.push(setTimeout(() => replay(entry, branch.id), delay));
         delay += STAGGER_MS;
       }
     }
@@ -220,7 +235,8 @@
               name: handMotionsTopicText(branch.name),
               caption: handMotionsTopicText(branch.caption),
             })}
-            onclick={() => play(entry, branch.id)}
+            onpointerenter={() => replay(entry, branch.id)}
+            onclick={() => replay(entry, branch.id)}
           >
             <PictographContainer
               pictographData={entry.data}

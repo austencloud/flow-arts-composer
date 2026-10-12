@@ -85,8 +85,9 @@ entry.
    branches to Shift, Dash and Static, each with its name and caption and real
    pictographs of the move from that start (both shifts, the dash, static).
    Once on screen each plays in turn, its arrow fading in and then the hand
-   travelling along it; a tap plays one again, and static's ring settles in
-   and stays. Under the chart sit the book's two lines on what the arrow and
+   travelling along it; a pointer over one, or a tap, plays it again once it
+   has finished (Austen preferred hover, as the Guide's six cards replay),
+   and static's ring settles in and stays. Under the chart sit the book's two lines on what the arrow and
    the hand show; the heading is the book's first line. A played picture holds
    its finished pose rather than dropping its start pose, so a replay never
    waits on a re-prepare. One-hand pictures take their start pose from the
