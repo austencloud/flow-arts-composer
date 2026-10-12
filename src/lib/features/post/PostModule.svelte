@@ -231,7 +231,7 @@
       {:else}
         {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${moduleState.selectedId}`}
           <TkaEditorScope
-            editArrangementOnOpen={!!moduleState.selectedId?.startsWith(
+            selectArrangementOnOpen={!!moduleState.selectedId?.startsWith(
               "studio-arrangement:"
             )}
             active={visible && !moduleState.showingProjects}

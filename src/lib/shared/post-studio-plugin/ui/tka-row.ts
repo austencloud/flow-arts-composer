@@ -125,7 +125,6 @@ export function tkaRow(
       return [
         "back",
         "grid",
-        "arrangement",
         "split",
         "speed",
         "look",

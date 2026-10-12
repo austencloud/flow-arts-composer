@@ -30,22 +30,19 @@ function overlay(
 const always = () => true;
 
 export const TKA_ADD_ITEMS: Readonly<Record<string, PluginAddItem>> = {
-  // A new arrangement opens straight in the arrangement editor.
+  // A new arrangement arrives selected, with its Grid tools at hand.
   arrangement: {
     id: "arrangement",
     icon: faTableCellsLarge,
     label: () => "Arrangement",
     available: always,
-    add: (e) => {
-      const tka = tkaEditorOf(e);
-      const itemId = tka?.wrapper.addArrangement(
+    add: (e) =>
+      tkaEditorOf(e)?.wrapper.addArrangement(
         createBlankArrangementSnapshot(),
         newItemStart(e.durationSeconds, e.previewSeconds)
-      );
-      if (!tka || !itemId) return null;
-      tka.editArrangement(itemId);
-      return "arrangement";
-    },
+      )
+        ? "arrangement"
+        : null,
   },
   animation: {
     id: "animation",

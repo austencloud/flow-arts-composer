@@ -59,9 +59,8 @@ registerVideoExportOrchestratorFactory(
 // Post Studio's animation panel paints trails/props/grid on its own canvas
 // but not the beat number, letter glyph, element icon or progress bar (those
 // are DOM overlays elsewhere in AnimatorCanvas) - this factory gives it a
-// painter that draws the same overlays the Animate export bakes in. See
-// post-animation-overlay-painter.ts for why it lives in features/compose
-// instead of shared/.
+// painter that draws the same overlays the Animate export bakes in; see
+// post-animation-overlay-painter.ts.
 registerAnimationOverlayPainterFactory(
   (sequence) => new PostAnimationOverlayPainter(sequence)
 );
