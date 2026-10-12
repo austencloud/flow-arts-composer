@@ -150,8 +150,9 @@ describe("buildPlacementTransition", () => {
     expect(startData.motions.right?.startLocation).toBe(GridLocation.NORTH);
 
     // PictographContainer only computes motion overrides for StepData, which
-    // it detects via the stepNumber field.
-    expect("stepNumber" in transitionStep).toBe(true);
+    // it detects via the stepNumber field. Without a preview step it is -1, so
+    // the moving frame draws no "Start" label or hand key (0 would).
+    expect(transitionStep.stepNumber).toBe(-1);
   });
 
   it("moves the partner too when it has its own move", () => {

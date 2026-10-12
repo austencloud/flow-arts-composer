@@ -35,10 +35,13 @@ interface PropPlacementStateInputs {
   getHands?: () => "both" | "left" | "right";
   /** A one-hand grid moves its hand to any point pressed, without picking it up first. */
   getTapToMove?: () => boolean;
+  /** A press picks a point for the hand (onPick) and leaves the hand where it is. */
+  getPickOnly?: () => boolean;
 }
 
 interface PropPlacementStateDependencies {
   triggerHaptic: () => void;
+  onPick?: (hand: HandSide, location: GridLocation) => void;
   onChange: (change: PropPlacementChange) => void;
   onPlacementComplete: (
     leftLocation: GridLocation,
@@ -163,6 +166,14 @@ export function createPropPlacementState(
     if (color === HandSide.LEFT && rightOnly()) return;
 
     const label = labelForLocation(location);
+    if (inputs.getPickOnly?.()) {
+      const noun =
+        color === HandSide.LEFT ? inputs.getLeftNoun() : inputs.getRightNoun();
+      dependencies.triggerHaptic();
+      liveAnnouncement = `${noun}: ${label} picked.`;
+      dependencies.onPick?.(color, location);
+      return;
+    }
     pushHistory();
     normalizePlacedOrientation(color, location);
 

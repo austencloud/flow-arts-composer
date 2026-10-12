@@ -72,18 +72,18 @@ export function roundHands(
 }
 
 /**
- * Both hands' moves played together from the round's start: the hands that
- * travel, a dash straight through the centre and a shift around it. Null when
- * both are static.
+ * Both hands' moves from where the round began, played together on the fused
+ * picture: a dash straight through the centre, a shift around it. A static
+ * hand stays put; null when neither hand travels.
  */
-export function roundReplay(
+export function roundTravel(
   round: PairRound,
   epoch: number,
   durationMs: number
 ): PlacementMotionMove | null {
   const hands = roundHands(round);
   if (!hands) return null;
-  const travels = (
+  const [first, second] = (
     [
       [HandSide.LEFT, hands.left],
       [HandSide.RIGHT, hands.right],
@@ -97,7 +97,6 @@ export function roundReplay(
       direction: handMoveDirection(made.from, made.to),
       path: made.move === "dash" ? ("dash" as const) : ("arc" as const),
     }));
-  const [first, second] = travels;
   if (!first) return null;
   return {
     epoch,
