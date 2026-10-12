@@ -936,7 +936,8 @@
     line-height: 28px;
     text-overflow: ellipsis;
     white-space: nowrap;
-    --tka-label-justify: center;
+    /* safe: a name wider than the slot keeps its start and clips the tail. */
+    --tka-label-justify: safe center;
   }
 
   .word-disclosure {
