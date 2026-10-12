@@ -231,12 +231,9 @@
     }
   }
 
-  /* One side only: a single column, kept to a readable width. */
+  /* One side only: a single column across the whole panel. */
   .tnd-panel.single {
     grid-template-columns: minmax(0, 1fr);
-    width: 100%;
-    max-width: 640px;
-    margin-inline: auto;
   }
 
   .tnd-section {
@@ -443,5 +440,38 @@
       margin-top: 0;
       padding-top: clamp(12px, 1.5cqh, 20px);
     }
+  }
+  /* One side only: the section fills the panel top to bottom at every size,
+     the six modes sharing the height left under Free, so no band of empty
+     space sits above or below. Icons and words grow with the panel's height
+     to fill the taller tiles. Placed last so it wins over the size tiers. */
+  .tnd-panel.single {
+    grid-template-rows: minmax(0, 1fr);
+    grid-auto-rows: auto;
+    align-content: stretch;
+  }
+
+  .tnd-panel.single .tnd-section,
+  .tnd-panel.single .choice-stack {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .tnd-panel.single .choice-stack :global(.mode-grid) {
+    height: 100%;
+    min-height: 13rem;
+  }
+
+  .tnd-panel.single .choice-stack :global(.mode-grid .choice-icon) {
+    width: clamp(1.75rem, 7cqh, 4rem);
+    height: clamp(1.75rem, 7cqh, 4rem);
+  }
+
+  .tnd-panel.single .choice-stack :global(.mode-grid .choice-copy strong) {
+    font-size: clamp(
+      var(--font-size-min, 0.875rem),
+      2.4cqh,
+      var(--font-size-lg, 1.25rem)
+    );
   }
 </style>
