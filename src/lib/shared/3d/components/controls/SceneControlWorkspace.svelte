@@ -132,6 +132,17 @@
   let performerCloseRequest = $state(0);
   let closeSheetsRequest = $state(0);
   const viewer = getViewer3DContext();
+  let lastPlacementRequest = $state(viewer.performerPlacementRequest);
+
+  $effect(() => {
+    const request = viewer.performerPlacementRequest;
+    if (request === lastPlacementRequest) return;
+    lastPlacementRequest = request;
+    activeTool = null;
+    hostPanelOpen = false;
+    performerCloseRequest += 1;
+    closeSheetsRequest += 1;
+  });
 
   onMount(() => {
     showInteractionHint =

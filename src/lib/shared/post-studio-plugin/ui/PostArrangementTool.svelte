@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { GridJoin } from "@tka/tka-types";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     LAYOUT_PRESETS,
@@ -22,6 +23,10 @@
     type ArrangementCellOffset,
   } from "#lib/shared/media-composition/domain/arrangement-edits.js";
   import { calculateArrangementCellBeats } from "#lib/shared/media-composition/domain/arrangement-timing.js";
+  import {
+    arrangementCellFollowsSequence,
+    arrangementCellGridJoin,
+  } from "#lib/shared/media-composition/domain/arrangement-grid-join.js";
   import type { PostArrangementItem } from "#lib/shared/post-studio-plugin/index.js";
   import {
     POST_MAX_SPEED,
@@ -31,6 +36,7 @@
   import {
     setArrangementBpm,
     setArrangementCellAppearance,
+    setArrangementCellGridJoin,
     setArrangementCellLayers,
     setArrangementCellMotionVisibility,
     setArrangementCellOffset,
@@ -65,6 +71,7 @@
   import { untrack } from "svelte";
   import { applyTransform } from "#lib/shared/media-composition/arrangement/arrange-layer-transformer.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import GridJoinSection from "#lib/shared/grid-join/GridJoinSection.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import TypeableValue from "#lib/shared/ui/components/TypeableValue.svelte";
@@ -80,9 +87,10 @@
    * its shape, whether the start placement plays, how its cells are staggered,
    * and how fast the whole clip plays. Look and Effects edit the grid's default
    * look, or the cell's own over it when a cell is in hand; Effort is the
-   * cell's. Sequence, Layers and Offset belong to the cell: which sequences it
-   * holds, how each layer looks and is turned, and when the cell starts and how
-   * fast it runs. Every change is an ordinary edit, so undo takes it back.
+   * cell's. Sequence, Layers, Grids and Offset belong to the cell: which
+   * sequences it holds, how each layer looks and is turned, whether it draws
+   * one grid or a joined pair, and when the cell starts and how fast it runs.
+   * Every change is an ordinary edit, so undo takes it back.
    */
   interface Props {
     editor: PostEditorState;
@@ -91,6 +99,7 @@
       | "grid"
       | "sequence"
       | "layers"
+      | "grids"
       | "offset"
       | "look"
       | "effects"
@@ -363,6 +372,40 @@
 
   function speedLabel(stop: number): string {
     return formatPostSpeed(2 ** stop);
+  }
+
+  // ---- Grids ---------------------------------------------------------------
+
+  /** The cell's first sequence: the one its join is read from and drawn on. */
+  const firstSequence = $derived(cell?.layers[0]?.sequence ?? null);
+  const joinPictograph = $derived(
+    firstSequence?.startPlacement ??
+      firstSequence?.startingPlacement ??
+      firstSequence?.steps[0] ??
+      null
+  );
+  const joinGridMode = $derived(
+    firstSequence?.gridMode ?? joinPictograph?.gridMode
+  );
+  const cellJoin = $derived(cell ? arrangementCellGridJoin(cell) : null);
+  const cellFollows = $derived(
+    cell ? arrangementCellFollowsSequence(cell) : true
+  );
+  const joinStatus = $derived(
+    cellFollows
+      ? "Using sequence grids"
+      : cellJoin
+        ? "Joined grids"
+        : "One grid"
+  );
+
+  /** The cell's own join; undefined hands the choice back to its sequence. */
+  function setJoin(join: GridJoin | null | undefined): void {
+    if (!cell || locked) return;
+    const id = cell.id;
+    editor.edit((project, ctx) =>
+      setArrangementCellGridJoin(project, item.id, id, join, ctx)
+    );
   }
 
   // ---- Look, effects and effort --------------------------------------------
@@ -982,6 +1025,38 @@
       disabled={locked}
       onchange={setSpeedStop}
     />
+  {:else if tool === "grids"}
+    {#if layers.length === 0}
+      <p class="hint">Add a sequence under Sequence first.</p>
+    {:else}
+      <div class="grid-source">
+        <span class="group-name" aria-live="polite">{joinStatus}</span>
+        <PanelButton
+          disabled={locked || cellFollows}
+          onclick={() => setJoin(undefined)}
+        >
+          Use sequence grids
+        </PanelButton>
+      </div>
+      {#if joinPictograph}
+        <fieldset class="join-field" disabled={locked}>
+          <GridJoinSection
+            pictograph={joinPictograph}
+            gridMode={joinGridMode}
+            join={cellJoin}
+            onChange={(join) => setJoin(join)}
+            leftPropType={look?.propType}
+            rightPropType={look?.propType}
+            compact={!fill}
+            embedded
+          />
+        </fieldset>
+      {/if}
+      <p class="hint">
+        Every sequence in this cell moves on the same grids: one grid, or each
+        hand on its own with red's a point or two across from blue's.
+      </p>
+    {/if}
   {/if}
 </div>
 
@@ -1046,6 +1121,24 @@
 
   .stepper-name {
     flex: 1 0 5rem;
+  }
+
+  /* The status and the way back to the sequence's own grids, on one line. */
+  .grid-source {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+    min-width: 0;
+  }
+
+  /* A fieldset so a locked project disables the join's whole radio group. */
+  .join-field {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
   }
 
   .readout {

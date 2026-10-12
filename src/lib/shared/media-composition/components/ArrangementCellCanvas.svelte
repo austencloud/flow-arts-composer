@@ -14,6 +14,11 @@
   import type { ArrangementCell } from "../domain/arrangement.js";
   import { migrateArrangementCell } from "../domain/arrangement-migration.js";
   import { arrangementCellLook } from "../domain/arrangement-look.js";
+  import {
+    arrangementCellGridJoin,
+    arrangementCellSequence,
+  } from "../domain/arrangement-grid-join.js";
+  import { animationGridJoinKey } from "#lib/shared/animation-engine/services/animation-grid-join.js";
   import type { PostAnimationAppearance } from "../domain/post-animation-appearance.js";
   import {
     postAnimationEffectsConfig,
@@ -94,6 +99,12 @@
   const extraLayers = $derived(cell.layers.slice(1));
   const hasLayers = $derived(cell.layers.length > 0);
   const isAnimationType = $derived(cell.mediaType === "animation");
+  // The join the cell draws: its own, else its first sequence's. The engine
+  // reads it off the sequence handed to the canvas and puts every layer on
+  // the same pair, so the orchestrators keep the stored sequences and only
+  // the canvas and the card get the resolved one.
+  const cellJoin = $derived(arrangementCellGridJoin(cell));
+  const cellSequence = $derived(arrangementCellSequence(cell));
   // The look this cell draws with: the grid's default under the cell's own
   // flags. The nested Arrange editor still writes the v1 fields on its working
   // copy, so they are folded in the way the migration folds them; phase 5
@@ -391,6 +402,7 @@
   class:other-media={!isAnimationType}
   data-arrangement-cell-ready={!isAnimationType || !hasLayers || canvasReady}
   data-arrangement-cell-error={initError ? "true" : undefined}
+  data-grid-join={animationGridJoinKey(cellJoin)}
   role="button"
   tabindex="0"
   aria-label="Cell {cellIndex + 1}{isAnimationType
@@ -416,7 +428,7 @@
         isPlaying={animationPlaying}
         virtualTime={virtualTimeMs}
         onInitialized={() => (canvasReady = true)}
-        sequenceData={primaryLayer?.sequence || null}
+        sequenceData={cellSequence}
         word={null}
         leftPropType={look?.propType ?? null}
         rightPropType={look?.propType ?? null}
@@ -437,11 +449,11 @@
         <i class="fas fa-plus" aria-hidden="true"></i>
       </div>
     {/if}
-  {:else if cell.mediaType === "choreo-card" && primaryLayer}
+  {:else if cell.mediaType === "choreo-card" && cellSequence}
     <!-- Choreo Card mode: Beat-synced sequence preview -->
     <div class="choreo-card-container">
       <ChoreoCard
-        sequence={primaryLayer.sequence}
+        sequence={cellSequence}
         highlightedStepIndex={primaryCurrentStep}
         showHighlight={isPlaying}
         darkMode={true}

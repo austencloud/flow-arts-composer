@@ -65,7 +65,7 @@
   import PerformerPickProxy from "./performer-interaction/PerformerPickProxy.svelte";
   import PerformerVisualPickTarget from "./performer-interaction/PerformerVisualPickTarget.svelte";
   import PerformerHoverRing from "./performer-interaction/PerformerHoverRing.svelte";
-  import PerformerMoveHandle from "./performer-interaction/PerformerMoveHandle.svelte";
+  import PerformerMoveHint from "./performer-interaction/PerformerMoveHint.svelte";
   import PerformerPlacementPrompt from "./performer-interaction/PerformerPlacementPrompt.svelte";
   import {
     createPerformerPointerInteraction,
@@ -421,6 +421,7 @@
 
   let performerInteraction = $state<PerformerPointerInteraction | null>(null);
   let detachPerformerInteraction: (() => void) | null = null;
+  let detachPlacement: (() => void) | null = null;
 
   let _detachUndo: (() => void) | null = null;
 
@@ -468,6 +469,10 @@
         },
       });
       detachPerformerInteraction = performerInteraction.attach();
+      detachPlacement = viewer3DState.registerPerformerPlacement(() => {
+        if (!performerInteraction?.placing)
+          performerInteraction?.togglePlacement();
+      });
       _detachUndo = attachSceneUndoKeyboard(
         getSceneUndoManager(),
         (desc) => toast.info(`Undid: ${desc}`, 1500),
@@ -482,6 +487,7 @@
 
   onDestroy(() => {
     detachPerformerInteraction?.();
+    detachPlacement?.();
     _detachUndo?.();
   });
 
@@ -566,7 +572,7 @@
       visiblePerformerCount ?? performerManager.performers.length
     )
   );
-  const selectionMoveHandle = $derived.by(() => {
+  const selectionMoveHint = $derived.by(() => {
     const selected = viewer3DState.selectedPerformerIndices.filter(
       (index) => index >= 0 && index < performerCount
     );
@@ -576,15 +582,8 @@
       return performer ? [performer.position] : [];
     });
     if (positions.length === 0) return null;
-    const anchorIndex = selected.includes(
-      viewer3DState.primaryPerformerIndex ?? -1
-    )
-      ? (viewer3DState.primaryPerformerIndex ?? selected[0])
-      : selected[0];
     return {
-      anchorIndex,
       key: selected.join(":"),
-      selectedCount: positions.length,
       position: {
         x:
           positions.reduce((total, position) => total + position.x, 0) /
@@ -1029,33 +1028,13 @@
     </T.Group>
   {/each}
 
-  {#if performerInteraction && selectionMoveHandle && !hideSceneMarkers && !viewer3DState.performerSelectionMode}
-    {#key selectionMoveHandle.key}
-      <PerformerMoveHandle
-        position={selectionMoveHandle.position}
+  {#if performerInteraction && selectionMoveHint && !hideSceneMarkers && !viewer3DState.performerSelectionMode}
+    {#key selectionMoveHint.key}
+      <PerformerMoveHint
+        position={selectionMoveHint.position}
         groundY={performerGroundLevel}
-        selectedCount={selectionMoveHandle.selectedCount}
-        dragging={performerInteraction.draggingIndex !== null}
         placing={performerInteraction.placing}
         takeHint={() => performerInteraction?.takeMoveHint() ?? false}
-        onkeydown={(event) => performerInteraction?.onMoveHandleKeyDown(event)}
-        onpointerdown={(event) =>
-          performerInteraction?.onMoveHandlePointerDown(
-            event,
-            selectionMoveHandle.anchorIndex
-          )}
-        onpointermove={(event) => {
-          event.stopPropagation();
-          performerInteraction?.onMoveHandlePointerMove(event);
-        }}
-        onpointerup={(event) => {
-          event.stopPropagation();
-          performerInteraction?.onMoveHandlePointerUp(event);
-        }}
-        onpointercancel={(event) => {
-          event.stopPropagation();
-          performerInteraction?.onMoveHandlePointerCancel(event);
-        }}
       />
     {/key}
   {/if}
