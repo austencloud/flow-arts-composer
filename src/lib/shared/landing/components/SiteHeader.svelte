@@ -394,7 +394,7 @@
 
 <svelte:window onscroll={handleScroll} onkeydown={handleKeydown} />
 
-<header class:scrolled>
+<header data-route-hold="header" class:scrolled>
   <div class="inner">
     <div class="left-group">
       {#if showBack}

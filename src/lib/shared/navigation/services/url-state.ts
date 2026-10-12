@@ -1,4 +1,3 @@
-import type { NavigationBase } from "$app/navigation";
 import { browser } from "$app/env";
 import { goto } from "$app/navigation";
 import { navigating, page } from "$app/state";
@@ -168,10 +167,11 @@ async function applyWrite(write: UrlWrite, id: number): Promise<void> {
  * changing skip them, so a query parameter or overlay update does not close
  * menus, start a route morph or restart a QR hand-off.
  */
-export function isShallowGoto(
-  navigation: Pick<NavigationBase, "type" | "shallow">
-): boolean {
-  return navigation.type === "goto" && navigation.shallow;
+export function isShallowGoto(navigation: {
+  type?: unknown;
+  shallow?: unknown;
+}): boolean {
+  return navigation.type === "goto" && navigation.shallow === true;
 }
 
 export function writeUrl(
