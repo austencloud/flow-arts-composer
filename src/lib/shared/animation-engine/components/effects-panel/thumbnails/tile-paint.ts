@@ -41,6 +41,7 @@ export function hexToRgb(hex: string): Rgb {
       .split("")
       .map((c) => c + c)
       .join("");
+  if (h.length === 8) h = h.slice(0, 6);
   const n = parseInt(h, 16);
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }

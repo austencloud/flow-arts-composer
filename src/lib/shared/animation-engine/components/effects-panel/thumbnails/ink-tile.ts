@@ -341,7 +341,10 @@ function ribbonPass(
   for (let si = 0; si < last; ) {
     const chunkId = Math.floor(ribbon[si]!.sequence / chunkSize);
     let ei = si + 1;
-    while (ei < last && Math.floor(ribbon[ei]!.sequence / chunkSize) === chunkId) {
+    while (
+      ei < last &&
+      Math.floor(ribbon[ei]!.sequence / chunkSize) === chunkId
+    ) {
       ei++;
     }
     const s = ribbon[si]!;

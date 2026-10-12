@@ -17,18 +17,27 @@ import { paintSmokeTile } from "./smoke-tile";
 import { paintSparkleTile } from "./sparkle-tile";
 import { paintZapTile } from "./zap-tile";
 
-/** What a tile needs beyond the merged intent. Only Ghost and Silk read it. */
+/** What a tile needs beyond the merged intent. Only Ghost reads it. */
 export interface TileExtras {
   propType: string | null;
+  /** True once the tile has moved on (new preset or prop); an async painter must not draw. */
+  isStale: () => boolean;
 }
 
+/**
+ * A painter returns `false` when its frame is incomplete and must not be
+ * cached (Ghost without its sprite); anything else means the frame is final.
+ */
 export type TilePainter<
   E extends keyof EffectConfigMap = keyof EffectConfigMap,
 > = (
   ctx: CanvasRenderingContext2D,
   intent: EffectConfigMap[E],
   extras: TileExtras
-) => void | Promise<void>;
+) => void | boolean | Promise<void | boolean>;
+
+/** Effects whose portrait changes with the prop; only these key the cache on it. */
+export const PROP_AWARE_TILES: ReadonlySet<string> = new Set(["ghost"]);
 
 const PAINTERS: Partial<{ [E in keyof EffectConfigMap]: TilePainter<E> }> = {
   zap: (ctx, intent) => paintZapTile(ctx, intent),
@@ -37,21 +46,21 @@ const PAINTERS: Partial<{ [E in keyof EffectConfigMap]: TilePainter<E> }> = {
     // Ground first so the card is never blank, then the prop once its sprite decodes.
     paintGhostTile(ctx, intent, null);
     const sprite = await loadGhostTileSprite(extras.propType);
-    if (sprite) paintGhostTile(ctx, intent, sprite);
+    if (!sprite || extras.isStale()) return false;
+    paintGhostTile(ctx, intent, sprite);
+    return true;
   },
   goo: (ctx, intent) => paintGooTile(ctx, intent),
   bubbles: (ctx, intent) => paintBubblesTile(ctx, intent),
   petals: (ctx, intent) => paintPetalsTile(ctx, intent),
   smoke: (ctx, intent) => paintSmokeTile(ctx, intent),
   ink: (ctx, intent) => paintInkTile(ctx, intent),
-  silk: (ctx, intent, extras) =>
-    paintSilkTile(ctx, intent, resolveSilkTilePropColor(extras.propType)),
+  silk: (ctx, intent) => paintSilkTile(ctx, intent, resolveSilkTilePropColor()),
   animal: (ctx, intent) => paintAnimalTile(ctx, intent),
   pulse: (ctx, intent) => paintPulseTile(ctx, intent),
 };
 
 export function tilePainterFor(effectType: string): TilePainter | null {
-  return (
-    (PAINTERS as Record<string, TilePainter | undefined>)[effectType] ?? null
-  );
+  if (!Object.hasOwn(PAINTERS, effectType)) return null;
+  return PAINTERS[effectType as keyof EffectConfigMap] as TilePainter;
 }

@@ -115,7 +115,10 @@ export function loadGhostTileSprite(
       .then((data) =>
         decode(data.svg, data.width, data.height, spriteFill(data.svg))
       )
-      .catch(() => null);
+      .catch(() => {
+        spriteCache.delete(key);
+        return null;
+      });
     spriteCache.set(key, pending);
   }
   return pending;

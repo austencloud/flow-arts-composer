@@ -119,7 +119,10 @@ function petals(p: PetalsIntent, pal: PetalPalette, rand: Rand): Leaf[] {
       tint: pickPetalTint(pal, rand),
       rot: rand() * TAU + dx * 0.012 * Math.min(1, age),
       face,
-      alpha: Math.max(0, fadeIn * fadeOut * resolvePetalOpacity(shape, isAmbient)),
+      alpha: Math.max(
+        0,
+        fadeIn * fadeOut * resolvePetalOpacity(shape, isAmbient)
+      ),
       ember: rollEmberFlag(pal, rand),
       age,
     });
@@ -159,7 +162,13 @@ export function paintPetalsTile(
     if (q.ember && pal.emberEdge && q.age < 1.35) {
       const emberAlpha = (1 - q.age / 1.35) * q.alpha * 1.15;
       if (emberAlpha > 0.02) {
-        drawPetalEmberRim(ctx, q.shape, q.size, pal.emberEdge.color, emberAlpha);
+        drawPetalEmberRim(
+          ctx,
+          q.shape,
+          q.size,
+          pal.emberEdge.color,
+          emberAlpha
+        );
       }
     }
   }

@@ -265,9 +265,7 @@ function simulate(intent: PulseIntent, phase0: number): Sim {
   const after = FREEZE_AFTER[intent.trigger] ?? FREEZE_AFTER.beat;
   while (probe.clock < horizon) probe.step(DT);
   const births = probe.primaryBirths.filter((t) => t + after <= horizon);
-  const freezeAt = births.length
-    ? births[births.length - 1]! + after
-    : horizon;
+  const freezeAt = births.length ? births[births.length - 1]! + after : horizon;
   const sim = new Sim(intent, phase0);
   while (sim.clock + DT <= freezeAt + 1e-9) sim.step(DT);
   return sim;

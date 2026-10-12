@@ -332,8 +332,7 @@ export function drawPulseRing(
   ctx: CanvasRenderingContext2D,
   r: PulseRing,
   params: Pulse2DParams,
-  units: PulseUnits,
-
+  units: PulseUnits
 ): void {
   const { unit, line } = units;
   const p = r.age / r.life;
@@ -438,8 +437,7 @@ export function drawPulseFlash(
   r: PulseRing,
   params: Pulse2DParams,
   size: number,
-  units: PulseUnits,
-
+  units: PulseUnits
 ): void {
   const { line } = units;
   const span = Math.min(Math.max(r.life * 0.16, 0.09), 0.4);
@@ -484,8 +482,7 @@ export function drawPulseCharge(
   tip: ChargeTip,
   params: Pulse2DParams,
   charge: { shape: number; strength: number },
-  units: PulseUnits,
-
+  units: PulseUnits
 ): void {
   const { unit, line } = units;
   const strength = charge.strength * params.charge * params.intensity;

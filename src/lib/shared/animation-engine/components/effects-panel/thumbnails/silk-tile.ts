@@ -59,12 +59,54 @@ interface MaterialProfile {
 
 /** Copy of the renderer's private `MATERIAL_PROFILES` alphas (silk-2d-renderer.ts). */
 const PROFILES: Record<string, MaterialProfile> = {
-  satin: { bodyAlpha: 0.9, glowAlpha: 0.02, edgeAlpha: 0.14, foldStrength: 0.24, sheenAlpha: 0.21, sheenWidth: 1.35 },
-  velvet: { bodyAlpha: 0.94, glowAlpha: 0.018, edgeAlpha: 0.22, foldStrength: 0.3, sheenAlpha: 0.08, sheenWidth: 0.9 },
-  ethereal: { bodyAlpha: 0.62, glowAlpha: 0.12, edgeAlpha: 0.38, foldStrength: 0.22, sheenAlpha: 0.18, sheenWidth: 0.68 },
-  shadow: { bodyAlpha: 0.72, glowAlpha: 0.01, edgeAlpha: 0.24, foldStrength: 0.34, sheenAlpha: 0.05, sheenWidth: 0.82 },
-  gold_leaf: { bodyAlpha: 0.96, glowAlpha: 0.03, edgeAlpha: 0.34, foldStrength: 0.32, sheenAlpha: 0.3, sheenWidth: 0.64 },
-  ember: { bodyAlpha: 0.8, glowAlpha: 0.18, edgeAlpha: 0.38, foldStrength: 0.24, sheenAlpha: 0.22, sheenWidth: 0.7 },
+  satin: {
+    bodyAlpha: 0.9,
+    glowAlpha: 0.02,
+    edgeAlpha: 0.14,
+    foldStrength: 0.24,
+    sheenAlpha: 0.21,
+    sheenWidth: 1.35,
+  },
+  velvet: {
+    bodyAlpha: 0.94,
+    glowAlpha: 0.018,
+    edgeAlpha: 0.22,
+    foldStrength: 0.3,
+    sheenAlpha: 0.08,
+    sheenWidth: 0.9,
+  },
+  ethereal: {
+    bodyAlpha: 0.62,
+    glowAlpha: 0.12,
+    edgeAlpha: 0.38,
+    foldStrength: 0.22,
+    sheenAlpha: 0.18,
+    sheenWidth: 0.68,
+  },
+  shadow: {
+    bodyAlpha: 0.72,
+    glowAlpha: 0.01,
+    edgeAlpha: 0.24,
+    foldStrength: 0.34,
+    sheenAlpha: 0.05,
+    sheenWidth: 0.82,
+  },
+  gold_leaf: {
+    bodyAlpha: 0.96,
+    glowAlpha: 0.03,
+    edgeAlpha: 0.34,
+    foldStrength: 0.32,
+    sheenAlpha: 0.3,
+    sheenWidth: 0.64,
+  },
+  ember: {
+    bodyAlpha: 0.8,
+    glowAlpha: 0.18,
+    edgeAlpha: 0.38,
+    foldStrength: 0.24,
+    sheenAlpha: 0.22,
+    sheenWidth: 0.7,
+  },
 };
 
 /** The sweep: free tail lower-left, prop (head) upper-right. */
@@ -160,7 +202,8 @@ function recordTrail(duration: number): Sample[] {
   const maxLen = total * (0.6 + 0.4 * duration);
   while (
     samples.length > 2 &&
-    samples[samples.length - 1]!.pathDistance - samples[0]!.pathDistance > maxLen
+    samples[samples.length - 1]!.pathDistance - samples[0]!.pathDistance >
+      maxLen
   ) {
     samples.shift();
   }
@@ -218,7 +261,8 @@ function drawRibbon(
     const tautWidth = 1 - speedFraction * intent.tautness * 0.58;
     const widthEnvelope = resolveSilk2DWidthEnvelope(positionFraction);
     const turn = clamp(signedTurn(basePath.x, basePath.y, i), -0.45, 0.45);
-    const flutterEnergy = (0.3 + speedFraction * 0.7) * (1 - intent.tautness * 0.42);
+    const flutterEnergy =
+      (0.3 + speedFraction * 0.7) * (1 - intent.tautness * 0.42);
     const flutterAmplitude = intent.flutter * SCALE * (8 + flutterEnergy * 32);
     const pathCoordinate = sample.pathDistance / SCALE;
     const waveA = Math.sin(
@@ -237,8 +281,11 @@ function drawRibbon(
       (0.16 + intent.flutter * 2.4) *
       (1 - intent.tautness * 0.55) *
       Math.pow(freeEnd, 1.45);
-    const foldWave = Math.sin(pathCoordinate * 0.026 + TIME * 0.28 + phase * 1.31);
-    const minimumHalfWidth = (0.04 + smoothstep(0, 0.16, positionFraction) * 0.5) * SCALE;
+    const foldWave = Math.sin(
+      pathCoordinate * 0.026 + TIME * 0.28 + phase * 1.31
+    );
+    const minimumHalfWidth =
+      (0.04 + smoothstep(0, 0.16, positionFraction) * 0.5) * SCALE;
     const widthBillow =
       1 + (waveA * 0.7 + waveB * 0.3) * intent.flutter * (0.18 + freeEnd * 0.2);
     const clothVolume = 1.16 + intent.flutter * 0.28;
@@ -254,11 +301,25 @@ function drawRibbon(
     );
     halfWidths[i] = halfWidth;
     maxHalfWidth = Math.max(maxHalfWidth, halfWidth);
-    const fold = foldWave * halfWidth * intent.flutter * 0.52 * freeEnd * profile.foldStrength;
+    const fold =
+      foldWave *
+      halfWidth *
+      intent.flutter *
+      0.52 *
+      freeEnd *
+      profile.foldStrength;
     const lw = Math.max(minimumHalfWidth, halfWidth + fold);
     const rw = Math.max(minimumHalfWidth, halfWidth - fold);
-    sheenAcross[i] = clamp(0.64 + foldWave * intent.flutter * 0.22 + turn * 0.18, 0.42, 0.82);
-    shadowAcross[i] = clamp(0.27 - foldWave * intent.flutter * 0.18 - turn * 0.12, 0.12, 0.46);
+    sheenAcross[i] = clamp(
+      0.64 + foldWave * intent.flutter * 0.22 + turn * 0.18,
+      0.42,
+      0.82
+    );
+    shadowAcross[i] = clamp(
+      0.27 - foldWave * intent.flutter * 0.18 - turn * 0.12,
+      0.12,
+      0.46
+    );
     spineX[i] = basePath.x[i]! + px * centerFlutter;
     spineY[i] = basePath.y[i]! + py * centerFlutter + gravitySag;
     leftX[i] = spineX[i]! + px * lw;
@@ -267,7 +328,9 @@ function drawRibbon(
     rightY[i] = spineY[i]! - py * rw;
   }
   const leftEdge = smoothSilk2DPath(leftX.map((x, i) => ({ x, y: leftY[i]! })));
-  const rightEdge = smoothSilk2DPath(rightX.map((x, i) => ({ x, y: rightY[i]! })));
+  const rightEdge = smoothSilk2DPath(
+    rightX.map((x, i) => ({ x, y: rightY[i]! }))
+  );
   const across = (arr: number[]) =>
     smoothSilk2DPath(
       arr.map((a, i) => ({
@@ -296,7 +359,14 @@ function drawRibbon(
     ctx.globalAlpha = ribbonAlpha * 0.12;
     for (let i = 0; i < n; i += AURA_STRIDE) {
       const r = halfWidths[i]! * 3.2;
-      const g = ctx.createRadialGradient(spineX[i]!, spineY[i]!, 0, spineX[i]!, spineY[i]!, r);
+      const g = ctx.createRadialGradient(
+        spineX[i]!,
+        spineY[i]!,
+        0,
+        spineX[i]!,
+        spineY[i]!,
+        r
+      );
       g.addColorStop(0, rep.edge);
       g.addColorStop(1, "rgba(0,0,0,0)");
       ctx.beginPath();
@@ -336,7 +406,12 @@ function drawRibbon(
 
   let edgeStyle: string | CanvasGradient = rep.edge;
   if (palette.hueShift) {
-    const g = ctx.createLinearGradient(spineX[0]!, spineY[0]!, spineX[n - 1]!, spineY[n - 1]!);
+    const g = ctx.createLinearGradient(
+      spineX[0]!,
+      spineY[0]!,
+      spineX[n - 1]!,
+      spineY[n - 1]!
+    );
     g.addColorStop(0, resolveSilk2DMaterialColors(palette, propColor, 0).edge);
     g.addColorStop(0.5, rep.edge);
     g.addColorStop(1, resolveSilk2DMaterialColors(palette, propColor, 1).edge);
@@ -362,7 +437,7 @@ function drawRibbon(
  * picker knows the prop kind but not its colors, so every prop takes the
  * left hand's default trail blue, the color the props wear on the dark canvas.
  */
-export function resolveSilkTilePropColor(_propType: string | null): string {
+export function resolveSilkTilePropColor(): string {
   return DEFAULT_EFFECTS_CONFIG.trails.leftColor;
 }
 

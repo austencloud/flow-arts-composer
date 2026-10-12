@@ -14,14 +14,7 @@ import {
   oilIridescentRim,
   resolveBubblePalette,
 } from "#lib/shared/effects/domain/bubble-palettes.js";
-import {
-  type Rgb,
-  blob,
-  css,
-  ground,
-  hexToRgb,
-  lcg,
-} from "./tile-paint";
+import { type Rgb, blob, css, ground, hexToRgb, lcg } from "./tile-paint";
 
 export type BubblesIntent = EffectConfigMap["bubbles"];
 export const BUBBLES_TILE_SEED = 0xb0b5;
@@ -55,9 +48,10 @@ interface Film {
 
 /** The palette's interior tint is an rgba string; the tile needs its parts. */
 function filmOf(pal: BubblePalette): Film {
-  const m = /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+))?\s*\)/.exec(
-    pal.fill
-  );
+  const m =
+    /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+))?\s*\)/.exec(
+      pal.fill
+    );
   if (!m) {
     const rgb = hexToRgb(pal.rim);
     return {
@@ -100,9 +94,7 @@ function field(p: BubblesIntent, rand: Rand): Bubble[] {
   const lifeMult =
     p.palette === "champagne" || p.palette === "acid" ? 0.55 : 1.0;
   const life = (1.0 + p.intensity * 2.0) * lifeMult;
-  const count = Math.round(
-    14 + p.ambientEmission * 30 + p.motionEmission * 26
-  );
+  const count = Math.round(14 + p.ambientEmission * 30 + p.motionEmission * 26);
   const pops = Math.round(1 + (1 - lifeMult) * 3 + p.ambientEmission * 2);
   const out: Bubble[] = [];
   for (let i = 0; i < count + pops; i += 1) {

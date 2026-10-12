@@ -108,11 +108,13 @@ dispatcher branches on that registry instead of eleven `{:else if}` arms.
 
 ### Dispatcher
 
-`EffectPresetThumbnail.svelte` gains one branch per effect type (`zap`,
-`sparkles`, `ghost`, `goo`, `bubbles`, `petals`, `smoke`, `ink`, `silk`,
-`animal`, `pulse`). The `EffectLookPreview` fallback stays for anything else
-(Frost). The explanatory comment above the fallback is updated to say the
-remaining effects are Frost only.
+`EffectPresetThumbnail.svelte` gains one branch for every effect with a
+painter in `tile-registry.ts` (`zap`, `sparkles`, `ghost`, `goo`, `bubbles`,
+`petals`, `smoke`, `ink`, `silk`, `animal`, `pulse`), rendered through the
+shared `PortraitTile.svelte` shell. The `EffectLookPreview` fallback stays for
+anything else (Frost). The explanatory comment above the fallback is updated
+to say the remaining effects are Frost only. (As built: the plan replaced
+eleven branches with the registry lookup; see Batch 1 notes.)
 
 ### Prop input for Ghost and Silk
 
@@ -121,7 +123,9 @@ Two tiles depend on the user's current prop:
 - Ghost blits the real prop sprite (whatever prop is selected) in its last
   poses. Without it the tile would show a staff for a poi user.
 - Silk's satin palette takes most of its color from the prop, so Classic shows
-  the hand's own blue.
+  the hand's own blue. (As built: the picker knows the prop kind but not its
+  colors, so Silk takes the left hand's default trail blue for every prop and
+  does not read the prop; see Batch 3 notes.)
 
 `EffectPresetThumbnail` gains an optional `propType?: string | null` prop and
 passes it to Ghost and Silk. The three call sites thread it:
@@ -141,13 +145,19 @@ when the image resolves; a cache miss must not throw.
 
 ### Caching
 
-Tiles paint once per preset and prop, like Fire does. The quick-switch
-popover mounts every effect's catalog portrait at once, so each tile's paint
-must stay well under a frame at 720x270. The heavier tiles (Goo's metaball
-pass, Smoke's column, Animal's clipped redraw, Pulse's simulation) measure
-their first paint during implementation; anything over about 8 ms moves its
-expensive stage into a module-level `Map` keyed by preset id plus prop type so
-re-mounting the popover reuses the result.
+Tiles paint once per preset, like Fire does, and Ghost (the one tile that
+draws the prop) once per preset and prop. The quick-switch popover mounts
+every effect's catalog portrait at once, so each tile's paint must stay well
+under a frame at 720x270. The heavier tiles (Goo's metaball pass, Smoke's
+column, Animal's clipped redraw, Pulse's simulation) measure their first paint
+during implementation; anything over about 8 ms moves its expensive stage into
+the shared frame cache in `PortraitTile.svelte` (a module-level `Map` of
+painted frames, keyed by effect and preset, plus the prop for Ghost) so
+re-mounting the popover reuses the result. The cache evicts its oldest frame
+past 32 entries rather than clearing, since each frame holds a 720x270 backing
+store and iOS caps total canvas memory. An async painter (Ghost) reports
+whether its frame is complete; an incomplete frame, or one whose tile has
+already moved to another preset or prop, is never cached.
 
 ### Look copy
 
@@ -327,14 +337,14 @@ The tiles must not fork renderer geometry. Where a helper is private today,
 export it; where a drawing routine is bound to a renderer instance, lift it
 into a pure function the renderer calls too. Expected export work:
 
-| Module                                    | Needed by | Export                                                                                                                                                                          |
-| ----------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ghost-2d-renderer.ts`                    | Ghost     | `buildGhostSpriteTreatment`, `blitGhostPose`, `GhostSpriteTreatment`; age curve already exported                                                                                |
-| `petal-palettes.ts`, `petal-airflow.ts`   | Petals    | already exported                                                                                                                                                                |
-| `smoke-curl-field.ts`                     | Smoke     | `curl2D`, already exported                                                                                                                                                      |
-| `ink-2d-renderer.ts`                      | Ink       | `BrushStampCache`; the ribbon, stamp, bristle and droplet passes are instance-bound, so the tile keeps the reference page's port of them                                        |
-| `silk-2d-renderer.ts`, `ribbon-trace.ts`  | Silk      | already exported (see `silk-entry.ts`); the per-material alphas (`MATERIAL_PROFILES`) stay private, so the tile carries a copy of that table                                    |
-| `animal-2d-renderer.ts`                   | Animal    | `bodyWidth`, `resampleAlongPath`; layer, head and ornament painters are instance-bound, so the tile keeps the reference page's port                                             |
+| Module                                    | Needed by | Export                                                                                                                                                                                                                                                           |
+| ----------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ghost-2d-renderer.ts`                    | Ghost     | `buildGhostSpriteTreatment`, `blitGhostPose`, `GhostSpriteTreatment`; age curve already exported                                                                                                                                                                 |
+| `petal-palettes.ts`, `petal-airflow.ts`   | Petals    | already exported                                                                                                                                                                                                                                                 |
+| `smoke-curl-field.ts`                     | Smoke     | `curl2D`, already exported                                                                                                                                                                                                                                       |
+| `ink-2d-renderer.ts`                      | Ink       | `BrushStampCache`; the ribbon, stamp, bristle and droplet passes are instance-bound, so the tile keeps the reference page's port of them                                                                                                                         |
+| `silk-2d-renderer.ts`, `ribbon-trace.ts`  | Silk      | already exported (see `silk-entry.ts`); the per-material alphas (`MATERIAL_PROFILES`) stay private, so the tile carries a copy of that table                                                                                                                     |
+| `animal-2d-renderer.ts`                   | Animal    | `bodyWidth`, `resampleAlongPath`; layer, head and ornament painters are instance-bound, so the tile keeps the reference page's port                                                                                                                              |
 | `pulse-2d-renderer.ts`, `pulse-rhythm.ts` | Pulse     | `drawPulseRing`, `drawPulseFlash`, `drawPulseCharge` (taking a `PulseUnits` record: `unit` for radii, `line`, `flash` and `core` for widths; the renderer passes its scale for all four), `PulseRing`, `ChargeTip`, `rotateHue`; rhythm helpers already exported |
 
 Renderer exports are additive; no renderer behavior changes. The renderer
@@ -447,8 +457,11 @@ the evidence set before the fourth batch merges.
 - Two agent-owned Vite servers were already running (ports 5196 and 5197)
   when this batch was ready, the resource budget's cap, so it had no worktree
   preview. The three tiles were checked on the primary server after
-  integration; `ink.png`, `silk.png` and `animal.png` are captured there and
-  land with batch 4's evidence set.
+  integration; `ink.jpg`, `silk-1.jpg`, `silk-2.jpg`, `animal-1.jpg` and
+  `animal-2.jpg` are captured there and land with batch 4's evidence set.
+- Only Goo's first paint was timed (8 to 19 ms in Chrome). Smoke, Animal and
+  Pulse were not timed; all three sit in the same per-preset frame cache, so
+  their cost is paid once per preset per session.
 
 ## Batch 4 notes (2026-10-11)
 
@@ -476,3 +489,27 @@ the evidence set before the fourth batch merges.
   this batch also had no worktree preview; Pulse and the full picker were
   checked on the primary server after integration, and the evidence set was
   committed from a follow-up branch.
+
+## Review notes (2026-10-11)
+
+One Opus read-only review of the whole feature found no blocking defects and
+two real ones, both fixed on `codex/effect-tiles-review`:
+
+- The frame cache keyed every tile on the prop, though only Ghost draws it,
+  so a prop change repainted nine prop-blind tiles and the 60 portrait presets
+  times two props overflowed the 96-entry cap, which cleared the whole cache.
+  Now only Ghost keys on the prop (`PROP_AWARE_TILES` in `tile-registry.ts`),
+  the cap is 32 and the oldest frame is evicted.
+- Ghost's sprite load is async: a slow load could paint an old prop over a
+  newer one and then cache it, a rejection after the `await` went uncaught,
+  and a failed load cached a null sprite for the session. `PortraitTile`
+  now numbers each paint, hands the painter an `isStale` check, catches the
+  promise, and caches only a frame the painter reports as complete;
+  `loadGhostTileSprite` forgets a failed load so the next tile retries.
+
+Style items from the same review: `tilePainterFor` guards inherited keys with
+`Object.hasOwn`; the intent merge is typed instead of cast to `never`;
+`hexToRgb` drops the alpha of an 8-digit hex; `resolveSilkTilePropColor` no
+longer takes the prop it ignored; the tile files are Prettier-formatted and
+the stray blank lines in the lifted Pulse painters' parameter lists are gone
+(the renderer's older formatting debt is untouched).

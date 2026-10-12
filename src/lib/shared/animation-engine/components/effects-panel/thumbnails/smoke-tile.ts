@@ -85,7 +85,11 @@ function build(p: SmokeIntent, pal: SmokePalette, rand: Rand): Puff[] {
   for (let i = 0; i <= SEG; i += 1) {
     spine.push({ x: sx, y: sy });
     const c1 = curl2D(sx * LARGE_EDDY_SCALE, sy * LARGE_EDDY_SCALE, CLOCK);
-    const c2 = curl2D(sx * SMALL_EDDY_SCALE, sy * SMALL_EDDY_SCALE, CLOCK * 1.7);
+    const c2 = curl2D(
+      sx * SMALL_EDDY_SCALE,
+      sy * SMALL_EDDY_SCALE,
+      CLOCK * 1.7
+    );
     const flow = (c1.vx * LARGE_STRENGTH + c2.vx * SMALL_STRENGTH) * curl;
     const dy = height / SEG;
     sx +=
@@ -124,7 +128,11 @@ function build(p: SmokeIntent, pal: SmokePalette, rand: Rand): Puff[] {
       (1 + (GROWTH - 1) * lifeT) *
       (wisp ? 0.7 : 0.85);
     const lateral = rand() < 0.7 ? gauss(rand) * w : (rand() - 0.5) * 2 * w;
-    const c = curl2D(o.x * SMALL_EDDY_SCALE, o.y * SMALL_EDDY_SCALE, CLOCK * 1.7);
+    const c = curl2D(
+      o.x * SMALL_EDDY_SCALE,
+      o.y * SMALL_EDDY_SCALE,
+      CLOCK * 1.7
+    );
     const fadeIn = Math.min(1, s / 0.12);
     puffs.push({
       x: o.x + lateral,

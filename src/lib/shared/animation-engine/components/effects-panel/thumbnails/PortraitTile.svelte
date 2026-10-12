@@ -1,11 +1,12 @@
 <script module lang="ts">
   /**
-   * Painted frames, keyed by effect, preset and prop, shared by every tile so
-   * reopening the picker blits instead of repainting. Bounded: the catalog is
-   * small, and a full clear on overflow is cheaper than bookkeeping.
+   * Painted frames, keyed by effect and preset (plus the prop for Ghost, the
+   * one tile that draws it), shared by every tile so reopening the picker
+   * blits instead of repainting. Bounded by evicting the oldest entry: each
+   * frame holds a 720x270 backing store, and iOS caps total canvas memory.
    */
   const cache = new Map<string, HTMLCanvasElement>();
-  const CACHE_LIMIT = 96;
+  const CACHE_LIMIT = 32;
 </script>
 
 <script lang="ts">
@@ -14,12 +15,16 @@
   import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import type { EffectPreset } from "../presets/types";
   import { TILE_H, TILE_W } from "./tile-paint";
-  import { tilePainterFor, type TileExtras } from "./tile-registry";
+  import {
+    PROP_AWARE_TILES,
+    tilePainterFor,
+    type TileExtras,
+  } from "./tile-registry";
 
   interface Props {
     effectType: keyof EffectConfigMap;
     preset: EffectPreset;
-    /** The prop Ghost and Silk portray. Null falls back to the current prop. */
+    /** The prop Ghost portrays. Null falls back to the current prop. */
     propType?: string | null;
     active?: boolean;
   }
@@ -32,15 +37,36 @@
   }: Props = $props();
 
   let canvas = $state<HTMLCanvasElement | null>(null);
+  /** Bumped per paint so a slow async painter cannot draw over a newer frame. */
+  let paintRun = 0;
 
   const resolvedPropType = $derived(
     propType ?? animationSettings.currentPropType
   );
 
+  function mergeIntent<E extends keyof EffectConfigMap>(
+    type: E,
+    patch: Partial<EffectConfigMap[E]> | undefined
+  ): EffectConfigMap[E] {
+    return { ...DEFAULT_EFFECTS_CONFIG[type], ...(patch ?? {}) };
+  }
+
+  function remember(key: string, target: HTMLCanvasElement): void {
+    if (cache.size >= CACHE_LIMIT) {
+      const oldest = cache.keys().next().value;
+      if (oldest !== undefined) cache.delete(oldest);
+    }
+    const copy = document.createElement("canvas");
+    copy.width = TILE_W;
+    copy.height = TILE_H;
+    copy.getContext("2d")?.drawImage(target, 0, 0);
+    cache.set(key, copy);
+  }
+
   function paintInto(
     target: HTMLCanvasElement,
     key: string,
-    extras: TileExtras
+    propType: string | null
   ): void {
     const ctx = target.getContext("2d");
     if (!ctx) return;
@@ -52,30 +78,29 @@
     }
     const painter = tilePainterFor(effectType);
     if (!painter) return;
-    const intent = {
-      ...DEFAULT_EFFECTS_CONFIG[effectType],
-      ...(preset.patch ?? {}),
+    const run = ++paintRun;
+    const extras: TileExtras = {
+      propType,
+      isStale: () => run !== paintRun,
     };
-    const result = painter(ctx, intent as never, extras);
-    const remember = (): void => {
-      if (cache.size >= CACHE_LIMIT) cache.clear();
-      const copy = document.createElement("canvas");
-      copy.width = TILE_W;
-      copy.height = TILE_H;
-      copy.getContext("2d")?.drawImage(target, 0, 0);
-      cache.set(key, copy);
-    };
-    if (result instanceof Promise) void result.then(remember);
-    else remember();
+    const result = painter(ctx, mergeIntent(effectType, preset.patch), extras);
+    if (result instanceof Promise) {
+      result
+        .then((complete) => {
+          if (complete !== false && !extras.isStale()) remember(key, target);
+        })
+        .catch(() => {});
+    } else if (result !== false) {
+      remember(key, target);
+    }
   }
 
   $effect(() => {
     const node = canvas;
     if (!node) return;
     const prop = resolvedPropType;
-    paintInto(node, `${effectType}|${preset.id}|${prop ?? ""}`, {
-      propType: prop,
-    });
+    const keyed = PROP_AWARE_TILES.has(effectType) ? (prop ?? "") : "";
+    paintInto(node, `${effectType}|${preset.id}|${keyed}`, prop);
   });
 </script>
 
