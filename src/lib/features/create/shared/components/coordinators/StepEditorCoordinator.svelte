@@ -24,7 +24,7 @@ import { getStepOperator } from "#lib/features/create/shared/get-step-operator.j
   import MandalaViewerPanel from "../sequence-actions/MandalaViewerPanel.svelte";
   import StepControlsZone from "../sequence-actions/StepControlsZone.svelte";
   import CreatePanelDrawer from "../CreatePanelDrawer.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
   import PropSelectionSheet from "#lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";

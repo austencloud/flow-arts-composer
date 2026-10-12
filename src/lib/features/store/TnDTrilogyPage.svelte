@@ -22,7 +22,7 @@
   import PreorderPriceNote from "./components/PreorderPriceNote.svelte";
   import { activePriceCents, preorderWindowOpen, formatUsd } from "./domain/preorder-pricing";
   import { deriveCrossSell } from "./domain/catalog-listings";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { TND_ELEMENTS } from "#lib/features/choreo-card/domain/tnd-element.js";
   import { prewarmCovers } from "./services/cover-front-renderer";
   import { DEFAULT_SHOP_PROP } from "./domain/shop-prop-options";

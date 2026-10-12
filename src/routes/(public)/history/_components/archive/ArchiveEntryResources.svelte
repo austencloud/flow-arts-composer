@@ -1,7 +1,7 @@
 <script lang="ts">
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import {
     EVIDENCE_BASIS_LABELS,

@@ -20,7 +20,7 @@
   } from "#lib/features/landing/domain/models/spinner-models.js";
   import SpinnerModeToggle from "#lib/features/landing/components/SpinnerModeToggle.svelte";
 
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
 
   // Local extracted components and services
   import SpinnerControls from "./components/SpinnerControls.svelte";

@@ -332,10 +332,10 @@
 		   overriding each other, which made un-hover snap. */
     box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.8);
     transition:
-      box-shadow 0.3s ease,
-      opacity 0.35s ease,
-      filter 0.35s ease,
-      translate 0.5s ease;
+      box-shadow var(--duration-emphasis) var(--ease-standard),
+      opacity var(--duration-dramatic) var(--ease-standard),
+      filter var(--duration-dramatic) var(--ease-standard),
+      translate var(--duration-dramatic) var(--ease-standard);
     /* Near-imperceptible breathing, staggered per tile via --i. */
     animation: tileBreathe 7.5s ease-in-out infinite;
     animation-delay: calc(var(--i, 0) * -0.9s);
@@ -388,8 +388,8 @@
       scale(var(--press, 1));
     translate: var(--mag-x, 0px) var(--mag-y, 0px);
     transition:
-      border-color 0.3s ease,
-      box-shadow 0.3s ease;
+      border-color var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-emphasis) var(--ease-standard);
     will-change: transform;
   }
   /* Top specular sheen, matching the reference sketch's glass-card language. */
@@ -498,7 +498,7 @@
         transparent 58%
       );
     opacity: var(--poster-opacity, 1);
-    transition: opacity 180ms ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
   .media-loaded .static-media {
     opacity: 0;
@@ -837,7 +837,7 @@
       color-mix(in oklch, var(--c) 55%, transparent),
       transparent 70%
     );
-    transition: opacity 0.25s ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   /* ---- chips: real links, siblings of .tile-link, stacked above it ---- */
@@ -873,9 +873,9 @@
     border: 1px solid rgba(255, 255, 255, 0.22);
     background: oklch(0.16 0.018 270 / 0.6);
     transition:
-      background 0.2s ease,
-      border-color 0.2s ease,
-      color 0.2s ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
   .chip:hover,
   .chip:focus-visible {
@@ -1478,8 +1478,8 @@
       /* Opacity fades stay (allowed under reduced motion); translate and
 			   filter movement do not. */
       transition:
-        box-shadow 0.3s ease,
-        opacity 0.35s ease;
+        box-shadow var(--duration-emphasis) var(--ease-standard),
+        opacity var(--duration-dramatic) var(--ease-standard);
     }
     .card {
       --rot-x: 0deg;
@@ -1487,7 +1487,7 @@
       --press: 1;
       --mag-x: 0px;
       --mag-y: 0px;
-      transition: border-color 0.3s ease;
+      transition: border-color var(--duration-emphasis) var(--ease-standard);
     }
     .glow {
       transition: none;

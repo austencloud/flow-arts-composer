@@ -48,7 +48,10 @@ import {
   Orientation,
   TnDMode,
 } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-import { TND_BY_FAMILY, type TnDElement } from "#lib/features/choreo-card/domain/tnd-element.js";
+import {
+  TND_BY_FAMILY,
+  type TnDElement,
+} from "#lib/features/choreo-card/domain/tnd-element.js";
 
 const BASE_WORDS_URL = "/data/hero/tnd-base-words.json";
 
@@ -106,17 +109,30 @@ async function loadPool(): Promise<PoolData> {
       const axis = buildFlowerAxis();
       const diamond = applyFilter(
         axis,
-        { style: "all", turns: new Set(ALLOWED_TURNS), ori: "all", grid: "diamond" },
-        true,
+        {
+          style: "all",
+          turns: new Set(ALLOWED_TURNS),
+          ori: "all",
+          grid: "diamond",
+        },
+        true
       );
       const box = applyFilter(
         axis,
-        { style: "all", turns: new Set(ALLOWED_TURNS), ori: "all", grid: "box" },
-        true,
+        {
+          style: "all",
+          turns: new Set(ALLOWED_TURNS),
+          ori: "all",
+          grid: "box",
+        },
+        true
       );
       const cells: Cell[] = [];
-      for (const left of diamond) for (const right of diamond) cells.push({ left, right, grid: "diamond" });
-      for (const left of box) for (const right of box) cells.push({ left, right, grid: "box" });
+      for (const left of diamond)
+        for (const right of diamond)
+          cells.push({ left, right, grid: "diamond" });
+      for (const left of box)
+        for (const right of box) cells.push({ left, right, grid: "box" });
 
       return { idx, edges, cells };
     })().catch((e) => {
@@ -151,7 +167,10 @@ function startLocKey(sp: StartPlacementData | undefined | null): string | null {
  * — an odd 45° step would toggle it. Returns null when no quarter-rotation of
  * this realization lands on the target (e.g. wrong position family).
  */
-function rotateToStartKey(seq: SequenceData, targetKey: string): SequenceData | null {
+function rotateToStartKey(
+  seq: SequenceData,
+  targetKey: string
+): SequenceData | null {
   for (const steps of [0, 2, 4, 6]) {
     const rotated = steps === 0 ? seq : rotateSequenceGeometry(seq, steps);
     if (startLocKey(rotated.startPlacement) === targetKey) return rotated;
@@ -253,7 +272,11 @@ export async function drawMatrixRealization(opts?: {
     let sequence: SequenceData;
     let turnLoopClosed: boolean;
     try {
-      ({ sequence, turnLoopClosed } = applyVariationDescriptor(base, descriptor, edges));
+      ({ sequence, turnLoopClosed } = applyVariationDescriptor(
+        base,
+        descriptor,
+        edges
+      ));
     } catch {
       continue;
     }

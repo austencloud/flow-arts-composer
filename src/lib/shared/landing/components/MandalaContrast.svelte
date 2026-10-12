@@ -22,7 +22,9 @@
   let reducedMotion = $state(false);
 
   onMount(() => {
-    reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
     if (typeof requestIdleCallback !== "undefined") {
       requestIdleCallback(() => (active = true), { timeout: 2500 });
     } else {
@@ -42,7 +44,8 @@
       <div class="cell">
         <div class="stage">
           <LazyMount
-            loader={() => import("#lib/shared/mandala/components/SequenceMandala.svelte")}
+            loader={() =>
+              import("#lib/shared/mandala/components/SequenceMandala.svelte")}
             {active}
             props={{
               sequence,

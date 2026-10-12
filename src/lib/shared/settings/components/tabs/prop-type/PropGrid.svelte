@@ -29,7 +29,7 @@
     isSameProp,
   } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import { tick } from "svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import PropGridButton from "./PropGridButton.svelte";
   import {

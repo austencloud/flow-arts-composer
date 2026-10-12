@@ -62,7 +62,7 @@
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { exploreVisualsVisible } from "#lib/shared/browse/navigation/visuals-promotion.js";
   import ExploreVisualsPanel from "#lib/features/browse/visuals/components/ExploreVisualsPanel.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { page } from "$app/state";
   import {
