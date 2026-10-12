@@ -34,8 +34,8 @@
 
   const applicationsOpen = $derived(
     festival.applicationDeadline != null &&
-    toDate(festival.applicationDeadline) > now &&
-    (festival.seekingInstructors || festival.seekingPerformers)
+      toDate(festival.applicationDeadline) > now &&
+      (festival.seekingInstructors || festival.seekingPerformers)
   );
 
   let imageLoaded = $state(false);
@@ -56,7 +56,12 @@
 </script>
 
 <div class="festival-popup">
-  <button class="close-btn" onclick={onclose} aria-label="Close popup" type="button">
+  <button
+    class="close-btn"
+    onclick={onclose}
+    aria-label="Close popup"
+    type="button"
+  >
     <i class="fas fa-times" aria-hidden="true"></i>
   </button>
 
@@ -79,7 +84,9 @@
       <span>{festival.name}</span>
     </div>
 
-    <span class="region-badge">{regionLabels[festival.region] ?? festival.region}</span>
+    <span class="region-badge"
+      >{regionLabels[festival.region] ?? festival.region}</span
+    >
   </div>
 
   <div class="popup-body">
@@ -135,7 +142,7 @@
     height: 100%;
     object-fit: cover;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
   }
 
   .popup-img.loaded {
@@ -189,7 +196,9 @@
     justify-content: center;
     cursor: pointer;
     color: rgba(255, 255, 255, 0.85);
-    transition: all 0.2s ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     z-index: 1;
   }
 
@@ -241,9 +250,14 @@
     border-radius: 10px;
     font-size: var(--font-size-xs, 11px);
     font-weight: 500;
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 15%,
+      transparent
+    );
     color: var(--semantic-success, #22c55e);
-    border: 1px solid color-mix(in srgb, var(--semantic-success, #22c55e) 30%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-success, #22c55e) 30%, transparent);
     align-self: flex-start;
   }
 
@@ -257,7 +271,9 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;

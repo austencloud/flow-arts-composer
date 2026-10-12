@@ -19,11 +19,11 @@ this keeps the toggle explicit per .claude/rules/no-layout-shift.md).
   const visible = $derived(status === "pending" || status === "failed");
   const isFailed = $derived(status === "failed");
   const label = $derived(
-    isFailed
-      ? "Not yet synced to cloud, will retry"
-      : "Saving to cloud"
+    isFailed ? "Not yet synced to cloud, will retry" : "Saving to cloud"
   );
-  const iconClass = $derived(isFailed ? "fa-cloud-exclamation" : "fa-cloud-arrow-up");
+  const iconClass = $derived(
+    isFailed ? "fa-cloud-exclamation" : "fa-cloud-arrow-up"
+  );
 </script>
 
 <div
@@ -65,7 +65,7 @@ this keeps the toggle explicit per .claude/rules/no-layout-shift.md).
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity var(--duration-fast, 150ms) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .sync-status-badge.visible {

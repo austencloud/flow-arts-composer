@@ -66,9 +66,13 @@
   // A shelf can empty out between loads (a product goes draft). Fall back to
   // All rather than showing a filter that matches nothing.
   const shelves = $derived(new Set(entries.map((e) => e.shelf)));
-  const activeShelf = $derived(shelf !== "all" && !shelves.has(shelf) ? "all" : shelf);
+  const activeShelf = $derived(
+    shelf !== "all" && !shelves.has(shelf) ? "all" : shelf
+  );
   const visible = $derived(
-    activeShelf === "all" ? entries : entries.filter((e) => e.shelf === activeShelf)
+    activeShelf === "all"
+      ? entries
+      : entries.filter((e) => e.shelf === activeShelf)
   );
 
   // Column counts are PINNED per tier — 1, then 2, then 3 — never auto-fill,
@@ -108,7 +112,11 @@
 
   {#if entries.length > 0}
     <div class="band filter-band">
-      <ShopShelfFilter {entries} value={activeShelf} onchange={(next) => (shelf = next)} />
+      <ShopShelfFilter
+        {entries}
+        value={activeShelf}
+        onchange={(next) => (shelf = next)}
+      />
     </div>
   {:else if catalogLoading}
     <div class="band filter-band" aria-hidden="true">
@@ -178,11 +186,13 @@
           </div>
         </div>
       {:else if entries.length === 0 && loadFailed}
-        <p class="empty">The catalog isn't loading right now. Try again in a moment.</p>
+        <p class="empty">
+          The catalog isn't loading right now. Try again in a moment.
+        </p>
       {:else if entries.length === 0}
         <p class="empty">
-          The shop is being restocked. Leave an email below and you'll hear when products
-          land.
+          The shop is being restocked. Leave an email below and you'll hear when
+          products land.
         </p>
       {:else}
         <div
@@ -227,8 +237,8 @@
         <div class="exit-copy">
           <h2 id="shop-onward-title">Not buying today?</h2>
           <p>
-            Everything on the cards is free in the Composer. Build sequences, watch them
-            move, share a link anyone can scan.
+            Everything on the cards is free in the Composer. Build sequences,
+            watch them move, share a link anyone can scan.
           </p>
         </div>
         <!-- Two ways out for a non-buyer: the tool, and the free reading path the
@@ -462,7 +472,11 @@
     font-family: var(--page-title-font, "Fraunces", Georgia, serif);
     font-style: italic;
     font-weight: 700;
-    font-variation-settings: "opsz" 144, "wght" 700, "SOFT" 0, "WONK" 1;
+    font-variation-settings:
+      "opsz" 144,
+      "wght" 700,
+      "SOFT" 0,
+      "WONK" 1;
     font-size: clamp(1.35rem, 2vw, 2rem);
     letter-spacing: -0.015em;
   }
@@ -498,7 +512,9 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 700;
     white-space: nowrap;
-    transition: background 0.2s, border-color 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal);
   }
   .onward-cta:hover {
     background: var(--theme-card-bg-hover, rgba(255, 255, 255, 0.13));

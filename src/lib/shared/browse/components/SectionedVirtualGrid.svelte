@@ -644,7 +644,9 @@
             style:view-transition-name={bannerName(it.level)}
           >
             <DifficultyBadge level={it.level} size="34px" />
-            <span class="level-banner-title">{t("browse_audit_level_number", { level: it.level })}</span>
+            <span class="level-banner-title"
+              >{t("browse_audit_level_number", { level: it.level })}</span
+            >
             <span class="level-banner-count">{it.levelTotal}</span>
             <div class="level-banner-divider"></div>
           </div>
@@ -764,7 +766,7 @@
     padding-bottom: var(--spacing-sm, 8px);
   }
   .sequences-grid.grid-view.is-transitioning {
-    transition: gap 200ms ease-out;
+    transition: gap var(--duration-normal) var(--ease-standard-out);
   }
 
   @media (prefers-reduced-motion: reduce) {

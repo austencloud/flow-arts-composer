@@ -536,7 +536,10 @@
     border-radius: 12px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     font-size: var(--font-size-sm);
     font-weight: 500;
   }
@@ -564,7 +567,7 @@
     font-size: var(--font-size-base);
     border-radius: 8px;
     background: var(--theme-card-bg);
-    transition: all var(--duration-normal) ease;
+    transition: background-color var(--duration-normal) var(--ease-standard);
   }
 
   .toggle-trigger.collapsed .button-icon {
@@ -615,7 +618,9 @@
     border-radius: 10px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     font-size: var(--font-size-base);
   }
 
@@ -755,9 +760,9 @@
     overflow: hidden;
     isolation: isolate;
     transition:
-      transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
-      box-shadow 0.15s ease,
-      opacity 0.15s ease;
+      transform var(--duration-fast) var(--ease-spring),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
     user-select: none;
     touch-action: none; /* Prevent scroll during drag */
   }
@@ -766,7 +771,11 @@
     position: absolute;
     inset: 0;
     border-radius: 12px;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
     z-index: 0;
   }
 
@@ -779,7 +788,7 @@
       transparent 60%
     );
     opacity: 0.1;
-    transition: opacity var(--duration-emphasis) ease;
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
     z-index: 1;
     mix-blend-mode: screen;
   }
@@ -804,7 +813,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .cell-icon :global(svg),
@@ -881,7 +890,7 @@
     font-size: 12px;
     cursor: grab;
     padding: 4px;
-    transition: color var(--duration-fast) ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
 
   .drag-handle:hover {
@@ -913,7 +922,10 @@
     font-size: 14px;
     cursor: pointer;
     opacity: 0;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
     z-index: 10;
   }
 
@@ -1043,7 +1055,7 @@
     color: rgba(16, 185, 129, 0.8);
     font-size: 14px;
     opacity: 0.6;
-    transition: opacity var(--duration-fast) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .hidden-module-cell:hover .add-indicator {

@@ -81,7 +81,8 @@
     aActImageProgress = 0;
 
     try {
-      const { ref, uploadBytesResumable, getDownloadURL } = await import("firebase/storage");
+      const { ref, uploadBytesResumable, getDownloadURL } =
+        await import("firebase/storage");
       const storage = await getStorageInstance();
       const storageRef = ref(storage, `acts/${uid}/${actId}/cover`);
 
@@ -90,7 +91,8 @@
       });
 
       uploadTask.on("state_changed", (snapshot) => {
-        aActImageProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        aActImageProgress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
       });
 
       await uploadTask;
@@ -190,10 +192,7 @@
   {#if festivalState.portfolio!.acts.length > 0}
     <div class="act-list">
       {#each festivalState.portfolio!.acts as act (act.id)}
-        <ActTemplateCard
-          {act}
-          onclick={() => openEditActForm(act)}
-        />
+        <ActTemplateCard {act} onclick={() => openEditActForm(act)} />
       {/each}
     </div>
   {:else if !showActForm}
@@ -228,7 +227,9 @@
       type="button"
       class="image-upload-area"
       class:has-image={!!aActImageUrl}
-      aria-label={aActImageUrl ? "Change act cover image" : "Upload act cover image"}
+      aria-label={aActImageUrl
+        ? "Change act cover image"
+        : "Upload act cover image"}
       onclick={() => actImageFileInput?.click()}
       disabled={aActImageUploading}
     >
@@ -246,7 +247,10 @@
       {/if}
       {#if aActImageUploading}
         <div class="upload-progress-overlay">
-          <div class="upload-progress-bar" style="width: {aActImageProgress}%"></div>
+          <div
+            class="upload-progress-bar"
+            style="width: {aActImageProgress}%"
+          ></div>
         </div>
       {/if}
     </button>
@@ -295,8 +299,18 @@
     <label class="field-label">
       Format
       <div class="level-toggle-row">
-        <button class="level-btn" class:active={aSolo} onclick={() => (aSolo = true)} type="button">Solo</button>
-        <button class="level-btn" class:active={!aSolo} onclick={() => (aSolo = false)} type="button">Group</button>
+        <button
+          class="level-btn"
+          class:active={aSolo}
+          onclick={() => (aSolo = true)}
+          type="button">Solo</button
+        >
+        <button
+          class="level-btn"
+          class:active={!aSolo}
+          onclick={() => (aSolo = false)}
+          type="button">Group</button
+        >
       </div>
     </label>
 
@@ -313,10 +327,21 @@
     <label class="field-label">
       Fire
       <div class="level-toggle-row">
-        <button class="level-btn" class:active={aFire} onclick={() => (aFire = true)} type="button">
-          <i class="fas fa-fire" aria-hidden="true" style="margin-right: 4px;"></i>Fire
+        <button
+          class="level-btn"
+          class:active={aFire}
+          onclick={() => (aFire = true)}
+          type="button"
+        >
+          <i class="fas fa-fire" aria-hidden="true" style="margin-right: 4px;"
+          ></i>Fire
         </button>
-        <button class="level-btn" class:active={!aFire} onclick={() => (aFire = false)} type="button">Non-fire</button>
+        <button
+          class="level-btn"
+          class:active={!aFire}
+          onclick={() => (aFire = false)}
+          type="button">Non-fire</button
+        >
       </div>
     </label>
 
@@ -356,7 +381,10 @@
           </button>
           <button
             class="ghost danger-text"
-            onclick={() => { deleteAct(editingActId!); cancelActForm(); }}
+            onclick={() => {
+              deleteAct(editingActId!);
+              cancelActForm();
+            }}
             title="Delete this act"
             type="button"
           >
@@ -366,8 +394,16 @@
         {/if}
       </div>
       <div class="modal-right-actions">
-        <button class="secondary" onclick={cancelActForm} type="button">Cancel</button>
-        <button data-save-shortcut class="primary" onclick={saveActForm} disabled={!aTitle.trim()} type="button">
+        <button class="secondary" onclick={cancelActForm} type="button"
+          >Cancel</button
+        >
+        <button
+          data-save-shortcut
+          class="primary"
+          onclick={saveActForm}
+          disabled={!aTitle.trim()}
+          type="button"
+        >
           {editingActId ? "Save Changes" : "Add Act"}
         </button>
       </div>
@@ -413,17 +449,26 @@
     align-items: center;
     gap: 6px;
     padding: 6px 14px;
-    background: color-mix(in srgb, var(--semantic-warning, #f59e0b) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-warning, #f59e0b) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 30%, transparent);
     border-radius: 8px;
     color: var(--semantic-warning, #f59e0b);
     font-size: var(--font-size-sm, 14px);
     cursor: pointer;
-    transition: background var(--transition-fast, 0.15s);
+    transition: background var(--transition-fast, var(--duration-fast));
   }
 
   .add-btn:not(:disabled):hover {
-    background: color-mix(in srgb, var(--semantic-warning, #f59e0b) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 25%,
+      transparent
+    );
   }
 
   .act-list {
@@ -431,7 +476,6 @@
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 16px;
   }
-
 
   .act-form-body {
     padding: 20px;
@@ -500,7 +544,10 @@
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
     text-transform: capitalize;
-    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    transition:
+      color var(--duration-fast),
+      border-color var(--duration-fast),
+      background var(--duration-fast);
   }
 
   .level-btn.active {
@@ -508,7 +555,6 @@
     border-color: var(--theme-accent, #6366f1);
     color: #fff;
   }
-
 
   .hidden-file-input {
     display: none;
@@ -526,7 +572,7 @@
     justify-content: center;
     cursor: pointer;
     overflow: hidden;
-    transition: border-color var(--transition-fast, 0.15s);
+    transition: border-color var(--transition-fast, var(--duration-fast));
     box-sizing: border-box;
   }
 
@@ -574,7 +620,7 @@
     color: rgba(255, 255, 255, 0.8);
     font-size: var(--font-size-compact, 12px);
     opacity: 0;
-    transition: opacity var(--transition-fast, 0.15s);
+    transition: opacity var(--transition-fast, var(--duration-fast));
   }
 
   .image-upload-area:hover .image-change-overlay {
@@ -593,7 +639,7 @@
   .upload-progress-bar {
     height: 100%;
     background: var(--theme-accent, #6366f1);
-    transition: width 0.2s;
+    transition: width var(--duration-normal);
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -81,7 +81,10 @@
 {#if available}
   <button
     class="buy-button"
-    onclick={() => (mode === "add" ? addToCart() : state.startCheckout(product.id, propType, loopConfig))}
+    onclick={() =>
+      mode === "add"
+        ? addToCart()
+        : state.startCheckout(product.id, propType, loopConfig)}
     disabled={mode === "buy" && state.isCheckingOut}
   >
     {#if mode === "buy" && state.isCheckingOut}
@@ -117,7 +120,9 @@
     color: var(--theme-text-on-accent, #fff);
     cursor: pointer;
     /* Compositor-only: only transform animates per interaction frame. */
-    transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s;
+    transition:
+      transform var(--duration-instant) var(--ease-out),
+      opacity var(--duration-normal);
     will-change: transform;
   }
 
@@ -128,7 +133,7 @@
 
   .buy-button:active:not(:disabled) {
     transform: translateY(0) scale(0.98);
-    transition-duration: 0.06s;
+    transition-duration: var(--duration-instant);
   }
 
   .buy-button:disabled {
@@ -186,7 +191,7 @@
       transform: none;
     }
     .spinner {
-      animation-duration: 1.4s;
+      animation-duration: var(--duration-scene);
     }
   }
 </style>

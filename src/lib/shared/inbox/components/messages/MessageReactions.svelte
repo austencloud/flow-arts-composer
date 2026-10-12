@@ -22,7 +22,11 @@
   }
 </script>
 
-<div class="reaction-cluster" aria-label={t("inbox_ui_message_reactions")} role="group">
+<div
+  class="reaction-cluster"
+  aria-label={t("inbox_ui_message_reactions")}
+  role="group"
+>
   {#each reactions as reaction}
     <button
       type="button"
@@ -30,7 +34,12 @@
       class:reacted={hasUserReacted(reaction)}
       onclick={() => onToggleReaction(reaction.emoji)}
       aria-pressed={hasUserReacted(reaction)}
-      aria-label={t(hasUserReacted(reaction) ? "inbox_reaction_remove_count" : "inbox_reaction_add_count", { emoji: reaction.emoji, count: reaction.userIds.length })}
+      aria-label={t(
+        hasUserReacted(reaction)
+          ? "inbox_reaction_remove_count"
+          : "inbox_reaction_add_count",
+        { emoji: reaction.emoji, count: reaction.userIds.length }
+      )}
     >
       <span class="reaction-surface">
         <span class="emoji" aria-hidden="true">{reaction.emoji}</span>
@@ -86,9 +95,9 @@
       0 3px 10px rgba(0, 0, 0, 0.32),
       inset 0 1px 0 rgba(255, 255, 255, 0.06);
     transition:
-      transform var(--duration-fast, 120ms) ease,
-      border-color var(--duration-fast, 120ms) ease,
-      background var(--duration-fast, 120ms) ease;
+      transform var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .reaction-option.reacted .reaction-surface {

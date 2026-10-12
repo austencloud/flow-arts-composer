@@ -23,10 +23,14 @@
   }>();
 
   const previewText = $derived(
-    unavailable ? t("inbox_ui_original_message_was_deleted") : getReplyPreviewText(reply)
+    unavailable
+      ? t("inbox_ui_original_message_was_deleted")
+      : getReplyPreviewText(reply)
   );
   const senderLabel = $derived(
-    compact ? reply.senderName : t("inbox_replying_person", { name: reply.senderName })
+    compact
+      ? reply.senderName
+      : t("inbox_replying_person", { name: reply.senderName })
   );
 
   function getAttachmentIcon(type?: MessageAttachmentType): string {
@@ -146,9 +150,9 @@
     text-align: left;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 120ms) ease,
-      border-color var(--duration-fast, 120ms) ease,
-      transform var(--duration-fast, 120ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .reply-preview.actionable:hover {
@@ -241,8 +245,8 @@
     background: transparent;
     cursor: pointer;
     transition:
-      color var(--duration-fast, 120ms) ease,
-      background var(--duration-fast, 120ms) ease;
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .dismiss-button:hover {

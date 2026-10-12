@@ -90,8 +90,8 @@
     white-space: nowrap;
     cursor: pointer;
     transition:
-      background-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   /* Reserved, never removed — a tick that appears and disappears shifts every

@@ -307,9 +307,13 @@
               />
             </h2>
             <p class="detail-byline">
-              {t("browse_verified_by_creator", { name: detailEnvelope.ownerDisplayName })}
+              {t("browse_verified_by_creator", {
+                name: detailEnvelope.ownerDisplayName,
+              })}
               {#if formatPublished(detailEnvelope.publishedAt)}
-                · {t("browse_verified_published_date", { date: formatPublished(detailEnvelope.publishedAt) })}
+                · {t("browse_verified_published_date", {
+                  date: formatPublished(detailEnvelope.publishedAt),
+                })}
               {/if}
             </p>
           </div>
@@ -603,9 +607,9 @@
     text-align: left;
     cursor: pointer;
     transition:
-      border-color 0.16s ease,
-      transform 0.16s ease,
-      box-shadow 0.16s ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   @media (hover: hover) {
@@ -769,7 +773,7 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 650;
     cursor: pointer;
-    transition: border-color 0.16s ease;
+    transition: border-color var(--duration-fast) var(--ease-standard);
   }
 
   @media (hover: hover) {

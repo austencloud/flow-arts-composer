@@ -27,7 +27,8 @@
 
   // Find current model data
   const currentModelData = $derived(
-    availableModels.find((m: ModelOption) => m.id === currentModel) || availableModels[0]
+    availableModels.find((m: ModelOption) => m.id === currentModel) ||
+      availableModels[0]
   );
 
   // Desktop breakpoint
@@ -70,8 +71,8 @@
     }
 
     // Set position via CSS custom properties to avoid !important conflicts
-    popoverElement.style.setProperty('--popover-top', `${rect.bottom + 8}px`);
-    popoverElement.style.setProperty('--popover-left', `${left}px`);
+    popoverElement.style.setProperty("--popover-top", `${rect.bottom + 8}px`);
+    popoverElement.style.setProperty("--popover-left", `${left}px`);
   }
 
   // Set up toggle event listener for chevron rotation
@@ -94,7 +95,8 @@
 </script>
 
 <!-- Compact Trigger Button -->
-<button aria-label="Select AI model"
+<button
+  aria-label="Select AI model"
   bind:this={triggerElement}
   class="model-picker-trigger"
   popovertarget="tika-model-popover"
@@ -103,7 +105,10 @@
   onclick={handleTriggerClick}
   style="--model-color: {currentModelData?.color || '#6366f1'}"
 >
-  <i class="fas {currentModelData?.icon || 'fa-brain'} model-icon" aria-hidden="true"></i>
+  <i
+    class="fas {currentModelData?.icon || 'fa-brain'} model-icon"
+    aria-hidden="true"
+  ></i>
   <span class="model-label">{currentModelData?.shortName || "Model"}</span>
   <i
     class="fas fa-chevron-down chevron"
@@ -121,7 +126,8 @@
 >
   <div class="model-list">
     {#each availableModels as model}
-      <button aria-label={`Select ${model.name}`}
+      <button
+        aria-label={`Select ${model.name}`}
         class="model-option"
         class:active={currentModel === model.id}
         onclick={() => handleModelClick(model)}
@@ -165,9 +171,9 @@
     -webkit-tap-highlight-color: transparent;
 
     transition:
-      background 0.2s ease,
-      border-color 0.2s ease,
-      transform 0.15s ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .model-picker-trigger:hover {
@@ -203,7 +209,7 @@
   .chevron {
     font-size: var(--font-size-compact, 12px);
     opacity: 0.6;
-    transition: transform var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .chevron.rotated {
@@ -240,10 +246,10 @@
     opacity: 1;
     scale: 1;
     transition:
-      opacity 0.2s ease,
-      scale 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-      overlay 0.2s ease allow-discrete,
-      display 0.2s ease allow-discrete;
+      opacity var(--duration-normal) var(--ease-standard),
+      scale var(--duration-normal) var(--ease-spring),
+      overlay var(--duration-normal) var(--ease-standard) allow-discrete,
+      display var(--duration-normal) var(--ease-standard) allow-discrete;
   }
 
   @starting-style {
@@ -304,9 +310,9 @@
     -webkit-tap-highlight-color: transparent;
 
     transition:
-      background 0.2s ease,
-      border-color 0.2s ease,
-      transform 0.15s ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .model-option:hover {
@@ -340,11 +346,7 @@
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    background: color-mix(
-      in srgb,
-      var(--model-color) 20%,
-      transparent
-    );
+    background: color-mix(in srgb, var(--model-color) 20%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;

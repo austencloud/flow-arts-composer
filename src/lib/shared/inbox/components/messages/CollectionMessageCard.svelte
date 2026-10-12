@@ -179,9 +179,9 @@
     cursor: pointer;
     text-align: left;
     transition:
-      transform var(--duration-fast) ease,
-      border-color var(--duration-fast) ease,
-      background var(--duration-fast) ease;
+      transform var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .collection-card:hover:not(:disabled) {

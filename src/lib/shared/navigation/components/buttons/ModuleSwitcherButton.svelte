@@ -102,9 +102,9 @@
     cursor: pointer;
     box-shadow: 0 2px 8px hsl(0 0% 0% / 0.3);
     transition:
-      transform 0.1s ease,
-      opacity 0.15s ease,
-      background 0.15s ease;
+      transform var(--duration-instant) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     position: relative;
@@ -151,7 +151,7 @@
     font-weight: 600;
     line-height: 18px;
     text-align: center;
-    animation: badgePop var(--duration-emphasis) ease;
+    animation: badgePop var(--duration-emphasis) var(--ease-standard);
     pointer-events: none;
     z-index: 10;
   }

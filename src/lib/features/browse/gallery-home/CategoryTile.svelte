@@ -142,10 +142,10 @@
     /* Background and shadow ride the same curve as the border: selecting a
        category used to snap its highlight on with no motion at all. */
     transition:
-      border-color 0.16s ease,
-      background-color 0.16s ease,
-      box-shadow 0.16s ease,
-      transform 0.16s ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
   .mini-tile:hover {
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.25));
@@ -490,7 +490,9 @@
   .mini-tile.rail .avatar-cluster {
     max-width: 100%;
   }
-  .mini-tile.catalog .avatar-cluster > :global(.robust-avatar + .robust-avatar) {
+  .mini-tile.catalog
+    .avatar-cluster
+    > :global(.robust-avatar + .robust-avatar) {
     margin-left: -0.72rem;
   }
   .mini-tile.catalog :global(.cluster-avatar.robust-avatar) {
@@ -547,7 +549,11 @@
     border: 1px solid
       color-mix(in srgb, var(--theme-accent, #6366f1) 38%, transparent);
     border-radius: 0.8rem;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 12%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 12%,
+      transparent
+    );
     color: var(--theme-accent, #6366f1);
   }
   .mini-tile.unified .mini-art.plate {
@@ -959,7 +965,8 @@
       width: clamp(0.4rem, 7cqh, 1.05rem);
       height: clamp(0.4rem, 7cqh, 1.05rem);
     }
-    .mini-tile.catalog .avatar-cluster
+    .mini-tile.catalog
+      .avatar-cluster
       > :global(.robust-avatar + .robust-avatar) {
       margin-left: clamp(-1.4rem, -11cqh, -0.72rem);
     }
@@ -1030,5 +1037,4 @@
       max-width: calc(100% - 9.25rem);
     }
   }
-
 </style>

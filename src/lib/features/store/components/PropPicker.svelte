@@ -25,8 +25,10 @@
     const idx = options.indexOf(value);
     if (idx < 0) return;
     let next = -1;
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (idx + 1) % options.length;
-    if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (idx - 1 + options.length) % options.length;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown")
+      next = (idx + 1) % options.length;
+    if (e.key === "ArrowLeft" || e.key === "ArrowUp")
+      next = (idx - 1 + options.length) % options.length;
     const target = next >= 0 ? options[next] : undefined;
     if (!target) return;
     e.preventDefault();
@@ -49,7 +51,12 @@
       onclick={() => onchange(prop)}
       onkeydown={onKeydown}
     >
-      <img class="prop-img" src={shopPropImage(prop)} alt="" draggable="false" />
+      <img
+        class="prop-img"
+        src={shopPropImage(prop)}
+        alt=""
+        draggable="false"
+      />
       <span class="prop-name">{shopPropLabel(prop)}</span>
     </button>
   {/each}
@@ -78,7 +85,9 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
     color: var(--theme-text, #fff);
     cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
   .prop-option:hover {
     border-color: var(--theme-border-strong, rgba(255, 255, 255, 0.3));

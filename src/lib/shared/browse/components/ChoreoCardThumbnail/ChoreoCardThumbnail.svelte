@@ -932,9 +932,9 @@ Variation support:
     font-size: clamp(11px, 4.5cqw, 16px);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.42);
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .selection-indicator.checked {
@@ -1016,7 +1016,7 @@ Variation support:
   /* Smooth crossfade when cycling variations */
   .thumbnail-container.crossfade :global(img),
   .thumbnail-container.crossfade :global(.placeholder) {
-    transition: opacity var(--duration-normal) ease-out;
+    transition: opacity var(--duration-normal) var(--ease-standard-out);
   }
 
   /* On mobile, suppress the morph view-transition-name so the drawer

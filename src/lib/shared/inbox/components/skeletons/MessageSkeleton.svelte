@@ -49,8 +49,9 @@
   .skeleton-bubble {
     display: flex;
     max-width: var(--width, 60%);
-    animation: fadeIn var(--duration-emphasis) ease-out backwards;
-    animation-delay: calc(var(--stagger) * 80ms);
+    animation: fadeIn var(--duration-emphasis) var(--ease-standard-out)
+      backwards;
+    animation-delay: calc(var(--stagger) * var(--stagger-relaxed));
   }
 
   .skeleton-bubble.own {

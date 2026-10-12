@@ -1221,7 +1221,9 @@
     border-radius: 50%;
     color: var(--theme-text);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
   }
 
@@ -1351,7 +1353,7 @@
     color: var(--theme-text);
     font-size: var(--font-size-compact);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition: background-color var(--duration-normal) var(--ease-standard);
   }
 
   .retry-btn:hover {

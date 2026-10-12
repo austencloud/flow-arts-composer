@@ -39,7 +39,12 @@
           Tap or point at any part of the card, or any row, to see what it is.
         </p>
       </div>
-      <button type="button" class="ca-close" aria-label="Close" onclick={() => onclose?.()}>
+      <button
+        type="button"
+        class="ca-close"
+        aria-label="Close"
+        onclick={() => onclose?.()}
+      >
         <i class="fas fa-xmark" aria-hidden="true"></i>
       </button>
     </div>
@@ -91,8 +96,8 @@
     font-size: 1.1rem;
     cursor: pointer;
     transition:
-      background 140ms ease,
-      border-color 140ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
   .ca-close:hover,
   .ca-close:focus-visible {

@@ -299,7 +299,7 @@
     z-index: 200;
     overflow: hidden;
     transform-origin: bottom left;
-    animation: popover-enter var(--duration-normal, 200ms) ease-out;
+    animation: popover-enter var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes popover-enter {
@@ -328,7 +328,7 @@
     text-align: left;
     font: inherit;
     color: inherit;
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
     border-radius: 0;
   }
 
@@ -402,8 +402,8 @@
     border-radius: 10px;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .setup-summary:hover {
@@ -477,8 +477,8 @@
     font-weight: 500;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .action-button:hover {
@@ -537,8 +537,8 @@
     opacity: 0.6;
     cursor: pointer;
     transition:
-      opacity var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .version-link:hover {

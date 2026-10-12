@@ -85,13 +85,20 @@
     // buildSequenceSharePayload already ran displayName/intendedWord/word
     // through simplifyRepeatedWord, so this is the simplified form by
     // construction (.claude/rules/simplified-word-display.md).
-    return payload.sequenceWord || payload.sequenceName || payload.sequence.word || "";
+    return (
+      payload.sequenceWord ||
+      payload.sequenceName ||
+      payload.sequence.word ||
+      ""
+    );
   });
 
   const progressLabel = $derived.by(() => {
     if (!progress) return "";
     if (progress.phase === "finalizing") return t("inbox_ui_preparing_image");
-    return t("inbox_upload_progress", { percent: Math.round(progress.fraction * 100) });
+    return t("inbox_upload_progress", {
+      percent: Math.round(progress.fraction * 100),
+    });
   });
 </script>
 
@@ -125,7 +132,9 @@
           </span>
           <span>
             <strong>{t("inbox_ui_share_sequence")}</strong>
-            <small>{t("inbox_ui_choose_from_your_library_or_the_community")}</small>
+            <small
+              >{t("inbox_ui_choose_from_your_library_or_the_community")}</small
+            >
           </span>
         </button>
         <button type="button" class="menu-option" onclick={chooseImage}>
@@ -179,7 +188,9 @@
         </strong>
         <span aria-live="polite">
           {progressLabel ||
-            (attachment.type === "image" ? t("inbox_ui_image_ready") : t("inbox_ui_sequence_ready"))}
+            (attachment.type === "image"
+              ? t("inbox_ui_image_ready")
+              : t("inbox_ui_sequence_ready"))}
         </span>
       </div>
       <button
@@ -231,9 +242,9 @@
     color: var(--theme-text-dim);
     cursor: pointer;
     transition:
-      border-color var(--duration-fast) ease,
-      color var(--duration-fast) ease,
-      background var(--duration-fast) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .attach-trigger:hover:not(:disabled) {
@@ -414,7 +425,7 @@
     width: var(--attachment-progress);
     height: 100%;
     background: var(--theme-accent);
-    transition: width var(--duration-fast) ease;
+    transition: width var(--duration-fast) var(--ease-standard);
   }
 
   .attachment-error {

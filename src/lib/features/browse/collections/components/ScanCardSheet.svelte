@@ -21,7 +21,9 @@ the geo dashboard).
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
-  import { fly } from "svelte/transition";
+  import { EASE_STANDARD } from "@austencloud/motion";
+  import { flyFade, motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import { CameraManager } from "#lib/shared/train/services/camera-manager.js";
   import {
@@ -156,7 +158,9 @@ the geo dashboard).
       // CameraManager maps NotAllowedError/NotFoundError/NotReadableError
       // to user-readable messages already.
       cameraError =
-        err instanceof Error ? err.message : t("browse_verified_camera_access_failed");
+        err instanceof Error
+          ? err.message
+          : t("browse_verified_camera_access_failed");
     }
   }
 
@@ -197,7 +201,9 @@ the geo dashboard).
       }
 
       const word =
-        resolution.sequence.word || resolution.sequence.name || t("browse_verified_sequence");
+        resolution.sequence.word ||
+        resolution.sequence.name ||
+        t("browse_verified_sequence");
       let targetId = resolution.sequence.id;
       let createdLibraryId: string | null = null;
 
@@ -245,10 +251,12 @@ the geo dashboard).
       }
 
       if (collectionsState.isIn(targetId, collectionId)) {
-        toast.info(t("browse_verified_already_in_collection", {
-          word,
-          collection: target?.name ?? t("browse_verified_this_collection"),
-        }));
+        toast.info(
+          t("browse_verified_already_in_collection", {
+            word,
+            collection: target?.name ?? t("browse_verified_this_collection"),
+          })
+        );
         return;
       }
 
@@ -256,10 +264,12 @@ the geo dashboard).
         target &&
         target.sequenceCount >= LIBRARY_LIMITS.MAX_SEQUENCES_PER_COLLECTION
       ) {
-        toast.error(t("browse_verified_collection_full", {
-          name: target.name,
-          count: LIBRARY_LIMITS.MAX_SEQUENCES_PER_COLLECTION,
-        }));
+        toast.error(
+          t("browse_verified_collection_full", {
+            name: target.name,
+            count: LIBRARY_LIMITS.MAX_SEQUENCES_PER_COLLECTION,
+          })
+        );
         return;
       }
 
@@ -361,8 +371,8 @@ the geo dashboard).
         },
       ],
       {
-        duration: 950,
-        easing: "cubic-bezier(0.3, 0.7, 0.25, 1)",
+        duration: motionDuration(DURATION.scene),
+        easing: EASE_STANDARD,
         fill: "forwards",
       }
     );
@@ -378,7 +388,7 @@ the geo dashboard).
         { transform: "scale(1.25)", offset: 0.85 },
         { transform: "scale(1)", offset: 1 },
       ],
-      { duration: 1050, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)" }
+      { duration: motionDuration(DURATION.scene), easing: EASE_STANDARD }
     );
   }
 
@@ -514,7 +524,12 @@ the geo dashboard).
   onDestroy(() => layoutUnsubscribe?.());
 
   function countLabel(n: number): string {
-    return t(n === 1 ? "browse_verified_one_card_added" : "browse_verified_cards_added", { count: n });
+    return t(
+      n === 1
+        ? "browse_verified_one_card_added"
+        : "browse_verified_cards_added",
+      { count: n }
+    );
   }
 </script>
 
@@ -534,7 +549,11 @@ the geo dashboard).
   <div class="sheet-content">
     <header class="panel-header">
       <div class="header-text">
-        <h2 class="panel-title">{t("browse_verified_scan_into", { collection: target?.name ?? t("browse_verified_this_collection") })}</h2>
+        <h2 class="panel-title">
+          {t("browse_verified_scan_into", {
+            collection: target?.name ?? t("browse_verified_this_collection"),
+          })}
+        </h2>
         <span class="panel-count" bind:this={counterEl}
           >{countLabel(addedCount)}</span
         >
@@ -565,7 +584,12 @@ the geo dashboard).
           {t("browse_verified_handoff_copy")}
         </p>
         <p class="phone-count" aria-live="polite">
-          {t(phoneAddedCount === 1 ? "browse_verified_one_card_from_phone" : "browse_verified_cards_from_phone", { count: phoneAddedCount })}
+          {t(
+            phoneAddedCount === 1
+              ? "browse_verified_one_card_from_phone"
+              : "browse_verified_cards_from_phone",
+            { count: phoneAddedCount }
+          )}
         </p>
         <button
           type="button"
@@ -607,20 +631,28 @@ the geo dashboard).
 						     slot, so swapping them moves nothing else. -->
             <div
               class="undo-tray"
-              transition:fly={{ y: 14, duration: reducedMotion ? 0 : 220 }}
+              transition:flyFade={{ y: 14, duration: DURATION.normal }}
             >
               {#if lastScan.chipSrc}
                 <img class="tray-chip" src={lastScan.chipSrc} alt="" />
               {/if}
-              <span class="tray-text">{t("browse_verified_word_added", { word: lastScan.word })}</span>
+              <span class="tray-text"
+                >{t("browse_verified_word_added", {
+                  word: lastScan.word,
+                })}</span
+              >
               <button
                 data-undo-shortcut
-                data-undo-shortcut-label={t("browse_verified_add_word", { word: lastScan.word })}
+                data-undo-shortcut-label={t("browse_verified_add_word", {
+                  word: lastScan.word,
+                })}
                 type="button"
                 class="tray-undo"
                 onclick={() => void undoLastScan()}
                 disabled={undoBusy}
-                aria-label={t("browse_verified_remove_word", { word: lastScan.word })}
+                aria-label={t("browse_verified_remove_word", {
+                  word: lastScan.word,
+                })}
               >
                 <i class="fas fa-xmark" aria-hidden="true"></i>
               </button>
@@ -704,7 +736,7 @@ the geo dashboard).
     font-size: var(--font-size-sm, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .done-btn:hover {
@@ -804,7 +836,7 @@ the geo dashboard).
     color: white;
     font-size: 16px;
     cursor: pointer;
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .tray-undo:hover:not(:disabled) {

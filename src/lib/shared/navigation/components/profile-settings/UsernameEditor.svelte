@@ -307,7 +307,10 @@
     border-radius: 0.5rem;
     border: 1px solid transparent;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .icon-btn.save {
@@ -348,7 +351,10 @@
     border-radius: 0.5rem;
     color: var(--theme-text);
     font-size: var(--font-size-sm);
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .input:focus {
@@ -374,7 +380,10 @@
     background: color-mix(in srgb, var(--theme-text) 8%, transparent);
     border: 1.5px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.18));
     border-radius: 0.5rem;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .username-input-wrapper:focus-within {
@@ -468,7 +477,10 @@
     border-radius: 6px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .suggestion-btn:hover {

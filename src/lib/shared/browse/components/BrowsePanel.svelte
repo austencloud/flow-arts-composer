@@ -621,7 +621,7 @@
     background: inherit;
     z-index: 1;
     opacity: 1;
-    transition: opacity 300ms ease-out;
+    transition: opacity var(--duration-emphasis) var(--ease-standard-out);
   }
 
   .skeleton-overlay.fading {

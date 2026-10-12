@@ -47,7 +47,8 @@
     ></textarea>
     {#if isStreaming}
       <!-- Stop button when streaming -->
-      <button aria-label="Stop generating"
+      <button
+        aria-label="Stop generating"
         type="button"
         class="stop-button"
         onclick={onStop}
@@ -57,7 +58,8 @@
       </button>
     {:else}
       <!-- Send button -->
-      <button aria-label={isLoading ? "Sending message" : "Send message"}
+      <button
+        aria-label={isLoading ? "Sending message" : "Send message"}
         type="submit"
         class="send-button"
         disabled={!inputValue.trim() || isLoading}
@@ -86,7 +88,7 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
     padding: 8px 12px;
-    transition: border-color var(--duration-normal) ease;
+    transition: border-color var(--duration-normal) var(--ease-standard);
   }
 
   .input-wrapper:focus-within {
@@ -121,7 +123,10 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      filter var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
   }
 

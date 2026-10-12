@@ -218,7 +218,9 @@
     <div aria-hidden="true">{@render wideCardPlaceholder()}</div>
     <div class="card-load-message">
       <p>{tDynamic("learn_card_anatomy_load_failed")}</p>
-      <button type="button" onclick={retry}>{tDynamic("learn_card_anatomy_retry")}</button>
+      <button type="button" onclick={retry}
+        >{tDynamic("learn_card_anatomy_retry")}</button
+      >
     </div>
   </div>
 {/snippet}
@@ -228,7 +230,9 @@
     <div aria-hidden="true">{@render narrowCardPlaceholder()}</div>
     <div class="card-load-message">
       <p>{tDynamic("learn_card_anatomy_load_failed")}</p>
-      <button type="button" onclick={retry}>{tDynamic("learn_card_anatomy_retry")}</button>
+      <button type="button" onclick={retry}
+        >{tDynamic("learn_card_anatomy_retry")}</button
+      >
     </div>
   </div>
 {/snippet}
@@ -552,9 +556,9 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background 140ms ease,
-      border-color 140ms ease,
-      box-shadow 180ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
   .part-chip.active:not(:disabled) {
     border-color: color-mix(in oklch, var(--accent, #ec4899) 55%, transparent);
@@ -607,9 +611,9 @@
     cursor: pointer;
     font: inherit;
     transition:
-      background 140ms ease,
-      opacity 180ms ease,
-      box-shadow 180ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
   .legend-row:hover:not(:disabled),
   .legend-row:focus-visible:not(:disabled),
@@ -628,7 +632,7 @@
   }
   .anatomy-layout.dimming .legend-title {
     opacity: 0.5;
-    transition: opacity 180ms ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
   @media (prefers-reduced-motion: reduce) {
     .legend-row,
