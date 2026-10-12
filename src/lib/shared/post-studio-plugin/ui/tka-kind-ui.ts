@@ -56,6 +56,9 @@ export const TKA_KIND_UI: Record<
       const place = cell.row * item.snapshot.gridCols + cell.col + 1;
       return `${item.label ?? "Arrangement"} · Cell ${place}`;
     },
-    selectionLayer: TkaArrangementSelection,
+    // Plain tsc uses the generic .svelte shim; svelte-check sees the typed props and exports.
+    selectionLayer: TkaArrangementSelection as unknown as NonNullable<
+      ItemKindUi["selectionLayer"]
+    >,
   },
 };

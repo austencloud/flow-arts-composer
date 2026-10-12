@@ -31,7 +31,9 @@ describe("effectInk", () => {
 
   it("darkens a pale color without turning it gray", () => {
     const ink = effectInk("#c8e0ff", "light");
-    const [r, g, b] = [1, 3, 5].map((i) => parseInt(ink.slice(i, i + 2), 16));
+    const r = parseInt(ink.slice(1, 3), 16);
+    const g = parseInt(ink.slice(3, 5), 16);
+    const b = parseInt(ink.slice(5, 7), 16);
     expect(b).toBeGreaterThan(r + 60);
     expect(b).toBeGreaterThan(g);
   });
