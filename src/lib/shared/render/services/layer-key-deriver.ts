@@ -16,7 +16,7 @@ import {
   isVisibleMotion,
   type MotionData,
 } from "../../pictograph/shared/domain/models/motion-data";
-import { gridJoinKey } from "@tka/render-core";
+import { gridJoinKey, joinedGridModesKey } from "@tka/render-core";
 
 export interface BaseLayerKeyComponents {
   motionHash: string;
@@ -147,6 +147,9 @@ export function getBaseLayerComponents(
     showGrid: options.showGrid ?? true,
     ...(pictograph._prepared?.join && {
       join: gridJoinKey(pictograph._prepared.join),
+    }),
+    ...(pictograph._prepared?.joinedGrids && {
+      joinedGrids: joinedGridModesKey(pictograph._prepared.joinedGrids),
     }),
     showNonRadialPoints: options.showNonRadialPoints,
     handPointVisibility: options.handPointVisibility,

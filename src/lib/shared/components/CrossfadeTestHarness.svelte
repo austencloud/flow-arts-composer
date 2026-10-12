@@ -1,12 +1,12 @@
 <!--
-  Test harness for Crossfade.svelte. The rapid-toggle button runs its key
+  Test harness for Crossfade. The rapid-toggle button runs its key
   changes on real timers INSIDE the page so the interruption happens faster
   than the fade duration — driving it from the test runner would put a
   playwright round-trip between clicks and miss the mid-transition window.
 -->
 <script lang="ts">
   import { tick } from "svelte";
-  import Crossfade from "./Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
 
   let key = $state("alpha");
   let focusKey = $state<"idle" | "playing" | "finished">("idle");

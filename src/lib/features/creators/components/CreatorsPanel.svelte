@@ -16,7 +16,7 @@
     unfollowUser,
   } from "#lib/shared/community/services/user-repository.js";
   import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import { setCommunityMapContext } from "#lib/features/community/context/community-map-context.js";
   import { createCommunityMapState } from "#lib/features/community/state/community-map-state.svelte.js";

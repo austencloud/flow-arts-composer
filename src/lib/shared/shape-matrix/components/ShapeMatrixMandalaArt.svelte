@@ -13,7 +13,7 @@
   (a different flower or pair) crossfades in place through the shared
   Crossfade primitive; a resize repaints the current image without one. -->
 <script lang="ts">
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import { DURATION, STAGGER } from "#lib/shared/transitions/transitions.js";
   import {

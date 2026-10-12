@@ -4,7 +4,7 @@
     holdBackground,
     releaseBackground,
   } from "#lib/shared/background/shared/state/background-hold.svelte.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";

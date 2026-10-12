@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { submitSoftware } from "../services/software-submissions";
 

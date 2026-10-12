@@ -20,10 +20,10 @@ const csvBase = "static/data/pictographs/";
   trigridData: "",
 };
 
-const { generatePerVisitDemo, FALLBACK_DEMO } = await import("../per-visit-demo");
-const { applyBoxMode } = await import(
-  "#lib/features/choreo-card/services/deck-variation.js"
-);
+const { generatePerVisitDemo, FALLBACK_DEMO } =
+  await import("../per-visit-demo");
+const { applyBoxMode } =
+  await import("#lib/features/choreo-card/services/deck-variation.js");
 
 describe("per-visit demo chained to a box start position", () => {
   it("returns a real sequence instead of the baked fallback", async () => {

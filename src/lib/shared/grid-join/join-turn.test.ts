@@ -25,7 +25,7 @@ function turned(point: { x: number; y: number }, degrees: number) {
 
 const MARKUP_OPTIONS = {
   darkMode: true,
-  box: false,
+  grids: { left: "diamond", right: "diamond" },
   handColors: { left: "#2e3192", right: "#ed1c24" },
 } as const;
 
@@ -61,6 +61,17 @@ describe("join turn", () => {
     expect(flipsDiamondBox("diamond", "skewed")).toBe(false);
     expect(flipsDiamondBox("skewed", "box")).toBe(false);
     expect(flipsDiamondBox(undefined, "box")).toBe(true);
+    // Each hand on its own grid: a whole-picture flip turns, a one-hand
+    // turn (diamond beside box) never does.
+    const both = { left: "box", right: "box" } as const;
+    const mixed = { left: "box", right: "diamond" } as const;
+    expect(flipsDiamondBox("diamond", both)).toBe(true);
+    expect(flipsDiamondBox(both, { left: "diamond", right: "diamond" })).toBe(
+      true
+    );
+    expect(flipsDiamondBox("diamond", mixed)).toBe(false);
+    expect(flipsDiamondBox(mixed, "box")).toBe(false);
+    expect(flipsDiamondBox(mixed, both)).toBe(false);
   });
 
   it("outer dots cross from filled to ring with the turn", () => {

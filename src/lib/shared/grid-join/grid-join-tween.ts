@@ -15,6 +15,7 @@ import {
   getGridJoinLayout,
   gridJoinOffsets,
   type JoinVec,
+  type JoinedGridModes,
 } from "@tka/render-core";
 
 export interface HandOffsets {
@@ -45,12 +46,12 @@ export function gridJoinHandOffsets(join: GridJoin | null): HandOffsets {
 
 /**
  * A pictograph's resting frame for a join: each hand's grid offset in scene
- * units and the fit scale, as `getGridJoinLayout` draws it. One grid is
- * centered at scale 1.
+ * units and the fit scale, as `getGridJoinLayout` draws it for one grid mode
+ * or each hand's own grid. One grid is centered at scale 1.
  */
 export function pictographJoinFrame(
   join: GridJoin | null,
-  gridMode: string | undefined
+  gridMode: string | undefined | JoinedGridModes
 ): HandOffsets {
   if (!join) return { ...CENTERED_HAND_OFFSETS, scale: 1 };
   const layout = getGridJoinLayout(join, gridMode);

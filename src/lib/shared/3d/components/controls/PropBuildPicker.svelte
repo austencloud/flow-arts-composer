@@ -1,6 +1,6 @@
 <script lang="ts" generics="T extends string">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { popIn } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { PropBuildPreviewOption } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";

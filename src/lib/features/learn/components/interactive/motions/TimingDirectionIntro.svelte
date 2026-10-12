@@ -3,7 +3,7 @@
   import { onMount, onDestroy } from "svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
   import {
     createRenderActivityGate,

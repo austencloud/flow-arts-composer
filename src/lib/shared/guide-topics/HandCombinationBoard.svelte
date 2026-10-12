@@ -20,6 +20,10 @@
   entering or clicking a found cell, so the host can replay it. Both are off
   unless passed.
 
+  With `onHint`, an unfound cell is a button that asks for a hint toward it,
+  named by `hintLabel`; `goal` rings the cell asked for (Austen, 2026-10-12:
+  learners could not tell what the six were, so they can tap one for help).
+
   A host can set `--board-wide-columns` (6 by default) for a wide board.
 -->
 <script lang="ts">
@@ -48,6 +52,9 @@
     label?: string;
     cellProgress?: (id: HandCombinationId) => number | null;
     onCellPlay?: (id: HandCombinationId) => void;
+    goal?: HandCombinationId | null;
+    onHint?: (id: HandCombinationId) => void;
+    hintLabel?: (name: string) => string;
   }
 
   let {
@@ -60,6 +67,9 @@
     label,
     cellProgress = undefined,
     onCellPlay = undefined,
+    goal = null,
+    onHint = undefined,
+    hintLabel = (name) => name,
   }: Props = $props();
 
   /** Where the example's hands start, for a cell that plays its move. */
@@ -95,6 +105,7 @@
   >
     {#each cells as { combination, data, start, step, tones } (combination.id)}
       {@const isFound = found === null || found.has(combination.id)}
+      {@const hintable = !isFound && !!onHint}
       {@const progress = start
         ? (cellProgress?.(combination.id) ?? null)
         : null}
@@ -104,9 +115,11 @@
         class="cell"
         class:found={isFound}
         class:lit={lit === combination.id}
+        class:hintable
+        class:goal={hintable && goal === combination.id}
         style:--tone-a={tones[0]}
         style:--tone-b={tones[1]}
-        aria-hidden={isFound ? undefined : "true"}
+        aria-hidden={isFound || hintable ? undefined : "true"}
         onpointerenter={isFound && onCellPlay
           ? () => onCellPlay(combination.id)
           : undefined}
@@ -147,6 +160,15 @@
           {/if}
         </div>
         <i class="fa-solid fa-check check" aria-hidden="true"></i>
+        {#if hintable}
+          <button
+            type="button"
+            class="hint"
+            aria-pressed={goal === combination.id}
+            aria-label={hintLabel(plainTopicText(combination.name))}
+            onclick={() => onHint?.(combination.id)}
+          ></button>
+        {/if}
       </li>
     {/each}
   </ul>
@@ -217,6 +239,35 @@
   .cell.lit {
     background: color-mix(in srgb, var(--tone-a) 12%, transparent);
     border-color: color-mix(in srgb, var(--tone-a) 60%, transparent);
+  }
+
+  /* An unfound cell asked for as a hint: ringed and tinted whole, its name
+     and bar at full strength while the learner works toward it. */
+  .cell.goal {
+    background: color-mix(in srgb, var(--tone-a) 10%, transparent);
+    border-color: color-mix(in srgb, var(--tone-a) 70%, transparent);
+  }
+
+  .goal .name,
+  .goal .bar,
+  .hintable:hover .name,
+  .hintable:hover .bar {
+    opacity: 1;
+  }
+
+  .hint {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .hint:focus-visible {
+    outline: 2px solid var(--theme-accent, currentColor);
+    outline-offset: 2px;
   }
 
   .art {

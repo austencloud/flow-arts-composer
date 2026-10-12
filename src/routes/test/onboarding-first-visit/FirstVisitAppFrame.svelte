@@ -1,7 +1,7 @@
 <script lang="ts">
   import AccountSetupChecklist from "#lib/shared/onboarding/components/account-setup/AccountSetupChecklist.svelte";
   import ConstructGuideEntry from "#lib/features/create/construct/tutorial/components/ConstructGuideEntry.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { AccountSetupTaskId } from "#lib/shared/onboarding/state/account-setup-state.svelte.js";

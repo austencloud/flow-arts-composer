@@ -25,7 +25,7 @@ animations, exactly as the legacy quizzes did.
 -->
 <script lang="ts">
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { formatTime } from "#lib/shared/sequence-viewer/utils/format-time.js";

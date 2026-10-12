@@ -14,7 +14,7 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { handLabel } from "./control-labels";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import MobileHandSelector from "./MobileHandSelector.svelte";
   import PropControlPair from "./PropControlPair.svelte";
   import PropTurnsControl from "./PropTurnsControl.svelte";
