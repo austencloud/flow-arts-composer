@@ -88,8 +88,8 @@
     active?: boolean;
     sequence: SequenceData | null;
     initialProject?: PostProject;
-    /** A post that is one arrangement opens in the arrangement editor. */
-    editArrangementOnOpen?: boolean;
+    /** A post that is one arrangement opens with that arrangement selected. */
+    selectArrangementOnOpen?: boolean;
     /**
      * A feature video. Its post saves to its folder on this computer, never
      * to this browser's Post Studio storage; see feature-video-client.ts.
@@ -115,7 +115,7 @@
     active = true,
     sequence,
     initialProject,
-    editArrangementOnOpen = false,
+    selectArrangementOnOpen = false,
     feature,
     cardPreviewUrl,
     animationPreviewUrl,
@@ -368,15 +368,6 @@
     if (beatsClip) openBeats(beatsClip);
   }
 
-  /** The arrangement open in the arrangement editor over the workspace. */
-  let editingArrangementId = $state<string | null>(null);
-
-  function editArrangement(itemId: string | null): void {
-    editor.pause();
-    editingArrangementId = itemId;
-    editor.mode = itemId === null ? "edit" : "arrangement";
-  }
-
   /** The save menu a right click on a media layer opens; mounted once below. */
   let saveMenuHost = $state<VisualSequenceSaveContextMenuHost | undefined>();
   registerTkaEditor(editor, {
@@ -394,10 +385,6 @@
     get sequence() {
       return sequence;
     },
-    get editingArrangementId() {
-      return editingArrangementId;
-    },
-    editArrangement,
   });
 
   $effect(() => onProjectPropChange(editor.project.propType));
@@ -498,10 +485,6 @@
     overlay,
     strips,
     arrangement,
-    get editingArrangementId() {
-      return editingArrangementId;
-    },
-    editArrangement,
     get inspectorTarget() {
       return inspectorTarget;
     },
@@ -636,10 +619,10 @@
   });
 
   onMount(() => {
-    if (!editArrangementOnOpen) return;
+    if (!selectArrangementOnOpen) return;
     const items = editor.project.tracks.flatMap((track) => track.items);
     const only = items.length === 1 ? items[0] : undefined;
-    if (only?.kind === "arrangement") editArrangement(only.id);
+    if (only?.kind === "arrangement") editor.selectedItemId = only.id;
   });
 
   onDestroy(() => editor.dispose());
