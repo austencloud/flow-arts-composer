@@ -598,7 +598,6 @@ export const NOT_YET: ReadonlySet<string> = new Set([
   "lib/shared/components/panel/PanelTabs.svelte",
   "lib/shared/components/parameter-cards/LengthCard.svelte",
   "lib/shared/components/parameter-cards/PositionCard.svelte",
-  "lib/shared/components/placement-picker/MultiSelectPlacementPicker.svelte",
   "lib/shared/components/placement-picker/PlacementPickerGrid.svelte",
   "lib/shared/components/selection/SelectionToolbar.svelte",
   "lib/shared/components/sequence-picker/SequencePickerModal.svelte",

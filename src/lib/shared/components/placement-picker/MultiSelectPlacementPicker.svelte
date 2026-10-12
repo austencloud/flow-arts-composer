@@ -6,6 +6,14 @@ Displays all 16 placements with toggle behavior:
 - Disabled (dimmed): Placement is blocked from use
 
 Uses blocklist approach: placements in blockedPlacements are excluded.
+
+Two layouts. `stack` (default) puts the quick choices and status line above
+the grid and any `aside` content below it. `split` does the same on a narrow
+pane, and from 40rem of its own width moves the grid to the left and the
+choices, status and aside into a column beside it, so a wide pane spends its
+height on the grid instead of on a band of chips. The host sizes the grid
+through two custom properties, --placement-grid-size (stacked) and
+--placement-grid-split-size (side by side); both default to the full width.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -17,7 +25,7 @@ Uses blocklist approach: placements in blockedPlacements are excluded.
     GridPlacement,
   } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { onMount } from "svelte";
+  import { onMount, type Snippet } from "svelte";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { getLetterBorderColorSafe } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
   import { createStartPlacementVariations } from "./start-placement-utils";
@@ -42,6 +50,8 @@ Uses blocklist approach: placements in blockedPlacements are excluded.
     leftStartOrientation = Orientation.IN,
     rightStartOrientation = Orientation.IN,
     presets = [],
+    layout = "stack",
+    aside,
   } = $props<{
     blockedPlacements: GridPlacement[];
     onBlockedChange: (blocked: GridPlacement[]) => void;
@@ -50,6 +60,10 @@ Uses blocklist approach: placements in blockedPlacements are excluded.
     rightStartOrientation?: Orientation;
     /** Named shortcuts shown beside All and Choose one. */
     presets?: PlacementSelectionPreset[];
+    /** `split` moves the controls beside the grid when there is room. */
+    layout?: "stack" | "split";
+    /** Extra controls that belong with the grid, such as start orientation. */
+    aside?: Snippet;
   }>();
 
   // State
@@ -221,174 +235,196 @@ Uses blocklist approach: placements in blockedPlacements are excluded.
   );
 </script>
 
-<div class="multi-select-grid">
+<div class="multi-select-grid" class:split={layout === "split"}>
   {#if isLoading}
     <div class="loading-placeholder">
       <span>{t("shared_placement_loading")}</span>
     </div>
   {:else}
-    <div
-      class="quick-actions"
-      role="toolbar"
-      aria-label={t("shared_placement_quick_choices")}
-    >
-      <FilterChipBase
-        label={t("create_option_all")}
-        icon="fas fa-check-double"
-        mode="toggle"
-        size="sm"
-        active={activeSelection === "all"}
-        ariaLabel={t("shared_placement_enable_all")}
-        onclick={selectAll}
-      />
-      {#each presets as preset (preset.id)}
-        <FilterChipBase
-          label={preset.label}
-          icon="fas fa-shapes"
-          mode="toggle"
-          size="sm"
-          active={activeSelection === `preset:${preset.id}`}
-          ariaLabel={t("shared_placement_use_preset", { name: preset.label })}
-          onclick={() => selectPreset(preset)}
-        />
-      {/each}
-      <FilterChipBase
-        label={t("compose_custom")}
-        icon="fas fa-sliders"
-        mode="toggle"
-        size="sm"
-        active={activeSelection === "custom"}
-        ariaLabel={t("shared_placement_custom_mix")}
-        onclick={selectCustom}
-      />
-      <FilterChipBase
-        label={t("shared_placement_choose_one")}
-        icon="fas fa-bullseye"
-        mode="toggle"
-        size="sm"
-        active={activeSelection === "one"}
-        ariaLabel={selectionMode === "one"
-          ? t("shared_placement_cancel_one")
-          : t("shared_placement_exactly_one")}
-        onclick={toggleChooseOne}
-      />
-    </div>
-
-    <!-- Status indicator -->
-    <div class="status-row" aria-live="polite" aria-atomic="true">
-      <span class="status-text">
-        {#if selectionMode === "one"}
-          {t("shared_placement_keep_one")}
-        {:else if selectionMode === "custom" && customNeedsFirstPlacement}
-          {t("shared_placement_first")}
-        {:else if selectionMode === "custom"}
-          {t("shared_placement_selected", {
-            count: enabledCount,
-            total: variations.length,
-          })}
-        {:else if enabledCount === variations.length}
-          {t("shared_placement_all_enabled", { total: variations.length })}
-        {:else if enabledCount === 0}
-          {t("shared_placement_none")}
-        {:else}
-          {t("shared_placement_enabled", {
-            count: enabledCount,
-            total: variations.length,
-          })}
-        {/if}
-      </span>
-      <span class="hint-text"
-        >{selectionMode === "one" || customNeedsFirstPlacement
-          ? t("shared_placement_tap")
-          : selectionMode === "custom"
-            ? t("shared_placement_add_remove")
-            : t("shared_placement_toggle")}</span
-      >
-    </div>
-
-    <!-- Placement grid -->
-    <div class="variations-grid">
-      {#each displayVariations as variation (variation.id)}
-        {@const gridPlacement = variation.startPlacement as GridPlacement}
-        {@const enabled = isEnabled(gridPlacement)}
-        <button
-          class="placement-cell"
-          class:enabled
-          class:disabled={!enabled}
-          onclick={() => togglePlacement(gridPlacement)}
-          onkeydown={(e) => handleKeydown(e, gridPlacement)}
-          type="button"
-          style:--letter-border-color={getLetterBorderColorSafe(
-            variation.letter
-          )}
-          aria-label={selectionMode === "one"
-            ? t("shared_placement_only", { position: variation.startPlacement })
-            : customNeedsFirstPlacement
-              ? t("shared_placement_start", {
-                  position: variation.startPlacement,
-                })
-              : enabled && enabledCount === 1
-                ? t("shared_placement_last", {
-                    position: variation.startPlacement,
-                  })
-                : t(
-                    enabled
-                      ? "shared_placement_disable"
-                      : "shared_placement_enable",
-                    { position: variation.startPlacement }
-                  )}
-          aria-pressed={enabled}
+    <div class="picker-layout">
+      <div class="picker-controls">
+        <div
+          class="quick-actions"
+          role="toolbar"
+          aria-label={t("shared_placement_quick_choices")}
         >
-          <div class="pictograph-wrapper">
-            <PictographContainer pictographData={variation} />
-          </div>
-          {#if !enabled}
-            <div class="disabled-overlay">
-              <svg
-                class="x-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="3"
-              >
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
+          <FilterChipBase
+            label={t("create_option_all")}
+            icon="fas fa-check-double"
+            mode="toggle"
+            size="sm"
+            active={activeSelection === "all"}
+            ariaLabel={t("shared_placement_enable_all")}
+            onclick={selectAll}
+          />
+          {#each presets as preset (preset.id)}
+            <FilterChipBase
+              label={preset.label}
+              icon="fas fa-shapes"
+              mode="toggle"
+              size="sm"
+              active={activeSelection === `preset:${preset.id}`}
+              ariaLabel={t("shared_placement_use_preset", {
+                name: preset.label,
+              })}
+              onclick={() => selectPreset(preset)}
+            />
+          {/each}
+          <FilterChipBase
+            label={t("compose_custom")}
+            icon="fas fa-sliders"
+            mode="toggle"
+            size="sm"
+            active={activeSelection === "custom"}
+            ariaLabel={t("shared_placement_custom_mix")}
+            onclick={selectCustom}
+          />
+          <FilterChipBase
+            label={t("shared_placement_choose_one")}
+            icon="fas fa-bullseye"
+            mode="toggle"
+            size="sm"
+            active={activeSelection === "one"}
+            ariaLabel={selectionMode === "one"
+              ? t("shared_placement_cancel_one")
+              : t("shared_placement_exactly_one")}
+            onclick={toggleChooseOne}
+          />
+        </div>
+
+        <!-- Status indicator -->
+        <div class="status-row" aria-live="polite" aria-atomic="true">
+          <span class="status-text">
+            {#if selectionMode === "one"}
+              {t("shared_placement_keep_one")}
+            {:else if selectionMode === "custom" && customNeedsFirstPlacement}
+              {t("shared_placement_first")}
+            {:else if selectionMode === "custom"}
+              {t("shared_placement_selected", {
+                count: enabledCount,
+                total: variations.length,
+              })}
+            {:else if enabledCount === variations.length}
+              {t("shared_placement_all_enabled", { total: variations.length })}
+            {:else if enabledCount === 0}
+              {t("shared_placement_none")}
+            {:else}
+              {t("shared_placement_enabled", {
+                count: enabledCount,
+                total: variations.length,
+              })}
+            {/if}
+          </span>
+          <span class="hint-text"
+            >{selectionMode === "one" || customNeedsFirstPlacement
+              ? t("shared_placement_tap")
+              : selectionMode === "custom"
+                ? t("shared_placement_add_remove")
+                : t("shared_placement_toggle")}</span
+          >
+        </div>
+      </div>
+
+      <!-- Placement grid -->
+      <div class="variations-grid">
+        {#each displayVariations as variation (variation.id)}
+          {@const gridPlacement = variation.startPlacement as GridPlacement}
+          {@const enabled = isEnabled(gridPlacement)}
+          <button
+            class="placement-cell"
+            class:enabled
+            class:disabled={!enabled}
+            onclick={() => togglePlacement(gridPlacement)}
+            onkeydown={(e) => handleKeydown(e, gridPlacement)}
+            type="button"
+            style:--letter-border-color={getLetterBorderColorSafe(
+              variation.letter
+            )}
+            aria-label={selectionMode === "one"
+              ? t("shared_placement_only", {
+                  position: gridPlacement,
+                })
+              : customNeedsFirstPlacement
+                ? t("shared_placement_start", {
+                    position: gridPlacement,
+                  })
+                : enabled && enabledCount === 1
+                  ? t("shared_placement_last", {
+                      position: gridPlacement,
+                    })
+                  : t(
+                      enabled
+                        ? "shared_placement_disable"
+                        : "shared_placement_enable",
+                      { position: gridPlacement }
+                    )}
+            aria-pressed={enabled}
+          >
+            <div class="pictograph-wrapper">
+              <PictographContainer pictographData={variation} />
             </div>
-          {/if}
-        </button>
-      {/each}
+            {#if !enabled}
+              <div class="disabled-overlay">
+                <svg
+                  class="x-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="3"
+                >
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </div>
+            {/if}
+          </button>
+        {/each}
+      </div>
+
+      {#if aside}
+        <div class="picker-aside">{@render aside()}</div>
+      {/if}
     </div>
   {/if}
 </div>
 
 <style>
   .multi-select-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    container: placement-picker / inline-size;
     padding: 8px 0;
   }
 
+  .picker-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .picker-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  /* Wraps rather than scrolls: a sideways scroller hid "Choose one" past the
+     edge of a 375px phone with nothing to say it was there. */
   .quick-actions {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: flex-start;
     gap: 6px;
     min-height: var(--min-touch-target, 48px);
-    overflow-x: auto;
     padding-inline: 4px;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .quick-actions::-webkit-scrollbar {
-    display: none;
   }
 
   .status-row {
     display: flex;
-    align-items: center;
+    flex-wrap: wrap;
+    align-items: baseline;
     justify-content: space-between;
+    column-gap: 12px;
+    row-gap: 2px;
     padding: 0 4px;
   }
 
@@ -417,6 +453,48 @@ Uses blocklist approach: placements in blockedPlacements are excluded.
     grid-template-columns: repeat(4, 1fr);
     gap: 8px;
     padding: 4px;
+    width: var(--placement-grid-size, 100%);
+    margin-inline: auto;
+  }
+
+  /* Side by side. The grid takes what the host allows, leaving the control
+     column at least 16rem; the column sits at the grid's top edge so the
+     chips stay next to the cells they act on. */
+  @container placement-picker (min-width: 40rem) {
+    .split .picker-layout {
+      display: grid;
+      grid-template-columns: auto minmax(16rem, 24rem);
+      grid-template-rows: auto 1fr;
+      grid-template-areas:
+        "grid controls"
+        "grid aside";
+      justify-content: center;
+      align-items: start;
+      column-gap: 24px;
+      row-gap: 16px;
+    }
+
+    .split .variations-grid {
+      grid-area: grid;
+      width: min(
+        var(--placement-grid-split-size, 100cqw),
+        calc(100cqw - 16rem - 24px)
+      );
+      margin-inline: 0;
+    }
+
+    .split .picker-controls {
+      grid-area: controls;
+    }
+
+    .split .picker-aside {
+      grid-area: aside;
+    }
+
+    .split .status-row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
 
   .placement-cell {
@@ -431,7 +509,11 @@ Uses blocklist approach: placements in blockedPlacements are excluded.
     border-radius: 8px;
     cursor: pointer;
     padding: 4px;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) ease,
+      border-color var(--duration-normal) ease,
+      opacity var(--duration-normal) ease,
+      transform var(--duration-normal) ease;
     overflow: hidden;
   }
 

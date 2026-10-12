@@ -1,11 +1,11 @@
 <!--
 CustomizeExpandedOverlay.svelte - Customize panel, one decision at a time.
 
-A SettingsDrillPanel over Style, Start Placement, End Placement, and Hand
-Relationship.
-The root list shows each one's current value; choosing a row
-gives that setting the whole panel. Single column at every size — see
-SettingsDrillPanel's header for why the two-pane variant was removed.
+A SettingsDrillPanel over Style, Start Placement and End Placement. The landing
+screen is CustomizeOverview: one tile per setting, each drawing a small picture
+of its own screen next to the current value. Choosing a tile gives that setting
+the whole panel. Single column at every size; see SettingsDrillPanel's header
+for why the two-pane variant was removed.
 
 Replaced an accordion that put start placement and end placement on the same
 screen (end placement nested INSIDE start placement) and, because the expanded
@@ -49,7 +49,9 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   } from "./customize-summary";
   import { GENERATE_DEFAULT_CONFIG } from "../../state/generate-config.svelte";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import GenerationSettingsOverlay from "./GenerationSettingsOverlay.svelte";
+  import CustomizeOverview from "./CustomizeOverview.svelte";
   import {
     clampStartOrientationToLevel,
     startOrientationsForLevel,
@@ -97,6 +99,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   }>();
 
   let hapticService: HapticFeedback | null = $state(null);
+  const oriHeadingId = $props.id();
 
   onMount(() => {
     hapticService = getHapticFeedback();
@@ -120,6 +123,12 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 
   function handleSelect(_id: string | null) {
     hapticService?.trigger("selection");
+  }
+
+  // The overview tiles report a choice; the drill panel owns the push.
+  function openScreen(id: string) {
+    selected = id;
+    handleSelect(id);
   }
 
   // ─── Local state for style (instant UI feedback) ───
@@ -342,18 +351,18 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 >
   {#snippet actions()}
     {#if onResetAll}
-      <button
-        class="reset-button"
+      <PanelButton
+        variant="quiet"
+        ariaLabel={t(
+          "create_ui_reset_all_generation_settings_to_their_defaults"
+        )}
         onclick={() => {
           hapticService?.trigger("selection");
           resetConfirmOpen = true;
         }}
-        aria-label={t(
-          "create_ui_reset_all_generation_settings_to_their_defaults"
-        )}
       >
         {t("settings_preset_reset_all")}
-      </button>
+      </PanelButton>
     {/if}
   {/snippet}
 
@@ -362,80 +371,89 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
       items={drillItems}
       bind:selected
       onSelect={handleSelect}
-      choiceLayout="cards"
     >
-      {#snippet listHeader()}
-        <!-- These settings persist across sessions, which is what made a saved
-             Choppy props value look like a broken generator. Say so up front. -->
-        <p class="overlay-note">
-          {t("create_deep_settings_persist_note")}
-        </p>
+      {#snippet listContent()}
+        <CustomizeOverview
+          {gridMode}
+          constraintPreset={localConstraintPreset}
+          handPathMode={localHandPathMode}
+          motionTypeFilter={localMotionTypeFilter}
+          styleValue={styleSummary}
+          startBlocked={localBlockedPlacements}
+          startValue={startPosDisplay}
+          endAllowed={localEndPlacements}
+          endValue={endPosDisplay}
+          endLocked={!isFreeformMode}
+          onOpen={openScreen}
+        />
       {/snippet}
 
       {#snippet detail(id)}
         {#if id === "style"}
-          <div class="drill-fill spread">
-            <GenerationStylePanel
-              constraintPreset={localConstraintPreset}
-              handPathMode={localHandPathMode}
-              motionTypeFilter={localMotionTypeFilter}
-              baseline={styleBaseline}
-              haptic={hapticService}
-              onPropsChange={(v) => {
-                localConstraintPreset = v;
-                onConstraintPresetChange(v);
-              }}
-              onHandsChange={(v) => {
-                localHandPathMode = v;
-                onHandPathModeChange(v);
-              }}
-              onDashesChange={(v) => {
-                localMotionTypeFilter = v === "mixed" ? null : v;
-                onMotionTypeFilterChange(v);
-              }}
-            />
-          </div>
+          <GenerationStylePanel
+            constraintPreset={localConstraintPreset}
+            handPathMode={localHandPathMode}
+            motionTypeFilter={localMotionTypeFilter}
+            baseline={styleBaseline}
+            haptic={hapticService}
+            onPropsChange={(v) => {
+              localConstraintPreset = v;
+              onConstraintPresetChange(v);
+            }}
+            onHandsChange={(v) => {
+              localHandPathMode = v;
+              onHandPathModeChange(v);
+            }}
+            onDashesChange={(v) => {
+              localMotionTypeFilter = v === "mixed" ? null : v;
+              onMotionTypeFilterChange(v);
+            }}
+          />
         {:else if id === "startPos"}
           <div class="drill-fill grid-fill">
             <MultiSelectPlacementPicker
+              layout="split"
               blockedPlacements={localBlockedPlacements}
               onBlockedChange={handleBlockedChange}
               leftStartOrientation={localLeftOri}
               rightStartOrientation={localRightOri}
               presets={startPlacementPresets}
               {gridMode}
-            />
-            <!-- Under the picker, not on a screen of its own: the props above
-                 redraw as these change, so the setting and its result are
-                 visible at the same time. -->
-            <div class="ori-block">
-              <div class="ori-row">
-                <span class="ori-color-label ori-blue"
-                  >{t("create_ui_left")}</span
-                >
-                <PropOrientationControl
-                  hand="left"
-                  orientation={localLeftOri}
-                  allowedOrientations={availableStartOrientations}
-                  onOrientationChange={handleLeftOriChange}
-                />
-              </div>
-              <div class="ori-row">
-                <span class="ori-color-label ori-red"
-                  >{t("create_ui_right")}</span
-                >
-                <PropOrientationControl
-                  hand="right"
-                  orientation={localRightOri}
-                  allowedOrientations={availableStartOrientations}
-                  onOrientationChange={handleRightOriChange}
-                />
-              </div>
-            </div>
+            >
+              <!-- Beside the picker, not on a screen of its own: the props in
+                   the grid redraw as these change, so the setting and its
+                   result are visible at the same time. -->
+              {#snippet aside()}
+                <section class="ori-block" aria-labelledby={oriHeadingId}>
+                  <h5 class="ori-heading" id={oriHeadingId}>
+                    {t("create_ui_prop_orientations")}
+                  </h5>
+                  <div class="ori-row">
+                    <span class="ori-hand ori-blue">{t("create_ui_left")}</span>
+                    <PropOrientationControl
+                      hand="left"
+                      orientation={localLeftOri}
+                      allowedOrientations={availableStartOrientations}
+                      onOrientationChange={handleLeftOriChange}
+                    />
+                  </div>
+                  <div class="ori-row">
+                    <span class="ori-hand ori-red">{t("create_ui_right")}</span>
+                    <PropOrientationControl
+                      hand="right"
+                      orientation={localRightOri}
+                      allowedOrientations={availableStartOrientations}
+                      onOrientationChange={handleRightOriChange}
+                    />
+                  </div>
+                </section>
+              {/snippet}
+            </MultiSelectPlacementPicker>
           </div>
         {:else if id === "endPos"}
           <div class="drill-fill grid-fill">
             <MultiSelectPlacementPicker
+              layout="split"
               blockedPlacements={endBlockedPlacements}
               onBlockedChange={handleEndBlockedChange}
               leftStartOrientation={localLeftOri}
@@ -461,69 +479,8 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 />
 
 <style>
-  /* A real button, not a text link — it's a standalone action. */
-  .reset-button {
-    flex-shrink: 0;
-    min-height: var(--min-touch-target);
-    padding: 0 14px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.1));
-    border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
-    border-radius: 8px;
-    color: var(--theme-text, white);
-    font-family: inherit;
-    font-size: var(--font-size-sm, 14px);
-    font-weight: 600;
-    white-space: nowrap;
-    cursor: pointer;
-    transition:
-      background var(--duration-normal) var(--ease-standard),
-      border-color var(--duration-normal) var(--ease-standard);
-  }
-
-  .reset-button:hover {
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.15));
-    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.3));
-  }
-
-  .reset-button:focus-visible {
-    outline: 2px solid var(--customize-accent);
-    outline-offset: 2px;
-  }
-
-  .overlay-note {
-    margin: 0 0 8px;
-    flex-shrink: 0;
-    font-size: var(--font-size-compact, 12px);
-    color: rgba(255, 255, 255, 0.55);
-  }
-
-  /* `spread` distributes a short form down the pane instead of leaving it
-     stacked at the top with 700px of nothing under it. `grid-fill` lets a
-     pictograph grid grow into the height it has. Both are the sibling
-     drawers' pattern: full-height box, content spread to fill it. */
-  /* Top-aligned, normal gaps. Spreading these across a full-height pane was
-     tried and reverted: at 1315px the three Style axes ended up 275px apart
-     and stopped reading as one group. A form's rows belong together; the
-     leftover height is the panel's problem, not theirs. */
-  .spread {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .spread :global(.style-panel) {
-    flex: 0 0 auto;
-    justify-content: flex-start;
-  }
-
-  /* A 4x4 grid of square cells is as tall as it is wide, so the panel's WIDTH
-     caps it and it cannot consume the leftover height of a full-height column.
-     Every attempt to make it try was worse: centering it stranded the preset
-     control 396px above it, and stretching the rows would letterbox a square
-     pictograph inside a tall cell. So the grid takes all the width it can,
-     sits directly under its control, and the remainder stays empty — the same
-     leftover every sibling drawer in this slot has. `cqh` still caps it by
-     height on short panes so it never overflows into a scroll it doesn't need. */
+  /* Full-height wrapper for the placement screens. It is a size container so
+     the picker can fit its square grid to the height the pane actually has. */
   .grid-fill {
     container-type: size;
     display: flex;
@@ -531,86 +488,74 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     min-width: 0;
   }
 
-  /* The reserve is whatever the picker puts ABOVE its grid, so the square grid
-     plus that chrome still fits the wrapper's height. MultiSelectPlacementPicker
-     has a quick-action toolbar and one-line status row; PlacementPickerGrid has
-     a full-height "Any" button. Under-reserving here cost a 16px scroll on a
-     375px phone. */
-  .grid-fill {
-    --grid-reserve: 7rem;
-  }
-
-  .grid-fill :global(.placement-picker-grid) {
-    --grid-reserve: 5.25rem;
-  }
-
-  /* Fit the height when there is height to fit, but never below a legible
-     cell. Without the 20rem floor a 412px-tall window squeezed cells to
-     exactly 44px — the touch floor, and a pictograph at that size is a smudge.
-     Below the floor the grid keeps its size and the body scrolls, which is the
-     right trade: a readable cell you scroll to beats an unreadable one you
-     don't. */
-  .grid-fill :global(.variations-grid) {
-    width: min(100%, max(20rem, calc(100cqh - var(--grid-reserve))));
-    margin-inline: auto;
-  }
-
-  .grid-fill :global(.placement-picker-grid),
+  /* The two sizes the picker's grid may take, measured against this wrapper.
+     Stacked (narrow panes), chips and the status line sit above the grid, so
+     the square is the height minus that band. The 20rem floor keeps a cell
+     legible on a 412px-tall window; below it the body scrolls instead, since
+     a readable cell you scroll to beats a smudge you do not. Side by side
+     (wide panes), the controls move beside the grid, so it may use nearly the
+     whole height. */
   .grid-fill :global(.multi-select-grid) {
+    --placement-grid-size: min(100%, max(20rem, calc(100cqh - 8.5rem)));
+    --placement-grid-split-size: max(18rem, calc(100cqh - 1rem));
     flex: 0 0 auto;
     min-height: 0;
   }
 
-  /* Sits under the placement grid, which already claimed the width it wants.
-     The top margin is what separates "where the props start" from "which way
-     they point" now that both live on one screen. */
   .ori-block {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-top: 14px;
+    gap: 0.625rem;
+    padding: 0.875rem;
+    border-radius: 0.875rem;
+    background: color-mix(in srgb, var(--theme-text, white) 5%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-text, white) 10%, transparent);
+  }
+
+  .ori-heading {
+    margin: 0 0 0.125rem;
+    font-size: var(--font-size-sm, 0.875rem);
+    font-weight: 600;
+    color: var(--theme-text, white);
   }
 
   /* Capped: four short labels are a compact control, and letting the row
-     stretch to a wide detail pane parked the Blue/Red label a third of a pane
-     away from the buttons it names. */
+     stretch across a wide pane parked the hand name a third of a pane away
+     from the buttons it names. */
   .ori-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 0.625rem;
     max-width: 26rem;
   }
 
-  /* Sized in ch to the longer word rather than to the 44px that fit "Blue" —
-     at 700 weight "Right" ran past its own box and closed the gap to the
-     control it names. */
-  .ori-color-label {
+  /* Sized in ch to the longer word: at this weight "Right" ran past a 44px box
+     and closed the gap to the control it names. */
+  .ori-hand {
     flex-shrink: 0;
     width: 6ch;
-    font-size: var(--font-size-sm, 14px);
+    font-size: var(--font-size-sm, 0.875rem);
     font-weight: 700;
-    letter-spacing: 0.3px;
   }
 
   /* Left and Right, not Blue and Red: the tint already says which prop, so the
-     word would be restating the colour. Naming the hand instead is the part a
-     first-time reader cannot get from looking. Blue is the left hand, red the
-     right — the same convention the Actions panel's APPLY TO row uses.
-
-     Lightened off the raw prop colors: #3b82f6 as text on the panel's dark
-     blue gradient was barely readable. Keeps the prop identity, wins the
-     contrast. */
+     word names the hand, the part a first-time reader cannot get by looking.
+     Mixed toward the theme's own text color so the prop hue keeps its
+     contrast on both the dark and the light panel. */
   .ori-blue {
-    color: color-mix(in srgb, var(--prop-blue, #3b82f6) 55%, white);
+    color: color-mix(
+      in srgb,
+      var(--dm-motion-blue, #3575e2) 60%,
+      var(--theme-text, white)
+    );
   }
 
   .ori-red {
-    color: color-mix(in srgb, var(--prop-red, #ef4444) 75%, white);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .reset-button {
-      transition: none;
-    }
+    color: color-mix(
+      in srgb,
+      var(--dm-motion-red, #ed1c24) 70%,
+      var(--theme-text, white)
+    );
   }
 </style>

@@ -4,12 +4,13 @@
   key names the four modes by timing and direction in the lesson's words,
   each chip a link to that mode's Timing and Direction guide, the one place
   that teaches timing and direction (one explainer per concept); Split-Same
-  and Tog-Same stand side by side under a line each on where they travel,
-  each a start box and its four-count loop in its element's colour;
+  and Tog-Same stand side by side, each under its own line on where it
+  travels, each a start box and its four-count loop in its element's colour;
   Split-Opp and Tog-Opp follow under their shared line. The loops come from
   the shared Dual-Shifts record the print sheet also reads; the web page
   sets one sentence per line, as the book does, and keeps the book's modes,
-  start-position and between-positions sentences for print only.
+  start-position, between-positions and notice sentences for print only; the
+  practice line closes the page as a plain centered line.
 -->
 <script lang="ts">
   import { onMount } from "svelte";
@@ -36,6 +37,7 @@
     type DualShiftMode,
     type DualShiftModeId,
   } from "#lib/shared/guide-topics/dual-shifts-topic.js";
+  import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import { getElementImagePath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import TopicHeader from "./TopicHeader.svelte";
   import type { TopicPageProps } from "./topic-pages";
@@ -44,14 +46,11 @@
 
   /** Austen's definition opens the page as its lede. */
   const lede = plainLine(dualShiftsTopicLines("intro")[0] ?? "");
-  /** Each pair's lead: where its modes travel, one sentence per line. */
-  const LEADS = {
-    same: [
-      DUAL_SHIFTS_WEB_COPY.sameLeadSplit,
-      DUAL_SHIFTS_WEB_COPY.sameLeadTog,
-    ],
-    opp: [DUAL_SHIFTS_WEB_COPY.oppLead],
-  } as const;
+  /** Where a Same mode travels, set above its own card. */
+  const MODE_LEADS: Partial<Record<DualShiftModeId, TranslationKey>> = {
+    "split-same": DUAL_SHIFTS_WEB_COPY.sameLeadSplit,
+    "tog-same": DUAL_SHIFTS_WEB_COPY.sameLeadTog,
+  };
   const TIMINGS = ["split", "tog"] as const;
   const DIRECTIONS = ["same", "opp"] as const;
 
@@ -217,52 +216,49 @@
   />
 {/snippet}
 
-{#snippet lead(name: "same" | "opp")}
-  <p class="lead">
-    {#each LEADS[name] as key (key)}
-      <span class="line">{t(key)}</span>
-    {/each}
-  </p>
-{/snippet}
-
 {#snippet pair(name: "same" | "opp")}
   <div class="pair-wrap" bind:this={pairEls[name]}>
     <ul class="pair">
       {#each LOOPS[name] as { mode, start, counts } (mode.id)}
-        <!-- Replay is a pointer extra; every loop has already played on view. -->
-        <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-        <li
-          class="mode"
-          style:--el={dualShiftElement(mode).accentColor}
-          style:--el-deep={dualShiftElement(mode).darkComplement}
-          aria-labelledby="dual-shift-{mode.id}"
-          onpointerenter={() => replay(mode.id)}
-          onclick={() => replay(mode.id)}
-        >
-          <h2 class="mode-name" id="dual-shift-{mode.id}">
-            <img
-              class="element"
-              src={getElementImagePath(dualShiftElement(mode).element)}
-              alt=""
-            />
-            {t(mode.name)}
-          </h2>
-          <div class="loop">
-            <div class="cell start">
-              {@render pictograph(start, true, null, null)}
-            </div>
-            <div class="counts">
-              {#each counts as { step, pose }, n (step.id)}
-                <div class="cell">
-                  {@render pictograph(
-                    step,
-                    false,
-                    countProgress(mode.id, n + 1),
-                    pose,
-                    () => onCountDrawn(name, step.id)
-                  )}
-                </div>
-              {/each}
+        <li class="slot">
+          {#if MODE_LEADS[mode.id]}
+            <p class="lead">{t(MODE_LEADS[mode.id]!)}</p>
+          {/if}
+          <!-- Replay is a pointer extra; every loop has already played on view. -->
+          <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+          <div
+            class="mode"
+            style:--el={dualShiftElement(mode).accentColor}
+            style:--el-deep={dualShiftElement(mode).darkComplement}
+            aria-labelledby="dual-shift-{mode.id}"
+            onpointerenter={() => replay(mode.id)}
+            onclick={() => replay(mode.id)}
+          >
+            <h2 class="mode-name" id="dual-shift-{mode.id}">
+              <img
+                class="element"
+                src={getElementImagePath(dualShiftElement(mode).element)}
+                alt=""
+              />
+              {t(mode.name)}
+            </h2>
+            <div class="loop">
+              <div class="cell start">
+                {@render pictograph(start, true, null, null)}
+              </div>
+              <div class="counts">
+                {#each counts as { step, pose }, n (step.id)}
+                  <div class="cell">
+                    {@render pictograph(
+                      step,
+                      false,
+                      countProgress(mode.id, n + 1),
+                      pose,
+                      () => onCountDrawn(name, step.id)
+                    )}
+                  </div>
+                {/each}
+              </div>
             </div>
           </div>
         </li>
@@ -330,20 +326,14 @@
     </div>
   </section>
 
-  <section class="set">
-    {@render lead("same")}
-    {@render pair("same")}
-  </section>
+  {@render pair("same")}
 
   <section class="set">
-    {@render lead("opp")}
+    <p class="lead">{t(DUAL_SHIFTS_WEB_COPY.oppLead)}</p>
     {@render pair("opp")}
   </section>
 
-  <aside class="remember">
-    <p>{@html dualShiftsTopicHtml("notice")}</p>
-    <p>{@html dualShiftsTopicHtml("practice")}</p>
-  </aside>
+  <p class="lead">{@html dualShiftsTopicHtml("practice")}</p>
 
   {#if lessonHref}
     <p class="lesson-link">
@@ -543,6 +533,12 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
+  /* A slot: the mode's travel line, if it has one, over its card. */
+  .slot {
+    display: grid;
+    gap: 0.85rem;
+    align-content: start;
+  }
   /* Each mode card wears its element: water, earth, fire or air, from the
      choreo-card palette, as a wash, a border and the name's colour. */
   .mode {
@@ -623,22 +619,6 @@
     height: 100%;
   }
 
-  .remember {
-    justify-self: center;
-    max-width: 40rem;
-    padding: 1rem 1.25rem;
-    border-radius: 0.75rem;
-    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-    background: color-mix(in srgb, currentColor 4%, transparent);
-    display: grid;
-    gap: 0.6rem;
-    text-align: center;
-  }
-  .remember p {
-    margin: 0;
-    line-height: 1.55;
-    text-wrap: balance;
-  }
   /* LinkChip reads the app's theme variables; point them at this page's
      palette, as the host does for its own title-band chip. */
   .lesson-link {

@@ -45,6 +45,7 @@ export interface WorkerPerformerInteractionViewer {
   readonly selectedPerformerIndices: readonly number[];
   readonly performerSelectionMode: boolean;
   readonly isCameraDragging: boolean;
+  registerPerformerPlacement?(fn: () => void): () => void;
   readonly performerManager: {
     readonly performers: Array<{ position: StagePosition }>;
     handleDrag(index: number, position: StagePosition): void;
@@ -85,7 +86,7 @@ export interface WorkerPerformerInteractionFrame {
 export interface WorkerPerformerInteractionBridgeOptions {
   /** Stable container above both transferred worker canvases. */
   interactionSurface: HTMLElement;
-  /** Optional coordinate host for a DOM move-handle overlay. */
+  /** Optional coordinate host for a projected move hint. */
   projectionContainer?: HTMLElement;
   viewer: WorkerPerformerInteractionViewer;
   cameraArbiter: WorkerPerformerInteractionCameraArbiter | null;
@@ -256,10 +257,6 @@ export class WorkerPerformerInteractionBridge {
     this.interaction.togglePlacement();
   }
 
-  onMoveHandleKeyDown(event: KeyboardEvent): void {
-    this.interaction.onMoveHandleKeyDown(event);
-  }
-
   takeMoveHint(): boolean {
     return this.interaction.takeMoveHint();
   }
@@ -331,31 +328,12 @@ export class WorkerPerformerInteractionBridge {
 
   private stopListening(): void {
     for (const pointerId of this.activePointerIds) {
-      this.interaction.onMoveHandlePointerCancel({ pointerId } as PointerEvent);
+      this.interaction.cancelPointer({ pointerId } as PointerEvent);
     }
     this.activePointerIds.clear();
     this.detachInteraction?.();
     this.detachInteraction = null;
     this.detachPointerTracking();
-  }
-
-  onMoveHandlePointerDown(event: PointerEvent, performerIndex: number): void {
-    this.activePointerIds.add(event.pointerId);
-    this.interaction.onMoveHandlePointerDown(event, performerIndex);
-  }
-
-  onMoveHandlePointerMove(event: PointerEvent): void {
-    this.interaction.onMoveHandlePointerMove(event);
-  }
-
-  onMoveHandlePointerUp(event: PointerEvent): void {
-    this.interaction.onMoveHandlePointerUp(event);
-    this.activePointerIds.delete(event.pointerId);
-  }
-
-  onMoveHandlePointerCancel(event: PointerEvent): void {
-    this.interaction.onMoveHandlePointerCancel(event);
-    this.activePointerIds.delete(event.pointerId);
   }
 
   projectStagePosition(
