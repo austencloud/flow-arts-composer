@@ -9,7 +9,8 @@
   Split-Opp and Tog-Opp follow under their shared line. The loops come from
   the shared Dual-Shifts record the print sheet also reads; the web page
   sets one sentence per line, as the book does, and keeps the book's modes,
-  start-position and between-positions sentences for print only.
+  start-position, between-positions and notice sentences for print only; the
+  practice line closes the page as a plain centered line.
 -->
 <script lang="ts">
   import { onMount } from "svelte";
@@ -332,10 +333,7 @@
     {@render pair("opp")}
   </section>
 
-  <aside class="remember">
-    <p>{@html dualShiftsTopicHtml("notice")}</p>
-    <p>{@html dualShiftsTopicHtml("practice")}</p>
-  </aside>
+  <p class="lead">{@html dualShiftsTopicHtml("practice")}</p>
 
   {#if lessonHref}
     <p class="lesson-link">
@@ -621,22 +619,6 @@
     height: 100%;
   }
 
-  .remember {
-    justify-self: center;
-    max-width: 40rem;
-    padding: 1rem 1.25rem;
-    border-radius: 0.75rem;
-    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-    background: color-mix(in srgb, currentColor 4%, transparent);
-    display: grid;
-    gap: 0.6rem;
-    text-align: center;
-  }
-  .remember p {
-    margin: 0;
-    line-height: 1.55;
-    text-wrap: balance;
-  }
   /* LinkChip reads the app's theme variables; point them at this page's
      palette, as the host does for its own title-band chip. */
   .lesson-link {
