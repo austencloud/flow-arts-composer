@@ -663,9 +663,9 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     cursor: pointer;
     transition:
-      border-color var(--duration-fast, 140ms) ease,
-      transform var(--duration-fast, 140ms) ease,
-      box-shadow var(--duration-fast, 140ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .variation-button:hover {

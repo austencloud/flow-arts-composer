@@ -161,7 +161,10 @@
     font-weight: 500;
     color: white;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard);
   }
 
   .orientation-toggle i {
@@ -196,7 +199,12 @@
     font-weight: 500;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard);
     white-space: nowrap;
   }
 

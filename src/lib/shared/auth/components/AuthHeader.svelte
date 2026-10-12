@@ -19,13 +19,17 @@
       {mode === "signin" ? t("auth_welcome") : t("auth_create_account")}
     </h2>
     <p class="auth-header__subtitle">
-      {mode === "signin" ? t("auth_signin_subtitle") : t("auth_signup_subtitle")}
+      {mode === "signin"
+        ? t("auth_signin_subtitle")
+        : t("auth_signup_subtitle")}
     </p>
   </div>
   <button
     class="auth-header__close"
     onclick={onClose}
-    aria-label={mode === "signin" ? t("auth_close_signin") : t("auth_close_signup")}
+    aria-label={mode === "signin"
+      ? t("auth_close_signin")
+      : t("auth_close_signup")}
   >
     <i class="fas fa-times" aria-hidden="true"></i>
   </button>
@@ -71,7 +75,10 @@
     color: color-mix(in srgb, var(--theme-text, white) 90%, transparent);
     font-size: var(--font-size-xl);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;

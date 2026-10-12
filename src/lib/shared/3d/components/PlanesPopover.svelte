@@ -346,11 +346,11 @@
     background: var(--surface-inset-deep);
     border: 1px solid var(--theme-stroke);
     transition:
-      background 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      border-color 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      box-shadow 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      color 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      transform 180ms cubic-bezier(0.2, 0, 0.13, 1.5);
+      background var(--duration-fast) var(--ease-spring),
+      border-color var(--duration-fast) var(--ease-spring),
+      box-shadow var(--duration-fast) var(--ease-spring),
+      color var(--duration-fast) var(--ease-spring),
+      transform var(--duration-fast) var(--ease-spring);
   }
 
   .plane-row:hover {
@@ -398,11 +398,11 @@
     align-items: center;
     justify-content: center;
     transition:
-      background 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      border-color 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      box-shadow 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      color 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      transform 180ms cubic-bezier(0.2, 0, 0.13, 1.5);
+      background var(--duration-fast) var(--ease-spring),
+      border-color var(--duration-fast) var(--ease-spring),
+      box-shadow var(--duration-fast) var(--ease-spring),
+      color var(--duration-fast) var(--ease-spring),
+      transform var(--duration-fast) var(--ease-spring);
     background: transparent;
     flex-shrink: 0;
     padding: 0;
@@ -458,11 +458,11 @@
     position: relative;
     flex-shrink: 0;
     transition:
-      background 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      border-color 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      box-shadow 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      color 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      transform 180ms cubic-bezier(0.2, 0, 0.13, 1.5);
+      background var(--duration-fast) var(--ease-spring),
+      border-color var(--duration-fast) var(--ease-spring),
+      box-shadow var(--duration-fast) var(--ease-spring),
+      color var(--duration-fast) var(--ease-spring),
+      transform var(--duration-fast) var(--ease-spring);
   }
 
   .reset-btn:hover {
@@ -579,10 +579,10 @@
     font-size: 13px;
     font-weight: 750;
     transition:
-      background 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      border-color 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      box-shadow 180ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      color 180ms cubic-bezier(0.2, 0, 0.13, 1.5);
+      background var(--duration-fast) var(--ease-spring),
+      border-color var(--duration-fast) var(--ease-spring),
+      box-shadow var(--duration-fast) var(--ease-spring),
+      color var(--duration-fast) var(--ease-spring);
     flex-shrink: 0;
   }
   .hand-chip.blue {

@@ -160,8 +160,8 @@
     background: color-mix(in srgb, var(--theme-text) 8%, transparent);
     cursor: pointer;
     transition:
-      background var(--duration-fast, 140ms) var(--ease-out, ease),
-      border-color var(--duration-fast, 140ms) var(--ease-out, ease);
+      background var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      border-color var(--duration-fast) var(--ease-out, var(--ease-standard));
   }
 
   .close-popover:hover {

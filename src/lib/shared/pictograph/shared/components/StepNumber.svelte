@@ -184,8 +184,8 @@ dark mode independent of app dark mode). Export uses explicit darkMode prop.
   .beat-number {
     opacity: 0;
     transition:
-      opacity var(--duration-fast) ease-out,
-      fill var(--duration-fast) ease-out;
+      opacity var(--duration-fast) var(--ease-standard-out),
+      fill var(--duration-fast) var(--ease-standard-out);
   }
 
   .beat-number.visible {
@@ -206,7 +206,7 @@ dark mode independent of app dark mode). Export uses explicit darkMode prop.
   }
 
   .beat-number.animating {
-    animation: step-number-pulse 180ms ease-in-out;
+    animation: step-number-pulse var(--duration-fast) var(--ease-standard);
   }
 
   /* Respect reduced motion preference */

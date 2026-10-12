@@ -695,7 +695,7 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     z-index: 1;
     /* Beautiful fade in/out effect matching other pictograph elements */
     opacity: 0;
-    transition: opacity var(--duration-fast) ease-out;
+    transition: opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   .grid-container.visible {
@@ -725,10 +725,10 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     stroke-width: 13;
     stroke-miterlimit: 10;
     transition:
-      fill-opacity 150ms ease-out,
-      stroke-opacity 150ms ease-out,
-      fill 150ms ease-out,
-      stroke 150ms ease-out;
+      fill-opacity var(--duration-fast) var(--ease-standard-out),
+      stroke-opacity var(--duration-fast) var(--ease-standard-out),
+      fill var(--duration-fast) var(--ease-standard-out),
+      stroke var(--duration-fast) var(--ease-standard-out);
   }
 
   /* Dark mode grid color is the literal #d0d0d0 (the value of --dm-grid-color
@@ -775,8 +775,8 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     fill: #000;
     opacity: 0;
     transition:
-      opacity 150ms ease-out,
-      fill 150ms ease-out;
+      opacity var(--duration-fast) var(--ease-standard-out),
+      fill var(--duration-fast) var(--ease-standard-out);
   }
 
   /* Dark mode - non-radial points use light color */
@@ -834,8 +834,8 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   /* Note: strict-hand-point is NOT styled here - it remains fill:none (hidden) as defined in SVG */
   :global(.normal-hand-point) {
     transition:
-      fill 150ms ease-out,
-      opacity 150ms ease-out;
+      fill var(--duration-fast) var(--ease-standard-out),
+      opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   /* Hand point visibility states for preview mode (smooth transitions) */
@@ -871,7 +871,7 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   /* Center point */
   :global(#center_point) {
     fill: #000;
-    transition: fill var(--duration-fast) ease-out;
+    transition: fill var(--duration-fast) var(--ease-standard-out);
   }
 
   /* Dark mode - center point uses light color */
@@ -887,7 +887,7 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   /* Transition timing synced with pictograph/canvas (150ms ease-out) */
   :global(.grid-container line) {
     stroke: #000;
-    transition: stroke var(--duration-fast) ease-out;
+    transition: stroke var(--duration-fast) var(--ease-standard-out);
   }
 
   /* Dark mode - lines use light color */

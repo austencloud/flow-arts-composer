@@ -22,7 +22,9 @@
     /** Plain surface with a red icon, for Assemble's quiet rail. */
     quiet?: boolean;
   } = $props();
-  const accessibleLabel = $derived(label ?? t("create_workspace_clear_sequence"));
+  const accessibleLabel = $derived(
+    label ?? t("create_workspace_clear_sequence")
+  );
 
   // Services
   const hapticService = getHapticFeedback();
@@ -66,10 +68,10 @@
     border-radius: var(--workspace-action-radius, 50%);
     cursor: pointer;
     transition:
-      transform var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
-      background var(--duration-fast) ease,
-      border-color var(--duration-fast) ease,
-      box-shadow var(--duration-fast) ease;
+      transform var(--duration-emphasis) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     font-size: var(--font-size-lg);
     color: var(--theme-text);
 

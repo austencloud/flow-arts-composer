@@ -488,8 +488,8 @@
     padding: 0;
     box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
     transition:
-      transform 120ms ease,
-      background 150ms ease;
+      transform var(--duration-instant) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .pill-play:hover {
@@ -592,9 +592,9 @@
     flex-shrink: 0;
     padding: 0;
     transition:
-      background 150ms ease,
-      color 150ms ease,
-      border-color 150ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .tempo-adjust:hover {
@@ -622,8 +622,8 @@
     cursor: pointer;
     flex-shrink: 0;
     transition:
-      background 150ms ease,
-      border-color 150ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
     box-shadow: 0 0 12px rgba(99, 102, 241, 0.15);
   }
 
@@ -689,8 +689,8 @@
     flex-shrink: 0;
     padding: 0;
     transition:
-      background 150ms ease,
-      border-color 150ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .pill-loop[aria-pressed="false"] {
@@ -724,9 +724,9 @@
     flex: 0 0 auto;
     font-size: 16px;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .compact-more:hover,
@@ -774,8 +774,7 @@
   }
 
   :global(.compact-playback-pop[data-state="open"]) {
-    animation: compactPlaybackIn 170ms
-      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    animation: compactPlaybackIn var(--duration-fast) var(--ease-out);
   }
 
   .compact-playback-panel {
@@ -914,7 +913,7 @@
     padding: 8px;
     z-index: 30;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-    animation: popoverUp 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    animation: popoverUp var(--duration-fast) var(--ease-standard);
   }
 
   @keyframes popoverUp {
@@ -945,7 +944,12 @@
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -986,7 +990,7 @@
       transition: none;
     }
     .bpm-popover {
-      animation-duration: 0.01ms;
+      animation-duration: 0s;
     }
     :global(.compact-playback-pop[data-state="open"]) {
       animation: none;

@@ -12,7 +12,12 @@
 
   const vm = getAnimationVisibilityManager();
 
-  type VisibilityKey = "props" | "stepNumbers" | "tkaGlyph" | "wordHeader" | "progressBar";
+  type VisibilityKey =
+    | "props"
+    | "stepNumbers"
+    | "tkaGlyph"
+    | "wordHeader"
+    | "progressBar";
 
   const TOGGLES: { key: VisibilityKey; label: string }[] = [
     { key: "props", label: "Props" },
@@ -25,7 +30,9 @@
   // Bridge observer pattern into reactive state
   let version = $state(0);
   $effect(() => {
-    const bump = () => { version++; };
+    const bump = () => {
+      version++;
+    };
     vm.registerObserver(bump);
     return () => vm.unregisterObserver(bump);
   });
@@ -71,7 +78,10 @@
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
   }
 

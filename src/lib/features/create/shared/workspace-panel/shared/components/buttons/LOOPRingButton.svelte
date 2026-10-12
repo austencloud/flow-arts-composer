@@ -87,12 +87,7 @@
   title={tooltip}
   aria-label={tooltip}
 >
-  <svg
-    viewBox="0 0 40 40"
-    width="24"
-    height="24"
-    aria-hidden="true"
-  >
+  <svg viewBox="0 0 40 40" width="24" height="24" aria-hidden="true">
     {#each ALL_COMPONENTS as component, i}
       <path
         d={arcPath(i)}
@@ -116,7 +111,12 @@
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
   }
@@ -133,7 +133,7 @@
 
   .loop-ring-button:active:not(:disabled) {
     transform: scale(0.95);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   .loop-ring-button:focus-visible {

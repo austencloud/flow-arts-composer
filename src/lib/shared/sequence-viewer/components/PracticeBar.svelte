@@ -18,7 +18,8 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { Popover } from "bits-ui";
   import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
   import type { TempoPracticeProgress } from "../services/tempo-practice-orchestrator";
@@ -180,8 +181,10 @@
           <i
             class="fas {isPlaying ? 'fa-pause' : 'fa-play'}"
             aria-hidden="true"
-            in:fade|local={{ duration: reduceMotion ? 0 : 160 }}
-            out:fade|local={{ duration: reduceMotion ? 0 : 160 }}
+            in:opaqueFade|local={{ duration: reduceMotion ? 0 : DURATION.fast }}
+            out:opaqueFade|local={{
+              duration: reduceMotion ? 0 : DURATION.fast,
+            }}
           ></i>
         {/key}
       </span>
@@ -342,8 +345,9 @@
         <span
           class="pb-caption"
           class:ready={progress.reachedTarget}
-          in:fade|local={{ duration: reduceMotion ? 0 : 150 }}
-          out:fade|local={{ duration: reduceMotion ? 0 : 150 }}>{caption}</span
+          in:opaqueFade|local={{ duration: reduceMotion ? 0 : DURATION.fast }}
+          out:opaqueFade|local={{ duration: reduceMotion ? 0 : DURATION.fast }}
+          >{caption}</span
         >
       {/key}
     </span>
@@ -405,7 +409,10 @@
     border: 2px solid transparent;
     font-weight: 700;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     flex-shrink: 0;
   }
@@ -660,7 +667,11 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.05));
     border: 2px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     flex-shrink: 0;
   }
@@ -697,7 +708,7 @@
   /* Bump pulse — the number pops when the tempo climbs. Transform only, so it
      never nudges layout. */
   .pb-readout-btn.bumped .pb-bpm-value {
-    animation: pb-bump 360ms ease-out;
+    animation: pb-bump var(--duration-dramatic) var(--ease-standard-out);
   }
   @keyframes pb-bump {
     0% {
@@ -741,8 +752,7 @@
   /* Entrance animation via bits-ui data-state — the popover rises + fades in
      from the readout instead of snapping open. */
   :global(.pb-bpm-pop[data-state="open"]) {
-    animation: pb-bpm-pop-in 170ms
-      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    animation: pb-bpm-pop-in var(--duration-fast) var(--ease-out);
   }
   @keyframes pb-bpm-pop-in {
     from {
@@ -782,7 +792,7 @@
     height: 100%;
     border-radius: 3px;
     background: var(--theme-accent, #8b5cf6);
-    transition: width var(--duration-normal, 200ms) ease;
+    transition: width var(--duration-normal) var(--ease-standard);
   }
   /* Creep-mode fill breathes so the steady per-loop climb reads as alive. */
   .pb-fill.creep {
@@ -805,8 +815,8 @@
   /* When the goal is reached the fill settles to full with a playful overshoot. */
   .pb-fill.ready {
     background: var(--semantic-success, #22c55e);
-    transition: width var(--duration-normal, 200ms)
-      var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    transition: width var(--duration-normal)
+      var(--ease-spring, var(--ease-spring));
   }
 
   /* Caption crossfades on change; the wrap reserves a line so swaps never
@@ -854,8 +864,7 @@
 
   /* One-shot celebration when the tempo crosses a staircase speed-up. */
   .pb-level.up.celebrate {
-    animation: pb-celebrate 620ms
-      var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    animation: pb-celebrate var(--duration-dramatic) var(--ease-spring);
   }
   @keyframes pb-celebrate {
     0% {

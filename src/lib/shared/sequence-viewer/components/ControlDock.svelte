@@ -70,7 +70,12 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { untrack } from "svelte";
-  import { slide, fly, fade } from "svelte/transition";
+  import {
+    flyFade,
+    growFade,
+    opaqueFade,
+  } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { cubicOut } from "svelte/easing";
   import type { Snippet } from "svelte";
   import { SwipeToDismiss } from "#lib/shared/foundation/ui/drawer/swipe-to-dismiss.js";
@@ -288,8 +293,8 @@
   style:--dock-tray-max={trayMaxHeight}
   data-swipe-block
   bind:this={dockEl}
-  in:fly={{ y: 80, duration: dur(250), easing: cubicOut }}
-  out:fly={{ y: 80, duration: dur(200), easing: cubicOut }}
+  in:flyFade={{ y: 80, duration: DURATION.normal }}
+  out:flyFade={{ y: 80, duration: DURATION.normal }}
 >
   {#if activeTab && tray}
     <!-- Sheet behavior: swipe down anywhere on the tray (scroll-aware — only
@@ -303,7 +308,7 @@
         ? `translateY(${trayDragOffset}px)`
         : ""}
       bind:this={trayEl}
-      transition:slide={{ duration: dur(260), easing: cubicOut }}
+      transition:growFade={{ duration: DURATION.emphasis, easing: cubicOut }}
     >
       <button
         type="button"
@@ -334,7 +339,7 @@
           <div
             class="scroll-rail"
             aria-hidden="true"
-            transition:fade={{ duration: dur(150) }}
+            transition:opaqueFade={{ duration: DURATION.fast }}
           >
             <div
               class="scroll-thumb"
@@ -513,7 +518,7 @@
     backdrop-filter: blur(16px);
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     /* Snap-back after a below-threshold swipe; disabled while the finger owns it. */
-    transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform var(--duration-normal) var(--ease-standard-out);
     /* Descendant rails can claim horizontal touch panning. The drawer handler
        still owns downward swipes outside those rails. */
     touch-action: auto;
@@ -566,8 +571,8 @@
      motion (set inline via dur()). */
   .tray-anim {
     overflow: hidden;
-    transition: height var(--tray-anim-dur, 260ms)
-      cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: height var(--tray-anim-dur, var(--duration-emphasis))
+      var(--ease-standard-out);
   }
 
   /* Full-width dismiss row pinned at the tray top: grab bar + down chevron.
@@ -588,7 +593,7 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.45));
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: color 150ms ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
   .tray-handle .grab {
     width: 40px;
@@ -673,13 +678,16 @@
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
     transition:
-      background 220ms ease,
-      border-color 220ms ease,
-      color 220ms ease,
-      transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      box-shadow 220ms ease;
-    animation: dockBtnIn 360ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
-    animation-delay: calc(var(--btn-i, 0) * 45ms + 90ms);
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard-out),
+      box-shadow var(--duration-normal) var(--ease-standard);
+    animation: dockBtnIn var(--duration-dramatic) var(--ease-standard-out)
+      backwards;
+    animation-delay: calc(
+      var(--btn-i, 0) * var(--stagger-normal) + var(--duration-instant)
+    );
   }
   .dock-btn:active {
     transform: scale(0.92);
@@ -690,7 +698,7 @@
   }
   .dock-btn i {
     font-size: 16px;
-    transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform var(--duration-normal) var(--ease-standard-out);
   }
   .dock-btn.cat {
     flex: 1 0 var(--min-touch-target, 44px);

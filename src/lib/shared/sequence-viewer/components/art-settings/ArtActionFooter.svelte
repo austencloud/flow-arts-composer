@@ -63,7 +63,7 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: filter var(--duration-normal, 200ms) ease;
+    transition: filter var(--duration-normal) var(--ease-standard);
     background: transparent;
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.18));
     color: var(--theme-text, rgba(255, 255, 255, 0.92));

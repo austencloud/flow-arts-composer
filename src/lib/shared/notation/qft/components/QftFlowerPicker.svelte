@@ -132,9 +132,9 @@
     color: var(--semantic-text-secondary, rgb(255 255 255 / 0.7));
     cursor: pointer;
     transition:
-      border-color 140ms ease,
-      background 140ms ease,
-      color 140ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .flower:hover {

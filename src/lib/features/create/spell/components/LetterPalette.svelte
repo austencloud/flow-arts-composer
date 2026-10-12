@@ -156,7 +156,11 @@ Haptic feedback on letter selection.
     font-size: var(--font-size-lg, 18px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
   }
 
   .letter-button:hover {

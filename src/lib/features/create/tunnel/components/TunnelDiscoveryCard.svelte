@@ -28,7 +28,15 @@
 
   const detailLabel = $derived(
     summary
-      ? t("tunnel_discovery_summary", { authored: summary.authoredCount, rendered: summary.renderedCount, props: summary.propsLabel, recipe: summary.recipeLabel, formation: summary.formationLabel, effect: summary.effectLabel, bpm: summary.bpm })
+      ? t("tunnel_discovery_summary", {
+          authored: summary.authoredCount,
+          rendered: summary.renderedCount,
+          props: summary.propsLabel,
+          recipe: summary.recipeLabel,
+          formation: summary.formationLabel,
+          effect: summary.effectLabel,
+          bpm: summary.bpm,
+        })
       : t("tunnel_details_loading")
   );
 </script>
@@ -76,11 +84,14 @@
 
     {#if summary}
       <span class="counts">
-        <strong>{summary.authoredCount}</strong> {t("tunnel_count_authored")}
+        <strong>{summary.authoredCount}</strong>
+        {t("tunnel_count_authored")}
         <span aria-hidden="true">·</span>
-        <strong>{summary.renderedCount}</strong> {t("tunnel_count_on_stage")}
+        <strong>{summary.renderedCount}</strong>
+        {t("tunnel_count_on_stage")}
         <span aria-hidden="true">·</span>
-        <strong>{summary.propCount}</strong> {t("tunnel_count_props")}
+        <strong>{summary.propCount}</strong>
+        {t("tunnel_count_props")}
       </span>
       <span class="props">{summary.propsLabel}</span>
       <span class="recipe">{summary.recipeLabel}</span>
@@ -92,7 +103,9 @@
     {:else}
       <span class="detail-placeholder" aria-hidden="true"></span>
       <span class="detail-placeholder short" aria-hidden="true"></span>
-      <span class="loading-copy">{t("create_review_loading_props_and_formation")}</span>
+      <span class="loading-copy"
+        >{t("create_review_loading_props_and_formation")}</span
+      >
     {/if}
 
     <span class="saved-date">{dateLabel}</span>
@@ -121,8 +134,8 @@
     text-align: left;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) var(--ease-out, ease),
-      box-shadow var(--duration-fast, 150ms) var(--ease-out, ease);
+      background var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      box-shadow var(--duration-fast) var(--ease-out, var(--ease-standard));
   }
 
   .tunnel-card:hover {

@@ -43,7 +43,9 @@
     <div class="export-progress-row" role="status" aria-live="polite">
       <div class="progress-info">
         <span class="progress-stage">
-          {#if !progress}{t("animation_export_starting")}{:else}{t("export_exporting")}{/if}
+          {#if !progress}{t("animation_export_starting")}{:else}{t(
+              "export_exporting"
+            )}{/if}
         </span>
         <span class="progress-pct"
           >{progress ? Math.round(progress.progress * 100) : 0}%</span
@@ -159,9 +161,9 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      filter 0.15s ease,
-      box-shadow 0.15s ease,
-      transform 0.15s ease;
+      filter var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .export-btn:hover:not(:disabled) {
@@ -172,7 +174,7 @@
 
   .export-btn:active:not(:disabled) {
     transform: scale(0.98);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   .export-btn:disabled,
@@ -206,7 +208,7 @@
     height: 100%;
     background: var(--theme-accent, #6366f1);
     border-radius: 3px;
-    transition: width 0.2s ease;
+    transition: width var(--duration-normal) var(--ease-standard);
   }
 
   .cancel-btn {

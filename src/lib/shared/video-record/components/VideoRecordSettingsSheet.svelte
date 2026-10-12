@@ -153,7 +153,7 @@
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    animation: fadeIn var(--duration-normal) ease;
+    animation: fadeIn var(--duration-normal) var(--ease-standard);
   }
 
   @keyframes fadeIn {
@@ -173,7 +173,7 @@
     border: 1px solid var(--theme-stroke);
     border-radius: 20px 20px 0 0;
     overflow: hidden;
-    animation: slideUp var(--duration-emphasis) ease;
+    animation: slideUp var(--duration-emphasis) var(--ease-standard);
   }
 
   @keyframes slideUp {
@@ -214,7 +214,9 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: var(--font-size-base);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .close-btn:hover {
@@ -268,7 +270,10 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: var(--font-size-compact);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .option-btn i {

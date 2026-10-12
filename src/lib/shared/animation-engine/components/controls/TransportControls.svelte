@@ -183,7 +183,12 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: var(--font-size-compact);
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -236,7 +241,16 @@
     border-radius: 50%;
     color: var(--theme-accent, rgba(139, 92, 246, 1));
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard),
+      border var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     font-size: var(--font-size-base);
   }
@@ -336,8 +350,8 @@
     color: var(--theme-text);
     font-size: var(--font-size-sm, 14px);
     transition:
-      background var(--duration-fast) ease-out,
-      opacity var(--duration-fast) ease-out;
+      background var(--duration-fast) var(--ease-standard-out),
+      opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   /* The play triangle is visually left-heavy; nudge it onto the optical

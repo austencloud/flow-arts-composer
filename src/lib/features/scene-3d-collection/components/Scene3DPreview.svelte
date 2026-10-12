@@ -54,7 +54,9 @@
     buildScene3DSeed(data, { autoOrbit: !reducedMotion })
   );
   setViewer3DContext(viewer);
-  setEffectsConfigContext(createEffectsConfigState(undefined, { persist: false }));
+  setEffectsConfigContext(
+    createEffectsConfigState(undefined, { persist: false })
+  );
   setScene3DRenderContext(createScene3DRenderState());
 
   const steps = data.steps ?? [];
@@ -144,7 +146,8 @@
     overflow: hidden;
     box-shadow:
       0 0 0 1px var(--theme-stroke, rgba(255, 255, 255, 0.08)),
-      0 12px 60px color-mix(in srgb, var(--theme-accent, #22d3ee) 14%, transparent);
+      0 12px 60px
+        color-mix(in srgb, var(--theme-accent, #22d3ee) 14%, transparent);
   }
 
   .art {
@@ -168,7 +171,11 @@
     font-size: 14px;
     cursor: pointer;
     backdrop-filter: blur(4px);
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out),
+      outline-color var(--duration-fast) var(--ease-out);
   }
   @media (hover: hover) {
     .pause-toggle:hover {

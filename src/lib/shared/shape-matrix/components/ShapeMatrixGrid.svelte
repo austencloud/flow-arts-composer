@@ -535,8 +535,10 @@
   .colhead,
   .rowhead {
     transition:
-      background var(--duration-fast, 150ms) var(--transition-easing, ease),
-      box-shadow var(--duration-fast, 150ms) var(--transition-easing, ease);
+      background var(--duration-fast)
+        var(--transition-easing, var(--ease-standard)),
+      box-shadow var(--duration-fast)
+        var(--transition-easing, var(--ease-standard));
   }
 
   .colhead.axis-emphasized {
@@ -575,8 +577,8 @@
     font: inherit;
     cursor: pointer;
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .head-button:hover {
@@ -637,16 +639,18 @@
     /* Hover and focus answer inside the cell's own box: a background wash and
        an inset ring, so the grid never shifts. Named properties only. */
     transition:
-      background var(--duration-fast, 150ms) var(--transition-easing, ease),
-      box-shadow var(--duration-fast, 150ms) var(--transition-easing, ease);
+      background var(--duration-fast)
+        var(--transition-easing, var(--ease-standard)),
+      box-shadow var(--duration-fast)
+        var(--transition-easing, var(--ease-standard));
   }
   .artwork {
     position: absolute;
     inset: 0;
     display: block;
     transform-origin: 50% 50%;
-    transition: transform var(--duration-fast, 150ms)
-      var(--transition-easing, ease);
+    transition: transform var(--duration-fast)
+      var(--transition-easing, var(--ease-standard));
   }
   .cell:hover,
   .cell:focus-visible {
@@ -691,8 +695,8 @@
       0 0 0.75rem
         color-mix(in srgb, var(--theme-accent, #f59e0b) 45%, transparent);
     pointer-events: none;
-    transition: opacity var(--duration-fast, 150ms)
-      var(--transition-easing, ease);
+    transition: opacity var(--duration-fast)
+      var(--transition-easing, var(--ease-standard));
   }
   .sel-mark {
     position: absolute;
@@ -715,8 +719,10 @@
     transform: scale(0.5);
     pointer-events: none;
     transition:
-      opacity var(--duration-fast, 150ms) var(--transition-easing, ease),
-      transform var(--duration-fast, 150ms) var(--transition-easing, ease);
+      opacity var(--duration-fast)
+        var(--transition-easing, var(--ease-standard)),
+      transform var(--duration-fast)
+        var(--transition-easing, var(--ease-standard));
   }
   .cell.sel .sel-mark {
     opacity: 1;

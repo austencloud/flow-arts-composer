@@ -239,7 +239,11 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
     min-height: var(--min-touch-target);
   }
 
@@ -277,7 +281,9 @@
     color: var(--theme-text, white);
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .action-btn:hover {
@@ -314,7 +320,11 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     color: var(--theme-text, white);
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     font-size: var(--font-size-min, 14px);
   }
 

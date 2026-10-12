@@ -44,6 +44,7 @@ import { migrateTunnelSnapshot } from "#lib/shared/sequence-viewer/tunnel/tunnel
  *  video export as soon as the playback controller is ready. sessionStorage so
  *  a stray flag can't survive into a later browser session. */
 export const TUNNEL_AUTO_EXPORT_INTENT_KEY = "tka_tunnel_auto_export";
+const UNDO_TOAST_DURATION_MS = 8_000;
 
 export function openTunnelInViewer(
   tunnel: CollectedTunnel,
@@ -85,7 +86,7 @@ export function openTunnelInViewer(
       ? `Creating video for "${tunnel.name}"`
       : `Opened "${tunnel.name}" with its saved settings`,
     type: "success",
-    duration: 8000,
+    duration: UNDO_TOAST_DURATION_MS,
     action: {
       label: "Undo",
       onClick: () => {

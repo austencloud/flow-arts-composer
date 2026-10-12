@@ -19,15 +19,27 @@
   7. Grid ID labels (optional)
 -->
 <script lang="ts">
-  import type { GridTopology, PointRef, Vec2 } from "../domain/models/grid-topology";
+  import type {
+    GridTopology,
+    PointRef,
+    Vec2,
+  } from "../domain/models/grid-topology";
   import type { ViewBoxData } from "../services/types";
   import type { TopologyPropRenderData } from "../services/types";
   import type { BetaOffset } from "../services/types";
   import type { GridLocation } from "#lib/shared/render/core/types.js";
-  import { computeTopologyViewBox, worldToSvg, gridCenterToSvg } from "../services/topology-renderer";
+  import {
+    computeTopologyViewBox,
+    worldToSvg,
+    gridCenterToSvg,
+  } from "../services/topology-renderer";
   import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
-  import { HAND_POINT_LOCATIONS, PIXELS_PER_UNIT, SVG_CENTER } from "../domain/constants/grid-mode-offsets";
+  import {
+    HAND_POINT_LOCATIONS,
+    PIXELS_PER_UNIT,
+    SVG_CENTER,
+  } from "../domain/constants/grid-mode-offsets";
   import { STRICT_HAND_POINT_COORDS } from "#lib/shared/conjoined-grid/domain/types.js";
 
   interface Props {
@@ -89,37 +101,44 @@
 
   // Grid translations in SVG space
   const gridTranslations = $derived(
-    topology.grids.map((grid) => gridCenterToSvg(grid)),
+    topology.grids.map((grid) => gridCenterToSvg(grid))
   );
 
   // Junction positions in SVG space
   const junctionPositions = $derived(
-    topology.junctions.map((junction) => worldToSvg(junction.position)),
+    topology.junctions.map((junction) => worldToSvg(junction.position))
   );
 
   // Convert GridMode string to enum for GridSvg component
   function toGridModeEnum(mode: string): GridMode {
     switch (mode) {
-      case "box": return GridMode.BOX;
-      case "skewed": return GridMode.SKEWED;
-      default: return GridMode.DIAMOND;
+      case "box":
+        return GridMode.BOX;
+      case "skewed":
+        return GridMode.SKEWED;
+      default:
+        return GridMode.DIAMOND;
     }
   }
 
   // Get hand point locations for a grid (for click targets)
   function getHandPointsForGrid(gridMode: string): readonly GridLocation[] {
-    return HAND_POINT_LOCATIONS[gridMode as keyof typeof HAND_POINT_LOCATIONS] ?? [];
+    return (
+      HAND_POINT_LOCATIONS[gridMode as keyof typeof HAND_POINT_LOCATIONS] ?? []
+    );
   }
 
   // Get strict hand point coordinate within a grid's local SVG space
   function getHandPointCoord(location: string): { x: number; y: number } {
-    return STRICT_HAND_POINT_COORDS[location] ?? { x: SVG_CENTER, y: SVG_CENTER };
+    return (
+      STRICT_HAND_POINT_COORDS[location] ?? { x: SVG_CENTER, y: SVG_CENTER }
+    );
   }
 
   // Compute the SVG transform for a prop (translate + rotate around center)
   function propTransform(
     data: TopologyPropRenderData,
-    offset: Vec2 | undefined,
+    offset: Vec2 | undefined
   ): string {
     const ox = offset?.x ?? 0;
     const oy = offset?.y ?? 0;
@@ -137,7 +156,8 @@
     preserveAspectRatio="xMidYMid meet"
     xmlns="http://www.w3.org/2000/svg"
     role="img"
-    aria-label="Multi-Grid Topology Visualization ({topology.grids.length} grids, {topology.junctions.length} junctions)"
+    aria-label="Multi-Grid Topology Visualization ({topology.grids
+      .length} grids, {topology.junctions.length} junctions)"
   >
     <!-- 1. Background -->
     <rect
@@ -154,7 +174,9 @@
       <g
         transform="translate({translation.x}, {translation.y})"
         class="strict-mode"
-        opacity={highlightedGridIndex >= 0 && highlightedGridIndex !== i ? 0.3 : 1}
+        opacity={highlightedGridIndex >= 0 && highlightedGridIndex !== i
+          ? 0.3
+          : 1}
       >
         {#if showGrid}
           <GridSvg
@@ -194,7 +216,9 @@
     {#if showProps}
       <!-- Blue prop -->
       {#if leftPropData && leftRef}
-        {@const gridIndex = topology.grids.findIndex((g) => g.id === leftRef.gridId)}
+        {@const gridIndex = topology.grids.findIndex(
+          (g) => g.id === leftRef.gridId
+        )}
         {@const translation = gridTranslations[gridIndex]}
         {#if translation}
           <g transform="translate({translation.x}, {translation.y})">
@@ -202,7 +226,8 @@
               <svg
                 width={leftPropData.viewBox.width}
                 height={leftPropData.viewBox.height}
-                viewBox="0 0 {leftPropData.viewBox.width} {leftPropData.viewBox.height}"
+                viewBox="0 0 {leftPropData.viewBox.width} {leftPropData.viewBox
+                  .height}"
               >
                 {@html leftPropData.svgContent}
               </svg>
@@ -213,7 +238,9 @@
 
       <!-- Red prop -->
       {#if rightPropData && rightRef}
-        {@const gridIndex = topology.grids.findIndex((g) => g.id === rightRef.gridId)}
+        {@const gridIndex = topology.grids.findIndex(
+          (g) => g.id === rightRef.gridId
+        )}
         {@const translation = gridTranslations[gridIndex]}
         {#if translation}
           <g transform="translate({translation.x}, {translation.y})">
@@ -221,7 +248,8 @@
               <svg
                 width={rightPropData.viewBox.width}
                 height={rightPropData.viewBox.height}
-                viewBox="0 0 {rightPropData.viewBox.width} {rightPropData.viewBox.height}"
+                viewBox="0 0 {rightPropData.viewBox.width} {rightPropData
+                  .viewBox.height}"
               >
                 {@html rightPropData.svgContent}
               </svg>
@@ -248,7 +276,10 @@
             tabindex="0"
             aria-label="Place prop at {grid.id}:{loc}"
             onclick={() => onPointClick({ gridId: grid.id, location: loc })}
-            onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") onPointClick({ gridId: grid.id, location: loc }); }}
+            onkeydown={(e) => {
+              if (e.key === "Enter" || e.key === " ")
+                onPointClick({ gridId: grid.id, location: loc });
+            }}
           />
         {/each}
       {/each}
@@ -296,7 +327,7 @@
 
   .click-target {
     cursor: pointer;
-    transition: opacity 0.15s;
+    transition: opacity var(--duration-fast);
   }
 
   .click-target:hover {

@@ -201,8 +201,10 @@
     font-weight: 750;
     letter-spacing: 0.01em;
     transition:
-      transform var(--transition-normal, 200ms ease),
-      opacity var(--transition-normal, 200ms ease),
+      transform
+        var(--transition-normal, var(--duration-normal) var(--ease-standard)),
+      opacity
+        var(--transition-normal, var(--duration-normal) var(--ease-standard)),
       visibility 0s linear 0s;
   }
 
@@ -214,9 +216,11 @@
     visibility: hidden;
     pointer-events: none;
     transition:
-      transform var(--transition-normal, 200ms ease),
-      opacity var(--transition-normal, 200ms ease),
-      visibility 0s linear var(--duration-normal, 200ms);
+      transform
+        var(--transition-normal, var(--duration-normal) var(--ease-standard)),
+      opacity
+        var(--transition-normal, var(--duration-normal) var(--ease-standard)),
+      visibility 0s linear var(--duration-normal);
   }
 
   .guide-drawer {

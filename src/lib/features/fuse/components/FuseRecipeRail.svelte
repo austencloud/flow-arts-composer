@@ -227,8 +227,8 @@
   .swing-slot {
     overflow: clip;
     opacity: 0;
-    transition: opacity var(--duration-emphasis, 280ms)
-      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    transition: opacity var(--duration-emphasis)
+      var(--ease-out, var(--ease-out));
   }
 
   .swing-slot.visible {
@@ -268,8 +268,8 @@
       --card-text-weight: 750;
       --card-text-spacing: 0;
       --card-text-shadow: none;
-      transition: grid-template-columns var(--duration-emphasis, 280ms)
-        var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+      transition: grid-template-columns var(--duration-emphasis)
+        var(--ease-out, var(--ease-out));
     }
 
     .recipe-rail.turns {

@@ -8,7 +8,8 @@
   import { authState } from "../state/auth-state.svelte";
   import { sendEmailVerification } from "firebase/auth";
   import { auth } from "../firebase";
-  import { slide } from "svelte/transition";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let sending = $state(false);
@@ -72,7 +73,10 @@
 </script>
 
 {#if shouldShow()}
-  <div class="verification-banner" transition:slide={{ duration: 300 }}>
+  <div
+    class="verification-banner"
+    transition:growFade={{ duration: DURATION.emphasis }}
+  >
     <div class="banner-content">
       <i class="fas fa-envelope-open-text banner-icon" aria-hidden="true"></i>
 
@@ -182,7 +186,9 @@
     font-size: var(--font-size-compact);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
     white-space: nowrap;
   }
 
@@ -203,7 +209,7 @@
     border-radius: 4px;
     cursor: pointer;
     opacity: 0.7;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .dismiss-button:hover {

@@ -2,7 +2,6 @@
   import { browser } from "$app/env";
   import { onDestroy, onMount } from "svelte";
   import { cubicInOut } from "svelte/easing";
-  import { fade } from "svelte/transition";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import LessonStageControls from "#lib/features/learn/components/interactive/LessonStageControls.svelte";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
@@ -14,6 +13,7 @@
   } from "#lib/shared/render-gating/render-activity-gate.js";
   import {
     motionDuration,
+    opaqueFade,
     reducedMotion,
   } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -39,7 +39,10 @@
   }
 
   const STAGES: readonly StageCopy[] = $derived([
-    { title: tDynamic("guide_paths_stage_hand"), caption: tDynamic("guide_paths_stage_hand_caption") },
+    {
+      title: tDynamic("guide_paths_stage_hand"),
+      caption: tDynamic("guide_paths_stage_hand_caption"),
+    },
     {
       title: tDynamic("guide_paths_stage_grid"),
       caption: tDynamic("guide_paths_stage_grid_caption"),
@@ -68,11 +71,12 @@
     },
   ]);
   const COMPARISON_PATHS: readonly IntroPath[] = ["arc", "linear", "concave"];
-  const LEGEND: readonly { path: IntroPath; x: number; label: string }[] = $derived([
-    { path: "arc", x: -118, label: tDynamic("guide_paths_arc") },
-    { path: "linear", x: -30, label: tDynamic("guide_paths_linear") },
-    { path: "concave", x: 66, label: tDynamic("guide_paths_concave") },
-  ]);
+  const LEGEND: readonly { path: IntroPath; x: number; label: string }[] =
+    $derived([
+      { path: "arc", x: -118, label: tDynamic("guide_paths_arc") },
+      { path: "linear", x: -30, label: tDynamic("guide_paths_linear") },
+      { path: "concave", x: 66, label: tDynamic("guide_paths_concave") },
+    ]);
   const TRAVERSE_DURATION = DURATION.dramatic * 4;
   const ARRIVAL_DURATION = DURATION.dramatic * 2;
   // Starting a path over, the hand lifts off where it is and sets down at the
@@ -371,10 +375,7 @@
         preserveAspectRatio="xMidYMid meet"
       >
         {#if gridVisible}
-          <g
-            class="grid-art"
-            in:fade={{ duration: motionDuration(DURATION.normal) }}
-          >
+          <g class="grid-art" in:opaqueFade={{ duration: DURATION.normal }}>
             <g transform={`scale(${INTRO_RADIUS / 300}) translate(-475 -475)`}>
               <GridSvg
                 gridMode={GridMode.DIAMOND}
@@ -401,7 +402,7 @@
               class="comparison-route"
               style:stroke={PATH_SHAPE_COLORS[path]}
               d={introPathD(INTRO_PATHS[path])}
-              in:fade={{ duration: motionDuration(DURATION.normal) }}
+              in:opaqueFade={{ duration: DURATION.normal }}
             />
           {/each}
         {/if}
@@ -411,15 +412,15 @@
             <path
               class="ghost-route"
               d={introPathD(INTRO_PATHS[path])}
-              in:fade={{ duration: motionDuration(SET_DOWN_DURATION) }}
+              in:opaqueFade={{ duration: SET_DOWN_DURATION }}
             />
           {/each}
           <!-- Keyed by stage so the finished path fades off as the next one
                fades in; the outgoing copy keeps the trace it had drawn. -->
           {#key stage}
             <g
-              in:fade={{ duration: motionDuration(SET_DOWN_DURATION) }}
-              out:fade={{ duration: motionDuration(SET_DOWN_DURATION) }}
+              in:opaqueFade={{ duration: SET_DOWN_DURATION }}
+              out:opaqueFade={{ duration: SET_DOWN_DURATION }}
             >
               <path class="route-shadow" d={routeD} />
               <path class="route" d={routeD} />
@@ -429,10 +430,7 @@
         {/if}
 
         {#if isFinal}
-          <g
-            class="route-legend"
-            in:fade={{ duration: motionDuration(DURATION.normal) }}
-          >
+          <g class="route-legend" in:opaqueFade={{ duration: DURATION.normal }}>
             {#each LEGEND as item (item.path)}
               <g transform={`translate(${item.x} 148)`}>
                 <path
@@ -468,10 +466,7 @@
 
         {#if endpointsVisible}
           <!-- Drawn after the hand so the point stays visible when the hand lands on it. -->
-          <g
-            class="endpoints"
-            in:fade={{ duration: motionDuration(DURATION.normal) }}
-          >
+          <g class="endpoints" in:opaqueFade={{ duration: DURATION.normal }}>
             <circle
               class="endpoint start"
               cx={shiftStart.x}
@@ -670,7 +665,8 @@
   }
 
   .hand-art.pulsing {
-    animation: arrival-pulse var(--arrival-duration) var(--ease-out, ease-out) 1;
+    animation: arrival-pulse var(--arrival-duration)
+      var(--ease-out, var(--ease-standard-out)) 1;
   }
 
   .route-label {

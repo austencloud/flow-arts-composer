@@ -18,7 +18,7 @@
   import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { cubicInOut, cubicOut } from "svelte/easing";
   import { Tween } from "svelte/motion";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
@@ -162,7 +162,7 @@
     class="path-lines-overlay"
     viewBox="0 0 950 950"
     preserveAspectRatio="xMidYMid meet"
-    transition:fade={{
+    transition:opaqueFade={{
       duration: motionDuration(DURATION.normal),
       easing: cubicOut,
     }}

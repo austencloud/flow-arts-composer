@@ -12,7 +12,8 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { slide } from "svelte/transition";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { cubicOut } from "svelte/easing";
   import type { MandalaViewerController } from "../../state/mandala-viewer-controller.svelte";
   import type {
@@ -211,7 +212,7 @@
 {#if category === "speed"}
   <div
     class="tray-stack"
-    transition:slide|local={{ duration: dur(220), easing: cubicOut }}
+    transition:growFade|local={{ duration: DURATION.normal, easing: cubicOut }}
   >
     <div class="control-field">
       <span class="control-label">{t("viewer_ui_motion")}</span>
@@ -256,7 +257,7 @@
        renderer's own. -->
   <div
     class="tray-previews"
-    transition:slide|local={{ duration: dur(220), easing: cubicOut }}
+    transition:growFade|local={{ duration: DURATION.normal, easing: cubicOut }}
   >
     {#each PATH_SHAPES as sh}
       <MandalaPreviewOption
@@ -283,7 +284,7 @@
 {:else if category === "spin"}
   <div
     class="tray-slider"
-    transition:slide|local={{ duration: dur(220), easing: cubicOut }}
+    transition:growFade|local={{ duration: DURATION.normal, easing: cubicOut }}
   >
     <input
       type="range"
@@ -309,7 +310,7 @@
 {:else if category === "colors"}
   <div
     class="tray-colors"
-    transition:slide|local={{ duration: dur(220), easing: cubicOut }}
+    transition:growFade|local={{ duration: DURATION.normal, easing: cubicOut }}
   >
     <div class="control-field">
       <span class="control-label">{t("viewer_ui_show")}</span>
@@ -333,7 +334,8 @@
               "solid",
               () => (ctrl.colorMode = "solid")
             )}
-          aria-pressed={ctrl.colorMode === "solid"}>{t("viewer_detail_solid")}</button
+          aria-pressed={ctrl.colorMode === "solid"}
+          >{t("viewer_detail_solid")}</button
         >
         <button
           class="chip mini"
@@ -345,7 +347,8 @@
               "flow",
               () => (ctrl.colorMode = "flow")
             )}
-          aria-pressed={ctrl.colorMode === "flow"}>{t("viewer_detail_flow")}</button
+          aria-pressed={ctrl.colorMode === "flow"}
+          >{t("viewer_detail_flow")}</button
         >
       </div>
       <button
@@ -368,7 +371,10 @@
     {#if presetsOpen}
       <div
         class="preset-row"
-        transition:slide|local={{ duration: dur(240), easing: cubicOut }}
+        transition:growFade|local={{
+          duration: DURATION.normal,
+          easing: cubicOut,
+        }}
       >
         {#each PRESETS as p}
           <button
@@ -421,7 +427,10 @@
     {#if ctrl.preset === "custom"}
       <div
         class="custom-flow"
-        transition:slide|local={{ duration: dur(240), easing: cubicOut }}
+        transition:growFade|local={{
+          duration: DURATION.normal,
+          easing: cubicOut,
+        }}
       >
         <span
           class="flow-preview"
@@ -461,7 +470,7 @@
        ratio between the widths show the actual difference. -->
   <div
     class="tray-previews"
-    transition:slide|local={{ duration: dur(220), easing: cubicOut }}
+    transition:growFade|local={{ duration: DURATION.normal, easing: cubicOut }}
   >
     {#each STROKE_WIDTHS as sw}
       <button
@@ -504,7 +513,7 @@
 {:else if category === "depth"}
   <div
     class="tray-slider"
-    transition:slide|local={{ duration: dur(220), easing: cubicOut }}
+    transition:growFade|local={{ duration: DURATION.normal, easing: cubicOut }}
   >
     <input
       type="range"
@@ -593,11 +602,13 @@
     <div class="dl-foot">
       <span class="dl-estimate"
         ><i class="fas fa-clock" aria-hidden="true"></i>
-        {estimateLabel} · {ctrl.exportFrameCount} {t("viewer_detail_frames")}</span
+        {estimateLabel} · {ctrl.exportFrameCount}
+        {t("viewer_detail_frames")}</span
       >
       {#if showExportButton}
         <button class="dl-export" onclick={handleExport}>
-          <i class="fas fa-film" aria-hidden="true"></i> {t("viewer_detail_export_mp4")}
+          <i class="fas fa-film" aria-hidden="true"></i>
+          {t("viewer_detail_export_mp4")}
         </button>
       {/if}
     </div>
@@ -639,9 +650,9 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      border-color 140ms ease,
-      background 140ms ease,
-      color 140ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
   .preview-option .thumb {
     display: grid;
@@ -737,9 +748,9 @@
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition:
-      border-color 180ms ease,
-      background 180ms ease,
-      transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard-out);
   }
   .palette-toggle:active {
     transform: scale(0.95);
@@ -797,10 +808,10 @@
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition:
-      background 200ms ease,
-      border-color 200ms ease,
-      color 200ms ease,
-      transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard-out);
   }
   .chip:active {
     transform: scale(0.94);
@@ -849,9 +860,9 @@
     color: rgba(255, 255, 255, 0.85);
     font-size: 14px;
     transition:
-      border-color 200ms ease,
-      box-shadow 200ms ease,
-      transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard-out);
   }
   .swatch:active .swatch-fill {
     transform: scale(0.93);
@@ -957,9 +968,9 @@
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition:
-      transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      box-shadow 200ms ease,
-      background 200ms ease;
+      transform var(--duration-fast) var(--ease-standard-out),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard);
   }
   .dl-export:active {
     transform: scale(0.95);
@@ -970,40 +981,40 @@
   .preset-row > *,
   .mode-toggle > *,
   .custom-flow > * {
-    animation: popIn 340ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    animation: popIn var(--duration-dramatic) var(--ease-standard-out) backwards;
   }
   .tray-chips > *:nth-child(2),
   .preset-row > *:nth-child(2) {
-    animation-delay: 45ms;
+    animation-delay: var(--stagger-normal);
   }
   .tray-chips > *:nth-child(3),
   .preset-row > *:nth-child(3) {
-    animation-delay: 90ms;
+    animation-delay: var(--duration-instant);
   }
   .tray-chips > *:nth-child(4),
   .preset-row > *:nth-child(4) {
-    animation-delay: 135ms;
+    animation-delay: var(--duration-fast);
   }
   .preset-row > *:nth-child(5) {
-    animation-delay: 180ms;
+    animation-delay: var(--duration-fast);
   }
   .preset-row > *:nth-child(6) {
-    animation-delay: 225ms;
+    animation-delay: var(--duration-normal);
   }
   .preset-row > *:nth-child(7) {
-    animation-delay: 270ms;
+    animation-delay: var(--duration-emphasis);
   }
   .preset-row > *:nth-child(8) {
-    animation-delay: 315ms;
+    animation-delay: var(--duration-emphasis);
   }
   .preset-row > *:nth-child(9) {
-    animation-delay: 360ms;
+    animation-delay: var(--duration-dramatic);
   }
   .preset-row > *:nth-child(10) {
-    animation-delay: 405ms;
+    animation-delay: var(--duration-dramatic);
   }
   .custom-flow > *:nth-child(2) {
-    animation-delay: 60ms;
+    animation-delay: var(--stagger-normal);
   }
   @keyframes popIn {
     from {

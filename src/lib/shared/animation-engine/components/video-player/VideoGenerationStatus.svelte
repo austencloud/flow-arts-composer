@@ -108,7 +108,7 @@
       var(--semantic-success-bright, #4ade80),
       var(--semantic-success)
     );
-    transition: width var(--duration-normal) ease;
+    transition: width var(--duration-normal) var(--ease-standard);
   }
 
   @media (prefers-reduced-motion: reduce) {

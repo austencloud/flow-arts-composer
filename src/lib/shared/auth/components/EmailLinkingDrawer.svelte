@@ -179,7 +179,7 @@
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: var(--z-modal);
-    animation: fadeIn var(--duration-normal) ease-out;
+    animation: fadeIn var(--duration-normal) var(--ease-standard-out);
   }
 
   /* Modal Container */
@@ -202,7 +202,7 @@
     max-height: calc(100vh - 40px);
     overflow-y: auto;
     z-index: calc(var(--z-modal) + 1);
-    animation: modalSlideIn var(--duration-emphasis) ease-out;
+    animation: modalSlideIn var(--duration-emphasis) var(--ease-standard-out);
   }
 
   @keyframes fadeIn {
@@ -327,7 +327,10 @@
     border-radius: 10px;
     color: var(--theme-text-dim, var(--theme-text-dim));
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
   }
 

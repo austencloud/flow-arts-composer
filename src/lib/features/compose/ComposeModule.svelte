@@ -8,6 +8,8 @@
   import { deepLinker } from "#lib/shared/navigation/services/deep-linker.js";
   import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
+  const ERROR_TOAST_DURATION_MS = 5_000;
+
   // Keep old /compose and /animate links alive without loading a second editor.
   let started = false;
   let openError = $state<string | null>(null);
@@ -42,7 +44,7 @@
         showToast({
           message: openError,
           type: "error",
-          duration: 5000,
+          duration: ERROR_TOAST_DURATION_MS,
         });
         return;
       }

@@ -1,7 +1,13 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { DIFFICULTY_LEVELS, DEFAULT_DIFFICULTY_STYLE } from "#lib/shared/config/difficulty-styles.js";
-  import { LEVEL_METADATA, type LevelNumber } from "#lib/shared/domain/curriculum/level-metadata.js";
+  import {
+    DIFFICULTY_LEVELS,
+    DEFAULT_DIFFICULTY_STYLE,
+  } from "#lib/shared/config/difficulty-styles.js";
+  import {
+    LEVEL_METADATA,
+    type LevelNumber,
+  } from "#lib/shared/domain/curriculum/level-metadata.js";
 
   let { currentLevel }: { currentLevel: LevelNumber } = $props();
 
@@ -46,10 +52,10 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
     /* Named properties, not `all`: `all` tweened layout on every restyle. */
     transition:
-      opacity var(--duration-fast, 0.2s) ease,
-      background-color var(--duration-fast, 0.2s) ease,
-      border-color var(--duration-fast, 0.2s) ease,
-      transform var(--duration-fast, 0.2s) ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .lcard img {
@@ -81,17 +87,29 @@
     margin-bottom: clamp(3px, 0.6vw, 6px);
   }
 
-  .lcard.dim { opacity: 0.5; }
+  .lcard.dim {
+    opacity: 0.5;
+  }
   .lcard.dim img {
     width: clamp(56px, 10vw, 90px);
     height: clamp(56px, 10vw, 90px);
     filter: grayscale(1) brightness(0.85);
   }
-  .lcard.dim .lnum { filter: grayscale(1) brightness(0.85); }
+  .lcard.dim .lnum {
+    filter: grayscale(1) brightness(0.85);
+  }
 
   .lcard.current {
-    background: color-mix(in srgb, var(--theme-accent, #2196f3) 14%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #2196f3) 35%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #2196f3) 14%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #2196f3) 35%,
+      transparent
+    );
     padding: clamp(8px, 1.4vw, 14px);
     transform: translateY(clamp(2px, 0.4vw, 6px));
   }
@@ -112,6 +130,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .lcard { transition: none; }
+    .lcard {
+      transition: none;
+    }
   }
 </style>

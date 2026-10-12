@@ -151,7 +151,7 @@
 		background: oklch(0.96 0.008 90 / 0.93);
 		border: 1px solid oklch(0.72 0.13 40 / 0.3);
 		box-shadow: 0 0 40px oklch(0.72 0.14 40 / 0.09);
-		transition: border-color 400ms ease, box-shadow 400ms ease;
+		transition: border-color var(--duration-dramatic) var(--ease-standard), box-shadow var(--duration-dramatic) var(--ease-standard);
 	}
 
 	.plate.on {
@@ -181,7 +181,7 @@
 		min-width: 0;
 		min-height: 0;
 		border-radius: 8px;
-		transition: background-color 300ms ease, transform 300ms cubic-bezier(0.34, 1.4, 0.44, 1);
+		transition: background-color var(--duration-emphasis) var(--ease-standard), transform var(--duration-emphasis) var(--ease-spring);
 	}
 
 	/* Fill the cell and let `contain` do the scaling. `max-height: 100%` looks

@@ -307,8 +307,8 @@
     cursor: pointer;
     min-height: 44px;
     transition:
-      transform 0.1s,
-      opacity 0.15s;
+      transform var(--duration-instant),
+      opacity var(--duration-fast);
   }
 
   .primary-button:active,

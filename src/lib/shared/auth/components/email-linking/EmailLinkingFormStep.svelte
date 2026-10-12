@@ -78,7 +78,9 @@
         type="button"
         class="toggle-password"
         onclick={onTogglePassword}
-        aria-label={showPassword ? t("auth_hide_password") : t("auth_show_password")}
+        aria-label={showPassword
+          ? t("auth_hide_password")
+          : t("auth_show_password")}
         disabled={isSubmitting}
         tabindex={-1}
       >
@@ -89,7 +91,8 @@
       </button>
     </div>
     <span class="field-hint">
-      <i class="fas fa-eye" aria-hidden="true"></i> {t("form_verify_password_hint")}
+      <i class="fas fa-eye" aria-hidden="true"></i>
+      {t("form_verify_password_hint")}
     </span>
   </div>
 
@@ -156,7 +159,7 @@
     left: 14px;
     font-size: var(--font-size-sm);
     color: var(--theme-text-dim);
-    transition: color var(--duration-normal) ease;
+    transition: color var(--duration-normal) var(--ease-standard);
     pointer-events: none;
   }
 
@@ -172,7 +175,11 @@
     border-radius: 12px;
     color: color-mix(in srgb, var(--theme-text, white) 95%, transparent);
     font-size: var(--font-size-sm);
-    transition: all var(--duration-normal) ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard);
   }
 
   .form-group input::placeholder {
@@ -208,7 +215,11 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     cursor: pointer;
     border-radius: 8px;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard);
   }
 
   .toggle-password:hover:not(:disabled) {
@@ -277,7 +288,12 @@
     font-size: var(--font-size-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard);
   }
 
   .cancel-btn:hover:not(:disabled) {
@@ -308,7 +324,12 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard);
   }
 
   .submit-btn:hover:not(:disabled) {

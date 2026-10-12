@@ -6,8 +6,8 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { fade, fly } from "svelte/transition";
-  import { cubicOut } from "svelte/easing";
+  import { flyFade, opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { TextRenderer } from "#lib/shared/render/services/text-renderer.js";
   import { ensureCardFonts } from "#lib/shared/render/services/gelasio-fonts.js";
   import type { HandLegend } from "../services/hand-legend";
@@ -82,10 +82,9 @@
         : t("viewer_detail_card_footer")
       : undefined}
     style="height: {scaledFooterHeight}px; padding-left: {footerMargin}px; padding-right: {footerMargin}px; font-size: max(var(--font-size-compact, 12px), {footerFontSize}px);"
-    transition:fly|local={{
+    transition:flyFade|local={{
       y: 20,
-      duration: exportPresentation ? 0 : 250,
-      easing: cubicOut,
+      duration: exportPresentation ? 0 : DURATION.normal,
     }}
   >
     {#if exportPresentation}
@@ -114,13 +113,17 @@
       {/if}
 
       {#if showNotes}
-        <span class="footer-notes" transition:fade|local={{ duration: 200 }}>
+        <span
+          class="footer-notes"
+          transition:opaqueFade|local={{ duration: DURATION.normal }}
+        >
           {customNotesText}
         </span>
       {/if}
 
       {#if hasPathShapeMetadata}
-        <span class="footer-path-shape">{t("viewer_detail_linear_shifts")}</span>
+        <span class="footer-path-shape">{t("viewer_detail_linear_shifts")}</span
+        >
       {/if}
     {/if}
   </div>
@@ -144,9 +147,9 @@
     width: 100%;
     box-sizing: border-box;
     transition:
-      background-color 350ms ease,
-      border-color 350ms ease,
-      color 350ms ease;
+      background-color var(--duration-dramatic) var(--ease-standard),
+      border-color var(--duration-dramatic) var(--ease-standard),
+      color var(--duration-dramatic) var(--ease-standard);
   }
 
   .footer-section.dark-mode {

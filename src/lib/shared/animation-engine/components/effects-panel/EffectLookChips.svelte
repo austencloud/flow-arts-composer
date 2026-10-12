@@ -208,7 +208,12 @@
     white-space: nowrap;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
   }
 
   .look-chip:hover:not(:disabled) {

@@ -460,7 +460,7 @@
     color: var(--theme-accent, #f43f5e);
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background var(--duration-fast);
   }
 
   .run-btn:hover:not(:disabled) {
@@ -490,7 +490,7 @@
     height: 100%;
     background: var(--theme-accent, #f43f5e);
     border-radius: 2px;
-    transition: width 0.1s linear;
+    transition: width var(--duration-instant) linear;
   }
 
   .progress-label {
@@ -600,7 +600,7 @@
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
     text-align: left;
-    transition: background 0.1s;
+    transition: background var(--duration-instant);
   }
 
   .frame-row:hover {

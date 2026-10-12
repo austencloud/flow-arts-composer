@@ -29,7 +29,11 @@
     >
       <i class="fas fa-circle-info" aria-hidden="true"></i>
     </button>
-    <button class="mobile-close-btn" onclick={onClose} aria-label={t("compose_close_panel")}>
+    <button
+      class="mobile-close-btn"
+      onclick={onClose}
+      aria-label={t("compose_close_panel")}
+    >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
   </div>
@@ -44,7 +48,11 @@
       <i class="fas fa-circle-info" aria-hidden="true"></i>
     </button>
     <span class="header-title">{t("compose_animation_viewer")}</span>
-    <button class="header-close-btn" onclick={onClose} aria-label={t("compose_close_panel")}>
+    <button
+      class="header-close-btn"
+      onclick={onClose}
+      aria-label={t("compose_close_panel")}
+    >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
   </header>
@@ -77,7 +85,9 @@
     color: var(--theme-text);
     font-size: var(--icon-size-md);
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     pointer-events: auto;
   }
@@ -136,7 +146,11 @@
     color: var(--theme-text-dim);
     font-size: var(--icon-size-md);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .header-info-btn {

@@ -581,8 +581,8 @@ even when Svelte recreates the component instance.
     /* IMPORTANT: transform must be a CSS property (not SVG attribute) for transitions to work */
     /* Intelligent rotation direction is calculated in the component logic above */
     transition:
-      transform var(--duration-normal, 200ms) var(--ease-out, ease),
-      filter var(--duration-normal, 200ms) var(--ease-out, ease);
+      transform var(--duration-normal) var(--ease-out, var(--ease-standard)),
+      filter var(--duration-normal) var(--ease-out, var(--ease-standard));
   }
 
   /* Disable transitions during sequence transforms to prevent janky mid-calculation animation */

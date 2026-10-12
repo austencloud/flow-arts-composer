@@ -23,10 +23,14 @@
     <div class="first-beat-dialog">
       <h3>{t("create_ui_start_from_here")}</h3>
       <p>
-        {isPlural ? t("create_start_remove_many", { count: stepsToRemove }) : t("create_start_remove_one")}
+        {isPlural
+          ? t("create_start_remove_many", { count: stepsToRemove })
+          : t("create_start_remove_one")}
       </p>
       <div class="dialog-actions">
-        <button class="dialog-btn cancel" onclick={onCancel}> {t("create_review_cancel")} </button>
+        <button class="dialog-btn cancel" onclick={onCancel}>
+          {t("create_review_cancel")}
+        </button>
         <button class="dialog-btn confirm" onclick={onConfirm}>
           {t("create_start_set")}
         </button>
@@ -83,7 +87,7 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
     min-width: 80px;
   }
 

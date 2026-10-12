@@ -70,7 +70,9 @@
     border-radius: 8px;
     cursor: pointer;
     font-size: var(--font-size-compact);
-    transition: all var(--duration-normal) ease;
+    transition:
+      color var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard);
   }
 
   .animation-mode-btn:hover {

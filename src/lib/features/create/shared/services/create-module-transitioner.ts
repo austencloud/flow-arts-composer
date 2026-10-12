@@ -7,6 +7,8 @@
  */
 
 import type { ActiveCreateModule } from "#lib/shared/foundation/ui/ui-types.js";
+import { opaqueFade } from "#lib/shared/transitions/motion.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 
 // Simplified transition module without complex fade orchestrator
 
@@ -31,14 +33,8 @@ export async function handleMainTabTransition(
 
 export function getSectionTransitions() {
   return {
-    in: (_node: Element) => ({
-      duration: 250,
-      css: (t: number) => `opacity: ${t}`,
-    }),
-    out: (_node: Element) => ({
-      duration: 200,
-      css: (t: number) => `opacity: ${1 - t}`,
-    }),
+    in: (node: Element) => opaqueFade(node, { duration: DURATION.normal }),
+    out: (node: Element) => opaqueFade(node, { duration: DURATION.normal }),
   };
 }
 

@@ -20,11 +20,12 @@
   let isExporting = $state(false);
   let error = $state<string | null>(null);
 
-  const SIDE_OPTIONS: { value: CodexPrintMode; label: string; icon: string }[] = [
-    { value: "fronts", label: "Fronts", icon: "fas fa-layer-group" },
-    { value: "backs", label: "Backs", icon: "fas fa-rotate" },
-    { value: "combined", label: "Combined", icon: "fas fa-book-open" },
-  ];
+  const SIDE_OPTIONS: { value: CodexPrintMode; label: string; icon: string }[] =
+    [
+      { value: "fronts", label: "Fronts", icon: "fas fa-layer-group" },
+      { value: "backs", label: "Backs", icon: "fas fa-rotate" },
+      { value: "combined", label: "Combined", icon: "fas fa-book-open" },
+    ];
 
   const sheetCount = $derived(codexSheetCount(copies));
   const blanks = $derived(sheetCount * PER_PAGE - copies);
@@ -43,7 +44,10 @@
     for (let s = 0; s < sheetCount; s++) {
       const remaining = copies - s * PER_PAGE;
       sheets.push(
-        Array.from({ length: PER_PAGE }, (_, i) => ({ filled: i < remaining, index: i })),
+        Array.from({ length: PER_PAGE }, (_, i) => ({
+          filled: i < remaining,
+          index: i,
+        }))
       );
     }
     return sheets;
@@ -57,16 +61,20 @@
   const printLabel = $derived(
     isPrinting
       ? "Preparing…"
-      : side === "fronts" ? "Print Fronts"
-      : side === "backs" ? "Print Backs"
-      : "Print Combined",
+      : side === "fronts"
+        ? "Print Fronts"
+        : side === "backs"
+          ? "Print Backs"
+          : "Print Combined"
   );
   const downloadLabel = $derived(
     isExporting
       ? "Preparing…"
-      : side === "fronts" ? "Download Fronts"
-      : side === "backs" ? "Download Backs"
-      : "Download Combined",
+      : side === "fronts"
+        ? "Download Fronts"
+        : side === "backs"
+          ? "Download Backs"
+          : "Download Combined"
   );
 
   async function handlePrint() {
@@ -88,7 +96,10 @@
     isExporting = true;
     error = null;
     try {
-      await downloadCodexSheetPDF({ mode: side, copies }, `codex-${side}-${copies}.pdf`);
+      await downloadCodexSheetPDF(
+        { mode: side, copies },
+        `codex-${side}-${copies}.pdf`
+      );
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
     } finally {
@@ -101,8 +112,9 @@
   <header class="head">
     <h1>Codex Print</h1>
     <p class="lede">
-      The full Double-Staff codex as cut-out reference cards. Four per sheet, double-sided:
-      Types&nbsp;1–2 on the front, Types&nbsp;3–6 on the back, framed in the Choreo Cards rainbow.
+      The full Double-Staff codex as cut-out reference cards. Four per sheet,
+      double-sided: Types&nbsp;1–2 on the front, Types&nbsp;3–6 on the back,
+      framed in the Choreo Cards rainbow.
     </p>
   </header>
 
@@ -111,15 +123,21 @@
     <div class="preview-pane">
       {#if side !== "backs"}
         {#each sheets as sheet, sheetIndex (sheetIndex)}
-          <span class="page-label">Fronts · Types&nbsp;1–2 · Sheet {sheetIndex + 1} of {sheetCount}</span>
+          <span class="page-label"
+            >Fronts · Types&nbsp;1–2 · Sheet {sheetIndex + 1} of {sheetCount}</span
+          >
           <div class="page">
             <div class="page-guide page-guide-top">
-              <span class="guide-text guide-bold">FRONTS · Sheet {sheetIndex + 1} of {sheetCount}</span>
+              <span class="guide-text guide-bold"
+                >FRONTS · Sheet {sheetIndex + 1} of {sheetCount}</span
+              >
             </div>
             <div class="page-grid">
               {#each sheet as cell (cell.index)}
                 {#if cell.filled}
-                  <div class="card-cell"><img src={FRONT_IMG} alt="Types 1–2 card front" /></div>
+                  <div class="card-cell">
+                    <img src={FRONT_IMG} alt="Types 1–2 card front" />
+                  </div>
                 {:else}
                   <div class="card-cell blank"></div>
                 {/if}
@@ -127,7 +145,9 @@
             </div>
             <div class="page-guide page-guide-bottom">
               <span class="guide-text">FRONT SIDE</span>
-              <span class="guide-text">Sheet {sheetIndex + 1} of {sheetCount}</span>
+              <span class="guide-text"
+                >Sheet {sheetIndex + 1} of {sheetCount}</span
+              >
             </div>
           </div>
         {/each}
@@ -135,10 +155,14 @@
 
       {#if side !== "fronts"}
         {#each sheets as sheet, sheetIndex (sheetIndex)}
-          <span class="page-label">Backs · Types&nbsp;3–6 · Sheet {sheetIndex + 1} of {sheetCount}</span>
+          <span class="page-label"
+            >Backs · Types&nbsp;3–6 · Sheet {sheetIndex + 1} of {sheetCount}</span
+          >
           <div class="page">
             <div class="page-guide page-guide-top">
-              <span class="guide-text guide-bold">BACKS · Sheet {sheetIndex + 1} of {sheetCount}</span>
+              <span class="guide-text guide-bold"
+                >BACKS · Sheet {sheetIndex + 1} of {sheetCount}</span
+              >
             </div>
             <div class="page-grid">
               {#each sheet as cell (cell.index)}
@@ -147,7 +171,9 @@
                     class="card-cell"
                     style:grid-column={mirroredCol(cell.index) + 1}
                     style:grid-row={rowOf(cell.index) + 1}
-                  ><img src={BACK_IMG} alt="Types 3–6 card back" /></div>
+                  >
+                    <img src={BACK_IMG} alt="Types 3–6 card back" />
+                  </div>
                 {:else}
                   <div
                     class="card-cell blank"
@@ -158,7 +184,9 @@
               {/each}
             </div>
             <div class="page-guide page-guide-bottom">
-              <span class="guide-text">BACK SIDE: columns mirrored for long-edge flip</span>
+              <span class="guide-text"
+                >BACK SIDE: columns mirrored for long-edge flip</span
+              >
               <span class="guide-text">↻ LONG EDGE</span>
             </div>
           </div>
@@ -177,8 +205,10 @@
         size="sm"
       />
       <p class="side-hint">
-        {#if side === "fronts"}Print these first, then flip the stack for the backs.
-        {:else if side === "backs"}Print after the fronts. Columns mirrored for the long-edge flip.
+        {#if side === "fronts"}Print these first, then flip the stack for the
+          backs.
+        {:else if side === "backs"}Print after the fronts. Columns mirrored for
+          the long-edge flip.
         {:else}Fronts + flip instructions + backs, in one file.{/if}
       </p>
 
@@ -192,32 +222,47 @@
       />
       <p class="sheet-readout">
         <strong>{sheetCount}</strong> sheet{sheetCount === 1 ? "" : "s"}
-        {#if side === "combined"} of fronts + {sheetCount} of backs{/if}
-        {#if blanks > 0}<span class="blanks"> · {blanks} blank cell{blanks === 1 ? "" : "s"} on the last sheet</span>{/if}
+        {#if side === "combined"}
+          of fronts + {sheetCount} of backs{/if}
+        {#if blanks > 0}<span class="blanks">
+            · {blanks} blank cell{blanks === 1 ? "" : "s"} on the last sheet</span
+          >{/if}
       </p>
 
       {#if error}
         <div class="error" role="alert">
-          <i class="fas fa-exclamation-triangle" aria-hidden="true"></i> {error}
+          <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+          {error}
         </div>
       {/if}
 
       <div class="actions">
-        <button class="action print-action" disabled={isPrinting || isExporting} onclick={handlePrint}>
-          {#if isPrinting}<i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+        <button
+          class="action print-action"
+          disabled={isPrinting || isExporting}
+          onclick={handlePrint}
+        >
+          {#if isPrinting}<i class="fas fa-spinner fa-spin" aria-hidden="true"
+            ></i>
           {:else}<i class="fas fa-print" aria-hidden="true"></i>{/if}
           <span>{printLabel}</span>
         </button>
-        <button class="action download-action" disabled={isPrinting || isExporting} onclick={handleDownload}>
-          {#if isExporting}<i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+        <button
+          class="action download-action"
+          disabled={isPrinting || isExporting}
+          onclick={handleDownload}
+        >
+          {#if isExporting}<i class="fas fa-spinner fa-spin" aria-hidden="true"
+            ></i>
           {:else}<i class="fas fa-download" aria-hidden="true"></i>{/if}
           <span>{downloadLabel}</span>
         </button>
       </div>
 
       <p class="workflow-tip">
-        Print the fronts, flip your paper stack on the <strong>long edge</strong>, then print the backs.
-        Set scale to <strong>Actual Size / 100%</strong>. Finished card: 4 × 5.25 in.
+        Print the fronts, flip your paper stack on the <strong>long edge</strong
+        >, then print the backs. Set scale to
+        <strong>Actual Size / 100%</strong>. Finished card: 4 × 5.25 in.
       </p>
     </aside>
   </div>
@@ -234,7 +279,9 @@
     overflow: hidden;
   }
 
-  .head { flex-shrink: 0; }
+  .head {
+    flex-shrink: 0;
+  }
 
   .head h1 {
     margin: 0 0 6px;
@@ -301,8 +348,14 @@
     padding: 4.5%;
     background: linear-gradient(
       to top,
-      #cc0000 0%, #cc6600 14%, #cccc00 28%, #00cc00 42%,
-      #00cc66 56%, #0066cc 70%, #0033cc 82%, #6600cc 100%
+      #cc0000 0%,
+      #cc6600 14%,
+      #cccc00 28%,
+      #00cc00 42%,
+      #00cc66 56%,
+      #0066cc 70%,
+      #0033cc 82%,
+      #6600cc 100%
     );
     box-sizing: border-box;
     overflow: hidden;
@@ -330,8 +383,12 @@
     pointer-events: none;
   }
 
-  .page-guide-top { top: 3px; }
-  .page-guide-bottom { bottom: 3px; }
+  .page-guide-top {
+    top: 3px;
+  }
+  .page-guide-bottom {
+    bottom: 3px;
+  }
 
   .guide-text {
     font-size: var(--font-size-compact, 12px);
@@ -340,7 +397,9 @@
     letter-spacing: 0.02em;
     white-space: nowrap;
   }
-  .guide-bold { font-weight: 600; }
+  .guide-bold {
+    font-weight: 600;
+  }
 
   .control-sidebar {
     display: flex;
@@ -377,8 +436,12 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-variant-numeric: tabular-nums;
   }
-  .sheet-readout strong { color: var(--theme-text, #fff); }
-  .blanks { color: rgba(255, 255, 255, 0.4); }
+  .sheet-readout strong {
+    color: var(--theme-text, #fff);
+  }
+  .blanks {
+    color: rgba(255, 255, 255, 0.4);
+  }
 
   .error {
     display: flex;
@@ -413,12 +476,17 @@
     border: none;
     border-radius: 12px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: opacity var(--duration-fast);
   }
 
-  .action:disabled { opacity: 0.5; cursor: not-allowed; }
+  .action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 
-  .print-action { background: linear-gradient(135deg, #10b981, #059669); }
+  .print-action {
+    background: linear-gradient(135deg, #10b981, #059669);
+  }
   .print-action:hover:not(:disabled) {
     background: linear-gradient(135deg, #34d399, #10b981);
     box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
@@ -441,12 +509,22 @@
     color: rgba(255, 255, 255, 0.3);
     line-height: 1.5;
   }
-  .workflow-tip strong { color: rgba(255, 255, 255, 0.6); }
+  .workflow-tip strong {
+    color: rgba(255, 255, 255, 0.6);
+  }
 
   @media (max-width: 860px) {
-    .codex-print { overflow-y: auto; }
-    .layout { grid-template-columns: 1fr; }
-    .preview-pane { overflow: visible; }
-    .control-sidebar { overflow: visible; }
+    .codex-print {
+      overflow-y: auto;
+    }
+    .layout {
+      grid-template-columns: 1fr;
+    }
+    .preview-pane {
+      overflow: visible;
+    }
+    .control-sidebar {
+      overflow: visible;
+    }
   }
 </style>

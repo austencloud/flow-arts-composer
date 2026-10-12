@@ -41,7 +41,12 @@
     showStepNumbers = false,
   }: Props = $props();
 
-  let popover = $state<{ lane: number; step: number; x: number; y: number } | null>(null);
+  let popover = $state<{
+    lane: number;
+    step: number;
+    x: number;
+    y: number;
+  } | null>(null);
 
   function zone(e: MouseEvent, el: HTMLElement): -1 | 0 | 1 {
     const r = el.getBoundingClientRect();
@@ -57,7 +62,13 @@
     const r = el.getBoundingClientRect();
     popover = { lane: li, step: bi, x: r.left, y: r.bottom + 8 };
   }
-  function onNumberClick(e: MouseEvent, li: number, bi: number, v: T, el: HTMLElement) {
+  function onNumberClick(
+    e: MouseEvent,
+    li: number,
+    bi: number,
+    v: T,
+    el: HTMLElement
+  ) {
     // Keyboard activation (Enter/Space) fires a click with detail === 0 and
     // clientX/clientY === 0, which the clientX-based zone() always reads as the
     // left ("−") zone. Route keyboard activation to the popover so keyboard
@@ -80,7 +91,12 @@
   }
 </script>
 
-<svelte:window onclick={(e) => { if (!(e.target as HTMLElement)?.closest?.(".pbs-cell,.pbs-pop")) popover = null; }} />
+<svelte:window
+  onclick={(e) => {
+    if (!(e.target as HTMLElement)?.closest?.(".pbs-cell,.pbs-pop"))
+      popover = null;
+  }}
+/>
 
 <div class="pbs" class:fill>
   {#if showStepNumbers}
@@ -118,13 +134,26 @@
               class:inert={lane.inert?.[bi]}
               role="switch"
               aria-checked={v !== base}
-              aria-label={tDynamic(lane.inert?.[bi] ? "pattern_strip_inert_step_aria" : "pattern_strip_step_aria", { lane: lane.label, step: bi + 1 })}
+              aria-label={tDynamic(
+                lane.inert?.[bi]
+                  ? "pattern_strip_inert_step_aria"
+                  : "pattern_strip_step_aria",
+                { lane: lane.label, step: bi + 1 }
+              )}
               title={lane.inert?.[bi]
                 ? tDynamic("pattern_strip_inert_step_title")
                 : undefined}
-              onclick={() => onEdit(li, bi, (v === base ? (valueList.find((x) => x !== base) ?? base) : base) as T)}
+              onclick={() =>
+                onEdit(
+                  li,
+                  bi,
+                  (v === base
+                    ? (valueList.find((x) => x !== base) ?? base)
+                    : base) as T
+                )}
             >
-              <i class="fa-solid {lane.inert?.[bi] ? 'fa-ban' : 'fa-rotate'}"></i>
+              <i class="fa-solid {lane.inert?.[bi] ? 'fa-ban' : 'fa-rotate'}"
+              ></i>
             </button>
           {/if}
         {/each}
@@ -137,36 +166,73 @@
   {@const lane = lanes[popover.lane]!}
   <div class="pbs-pop" style="left:{popover.x}px; top:{popover.y}px">
     {#each valueList as v}
-      <button class:sel={String(v) === String(lane.values[popover.step])} onclick={() => pick(v)}>{format(v)}</button>
+      <button
+        class:sel={String(v) === String(lane.values[popover.step])}
+        onclick={() => pick(v)}>{format(v)}</button
+      >
     {/each}
   </div>
 {/if}
 
 <style>
-  .pbs { display: flex; flex-direction: column; gap: 10px; }
-  .pbs-lane { display: flex; align-items: center; gap: 12px; }
+  .pbs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .pbs-lane {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
   /* Sized to the longest label ("Right") rather than to a round number of
      pixels. At 44px the bold text ran past its own box and collided with the
      first cell; ch tracks the font, and the clamp is the backstop for a lane
      name longer than the two this ships with. */
   .pbs-label {
-    width: 6ch; flex: 0 0 6ch; min-width: 0;
-    font-size: 14px; font-weight: 800;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    width: 6ch;
+    flex: 0 0 6ch;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 800;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   /* The app's own hand colours — the same two tokens the cells below are
      filled with, so the word "Left" and the blue cells it labels are one
      blue. Any tint invented here reads as a third colour on a screen that
      already has two. */
-  .pbs-label.blue { color: var(--dm-motion-blue); }
-  .pbs-label.red { color: var(--dm-motion-red); }
-  .pbs-label.hold { color: var(--theme-accent, #2dd4bf); }
-  .pbs-steps { display: flex; gap: 10px; flex: 1; min-width: 0; }
+  .pbs-label.blue {
+    color: var(--dm-motion-blue);
+  }
+  .pbs-label.red {
+    color: var(--dm-motion-red);
+  }
+  .pbs-label.hold {
+    color: var(--theme-accent, #2dd4bf);
+  }
+  .pbs-steps {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
   .pbs-cell {
-    position: relative; flex: 1; min-width: 0; height: 56px; border-radius: 12px;
-    border: 1px solid var(--theme-stroke); background: var(--theme-card-bg);
-    color: var(--theme-text); cursor: pointer; overflow: hidden;
-    display: flex; align-items: center; justify-content: center; user-select: none;
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    height: 56px;
+    border-radius: 12px;
+    border: 1px solid var(--theme-stroke);
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
   }
   /* Fill mode: the same strip in a roomy pane, where the inline 56px row looks
      lost. The cells step up to a size that reads at arm's length and stop —
@@ -184,14 +250,20 @@
      while its cells kept painting at full size — the bottom lane ran off the
      screen with no scroll able to reach it, because a collapsed flex item
      contributes no height for the scroller to find. */
-  .pbs.fill { flex: 0 0 auto; }
+  .pbs.fill {
+    flex: 0 0 auto;
+  }
   /* The lane centres as a UNIT — name and cells together. Stretching the cell
      row across the panel and centring the cells inside it looked right in the
      numbers and wrong on screen: the row kept the panel's full width, so "Left"
      stayed pinned to the far edge with 165px of nothing between it and the
      first cell it labels. */
-  .pbs.fill .pbs-lane { justify-content: center; }
-  .pbs.fill .pbs-steps { flex: 0 1 auto; }
+  .pbs.fill .pbs-lane {
+    justify-content: center;
+  }
+  .pbs.fill .pbs-steps {
+    flex: 0 1 auto;
+  }
   /* A definite width that shrinks, rather than a share of the row that grows:
      four steps read as four tokens instead of four slabs, and sixteen still
      fit by getting narrower. */
@@ -205,70 +277,186 @@
 
   /* The column header. Sized and spaced exactly like the cell row beneath it so
      each number sits over its own cell — a ruler, not a caption. */
-  .pbs-nums { margin-bottom: -2px; }
-  .pbs-num {
-    flex: 1; min-width: 0; text-align: center;
-    font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
-    color: var(--theme-text-dim); letter-spacing: 0.02em;
+  .pbs-nums {
+    margin-bottom: -2px;
   }
-  .pbs.fill .pbs-num { flex: 0 1 7rem; width: 7rem; max-width: none; }
-  .pbs-cell .v { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; z-index: 2; pointer-events: none; }
-  .pbs-cell.muted .v { color: var(--theme-text-dim); }
+  .pbs-num {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--theme-text-dim);
+    letter-spacing: 0.02em;
+  }
+  .pbs.fill .pbs-num {
+    flex: 0 1 7rem;
+    width: 7rem;
+    max-width: none;
+  }
+  .pbs-cell .v {
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .pbs-cell.muted .v {
+    color: var(--theme-text-dim);
+  }
   /* Filled with the hand colour itself, not a wash of it. A wash toward the
      card background made a fourth and fifth blue on a screen that also shows
      the lane names and the rhythm dots — three shades of "blue" that are all
      supposed to mean the same hand. One token, everywhere. */
-  .pbs-cell.num.blue:not(.muted) { background: var(--dm-motion-blue); border-color: var(--dm-motion-blue); }
-  .pbs-cell.num.red:not(.muted) { background: var(--dm-motion-red); border-color: var(--dm-motion-red); }
-  .pbs-cell.num.hold:not(.muted) { background: var(--theme-accent, #2dd4bf); border-color: var(--theme-accent, #2dd4bf); }
-  .pbs-cell.num:not(.muted) .v { color: #fff; }
+  .pbs-cell.num.blue:not(.muted) {
+    background: var(--dm-motion-blue);
+    border-color: var(--dm-motion-blue);
+  }
+  .pbs-cell.num.red:not(.muted) {
+    background: var(--dm-motion-red);
+    border-color: var(--dm-motion-red);
+  }
+  .pbs-cell.num.hold:not(.muted) {
+    background: var(--theme-accent, #2dd4bf);
+    border-color: var(--theme-accent, #2dd4bf);
+  }
+  .pbs-cell.num:not(.muted) .v {
+    color: #fff;
+  }
   .pbs-cell .z {
-    position: absolute; top: 0; bottom: 0; width: 50%; display: flex; align-items: center;
-    opacity: 0; transition: opacity .12s; z-index: 1; color: var(--theme-text);
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    transition: opacity var(--duration-instant);
+    z-index: 1;
+    color: var(--theme-text);
   }
   /* The hover -/+ sits on top of the hand colour once a step is filled, so it
      takes the fill's own foreground rather than the panel's. */
-  .pbs-cell.num:not(.muted) .z { color: #fff; }
-  .pbs-cell .z.minus { left: 0; justify-content: flex-start; padding-left: 9px; }
-  .pbs-cell .z.plus { right: 0; justify-content: flex-end; padding-right: 9px; }
-  .pbs-cell:hover .z { opacity: .8; }
-  .pbs-cell.toggle.on { background: var(--dm-motion-blue); border-color: var(--dm-motion-blue); color: #fff; }
-  .pbs-cell.toggle.on.red { background: var(--dm-motion-red); border-color: var(--dm-motion-red); }
-  .pbs-cell.toggle:not(.on) i { opacity: .32; }
+  .pbs-cell.num:not(.muted) .z {
+    color: #fff;
+  }
+  .pbs-cell .z.minus {
+    left: 0;
+    justify-content: flex-start;
+    padding-left: 9px;
+  }
+  .pbs-cell .z.plus {
+    right: 0;
+    justify-content: flex-end;
+    padding-right: 9px;
+  }
+  .pbs-cell:hover .z {
+    opacity: 0.8;
+  }
+  .pbs-cell.toggle.on {
+    background: var(--dm-motion-blue);
+    border-color: var(--dm-motion-blue);
+    color: #fff;
+  }
+  .pbs-cell.toggle.on.red {
+    background: var(--dm-motion-red);
+    border-color: var(--dm-motion-red);
+  }
+  .pbs-cell.toggle:not(.on) i {
+    opacity: 0.32;
+  }
 
   /* Inert: this step doesn't spin, so a reversal here can't act. Dashed + dim,
      and an "on" toggle here drops its bright fill to read as having no effect. */
-  .pbs-cell.inert { border-style: dashed; opacity: .55; }
-  .pbs-cell.toggle.on.inert { background: var(--theme-card-bg); color: var(--theme-text-dim); }
-  .pbs-cell.inert i { opacity: .5; }
+  .pbs-cell.inert {
+    border-style: dashed;
+    opacity: 0.55;
+  }
+  .pbs-cell.toggle.on.inert {
+    background: var(--theme-card-bg);
+    color: var(--theme-text-dim);
+  }
+  .pbs-cell.inert i {
+    opacity: 0.5;
+  }
   .pbs-pop {
-    position: fixed; z-index: 50; display: grid; grid-template-columns: repeat(4, 54px); gap: 7px;
-    background: var(--theme-panel-bg); border: 1px solid var(--theme-stroke); border-radius: 14px; padding: 10px;
-    box-shadow: 0 18px 44px -16px rgba(0,0,0,.7);
+    position: fixed;
+    z-index: 50;
+    display: grid;
+    grid-template-columns: repeat(4, 54px);
+    gap: 7px;
+    background: var(--theme-panel-bg);
+    border: 1px solid var(--theme-stroke);
+    border-radius: 14px;
+    padding: 10px;
+    box-shadow: 0 18px 44px -16px rgba(0, 0, 0, 0.7);
   }
   .pbs-pop button {
-    height: 46px; border-radius: 10px; border: 1px solid var(--theme-stroke);
-    background: var(--theme-card-bg); color: var(--theme-text); font-weight: 700; font-size: 15px;
-    cursor: pointer; font-variant-numeric: tabular-nums;
+    height: 46px;
+    border-radius: 10px;
+    border: 1px solid var(--theme-stroke);
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
   }
-  .pbs-pop button.sel { background: var(--theme-accent); color: #fff; border-color: transparent; }
+  .pbs-pop button.sel {
+    background: var(--theme-accent);
+    color: #fff;
+    border-color: transparent;
+  }
 
   /* The strip steps up with the panel for the same reason the sentence does:
      every size here is px, so on a 4K panel a 76px cell holding one character
      reads as punctuation. See PatternStripEditor for the matching tiers. */
   @container sequence-action-subview (min-width: 1100px) {
-    .pbs.fill { gap: 14px; }
-    .pbs.fill .pbs-cell { flex-basis: 9rem; width: 9rem; height: 100px; border-radius: 14px; }
-    .pbs.fill .pbs-num { flex-basis: 9rem; width: 9rem; font-size: 15px; }
-    .pbs.fill .pbs-label { width: 6ch; flex-basis: 6ch; font-size: 18px; }
-    .pbs.fill .pbs-cell .v { font-size: 22px; }
+    .pbs.fill {
+      gap: 14px;
+    }
+    .pbs.fill .pbs-cell {
+      flex-basis: 9rem;
+      width: 9rem;
+      height: 100px;
+      border-radius: 14px;
+    }
+    .pbs.fill .pbs-num {
+      flex-basis: 9rem;
+      width: 9rem;
+      font-size: 15px;
+    }
+    .pbs.fill .pbs-label {
+      width: 6ch;
+      flex-basis: 6ch;
+      font-size: 18px;
+    }
+    .pbs.fill .pbs-cell .v {
+      font-size: 22px;
+    }
   }
 
   @container sequence-action-subview (min-width: 1600px) {
-    .pbs.fill { gap: 18px; }
-    .pbs.fill .pbs-cell { flex-basis: 11rem; width: 11rem; height: 128px; border-radius: 18px; }
-    .pbs.fill .pbs-num { flex-basis: 11rem; width: 11rem; font-size: 18px; }
-    .pbs.fill .pbs-label { font-size: 22px; }
-    .pbs.fill .pbs-cell .v { font-size: 28px; }
+    .pbs.fill {
+      gap: 18px;
+    }
+    .pbs.fill .pbs-cell {
+      flex-basis: 11rem;
+      width: 11rem;
+      height: 128px;
+      border-radius: 18px;
+    }
+    .pbs.fill .pbs-num {
+      flex-basis: 11rem;
+      width: 11rem;
+      font-size: 18px;
+    }
+    .pbs.fill .pbs-label {
+      font-size: 22px;
+    }
+    .pbs.fill .pbs-cell .v {
+      font-size: 28px;
+    }
   }
 </style>

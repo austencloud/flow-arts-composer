@@ -29,7 +29,10 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
-  import type { PictographRender, PoolEntry } from "../_data/guide-content-blocks";
+  import type {
+    PictographRender,
+    PoolEntry,
+  } from "../_data/guide-content-blocks";
   import type { Snippet } from "svelte";
 
   let {
@@ -93,7 +96,9 @@
   // only the default example's strip prerenders (the SEO / page-weight split).
   // A `strip` override disables the pool (see the prop doc above).
   let exampleIndex = $state(0);
-  const effectivePool = $derived(strip || variant === "pair" ? undefined : pool);
+  const effectivePool = $derived(
+    strip || variant === "pair" ? undefined : pool
+  );
   const hasPool = $derived(!!effectivePool && effectivePool.length > 1);
   const total = $derived(effectivePool?.length ?? 1);
   const entry = $derived(effectivePool?.[exampleIndex]);
@@ -109,7 +114,7 @@
           word: entry.word,
           name: entry.word,
         })
-      : sequence,
+      : sequence
   );
 
   function nextExample() {
@@ -153,7 +158,9 @@
 
   onMount(() => {
     if (typeof window !== "undefined" && "matchMedia" in window) {
-      reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
     }
     const el = rootEl;
     if (!el) return;
@@ -234,7 +241,9 @@
       >
         {t("guide_show_another_example")}
       </button>
-      <span class="cycle-count" aria-hidden="true">{exampleIndex + 1} / {total}</span>
+      <span class="cycle-count" aria-hidden="true"
+        >{exampleIndex + 1} / {total}</span
+      >
     </div>
   {/if}
 {/snippet}
@@ -285,7 +294,14 @@
         {:else}
           <!-- The label rides in the strip's start ROW - beside the start box,
                filling the band the tab layout leaves free. -->
-          <GuideStepStrip {items} {stepLabels} {render} {picTheme} startAside={text} {activeBeat} />
+          <GuideStepStrip
+            {items}
+            {stepLabels}
+            {render}
+            {picTheme}
+            startAside={text}
+            {activeBeat}
+          />
         {/if}
       </div>
     </div>
@@ -307,7 +323,13 @@
            keyed Crossfade swaps cleanly with zero layout shift (crossfade rule:
            cheap identical-height content, not the heavy no-remount path). -->
       <Crossfade key={exampleIndex} duration={DURATION.normal}>
-        <GuideStepStrip items={curItems} {stepLabels} {render} {picTheme} {activeBeat} />
+        <GuideStepStrip
+          items={curItems}
+          {stepLabels}
+          {render}
+          {picTheme}
+          {activeBeat}
+        />
       </Crossfade>
     {:else}
       <GuideStepStrip {items} {stepLabels} {render} {picTheme} {activeBeat} />
@@ -415,7 +437,8 @@
     min-height: var(--min-touch-target, 44px);
     padding: 0.35rem 1.05rem;
     border-radius: 10px;
-    border: 1.5px solid color-mix(in oklab, var(--ink, #1a1a1a) 30%, transparent);
+    border: 1.5px solid
+      color-mix(in oklab, var(--ink, #1a1a1a) 30%, transparent);
     background: color-mix(in oklab, var(--ink, #1a1a1a) 5%, transparent);
     color: var(--ink, #1a1a1a);
     font-family: "Cormorant Garamond", Georgia, serif;
@@ -424,8 +447,8 @@
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
   @media (hover: hover) and (pointer: fine) {
     .cycle-btn:hover {
@@ -434,7 +457,8 @@
     }
   }
   .cycle-btn:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--semantic-warning, #d4a017) 70%, transparent);
+    outline: 2px solid
+      color-mix(in srgb, var(--semantic-warning, #d4a017) 70%, transparent);
     outline-offset: 2px;
   }
   .cycle-count {
@@ -463,17 +487,22 @@
     border-radius: 14px;
     overflow: hidden;
     background: color-mix(in oklab, var(--ink, #1a1a1a) 6%, transparent);
-    border: 1.5px solid color-mix(in oklab, var(--ink, #1a1a1a) 12%, transparent);
+    border: 1.5px solid
+      color-mix(in oklab, var(--ink, #1a1a1a) 12%, transparent);
     transition:
-      border-color var(--duration-normal, 260ms) ease,
-      box-shadow var(--duration-normal, 260ms) ease;
+      border-color var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-emphasis) var(--ease-standard);
   }
   .canvas-box.in-view {
     border-color: color-mix(in srgb, var(--semantic-warning) 42%, transparent);
   }
   @media (hover: hover) and (pointer: fine) {
     .canvas-box:hover {
-      border-color: color-mix(in srgb, var(--semantic-warning) 85%, transparent);
+      border-color: color-mix(
+        in srgb,
+        var(--semantic-warning) 85%,
+        transparent
+      );
       box-shadow:
         0 0 12px color-mix(in srgb, var(--semantic-warning) 38%, transparent),
         0 0 24px color-mix(in srgb, var(--semantic-warning) 16%, transparent);
@@ -573,7 +602,8 @@
     aspect-ratio: 1;
     border-radius: 14px;
     overflow: hidden;
-    border: 1.5px solid color-mix(in oklab, var(--ink, #1a1a1a) 12%, transparent);
+    border: 1.5px solid
+      color-mix(in oklab, var(--ink, #1a1a1a) 12%, transparent);
   }
   .pair-still :global(.guide-pictograph) {
     width: 100%;

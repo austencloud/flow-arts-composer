@@ -7,7 +7,7 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { fade, scale } from "svelte/transition";
+  import { opaqueFade, popIn } from "#lib/shared/transitions/motion.js";
   import { flip } from "svelte/animate";
   import { cubicOut } from "svelte/easing";
   import type { AnimationConfig } from "svelte/animate";
@@ -357,14 +357,14 @@
           <div
             class="duration-start-col"
             class:dark-mode={activeDarkMode}
-            transition:fade|local={{ duration: scaleDuration }}
+            transition:opaqueFade|local={{ duration: scaleDuration }}
           >
             {@render startCellBlock(startCell)}
             {#if showQRCode}
               <div
                 class="pictograph-cell qr-cell"
                 class:dark-mode={activeDarkMode}
-                transition:fade|local={{ duration: scaleDuration }}
+                transition:opaqueFade|local={{ duration: scaleDuration }}
               >
                 {@render qrCellBlock()}
               </div>
@@ -470,7 +470,7 @@
             <div
               class="pictograph-cell qr-cell"
               class:dark-mode={activeDarkMode}
-              transition:fade|local={{ duration: scaleDuration }}
+              transition:opaqueFade|local={{ duration: scaleDuration }}
             >
               {@render qrCellBlock()}
             </div>
@@ -575,7 +575,7 @@
         <div
           class="cell-flip-wrapper"
           style="grid-column: 1; grid-row: 1;"
-          transition:scale|local={{ duration: scaleDuration, easing: cubicOut }}
+          transition:popIn|local={{ duration: scaleDuration }}
         >
           {@render startCellBlock(startCellScroll)}
         </div>
@@ -656,7 +656,7 @@
         <div
           class="cell-flip-wrapper qr-cell-wrapper"
           style="grid-column: {qrGridPlacement.gridColumn}; grid-row: {qrGridPlacement.gridRow};"
-          transition:scale|local={{ duration: scaleDuration, easing: cubicOut }}
+          transition:popIn|local={{ duration: scaleDuration }}
         >
           <div class="pictograph-cell qr-cell" class:dark-mode={activeDarkMode}>
             {@render qrCellBlock()}
@@ -667,7 +667,7 @@
         <div
           class="cell-flip-wrapper mandala-cell-wrapper"
           style="grid-column: {placement.col}; grid-row: {placement.row};"
-          transition:fade|local={{ duration: scaleDuration }}
+          transition:opaqueFade|local={{ duration: scaleDuration }}
         >
           <div
             class="pictograph-cell mandala-cell"
@@ -706,7 +706,7 @@
       <div
         class="cell-flip-wrapper start-cell-wrapper"
         style="grid-column: 1; grid-row: 1;"
-        transition:scale|local={{ duration: scaleDuration, easing: cubicOut }}
+        transition:popIn|local={{ duration: scaleDuration }}
       >
         {@render startCellBlock(startCell)}
       </div>
@@ -785,7 +785,7 @@
       <div
         class="cell-flip-wrapper qr-cell-wrapper"
         style="grid-column: {qrGridPlacement.gridColumn}; grid-row: {qrGridPlacement.gridRow};"
-        transition:scale|local={{ duration: scaleDuration, easing: cubicOut }}
+        transition:popIn|local={{ duration: scaleDuration }}
       >
         <div class="pictograph-cell qr-cell" class:dark-mode={activeDarkMode}>
           {@render qrCellBlock()}
@@ -796,7 +796,7 @@
       <div
         class="cell-flip-wrapper mandala-cell-wrapper"
         style="grid-column: {placement.col}; grid-row: {placement.row};"
-        transition:fade|local={{ duration: scaleDuration }}
+        transition:opaqueFade|local={{ duration: scaleDuration }}
       >
         <div
           class="pictograph-cell mandala-cell"
@@ -843,7 +843,7 @@
     max-width: 100%;
     overflow: hidden;
     background: #f5f5f5;
-    transition: background-color 350ms ease;
+    transition: background-color var(--duration-dramatic) var(--ease-standard);
   }
 
   .duration-layout.dark-mode {
@@ -857,7 +857,7 @@
     flex-direction: column;
     align-items: flex-start;
     background: #f5f5f5;
-    transition: background-color 350ms ease;
+    transition: background-color var(--duration-dramatic) var(--ease-standard);
   }
 
   .duration-start-col.dark-mode {
@@ -926,7 +926,7 @@
     min-width: 0;
     /* Background matches pictograph so wider cells have seamless side fill */
     background: #f5f5f5;
-    transition: background-color 350ms ease;
+    transition: background-color var(--duration-dramatic) var(--ease-standard);
   }
 
   .duration-cell.dark-mode {
@@ -961,7 +961,7 @@
     overflow: hidden;
     /* Light mode background for empty cells */
     background: #f5f5f5;
-    transition: background-color 350ms ease;
+    transition: background-color var(--duration-dramatic) var(--ease-standard);
   }
 
   .grid-section.dark-mode {
@@ -996,7 +996,7 @@
     font: inherit;
     color: inherit;
     cursor: default;
-    transition: border-color 350ms ease;
+    transition: border-color var(--duration-dramatic) var(--ease-standard);
   }
 
   button.pictograph-cell {
@@ -1035,9 +1035,9 @@
   .pictograph-cell.clickable {
     cursor: pointer;
     transition:
-      transform 150ms ease,
-      box-shadow 150ms ease,
-      border-color 350ms ease;
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-dramatic) var(--ease-standard);
   }
 
   /* Hover affordance: scale the cell up so it reads as clickable (click to jump
@@ -1071,7 +1071,8 @@
     border: 3px solid rgba(251, 191, 36, 0.9);
     box-shadow: inset 0 0 14px rgba(251, 191, 36, 0.5);
     pointer-events: none;
-    animation: cellSelectionGlowIn 0.4s ease-out forwards;
+    animation: cellSelectionGlowIn var(--duration-dramatic)
+      var(--ease-standard-out) forwards;
   }
 
   @keyframes cellSelectionGlowIn {
@@ -1088,7 +1089,7 @@
   /* Played cells (already passed) - dim to distinguish from upcoming */
   .pictograph-cell.played {
     opacity: 0.6;
-    transition: opacity 0.15s ease-out;
+    transition: opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   /* QR code cell - occupies the last row of column 1, under the start position.
@@ -1099,7 +1100,7 @@
     justify-content: center;
     margin-top: auto;
     background: #f5f5f5;
-    transition: background-color 350ms ease;
+    transition: background-color var(--duration-dramatic) var(--ease-standard);
   }
 
   .qr-cell.dark-mode {
@@ -1138,7 +1139,7 @@
     -webkit-user-drag: none;
     user-select: none;
     /* Fade the QR in once it renders so it doesn't pop inside the cell's scale. */
-    animation: qrImgIn var(--duration-normal, 200ms) ease;
+    animation: qrImgIn var(--duration-normal) var(--ease-standard);
   }
   @keyframes qrImgIn {
     from {
@@ -1196,8 +1197,8 @@
     opacity: 0;
     transform: scale(0.82);
     transition:
-      opacity 160ms ease,
-      transform 160ms ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     pointer-events: none;
   }
 

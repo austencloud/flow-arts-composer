@@ -401,8 +401,8 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.55));
     cursor: pointer;
     transition:
-      border-color 0.12s ease,
-      background 0.12s ease;
+      border-color var(--duration-instant) var(--ease-standard),
+      background var(--duration-instant) var(--ease-standard);
   }
   .preset-card i {
     font-size: 14px;
@@ -450,8 +450,8 @@
     font-weight: 500;
     cursor: pointer;
     transition:
-      background 0.12s ease,
-      border-color 0.12s ease;
+      background var(--duration-instant) var(--ease-standard),
+      border-color var(--duration-instant) var(--ease-standard);
   }
   .customize-btn:hover {
     background: color-mix(in srgb, var(--theme-accent) 14%, transparent);
@@ -488,8 +488,8 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.45));
     cursor: pointer;
     transition:
-      background 0.12s ease,
-      color 0.12s ease;
+      background var(--duration-instant) var(--ease-standard),
+      color var(--duration-instant) var(--ease-standard);
   }
   .preset-del:hover,
   .preset-del:focus-visible {
@@ -522,8 +522,8 @@
     color: inherit;
     cursor: pointer;
     transition:
-      background 0.12s,
-      border-color 0.12s;
+      background var(--duration-instant),
+      border-color var(--duration-instant);
   }
   .grid-toggle.active {
     background: var(--theme-accent, #8b5cf6);

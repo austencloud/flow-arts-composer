@@ -126,9 +126,9 @@
     font-size: 14px;
     font-weight: 700;
     transition:
-      background 140ms ease,
-      border-color 140ms ease,
-      color 140ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
   .sequence-button:hover {
     background: var(--theme-card-hover-bg);

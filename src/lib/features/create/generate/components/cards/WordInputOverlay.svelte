@@ -172,7 +172,7 @@
     align-items: flex-start;
     justify-content: center;
     padding-top: 15vh;
-    animation: fadeIn 150ms ease-out;
+    animation: fadeIn var(--duration-fast) var(--ease-standard-out);
   }
 
   @keyframes fadeIn {
@@ -193,7 +193,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    animation: slideDown 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideDown var(--duration-normal) var(--ease-standard);
   }
 
   @keyframes slideDown {
@@ -232,7 +232,9 @@
     color: var(--theme-text, white);
     cursor: pointer;
     font-size: 16px;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .close-btn:hover {
@@ -262,7 +264,7 @@
     text-align: center;
     padding: 14px 16px;
     font-family: inherit;
-    transition: border-color 150ms ease;
+    transition: border-color var(--duration-fast) var(--ease-standard);
   }
 
   .word-field:focus {
@@ -295,7 +297,10 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.7));
     cursor: pointer;
     font-size: 16px;
-    transition: all 100ms ease;
+    transition:
+      background var(--duration-instant) var(--ease-standard),
+      color var(--duration-instant) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard);
   }
 
   .clear-btn:hover {
@@ -323,7 +328,9 @@
     font-weight: 700;
     letter-spacing: 0.5px;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     touch-action: manipulation;
   }
 

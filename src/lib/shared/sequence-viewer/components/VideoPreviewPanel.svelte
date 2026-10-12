@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { shareTarget } from "#lib/shared/mobile/share-action.svelte.js";
 
   interface Props {
@@ -49,8 +49,14 @@
   }
 
   // Mobile shares (native sheet); keep each host's desktop copy otherwise.
-  const effectiveSaveLabel = $derived(shareTarget.isMobile ? t("viewer_share") : (saveLabel ?? t("viewer_ui_save_again")));
-  const effectiveCloudSaveLabel = $derived(cloudSaveLabel ?? t("viewer_ui_save_to_sequence"));
+  const effectiveSaveLabel = $derived(
+    shareTarget.isMobile
+      ? t("viewer_share")
+      : (saveLabel ?? t("viewer_ui_save_again"))
+  );
+  const effectiveCloudSaveLabel = $derived(
+    cloudSaveLabel ?? t("viewer_ui_save_to_sequence")
+  );
 
   let videoEl = $state<HTMLVideoElement | null>(null);
   let isPlaying = $state(false);
@@ -93,7 +99,7 @@
 
 <div
   class="preview-panel"
-  in:fade={{ duration: 200 }}
+  in:opaqueFade
   role="region"
   aria-label={t("viewer_ui_video_export_preview")}
 >
@@ -121,7 +127,11 @@
       class="play-overlay"
       class:visible={!isPlaying}
       onclick={togglePlayback}
-      aria-label={hasEnded ? t("viewer_ui_replay_video") : isPlaying ? t("viewer_ui_pause_video") : t("viewer_ui_play_video")}
+      aria-label={hasEnded
+        ? t("viewer_ui_replay_video")
+        : isPlaying
+          ? t("viewer_ui_pause_video")
+          : t("viewer_ui_play_video")}
     >
       <div class="play-icon">
         {#if hasEnded}
@@ -150,7 +160,10 @@
       onclick={onRedownload}
       aria-label={effectiveSaveLabel}
     >
-      <i class="fas {shareTarget.isMobile ? 'fa-share-nodes' : 'fa-download'}" aria-hidden="true"></i>
+      <i
+        class="fas {shareTarget.isMobile ? 'fa-share-nodes' : 'fa-download'}"
+        aria-hidden="true"
+      ></i>
       {effectiveSaveLabel}
     </button>
     {#if onSaveToCloud}
@@ -210,8 +223,13 @@
     align-items: center;
     gap: 8px;
     padding: 6px 14px;
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
     border-radius: 20px;
     color: var(--semantic-success, #22c55e);
     font-size: var(--font-size-compact, 12px);
@@ -251,7 +269,7 @@
     border: none;
     cursor: pointer;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -275,7 +293,7 @@
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     color: white;
     font-size: 22px;
-    transition: transform 0.15s ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .play-overlay:hover .play-icon {
@@ -303,7 +321,16 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      border-width var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
   }
 
   .action-btn:disabled {
@@ -332,16 +359,18 @@
 
   .action-btn.primary:hover {
     filter: brightness(1.1);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
+    box-shadow: 0 4px 12px
+      color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
   }
 
   .action-btn:active {
     transform: scale(0.96);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   .action-btn:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
+    outline: 2px solid
+      color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
     outline-offset: 2px;
   }
 

@@ -203,8 +203,8 @@
     font-size: var(--font-size-compact, 0.75rem);
     cursor: pointer;
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .top-actions button:hover {

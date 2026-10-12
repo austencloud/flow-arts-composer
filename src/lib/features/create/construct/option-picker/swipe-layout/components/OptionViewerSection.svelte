@@ -415,7 +415,9 @@ Renders a section with:
           data-option-index={index}
           data-ghost="safe"
           data-ghost-kind="option"
-          aria-label={t("create_option_add_preview", { letter: pictograph.letter ?? t("create_option_movement") })}
+          aria-label={t("create_option_add_preview", {
+            letter: pictograph.letter ?? t("create_option_movement"),
+          })}
           aria-keyshortcuts="Shift+Space"
           title={t("create_ui_tap_to_add_hold_to_preview")}
           {@attach holdToAudition}
@@ -475,7 +477,7 @@ Renders a section with:
        cell — pictograph SVG included — on every frame of a 300ms hover, on a
        grid that mounts dozens of these. The lift now animates on the compositor
        and the brightness cue moved to the veil below. */
-    transition: transform 0.3s ease;
+    transition: transform var(--duration-emphasis) var(--ease-standard);
     touch-action: manipulation;
     -webkit-touch-callout: none;
     user-select: none;
@@ -489,7 +491,7 @@ Renders a section with:
     background: #fff;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
   }
 
   .pictograph-option.continuation {
@@ -530,12 +532,12 @@ Renders a section with:
       0 14px 28px -14px
         color-mix(in srgb, var(--border-primary) 70%, transparent),
       var(--option-card-shadow-hover);
-    transition: transform 320ms cubic-bezier(0.2, 1.55, 0.35, 1);
+    transition: transform var(--duration-emphasis) var(--ease-spring);
   }
 
   .pictograph-option:global(.option-audition-active)::after {
     opacity: 0.08;
-    transition: opacity 160ms ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .pictograph-option:focus-visible {

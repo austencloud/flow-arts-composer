@@ -65,7 +65,11 @@ Uses the actual GridSvg component for consistency with the rest of the app.
   );
 </script>
 
-<div class="lesson-grid-display {sizeClass}" class:pulsing class:animate-entrance={animateEntrance}>
+<div
+  class="lesson-grid-display {sizeClass}"
+  class:pulsing
+  class:animate-entrance={animateEntrance}
+>
   <svg viewBox="0 0 950 950" class="grid-svg">
     <!-- Background that respects light/dark mode -->
     <rect class="grid-background" width="950" height="950" rx="8" />
@@ -121,7 +125,7 @@ Uses the actual GridSvg component for consistency with the rest of the app.
   /* Background respects light/dark mode - matches PictographRenderer */
   .grid-background {
     fill: var(--lm-pictograph-bg, #ffffff);
-    transition: fill var(--duration-fast) ease-out;
+    transition: fill var(--duration-fast) var(--ease-standard-out);
   }
 
   :global(:root.dark) .grid-background {
@@ -177,33 +181,40 @@ Uses the actual GridSvg component for consistency with the rest of the app.
 
   /* Staggered entrance: Center first, then N, E, S, W */
   .animate-entrance :global(#center_point) {
-    animation: pointPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) var(--duration-normal) forwards;
+    animation: pointPopIn var(--duration-dramatic) var(--ease-spring)
+      var(--duration-normal) forwards;
   }
 
   .animate-entrance :global(#n_diamond_outer_point) {
-    animation: pointPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s forwards;
+    animation: pointPopIn var(--duration-dramatic) var(--ease-spring)
+      var(--duration-dramatic) forwards;
   }
 
   .animate-entrance :global(#e_diamond_outer_point) {
-    animation: pointPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.7s forwards;
+    animation: pointPopIn var(--duration-dramatic) var(--ease-spring)
+      var(--duration-scene) forwards;
   }
 
   .animate-entrance :global(#s_diamond_outer_point) {
-    animation: pointPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.9s forwards;
+    animation: pointPopIn var(--duration-dramatic) var(--ease-spring)
+      var(--duration-scene) forwards;
   }
 
   .animate-entrance :global(#w_diamond_outer_point) {
-    animation: pointPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.1s forwards;
+    animation: pointPopIn var(--duration-dramatic) var(--ease-spring)
+      calc(var(--duration-scene) + var(--duration-emphasis)) forwards;
   }
 
   /* Hand points appear after outer points */
   .animate-entrance :global(.normal-hand-point) {
-    animation: pointPopIn var(--duration-dramatic) cubic-bezier(0.34, 1.56, 0.64, 1) 1.4s forwards;
+    animation: pointPopIn var(--duration-dramatic) var(--ease-spring)
+      calc(var(--duration-scene) + var(--duration-dramatic)) forwards;
   }
 
   /* Lines fade in last */
   .animate-entrance :global(line) {
-    animation: linesFadeIn 0.6s ease-out 1.6s forwards;
+    animation: linesFadeIn var(--duration-dramatic) var(--ease-standard-out)
+      calc(var(--duration-scene) * 2) forwards;
   }
 
   /* Size variants - applied to the container */

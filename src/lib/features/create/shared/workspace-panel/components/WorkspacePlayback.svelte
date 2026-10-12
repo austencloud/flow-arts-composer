@@ -198,7 +198,7 @@
     height: 100%;
     container-type: size;
   }
-  /* How far the notation rail is open, 0 to 1. Registered so it can ease, and
+  /* How far the notation rail is open, 0 to 1. Registered so it can var(--ease-standard), and
      not inherited so easing it restyles only .playback-media instead of every
      pictograph inside the player. */
   @property --rail-open {
@@ -274,8 +274,8 @@
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition:
-      background var(--duration-fast) ease-out,
-      opacity var(--duration-fast) ease-out;
+      background var(--duration-fast) var(--ease-standard-out),
+      opacity var(--duration-fast) var(--ease-standard-out);
   }
   @media (hover: hover) and (pointer: fine) {
     .close-preview:hover {

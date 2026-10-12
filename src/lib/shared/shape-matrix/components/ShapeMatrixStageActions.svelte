@@ -102,10 +102,10 @@
        gear reads over the mandala the moment it is wanted. */
     opacity: 0.55;
     transition:
-      opacity var(--duration-fast, 0.15s) ease,
-      background var(--duration-fast, 0.15s) ease,
-      color var(--duration-fast, 0.15s) ease,
-      border-color var(--duration-fast, 0.15s) ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .stage-action:hover:not(:disabled),
