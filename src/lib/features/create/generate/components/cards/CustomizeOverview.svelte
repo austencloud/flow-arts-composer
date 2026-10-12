@@ -570,10 +570,13 @@ columns and puts the picture back beside the words, so all three still fit.
       min-height: 0;
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto 1fr;
       grid-template-areas:
         "art art"
         "text chevron";
-      align-items: center;
+      /* Top-aligned, so a value that wraps to two lines in one column does
+         not push its name out of line with the names beside it. */
+      align-items: start;
       row-gap: 0.875rem;
       column-gap: 0.5rem;
       padding: 0.875rem;
@@ -591,6 +594,7 @@ columns and puts the picture back beside the words, so all three still fit.
 
     .tile-chevron {
       grid-area: chevron;
+      margin-top: 0.0625rem;
     }
 
     .style-art {
@@ -627,7 +631,9 @@ columns and puts the picture back beside the words, so all three still fit.
 
     .tile {
       grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-rows: auto;
       grid-template-areas: "art text chevron";
+      align-items: center;
       column-gap: 0.625rem;
       row-gap: 0;
       padding: 0.625rem;
