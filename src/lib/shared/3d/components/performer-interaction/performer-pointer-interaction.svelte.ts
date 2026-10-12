@@ -700,6 +700,8 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
   function togglePlacement(): void {
     if (options.viewer.selectedPerformerIndices.length === 0) return;
     placing = !placing;
+    // The Performer panel closes on entry; keep Escape on the stage.
+    if (placing) options.canvas.focus({ preventScroll: true });
     announcement = placing
       ? "Tap the floor to move the selection. Press Escape to cancel."
       : "Move cancelled";
