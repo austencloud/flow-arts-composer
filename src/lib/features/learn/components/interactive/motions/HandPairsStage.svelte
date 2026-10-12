@@ -19,6 +19,10 @@
   Then: a pick stays picked, only the hand whose turn it is is lit, and the
   grids move together and resize. Then: a pick shows only its arrow, and the
   hands move once the grids have fused, never while they fuse.
+  Then (2026-10-12): learners could not tell what the six were, so an unfound
+  cell, or its bar on a phone, can be tapped for a hint. It becomes the goal:
+  its rule shows in the readout, and dashed rings mark the points on the
+  current hand's grid that would make it. The goal clears once it is found.
   Spec: docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md
 -->
 <script lang="ts">
@@ -56,6 +60,7 @@
   import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
+    goalPoints,
     isMirrorPair,
     placeHand,
     roundHands,
@@ -154,6 +159,8 @@
     key: number;
   } | null>(null);
   let lit = $state<HandCombinationId | null>(null);
+  /** The combination the learner asked a hint for, until it is found. */
+  let goal = $state<HandCombinationId | null>(null);
   let announcement = $state("");
   let pending: { combination: HandCombination; pair: HandPair } | null = null;
   let holding = false;
@@ -167,8 +174,50 @@
   const foundIds = $derived(new Set(Object.keys(found) as HandCombinationId[]));
   const strip = HAND_COMBINATIONS.map((combination) => ({
     id: combination.id,
+    name: plainTopicText(combination.name),
     tones: LETTER_TYPE_COLORS[combination.letterType],
   }));
+  const goalCombination = $derived(
+    HAND_COMBINATIONS.find((combination) => combination.id === goal) ?? null
+  );
+  /** The readout: the goal while the learner picks, else the last find. */
+  const readout = $derived(
+    goalCombination && turn !== null
+      ? {
+          combination: goalCombination,
+          mirror: false,
+          key: `goal-${goalCombination.id}`,
+          goal: true,
+        }
+      : shown
+        ? { ...shown, goal: false }
+        : null
+  );
+
+  /** The points on `hand`'s grid that would make the goal, on its turn. */
+  function hintsFor(hand: HandSide): GridLocation[] {
+    if (!goal || turn !== hand) return [];
+    return goalPoints(
+      round,
+      hand,
+      goal,
+      POINTS.map((point) => point.location)
+    );
+  }
+
+  /** Asks for a hint toward a combination; asking again puts it away. */
+  function toggleGoal(id: HandCombinationId) {
+    goal = goal === id ? null : id;
+    if (!goalCombination) return;
+    announcement = t("learn_motion_path_aria", {
+      name: plainTopicText(goalCombination.name),
+      caption: plainTopicText(goalCombination.description),
+    });
+  }
+
+  function hintLabel(name: string) {
+    return t("learn_motion_pairs_hint", { name });
+  }
 
   function setArrow(hand: HandSide, arrow: Arrow) {
     arrows = { ...arrows, [hand]: arrow };
@@ -188,6 +237,7 @@
     const mirror = !!first && isMirrorPair(first, pair);
     shown = { combination, mirror, key: (shown?.key ?? 0) + 1 };
     lit = combination.id;
+    if (combination.id === goal) goal = null;
     if (!first) onFind?.(combination.id, pair);
     const named = t("learn_motion_path_aria", {
       name: plainTopicText(combination.name),
@@ -563,6 +613,7 @@
         {#each HANDS as hand (hand)}
           {@const red = hand === RED}
           {@const picked = pickedPoint(hand)}
+          {@const hints = hintsFor(hand)}
           <div
             class="half"
             class:red
@@ -602,6 +653,16 @@
                       cy={point.y}
                       r="75"
                       class:shown={point.location === picked && !flying}
+                    />
+                  {/each}
+                </svg>
+                <svg class="hints" viewBox="0 0 950 950" aria-hidden="true">
+                  {#each POINTS as point (point.location)}
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r="95"
+                      class:shown={hints.includes(point.location)}
                     />
                   {/each}
                 </svg>
@@ -662,23 +723,26 @@
 
     <div class="results">
       <div class="readout" aria-hidden="true">
-        {#if shown}
-          {@const tones = LETTER_TYPE_COLORS[shown.combination.letterType]}
-          <Crossfade key={shown.key}>
+        {#if readout}
+          {@const tones = LETTER_TYPE_COLORS[readout.combination.letterType]}
+          <Crossfade key={readout.key}>
             <div
               class="readout-copy"
-              class:mirrored={shown.mirror}
+              class:mirrored={readout.mirror}
               style:--tone-a={tones[0]}
               style:--tone-b={tones[1]}
             >
-              <span class="readout-name"
-                >{plainTopicText(shown.combination.name)}</span
-              >
+              <span class="readout-name">
+                {#if readout.goal}
+                  <i class="fa-solid fa-lightbulb goal-icon"></i>
+                {/if}
+                {plainTopicText(readout.combination.name)}
+              </span>
               <span class="bar"></span>
               <span class="readout-description"
-                >{plainTopicText(shown.combination.description)}</span
+                >{plainTopicText(readout.combination.description)}</span
               >
-              {#if shown.mirror}
+              {#if readout.mirror}
                 <span class="mirror">{t("learn_motion_pairs_mirror")}</span>
               {/if}
             </div>
@@ -686,18 +750,42 @@
         {/if}
       </div>
       <div class="board-slot">
-        <HandCombinationBoard found={foundIds} {lit} namesOnlyWhenNarrow />
+        <HandCombinationBoard
+          found={foundIds}
+          {lit}
+          {goal}
+          onHint={toggleGoal}
+          {hintLabel}
+          namesOnlyWhenNarrow
+        />
       </div>
       <!-- Stacked on a phone, the board would fall under the lesson controls;
            a row of six bars in the combinations' colors stands in for it. -->
-      <ul class="found-strip" aria-hidden="true">
-        {#each strip as { id, tones } (id)}
+      <ul class="found-strip">
+        {#each strip as { id, name, tones } (id)}
+          {@const isFound = foundIds.has(id)}
           <li
-            class:found={foundIds.has(id)}
+            class:found={isFound}
             class:lit={lit === id}
+            class:goal={!isFound && goal === id}
             style:--tone-a={tones[0]}
             style:--tone-b={tones[1]}
-          ></li>
+          >
+            {#if isFound}
+              <span class="strip-bar" aria-hidden="true"></span>
+              <span class="sr-only">{name}</span>
+            {:else}
+              <button
+                type="button"
+                class="strip-hint"
+                aria-pressed={goal === id}
+                aria-label={hintLabel(name)}
+                onclick={() => toggleGoal(id)}
+              >
+                <span class="strip-bar"></span>
+              </button>
+            {/if}
+          </li>
         {/each}
       </ul>
     </div>
@@ -820,6 +908,30 @@
     opacity: 1;
   }
 
+  /* A hint's points: dashed rings, wider than a pick's, so a pick inside one
+     still reads as the pick. */
+  .hints {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .hints circle {
+    fill: color-mix(in srgb, var(--hand) 10%, transparent);
+    stroke: var(--hand);
+    stroke-width: 2;
+    stroke-dasharray: 5 5;
+    vector-effect: non-scaling-stroke;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+  }
+
+  .hints circle.shown {
+    opacity: 1;
+  }
+
   .fused {
     position: absolute;
     top: 50%;
@@ -882,6 +994,8 @@
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
+    /* The strip stands in for it, buttons and all. */
+    visibility: hidden;
   }
 
   .found-strip {
@@ -893,7 +1007,33 @@
     list-style: none;
   }
 
+  /* Each bar sits in a tap-sized slot, so an unfound one can ask for a
+     hint. */
   .found-strip li {
+    display: grid;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+
+  .strip-hint {
+    display: grid;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .strip-hint:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+    border-radius: 0.4rem;
+  }
+
+  .strip-bar {
+    display: block;
     height: 0.4rem;
     border-radius: 999px;
     background: linear-gradient(
@@ -907,11 +1047,13 @@
       box-shadow var(--transition-normal);
   }
 
-  .found-strip li.found {
+  .found .strip-bar,
+  .goal .strip-bar {
     opacity: 1;
   }
 
-  .found-strip li.lit {
+  .lit .strip-bar,
+  .goal .strip-bar {
     box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--tone-a) 35%, transparent);
   }
 
@@ -959,6 +1101,7 @@
       overflow: visible;
       clip: auto;
       white-space: normal;
+      visibility: visible;
     }
 
     .found-strip {
@@ -978,6 +1121,7 @@
         overflow: hidden;
         clip: rect(0, 0, 0, 0);
         white-space: nowrap;
+        visibility: hidden;
       }
 
       .found-strip {
@@ -1004,6 +1148,12 @@
       var(--tone-a) 0 50%,
       var(--tone-b) 50% 100%
     );
+  }
+
+  .goal-icon {
+    margin-inline-end: 0.35rem;
+    color: var(--theme-text-dim);
+    font-size: 0.8em;
   }
 
   .readout-description {
