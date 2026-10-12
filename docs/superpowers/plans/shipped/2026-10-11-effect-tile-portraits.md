@@ -6,7 +6,7 @@
 
 **Architecture:** One `tile-paint.ts` kit (colors, seeded random, ground, blob, glow stroke, terminal) replaces the private helper copies in the three existing tiles. One shell component `PortraitTile.svelte` owns the canvas, the once-per-key paint and a module cache; each effect contributes a pure `<effect>-tile.ts` module exporting `paint<Effect>Tile(ctx, intent, extras)` built from the preset's parameters and the renderer's own helpers. `EffectPresetThumbnail.svelte` maps effect type to painter through `tile-registry.ts`; Ghost and Silk receive the current prop type.
 
-**Spec:** `docs/superpowers/specs/active/2026-10-11-effect-tile-portraits-design.md`. **Reference art (approved, port from these):** `docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/reference/`. The spec says one `<Effect>Thumbnail.svelte` per effect; this plan uses one shell plus one `<effect>-tile.ts` per effect instead, because the eleven Svelte files would be identical. Task 2 records that in the spec.
+**Spec:** `docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits-design.md`. **Reference art (approved, port from these):** `docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/reference/`. The spec says one `<Effect>Thumbnail.svelte` per effect; this plan uses one shell plus one `<effect>-tile.ts` per effect instead, because the eleven Svelte files would be identical. Task 2 records that in the spec.
 
 **Tech Stack:** Svelte 5 runes, TypeScript, Canvas 2D, Vitest (jsdom with node-canvas, `tests/config/vitest.config.ts`), pnpm, the project's worktree lifecycle (`npm run wt:finish`).
 
@@ -64,7 +64,7 @@ All under `src/lib/shared/animation-engine/components/effects-panel/thumbnails/`
 | `src/lib/shared/effects/renderers/ink-2d-renderer.ts` (modify)                                     | Export `BrushStampCache`                                                                                  |
 | `src/lib/shared/effects/renderers/animal-2d-renderer.ts` (modify)                                  | Export `bodyWidth`, `resampleAlongPath`                                                                   |
 | `src/lib/shared/effects/renderers/pulse-2d-renderer.ts` (modify)                                   | Lift ring, flash and charge painters to exported functions                                                |
-| `docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence/` (new)                   | Picker screenshots                                                                                        |
+| `docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence/` (new)                   | Picker screenshots                                                                                        |
 
 Tile module contract (every effect):
 
@@ -369,13 +369,13 @@ In `FireThumbnail.svelte` add `import { type Rgb, blob, css, hexToRgb, lcg, mix,
 Run: `npm run check:fast`
 Expected: no new errors in the three thumbnail files.
 
-Then, with the primary dev server at https://localhost:5173/create, open the effect picker and screenshot the Fire, Coal and Bloom rows before and after this change (DevTools MCP `take_screenshot` on the picker element). Save both to `docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence/kit-before.png` and `kit-after.png`. They must look identical.
+Then, with the primary dev server at https://localhost:5173/create, open the effect picker and screenshot the Fire, Coal and Bloom rows before and after this change (DevTools MCP `take_screenshot` on the picker element). Save both to `docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence/kit-before.png` and `kit-after.png`. They must look identical.
 
 - [ ] **Step 7: Commit**
 
 ```powershell
-git add src/lib/shared/animation-engine/components/effects-panel/thumbnails/tile-paint.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/tile-paint.test.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/FireThumbnail.svelte src/lib/shared/animation-engine/components/effects-panel/thumbnails/CoalThumbnail.svelte src/lib/shared/animation-engine/components/effects-panel/thumbnails/BloomThumbnail.svelte docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence
-git commit -m "refactor(effects): share the tile paint kit across Fire, Coal and Bloom" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence
+git add src/lib/shared/animation-engine/components/effects-panel/thumbnails/tile-paint.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/tile-paint.test.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/FireThumbnail.svelte src/lib/shared/animation-engine/components/effects-panel/thumbnails/CoalThumbnail.svelte src/lib/shared/animation-engine/components/effects-panel/thumbnails/BloomThumbnail.svelte docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence
+git commit -m "refactor(effects): share the tile paint kit across Fire, Coal and Bloom" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence
 ```
 
 ---
@@ -390,7 +390,7 @@ git commit -m "refactor(effects): share the tile paint kit across Fire, Coal and
 - Create: `thumbnails/zap-tile.ts`, `thumbnails/zap-tile.test.ts`
 - Modify: `EffectPresetThumbnail.svelte`
 - Modify: `EffectPresetsSection.svelte:10-48` (Props), `EffectsPanel.svelte:743-750`, `EffectQuickSwitch.svelte:351-355`
-- Modify: `docs/superpowers/specs/active/2026-10-11-effect-tile-portraits-design.md` (architecture note)
+- Modify: `docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits-design.md` (architecture note)
 - Reference: `reference/zap.html` (161 lines, draw code inline)
 
 - [ ] **Step 1: Write the test helper**
@@ -677,7 +677,7 @@ Thread it at the three call sites:
 
 - [ ] **Step 9: Record the shell decision in the spec**
 
-In `docs/superpowers/specs/active/2026-10-11-effect-tile-portraits-design.md`, under "One tile component per effect", append: "Implementation note 2026-10-11: the eleven Svelte files would be identical, so `PortraitTile.svelte` is the one shell and each effect contributes `<effect>-tile.ts`; `tile-registry.ts` maps effect type to painter."
+In `docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits-design.md`, under "One tile component per effect", append: "Implementation note 2026-10-11: the eleven Svelte files would be identical, so `PortraitTile.svelte` is the one shell and each effect contributes `<effect>-tile.ts`; `tile-registry.ts` maps effect type to painter."
 
 - [ ] **Step 10: Verify in the browser**
 
@@ -686,8 +686,8 @@ Run `npm run check:fast` (expected: no new errors). Open https://localhost:5173/
 - [ ] **Step 11: Commit**
 
 ```powershell
-git add src/lib/shared/animation-engine/components/effects-panel/thumbnails/PortraitTile.svelte src/lib/shared/animation-engine/components/effects-panel/thumbnails/tile-registry.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/tile-registry.test.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/tile-test-utils.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/zap-tile.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/zap-tile.test.ts src/lib/shared/animation-engine/components/effects-panel/EffectPresetThumbnail.svelte src/lib/shared/animation-engine/components/effects-panel/EffectPresetsSection.svelte src/lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte src/lib/shared/animation-engine/components/effects-panel/EffectQuickSwitch.svelte docs/superpowers/specs/active/2026-10-11-effect-tile-portraits-design.md docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence/zap.png
-git commit -m "feat(effects): portrait tile shell, registry and the Zap portrait" -- src/lib/shared/animation-engine/components/effects-panel docs/superpowers/specs/active/2026-10-11-effect-tile-portraits-design.md docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence
+git add src/lib/shared/animation-engine/components/effects-panel/thumbnails/PortraitTile.svelte src/lib/shared/animation-engine/components/effects-panel/thumbnails/tile-registry.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/tile-registry.test.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/tile-test-utils.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/zap-tile.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/zap-tile.test.ts src/lib/shared/animation-engine/components/effects-panel/EffectPresetThumbnail.svelte src/lib/shared/animation-engine/components/effects-panel/EffectPresetsSection.svelte src/lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte src/lib/shared/animation-engine/components/effects-panel/EffectQuickSwitch.svelte docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits-design.md docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence/zap.png
+git commit -m "feat(effects): portrait tile shell, registry and the Zap portrait" -- src/lib/shared/animation-engine/components/effects-panel docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits-design.md docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence
 ```
 
 ---
@@ -883,7 +883,7 @@ Expected: PASS, 3 tests. `npm run check:fast`: no new errors. In the picker on /
 - [ ] **Step 6: Commit, then finish batch 1**
 
 ```powershell
-git commit -m "feat(effects): Sparkle and Ghost portraits; export the ghost treatment and pose blit" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails src/lib/shared/effects/renderers/ghost-2d-renderer.ts docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence
+git commit -m "feat(effects): Sparkle and Ghost portraits; export the ghost treatment and pose blit" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails src/lib/shared/effects/renderers/ghost-2d-renderer.ts docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence
 ```
 
 (stage the same paths first with `git add`.) Then `Set-Location E:/tka-platform; npm run wt:finish -- codex/effect-tiles-b1 --route /create`.
@@ -917,8 +917,8 @@ Add `goo: (ctx, intent) => paintGooTile(ctx, intent)` and `bubbles: (ctx, intent
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add src/lib/shared/animation-engine/components/effects-panel/thumbnails/goo-tile.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/goo-tile.test.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/bubbles-tile.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/bubbles-tile.test.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/tile-registry.ts docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence
-git commit -m "feat(effects): Goo and Bubbles portraits" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence
+git add src/lib/shared/animation-engine/components/effects-panel/thumbnails/goo-tile.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/goo-tile.test.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/bubbles-tile.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/bubbles-tile.test.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails/tile-registry.ts docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence
+git commit -m "feat(effects): Goo and Bubbles portraits" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence
 ```
 
 ---
@@ -1000,7 +1000,7 @@ Prop color for the registry: the left hand's trail color is what satin borrows o
 Run both tests: PASS. `npm run check:fast`: clean. Picker: three Ink swashes, six Silk ribbons (Phantom on the lit ground). Screenshots to `evidence/ink.png`, `evidence/silk.png`. Commit:
 
 ```powershell
-git commit -m "feat(effects): Ink and Silk portraits; export BrushStampCache" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails src/lib/shared/effects/renderers/ink-2d-renderer.ts docs/superpowers/specs/active/2026-10-11-effect-tile-portraits-design.md docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence
+git commit -m "feat(effects): Ink and Silk portraits; export BrushStampCache" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails src/lib/shared/effects/renderers/ink-2d-renderer.ts docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits-design.md docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence
 ```
 
 ---
@@ -1031,7 +1031,7 @@ In `animal-2d-renderer.ts` prefix `function bodyWidth(` (line 712) and `function
 Register `animal`. Run the test: PASS. `npm run check:fast`: clean. Picker: six creatures, Whisper on the lit ground, Gilt Wyrm's neck crossing over its coil without a seam. Screenshot to `evidence/animal.png`. Commit:
 
 ```powershell
-git commit -m "feat(effects): Animal portrait; export bodyWidth and resampleAlongPath" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails src/lib/shared/effects/renderers/animal-2d-renderer.ts docs/superpowers/specs/active/2026-10-11-effect-tile-portraits-design.md docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence
+git commit -m "feat(effects): Animal portrait; export bodyWidth and resampleAlongPath" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails src/lib/shared/effects/renderers/animal-2d-renderer.ts docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits-design.md docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence
 ```
 
 Then finish batch 3: `npm run wt:finish -- codex/effect-tiles-b3 --route /create`.
@@ -1097,7 +1097,7 @@ Run: `npx vitest run --config tests/config/vitest.config.ts src/lib/shared/effec
 Register `pulse`. Run the tile test and `tile-registry.test.ts`: both PASS (the registry test turns green here). `npm run check:fast`: clean. Picker: Sonar two beats of blue rings, Shockwave's orange bang with the yellow fringe, Heartbeat's inner overtone, Ripple's stream. Screenshot to `evidence/pulse.png`. Commit:
 
 ```powershell
-git commit -m "feat(effects): Pulse portrait; lift the ring, flash and charge painters" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails src/lib/shared/effects/renderers/pulse-2d-renderer.ts docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence
+git commit -m "feat(effects): Pulse portrait; lift the ring, flash and charge painters" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails src/lib/shared/effects/renderers/pulse-2d-renderer.ts docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence
 ```
 
 ---
@@ -1107,8 +1107,8 @@ git commit -m "feat(effects): Pulse portrait; lift the ring, flash and charge pa
 **Files:**
 
 - Modify: `thumbnails/look-copy.ts`
-- Create: `docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence/README.md`
-- Modify: `docs/superpowers/specs/active/2026-10-11-effect-tile-portraits-design.md` (frontmatter)
+- Create: `docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence/README.md`
+- Modify: `docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits-design.md` (frontmatter)
 
 - [ ] **Step 1: Add the copy**
 
@@ -1202,8 +1202,8 @@ Update the spec frontmatter: `work_state: verification`, `plan_path: "docs/super
 - [ ] **Step 4: Commit and finish batch 4**
 
 ```powershell
-git add src/lib/shared/animation-engine/components/effects-panel/thumbnails/look-copy.ts docs/superpowers/specs/active/2026-10-11-effect-tile-portraits/evidence docs/superpowers/specs/active/2026-10-11-effect-tile-portraits-design.md
-git commit -m "feat(effects): look copy for every portrait preset; tile evidence set" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails/look-copy.ts docs/superpowers/specs/active/2026-10-11-effect-tile-portraits
+git add src/lib/shared/animation-engine/components/effects-panel/thumbnails/look-copy.ts docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits/evidence docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits-design.md
+git commit -m "feat(effects): look copy for every portrait preset; tile evidence set" -- src/lib/shared/animation-engine/components/effects-panel/thumbnails/look-copy.ts docs/superpowers/specs/shipped/2026-10-11-effect-tile-portraits
 ```
 
 Then `npm run wt:finish -- codex/effect-tiles-b4 --route /create`. After the merge, one `opus` review of the whole feature against the spec and the reference pages; fix what it finds inline and rerun the tile tests (`npx vitest run --config tests/config/vitest.config.ts src/lib/shared/animation-engine/components/effects-panel/thumbnails`).
