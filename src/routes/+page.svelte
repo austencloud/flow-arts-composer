@@ -154,7 +154,7 @@
     text-decoration: none;
     font-weight: 600;
     z-index: var(--z-overlay);
-    transition: top var(--duration-normal) ease;
+    transition: top var(--duration-normal) var(--ease-standard);
   }
 
   .skip-link:focus {

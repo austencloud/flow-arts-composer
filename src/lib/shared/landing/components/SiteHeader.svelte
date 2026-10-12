@@ -197,7 +197,12 @@
           icon: "fa-circle-dot",
           group: "By prop",
         },
-        { label: "Fans", href: "/notation/fans", icon: "fa-fan", group: "By prop" },
+        {
+          label: "Fans",
+          href: "/notation/fans",
+          icon: "fa-fan",
+          group: "By prop",
+        },
         {
           label: "Clubs",
           href: "/notation/clubs",
@@ -572,7 +577,9 @@
                 {/if}
                 <ul
                   class="m-sub-list"
-                  aria-label={section.label ? siteCopy(section.label) : undefined}
+                  aria-label={section.label
+                    ? siteCopy(section.label)
+                    : undefined}
                 >
                   {#each section.items as item}
                     <li>
@@ -585,7 +592,9 @@
                           aria-hidden="true"
                         ></i>
                         <span class="m-label">{siteCopy(item.label)}</span>
-                        <i class="fas fa-chevron-right m-chev" aria-hidden="true"
+                        <i
+                          class="fas fa-chevron-right m-chev"
+                          aria-hidden="true"
                         ></i>
                       </a>
                     </li>
@@ -657,9 +666,9 @@
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     transition:
-      background 0.3s ease,
-      border-color 0.3s ease,
-      height 0.3s ease;
+      background var(--duration-emphasis) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard),
+      height var(--duration-emphasis) var(--ease-standard);
   }
   header.scrolled {
     background: rgba(13, 13, 28, 0.92);
@@ -678,7 +687,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    transition: height 0.3s ease;
+    transition: height var(--duration-emphasis) var(--ease-standard);
   }
   header.scrolled .inner {
     height: 56px;
@@ -728,10 +737,10 @@
     font-size: 0.9rem;
     font-weight: 600;
     transition:
-      background 0.2s ease,
-      border-color 0.2s ease,
-      color 0.2s ease,
-      transform 0.2s ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
   .surface-back:hover,
   .surface-back:focus-visible {
@@ -769,7 +778,7 @@
     align-items: center;
     padding: 0.4rem 0;
     box-sizing: border-box;
-    transition: color 0.2s ease;
+    transition: color var(--duration-normal) var(--ease-standard);
   }
   .desktop-nav a:hover,
   .desktop-nav a:focus-visible {
@@ -800,7 +809,7 @@
     min-height: var(--min-touch-target, 44px);
     padding: 0.4rem 0;
     cursor: pointer;
-    transition: color 0.2s ease;
+    transition: color var(--duration-normal) var(--ease-standard);
   }
   .signin:hover,
   .signin:focus-visible {
@@ -847,8 +856,8 @@
     cursor: pointer;
     line-height: 0;
     transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
   .avatar-btn:hover,
   .avatar-btn:focus-visible {
@@ -866,7 +875,7 @@
     border-radius: 12px;
     box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
     z-index: 210;
-    animation: acct-in 0.16s ease-out;
+    animation: acct-in var(--duration-fast) var(--ease-standard-out);
   }
   @keyframes acct-in {
     from {
@@ -911,8 +920,8 @@
     font-weight: 500;
     cursor: pointer;
     transition:
-      background 0.15s ease,
-      color 0.15s ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
   .acct-signout:hover,
   .acct-signout:focus-visible {
@@ -977,7 +986,9 @@
     height: 2px;
     background: #fff;
     border-radius: 1px;
-    transition: all 0.3s ease;
+    transition:
+      transform var(--duration-emphasis) var(--ease-standard),
+      opacity var(--duration-emphasis) var(--ease-standard);
     transform-origin: center;
   }
   .bar.open:nth-child(1) {
@@ -1014,14 +1025,14 @@
     opacity: 0;
     visibility: hidden;
     transition:
-      opacity 0.3s ease,
-      visibility 0s linear 0.3s;
+      opacity var(--duration-emphasis) var(--ease-standard),
+      visibility 0s linear var(--duration-emphasis);
   }
   .mobile-nav.open {
     opacity: 1;
     visibility: visible;
     transition:
-      opacity 0.32s ease,
+      opacity var(--duration-emphasis) var(--ease-standard),
       visibility 0s;
   }
 
@@ -1037,8 +1048,10 @@
     transform: translateY(14px);
   }
   .mobile-nav.open .m-list li {
-    animation: m-item-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: calc(0.06s + var(--i) * 0.06s);
+    animation: m-item-in var(--duration-dramatic) var(--ease-out) both;
+    animation-delay: calc(
+      var(--stagger-normal) + var(--i) * var(--stagger-normal)
+    );
   }
   .m-list a {
     display: flex;
@@ -1052,9 +1065,9 @@
     font-weight: 600;
     border: 1px solid transparent;
     transition:
-      background 0.18s ease,
-      border-color 0.18s ease,
-      transform 0.18s ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
   .m-list a:hover,
   .m-list a:focus-visible {
@@ -1087,8 +1100,8 @@
     border: 1px solid transparent;
     cursor: pointer;
     transition:
-      background 0.18s ease,
-      border-color 0.18s ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
   .m-group-btn:hover,
   .m-group-btn:focus-visible {
@@ -1105,7 +1118,7 @@
     transform: rotate(180deg);
   }
   .m-group-btn .m-chev {
-    transition: transform 0.25s ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   /* Collapsible sub-list: the 0fr→1fr grid-row trick animates height without
@@ -1113,7 +1126,7 @@
   .m-sub {
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: grid-template-rows var(--duration-emphasis) var(--ease-out);
   }
   .m-sub.expanded {
     grid-template-rows: 1fr;
@@ -1175,8 +1188,10 @@
     transform: translateY(14px);
   }
   .mobile-nav.open .m-actions {
-    animation: m-item-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: calc(0.06s + var(--i) * 0.06s);
+    animation: m-item-in var(--duration-dramatic) var(--ease-out) both;
+    animation-delay: calc(
+      var(--stagger-normal) + var(--i) * var(--stagger-normal)
+    );
   }
   .m-signin {
     color: #9b97bd;

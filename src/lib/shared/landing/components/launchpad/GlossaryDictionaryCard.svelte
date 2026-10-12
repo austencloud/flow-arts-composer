@@ -26,129 +26,140 @@
   the underlying swap).
 -->
 <script lang="ts">
-	import { Crossfade } from "#lib/shared/transitions/motion.js";
-	import { DURATION } from "#lib/shared/transitions/transitions.js";
-	import { GLOSSARY } from "@tka/domain";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { GLOSSARY } from "@tka/domain";
 
-	let {
-		intervalMs = 7500,
-		startDelayMs = 0,
-	}: { intervalMs?: number; startDelayMs?: number } = $props();
+  let {
+    intervalMs = 7500,
+    startDelayMs = 0,
+  }: { intervalMs?: number; startDelayMs?: number } = $props();
 
-	// Curated excerpt of real GLOSSARY keys: short, self-contained entries that
-	// read cleanly at tile scale. None of these need the display-name overrides
-	// the live /atlas page applies to acronyms (vtg, pads, cw, ...), so a
-	// plain title-case of the key matches +page.server.ts's displayName()
-	// fallback branch exactly.
-	const KEYS = ["alpha", "beta", "gamma", "letter", "word", "glyph", "bridge", "compound"] as const;
+  // Curated excerpt of real GLOSSARY keys: short, self-contained entries that
+  // read cleanly at tile scale. None of these need the display-name overrides
+  // the live /atlas page applies to acronyms (vtg, pads, cw, ...), so a
+  // plain title-case of the key matches +page.server.ts's displayName()
+  // fallback branch exactly.
+  const KEYS = [
+    "alpha",
+    "beta",
+    "gamma",
+    "letter",
+    "word",
+    "glyph",
+    "bridge",
+    "compound",
+  ] as const;
 
-	function titleCase(key: string): string {
-		return key.charAt(0).toUpperCase() + key.slice(1);
-	}
+  function titleCase(key: string): string {
+    return key.charAt(0).toUpperCase() + key.slice(1);
+  }
 
-	interface Entry {
-		term: string;
-		category: string;
-		definition: string;
-	}
+  interface Entry {
+    term: string;
+    category: string;
+    definition: string;
+  }
 
-	const BY_KEY = new Map(Object.entries(GLOSSARY));
-	const ENTRIES: Entry[] = KEYS.flatMap((k) => {
-		const e = BY_KEY.get(k);
-		return e ? [{ term: titleCase(k), category: e.category, definition: e.definition }] : [];
-	});
+  const BY_KEY = new Map(Object.entries(GLOSSARY));
+  const ENTRIES: Entry[] = KEYS.flatMap((k) => {
+    const e = BY_KEY.get(k);
+    return e
+      ? [{ term: titleCase(k), category: e.category, definition: e.definition }]
+      : [];
+  });
 
-	let index = $state(0);
-	const current = $derived(ENTRIES[index % ENTRIES.length]);
+  let index = $state(0);
+  const current = $derived(ENTRIES[index % ENTRIES.length]);
 
-	$effect(() => {
-		if (ENTRIES.length < 2) return;
+  $effect(() => {
+    if (ENTRIES.length < 2) return;
 
-		let timer: ReturnType<typeof setInterval> | undefined;
-		let starter: ReturnType<typeof setTimeout> | undefined;
-		const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let timer: ReturnType<typeof setInterval> | undefined;
+    let starter: ReturnType<typeof setTimeout> | undefined;
+    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-		function stop() {
-			if (starter) clearTimeout(starter);
-			if (timer) clearInterval(timer);
-			starter = undefined;
-			timer = undefined;
-		}
+    function stop() {
+      if (starter) clearTimeout(starter);
+      if (timer) clearInterval(timer);
+      starter = undefined;
+      timer = undefined;
+    }
 
-		function start() {
-			stop();
-			if (mql.matches) return;
-			starter = setTimeout(() => {
-				timer = setInterval(() => {
-					index = (index + 1) % ENTRIES.length;
-				}, intervalMs);
-			}, startDelayMs);
-		}
+    function start() {
+      stop();
+      if (mql.matches) return;
+      starter = setTimeout(() => {
+        timer = setInterval(() => {
+          index = (index + 1) % ENTRIES.length;
+        }, intervalMs);
+      }, startDelayMs);
+    }
 
-		start();
-		mql.addEventListener("change", start);
-		return () => {
-			stop();
-			mql.removeEventListener("change", start);
-		};
-	});
+    start();
+    mql.addEventListener("change", start);
+    return () => {
+      stop();
+      mql.removeEventListener("change", start);
+    };
+  });
 </script>
 
 <div class="dictionary-card">
-	<Crossfade key={current?.term ?? index} duration={DURATION.dramatic} fill>
-		{#if current}
-			<div class="entry">
-				<p class="headword">
-					{current.term}<span class="cat">{current.category}</span>
-				</p>
-				<p class="def">{current.definition}</p>
-			</div>
-		{/if}
-	</Crossfade>
+  <Crossfade key={current?.term ?? index} duration={DURATION.dramatic} fill>
+    {#if current}
+      <div class="entry">
+        <p class="headword">
+          {current.term}<span class="cat">{current.category}</span>
+        </p>
+        <p class="def">{current.definition}</p>
+      </div>
+    {/if}
+  </Crossfade>
 </div>
 
 <style>
-	.dictionary-card {
-		position: relative;
-		width: 100%;
-		height: 100%;
-	}
-	.entry {
-		position: absolute;
-		inset: 0;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		gap: 0.3rem;
-	}
-	.headword {
-		margin: 0;
-		display: flex;
-		align-items: baseline;
-		gap: 0.45em;
-		font-family: "Cormorant Garamond", Georgia, serif;
-		font-style: italic;
-		font-weight: 700;
-		font-size: 1.15rem;
-		color: var(--c);
-	}
-	.cat {
-		font-family: "Cormorant Garamond", Georgia, serif;
-		font-style: italic;
-		font-weight: 400;
-		font-size: 0.68rem;
-		letter-spacing: 0.02em;
-		color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
-		opacity: 0.75;
-	}
-	.def {
-		margin: 0;
-		font-size: 0.8rem;
-		line-height: 1.4;
-		color: var(--theme-text-dim, rgba(255, 255, 255, 0.68));
-		display: -webkit-box;
-		-webkit-line-clamp: 3;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
+  .dictionary-card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  .entry {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.3rem;
+  }
+  .headword {
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.45em;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--c);
+  }
+  .cat {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
+    opacity: 0.75;
+  }
+  .def {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.68));
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 </style>

@@ -21,75 +21,115 @@
   /test/tka-font (identical token strings, e.g. "Sigma-", "alpha").
 -->
 <script lang="ts">
-	const LETTERS = [
-		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
-		"M", "N", "O", "P", "Q", "R", "S", "T", "U", "V",
-		"W", "X", "Y", "Z", "Sigma", "Delta", "Theta", "Omega",
-		"W-", "X-", "Y-", "Z-", "Sigma-", "Delta-", "Theta-", "Omega-",
-		"Phi", "Psi", "Lambda",
-		"Phi-", "Psi-", "Lambda-",
-		"alpha", "beta", "gamma",
-	];
+  const LETTERS = [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+    "Sigma",
+    "Delta",
+    "Theta",
+    "Omega",
+    "W-",
+    "X-",
+    "Y-",
+    "Z-",
+    "Sigma-",
+    "Delta-",
+    "Theta-",
+    "Omega-",
+    "Phi",
+    "Psi",
+    "Lambda",
+    "Phi-",
+    "Psi-",
+    "Lambda-",
+    "alpha",
+    "beta",
+    "gamma",
+  ];
 </script>
 
 <div class="alphabet-strip" aria-hidden="true">
-	<div class="track">
-		{#each [...LETTERS, ...LETTERS] as letter, i (i)}
-			<span class="tka-font">{letter}</span>
-		{/each}
-	</div>
+  <div class="track">
+    {#each [...LETTERS, ...LETTERS] as letter, i (i)}
+      <span class="tka-font">{letter}</span>
+    {/each}
+  </div>
 </div>
 
 <style>
-	.alphabet-strip {
-		width: 100%;
-		height: 100%;
-		container-type: inline-size;
-		display: flex;
-		align-items: center;
-		overflow: hidden;
-	}
-	.track {
-		display: inline-flex;
-		align-items: center;
-		gap: 3.4cqi;
-		padding-inline: 2cqi;
-		white-space: nowrap;
-		animation: alphabet-stream 48s linear infinite;
-		will-change: transform;
-	}
-	.track span {
-		font-size: 15cqi;
-		line-height: 1;
-		color: var(--c);
-		opacity: 0.5;
-		text-shadow: 0 0 14px color-mix(in srgb, var(--c) 40%, transparent);
-	}
+  .alphabet-strip {
+    width: 100%;
+    height: 100%;
+    container-type: inline-size;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+  .track {
+    display: inline-flex;
+    align-items: center;
+    gap: 3.4cqi;
+    padding-inline: 2cqi;
+    white-space: nowrap;
+    animation: alphabet-stream 48s linear infinite;
+    will-change: transform;
+  }
+  .track span {
+    font-size: 15cqi;
+    line-height: 1;
+    color: var(--c);
+    opacity: 0.5;
+    text-shadow: 0 0 14px color-mix(in srgb, var(--c) 40%, transparent);
+  }
 
-	@keyframes alphabet-stream {
-		from {
-			transform: translateX(0);
-		}
-		to {
-			transform: translateX(-50%);
-		}
-	}
+  @keyframes alphabet-stream {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
 
-	@media (prefers-reduced-motion: reduce) {
-		.track {
-			animation: none;
-		}
-	}
+  @media (prefers-reduced-motion: reduce) {
+    .track {
+      animation: none;
+    }
+  }
 
-	/* 4K tier: the tile grows via LaunchpadTile's own ramp, so the cqi-sized
+  /* 4K tier: the tile grows via LaunchpadTile's own ramp, so the cqi-sized
 	   glyphs already scale with it — this nudges gap/opacity to match the
 	   slightly heavier type treatment the rest of the tile gets at this tier. */
-	@media (min-width: 2200px) {
-		.track {
-			gap: 4cqi;
-		}
-		.track span {
-			opacity: 0.58;
-		}
-	}
+  @media (min-width: 2200px) {
+    .track {
+      gap: 4cqi;
+    }
+    .track span {
+      opacity: 0.58;
+    }
+  }
 </style>

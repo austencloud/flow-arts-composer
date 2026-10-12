@@ -66,8 +66,8 @@
     justify-content: center;
     margin-bottom: 0.5rem;
     transition:
-      filter 0.3s ease,
-      background 0.3s ease;
+      filter var(--duration-emphasis) var(--ease-standard),
+      background var(--duration-emphasis) var(--ease-standard);
   }
   .position-image-container img {
     width: 100%;
