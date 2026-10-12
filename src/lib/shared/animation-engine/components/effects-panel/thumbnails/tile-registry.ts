@@ -11,6 +11,7 @@ import { loadGhostTileSprite, paintGhostTile } from "./ghost-tile";
 import { paintGooTile } from "./goo-tile";
 import { paintInkTile } from "./ink-tile";
 import { paintPetalsTile } from "./petals-tile";
+import { paintPulseTile } from "./pulse-tile";
 import { paintSilkTile, resolveSilkTilePropColor } from "./silk-tile";
 import { paintSmokeTile } from "./smoke-tile";
 import { paintSparkleTile } from "./sparkle-tile";
@@ -46,6 +47,7 @@ const PAINTERS: Partial<{ [E in keyof EffectConfigMap]: TilePainter<E> }> = {
   silk: (ctx, intent, extras) =>
     paintSilkTile(ctx, intent, resolveSilkTilePropColor(extras.propType)),
   animal: (ctx, intent) => paintAnimalTile(ctx, intent),
+  pulse: (ctx, intent) => paintPulseTile(ctx, intent),
 };
 
 export function tilePainterFor(effectType: string): TilePainter | null {
