@@ -304,23 +304,53 @@
 </div>
 
 <style>
+  /* On a big screen the whole lesson scales up as one, words and controls
+     with the pictures, so it keeps a laptop's proportions (Austen,
+     2026-10-12: at 4K the pictures alone grew and dwarfed the words). Zoom
+     scales viewport units too, so the stages size by `--lesson-vh`, a
+     viewport percent before the zoom. */
   .motions-experience {
+    --zoom: 1;
+    --lesson-vh: calc(1svh / var(--zoom));
+    --lesson-vw: calc(1vw / var(--zoom));
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
     width: 100%;
-    min-height: calc(100svh - 5rem);
+    min-height: calc((100svh - 5rem) / var(--zoom));
     color: var(--theme-text);
     outline: none;
+    zoom: var(--zoom);
   }
 
+  @media (min-width: 2400px) and (min-height: 1300px) {
+    .motions-experience {
+      --zoom: 1.25;
+    }
+  }
+
+  @media (min-width: 2900px) and (min-height: 1600px) {
+    .motions-experience {
+      --zoom: 1.5;
+    }
+  }
+
+  @media (min-width: 3400px) and (min-height: 1900px) {
+    .motions-experience {
+      --zoom: 1.75;
+    }
+  }
+
+  /* Each stage sizes itself by the screen's height, so the frame only keeps
+     the controls to a comfortable span. */
   .motions-experience :global(.lesson-stage-frame) {
-    --lesson-workshop-max: clamp(64rem, 72vw, 120rem);
+    --lesson-workshop-max: 200rem;
+    --lesson-controls-max: clamp(64rem, calc(60 * var(--lesson-vw)), 100rem);
   }
 
   .motions-experience :global(.curriculum-progress),
   .motions-experience :global(.progress-text) {
-    font-size: clamp(1rem, 1.1vw, 1.25rem);
+    font-size: clamp(1rem, calc(1.1 * var(--lesson-vw)), 1.25rem);
     color: var(--theme-text);
     line-height: 1.4;
   }
@@ -340,8 +370,28 @@
     text-wrap: balance;
   }
 
+  /* Two rows of three, each picture as big as the screen's height allows
+     over its words; a landscape screen takes one row of six. */
   .board-stage {
-    width: min(100%, 72rem);
+    --board-wide-columns: 3;
+    --board-art: max(9rem, calc((100 * var(--lesson-vh) - 27rem) / 2 - 8rem));
+    width: min(100%, calc(3 * var(--board-art) + 6.5rem));
     margin-inline: auto;
+  }
+
+  @media (min-aspect-ratio: 3 / 2) {
+    .board-stage {
+      --board-wide-columns: 6;
+      width: min(100%, 100rem);
+    }
+  }
+
+  /* A tall screen fills better with two rows of three; one row left the
+     board a strip with empty space above and below it. */
+  @media (min-aspect-ratio: 3 / 2) and (max-aspect-ratio: 11 / 5) and (min-height: 1100px) {
+    .board-stage {
+      --board-wide-columns: 3;
+      width: min(100%, calc(3 * var(--board-art) + 6.5rem));
+    }
   }
 </style>
