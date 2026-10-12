@@ -577,7 +577,7 @@
     font-size: var(--font-size-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .module-error .reload-button:hover {

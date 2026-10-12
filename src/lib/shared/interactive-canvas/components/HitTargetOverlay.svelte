@@ -306,8 +306,8 @@
     stroke-width: 5;
     stroke-linecap: round;
     transition:
-      stroke var(--duration-fast, 150ms) ease,
-      stroke-width var(--duration-fast, 150ms) ease;
+      stroke var(--duration-fast) var(--ease-standard),
+      stroke-width var(--duration-fast) var(--ease-standard);
   }
 
   .aim-ticks line.aimed {
@@ -329,9 +329,9 @@
     stroke-width: 2.5;
     cursor: pointer;
     transition:
-      fill 0.14s ease,
-      stroke 0.14s ease,
-      stroke-width 0.14s ease;
+      fill var(--duration-fast) var(--ease-standard),
+      stroke var(--duration-fast) var(--ease-standard),
+      stroke-width var(--duration-fast) var(--ease-standard);
   }
 
   .hit-target.disabled {

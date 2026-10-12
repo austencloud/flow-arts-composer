@@ -269,7 +269,7 @@
     font-size: var(--font-size-sm, 14px);
     text-decoration: none;
     cursor: pointer;
-    transition: filter var(--duration-normal, 200ms) ease;
+    transition: filter var(--duration-normal) var(--ease-standard);
   }
 
   .bridge-button.ghost {

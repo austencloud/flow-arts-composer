@@ -422,8 +422,8 @@
        Android (where StatusBar already reserves the strip), so no double pad. */
     padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
     transition:
-      padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      padding-top 0.2s ease;
+      padding-left var(--duration-emphasis) var(--ease-standard),
+      padding-top var(--duration-normal) var(--ease-standard);
   }
 
   /* Desktop sidebar support */
@@ -493,7 +493,8 @@
 
   /* Content area slides up + fades in */
   .content-area.entry-animating {
-    animation: entry-content-in 350ms cubic-bezier(0.16, 1, 0.3, 1) 400ms both;
+    animation: entry-content-in var(--duration-dramatic) var(--ease-out)
+      var(--duration-dramatic) both;
   }
 
   @keyframes entry-content-in {

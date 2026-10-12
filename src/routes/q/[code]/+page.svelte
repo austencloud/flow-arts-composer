@@ -136,7 +136,7 @@
 
   .loading-layer,
   .viewer-layer {
-    transition: opacity 180ms ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .loading-layer {

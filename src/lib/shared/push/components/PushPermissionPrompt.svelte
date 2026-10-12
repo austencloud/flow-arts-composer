@@ -75,7 +75,7 @@
     max-width: 400px;
     width: calc(100% - 2rem);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    animation: slideUp 0.3s ease-out;
+    animation: slideUp var(--duration-emphasis) var(--ease-standard-out);
   }
 
   .prompt-text {
@@ -100,7 +100,7 @@
     font-weight: 500;
     cursor: pointer;
     border: none;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .btn-secondary {
