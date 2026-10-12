@@ -56,6 +56,8 @@ export interface JoinedGridPoint {
   readonly kind: JoinedGridPointKind;
   readonly x: number;
   readonly y: number;
+  /** Drawn as a ring: a box grid's outer point (the diagonal ones). */
+  readonly ring: boolean;
   /** Every grid this point belongs to, with its location in that grid. */
   readonly members: readonly {
     readonly hand: Hand;
@@ -65,6 +67,8 @@ export interface JoinedGridPoint {
 
 export interface GridJoinLayout {
   readonly join: GridJoinSpec;
+  /** The grid each hand is drawn on. */
+  readonly grids: JoinedGridModes;
   /** Each hand's grid offset from the scene center, before the fit scale. */
   readonly offsets: Readonly<Record<Hand, JoinVec>>;
   /** Points to draw, after shared points merge and crowded outer points hide. */
@@ -113,13 +117,79 @@ const LOCATION_UNIT: Readonly<Record<GridLocation, JoinVec>> = {
   c: { x: 0, y: 0 },
 };
 
+/**
+ * The grid one hand draws in a joined picture. A skewed hand (one that moves
+ * between a cardinal and a diagonal point in one step) draws both sets of
+ * points, as the one-grid skewed picture does.
+ */
+export type JoinedGridMode = "diamond" | "box" | "skewed";
+
+/** Each hand's drawn grid. */
+export type JoinedGridModes = Readonly<Record<Hand, JoinedGridMode>>;
+
 /** Hand-point (and outer-point) locations of each drawn grid. */
 const GRID_LOCATIONS: Readonly<
-  Record<"diamond" | "box", readonly GridLocation[]>
+  Record<JoinedGridMode, readonly GridLocation[]>
 > = {
   diamond: ["n", "e", "s", "w"],
   box: ["ne", "se", "sw", "nw"],
+  skewed: ["n", "ne", "e", "se", "s", "sw", "w", "nw"],
 };
+
+const CARDINAL: ReadonlySet<string> = new Set(GRID_LOCATIONS.diamond);
+const INTERCARDINAL: ReadonlySet<string> = new Set(GRID_LOCATIONS.box);
+
+/** The grid a hand's own points sit on; diamond when it has none. */
+function handGridMode(locations: readonly string[]): JoinedGridMode {
+  const points = locations.filter((location) => location && location !== "c");
+  if (points.length === 0) return "diamond";
+  const cardinal = points.some((location) => CARDINAL.has(location));
+  const intercardinal = points.some((location) => INTERCARDINAL.has(location));
+  if (cardinal && intercardinal) return "skewed";
+  return intercardinal ? "box" : "diamond";
+}
+
+/** True for a per-hand grid description rather than one mode name. */
+export function isJoinedGridModes(
+  grids: string | null | undefined | JoinedGridModes
+): grids is JoinedGridModes {
+  return typeof grids === "object" && grids !== null;
+}
+
+/**
+ * The grid each hand draws for a pictograph. A diamond or box pictograph
+ * draws both hands on that grid. Any other mode (skewed: one hand on the
+ * cardinal points, the other on the diagonals, as one hand turned 45° on its
+ * own leaves them) draws each hand on the grid its own `locations` sit on,
+ * so a diamond grid can join a box one; with no locations to read, both
+ * hands draw diamond, as one skewed grid used to.
+ */
+export function joinedGridModes(
+  gridMode: string | null | undefined | JoinedGridModes,
+  locations?: Readonly<Partial<Record<Hand, readonly string[]>>> | null
+): JoinedGridModes {
+  if (isJoinedGridModes(gridMode)) return gridMode;
+  if (gridMode === "box") return BOX_GRIDS;
+  if (gridMode === "diamond" || !locations) return DIAMOND_GRIDS;
+  return {
+    left: handGridMode(locations.left ?? []),
+    right: handGridMode(locations.right ?? []),
+  };
+}
+
+const DIAMOND_GRIDS: JoinedGridModes = Object.freeze({
+  left: "diamond",
+  right: "diamond",
+});
+const BOX_GRIDS: JoinedGridModes = Object.freeze({
+  left: "box",
+  right: "box",
+});
+
+/** Short stable cache-key term for a pair of grids, e.g. "diamond-box". */
+export function joinedGridModesKey(grids: JoinedGridModes): string {
+  return `${grids.left}-${grids.right}`;
+}
 
 const JOIN_DIRECTIONS: ReadonlySet<string> = new Set<GridJoinDirection>([
   "n",
@@ -163,15 +233,35 @@ const CLOCKWISE_EIGHTH: Readonly<Record<GridJoinDirection, GridJoinDirection>> =
  * hand-point lines (a diagonal on a diamond grid, a straight one on a box
  * grid, as a sequence carries after its grid mode changes) turns 45°
  * clockwise onto them; a join already on them comes back unchanged.
+ *
+ * Two different grids (a diamond joined to a box, or a skewed hand) have a
+ * hand-point line in every direction between them, so their join is never
+ * turned: turning it would slide the hand that did not move.
  */
 export function alignGridJoin<T extends GridJoinSpec>(
   join: T,
-  gridMode: string | null | undefined
+  gridMode: string | null | undefined | JoinedGridModes
 ): T {
-  const directions =
-    GRID_JOIN_DIRECTIONS[isBoxGrid(gridMode ?? undefined) ? "box" : "diamond"];
-  if (directions.includes(join.toward)) return join;
+  const oneGrid = alignedGrid(gridMode);
+  if (!oneGrid) return join;
+  if (GRID_JOIN_DIRECTIONS[oneGrid].includes(join.toward)) return join;
   return { ...join, toward: CLOCKWISE_EIGHTH[join.toward] };
+}
+
+/**
+ * The one grid a join is lined up with, or null when the two hands draw
+ * different grids (every direction then lies on one of them).
+ */
+function alignedGrid(
+  gridMode: string | null | undefined | JoinedGridModes
+): "diamond" | "box" | null {
+  if (isJoinedGridModes(gridMode)) {
+    return gridMode.left === gridMode.right && gridMode.left !== "skewed"
+      ? gridMode.left
+      : null;
+  }
+  if (gridMode === "skewed") return null;
+  return isBoxGrid(gridMode ?? undefined) ? "box" : "diamond";
 }
 
 /** True for a well-formed join (anything read from storage or a link). */
@@ -241,7 +331,7 @@ export function gridJoinOffsets(
 
 /** The grid locations a drawn grid has hand and outer points at. */
 export const JOIN_GRID_LOCATIONS: Readonly<
-  Record<"diamond" | "box", readonly GridLocation[]>
+  Record<JoinedGridMode, readonly GridLocation[]>
 > = GRID_LOCATIONS;
 
 /** A painter's own grid size: center to hand point and center to outer point. */
@@ -272,10 +362,14 @@ export interface JoinedGridPlan {
  */
 export function planJoinedGridPoints(
   join: GridJoinSpec,
-  locations: readonly GridLocation[],
+  locations:
+    | readonly GridLocation[]
+    | Readonly<Record<Hand, readonly GridLocation[]>>,
   geometry: JoinGridGeometry
 ): JoinedGridPlan {
   const offsets = gridJoinOffsets(join, geometry.handRadius);
+  const handLocations: Readonly<Record<Hand, readonly GridLocation[]>> =
+    "left" in locations ? locations : { left: locations, right: locations };
   const raw: {
     hand: Hand;
     kind: JoinedGridPointKind;
@@ -287,7 +381,7 @@ export function planJoinedGridPoints(
     const cx = SCENE_CENTER + offsets[hand].x;
     const cy = SCENE_CENTER + offsets[hand].y;
     raw.push({ hand, kind: "center", location: "c", x: cx, y: cy });
-    for (const location of locations) {
+    for (const location of handLocations[hand]) {
       const unit = LOCATION_UNIT[location];
       raw.push({
         hand,
@@ -327,6 +421,7 @@ export function planJoinedGridPoints(
       kind: point.kind,
       x: point.x,
       y: point.y,
+      ring: point.kind === "outer" && INTERCARDINAL.has(point.location),
       members: twin
         ? [
             { hand: point.hand, location: point.location },
@@ -370,11 +465,8 @@ export function joinedPointsDrawnBy(
  */
 export function joinedFitScale(
   points: readonly JoinedGridPoint[],
-  box: boolean,
   margin: number
 ): number {
-  const outerReach =
-    JOINED_POINT_RADIUS.outer + (box ? BOX_OUTER_RING_WIDTH / 2 : 0);
   const reach = Math.max(
     ...points.map(
       (point) =>
@@ -382,7 +474,8 @@ export function joinedFitScale(
           Math.abs(point.x - SCENE_CENTER),
           Math.abs(point.y - SCENE_CENTER)
         ) +
-        (point.kind === "outer" ? outerReach : JOINED_POINT_RADIUS[point.kind])
+        JOINED_POINT_RADIUS[point.kind] +
+        (point.ring ? BOX_OUTER_RING_WIDTH / 2 : 0)
     )
   );
   return Math.min(1, (SCENE_CENTER - margin) / reach);
@@ -391,29 +484,32 @@ export function joinedFitScale(
 const layoutCache = new Map<string, GridJoinLayout>();
 
 /**
- * The joined layout for a join and grid mode. Box draws box grids; every
- * other mode draws diamond grids, as the single-grid painters do. The join is
- * aligned to that grid first, so `layout.join` is the join actually drawn.
+ * The joined layout for a join and the grids it draws: one mode name for
+ * both hands (box draws box grids; every other name draws diamond grids, as
+ * the single-grid painters do), or each hand's own grid from
+ * `joinedGridModes`. The join is aligned to the grid first, so `layout.join`
+ * is the join actually drawn.
  */
 export function getGridJoinLayout(
   join: GridJoinSpec,
-  gridMode: string | undefined
+  gridMode: string | undefined | JoinedGridModes
 ): GridJoinLayout {
-  const box = gridMode === "box";
+  const grids = joinedGridModes(gridMode);
   join = alignGridJoin(join, gridMode);
-  const cacheKey = `${gridJoinKey(join)}:${box ? "box" : "diamond"}`;
+  const cacheKey = `${gridJoinKey(join)}:${joinedGridModesKey(grids)}`;
   const cached = layoutCache.get(cacheKey);
   if (cached) return cached;
 
   const { offsets, points } = planJoinedGridPoints(
     join,
-    GRID_LOCATIONS[box ? "box" : "diamond"],
+    { left: GRID_LOCATIONS[grids.left], right: GRID_LOCATIONS[grids.right] },
     CARD_GRID_GEOMETRY
   );
-  const scale = joinedFitScale(points, box, FIT_MARGIN);
+  const scale = joinedFitScale(points, FIT_MARGIN);
 
   const layout: GridJoinLayout = Object.freeze({
     join: Object.freeze({ toward: join.toward, steps: join.steps }),
+    grids: Object.freeze({ left: grids.left, right: grids.right }),
     offsets: Object.freeze(offsets),
     points: Object.freeze(points),
     scale,
