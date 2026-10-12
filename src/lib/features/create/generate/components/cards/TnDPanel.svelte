@@ -13,11 +13,11 @@
   Match turns is forced on while a prop timing is set: the prop constraint
   needs equal turns on every beat, so the switch would be a lie.
 
-  A tap on one half of the TnD card opens the panel with `focusSection` set:
-  that section scrolls into view and glows once so the eye lands on it.
+  Each half of the TnD card opens its own side: `section` "hands" or "props"
+  shows only that section, titled for it, with Match turns beneath either
+  (it is a hand rule that prop timing forces). Without `section` both show.
 -->
 <script lang="ts">
-  import { onMount } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import GenerationSettingsOverlay from "./GenerationSettingsOverlay.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
@@ -35,7 +35,7 @@
     level,
     blockedHandModes = {},
     startFeasibility = null,
-    focusSection = null,
+    section = null,
     titleId,
     onHandRelationshipChange,
     onPropRelationshipChange,
@@ -49,8 +49,8 @@
     /** Hand modes the current LOOP rules out, each with its reason. */
     blockedHandModes?: Partial<Record<VtgMode, string>>;
     startFeasibility?: StartFeasibilityResult | null;
-    /** The section the card's tapped half asked for, if any. */
-    focusSection?: "hands" | "props" | null;
+    /** The one side the card's tapped half opens; null shows both. */
+    section?: "hands" | "props" | null;
     /** The heading's id, so the host stage's aria-labelledby points here. */
     titleId?: string;
     onHandRelationshipChange: (value: TnDSelection) => void;
@@ -59,18 +59,15 @@
     onClose: () => void;
   } = $props();
 
-  let handsSection = $state<HTMLElement>();
-  let propsSection = $state<HTMLElement>();
-  let spotlight = $state<"hands" | "props" | null>(null);
-
-  onMount(() => {
-    if (!focusSection) return;
-    const target = focusSection === "hands" ? handsSection : propsSection;
-    target?.scrollIntoView({ block: "nearest" });
-    spotlight = focusSection;
-    const timer = setTimeout(() => (spotlight = null), 1600);
-    return () => clearTimeout(timer);
-  });
+  const showHands = $derived(section !== "props");
+  const showProps = $derived(section !== "hands");
+  const title = $derived(
+    section === "hands"
+      ? t("create_deep_hand_tnd")
+      : section === "props"
+        ? t("create_deep_prop_tnd")
+        : t("create_ui_timing_and_direction")
+  );
 
   const blockedModes = $derived(Object.keys(blockedHandModes) as VtgMode[]);
   const timingSet = $derived(propRelationship !== "free");
@@ -95,81 +92,75 @@
 </script>
 
 <GenerationSettingsOverlay
-  title={t("create_ui_timing_and_direction")}
+  {title}
   {titleId}
   closeLabel={t("create_deep_close_tnd")}
   entrance="none"
   {onClose}
 >
   <div class="tnd-host">
-    <div class="tnd-panel">
-      <section
-        class="tnd-section"
-        class:spotlight={spotlight === "hands"}
-        aria-labelledby="tnd-hands-heading"
-        bind:this={handsSection}
-      >
-        <div class="section-head">
-          <h4 class="section-title" id="tnd-hands-heading">
-            {t("create_ui_hands")}
-          </h4>
-          <span class="section-value"
-            >{describeCreateTnDSelection(handRelationship)}</span
-          >
-        </div>
-        <div class="choice-stack">
-          <RelationshipChoiceChip
-            compact
-            accent="var(--theme-accent, #38bdf8)"
-            timing={t("create_deep_free")}
-            direction={t("create_deep_no_constraints")}
-            active={handRelationship === "free"}
-            ariaLabel={t("create_deep_free_hands")}
-            onpick={() => onHandRelationshipChange("free")}
-          />
-          <TnDModeGrid
-            fullLabels
-            selected={handRelationship === "free" ? null : handRelationship}
-            disabledModes={blockedModes}
-            reasons={blockedHandModes}
-            ariaLabel={t("create_deep_hand_tnd")}
-            onpick={onHandRelationshipChange}
-          />
-        </div>
-      </section>
+    <div class="tnd-panel" class:single={section !== null}>
+      {#if showHands}
+        <section class="tnd-section" aria-labelledby="tnd-hands-heading">
+          <div class="section-head">
+            <h4 class="section-title" id="tnd-hands-heading">
+              {t("create_ui_hands")}
+            </h4>
+            <span class="section-value"
+              >{describeCreateTnDSelection(handRelationship)}</span
+            >
+          </div>
+          <div class="choice-stack">
+            <RelationshipChoiceChip
+              compact
+              accent="var(--theme-accent, #38bdf8)"
+              timing={t("create_deep_free")}
+              direction={t("create_deep_no_constraints")}
+              active={handRelationship === "free"}
+              ariaLabel={t("create_deep_free_hands")}
+              onpick={() => onHandRelationshipChange("free")}
+            />
+            <TnDModeGrid
+              fullLabels
+              selected={handRelationship === "free" ? null : handRelationship}
+              disabledModes={blockedModes}
+              reasons={blockedHandModes}
+              ariaLabel={t("create_deep_hand_tnd")}
+              onpick={onHandRelationshipChange}
+            />
+          </div>
+        </section>
+      {/if}
 
-      <section
-        class="tnd-section"
-        class:spotlight={spotlight === "props"}
-        aria-labelledby="tnd-props-heading"
-        bind:this={propsSection}
-      >
-        <div class="section-head">
-          <h4 class="section-title" id="tnd-props-heading">
-            {t("create_ui_props")}
-          </h4>
-          <span class="section-value"
-            >{describeCreateTnDSelection(propRelationship)}</span
-          >
-        </div>
-        <div class="choice-stack">
-          <RelationshipChoiceChip
-            compact
-            accent="var(--theme-accent, #38bdf8)"
-            timing={t("create_deep_free")}
-            direction={t("create_deep_no_constraints")}
-            active={propRelationship === "free"}
-            ariaLabel={t("create_deep_free_props")}
-            onpick={() => onPropRelationshipChange("free")}
-          />
-          <TnDModeGrid
-            fullLabels
-            selected={propRelationship === "free" ? null : propRelationship}
-            ariaLabel={t("create_deep_prop_tnd")}
-            onpick={onPropRelationshipChange}
-          />
-        </div>
-      </section>
+      {#if showProps}
+        <section class="tnd-section" aria-labelledby="tnd-props-heading">
+          <div class="section-head">
+            <h4 class="section-title" id="tnd-props-heading">
+              {t("create_ui_props")}
+            </h4>
+            <span class="section-value"
+              >{describeCreateTnDSelection(propRelationship)}</span
+            >
+          </div>
+          <div class="choice-stack">
+            <RelationshipChoiceChip
+              compact
+              accent="var(--theme-accent, #38bdf8)"
+              timing={t("create_deep_free")}
+              direction={t("create_deep_no_constraints")}
+              active={propRelationship === "free"}
+              ariaLabel={t("create_deep_free_props")}
+              onpick={() => onPropRelationshipChange("free")}
+            />
+            <TnDModeGrid
+              fullLabels
+              selected={propRelationship === "free" ? null : propRelationship}
+              ariaLabel={t("create_deep_prop_tnd")}
+              onpick={onPropRelationshipChange}
+            />
+          </div>
+        </section>
+      {/if}
 
       {#if startFeasibility?.feasible === false}
         <div class="feasibility-warning" role="status">
@@ -227,36 +218,19 @@
     }
   }
 
+  /* One side only: a single column, kept to a readable width. */
+  .tnd-panel.single {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: 640px;
+    margin-inline: auto;
+  }
+
   .tnd-section {
     display: flex;
     flex-direction: column;
     gap: 10px;
     min-width: 0;
-    border-radius: 14px;
-  }
-
-  /* One soft glow on the section the card's tapped half asked for. */
-  .tnd-section.spotlight {
-    animation: tndSpotlight 1.6s ease-out;
-  }
-
-  @keyframes tndSpotlight {
-    0%,
-    35% {
-      box-shadow: 0 0 0 3px
-        color-mix(in srgb, var(--theme-accent, #38bdf8) 70%, transparent);
-    }
-    100% {
-      box-shadow: 0 0 0 3px transparent;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .tnd-section.spotlight {
-      animation: none;
-      box-shadow: 0 0 0 3px
-        color-mix(in srgb, var(--theme-accent, #38bdf8) 60%, transparent);
-    }
   }
 
   .choice-stack {

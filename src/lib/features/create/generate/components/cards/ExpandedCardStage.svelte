@@ -358,7 +358,7 @@
       level={tnd.level}
       blockedHandModes={tnd.blockedHandModes}
       startFeasibility={tnd.startFeasibility}
-      focusSection={panelState.tndPanelFocus}
+      section={panelState.tndPanelSection}
       onHandRelationshipChange={tnd.onHandRelationshipChange}
       onPropRelationshipChange={tnd.onPropRelationshipChange}
       onMatchHandTurnsChange={tnd.onMatchHandTurnsChange}
