@@ -78,7 +78,10 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     font-family: inherit;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .disable-button:hover {
@@ -116,7 +119,9 @@
     min-width: 44px;
     min-height: 44px;
     flex-shrink: 0;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .close-button:hover {

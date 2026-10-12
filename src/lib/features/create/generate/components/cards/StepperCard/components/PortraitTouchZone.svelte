@@ -48,8 +48,8 @@ Covers top or bottom half of the card for increment/decrement
     border: none;
     cursor: pointer;
     transition:
-      background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-      outline-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      background var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-dramatic) var(--ease-standard);
 
     user-select: none;
     -webkit-user-select: none;
@@ -79,7 +79,6 @@ Covers top or bottom half of the card for increment/decrement
   .portrait-touch-zone:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--text-color) 70%, transparent);
     outline-offset: -2px;
-    transition: outline-color var(--duration-dramatic)
-      cubic-bezier(0.4, 0, 0.2, 1);
+    transition: outline-color var(--duration-dramatic) var(--ease-standard);
   }
 </style>

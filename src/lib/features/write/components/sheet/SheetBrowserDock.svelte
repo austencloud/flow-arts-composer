@@ -221,7 +221,7 @@
 
   /* dockSlide perf contract: pin children at the dock's final width so the
      width animation is a pure clip-reveal. Without this the virtualized
-     gallery re-measures itself every frame (traced at 180ms+ of reflow). */
+     gallery re-measures itself every frame (traced at var(--duration-fast)+ of reflow). */
   .browse-dock > :global(*) {
     /* Inside the 1px border. */
     width: calc(var(--dock-w) - 2px);

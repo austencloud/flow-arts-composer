@@ -202,7 +202,7 @@
     border-radius: 6px;
     padding: 2px 4px;
     cursor: pointer;
-    transition: border-color var(--duration-fast) ease;
+    transition: border-color var(--duration-fast) var(--ease-standard);
   }
 
   .duration-value:hover {
@@ -253,7 +253,13 @@
     border: 1px solid;
     cursor: pointer;
     font-size: 1rem;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.08));
     border-color: var(--theme-stroke, rgba(255, 255, 255, 0.15));
     color: rgba(255, 255, 255, 0.7);

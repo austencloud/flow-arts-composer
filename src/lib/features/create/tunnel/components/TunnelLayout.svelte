@@ -2,6 +2,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick } from "svelte";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import CreatePanelDrawer from "#lib/features/create/shared/components/CreatePanelDrawer.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import PanelState from "#lib/shared/components/panel/PanelState.svelte";
@@ -192,7 +193,7 @@
     }
     const timer = setTimeout(
       () => (inspectorColumn = null),
-      motionDuration(280)
+      motionDuration(DURATION.emphasis)
     );
     return () => clearTimeout(timer);
   });
@@ -336,7 +337,9 @@
 {#snippet pairingPanel(isMobile: boolean)}
   <div class="drawer-panel pairing-panel">
     <PanelHeader
-      title={t("tunnel_source_label", { name: creator.pairingTarget?.label ?? t("tunnel_performer") })}
+      title={t("tunnel_source_label", {
+        name: creator.pairingTarget?.label ?? t("tunnel_performer"),
+      })}
       subtitle={t(
         "create_ui_independent_choreography_or_a_derived_relationship"
       )}
@@ -411,7 +414,9 @@
         <div class="title-block">
           <h2>{t("create_ui_build_a_tunnel")}</h2>
           <p>
-            {t("create_review_give_each_performer_choreography_then_arrange_the_cast_on_stage")}
+            {t(
+              "create_review_give_each_performer_choreography_then_arrange_the_cast_on_stage"
+            )}
           </p>
         </div>
       {/if}
@@ -465,7 +470,10 @@
         </div>
         <div class="preview-summary">
           <p>
-            {t("tunnel_preview_counts", { people: controller.performerCount, props: controller.propCount })}
+            {t("tunnel_preview_counts", {
+              people: controller.performerCount,
+              props: controller.propCount,
+            })}
           </p>
         </div>
       </header>
@@ -494,7 +502,9 @@
               <i class="fas fa-person-circle-plus" aria-hidden="true"></i>
               <span>
                 <strong>{t("create_ui_previewing_the_completed_cards")}</strong>
-                {t("create_review_finish_every_empty_performer_card_before_opening_the_viewer")}
+                {t(
+                  "create_review_finish_every_empty_performer_card_before_opening_the_viewer"
+                )}
               </span>
             </div>
           {/if}
@@ -502,7 +512,9 @@
           <PanelState
             type="empty"
             title={t("create_ui_your_tunnel_will_appear_here")}
-            message={t("create_review_choose_a_sequence_in_the_first_performer_card_to_start_the_preview")}
+            message={t(
+              "create_review_choose_a_sequence_in_the_first_performer_card_to_start_the_preview"
+            )}
             icon="fa-people-arrows-left-right"
           />
         {/if}
@@ -609,7 +621,11 @@
   open={creator.pickerTarget !== null}
   onClose={creator.closePicker}
   onSelect={selectPickedSequence}
-  title={t("tunnel_choose_sequence_for", { name: creator.performerSlots.find((slot) => slot.id === creator.pickerTarget)?.label ?? t("tunnel_performer") })}
+  title={t("tunnel_choose_sequence_for", {
+    name:
+      creator.performerSlots.find((slot) => slot.id === creator.pickerTarget)
+        ?.label ?? t("tunnel_performer"),
+  })}
 />
 
 {#if shapeMatrixTarget}
@@ -941,10 +957,8 @@
     transform: translateX(2rem);
     pointer-events: none;
     transition:
-      opacity var(--duration-emphasis, 280ms)
-        var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
-      transform var(--duration-emphasis, 280ms)
-        var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+      opacity var(--duration-emphasis) var(--ease-out, var(--ease-out)),
+      transform var(--duration-emphasis) var(--ease-out, var(--ease-out));
   }
 
   .inspector-column.open {
@@ -965,10 +979,9 @@
     transform: translateX(1rem);
     pointer-events: none;
     transition:
-      opacity var(--duration-normal, 180ms) ease,
-      transform var(--duration-emphasis, 280ms)
-        var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
-      visibility 0s linear var(--duration-emphasis, 280ms);
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-emphasis) var(--ease-out, var(--ease-out)),
+      visibility 0s linear var(--duration-emphasis);
   }
 
   .inspector-layer.active {
@@ -1179,8 +1192,8 @@
         "sources . preview . inspector";
       column-gap: 0;
       row-gap: var(--tunnel-gap);
-      transition: grid-template-columns var(--duration-emphasis, 280ms)
-        var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+      transition: grid-template-columns var(--duration-emphasis)
+        var(--ease-out, var(--ease-out));
     }
 
     .tunnel-workspace.split-workspace.inline-inspector {

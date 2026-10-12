@@ -279,7 +279,6 @@
 {/key}
 
 <style>
-
   /* Base drawer content styling - more opaque for floating over busy content */
   :global(.drawer-content[class*="-panel-container"]) {
     --sheet-bg: linear-gradient(
@@ -394,7 +393,6 @@
     left: var(--desktop-sidebar-width, 220px);
   }
 
-
   .create-drawer-body {
     position: relative;
     display: flex;
@@ -402,10 +400,9 @@
     width: 100%;
     /* height set dynamically via inline style for reactive sizing */
     /* When height: 100dvh is set inline, it will force drawer-content to that height */
-    transition: height var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: height var(--duration-emphasis) var(--ease-standard);
     background: transparent; /* Background is on drawer-content */
   }
-
 
   /* Reduced motion preference - disable height transitions */
   @media (prefers-reduced-motion: reduce) {

@@ -102,11 +102,15 @@
     background: transparent;
     border-radius: 50%;
     cursor: pointer;
-    transition: all
-      var(
-        --transition-normal,
-        var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1)
-      );
+    transition:
+      transform
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      border-color
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      box-shadow
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      outline
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard));
     box-shadow: 0 0 12px
       color-mix(in srgb, var(--theme-accent, #818cf8) 25%, transparent);
     -webkit-tap-highlight-color: transparent;
@@ -134,7 +138,11 @@
 
   .prop-indicator-button:active {
     transform: scale(0.95);
-    transition: all var(--duration-instant) ease;
+    transition:
+      transform var(--duration-instant) var(--ease-standard),
+      border-color var(--duration-instant) var(--ease-standard),
+      box-shadow var(--duration-instant) var(--ease-standard),
+      outline var(--duration-instant) var(--ease-standard);
   }
 
   .prop-indicator-button:focus-visible {

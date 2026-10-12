@@ -384,7 +384,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    animation: fadeSlideIn var(--duration-dramatic) cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeSlideIn var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes fadeSlideIn {
@@ -419,7 +419,10 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .element-btn.active {
@@ -453,7 +456,10 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .trail-btn.active {
@@ -474,7 +480,7 @@
   .ends-selector {
     display: flex;
     gap: 6px;
-    animation: fadeSlideIn var(--duration-emphasis) ease;
+    animation: fadeSlideIn var(--duration-emphasis) var(--ease-standard);
   }
 
   .ends-btn {
@@ -492,7 +498,10 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .ends-btn.active {

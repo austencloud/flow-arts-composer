@@ -258,7 +258,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
-    transition: color var(--duration-fast, 100ms) ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
 
   .path-shape-grid {
@@ -285,8 +285,8 @@
     white-space: nowrap;
     cursor: pointer;
     transition:
-      background-color var(--duration-fast, 100ms) ease,
-      border-color var(--duration-fast, 100ms) ease;
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .path-glyph {

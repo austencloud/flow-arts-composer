@@ -9,8 +9,8 @@ Shows:
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { fly } from "svelte/transition";
-  import { backOut } from "svelte/easing";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   // Props
   const {
@@ -37,7 +37,7 @@ Shows:
 
 <div
   class="selection-toolbar"
-  transition:fly={{ y: 100, duration: 300, easing: backOut }}
+  transition:flyFade={{ y: 100, duration: DURATION.emphasis }}
   role="toolbar"
   aria-label={t("create_ui_selection_toolbar")}
 >
@@ -108,7 +108,7 @@ Shows:
     font-size: var(--font-size-md);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition: outline var(--duration-normal) var(--ease-standard);
     min-height: var(--min-touch-target); /* Touch target */
   }
 

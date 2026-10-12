@@ -42,6 +42,10 @@
   import WorkspaceShareControl from "./WorkspaceShareControl.svelte";
   import WorkspaceShareSheet from "./WorkspaceShareSheet.svelte";
 
+  const PREPARING_TOAST_DURATION_MS = 2_500;
+  const ACTION_TOAST_DURATION_MS = 7_000;
+  const ERROR_TOAST_DURATION_MS = 6_000;
+
   interface Props {
     sequence?: SequenceData | null;
     disabled?: boolean;
@@ -295,7 +299,7 @@
     showToast({
       message: t("inbox_ui_preparing_card"),
       type: "info",
-      duration: 2500,
+      duration: PREPARING_TOAST_DURATION_MS,
     });
 
     void prepareCurrentCard()
@@ -308,7 +312,7 @@
         showToast({
           message: t("create_workspace_card_ready"),
           type: "success",
-          duration: 7000,
+          duration: ACTION_TOAST_DURATION_MS,
           action: {
             label: needsOptions
               ? t("create_workspace_options")
@@ -333,7 +337,7 @@
         showToast({
           message: t("create_workspace_card_preparation_failed_retry"),
           type: "error",
-          duration: 6000,
+          duration: ERROR_TOAST_DURATION_MS,
         });
       });
   }
@@ -358,7 +362,7 @@
           ? t("create_workspace_share_unavailable")
           : t("create_workspace_device_share_failed"),
       type: result.status === "unavailable" ? "info" : "error",
-      duration: 7000,
+      duration: ACTION_TOAST_DURATION_MS,
       action: {
         label: t("create_workspace_download"),
         onClick: () => void downloadPreparedCard(card),
@@ -421,7 +425,7 @@
       showToast({
         message: t("create_workspace_download_failed"),
         type: "error",
-        duration: 6000,
+        duration: ERROR_TOAST_DURATION_MS,
       });
       return;
     }
@@ -472,7 +476,7 @@
     showToast({
       message: t("inbox_ui_preparing_card"),
       type: "info",
-      duration: 2500,
+      duration: PREPARING_TOAST_DURATION_MS,
     });
 
     void readiness
@@ -495,7 +499,7 @@
         showToast({
           message: t("create_workspace_card_preparation_failed_retry"),
           type: "error",
-          duration: 6000,
+          duration: ERROR_TOAST_DURATION_MS,
         });
       });
   }
@@ -521,7 +525,7 @@
           ? t("create_workspace_link_creation_failed")
           : t("create_workspace_link_creation_offline")),
       type: "error",
-      duration: 6000,
+      duration: ERROR_TOAST_DURATION_MS,
     });
   }
 
@@ -534,7 +538,7 @@
     showToast({
       message: t("viewer_ui_preparing_link"),
       type: "info",
-      duration: 2500,
+      duration: PREPARING_TOAST_DURATION_MS,
     });
 
     void prepareCurrentLink()
@@ -543,7 +547,7 @@
         showToast({
           message: t("create_workspace_link_ready"),
           type: "success",
-          duration: 7000,
+          duration: ACTION_TOAST_DURATION_MS,
           action: {
             label: t("create_workspace_copy"),
             onClick: handleCopyLink,
@@ -582,7 +586,7 @@
       showToast({
         message: t("create_workspace_copy_link_failed"),
         type: "error",
-        duration: 6000,
+        duration: ERROR_TOAST_DURATION_MS,
       });
       return;
     }
@@ -607,7 +611,7 @@
         showToast({
           message: t("create_workspace_copy_link_failed"),
           type: "error",
-          duration: 6000,
+          duration: ERROR_TOAST_DURATION_MS,
         });
       })
       .finally(() => {

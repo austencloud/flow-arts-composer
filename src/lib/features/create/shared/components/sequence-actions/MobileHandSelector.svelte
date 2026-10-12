@@ -104,7 +104,12 @@
     background: transparent;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     cursor: pointer;
-    transition: all var(--duration-fast, 100ms) ease;
+    transition:
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
     /* 48px touch target via padding beyond visual height */
     position: relative;
   }

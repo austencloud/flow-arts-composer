@@ -15,6 +15,7 @@
   } from "#lib/shared/pictograph/tka-glyph/utils/letter-image-getter.js";
   import { browser } from "$app/env";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   const cache = browser ? getGlyphCache() : null;
 
@@ -56,7 +57,7 @@
     const epoch = historyTransitionEpoch;
     if (!historyWordChanged || epoch === 0 || !labelElement) return;
 
-    const duration = motionDuration(240);
+    const duration = motionDuration(DURATION.normal);
     if (duration === 0) return;
     const animation = labelElement.animate(
       // Opacity only. A `brightness()` keyframe put the whole label behind a
@@ -173,7 +174,8 @@
     const skewedCount = notationUnits.filter((unit) => unit.skewed).length;
     if (skewedCount > 0 && skewedCount < notationUnits.length) return null;
     const segments = compressWord(word);
-    if (segments.length < 2 && !segments.some((segment) => segment.repeat > 1)) return null;
+    if (segments.length < 2 && !segments.some((segment) => segment.repeat > 1))
+      return null;
     const letterCount = segments.reduce(
       (count, segment) => count + segment.tokens.length,
       0
@@ -364,7 +366,9 @@
         aria-expanded={isContextualMessage ? undefined : actions.isOpen}
         aria-label={isContextualMessage
           ? word
-          : t("viewer_header_current_word_actions", { word: actions.copyableWord })}
+          : t("viewer_header_current_word_actions", {
+              word: actions.copyableWord,
+            })}
       >
         {#if !isContextualMessage && displayUnits.length > 0}
           {#each displayUnits as unit, index (index)}
@@ -461,10 +465,10 @@
     border: 1px solid transparent;
     cursor: pointer;
     transition:
-      background-color var(--duration-normal) ease,
-      border-color var(--duration-normal) ease,
-      box-shadow var(--duration-normal) ease,
-      transform var(--duration-normal) ease;
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     border-radius: 8px;
     text-align: center;
     white-space: nowrap;
@@ -563,7 +567,7 @@
     font-size: 0.4em;
     opacity: 0.55;
     flex-shrink: 0;
-    transition: transform var(--duration-fast, 100ms) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .word-label[aria-expanded="true"] .menu-indicator {
@@ -582,7 +586,7 @@
     font-size: 0.9rem;
     font-weight: 600;
     white-space: nowrap;
-    animation: fadeInOut 2s ease;
+    animation: fadeInOut var(--duration-scene) var(--ease-standard);
     pointer-events: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
@@ -633,7 +637,7 @@
     /* Opacity only. The active-state glow is a static drop-shadow that paints
        once when the class flips; transitioning `filter` re-ran the shadow pass
        every frame for 300ms on every letter in the word. */
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
   }
 
   .glyph-img {
@@ -693,8 +697,7 @@
   .letter.active-intense {
     filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.5))
       drop-shadow(0 0 28px rgba(255, 255, 255, 0.22));
-    animation: letterPopIntense var(--duration-normal)
-      cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: letterPopIntense var(--duration-normal) var(--ease-spring);
   }
 
   /* Transform only: the glow is the static drop-shadow on `.active-intense`. */
@@ -712,7 +715,7 @@
 
   .letter.active-subtle {
     filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.5));
-    animation: letterFadeSubtle var(--duration-normal) ease-out;
+    animation: letterFadeSubtle var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes letterFadeSubtle {
@@ -728,7 +731,7 @@
 
   .letter.active-glow-only {
     filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.6));
-    animation: letterGlowOnly var(--duration-fast) ease-out;
+    animation: letterGlowOnly var(--duration-fast) var(--ease-standard-out);
   }
 
   /* The glow itself is static on `.active-glow-only`; this reveals it with an
@@ -744,7 +747,7 @@
 
   .letter.active-minimal {
     filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
-    animation: letterMinimal 0.08s ease-out;
+    animation: letterMinimal var(--duration-instant) var(--ease-standard-out);
   }
 
   @keyframes letterMinimal {
@@ -758,7 +761,7 @@
 
   .letter.active-wave {
     filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.5));
-    animation: letterWave var(--duration-dramatic) ease-out;
+    animation: letterWave var(--duration-dramatic) var(--ease-standard-out);
   }
 
   /* Transform only: the glow is the static drop-shadow on `.active-wave`. */

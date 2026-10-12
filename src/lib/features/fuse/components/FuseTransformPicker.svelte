@@ -456,8 +456,8 @@
     text-align: left;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .operation-toggle:hover:not(:disabled) {
@@ -515,7 +515,7 @@
     flex: 0 0 auto;
     border-radius: 999px;
     background: color-mix(in srgb, var(--theme-text, #fff) 16%, transparent);
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .op-switch::after {
@@ -528,8 +528,8 @@
     border-radius: 50%;
     background: color-mix(in srgb, var(--theme-text, #fff) 70%, transparent);
     transition:
-      transform var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease;
+      transform var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .operation-toggle.active .op-switch {
@@ -625,7 +625,9 @@
   .transform-picker.inline {
     flex: none;
     display: grid;
-    grid-template-columns: minmax(160px, 1fr) minmax(360px, 2fr) minmax(170px, 1fr) minmax(200px, 1fr);
+    grid-template-columns:
+      minmax(160px, 1fr) minmax(360px, 2fr) minmax(170px, 1fr)
+      minmax(200px, 1fr);
     align-items: start;
     gap: 8px;
   }

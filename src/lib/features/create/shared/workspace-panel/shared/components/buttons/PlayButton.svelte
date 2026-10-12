@@ -48,11 +48,15 @@
     border-radius: 50%;
     color: var(--theme-text);
     cursor: pointer;
-    transition: all
-      var(
-        --transition-normal,
-        var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1)
-      );
+    transition:
+      background
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      transform
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      box-shadow
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      outline
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard));
     box-shadow: 0 4px 12px color-mix(in srgb, #a78bfa 40%, transparent);
   }
 
@@ -68,7 +72,11 @@
 
   .play-button:active {
     transform: scale(0.95);
-    transition: all var(--duration-instant) ease;
+    transition:
+      background var(--duration-instant) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard),
+      box-shadow var(--duration-instant) var(--ease-standard),
+      outline var(--duration-instant) var(--ease-standard);
   }
 
   .play-button:focus-visible {

@@ -34,7 +34,7 @@ Supports letter highlighting during animation playback.
     getBaseLetter,
   } from "#lib/shared/pictograph/tka-glyph/utils/letter-image-getter.js";
   import { browser } from "$app/env";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { cubicOut } from "svelte/easing";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -211,7 +211,8 @@ Supports letter highlighting during animation playback.
     const skewedCount = units.filter((unit) => unit.skewed).length;
     if (skewedCount > 0 && skewedCount < units.length) return null;
     const segments = compressWord(stripWordNotation(displayedWord));
-    if (segments.length < 2 && !segments.some((segment) => segment.repeat > 1)) return null;
+    if (segments.length < 2 && !segments.some((segment) => segment.repeat > 1))
+      return null;
     const letterCount = segments.reduce((n, s) => n + s.tokens.length, 0);
     if (letterCount > 12) return null;
     return segments;
@@ -394,7 +395,7 @@ Supports letter highlighting during animation playback.
     class:dark-mode={darkMode}
     class:chrome={presentation === "chrome"}
     data-controlled="true"
-    out:fade={{ duration: motionDuration(DURATION.normal), easing: cubicOut }}
+    out:opaqueFade={{ duration: DURATION.normal, easing: cubicOut }}
   >
     {#if difficultyLevel != null}
       <div class="badge-wrapper">
@@ -410,7 +411,9 @@ Supports letter highlighting during animation playback.
          flex squeeze the glyphs individually. See .word-text. -->
     <span
       class="word-text"
-      style="--word-em: {wordEmWidth.toFixed(2)}; --brace-scale: {SKEW_BRACE_FONT_SCALE}; --brace-drop: {BRACE_DROP}"
+      style="--word-em: {wordEmWidth.toFixed(
+        2
+      )}; --brace-scale: {SKEW_BRACE_FONT_SCALE}; --brace-drop: {BRACE_DROP}"
     >
       {#if hasActiveHighlighting && displayUnits.length > 0 && animationPhase === "idle"}
         {#each displayUnits as unit, index (index)}
@@ -533,10 +536,10 @@ Supports letter highlighting during animation playback.
     flex-shrink: 0;
     background: var(--theme-panel-bg, rgb(240, 240, 240));
     border-bottom: 1px solid var(--theme-stroke, rgba(0, 0, 0, 0.08));
-    /* Smooth transition synced with canvas background (150ms) */
+    /* Smooth transition synced with canvas background (var(--duration-fast)) */
     transition:
-      background 150ms ease-out,
-      border-color 150ms ease-out;
+      background var(--duration-fast) var(--ease-standard-out),
+      border-color var(--duration-fast) var(--ease-standard-out);
   }
 
   .badge-wrapper {
@@ -685,7 +688,7 @@ Supports letter highlighting during animation playback.
        step of playback — the most frequently restyled text on the page. The
        glow now snaps in with the opacity ramp: one raster per state change
        instead of one per frame. */
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .letter.active {
@@ -722,12 +725,16 @@ Supports letter highlighting during animation playback.
     top: calc(-1em * var(--brace-drop, 0));
     height: calc(1em / var(--brace-scale, 1));
     overflow: visible;
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family:
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      sans-serif;
     font-size: calc(var(--brace-scale, 1) * 1em);
     font-weight: 500;
     line-height: 1;
     opacity: 0.4;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .letter.animated,
@@ -744,10 +751,10 @@ Supports letter highlighting during animation playback.
   .letter.animated.entering,
   .group-dot.animated.entering,
   .skew-brace.animated.entering {
-    animation: letterEnter var(--duration-emphasis)
-      cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation: letterEnter var(--duration-emphasis) var(--ease-spring) forwards;
     animation-delay: calc(
-      var(--letter-index) * (180ms / max(var(--total-letters), 4))
+      var(--letter-index) *
+        (var(--duration-fast) / max(var(--total-letters), 4))
     );
   }
 
@@ -756,10 +763,11 @@ Supports letter highlighting during animation playback.
   .skew-brace.animated.exiting {
     opacity: 1;
     transform: translateY(0) scale(1);
-    animation: letterExit var(--duration-normal) cubic-bezier(0.4, 0, 1, 1)
+    animation: letterExit var(--duration-normal) var(--ease-standard-in)
       forwards;
     animation-delay: calc(
-      var(--letter-index) * (120ms / max(var(--total-letters), 4))
+      var(--letter-index) *
+        (var(--duration-instant) / max(var(--total-letters), 4))
     );
   }
 

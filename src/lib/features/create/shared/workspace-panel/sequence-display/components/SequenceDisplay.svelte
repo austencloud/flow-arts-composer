@@ -323,8 +323,8 @@
     min-height: 0;
     border-radius: 12px;
     transition:
-      box-shadow 0.2s ease,
-      border-color 0.2s ease;
+      box-shadow var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .step-grid-wrapper.shift-mode {

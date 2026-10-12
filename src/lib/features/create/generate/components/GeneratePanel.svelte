@@ -507,8 +507,8 @@ Card-based architecture with integrated Generate button:
     min-height: 0;
     /* Mobile: Minimal vertical padding to maximize space for cards */
     padding-block: 0.25rem;
-    /* Smooth transition for padding changes (syncs with 450ms workspace animation) */
-    transition: padding 450ms cubic-bezier(0.4, 0, 0.2, 1);
+    /* Smooth transition for padding changes (syncs with var(--duration-dramatic) workspace animation) */
+    transition: padding var(--duration-dramatic) var(--ease-standard);
   }
 
   /* Desktop: center cards vertically since we constrain their height, remove vertical padding */

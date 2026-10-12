@@ -58,7 +58,10 @@
     <button
       class="prop-icon-btn"
       onclick={() => onOpenPropSheet?.(hand)}
-      aria-label={t("create_controls_change_prop", { hand: handLabel(hand), prop: displayInfo.label })}
+      aria-label={t("create_controls_change_prop", {
+        hand: handLabel(hand),
+        prop: displayInfo.label,
+      })}
     >
       <span
         role="img"
@@ -72,10 +75,17 @@
     <button
       class="prop-type-btn"
       onclick={() => onOpenPropSheet?.(hand)}
-      aria-label={t("create_controls_change_prop", { hand: handLabel(hand), prop: displayInfo.label })}
+      aria-label={t("create_controls_change_prop", {
+        hand: handLabel(hand),
+        prop: displayInfo.label,
+      })}
     >
-      <span role="img" aria-label={displayInfo.label} class="prop-icon"
-        style:mask-image={`url("${displayInfo.image}")`}></span>
+      <span
+        role="img"
+        aria-label={displayInfo.label}
+        class="prop-icon"
+        style:mask-image={`url("${displayInfo.image}")`}
+      ></span>
       <span class="prop-name">{displayInfo.label}</span>
       <i class="fas fa-chevron-right" aria-hidden="true"></i>
     </button>
@@ -93,7 +103,10 @@
       class:compact
       class:flipped
       onclick={toggleChirality}
-      aria-label={t("create_controls_chirality", { hand: handLabel(hand), variant: flipped ? 'B' : 'A' })}
+      aria-label={t("create_controls_chirality", {
+        hand: handLabel(hand),
+        variant: flipped ? "B" : "A",
+      })}
       aria-pressed={flipped}
     >
       <i class="fas fa-arrows-left-right" aria-hidden="true"></i>
@@ -116,7 +129,8 @@
 </div>
 
 <style>
-  .prop-icon, .prop-icon-sm {
+  .prop-icon,
+  .prop-icon-sm {
     display: inline-block;
     flex-shrink: 0;
     mask-size: contain;
@@ -124,7 +138,6 @@
     mask-repeat: no-repeat;
     background: var(--prop-color, var(--dm-motion-blue));
   }
-
 
   .prop-type-row {
     display: flex;
@@ -157,7 +170,9 @@
     cursor: pointer;
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .prop-type-btn .prop-icon {
@@ -216,7 +231,9 @@
     border-radius: 8px;
     border: 1px solid;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
     padding: 4px;
   }
 
@@ -248,7 +265,6 @@
     border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.5);
   }
 
-
   .chirality-btn {
     display: flex;
     align-items: center;
@@ -261,7 +277,10 @@
     border: 1px solid;
     cursor: pointer;
     font-size: 0.85rem;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     flex-shrink: 0;
   }
 

@@ -702,7 +702,7 @@ captureEffectDiagnostics to the context menu.
     align-items: center;
     justify-content: center;
     background: #f5f5f5;
-    transition: background-color 350ms ease;
+    transition: background-color var(--duration-dramatic) var(--ease-standard);
   }
 
   .canvas-wrapper[data-dark-mode="true"] {

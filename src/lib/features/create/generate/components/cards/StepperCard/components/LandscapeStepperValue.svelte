@@ -33,7 +33,7 @@ LandscapeStepperValue.svelte - Centered value display for landscape stepper
     pointer-events: none;
     white-space: nowrap;
     z-index: 3;
-    transition: color var(--duration-dramatic) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color var(--duration-dramatic) var(--ease-standard);
   }
 
   @media (min-width: 1280px) {
