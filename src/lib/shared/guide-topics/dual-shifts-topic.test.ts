@@ -5,10 +5,15 @@ import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
+  DUAL_SHIFT_KEY,
   DUAL_SHIFT_MODES,
   DUAL_SHIFT_MODES_BY_PAIR,
   DUAL_SHIFTS_TOPIC_UNITS,
+  DUAL_SHIFTS_WEB_COPY,
+  dualShiftElement,
+  dualShiftModeAt,
   dualShiftSteps,
+  dualShiftsWebLeadLines,
   plainLine,
 } from "./dual-shifts-topic";
 
@@ -22,14 +27,42 @@ const motions = (step: StepData) =>
   >;
 
 /** "alpha1" → "alpha": the placement family a box starts or ends in. */
-const family = (placement: unknown) =>
-  String(placement).replace(/\d+$/, "");
+const family = (placement: unknown) => String(placement).replace(/\d+$/, "");
 
 describe("Type 1 Dual-Shifts topic record", () => {
   it("resolves every unit in English and German", () => {
-    for (const key of Object.values(DUAL_SHIFTS_TOPIC_UNITS)) {
+    const keyLines = Object.values(DUAL_SHIFT_KEY).flatMap((axis) =>
+      Object.values(axis).flatMap((entry) => [entry.name, entry.says])
+    );
+    for (const key of [
+      ...Object.values(DUAL_SHIFTS_TOPIC_UNITS),
+      ...Object.values(DUAL_SHIFTS_WEB_COPY),
+      ...keyLines,
+    ]) {
       expect(english[key], key).toBeTruthy();
       expect(german[key], key).toBeTruthy();
+    }
+  });
+
+  it("keeps only the book's turn to α and β for the web lead", () => {
+    const lines = dualShiftsWebLeadLines();
+    expect(lines).toHaveLength(2);
+    expect(plainLine(lines[0]!)).toMatch(
+      /^Let’s try another type of Dual-Shift\.$/
+    );
+    expect(plainLine(lines[1]!)).toMatch(/α and β\?$/);
+  });
+
+  it("places each mode at one timing and direction with its element", () => {
+    expect(dualShiftModeAt("split", "same").id).toBe("split-same");
+    expect(dualShiftModeAt("tog", "same").id).toBe("tog-same");
+    expect(dualShiftModeAt("split", "opp").id).toBe("split-opp");
+    expect(dualShiftModeAt("tog", "opp").id).toBe("tog-opp");
+    expect(
+      DUAL_SHIFT_MODES.map((mode) => dualShiftElement(mode).element)
+    ).toEqual(["water", "earth", "fire", "air"]);
+    for (const mode of DUAL_SHIFT_MODES) {
+      expect(dualShiftElement(mode).accentColor).toMatch(/^#[0-9a-f]{6}$/i);
     }
   });
 
