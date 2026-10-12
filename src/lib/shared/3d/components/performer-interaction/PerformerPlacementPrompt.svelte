@@ -51,4 +51,14 @@
     outline: 2px solid var(--theme-accent-text, #a78bfa);
     outline-offset: 2px;
   }
+  @media (max-width: 959px) {
+    .placement-prompt {
+      top: 124px;
+    }
+  }
+  @media (max-width: 639px) {
+    .placement-prompt {
+      top: 76px;
+    }
+  }
 </style>
