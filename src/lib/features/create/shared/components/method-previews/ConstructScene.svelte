@@ -267,8 +267,8 @@
     position: absolute;
     inset: 0;
     transform-origin: 0 0;
-    transition: transform var(--construct-grow, 300ms)
-      cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform var(--construct-grow, var(--duration-emphasis))
+      var(--ease-out);
   }
 
   .slot.waiting .art {
@@ -279,16 +279,16 @@
   .choice {
     position: absolute;
     opacity: 0;
-    transition: opacity 160ms ease-out;
+    transition: opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   .slot.choosing .choice {
     opacity: 1;
-    transition-duration: 120ms;
+    transition-duration: var(--duration-instant);
   }
 
   /* A box offering its choices shrinks its real step into place at once. */
   .slot.choosing .art {
-    transition: opacity 120ms ease-out;
+    transition: opacity var(--duration-instant) var(--ease-standard-out);
   }
 </style>

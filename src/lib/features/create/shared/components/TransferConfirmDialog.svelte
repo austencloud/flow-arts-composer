@@ -43,7 +43,9 @@
           {t("create_ui_replace_construct_content")}
         </h3>
         <p class="confirmation-message">
-          {t("create_review_the_construct_workspace_already_has_content_transferring_this_sequence_will_replace_it")}
+          {t(
+            "create_review_the_construct_workspace_already_has_content_transferring_this_sequence_will_replace_it"
+          )}
         </p>
         <div class="confirmation-actions">
           <button class="cancel-button" onclick={handleCancel}
@@ -61,7 +63,9 @@
   <ConfirmDialog
     bind:isOpen
     title={t("create_ui_replace_construct_content")}
-    message={t("create_review_the_construct_workspace_already_has_content_transferring_this_sequence_will_replace_it")}
+    message={t(
+      "create_review_the_construct_workspace_already_has_content_transferring_this_sequence_will_replace_it"
+    )}
     confirmText={t("create_review_replace_transfer")}
     cancelText={t("create_review_cancel")}
     variant="warning"
@@ -105,7 +109,10 @@
     font-size: var(--font-size-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     border: 2px solid transparent;
     min-width: 120px;
   }

@@ -83,7 +83,15 @@ Design Principles:
     border-radius: 50%;
     background: var(--theme-card-bg);
     cursor: pointer;
-    transition: all var(--transition-normal, var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1));
+    transition:
+      transform
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      background
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      border-color
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      outline
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard));
     color: var(--theme-text);
   }
 
@@ -102,7 +110,11 @@ Design Principles:
 
   .toggle-button:active {
     transform: scale(0.95);
-    transition: all var(--duration-instant) ease;
+    transition:
+      transform var(--duration-instant) var(--ease-standard),
+      background var(--duration-instant) var(--ease-standard),
+      border-color var(--duration-instant) var(--ease-standard),
+      outline var(--duration-instant) var(--ease-standard);
   }
 
   .toggle-button:focus-visible {
@@ -113,7 +125,15 @@ Design Principles:
   /* Icon styling */
   .toggle-button i {
     font-size: var(--font-size-lg);
-    transition: all var(--transition-normal, var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1));
+    transition:
+      transform
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      background
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      border-color
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      outline
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard));
   }
 
   /* Label text styling */

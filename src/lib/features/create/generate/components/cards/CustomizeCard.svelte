@@ -150,7 +150,9 @@ to three rows. Click opens the expanded overlay.
   bind:borderBoxSize={cardBox}
   onclick={handleClick}
   onkeydown={handleKeydown}
-  aria-label={t("create_ui_customize_card_label", { summary: summary.accessibleSummary })}
+  aria-label={t("create_ui_customize_card_label", {
+    summary: summary.accessibleSummary,
+  })}
 >
   <CardHeader title={t("create_ui_customize")} {headerFontSize} />
   {#if summary.isDefault}
@@ -198,9 +200,9 @@ to three rows. Click opens the expanded overlay.
     /* Only what hover and press change. `all` also eased the container-unit
        padding, so every resize of the panel re-laid the grid out each frame. */
     transition:
-      transform var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
-      box-shadow var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
-      filter var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+      transform var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-emphasis) var(--ease-standard),
+      filter var(--duration-emphasis) var(--ease-standard);
   }
 
   /* Glossy sheen */
@@ -239,9 +241,9 @@ to three rows. Click opens the expanded overlay.
   .customize-card:active {
     transform: translateY(0) scale(0.98);
     transition:
-      transform var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1),
-      box-shadow var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1),
-      filter var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
+      transform var(--duration-instant) var(--ease-standard),
+      box-shadow var(--duration-instant) var(--ease-standard),
+      filter var(--duration-instant) var(--ease-standard);
   }
 
   .card-value {

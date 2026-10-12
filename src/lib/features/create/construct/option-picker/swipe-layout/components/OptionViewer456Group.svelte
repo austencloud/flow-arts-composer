@@ -9,9 +9,9 @@ Matches the desktop version exactly:
 - In-place pictograph transitions on option changes
 -->
 <script lang="ts">
-
-import { calculateOptimalLayout as calculateAspectLayout } from "#lib/features/create/construct/option-picker/services/aspect-layout-planner.js";
-import { getAnimator } from "#lib/shared/application/get-animator.js";
+  import { calculateOptimalLayout as calculateAspectLayout } from "#lib/features/create/construct/option-picker/services/aspect-layout-planner.js";
+  import { getAnimator } from "#lib/shared/application/get-animator.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     Letter,
@@ -30,7 +30,7 @@ import { getAnimator } from "#lib/shared/application/get-animator.js";
       return { duration: 0 };
     }
     return animationService.createFadeOutTransition({
-      duration: 200,
+      duration: DURATION.normal,
     });
   };
 
@@ -39,8 +39,8 @@ import { getAnimator } from "#lib/shared/application/get-animator.js";
       return { duration: 0 };
     }
     return animationService.createFadeInTransition({
-      duration: 250,
-      outDuration: 200, // Wait for fade-out to complete
+      duration: DURATION.normal,
+      outDuration: DURATION.normal, // Wait for fade-out to complete
     });
   };
 
@@ -490,7 +490,7 @@ import { getAnimator } from "#lib/shared/application/get-animator.js";
     /* Clip content to prevent spilling */
     overflow: hidden;
     /* FLIP-inspired smooth layout transitions */
-    transition: transform var(--duration-emphasis) cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transition: transform var(--duration-emphasis) var(--ease-out);
   }
 
   /* Horizontal layout: side-by-side with aesthetic spacing */

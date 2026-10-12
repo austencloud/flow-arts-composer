@@ -154,7 +154,9 @@
   onclick={handleBackdropClick}
   role="dialog"
   aria-modal="true"
-  aria-label={t("create_action_help_for", { action: action?.name ?? t("create_action_help_action") })}
+  aria-label={t("create_action_help_for", {
+    action: action?.name ?? t("create_action_help_action"),
+  })}
   tabindex="-1"
 >
   <div class="modal-container">
@@ -171,7 +173,9 @@
         {/if}
       </div>
       <div class="header-text">
-        <h2 class="header-title">{action?.name ?? t("create_action_help_action")}</h2>
+        <h2 class="header-title">
+          {action?.name ?? t("create_action_help_action")}
+        </h2>
         <p class="header-subtitle">{action?.shortDesc ?? ""}</p>
       </div>
       <button
@@ -245,7 +249,9 @@
 
     <!-- Footer -->
     <div class="modal-footer">
-      <button class="done-btn" onclick={onClose}> {t("create_review_done")} </button>
+      <button class="done-btn" onclick={onClose}>
+        {t("create_review_done")}
+      </button>
     </div>
   </div>
 </div>
@@ -332,7 +338,10 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     color: rgba(255, 255, 255, 0.85); /* AAA contrast */
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
     flex-shrink: 0;
   }
 
@@ -421,7 +430,12 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      filter var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
     border: none;
   }
 
@@ -498,7 +512,9 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.15));
     color: white;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
   }
 
   .done-btn:hover {
@@ -634,7 +650,7 @@
   /* Accessibility: Respect user's motion preferences (WCAG AAA) */
   @media (prefers-reduced-motion: reduce) {
     * {
-      animation-duration: 0.01ms !important;
+      animation-duration: 0s !important;
       animation-iteration-count: 1 !important;
     }
   }

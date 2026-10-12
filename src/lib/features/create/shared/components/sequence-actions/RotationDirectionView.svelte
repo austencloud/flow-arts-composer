@@ -235,7 +235,9 @@
     color: var(--theme-text-muted);
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      color var(--duration-fast),
+      background var(--duration-fast);
   }
 
   .tab-target {

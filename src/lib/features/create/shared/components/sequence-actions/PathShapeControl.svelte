@@ -52,7 +52,10 @@
               hand.cssClass === "blue"}
             class:red-active={hand.current === shape && hand.cssClass === "red"}
             aria-pressed={hand.current === shape}
-            aria-label={t("create_controls_path", { hand: hand.label, shape: pathShapeLabel(shape) })}
+            aria-label={t("create_controls_path", {
+              hand: hand.label,
+              shape: pathShapeLabel(shape),
+            })}
             onclick={() => onPathShapeChange(hand.hand, shape)}
           >
             {pathShapeLabel(shape)}
@@ -68,7 +71,9 @@
         </button>
       </div>
       {#if hand.current === undefined}
-        <span class="global-hint">{t("create_controls_global_path", { shape: globalHint })}</span>
+        <span class="global-hint"
+          >{t("create_controls_global_path", { shape: globalHint })}</span
+        >
       {/if}
     </div>
   {/each}
@@ -140,7 +145,11 @@
     font-size: 0.7rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
     min-height: var(--min-touch-target, 44px);
     min-width: var(--min-touch-target, 44px);
   }

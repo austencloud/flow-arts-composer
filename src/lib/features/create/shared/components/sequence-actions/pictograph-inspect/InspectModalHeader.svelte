@@ -154,7 +154,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--duration-fast, 0.15s) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
     margin-left: 4px;
     font-size: var(--font-size-compact, 12px);
   }

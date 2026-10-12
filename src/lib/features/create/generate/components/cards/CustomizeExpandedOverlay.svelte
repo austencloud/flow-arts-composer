@@ -476,8 +476,8 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     white-space: nowrap;
     cursor: pointer;
     transition:
-      background var(--duration-normal) ease,
-      border-color var(--duration-normal) ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .reset-button:hover {

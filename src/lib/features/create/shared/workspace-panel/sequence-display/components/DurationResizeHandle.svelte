@@ -162,8 +162,8 @@
       transparent
     );
     transition:
-      background 0.15s ease,
-      transform 0.15s ease;
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .grip-dot {
@@ -200,7 +200,7 @@
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .duration-resize-handle:hover .duration-chip,

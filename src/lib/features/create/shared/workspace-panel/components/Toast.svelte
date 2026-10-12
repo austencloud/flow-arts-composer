@@ -50,7 +50,7 @@ Shows at the bottom center of screen, auto-dismisses after 3 seconds
     color: hsl(var(--destructive-foreground));
     border-radius: 8px;
     pointer-events: auto;
-    animation: slide-up var(--duration-emphasis) ease-out;
+    animation: slide-up var(--duration-emphasis) var(--ease-standard-out);
     min-width: 280px;
     max-width: 90vw;
   }
@@ -79,7 +79,7 @@ Shows at the bottom center of screen, auto-dismisses after 3 seconds
     cursor: pointer;
     padding: var(--spacing-xs);
     border-radius: 4px;
-    transition: background var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;

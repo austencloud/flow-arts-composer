@@ -111,7 +111,9 @@
     {:else if isCircular}
       <div class="loop-status circular-only">
         <i class="fas fa-circle-notch" aria-hidden="true"></i>
-        <span>{t("create_review_circular_sequence_no_loop_pattern_detected")}</span>
+        <span
+          >{t("create_review_circular_sequence_no_loop_pattern_detected")}</span
+        >
       </div>
     {/if}
 
@@ -189,7 +191,10 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -239,7 +244,7 @@
   }
   .component-button.available:active {
     transform: scale(0.95);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   /* Unavailable: gray, disabled */

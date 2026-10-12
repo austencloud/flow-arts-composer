@@ -164,7 +164,11 @@
             {#snippet optionContent(value)}
               <span class="filter-option">
                 {#if layout === "compact"}
-                  <span>{value === "all" ? t("create_option_all") : t("create_option_continuous")}</span>
+                  <span
+                    >{value === "all"
+                      ? t("create_option_all")
+                      : t("create_option_continuous")}</span
+                  >
                 {:else}
                   <i
                     class={value === "all"
@@ -174,7 +178,11 @@
                   ></i>
                 {/if}
                 {#if value === "continuous" && hiddenCount > 0}
-                  <span class="filter-hidden-count">{t("create_option_hidden_count", { count: hiddenCount })}</span>
+                  <span class="filter-hidden-count"
+                    >{t("create_option_hidden_count", {
+                      count: hiddenCount,
+                    })}</span
+                  >
                 {/if}
               </span>
             {/snippet}
@@ -235,7 +243,9 @@
                 class="spin-inline edge"
                 transition:popIn
                 title={t("create_option_spin_direction_hint")}
-                aria-label={t("create_option_toggle_left_spin", { direction: dirLabel(leftRotation) })}
+                aria-label={t("create_option_toggle_left_spin", {
+                  direction: dirLabel(leftRotation),
+                })}
                 onclick={() => onLeftRotationChange(opposite(leftRotation))}
               >
                 <i class="fas {dirIcon(leftRotation)}" aria-hidden="true"></i>
@@ -271,7 +281,9 @@
                 class="spin-inline edge"
                 transition:popIn
                 title={t("create_option_spin_direction_hint")}
-                aria-label={t("create_option_toggle_right_spin", { direction: dirLabel(rightRotation) })}
+                aria-label={t("create_option_toggle_right_spin", {
+                  direction: dirLabel(rightRotation),
+                })}
                 onclick={() => onRightRotationChange(opposite(rightRotation))}
               >
                 <i class="fas {dirIcon(rightRotation)}" aria-hidden="true"></i>
@@ -452,7 +464,7 @@
     min-width: 260px;
     border-radius: 12px;
     border: 1px solid;
-    transition: padding var(--duration-normal, 200ms) ease;
+    transition: padding var(--duration-normal) var(--ease-standard);
   }
 
   .hand-half.blue.has-spin,
@@ -518,9 +530,9 @@
     font-variant-numeric: tabular-nums;
     cursor: pointer;
     transition:
-      background-color var(--duration-fast, 0.15s) ease,
-      border-color var(--duration-fast, 0.15s) ease,
-      transform var(--duration-fast, 0.15s) ease;
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .spin-inline:hover {

@@ -143,7 +143,7 @@ Replaces the old GenerationModeCard (Freeform/Spell toggle).
     gap: 2px;
     position: relative;
     overflow: hidden;
-    transition: box-shadow var(--duration-emphasis) ease;
+    transition: box-shadow var(--duration-emphasis) var(--ease-standard);
   }
 
   .word-input-card.mobile {
@@ -176,7 +176,7 @@ Replaces the old GenerationModeCard (Freeform/Spell toggle).
     padding: 2px 6px;
     height: 100%;
     font-family: inherit;
-    transition: border-color 150ms ease;
+    transition: border-color var(--duration-fast) var(--ease-standard);
   }
 
   .word-field:focus:not(:focus-visible) {

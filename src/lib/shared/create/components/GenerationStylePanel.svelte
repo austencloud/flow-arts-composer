@@ -238,10 +238,10 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
     font-size: var(--font-size-compact, 12px);
     padding: 4px 6px;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .option-btn:active {
