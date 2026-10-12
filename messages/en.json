@@ -5047,6 +5047,8 @@
   "create_deep_step_count_many": "{count} steps",
   "create_deep_step_count_one": "{count} step",
   "create_deep_tnd_card_aria": "Timing and direction: hands {hands}, props {props}{turns}. Click to configure.",
+  "create_deep_tnd_hands_tile_aria": "Hands: {value}{turns}. Click to set hand timing and direction.",
+  "create_deep_tnd_props_tile_aria": "Props: {value}{turns}. Click to set prop timing and direction.",
   "create_deep_together_opposite": "Together Opposite",
   "create_deep_together_same": "Together Same",
   "create_deep_toggle_card_aria": "{title}: {value}. Click to toggle.",

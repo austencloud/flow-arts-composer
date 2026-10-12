@@ -246,6 +246,7 @@ export function buildCardDescriptors(
         handRelationship: config.handRelationship ?? "free",
         propRelationship: config.propRelationship ?? "free",
         matchHandTurns: config.matchHandTurns ?? false,
+        level: Number(config.level) || 1,
         blockedHandModes: handModesBlockedByLoop(
           loopEnabled ? config.loopType : null
         ),
