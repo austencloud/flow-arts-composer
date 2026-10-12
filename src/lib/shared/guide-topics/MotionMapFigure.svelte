@@ -6,11 +6,14 @@
   (shift, dash, static). Reduced motion shows the hand at rest.
 
   With `interactive`, the hand can be grabbed at any time; that ends the
-  demonstration. While it is dragged, one arrow runs from its point to the
-  point it would land on and that move lights. A drop keeps the move lit for
-  one beat, then the arrow fades and the hand rests where it landed. Dragging
-  and the keyboard both come from PropPlacementGrid; the keyboard shows the
-  arrow once the hand is put down.
+  demonstration. A tap on a point draws the arrow on from the hand to that
+  point, the hand follows along it, and the two stay as the finished picture
+  until the next move (Austen, 2026-10-12: the arrow showed for under a
+  second, so the finished picture never held). While the hand is dragged,
+  one arrow runs from its point to the point it would land on; a drop keeps
+  it. Dragging and the keyboard both come from PropPlacementGrid; the
+  keyboard shows the arrow once the hand is put down. `demo` false skips the
+  demonstration, for a lesson that has already shown the three moves.
   Spec: docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md
 -->
 <script lang="ts">
@@ -35,6 +38,7 @@
   import {
     MOTION_MAP_HOME,
     classifyHandMove,
+    handMoveDirection,
     motionMapTargets,
     type HandMove,
     type MotionMapTarget,
@@ -47,8 +51,15 @@
     /** The move being shown right now; the host can light its caption from it. */
     lit?: HandMove | null;
     /** A move was shown, by the demonstration or by the learner. */
-    onMove?: (move: HandMove, by: "demo" | "learner") => void;
+    onMove?: (
+      move: HandMove,
+      by: "demo" | "learner",
+      from: GridLocation,
+      to: GridLocation
+    ) => void;
     leftNoun?: string;
+    /** Play the demonstration once the figure is on screen. */
+    demo?: boolean;
   }
 
   let {
@@ -56,7 +67,12 @@
     lit = $bindable(null),
     onMove,
     leftNoun = "blue hand",
+    demo = true,
   }: Props = $props();
+
+  /** A tapped move's arrow draws on, then the hand follows along it. */
+  const DRAW_MS = DURATION.dramatic;
+  const FOLLOW_DELAY_MS = DURATION.normal;
 
   let host: HTMLDivElement;
   /** The hand's committed point. */
@@ -72,6 +88,8 @@
   let arrowTo = $state<GridLocation | null>(null);
   let showHand = $state(false);
   let motionMove = $state<PlacementMotionMove | null>(null);
+  /** The learner's last move, which stays drawn until the next. */
+  let lastMove: { from: GridLocation; to: GridLocation } | null = null;
   let building = true;
   let previewing = false;
   let ready = false;
@@ -79,7 +97,6 @@
   let started = false;
 
   const build = createBuildSequence();
-  const settle = createBuildSequence();
 
   function showMove(from: GridLocation, to: GridLocation | null) {
     arrowFrom = from;
@@ -102,7 +119,7 @@
       {
         act: () => {
           lit = move;
-          onMove?.(move, "demo");
+          onMove?.(move, "demo", handAt, target?.to ?? handAt);
           showMove(handAt, target?.to ?? handAt);
         },
       },
@@ -176,13 +193,18 @@
     if (!interactive) return;
     if (target === null) {
       if (!previewing) return;
+      // A cancelled drag puts the last move back.
       previewing = false;
-      arrowTo = null;
-      lit = null;
+      if (lastMove) {
+        showMove(lastMove.from, lastMove.to);
+        lit = classifyHandMove(lastMove.from, lastMove.to);
+      } else {
+        arrowTo = null;
+        lit = null;
+      }
       return;
     }
     takeOver();
-    settle.cancel();
     previewing = true;
     showMove(handAt, target);
     lit = classifyHandMove(handAt, target);
@@ -193,23 +215,34 @@
     takeOver();
     // Picked up (tap or Enter) but not yet put down.
     if (change.activeHand !== null || change.leftLocation === null) return;
+    const dropped = previewing;
     previewing = false;
     const from = handAt;
     const to = change.leftLocation;
     handAt = to;
     const move = classifyHandMove(from, to);
     if (!move) return;
+    lastMove = { from, to };
     showMove(from, to);
     lit = move;
-    onMove?.(move, "learner");
-    settle.play([{ pause: BUILD_BEAT_PAUSE_MS }], () => {
-      arrowTo = null;
-      lit = null;
-    });
+    onMove?.(move, "learner", from, to);
+    // A dragged hand is already where it was dropped; a tapped one follows
+    // its arrow there.
+    if (dropped || move === "static") return;
+    motionMove = {
+      epoch: (motionMove?.epoch ?? 0) + 1,
+      color: HandSide.LEFT,
+      from,
+      to,
+      direction: handMoveDirection(from, to),
+      path: move === "dash" ? "dash" : "arc",
+      durationMs: DURATION.scene,
+      delayMs: FOLLOW_DELAY_MS,
+    };
   }
 
   onMount(() => {
-    if (reducedMotion()) finishBuild();
+    if (reducedMotion() || !demo) finishBuild();
     // Capture, so the demonstration stops before the grid starts a drag.
     host.addEventListener("pointerdown", takeOver, { capture: true });
     host.addEventListener("keydown", handleKeydown, { capture: true });
@@ -222,7 +255,6 @@
       host.removeEventListener("keydown", handleKeydown, { capture: true });
       stopWatching();
       build.cancel();
-      settle.cancel();
     };
   });
 </script>
@@ -253,7 +285,12 @@
     onChange={changed}
   >
     {#snippet figureLayer()}
-      <MotionMapArrows from={arrowFrom} to={arrowTo} />
+      <MotionMapArrows
+        from={arrowFrom}
+        to={arrowTo}
+        drawMs={interactive ? DRAW_MS : 0}
+        settleMs={interactive ? FOLLOW_DELAY_MS + DURATION.scene : 0}
+      />
     {/snippet}
   </PropPlacementGrid>
 </div>
