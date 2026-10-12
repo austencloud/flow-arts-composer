@@ -10,6 +10,8 @@ import {
   gridJoinOffsets,
   gridJoinPropNudges,
   isGridJoin,
+  joinedGridModes,
+  joinedGridModesKey,
   joinedHandTransform,
   sequenceGridJoinKey,
   toJoinedHandPoint,
@@ -189,6 +191,87 @@ describe("joined grid layout", () => {
     expect(getGridJoinLayout(EAST_1, "skewed")).toBe(
       getGridJoinLayout(EAST_1, "diamond")
     );
+    expect(getGridJoinLayout(EAST_1, undefined)).toBe(
+      getGridJoinLayout(EAST_1, "diamond")
+    );
+  });
+
+  describe("each hand on its own grid", () => {
+    // Blue turned 45° on its own: blue on the diagonals, red still cardinal.
+    const BLUE_BOX = joinedGridModes("skewed", {
+      left: ["sw", "nw"],
+      right: ["s", "e"],
+    });
+
+    it("reads each hand's grid from its own points", () => {
+      expect(BLUE_BOX).toEqual({ left: "box", right: "diamond" });
+      expect(
+        joinedGridModes("skewed", { left: ["n"], right: ["ne", "e"] })
+      ).toEqual({ left: "diamond", right: "skewed" });
+      expect(joinedGridModes("skewed", { left: [], right: ["ne"] })).toEqual({
+        left: "diamond",
+        right: "box",
+      });
+      // A diamond or box pictograph draws both hands on that grid.
+      expect(joinedGridModes("box", { left: ["n"], right: ["n"] })).toEqual({
+        left: "box",
+        right: "box",
+      });
+      expect(joinedGridModes("diamond")).toEqual({
+        left: "diamond",
+        right: "diamond",
+      });
+      expect(joinedGridModes(BLUE_BOX)).toBe(BLUE_BOX);
+      expect(joinedGridModesKey(BLUE_BOX)).toBe("box-diamond");
+    });
+
+    it("draws blue's box grid beside red's diamond grid, join untouched", () => {
+      const layout = getGridJoinLayout(EAST_1, BLUE_BOX);
+      expect(layout.join).toEqual(EAST_1);
+      expect(layout.grids).toEqual(BLUE_BOX);
+      const handLocations = (hand: "left" | "right") =>
+        layout.points
+          .filter(
+            (point) => point.kind === "hand" && point.members[0]!.hand === hand
+          )
+          .map((point) => point.members[0]!.location)
+          .sort();
+      expect(handLocations("left")).toEqual(["ne", "nw", "se", "sw"]);
+      expect(handLocations("right")).toEqual(["e", "n", "s", "w"]);
+      // Red's center still sits one step east of blue's, where the one-grid
+      // diamond join put it.
+      expect(layout.offsets).toEqual(
+        getGridJoinLayout(EAST_1, "diamond").offsets
+      );
+      // Only the box hand's outer points are rings.
+      for (const point of layout.points) {
+        expect(point.ring).toBe(
+          point.kind === "outer" && point.members[0]!.hand === "left"
+        );
+      }
+    });
+
+    it("keeps a box sequence's diagonal join after one hand turns", () => {
+      const redBox = joinedGridModes("skewed", {
+        left: ["n", "e"],
+        right: ["ne", "se"],
+      });
+      const join: GridJoinSpec = { toward: "nw", steps: 1 };
+      expect(alignGridJoin(join, redBox)).toBe(join);
+      expect(alignGridJoin(join, "skewed")).toBe(join);
+      const layout = getGridJoinLayout(join, redBox);
+      expect(layout.join).toEqual(join);
+      expect(layout.offsets).toEqual(getGridJoinLayout(join, "box").offsets);
+    });
+
+    it("keys the layout by both grids", () => {
+      expect(getGridJoinLayout(EAST_1, BLUE_BOX)).not.toBe(
+        getGridJoinLayout(EAST_1, "diamond")
+      );
+      expect(getGridJoinLayout(EAST_1, { ...BLUE_BOX })).toBe(
+        getGridJoinLayout(EAST_1, BLUE_BOX)
+      );
+    });
   });
 
   it("is memoized and frozen", () => {
@@ -229,7 +312,7 @@ describe("joins line up with the grid", () => {
       toward: "e",
       steps: 1,
     });
-    expect(alignGridJoin({ toward: "nw", steps: 2 }, "skewed")).toEqual({
+    expect(alignGridJoin({ toward: "nw", steps: 2 }, undefined)).toEqual({
       toward: "n",
       steps: 2,
     });

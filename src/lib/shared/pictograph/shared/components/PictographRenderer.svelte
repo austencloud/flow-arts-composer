@@ -66,6 +66,7 @@ Usage:
     joinedGridFitTransform,
     joinedGridMarkup,
     slidingGridsMarkup,
+    turningGridMarkup,
   } from "../../grid/services/joined-grid-markup";
   import {
     followJoinSlide,
@@ -627,14 +628,30 @@ Usage:
     const drawn = joinLayout?.offsets[side] ?? { x: 0, y: 0 };
     return `translate(${shown.x - drawn.x} ${shown.y - drawn.y})`;
   }
-  const slideScale = $derived(slide?.frame.scale ?? joinLayout?.scale ?? 1);
+  // A rotate of a joined sequence turns the joined grids 45° about the cell
+  // center (the join turned with the hands, so the new layout is the old one
+  // turned) while the outer dots morph between filled and ring, as GridSvg
+  // turns one grid. The props and arrows keep their own transitions, as on
+  // one grid; only the fit scale eases here with the grids.
+  const turn = $derived(joinSlide.turn);
+  const turningGrid = $derived(
+    turn && joinLayout
+      ? turningGridMarkup(joinLayout, turn.ring, joinedGridOptions)
+      : ""
+  );
+  const turnTransform = $derived(
+    turn ? `rotate(${turn.angle} ${BASE_SIZE / 2} ${BASE_SIZE / 2})` : undefined
+  );
+  const slideScale = $derived(
+    slide?.frame.scale ?? turn?.scale ?? joinLayout?.scale ?? 1
+  );
   // The joined dots are drawn in the same pass, with no grid file to load, so
   // they are ready as soon as they are in the DOM.
   $effect(() => {
     if (joinLayout && joinedGrid) onGridReady?.();
   });
   const coreContentTransform = $derived(
-    slide
+    slide || turn
       ? `translate(${coreContentOffset} 0) translate(${BASE_SIZE / 2} ${BASE_SIZE / 2}) scale(${slideScale}) translate(${-BASE_SIZE / 2} ${-BASE_SIZE / 2})`
       : joinLayout
         ? `translate(${coreContentOffset} 0) ${joinedGridFitTransform(joinLayout, BASE_SIZE)}`
@@ -702,7 +719,16 @@ Usage:
         </g>
       {/if}
       {#if joinLayout}
-        {#if showGrid}
+        {#if showGrid && turn}
+          <g
+            class="joined-grid turning"
+            opacity={joinedGridOpacity}
+            transform={turnTransform}
+            pointer-events="none"
+          >
+            {@html turningGrid}
+          </g>
+        {:else if showGrid}
           <g
             class="joined-grid"
             opacity={joinedGridOpacity * (slideLayers?.composite ?? 1)}

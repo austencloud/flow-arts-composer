@@ -53,3 +53,25 @@ export function isConceptPath(pathname: string): boolean {
     conceptIdFromPathname(pathname) !== null
   );
 }
+
+/**
+ * Whether a navigation into the course arrived from another page of this
+ * site, such as the Guide's "Start the first lesson" or a topic's "Learn this
+ * interactively". A lesson reached that way keeps that page as its way out:
+ * its Back button at the first step returns there, the way the browser's own
+ * Back does, instead of landing on a lesson list the reader never saw.
+ *
+ * Moves inside the course (the list, a lesson switch) do not count, and
+ * neither does a fresh page load or an arrival from another site, since
+ * neither has a page of ours to go back to.
+ */
+export function enteredCourseFromOutside(navigation: {
+  from: { url: URL } | null;
+  to: { url: URL } | null;
+}): boolean {
+  const from = navigation.from?.url;
+  const to = navigation.to?.url;
+  if (!from || !to) return false;
+  if (from.origin !== to.origin) return false;
+  return isConceptPath(to.pathname) && !isConceptPath(from.pathname);
+}
