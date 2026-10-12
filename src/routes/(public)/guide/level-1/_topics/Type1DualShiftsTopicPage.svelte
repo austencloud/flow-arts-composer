@@ -261,8 +261,11 @@
 </article>
 
 <style>
+  /* Wider than the text-led topic pages: four loops of five pictographs
+     use the room a wide screen gives them, and the reading measures inside
+     keep their own caps. */
   .dual-shifts-topic {
-    max-width: 90rem;
+    max-width: 120rem;
     margin: 0 auto;
     padding: 1.5rem clamp(1rem, 4cqw, 2.5rem) 2rem;
     display: grid;
