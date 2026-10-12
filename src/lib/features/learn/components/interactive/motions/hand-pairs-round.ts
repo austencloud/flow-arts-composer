@@ -6,7 +6,9 @@
  */
 import {
   classifyHandMove,
+  combinationMoves,
   handMoveDirection,
+  type HandCombinationId,
   type ComboHand,
   type HandMove,
 } from "#lib/shared/guide-topics/hand-motions-topic.js";
@@ -40,6 +42,31 @@ export function placeHand(
   const move = classifyHandMove(round.start[hand], to);
   if (!move) return round;
   return { ...round, moves: { ...round.moves, [hand]: { to, move } } };
+}
+
+/**
+ * Where `hand` can go this round to make the goal combination: either of its
+ * moves for blue, who picks first, and for red only the move that completes
+ * blue's. None once blue's move is not part of the goal.
+ */
+export function goalPoints(
+  round: PairRound,
+  hand: HandSide,
+  goal: HandCombinationId,
+  points: readonly GridLocation[]
+): GridLocation[] {
+  const needed = combinationMoves(goal);
+  let allowed: HandMove[] = needed;
+  if (hand === HandSide.RIGHT) {
+    const blue = round.moves[HandSide.LEFT]?.move;
+    const at = blue ? needed.indexOf(blue) : -1;
+    if (at < 0) return [];
+    allowed = [needed[1 - at] as HandMove];
+  }
+  return points.filter((point) => {
+    const move = classifyHandMove(round.start[hand], point);
+    return move !== null && allowed.includes(move);
+  });
 }
 
 /** Both hands' moves once both have been dropped. */

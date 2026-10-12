@@ -5,8 +5,9 @@ Root is a list of rows, each showing a setting's current value. Choosing a row
 gives that one setting the whole panel, with a back arrow. Nothing else is on
 screen while the user decides.
 
-The default list stays one column. Customize opts into a centered choice grid
-for wide stages; detail screens still use the whole panel. A persistent
+The default list stays one column. A host that wants a richer landing screen
+passes `listContent` (Customize draws a tile per setting); detail screens
+still use the whole panel. A persistent
 list-plus-detail split was removed because it made the drawer much wider than
 its siblings and stretched a short form through a tall pane.
 
@@ -52,7 +53,6 @@ named in .claude/rules/crossfade-primitive.md.
     listHeader,
     listContent,
     onSelect,
-    choiceLayout = "list",
   }: {
     items: SettingsDrillItem[];
     /** Currently drilled-into item id, or null for the root list. */
@@ -64,7 +64,6 @@ named in .claude/rules/crossfade-primitive.md.
     /** Optional custom landing content. The drill still owns navigation. */
     listContent?: Snippet;
     onSelect?: (id: string | null) => void;
-    choiceLayout?: "list" | "cards";
   } = $props();
 
   const activeItem = $derived(items.find((i) => i.id === selected) ?? null);
@@ -112,14 +111,11 @@ named in .claude/rules/crossfade-primitive.md.
           {#if listHeader}
             <div class="layer-header">{@render listHeader()}</div>
           {/if}
-          <div
-            class="layer-body themed-scrollbar"
-            class:cards={choiceLayout === "cards"}
-          >
+          <div class="layer-body themed-scrollbar">
             {#if listContent}
               {@render listContent()}
             {:else}
-              <div class="row-list" class:cards={choiceLayout === "cards"}>
+              <div class="row-list">
                 {#each items as item (item.id)}
                   <SettingsDrillRow
                     label={item.label}
@@ -236,33 +232,6 @@ named in .claude/rules/crossfade-primitive.md.
     gap: 0.5rem;
   }
 
-  .layer-body.cards {
-    container-type: inline-size;
-  }
-
-  .row-list.cards {
-    display: grid;
-    grid-template-columns: 1fr;
-    align-content: center;
-    gap: 0.75rem;
-    width: 100%;
-    max-width: 1050px;
-    min-height: 100%;
-    margin-inline: auto;
-  }
-
-  @container (min-width: 660px) {
-    .row-list.cards {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @container (min-width: 820px) {
-    .row-list.cards {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
   .detail-title-row {
     display: flex;
     align-items: center;
@@ -276,7 +245,7 @@ named in .claude/rules/crossfade-primitive.md.
     margin: 0;
     font-size: var(--font-size-base, 16px);
     font-weight: 700;
-    color: white;
+    color: var(--theme-text, white);
   }
 
   /* Back is the exit the user takes on every visit; Close is the one they take
@@ -295,7 +264,7 @@ named in .claude/rules/crossfade-primitive.md.
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.07));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.16));
     border-radius: 0.5rem;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--theme-text, rgba(255, 255, 255, 0.9));
     cursor: pointer;
     transition:
       background var(--duration-normal) var(--ease-standard),
