@@ -2,7 +2,7 @@
 status: active
 value: null
 effort: null
-work_state: planned
+work_state: ready
 remaining: Build the Level-chapter pilot and send it to Austen.
 depends_on: "2026-09-26-post-studio-keyframes-design.md"
 plan_path: "docs/superpowers/plans/2026-10-11-walkthrough-zoom-bubbles.md"
