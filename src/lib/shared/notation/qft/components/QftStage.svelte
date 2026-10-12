@@ -359,8 +359,8 @@
     stroke: var(--semantic-border, rgb(255 255 255 / 0.28));
     stroke-width: 2;
     transition:
-      fill 160ms ease,
-      stroke 160ms ease;
+      fill var(--duration-fast) var(--ease-standard),
+      stroke var(--duration-fast) var(--ease-standard);
   }
 
   .point text {

@@ -91,7 +91,9 @@
       {category.label}
       <span class="cat-count">{category.items.length}</span>
       <i
-        class="fas fa-chevron-{collapsedCategories.has(category.id) ? 'right' : 'down'} chevron"
+        class="fas fa-chevron-{collapsedCategories.has(category.id)
+          ? 'right'
+          : 'down'} chevron"
         aria-hidden="true"
       ></i>
     </button>
@@ -132,7 +134,8 @@
     height: 100%;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2)) transparent;
+    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2))
+      transparent;
   }
 
   .picker-header {
@@ -239,7 +242,9 @@
     border-radius: 6px;
     cursor: pointer;
     color: var(--theme-text, #ffffff);
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
     text-align: center;
     min-width: 0;
   }
@@ -251,7 +256,11 @@
 
   .picker-item.selected {
     border-color: var(--theme-accent, #7c6af0);
-    background: color-mix(in srgb, var(--theme-accent, #7c6af0) 18%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #7c6af0) 18%,
+      transparent
+    );
   }
 
   .item-icon {
@@ -297,7 +306,9 @@
     line-height: 1.4;
   }
 
-  .picker-hint p:last-child { margin-bottom: 0; }
+  .picker-hint p:last-child {
+    margin-bottom: 0;
+  }
 
   kbd {
     display: inline-block;

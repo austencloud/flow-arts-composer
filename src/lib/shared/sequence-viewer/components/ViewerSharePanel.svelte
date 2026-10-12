@@ -301,8 +301,8 @@
     font-size: 1.05rem;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .close:hover {
@@ -374,8 +374,8 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .settings:hover {

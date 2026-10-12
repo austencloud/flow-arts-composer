@@ -32,7 +32,11 @@
 
   function handleAddKeyframe() {
     if (!currentCameraPosition || !currentCameraTarget) return;
-    choreographyState.addKeyframe(currentStep, currentCameraPosition, currentCameraTarget);
+    choreographyState.addKeyframe(
+      currentStep,
+      currentCameraPosition,
+      currentCameraTarget
+    );
   }
 
   function handleToggleRecording() {
@@ -50,8 +54,12 @@
     class="mode-toggle"
     class:active={choreographyState.isEnabled}
     onclick={() => choreographyState.toggle()}
-    aria-label={choreographyState.isEnabled ? "Switch to orbit camera" : "Enable choreographed camera"}
-    title={choreographyState.isEnabled ? "Switch to orbit camera" : "Enable choreographed camera"}
+    aria-label={choreographyState.isEnabled
+      ? "Switch to orbit camera"
+      : "Enable choreographed camera"}
+    title={choreographyState.isEnabled
+      ? "Switch to orbit camera"
+      : "Enable choreographed camera"}
     disabled={!hasSequence}
   >
     <i class="fas fa-video" aria-hidden="true"></i>
@@ -81,8 +89,12 @@
       class="action-btn"
       class:recording={choreographyState.isRecording}
       onclick={handleToggleRecording}
-      aria-label={choreographyState.isRecording ? "Stop recording" : "Start recording"}
-      title={choreographyState.isRecording ? "Stop recording" : "Start recording"}
+      aria-label={choreographyState.isRecording
+        ? "Stop recording"
+        : "Start recording"}
+      title={choreographyState.isRecording
+        ? "Stop recording"
+        : "Start recording"}
     >
       <i class="fas fa-circle" aria-hidden="true"></i>
     </button>
@@ -127,7 +139,10 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast);
   }
 
   .mode-toggle:hover:not(:disabled) {
@@ -181,7 +196,10 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-size: 12px;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast);
   }
 
   .action-btn:hover:not(:disabled) {
@@ -204,8 +222,13 @@
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

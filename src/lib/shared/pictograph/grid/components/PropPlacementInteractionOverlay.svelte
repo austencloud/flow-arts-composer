@@ -415,7 +415,7 @@
   }
 
   .point-solid {
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .click-target {
@@ -452,8 +452,8 @@
     stroke-linecap: round;
     opacity: 0.22;
     transition:
-      opacity 0.12s ease,
-      stroke-width 0.12s ease;
+      opacity var(--duration-instant) var(--ease-standard),
+      stroke-width var(--duration-instant) var(--ease-standard);
   }
 
   .aim-tick.aimed {
@@ -484,8 +484,8 @@
     stroke-width: 2;
     vector-effect: non-scaling-stroke;
     transition:
-      fill 0.15s ease,
-      stroke 0.15s ease;
+      fill var(--duration-fast) var(--ease-standard),
+      stroke var(--duration-fast) var(--ease-standard);
   }
 
   .click-target.ring:hover {

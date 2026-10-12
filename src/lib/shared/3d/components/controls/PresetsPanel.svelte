@@ -161,9 +161,9 @@
     cursor: pointer;
     text-align: left;
     transition:
-      border-color 160ms ease,
-      background 160ms ease,
-      transform 160ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .preset-row:not(.preset-row--skeleton):hover,

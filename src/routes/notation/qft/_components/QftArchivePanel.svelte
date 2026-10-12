@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
+  import { flyFade, opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import QftFrames from "#lib/shared/notation/qft/components/QftFrames.svelte";
   import { GUIDE_MOVES } from "#lib/shared/notation/qft/qft-guide.js";
@@ -24,7 +24,7 @@
   class="scrim"
   aria-label="Close the 2011 diagrams"
   onclick={app.closeArchive}
-  transition:fade={{ duration: DURATION.fast }}
+  transition:opaqueFade={{ duration: DURATION.fast }}
 ></button>
 
 <div
@@ -32,7 +32,7 @@
   role="dialog"
   aria-modal="true"
   aria-labelledby="qft-archive-title"
-  transition:fly={{ x: 80, duration: DURATION.normal }}
+  transition:flyFade={{ x: 80, duration: DURATION.normal }}
 >
   <header>
     <div>

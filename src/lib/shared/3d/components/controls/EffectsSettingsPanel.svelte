@@ -815,7 +815,11 @@
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast);
   }
 
   .effect-chip span {
@@ -831,7 +835,11 @@
     font-size: 1.1rem;
     color: var(--color);
     opacity: 0.85;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast);
   }
 
   .effect-chip:hover {
@@ -945,7 +953,10 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast);
   }
 
   .footer-btn:hover {

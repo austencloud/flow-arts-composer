@@ -24,8 +24,6 @@
   import { createViewerStudioSurfaces } from "../state/viewer-studio-surfaces.svelte";
   import { setViewerStudioSurfaces } from "../context/viewer-studio-surfaces-context";
   import { reparentToInspector } from "./reparent-to-inspector";
-  import { slide, fly } from "svelte/transition";
-  import { cubicOut } from "svelte/easing";
   import { goto } from "$app/navigation";
   import ViewerSplitPane from "./ViewerSplitPane.svelte";
   import ViewerWorkspacePanels from "./ViewerWorkspacePanels.svelte";
@@ -39,7 +37,11 @@
   } from "../context/video-playhead-context";
   import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
-  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import {
+    flyFade,
+    growFade,
+    standardEasing,
+  } from "#lib/shared/transitions/motion.js";
   import { getSequenceVideosStore } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
   import {
     showToast,
@@ -508,6 +510,8 @@
    * for a single recipient. The drawer's sheet navigates into the thread
    * instead, because the person was already in the inbox there.
    */
+  const SENT_TOAST_DURATION_MS = 5_000;
+
   function handleSequenceSent(conversationIds: string[]): void {
     share.resetSendSession();
     const single = conversationIds.length === 1 ? conversationIds[0]! : null;
@@ -519,7 +523,7 @@
               count: conversationIds.length,
             })
           : t("viewer_ui_sent"),
-      duration: 5000,
+      duration: SENT_TOAST_DURATION_MS,
       action: single
         ? {
             label: t("viewer_ui_open"),
@@ -1790,16 +1794,15 @@
            cubicOut curve as the tray — reads as the tray displacing the
            bar, not a pop. -->
       <div
-        transition:slide={{
-          duration: layout.prefersReducedMotion ? 0 : 260,
-          easing: cubicOut,
+        transition:growFade={{
+          duration: layout.prefersReducedMotion ? 0 : DURATION.emphasis,
+          easing: standardEasing,
         }}
       >
         <div
-          transition:fly={{
+          transition:flyFade={{
             y: 72,
-            duration: layout.prefersReducedMotion ? 0 : 260,
-            easing: cubicOut,
+            duration: layout.prefersReducedMotion ? 0 : DURATION.emphasis,
           }}
         >
           <ViewerModeBottomBar

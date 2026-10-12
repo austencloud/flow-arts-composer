@@ -52,7 +52,11 @@
       <i class="fas fa-copy" aria-hidden="true"></i>
     {/if}
     <span
-      >{copySuccess ? t("browse_copied") : disabled ? t("viewer_ui_preparing_link") : t("browse_copy")}</span
+      >{copySuccess
+        ? t("browse_copied")
+        : disabled
+          ? t("viewer_ui_preparing_link")
+          : t("browse_copy")}</span
     >
   </button>
 
@@ -116,7 +120,14 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal, 200ms) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      min-height var(--duration-normal) var(--ease-standard),
+      padding var(--duration-normal) var(--ease-standard);
   }
 
   .share-btn:hover:not(:disabled) {

@@ -102,9 +102,9 @@
     display: flex;
     flex-direction: column;
     transition:
-      transform 160ms cubic-bezier(0.2, 0, 0.13, 1.5),
-      border-color 160ms,
-      box-shadow 160ms;
+      transform var(--duration-fast) var(--ease-spring),
+      border-color var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .tile:hover {
@@ -117,7 +117,7 @@
     background-size: cover;
     background-position: center;
     filter: saturate(0.25) brightness(0.55);
-    transition: filter 160ms;
+    transition: filter var(--duration-fast);
     position: relative;
   }
 
@@ -151,8 +151,8 @@
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.12);
     transition:
-      background 160ms,
-      box-shadow 160ms;
+      background var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .tile[aria-pressed="true"] {

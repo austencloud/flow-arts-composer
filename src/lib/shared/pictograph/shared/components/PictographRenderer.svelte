@@ -1097,7 +1097,7 @@ Usage:
     height: 100%;
     display: block;
     box-sizing: border-box;
-    transition: border-color var(--duration-fast) ease-out;
+    transition: border-color var(--duration-fast) var(--ease-standard-out);
     /* Allow pointer events to pass through to interactive SVG elements */
     pointer-events: none;
   }
@@ -1108,7 +1108,7 @@ Usage:
      duration/path-shape layers fade here. */
   .pictograph-arrows,
   .beat-layer {
-    transition: opacity var(--duration-fast, 150ms) ease-out;
+    transition: opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   .beat-layer.pose-only {
@@ -1123,7 +1123,7 @@ Usage:
      default; .visible drives the opacity transition. */
   .hand-color-key {
     opacity: 0;
-    transition: opacity var(--duration-normal, 200ms) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .hand-color-key.visible {
@@ -1150,6 +1150,6 @@ Usage:
 
   /* Animate SVG background fill changes */
   svg rect:first-child {
-    transition: fill var(--duration-fast) ease-out;
+    transition: fill var(--duration-fast) var(--ease-standard-out);
   }
 </style>

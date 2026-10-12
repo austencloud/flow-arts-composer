@@ -262,9 +262,9 @@
     font-weight: 750;
     white-space: nowrap;
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .surprise i {
@@ -285,7 +285,7 @@
   }
 
   .surprise:active:not(:disabled) i {
-    animation: roll 420ms ease;
+    animation: roll var(--duration-dramatic) var(--ease-standard);
   }
 
   .surprise:disabled {
@@ -366,9 +366,9 @@
     font-size: clamp(0.7rem, 8cqi, 0.95rem);
     cursor: pointer;
     transition:
-      color var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease;
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .link:hover {

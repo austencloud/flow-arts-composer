@@ -203,7 +203,13 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      min-width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard),
+      padding var(--duration-normal) var(--ease-standard);
     white-space: nowrap;
   }
 
@@ -294,7 +300,9 @@
     color: var(--text-secondary);
     font-size: 0.85rem;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .retry-btn:hover {

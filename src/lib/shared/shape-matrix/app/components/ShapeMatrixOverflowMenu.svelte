@@ -91,9 +91,9 @@
     cursor: pointer;
     font: inherit;
     transition:
-      color var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease;
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .overflow-trigger:hover {

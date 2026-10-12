@@ -231,8 +231,8 @@
     <span>Performance timing</span>
     <h3>Choose the sequence and the video that performs it</h3>
     <p>
-      Saved Flow Arts Composer videos keep their markers. A local file stays on this device
-      until you upload it.
+      Saved Flow Arts Composer videos keep their markers. A local file stays on
+      this device until you upload it.
     </p>
   </div>
   <div class="setup-content">
@@ -652,7 +652,6 @@
     color: var(--theme-accent, #6366f1);
   }
 
-
   .drop-zone {
     display: flex;
     flex-direction: column;
@@ -667,8 +666,8 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
     cursor: pointer;
     transition:
-      border-color 0.15s,
-      background 0.15s;
+      border-color var(--duration-fast),
+      background var(--duration-fast);
   }
 
   .drop-zone:hover,
@@ -713,7 +712,6 @@
     font-size: var(--font-size-compact, 12px);
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.3));
   }
-
 
   .card {
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
@@ -792,7 +790,6 @@
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
   }
 
-
   .start-area {
     display: flex;
     justify-content: center;
@@ -811,8 +808,8 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      transform 0.1s,
-      box-shadow 0.15s;
+      transform var(--duration-instant),
+      box-shadow var(--duration-fast);
   }
 
   .start-btn:hover {

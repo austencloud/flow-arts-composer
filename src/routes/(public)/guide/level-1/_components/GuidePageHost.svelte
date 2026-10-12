@@ -405,7 +405,7 @@
     color: var(--ink, #1a1a1a);
     text-decoration: none;
     flex: 1 1 0;
-    transition: background 120ms ease;
+    transition: background var(--duration-instant) var(--ease-standard);
   }
   .nav-link:hover {
     background: color-mix(in oklab, var(--ink, #1a1a1a) 8%, transparent);

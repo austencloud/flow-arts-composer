@@ -11,7 +11,7 @@
   import { getSceneFeatureContext } from "../context/scene-feature-context";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import ScenePreparationSurface from "./ScenePreparationSurface.svelte";
 
   interface Props {
@@ -84,14 +84,10 @@
       `[Curtain] progress=${(progress * 100).toFixed(0)}% | enabled=[${enabled.map((f) => f.key)}] | pending=[${pending.map((f) => f.key)}]`
     );
   });
-
 </script>
 
 {#if showCurtain}
-  <div
-    class="curtain"
-    out:fade={{ duration: motionDuration(DURATION.emphasis) }}
-  >
+  <div class="curtain" out:opaqueFade={{ duration: DURATION.emphasis }}>
     <ScenePreparationSurface {statusText} {progress} />
   </div>
 {/if}

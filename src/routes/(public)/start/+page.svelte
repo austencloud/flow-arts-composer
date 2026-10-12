@@ -186,8 +186,7 @@
           </div>
 
           <p class="scan-hint">
-            Then point your camera at any card in your pack. The sequence
-            plays.
+            Then point your camera at any card in your pack. The sequence plays.
           </p>
         </section>
       {/if}
@@ -239,7 +238,6 @@
     }
   }
 
-
   .guest-hatch {
     display: flex;
     flex-direction: column;
@@ -262,9 +260,9 @@
     border-radius: var(--radius-md, 0.75rem);
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .guest-button:hover:not(:disabled) {
@@ -284,7 +282,6 @@
     font-size: var(--font-size-compact, 0.8125rem);
     text-align: center;
   }
-
 
   .success-card {
     box-sizing: border-box;
@@ -337,9 +334,9 @@
     cursor: pointer;
     text-decoration: none;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease,
-      box-shadow var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .install-button {

@@ -188,9 +188,9 @@
     cursor: zoom-in;
     pointer-events: auto;
     transition:
-      border-color 140ms ease,
-      box-shadow 140ms ease,
-      background 140ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .card-target span {
@@ -208,8 +208,8 @@
     opacity: 0;
     transform: scale(0.88);
     transition:
-      opacity 140ms ease,
-      transform 140ms ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .card-target:hover,

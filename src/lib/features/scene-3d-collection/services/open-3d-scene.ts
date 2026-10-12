@@ -2,7 +2,10 @@ import type {
   Collected3DScene,
   Scene3DFilm,
 } from "../domain/scene-3d-collection-types";
-import { isGroupSaved, Scene3DFilmSchema } from "../domain/scene-3d-collection-types";
+import {
+  isGroupSaved,
+  Scene3DFilmSchema,
+} from "../domain/scene-3d-collection-types";
 import { buildScene3DPersistConfig } from "../domain/scene-3d-look";
 import {
   clearViewer3DPresetIntent,
@@ -12,7 +15,10 @@ import {
 } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
 import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 import { persistViewerMode } from "#lib/shared/sequence-viewer/services/viewer-state-persistence.js";
-import { createSequenceData, type SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import {
+  createSequenceData,
+  type SequenceData,
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   captureSettingsCheckpoint,
@@ -25,6 +31,8 @@ const SCENE_FEATURES_STORAGE_KEY = "tka-scene-features";
 /** Legacy one-shot tempo handoff retained for Sequence Viewer compatibility. */
 export const SCENE_BPM_INTENT_KEY = "tka_scene_bpm";
 const SCENE_STUDIO_HANDOFF_KEY = "tka_scene_studio_handoff";
+const APPLY_TOAST_DURATION_MS = 6_000;
+const OPEN_TOAST_DURATION_MS = 4_000;
 
 export interface SceneStudioHandoff {
   sequence: SequenceData;
@@ -46,7 +54,8 @@ export interface SceneStudioHandoff {
  */
 export function applyScene3DLook(scene: Collected3DScene): void {
   const snap = scene.snapshot;
-  const saved = (g: Parameters<typeof isGroupSaved>[1]) => isGroupSaved(snap, g);
+  const saved = (g: Parameters<typeof isGroupSaved>[1]) =>
+    isGroupSaved(snap, g);
 
   captureSettingsCheckpoint(scene.name);
 
@@ -57,7 +66,10 @@ export function applyScene3DLook(scene: Collected3DScene): void {
   // 2. Scene-feature toggles (a fresh createSceneFeatureState reads this key).
   if (saved("scene") && typeof localStorage !== "undefined") {
     try {
-      localStorage.setItem(SCENE_FEATURES_STORAGE_KEY, JSON.stringify(snap.sceneFeatures));
+      localStorage.setItem(
+        SCENE_FEATURES_STORAGE_KEY,
+        JSON.stringify(snap.sceneFeatures)
+      );
     } catch {
       // Quota / unavailable — viewer still opens with existing feature toggles.
     }
@@ -67,9 +79,12 @@ export function applyScene3DLook(scene: Collected3DScene): void {
   //    state and never repaints the application.
   if (saved("props")) {
     const propUpdate: Record<string, PropType> = {};
-    if (snap.props.leftPropType) propUpdate.leftPropType = snap.props.leftPropType as PropType;
-    if (snap.props.rightPropType) propUpdate.rightPropType = snap.props.rightPropType as PropType;
-    if (Object.keys(propUpdate).length > 0) void settingsService.updateSettings(propUpdate);
+    if (snap.props.leftPropType)
+      propUpdate.leftPropType = snap.props.leftPropType as PropType;
+    if (snap.props.rightPropType)
+      propUpdate.rightPropType = snap.props.rightPropType as PropType;
+    if (Object.keys(propUpdate).length > 0)
+      void settingsService.updateSettings(propUpdate);
   }
 
   // 4. Viewer boots into 3D (a fresh createViewerState reads this via
@@ -122,7 +137,7 @@ export function applyScene3DLookLive(
   showToast({
     message: `Applied "${scene.name}"`,
     type: "success",
-    duration: 6000,
+    duration: APPLY_TOAST_DURATION_MS,
     action: {
       label: "Undo",
       onClick: () => {
@@ -191,7 +206,7 @@ export function openScene3DInStudio(
       ? `Opening "${scene.name}" to render`
       : `Opening "${scene.name}" in 3D Studio`,
     type: "success",
-    duration: 4000,
+    duration: OPEN_TOAST_DURATION_MS,
   });
   // The coordinator imports auth-state; loading it here keeps the scene
   // controls that apply presets from bringing Firebase onto public pages.
@@ -219,9 +234,7 @@ export function consumeSceneStudioHandoff(): SceneStudioHandoff | null {
     if (!parsed.sequence || !Array.isArray(parsed.sequence.steps)) return null;
     // The film crossed sessionStorage as JSON, so it is parsed rather than
     // trusted: a shape the renderer cannot use is better dropped than thrown.
-    const film = parsed.film
-      ? Scene3DFilmSchema.safeParse(parsed.film)
-      : null;
+    const film = parsed.film ? Scene3DFilmSchema.safeParse(parsed.film) : null;
     return {
       sequence: parsed.sequence,
       bpm: typeof parsed.bpm === "number" ? parsed.bpm : null,

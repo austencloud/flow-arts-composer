@@ -34,11 +34,16 @@
   } = $props();
 
   setGuideData(
-    (meta.chapter === "double-turns" ? doubleTurnsData : turnsData) as unknown as GuideChapterData
+    (meta.chapter === "double-turns"
+      ? doubleTurnsData
+      : turnsData) as unknown as GuideChapterData
   );
 </script>
 
-<GuideCompanionHost pageTitle={localizedLevel2Topic(meta, "h1")} levelLabel={t("guide_l2_level_label")}>
+<GuideCompanionHost
+  pageTitle={localizedLevel2Topic(meta, "h1")}
+  levelLabel={t("guide_l2_level_label")}
+>
   <h1>{localizedLevel2Topic(meta, "h1")}</h1>
 
   {#each LEVEL2_TOPIC_SECTIONS[meta.slug] ?? [] as Section (Section)}
@@ -48,15 +53,21 @@
   <nav class="topic-nav" aria-label={t("guide_l2_topic_navigation")}>
     {#if prev}
       <a class="nav-link prev" href="/guide/level-2/{prev.slug}">
-        <span class="nav-dir">{t("guide_l2_previous")}</span><span class="nav-title">{localizedLevel2Topic(prev, "h1")}</span>
+        <span class="nav-dir">{t("guide_l2_previous")}</span><span
+          class="nav-title">{localizedLevel2Topic(prev, "h1")}</span
+        >
       </a>
     {:else}
       <span class="nav-spacer"></span>
     {/if}
-    <a class="nav-link hub" href="/guide/level-2/{meta.chapter}">{t("guide_l2_chapter_overview")}</a>
+    <a class="nav-link hub" href="/guide/level-2/{meta.chapter}"
+      >{t("guide_l2_chapter_overview")}</a
+    >
     {#if next}
       <a class="nav-link next" href="/guide/level-2/{next.slug}">
-        <span class="nav-dir">{t("guide_l2_next")}</span><span class="nav-title">{localizedLevel2Topic(next, "h1")}</span>
+        <span class="nav-dir">{t("guide_l2_next")}</span><span class="nav-title"
+          >{localizedLevel2Topic(next, "h1")}</span
+        >
       </a>
     {:else}
       <span class="nav-spacer"></span>
@@ -98,7 +109,7 @@
     color: oklch(0.85 0.02 270);
     text-decoration: none;
     flex: 1 1 0;
-    transition: background 120ms ease;
+    transition: background var(--duration-instant) var(--ease-standard);
   }
   .nav-link:hover {
     background: oklch(0.24 0.03 270 / 0.5);

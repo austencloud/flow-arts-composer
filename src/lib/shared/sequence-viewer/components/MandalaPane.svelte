@@ -160,7 +160,7 @@
     align-items: center;
     justify-content: center;
     min-width: 0;
-    transition: padding-bottom 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: padding-bottom var(--duration-emphasis) var(--ease-standard-out);
   }
   .mandala-stage :global(svg) {
     width: 100%;

@@ -14,6 +14,7 @@ import {
 // Save and collection actions share one optional invitation. Retain the old
 // library key so people who already saw it are not asked again after an update.
 const GUEST_SAVE_NUDGE_SEEN_KEY = "tka-guest-save-nudge-seen";
+const GUEST_SAVE_TOAST_DURATION_MS = 8_000;
 let guestSaveNudgeSeen = $state(false);
 let guestSaveToastId: string | null = null;
 
@@ -66,7 +67,7 @@ export const authDrawerState = {
     markGuestSaveNudgeSeen();
     guestSaveToastId = showToast({
       type: "success",
-      duration: 8000,
+      duration: GUEST_SAVE_TOAST_DURATION_MS,
       announcement: "polite",
       action: {
         label: "Create account",

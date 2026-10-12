@@ -96,7 +96,7 @@
     background: transparent;
     outline: none;
     cursor: pointer;
-    transition: background 180ms;
+    transition: background var(--duration-fast);
   }
   .size-slider:hover {
     background: transparent;
@@ -118,8 +118,8 @@
     box-shadow: 0 0 10px
       color-mix(in srgb, var(--theme-accent) 35%, transparent);
     transition:
-      box-shadow 180ms,
-      transform 180ms;
+      box-shadow var(--duration-fast),
+      transform var(--duration-fast);
   }
   .size-slider::-webkit-slider-thumb:hover {
     box-shadow: 0 0 16px

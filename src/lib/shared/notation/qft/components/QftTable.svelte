@@ -69,54 +69,59 @@
     </ol>
   </div>
 {:else}
-<div class="wrap">
-  <table>
-    <caption class="sr-only">
-      QfT notation rows for the current pattern, one row per eighth of a hand revolution
-    </caption>
-    <colgroup><col class="c-step" /></colgroup>
-    <colgroup class="g-depart"><col /><col /><col /></colgroup>
-    <colgroup class="g-radius"><col /></colgroup>
-    <colgroup class="g-arrive"><col /><col /><col /></colgroup>
-    <thead>
-      <!--
+  <div class="wrap">
+    <table>
+      <caption class="sr-only">
+        QfT notation rows for the current pattern, one row per eighth of a hand
+        revolution
+      </caption>
+      <colgroup><col class="c-step" /></colgroup>
+      <colgroup class="g-depart"><col /><col /><col /></colgroup>
+      <colgroup class="g-radius"><col /></colgroup>
+      <colgroup class="g-arrive"><col /><col /><col /></colgroup>
+      <thead>
+        <!--
         Two header rows because the seven columns are not seven peers: they are
         a departure, a radius, and an arrival. Reading them as one flat run of
         digits is what made this look like a spreadsheet.
       -->
-      <tr class="groups">
-        <td></td>
-        <th scope="colgroup" colspan="3">Depart</th>
-        <th scope="col">Radius</th>
-        <th scope="colgroup" colspan="3">Arrive</th>
-      </tr>
-      <tr class="fields">
-        <td><span class="sr-only">Step</span></td>
-        <th scope="col">Prop</th>
-        <th scope="col">Dir</th>
-        <th scope="col">Hand</th>
-        <th scope="col"><span class="sr-only">Radius</span></th>
-        <th scope="col">Hand</th>
-        <th scope="col">Dir</th>
-        <th scope="col">Prop</th>
-      </tr>
-    </thead>
-    <tbody>
-      {#each increments as row, i (i)}
-        <tr class:active={i === activeStep}>
-          <th scope="row" class="step">{i + 1}</th>
-          <td>{row.propDepart}</td>
-          <td class:unresolved={row.propDirDepart === "n"}>{cell(row.propDirDepart)}</td>
-          <td>{row.handDepart}</td>
-          <td class="radius">{row.radius}</td>
-          <td>{row.handArrive}</td>
-          <td class:unresolved={row.propDirArrive === "n"}>{cell(row.propDirArrive)}</td>
-          <td>{row.propArrive}</td>
+        <tr class="groups">
+          <td></td>
+          <th scope="colgroup" colspan="3">Depart</th>
+          <th scope="col">Radius</th>
+          <th scope="colgroup" colspan="3">Arrive</th>
         </tr>
-      {/each}
-    </tbody>
-  </table>
-</div>
+        <tr class="fields">
+          <td><span class="sr-only">Step</span></td>
+          <th scope="col">Prop</th>
+          <th scope="col">Dir</th>
+          <th scope="col">Hand</th>
+          <th scope="col"><span class="sr-only">Radius</span></th>
+          <th scope="col">Hand</th>
+          <th scope="col">Dir</th>
+          <th scope="col">Prop</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each increments as row, i (i)}
+          <tr class:active={i === activeStep}>
+            <th scope="row" class="step">{i + 1}</th>
+            <td>{row.propDepart}</td>
+            <td class:unresolved={row.propDirDepart === "n"}
+              >{cell(row.propDirDepart)}</td
+            >
+            <td>{row.handDepart}</td>
+            <td class="radius">{row.radius}</td>
+            <td>{row.handArrive}</td>
+            <td class:unresolved={row.propDirArrive === "n"}
+              >{cell(row.propDirArrive)}</td
+            >
+            <td>{row.propArrive}</td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
 {/if}
 
 <style>
@@ -247,7 +252,7 @@
     /* Reserved so the active marker cannot shift the line when it appears. */
     border-left: 2px solid transparent;
     opacity: 0.52;
-    transition: opacity 220ms ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .lines li.active {
@@ -349,7 +354,8 @@
      it more of a spreadsheet, not less. */
   .g-radius,
   .g-arrive {
-    border-left: 1px solid var(--semantic-border-subtle, rgb(255 255 255 / 0.14));
+    border-left: 1px solid
+      var(--semantic-border-subtle, rgb(255 255 255 / 0.14));
   }
 
   .groups th {
@@ -371,7 +377,8 @@
   }
 
   thead {
-    border-bottom: 1px solid var(--semantic-border-subtle, rgb(255 255 255 / 0.12));
+    border-bottom: 1px solid
+      var(--semantic-border-subtle, rgb(255 255 255 / 0.12));
   }
 
   tbody td,
@@ -391,7 +398,7 @@
      column down them — and at 0.38 on a dark panel they were barely there. */
   tbody tr {
     opacity: 0.52;
-    transition: opacity 220ms ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   tbody tr.active {

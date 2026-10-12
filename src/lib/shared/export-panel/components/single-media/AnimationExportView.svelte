@@ -266,7 +266,10 @@
     border-radius: 6px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   /* Expand the interactive hit-area to the WCAG 44px floor without
@@ -298,7 +301,7 @@
   .progress-bar {
     height: 100%;
     background: var(--theme-accent);
-    transition: width var(--duration-instant) ease;
+    transition: width var(--duration-instant) var(--ease-standard);
   }
 
   .progress-percent {

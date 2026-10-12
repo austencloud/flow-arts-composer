@@ -166,7 +166,7 @@
     border: 1px solid var(--theme-stroke);
     border-radius: 12px;
     overflow: hidden;
-    transition: border-color var(--duration-normal) ease;
+    transition: border-color var(--duration-normal) var(--ease-standard);
   }
 
   .media-piece-card:hover {
@@ -218,7 +218,7 @@
     justify-content: center;
     background: color-mix(in srgb, #000 30%, transparent);
     opacity: 0;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .animation-preview-mini:hover .play-overlay {
@@ -293,7 +293,12 @@
     color: white;
     cursor: pointer;
     opacity: 0;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard);
     transform: scale(0.9);
   }
 

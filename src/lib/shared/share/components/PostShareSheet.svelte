@@ -3048,8 +3048,8 @@
     font: inherit;
     line-height: 1.45;
     transition:
-      border-color 0.15s ease,
-      box-shadow 0.15s ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   textarea::placeholder {
@@ -3080,9 +3080,9 @@
     text-decoration: none;
     cursor: pointer;
     transition:
-      transform 0.12s ease,
-      box-shadow 0.18s ease,
-      filter 0.18s ease;
+      transform var(--duration-instant) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard);
   }
 
   .network--instagram {
@@ -3177,9 +3177,9 @@
     font: inherit;
     cursor: pointer;
     transition:
-      background 0.15s ease,
-      border-color 0.15s ease,
-      transform 0.12s ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard);
   }
 
   .tile-icon {
@@ -3250,7 +3250,7 @@
     font-weight: 500;
     text-align: left;
     cursor: pointer;
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .page-option:hover {

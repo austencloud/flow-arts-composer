@@ -158,12 +158,16 @@
       if (prevLeft && !current) {
         // Was visible, now hidden - trigger exit animation
         isLeftExiting = true;
-        timeout = setTimeout(() => { isLeftExiting = false; }, 200);
+        timeout = setTimeout(() => {
+          isLeftExiting = false;
+        }, 200);
       }
       prevLeft = current;
     }
 
-    return () => { if (timeout) clearTimeout(timeout); };
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
   });
 
   // Red dot state change detection
@@ -179,12 +183,16 @@
       if (prevRight && !current) {
         // Was visible, now hidden - trigger exit animation
         isRightExiting = true;
-        timeout = setTimeout(() => { isRightExiting = false; }, 200);
+        timeout = setTimeout(() => {
+          isRightExiting = false;
+        }, 200);
       }
       prevRight = current;
     }
 
-    return () => { if (timeout) clearTimeout(timeout); };
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
   });
 
   // For smooth exit animations, we need to keep dots in DOM but hide them with CSS
@@ -258,7 +266,9 @@
       cy={rightDotY}
       r={DOT_RADIUS}
       fill={RED_COLOR}
-      style="transform-origin: {X_POSITION}px {rightDotY}px; opacity: {effectiveRightReversal ? rightDotOpacity : 0};"
+      style="transform-origin: {X_POSITION}px {rightDotY}px; opacity: {effectiveRightReversal
+        ? rightDotOpacity
+        : 0};"
     />
     <circle
       class="reversal-dot blue-dot"
@@ -268,7 +278,9 @@
       cy={leftDotY}
       r={DOT_RADIUS}
       fill={BLUE_COLOR}
-      style="transform-origin: {X_POSITION}px {leftDotY}px; opacity: {effectiveLeftReversal ? leftDotOpacity : 0};"
+      style="transform-origin: {X_POSITION}px {leftDotY}px; opacity: {effectiveLeftReversal
+        ? leftDotOpacity
+        : 0};"
     />
   </g>
 {/if}
@@ -277,7 +289,7 @@
   .reversal-indicators {
     /* Fade the container in/out */
     opacity: 0;
-    transition: opacity var(--duration-normal, 200ms) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .reversal-indicators.visible {
@@ -319,18 +331,19 @@
   .reversal-dot.dot-visible {
     opacity: 1;
     transform: scale(1);
-    animation: dot-appear 180ms ease-out forwards;
+    animation: dot-appear var(--duration-fast) var(--ease-standard-out) forwards;
   }
 
   /* When dot is exiting, play exit animation */
   .reversal-dot.dot-exiting {
-    animation: dot-disappear 150ms ease-in forwards;
+    animation: dot-disappear var(--duration-fast) var(--ease-standard-in)
+      forwards;
   }
 
   /* Respect reduced motion preference */
   @media (prefers-reduced-motion: reduce) {
     .reversal-dot {
-      transition: opacity 100ms ease;
+      transition: opacity var(--duration-instant) var(--ease-standard);
     }
     .reversal-dot.dot-visible {
       animation: none;

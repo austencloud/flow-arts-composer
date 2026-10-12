@@ -121,8 +121,8 @@
 		border-radius: 6px;
 		padding-inline: 0.4rem;
 		transition:
-			background 300ms ease,
-			color 300ms ease;
+			background var(--duration-emphasis) var(--ease-standard),
+			color var(--duration-emphasis) var(--ease-standard);
 	}
 
 	.line.lit {

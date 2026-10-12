@@ -146,7 +146,11 @@
     font-size: 14px;
     cursor: pointer;
     backdrop-filter: blur(4px);
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out),
+      outline-color var(--duration-fast) var(--ease-out);
   }
   @media (hover: hover) {
     .pause-toggle:hover {

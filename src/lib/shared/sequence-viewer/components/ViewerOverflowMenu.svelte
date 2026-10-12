@@ -376,10 +376,10 @@
     cursor: pointer;
     font-size: 16px;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -473,7 +473,7 @@
   }
 
   :global(.viewer-overflow-popover[data-state="open"]) {
-    animation: viewer-overflow-enter 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: viewer-overflow-enter var(--duration-fast) var(--ease-out) both;
   }
 
   :global(.viewer-overflow-item) {

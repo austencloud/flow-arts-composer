@@ -648,8 +648,8 @@
     pointer-events: none;
     background: var(--sequence-preview-stage-bg);
     transition:
-      opacity var(--duration-normal, 180ms) ease,
-      visibility 0s linear var(--duration-normal, 180ms);
+      opacity var(--duration-normal) var(--ease-standard),
+      visibility 0s linear var(--duration-normal);
   }
 
   .card-layer.visible {
@@ -718,9 +718,9 @@
     cursor: pointer;
     transform: translate(-50%, -50%);
     transition:
-      background var(--duration-fast, 120ms) ease,
-      border-color var(--duration-fast, 120ms) ease,
-      transform var(--duration-fast, 120ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .play-preview:hover:not(:disabled) {
@@ -826,7 +826,7 @@
     }
 
     .spinner {
-      animation-duration: 1400ms;
+      animation-duration: var(--duration-scene);
     }
   }
 </style>

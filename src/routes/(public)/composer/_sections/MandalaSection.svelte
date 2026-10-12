@@ -60,7 +60,8 @@
                 : "Play this mandala"}
             ></button>
             <LazyMount
-              loader={() => import("#lib/shared/mandala/components/SequenceMandala.svelte")}
+              loader={() =>
+                import("#lib/shared/mandala/components/SequenceMandala.svelte")}
               active={browser && sizes[i] > 0}
               props={{
                 sequence: { steps: m.steps },
@@ -95,8 +96,9 @@
       </div>
     {:else}
       <div class="collection-status">
-        No picks yet. Choose them at <LinkChip size="inline" href="/test/mandala-pick"
-          >/test/mandala-pick</LinkChip
+        No picks yet. Choose them at <LinkChip
+          size="inline"
+          href="/test/mandala-pick">/test/mandala-pick</LinkChip
         >.
       </div>
     {/if}
@@ -153,7 +155,7 @@
     background: oklch(0.16 0.018 270 / 0.55);
     border: 1px solid oklch(0.5 0.03 270 / 0.18);
     box-shadow: 0 12px 30px oklch(0.1 0.02 270 / 0.35);
-    transition: border-color 0.18s ease;
+    transition: border-color var(--duration-fast) var(--ease-standard);
   }
   .stage-activation {
     position: absolute;
@@ -195,7 +197,7 @@
     -webkit-backdrop-filter: blur(6px);
     opacity: 0.55;
     pointer-events: none;
-    transition: opacity 0.18s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
   .mandala-load-error {
     position: absolute;

@@ -9,7 +9,7 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import LiveCardPictograph from "./LiveCardPictograph.svelte";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import { getScanCardCloudProbe } from "../scan-card-cloud-context";
@@ -117,7 +117,7 @@
       class="step-number-overlay"
       class:dark-mode={activeDarkMode}
       style="font-size: {stepNumFontSize}px;"
-      transition:fade|local={{ duration: 150 }}>{cell.label}</span
+      transition:opaqueFade|local>{cell.label}</span
     >{/if}
   {#if showDurBadge && hasMixedDurations && cell.duration !== 1}<span
       class="duration-badge"
@@ -130,7 +130,7 @@
         class="solo-locations"
         class:browse={isBrowseSoloMode}
         class:dark-mode={activeDarkMode}
-        transition:fade|local={{ duration: 150 }}
+        transition:opaqueFade|local
       >
         <span class="solo-loc-letter"
           >{(soloMotion.startLocation ?? "").toLowerCase()}</span
@@ -154,7 +154,7 @@
           style="color: {soloHand === 'left'
             ? 'var(--prop-blue, #2196f3)'
             : 'var(--prop-red, #f44336)'};"
-          transition:fade|local={{ duration: 150 }}>{turnsLabel}</span
+          transition:opaqueFade|local>{turnsLabel}</span
         >
       {/if}
       {#if isMotionSoloMode}
@@ -164,7 +164,7 @@
           <span
             class="solo-orientation"
             class:dark-mode={activeDarkMode}
-            transition:fade|local={{ duration: 150 }}
+            transition:opaqueFade|local
           >
             <span class="solo-ori-letter">{startOri}</span>
             <img
@@ -226,7 +226,7 @@
      opacity; keeping its name on the element is what stops the restart. The old
      fade layer stays excluded so it doesn't pop-in on the way out. */
   .cell-image:not(.cell-fade-old) {
-    animation: cellLoadIn var(--duration-fast, 150ms) ease;
+    animation: cellLoadIn var(--duration-fast) var(--ease-standard);
   }
   @keyframes cellLoadIn {
     from {
@@ -247,7 +247,7 @@
     object-fit: cover;
     z-index: 1;
     opacity: 1;
-    transition: opacity 350ms ease;
+    transition: opacity var(--duration-dramatic) var(--ease-standard);
     pointer-events: none;
   }
 
@@ -261,13 +261,13 @@
 
   .cell-image.cell-fade-new.reveal {
     opacity: 1;
-    transition: opacity 350ms ease;
+    transition: opacity var(--duration-dramatic) var(--ease-standard);
   }
 
   /* Sequential swap: old exits fully before new enters. No overlap. */
   .cell-fade-old.swap-out {
     opacity: 0;
-    transition: opacity 150ms ease-out;
+    transition: opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   .cell-image.cell-swap-new {
@@ -276,7 +276,8 @@
 
   .cell-image.cell-swap-new.reveal {
     opacity: 1;
-    transition: opacity 200ms ease-in 150ms;
+    transition: opacity var(--duration-normal) var(--ease-standard-in)
+      var(--duration-fast);
   }
 
   /* HTML annotation overlays (start "Start" label, solo location/turn/orientation,

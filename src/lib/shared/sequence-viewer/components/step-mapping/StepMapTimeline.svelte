@@ -372,7 +372,7 @@
     );
     border-radius: 7px 0 0 7px;
     pointer-events: none;
-    transition: width 0.05s linear;
+    transition: width var(--duration-instant) linear;
   }
 
   .playhead {
@@ -385,7 +385,7 @@
     transform: translateX(-1px);
     pointer-events: none;
     z-index: 2;
-    transition: left 0.05s linear;
+    transition: left var(--duration-instant) linear;
   }
 
   .beat-marker {
@@ -429,7 +429,7 @@
     width: 2px;
     background: var(--theme-text-muted, rgba(255, 255, 255, 0.35));
     border-radius: 1px;
-    transition: background 0.15s ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   /* A repeat boundary: taller and brighter than the marks inside a pass, so
@@ -461,9 +461,9 @@
     background: var(--theme-card-bg, rgba(30, 30, 40, 1));
     border: 2px solid var(--theme-text-muted, rgba(255, 255, 255, 0.35));
     transition:
-      border-color 0.15s ease,
-      transform 0.15s ease,
-      box-shadow 0.15s ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .beat-marker:hover .marker-handle {
