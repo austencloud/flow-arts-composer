@@ -11,6 +11,11 @@
  * the slide's starting position.
  */
 import type { GridJoin } from "@tka/tka-types";
+import {
+  joinedGridModes,
+  joinedGridModesKey,
+  type JoinedGridModes,
+} from "@tka/render-core";
 import { motionDuration } from "#lib/shared/transitions/motion.js";
 import { gridJoinsEqual } from "./grid-join-controller";
 import {
@@ -24,7 +29,8 @@ import {
 export interface JoinSlideSource {
   /** The join the pictograph is drawn with now, or null for one grid. */
   readonly join: GridJoin | null;
-  readonly gridMode: string | undefined;
+  /** The grid mode, or each hand's own grid when the two differ. */
+  readonly gridMode: string | undefined | JoinedGridModes;
   /** Everything the drawing shows apart from its join (`joinSlideDrawingKey`). */
   readonly drawingKey: string;
 }
@@ -86,6 +92,11 @@ export function joinSlideDrawingKey(pictograph: {
   ].join("|");
 }
 
+/** The pair of grids a mode draws, as one comparable key. */
+function gridsKey(gridMode: string | undefined | JoinedGridModes): string {
+  return joinedGridModesKey(joinedGridModes(gridMode));
+}
+
 /** Linear in progress, from where the slide began to 1 joined, 0 one grid. */
 function secondGridAlphaFor(
   to: GridJoin | null,
@@ -134,7 +145,10 @@ export function followJoinSlide(read: () => JoinSlideSource): JoinSlide {
     const last = previous;
     previous = next;
     if (!last) return;
-    if (gridJoinsEqual(last.join, next.join) && last.gridMode === next.gridMode)
+    if (
+      gridJoinsEqual(last.join, next.join) &&
+      gridsKey(last.gridMode) === gridsKey(next.gridMode)
+    )
       return;
     const nextFrame = pictographJoinFrame(next.join, next.gridMode);
     const lastFrame = pictographJoinFrame(last.join, last.gridMode);

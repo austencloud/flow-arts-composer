@@ -61,6 +61,7 @@ Usage:
     getGridJoinLayout,
     getHandKeyGlyphPath,
     getMotionColor,
+    joinedGridModes,
   } from "@tka/render-core";
   import {
     joinedGridFitTransform,
@@ -559,12 +560,15 @@ Usage:
 
   // Two joined grids, when the pictograph was prepared with the sequence's
   // join (`_prepared.join`, which already moved the props and arrows onto
-  // each hand's grid). Drawn as the cards draw them: tinted dots from the
-  // render-core layout, and grids, props and arrows shrunk together about the
-  // center so they clear the edge glyphs. One-grid pictographs keep GridSvg.
+  // each hand's grid, and `_prepared.joinedGrids`, the grid each hand draws:
+  // a skewed pictograph puts one hand on a diamond grid and the other on a
+  // box grid). Drawn as the cards draw them: tinted dots from the render-core
+  // layout, and grids, props and arrows shrunk together about the center so
+  // they clear the edge glyphs. One-grid pictographs keep GridSvg.
+  const joinGrids = $derived(pictograph._prepared?.joinedGrids ?? gridMode);
   const joinLayout = $derived(
     pictograph._prepared?.join
-      ? getGridJoinLayout(pictograph._prepared.join, gridMode)
+      ? getGridJoinLayout(pictograph._prepared.join, joinGrids)
       : null
   );
   const joinedGridOptions = $derived.by(() => {
@@ -572,7 +576,7 @@ Usage:
     const mode = dark ? "dark" : "light";
     return {
       darkMode: dark,
-      box: gridMode === GridMode.BOX,
+      grids: joinedGridModes(joinGrids),
       handColors: {
         left: effectiveLeftColor ?? getMotionColor(HandSide.LEFT, mode),
         right: effectiveRightColor ?? getMotionColor(HandSide.RIGHT, mode),
@@ -595,7 +599,7 @@ Usage:
   // snaps.
   const joinSlide = followJoinSlide(() => ({
     join: pictograph._prepared?.join ?? null,
-    gridMode,
+    gridMode: joinGrids,
     drawingKey: joinSlideDrawingKey(pictograph),
   }));
   const slide = $derived(joinSlide.current);
@@ -605,7 +609,7 @@ Usage:
   const slideOutgoingGrid = $derived(
     slide?.from
       ? joinedGridMarkup(
-          getGridJoinLayout(slide.from, gridMode),
+          getGridJoinLayout(slide.from, joinGrids),
           joinedGridOptions
         )
       : ""

@@ -16,6 +16,8 @@ import {
   joinedPointColors,
   type GridJoinLayout,
   type JoinVec,
+  type JoinedGridMode,
+  type JoinedGridModes,
   type JoinedGridPoint,
 } from "@tka/render-core";
 
@@ -25,8 +27,8 @@ const GRID_POINT_COLOR_LIGHT = "#000000";
 
 export interface JoinedGridMarkupOptions {
   darkMode: boolean;
-  /** Box grids draw their outer points as rings. */
-  box: boolean;
+  /** The grid each hand draws; a box grid's outer points are rings. */
+  grids: JoinedGridModes;
   /** Each hand's color; the dots lean toward their own hand's. */
   handColors: Readonly<Record<"left" | "right", string>>;
   /**
@@ -67,26 +69,33 @@ function pointsMarkup(
         )));
   return points
     .map((point, index) =>
-      shown(point) ? gridPointsSvg([point], options.box, colors[index]!) : ""
+      shown(point) ? gridPointsSvg([point], point.ring, colors[index]!) : ""
     )
     .join("");
 }
 
 const SCENE_CENTER = 475;
 const OUTER_RADIUS = DIAMOND_OUTER_POINTS.e!.x - SCENE_CENTER;
+const INTERCARDINAL: ReadonlySet<string> = new Set(JOIN_GRID_LOCATIONS.box);
 
 /** One hand's whole grid, centered `offset` from the scene center. */
 function handGridPoints(
   hand: "left" | "right",
   offset: JoinVec,
-  box: boolean
+  mode: JoinedGridMode
 ): JoinedGridPoint[] {
   const cx = SCENE_CENTER + offset.x;
   const cy = SCENE_CENTER + offset.y;
   const points: JoinedGridPoint[] = [
-    { kind: "center", x: cx, y: cy, members: [{ hand, location: "c" }] },
+    {
+      kind: "center",
+      x: cx,
+      y: cy,
+      members: [{ hand, location: "c" }],
+      ring: false,
+    },
   ];
-  for (const location of JOIN_GRID_LOCATIONS[box ? "box" : "diamond"]) {
+  for (const location of JOIN_GRID_LOCATIONS[mode]) {
     const unit = LOCATION_UNIT[location]!;
     for (const [kind, radius] of [
       ["hand", JOIN_HAND_RADIUS],
@@ -97,6 +106,7 @@ function handGridPoints(
         x: cx + unit.x * radius,
         y: cy + unit.y * radius,
         members: [{ hand, location }],
+        ring: kind === "outer" && INTERCARDINAL.has(location),
       });
     }
   }
@@ -127,8 +137,8 @@ export function slidingGridsMarkup(
   joined: number,
   options: JoinedGridMarkupOptions
 ): string {
-  const blue = handGridPoints("left", offsets.left, options.box);
-  const red = handGridPoints("right", offsets.right, options.box);
+  const blue = handGridPoints("left", offsets.left, options.grids.left);
+  const red = handGridPoints("right", offsets.right, options.grids.right);
   const layer = (markup: string, opacity: number): string =>
     opacity <= 0.001 ? "" : `<g opacity="${opacity.toFixed(3)}">${markup}</g>`;
   return [

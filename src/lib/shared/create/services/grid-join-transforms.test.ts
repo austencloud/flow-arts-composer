@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 import type { GridJoin, GridJoinDirection } from "@tka/tka-types";
 import {
+  getGridJoinLayout,
   gridJoinOffsets,
   getNormalHandPointCoordinates,
 } from "@tka/render-core";
+import { pictographJoinedGrids } from "#lib/shared/grid-join/joined-grid-modes.js";
 import {
   mirrorSequence,
   flipSequence,
@@ -246,6 +248,34 @@ describe("joined sequence transforms draw each hand in the moved picture", () =>
     expect((await mirrorSequence(seq, handler, "left")).conjoined).toEqual(join);
     expect((await flipSequence(seq, handler, "right")).conjoined).toEqual(join);
     expect((await rotateSequence(seq, 2, handler, "left")).conjoined).toEqual(join);
+  });
+
+  it("turning one hand 45° keeps the join and draws that hand on a box grid", async () => {
+    const seq = joinedSequence(join);
+    const before = drawnHands(seq);
+    const after = await rotateSequence(seq, 1, handler, "left");
+
+    // The join is kept as stored, not turned onto a diamond grid's lines.
+    expect(after.conjoined).toEqual(join);
+    // Red did not move; blue's points turned 45° about blue's own center.
+    const drawn = drawnHands(after);
+    expectSamePoints(drawn.right, before.right);
+    const blueCenter = gridJoinOffsets(join).left;
+    const aboutBlue = (p: Point) => {
+      const turned = rotatePoint(
+        { x: p.x - blueCenter.x, y: p.y - blueCenter.y },
+        1
+      );
+      return { x: turned.x + blueCenter.x, y: turned.y + blueCenter.y };
+    };
+    expectSamePoints(drawn.left, before.left.map(aboutBlue));
+    // Every picture draws blue on a box grid beside red's diamond grid, and
+    // the layout keeps the join as stored.
+    for (const pose of [after.startPlacement!, ...after.steps]) {
+      const grids = pictographJoinedGrids(pose);
+      expect(grids).toEqual({ left: "box", right: "diamond" });
+      expect(getGridJoinLayout(after.conjoined!, grids).join).toEqual(join);
+    }
   });
 
   it("a sequence on one grid gains no join", async () => {
