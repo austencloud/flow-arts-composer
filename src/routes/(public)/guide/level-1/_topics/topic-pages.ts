@@ -3,6 +3,7 @@ import GridTopicPage from "./GridTopicPage.svelte";
 import HandMotionsTopicPage from "./HandMotionsTopicPage.svelte";
 import PlacementsTopicPage from "./PlacementsTopicPage.svelte";
 import StaffPlacementsTopicPage from "./StaffPlacementsTopicPage.svelte";
+import Type1DualShiftsTopicPage from "./Type1DualShiftsTopicPage.svelte";
 
 /** Props every migrated Guide topic page receives from GuidePageHost. */
 export type TopicPageProps = {
@@ -21,4 +22,5 @@ export const TOPIC_PAGES: Readonly<Record<string, Component<TopicPageProps>>> =
     "hand-placements": PlacementsTopicPage,
     "hand-motions": HandMotionsTopicPage,
     "staff-placements": StaffPlacementsTopicPage,
+    "hm-type1": Type1DualShiftsTopicPage,
   };

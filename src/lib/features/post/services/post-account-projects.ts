@@ -29,6 +29,7 @@ import {
 import { loadPostPlan } from "#lib/shared/media-composition/services/post-plan-store.js";
 import { migratePostPlan } from "#lib/shared/media-composition/domain/post-project-migration.js";
 import { isIndependentStudioProjectId } from "#lib/shared/media-composition/domain/studio-project-id.js";
+import { arrangementSummaryOf } from "./arrangement-summary.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   cachePostSequence,
@@ -395,14 +396,17 @@ export async function listSyncedPostProjects(): Promise<{
   const choices = new Map<string, PostProjectChoice>();
   for (const project of [...local.values(), ...cloudById.values()]) {
     const existing = choices.get(project.sequenceId);
-    if (!existing || project.updatedAt > existing.updatedAt)
+    if (!existing || project.updatedAt > existing.updatedAt) {
+      const arrangement = arrangementSummaryOf(project);
       choices.set(project.sequenceId, {
         sequenceId: project.sequenceId,
         title: project.title ?? project.sequenceId,
         word: "",
         updatedAt: project.updatedAt,
         hasDraft: true,
+        ...(arrangement ? { arrangement } : {}),
       });
+    }
   }
   for (const [sequenceId, problem] of problems) {
     const choice = choices.get(sequenceId);
