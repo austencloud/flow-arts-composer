@@ -95,7 +95,7 @@
   open={open && browserViewMode === "sequences"}
   title="Load Sequence"
   onSelect={handleSequenceSelect}
-  onClose={onClose}
+  {onClose}
 />
 
 <!-- Duets Browser Panel (when in duets mode) -->
@@ -208,7 +208,10 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-size: 1rem;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
   }
 
   .close-browser-btn:hover {
@@ -242,7 +245,11 @@
     font-size: var(--font-size-sm, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
   }
 
   .view-mode-btn:hover {

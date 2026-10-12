@@ -176,7 +176,10 @@ Combines video feed with playback controls for practicing sequences.
           ></div>
         </div>
         <div class="progress-text">
-          {t("create_record_beat_of", { number: recordState.currentStepIndex + 1, total: recordState.totalSteps })}
+          {t("create_record_beat_of", {
+            number: recordState.currentStepIndex + 1,
+            total: recordState.totalSteps,
+          })}
         </div>
       </div>
     </div>
@@ -185,7 +188,9 @@ Combines video feed with playback controls for practicing sequences.
       <div class="empty-icon">🎥</div>
       <h3>{t("create_ui_no_sequence_to_practice")}</h3>
       <p>
-        {t("create_review_create_or_select_a_sequence_from_the_construct_or_generate_tab_to_start_practicing")}
+        {t(
+          "create_review_create_or_select_a_sequence_from_the_construct_or_generate_tab_to_start_practicing"
+        )}
       </p>
     </div>
   {/if}
@@ -246,7 +251,7 @@ Combines video feed with playback controls for practicing sequences.
         var(--theme-accent-strong, var(--theme-accent-strong))
       )
     );
-    transition: width var(--duration-emphasis) ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
 
   .progress-text {

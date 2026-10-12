@@ -13,8 +13,8 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Popover } from "bits-ui";
-  import { scale } from "svelte/transition";
-  import { cubicOut } from "svelte/easing";
+  import { popIn } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
   /** Neutral row shape both domains map their Firestore docs into. */
@@ -176,17 +176,13 @@
               {...props}
               class="history-pop"
               style:--accent={accentColor ?? "var(--theme-accent, #58a6ff)"}
-              in:scale={{
-                duration: 160,
+              in:popIn={{
+                duration: DURATION.fast,
                 start: 0.96,
-                opacity: 0,
-                easing: cubicOut,
               }}
-              out:scale={{
-                duration: 110,
+              out:popIn={{
+                duration: DURATION.instant,
                 start: 0.97,
-                opacity: 0,
-                easing: cubicOut,
               }}
             >
               <header class="pop-header">
@@ -294,7 +290,9 @@
     justify-content: center;
     font-size: 11px;
     padding: 0;
-    transition: all var(--duration-fast, 120ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
   .revert-btn:hover:not(:disabled) {
     background: color-mix(in srgb, var(--accent, #fbbf24) 18%, transparent);
@@ -327,7 +325,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--duration-fast, 120ms) ease;
+    transition:
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
   .trigger-btn:hover {
     color: var(--theme-text, #fff);
@@ -387,7 +388,9 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.65rem;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
   .toggle-btn:hover {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));

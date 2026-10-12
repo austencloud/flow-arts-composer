@@ -814,7 +814,7 @@
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
-    transition: transform 0.2s;
+    transition: transform var(--duration-normal);
   }
 
   .upload-btn:hover {
@@ -874,7 +874,7 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform var(--duration-normal);
   }
 
   .btn-primary:hover {
@@ -937,7 +937,7 @@
   .progress-fill {
     height: 100%;
     background: var(--theme-accent);
-    transition: width 0.1s;
+    transition: width var(--duration-instant);
   }
 
   .frame-count {
@@ -1026,8 +1026,8 @@
     font-size: var(--font-size-compact);
     cursor: pointer;
     transition:
-      background 0.15s,
-      border-color 0.15s;
+      background var(--duration-fast),
+      border-color var(--duration-fast);
   }
 
   .calib-panel button:hover {
@@ -1060,8 +1060,8 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      transform 0.2s,
-      border-color 0.15s;
+      transform var(--duration-normal),
+      border-color var(--duration-fast);
   }
 
   .btn-secondary:hover {

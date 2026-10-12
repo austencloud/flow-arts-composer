@@ -40,7 +40,7 @@
     overflow: hidden;
     container-type: size;
     container-name: art-sidebar;
-    transition: opacity var(--duration-normal, 200ms) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   /* Frozen while a tunnel export bakes — `inert` blocks interaction; the dim is

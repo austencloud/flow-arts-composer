@@ -495,7 +495,11 @@
           aria-label={t("browse_view_videos")}
         >
           <i class="fas fa-video" aria-hidden="true"></i>
-          <span>{t("browse_view_videos")}{videoCount > 0 ? ` (${videoCount})` : ""}</span>
+          <span
+            >{t("browse_view_videos")}{videoCount > 0
+              ? ` (${videoCount})`
+              : ""}</span
+          >
         </button>
       {/if}
 
@@ -642,7 +646,10 @@
     border-radius: 10px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
     cursor: pointer;
-    transition: all var(--duration-normal, 200ms) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .icon-btn:hover {
@@ -677,7 +684,10 @@
     border-radius: 8px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     cursor: pointer;
-    transition: all var(--duration-normal, 200ms) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
   }
 
@@ -723,7 +733,9 @@
     border: 2px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     border-radius: 50%;
     cursor: pointer;
-    transition: all var(--duration-normal, 200ms) ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .creator-badge:hover {
@@ -773,7 +785,12 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal, 200ms) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .action-btn:hover:not(:disabled) {

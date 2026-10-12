@@ -487,8 +487,8 @@
     box-shadow: none;
     background: transparent;
     transition:
-      transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.25s ease-out;
+      transform var(--duration-dramatic) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard-out);
 
     /* Prevent text selection during long-press */
     user-select: none;
@@ -546,8 +546,9 @@
    * `.invisible` scale(0.3) it would otherwise flash.
    */
   .step-cell.animate {
-    animation: stepCascade var(--step-entrance-duration, 380ms)
-      cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: stepCascade
+      var(--step-entrance-duration, var(--duration-dramatic)) var(--ease-out)
+      both;
     animation-delay: var(--reveal-delay, 0ms);
   }
 
@@ -572,8 +573,8 @@
     transform: scale(0.95);
     opacity: 0.8;
     transition:
-      transform 0.15s ease-out,
-      opacity 0.15s ease-out;
+      transform var(--duration-fast) var(--ease-standard-out),
+      opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   /*
@@ -601,7 +602,7 @@
       0 0 0 1px rgba(251, 191, 36, 0.2);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.35s ease-out;
+    transition: opacity var(--duration-dramatic) var(--ease-standard-out);
   }
 
   .step-cell.selected .selection-skin,
@@ -622,7 +623,7 @@
     opacity: 1;
 
     /* Smooth spring animation - longer duration for more noticeable fade-in */
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform var(--duration-dramatic) var(--ease-spring);
   }
 
   /* Selection fade-in animation using a pseudo-element for the glow */
@@ -642,7 +643,8 @@
         border-box;
     border-radius: 16px;
     opacity: 0;
-    animation: selectionGlowIn 0.4s ease-out forwards;
+    animation: selectionGlowIn var(--duration-dramatic) var(--ease-standard-out)
+      forwards;
     pointer-events: none;
     z-index: -1;
   }
@@ -722,7 +724,7 @@
   .step-cell.practice-intense {
     background: rgba(251, 191, 36, 0.08);
     animation:
-      practiceEnterIntense 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+      practiceEnterIntense 0.25s var(--ease-spring) forwards,
       practiceGlowIntense 2s ease-in-out 0.25s infinite;
   }
 
@@ -764,7 +766,8 @@
   /* STYLE 2: SUBTLE - gentle fade with slight scale */
   .step-cell.practice-subtle {
     background: rgba(251, 191, 36, 0.08);
-    animation: practiceEnterSubtle var(--duration-emphasis) ease-out forwards;
+    animation: practiceEnterSubtle var(--duration-emphasis)
+      var(--ease-standard-out) forwards;
     box-shadow:
       0 0 16px rgba(251, 191, 36, 0.5),
       0 0 32px rgba(251, 191, 36, 0.2);
@@ -790,7 +793,8 @@
   .step-cell.practice-glow-only {
     background: transparent;
     transform: scale(1);
-    animation: practiceEnterGlow var(--duration-normal) ease-out forwards;
+    animation: practiceEnterGlow var(--duration-normal) var(--ease-standard-out)
+      forwards;
   }
 
   @keyframes practiceEnterGlow {
@@ -809,7 +813,8 @@
     background: transparent;
     transform: scale(1.02);
     box-shadow: 0 0 12px rgba(251, 191, 36, 0.5);
-    animation: practiceEnterMinimal var(--duration-instant) ease-out;
+    animation: practiceEnterMinimal var(--duration-instant)
+      var(--ease-standard-out);
   }
 
   @keyframes practiceEnterMinimal {
@@ -826,7 +831,8 @@
     background: rgba(251, 191, 36, 0.05);
     transform: scale(1.05);
     box-shadow: 0 0 16px rgba(251, 191, 36, 0.5);
-    animation: practiceEnterWave var(--duration-dramatic) ease-out forwards;
+    animation: practiceEnterWave var(--duration-dramatic)
+      var(--ease-standard-out) forwards;
   }
 
   .step-cell.practice-wave::before {
@@ -835,7 +841,8 @@
     inset: -4px;
     border: 2px solid rgba(251, 191, 36, 0.6);
     border-radius: 12px;
-    animation: practiceRing 0.5s ease-out forwards;
+    animation: practiceRing var(--duration-dramatic) var(--ease-standard-out)
+      forwards;
     pointer-events: none;
   }
 
@@ -884,7 +891,7 @@
    */
   @media (prefers-reduced-motion: reduce) {
     .step-cell.animate {
-      animation-duration: 0.01ms;
+      animation-duration: 0s;
       animation-delay: 0s;
     }
     .step-cell.selected::before {
@@ -892,7 +899,7 @@
       opacity: 1;
     }
     .selection-skin {
-      transition-duration: 0.01ms;
+      transition-duration: 0s;
     }
     .practice-intense {
       animation: none;

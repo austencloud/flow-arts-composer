@@ -390,7 +390,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeIn 200ms ease-out;
+    animation: fadeIn var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes fadeIn {
@@ -460,7 +460,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     z-index: calc(var(--z-modal) + 1);
   }
 
@@ -505,10 +507,10 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background 0.15s ease,
-      border-color 0.15s ease,
-      color 0.15s ease,
-      transform 0.15s ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .actions :global(button:hover:not(:disabled)) {

@@ -207,7 +207,11 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: all var(--duration-fast, 100ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 

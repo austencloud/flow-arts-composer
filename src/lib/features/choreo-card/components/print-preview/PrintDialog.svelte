@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { CARD_SIZES, getPageLayout, type CardSizeId } from "../../domain/card-sizes";
+  import {
+    CARD_SIZES,
+    getPageLayout,
+    type CardSizeId,
+  } from "../../domain/card-sizes";
   import { TND_ELEMENTS, type TnDElement } from "../../domain/tnd-element";
   import type { PrintPDFMode } from "../../services/print-pdf-exporter";
   import CardSizeToggle from "../card-preview/CardSizeToggle.svelte";
@@ -81,7 +85,8 @@
       else untagged++;
     }
     let sheets = 0;
-    for (const c of counts.values()) sheets += Math.ceil((c * copies) / perPage);
+    for (const c of counts.values())
+      sheets += Math.ceil((c * copies) / perPage);
     if (untagged) sheets += Math.ceil((untagged * copies) / perPage);
     return sheets;
   });
@@ -95,12 +100,10 @@
       else counts.set(el.element, { element: el, count: 1 });
     }
     const perPage = layout.cardsPerPage;
-    return TND_ELEMENTS
-      .filter((e) => counts.has(e.element))
-      .map((e) => {
-        const { element, count } = counts.get(e.element)!;
-        return { element, count, sheets: Math.ceil((count * copies) / perPage) };
-      });
+    return TND_ELEMENTS.filter((e) => counts.has(e.element)).map((e) => {
+      const { element, count } = counts.get(e.element)!;
+      return { element, count, sheets: Math.ceil((count * copies) / perPage) };
+    });
   });
 
   const FORMAT_OPTIONS: {
@@ -122,39 +125,50 @@
       icon: "fa-rotate",
       label: "Backs",
       getDetail: () => `${sheetCount} sheets`,
-      getHint: () => "Print after the fronts. Columns mirrored for the long-edge flip.",
+      getHint: () =>
+        "Print after the fronts. Columns mirrored for the long-edge flip.",
     },
     {
       id: "combined",
       icon: "fa-book-open",
       label: "Combined",
       getDetail: () => `${sheetCount * 2 + 2} pages`,
-      getHint: () => "Fronts + flip instructions + backs + finishing tips, in one file.",
+      getHint: () =>
+        "Fronts + flip instructions + backs + finishing tips, in one file.",
     },
     {
       id: "zip",
       icon: "fa-images",
       label: "Images",
       getDetail: () => `${cardCount * 2} PNGs`,
-      getHint: () => "Individual files for MPC or custom layouts. Download only.",
+      getHint: () =>
+        "Individual files for MPC or custom layouts. Download only.",
     },
   ];
 
-  const selectedOption = $derived(FORMAT_OPTIONS.find((f) => f.id === selectedFormat)!);
+  const selectedOption = $derived(
+    FORMAT_OPTIONS.find((f) => f.id === selectedFormat)!
+  );
 
   const printLabel = $derived.by(() => {
     if (isPrinting) return "Preparing…";
     switch (selectedFormat) {
-      case "fronts": return "Print Fronts";
-      case "backs": return "Print Backs";
-      case "combined": return "Print Combined";
-      default: return "Print";
+      case "fronts":
+        return "Print Fronts";
+      case "backs":
+        return "Print Backs";
+      case "combined":
+        return "Print Combined";
+      default:
+        return "Print";
     }
   });
 
   const downloadLabel = $derived.by(() => {
     if (isExporting) {
-      return exportTotal > 0 ? `Exporting ${exportProgress} / ${exportTotal}…` : "Preparing…";
+      return exportTotal > 0
+        ? `Exporting ${exportProgress} / ${exportTotal}…`
+        : "Preparing…";
     }
     return `Download ${selectedOption.label}`;
   });
@@ -175,7 +189,10 @@
   }
 
   function handleBackdropClick(e: MouseEvent) {
-    if ((e.target as HTMLElement).classList.contains("dialog-backdrop") && !busy) {
+    if (
+      (e.target as HTMLElement).classList.contains("dialog-backdrop") &&
+      !busy
+    ) {
       onClose();
     }
   }
@@ -184,8 +201,18 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="dialog-backdrop" role="presentation" onclick={handleBackdropClick}>
-  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="print-dialog-title">
-    <button class="close-btn" onclick={onClose} disabled={busy} aria-label="Close">
+  <div
+    class="dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="print-dialog-title"
+  >
+    <button
+      class="close-btn"
+      onclick={onClose}
+      disabled={busy}
+      aria-label="Close"
+    >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
 
@@ -207,7 +234,9 @@
           </div>
           <div class="summary-row">
             <span class="summary-label">Sheets</span>
-            <span class="summary-value">{sheetCount} ({layout.cols}&times;{layout.rows} per sheet)</span>
+            <span class="summary-value"
+              >{sheetCount} ({layout.cols}&times;{layout.rows} per sheet)</span
+            >
           </div>
           <div class="summary-row">
             <span class="summary-label">Size</span>
@@ -217,7 +246,9 @@
           </div>
           <div class="summary-row">
             <span class="summary-label">Copies / card</span>
-            <span class="summary-value">{copies}<span class="inline-hint">set on the toolbar</span></span>
+            <span class="summary-value"
+              >{copies}<span class="inline-hint">set on the toolbar</span></span
+            >
           </div>
           <div class="summary-row">
             <span class="summary-label">Theme</span>
@@ -231,9 +262,17 @@
               <div
                 class="element-pill"
                 style="--el-color: {element.accentColor}"
-                title="{count} card{count === 1 ? '' : 's'} × {copies} = {sheets} sheet{sheets === 1 ? '' : 's'}"
+                title="{count} card{count === 1
+                  ? ''
+                  : 's'} × {copies} = {sheets} sheet{sheets === 1 ? '' : 's'}"
               >
-                <img src={element.iconPath} alt={element.element} class="element-icon" width="16" height="16" />
+                <img
+                  src={element.iconPath}
+                  alt={element.element}
+                  class="element-icon"
+                  width="16"
+                  height="16"
+                />
                 <span class="element-count">{count} · {sheets}sh</span>
               </div>
             {/each}
@@ -251,7 +290,9 @@
               class:selected={selectedFormat === opt.id}
               role="radio"
               aria-checked={selectedFormat === opt.id}
-              onclick={() => { selectedFormat = opt.id; }}
+              onclick={() => {
+                selectedFormat = opt.id;
+              }}
             >
               <i class="fas {opt.icon} format-icon" aria-hidden="true"></i>
               <span class="format-label">{opt.label}</span>
@@ -273,7 +314,9 @@
             <button
               class="action print-action"
               disabled={busy || !printable || cardCount === 0}
-              title={!printable ? "Card images can't be sent to a printer. Download instead." : undefined}
+              title={!printable
+                ? "Card images can't be sent to a printer. Download instead."
+                : undefined}
               onclick={handlePrint}
             >
               {#if isPrinting}
@@ -300,7 +343,9 @@
         </div>
 
         <p class="workflow-tip">
-          Print the fronts, flip your paper stack on the <strong>long edge</strong>, then print the backs.
+          Print the fronts, flip your paper stack on the <strong
+            >long edge</strong
+          >, then print the backs.
         </p>
       </section>
     </div>
@@ -317,12 +362,16 @@
     align-items: center;
     justify-content: center;
     padding: 24px;
-    animation: fadeIn 150ms ease-out;
+    animation: fadeIn var(--duration-fast) var(--ease-standard-out);
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .dialog {
@@ -354,7 +403,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast);
   }
 
   .close-btn:hover:not(:disabled) {
@@ -443,8 +495,13 @@
   .theme-badge {
     text-transform: capitalize;
     padding: 2px 10px;
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #8b5cf6) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 12%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #8b5cf6) 25%, transparent);
     border-radius: 6px;
     font-size: 12px;
     color: #a78bfa;
@@ -506,7 +563,10 @@
     color: rgba(255, 255, 255, 0.5);
     font: inherit;
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast);
   }
 
   .format-card:hover {
@@ -516,8 +576,16 @@
   }
 
   .format-card.selected {
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 10%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #8b5cf6) 50%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 10%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 50%,
+      transparent
+    );
     color: var(--theme-text, #fff);
   }
 
@@ -553,8 +621,13 @@
     align-items: center;
     gap: 8px;
     padding: 10px 14px;
-    background: color-mix(in srgb, var(--semantic-error, #f87171) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-error, #f87171) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #f87171) 8%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-error, #f87171) 20%, transparent);
     border-radius: 8px;
     font-size: 13px;
     color: var(--semantic-error, #f87171);
@@ -581,7 +654,9 @@
     border: none;
     border-radius: 12px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      opacity var(--duration-fast),
+      transform var(--duration-fast);
   }
 
   .action:active:not(:disabled) {
@@ -594,13 +669,22 @@
   }
 
   .print-action {
-    background: linear-gradient(135deg, var(--semantic-success, #10b981), #059669);
+    background: linear-gradient(
+      135deg,
+      var(--semantic-success, #10b981),
+      #059669
+    );
   }
 
   .print-action:hover:not(:disabled) {
-    background: linear-gradient(135deg, #34d399, var(--semantic-success, #10b981));
+    background: linear-gradient(
+      135deg,
+      #34d399,
+      var(--semantic-success, #10b981)
+    );
     transform: translateY(-1px);
-    box-shadow: 0 4px 20px color-mix(in srgb, var(--semantic-success, #10b981) 30%, transparent);
+    box-shadow: 0 4px 20px
+      color-mix(in srgb, var(--semantic-success, #10b981) 30%, transparent);
   }
 
   .download-action {
@@ -626,7 +710,8 @@
 
   .download-action.full:hover:not(:disabled) {
     background: linear-gradient(135deg, var(--theme-accent, #8b5cf6), #7c3aed);
-    box-shadow: 0 4px 20px color-mix(in srgb, var(--theme-accent, #7c3aed) 30%, transparent);
+    box-shadow: 0 4px 20px
+      color-mix(in srgb, var(--theme-accent, #7c3aed) 30%, transparent);
   }
 
   .workflow-tip {
@@ -658,7 +743,11 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .dialog-backdrop { animation: none; }
-    .action:hover:not(:disabled) { transform: none; }
+    .dialog-backdrop {
+      animation: none;
+    }
+    .action:hover:not(:disabled) {
+      transform: none;
+    }
   }
 </style>

@@ -618,7 +618,7 @@
     justify-content: center;
     font-size: 0.5rem;
     border-radius: 50%;
-    transition: all var(--duration-normal) ease;
+    transition: color var(--duration-normal) var(--ease-standard);
   }
 
   .save-indicator.unsaved {
@@ -656,7 +656,9 @@
     cursor: pointer;
     font-size: 0.6rem;
     padding: 0 6px;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .undo-btn:hover {
@@ -683,7 +685,9 @@
     align-items: center;
     justify-content: center;
     font-size: 0.6rem;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     padding: 0;
   }
 
@@ -720,7 +724,10 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     cursor: pointer;
     font-size: 0.6rem;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .rotation-override-btn:hover {

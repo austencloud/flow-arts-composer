@@ -51,7 +51,7 @@
         <p class="phase-description">{phase.description}</p>
       </div>
       {#if phase.status === "locked"}
-        <span class="coming-soon">{t('skel2tka_coming_soon')}</span>
+        <span class="coming-soon">{t("skel2tka_coming_soon")}</span>
       {/if}
     </button>
   {/each}
@@ -73,7 +73,9 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 10px;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
+    transition:
+      border-color var(--duration-normal),
+      background var(--duration-normal);
     text-align: left;
     flex: 1 1 260px;
     min-width: 240px;

@@ -5,14 +5,23 @@
   import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
   import { buildTunnelLayers } from "#lib/shared/sequence-viewer/tunnel/tunnel-layer-builder.js";
   import { DEFAULT_CONFIG } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
-  import { getPropDemoLoop, generateFreshDemoLoop } from "../data/prop-demo-loop";
+  import {
+    getPropDemoLoop,
+    generateFreshDemoLoop,
+  } from "../data/prop-demo-loop";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import type { EffectType, TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import type {
+    EffectType,
+    TipEffectMap,
+  } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
-  import { propCelebration, closePropCelebration } from "../state/prop-celebration-state.svelte";
+  import {
+    propCelebration,
+    closePropCelebration,
+  } from "../state/prop-celebration-state.svelte";
   import { remainingLockedProps } from "../state/prop-collection-state.svelte";
   import { getPropUnlockManager } from "../get-prop-unlock-manager";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
@@ -20,19 +29,13 @@
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import { scale } from "svelte/transition";
-  import { cubicOut } from "svelte/easing";
+  import { popIn } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
-  const DEFAULT_PROP_STATE: PropState = { centerPathAngle: 0, staffRotationAngle: 0 };
-
-  // Morph duration — every state change crossfades/scales rather than snapping.
-  // Collapses to 0 under reduced-motion so the swap is instant but never jarring.
-  function morphMs(): number {
-    return typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ? 0
-      : 280;
-  }
+  const DEFAULT_PROP_STATE: PropState = {
+    centerPathAngle: 0,
+    staffRotationAngle: 0,
+  };
 
   let phase = $state<"pick" | "reveal">("pick");
   let chosen = $state<PropType | null>(null);
@@ -55,7 +58,7 @@
   // until the engine renders effects across all overlaid layers.
   let currentEffect = $state<EffectType>("none");
   const tipEffectMap = $derived<TipEffectMap | undefined>(
-    currentEffect === "none" ? undefined : { "*": { effect: currentEffect } },
+    currentEffect === "none" ? undefined : { "*": { effect: currentEffect } }
   );
 
   function prefersReducedMotion(): boolean {
@@ -81,10 +84,14 @@
   async function loadReveal(
     seqPromise: Promise<SequenceData>,
     token: number,
-    arms: number,
+    arms: number
   ) {
     const seq = await seqPromise;
-    const copies = await buildTunnelLayers(seq, { ...DEFAULT_CONFIG, fold: arms, mirror: false });
+    const copies = await buildTunnelLayers(seq, {
+      ...DEFAULT_CONFIG,
+      fold: arms,
+      mirror: false,
+    });
     if (token !== revealToken) return;
     base = seq;
     rotated = copies;
@@ -136,20 +143,43 @@
     return () => cancelAnimationFrame(raf);
   });
 
-  type LayerProps = { left: PropState; right: PropState; step: StepData | null; stepOneBased: number };
+  type LayerProps = {
+    left: PropState;
+    right: PropState;
+    step: StepData | null;
+    stepOneBased: number;
+  };
   function propsFor(seq: SequenceData | null): LayerProps {
     if (!seq || seq.steps.length === 0) {
-      return { left: { ...DEFAULT_PROP_STATE }, right: { ...DEFAULT_PROP_STATE }, step: null, stepOneBased: 1 };
+      return {
+        left: { ...DEFAULT_PROP_STATE },
+        right: { ...DEFAULT_PROP_STATE },
+        step: null,
+        stepOneBased: 1,
+      };
     }
     const n = seq.steps.length;
     const idx = Math.min(n - 1, Math.max(0, Math.floor(playheadBeat)));
-    const progress = Math.max(0, Math.min(0.9999, playheadBeat - Math.floor(playheadBeat)));
+    const progress = Math.max(
+      0,
+      Math.min(0.9999, playheadBeat - Math.floor(playheadBeat))
+    );
     const step = seq.steps[idx] ?? null;
-    if (!step) return { left: { ...DEFAULT_PROP_STATE }, right: { ...DEFAULT_PROP_STATE }, step: null, stepOneBased: idx + 1 };
+    if (!step)
+      return {
+        left: { ...DEFAULT_PROP_STATE },
+        right: { ...DEFAULT_PROP_STATE },
+        step: null,
+        stepOneBased: idx + 1,
+      };
     const r = interpolatePropAngles(step, progress);
     return {
-      left: r.isValid ? (r.leftAngles ?? { ...DEFAULT_PROP_STATE }) : { ...DEFAULT_PROP_STATE },
-      right: r.isValid ? (r.rightAngles ?? { ...DEFAULT_PROP_STATE }) : { ...DEFAULT_PROP_STATE },
+      left: r.isValid
+        ? (r.leftAngles ?? { ...DEFAULT_PROP_STATE })
+        : { ...DEFAULT_PROP_STATE },
+      right: r.isValid
+        ? (r.rightAngles ?? { ...DEFAULT_PROP_STATE })
+        : { ...DEFAULT_PROP_STATE },
       step,
       stepOneBased: idx + 1,
     };
@@ -159,11 +189,13 @@
     rotated.map((seq) => {
       const p = propsFor(seq);
       return { leftProp: p.left, rightProp: p.right };
-    }),
+    })
   );
   // Canvas needs the enum STRING; heading/toast need the human LABEL.
   const chosenPropStr = $derived(chosen ? String(chosen) : null);
-  const chosenLabel = $derived(chosen ? getPropTypeDisplayInfo(chosen).label : "");
+  const chosenLabel = $derived(
+    chosen ? getPropTypeDisplayInfo(chosen).label : ""
+  );
   const gridMode = $derived(base?.gridMode ?? GridMode.DIAMOND);
 
   function reset() {
@@ -193,38 +225,49 @@
   }
 </script>
 
-<BaseModal open={propCelebration.isOpen} size="fit" class="chromeless prop-celebration-modal" onclose={onClose}>
+<BaseModal
+  open={propCelebration.isOpen}
+  size="fit"
+  class="chromeless prop-celebration-modal"
+  onclose={onClose}
+>
   <div class="celebration">
     <div class="phase-stack">
       {#if phase === "pick"}
         <div
           class="pane"
-          in:scale={{ duration: morphMs(), start: 0.94, opacity: 0, easing: cubicOut }}
-          out:scale={{ duration: morphMs(), start: 0.96, opacity: 0, easing: cubicOut }}
+          in:popIn={{ duration: DURATION.emphasis, start: 0.94 }}
+          out:popIn={{ duration: DURATION.emphasis, start: 0.96 }}
         >
           <h2 data-animate="1">You've earned a new prop</h2>
-          <p class="sub" data-animate="2">Pick one to add to your collection.</p>
+          <p class="sub" data-animate="2">
+            Pick one to add to your collection.
+          </p>
           <div class="grid" data-animate="3">
             {#each locked as prop (prop)}
               <button class="tile" onclick={() => choose(prop)}>
                 <span class="tile-image">
                   <PropCompositionPreview propType={prop} neutral />
                 </span>
-                <span class="tile-label">{getPropTypeDisplayInfo(prop).label}</span>
+                <span class="tile-label"
+                  >{getPropTypeDisplayInfo(prop).label}</span
+                >
               </button>
             {/each}
           </div>
           {#if isGuest}
             <div class="actions" data-animate="4">
-              <button onclick={signUpToKeep}>Sign up to keep your collection</button>
+              <button onclick={signUpToKeep}
+                >Sign up to keep your collection</button
+              >
             </div>
           {/if}
         </div>
       {:else}
         <div
           class="pane"
-          in:scale={{ duration: morphMs(), start: 0.94, opacity: 0, easing: cubicOut }}
-          out:scale={{ duration: morphMs(), start: 0.96, opacity: 0, easing: cubicOut }}
+          in:popIn={{ duration: DURATION.emphasis, start: 0.94 }}
+          out:popIn={{ duration: DURATION.emphasis, start: 0.96 }}
         >
           <h2 data-animate="1">Meet your {chosenLabel}</h2>
           <div class="stage" data-animate="2">
@@ -244,34 +287,38 @@
               {#if base}
                 <div
                   class="canvas-holder"
-                  in:scale={{ duration: morphMs(), start: 0.9, opacity: 0, easing: cubicOut }}
+                  in:popIn={{ duration: DURATION.emphasis, start: 0.9 }}
                 >
                   <AnimatorCanvas
-                  leftProp={baseLayer.left}
-                  rightProp={baseLayer.right}
-                  {additionalLayers}
-                  leftPropType={chosenPropStr}
-                  rightPropType={chosenPropStr}
-                  sequenceData={base}
-                  stepData={baseLayer.step}
-                  currentStep={baseLayer.stepOneBased}
-                  isPlaying={true}
-                  {gridMode}
-                  {tipEffectMap}
-                  gridVisible={true}
-                  hideHeader={true}
-                  hideProgressBar={true}
-                  hideTkaGlyph={true}
-                  hideStepNumbers={true}
-                  fillContainer={true}
-                  fireConfig={{ disableFrameCache: true }}
-                />
+                    leftProp={baseLayer.left}
+                    rightProp={baseLayer.right}
+                    {additionalLayers}
+                    leftPropType={chosenPropStr}
+                    rightPropType={chosenPropStr}
+                    sequenceData={base}
+                    stepData={baseLayer.step}
+                    currentStep={baseLayer.stepOneBased}
+                    isPlaying={true}
+                    {gridMode}
+                    {tipEffectMap}
+                    gridVisible={true}
+                    hideHeader={true}
+                    hideProgressBar={true}
+                    hideTkaGlyph={true}
+                    hideStepNumbers={true}
+                    fillContainer={true}
+                    fireConfig={{ disableFrameCache: true }}
+                  />
                 </div>
                 <span class="remix-hint">
-                  {currentEffect === "none" ? "Tap to remix ✨" : `✨ ${currentEffect}`}
+                  {currentEffect === "none"
+                    ? "Tap to remix ✨"
+                    : `✨ ${currentEffect}`}
                 </span>
               {:else}
-                <div class="loading">{isRemixing ? "Remixing…" : "Summoning…"}</div>
+                <div class="loading">
+                  {isRemixing ? "Remixing…" : "Summoning…"}
+                </div>
               {/if}
             </div>
           </div>
@@ -329,8 +376,15 @@
     height: 100%;
     transform-origin: center;
   }
-  h2 { margin: 0; font-size: 1.3rem; }
-  .sub { margin: 0; opacity: 0.7; font-size: 0.9rem; }
+  h2 {
+    margin: 0;
+    font-size: 1.3rem;
+  }
+  .sub {
+    margin: 0;
+    opacity: 0.7;
+    font-size: 0.9rem;
+  }
   .grid {
     flex: 1 1 auto;
     min-height: 0;
@@ -354,7 +408,10 @@
     border-radius: 12px;
     color: inherit;
     cursor: pointer;
-    transition: transform 0.15s, background 0.15s, border-color 0.15s;
+    transition:
+      transform var(--duration-fast),
+      background var(--duration-fast),
+      border-color var(--duration-fast);
   }
   .tile:hover {
     transform: scale(1.05);
@@ -372,7 +429,10 @@
     width: 100%;
     height: 100%;
   }
-  .tile-label { font-size: 0.72rem; opacity: 0.85; }
+  .tile-label {
+    font-size: 0.72rem;
+    opacity: 0.85;
+  }
   .stage {
     flex: 1 1 auto;
     min-height: 0;
@@ -392,10 +452,15 @@
     background: #07070b;
     border: 1px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
-    transition: border-color 0.15s;
+    transition: border-color var(--duration-fast);
   }
-  .canvas-box:hover { border-color: rgba(150, 120, 240, 0.55); }
-  .canvas-box:focus-visible { outline: 2px solid var(--theme-accent, #b14ddb); outline-offset: 2px; }
+  .canvas-box:hover {
+    border-color: rgba(150, 120, 240, 0.55);
+  }
+  .canvas-box:focus-visible {
+    outline: 2px solid var(--theme-accent, #b14ddb);
+    outline-offset: 2px;
+  }
   .remix-hint {
     position: absolute;
     bottom: 8px;
@@ -408,14 +473,26 @@
     font-size: 0.68rem;
     letter-spacing: 0.02em;
     opacity: 0;
-    transition: opacity 0.18s;
+    transition: opacity var(--duration-fast);
     pointer-events: none;
     text-transform: capitalize;
   }
   .canvas-box:hover .remix-hint,
-  .canvas-box:focus-visible .remix-hint { opacity: 0.9; }
-  .loading { width: 100%; height: 100%; display: grid; place-items: center; opacity: 0.5; }
-  .actions { display: flex; gap: 10px; justify-content: center; }
+  .canvas-box:focus-visible .remix-hint {
+    opacity: 0.9;
+  }
+  .loading {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    opacity: 0.5;
+  }
+  .actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
   .actions button {
     display: inline-flex;
     align-items: center;
@@ -428,14 +505,19 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
     background: rgba(255, 255, 255, 0.06);
     color: inherit;
-    transition: transform 0.14s ease, background 0.14s ease,
-      border-color 0.14s ease, box-shadow 0.14s ease;
+    transition:
+      transform var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
   .actions button:hover {
     transform: translateY(-1px);
     background: rgba(255, 255, 255, 0.12);
   }
-  .actions button:active { transform: translateY(0) scale(0.97); }
+  .actions button:active {
+    transform: translateY(0) scale(0.97);
+  }
   .actions button:focus-visible {
     outline: 2px solid var(--theme-accent, #b14ddb);
     outline-offset: 2px;
@@ -449,22 +531,38 @@
     border-color: rgba(170, 140, 250, 0.75);
     box-shadow: 0 4px 18px rgba(150, 120, 240, 0.34);
   }
-  .actions .remix .dice { transition: transform 0.3s ease; }
-  .actions .remix:hover .dice { transform: rotate(-18deg) scale(1.18); }
+  .actions .remix .dice {
+    transition: transform var(--duration-emphasis) var(--ease-standard);
+  }
+  .actions .remix:hover .dice {
+    transform: rotate(-18deg) scale(1.18);
+  }
   .actions .confirm {
     background: linear-gradient(135deg, #6d5ef0, #b14ddb);
     border-color: transparent;
     color: #fff;
   }
-  .actions .confirm:hover { box-shadow: 0 6px 22px rgba(150, 80, 219, 0.45); }
-  @media (prefers-reduced-motion: reduce) {
-    .actions button,
-    .actions .remix .dice { transition: none; }
-    .actions button:hover { transform: none; }
-    .actions .remix:hover .dice { transform: none; }
+  .actions .confirm:hover {
+    box-shadow: 0 6px 22px rgba(150, 80, 219, 0.45);
   }
   @media (prefers-reduced-motion: reduce) {
-    .tile { transition: none; }
-    .tile:hover { transform: none; }
+    .actions button,
+    .actions .remix .dice {
+      transition: none;
+    }
+    .actions button:hover {
+      transform: none;
+    }
+    .actions .remix:hover .dice {
+      transform: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tile {
+      transition: none;
+    }
+    .tile:hover {
+      transform: none;
+    }
   }
 </style>

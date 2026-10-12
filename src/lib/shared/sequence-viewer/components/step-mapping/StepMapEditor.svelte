@@ -337,7 +337,9 @@
       return;
     }
     void videoEl.play().catch(() => {
-      saveError = t("viewer_detail_playback_could_not_start_try_the_play_button_again");
+      saveError = t(
+        "viewer_detail_playback_could_not_start_try_the_play_button_again"
+      );
     });
   }
 
@@ -397,7 +399,9 @@
     seekTo(0);
     if (videoEl) {
       void videoEl.play().catch(() => {
-        saveError = t("viewer_detail_playback_could_not_start_try_the_play_button_again");
+        saveError = t(
+          "viewer_detail_playback_could_not_start_try_the_play_button_again"
+        );
       });
     }
   }
@@ -611,7 +615,9 @@
       if (draftKey) clearStepMapDraft(draftKey);
     } catch (cause) {
       saveError =
-        cause instanceof Error ? cause.message : t("viewer_detail_failed_to_save_the_timing");
+        cause instanceof Error
+          ? cause.message
+          : t("viewer_detail_failed_to_save_the_timing");
     } finally {
       isSaving = false;
     }
@@ -669,8 +675,12 @@
           type="button"
           class="stage-play"
           onclick={togglePlayPause}
-          aria-label={isPlaying ? t("viewer_detail_pause") : t("viewer_detail_play")}
-          title={isPlaying ? t("viewer_detail_pause_space") : t("viewer_detail_play_space")}
+          aria-label={isPlaying
+            ? t("viewer_detail_pause")
+            : t("viewer_detail_play")}
+          title={isPlaying
+            ? t("viewer_detail_pause_space")
+            : t("viewer_detail_play_space")}
         >
           <i class="fas {isPlaying ? 'fa-pause' : 'fa-play'}" aria-hidden="true"
           ></i>
@@ -717,9 +727,21 @@
           <span class="rate-control">
             <SegmentedControl
               options={[
-                { value: 0.25, label: "0.25x", ariaLabel: t("viewer_detail_quarter_speed") },
-                { value: 0.5, label: "0.5x", ariaLabel: t("viewer_detail_half_speed") },
-                { value: 1, label: "1x", ariaLabel: t("viewer_detail_full_speed") },
+                {
+                  value: 0.25,
+                  label: "0.25x",
+                  ariaLabel: t("viewer_detail_quarter_speed"),
+                },
+                {
+                  value: 0.5,
+                  label: "0.5x",
+                  ariaLabel: t("viewer_detail_half_speed"),
+                },
+                {
+                  value: 1,
+                  label: "1x",
+                  ariaLabel: t("viewer_detail_full_speed"),
+                },
               ]}
               value={rate}
               onchange={applyRate}
@@ -758,7 +780,10 @@
               {#if pendingIndex === 0}
                 {t("viewer_timing_mark_count", { count: 1, total: totalMarks })}
               {:else}
-                {t("viewer_timing_move_count", { count: moveNumberFor(pendingIndex), total: moveCount })}
+                {t("viewer_timing_move_count", {
+                  count: moveNumberFor(pendingIndex),
+                  total: moveCount,
+                })}
                 {#if passes > 1}
                   · {t("viewer_timing_pass", { count: passFor(pendingIndex) })}
                 {/if}
@@ -780,7 +805,9 @@
               {#if supersededCount > 0}
                 {t("viewer_timing_replace_marks", { count: supersededCount })}
               {:else}
-                <span class="kbd-hint">{t("viewer_detail_t_marks_it_space_plays")}</span>
+                <span class="kbd-hint"
+                  >{t("viewer_detail_t_marks_it_space_plays")}</span
+                >
               {/if}
             </span>
           </span>
@@ -837,8 +864,13 @@
               {selectedMark === 0
                 ? t("viewer_detail_opening_pose")
                 : passes > 1
-                  ? t("viewer_timing_move_pass", { move: moveNumberFor(selectedMark), pass: passFor(selectedMark) })
-                  : t("viewer_timing_move", { count: moveNumberFor(selectedMark) })}
+                  ? t("viewer_timing_move_pass", {
+                      move: moveNumberFor(selectedMark),
+                      pass: passFor(selectedMark),
+                    })
+                  : t("viewer_timing_move", {
+                      count: moveNumberFor(selectedMark),
+                    })}
               {#if letterFor(selectedMark)}
                 <span class="selected-letter">
                   <TKAWordGlyph
@@ -850,7 +882,9 @@
               {/if}
             </span>
             <span class="selected-time">
-              {t("viewer_timing_lands_at", { time: formatTime(marks[selectedMark] ?? 0) })}
+              {t("viewer_timing_lands_at", {
+                time: formatTime(marks[selectedMark] ?? 0),
+              })}
             </span>
           </span>
           <span class="nudge">
@@ -886,7 +920,10 @@
           </button>
           {@render mirrorToggle()}
           <span class="review-progress" class:complete>
-            {t("viewer_timing_marked_count", { count: marks.length, total: totalMarks })}
+            {t("viewer_timing_marked_count", {
+              count: marks.length,
+              total: totalMarks,
+            })}
             {#if passes > 1}
               · {passes} {t("viewer_detail_passes")}
             {/if}
@@ -1085,8 +1122,8 @@
     text-align: start;
     cursor: pointer;
     transition:
-      background 120ms ease,
-      transform 120ms ease;
+      background var(--duration-instant) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard);
   }
 
   .tap-target:hover:not(:disabled) {

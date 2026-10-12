@@ -658,7 +658,7 @@
     border: 0;
     background: transparent;
     cursor: pointer;
-    transition: background-color var(--duration-fast, 0.12s) ease;
+    transition: background-color var(--duration-fast) var(--ease-standard);
   }
   .add-col:hover {
     background: var(--print-accent-bg);

@@ -23,11 +23,19 @@
   );
 
   const moverClass = $derived(
-    entry.rankChange > 0 ? "mover-up" : entry.rankChange < 0 ? "mover-down" : "mover-flat"
+    entry.rankChange > 0
+      ? "mover-up"
+      : entry.rankChange < 0
+        ? "mover-down"
+        : "mover-flat"
   );
 
   const moverIcon = $derived(
-    entry.rankChange > 0 ? "fa-caret-up" : entry.rankChange < 0 ? "fa-caret-down" : ""
+    entry.rankChange > 0
+      ? "fa-caret-up"
+      : entry.rankChange < 0
+        ? "fa-caret-down"
+        : ""
   );
 </script>
 
@@ -35,7 +43,11 @@
   class="leaderboard-row"
   onclick={onselect}
   type="button"
-  aria-label={t('arena_leaderboard_rank_detail', { rank: entry.rank, word: entry.entry.word, rating: Math.round(entry.rating.displayRating) })}
+  aria-label={t("arena_leaderboard_rank_detail", {
+    rank: entry.rank,
+    word: entry.entry.word,
+    rating: Math.round(entry.rating.displayRating),
+  })}
 >
   <span class="rank">{entry.rank}</span>
 
@@ -49,7 +61,9 @@
   <div class="entry-info">
     <span class="word">{entry.entry.word}</span>
     {#if entry.entry.ownerDisplayName}
-      <span class="author">{t('arena_by_creator', { name: entry.entry.ownerDisplayName })}</span>
+      <span class="author"
+        >{t("arena_by_creator", { name: entry.entry.ownerDisplayName })}</span
+      >
     {/if}
   </div>
 
@@ -74,7 +88,7 @@
     cursor: pointer;
     width: 100%;
     text-align: left;
-    transition: background 0.15s ease;
+    transition: background var(--duration-fast) var(--ease-standard);
     min-height: var(--min-touch-target);
   }
 

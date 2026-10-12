@@ -90,7 +90,7 @@ ModeQuizSection - Identify diamond vs box grid
     flex-direction: column;
     align-items: center;
     gap: 1.25rem;
-    animation: fadeIn var(--duration-emphasis) ease;
+    animation: fadeIn var(--duration-emphasis) var(--ease-standard);
   }
 
   @keyframes fadeIn {
@@ -151,7 +151,11 @@ ModeQuizSection - Identify diamond vs box grid
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     position: relative;
   }
 
@@ -171,9 +175,17 @@ ModeQuizSection - Identify diamond vs box grid
   }
 
   .answer-btn.correct {
-    background: color-mix(in srgb, var(--semantic-success, #50c878) 20%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-success, #50c878) 60%, transparent);
-    animation: correctPulse 0.5s ease;
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #50c878) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #50c878) 60%,
+      transparent
+    );
+    animation: correctPulse var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes correctPulse {
@@ -189,9 +201,17 @@ ModeQuizSection - Identify diamond vs box grid
   }
 
   .answer-btn.incorrect {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 60%, transparent);
-    animation: shake var(--duration-dramatic) ease;
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 60%,
+      transparent
+    );
+    animation: shake var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes shake {
@@ -208,8 +228,16 @@ ModeQuizSection - Identify diamond vs box grid
   }
 
   .answer-btn.reveal-correct {
-    background: color-mix(in srgb, var(--semantic-success, #50c878) 15%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-success, #50c878) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #50c878) 15%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #50c878) 40%,
+      transparent
+    );
   }
 
   .result-icon {
@@ -233,7 +261,7 @@ ModeQuizSection - Identify diamond vs box grid
     border-radius: 10px;
     font-size: 0.9375rem;
     text-align: center;
-    animation: slideUp var(--duration-emphasis) ease;
+    animation: slideUp var(--duration-emphasis) var(--ease-standard);
   }
 
   @keyframes slideUp {
@@ -248,14 +276,24 @@ ModeQuizSection - Identify diamond vs box grid
   }
 
   .feedback.correct {
-    background: color-mix(in srgb, var(--semantic-success, #50c878) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-success, #50c878) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #50c878) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-success, #50c878) 30%, transparent);
     color: var(--semantic-success, #50c878);
   }
 
   .feedback.incorrect {
-    background: color-mix(in srgb, var(--semantic-warning, #f59e0b) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-warning, #f59e0b) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 30%, transparent);
     color: var(--semantic-warning, #f59e0b);
   }
 

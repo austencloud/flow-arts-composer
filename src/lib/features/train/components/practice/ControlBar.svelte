@@ -52,13 +52,13 @@
   const modeLabel = $derived(() => {
     switch (practiceMode) {
       case PracticeMode.ADAPTIVE:
-        return t('train_mode_adaptive');
+        return t("train_mode_adaptive");
       case PracticeMode.STEP_BY_STEP:
-        return t('train_mode_step');
+        return t("train_mode_step");
       case PracticeMode.TIMED:
-        return t('train_mode_timed');
+        return t("train_mode_timed");
       default:
-        return t('train_mode_label');
+        return t("train_mode_label");
     }
   });
 
@@ -98,10 +98,10 @@
       {:else}
         <i class="fas fa-play" aria-hidden="true"></i>
       {/if}
-      <span class="btn-label">{t('train_play')}</span>
+      <span class="btn-label">{t("train_play")}</span>
     {:else if mode === TrainMode.PERFORMING}
       <i class="fas fa-stop" aria-hidden="true"></i>
-      <span class="btn-label">{t('train_stop')}</span>
+      <span class="btn-label">{t("train_stop")}</span>
     {/if}
   </button>
 
@@ -126,7 +126,7 @@
       class="fas {hasSequence ? 'fa-exchange-alt' : 'fa-folder-open'}"
       aria-hidden="true"
     ></i>
-    <span class="btn-label">{t('train_seq')}</span>
+    <span class="btn-label">{t("train_seq")}</span>
   </button>
 
   <!-- Settings Button (Orange/Amber) -->
@@ -136,7 +136,7 @@
     aria-label="Mode settings"
   >
     <i class="fas fa-cog" aria-hidden="true"></i>
-    <span class="btn-label">{t('train_settings_short')}</span>
+    <span class="btn-label">{t("train_settings_short")}</span>
   </button>
 </div>
 
@@ -171,14 +171,10 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     transition:
-      background var(--duration-fast)
-        var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1)),
-      border-color var(--duration-fast)
-        var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1)),
-      transform var(--duration-instant)
-        var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1)),
-      color var(--duration-fast)
-        var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1));
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-instant) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
   }
 
   .control-btn:hover:not(:disabled) {
@@ -204,7 +200,6 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
-
 
   /* Primary button (Play/Stop) - Green */
   .primary-btn {

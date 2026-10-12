@@ -75,8 +75,8 @@
     text-decoration: none;
     color: inherit;
     transition:
-      border-color 0.15s,
-      box-shadow 0.15s;
+      border-color var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
   .topic-list a:hover {
     border-color: #4ea7e8;

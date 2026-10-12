@@ -402,11 +402,13 @@ correct letter" for free).
   }
 
   .quiz-content.flash-correct {
-    animation: flash-correct-pulse 300ms ease-out;
+    animation: flash-correct-pulse var(--duration-emphasis)
+      var(--ease-standard-out);
   }
 
   .quiz-content.flash-wrong {
-    animation: flash-wrong-pulse 300ms ease-out;
+    animation: flash-wrong-pulse var(--duration-emphasis)
+      var(--ease-standard-out);
   }
 
   .answer-section {

@@ -227,7 +227,10 @@
     font-weight: 700;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .apply-button:hover:not(:disabled) {

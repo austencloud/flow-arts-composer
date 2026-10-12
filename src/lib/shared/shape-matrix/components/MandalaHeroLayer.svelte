@@ -81,7 +81,8 @@
     place-items: center;
     container-type: size;
     pointer-events: none;
-    transition: opacity var(--mandala-duration) var(--transition-easing, ease);
+    transition: opacity var(--mandala-duration)
+      var(--transition-easing, var(--ease-standard));
   }
   /* The snapshot for a shared-element transition is taken the frame the
      floor is asked to show; a fade-in would capture a half-transparent tile. */

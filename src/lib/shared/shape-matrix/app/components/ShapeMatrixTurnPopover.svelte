@@ -232,8 +232,10 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     transition:
-      border-color var(--duration-fast, 150ms) var(--transition-easing, ease),
-      background var(--duration-fast, 150ms) var(--transition-easing, ease);
+      border-color var(--duration-fast)
+        var(--transition-easing, var(--ease-standard)),
+      background var(--duration-fast)
+        var(--transition-easing, var(--ease-standard));
   }
 
   .turn-trigger:hover {
@@ -369,9 +371,9 @@
     cursor: pointer;
     font: inherit;
     transition:
-      color var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease;
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .popover-close:hover {

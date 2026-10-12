@@ -66,7 +66,9 @@ Reset triggers a crack/fade animation.
   </div>
 
   {#if bestStreak > 0}
-    <span class="best-streak">{tDynamic("learn_placement_best", { streak: bestStreak })}</span>
+    <span class="best-streak"
+      >{tDynamic("learn_placement_best", { streak: bestStreak })}</span
+    >
   {/if}
 
   <!-- CSS pseudo-element particles are handled via the tier-bounce class -->
@@ -99,7 +101,9 @@ Reset triggers a crack/fade animation.
     font-weight: 700;
     color: var(--theme-text, #ffffff);
     line-height: 1;
-    transition: transform 0.2s ease, color 0.2s ease;
+    transition:
+      transform var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .best-streak {
@@ -111,14 +115,16 @@ Reset triggers a crack/fade animation.
   /* Tier: Glow (streak 1-2) */
   .tier-glow .streak-number {
     color: var(--theme-accent, #60a5fa);
-    text-shadow: 0 0 8px color-mix(in srgb, var(--theme-accent, #60a5fa) 40%, transparent);
+    text-shadow: 0 0 8px
+      color-mix(in srgb, var(--theme-accent, #60a5fa) 40%, transparent);
   }
 
   /* Tier: Bounce (streak 3-4) */
   .tier-bounce .streak-number {
     color: var(--semantic-warning, #f59e0b);
-    animation: streak-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    text-shadow: 0 0 12px color-mix(in srgb, var(--semantic-warning, #f59e0b) 50%, transparent);
+    animation: streak-bounce var(--duration-dramatic) var(--ease-spring);
+    text-shadow: 0 0 12px
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 50%, transparent);
   }
 
   /* Particle effect via pseudo-element */
@@ -136,7 +142,8 @@ Reset triggers a crack/fade animation.
       8px -6px 0 var(--semantic-warning, #f59e0b),
       -4px -10px 0 var(--semantic-warning, #f59e0b),
       6px -2px 0 var(--semantic-warning, #f59e0b);
-    animation: particles-burst 0.5s ease-out forwards;
+    animation: particles-burst var(--duration-dramatic) var(--ease-standard-out)
+      forwards;
     pointer-events: none;
   }
 
@@ -144,12 +151,13 @@ Reset triggers a crack/fade animation.
   .tier-pulse .streak-number {
     color: var(--semantic-success, #22c55e);
     animation: streak-pulse 1s ease-in-out infinite;
-    text-shadow: 0 0 16px color-mix(in srgb, var(--semantic-success, #22c55e) 60%, transparent);
+    text-shadow: 0 0 16px
+      color-mix(in srgb, var(--semantic-success, #22c55e) 60%, transparent);
   }
 
   /* Reset: crack/fade */
   .just-reset .streak-number {
-    animation: streak-crack 0.5s ease-out;
+    animation: streak-crack var(--duration-dramatic) var(--ease-standard-out);
     color: var(--semantic-error, #ef4444);
   }
 

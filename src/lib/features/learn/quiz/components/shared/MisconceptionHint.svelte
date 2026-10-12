@@ -88,11 +88,10 @@ Tappable: navigates to TIKA with the misconception pre-loaded.
     max-width: 340px;
     z-index: 149;
     cursor: pointer;
-    animation: hintSlideIn var(--duration-emphasis, 300ms)
-      cubic-bezier(0.16, 1, 0.3, 1);
-    animation-delay: 200ms;
+    animation: hintSlideIn var(--duration-emphasis) var(--ease-out);
+    animation-delay: var(--duration-normal);
     animation-fill-mode: backwards;
-    transition: filter var(--duration-fast, 150ms) ease;
+    transition: filter var(--duration-fast) var(--ease-standard);
   }
 
   .misconception-hint:hover {

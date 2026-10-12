@@ -41,7 +41,9 @@
     body ??
       (word
         ? `"${word}" will be permanently removed from your library.`
-        : t("viewer_detail_this_sequence_will_be_permanently_removed_from_your_library"))
+        : t(
+            "viewer_detail_this_sequence_will_be_permanently_removed_from_your_library"
+          ))
   );
 
   function handleKeydown(e: KeyboardEvent) {
@@ -143,7 +145,9 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: background 150ms ease, border-color 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .delete-cancel-btn:disabled,

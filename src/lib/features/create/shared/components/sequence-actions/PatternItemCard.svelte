@@ -70,7 +70,14 @@
       <span class="pattern-desc">{description}</span>
     {/if}
     {#if stepCount !== undefined}
-      <span class="pattern-steps">{t(stepCount === 1 ? "create_deep_step_count_one" : "create_deep_step_count_many", { count: stepCount })}</span>
+      <span class="pattern-steps"
+        >{t(
+          stepCount === 1
+            ? "create_deep_step_count_one"
+            : "create_deep_step_count_many",
+          { count: stepCount }
+        )}</span
+      >
     {/if}
   </div>
   {#if actions}
@@ -91,7 +98,12 @@
     border-radius: 8px;
     border: 1px solid var(--theme-stroke);
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
     user-select: none;
   }
 

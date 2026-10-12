@@ -70,8 +70,7 @@ Features:
     background: color-mix(in srgb, var(--semantic-error) 90%, transparent);
     border-radius: 12px;
     text-align: center;
-    animation: bannerFadeIn var(--duration-emphasis)
-      cubic-bezier(0.16, 1, 0.3, 1);
+    animation: bannerFadeIn var(--duration-emphasis) var(--ease-out);
     white-space: nowrap;
     z-index: var(--z-sidebar);
   }

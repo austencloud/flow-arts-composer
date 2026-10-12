@@ -6,7 +6,8 @@
 -->
 <script lang="ts">
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
-  import { fade, fly } from "svelte/transition";
+  import { flyFade, opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION, STAGGER } from "#lib/shared/transitions/transitions.js";
   import {
     getTrainPracticeState,
     type RecentSequence,
@@ -59,11 +60,11 @@
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (minutes < 1) return t('train_time_just_now');
-    if (minutes < 60) return t('train_time_minutes_ago', { count: minutes });
-    if (hours < 24) return t('train_time_hours_ago', { count: hours });
-    if (days === 1) return t('train_time_yesterday');
-    if (days < 7) return t('train_time_days_ago', { count: days });
+    if (minutes < 1) return t("train_time_just_now");
+    if (minutes < 60) return t("train_time_minutes_ago", { count: minutes });
+    if (hours < 24) return t("train_time_hours_ago", { count: hours });
+    if (days === 1) return t("train_time_yesterday");
+    if (days < 7) return t("train_time_days_ago", { count: days });
 
     return new Date(timestamp).toLocaleDateString("en-US", {
       month: "short",
@@ -72,7 +73,7 @@
   }
 </script>
 
-<div class="prompt-container" in:fade={{ duration: 200 }}>
+<div class="prompt-container" in:opaqueFade={{ duration: DURATION.normal }}>
   <div class="prompt-card">
     <!-- Icon -->
     <div class="prompt-icon">
@@ -80,28 +81,41 @@
     </div>
 
     <!-- Title -->
-    <h2 class="prompt-title">{t('train_select_sequence')}</h2>
+    <h2 class="prompt-title">{t("train_select_sequence")}</h2>
     <p class="prompt-subtitle">
-      {t('train_select_sequence_subtitle')}
+      {t("train_select_sequence_subtitle")}
     </p>
 
     <!-- Recent Sequences (if any) -->
     {#if recentSequences.length > 0}
-      <div class="recent-section" in:fly={{ y: 10, duration: 200, delay: 100 }}>
+      <div
+        class="recent-section"
+        in:flyFade={{
+          y: 10,
+          duration: DURATION.normal,
+          delay: DURATION.instant,
+        }}
+      >
         <div class="recent-header">
           <i class="fas fa-history" aria-hidden="true"></i>
-          <span>{t('train_recent')}</span>
+          <span>{t("train_recent")}</span>
         </div>
         <div class="recent-grid">
           {#each recentSequences as recent, index (recent.id)}
             <button
               class="recent-card"
               onclick={() => handleRecentSelect(recent)}
-              in:fly={{ y: 10, duration: 200, delay: 150 + index * 50 }}
+              in:flyFade={{
+                y: 10,
+                duration: DURATION.normal,
+                delay: DURATION.fast + index * STAGGER.normal,
+              }}
             >
               <div class="recent-name">{recent.word ?? recent.name}</div>
               <div class="recent-meta">
-                <span class="step-count">{t('train_step_count', { count: recent.stepCount })}</span>
+                <span class="step-count"
+                  >{t("train_step_count", { count: recent.stepCount })}</span
+                >
                 <span class="time-ago"
                   >{formatTimeAgo(recent.lastPracticedAt)}</span
                 >
@@ -116,14 +130,15 @@
     <button
       class="browse-button"
       onclick={handleBrowseClick}
-      in:fly={{
+      in:flyFade={{
         y: 10,
-        duration: 200,
-        delay: recentSequences.length > 0 ? 300 : 100,
+        duration: DURATION.normal,
+        delay:
+          recentSequences.length > 0 ? DURATION.emphasis : DURATION.instant,
       }}
     >
       <i class="fas fa-folder-open" aria-hidden="true"></i>
-      <span>{t('train_browse_all')}</span>
+      <span>{t("train_browse_all")}</span>
     </button>
   </div>
 
@@ -244,7 +259,10 @@
     border: 1px solid var(--theme-stroke, var(--theme-stroke));
     border-radius: clamp(0.5rem, 2vw, 0.75rem);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     text-align: left;
   }
 
@@ -274,7 +292,7 @@
 
   .recent-card:active {
     transform: scale(0.98);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   .recent-name {
@@ -330,7 +348,9 @@
     font-size: clamp(0.9rem, 3vw, 1rem);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .browse-button:hover {
@@ -345,7 +365,7 @@
 
   .browse-button:active {
     transform: translateY(0);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   .browse-button i {

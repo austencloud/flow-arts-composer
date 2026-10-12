@@ -43,7 +43,11 @@
     shortLabel: string;
   }[] = $derived([
     { hand: "left", label: handLabel("left"), shortLabel: handLabel("left") },
-    { hand: "right", label: handLabel("right"), shortLabel: handLabel("right") },
+    {
+      hand: "right",
+      label: handLabel("right"),
+      shortLabel: handLabel("right"),
+    },
   ]);
 
   interface Props {
@@ -53,10 +57,7 @@
     // Single-select: the displayed regular step (null when none / start placement)
     stepData: StepData | null;
     onTurnsChange: (color: HandSide, delta: number) => void;
-    onRotationChange: (
-      color: HandSide,
-      direction: RotationDirection
-    ) => void;
+    onRotationChange: (color: HandSide, direction: RotationDirection) => void;
     onOpenPropSheet?: (hand: "left" | "right") => void;
     onPathShapeChange?: (color: HandSide, shape: PathShapeValue) => void;
     onPathShapeClear?: (color: HandSide) => void;
@@ -275,7 +276,11 @@
         : undefined}
     >
       {#snippet trailingControl()}
-        <PropTypeRow hand={color === HandSide.LEFT ? "left" : "right"} {compact} {onOpenPropSheet} />
+        <PropTypeRow
+          hand={color === HandSide.LEFT ? "left" : "right"}
+          {compact}
+          {onOpenPropSheet}
+        />
       {/snippet}
     </PropTurnsControl>
   </div>
@@ -304,7 +309,10 @@
             class="value-chip"
             class:active={isActiveOption(agg, opt)}
             type="button"
-            aria-label={t("create_controls_set_turns", { hand: handLabel(color), turns: fmt(opt) })}
+            aria-label={t("create_controls_set_turns", {
+              hand: handLabel(color),
+              turns: fmt(opt),
+            })}
             onclick={() => onBatchTurnsChange(color, "set", opt)}
           >
             {fmt(opt)}
@@ -317,7 +325,9 @@
         <button
           class="ctrl-btn"
           type="button"
-          aria-label={t("create_controls_less_turns", { hand: handLabel(color) })}
+          aria-label={t("create_controls_less_turns", {
+            hand: handLabel(color),
+          })}
           onclick={() => onBatchTurnsChange(color, "adjust", -0.5)}
         >
           <i class="fas fa-minus" aria-hidden="true"></i>
@@ -328,7 +338,9 @@
         <button
           class="ctrl-btn"
           type="button"
-          aria-label={t("create_controls_more_turns", { hand: handLabel(color) })}
+          aria-label={t("create_controls_more_turns", {
+            hand: handLabel(color),
+          })}
           onclick={() => onBatchTurnsChange(color, "adjust", 0.5)}
         >
           <i class="fas fa-plus" aria-hidden="true"></i>
@@ -388,7 +400,11 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .value-chip:hover {
@@ -426,7 +442,10 @@
     color: rgba(255, 255, 255, 0.95);
     font-size: 1.1rem;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .ctrl-btn:hover {

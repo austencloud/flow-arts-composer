@@ -76,7 +76,10 @@
     font-weight: 700;
     color: white;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     overflow: hidden;
   }
 
@@ -118,7 +121,7 @@
   .progress-fill {
     height: 100%;
     background: color-mix(in srgb, #fff 80%, transparent);
-    transition: width var(--duration-emphasis) ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
 
   /* Pulse animation */

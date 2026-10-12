@@ -351,8 +351,10 @@
     border-radius: 9px;
     background: color-mix(in srgb, #000 34%, transparent);
     transition:
-      border-color var(--duration-fast, 150ms) var(--transition-easing, ease),
-      background var(--duration-fast, 150ms) var(--transition-easing, ease);
+      border-color var(--duration-fast)
+        var(--transition-easing, var(--ease-standard)),
+      background var(--duration-fast)
+        var(--transition-easing, var(--ease-standard));
   }
 
   .part-stepper:hover {
@@ -408,8 +410,8 @@
     cursor: pointer;
     font-size: calc(var(--value-size) * 0.7);
     transition:
-      color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease;
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   /* The glyph is narrower than the icon box; sizing the box to the glyph

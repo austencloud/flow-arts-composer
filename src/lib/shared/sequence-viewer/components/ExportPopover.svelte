@@ -6,7 +6,7 @@
     type VideoResolution,
     type VideoQuality,
   } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
-  import { slide } from "svelte/transition";
+  import { growFade } from "#lib/shared/transitions/motion.js";
   import {
     reportViewerControlChange,
     type ViewerControlSink,
@@ -153,7 +153,7 @@
   </button>
 
   {#if advancedOpen}
-    <div class="advanced" transition:slide={{ duration: 180 }}>
+    <div class="advanced" transition:growFade>
       <div class="row">
         <div class="row-label">{t("viewer_detail_loop_count")}</div>
         <div class="stepper">
@@ -216,7 +216,10 @@
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 140ms cubic-bezier(0.2, 0, 0.13, 1.5);
+    transition:
+      background var(--duration-fast) var(--ease-spring),
+      border-color var(--duration-fast) var(--ease-spring),
+      color var(--duration-fast) var(--ease-spring);
   }
   .chip:hover {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));

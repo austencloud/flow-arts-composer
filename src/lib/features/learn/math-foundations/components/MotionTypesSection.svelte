@@ -19,7 +19,8 @@
     <div class="subsection">
       <h3>Movement Intensity: Another Triad</h3>
       <p class="subsection-intro">
-        Just as placements split into Alpha/Beta/Gamma, movement intensity splits into three types:
+        Just as placements split into Alpha/Beta/Gamma, movement intensity
+        splits into three types:
       </p>
 
       <div class="triad-grid">
@@ -34,7 +35,11 @@
             <div class="intensity-bar">
               <div
                 class="intensity-fill"
-                style="width: {item.intensity === 'Minimal' ? '15%' : item.intensity === 'Maximum' ? '100%' : '50%'}"
+                style="width: {item.intensity === 'Minimal'
+                  ? '15%'
+                  : item.intensity === 'Maximum'
+                    ? '100%'
+                    : '50%'}"
               ></div>
               <span class="intensity-label">{item.intensity}</span>
             </div>
@@ -74,7 +79,8 @@
     <div class="subsection">
       <h3>Orientation Behavior: Hidden Pairs</h3>
       <p class="subsection-intro">
-        Motion types secretly pair up based on how they affect orientation with zero turns:
+        Motion types secretly pair up based on how they affect orientation with
+        zero turns:
       </p>
 
       <div class="orientation-grid">
@@ -119,7 +125,8 @@
           </div>
         </div>
         <p class="orientation-note">
-          When orientation "swaps," it toggles within its pair: IN↔OUT or CLOCK↔COUNTER
+          When orientation "swaps," it toggles within its pair: IN↔OUT or
+          CLOCK↔COUNTER
         </p>
       </div>
     </div>
@@ -128,10 +135,12 @@
     <div class="base-four-insight">
       <h3>The Base-4 Structure</h3>
       <p>
-        Notice the pattern: <strong>4</strong> orientations, <strong>4</strong> primary motion types,
-        placements that combine as <strong>8 + 8 = 16</strong> (multiples of 4).
-        TKA operates in something akin to <strong>base-4</strong>, where the fundamental unit
-        is the quartet rather than the decimal ten.
+        Notice the pattern: <strong>4</strong> orientations, <strong>4</strong>
+        primary motion types, placements that combine as
+        <strong>8 + 8 = 16</strong>
+        (multiples of 4). TKA operates in something akin to
+        <strong>base-4</strong>, where the fundamental unit is the quartet
+        rather than the decimal ten.
       </p>
     </div>
   </div>
@@ -208,7 +217,9 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 16px;
     padding: 20px;
-    transition: all var(--duration-normal) ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .motion-card:hover {
@@ -263,7 +274,7 @@
     height: 100%;
     background: var(--card-accent);
     border-radius: 4px;
-    transition: width var(--duration-emphasis) ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
 
   .intensity-label {
@@ -379,7 +390,7 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 16px;
     padding: 24px;
-    transition: all var(--duration-normal) ease;
+    transition: border-color var(--duration-normal) var(--ease-standard);
   }
 
   .pairing-card:hover {

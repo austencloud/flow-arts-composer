@@ -2,6 +2,7 @@
   // The content wrapper rests at full opacity, so it fades without Svelte
   // fade's computed-style read (one forced style pass per pictograph swap).
   import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 </script>
 
 <!--
@@ -828,8 +829,8 @@ with pre-prepared data for better performance.
       {#key contentKey}
         <div
           class="transition-wrapper"
-          in:opaqueFade={{ duration: 200 }}
-          out:opaqueFade={{ duration: 150 }}
+          in:opaqueFade={{ duration: DURATION.normal }}
+          out:opaqueFade={{ duration: DURATION.fast }}
         >
           <PictographRenderer
             pictograph={preparedData}

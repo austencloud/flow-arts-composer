@@ -47,7 +47,12 @@
   color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
   font-family: inherit;
-  transition: all 180ms cubic-bezier(0.2, 0, 0.13, 1.5);
+  transition:
+    border-color var(--duration-fast) var(--ease-spring),
+    background var(--duration-fast) var(--ease-spring),
+    color var(--duration-fast) var(--ease-spring),
+    outline var(--duration-fast) var(--ease-spring),
+    box-shadow var(--duration-fast) var(--ease-spring);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -68,10 +73,19 @@
 }
 
 .pill[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--pill-accent, #4a9eff) 22%, rgba(20, 22, 32, 0.85));
-  border-color: color-mix(in srgb, var(--pill-accent, #4a9eff) 60%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--pill-accent, #4a9eff) 22%,
+    rgba(20, 22, 32, 0.85)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--pill-accent, #4a9eff) 60%,
+    transparent
+  );
   color: white;
-  box-shadow: 0 4px 20px color-mix(in srgb, var(--pill-accent, #4a9eff) 30%, transparent);
+  box-shadow: 0 4px 20px
+    color-mix(in srgb, var(--pill-accent, #4a9eff) 30%, transparent);
 }
 
 .pill-icon-row {

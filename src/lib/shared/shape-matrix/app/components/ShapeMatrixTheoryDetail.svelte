@@ -760,7 +760,7 @@
   }
 
   .boundary-toggle-icon {
-    transition: transform var(--duration-fast, 150ms) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .boundary-toggle-icon.open {
@@ -815,7 +815,7 @@
     gap: 0.5rem;
     pointer-events: none;
     opacity: 0;
-    transition: opacity var(--duration-fast, 0.15s) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .stage-hint-disc {

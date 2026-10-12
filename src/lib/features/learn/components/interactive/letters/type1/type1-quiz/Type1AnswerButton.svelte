@@ -63,7 +63,11 @@ Type1AnswerButton - Single answer option for motion pattern
     border-radius: 12px;
     color: white;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     position: relative;
     text-align: left;
     width: 100%;
@@ -106,7 +110,7 @@ Type1AnswerButton - Single answer option for motion pattern
   .answer-btn.correct {
     background: color-mix(in srgb, var(--pattern-color) 20%, transparent);
     border-color: var(--pattern-color);
-    animation: correctPulse 0.5s ease;
+    animation: correctPulse var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes correctPulse {
@@ -122,9 +126,17 @@ Type1AnswerButton - Single answer option for motion pattern
   }
 
   .answer-btn.incorrect {
-    background: color-mix(in srgb, var(--semantic-error, #ff4a4a) 20%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-error, #ff4a4a) 60%, transparent);
-    animation: shake var(--duration-dramatic) ease;
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ff4a4a) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ff4a4a) 60%,
+      transparent
+    );
+    animation: shake var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes shake {

@@ -121,7 +121,10 @@
     <button
       class="invert-btn"
       class:compact
-      aria-label={t("create_controls_toggle_rotation", { hand: handLabel(hand), direction: directionLabel })}
+      aria-label={t("create_controls_toggle_rotation", {
+        hand: handLabel(hand),
+        direction: directionLabel,
+      })}
       onclick={handleInvert}
     >
       <i class="fas {directionIcon}" aria-hidden="true"></i>
@@ -138,7 +141,10 @@
           class:active={pathShape === shape}
           class:compact
           aria-pressed={pathShape === shape}
-          aria-label={t("create_controls_path", { hand: handLabel(hand), shape: pathShapeLabel(shape) })}
+          aria-label={t("create_controls_path", {
+            hand: handLabel(hand),
+            shape: pathShapeLabel(shape),
+          })}
           onclick={(e) => {
             e.stopPropagation();
             onPathShapeChange(shape);
@@ -233,7 +239,11 @@
     border: 1px solid;
     cursor: pointer;
     font-size: 1.1rem;
-    transition: all var(--duration-fast) ease;
+    transition:
+      transform var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .ctrl-btn.compact {
@@ -285,7 +295,11 @@
     cursor: pointer;
     font-size: 1rem;
     font-weight: 600;
-    transition: all var(--duration-fast) ease;
+    transition:
+      transform var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   /* Compact: icon-only square button, positioned before turns row */
@@ -368,7 +382,11 @@
     font-size: 0.65rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
     min-height: 28px;
   }
 

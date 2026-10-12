@@ -1466,8 +1466,8 @@
      take precedence when they apply. */
   .choreo-card-root[data-header-motion="true"] .preview-stack {
     transition:
-      width 250ms cubic-bezier(0.33, 1, 0.68, 1),
-      height 250ms cubic-bezier(0.33, 1, 0.68, 1);
+      width var(--duration-normal) var(--ease-out),
+      height var(--duration-normal) var(--ease-out);
   }
 
   /* The Card was never readable at its previous size, so there is nothing to

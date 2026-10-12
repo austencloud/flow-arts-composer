@@ -59,7 +59,7 @@ QuizCompleteSection - Results display and actions
     flex-direction: column;
     align-items: center;
     gap: 1.25rem;
-    animation: fadeIn var(--duration-emphasis) ease;
+    animation: fadeIn var(--duration-emphasis) var(--ease-standard);
   }
 
   @keyframes fadeIn {
@@ -139,7 +139,10 @@ QuizCompleteSection - Results display and actions
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .action-btn.secondary {
@@ -159,7 +162,8 @@ QuizCompleteSection - Results display and actions
       color-mix(in srgb, var(--prop-blue, #4a9eff) 30%, transparent),
       color-mix(in srgb, var(--theme-accent, #a855f7) 30%, transparent)
     );
-    border: 1px solid color-mix(in srgb, var(--prop-blue, #4a9eff) 40%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--prop-blue, #4a9eff) 40%, transparent);
     color: white;
   }
 
@@ -169,7 +173,11 @@ QuizCompleteSection - Results display and actions
       color-mix(in srgb, var(--prop-blue, #4a9eff) 40%, transparent),
       color-mix(in srgb, var(--theme-accent, #a855f7) 40%, transparent)
     );
-    border-color: color-mix(in srgb, var(--prop-blue, #4a9eff) 60%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--prop-blue, #4a9eff) 60%,
+      transparent
+    );
     transform: translateY(-2px);
   }
 

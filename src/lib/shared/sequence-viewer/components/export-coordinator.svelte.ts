@@ -89,6 +89,7 @@ export interface ExportCoordinatorDeps {
 }
 
 export function createExportCoordinator(deps: ExportCoordinatorDeps) {
+  const READY_TOAST_DURATION_MS = 12_000;
   const { viewer3DState, accessibilityHelper, getMotionVisibility } = deps;
   const measuredVideoUrls = new Set<string>();
 
@@ -389,7 +390,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     showToast({
       message: "Video ready",
       type: "success",
-      duration: 12000,
+      duration: READY_TOAST_DURATION_MS,
       action: {
         label: saveLabel,
         onClick: () => void saveExportedVideo(effectiveSequence),

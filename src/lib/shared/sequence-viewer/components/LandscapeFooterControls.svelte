@@ -44,7 +44,9 @@
       class="landscape-btn"
       class:favorited={isFavorite}
       onclick={onFavorite}
-      aria-label={isFavorite ? t("viewer_detail_remove_from_favorites") : t("viewer_detail_add_to_favorites")}
+      aria-label={isFavorite
+        ? t("viewer_detail_remove_from_favorites")
+        : t("viewer_detail_add_to_favorites")}
     >
       <i class="fas fa-heart" aria-hidden="true"></i>
     </button>
@@ -89,7 +91,9 @@
       class:practice-active={practiceActive}
       onclick={() =>
         practiceActive ? onPracticeStop?.() : onPracticeStart?.()}
-      aria-label={practiceActive ? t("viewer_detail_stop_practice") : "Practice"}
+      aria-label={practiceActive
+        ? t("viewer_detail_stop_practice")
+        : "Practice"}
       aria-pressed={practiceActive}
     >
       <i
@@ -104,7 +108,9 @@
       type="button"
       class="landscape-btn"
       onclick={isPublished ? onUnpublish : onPublish}
-      aria-label={isPublished ? t("viewer_detail_make_private") : t("viewer_detail_make_public")}
+      aria-label={isPublished
+        ? t("viewer_detail_make_private")
+        : t("viewer_detail_make_public")}
     >
       <i
         class="fas {isPublished ? 'fa-eye-slash' : 'fa-eye'}"
@@ -161,7 +167,13 @@
     cursor: pointer;
     flex-shrink: 1;
     -webkit-tap-highlight-color: transparent;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
   }
 
   .landscape-btn:active {

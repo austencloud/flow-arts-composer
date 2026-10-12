@@ -33,7 +33,9 @@
   let videoEl = $state<HTMLVideoElement | undefined>();
 
   const displayWord = $derived(
-    movementMap.sequence?.word ? simplifyRepeatedWord(movementMap.sequence.word) : ""
+    movementMap.sequence?.word
+      ? simplifyRepeatedWord(movementMap.sequence.word)
+      : ""
   );
 
   // The face is drawn on the grids the sequence is joined on (display-only).
@@ -42,7 +44,9 @@
   );
 
   const stepCount = $derived(movementMap.sequence?.steps.length ?? 0);
-  const canSave = $derived(!!movementMap.position && !isDraftEmpty(movementMap.draft));
+  const canSave = $derived(
+    !!movementMap.position && !isDraftEmpty(movementMap.draft)
+  );
 
   const railOptions = $derived([
     { value: "describe" as RailTab, label: "Describe" },
@@ -130,10 +134,12 @@
           <video
             bind:this={videoEl}
             bind:currentTime={
-              () => movementMap.currentTime, (value) => (movementMap.currentTime = value)
+              () => movementMap.currentTime,
+              (value) => (movementMap.currentTime = value)
             }
             bind:paused={
-              () => !movementMap.isPlaying, (value) => (movementMap.isPlaying = !value)
+              () => !movementMap.isPlaying,
+              (value) => (movementMap.isPlaying = !value)
             }
             src={movementMap.video.url}
             playsinline
@@ -244,7 +250,8 @@
                     <button
                       type="button"
                       class="ghost sm danger"
-                      onclick={() => movementMap.deleteAnnotation(annotation.id)}
+                      onclick={() =>
+                        movementMap.deleteAnnotation(annotation.id)}
                     >
                       Delete
                     </button>
@@ -465,8 +472,10 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.05));
     color: var(--theme-text, #fff);
     transition:
-      background-color var(--transition-fast, 120ms) ease,
-      border-color var(--transition-fast, 120ms) ease;
+      background-color var(--transition-fast, var(--duration-instant))
+        var(--ease-standard),
+      border-color var(--transition-fast, var(--duration-instant))
+        var(--ease-standard);
   }
 
   button:hover:not(:disabled) {

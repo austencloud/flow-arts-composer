@@ -68,7 +68,7 @@ StaffIntroPage - Page 1: Staff Positions Introduction
     max-width: 700px;
     margin: 0 auto;
     width: 100%;
-    animation: slideInUp var(--duration-dramatic) cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideInUp var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes slideInUp {
@@ -192,7 +192,10 @@ StaffIntroPage - Page 1: Staff Positions Introduction
     font-size: 1.125rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all var(--duration-emphasis);
+    transition:
+      background var(--duration-emphasis),
+      border-color var(--duration-emphasis),
+      transform var(--duration-emphasis);
     min-height: var(--min-touch-target);
     margin-top: 1rem;
   }

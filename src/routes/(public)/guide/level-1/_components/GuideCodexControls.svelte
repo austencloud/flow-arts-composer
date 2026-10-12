@@ -19,7 +19,10 @@
   import PropSelectionSheet from "#lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
   import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import { HandSide, RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import {
+    HandSide,
+    RotationDirection,
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { getGuideCodexState } from "../_data/guide-codex-state.svelte";
   import type { GuideCodexVisibility } from "../_data/guide-codex-persistence";
 
@@ -32,16 +35,21 @@
 
   // Layer toggles - text only. The layer name IS the label; no decorative icon
   // (a flame doesn't explain "Glyph", an "A" doesn't explain "TKA").
-  const VISIBILITY_CHIPS: { key: keyof GuideCodexVisibility; label: string }[] = [
-    { key: "showGlyph", label: "Glyph" },
-    { key: "showGrid", label: "Grid" },
-    { key: "showTKA", label: "TKA" },
-    { key: "showPlacements", label: "Placements" },
-    { key: "showReversals", label: "Reversals" },
-    { key: "showNonRadialPoints", label: "Non-Radial" },
-  ];
+  const VISIBILITY_CHIPS: { key: keyof GuideCodexVisibility; label: string }[] =
+    [
+      { key: "showGlyph", label: "Glyph" },
+      { key: "showGrid", label: "Grid" },
+      { key: "showTKA", label: "TKA" },
+      { key: "showPlacements", label: "Placements" },
+      { key: "showReversals", label: "Reversals" },
+      { key: "showNonRadialPoints", label: "Non-Radial" },
+    ];
 
-  const TRANSFORMS: { op: "rotate" | "mirror" | "colorswap"; label: string; icon: string }[] = [
+  const TRANSFORMS: {
+    op: "rotate" | "mirror" | "colorswap";
+    label: string;
+    icon: string;
+  }[] = [
     { op: "rotate", label: "Rotate", icon: "fas fa-rotate-right" },
     { op: "mirror", label: "Mirror", icon: "fas fa-left-right" },
     { op: "colorswap", label: "Swap", icon: "fas fa-palette" },
@@ -186,7 +194,9 @@
     color: var(--theme-text, #fff);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: background var(--duration-fast, 150ms) ease, border-color var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
   @media (hover: hover) and (pointer: fine) {
     .prop-trigger:hover {

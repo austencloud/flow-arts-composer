@@ -28,7 +28,7 @@ Page 5 of 5: Test knowledge with Type1LetterQuiz component
     max-width: 700px;
     margin: 0 auto;
     width: 100%;
-    animation: slideInUp var(--duration-dramatic) cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideInUp var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes slideInUp {
@@ -48,7 +48,11 @@ Page 5 of 5: Test knowledge with Type1LetterQuiz component
     color: white;
     margin: 0;
     text-align: center;
-    background: linear-gradient(135deg, var(--theme-accent, #22d3ee) 0%, var(--theme-accent, #06b6d4) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #22d3ee) 0%,
+      var(--theme-accent, #06b6d4) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

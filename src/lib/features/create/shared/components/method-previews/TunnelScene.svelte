@@ -293,12 +293,14 @@
   .art {
     position: absolute;
     inset: 0;
-    transition: opacity var(--fade-in, 200ms) ease-out;
+    transition: opacity var(--fade-in, var(--duration-normal))
+      var(--ease-standard-out);
   }
 
   .scene[data-stage="hidden"] .art {
     opacity: 0;
-    transition: opacity var(--fade-out, 150ms) ease-in;
+    transition: opacity var(--fade-out, var(--duration-fast))
+      var(--ease-standard-in);
   }
 
   /* The performer card's dice (TunnelPerformerCard's primary PanelButton):
@@ -312,7 +314,7 @@
     background: var(--theme-accent, var(--accent));
     box-shadow: 0 2px 6px
       color-mix(in srgb, var(--theme-accent, var(--accent)) 40%, transparent);
-    transition: transform 140ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .dice.pressed {

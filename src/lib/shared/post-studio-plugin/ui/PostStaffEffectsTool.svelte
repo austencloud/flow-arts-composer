@@ -229,7 +229,7 @@
     height: 100%;
     border-radius: inherit;
     background: var(--theme-accent, #60a5fa);
-    transition: width 200ms ease-out;
+    transition: width var(--duration-normal) var(--ease-standard-out);
   }
 
   @media (prefers-reduced-motion: reduce) {

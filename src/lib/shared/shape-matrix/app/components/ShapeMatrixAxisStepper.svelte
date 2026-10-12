@@ -234,8 +234,8 @@
     font-size: calc(var(--value-size) * 0.7);
     cursor: pointer;
     transition:
-      color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease;
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .step:hover:not(:disabled) {
@@ -273,7 +273,7 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     cursor: pointer;
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .value:hover:not(:disabled),

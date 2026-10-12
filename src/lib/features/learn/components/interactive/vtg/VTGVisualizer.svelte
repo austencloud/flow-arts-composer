@@ -456,7 +456,10 @@ Shows how the two hands coordinate across the timing and direction axes.
     font-size: 0.9375rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
     min-width: 140px;
   }
 

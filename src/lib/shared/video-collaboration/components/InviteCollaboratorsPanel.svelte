@@ -139,7 +139,6 @@
     inviteError = null;
     onClose?.();
   }
-
 </script>
 
 <Drawer
@@ -388,7 +387,9 @@
     border-radius: 8px;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .close-button:hover {
@@ -597,7 +598,10 @@
     border-radius: 12px;
     color: var(--text-primary);
     font-size: 1rem;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard);
   }
 
   .search-input-wrapper input:focus {
@@ -635,7 +639,10 @@
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     white-space: nowrap;
   }
 

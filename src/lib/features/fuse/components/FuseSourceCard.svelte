@@ -998,8 +998,8 @@
   .follower-note.interactive {
     cursor: pointer;
     transition:
-      border-color var(--duration-fast, 120ms) ease,
-      background var(--duration-fast, 120ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .follower-note.interactive:hover {

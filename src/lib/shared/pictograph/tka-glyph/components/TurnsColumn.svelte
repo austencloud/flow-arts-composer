@@ -111,18 +111,20 @@ Props:
   // Get motion colors - use static colors when darkMode is explicitly provided (preview isolation)
   // Otherwise use centralized cache (global mode)
   const BLUE_COLOR = $derived(
-    leftColorOverride ?? (darkMode !== undefined
-      ? darkMode
-        ? STATIC_COLORS.dark.left
-        : STATIC_COLORS.light.left
-      : cachedColors.left)
+    leftColorOverride ??
+      (darkMode !== undefined
+        ? darkMode
+          ? STATIC_COLORS.dark.left
+          : STATIC_COLORS.light.left
+        : cachedColors.left)
   );
   const RED_COLOR = $derived(
-    rightColorOverride ?? (darkMode !== undefined
-      ? darkMode
-        ? STATIC_COLORS.dark.right
-        : STATIC_COLORS.light.right
-      : cachedColors.right)
+    rightColorOverride ??
+      (darkMode !== undefined
+        ? darkMode
+          ? STATIC_COLORS.dark.right
+          : STATIC_COLORS.light.right
+        : cachedColors.right)
   );
 
   // Track loaded letter dimensions with $state for reactivity
@@ -225,7 +227,10 @@ Props:
   // halved slot's mark+gap - this is the box both top and bottom center within.
   const columnWidth = $derived.by(() => {
     const topUnit = getSlotUnitWidth(topOwnWidth, parsedTurns.topHalved);
-    const bottomUnit = getSlotUnitWidth(bottomOwnWidth, parsedTurns.bottomHalved);
+    const bottomUnit = getSlotUnitWidth(
+      bottomOwnWidth,
+      parsedTurns.bottomHalved
+    );
     return Math.max(topUnit, bottomUnit);
   });
 
@@ -286,14 +291,13 @@ Props:
 
   const topImagePath = $derived(getTurnNumberImagePath(parsedTurns.top));
   const bottomImagePath = $derived(getTurnNumberImagePath(parsedTurns.bottom));
-
 </script>
 
 <!-- Turns Column Group - only render when visible (or in preview mode) AND dimensions are loaded
      NOTE: We check visibility here (not just CSS) because when exporting to SVG/image,
      CSS classes don't carry over - only the raw SVG markup is captured.
      We wait for valid dimensions to avoid positioning flash when letter loads. -->
-{#if (visible || previewMode || animateVisibility) && (dimensionsReady || (letterDimensions.width !== 100 || letterDimensions.height !== 100) || (effectiveLetterDimensions.width !== 100 || effectiveLetterDimensions.height !== 100))}
+{#if (visible || previewMode || animateVisibility) && (dimensionsReady || letterDimensions.width !== 100 || letterDimensions.height !== 100 || effectiveLetterDimensions.width !== 100 || effectiveLetterDimensions.height !== 100)}
   <g
     class="turns-column"
     class:visible
@@ -417,7 +421,7 @@ Props:
   .turns-column {
     /* Beautiful fade in/out effect matching TKA glyph */
     opacity: 0;
-    transition: opacity var(--duration-fast) ease-out;
+    transition: opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   .turns-column.visible {

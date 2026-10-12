@@ -1,8 +1,8 @@
 <script lang="ts">
   import "../customize-accent.css";
   import type { Snippet } from "svelte";
-  import { quintOut } from "svelte/easing";
-  import { scale } from "svelte/transition";
+  import { popIn } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   let {
     title,
@@ -31,10 +31,9 @@
 
 <div
   class="generation-settings-overlay customize-accent-scope"
-  transition:scale={{
+  transition:popIn={{
     start: entrance === "none" ? 1 : 0.95,
-    duration: entrance === "none" ? 0 : 250,
-    easing: quintOut,
+    duration: entrance === "none" ? 0 : DURATION.normal,
   }}
 >
   <div class="overlay-header">
@@ -116,8 +115,8 @@
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     border-radius: 8px;
     transition:
-      background var(--duration-normal) ease,
-      border-color var(--duration-normal) ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .close-button:hover {

@@ -5,8 +5,7 @@
   Uses the same animation pattern as SingleRenderer for consistent behavior.
 -->
 <script lang="ts">
-
-import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get-animation-playback-controller.js";
+  import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get-animation-playback-controller.js";
   import { onMount } from "svelte";
   import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
@@ -167,7 +166,7 @@ import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get
   {#if isLoading}
     <div class="loading-state">
       <ProgressRing percent={-1} size={32} strokeWidth={3} />
-      <span>{t('train_loading_animation')}</span>
+      <span>{t("train_loading_animation")}</span>
     </div>
   {:else if loadError}
     <div class="error-state">
@@ -189,11 +188,11 @@ import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get
       <div class="empty-icon">
         <i class="fas fa-play-circle" aria-hidden="true"></i>
       </div>
-      <p class="empty-text">{t('train_no_sequence_selected')}</p>
+      <p class="empty-text">{t("train_no_sequence_selected")}</p>
       {#if onBrowseSequences}
         <button class="browse-btn" onclick={onBrowseSequences}>
           <i class="fas fa-folder-open" aria-hidden="true"></i>
-          {t('train_browse')}
+          {t("train_browse")}
         </button>
       {/if}
     </div>
@@ -353,7 +352,10 @@ import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      transform var(--duration-normal);
   }
 
   .browse-btn:hover {
@@ -377,5 +379,4 @@ import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get
     );
     transform: translateY(-1px);
   }
-
 </style>

@@ -129,7 +129,7 @@
     font-weight: 800;
     color: white;
     text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
-    animation: countdown-pop 0.8s ease-out;
+    animation: countdown-pop var(--duration-scene) var(--ease-standard-out);
     font-variant-numeric: tabular-nums;
   }
 
@@ -211,7 +211,7 @@
     background: #ef4444;
     cursor: pointer;
     margin-left: 4px;
-    transition: background 0.15s;
+    transition: background var(--duration-fast);
   }
 
   .stop-btn:hover {

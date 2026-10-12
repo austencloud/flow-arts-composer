@@ -508,7 +508,9 @@
     border-radius: 8px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .close-button:hover {
@@ -557,7 +559,9 @@
     border: 2px dashed var(--theme-stroke-strong);
     border-radius: 12px;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .file-drop-zone:hover {
@@ -631,7 +635,7 @@
     color: white;
     font-size: 0.8rem;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .change-btn:hover {
@@ -672,7 +676,10 @@
     font-size: 0.9rem;
     font-family: inherit;
     resize: none;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard);
   }
 
   .option-group textarea:focus {
@@ -708,7 +715,7 @@
       var(--theme-accent-strong) 100%
     );
     border-radius: 4px;
-    transition: width var(--duration-emphasis) ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
 
   .progress-text {
@@ -749,7 +756,13 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .btn-secondary {

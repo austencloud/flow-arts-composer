@@ -211,7 +211,13 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     cursor: pointer;
-    transition: all 180ms cubic-bezier(0.2, 0, 0.13, 1.5);
+    transition:
+      transform var(--duration-fast) var(--ease-spring),
+      border-color var(--duration-fast) var(--ease-spring),
+      color var(--duration-fast) var(--ease-spring),
+      outline var(--duration-fast) var(--ease-spring),
+      background var(--duration-fast) var(--ease-spring),
+      box-shadow var(--duration-fast) var(--ease-spring);
     -webkit-tap-highlight-color: transparent;
   }
 

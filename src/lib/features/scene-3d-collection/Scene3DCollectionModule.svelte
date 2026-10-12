@@ -40,8 +40,14 @@
   import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
   import CollectionGalleryDetail from "#lib/shared/modules/CollectionGalleryDetail.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import { toast, showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
-  import { openLineageSource, hasLineageSource } from "#lib/shared/collections/open-lineage-source.js";
+  import {
+    toast,
+    showToast,
+  } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import {
+    openLineageSource,
+    hasLineageSource,
+  } from "#lib/shared/collections/open-lineage-source.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { revertSettingsCheckpoint } from "#lib/shared/collections/settings-checkpoint.svelte.js";
 
@@ -70,7 +76,7 @@
           day: "numeric",
           year: "numeric",
         })
-      : "",
+      : ""
   );
 
   const hasSteps = $derived(selected ? scene3DHasSteps(selected) : false);
@@ -127,14 +133,21 @@
       .map(([k]) => k);
     const chips: { icon: string; label: string }[] = [
       { icon: "fa-mountain-sun", label: scene },
-      { icon: "fa-users", label: `${performers} performer${performers === 1 ? "" : "s"}` },
+      {
+        icon: "fa-users",
+        label: `${performers} performer${performers === 1 ? "" : "s"}`,
+      },
       { icon: "fa-hand", label: cap(snap.defaultSettings.prop || "staff") },
       {
         icon: "fa-wand-magic-sparkles",
         label: activeEffects.length ? activeEffects.join(", ") : "No effects",
       },
     ];
-    if (features.length) chips.push({ icon: "fa-cubes", label: `${features.length} feature${features.length === 1 ? "" : "s"}` });
+    if (features.length)
+      chips.push({
+        icon: "fa-cubes",
+        label: `${features.length} feature${features.length === 1 ? "" : "s"}`,
+      });
     return chips;
   });
 
@@ -188,6 +201,8 @@
     }
   }
 
+  const UNDO_TOAST_DURATION_MS = 8_000;
+
   function handleApplyLook() {
     if (!selected) return;
     // applyScene3DLook captures its own settings checkpoint before writing
@@ -198,7 +213,7 @@
     showToast({
       message: `Viewer now using "${name}"`,
       type: "success",
-      duration: 8000,
+      duration: UNDO_TOAST_DURATION_MS,
       action: {
         label: "Undo",
         onClick: () => revertSettingsCheckpoint(),
@@ -278,55 +293,55 @@
   />
 
   {#snippet galleryView()}
-      <div class="gallery-view">
-        {#if scene3dCollectionState.loading && items.length === 0}
-          <div class="loading-state">
-            <PanelSpinner size={12} />
-            <p class="loading-label">Loading your scenes…</p>
-          </div>
-        {:else if items.length === 0}
-          <div class="empty-state">
-            <i class="fas fa-cube empty-icon" aria-hidden="true"></i>
-            <p class="empty-title">No scenes yet</p>
-            <p class="empty-hint">
-              Open a sequence in 3D Studio, set up the shot, and press
-              “Save scene” in the scene controls.
-            </p>
-          </div>
-        {:else}
-          <header class="gallery-head">
-            <h2 class="gallery-title">Saved scenes</h2>
-            <span class="gallery-count">{items.length}</span>
-          </header>
-          <div class="gallery-grid">
-            {#each items as item, i (item.id)}
-              <button
-                type="button"
-                class="gallery-card"
-                data-card-id={item.id}
-                onclick={() => open(item)}
-                aria-label="View {item.name}, {i + 1} of {items.length}"
-                title={item.name}
-              >
-                <div class="card-thumb">
-                  {#if item.poster}
-                    <img src={item.poster} alt={item.name} loading="lazy" />
-                  {:else}
-                    <i class="fas fa-cube thumb-fallback" aria-hidden="true"></i>
-                  {/if}
-                </div>
-                {#if scene3DHasFilm(item)}
-                  <span class="film-badge">
-                    <i class="fas fa-clapperboard" aria-hidden="true"></i>
-                    Film
-                  </span>
+    <div class="gallery-view">
+      {#if scene3dCollectionState.loading && items.length === 0}
+        <div class="loading-state">
+          <PanelSpinner size={12} />
+          <p class="loading-label">Loading your scenes…</p>
+        </div>
+      {:else if items.length === 0}
+        <div class="empty-state">
+          <i class="fas fa-cube empty-icon" aria-hidden="true"></i>
+          <p class="empty-title">No scenes yet</p>
+          <p class="empty-hint">
+            Open a sequence in 3D Studio, set up the shot, and press “Save
+            scene” in the scene controls.
+          </p>
+        </div>
+      {:else}
+        <header class="gallery-head">
+          <h2 class="gallery-title">Saved scenes</h2>
+          <span class="gallery-count">{items.length}</span>
+        </header>
+        <div class="gallery-grid">
+          {#each items as item, i (item.id)}
+            <button
+              type="button"
+              class="gallery-card"
+              data-card-id={item.id}
+              onclick={() => open(item)}
+              aria-label="View {item.name}, {i + 1} of {items.length}"
+              title={item.name}
+            >
+              <div class="card-thumb">
+                {#if item.poster}
+                  <img src={item.poster} alt={item.name} loading="lazy" />
+                {:else}
+                  <i class="fas fa-cube thumb-fallback" aria-hidden="true"></i>
                 {/if}
-                <span class="card-label">{item.name}</span>
-              </button>
-            {/each}
-          </div>
-        {/if}
-      </div>
+              </div>
+              {#if scene3DHasFilm(item)}
+                <span class="film-badge">
+                  <i class="fas fa-clapperboard" aria-hidden="true"></i>
+                  Film
+                </span>
+              {/if}
+              <span class="card-label">{item.name}</span>
+            </button>
+          {/each}
+        </div>
+      {/if}
+    </div>
   {/snippet}
 
   {#snippet detailView({ inDrawer }: { inDrawer: boolean })}
@@ -345,7 +360,11 @@
               <span>Gallery</span>
             </button>
           {/if}
-          <div class="preview-stage" role="img" aria-label="Saved 3D scene {selected.name}">
+          <div
+            class="preview-stage"
+            role="img"
+            aria-label="Saved 3D scene {selected.name}"
+          >
             {#if selected.poster}
               <img src={selected.poster} alt={selected.name} />
             {:else}
@@ -370,7 +389,9 @@
                   aria-label="Scene name"
                 />
               {:else}
-                <h2 class="detail-name" title={selected.name}>{selected.name}</h2>
+                <h2 class="detail-name" title={selected.name}>
+                  {selected.name}
+                </h2>
                 {#if !scene3dCollectionState.isReadOnlyPreview}
                   <button
                     type="button"
@@ -547,7 +568,11 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
     border-radius: 14px;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out),
+      outline-color var(--duration-fast) var(--ease-out);
     min-height: var(--min-touch-target, 44px);
   }
 
@@ -556,13 +581,18 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform var(--duration-normal, 250ms) var(--ease-out, ease);
+    transition: transform var(--duration-normal)
+      var(--ease-out, var(--ease-standard));
   }
 
   @media (hover: hover) {
     .gallery-card:hover {
       background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.07));
-      border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent);
+      border-color: color-mix(
+        in srgb,
+        var(--theme-accent, #22d3ee) 40%,
+        transparent
+      );
       transform: translateY(-2px);
     }
     .gallery-card:hover .card-thumb img {
@@ -572,7 +602,7 @@
 
   .gallery-card:active {
     transform: scale(0.97);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   .gallery-card:focus-visible {
@@ -684,7 +714,8 @@
     overflow: hidden;
     box-shadow:
       0 0 0 1px var(--theme-stroke, rgba(255, 255, 255, 0.08)),
-      0 12px 60px color-mix(in srgb, var(--theme-accent, #22d3ee) 14%, transparent);
+      0 12px 60px
+        color-mix(in srgb, var(--theme-accent, #22d3ee) 14%, transparent);
   }
   .preview-stage img {
     width: 100%;
@@ -720,7 +751,11 @@
     gap: 8px;
     min-height: 48px;
     padding: 8px 18px;
-    background: color-mix(in srgb, var(--theme-panel-bg, rgba(10, 10, 20, 0.85)) 80%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-panel-bg, rgba(10, 10, 20, 0.85)) 80%,
+      transparent
+    );
     backdrop-filter: blur(8px);
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     border-radius: 999px;
@@ -728,7 +763,11 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out),
+      outline-color var(--duration-fast) var(--ease-out);
   }
 
   @media (hover: hover) {
@@ -795,7 +834,11 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.45));
     font-size: 13px;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out),
+      outline-color var(--duration-fast) var(--ease-out);
   }
   @media (hover: hover) {
     .rename-btn:hover {
@@ -891,7 +934,10 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      transform var(--duration-fast) var(--ease-out),
+      outline-color var(--duration-fast) var(--ease-out),
+      width var(--duration-fast) var(--ease-out);
   }
 
   .action-btn:focus-visible {
@@ -907,12 +953,14 @@
     );
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: white;
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent);
+    box-shadow: 0 4px 12px
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent);
   }
 
   .apply-btn {
     background: transparent;
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 45%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 45%, transparent);
     color: var(--theme-accent-text, var(--theme-accent, #22d3ee));
   }
 
@@ -931,15 +979,28 @@
   @media (hover: hover) {
     .open-btn:hover {
       transform: translateY(-1px);
-      box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent);
+      box-shadow: 0 6px 16px
+        color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent);
     }
     .apply-btn:hover {
-      background: color-mix(in srgb, var(--theme-accent, #22d3ee) 12%, transparent);
-      border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 70%, transparent);
+      background: color-mix(
+        in srgb,
+        var(--theme-accent, #22d3ee) 12%,
+        transparent
+      );
+      border-color: color-mix(
+        in srgb,
+        var(--theme-accent, #22d3ee) 70%,
+        transparent
+      );
     }
     .delete-btn:hover {
       color: var(--semantic-error, #ef4444);
-      border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
+      border-color: color-mix(
+        in srgb,
+        var(--semantic-error, #ef4444) 30%,
+        transparent
+      );
     }
     .delete-btn.confirming:hover {
       background: color-mix(in srgb, var(--semantic-error, #ef4444) 80%, black);
@@ -948,7 +1009,7 @@
 
   .action-btn:active {
     transform: scale(0.98);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   /* ── Responsive (container-relative) ── */

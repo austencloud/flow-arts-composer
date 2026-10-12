@@ -8,7 +8,8 @@
 <script lang="ts">
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { untrack } from "svelte";
-  import { fly, fade } from "svelte/transition";
+  import { flyFade, opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ModalFooter from "#lib/shared/foundation/ui/modal/ModalFooter.svelte";
   import {
@@ -127,23 +128,16 @@
     return () => clearTimeout(timer);
   });
 
-  // Respect reduced motion preference for content transitions
-  const prefersReducedMotion =
-    typeof window !== "undefined"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      : false;
-
-  // Custom transition wrappers that respect reduced motion
   function slideIn(node: Element) {
-    return prefersReducedMotion
-      ? fade(node, { duration: 150 })
-      : fly(node, { x: 30, duration: 250, delay: 200 });
+    return flyFade(node, {
+      x: 30,
+      duration: DURATION.normal,
+      delay: DURATION.normal,
+    });
   }
 
   function slideOut(node: Element) {
-    return prefersReducedMotion
-      ? fade(node, { duration: 100 })
-      : fly(node, { x: -30, duration: 200 });
+    return opaqueFade(node, { duration: DURATION.normal });
   }
 </script>
 
@@ -342,8 +336,8 @@
     padding: 10px 6px;
     border-radius: 10px;
     transition:
-      opacity 0.25s ease,
-      box-shadow 0.25s ease;
+      opacity var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     position: relative;
     min-height: 65px;
     cursor: pointer;
@@ -399,7 +393,7 @@
   }
 
   .mini-card.pulse {
-    animation: cardPulse 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: cardPulse var(--duration-dramatic) var(--ease-spring);
   }
 
   /* Outer container holds layout space; inner content transitions in/out */
@@ -473,7 +467,7 @@
     justify-content: center;
     font-size: 14px;
     flex-shrink: 0;
-    transition: background 0.15s ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .close-btn:hover {
@@ -570,7 +564,9 @@
     height: 8px;
     border-radius: 50%;
     background: var(--theme-stroke, rgba(255, 255, 255, 0.15));
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .dot.active {

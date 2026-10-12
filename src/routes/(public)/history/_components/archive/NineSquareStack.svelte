@@ -44,7 +44,7 @@
 		/* Resting: a tight deck with corners peeking. */
 		transform: translate(calc(var(--i) * 2.5%), calc(var(--i) * -2.5%))
 			rotate(calc(var(--i) * 1.4deg - 2deg));
-		transition: transform 420ms cubic-bezier(0.3, 1.2, 0.4, 1);
+		transition: transform var(--duration-dramatic) var(--ease-spring);
 	}
 
 	/* Active: the deck fans so every frame shows an edge. */

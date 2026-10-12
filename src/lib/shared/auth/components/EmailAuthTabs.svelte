@@ -216,8 +216,8 @@
     font-weight: 500;
     cursor: pointer;
     transition:
-      background var(--duration-normal, 200ms) ease,
-      color var(--duration-normal, 200ms) ease;
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .tab:hover:not(.active) {

@@ -392,9 +392,9 @@
     border-radius: 0.75rem;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .close-button:hover {
@@ -474,9 +474,9 @@
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.24);
     cursor: pointer;
     transition:
-      background var(--duration-normal, 200ms) ease,
-      box-shadow var(--duration-normal, 200ms) ease,
-      transform var(--duration-normal, 200ms) ease;
+      background var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .email-method:hover {
@@ -577,8 +577,8 @@
     font-size: var(--font-size-min);
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .mode-toggle :global(.crossfade > .layer) {

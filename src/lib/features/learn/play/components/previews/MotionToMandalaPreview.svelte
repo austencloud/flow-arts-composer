@@ -46,7 +46,11 @@
   {#if sequence && steps.length > 0}
     <div class="motion-frame">
       {#each steps as step, i (i)}
-        <div class="motion-step" class:first={i === 0} style="--step: {i}; --steps: {steps.length}">
+        <div
+          class="motion-step"
+          class:first={i === 0}
+          style="--step: {i}; --steps: {steps.length}"
+        >
           <PictographContainer
             pictographData={step}
             disableTransitions
@@ -95,7 +99,13 @@
     inset: 0;
     opacity: 0;
     animation: step-play calc(var(--steps) * 1.2s) linear infinite;
-    animation-delay: calc(var(--step) * 1.2s);
+    animation-delay: calc(
+      var(--step) *
+        (
+          var(--duration-scene) + var(--duration-dramatic) +
+            var(--stagger-normal)
+        )
+    );
   }
 
   .flow {
@@ -121,16 +131,33 @@
 
   /* Each step owns a 1/N slice of the loop (tuned for 4 steps). */
   @keyframes step-play {
-    0% { opacity: 0; }
-    4% { opacity: 1; }
-    22% { opacity: 1; }
-    26% { opacity: 0; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 0;
+    }
+    4% {
+      opacity: 1;
+    }
+    22% {
+      opacity: 1;
+    }
+    26% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 
   @keyframes nudge {
-    0%, 100% { transform: translateX(0); opacity: 0.7; }
-    50% { transform: translateX(0.6cqi); opacity: 1; }
+    0%,
+    100% {
+      transform: translateX(0);
+      opacity: 0.7;
+    }
+    50% {
+      transform: translateX(0.6cqi);
+      opacity: 1;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

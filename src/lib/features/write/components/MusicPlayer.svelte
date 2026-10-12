@@ -187,7 +187,7 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: var(--border-radius-lg, 12px);
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .music-player.disabled {
@@ -302,7 +302,7 @@
     cursor: pointer;
     -webkit-appearance: none;
     appearance: none;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .scrubber:disabled {
@@ -319,7 +319,7 @@
     border: 2px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.3));
     border-radius: 50%;
     cursor: pointer;
-    transition: transform var(--duration-fast) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .scrubber:not(:disabled)::-webkit-slider-thumb:hover {
@@ -372,7 +372,13 @@
     color: var(--theme-text, #ffffff);
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .transport-btn:hover:not(:disabled) {

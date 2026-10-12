@@ -77,11 +77,17 @@
     height: var(--min-touch-target);
     flex-shrink: 0;
     background: color-mix(in srgb, var(--semantic-success) 25%, transparent);
-    border: 1.5px solid color-mix(in srgb, var(--semantic-success) 40%, transparent);
+    border: 1.5px solid
+      color-mix(in srgb, var(--semantic-success) 40%, transparent);
     border-radius: 50%;
     color: var(--semantic-success);
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     box-shadow:
       0 2px 8px color-mix(in srgb, var(--semantic-success) 15%, transparent),
       0 0 16px color-mix(in srgb, var(--semantic-success) 10%, transparent),
@@ -104,7 +110,11 @@
     .play-pause-btn:hover {
       transform: translateX(-50%) scale(1.05);
       background: color-mix(in srgb, var(--semantic-success) 35%, transparent);
-      border-color: color-mix(in srgb, var(--semantic-success) 60%, transparent);
+      border-color: color-mix(
+        in srgb,
+        var(--semantic-success) 60%,
+        transparent
+      );
       box-shadow:
         0 4px 14px color-mix(in srgb, var(--semantic-success) 25%, transparent),
         0 0 20px color-mix(in srgb, var(--semantic-success) 15%, transparent),

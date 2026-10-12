@@ -464,7 +464,12 @@
     font-weight: 600;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: all var(--duration-fast, 0.15s) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
   .ctl-chip:hover {
     border-color: var(--theme-stroke-strong);
@@ -522,7 +527,7 @@
     height: 16px;
     border-radius: 50%;
     background: #fff;
-    transition: left var(--duration-fast, 0.15s);
+    transition: left var(--duration-fast);
   }
   .ctl-toggle.on .ctl-toggle-dot {
     left: 20px;

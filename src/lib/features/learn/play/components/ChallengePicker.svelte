@@ -291,7 +291,7 @@ tree, so exactly one heading is ever announced.
     border-radius: 10px;
     color: var(--theme-text, #ffffff);
     cursor: pointer;
-    transition: filter var(--duration-fast, 150ms) ease;
+    transition: filter var(--duration-fast) var(--ease-standard);
   }
 
   .back-button:hover {
@@ -364,9 +364,9 @@ tree, so exactly one heading is ever announced.
     cursor: pointer;
     text-align: left;
     transition:
-      transform var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      filter var(--duration-fast, 150ms) ease;
+      transform var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard);
   }
 
   .challenge-row:hover:not(.locked) {

@@ -139,7 +139,8 @@ Always renders as a pure button. Word input is now in WordInputCard.
     /* Only the transform pulse loops, so the compositor runs it. The gradient
        fills the button exactly, so the old background-position "flow" never
        moved; it only repainted the button every frame. */
-    animation: subtlePulse 2s ease-in-out infinite;
+    animation: subtlePulse var(--generate-pulse-duration, 2s) ease-in-out
+      infinite;
 
     color: var(--theme-text, white);
     border-radius: 20px;
@@ -150,7 +151,12 @@ Always renders as a pure button. Word input is now in WordInputCard.
     text-shadow: var(--card-text-shadow);
 
     cursor: pointer;
-    transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      outline var(--duration-emphasis) var(--ease-standard),
+      filter var(--duration-emphasis) var(--ease-standard),
+      transform var(--duration-emphasis) var(--ease-standard),
+      text-shadow var(--duration-emphasis) var(--ease-standard),
+      opacity var(--duration-emphasis) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -178,7 +184,7 @@ Always renders as a pure button. Word input is now in WordInputCard.
       0 2px 6px rgba(0, 0, 0, 0.6),
       0 0 25px color-mix(in srgb, var(--theme-text) 40%, transparent);
 
-    animation-duration: 1.5s;
+    --generate-pulse-duration: 1.5s;
   }
 
   .generate-button-card.pulse-suspended:not(:disabled) {
@@ -187,7 +193,12 @@ Always renders as a pure button. Word input is now in WordInputCard.
 
   .generate-button-card:active:not(:disabled) {
     transform: scale(0.98);
-    transition: all var(--duration-instant) ease;
+    transition:
+      outline var(--duration-instant) var(--ease-standard),
+      filter var(--duration-instant) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard),
+      text-shadow var(--duration-instant) var(--ease-standard),
+      opacity var(--duration-instant) var(--ease-standard);
   }
 
   button.generate-button-card:disabled {

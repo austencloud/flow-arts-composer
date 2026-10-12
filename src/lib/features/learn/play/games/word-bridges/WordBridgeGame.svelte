@@ -771,8 +771,8 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 850;
     transition:
-      transform var(--duration-fast) ease,
-      filter var(--duration-fast) ease;
+      transform var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard);
   }
 
   .continue-button:hover {

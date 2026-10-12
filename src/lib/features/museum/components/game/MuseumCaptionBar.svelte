@@ -63,7 +63,7 @@
     color: var(--museum-gold-90);
     pointer-events: none;
     z-index: 11;
-    animation: caption-in 0.25s ease;
+    animation: caption-in var(--duration-normal) var(--ease-standard);
   }
 
   .caption-stamp {
@@ -103,7 +103,7 @@
     font-family: Georgia, "Times New Roman", serif;
     font-size: clamp(0.95rem, 0.7rem + 0.3vw, 1.35rem);
     line-height: 1.45;
-    animation: line-in 0.3s ease;
+    animation: line-in var(--duration-emphasis) var(--ease-standard);
   }
 
   .skip-hint {

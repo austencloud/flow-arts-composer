@@ -22,24 +22,24 @@
   const modes = [
     {
       value: PracticeMode.ADAPTIVE,
-      label: t('train_mode_adaptive'),
-      shortDesc: t('train_mode_adaptive_short'),
+      label: t("train_mode_adaptive"),
+      shortDesc: t("train_mode_adaptive_short"),
       icon: "fa-brain",
-      description: t('train_mode_adaptive_desc'),
+      description: t("train_mode_adaptive_desc"),
     },
     {
       value: PracticeMode.STEP_BY_STEP,
-      label: t('train_mode_step'),
-      shortDesc: t('train_mode_step_short'),
+      label: t("train_mode_step"),
+      shortDesc: t("train_mode_step_short"),
       icon: "fa-shoe-prints",
-      description: t('train_mode_step_desc'),
+      description: t("train_mode_step_desc"),
     },
     {
       value: PracticeMode.TIMED,
-      label: t('train_mode_timed'),
-      shortDesc: t('train_mode_timed_short'),
+      label: t("train_mode_timed"),
+      shortDesc: t("train_mode_timed_short"),
       icon: "fa-stopwatch",
-      description: t('train_mode_timed_desc'),
+      description: t("train_mode_timed_desc"),
     },
   ];
 </script>
@@ -87,7 +87,10 @@
     border-radius: 0.5rem;
     color: var(--theme-text-dim, var(--theme-text-dim));
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      color var(--duration-normal),
+      border var(--duration-normal);
     white-space: nowrap;
   }
 

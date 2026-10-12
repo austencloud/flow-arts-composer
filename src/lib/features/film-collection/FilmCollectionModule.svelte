@@ -41,7 +41,9 @@
     const whole = Math.round(seconds);
     const minutes = Math.floor(whole / 60);
     const rest = whole % 60;
-    return minutes > 0 ? `${minutes}:${String(rest).padStart(2, "0")}` : `${rest}s`;
+    return minutes > 0
+      ? `${minutes}:${String(rest).padStart(2, "0")}`
+      : `${rest}s`;
   }
 
   function startRename(film: CollectedFilm): void {
@@ -113,7 +115,12 @@
           >
             <span class="poster">
               {#if film.poster}
-                <img src={film.poster} alt="" aria-hidden="true" loading="lazy" />
+                <img
+                  src={film.poster}
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                />
               {:else}
                 <span class="poster-empty" aria-hidden="true">
                   <i class="fas fa-film"></i>
@@ -141,7 +148,11 @@
             {/if}
 
             <span class="tile-meta">
-              <span>{film.sceneCount === 1 ? "1 scene" : `${film.sceneCount} scenes`}</span>
+              <span
+                >{film.sceneCount === 1
+                  ? "1 scene"
+                  : `${film.sceneCount} scenes`}</span
+              >
               <span aria-hidden="true">·</span>
               <span>{formatDuration(film.durationSeconds)}</span>
             </span>
@@ -164,7 +175,9 @@
                 aria-label={pendingDeleteId === film.id
                   ? `Confirm delete ${film.name}`
                   : `Delete ${film.name}`}
-                title={pendingDeleteId === film.id ? "Click again to delete" : "Delete"}
+                title={pendingDeleteId === film.id
+                  ? "Click again to delete"
+                  : "Delete"}
               >
                 <i class="fas fa-trash" aria-hidden="true"></i>
               </button>
@@ -273,7 +286,7 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
     border-radius: 0.6rem;
     background: #0a0b14;
-    transition: border-color 140ms ease;
+    transition: border-color var(--duration-fast) var(--ease-standard);
   }
 
   .poster-button:hover .poster,
@@ -340,7 +353,7 @@
     display: flex;
     gap: 0.25rem;
     opacity: 0;
-    transition: opacity 140ms ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .tile:hover .tile-actions,

@@ -300,8 +300,8 @@
     color: var(--theme-text, #ffffff);
     cursor: pointer;
     transition:
-      border-color 0.15s,
-      background 0.15s;
+      border-color var(--duration-fast),
+      background var(--duration-fast);
     font-size: var(--font-size-compact, 12px);
   }
 
@@ -354,8 +354,8 @@
     font-size: var(--font-size-sm, 14px);
     font-weight: 600;
     transition:
-      background 0.15s,
-      color 0.15s;
+      background var(--duration-fast),
+      color var(--duration-fast);
   }
 
   .mode-button:hover {
@@ -402,8 +402,8 @@
     color: var(--theme-text, #ffffff);
     cursor: pointer;
     transition:
-      border-color 0.15s,
-      background 0.15s;
+      border-color var(--duration-fast),
+      background var(--duration-fast);
     font-size: 14px;
   }
 
@@ -432,8 +432,8 @@
     cursor: pointer;
     font-size: var(--font-size-sm, 14px);
     transition:
-      border-color 0.15s,
-      background 0.15s;
+      border-color var(--duration-fast),
+      background var(--duration-fast);
   }
 
   .toggle-button:hover {

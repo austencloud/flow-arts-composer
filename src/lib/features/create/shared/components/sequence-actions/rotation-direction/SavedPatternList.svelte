@@ -21,7 +21,9 @@
 
 {#if patterns.length === 0}
   <p class="empty-message">
-    {t("create_review_no_saved_patterns_yet_save_a_pattern_from_the_current_sequence_or_try_a_template_above")}
+    {t(
+      "create_review_no_saved_patterns_yet_save_a_pattern_from_the_current_sequence_or_try_a_template_above"
+    )}
   </p>
 {:else}
   <div class="saved-patterns-section">
@@ -47,7 +49,9 @@
         >
           <div class="pattern-info">
             <span class="pattern-name">{pattern.name}</span>
-            <span class="pattern-steps">{t("create_pattern_steps", { count: pattern.stepCount })}</span>
+            <span class="pattern-steps"
+              >{t("create_pattern_steps", { count: pattern.stepCount })}</span
+            >
           </div>
           <div class="pattern-actions">
             <button
@@ -118,7 +122,10 @@
     border-radius: 8px;
     border: 1px solid var(--theme-stroke, var(--theme-stroke));
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
     user-select: none;
   }
 
@@ -162,7 +169,9 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      opacity var(--duration-fast),
+      background var(--duration-fast);
     background: rgba(239, 68, 68, 0.15);
     color: var(--semantic-error);
     font-size: 0.75rem;

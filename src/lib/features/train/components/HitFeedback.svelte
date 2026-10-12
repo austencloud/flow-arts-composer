@@ -42,7 +42,7 @@
 <div class="hit-feedback">
   <!-- Total Score Display -->
   <div class="score-display">
-    <span class="score-label">{t('train_score_label')}</span>
+    <span class="score-label">{t("train_score_label")}</span>
     <span class="score-value">{totalScore.toLocaleString()}</span>
   </div>
 
@@ -50,7 +50,7 @@
   {#if combo > 0}
     <div class="combo-display" class:high-combo={combo >= 10}>
       <span class="combo-value">{combo}x</span>
-      <span class="combo-label">{t('train_combo_label')}</span>
+      <span class="combo-label">{t("train_combo_label")}</span>
     </div>
   {/if}
 
@@ -59,10 +59,10 @@
     {#key feedbackKey}
       <div class="feedback-popup" class:hit={lastHit} class:miss={!lastHit}>
         {#if lastHit}
-          <div class="hit-text">{t('train_hit')}</div>
+          <div class="hit-text">{t("train_hit")}</div>
           <div class="points-text">+{lastPoints}</div>
         {:else}
-          <div class="miss-text">{t('train_miss')}</div>
+          <div class="miss-text">{t("train_miss")}</div>
         {/if}
       </div>
     {/key}
@@ -130,7 +130,7 @@
         transparent
       );
     border-radius: 8px;
-    animation: pulse-combo 0.5s ease-in-out;
+    animation: pulse-combo var(--duration-dramatic) var(--ease-standard);
   }
 
   .combo-display.high-combo {
@@ -144,7 +144,7 @@
       )
     );
     border-color: color-mix(in srgb, var(--semantic-warning) 60%, transparent);
-    animation: pulse-high-combo 0.5s ease-in-out;
+    animation: pulse-high-combo var(--duration-dramatic) var(--ease-standard);
   }
 
   .combo-value {
@@ -181,7 +181,7 @@
     border-radius: 12px;
     pointer-events: none;
     z-index: 100;
-    animation: popup 1s ease-out forwards;
+    animation: popup var(--duration-scene) var(--ease-standard-out) forwards;
   }
 
   .feedback-popup.hit {

@@ -40,7 +40,7 @@
     class:bouncing
     class:milestone
     role="status"
-    aria-label={t('arena_battle_streak', { count: streak })}
+    aria-label={t("arena_battle_streak", { count: streak })}
   >
     <svg
       class="flame-icon"
@@ -77,8 +77,12 @@
     gap: 4px;
     padding: 4px 10px;
     border-radius: 20px;
-    background: color-mix(in srgb, var(--semantic-warning, #f59e0b) 12%, transparent);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 12%,
+      transparent
+    );
+    transition: transform var(--duration-emphasis) var(--ease-spring);
   }
 
   .streak-counter.bouncing {
@@ -86,8 +90,13 @@
   }
 
   .streak-counter.milestone {
-    background: color-mix(in srgb, var(--semantic-warning, #f59e0b) 25%, transparent);
-    box-shadow: 0 0 16px color-mix(in srgb, var(--semantic-warning, #f59e0b) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 25%,
+      transparent
+    );
+    box-shadow: 0 0 16px
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 30%, transparent);
   }
 
   .streak-count {

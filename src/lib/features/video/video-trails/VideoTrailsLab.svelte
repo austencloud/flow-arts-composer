@@ -1,8 +1,7 @@
 <script lang="ts">
-
-import { getDetectionCorrector } from "#lib/features/video/video-trails/get-detection-corrector.js";
-import { getVideoTipAdapter } from "#lib/features/video/video-trails/get-video-tip-adapter.js";
-import { getVideoTrailsRepository } from "#lib/features/video/video-trails/get-video-trails-repository.js";
+  import { getDetectionCorrector } from "#lib/features/video/video-trails/get-detection-corrector.js";
+  import { getVideoTipAdapter } from "#lib/features/video/video-trails/get-video-tip-adapter.js";
+  import { getVideoTrailsRepository } from "#lib/features/video/video-trails/get-video-trails-repository.js";
   import { onDestroy, type Component } from "svelte";
   import { createVideoTrailsState } from "./state/video-trails-state.svelte";
   import { setVideoTrailsContext } from "./context/video-trails-context";
@@ -11,13 +10,17 @@ import { getVideoTrailsRepository } from "#lib/features/video/video-trails/get-v
   const trailsState = createVideoTrailsState(
     getVideoTrailsRepository(),
     getDetectionCorrector(),
-    getVideoTipAdapter(),
+    getVideoTipAdapter()
   );
   setVideoTrailsContext({ state: trailsState });
 
   const views: { id: VideoTrailsView; label: string; icon: string }[] = [
     { id: "workspace", label: "Workspace", icon: "fa-video" },
-    { id: "detection-studio", label: "Detection Studio", icon: "fa-crosshairs" },
+    {
+      id: "detection-studio",
+      label: "Detection Studio",
+      icon: "fa-crosshairs",
+    },
     { id: "library", label: "Library", icon: "fa-folder-open" },
   ];
 
@@ -29,17 +32,23 @@ import { getVideoTrailsRepository } from "#lib/features/video/video-trails/get-v
     switch (trailsState.activeView) {
       case "workspace":
         if (!WorkspaceView) {
-          import("./views/WorkspaceView.svelte").then((m) => { WorkspaceView = m.default; });
+          import("./views/WorkspaceView.svelte").then((m) => {
+            WorkspaceView = m.default;
+          });
         }
         break;
       case "detection-studio":
         if (!DetectionStudioView) {
-          import("./views/DetectionStudioView.svelte").then((m) => { DetectionStudioView = m.default; });
+          import("./views/DetectionStudioView.svelte").then((m) => {
+            DetectionStudioView = m.default;
+          });
         }
         break;
       case "library":
         if (!LibraryView) {
-          import("./views/LibraryView.svelte").then((m) => { LibraryView = m.default; });
+          import("./views/LibraryView.svelte").then((m) => {
+            LibraryView = m.default;
+          });
         }
         break;
     }
@@ -56,7 +65,9 @@ import { getVideoTrailsRepository } from "#lib/features/video/video-trails/get-v
         class:active={trailsState.activeView === view.id}
         role="tab"
         aria-selected={trailsState.activeView === view.id}
-        onclick={() => { trailsState.activeView = view.id; }}
+        onclick={() => {
+          trailsState.activeView = view.id;
+        }}
       >
         <i class="fas {view.icon}" aria-hidden="true"></i>
         <span>{view.label}</span>
@@ -105,7 +116,9 @@ import { getVideoTrailsRepository } from "#lib/features/video/video-trails/get-v
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.6));
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast);
   }
 
   .sub-nav-tab:hover {

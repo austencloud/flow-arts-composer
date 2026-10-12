@@ -437,7 +437,10 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast, 100ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
   }
 
   .category-tab:last-child {
