@@ -37,14 +37,45 @@ function snapshotKey(sequenceId: string): string {
   return `${scopedKey(SNAPSHOT_PREFIX)}${sequenceId}`;
 }
 
+/** The grid behind an arrangement project's card: its shown size and populated cells. */
+export interface ArrangementSummary {
+  rows: number;
+  cols: number;
+  sequences: number;
+}
+
 export interface PostProjectChoice {
   sequenceId: string;
   title: string;
   word: string;
   updatedAt: number;
   hasDraft: boolean;
+  /** Set when the project is one arrangement. */
+  arrangement?: ArrangementSummary;
   /** A sync problem that belongs to this project alone, shown on its card. */
   problem?: string;
+}
+
+function arrangementSummaryOf(
+  project: ReturnType<typeof PostProjectSchema.parse>
+): ArrangementSummary | undefined {
+  for (const track of project.tracks) {
+    for (const item of track.items) {
+      if (item.kind !== "arrangement") continue;
+      const { gridRows, gridCols, cells } = item.snapshot;
+      return {
+        rows: gridRows,
+        cols: gridCols,
+        sequences: cells.filter(
+          (cell) =>
+            cell.row < gridRows &&
+            cell.col < gridCols &&
+            cell.layers.length > 0
+        ).length,
+      };
+    }
+  }
+  return undefined;
 }
 
 interface RecentSequence {
@@ -261,12 +292,14 @@ function choicesFromRecords(
         continue;
       const current = choices.get(project.sequenceId);
       if (current && current.updatedAt >= project.updatedAt) continue;
+      const arrangement = arrangementSummaryOf(project);
       choices.set(project.sequenceId, {
         sequenceId: project.sequenceId,
         title: project.title ?? project.sequenceId,
         word: "",
         updatedAt: project.updatedAt,
         hasDraft: true,
+        ...(arrangement ? { arrangement } : {}),
       });
     } catch {
       /* One malformed backup cannot hide other projects. */

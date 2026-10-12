@@ -6,7 +6,7 @@
 
 **Implementation gate:** OPEN for previously approved text and terminology;
 CLOSED for new teaching explanation pending exact-copy approval
-**Last reviewed:** 2026-09-04
+**Last reviewed:** 2026-10-11
 
 ## Approved Text
 
@@ -34,13 +34,47 @@ Sources: `src/routes/(public)/guide/level-1/_pages/HandMotionsPage.svelte` and
 Routine labels such as “Blue hand,” “Previous,” and “Next” are exempt. No
 additional explanation of how to perform these motions is approved.
 
+## Rebuilt Lesson (2026-10-11) — Exact UI Copy
+
+The three stages share the heading “Hand Motions” (the Guide page title). Each
+stage's line under it:
+
+> Pick a point to move the hand.
+
+> Move the blue hand, then the red hand. Find all six.
+
+> Using these, we can make six combinations, named below.
+
+The third is the first sentence of the book's line above its combinations
+(`verified_level1_hand_motions_76`), kept as `learn_motion_combinations_lead`
+with “make” for the book's “derive.”
+The book goes on “We’ll explore each one individually:”, which the lesson drops
+because it continues to Timing and Direction instead.
+
+Stage 1 lists the three moves with the approved step captions (“Move to an
+adjacent point,” “Move to the opposite point,” “Remain at the same point”).
+Stages 2 and 3 name each combination with the book's name and description
+(`verified_level1_hand_motions_77` to `_87`, and `_70` for Static). The book's
+Dash and Dual-Dash descriptions end without a full stop; the app adds one
+through its own keys (`learn_motion_dash_description`,
+`learn_motion_dual_dash_description`), so the book's keys and the printed
+edition keep the book's text.
+
+A pair already found with the hands swapped adds:
+
+> Same pair, hands swapped.
+
+The last stage's button reads “Continue to Timing and Direction,” following
+the existing “Continue to Hand Motions” label.
+
 ## Timing and Direction Comparison — Exact UI Copy
 
 The concept heading is exactly:
 
 > Timing and Direction
 
-This chapter follows Shift, Dash, and Static in the same lesson.
+Since 2026-10-11 this is its own lesson (`timing-and-direction`), which the
+Hand Motions lesson continues to. Its copy below is unchanged by the move.
 
 ### Bridge
 
@@ -165,6 +199,40 @@ the lesson does not repeat Water, Earth, Sun, Fire, Air, or Moon as headings.
   for Opposite. Timing captions are “In sync,” “½ cycle apart,” and “¼ cycle
   apart”; direction captions are “Same way” and “Opposite ways.” These are
   implementation choices under the delegated redesign, pending Austen's review.
+- 2026-10-10 — Austen approved the rebuild design
+  (`docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md`): one
+  motion map instead of one player per motion, the six combinations taught in
+  the lesson, and Timing and Direction moved to its own lesson. No new
+  teaching explanation was approved.
+- 2026-10-11 — Austen chose “Remain at the same point” as the Static caption
+  for the lesson, the Guide web page and the handbook (over the book's “Stay at
+  the current point”). The frozen first edition keeps its wording.
+- 2026-10-11 — Austen approved three lesson prompts exactly as written:
+  “Drag the hand to a point.” (motion map), “Drag both hands. Find all six.”
+  (two hands), and “Same pair, hands swapped.” (a mirrored pair lands on a
+  cell it already filled).
+- 2026-10-11 — Implemented the three-stage lesson with the approved prompts,
+  the book's combination names and descriptions, and the routine label
+  “Continue to Timing and Direction.” The lesson is BUILT pending his
+  hands-on confirmation.
+- 2026-10-11 — Austen chose the book's first sentence alone for the wrap-up
+  (“Using these, we can derive six combinations, named below.”) and full
+  stops on the Dash and Dual-Dash descriptions in the app, with the printed
+  first edition unchanged.
+- 2026-10-11 — Austen replaced “derive” with “make” in that line for
+  non-technical readers: “Using these, we can make six combinations, named
+  below.” (German “bilden” for “ableiten”). Relayed by the Guide page session;
+  the book key and the printed edition keep “derive.”
+- 2026-10-11 — Austen redesigned the two-hands stage as two grids side by side
+  (blue, then red) that fuse into one picture, and chose the prompt “Move the
+  blue hand, then the red hand. Find all six.” It replaces “Drag both hands.
+  Find all six.” German: “Bewege erst die blaue Hand, dann die rote. Finde
+  alle sechs.”
+- 2026-10-11 — The hand grids now take a click or tap on any point, with
+  Assemble's point rings. Austen chose the motion map prompt “Pick a point to
+  move the hand.” over “Tap or drag the hand to a point.” and keeping “Drag
+  the hand to a point.”, which it replaces. German: “Wähle einen Punkt, um die
+  Hand zu bewegen.”
 
 ## Shared-path Refinement Verification — 2026-09-04
 

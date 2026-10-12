@@ -14,7 +14,6 @@ import {
 import {
   ALPHA_BETA_MODES,
   GAMMA_MODES,
-  HAND_PATH_STEPS,
 } from "../../../src/lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
 import {
   HAND_MOTIONS_STAGE_SCHEMA_VERSION,
@@ -34,27 +33,13 @@ const emphasisShape = (message: string) =>
   );
 
 describe("canonical concept lesson content", () => {
-  it("moves legacy comparison progress past the inserted bridge", () => {
-    expect(HAND_MOTIONS_STAGE_SCHEMA_VERSION).toBe(2);
-    expect(migrateHandMotionsSavedStep(4, 1, HAND_PATH_STEPS.length)).toBe(5);
-    expect(migrateHandMotionsSavedStep(4, 2, HAND_PATH_STEPS.length)).toBe(4);
-    expect(migrateHandMotionsSavedStep(2, 1, HAND_PATH_STEPS.length)).toBe(2);
-  });
-
-  it("teaches hand paths before any visible letter", () => {
-    expect(HAND_PATH_STEPS.map((item) => item.id)).toEqual([
-      "shift",
-      "dash",
-      "static",
-    ]);
-    expect(HAND_PATH_STEPS.every((item) => item.sequence.word === "")).toBe(
-      true
-    );
-    expect(
-      HAND_PATH_STEPS.every((item) =>
-        item.sequence.steps.every((step) => step.letter === null)
-      )
-    ).toBe(true);
+  it("restarts saves from the hand-path carousel at the motion map", () => {
+    expect(HAND_MOTIONS_STAGE_SCHEMA_VERSION).toBe(3);
+    expect(migrateHandMotionsSavedStep(5, 2)).toBe(1);
+    expect(migrateHandMotionsSavedStep(2, 1)).toBe(1);
+    expect(migrateHandMotionsSavedStep(2, 3)).toBe(2);
+    expect(migrateHandMotionsSavedStep(9, 3)).toBe(3);
+    expect(migrateHandMotionsSavedStep(0, 3)).toBe(1);
   });
 
   it("orders all six timing/direction modes before the letter lessons", () => {
@@ -143,8 +128,8 @@ describe("canonical concept lesson composition", () => {
     const timingIntro = readSource(
       "src/lib/features/learn/components/interactive/motions/TimingDirectionIntro.svelte"
     );
-    const foundationContent = readSource(
-      "src/lib/features/learn/components/interactive/foundations/pictograph-foundation-content.ts"
+    const handMotionsTopic = readSource(
+      "src/lib/shared/guide-topics/hand-motions-topic.ts"
     );
     const type1 = readSource(
       "src/lib/features/learn/components/interactive/letters/type1/Type1ConceptExperience.svelte"
@@ -156,30 +141,27 @@ describe("canonical concept lesson composition", () => {
     expect(stage).toContain("PictographContainer");
     expect(stage).toContain("startPlacementDeriver");
     expect(stage).toContain("PropType.STAFF");
-    expect(motions).toContain("HandMotionPlayer");
-    expect(motions).toContain("HAND_PATH_STEPS");
-    expect(motions).toContain("ALPHA_BETA_MODES");
-    expect(motions).toContain("GAMMA_MODES");
-    expect(motions).toContain("TND_ELEMENTS");
-    expect(motions).toContain("TimingDirectionBoard");
-    expect(motions).toContain("TimingDirectionIntro");
-    expect(motions).toContain(
-      "const timingDirectionIndex = HAND_PATH_STEPS.length"
-    );
-    expect(motions.replace(/\s+/g, " ")).toContain(
-      'activeMotion ? tDynamic(`learn_motion_path_${activeMotion.id}_name`) : tDynamic("learn_motion_timing_direction")'
-    );
-    expect(motions).toContain('"stageSchemaVersion"');
+    // Hand Motions is three stages: the motion map, two hands finding the
+    // six combinations, then the six on one board (2026-10 rebuild).
+    expect(motions).toContain("HandMotionsMapStage");
+    expect(motions).toContain("HandPairsStage");
+    expect(motions).toContain("HandCombinationBoard");
+    expect(motions).toContain('getExperiencePersistence("hand-motions-intro")');
     expect(motions).toContain("migrateHandMotionsSavedStep");
-    expect(motions).toContain('viewMode === "scroll"\n      ? comparisonIndex');
+    expect(motions).toContain('"mapFound"');
+    expect(motions).toContain('"pairsFound"');
+    expect(motions).toContain("actionDisabled={!stageDone}");
+    expect(motions).toContain('onComplete?.("timing-and-direction")');
+    expect(motions).toContain('t("learn_ui_continue_timing_direction")');
+    expect(motions).toContain(
+      'viewMode === "scroll" ? BOARD_STAGE : savedStep - 1'
+    );
     expect(motions).toContain("getConceptPlacesByLevel(1)");
     expect(motions).toContain("LessonStageFrame");
-    expect(motions).toContain("var(--shell-w, 96rem)");
-    expect(motions).not.toContain("element-properties");
-    expect(motions).not.toContain("activeMode");
-    expect(motions).not.toContain("recap-state");
-    expect(motions).not.toContain('"Timing + Direction"');
-    expect(motions).not.toContain('class="axis-join"');
+    expect(motions).not.toContain("HandMotionPlayer");
+    expect(motions).not.toContain("TimingDirectionBoard");
+    expect(motions).not.toContain("TimingDirectionIntro");
+    expect(motions).not.toContain("timingDirectionOnly");
     expect(motions).not.toContain("letterQueryHandler");
     expect(motions).not.toContain("LessonPictographStage");
     expect(placementsSrc).toContain('onComplete?.("hand-motions-intro")');
@@ -266,7 +248,9 @@ describe("canonical concept lesson composition", () => {
     );
     expect(timingIntro).toContain("SegmentedControl");
     expect(timingIntro).toContain('semantics="radiogroup"');
-    expect(timingIntro).toContain('let timing = $state<TimingMode>("together");');
+    expect(timingIntro).toContain(
+      'let timing = $state<TimingMode>("together");'
+    );
     expect(timingIntro).toContain(
       'rotations[0] === rotations[1] ? "same" : "opposite"'
     );
@@ -281,7 +265,7 @@ describe("canonical concept lesson composition", () => {
     expect(timingIntro).not.toMatch(
       /border-(left|right|top|bottom):\s*[2-9]\d*px/
     );
-    expect(foundationContent).toContain("PropType.HAND");
+    expect(handMotionsTopic).toContain("PropType.HAND");
     expect(rotation).toContain("letterQueryHandler");
     expect(rotation).toContain("LessonPictographStage");
     expect(type1).toContain("letterQueryHandler");
@@ -296,6 +280,26 @@ describe("canonical concept lesson composition", () => {
     expect(rotation).not.toContain("StaffPlacementVisualizer");
     expect(type1).not.toContain("TYPE1_ALPHABET");
     expect(type1).not.toContain("Type1ProspinPage");
+  });
+
+  it("runs Timing and Direction as its own lesson", () => {
+    const timing = readSource(
+      "src/lib/features/learn/components/interactive/motions/TimingDirectionConceptExperience.svelte"
+    );
+
+    expect(timing).toContain("TimingDirectionExamples");
+    expect(timing).toContain("TimingDirectionBoard");
+    expect(timing).toContain("TND_ELEMENTS");
+    expect(timing).toContain(
+      'getExperiencePersistence("timing-and-direction")'
+    );
+    expect(timing).toContain("migrateTimingLessonSavedStep");
+    expect(timing).toContain('onComplete?.("reading-choreo-cards")');
+    expect(timing).toContain('viewMode === "scroll"\n      ? comparisonIndex');
+    expect(timing).toContain("LessonStageFrame");
+    expect(timing).not.toContain("MotionsConceptExperience");
+    expect(timing).not.toContain("HandMotionPlayer");
+    expect(timing).not.toContain("HAND_PATH_STEPS");
   });
 
   it("publishes motion, timing/direction, and anatomy before letters", () => {

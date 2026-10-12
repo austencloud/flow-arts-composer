@@ -35,6 +35,10 @@ export interface TnDCardDisplay {
   props: TnDCardLine;
   /** The hand mode is set but the current LOOP cannot keep it. */
   handBlocked: boolean;
+  /** The blocked hand mode's element, shown greyed under a LOOP tag. */
+  handBlockedElement: TnDElement | null;
+  /** Turns are matched, by the switch or because a prop timing forces it. */
+  turnsMatched: boolean;
   accent: string | null;
   darkComplement: string | null;
   /** Something is set and in force, so the card wears an accent. */
@@ -47,6 +51,8 @@ export interface TnDCardDisplayInput {
   propRelationship: TnDSelection;
   matchHandTurns: boolean;
   blockedHandModes: Partial<Record<VtgMode, string>>;
+  /** Turns only exist from level 2 up; below that nothing is matched. */
+  level?: number;
 }
 
 export function buildTnDCardDisplay(
@@ -76,6 +82,12 @@ export function buildTnDCardDisplay(
       element: propElement,
     },
     handBlocked,
+    handBlockedElement: handBlocked
+      ? tndSelectionElement(handRelationship)
+      : null,
+    turnsMatched:
+      (input.level ?? 2) >= 2 &&
+      (matchHandTurns || propRelationship !== "free"),
     accent: accentElement?.accentColor ?? null,
     darkComplement: accentElement?.darkComplement ?? null,
     active: accentElement !== null,

@@ -1,7 +1,7 @@
 import type { Composition } from "#lib/shared/animation-engine/domain/compose-types.js";
 import { getTunnelLayerColors } from "#lib/shared/animation-engine/domain/compose-types.js";
-import { compositionSyncer } from "#lib/features/compose/services/composition-syncer.js";
-import { compositionToGridState } from "#lib/features/compose/tabs/arrange/services/arrange-composition-converter.js";
+import { compositionSyncer } from "#lib/features/post/compose-import/composition-syncer.js";
+import { compositionToGridState } from "#lib/shared/media-composition/arrangement/arrange-composition-converter.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
 import type { PostProject } from "@austencloud/video-editor/core";

@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
   import { untrack } from "svelte";
+  import type { Snippet } from "svelte";
   import type { GridJoin } from "@tka/tka-types";
   import { getGridJoinLayout, toJoinedHandPoint } from "@tka/render-core";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
@@ -79,6 +80,32 @@
      * on its own grid. Absent or null keeps one grid for both hands.
      */
     gridJoin?: GridJoin | null;
+    /** "left" keeps one blue hand on the grid, "right" one red hand; the other is never placed. */
+    hands?: "both" | "left" | "right";
+    /**
+     * With one hand: a press on any point moves the hand there, and every
+     * point wears Assemble's ring so the choices show. Needs editAfterCompletion.
+     */
+    tapToMove?: boolean;
+    /**
+     * A press picks a point for the hand instead of moving it there: the hand
+     * stays put and the grid reports the pick, for a figure that plays the
+     * move itself later.
+     */
+    onPick?: (hand: HandSide, location: GridLocation) => void;
+    /** No backdrop behind the grid, so a grid laid over another shows both. */
+    transparentBackground?: boolean;
+    /** False hides the hands and shows the grid alone, as a self-building figure starts. */
+    showProps?: boolean;
+    /** Fires once the pictograph has drawn (PictographContainer onReady). */
+    onReady?: () => void;
+    /** Figure art drawn over the pictograph and under the touch targets, in the grid's own square. */
+    figureLayer?: Snippet;
+    /** The point a dragged hand would land on now, and which hand; nulls when no drag aims at one. */
+    onDragTarget?: (
+      location: GridLocation | null,
+      hand: HandSide | null
+    ) => void;
     onChange?: (change: PropPlacementChange) => void;
     onPlacementComplete?: (leftLocation, rightLocation) => void;
     onOrientationChange?: (color: HandSide, orientation: Orientation) => void;
@@ -113,6 +140,14 @@
     guideLineType,
     guideLineLocations = null,
     gridJoin = null,
+    hands = "both",
+    tapToMove = false,
+    onPick,
+    transparentBackground = false,
+    showProps = true,
+    onReady,
+    figureLayer,
+    onDragTarget,
     onChange = () => {},
     onPlacementComplete,
     onOrientationChange,
@@ -175,9 +210,13 @@
       getLeftNoun: () => leftNoun,
       getRightNoun: () => rightNoun,
       getActivePoints: () => activePoints,
+      getHands: () => hands,
+      getTapToMove: () => tapToMove,
+      getPickOnly: () => onPick !== undefined,
     },
     {
       triggerHaptic,
+      onPick: (hand, location) => onPick?.(hand, location),
       onChange: (change) => onChange(change),
       onPlacementComplete: (left, right) => onPlacementComplete?.(left, right),
       onOrientationChange: (color, orientation) =>
@@ -285,6 +324,12 @@
   });
 
   $effect(() => {
+    const target = aim.locationTarget?.location ?? null;
+    const hand = target === null ? null : aim.locationDragColor;
+    untrack(() => onDragTarget?.(target, hand));
+  });
+
+  $effect(() => {
     return () => motion.destroy();
   });
 
@@ -387,8 +432,17 @@
           motionStartData={withJoin(motion.startData)}
           motionProgress={motion.active ? motion.progress : null}
           arrowOpacity={motion.active ? 0 : 1}
+          {transparentBackground}
+          {showProps}
+          {onReady}
         />
       </div>
+
+      {#if figureLayer}
+        <div class="figure-layer" aria-hidden="true">
+          {@render figureLayer()}
+        </div>
+      {/if}
 
       <PropPlacementInteractionOverlay
         {placement}
@@ -507,6 +561,13 @@
   .pictograph-layer {
     width: 100%;
     height: 100%;
+  }
+
+  /* Figure art shares the pictograph's square and never takes a pointer. */
+  .figure-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
 
   .dragging-left :global(.left-prop-svg),

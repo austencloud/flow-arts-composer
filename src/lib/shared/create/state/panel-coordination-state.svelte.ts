@@ -352,7 +352,9 @@ export interface PanelCoordinationState {
 
   // TnD panel state (Hands, Props, Match turns)
   get isTnDPanelOpen(): boolean;
-  openTnDPanel(): void;
+  /** The section a tap on one half of the TnD card asked the panel to show. */
+  get tndPanelFocus(): "hands" | "props" | null;
+  openTnDPanel(focus?: "hands" | "props"): void;
   closeTnDPanel(): void;
 
   // Duration Preview Mode State (for live preview in duration pattern drawer)
@@ -570,6 +572,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
 
   // TnD panel state
   let isTnDPanelOpen = $state(false);
+  let tndPanelFocus = $state<"hands" | "props" | null>(null);
 
   // Customize overlay state (Style + Rhythm + Start/End in one overlay)
   let isCustomizeOverlayOpen = $state(false);
@@ -1129,8 +1132,13 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       return isTnDPanelOpen;
     },
 
-    openTnDPanel() {
+    get tndPanelFocus() {
+      return tndPanelFocus;
+    },
+
+    openTnDPanel(focus?: "hands" | "props") {
       closeAllPanels();
+      tndPanelFocus = focus ?? null;
       isTnDPanelOpen = true;
     },
 

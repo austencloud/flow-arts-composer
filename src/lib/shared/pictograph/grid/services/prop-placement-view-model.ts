@@ -191,14 +191,27 @@ export interface PlacementTransitionInput {
   fromLocation: GridLocation;
   toLocation: GridLocation;
   direction: "clockwise" | "counterclockwise";
-  leftLocation: GridLocation;
-  rightLocation: GridLocation;
+  /** "arc" (default) is the pro shift around the center; "dash" goes straight through it. */
+  path?: "arc" | "dash";
+  /** The partner's own move when both hands travel together. Without it the
+   *  partner holds its committed point. */
+  partnerMove?: PlacementPartnerMove | null;
+  /** Null when the grid holds only the moving hand. */
+  leftLocation: GridLocation | null;
+  rightLocation: GridLocation | null;
   leftOrientation: Orientation;
   rightOrientation: Orientation;
   leftPropType: PropType;
   rightPropType: PropType;
   betaSwapped: boolean;
   previewPictographData: StepData | PictographData | null;
+}
+
+export interface PlacementPartnerMove {
+  fromLocation: GridLocation;
+  toLocation: GridLocation;
+  direction: "clockwise" | "counterclockwise";
+  path?: "arc" | "dash";
 }
 
 export interface PlacementTransition {
@@ -251,18 +264,26 @@ export function buildPlacementTransformTransition(
 /**
  * Builds the pair of pictographs that let PictographContainer animate a start
  * placement location change in place: the moving prop travels a pro-zero-turns
- * arc around the grid center while the partner's beta offset resolves via the
+ * arc around the grid center (or a straight dash through it) while the
+ * partner, when there is one, resolves its beta offset via the
  * prepared-endpoint correction lerp in calculatePictographMotionPositions.
  */
 export function buildPlacementTransition(
   input: PlacementTransitionInput
 ): PlacementTransition {
   const isBlueMoving = input.movingColor === HandSide.LEFT;
+  const partnerMove = input.partnerMove ?? null;
+  const partnerStart = (committed: GridLocation | null) =>
+    partnerMove ? partnerMove.fromLocation : committed;
 
   const startData = buildPlacementPictographData({
     gridMode: input.gridMode,
-    leftLocation: isBlueMoving ? input.fromLocation : input.leftLocation,
-    rightLocation: isBlueMoving ? input.rightLocation : input.fromLocation,
+    leftLocation: isBlueMoving
+      ? input.fromLocation
+      : partnerStart(input.leftLocation),
+    rightLocation: isBlueMoving
+      ? partnerStart(input.rightLocation)
+      : input.fromLocation,
     leftOrientation: input.leftOrientation,
     rightOrientation: input.rightOrientation,
     leftPropType: input.leftPropType,
@@ -271,37 +292,58 @@ export function buildPlacementTransition(
     previewPictographData: input.previewPictographData,
   });
 
-  const movingMotion = createMotionData({
-    motionType: MotionType.PRO,
-    rotationDirection:
-      input.direction === "clockwise"
-        ? RotationDirection.CLOCKWISE
-        : RotationDirection.COUNTER_CLOCKWISE,
-    startLocation: input.fromLocation,
-    endLocation: input.toLocation,
-    turns: 0,
-    startOrientation: isBlueMoving
-      ? input.leftOrientation
-      : input.rightOrientation,
-    endOrientation: isBlueMoving
-      ? input.leftOrientation
-      : input.rightOrientation,
-    isVisible: true,
-    propType: isBlueMoving ? input.leftPropType : input.rightPropType,
-    arrowLocation: input.toLocation,
-    hand: input.movingColor,
-    gridMode: input.gridMode,
-    // Force the circular path around the grid center regardless of the global
-    // animation path-shape setting — this preview IS the pathway.
-    pathShape: "arc",
+  const travelMotion = (color: HandSide, move: PlacementPartnerMove) => {
+    const dash = move.path === "dash";
+    const isBlue = color === HandSide.LEFT;
+    const orientation = isBlue ? input.leftOrientation : input.rightOrientation;
+    return createMotionData({
+      motionType: dash ? MotionType.DASH : MotionType.PRO,
+      rotationDirection: dash
+        ? RotationDirection.NO_ROTATION
+        : move.direction === "clockwise"
+          ? RotationDirection.CLOCKWISE
+          : RotationDirection.COUNTER_CLOCKWISE,
+      startLocation: move.fromLocation,
+      endLocation: move.toLocation,
+      turns: 0,
+      startOrientation: orientation,
+      endOrientation: orientation,
+      isVisible: true,
+      propType: isBlue ? input.leftPropType : input.rightPropType,
+      arrowLocation: move.toLocation,
+      hand: color,
+      gridMode: input.gridMode,
+      // Force the circular path around the grid center regardless of the
+      // global animation path-shape setting — this preview IS the pathway. A
+      // dash is always straight, so it needs no override.
+      ...(dash ? {} : { pathShape: "arc" as const }),
+    });
+  };
+  const movingMotion = travelMotion(input.movingColor, {
+    fromLocation: input.fromLocation,
+    toLocation: input.toLocation,
+    direction: input.direction,
+    path: input.path,
   });
-  const partnerMotion = buildMotion(
-    isBlueMoving ? input.rightLocation : input.leftLocation,
-    isBlueMoving ? HandSide.RIGHT : HandSide.LEFT,
-    isBlueMoving ? input.rightOrientation : input.leftOrientation,
-    isBlueMoving ? input.rightPropType : input.leftPropType,
-    input.gridMode
-  );
+  const partnerColor = isBlueMoving ? HandSide.RIGHT : HandSide.LEFT;
+  const partnerLocation = isBlueMoving
+    ? input.rightLocation
+    : input.leftLocation;
+  const partnerMotion = partnerMove
+    ? travelMotion(partnerColor, partnerMove)
+    : partnerLocation
+      ? buildMotion(
+          partnerLocation,
+          partnerColor,
+          isBlueMoving ? input.rightOrientation : input.leftOrientation,
+          isBlueMoving ? input.rightPropType : input.leftPropType,
+          input.gridMode
+        )
+      : null;
+  const motions: PictographData["motions"] = {
+    [input.movingColor]: movingMotion,
+  };
+  if (partnerMotion) motions[partnerColor] = partnerMotion;
 
   const base = input.previewPictographData;
   const stepBase = base && "stepNumber" in base ? base : null;
@@ -313,13 +355,12 @@ export function buildPlacementTransition(
     endPlacement: base?.endPlacement ?? null,
     gridMode: input.gridMode,
     betaSwapped: input.betaSwapped,
-    motions: {
-      [HandSide.LEFT]: isBlueMoving ? movingMotion : partnerMotion,
-      [HandSide.RIGHT]: isBlueMoving ? partnerMotion : movingMotion,
-    },
+    motions,
     // The container only computes motion overrides for StepData ("stepNumber"
     // narrowing), so guarantee the beat fields even without a preview step.
-    stepNumber: stepBase?.stepNumber ?? 0,
+    // Without one, -1 (no label): 0 would draw "Start" and the hand key on
+    // every frame of the move, which the resting grid never shows.
+    stepNumber: stepBase?.stepNumber ?? -1,
     duration: stepBase?.duration ?? 1,
     leftReversal: false,
     rightReversal: false,
