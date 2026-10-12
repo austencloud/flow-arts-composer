@@ -59,6 +59,13 @@ export function plainTopicText(key: TranslationKey): string {
   return t(key).replace(/\s*<br\s*\/?>\s*/gi, " ");
 }
 
+/** A unit's lines, split where the Guide's proof copy breaks them. */
+export function handMotionsTopicLines(unit: HandMotionsTopicUnit): string[] {
+  return handMotionsTopicText(unit)
+    .split(/\s*<br\s*\/?>\s*/i)
+    .filter(Boolean);
+}
+
 export type HandMove = "shift" | "dash" | "static";
 
 export const MOTION_MAP_MOVES = [
@@ -146,6 +153,26 @@ export function motionMapArrowData(
         to: target.to,
       }),
     },
+  };
+}
+
+/**
+ * One blue hand's move as a whole pictograph: its arrow, and the hand where
+ * the move ends. Static has no arrow, as in the book. Null for a step that is
+ * no hand move.
+ */
+export function handMovePictographData(
+  from: GridLocation,
+  to: GridLocation,
+  hand: HandSide = HandSide.LEFT
+): PictographData | null {
+  const move = classifyHandMove(from, to);
+  if (!move) return null;
+  return {
+    id: `hand-move-${hand}-${from}-${to}`,
+    letter: null,
+    gridMode: GridMode.DIAMOND,
+    motions: { [hand]: handMotion(hand, { move, from, to }) },
   };
 }
 

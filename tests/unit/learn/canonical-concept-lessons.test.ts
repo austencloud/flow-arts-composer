@@ -33,13 +33,15 @@ const emphasisShape = (message: string) =>
   );
 
 describe("canonical concept lesson content", () => {
-  it("restarts saves from the hand-path carousel at the motion map", () => {
-    expect(HAND_MOTIONS_STAGE_SCHEMA_VERSION).toBe(3);
+  it("restarts saves from before the motions chart at the chart", () => {
+    expect(HAND_MOTIONS_STAGE_SCHEMA_VERSION).toBe(4);
     expect(migrateHandMotionsSavedStep(5, 2)).toBe(1);
     expect(migrateHandMotionsSavedStep(2, 1)).toBe(1);
-    expect(migrateHandMotionsSavedStep(2, 3)).toBe(2);
-    expect(migrateHandMotionsSavedStep(9, 3)).toBe(3);
-    expect(migrateHandMotionsSavedStep(0, 3)).toBe(1);
+    // Schema 3 began at the map, now stage 2.
+    expect(migrateHandMotionsSavedStep(2, 3)).toBe(1);
+    expect(migrateHandMotionsSavedStep(3, 4)).toBe(3);
+    expect(migrateHandMotionsSavedStep(9, 4)).toBe(4);
+    expect(migrateHandMotionsSavedStep(0, 4)).toBe(1);
   });
 
   it("orders all six timing/direction modes before the letter lessons", () => {
@@ -141,14 +143,16 @@ describe("canonical concept lesson composition", () => {
     expect(stage).toContain("PictographContainer");
     expect(stage).toContain("startPlacementDeriver");
     expect(stage).toContain("PropType.STAFF");
-    // Hand Motions is three stages: the motion map, two hands finding the
-    // six combinations, then the six on one board (2026-10 rebuild).
+    // Hand Motions is four stages: the book's chart of the three motions,
+    // the motion map, two hands finding the six combinations, then the six
+    // on one board (2026-10 rebuild; the chart came first on 2026-10-12).
+    expect(motions).toContain("HandMotionsIntroStage");
     expect(motions).toContain("HandMotionsMapStage");
     expect(motions).toContain("HandPairsStage");
     expect(motions).toContain("HandCombinationBoard");
     expect(motions).toContain('getExperiencePersistence("hand-motions-intro")');
     expect(motions).toContain("migrateHandMotionsSavedStep");
-    expect(motions).toContain('"mapFound"');
+    expect(motions).toContain('"mapMoves"');
     expect(motions).toContain('"pairsFound"');
     expect(motions).toContain("actionDisabled={!stageDone}");
     expect(motions).toContain('onComplete?.("timing-and-direction")');

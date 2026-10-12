@@ -1,7 +1,11 @@
 <!--
-  Hand Motions, stage 1: the motion map beside its three moves. The map builds
-  itself once on screen, then the learner drags the blue hand; each move they
-  make gets its found mark. The stage is done once all three are found.
+  Hand Motions, stage 2: the motion map beside a slot for each of its three
+  moves. The learner taps a point (or drags the blue hand); the move's arrow
+  draws on, the hand follows it, and the slot it counts for lights. The first
+  time, the learner's own move fills the slot as a small picture with its
+  name, as the two-hand stage's board fills (Austen, 2026-10-12: the old
+  cards were too understated to show when a move was done). The stage is done
+  once all three slots are filled.
   Spec: docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md
 -->
 <script lang="ts">
@@ -10,22 +14,41 @@
   import {
     MOTION_MAP_MOVES,
     handMotionsTopicText,
+    handMovePictographData,
+    type ComboHand,
     type HandMove,
   } from "#lib/shared/guide-topics/hand-motions-topic.js";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { getPlacementGridPoints } from "#lib/shared/pictograph/grid/services/placement-grid-points.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
 
   interface Props {
-    found: readonly HandMove[];
-    onFind?: (move: HandMove) => void;
+    /** Each move found so far, as the learner first made it. */
+    found: Partial<Record<HandMove, ComboHand>>;
+    onFind?: (made: ComboHand) => void;
   }
 
   let { found, onFind }: Props = $props();
 
+  const handPoints = getPlacementGridPoints(GridMode.DIAMOND);
+
   let lit = $state<HandMove | null>(null);
+  /** Counts the learner's moves, so the lit slot answers each one. */
+  let moves = $state(0);
   let announcement = $state("");
 
-  function moved(move: HandMove, by: "demo" | "learner") {
+  function moved(
+    move: HandMove,
+    by: "demo" | "learner",
+    from: GridLocation,
+    to: GridLocation
+  ) {
     if (by === "demo") return;
-    if (!found.includes(move)) onFind?.(move);
+    moves += 1;
+    if (!found[move]) onFind?.({ move, from, to });
     const entry = MOTION_MAP_MOVES.find((candidate) => candidate.id === move);
     if (!entry) return;
     announcement = t("learn_motion_path_aria", {
@@ -38,11 +61,50 @@
 <div class="map-stage">
   <div class="map-layout">
     <div class="figure">
-      <MotionMapFigure interactive bind:lit onMove={moved} />
+      <MotionMapFigure interactive demo={false} bind:lit onMove={moved} />
     </div>
     <ul class="moves">
       {#each MOTION_MAP_MOVES as move (move.id)}
-        <li class:lit={lit === move.id} class:found={found.includes(move.id)}>
+        {@const made = found[move.id]}
+        {@const picture = made
+          ? handMovePictographData(made.from, made.to)
+          : null}
+        {@const holdPoint =
+          made?.move === "static"
+            ? handPoints.find((point) => point.location === made.from)
+            : undefined}
+        <li class:lit={lit === move.id} class:found={!!made}>
+          <div class="art" aria-hidden="true">
+            {#if picture}
+              <div class="picture">
+                <PictographContainer
+                  pictographData={picture}
+                  gridMode={GridMode.DIAMOND}
+                  leftPropTypeOverride={PropType.HAND}
+                  rightPropTypeOverride={PropType.HAND}
+                  visibleHand={HandSide.LEFT}
+                  showTKA={false}
+                  showPlacements={false}
+                  showReversals={false}
+                  showTnD={false}
+                  showElemental={false}
+                  showNonRadialPoints={false}
+                  stepNumberOverride={false}
+                />
+                {#if holdPoint}
+                  <!-- Static has no arrow; its ring is the map's halo. -->
+                  <svg class="ring" viewBox="0 0 950 950">
+                    <circle cx={holdPoint.x} cy={holdPoint.y} r="78" />
+                  </svg>
+                {/if}
+              </div>
+            {/if}
+            {#if lit === move.id}
+              {#key moves}
+                <span class="ping"></span>
+              {/key}
+            {/if}
+          </div>
           <span class="name">{handMotionsTopicText(move.name)}</span>
           <span class="caption">{handMotionsTopicText(move.caption)}</span>
           <i class="fa-solid fa-check check" aria-hidden="true"></i>
@@ -68,32 +130,36 @@
     width: 100%;
   }
 
-  /* Sized by the window's height too, so the heading, map, moves and the
-     lesson controls fit one screen. Stacked, the moves sit under the map and
+  /* Sized by the window's height too, so the heading, map, slots and the
+     lesson controls fit one screen. Stacked, the slots sit under the map and
      the controls are taller, so the map gives up more height. */
   .figure {
-    width: min(100%, max(17rem, calc(100svh - 30rem)), 44rem);
+    width: min(100%, max(16rem, calc(100svh - 36rem)), 44rem);
   }
 
   .moves {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.4rem;
+    gap: 0.5rem;
     width: 100%;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
+  /* As the two-hand board's cells: the picture's slot over its name. */
   .moves li {
+    position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 1rem;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "name check"
-      "caption caption";
-    align-items: start;
-    gap: 0.2rem 0.25rem;
-    padding: 0.5rem 0.55rem;
+      "art"
+      "name"
+      "caption";
+    align-content: start;
+    gap: 0.3rem;
+    min-width: 0;
+    padding: 0.45rem;
     border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
     border-radius: 0.75rem;
     transition:
@@ -102,15 +168,15 @@
   }
 
   @container hand-map (min-width: 40rem) {
-    /* The map takes its full size first; the moves get what is left. */
+    /* The map takes its full size first; the slots get what is left. */
     .map-layout {
       grid-template-columns:
         min(
           max(17rem, calc(100svh - 21rem)),
           44rem,
-          calc(100% - 14rem - var(--map-gap))
+          calc(100% - 15rem - var(--map-gap))
         )
-        minmax(14rem, 22rem);
+        minmax(15rem, 22rem);
       justify-content: center;
     }
 
@@ -120,18 +186,26 @@
 
     .moves {
       grid-template-columns: minmax(0, 1fr);
-      gap: 0.5rem;
+      gap: 0.6rem;
       width: min(100%, 22rem);
     }
 
     .moves li {
-      grid-template-columns: minmax(0, 1fr) 1.25rem;
+      grid-template-columns: clamp(4.5rem, 12svh, 6.5rem) minmax(0, 1fr);
       grid-template-areas:
-        "name check"
-        "caption check";
-      align-items: center;
-      gap: 0 0.75rem;
-      padding: 0.65rem 0.9rem;
+        "art name"
+        "art caption";
+      align-content: center;
+      gap: 0.2rem 0.85rem;
+      padding: 0.6rem 2.5rem 0.6rem 0.6rem;
+    }
+
+    .name {
+      align-self: end;
+    }
+
+    .caption {
+      align-self: start;
     }
   }
 
@@ -139,34 +213,128 @@
     background: color-mix(in srgb, var(--prop-blue, #3b82f6) 16%, transparent);
     border-color: color-mix(
       in srgb,
-      var(--prop-blue, #3b82f6) 55%,
+      var(--prop-blue, #3b82f6) 60%,
       transparent
     );
+  }
+
+  .art {
+    grid-area: art;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, currentColor 5%, transparent);
+  }
+
+  .picture {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: inherit;
+    animation: fill-slot var(--duration-emphasis, 280ms) ease-out both;
+  }
+
+  .ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .ring circle {
+    fill: color-mix(in srgb, var(--prop-blue, #3b82f6) 14%, transparent);
+    stroke: var(--prop-blue, #3b82f6);
+    stroke-width: 5;
+    stroke-opacity: 0.8;
+  }
+
+  @keyframes fill-slot {
+    from {
+      opacity: 0;
+      transform: scale(0.85);
+    }
+  }
+
+  /* Each move answers on its slot, even one already found. */
+  .ping {
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--prop-blue, #3b82f6);
+    border-radius: inherit;
+    pointer-events: none;
+    animation: ping 600ms ease-out both;
+  }
+
+  @keyframes ping {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.12);
+    }
   }
 
   .name {
     grid-area: name;
     color: var(--theme-text);
     font-weight: 700;
+    line-height: 1.2;
+    opacity: 0.55;
+    transition: opacity var(--transition-normal);
+  }
+
+  .found .name {
+    opacity: 1;
   }
 
   .caption {
     grid-area: caption;
     color: var(--theme-text-dim);
     font-size: var(--font-size-min, 0.875rem);
-    line-height: 1.4;
+    line-height: 1.35;
+    text-wrap: pretty;
   }
 
   /* The check's slot is always reserved, so a find moves nothing. */
   .check {
-    grid-area: check;
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--theme-panel-bg);
     color: var(--theme-text);
+    font-size: 0.8rem;
     opacity: 0;
     transition: opacity var(--transition-normal);
   }
 
   .found .check {
     opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .moves li,
+    .name,
+    .check {
+      transition: none;
+    }
+
+    .picture,
+    .ping {
+      animation: none;
+    }
+
+    .ping {
+      display: none;
+    }
   }
 
   .sr-only {
