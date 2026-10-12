@@ -212,50 +212,41 @@ describe("homepage public-links contract", () => {
     expect(siteHeader).not.toContain("/notation/loops");
   });
 
-  it("keeps the homepage and Composer compact and hands About directly to the sitemap", () => {
-    // The compact list is a multi-line `||` chain that Prettier reflows as
-    // routes join it, so match the two anchors across whitespace.
-    expect(marketingChrome).toMatch(
-      /path === "\/" \|\|\s+path === "\/composer" \|\|/
-    );
-    expect(marketingChrome).toContain('path === "/about"');
-    expect(marketingChrome).toContain('"sitemap"');
-    expect(marketingChrome).toContain('"full"');
-    expect(marketingChrome).toContain("<SiteFooter");
-    expect(marketingChrome).toContain("variant={footerVariant}");
-    expect(marketingChrome).toContain("surface={footerSurface}");
-    expect(marketingChrome).toContain("immersive={footerImmersive}");
+  it("renders one footer that continues the page surface instead of seating itself", () => {
+    // One composition on every page inside MarketingChrome: no per-route
+    // variant, no History exception. Only the timing lesson keeps none.
+    expect(marketingChrome).toContain("<SiteFooter surface={footerSurface} />");
+    expect(marketingChrome).not.toContain("footerVariant");
+    expect(marketingChrome).not.toContain("footerImmersive");
+    expect(marketingChrome).toContain("{#if !isTimingLesson}");
     // A page that paints its own opaque surface to the viewport edge hands it
-    // to the footer, which continues it instead of settling onto the star
-    // field. Without that the 4.5rem handoff gap shows a band of sky, and the
-    // footer's scrim and hairline finish making the bottom of the page look
-    // like a different site.
+    // to the footer, which paints the same surface. The guide hub joins the
+    // deep guide pages.
     expect(marketingChrome).toContain("pageSurface(path)");
     expect(pageSurface).toContain(
       'if (path === "/history") return ARCHIVE_INK'
     );
     expect(pageSurface).toContain(
-      'if (path.startsWith("/guide/")) return GUIDE_CANVAS'
+      'if (path === "/guide" || path.startsWith("/guide/")) return GUIDE_CANVAS'
     );
     expect(siteFooter).toContain("surface?: string");
-    expect(siteFooter).toContain("immersive?: boolean");
-    expect(siteFooter).toContain("class:surfaced={Boolean(surface)}");
     expect(siteFooter).toContain("style:background={surface}");
-    expect(siteFooter).toContain(".site-footer.surfaced");
-    expect(siteFooter).toContain(".site-footer.immersive");
-    // The surfaced footer drops all three: gap, scrim, hairline.
-    expect(siteFooter).toMatch(
-      /\.site-footer\.surfaced \{[^}]*margin-top: 0;[^}]*border-top: 0;/
-    );
+    expect(siteFooter).not.toMatch(/\bvariant\b/);
+    expect(siteFooter).not.toContain("immersive");
+    expect(siteFooter).not.toContain("surfaced");
+    expect(siteFooter).not.toMatch(/\.(compact|sitemap)\b/);
+    // The footer never paints a seat of its own: no handoff gap, no hairline,
+    // no scrim. Its only line is the .bottom rule inside it.
+    const footerRule = siteFooter.match(/\.site-footer \{([^}]*)\}/)?.[1];
+    expect(footerRule).toBeDefined();
+    expect(footerRule).not.toMatch(/margin|border|background/);
     // One definition of the archive ink, so the room and the footer beneath it
     // cannot drift apart.
     expect(historyPage).toContain("ARCHIVE_INK");
     expect(historyPage).not.toContain("background: oklch(0.115 0.008 270)");
-    expect(siteFooter).toContain('variant?: "full" | "compact" | "sitemap"');
-    expect(siteFooter).toContain('variant = "full"');
-    expect(siteFooter).toContain('class:sitemap={variant === "sitemap"}');
-    expect(siteFooter).toContain('{#if variant !== "sitemap"}');
-    expect(siteFooter).toContain('{#if variant !== "compact"}');
+    // The brand column and both link groups render unconditionally.
+    expect(siteFooter).toContain('<div class="brand">');
+    expect(siteFooter).toContain('class="composer-cta"');
     // Prettier puts the nav's attributes on their own lines once the
     // translated aria-label makes the tag too long, so match across whitespace.
     expect(siteFooter).toMatch(/<nav\s+class="col col-static"/);

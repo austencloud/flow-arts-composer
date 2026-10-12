@@ -1,11 +1,15 @@
 <script lang="ts">
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   /**
-   * SiteFooter owns three compositions of the same navigation: the full
-   * interior footer, the compact homepage footer, and a sitemap-only handoff
-   * for pages that already finish with their own brand and Composer action.
-   * MarketingChrome renders it outside the route crossfade, while the guide
-   * subtree uses the full default.
+   * SiteFooter: one composition on every public page (brand column, the
+   * Explore and Learn link rows, and the legal bottom). MarketingChrome
+   * renders it outside the route crossfade.
+   *
+   * It never paints a seat of its own: no top margin, no hairline, no scrim.
+   * It continues whatever surface the page above shows, the page's opaque
+   * surface when MarketingChrome hands one over, or the star field (it is
+   * transparent) when the page floats on the sky. The `.bottom` rule is the
+   * only line it draws.
    *
    * Terms/Privacy keep LandingFooter's behavior: on narrow viewports they
    * open the in-place LegalSheet instead of navigating.
@@ -15,25 +19,15 @@
   import { siteCopy } from "../site-copy";
 
   let {
-    variant = "full",
     surface,
-    immersive = false,
   }: {
-    variant?: "full" | "compact" | "sitemap";
     /**
      * The opaque surface the page above runs to the viewport edge, when it has
-     * one. Given it, the footer continues that surface rather than settling
-     * onto the cosmic background: no handoff gap, no sky scrim, no hairline
-     * across what should read as one continuous page. Pages that float their
-     * content on the star field leave this unset.
+     * one. Given it, the footer paints that same surface so the two read as
+     * one continuous page. Pages that float their content on the star field
+     * leave this unset and the footer stays transparent over the sky.
      */
     surface?: string;
-    /**
-     * Hide the footer after a viewport-sized room on non-phone layouts. The
-     * room's persistent header already provides global navigation; phones keep
-     * the compact footer after their document-flow version of the same page.
-     */
-    immersive?: boolean;
   } = $props();
 
   let sheetOpen = $state(false);
@@ -111,63 +105,46 @@
   </div>
 {/snippet}
 
-<footer
-  class="site-footer"
-  class:compact={variant === "compact"}
-  class:full={variant === "full"}
-  class:sitemap={variant === "sitemap"}
-  class:surfaced={Boolean(surface)}
-  class:immersive
-  style:background={surface}
->
+<footer class="site-footer" style:background={surface}>
   <div class="inner">
-    <div
-      class:cols={variant !== "compact"}
-      class:compact-main={variant === "compact"}
-    >
-      {#if variant !== "sitemap"}
-        <div class="brand">
-          <a
-            href="/"
-            class="wordmark"
-            aria-label={siteCopy("TKA, The Kinetic Alphabet, Home")}>TKA</a
-          >
-          <p class="tagline">{siteCopy("Notation for flow arts.")}</p>
-          {#if variant === "full"}
-            <a
-              class="composer-cta"
-              href="/create"
-              data-sveltekit-reload
-              onclick={() =>
-                trackCtaClick("footer", {
-                  cta_type: "open_composer",
-                  destination: "/create",
-                })}
-            >
-              {siteCopy("Open Flow Arts Composer")}
-            </a>
-          {/if}
-        </div>
-      {/if}
+    <div class="cols">
+      <div class="brand">
+        <a
+          href="/"
+          class="wordmark"
+          aria-label={siteCopy("TKA, The Kinetic Alphabet, Home")}>TKA</a
+        >
+        <p class="tagline">{siteCopy("Notation for flow arts.")}</p>
+        <a
+          class="composer-cta"
+          href="/create"
+          data-sveltekit-reload
+          onclick={() =>
+            trackCtaClick("footer", {
+              cta_type: "open_composer",
+              destination: "/create",
+            })}
+        >
+          {siteCopy("Open Flow Arts Composer")}
+        </a>
+      </div>
 
-      {#if variant !== "compact"}
-        {#each COLUMNS as col}
-          <nav
-            class="col col-static"
-            aria-label={siteCopy(col.title) + " " + siteCopy("links")}
-          >
-            <h2 class="col-title">{siteCopy(col.title)}</h2>
-            {@render columnLinks(col)}
-          </nav>
-          <details class="col col-disclosure">
-            <summary class="col-toggle">
-              <span class="col-title">{siteCopy(col.title)}</span>
-              <i class="fas fa-chevron-down col-chevron" aria-hidden="true"></i>
-            </summary>
-            {@render columnLinks(col)}
-          </details>
-        {/each}
-      {/if}
+      {#each COLUMNS as col}
+        <nav
+          class="col col-static"
+          aria-label={siteCopy(col.title) + " " + siteCopy("links")}
+        >
+          <h2 class="col-title">{siteCopy(col.title)}</h2>
+          {@render columnLinks(col)}
+        </nav>
+        <details class="col col-disclosure">
+          <summary class="col-toggle">
+            <span class="col-title">{siteCopy(col.title)}</span>
+            <i class="fas fa-chevron-down col-chevron" aria-hidden="true"></i>
+          </summary>
+          {@render columnLinks(col)}
+        </details>
+      {/each}
     </div>
 
     <div class="bottom">
@@ -205,37 +182,12 @@
 />
 
 <style>
+  /* No margin, hairline or scrim: each of them draws a seam between the page
+     and its own bottom. The background comes only from the `surface` prop,
+     so the footer is transparent over the star field and opaque only where
+     the page above is. The gap above the columns is .inner's padding. */
   .site-footer {
     position: relative;
-    margin-top: 4.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    /* Quiet grounding gradient so the columns read over any cosmic-canvas
-       brightness without a hard panel edge. */
-    background: linear-gradient(
-      180deg,
-      rgba(8, 8, 20, 0.1),
-      rgba(8, 8, 20, 0.55)
-    );
-  }
-  .site-footer.compact {
-    margin-top: 1.5rem;
-  }
-  .site-footer.sitemap {
-    margin-top: 0;
-  }
-  /* Continuing the page's own surface. The handoff gap, the scrim (replaced by
-     the inline background) and the hairline all exist to seat the footer on the
-     star field; with no star field beneath it, all three only draw the seam
-     they were meant to prevent. */
-  .site-footer.surfaced {
-    margin-top: 0;
-    border-top: 0;
-  }
-
-  @media (min-width: 761px), (min-width: 700px) and (max-height: 560px) {
-    .site-footer.immersive {
-      display: none;
-    }
   }
 
   .inner {
@@ -244,21 +196,11 @@
     margin: 0 auto;
     padding: 48px 1.4rem 28px;
   }
-  .compact .inner {
-    padding: 1.5rem 1.4rem 1.25rem;
-  }
-  .sitemap .inner {
-    padding: 1.5rem 1.4rem 1.25rem;
-  }
 
   .cols {
     display: grid;
     grid-template-columns: 1fr;
     gap: 40px;
-  }
-  .compact-main {
-    display: flex;
-    justify-content: center;
   }
 
   .brand {
@@ -266,10 +208,6 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
-  }
-  .compact .brand {
-    align-items: center;
-    gap: 0.25rem;
   }
   .wordmark {
     font-family: var(--page-title-font, "Fraunces", Georgia, serif);
@@ -382,13 +320,6 @@
     padding-top: 22px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
   }
-  .compact .bottom {
-    margin-top: 1rem;
-    padding-top: 1rem;
-  }
-  .sitemap .bottom {
-    margin-top: 2rem;
-  }
   .legal-line {
     margin: 0;
     font-size: 0.875rem;
@@ -447,17 +378,13 @@
       padding-inline: 0.75rem;
       white-space: nowrap;
     }
-    .full .inner {
+    .inner {
       padding-top: 2rem;
     }
-    .sitemap .inner {
-      padding-top: 1.25rem;
-    }
-    .full .cols,
-    .sitemap .cols {
+    .cols {
       gap: 0.625rem;
     }
-    .full .brand {
+    .brand {
       margin-bottom: 0.75rem;
     }
     .col-static {
@@ -466,15 +393,13 @@
     .col-disclosure {
       display: block;
     }
-    .full .col,
-    .sitemap .col {
+    .col {
       overflow: clip;
       border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.09));
       border-radius: 0.875rem;
       background: var(--theme-card-bg, rgba(255, 255, 255, 0.025));
     }
-    .full .col ul,
-    .sitemap .col ul {
+    .col ul {
       padding: 0.25rem 0.5rem 0.5rem;
     }
     /* A phone's row holds one or two pills. Growing them to fill it keeps
@@ -508,18 +433,9 @@
       grid-template-columns: minmax(15rem, 1fr) auto;
       column-gap: clamp(32px, 3.5vw, 84px);
     }
-    .sitemap .cols {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
     .brand {
       grid-row: span 2;
       margin-bottom: 0;
-    }
-    .compact-main {
-      justify-content: flex-start;
-    }
-    .compact .brand {
-      align-items: flex-start;
     }
     .bottom {
       flex-direction: row;
