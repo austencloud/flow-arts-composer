@@ -20,7 +20,13 @@
  * carries the motion's starting position.
  */
 import type { GridJoin } from "@tka/tka-types";
-import { isBoxGrid } from "@tka/render-core";
+import {
+  isBoxGrid,
+  isJoinedGridModes,
+  joinedGridModes,
+  joinedGridModesKey,
+  type JoinedGridModes,
+} from "@tka/render-core";
 import { motionDuration } from "#lib/shared/transitions/motion.js";
 import { DURATION } from "#lib/shared/transitions/transitions.js";
 import { cssCubicBezier } from "#lib/shared/transitions/ws-ease.js";
@@ -37,7 +43,8 @@ import {
 export interface JoinSlideSource {
   /** The join the pictograph is drawn with now, or null for one grid. */
   readonly join: GridJoin | null;
-  readonly gridMode: string | undefined;
+  /** The grid mode, or each hand's own grid when the two differ. */
+  readonly gridMode: string | undefined | JoinedGridModes;
   /** Everything the drawing shows apart from its join (`joinSlideDrawingKey`). */
   readonly drawingKey: string;
 }
@@ -122,6 +129,11 @@ export function joinSlideDrawingKey(pictograph: {
   ].join("|");
 }
 
+/** The pair of grids a mode draws, as one comparable key. */
+function gridsKey(gridMode: string | undefined | JoinedGridModes): string {
+  return joinedGridModesKey(joinedGridModes(gridMode));
+}
+
 /** Linear in progress, from where the slide began to 1 joined, 0 one grid. */
 function secondGridAlphaFor(
   to: GridJoin | null,
@@ -131,13 +143,31 @@ function secondGridAlphaFor(
   return startAlpha + ((to ? 1 : 0) - startAlpha) * t;
 }
 
+/**
+ * The one grid both hands draw for a mode, or null when they draw different
+ * grids (a skewed drawing, or one hand on a diamond grid and the other on a
+ * box grid), which no turn goes between.
+ */
+function oneGrid(
+  gridMode: string | undefined | JoinedGridModes
+): "diamond" | "box" | null {
+  if (isJoinedGridModes(gridMode)) {
+    return gridMode.left === gridMode.right && gridMode.left !== "skewed"
+      ? gridMode.left
+      : null;
+  }
+  if (gridMode === "skewed") return null;
+  return isBoxGrid(gridMode) ? "box" : "diamond";
+}
+
 /** True when the two modes draw different grids, one diamond and one box. */
 export function flipsDiamondBox(
-  from: string | undefined,
-  to: string | undefined
+  from: string | undefined | JoinedGridModes,
+  to: string | undefined | JoinedGridModes
 ): boolean {
-  if (from === "skewed" || to === "skewed") return false;
-  return isBoxGrid(from) !== isBoxGrid(to);
+  const a = oneGrid(from);
+  const b = oneGrid(to);
+  return a !== null && b !== null && a !== b;
 }
 
 function clamp01(value: number): number {
@@ -222,7 +252,7 @@ export function followJoinSlide(read: () => JoinSlideSource): JoinSlide {
     }
     const now = performance.now();
     const shown = turn;
-    const toBox = isBoxGrid(next.gridMode);
+    const toBox = oneGrid(next.gridMode) === "box";
     turnFrom = {
       angle:
         (shown?.angle ?? 0) - GRID_TURN_DEGREES * getGridRotationDirection(),
@@ -251,7 +281,10 @@ export function followJoinSlide(read: () => JoinSlideSource): JoinSlide {
     const last = previous;
     previous = next;
     if (!last) return;
-    if (gridJoinsEqual(last.join, next.join) && last.gridMode === next.gridMode)
+    if (
+      gridJoinsEqual(last.join, next.join) &&
+      gridsKey(last.gridMode) === gridsKey(next.gridMode)
+    )
       return;
     if (
       last.join &&

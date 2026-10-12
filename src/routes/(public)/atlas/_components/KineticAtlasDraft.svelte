@@ -3,7 +3,7 @@
   import "#lib/shared/landing/styles/public-editorial.css";
   import { onMount, tick } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import GlossaryNav from "./GlossaryNav.svelte";
   import GlossaryTermDetail from "./GlossaryTermDetail.svelte";

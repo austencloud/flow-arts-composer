@@ -5,7 +5,7 @@
   import { onDestroy, onMount, untrack } from "svelte";
   import { initializeAppServices } from "#lib/shared/application/state/services.svelte.js";
 
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
   import {
     clearCameraUrlPose,

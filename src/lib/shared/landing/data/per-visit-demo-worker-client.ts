@@ -75,7 +75,10 @@ function ensureWorker(): Worker | null {
       { type: "module" }
     );
   } catch (error) {
-    console.warn("[per-visit-demo] worker unavailable, rolling in-process:", error);
+    console.warn(
+      "[per-visit-demo] worker unavailable, rolling in-process:",
+      error
+    );
     unusable = true;
     return null;
   }
@@ -87,13 +90,20 @@ function ensureWorker(): Worker | null {
       const resolve = data && pending.get(data.id);
       if (!resolve) return;
       pending.delete(data.id);
-      resolve(data.ok ? { status: "ok", sequence: data.sequence } : { status: "failed" });
+      resolve(
+        data.ok
+          ? { status: "ok", sequence: data.sequence }
+          : { status: "failed" }
+      );
     }
   );
   // An error inside the worker's module graph arrives here, not as a message.
   // Retire it so the act degrades to in-process rolls instead of hanging.
   worker.addEventListener("error", (event) => {
-    console.warn("[per-visit-demo] worker error, rolling in-process:", event.message);
+    console.warn(
+      "[per-visit-demo] worker error, rolling in-process:",
+      event.message
+    );
     retireWorker();
   });
   worker.addEventListener("messageerror", () => {
@@ -148,7 +158,9 @@ export function rollInWorker(options?: {
       resolve(result);
     };
     const timer = setTimeout(() => {
-      console.warn("[per-visit-demo] worker roll timed out, rolling in-process");
+      console.warn(
+        "[per-visit-demo] worker roll timed out, rolling in-process"
+      );
       finish(UNAVAILABLE);
       retireWorker();
     }, RESPONSE_TIMEOUT_MS);

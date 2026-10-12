@@ -3,7 +3,9 @@
  * one or two hand points across from blue's, in one of the four directions
  * along the sequence's own grid lines (straight on a diamond grid, diagonal on
  * a box grid). A join along any other line never lands one grid's points on
- * the other's.
+ * the other's. A skewed sequence draws each hand on its own grid, one
+ * diamond and one box, which together have a line in every direction, so it
+ * offers all eight.
  *
  * The right-click submenu and the viewer's Grid join section both read these,
  * so the two always offer the same choices with the same names.
@@ -69,10 +71,11 @@ const DIRECTIONS: readonly GridJoinDirectionChoice[] = [
 const DEFAULT_DIRECTION: JoinDirection = "e";
 const DEFAULT_STEPS: JoinSteps = 1;
 
-/** The four directions offered on this grid mode, in display order. */
+/** The directions offered on this grid mode, in display order. */
 export function offeredGridJoinDirections(
   gridMode: string | null | undefined
 ): readonly GridJoinDirectionChoice[] {
+  if (gridMode === "skewed") return DIRECTIONS;
   const offered = GRID_JOIN_DIRECTIONS[
     isBoxGrid(gridMode ?? undefined) ? "box" : "diamond"
   ] as readonly JoinDirection[];

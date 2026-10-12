@@ -614,9 +614,9 @@
     background: var(--theme-card-bg, oklch(0.18 0.018 270 / 0.32));
     text-decoration: none;
     transition:
-      border-color 0.2s ease,
-      background 0.2s ease,
-      transform 0.2s ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
   .strip a:hover,
   .strip a:focus-visible {

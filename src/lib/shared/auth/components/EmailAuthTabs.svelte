@@ -10,7 +10,7 @@
   import EmailPasswordAuth from "./EmailPasswordAuth.svelte";
   import EmailLinkAuth from "./EmailLinkAuth.svelte";
   import LastUsedBadge from "#lib/shared/components/LastUsedBadge.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getLastAuthMethod } from "#lib/shared/auth/services/last-auth-method.svelte.js";
   import { readPendingEmailCode } from "#lib/shared/auth/services/pending-email-code.js";

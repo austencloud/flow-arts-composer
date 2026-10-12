@@ -31,7 +31,7 @@
   import { activateWhenNear } from "#lib/actions/activate-when-near.js";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import {
     isNamedRouteMorphActive,
     runAfterNamedRouteMorph,
@@ -687,10 +687,10 @@
     background: oklch(0.3 0.04 270 / 0.18);
     cursor: pointer;
     transition:
-      transform 160ms ease,
-      border-color 160ms ease,
-      background 160ms ease,
-      opacity 160ms ease;
+      transform var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
   .reroll-button:hover:not(:disabled) {
     transform: translateY(-2px);

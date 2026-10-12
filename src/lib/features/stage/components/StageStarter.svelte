@@ -2,7 +2,7 @@
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { tick } from "svelte";
 
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";

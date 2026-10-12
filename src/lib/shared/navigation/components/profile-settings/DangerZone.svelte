@@ -13,7 +13,7 @@
   import FacebookIcon from "#lib/shared/auth/components/icons/FacebookIcon.svelte";
   import GoogleIcon from "#lib/shared/auth/components/icons/GoogleIcon.svelte";
   import InstagramIcon from "#lib/shared/auth/components/icons/InstagramIcon.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
 

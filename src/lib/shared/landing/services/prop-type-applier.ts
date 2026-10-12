@@ -10,7 +10,10 @@ import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js
 import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
-export function applyToSequence(sequence: SequenceData, propType: PropType): SequenceData {
+export function applyToSequence(
+  sequence: SequenceData,
+  propType: PropType
+): SequenceData {
   return {
     ...sequence,
     startPlacement: sequence.startPlacement
@@ -41,8 +44,12 @@ function applyToStartPlacement(
   return {
     ...startPos,
     motions: {
-      left: startPos.motions.left ? { ...startPos.motions.left, propType } : undefined,
-      right: startPos.motions.right ? { ...startPos.motions.right, propType } : undefined,
+      left: startPos.motions.left
+        ? { ...startPos.motions.left, propType }
+        : undefined,
+      right: startPos.motions.right
+        ? { ...startPos.motions.right, propType }
+        : undefined,
     },
   };
 }

@@ -116,6 +116,7 @@ export function tkaRow(
           "back",
           "sequence",
           "layers",
+          "grids",
           "offset",
           "look",
           "effects",

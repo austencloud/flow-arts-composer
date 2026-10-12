@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import LessonGridDisplay from "#lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {

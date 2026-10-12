@@ -11,7 +11,7 @@
   import { onDestroy, tick } from "svelte";
   import { TND_ELEMENTS } from "#lib/features/choreo-card/domain/tnd-element.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";

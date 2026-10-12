@@ -9,7 +9,7 @@
     type TnDElement,
   } from "#lib/features/choreo-card/domain/tnd-element.js";
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";

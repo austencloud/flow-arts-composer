@@ -139,12 +139,14 @@ describe("tka tool rows are today's rows", () => {
       "back",
       "sequence",
       "layers",
+      "grids",
       "offset",
       "look",
       "effects",
       "effort",
       "clear",
     ]);
+    expect(isPanelTool("grids", TKA_TOOLS)).toBe(true);
     expect(isPanelTool("effort", TKA_TOOLS)).toBe(true);
     expect(isPanelTool("clear", TKA_TOOLS)).toBe(false);
   });
