@@ -224,6 +224,7 @@ describe("performer press vs camera-controls listener ordering", () => {
     Object.assign(canvas, {
       style: {},
       dataset: {},
+      focus: vi.fn(),
       getBoundingClientRect: () =>
         ({ left: 0, top: 0, width: 100, height: 100 }) as DOMRect,
       setPointerCapture: () => {},
