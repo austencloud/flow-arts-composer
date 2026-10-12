@@ -27,8 +27,12 @@ function createHarness() {
     rightOrientation: Orientation.IN,
     dragLocations: false,
     canAim: false,
+    hands: "both" as "both" | "left" | "right",
+    tapToMove: false,
+    pickOnly: false,
   };
   const onChange = vi.fn();
+  const onPick = vi.fn();
   const onPlacementComplete = vi.fn();
   const onOrientationChange = vi.fn();
   const triggerHaptic = vi.fn();
@@ -49,9 +53,13 @@ function createHarness() {
       getRightNoun: () => "right prop",
       getActivePoints: () =>
         getPlacementGridPoints(values.gridMode, values.showCenter),
+      getHands: () => values.hands,
+      getTapToMove: () => values.tapToMove,
+      getPickOnly: () => values.pickOnly,
     },
     {
       triggerHaptic,
+      onPick,
       onChange,
       onPlacementComplete,
       onOrientationChange,
@@ -77,6 +85,7 @@ function createHarness() {
     values,
     state,
     onChange,
+    onPick,
     onPlacementComplete,
     onOrientationChange,
     triggerHaptic,
@@ -85,6 +94,20 @@ function createHarness() {
 
 describe("prop placement state", () => {
   afterEach(() => vi.unstubAllGlobals());
+
+  it("says which hand was just put down, even back on its own point", () => {
+    const { state, onChange } = createHarness();
+    state.selectPoint(GridLocation.WEST);
+    expect(onChange.mock.lastCall?.[0].placedHand).toBe(HandSide.LEFT);
+    state.selectPoint(GridLocation.EAST);
+    expect(onChange.mock.lastCall?.[0].placedHand).toBe(HandSide.RIGHT);
+    state.edit(HandSide.RIGHT);
+    expect(onChange.mock.lastCall?.[0].placedHand).toBeNull();
+    state.selectPoint(GridLocation.EAST);
+    expect(onChange.mock.lastCall?.[0].placedHand).toBe(HandSide.RIGHT);
+    state.undo();
+    expect(onChange.mock.lastCall?.[0].placedHand).toBeNull();
+  });
 
   function dragHarness() {
     vi.stubGlobal(
@@ -289,5 +312,239 @@ describe("prop placement state", () => {
 
     expect(harness.state.activeHand).toBe(HandSide.LEFT);
     expect(harness.onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe("left-hand-only placement", () => {
+  function leftOnly(initialLeft: GridLocation | null) {
+    const harness = createHarness();
+    harness.values.hands = "left";
+    harness.values.initialLeftLocation = initialLeft;
+    harness.state.synchronizeInputs();
+    return harness;
+  }
+
+  it("counts one placed hand as a complete placement", () => {
+    const { state } = leftOnly(GridLocation.WEST);
+    expect(state.activeHand).toBeNull();
+    expect(state.isComplete).toBe(true);
+  });
+
+  it("moves the hand without ever asking for the right hand", () => {
+    const { state, onChange, onPlacementComplete } = leftOnly(
+      GridLocation.WEST
+    );
+    state.edit(HandSide.LEFT);
+    state.selectPoint(GridLocation.NORTH);
+    expect(state.leftLocation).toBe(GridLocation.NORTH);
+    expect(state.rightLocation).toBeNull();
+    expect(state.activeHand).toBeNull();
+    expect(state.liveAnnouncement).toBe("left prop moved to North.");
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        leftLocation: GridLocation.NORTH,
+        rightLocation: null,
+        activeHand: null,
+        complete: true,
+      })
+    );
+    expect(onPlacementComplete).not.toHaveBeenCalled();
+  });
+
+  it("places a first hand and stops there", () => {
+    const { state } = leftOnly(null);
+    expect(state.activeHand).toBe(HandSide.LEFT);
+    state.selectPoint(GridLocation.EAST);
+    expect(state.activeHand).toBeNull();
+    expect(state.isComplete).toBe(true);
+    expect(state.liveAnnouncement).toBe("left prop placed at East.");
+  });
+
+  it("ignores a right-hand selection", () => {
+    const { state } = leftOnly(GridLocation.WEST);
+    state.selectPoint(GridLocation.SOUTH, HandSide.RIGHT);
+    expect(state.rightLocation).toBeNull();
+    expect(state.historyLength).toBe(0);
+  });
+});
+
+describe("right-hand-only placement", () => {
+  function rightOnly(initialRight: GridLocation | null) {
+    const harness = createHarness();
+    harness.values.hands = "right";
+    harness.values.initialRightLocation = initialRight;
+    harness.state.synchronizeInputs();
+    return harness;
+  }
+
+  it("counts one placed hand as a complete placement", () => {
+    const { state } = rightOnly(GridLocation.EAST);
+    expect(state.activeHand).toBeNull();
+    expect(state.isComplete).toBe(true);
+  });
+
+  it("moves the hand without ever asking for the left hand", () => {
+    const { state, onChange, onPlacementComplete } = rightOnly(
+      GridLocation.EAST
+    );
+    state.edit(HandSide.RIGHT);
+    state.selectPoint(GridLocation.NORTH);
+    expect(state.rightLocation).toBe(GridLocation.NORTH);
+    expect(state.leftLocation).toBeNull();
+    expect(state.activeHand).toBeNull();
+    expect(state.liveAnnouncement).toBe("right prop moved to North.");
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        leftLocation: null,
+        rightLocation: GridLocation.NORTH,
+        activeHand: null,
+        placedHand: HandSide.RIGHT,
+        complete: true,
+      })
+    );
+    expect(onPlacementComplete).not.toHaveBeenCalled();
+  });
+
+  it("places a first hand and stops there", () => {
+    const { state } = rightOnly(null);
+    expect(state.activeHand).toBe(HandSide.RIGHT);
+    state.selectPoint(GridLocation.WEST);
+    expect(state.activeHand).toBeNull();
+    expect(state.isComplete).toBe(true);
+    expect(state.liveAnnouncement).toBe("right prop placed at West.");
+  });
+
+  it("ignores a left-hand selection", () => {
+    const { state } = rightOnly(GridLocation.EAST);
+    state.selectPoint(GridLocation.SOUTH, HandSide.LEFT);
+    expect(state.leftLocation).toBeNull();
+    expect(state.historyLength).toBe(0);
+  });
+
+  it("starts over on the right hand", () => {
+    const { state } = rightOnly(GridLocation.EAST);
+    state.reset();
+    expect(state.activeHand).toBe(HandSide.RIGHT);
+  });
+});
+
+describe("tap to move", () => {
+  const { NORTH, EAST, SOUTH, WEST } = GridLocation;
+
+  function tapGrid(hands: "left" | "right", at: GridLocation) {
+    const harness = createHarness();
+    harness.values.hands = hands;
+    harness.values.tapToMove = true;
+    harness.values.dragLocations = true;
+    if (hands === "left") harness.values.initialLeftLocation = at;
+    else harness.values.initialRightLocation = at;
+    harness.state.synchronizeInputs();
+    return harness;
+  }
+
+  it("moves the one hand to any point in a single press, and rings them all", () => {
+    const { state, aim, onChange } = tapGrid("left", WEST);
+    expect(state.tapHand).toBe(HandSide.LEFT);
+    for (const location of [NORTH, EAST, SOUTH, WEST]) {
+      expect(aim.isPressable(location)).toBe(true);
+    }
+    aim.handleClick(NORTH);
+    expect(state.leftLocation).toBe(NORTH);
+    expect(state.activeHand).toBeNull();
+    expect(state.liveAnnouncement).toBe("left prop moved to North.");
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        leftLocation: NORTH,
+        placedHand: HandSide.LEFT,
+      })
+    );
+    expect(aim.landing?.point.location).toBe(NORTH);
+    expect(state.tapHand).toBe(HandSide.LEFT);
+  });
+
+  it("with pick only, reports the point pressed and leaves the hand where it is", () => {
+    const harness = tapGrid("left", WEST);
+    harness.values.pickOnly = true;
+    const { state, aim, onChange, onPick } = harness;
+    aim.handleClick(NORTH);
+    expect(onPick).toHaveBeenCalledExactlyOnceWith(HandSide.LEFT, NORTH);
+    expect(state.leftLocation).toBe(WEST);
+    expect(state.historyLength).toBe(0);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(state.liveAnnouncement).toBe("left prop: North picked.");
+    // Its own point is a pick too: a Static move.
+    aim.handleKeydown(new KeyboardEvent("keydown", { key: "Enter" }), WEST);
+    expect(onPick).toHaveBeenLastCalledWith(HandSide.LEFT, WEST);
+    expect(state.leftLocation).toBe(WEST);
+  });
+
+  it("keeps the hand where it is when its own point is pressed: a Static move", () => {
+    const { state, aim, onChange } = tapGrid("right", EAST);
+    aim.handleKeydown(new KeyboardEvent("keydown", { key: "Enter" }), EAST);
+    expect(state.rightLocation).toBe(EAST);
+    expect(state.activeHand).toBeNull();
+    expect(state.historyLength).toBe(1);
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        rightLocation: EAST,
+        placedHand: HandSide.RIGHT,
+      })
+    );
+  });
+
+  it("still lets a press on the hand start a drag, and a still tap there counts as Static", () => {
+    vi.stubGlobal(
+      "DOMPoint",
+      class {
+        constructor(
+          public x: number,
+          public y: number
+        ) {}
+        matrixTransform() {
+          return this;
+        }
+      }
+    );
+    const { state, aim } = tapGrid("left", WEST);
+    aim.overlayElement = {
+      getScreenCTM: () => ({ inverse: () => ({}) }),
+    } as unknown as SVGSVGElement;
+    const west = getPlacementGridPoints(GridMode.DIAMOND).find(
+      (point) => point.location === WEST
+    )!;
+    const press = (type: string) =>
+      Object.assign(
+        new MouseEvent(type, { clientX: west.x, clientY: west.y, button: 0 }),
+        { pointerId: 1 }
+      ) as PointerEvent;
+    aim.handlePointerDown(press("pointerdown"), WEST);
+    expect(aim.grabbedLocationColor).toBe(HandSide.LEFT);
+    aim.handlePointerUp(press("pointerup"));
+    aim.handleClick(WEST);
+    expect(state.leftLocation).toBe(WEST);
+    expect(state.historyLength).toBe(1);
+    vi.unstubAllGlobals();
+  });
+
+  it("offers nothing while the grid is disabled or the mode is off", () => {
+    const { state, aim, values } = tapGrid("right", EAST);
+    values.disabled = true;
+    expect(state.tapHand).toBeNull();
+    expect(aim.isPressable(NORTH)).toBe(false);
+    values.disabled = false;
+    values.tapToMove = false;
+    expect(state.tapHand).toBeNull();
+    expect(aim.isPressable(NORTH)).toBe(false);
+  });
+
+  it("leaves a two-hand grid picking a hand up first", () => {
+    const { state, aim, values } = createHarness();
+    values.tapToMove = true;
+    state.selectPoint(NORTH);
+    state.selectPoint(SOUTH);
+    expect(state.tapHand).toBeNull();
+    aim.handleClick(NORTH);
+    expect(state.activeHand).toBe(HandSide.LEFT);
+    expect(state.leftLocation).toBe(NORTH);
   });
 });

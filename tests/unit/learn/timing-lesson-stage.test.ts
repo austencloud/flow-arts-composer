@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { migrateTimingLessonSavedStep } from "../../../src/lib/features/learn/components/interactive/motions/timing-lesson-stage";
+import {
+  TIMING_LESSON_SAVED_STEP_OFFSET,
+  migrateTimingLessonSavedStep,
+} from "../../../src/lib/features/learn/components/interactive/motions/timing-lesson-stage";
 
 describe("timing lesson progress migration", () => {
+  it("keeps counting the three hand-path steps that once came first", () => {
+    expect(TIMING_LESSON_SAVED_STEP_OFFSET).toBe(3);
+  });
   it("starts new learners at placement", () => {
     expect(migrateTimingLessonSavedStep(0, 1, 3)).toBe(4);
   });

@@ -1,5 +1,6 @@
 import type { Component } from "svelte";
 import GridTopicPage from "./GridTopicPage.svelte";
+import HandMotionsTopicPage from "./HandMotionsTopicPage.svelte";
 import PlacementsTopicPage from "./PlacementsTopicPage.svelte";
 import StaffPlacementsTopicPage from "./StaffPlacementsTopicPage.svelte";
 
@@ -18,5 +19,6 @@ export const TOPIC_PAGES: Readonly<Record<string, Component<TopicPageProps>>> =
   {
     "the-grid": GridTopicPage,
     "hand-placements": PlacementsTopicPage,
+    "hand-motions": HandMotionsTopicPage,
     "staff-placements": StaffPlacementsTopicPage,
   };

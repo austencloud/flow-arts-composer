@@ -150,8 +150,36 @@ describe("buildPlacementTransition", () => {
     expect(startData.motions.right?.startLocation).toBe(GridLocation.NORTH);
 
     // PictographContainer only computes motion overrides for StepData, which
-    // it detects via the stepNumber field.
-    expect("stepNumber" in transitionStep).toBe(true);
+    // it detects via the stepNumber field. Without a preview step it is -1, so
+    // the moving frame draws no "Start" label or hand key (0 would).
+    expect(transitionStep.stepNumber).toBe(-1);
+  });
+
+  it("moves the partner too when it has its own move", () => {
+    const { startData, transitionStep } = buildPlacementTransition({
+      ...baseInput,
+      movingColor: HandSide.LEFT,
+      fromLocation: GridLocation.WEST,
+      toLocation: GridLocation.NORTH,
+      direction: "clockwise",
+      leftLocation: GridLocation.NORTH,
+      rightLocation: GridLocation.WEST,
+      partnerMove: {
+        fromLocation: GridLocation.EAST,
+        toLocation: GridLocation.WEST,
+        direction: "clockwise",
+        path: "dash",
+      },
+    });
+
+    const partner = transitionStep.motions.right;
+    expect(partner.motionType).toBe(MotionType.DASH);
+    expect(partner.startLocation).toBe(GridLocation.EAST);
+    expect(partner.endLocation).toBe(GridLocation.WEST);
+    expect(transitionStep.motions.left.motionType).toBe(MotionType.PRO);
+    // Both hands start where the round began.
+    expect(startData.motions.left?.startLocation).toBe(GridLocation.WEST);
+    expect(startData.motions.right?.startLocation).toBe(GridLocation.EAST);
   });
 
   it("keeps the partner at the shared location when the move departs a beta", () => {
@@ -175,5 +203,67 @@ describe("buildPlacementTransition", () => {
     // animates out of.
     expect(startData.motions.right?.startLocation).toBe(GridLocation.NORTH);
     expect(startData.motions.left?.startLocation).toBe(GridLocation.NORTH);
+  });
+});
+
+describe("one-hand moves", () => {
+  const oneHand = {
+    ...baseInput,
+    leftPropType: PropType.HAND,
+    rightPropType: PropType.HAND,
+    movingColor: HandSide.LEFT,
+    rightLocation: null,
+  };
+  const positions = (
+    from: { x: number; y: number },
+    to: { x: number; y: number }
+  ) => ({
+    gridMode: GridMode.DIAMOND,
+    leftPropType: PropType.HAND,
+    rightPropType: PropType.HAND,
+    startPlacements: { left: { ...from, rotation: 0 } },
+    endPlacements: { left: { ...to, rotation: 0 } },
+  });
+
+  it("plays a dash straight through the center with no partner", () => {
+    const { startData, transitionStep } = buildPlacementTransition({
+      ...oneHand,
+      path: "dash",
+      fromLocation: GridLocation.WEST,
+      toLocation: GridLocation.EAST,
+      direction: "clockwise",
+      leftLocation: GridLocation.EAST,
+    });
+    expect(transitionStep.motions.left?.motionType).toBe(MotionType.DASH);
+    expect(transitionStep.motions.right).toBeUndefined();
+    expect(startData.motions.right).toBeUndefined();
+    const midpoint = calculatePictographMotionPositions({
+      ...positions({ x: 325, y: 475 }, { x: 625, y: 475 }),
+      step: transitionStep,
+      progress: 0.5,
+    });
+    expect(midpoint.left?.x).toBeCloseTo(475);
+    expect(midpoint.left?.y).toBeCloseTo(475);
+  });
+
+  it("keeps a one-hand shift on its arc around the center", () => {
+    const { transitionStep } = buildPlacementTransition({
+      ...oneHand,
+      fromLocation: GridLocation.WEST,
+      toLocation: GridLocation.NORTH,
+      direction: "clockwise",
+      leftLocation: GridLocation.NORTH,
+    });
+    expect(transitionStep.motions.left?.pathShape).toBe("arc");
+    const midpoint = calculatePictographMotionPositions({
+      ...positions({ x: 325, y: 475 }, { x: 475, y: 325 }),
+      step: transitionStep,
+      progress: 0.5,
+    });
+    // A straight line would pass 106 units from the center; the arc keeps
+    // the hand on its 150-unit circle.
+    expect(
+      Math.hypot(midpoint.left!.x - 475, midpoint.left!.y - 475)
+    ).toBeGreaterThan(140);
   });
 });
