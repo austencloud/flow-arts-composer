@@ -6,7 +6,7 @@
 
 **Implementation gate:** OPEN for previously approved text and terminology;
 CLOSED for new teaching explanation pending exact-copy approval
-**Last reviewed:** 2026-10-11
+**Last reviewed:** 2026-10-12
 
 ## Approved Text
 
@@ -36,8 +36,10 @@ additional explanation of how to perform these motions is approved.
 
 ## Rebuilt Lesson (2026-10-11) — Exact UI Copy
 
-The three stages share the heading “Hand Motions” (the Guide page title). Each
+The stages share the heading “Hand Motions” (the Guide page title). Each
 stage's line under it:
+
+> There are three fundamental hand motions in the Alphabet.
 
 > Pick a point to move the hand.
 
@@ -51,9 +53,22 @@ with “make” for the book's “derive.”
 The book goes on “We’ll explore each one individually:”, which the lesson drops
 because it continues to Timing and Direction instead.
 
-Stage 1 lists the three moves with the approved step captions (“Move to an
+The first stage (added 2026-10-12) is the book's flowchart. Its line is the
+first line of the book's intro (`verified_level1_hand_motions_72`), and the
+book's other two lines sit under the chart:
+
+> The arrow shows the direction of motion.
+>
+> The hand shows the end position.
+
+Its branches use the approved names and step captions, and each picture's
+accessible name is “Shift: Move to an adjacent point” and so on, through the
+existing `learn_motion_path_aria`. It adds no other text; a hint such as “tap
+one to watch it play” would need Austen's approval first.
+
+The motion map stage lists the three moves with the approved step captions (“Move to an
 adjacent point,” “Move to the opposite point,” “Remain at the same point”).
-Stages 2 and 3 name each combination with the book's name and description
+The two-hands stage and the wrap-up name each combination with the book's name and description
 (`verified_level1_hand_motions_77` to `_87`, and `_70` for Static). The book's
 Dash and Dual-Dash descriptions end without a full stop; the app adds one
 through its own keys (`learn_motion_dash_description`,
@@ -233,6 +248,9 @@ the lesson does not repeat Water, Earth, Sun, Fire, Air, or Moon as headings.
   move the hand.” over “Tap or drag the hand to a point.” and keeping “Drag
   the hand to a point.”, which it replaces. German: “Wähle einen Punkt, um die
   Hand zu bewegen.”
+- 2026-10-12 — Austen asked for the three motions before the grid and chose
+  the book's flowchart as a new first stage. It uses only the approved book
+  lines and captions above; no new text was added.
 
 ## Shared-path Refinement Verification — 2026-09-04
 

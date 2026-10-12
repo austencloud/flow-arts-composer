@@ -39,10 +39,6 @@ export interface TkaEditorFacts {
    * export file name. Null for a post with no sequence, such as an arrangement.
    */
   readonly sequence: SequenceData | null;
-  /** The arrangement open in the arrangement editor, or null. */
-  readonly editingArrangementId: string | null;
-  /** Opens an arrangement in the arrangement editor over the workspace; null closes it. */
-  editArrangement(itemId: string | null): void;
 }
 
 const FACTS = new WeakMap<object, TkaEditorFacts>();
@@ -136,10 +132,6 @@ export interface TkaEditorContext {
   readonly overlay: TkaOverlayHolder;
   readonly strips: TkaStripsHolder;
   readonly arrangement: TkaArrangementHolder;
-  /** The arrangement open in the arrangement editor, or null. */
-  readonly editingArrangementId: string | null;
-  /** Opens an arrangement in the arrangement editor over the workspace; null closes it. */
-  editArrangement(itemId: string | null): void;
   /** The viewer's side inspector, where the tool panel goes; the viewer bridge sets it. */
   readonly inspectorTarget: HTMLElement | null;
   setInspectorTarget(element: HTMLElement | null): void;

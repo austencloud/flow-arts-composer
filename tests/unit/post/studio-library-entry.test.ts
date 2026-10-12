@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  arrangementSubtitle,
   studioKindLabels,
   studioLibraryEntries,
+  withoutImportedCompositions,
 } from "#lib/features/post/components/studio-library-entry.js";
 import type { FeatureVideoSummary } from "#lib/shared/media-composition/domain/feature-video.js";
 
@@ -71,6 +73,63 @@ describe("studioLibraryEntries", () => {
       kind: "tutorial",
       problem: "Its source sequence is missing, so it stays on this device.",
     });
+  });
+
+  it("captions an arrangement card with its grid and sequence count", () => {
+    const [untitled, titled] = studioLibraryEntries(
+      [
+        {
+          sequenceId: "studio-arrangement:a",
+          title: "studio-arrangement:a",
+          word: "",
+          updatedAt: 9,
+          hasDraft: true,
+          arrangement: { rows: 2, cols: 2, sequences: 1 },
+        },
+        {
+          sequenceId: "studio-arrangement:b",
+          title: "Finale",
+          word: "",
+          updatedAt: 8,
+          hasDraft: true,
+          arrangement: { rows: 1, cols: 3, sequences: 2 },
+        },
+      ],
+      []
+    );
+    expect(untitled).toMatchObject({
+      kind: "arrangement",
+      title: "Arrangement",
+      subtitle: "2 × 2 · 1 sequence",
+    });
+    expect(titled).toMatchObject({
+      title: "Finale",
+      subtitle: "3 × 1 · 2 sequences",
+    });
+    expect(arrangementSubtitle({ rows: 4, cols: 1, sequences: 0 })).toBe(
+      "1 × 4 · 0 sequences"
+    );
+  });
+
+  it("hides a Compose composition once its Studio project exists", () => {
+    const entries = studioLibraryEntries(
+      [
+        {
+          sequenceId: "studio-arrangement:opened",
+          title: "Opened",
+          word: "",
+          updatedAt: 3,
+          hasDraft: true,
+        },
+      ],
+      []
+    );
+    expect(
+      withoutImportedCompositions(
+        [{ id: "opened" }, { id: "fresh" }, { id: "studio-arrangement:opened" }],
+        entries
+      ).map((composition) => composition.id)
+    ).toEqual(["fresh", "studio-arrangement:opened"]);
   });
 
   it("names each kind once", () => {

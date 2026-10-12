@@ -13,7 +13,7 @@ import {
   trackCompositionDeleted,
   trackCompositionFavoriteChanged,
   trackCompositionSaved,
-} from "#lib/features/compose/analytics/compose-events.js";
+} from "#lib/features/post/compose-import/compose-events.js";
 import { trackTikaQuestionSubmitted } from "#lib/features/tika/analytics/tika-events.js";
 import {
   trackTrainSessionCompleted,

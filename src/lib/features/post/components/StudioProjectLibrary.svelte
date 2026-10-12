@@ -52,6 +52,8 @@
   let copying = $state<string | null>(null);
   let copyError = $state<string | null>(null);
   let width = $state(0);
+  /** Saved Compose rows below the cards; they count under Arrangements. */
+  let fromCompose = $state(0);
   const entries = $derived(studioLibraryEntries(projects, features));
   const shown = $derived(
     entries
@@ -83,7 +85,9 @@
       count: entries.length,
     },
     ...kinds.map((kind) => {
-      const count = entries.filter((entry) => entry.kind === kind).length;
+      const count =
+        entries.filter((entry) => entry.kind === kind).length +
+        (kind === "arrangement" ? fromCompose : 0);
       return {
         value: kind,
         label: studioKindLabels[kind].many,
@@ -255,7 +259,12 @@
         {/each}
       </div>
     {/if}
-    <StudioArrangements {onopen} />
+    <StudioArrangements
+      {onopen}
+      {entries}
+      visible={filter === "all" || filter === "arrangement"}
+      oncount={(rows) => (fromCompose = rows)}
+    />
     <footer class="library-footer">
       <span
         ><i class="fas fa-cloud" aria-hidden="true"></i>

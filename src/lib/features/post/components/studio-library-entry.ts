@@ -1,4 +1,7 @@
-import type { PostProjectChoice } from "../services/post-workspace-projects.js";
+import type {
+  ArrangementSummary,
+  PostProjectChoice,
+} from "../services/post-workspace-projects.js";
 import type { FeatureVideoSummary } from "#lib/shared/media-composition/domain/feature-video.js";
 import { studioProjectKindFromId } from "#lib/shared/media-composition/domain/studio-project-id.js";
 
@@ -52,7 +55,7 @@ export function studioLibraryEntries(
       const kind = studioProjectKindFromId(project.sequenceId) ?? "tutorial";
       const fallback =
         kind === "arrangement"
-          ? "Saved arrangement"
+          ? "Arrangement"
           : kind === "showcase"
             ? "Saved software showcase"
             : "Saved tutorial";
@@ -67,6 +70,9 @@ export function studioLibraryEntries(
         word: project.word,
         updatedAt: project.updatedAt,
         kind,
+        ...(project.arrangement
+          ? { subtitle: arrangementSubtitle(project.arrangement) }
+          : {}),
         ...(project.problem ? { problem: project.problem } : {}),
       };
     }),
@@ -88,5 +94,26 @@ export function studioLibraryEntries(
     entry.featureSlug && (titles.get(titleKey(entry)) ?? 0) > 1
       ? { ...entry, subtitle: folderSubtitle(entry.featureSlug, entry.title) }
       : entry
+  );
+}
+
+/** "2 × 2 · 3 sequences": the grid's shown size and how many cells hold a sequence. */
+export function arrangementSubtitle(summary: ArrangementSummary): string {
+  const sequences =
+    summary.sequences === 1 ? "1 sequence" : `${summary.sequences} sequences`;
+  return `${summary.cols} × ${summary.rows} · ${sequences}`;
+}
+
+/**
+ * Saved Compose compositions that Studio has not opened yet. One that has a
+ * `studio-arrangement:<id>` project is already a card, so it is left out.
+ */
+export function withoutImportedCompositions<T extends { id: string }>(
+  compositions: readonly T[],
+  entries: readonly { id: string }[]
+): T[] {
+  const imported = new Set(entries.map((entry) => entry.id));
+  return compositions.filter(
+    (composition) => !imported.has(`studio-arrangement:${composition.id}`)
   );
 }

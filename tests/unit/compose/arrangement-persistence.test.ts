@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   gridCellsToComposition,
   compositionToGridState,
-} from "#lib/features/compose/tabs/arrange/services/arrange-composition-converter.js";
+} from "#lib/shared/media-composition/arrangement/arrange-composition-converter.js";
 import { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import { validateArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
-import type { GridCell } from "#lib/features/compose/tabs/arrange/state/arrange-grid-state.svelte.js";
+import type { GridCell } from "#lib/shared/media-composition/arrangement/types.js";
 
 function cells(): GridCell[] {
   return Array.from({ length: 64 }, (_, index) => ({

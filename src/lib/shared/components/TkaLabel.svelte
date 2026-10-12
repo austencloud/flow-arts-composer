@@ -133,7 +133,12 @@
     justify-content: var(--tka-label-justify, flex-start);
   }
 
-  .text-token {
+  /* Words are the identity and prose is the detail, so neither shrinks: an
+     overflowing name clips its tail. A glyph row is overflow: hidden, which
+     makes its automatic min-width zero, so without this it was the one token
+     that gave way and a long tunnel name lost its words entirely. */
+  .text-token,
+  .tka-label.glyphs > :global(.tka-word-glyph) {
     flex-shrink: 0;
   }
 

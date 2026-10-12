@@ -44,6 +44,34 @@ describe("TnDPanel", () => {
     ).toBe(1);
   });
 
+  it("shows only the side a card half opened, titled for it", () => {
+    const hands = render(
+      TnDPanel,
+      props({ section: "hands", titleId: "hands-title" })
+    ).container;
+    expect(hands.querySelector("#hands-title")?.textContent?.trim()).toBe(
+      "Hand timing and direction"
+    );
+    expect(
+      hands.querySelector('button[aria-label="Free hands"]')
+    ).not.toBeNull();
+    expect(hands.querySelector('button[aria-label="Free props"]')).toBeNull();
+
+    const propsOnly = render(
+      TnDPanel,
+      props({ section: "props", titleId: "props-title" })
+    ).container;
+    expect(propsOnly.querySelector("#props-title")?.textContent?.trim()).toBe(
+      "Prop timing and direction"
+    );
+    expect(
+      propsOnly.querySelector('button[aria-label="Free props"]')
+    ).not.toBeNull();
+    expect(
+      propsOnly.querySelector('button[aria-label="Free hands"]')
+    ).toBeNull();
+  });
+
   it("presses Free when a section is free and the mode when it is set", () => {
     const { container } = render(
       TnDPanel,

@@ -45,6 +45,8 @@ export interface PlacementMotionMove {
   path?: "arc" | "dash";
   /** Travel time; defaults to DURATION.dramatic. A teaching demo uses DURATION.scene. */
   durationMs?: number;
+  /** The hands hold their start pose this long before they travel. */
+  delayMs?: number;
   /** The other hand's move, when both hands travel together. */
   partner?: {
     from: GridLocation;
@@ -101,17 +103,17 @@ export function createPropPlacementMotionState(deps?: PlacementMotionDeps) {
     onComplete = complete;
   }
 
-  function start(durationMs: number = MOTION_DURATION_MS) {
+  function start(durationMs: number = MOTION_DURATION_MS, delayMs = 0) {
     if (!transition || frame) return;
     if (reducedMotion()) {
       finish();
       return;
     }
-    const startedAt = performance.now();
+    const startedAt = performance.now() + delayMs;
     const tick = (now: number) => {
       const t = reducedMotion()
         ? 1
-        : Math.min(1, (now - startedAt) / durationMs);
+        : Math.min(1, Math.max(0, now - startedAt) / durationMs);
       progress = cubicInOut(t);
       if (t < 1) frame = requestAnimationFrame(tick);
       else finish();
@@ -162,7 +164,7 @@ export function createPropPlacementMotionState(deps?: PlacementMotionDeps) {
         previewPictographData: deps.getPreviewPictographData(),
       })
     );
-    start(move.durationMs);
+    start(move.durationMs, move.delayMs);
   }
 
   /**
