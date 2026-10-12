@@ -11,6 +11,7 @@
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import WordHeader from "#lib/shared/animation-engine/components/layers/WordHeader.svelte";
+  import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
   import WordActionMenu from "#lib/shared/choreo-card/components/WordActionMenu.svelte";
   import ShareActionMenu from "#lib/shared/share/components/ShareActionMenu.svelte";
   import { resolveSequenceIdentityTitle } from "../services/viewer-title";
@@ -507,7 +508,11 @@
               activeStepNumber={activeWordStepNumber}
             />
           {:else}
-            <span class="word-text">{displayTitle}</span>
+            <!-- A tunnel name sets TKA words against prose ("BBBA × ΩORZ
+                 Duo"); TkaLabel draws the words in the alphabet's glyphs. -->
+            <span class="word-text">
+              <TkaLabel text={displayTitle} darkMode />
+            </span>
           {/if}
         </span>
         {#if isWordTitle}
@@ -931,6 +936,7 @@
     line-height: 28px;
     text-overflow: ellipsis;
     white-space: nowrap;
+    --tka-label-justify: center;
   }
 
   .word-disclosure {
