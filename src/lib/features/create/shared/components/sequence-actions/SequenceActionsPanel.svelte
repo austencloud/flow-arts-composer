@@ -146,6 +146,19 @@
     !isSideBySideLayout && viewportWidth < BREAKPOINTS.PORTRAIT_MOBILE
   );
 
+  // The desktop grid sizes its tiles from this box (see `fitBox` on
+  // SequenceTransformActions). Both bindings are the padded client box, so
+  // the 12px padding on each side comes off here. The client height is an
+  // integer rounded down while the content can be a fraction taller, so one
+  // pixel of slack keeps a fitted stack from showing a scrollbar.
+  const CONTROLS_PADDING = 12;
+  let controlsWidth = $state(0);
+  let controlsHeight = $state(0);
+  const controlsFitBox = $derived({
+    width: controlsWidth - CONTROLS_PADDING * 2,
+    height: controlsHeight - CONTROLS_PADDING * 2 - 1,
+  });
+
   const basePanelHeight = $derived(
     panelState.navigationBarHeight + panelState.toolPanelHeight
   );
@@ -955,8 +968,14 @@
             />
           {:else}
             <!-- Desktop: full grid of all actions -->
-            <div class="controls-content">
+            <div
+              class="controls-content"
+              class:measuring={controlsHeight === 0}
+              bind:clientWidth={controlsWidth}
+              bind:clientHeight={controlsHeight}
+            >
               <SequenceTransformActions
+                fitBox={controlsFitBox}
                 {hasSequence}
                 {hasSelection}
                 {isTransforming}
@@ -1329,11 +1348,16 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    /* Query container for the action grid's proportional sizing (Approach A
-       in SequenceTransformActions). cqh inside resolves against this box's height,
-       which flex:1 makes definite — so button/icon/label scale to the panel,
-       not to their own content. */
+    /* Query container for the action grid. Its measured client box is also
+       the grid's `fitBox`, which decides columns, tile height, and whether
+       every section fits or one category shows behind tabs. The scroll is
+       only a safety net for a box too short for even one category. */
     container-type: size;
+  }
+
+  /* No legacy-sized frame before the first measurement lands. */
+  .controls-content.measuring {
+    visibility: hidden;
   }
 
   @media (prefers-reduced-motion: reduce) {

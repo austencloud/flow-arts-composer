@@ -1146,12 +1146,12 @@
     margin-bottom: 0.75rem;
   }
 
-  /* The full SiteFooter carries a 4.5rem handoff above itself. Let the Codex
-     claim the rest of the first viewport so that handoff begins at the fold:
-     the footer is either fully below the page content or deliberately reached
-     by scrolling, never stranded as a partial footer under a compressed board. */
+  /* Let the Codex claim the whole first viewport so the SiteFooter begins at
+     the fold: it is either fully below the page content or deliberately
+     reached by scrolling, never stranded as a partial footer under a
+     compressed board. */
   .codex-view .editorial {
-    min-height: calc(100dvh - 4.5rem);
+    min-height: 100dvh;
   }
 
   .codex-search-result {
