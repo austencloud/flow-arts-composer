@@ -5,14 +5,17 @@
   choice, not a gap. A hand mode the LOOP cannot keep shows its icon greyed
   under a LOOP tag. A link between the tiles says turns are matched.
 
-  Each tile is its own button: a tap grows the card into TnDPanel through the
-  card morph, showing only that tile's side.
+  Each tile is its own button: a tap grows that tile, not the whole card, into
+  TnDPanel through the card morph, showing only that tile's side. While the
+  tapped tile is the morph source it carries `data-morph-source`, which
+  view-transitions.css uses to name the tile in place of the card and to fly
+  its icon into the panel's chosen option.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
-  import { onMount, getContext } from "svelte";
+  import { onMount, getContext, flushSync } from "svelte";
   import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
   import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
   import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
@@ -83,8 +86,15 @@
     },
   ]);
 
+  /* The tile the panel grew from; it is also where the panel shrinks back to,
+     so it stays set after the panel closes. Only marked while the panel is
+     closed: once open, the panel owns the morph name. */
+  let sourceSide = $state<"hands" | "props" | null>(null);
+
   function openSection(section: "hands" | "props") {
     hapticService?.trigger("selection");
+    // The mark must be in the DOM before the transition snapshots the card.
+    flushSync(() => (sourceSide = section));
     morphGenerateCard("tnd", () => panelState.openTnDPanel(section));
   }
 </script>
@@ -99,6 +109,9 @@
         class:blocked={tile.blocked}
         style:--tile-accent={tile.element?.accentColor}
         style:--tile-dark={tile.element?.darkComplement}
+        data-morph-source={(!panelState?.isTnDPanelOpen &&
+          sourceSide === tile.key) ||
+          undefined}
         onclick={() => openSection(tile.key)}
         aria-label={tile.ariaLabel}
       >
