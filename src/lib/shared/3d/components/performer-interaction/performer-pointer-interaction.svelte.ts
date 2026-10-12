@@ -26,7 +26,7 @@ const POSITION_EPSILON = 1e-10;
 
 export type PointerIntent = "click" | "drag";
 export type TouchIntent = "tap" | "drag" | "camera";
-export type PerformerPointerTarget = "character" | "move-handle";
+export type PerformerPointerTarget = "character";
 
 export interface DirectPerformerSelectionDetail {
   performerIndex: number | null;
@@ -831,54 +831,6 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
     }
   }
 
-  function onMoveHandlePointerDown(
-    event: PointerEvent,
-    performerIndex: number
-  ): void {
-    if (event.button !== 0) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const performer =
-      options.viewer.performerManager.performers[performerIndex];
-    if (!performer || !isSelected(performerIndex)) return;
-    activePointers.add(event.pointerId);
-    if (activePointers.size > 1) {
-      cancelDrag();
-      return;
-    }
-    if (!setRayFromEvent(event)) return;
-    const dragPoint = intersectHorizontalPlane(
-      raycaster.ray.origin,
-      raycaster.ray.direction,
-      options.groundY(),
-      { x: 0, z: 0 }
-    );
-    const captureTarget = event.currentTarget as Element;
-    pressed = {
-      pointerId: event.pointerId,
-      pointerType: event.pointerType,
-      performerIndex,
-      target: "move-handle",
-      start: { x: event.clientX, y: event.clientY },
-      startedAt: performance.now(),
-      startPosition: { ...performer.position },
-      startPositions: new Map(),
-      dragPlaneY: options.groundY(),
-      grabOffset: dragPoint
-        ? {
-            x: performer.position.x - dragPoint.x,
-            z: performer.position.z - dragPoint.z,
-          }
-        : { x: 0, z: 0 },
-      anchorSource: "proxy",
-      visualAnchor: null,
-      additive: false,
-      longPressSelected: false,
-      captureTarget,
-    };
-    captureTarget.setPointerCapture?.(event.pointerId);
-  }
-
   function onPointerMove(event: PointerEvent): void {
     if (pressed?.pointerId === event.pointerId) {
       if (!setRayFromEvent(event)) return;
@@ -889,9 +841,7 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
       if (pressed.pointerType === "touch") {
         if (pressed.longPressSelected) return;
         const intent = resolveTouchIntent({
-          selected:
-            pressed.target === "move-handle" ||
-            isSelected(pressed.performerIndex),
+          selected: isSelected(pressed.performerIndex),
           heldMs: performance.now() - pressed.startedAt,
           travelPx: travel,
         });
@@ -968,10 +918,7 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
     }
     if (pressed?.pointerId !== event.pointerId) return;
     if (draggingIndex !== null) finishPointer(true);
-    else if (pressed.target === "move-handle") {
-      finishPointer(false);
-      togglePlacement();
-    } else if (!pressed.longPressSelected) {
+    else if (!pressed.longPressSelected) {
       const additive =
         pressed.additive || options.viewer.performerSelectionMode;
       if (additive) {
@@ -1105,23 +1052,13 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
       moveHintClaimed = true;
       return true;
     },
-    onMoveHandleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        event.stopPropagation();
-        togglePlacement();
-      } else onKeyDown(event);
-    },
     get hoveredIndex() {
       return hoveredIndex;
     },
     get draggingIndex() {
       return draggingIndex;
     },
-    onMoveHandlePointerDown,
-    onMoveHandlePointerMove: onPointerMove,
-    onMoveHandlePointerUp: onPointerUp,
-    onMoveHandlePointerCancel: onPointerCancel,
+    cancelPointer: onPointerCancel,
     get announcement() {
       return announcement;
     },

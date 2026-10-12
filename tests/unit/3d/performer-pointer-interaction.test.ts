@@ -320,25 +320,8 @@ describe("performer press vs camera-controls listener ordering", () => {
     interaction.registerPickTarget(proxy);
     interaction.registerVisualPickTarget(0, visualRoot);
     const detach = interaction.attach();
-    const moveHandle = new EventTarget() as unknown as HTMLElement;
-    Object.assign(moveHandle, {
-      style: {},
-      setPointerCapture: () => {},
-      hasPointerCapture: () => false,
-      releasePointerCapture: () => {},
-    });
-    moveHandle.addEventListener("pointerdown", (event) =>
-      interaction.onMoveHandlePointerDown(event as PointerEvent, 0)
-    );
-    moveHandle.addEventListener("pointermove", (event) =>
-      interaction.onMoveHandlePointerMove(event as PointerEvent)
-    );
-    moveHandle.addEventListener("pointerup", (event) =>
-      interaction.onMoveHandlePointerUp(event as PointerEvent)
-    );
     return {
       canvas,
-      moveHandle,
       viewer,
       orbitDown,
       interaction,
@@ -498,31 +481,12 @@ describe("performer press vs camera-controls listener ordering", () => {
     detach();
   });
 
-  it("moves the selected formation from the explicit move handle", () => {
-    const { moveHandle, viewer, detach } = buildHarness();
-    viewer.selectedPerformerIndices = [0, 1];
-    viewer.primaryPerformerIndex = 0;
-
-    firePointer(moveHandle, "pointerdown", { clientX: 50, clientY: 50 });
-    firePointer(moveHandle, "pointermove", { clientX: 65, clientY: 50 });
-    firePointer(moveHandle, "pointerup", { clientX: 65, clientY: 50 });
-
-    expect(viewer.beginSpatialEdit).toHaveBeenCalledTimes(1);
-    expect(viewer.endSpatialEdit).toHaveBeenCalledTimes(1);
-    expect(
-      viewer.performerManager.handleDrag.mock.calls.map(([index]) => index)
-    ).toEqual([0, 1]);
-    detach();
-  });
-
   it("places a selected group with one undoable floor tap and preserves its spacing", () => {
-    const { canvas, moveHandle, viewer, orbitDown, interaction, detach } =
-      buildHarness();
+    const { canvas, viewer, orbitDown, interaction, detach } = buildHarness();
     viewer.selectedPerformerIndices = [0, 1];
     viewer.primaryPerformerIndex = 0;
 
-    firePointer(moveHandle, "pointerdown", { clientX: 50, clientY: 50 });
-    firePointer(moveHandle, "pointerup", { clientX: 50, clientY: 50 });
+    interaction.togglePlacement();
     expect(interaction.placing).toBe(true);
     firePointer(canvas, "pointerdown", { clientX: 75, clientY: 50 });
     firePointer(canvas, "pointerup", { clientX: 75, clientY: 50 });
@@ -540,12 +504,10 @@ describe("performer press vs camera-controls listener ordering", () => {
   });
 
   it("keeps placement pending after a floor drag and cancels it with Escape", () => {
-    const { canvas, moveHandle, viewer, orbitDown, interaction, detach } =
-      buildHarness();
+    const { canvas, viewer, orbitDown, interaction, detach } = buildHarness();
     viewer.selectedPerformerIndices = [0];
     viewer.primaryPerformerIndex = 0;
-    firePointer(moveHandle, "pointerdown", { clientX: 50, clientY: 50 });
-    firePointer(moveHandle, "pointerup", { clientX: 50, clientY: 50 });
+    interaction.togglePlacement();
     firePointer(canvas, "pointerdown", { clientX: 75, clientY: 50 });
     firePointer(canvas, "pointermove", { clientX: 90, clientY: 50 });
     firePointer(canvas, "pointerup", { clientX: 90, clientY: 50 });
@@ -564,11 +526,10 @@ describe("performer press vs camera-controls listener ordering", () => {
   });
 
   it("does not place when Escape cancels an active floor press", () => {
-    const { canvas, moveHandle, viewer, interaction, detach } = buildHarness();
+    const { canvas, viewer, interaction, detach } = buildHarness();
     viewer.selectedPerformerIndices = [0];
     viewer.primaryPerformerIndex = 0;
-    firePointer(moveHandle, "pointerdown", { clientX: 50, clientY: 50 });
-    firePointer(moveHandle, "pointerup", { clientX: 50, clientY: 50 });
+    interaction.togglePlacement();
     firePointer(canvas, "pointerdown", { clientX: 75, clientY: 50 });
     canvas.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     firePointer(canvas, "pointerup", { clientX: 75, clientY: 50 });
@@ -576,25 +537,6 @@ describe("performer press vs camera-controls listener ordering", () => {
     expect(interaction.placing).toBe(false);
     expect(viewer.beginSpatialEdit).not.toHaveBeenCalled();
     expect(viewer.performerManager.handleDrag).not.toHaveBeenCalled();
-    detach();
-  });
-
-  it("activates and cancels floor placement from the keyboard", () => {
-    const { viewer, interaction, detach } = buildHarness();
-    viewer.selectedPerformerIndices = [0];
-    viewer.primaryPerformerIndex = 0;
-    const enter = new KeyboardEvent("keydown", {
-      key: "Enter",
-      cancelable: true,
-    });
-    interaction.onMoveHandleKeyDown(enter);
-    expect(enter.defaultPrevented).toBe(true);
-    expect(interaction.placing).toBe(true);
-    interaction.onMoveHandleKeyDown(
-      new KeyboardEvent("keydown", { key: "Escape" })
-    );
-    expect(interaction.placing).toBe(false);
-    expect(viewer.beginSpatialEdit).not.toHaveBeenCalled();
     detach();
   });
 
