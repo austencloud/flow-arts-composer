@@ -2,8 +2,8 @@
 status: active
 value: 4
 effort: L
-work_state: ready
-remaining: "Extract the tile paint kit from Fire/Coal/Bloom, then port the eleven approved prototype portraits (Zap, Sparkle, Ghost, Goo, Bubbles, Petals, Smoke, Ink, Silk, Animal, Pulse) into Svelte tiles, wire the dispatcher, add look copy, and review every tile in the picker at 304x114."
+work_state: verification
+remaining: "Austen reviews the evidence set; then move to shipped."
 depends_on: ""
 plan_path: "docs/superpowers/plans/active/2026-10-11-effect-tile-portraits.md"
 tags: [effects, create, ui]
@@ -13,7 +13,9 @@ last_triaged: "2026-10-11"
 # Effect Tile Portraits
 
 **Status 2026-10-11.** Design approved by Austen tile by tile in the browser.
-Nothing is implemented. The approved prototype pages live in
+All eleven portraits, the dispatcher and the look copy are on local main
+(batches 1 to 4); the evidence set under `evidence/` awaits his review.
+The approved prototype pages live in
 [`2026-10-11-effect-tile-portraits/reference/`](2026-10-11-effect-tile-portraits/reference/README.md)
 and are the reference for every port below.
 
@@ -333,7 +335,7 @@ into a pure function the renderer calls too. Expected export work:
 | `ink-2d-renderer.ts`                      | Ink       | `BrushStampCache`; the ribbon, stamp, bristle and droplet passes are instance-bound, so the tile keeps the reference page's port of them                                        |
 | `silk-2d-renderer.ts`, `ribbon-trace.ts`  | Silk      | already exported (see `silk-entry.ts`); the per-material alphas (`MATERIAL_PROFILES`) stay private, so the tile carries a copy of that table                                    |
 | `animal-2d-renderer.ts`                   | Animal    | `bodyWidth`, `resampleAlongPath`; layer, head and ornament painters are instance-bound, so the tile keeps the reference page's port                                             |
-| `pulse-2d-renderer.ts`, `pulse-rhythm.ts` | Pulse     | `drawPulseRing`, `drawPulseFlash`, `drawPulseCharge` (with a `lineUnit` parameter defaulting to `unit`), `PulseRing`, `ChargeTip`, `rotateHue`; rhythm helpers already exported |
+| `pulse-2d-renderer.ts`, `pulse-rhythm.ts` | Pulse     | `drawPulseRing`, `drawPulseFlash`, `drawPulseCharge` (taking a `PulseUnits` record: `unit` for radii, `line`, `flash` and `core` for widths; the renderer passes its scale for all four), `PulseRing`, `ChargeTip`, `rotateHue`; rhythm helpers already exported |
 
 Renderer exports are additive; no renderer behavior changes. The renderer
 test files next to each module guard that.
@@ -447,3 +449,30 @@ the evidence set before the fourth batch merges.
   preview. The three tiles were checked on the primary server after
   integration; `ink.png`, `silk.png` and `animal.png` are captured there and
   land with batch 4's evidence set.
+
+## Batch 4 notes (2026-10-11)
+
+- Pulse is a port of `reference/pulse-draw.js` staging (the sweeping staff,
+  the freeze rule, the tile-only life boost, intensity floor and staff bar)
+  over the renderer's own state machine: `PulseTipMotion`,
+  `pulseAccentThreshold`, `pulseRingLife`, `pulseOvertoneGap` and
+  `pulseCharge` from `pulse-rhythm.ts`, `resolvePulse2D` for the derived
+  radius and band, and the ring, flash and charge painters lifted out of
+  `Pulse2DRenderer` into exported functions. The page's own copies of the
+  rhythm helpers and painters are gone from the tile.
+- The spec asked for a single `lineUnit` parameter, but the reference page
+  scales the birth flash radius (`LINE * 0.6`) and the charge core
+  (`LINE * 0.7`) differently from the strokes, so the painters take a
+  `PulseUnits` record (`unit`, `line`, `flash`, `core`) instead. The renderer
+  fills all four with its stage scale, so its picture is unchanged;
+  `pulse-2d-renderer.test.ts` still passes.
+- The tile always paints in solid color mode (the palette's ring and fade),
+  since the picker shows the look rather than the current prop colors.
+- Look copy covers every preset in the ten portrait groups plus the five
+  legacy tiles; Frost (retired) has none. Two lines differ from the plan to
+  match the tiles as painted: Ink Splatter is a dark red swash, and Silk Whip
+  sits on a lit ground like Phantom.
+- Two agent-owned Vite servers were running again (ports 5196 and 5221), so
+  this batch also had no worktree preview; Pulse and the full picker were
+  checked on the primary server after integration, and the evidence set was
+  committed from a follow-up branch.
