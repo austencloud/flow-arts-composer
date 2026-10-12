@@ -46,6 +46,10 @@ function timingOf(options: KeyframeAnimationOptions | number | undefined): {
  */
 export class FakeAnimation {
   onfinish: (() => void) | null = null;
+  readonly #listeners: Record<"finish" | "cancel", Set<() => void>> = {
+    finish: new Set(),
+    cancel: new Set(),
+  };
   currentTime = 0;
   playState: AnimationPlayState = "running";
   // Svelte clears `effect` once its own transitions finish, so it stays a
@@ -73,14 +77,24 @@ export class FakeAnimation {
     };
   }
 
+  addEventListener(type: "finish" | "cancel", listener: () => void): void {
+    this.#listeners[type].add(listener);
+  }
+
+  removeEventListener(type: "finish" | "cancel", listener: () => void): void {
+    this.#listeners[type].delete(listener);
+  }
+
   cancel(): void {
     this.playState = "idle";
+    for (const listener of this.#listeners.cancel) listener();
   }
 
   finish(): void {
     if (this.playState !== "running") return;
     this.playState = "finished";
     this.onfinish?.();
+    for (const listener of this.#listeners.finish) listener();
   }
 }
 

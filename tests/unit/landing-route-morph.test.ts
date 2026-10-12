@@ -246,10 +246,10 @@ describe("landing shared-element contract", () => {
     );
     expect(chrome).toContain("isNamedRouteMorphActive()");
     expect(chrome).toMatch(
-      /duration:\s*suppressContentFade\s*\?\s*0\s*:\s*motionDuration\(200\)/
+      /duration:\s*suppressContentFade\s*\?\s*0\s*:\s*DURATION\.normal/
     );
     expect(chrome).toContain(
-      'import { motionDuration } from "#lib/shared/transitions/motion.js";'
+      'import { DURATION } from "#lib/shared/transitions/transitions.js";'
     );
     expect(chrome).not.toContain("MORPH_PATHS.has(path)");
   });

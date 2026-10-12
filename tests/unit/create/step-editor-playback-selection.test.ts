@@ -42,9 +42,6 @@ vi.mock("#lib/shared/application/state/app-state.svelte.js", () => ({
   getSettings: () => ({}),
   updateSettings: () => {},
 }));
-vi.mock("#lib/shared/components/Crossfade.svelte", async () => ({
-  default: (await import("./PassthroughStub.svelte")).default,
-}));
 vi.mock(
   "#lib/features/create/shared/components/sequence-actions/StepEditorPanel.svelte",
   () => ({
@@ -90,7 +87,22 @@ type Selection = ReturnType<typeof createSequenceSelectionState>;
 const realCreateElement = Object.getPrototypeOf(document)
   .createElement as typeof document.createElement;
 let stubbedCreateElement: typeof document.createElement;
+const originalAnimate = Element.prototype.animate;
 const cleanups: Array<() => void> = [];
+
+/** jsdom has no Web Animations API, which the coordinator's Crossfade runs
+ *  on. This stand-in finishes on the next task, all a transition waits for. */
+function finishOnNextTask(): Animation {
+  const animation = {
+    currentTime: 0,
+    effect: null,
+    playState: "finished",
+    onfinish: null as (() => void) | null,
+    cancel() {},
+  };
+  setTimeout(() => animation.onfinish?.());
+  return animation as unknown as Animation;
+}
 
 beforeEach(() => {
   // The drawer finishes opening and closing on animation frames and timers.
@@ -101,6 +113,7 @@ beforeEach(() => {
   shown.batch = null;
   stubbedCreateElement = document.createElement;
   document.createElement = realCreateElement.bind(document);
+  Element.prototype.animate = finishOnNextTask;
 });
 
 afterEach(() => {
@@ -109,6 +122,7 @@ afterEach(() => {
   vi.useRealTimers();
   document.body.innerHTML = "";
   document.createElement = stubbedCreateElement;
+  Element.prototype.animate = originalAnimate;
   localStorage.clear();
 });
 

@@ -39,8 +39,9 @@ describe("performer selection light", () => {
     // The render budget it still owes: exactly one ring set, mounted behind
     // the selection gate, so an unselected cast adds no ring meshes and no
     // second light. Lifting a ring above the gate would put a ring set on
-    // every performer in the scene.
-    expect(sceneSource.match(/<T\.RingGeometry/g)).toHaveLength(2);
+    // every performer in the scene. The third ring in the file is the
+    // all-selected marker outside the loop (a ring since dfe4d3cafa).
+    expect(sceneSource.match(/<T\.RingGeometry/g)).toHaveLength(3);
 
     const selectionGate = performerLoop.indexOf(
       "selectedPerformerIndices.has(i)"
@@ -49,7 +50,9 @@ describe("performer selection light", () => {
     expect(performerLoop.slice(0, selectionGate)).not.toContain(
       "<T.RingGeometry"
     );
-    expect(performerLoop.match(/<T\.RingGeometry/g)).toHaveLength(2);
+    // Inner and outer ring behind the per-performer gate, plus the
+    // all-selected ring behind viewer3DState.isAllPerformersSelected.
+    expect(performerLoop.match(/<T\.RingGeometry/g)).toHaveLength(3);
     expect(performerLoop).toContain("color={selectionColor}");
   });
 });

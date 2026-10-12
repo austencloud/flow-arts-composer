@@ -5,7 +5,7 @@
   setters so it can flush synchronously between steps.
 -->
 <script lang="ts">
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
 
   let {
     mode = "crossfade",
