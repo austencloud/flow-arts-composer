@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import LabeledColorPairPicker from "#lib/shared/ui/components/LabeledColorPairPicker.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import ScrubbableNumber from "#lib/shared/ui/components/ScrubbableNumber.svelte";

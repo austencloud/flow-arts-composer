@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     DEFAULT_FAN_APPEARANCE,

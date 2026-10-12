@@ -5,7 +5,7 @@
   import { getViewer3DContext } from "../../context/viewer-3d-context";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     reportViewerControlChange,

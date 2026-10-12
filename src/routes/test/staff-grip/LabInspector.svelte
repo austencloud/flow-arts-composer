@@ -8,7 +8,7 @@
 -->
 <script lang="ts">
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
 
   import CoverageMatrixMount from "./CoverageMatrixMount.svelte";
   import StanceTimingChart from "./StanceTimingChart.svelte";

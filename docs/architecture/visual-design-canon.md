@@ -270,10 +270,14 @@ Motion explains change.
 - Let pointer-driven dragging follow the pointer without easing.
 - Collapse to the accessible final state for reduced motion.
 
-Use the shared duration and transition tokens. Do not create feature-local
-easing systems or use `transition: all`. Ambient animation is appropriate only
-when it belongs to the scene or artifact, not as generic activity around UI
-chrome.
+The clock and the shared owners (`flyFade`, `growFade`, `popIn`, `arrive`,
+`leave`, `Crossfade`, `flipDuration`) are `@austencloud/motion`, imported
+through `#lib/shared/transitions/*`;
+`src/lib/shared/transitions/motion-coverage.test.ts` is the gate that keeps raw
+timings out of feature code. Use the shared duration and transition tokens. Do
+not create feature-local easing systems or use `transition: all`. Ambient
+animation is appropriate only when it belongs to the scene or artifact, not as
+generic activity around UI chrome.
 
 ## 10. Responsive Composition
 

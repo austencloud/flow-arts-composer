@@ -41,7 +41,7 @@
   import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
   import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";

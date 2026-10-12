@@ -19,7 +19,7 @@
   } from "@austencloud/scene-3d";
   import { tick } from "svelte";
 
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
   import FanAppearancePicker from "#lib/shared/pictograph/prop/components/FanAppearancePicker.svelte";

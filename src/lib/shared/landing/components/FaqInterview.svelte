@@ -60,7 +60,10 @@
   function splitNote(note: FaqNote): [string, string] {
     const at = note.text.indexOf(note.linkLabel);
     if (at === -1) return [`${note.text} `, ""];
-    return [note.text.slice(0, at), note.text.slice(at + note.linkLabel.length)];
+    return [
+      note.text.slice(0, at),
+      note.text.slice(at + note.linkLabel.length),
+    ];
   }
 </script>
 
@@ -187,8 +190,8 @@
     font-weight: 600;
     text-decoration: none;
     transition:
-      background var(--duration-normal, 0.2s) ease,
-      border-color var(--duration-normal, 0.2s) ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
   .faq-cta:hover {
     background: color-mix(

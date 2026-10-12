@@ -32,9 +32,9 @@
   border: 1px solid oklch(0.45 0.04 270 / 0.18);
   border-radius: 999px;
   transition:
-    color 160ms ease,
-    border-color 160ms ease,
-    background 160ms ease;
+    color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
 }
 .editorial .back-link:hover {
   color: oklch(0.92 0.01 270);
@@ -287,15 +287,15 @@
   background: linear-gradient(135deg, #6f8cff, #8b6cff);
   box-shadow: 0 14px 32px oklch(0.45 0.18 275 / 0.4);
   transition:
-    transform 160ms ease,
-    box-shadow 160ms ease;
+    transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
 }
 .cta-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 20px 44px oklch(0.45 0.18 275 / 0.55);
 }
 .cta-button i {
-  transition: transform 160ms ease;
+  transition: transform var(--duration-fast) var(--ease-standard);
 }
 .cta-button:hover i {
   transform: translateX(4px);

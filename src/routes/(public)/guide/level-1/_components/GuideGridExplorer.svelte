@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";

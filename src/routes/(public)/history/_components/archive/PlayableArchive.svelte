@@ -2,7 +2,7 @@
   import { onMount, tick } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { goto } from "$app/navigation";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import {
     ARCHIVE_ENTRIES,
     ARCHIVE_START_YEAR,

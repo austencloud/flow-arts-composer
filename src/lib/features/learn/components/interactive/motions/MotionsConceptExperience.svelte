@@ -10,7 +10,7 @@
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick } from "svelte";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import HandCombinationBoard from "#lib/shared/guide-topics/HandCombinationBoard.svelte";
   import {
     HAND_COMBINATIONS,

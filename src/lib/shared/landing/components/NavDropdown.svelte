@@ -252,7 +252,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    transition: color 0.2s ease;
+    transition: color var(--duration-normal) var(--ease-standard);
   }
   .trigger:hover,
   .trigger:focus-visible,
@@ -265,8 +265,8 @@
     font-size: 0.6rem;
     color: #6f6b8e;
     transition:
-      transform 0.2s ease,
-      color 0.2s ease;
+      transform var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
   .trigger.open .chev {
     transform: rotate(180deg);
@@ -295,7 +295,7 @@
     border-radius: 14px;
     box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
     z-index: 210;
-    animation: panel-in 0.16s ease-out;
+    animation: panel-in var(--duration-fast) var(--ease-standard-out);
   }
   /* Invisible hover bridge so the mouse can travel trigger → panel without
      crossing a gap that fires pointerleave. */
@@ -350,8 +350,8 @@
     color: #c4c1d8;
     text-decoration: none;
     transition:
-      background 0.15s ease,
-      color 0.15s ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
   .panel a:hover,
   .panel a:focus-visible {
