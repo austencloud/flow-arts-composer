@@ -60,14 +60,21 @@
       : false;
 
   // Generate cache key (includes grid mode and prop type for uniqueness)
-  function getCacheKey(letter: string, variation: number, imageSize: number): string {
+  function getCacheKey(
+    letter: string,
+    variation: number,
+    imageSize: number
+  ): string {
     const gridMode = pictograph.gridMode ?? "diamond";
     const base = `${letter}-${variation}-${imageSize}-${gridMode}`;
     return pictograph.propType ? `${base}-${pictograph.propType}` : base;
   }
 
   // Build static file key
-  function buildStaticKey(letter: string, variation: number): PictographFileKey {
+  function buildStaticKey(
+    letter: string,
+    variation: number
+  ): PictographFileKey {
     return {
       letter,
       variation,
@@ -79,7 +86,9 @@
   // Check if static file exists
   // Note: HEAD requests don't work reliably in Vite dev (returns 200 for non-existent files)
   // Instead, we fetch the file and check Content-Type to verify it's actually an image
-  async function checkStaticFile(key: PictographFileKey): Promise<string | null> {
+  async function checkStaticFile(
+    key: PictographFileKey
+  ): Promise<string | null> {
     const path = getStaticPictographPath(key);
     try {
       const response = await fetch(path, { method: "GET" });
@@ -196,7 +205,9 @@
       // Priority 3: API (dev only)
       // Note: dev can be undefined in some contexts, so check explicitly for false
       if (dev === false) {
-        console.warn(`[InlinePictograph] Missing pictograph in production: ${pictograph.letter}-${variation}`);
+        console.warn(
+          `[InlinePictograph] Missing pictograph in production: ${pictograph.letter}-${variation}`
+        );
         error = true;
         loading = false;
         return;
@@ -238,7 +249,10 @@
 
       imageUrl = `data:image/png;base64,${base64}`;
     } catch (e) {
-      console.error(`[InlinePictograph] Error fetching ${pictograph.letter}:`, e);
+      console.error(
+        `[InlinePictograph] Error fetching ${pictograph.letter}:`,
+        e
+      );
       error = true;
     } finally {
       loading = false;
@@ -261,10 +275,7 @@
       <span>{pictograph.letter}</span>
     </div>
   {:else if svgMarkup}
-    <div
-      class="svg-pictograph"
-      class:animate={!prefersReducedMotion}
-    >
+    <div class="svg-pictograph" class:animate={!prefersReducedMotion}>
       {@html svgMarkup}
     </div>
   {:else if imageUrl}
@@ -344,21 +355,36 @@
   }
 
   .label.pro {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 20%,
+      transparent
+    );
     color: var(--semantic-success, #22c55e);
-    border: 1px solid color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
   }
 
   .label.anti {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
-    border: 1px solid color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
   }
 
   .label.hybrid {
-    background: color-mix(in srgb, var(--semantic-info, #a855f7) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-info, #a855f7) 20%,
+      transparent
+    );
     color: var(--semantic-info, #a855f7);
-    border: 1px solid color-mix(in srgb, var(--semantic-info, #a855f7) 40%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-info, #a855f7) 40%, transparent);
   }
 
   /* Default label style */
@@ -399,28 +425,28 @@
   }
 
   .svg-pictograph.animate :global(.svg-bg) {
-    animation: svgReveal 0.3s ease-out both;
+    animation: svgReveal var(--duration-emphasis) var(--ease-standard-out) both;
     animation-delay: 0ms;
   }
 
   .svg-pictograph.animate :global(.svg-grid) {
-    animation: svgReveal 0.3s ease-out both;
-    animation-delay: 80ms;
+    animation: svgReveal var(--duration-emphasis) var(--ease-standard-out) both;
+    animation-delay: var(--stagger-relaxed);
   }
 
   .svg-pictograph.animate :global(.svg-prop) {
-    animation: svgReveal 0.35s ease-out both;
-    animation-delay: 200ms;
+    animation: svgReveal var(--duration-dramatic) var(--ease-standard-out) both;
+    animation-delay: var(--duration-normal);
   }
 
   .svg-pictograph.animate :global(.svg-arrow) {
-    animation: svgReveal 0.35s ease-out both;
-    animation-delay: 350ms;
+    animation: svgReveal var(--duration-dramatic) var(--ease-standard-out) both;
+    animation-delay: var(--duration-dramatic);
   }
 
   .svg-pictograph.animate :global(.svg-glyph) {
-    animation: svgReveal 0.3s ease-out both;
-    animation-delay: 480ms;
+    animation: svgReveal var(--duration-emphasis) var(--ease-standard-out) both;
+    animation-delay: calc(var(--stagger-relaxed) * 6);
   }
 
   @keyframes svgReveal {

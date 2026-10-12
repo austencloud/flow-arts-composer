@@ -546,7 +546,9 @@
               className="card-preview-skeleton"
             />
           </div>
-          {#if face === "both"}<figcaption>{tDynamic("learn_card_anatomy_front")}</figcaption>{/if}
+          {#if face === "both"}<figcaption>
+              {tDynamic("learn_card_anatomy_front")}
+            </figcaption>{/if}
         </figure>
       {/if}
       {#if showBack}
@@ -559,7 +561,9 @@
               className="card-preview-skeleton"
             />
           </div>
-          {#if face === "both"}<figcaption>{tDynamic("learn_card_anatomy_back")}</figcaption>{/if}
+          {#if face === "both"}<figcaption>
+              {tDynamic("learn_card_anatomy_back")}
+            </figcaption>{/if}
         </figure>
       {/if}
     </div>
@@ -609,7 +613,8 @@
                 darkMode
                 cardAspectRatio={pokerCardAspectRatio}
                 showWord={false}
-                customTitleText={cardTitle ?? tDynamic("learn_card_anatomy_hand_paths")}
+                customTitleText={cardTitle ??
+                  tDynamic("learn_card_anatomy_hand_paths")}
                 showDifficultyLevel={false}
                 includeStartPlacement
                 columnCount={2}
@@ -624,12 +629,17 @@
                 }}
               />
             {:else if shown.frontUrl}
-              <img src={shown.frontUrl} alt={tDynamic("learn_card_anatomy_front_alt")} />
+              <img
+                src={shown.frontUrl}
+                alt={tDynamic("learn_card_anatomy_front_alt")}
+              />
             {:else}
               <div
                 class="front-preview-unavailable"
                 role="img"
-                aria-label={tDynamic("learn_card_anatomy_front_unavailable_aria")}
+                aria-label={tDynamic(
+                  "learn_card_anatomy_front_unavailable_aria"
+                )}
               >
                 <i class="fas fa-image" aria-hidden="true"></i>
                 <span>{tDynamic("learn_card_anatomy_front_unavailable")}</span>
@@ -637,7 +647,9 @@
             {/if}
             {@render spotlight("front")}
           </div>
-          {#if face === "both"}<figcaption>{tDynamic("learn_card_anatomy_front")}</figcaption>{/if}
+          {#if face === "both"}<figcaption>
+              {tDynamic("learn_card_anatomy_front")}
+            </figcaption>{/if}
         </figure>
       {/if}
 
@@ -665,7 +677,9 @@
             />
             {@render spotlight("back")}
           </div>
-          {#if face === "both"}<figcaption>{tDynamic("learn_card_anatomy_back")}</figcaption>{/if}
+          {#if face === "both"}<figcaption>
+              {tDynamic("learn_card_anatomy_back")}
+            </figcaption>{/if}
         </figure>
       {/if}
     </div>
@@ -703,7 +717,8 @@
       <button
         class="preview-retry-btn"
         type="button"
-        onclick={retryCatalogExample}>{tDynamic("learn_card_anatomy_retry")}</button
+        onclick={retryCatalogExample}
+        >{tDynamic("learn_card_anatomy_retry")}</button
       >
     </div>
   </div>
@@ -777,7 +792,7 @@
     justify-content: center;
     flex-wrap: wrap;
     width: 100%;
-    transition: opacity 160ms ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
   .anatomy.busy {
     opacity: 0.55;
@@ -814,9 +829,9 @@
     border-radius: 999px;
     cursor: pointer;
     transition:
-      background 160ms ease,
-      border-color 160ms ease,
-      transform 160ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
   .shuffle-btn:hover,
   .shuffle-btn:focus-visible {
@@ -851,7 +866,7 @@
     align-items: center;
     gap: 0.6rem;
     flex: 1 1 240px;
-    transition: opacity 200ms ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   /* When the focus is on the other face, this one steps back. */

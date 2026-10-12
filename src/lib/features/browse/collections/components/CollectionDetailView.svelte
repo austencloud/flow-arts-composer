@@ -985,8 +985,8 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     color: var(--theme-text, white);
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .back-btn:hover,
@@ -1023,7 +1023,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     font-size: var(--font-size-sm, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .header-action-btn:hover:not(:disabled) {
@@ -1244,7 +1244,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     font-size: var(--font-size-sm, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .empty-cta:hover {

@@ -23,7 +23,8 @@
     onBackToMapping: () => void;
   }
 
-  const { videoUrl, videoDuration, sequence, beatMap, onBackToMapping }: Props = $props();
+  const { videoUrl, videoDuration, sequence, beatMap, onBackToMapping }: Props =
+    $props();
 
   let videoEl: HTMLVideoElement | undefined = $state();
   let currentTime = $state(0);
@@ -46,7 +47,7 @@
   });
 
   const effectiveBpm = $derived(
-    estimatedBpm > 0 ? Math.round(estimatedBpm * playbackRate) : 0,
+    estimatedBpm > 0 ? Math.round(estimatedBpm * playbackRate) : 0
   );
 
   function handleTimeUpdate() {
@@ -94,7 +95,6 @@
     videoEl.currentTime = at;
     currentTime = at;
   }
-
 </script>
 
 <div class="synced-playback-view">
@@ -150,7 +150,8 @@
       type="button"
       aria-label={isPlaying ? "Pause" : "Play"}
     >
-      <i class="fas {isPlaying ? 'fa-pause' : 'fa-play'}" aria-hidden="true"></i>
+      <i class="fas {isPlaying ? 'fa-pause' : 'fa-play'}" aria-hidden="true"
+      ></i>
     </button>
 
     <input
@@ -220,7 +221,6 @@
     padding: 12px 16px;
   }
 
-
   .playback-header {
     display: flex;
     align-items: center;
@@ -252,7 +252,6 @@
     font-weight: 700;
     color: var(--theme-text, #ffffff);
   }
-
 
   .content-grid {
     display: grid;
@@ -288,7 +287,6 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.02));
   }
 
-
   .transport-bar {
     display: flex;
     align-items: center;
@@ -305,7 +303,7 @@
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    transition: filter 0.15s;
+    transition: filter var(--duration-fast);
   }
 
   .transport-btn.play-btn {
@@ -352,7 +350,6 @@
     white-space: nowrap;
   }
 
-
   .rate-controls {
     display: flex;
     align-items: center;
@@ -375,7 +372,9 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.1s, border-color 0.1s;
+    transition:
+      background var(--duration-instant),
+      border-color var(--duration-instant);
   }
 
   .rate-btn:hover {
@@ -384,7 +383,11 @@
   }
 
   .rate-btn.active {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 20%,
+      transparent
+    );
     border-color: var(--theme-accent, #6366f1);
     color: var(--theme-accent, #6366f1);
   }
@@ -409,7 +412,6 @@
     font-weight: 700;
   }
 
-
   .beat-indicator {
     display: flex;
     align-items: center;
@@ -425,19 +427,30 @@
     border-radius: 50%;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.1));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.15));
-    transition: background 0.1s, transform 0.1s;
+    transition:
+      background var(--duration-instant),
+      transform var(--duration-instant);
   }
 
   .beat-dot.past {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 40%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 50%,
+      transparent
+    );
   }
 
   .beat-dot.active {
     background: var(--theme-accent, #6366f1);
     border-color: var(--theme-accent, #6366f1);
     transform: scale(1.4);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--theme-accent, #6366f1) 60%, transparent);
+    box-shadow: 0 0 8px
+      color-mix(in srgb, var(--theme-accent, #6366f1) 60%, transparent);
   }
 
   /* ---- Responsive: stack on narrow screens ---- */

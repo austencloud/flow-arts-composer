@@ -50,19 +50,28 @@
           onclick={() => !disabled && onToggle(performer)}
           {disabled}
         >
-          <span class="chip-key">{performerKeys[i]?.toUpperCase() || ''}</span>
+          <span class="chip-key">{performerKeys[i]?.toUpperCase() || ""}</span>
           <span class="chip-label">{performer.displayName}</span>
           {#if isSelected(performer.id)}
             <i class="fas fa-check chip-selected-icon" aria-hidden="true"></i>
           {/if}
         </button>
-        <button class="chip-remove" onclick={() => onRemove(performer.id)} aria-label="Remove">
+        <button
+          class="chip-remove"
+          onclick={() => onRemove(performer.id)}
+          aria-label="Remove"
+        >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
       </div>
     {/each}
     {#if !showAddForm}
-      <button class="chip add-chip" onclick={() => onToggleAddForm(true)} {disabled} aria-label="Add performer">
+      <button
+        class="chip add-chip"
+        onclick={() => onToggleAddForm(true)}
+        {disabled}
+        aria-label="Add performer"
+      >
         <i class="fas fa-plus" aria-hidden="true"></i>
       </button>
     {/if}
@@ -72,9 +81,11 @@
       <PerformerSearchInput
         onSelect={(performer) => onAdd(performer)}
         autofocus={true}
-        excludeUserIds={quickPerformers.map(p => p.id)}
+        excludeUserIds={quickPerformers.map((p) => p.id)}
       />
-      <button class="add-form-btn cancel" onclick={() => onToggleAddForm(false)}>Cancel</button>
+      <button class="add-form-btn cancel" onclick={() => onToggleAddForm(false)}
+        >Cancel</button
+      >
     </div>
   {/if}
 </div>
@@ -126,7 +137,13 @@
     color: var(--theme-text, rgba(255, 255, 255, 0.8));
     cursor: pointer;
     font-size: 13px;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .chip:hover:not(:disabled) {
@@ -198,7 +215,15 @@
     justify-content: center;
     opacity: 0;
     transform: scale(0.8);
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast),
+      height var(--duration-fast);
   }
 
   .chip-wrapper:hover .chip-remove {
@@ -229,7 +254,13 @@
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .add-form-btn:disabled {

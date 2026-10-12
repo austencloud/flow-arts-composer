@@ -46,11 +46,11 @@
   }
 
   .dot:nth-child(2) {
-    animation-delay: 0.16s;
+    animation-delay: var(--duration-fast);
   }
 
   .dot:nth-child(3) {
-    animation-delay: 0.32s;
+    animation-delay: var(--duration-emphasis);
   }
 
   @keyframes pulse-bounce {

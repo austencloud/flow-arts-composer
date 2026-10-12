@@ -180,7 +180,7 @@ Features:
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: calc(var(--settings-radius-md, 12px) * var(--scale));
     padding: calc(var(--settings-spacing-sm, 8px) * var(--scale));
-    transition: border-color var(--duration-normal) ease;
+    transition: border-color var(--duration-normal) var(--ease-standard);
   }
 
   .input-wrapper:focus-within {
@@ -224,7 +224,11 @@ Features:
     border-radius: calc(var(--settings-radius-sm, 8px) * var(--scale));
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.7));
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
   }
 
   .action-button svg {

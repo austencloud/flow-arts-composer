@@ -1,8 +1,8 @@
 <script lang="ts">
   import CopyForAIButton from "#lib/shared/foundation/ui/CopyForAIButton.svelte";
   import { simplifyAndTruncate } from "#lib/shared/foundation/utils/word-simplifier.js";
-  import { scale } from "svelte/transition";
-  import { backOut, cubicOut } from "svelte/easing";
+  import { popIn } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface HistoryEntry {
     word: string;
@@ -56,12 +56,16 @@
         class="popover"
         role="dialog"
         aria-label="Recent sequences"
-        in:scale={{ duration: 220, start: 0.92, opacity: 0, easing: backOut }}
-        out:scale={{ duration: 160, start: 0.95, opacity: 0, easing: cubicOut }}
+        in:popIn={{ duration: DURATION.normal, start: 0.92 }}
+        out:popIn={{ duration: DURATION.fast, start: 0.95 }}
       >
         <div class="pop-header">
           <span>Recent Sequences</span>
-          <button class="close-btn" onclick={() => (open = false)} aria-label="Close">
+          <button
+            class="close-btn"
+            onclick={() => (open = false)}
+            aria-label="Close"
+          >
             <i class="fas fa-times" aria-hidden="true"></i>
           </button>
         </div>
@@ -69,14 +73,18 @@
           {#each entries as entry (entry.timestamp)}
             <li class="history-entry">
               <div class="entry-info">
-                <span class="entry-name">{simplifyAndTruncate(entry.word)}</span>
+                <span class="entry-name">{simplifyAndTruncate(entry.word)}</span
+                >
                 <span class="entry-meta">{entry.stepCount} steps</span>
               </div>
               <div class="entry-actions">
                 {#if onView}
                   <button
                     class="entry-icon-btn"
-                    onclick={() => { onView(entry); open = false; }}
+                    onclick={() => {
+                      onView(entry);
+                      open = false;
+                    }}
                     aria-label="View {entry.word} in sequence viewer"
                     title="View"
                   >
@@ -128,7 +136,14 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
     width: 100%;
   }
 
@@ -145,7 +160,11 @@
 
   .badge {
     margin-left: auto;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 25%,
+      transparent
+    );
     color: var(--theme-accent, #6366f1);
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
@@ -204,7 +223,16 @@
     border-radius: 50%;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
     cursor: pointer;
-    transition: all 100ms ease;
+    transition:
+      background var(--duration-instant) var(--ease-standard),
+      border-color var(--duration-instant) var(--ease-standard),
+      color var(--duration-instant) var(--ease-standard),
+      opacity var(--duration-instant) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard),
+      box-shadow var(--duration-instant) var(--ease-standard),
+      width var(--duration-instant) var(--ease-standard),
+      height var(--duration-instant) var(--ease-standard),
+      max-height var(--duration-instant) var(--ease-standard);
   }
 
   .close-btn:hover {
@@ -229,7 +257,7 @@
     gap: 8px;
     padding: 8px 10px;
     border-radius: 8px;
-    transition: background 100ms ease;
+    transition: background var(--duration-instant) var(--ease-standard);
   }
 
   .history-entry:hover {
@@ -275,7 +303,15 @@
     border: 1px solid transparent;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
     cursor: pointer;
-    transition: all 100ms ease;
+    transition:
+      background var(--duration-instant) var(--ease-standard),
+      border-color var(--duration-instant) var(--ease-standard),
+      color var(--duration-instant) var(--ease-standard),
+      opacity var(--duration-instant) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard),
+      box-shadow var(--duration-instant) var(--ease-standard),
+      width var(--duration-instant) var(--ease-standard),
+      height var(--duration-instant) var(--ease-standard);
     font-size: var(--font-size-compact, 12px);
   }
 

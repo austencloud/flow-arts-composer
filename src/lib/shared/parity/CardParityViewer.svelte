@@ -8,7 +8,12 @@
    * Raw JSON lives in a collapsed footer. Cell order convention: [0]=MAIN,
    * [1]=WORKER, [2]=DIFF.
    */
-  import type { ParityRun, ParityRow, ParityProgress, ParityVerdict } from "./parity-types";
+  import type {
+    ParityRun,
+    ParityRow,
+    ParityProgress,
+    ParityVerdict,
+  } from "./parity-types";
   import type { Snippet } from "svelte";
 
   interface Props {
@@ -46,7 +51,8 @@
     rows = [];
     verdict = null;
     progress = { phase: "starting" };
-    (window as unknown as Record<string, unknown>)["__" + resultKey] = undefined;
+    (window as unknown as Record<string, unknown>)["__" + resultKey] =
+      undefined;
     try {
       const pipeline = run();
       const v = await pipeline.run({
@@ -55,7 +61,8 @@
         addRow: (r) => (rows = [...rows, r]),
       });
       verdict = v;
-      (window as unknown as Record<string, unknown>)["__" + resultKey] = v.result;
+      (window as unknown as Record<string, unknown>)["__" + resultKey] =
+        v.result;
     } catch (err) {
       verdict = {
         verdict: "FAIL",
@@ -71,7 +78,9 @@
   }
 
   let pct = $derived(
-    progress?.total ? Math.round(((progress.current ?? 0) / progress.total) * 100) : null,
+    progress?.total
+      ? Math.round(((progress.current ?? 0) / progress.total) * 100)
+      : null
   );
 
   // Pull the named metrics in a stable order for the strip.
@@ -86,7 +95,11 @@
     <div class="bar-left">
       <h1>{title}</h1>
       {#if verdict && verdict.verdict}
-        <span class="pill" class:pass={verdict.verdict === "PASS"} class:fail={verdict.verdict === "FAIL"}>
+        <span
+          class="pill"
+          class:pass={verdict.verdict === "PASS"}
+          class:fail={verdict.verdict === "FAIL"}
+        >
           <span class="dot"></span>{verdict.verdict}
         </span>
         <span class="summary">{verdict.summary}</span>
@@ -94,17 +107,24 @@
     </div>
     <div class="bar-right">
       {@render controls?.()}
-      <button class="run" onclick={start} disabled={running}>{running ? "running…" : "Run parity"}</button>
+      <button class="run" onclick={start} disabled={running}
+        >{running ? "running…" : "Run parity"}</button
+      >
     </div>
   </header>
 
   {#if progress}
     <div class="progress">
       <div class="track">
-        <div class="fill" class:indeterminate={pct === null} style={pct !== null ? `width:${pct}%` : ""}></div>
+        <div
+          class="fill"
+          class:indeterminate={pct === null}
+          style={pct !== null ? `width:${pct}%` : ""}
+        ></div>
       </div>
       <span class="ptext">
-        {progress.phase}{#if progress.total} {progress.current ?? 0}/{progress.total}{/if}{#if progress.detail}: {progress.detail}{/if}
+        {progress.phase}{#if progress.total}
+          {progress.current ?? 0}/{progress.total}{/if}{#if progress.detail}: {progress.detail}{/if}
       </span>
     </div>
   {/if}
@@ -112,7 +132,9 @@
   {#if verdict && verdict.gates.length}
     <div class="gates">
       {#each verdict.gates as g (g.label)}
-        <span class="gate" class:gp={g.pass} class:gf={!g.pass}>{g.label}: {g.detail}</span>
+        <span class="gate" class:gp={g.pass} class:gf={!g.pass}
+          >{g.label}: {g.detail}</span
+        >
       {/each}
     </div>
   {/if}
@@ -141,7 +163,11 @@
             {/if}
             <div class="diff-strip">
               {#each metricEntries(r) as [k, v] (k)}
-                <div class="metric"><span class="mk">{k}</span><span class="mv">{typeof v === "number" ? v.toFixed(3) : v}</span></div>
+                <div class="metric">
+                  <span class="mk">{k}</span><span class="mv"
+                    >{typeof v === "number" ? v.toFixed(3) : v}</span
+                  >
+                </div>
               {/each}
               {#if r.cells[2]}
                 <figure class="diff-thumb">
@@ -159,7 +185,11 @@
   {#if verdict}
     <details class="json-wrap">
       <summary>raw json</summary>
-      <pre class="json" id="parity-summary">{JSON.stringify(verdict.result, null, 2)}</pre>
+      <pre class="json" id="parity-summary">{JSON.stringify(
+          verdict.result,
+          null,
+          2
+        )}</pre>
     </details>
   {/if}
 </div>
@@ -261,15 +291,19 @@
   .fill {
     height: 100%;
     background: #4c6ef5;
-    transition: width 0.2s ease;
+    transition: width var(--duration-normal) var(--ease-standard);
   }
   .fill.indeterminate {
     width: 35%;
     animation: slide 1.1s ease-in-out infinite;
   }
   @keyframes slide {
-    0% { margin-left: -35%; }
-    100% { margin-left: 100%; }
+    0% {
+      margin-left: -35%;
+    }
+    100% {
+      margin-left: 100%;
+    }
   }
   .ptext {
     font-family: monospace;
@@ -290,8 +324,14 @@
     border-radius: 5px;
     font-variant-numeric: tabular-nums;
   }
-  .gate.gp { background: #103021; color: #51cf66; }
-  .gate.gf { background: #341414; color: #ff6b6b; }
+  .gate.gp {
+    background: #103021;
+    color: #51cf66;
+  }
+  .gate.gf {
+    background: #341414;
+    color: #ff6b6b;
+  }
   .sub {
     color: #8a8aa0;
     margin: 10px 20px 0;
@@ -363,8 +403,13 @@
     border-radius: 6px;
     padding: 5px 9px;
   }
-  .mk { color: #8a8aa0; }
-  .mv { color: #e6e6f0; font-variant-numeric: tabular-nums; }
+  .mk {
+    color: #8a8aa0;
+  }
+  .mv {
+    color: #e6e6f0;
+    font-variant-numeric: tabular-nums;
+  }
   .diff-thumb {
     margin: 0;
   }

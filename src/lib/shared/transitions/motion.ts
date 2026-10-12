@@ -39,6 +39,12 @@ const STANDARD_MOTION_EASING = EASE_STANDARD;
 export const standardEasing = cssCubicBezier(0.4, 0, 0.2, 1);
 
 /**
+ * JS twin of `--ease-out` (app.css), for Web Animations, which take a literal
+ * easing string and reject a CSS variable.
+ */
+export const EASE_OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
+
+/**
  * motion — reduced-motion-aware Svelte transitions on the DURATION tokens.
  *
  * Svelte JS transitions ignore the `prefers-reduced-motion` media query that

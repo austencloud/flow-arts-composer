@@ -49,7 +49,8 @@
     if (!country.trim()) errors.country = "Country is required.";
     if (!startDate) errors.startDate = "Start date is required.";
     if (!endDate) errors.endDate = "End date is required.";
-    else if (endDate < startDate) errors.endDate = "End date must be after start date.";
+    else if (endDate < startDate)
+      errors.endDate = "End date must be after start date.";
     if (!websiteUrl.trim()) {
       errors.websiteUrl = "Website URL is required.";
     } else {
@@ -86,8 +87,10 @@
     try {
       // Geocode the city + country into coordinates. Falls back to (0, 0) if
       // the Maps API key isn't configured - the moderator can correct it later.
-      const coords = await geocodingService.forwardGeocode(city.trim(), country.trim())
-        ?? { lat: 0, lng: 0 };
+      const coords = (await geocodingService.forwardGeocode(
+        city.trim(),
+        country.trim()
+      )) ?? { lat: 0, lng: 0 };
 
       const tags = tagsInput
         .split(",")
@@ -118,7 +121,10 @@
 
       submitSuccess = true;
     } catch (err) {
-      submitError = err instanceof Error ? err.message : "Submission failed. Check your connection and try again.";
+      submitError =
+        err instanceof Error
+          ? err.message
+          : "Submission failed. Check your connection and try again.";
     } finally {
       isSubmitting = false;
     }
@@ -156,16 +162,20 @@
   {:else}
     <div class="form-body" data-animate="3">
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-      <form onsubmit={(e) => e.preventDefault()} onkeydown={(e) => {
-        if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
-          e.preventDefault();
-          handleSubmit();
-        }
-      }}>
-
+      <form
+        onsubmit={(e) => e.preventDefault()}
+        onkeydown={(e) => {
+          if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
+            e.preventDefault();
+            handleSubmit();
+          }
+        }}
+      >
         <!-- Name -->
         <div class="field">
-          <label for="sf-name">Festival name <span class="required">*</span></label>
+          <label for="sf-name"
+            >Festival name <span class="required">*</span></label
+          >
           <input
             id="sf-name"
             type="text"
@@ -195,7 +205,9 @@
           </div>
 
           <div class="field">
-            <label for="sf-country">Country <span class="required">*</span></label>
+            <label for="sf-country"
+              >Country <span class="required">*</span></label
+            >
             <input
               id="sf-country"
               type="text"
@@ -211,7 +223,9 @@
 
         <!-- Venue (optional) -->
         <div class="field">
-          <label for="sf-venue">Venue <span class="optional">(optional)</span></label>
+          <label for="sf-venue"
+            >Venue <span class="optional">(optional)</span></label
+          >
           <input
             id="sf-venue"
             type="text"
@@ -223,7 +237,9 @@
         <!-- Dates -->
         <div class="field-row">
           <div class="field">
-            <label for="sf-start">Start date <span class="required">*</span></label>
+            <label for="sf-start"
+              >Start date <span class="required">*</span></label
+            >
             <input
               id="sf-start"
               type="date"
@@ -251,7 +267,8 @@
 
         <!-- Website URL -->
         <div class="field">
-          <label for="sf-website">Website <span class="required">*</span></label>
+          <label for="sf-website">Website <span class="required">*</span></label
+          >
           <input
             id="sf-website"
             type="url"
@@ -266,7 +283,9 @@
 
         <!-- Application URL (optional) -->
         <div class="field">
-          <label for="sf-apply">Application URL <span class="optional">(optional)</span></label>
+          <label for="sf-apply"
+            >Application URL <span class="optional">(optional)</span></label
+          >
           <input
             id="sf-apply"
             type="url"
@@ -281,7 +300,9 @@
 
         <!-- Description (optional) -->
         <div class="field">
-          <label for="sf-desc">Description <span class="optional">(optional)</span></label>
+          <label for="sf-desc"
+            >Description <span class="optional">(optional)</span></label
+          >
           <textarea
             id="sf-desc"
             bind:value={description}
@@ -292,7 +313,10 @@
 
         <!-- Tags (optional) -->
         <div class="field">
-          <label for="sf-tags">Tags <span class="optional">(optional, comma-separated)</span></label>
+          <label for="sf-tags"
+            >Tags <span class="optional">(optional, comma-separated)</span
+            ></label
+          >
           <input
             id="sf-tags"
             type="text"
@@ -357,7 +381,6 @@
 </BaseModal>
 
 <style>
-
   .form-body {
     padding: 20px;
   }
@@ -406,7 +429,7 @@
     color: var(--theme-text, #ffffff);
     font-size: var(--font-size-min, 14px);
     font-family: inherit;
-    transition: border-color 0.15s ease;
+    transition: border-color var(--duration-fast) var(--ease-standard);
     box-sizing: border-box;
   }
 
@@ -439,7 +462,6 @@
     color: var(--semantic-error, #ef4444);
   }
 
-
   .toggles-row {
     display: flex;
     gap: 10px;
@@ -457,7 +479,10 @@
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.6));
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .toggle-btn:hover {
@@ -466,11 +491,14 @@
   }
 
   .toggle-btn.active {
-    background: color-mix(in srgb, var(--theme-accent, #3b82f6) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #3b82f6) 15%,
+      transparent
+    );
     border-color: var(--theme-accent, #3b82f6);
     color: var(--theme-accent, #3b82f6);
   }
-
 
   .submit-error {
     display: flex;
@@ -483,7 +511,6 @@
     color: var(--semantic-error, #ef4444);
     font-size: var(--font-size-min, 14px);
   }
-
 
   .success-state {
     display: flex;
@@ -535,13 +562,12 @@
     background: var(--theme-accent, #3b82f6);
     border: none;
     color: #ffffff;
-    transition: background 0.15s ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .done-btn:hover {
     background: var(--theme-accent-hover, #2563eb);
   }
-
 
   @media (prefers-reduced-motion: reduce) {
     .toggle-btn,

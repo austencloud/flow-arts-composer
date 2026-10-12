@@ -92,7 +92,7 @@
       >
         <i class="fas fa-microphone"></i>
       </button>
-    <!-- Command mode: expanded pill with animated border -->
+      <!-- Command mode: expanded pill with animated border -->
     {:else if inCommandMode && !hasFeedback}
       <div class="command-mode-pill">
         <div class="glow-border"></div>
@@ -111,7 +111,7 @@
           </button>
         </div>
       </div>
-    <!-- Feedback toast (shown in both modes) -->
+      <!-- Feedback toast (shown in both modes) -->
     {:else if hasFeedback}
       <div class="feedback-pill">
         <div class="feedback-icon">
@@ -119,7 +119,7 @@
         </div>
         <span class="feedback-text">{state.feedback?.message}</span>
       </div>
-    <!-- Wake word mode: small subtle dot -->
+      <!-- Wake word mode: small subtle dot -->
     {:else}
       <div class="wake-dot">
         <i class="fas {iconClass}"></i>
@@ -145,7 +145,7 @@
     left: 24px;
     z-index: var(--z-toast);
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
   }
 
   /* Hide on desktop - the sidebar mic button handles it there */
@@ -170,7 +170,15 @@
     background: color-mix(in srgb, var(--vc-active) 8%, transparent);
     color: color-mix(in srgb, var(--vc-active) 50%, transparent);
     border: 1.5px solid color-mix(in srgb, var(--vc-active) 15%, transparent);
-    transition: all 0.3s ease;
+    transition:
+      background var(--duration-emphasis) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard),
+      color var(--duration-emphasis) var(--ease-standard),
+      opacity var(--duration-emphasis) var(--ease-standard),
+      transform var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-emphasis) var(--ease-standard),
+      width var(--duration-emphasis) var(--ease-standard),
+      height var(--duration-emphasis) var(--ease-standard);
   }
 
   .wake-word:hover .wake-dot {
@@ -221,7 +229,9 @@
   }
 
   @keyframes glow-spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   /* Overlay to clip the glow into a border effect */
@@ -259,8 +269,14 @@
   }
 
   @keyframes mic-ring {
-    0% { transform: scale(1); opacity: 0.6; }
-    100% { transform: scale(1.6); opacity: 0; }
+    0% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+    100% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
   }
 
   .command-label {
@@ -284,7 +300,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     flex-shrink: 0;
   }
 
@@ -304,7 +328,7 @@
     padding: 8px 16px 8px 10px;
     border-radius: 24px;
     min-height: 44px;
-    animation: feedback-enter 0.25s ease-out;
+    animation: feedback-enter var(--duration-normal) var(--ease-standard-out);
   }
 
   .feedback-success .feedback-pill {
@@ -367,8 +391,14 @@
   }
 
   @keyframes feedback-enter {
-    from { opacity: 0; transform: translateY(8px) scale(0.95); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 
   /* ═══════════════════════════════════════════════════════════

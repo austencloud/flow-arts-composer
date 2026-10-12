@@ -53,7 +53,9 @@
         class="mid-action-btn"
         class:favorited={isFavorite}
         onclick={onFavorite}
-        aria-label={isFavorite ? t("viewer_detail_remove_from_favorites") : t("viewer_detail_add_to_favorites")}
+        aria-label={isFavorite
+          ? t("viewer_detail_remove_from_favorites")
+          : t("viewer_detail_add_to_favorites")}
       >
         <i class="fas fa-heart" aria-hidden="true"></i>
       </button>
@@ -152,7 +154,13 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-size: 16px;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     position: relative;
   }

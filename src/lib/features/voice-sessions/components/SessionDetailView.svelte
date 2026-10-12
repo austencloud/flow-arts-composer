@@ -7,10 +7,17 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import type { VoiceSession, VoiceSessionEvent, ResolutionTier } from "#lib/shared/voice-control/domain/voice-session-types.js";
+  import type {
+    VoiceSession,
+    VoiceSessionEvent,
+    ResolutionTier,
+  } from "#lib/shared/voice-control/domain/voice-session-types.js";
   import type * as VoiceSessionFormatterModule from "#lib/features/voice-sessions/services/voice-session-formatter.js";
   import type { VoiceSessionReplayer } from "#lib/features/voice-sessions/services/voice-session-replayer.js";
-  import type { ReplayResult, ReplayDiffType } from "#lib/features/voice-sessions/domain/replay-types.js";
+  import type {
+    ReplayResult,
+    ReplayDiffType,
+  } from "#lib/features/voice-sessions/domain/replay-types.js";
 
   let {
     session,
@@ -54,10 +61,10 @@
   };
 
   const diffLabels: Record<ReplayDiffType, string> = {
-    SAME: t('voice_sessions_diff_same'),
-    IMPROVED: t('voice_sessions_diff_improved'),
-    REGRESSED: t('voice_sessions_diff_regressed'),
-    CHANGED: t('voice_sessions_diff_changed'),
+    SAME: t("voice_sessions_diff_same"),
+    IMPROVED: t("voice_sessions_diff_improved"),
+    REGRESSED: t("voice_sessions_diff_regressed"),
+    CHANGED: t("voice_sessions_diff_changed"),
   };
 
   const diffIcons: Record<ReplayDiffType, string> = {
@@ -84,7 +91,9 @@
     try {
       await navigator.clipboard.writeText(markdown);
       copySuccess = true;
-      setTimeout(() => { copySuccess = false; }, 2000);
+      setTimeout(() => {
+        copySuccess = false;
+      }, 2000);
     } catch {
       // Clipboard API may fail in some contexts
     }
@@ -104,7 +113,8 @@
 
   function eventColor(event: VoiceSessionEvent): string {
     if (event.tier === "unresolved") return "var(--semantic-warning, #f59e0b)";
-    if (event.dispatchResult?.success === false) return "var(--semantic-error, #ef4444)";
+    if (event.dispatchResult?.success === false)
+      return "var(--semantic-error, #ef4444)";
     return "var(--semantic-success, #22c55e)";
   }
 
@@ -125,12 +135,22 @@
 
 <div class="detail-view">
   <div class="detail-header">
-    <button class="back-btn" onclick={onClose} aria-label={t('voice_sessions_back')}>
+    <button
+      class="back-btn"
+      onclick={onClose}
+      aria-label={t("voice_sessions_back")}
+    >
       <i class="fas fa-arrow-left" aria-hidden="true"></i>
-      {t('voice_sessions_back')}
+      {t("voice_sessions_back")}
     </button>
     <span class="detail-title">
-      {session.startedAt.toLocaleDateString(undefined, { month: "short", day: "numeric" })} at {session.startedAt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+      {session.startedAt.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      })} at {session.startedAt.toLocaleTimeString(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+      })}
     </span>
   </div>
 
@@ -138,19 +158,21 @@
   <div class="stats-grid">
     <div class="stat-cell">
       <span class="stat-value">{session.stats.totalEvents}</span>
-      <span class="stat-label">{t('voice_sessions_events')}</span>
+      <span class="stat-label">{t("voice_sessions_events")}</span>
     </div>
     <div class="stat-cell">
-      <span class="stat-value" style="color: var(--semantic-success, #22c55e)">{successRate()}</span>
-      <span class="stat-label">{t('voice_sessions_success')}</span>
+      <span class="stat-value" style="color: var(--semantic-success, #22c55e)"
+        >{successRate()}</span
+      >
+      <span class="stat-label">{t("voice_sessions_success")}</span>
     </div>
     <div class="stat-cell">
       <span class="stat-value">{formatDuration(session.durationMs)}</span>
-      <span class="stat-label">{t('voice_sessions_duration')}</span>
+      <span class="stat-label">{t("voice_sessions_duration")}</span>
     </div>
     <div class="stat-cell">
       <span class="stat-value">{Math.round(session.stats.avgLatencyMs)}ms</span>
-      <span class="stat-label">{t('voice_sessions_avg_latency')}</span>
+      <span class="stat-label">{t("voice_sessions_avg_latency")}</span>
     </div>
   </div>
 
@@ -159,10 +181,18 @@
     {#each Object.entries(session.stats.tierBreakdown) as [tier, count]}
       {#if count > 0}
         <div class="tier-row">
-          <span class="tier-badge" style="background: {tierColors[tier as ResolutionTier]}">{tierLabels[tier as ResolutionTier]}</span>
+          <span
+            class="tier-badge"
+            style="background: {tierColors[tier as ResolutionTier]}"
+            >{tierLabels[tier as ResolutionTier]}</span
+          >
           <span class="tier-count">{count}</span>
           {#if session.stats.avgLatencyByTier[tier as ResolutionTier]}
-            <span class="tier-latency">{Math.round(session.stats.avgLatencyByTier[tier as ResolutionTier]!)}ms avg</span>
+            <span class="tier-latency"
+              >{Math.round(
+                session.stats.avgLatencyByTier[tier as ResolutionTier]!
+              )}ms avg</span
+            >
           {/if}
         </div>
       {/if}
@@ -171,20 +201,31 @@
 
   <!-- Event Timeline -->
   <div class="timeline-header">
-    <h3>{t('voice_sessions_events')}</h3>
+    <h3>{t("voice_sessions_events")}</h3>
   </div>
   <div class="timeline themed-scrollbar">
     {#each session.events as event}
       <div class="timeline-event">
         <div class="event-header">
-          <i class="fas {eventIcon(event)}" style="color: {eventColor(event)}" aria-hidden="true"></i>
+          <i
+            class="fas {eventIcon(event)}"
+            style="color: {eventColor(event)}"
+            aria-hidden="true"
+          ></i>
           <span class="event-transcript">"{event.transcript}"</span>
           <span class="event-offset">{formatEventOffset(event.offsetMs)}</span>
         </div>
         <div class="event-details">
-          <span class="tier-badge small" style="background: {tierColors[event.tier]}">{tierLabels[event.tier]}</span>
+          <span
+            class="tier-badge small"
+            style="background: {tierColors[event.tier]}"
+            >{tierLabels[event.tier]}</span
+          >
           {#if event.interpretedCommand}
-            <span class="event-command">{event.interpretedCommand.category}:{event.interpretedCommand.action}</span>
+            <span class="event-command"
+              >{event.interpretedCommand.category}:{event.interpretedCommand
+                .action}</span
+            >
           {/if}
           <span class="event-latency">{event.latencyMs}ms</span>
         </div>
@@ -194,7 +235,7 @@
       </div>
     {/each}
     {#if session.events.length === 0}
-      <div class="empty-timeline">{t('voice_sessions_no_events')}</div>
+      <div class="empty-timeline">{t("voice_sessions_no_events")}</div>
     {/if}
   </div>
 
@@ -202,11 +243,17 @@
   {#if showReplayDiff && replayResult}
     <div class="replay-section" role="region" aria-label="Replay results">
       <span class="sr-only" role="status" aria-live="polite">
-        {#if replaying}Replaying session...{:else if replayResult}Replay complete: {replayResult.summary.regressedCount} regressions, {replayResult.summary.improvedCount} improvements{/if}
+        {#if replaying}Replaying session...{:else if replayResult}Replay
+          complete: {replayResult.summary.regressedCount} regressions, {replayResult
+            .summary.improvedCount} improvements{/if}
       </span>
       <div class="replay-header">
-        <h3>{t('voice_sessions_replay_results')}</h3>
-        <button class="close-replay-btn" onclick={closeReplay} aria-label={t('voice_sessions_close_replay')}>
+        <h3>{t("voice_sessions_replay_results")}</h3>
+        <button
+          class="close-replay-btn"
+          onclick={closeReplay}
+          aria-label={t("voice_sessions_close_replay")}
+        >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
       </div>
@@ -214,19 +261,35 @@
       <!-- Replay Summary -->
       <div class="replay-summary">
         <div class="replay-stat">
-          <span class="replay-stat-value" style="color: var(--theme-text-muted, #64748b)">{replayResult.summary.sameCount}</span>
+          <span
+            class="replay-stat-value"
+            style="color: var(--theme-text-muted, #64748b)"
+            >{replayResult.summary.sameCount}</span
+          >
           <span class="replay-stat-label">Same</span>
         </div>
         <div class="replay-stat">
-          <span class="replay-stat-value" style="color: var(--semantic-success, #22c55e)">{replayResult.summary.improvedCount}</span>
+          <span
+            class="replay-stat-value"
+            style="color: var(--semantic-success, #22c55e)"
+            >{replayResult.summary.improvedCount}</span
+          >
           <span class="replay-stat-label">Improved</span>
         </div>
         <div class="replay-stat">
-          <span class="replay-stat-value" style="color: var(--semantic-error, #ef4444)">{replayResult.summary.regressedCount}</span>
+          <span
+            class="replay-stat-value"
+            style="color: var(--semantic-error, #ef4444)"
+            >{replayResult.summary.regressedCount}</span
+          >
           <span class="replay-stat-label">Regressed</span>
         </div>
         <div class="replay-stat">
-          <span class="replay-stat-value" style="color: var(--semantic-warning, #f59e0b)">{replayResult.summary.changedCount}</span>
+          <span
+            class="replay-stat-value"
+            style="color: var(--semantic-warning, #f59e0b)"
+            >{replayResult.summary.changedCount}</span
+          >
           <span class="replay-stat-label">Changed</span>
         </div>
       </div>
@@ -234,29 +297,60 @@
       <!-- Per-Event Diff -->
       <div class="replay-diff themed-scrollbar">
         {#each replayResult.comparisons as comparison}
-          <div class="diff-event" style="border-left-color: {diffColors[comparison.diff]}">
+          <div
+            class="diff-event"
+            style="border-left-color: {diffColors[comparison.diff]}"
+          >
             <div class="diff-header">
-              <i class="fas {diffIcons[comparison.diff]}" style="color: {diffColors[comparison.diff]}" aria-hidden="true"></i>
+              <i
+                class="fas {diffIcons[comparison.diff]}"
+                style="color: {diffColors[comparison.diff]}"
+                aria-hidden="true"
+              ></i>
               <span class="diff-transcript">"{comparison.transcript}"</span>
-              <span class="diff-badge" style="background: {diffColors[comparison.diff]}">{diffLabels[comparison.diff]}</span>
+              <span
+                class="diff-badge"
+                style="background: {diffColors[comparison.diff]}"
+                >{diffLabels[comparison.diff]}</span
+              >
             </div>
 
             {#if comparison.diff !== "SAME"}
               <div class="diff-comparison">
                 <div class="diff-side original">
-                  <span class="diff-side-label">{t('voice_sessions_original')}</span>
-                  <span class="tier-badge small" style="background: {tierColors[comparison.originalTier]}">{tierLabels[comparison.originalTier]}</span>
+                  <span class="diff-side-label"
+                    >{t("voice_sessions_original")}</span
+                  >
+                  <span
+                    class="tier-badge small"
+                    style="background: {tierColors[comparison.originalTier]}"
+                    >{tierLabels[comparison.originalTier]}</span
+                  >
                   {#if comparison.originalCommand}
-                    <span class="diff-command">{comparison.originalCommand.category}:{comparison.originalCommand.action}({comparison.originalCommand.target})</span>
+                    <span class="diff-command"
+                      >{comparison.originalCommand.category}:{comparison
+                        .originalCommand.action}({comparison.originalCommand
+                        .target})</span
+                    >
                   {:else}
                     <span class="diff-command muted">(unresolved)</span>
                   {/if}
                 </div>
                 <div class="diff-side current">
-                  <span class="diff-side-label">{t('voice_sessions_current')}</span>
-                  <span class="tier-badge small" style="background: {tierColors[comparison.currentTier]}">{tierLabels[comparison.currentTier]}</span>
+                  <span class="diff-side-label"
+                    >{t("voice_sessions_current")}</span
+                  >
+                  <span
+                    class="tier-badge small"
+                    style="background: {tierColors[comparison.currentTier]}"
+                    >{tierLabels[comparison.currentTier]}</span
+                  >
                   {#if comparison.currentCommand}
-                    <span class="diff-command">{comparison.currentCommand.category}:{comparison.currentCommand.action}({comparison.currentCommand.target})</span>
+                    <span class="diff-command"
+                      >{comparison.currentCommand.category}:{comparison
+                        .currentCommand.action}({comparison.currentCommand
+                        .target})</span
+                    >
                   {:else}
                     <span class="diff-command muted">(unresolved)</span>
                   {/if}
@@ -272,18 +366,32 @@
   <!-- Actions -->
   <div class="detail-actions">
     <button class="action-btn copy" onclick={copyForAI} disabled={copySuccess}>
-      <i class="fas {copySuccess ? 'fa-check' : 'fa-copy'}" aria-hidden="true"></i>
-      {copySuccess ? t('voice_sessions_copied') : t('voice_sessions_copy_for_ai')}
+      <i class="fas {copySuccess ? 'fa-check' : 'fa-copy'}" aria-hidden="true"
+      ></i>
+      {copySuccess
+        ? t("voice_sessions_copied")
+        : t("voice_sessions_copy_for_ai")}
     </button>
     {#if replayer}
-      <button class="action-btn replay" onclick={runReplay} disabled={replaying}>
-        <i class="fas {replaying ? 'fa-spinner fa-spin' : 'fa-redo'}" aria-hidden="true"></i>
-        {replaying ? t('voice_sessions_replaying') : showReplayDiff ? t('voice_sessions_rerun') : t('voice_sessions_replay')}
+      <button
+        class="action-btn replay"
+        onclick={runReplay}
+        disabled={replaying}
+      >
+        <i
+          class="fas {replaying ? 'fa-spinner fa-spin' : 'fa-redo'}"
+          aria-hidden="true"
+        ></i>
+        {replaying
+          ? t("voice_sessions_replaying")
+          : showReplayDiff
+            ? t("voice_sessions_rerun")
+            : t("voice_sessions_replay")}
       </button>
     {/if}
     <button class="action-btn delete" onclick={onDelete}>
       <i class="fas fa-trash" aria-hidden="true"></i>
-      {t('voice_sessions_delete')}
+      {t("voice_sessions_delete")}
     </button>
   </div>
 </div>
@@ -312,7 +420,14 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.6));
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      grid-template-columns var(--duration-fast) var(--ease-standard);
   }
 
   .back-btn:hover {
@@ -501,7 +616,13 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .action-btn.copy {
@@ -520,13 +641,25 @@
   }
 
   .action-btn.delete {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
   }
 
   .action-btn.delete:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
   }
 
   .sr-only {
@@ -686,13 +819,25 @@
   }
 
   .action-btn.replay {
-    background: color-mix(in srgb, var(--semantic-info, #3b82f6) 10%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-info, #3b82f6) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 10%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 20%,
+      transparent
+    );
     color: var(--semantic-info, #3b82f6);
   }
 
   .action-btn.replay:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--semantic-info, #3b82f6) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 20%,
+      transparent
+    );
   }
 
   .action-btn.replay:disabled {

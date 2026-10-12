@@ -183,9 +183,10 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     cursor: pointer;
     transition:
-      background-color var(--duration-fast, 150ms) var(--ease-out, ease),
-      border-color var(--duration-fast, 150ms) var(--ease-out, ease),
-      color var(--duration-fast, 150ms) var(--ease-out, ease);
+      background-color var(--duration-fast)
+        var(--ease-out, var(--ease-standard)),
+      border-color var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      color var(--duration-fast) var(--ease-out, var(--ease-standard));
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -258,7 +259,7 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 

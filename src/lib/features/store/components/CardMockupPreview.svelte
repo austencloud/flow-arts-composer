@@ -84,7 +84,7 @@
     object-fit: cover;
     /* Ken-Burns zoom on hover. Transform only (compositor); .mockup-container's
        overflow: hidden crops it while the outer card geometry stays stable. */
-    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform var(--duration-dramatic) var(--ease-out);
   }
 
   /* Fanned real-card cover: same soft wash frame as the mandala, the fan does
@@ -99,7 +99,7 @@
       rgba(255, 255, 255, 0.05),
       rgba(255, 255, 255, 0.015)
     );
-    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform var(--duration-dramatic) var(--ease-out);
   }
 
   /* Content-derived cover: the deck's signature tip-path mandala, centered on a
@@ -114,7 +114,7 @@
       rgba(255, 255, 255, 0.05),
       rgba(255, 255, 255, 0.015)
     );
-    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform var(--duration-dramatic) var(--ease-out);
   }
 
   .placeholder {

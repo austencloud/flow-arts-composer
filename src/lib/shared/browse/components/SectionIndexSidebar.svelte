@@ -460,8 +460,8 @@
     white-space: nowrap;
     position: relative;
     transition:
-      color 180ms ease,
-      background 180ms ease;
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .month-btn:hover {
@@ -552,8 +552,8 @@
     white-space: nowrap;
     position: relative;
     transition:
-      color 180ms ease,
-      background 180ms ease;
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .letter-marker:hover {
@@ -586,7 +586,7 @@
   .letter-marker :global(.glyph img) {
     filter: brightness(0) invert(1);
     opacity: 0.55;
-    transition: opacity 180ms ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .letter-marker:hover :global(.glyph img),
@@ -596,7 +596,7 @@
 
   .letter-marker :global(.dash-bar) {
     opacity: 0.55;
-    transition: opacity 180ms ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .letter-marker:hover :global(.dash-bar),
@@ -630,8 +630,8 @@
     white-space: nowrap;
     position: relative;
     transition:
-      color 180ms ease,
-      background 180ms ease;
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .marker:hover {
@@ -669,7 +669,7 @@
   .marker :global(.glyph img) {
     filter: brightness(0) invert(1);
     opacity: 0.5;
-    transition: opacity 180ms ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .marker:hover :global(.glyph img) {
@@ -682,7 +682,7 @@
 
   .marker :global(.dash-bar) {
     opacity: 0.5;
-    transition: opacity 180ms ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .marker:hover :global(.dash-bar),

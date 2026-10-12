@@ -54,7 +54,9 @@
       <div class="dialog-icon trash-icon">
         <i class="fas fa-trash-alt" aria-hidden="true"></i>
       </div>
-      <h3 class="dialog-title" id="trash-dialog-title">{t("feedback_delete_title")}</h3>
+      <h3 class="dialog-title" id="trash-dialog-title">
+        {t("feedback_delete_title")}
+      </h3>
       <button
         type="button"
         class="close-button"
@@ -116,7 +118,7 @@
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(8px);
     z-index: var(--z-modal);
-    animation: fadeIn var(--duration-normal) ease;
+    animation: fadeIn var(--duration-normal) var(--ease-standard);
   }
 
   .trash-dialog {
@@ -134,7 +136,7 @@
     box-shadow:
       0 20px 60px rgba(0, 0, 0, 0.5),
       inset 0 1px 0 var(--theme-stroke);
-    animation: slideUp var(--duration-emphasis) cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: slideUp var(--duration-emphasis) var(--ease-spring);
   }
 
   .dialog-header {
@@ -194,7 +196,15 @@
     color: var(--theme-text-dim);
     font-size: clamp(16px, 4cqi, 18px);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
   }
 
   .close-button:hover {
@@ -267,7 +277,13 @@
     font-size: clamp(0.875rem, 2.5cqi, 1rem);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .cancel-button {
@@ -281,11 +297,7 @@
   }
 
   .trash-submit {
-    background: linear-gradient(
-      135deg,
-      var(--semantic-error) 0%,
-      #b91c1c 100%
-    );
+    background: linear-gradient(135deg, var(--semantic-error) 0%, #b91c1c 100%);
     color: #fff;
     box-shadow: 0 4px 12px
       color-mix(in srgb, var(--semantic-error) 30%, transparent);
@@ -309,17 +321,31 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .trash-dialog-overlay { animation: none; }
-    .trash-dialog { animation: none; }
+    .trash-dialog-overlay {
+      animation: none;
+    }
+    .trash-dialog {
+      animation: none;
+    }
   }
 </style>

@@ -25,12 +25,7 @@
     onError?: (message: string) => void;
   }
 
-  let {
-    item,
-    controlsVisible = true,
-    onLoad,
-    onError,
-  }: Props = $props();
+  let { item, controlsVisible = true, onLoad, onError }: Props = $props();
 
   let videoRef = $state<HTMLVideoElement | null>(null);
   let isPlaying = $state(false);
@@ -123,7 +118,9 @@
     onloadedmetadata={handleLoadedMetadata}
     ontimeupdate={handleTimeUpdate}
     onerror={handleError}
-    onended={() => { isPlaying = false; }}
+    onended={() => {
+      isPlaying = false;
+    }}
   >
     Your browser does not support video playback.
   </video>
@@ -180,12 +177,24 @@
         type="button"
       >
         {#if isPlaying}
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
             <rect x="6" y="4" width="4" height="16" />
             <rect x="14" y="4" width="4" height="16" />
           </svg>
         {:else}
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
             <polygon points="5 3 19 12 5 21 5 3" />
           </svg>
         {/if}
@@ -223,15 +232,37 @@
         type="button"
       >
         {#if isMuted}
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
             <line x1="23" y1="9" x2="17" y2="15" />
             <line x1="17" y1="9" x2="23" y2="15" />
           </svg>
         {:else}
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+            <path
+              d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"
+            />
           </svg>
         {/if}
       </button>
@@ -244,7 +275,17 @@
           aria-label="Picture in picture"
           type="button"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
             <rect x="12" y="10" width="8" height="6" rx="1" ry="1" />
           </svg>
@@ -302,7 +343,7 @@
     background: rgba(0, 0, 0, 0.3);
     border: none;
     cursor: pointer;
-    transition: background 150ms ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .spotlight-video-play-overlay:hover {
@@ -312,7 +353,7 @@
   .spotlight-video-play-overlay svg {
     color: white;
     filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
-    transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform var(--duration-fast) var(--ease-spring);
   }
 
   .spotlight-video-play-overlay:hover svg {
@@ -330,7 +371,11 @@
     gap: 12px;
     padding: 12px 16px;
     padding-bottom: calc(12px + var(--spotlight-safe-area-bottom, 0px));
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.8) 0%,
+      transparent 100%
+    );
   }
 
   .video-control-btn {
@@ -345,8 +390,8 @@
     align-items: center;
     justify-content: center;
     transition:
-      background 150ms ease,
-      transform 150ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .video-control-btn:hover {
@@ -396,7 +441,7 @@
     background: rgba(255, 255, 255, 0.3);
     border-radius: 2px;
     overflow: hidden;
-    transition: height 150ms ease;
+    transition: height var(--duration-fast) var(--ease-standard);
   }
 
   .video-progress:hover .video-progress-track {
@@ -407,7 +452,7 @@
     height: 100%;
     background: white;
     border-radius: 2px;
-    transition: width 100ms linear;
+    transition: width var(--duration-instant) linear;
   }
 
   /* Reduced motion */

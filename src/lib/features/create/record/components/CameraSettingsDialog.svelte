@@ -192,7 +192,10 @@ aria-modal, focus trapping, Escape-to-close, and backdrop dismissal.
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
   }
 
   .close-button:hover {
@@ -244,7 +247,10 @@ aria-modal, focus trapping, Escape-to-close, and backdrop dismissal.
     border: 1px solid var(--border-color, var(--theme-stroke));
     border-radius: var(--border-radius-md, 8px);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
     font-size: var(--font-size-base);
     color: var(--foreground, #ffffff);
   }
@@ -281,7 +287,11 @@ aria-modal, focus trapping, Escape-to-close, and backdrop dismissal.
     border-radius: var(--border-radius-md, 8px);
     font-size: var(--font-size-base);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .camera-selector:hover {

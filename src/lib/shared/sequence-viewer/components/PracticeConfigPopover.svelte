@@ -132,7 +132,9 @@
             class:on={targetEnabled}
             onclick={toggleTarget}
             aria-pressed={targetEnabled}
-            aria-label={targetEnabled ? t("viewer_detail_goal_on") : t("viewer_detail_goal_off")}
+            aria-label={targetEnabled
+              ? t("viewer_detail_goal_on")
+              : t("viewer_detail_goal_off")}
           >
             <span class="goal-knob"></span>
           </button>
@@ -199,7 +201,11 @@
     border-radius: 12px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -247,8 +253,8 @@
     z-index: var(--z-dropdown, 1000);
     /* Entrance: scale + fade from the trigger corner (side=bottom align=end). */
     transform-origin: top right;
-    animation: -global-practice-config-in var(--duration-fast, 150ms)
-      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    animation: -global-practice-config-in var(--duration-fast)
+      var(--ease-out, var(--ease-out));
   }
   @keyframes -global-practice-config-in {
     from {
@@ -316,7 +322,12 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
     font-size: 0.7rem;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -364,7 +375,15 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.08));
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard),
+      left var(--duration-fast) var(--ease-standard),
+      top var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
   .goal-toggle .goal-knob {
@@ -377,9 +396,8 @@
     background: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
     transform: translate(0, -50%);
     transition:
-      transform var(--duration-fast, 150ms)
-        var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
-      background var(--duration-fast, 150ms) ease;
+      transform var(--duration-fast) var(--ease-out, var(--ease-out)),
+      background var(--duration-fast) var(--ease-standard);
   }
   .goal-toggle.on {
     background: color-mix(

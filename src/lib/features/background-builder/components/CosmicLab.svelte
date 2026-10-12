@@ -1,7 +1,14 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { type QualityLevel, type UFOMood, type WobbleType } from "@austencloud/backgrounds";
-  import type { CosmicDensityPreset, CosmicLabMode } from "#lib/shared/background-builder/domain/lab-settings-types.js";
+  import {
+    type QualityLevel,
+    type UFOMood,
+    type WobbleType,
+  } from "@austencloud/backgrounds";
+  import type {
+    CosmicDensityPreset,
+    CosmicLabMode,
+  } from "#lib/shared/background-builder/domain/lab-settings-types.js";
   import type { UFOStatusSnapshot } from "../services/types";
   import { getCosmicLabController } from "../get-cosmic-lab-controller";
   import { getUFOStatusPoller } from "../get-ufo-status-poller";
@@ -106,7 +113,8 @@
     }
 
     const entrances: EntranceType[] = ["fade", "warp", "zoom", "descend"];
-    const randomEntrance = entrances[Math.floor(Math.random() * entrances.length)]!;
+    const randomEntrance =
+      entrances[Math.floor(Math.random() * entrances.length)]!;
     system.triggerUFOWithEntrance(randomEntrance);
 
     // Persist UFO active state for HMR
@@ -194,7 +202,10 @@
   $effect(() => {
     if (ufoStatus.active) {
       ufoHasBeenActive = true;
-    } else if (ufoHasBeenActive && sessionStorage.getItem(UFO_ACTIVE_KEY) === "true") {
+    } else if (
+      ufoHasBeenActive &&
+      sessionStorage.getItem(UFO_ACTIVE_KEY) === "true"
+    ) {
       // Only clear if UFO was active and then became inactive
       sessionStorage.removeItem(UFO_ACTIVE_KEY);
     }
@@ -257,11 +268,19 @@
 
     <!-- Mode Toggle -->
     <div class="mode-toggle">
-      <button class="mode-btn" class:active={mode === "default"} onclick={() => setMode("default")}>
+      <button
+        class="mode-btn"
+        class:active={mode === "default"}
+        onclick={() => setMode("default")}
+      >
         <i class="fas fa-moon"></i>
         Default
       </button>
-      <button class="mode-btn ufo-mode" class:active={mode === "ufoLab"} onclick={() => setMode("ufoLab")}>
+      <button
+        class="mode-btn ufo-mode"
+        class:active={mode === "ufoLab"}
+        onclick={() => setMode("ufoLab")}
+      >
         <i class="fas fa-satellite"></i>
         UFO Lab
       </button>
@@ -346,7 +365,11 @@
 
   .badge {
     padding: 4px 10px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(168, 85, 247, 0.3));
+    background: linear-gradient(
+      135deg,
+      rgba(99, 102, 241, 0.3),
+      rgba(168, 85, 247, 0.3)
+    );
     border: 1px solid rgba(139, 92, 246, 0.4);
     border-radius: 20px;
     font-size: var(--font-size-compact, 0.75rem);
@@ -379,7 +402,13 @@
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .mode-btn:hover {
@@ -393,7 +422,11 @@
   }
 
   .mode-btn.ufo-mode.active {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(168, 85, 247, 0.3));
+    background: linear-gradient(
+      135deg,
+      rgba(99, 102, 241, 0.3),
+      rgba(168, 85, 247, 0.3)
+    );
   }
 
   .mode-btn i {

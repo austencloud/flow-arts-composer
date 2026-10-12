@@ -274,8 +274,8 @@
     cursor: pointer;
     overflow: hidden;
     transition:
-      border-color 0.16s ease,
-      transform 0.16s ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
   .choice-tile:hover {
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.25));

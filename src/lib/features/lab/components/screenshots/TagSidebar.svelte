@@ -123,13 +123,17 @@
       inset: 0;
       background: rgba(0, 0, 0, 0.5);
       z-index: 90;
-      animation: fadeIn 200ms ease-out;
+      animation: fadeIn var(--duration-normal) var(--ease-standard-out);
     }
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   /* Sidebar */
@@ -153,7 +157,8 @@
       max-width: 85vw;
       z-index: 91;
       transform: translateX(100%);
-      transition: transform 300ms var(--ease-out, ease-out);
+      transition: transform var(--duration-emphasis)
+        var(--ease-out, var(--ease-standard-out));
       border-left: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     }
 
@@ -190,7 +195,15 @@
     background: transparent;
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.5));
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out, ease-out),
+      border-color var(--duration-fast) var(--ease-out, ease-out),
+      color var(--duration-fast) var(--ease-out, ease-out),
+      opacity var(--duration-fast) var(--ease-out, ease-out),
+      transform var(--duration-fast) var(--ease-out, ease-out),
+      box-shadow var(--duration-fast) var(--ease-out, ease-out),
+      width var(--duration-fast) var(--ease-out, ease-out),
+      height var(--duration-fast) var(--ease-out, ease-out);
     font-size: 14px;
   }
 
@@ -209,7 +222,8 @@
     flex: 1;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2)) var(--scrollbar-track, transparent);
+    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2))
+      var(--scrollbar-track, transparent);
   }
 
   /* Empty state */
@@ -238,17 +252,31 @@
     min-height: 40px;
     border-radius: 8px;
     border: 1px solid var(--theme-accent, #3b82f6);
-    background: color-mix(in srgb, var(--theme-accent, #3b82f6) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #3b82f6) 15%,
+      transparent
+    );
     color: var(--theme-accent, #3b82f6);
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out, ease-out),
+      border-color var(--duration-fast) var(--ease-out, ease-out),
+      color var(--duration-fast) var(--ease-out, ease-out),
+      opacity var(--duration-fast) var(--ease-out, ease-out),
+      transform var(--duration-fast) var(--ease-out, ease-out),
+      box-shadow var(--duration-fast) var(--ease-out, ease-out);
   }
 
   .create-first-btn:hover {
-    background: color-mix(in srgb, var(--theme-accent, #3b82f6) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #3b82f6) 25%,
+      transparent
+    );
   }
 
   .create-first-btn:focus-visible {
@@ -281,7 +309,13 @@
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out, ease-out),
+      border-color var(--duration-fast) var(--ease-out, ease-out),
+      color var(--duration-fast) var(--ease-out, ease-out),
+      opacity var(--duration-fast) var(--ease-out, ease-out),
+      transform var(--duration-fast) var(--ease-out, ease-out),
+      box-shadow var(--duration-fast) var(--ease-out, ease-out);
   }
 
   .footer-btn:hover {

@@ -24,7 +24,7 @@ Design:
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { cubicOut } from "svelte/easing";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -227,7 +227,7 @@ Design:
         class="progress-bar-container interactive"
         class:dark-mode={darkMode}
         class:scrubbing
-        transition:fade={fadeParams}
+        transition:opaqueFade={fadeParams}
         role="slider"
         tabindex="0"
         aria-label={tDynamic("guide_runtime_seek_position")}
@@ -255,7 +255,7 @@ Design:
         class:dark-mode={darkMode}
         class:strip
         style:height={strip ? stripHeight : undefined}
-        transition:fade={fadeParams}
+        transition:opaqueFade={fadeParams}
         role="progressbar"
         aria-label={ariaLabel}
         aria-valuenow={Math.floor(progress * 100)}
@@ -286,7 +286,7 @@ Design:
     box-sizing: border-box;
     /* Match WordHeader background for seamless integration */
     background: var(--theme-panel-bg, rgba(240, 240, 240, 0.98));
-    transition: background 150ms ease-out;
+    transition: background var(--duration-fast) var(--ease-standard-out);
   }
 
   /* Seekable: bigger, comfortable hit area (≥~24px) while the line stays 3px,
@@ -326,7 +326,7 @@ Design:
     background: var(--theme-stroke, rgba(0, 0, 0, 0.08));
     border-radius: 999px; /* Pill shape */
     position: relative;
-    transition: background 150ms ease-out;
+    transition: background var(--duration-fast) var(--ease-standard-out);
   }
 
   /* Display-only track clips its fill; the seekable track lets the knob overflow. */
@@ -381,8 +381,8 @@ Design:
     /* NO transition on width - let browser render smooth float updates directly from requestAnimationFrame */
     /* Only transition theme changes (background, shadow) */
     transition:
-      background 150ms ease-out,
-      box-shadow 150ms ease-out;
+      background var(--duration-fast) var(--ease-standard-out),
+      box-shadow var(--duration-fast) var(--ease-standard-out);
   }
 
   .dark-mode .progress-fill {
@@ -419,7 +419,7 @@ Design:
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
     pointer-events: none;
     opacity: 0;
-    transition: opacity 120ms ease-out;
+    transition: opacity var(--duration-instant) var(--ease-standard-out);
   }
 
   .progress-bar-container.interactive:hover .progress-knob,

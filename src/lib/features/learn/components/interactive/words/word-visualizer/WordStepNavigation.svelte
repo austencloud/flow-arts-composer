@@ -61,7 +61,11 @@ WordStepNavigation - Step navigation dots for letter sequence
     border: 2px solid var(--theme-stroke-strong);
     border-radius: 50%;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     color: var(--theme-text-dim);
     font-size: 0.75rem;
     font-weight: 600;
@@ -80,8 +84,16 @@ WordStepNavigation - Step navigation dots for letter sequence
   }
 
   .step-dot.active {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 25%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 60%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 25%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 60%,
+      transparent
+    );
     color: var(--theme-accent, #22d3ee);
   }
 

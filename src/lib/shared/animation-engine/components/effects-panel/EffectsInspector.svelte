@@ -318,9 +318,9 @@
     font-weight: 650;
     cursor: pointer;
     transition:
-      border-color var(--duration-fast, 100ms) ease,
-      background var(--duration-fast, 100ms) ease,
-      color var(--duration-fast, 100ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   /* Leaving the inspector is the one thing you reach for blind, so it is not
@@ -349,7 +349,7 @@
   }
 
   .back-arrow i {
-    transition: transform var(--duration-fast, 100ms) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .back-action:hover {
@@ -505,7 +505,7 @@
 
   .fine-toggle i {
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
-    transition: transform var(--duration-fast, 100ms) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .fine-toggle.open i {

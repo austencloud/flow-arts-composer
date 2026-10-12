@@ -45,9 +45,7 @@
     new Map(allContributors.map((c) => [c.id, c]))
   );
 
-  const streamVersions = $derived(
-    versionState.versions.slice(0, visibleCount)
-  );
+  const streamVersions = $derived(versionState.versions.slice(0, visibleCount));
 
   $effect(() => {
     getContributorLoader()
@@ -74,7 +72,9 @@
       streamElement.getBoundingClientRect().top +
       Math.min(streamElement.clientHeight * 0.25, 160);
     let current: string | null = null;
-    for (const section of streamElement.querySelectorAll<HTMLElement>(".stream-section")) {
+    for (const section of streamElement.querySelectorAll<HTMLElement>(
+      ".stream-section"
+    )) {
       if (section.getBoundingClientRect().top <= line) {
         current = section.dataset.version ?? null;
       } else break;
@@ -118,7 +118,8 @@
     const itemRect = item.getBoundingClientRect();
     if (itemRect.top < railRect.top || itemRect.bottom > railRect.bottom) {
       railElement.scrollTo({
-        top: item.offsetTop - railElement.clientHeight / 2 + item.clientHeight / 2,
+        top:
+          item.offsetTop - railElement.clientHeight / 2 + item.clientHeight / 2,
         behavior: "smooth",
       });
     }
@@ -263,7 +264,10 @@
           <!-- Narrow mode: full cards -->
           <div class="version-list-cards">
             {#each versionState.versions as version (version.version)}
-              <VersionCard {version} onclick={() => openVersionDetail(version)} />
+              <VersionCard
+                {version}
+                onclick={() => openVersionDetail(version)}
+              />
             {/each}
           </div>
         {/if}
@@ -301,13 +305,19 @@
             {/each}
 
             {#if visibleCount < versionState.versions.length}
-              <div class="stream-sentinel" use:revealOnScroll aria-hidden="true">
+              <div
+                class="stream-sentinel"
+                use:revealOnScroll
+                aria-hidden="true"
+              >
                 <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
                 {t("settings_loading_earlier_releases")}
               </div>
             {:else}
               <p class="stream-end">
-                {t("settings_release_count_end", { count: versionState.versions.length })}
+                {t("settings_release_count_end", {
+                  count: versionState.versions.length,
+                })}
               </p>
             {/if}
           </div>
@@ -532,7 +542,13 @@
     color: var(--theme-text);
     font-size: var(--font-size-sm);
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
   }
 
   .error-state button:hover {

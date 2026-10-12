@@ -9,7 +9,8 @@
 <script lang="ts">
   import { detectPlatformAndBrowser } from "#lib/shared/mobile/services/platform-detector.js";
   import { onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
+  import { flyFade, opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import type { Platform, Browser } from "../config/pwa-install-instructions";
@@ -93,7 +94,7 @@
   <div
     class="guide-backdrop"
     onclick={handleClose}
-    transition:fade={{ duration: 250 }}
+    transition:opaqueFade={{ duration: DURATION.normal }}
     role="presentation"
   ></div>
 
@@ -102,7 +103,7 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="install-guide-title"
-    transition:fly={{ y: 500, duration: 350 }}
+    transition:flyFade={{ y: 500, duration: DURATION.dramatic }}
   >
     <div class="guide-header">
       <h2 id="install-guide-title">Add to your home screen</h2>

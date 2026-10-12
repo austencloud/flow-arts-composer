@@ -7,6 +7,7 @@
 -->
 <script lang="ts">
   import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import type { PlaybackHistoryEntry } from "#lib/shared/animation-engine/domain/chaining-types.js";
@@ -20,7 +21,10 @@
   } = $props();
 </script>
 
-<div class="history-panel" transition:flyFade={{ y: 100, duration: 250 }}>
+<div
+  class="history-panel"
+  transition:flyFade={{ y: 100, duration: DURATION.normal }}
+>
   <div class="panel-header">
     <span class="panel-title">{t("landing_spinner_recent_sequences")}</span>
     <span class="entry-count">{entries.length}</span>
@@ -184,7 +188,10 @@
     border-radius: 0.375rem;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast);
     white-space: nowrap;
   }
 

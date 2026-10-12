@@ -34,9 +34,16 @@
 
   // Greek letter substitution map
   const greekMap: Record<string, string> = {
-    sig: "Σ", del: "Δ", the: "Θ", ome: "Ω",
-    phi: "Φ", psi: "Ψ", lam: "Λ",
-    alp: "α", bet: "β", gam: "γ",
+    sig: "Σ",
+    del: "Δ",
+    the: "Θ",
+    ome: "Ω",
+    phi: "Φ",
+    psi: "Ψ",
+    lam: "Λ",
+    alp: "α",
+    bet: "β",
+    gam: "γ",
   };
   const greekPattern = /(sig|del|the|ome|phi|psi|lam|alp|bet|gam)(-?)/gi;
 
@@ -126,9 +133,17 @@
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         hasNavigatedSuggestions = true;
-        highlightedIndex = highlightedIndex < 0 ? titleSuggestions.length - 1 : (highlightedIndex - 1 + titleSuggestions.length) % titleSuggestions.length;
+        highlightedIndex =
+          highlightedIndex < 0
+            ? titleSuggestions.length - 1
+            : (highlightedIndex - 1 + titleSuggestions.length) %
+              titleSuggestions.length;
         return;
-      } else if (e.key === "Enter" && hasNavigatedSuggestions && highlightedIndex >= 0) {
+      } else if (
+        e.key === "Enter" &&
+        hasNavigatedSuggestions &&
+        highlightedIndex >= 0
+      ) {
         // Only select suggestion if user explicitly navigated with arrow keys
         e.preventDefault();
         const suggestion = titleSuggestions[highlightedIndex];
@@ -175,8 +190,9 @@
   const topMatches = $derived(matchedSequences.slice(0, 5));
   const hasExactMatch = $derived(
     topMatches.length > 0 &&
-    video.title &&
-    stripWordNotation(topMatches[0]?.word ?? "").toUpperCase() === video.title.toUpperCase()
+      video.title &&
+      stripWordNotation(topMatches[0]?.word ?? "").toUpperCase() ===
+        video.title.toUpperCase()
   );
 </script>
 
@@ -199,12 +215,15 @@
           placeholder="Enter TKA word..."
         />
         {#if titleSearching}
-          <i class="fas fa-spinner fa-spin title-loading" aria-hidden="true"></i>
+          <i class="fas fa-spinner fa-spin title-loading" aria-hidden="true"
+          ></i>
         {/if}
         {#if showTitleSuggestions && titleSuggestions.length > 0}
           <div class="title-suggestions" role="listbox">
             {#each titleSuggestions as seq, i (seq.id)}
-              {@const isExactMatch = stripWordNotation(seq.word).toUpperCase() === editedTitle.toUpperCase()}
+              {@const isExactMatch =
+                stripWordNotation(seq.word).toUpperCase() ===
+                editedTitle.toUpperCase()}
               <button
                 type="button"
                 class="title-suggestion"
@@ -223,7 +242,9 @@
                   </div>
                 {/if}
                 <div class="suggestion-info">
-                  <span class="suggestion-word"><TKAWordGlyph word={seq.word} height={13} /></span>
+                  <span class="suggestion-word"
+                    ><TKAWordGlyph word={seq.word} height={13} /></span
+                  >
                   <span class="suggestion-owner">by {seq.ownerName}</span>
                 </div>
               </button>
@@ -232,7 +253,12 @@
         {/if}
       </div>
     {:else}
-      <button type="button" class="title-display" onclick={startEditingTitle} title="Click to edit">
+      <button
+        type="button"
+        class="title-display"
+        onclick={startEditingTitle}
+        title="Click to edit"
+      >
         <span class="title-text">{video.title || "Click to set word"}</span>
         <i class="fas fa-pencil-alt edit-hint" aria-hidden="true"></i>
       </button>
@@ -275,7 +301,9 @@
               </div>
             {/if}
             <div class="candidate-info">
-              <span class="candidate-word"><TKAWordGlyph word={seq.word} height={13} /></span>
+              <span class="candidate-word"
+                ><TKAWordGlyph word={seq.word} height={13} /></span
+              >
               <span class="candidate-owner">by {seq.ownerName}</span>
             </div>
             <kbd class="candidate-key">{i + 1}</kbd>
@@ -344,7 +372,13 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .title-display:hover {
@@ -362,7 +396,7 @@
     font-size: 12px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.3));
     opacity: 0;
-    transition: opacity 0.15s;
+    transition: opacity var(--duration-fast);
   }
 
   .title-display:hover .edit-hint {
@@ -423,7 +457,15 @@
     border: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     cursor: pointer;
-    transition: all 0.1s;
+    transition:
+      background var(--duration-instant),
+      border-color var(--duration-instant),
+      color var(--duration-instant),
+      opacity var(--duration-instant),
+      transform var(--duration-instant),
+      box-shadow var(--duration-instant),
+      width var(--duration-instant),
+      max-height var(--duration-instant);
     text-align: left;
   }
 
@@ -438,13 +480,21 @@
 
   .title-suggestion.exact {
     /* Exact match uses accent/purple - NOT green (green = already linked) */
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 15%,
+      transparent
+    );
     border-left: 3px solid var(--theme-accent, #6366f1);
   }
 
   .title-suggestion.exact:hover,
   .title-suggestion.exact.highlighted {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 25%,
+      transparent
+    );
   }
 
   .suggestion-thumb,
@@ -515,7 +565,14 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast);
     text-align: left;
     width: 100%;
   }
@@ -527,13 +584,29 @@
 
   .candidate-card.exact {
     /* Exact match uses accent/purple - NOT green (green = already linked) */
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 15%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 15%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 50%,
+      transparent
+    );
   }
 
   .candidate-card.exact:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 25%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 70%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 25%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 70%,
+      transparent
+    );
   }
 
   .candidate-card:disabled {

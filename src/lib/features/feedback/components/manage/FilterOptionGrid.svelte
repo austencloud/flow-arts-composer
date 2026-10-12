@@ -72,7 +72,14 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
     text-align: left;
   }
 
@@ -99,7 +106,15 @@
     border-radius: 50%;
     flex-shrink: 0;
     position: relative;
-    transition: all var(--duration-normal) cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition:
+      background var(--duration-normal) var(--ease-spring),
+      border-color var(--duration-normal) var(--ease-spring),
+      color var(--duration-normal) var(--ease-spring),
+      opacity var(--duration-normal) var(--ease-spring),
+      transform var(--duration-normal) var(--ease-spring),
+      box-shadow var(--duration-normal) var(--ease-spring),
+      width var(--duration-normal) var(--ease-spring),
+      height var(--duration-normal) var(--ease-spring);
   }
 
   .option-radio::after {
@@ -112,7 +127,7 @@
     background: var(--option-color, var(--semantic-success));
     border-radius: 50%;
     transform: translate(-50%, -50%) scale(0);
-    transition: transform var(--duration-normal) cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform var(--duration-normal) var(--ease-spring);
   }
 
   .filter-option.selected {

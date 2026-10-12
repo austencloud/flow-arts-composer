@@ -6,7 +6,10 @@
   based on mastery data, topic history, and conversation history.
 -->
 <script lang="ts">
-  import type { WelcomeContext, WelcomeSuggestion } from "../services/tika-welcome-builder";
+  import type {
+    WelcomeContext,
+    WelcomeSuggestion,
+  } from "../services/tika-welcome-builder";
 
   let {
     onSubmit,
@@ -19,16 +22,47 @@
   } = $props();
 
   const defaultSuggestions: WelcomeSuggestion[] = [
-    { icon: "fa-crosshairs", text: "What is alpha?", question: "What does alpha mean?", reason: "explore" },
-    { icon: "fa-crosshairs", text: "What is beta?", question: "What does beta mean?", reason: "explore" },
-    { icon: "fa-crosshairs", text: "What is gamma?", question: "What does gamma mean?", reason: "explore" },
-    { icon: "fa-font", text: "What is letter A?", question: "What is letter A?", reason: "explore" },
-    { icon: "fa-arrows-alt", text: "What is shift?", question: "What is shift?", reason: "explore" },
-    { icon: "fa-layer-group", text: "Type 1 letters", question: "What are Type 1 letters?", reason: "explore" },
+    {
+      icon: "fa-crosshairs",
+      text: "What is alpha?",
+      question: "What does alpha mean?",
+      reason: "explore",
+    },
+    {
+      icon: "fa-crosshairs",
+      text: "What is beta?",
+      question: "What does beta mean?",
+      reason: "explore",
+    },
+    {
+      icon: "fa-crosshairs",
+      text: "What is gamma?",
+      question: "What does gamma mean?",
+      reason: "explore",
+    },
+    {
+      icon: "fa-font",
+      text: "What is letter A?",
+      question: "What is letter A?",
+      reason: "explore",
+    },
+    {
+      icon: "fa-arrows-alt",
+      text: "What is shift?",
+      question: "What is shift?",
+      reason: "explore",
+    },
+    {
+      icon: "fa-layer-group",
+      text: "Type 1 letters",
+      question: "What are Type 1 letters?",
+      reason: "explore",
+    },
   ];
 
   const greeting = $derived(
-    welcomeContext?.greeting ?? "I'm your AI tutor for The Kinetic Alphabet. Ask me anything about:"
+    welcomeContext?.greeting ??
+      "I'm your AI tutor for The Kinetic Alphabet. Ask me anything about:"
   );
 
   const suggestions = $derived(
@@ -38,10 +72,14 @@
   /** Map suggestion reason to accent CSS class */
   function getReasonClass(reason: WelcomeSuggestion["reason"]): string {
     switch (reason) {
-      case "review": return "reason-review";
-      case "continue": return "reason-continue";
-      case "next": return "reason-next";
-      case "explore": return "reason-explore";
+      case "review":
+        return "reason-review";
+      case "continue":
+        return "reason-continue";
+      case "next":
+        return "reason-next";
+      case "explore":
+        return "reason-explore";
     }
   }
 </script>
@@ -55,12 +93,14 @@
   <ul class="suggestion-list">
     {#each suggestions as suggestion}
       <li>
-        <button aria-label={suggestion.text}
+        <button
+          aria-label={suggestion.text}
           class={getReasonClass(suggestion.reason)}
           onclick={() => onSubmit(suggestion.question)}
           disabled={isLoading}
         >
-          <i class="fas {suggestion.icon}" aria-hidden="true"></i> {suggestion.text}
+          <i class="fas {suggestion.icon}" aria-hidden="true"></i>
+          {suggestion.text}
         </button>
       </li>
     {/each}
@@ -82,7 +122,11 @@
     width: 64px;
     height: 64px;
     border-radius: 16px;
-    background: linear-gradient(135deg, var(--theme-accent, #818cf8) 0%, color-mix(in srgb, var(--theme-accent, #6366f1) 85%, black) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #818cf8) 0%,
+      color-mix(in srgb, var(--theme-accent, #6366f1) 85%, black) 100%
+    );
     display: flex;
     align-items: center;
     justify-content: center;
@@ -131,7 +175,11 @@
     font-size: 13px;
     text-align: left;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .suggestion-list button:hover {

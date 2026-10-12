@@ -36,8 +36,9 @@
     gap: 12px;
     padding: 12px 16px;
     border-bottom: 1px solid var(--theme-stroke);
-    animation: fadeIn var(--duration-emphasis) ease-out backwards;
-    animation-delay: calc(var(--stagger) * 50ms);
+    animation: fadeIn var(--duration-emphasis) var(--ease-standard-out)
+      backwards;
+    animation-delay: calc(var(--stagger) * var(--stagger-normal));
   }
 
   @keyframes fadeIn {

@@ -145,8 +145,8 @@
     border-radius: 12px;
     outline: none;
     transition:
-      border-color 160ms ease,
-      background 160ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
   .gnav-search input::placeholder {
     color: oklch(0.55 0.02 270);
@@ -223,9 +223,9 @@
     border: 1px solid transparent;
     border-radius: 10px;
     transition:
-      color 140ms ease,
-      background 140ms ease,
-      border-color 140ms ease;
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
   .gnav-cat:hover {
     color: oklch(0.94 0.01 270);

@@ -22,6 +22,7 @@
   import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { resolveAdminCreatedSequenceTarget } from "../../domain/admin-created-sequence-target";
   import { openCreatorProfile } from "#lib/features/creators/state/creators-routing.svelte.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
     notification: UserNotification;
@@ -38,10 +39,10 @@
   $effect(() => {
     if (wasUnread && notification.read && !justMarkedRead) {
       justMarkedRead = true;
-      // Reset after animation completes (1.8s total)
+      // Reset when the shared scene-length acknowledgement finishes.
       const timer = setTimeout(() => {
         justMarkedRead = false;
-      }, 1800);
+      }, DURATION.scene);
       return () => clearTimeout(timer);
     }
     return undefined;
@@ -406,7 +407,9 @@
   onkeydown={handleCardKeydown}
   role="button"
   tabindex="0"
-  aria-label="{notification.message}{!notification.read ? ` (${t("inbox_unread")})` : ''}"
+  aria-label="{notification.message}{!notification.read
+    ? ` (${t('inbox_unread')})`
+    : ''}"
 >
   <!-- Icon -->
   <div class="icon" style="--icon-color: {getColor(notification.type)}">
@@ -441,8 +444,8 @@
     text-align: left;
     cursor: pointer;
     transition:
-      background 0.2s ease,
-      transform 0.2s ease;
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .notification-item:hover {
@@ -466,7 +469,7 @@
 
   /* Animation when notification is marked as read */
   .notification-item.just-marked-read {
-    animation: markAsRead 1.8s ease-out;
+    animation: markAsRead var(--duration-scene) var(--ease-standard-out);
   }
 
   @keyframes markAsRead {
@@ -500,7 +503,7 @@
     border-radius: 50%;
     font-size: var(--font-size-sm);
     color: var(--icon-color);
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .notification-item:hover .icon {
@@ -518,7 +521,7 @@
     font-size: var(--font-size-min);
     line-height: 1.4;
     color: var(--theme-text);
-    transition: font-weight var(--duration-emphasis) ease;
+    transition: font-weight var(--duration-emphasis) var(--ease-standard);
   }
 
   .unread .message {
@@ -526,7 +529,8 @@
   }
 
   .just-marked-read .message {
-    animation: messageUnbold 0.8s ease-out forwards;
+    animation: messageUnbold var(--duration-scene) var(--ease-standard-out)
+      forwards;
   }
 
   @keyframes messageUnbold {
@@ -553,7 +557,9 @@
     height: 20px;
     color: var(--theme-text-dim);
     font-size: var(--font-size-compact);
-    transition: all var(--duration-normal) ease;
+    transition:
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .notification-item:hover .chevron {

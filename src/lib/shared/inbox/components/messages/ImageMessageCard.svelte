@@ -16,7 +16,9 @@
   let loadError = $state(false);
   let spotlightOpen = $state(false);
 
-  const altText = $derived(caption.trim() || attachment.name || t("inbox_ui_shared_image"));
+  const altText = $derived(
+    caption.trim() || attachment.name || t("inbox_ui_shared_image")
+  );
   const aspectRatio = $derived.by(() => {
     const width = attachment.width ?? attachment.metadata?.width;
     const height = attachment.height ?? attachment.metadata?.height;
@@ -97,7 +99,11 @@
       <span>{t("inbox_ui_image_unavailable")}</span>
     </div>
   {:else}
-    <div class="image-state" role="status" aria-label={t("inbox_ui_loading_image")}>
+    <div
+      class="image-state"
+      role="status"
+      aria-label={t("inbox_ui_loading_image")}
+    >
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
     </div>
   {/if}
@@ -163,7 +169,7 @@
     background: rgba(0, 0, 0, 0.68);
     color: white;
     opacity: 0;
-    transition: opacity var(--duration-fast) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .image-button:hover .expand-hint,

@@ -9,9 +9,7 @@
   import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import { getContributorLoader } from "#lib/shared/feedback/get-contributor-loader.js";
-  import {
-    CATEGORY_ICONS,
-  } from "#lib/shared/versioning/domain/constants/changelog-constants.js";
+  import { CATEGORY_ICONS } from "#lib/shared/versioning/domain/constants/changelog-constants.js";
   import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
   import type {
     ChangelogCategory,
@@ -341,7 +339,15 @@
     border-radius: 10px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     cursor: pointer;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
   }
 
   .close-btn:hover {
@@ -371,7 +377,15 @@
     background: var(--cat-bg);
     border: 1.5px solid color-mix(in srgb, var(--cat-color) 20%, transparent);
     border-radius: 14px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      grid-template-columns var(--duration-normal);
   }
 
   .category-card:hover {
@@ -544,7 +558,13 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
   }
 
   .footer-btn.primary {
@@ -580,7 +600,6 @@
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
   }
-
 
   /* Wide-screen tiers change the modal's composition band. Type keeps the
      same logical roles at every width. */

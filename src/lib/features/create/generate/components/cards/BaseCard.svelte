@@ -8,6 +8,8 @@ Provides consistent styling and interaction patterns for all generation setting 
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import CardHeader from "./shared/CardHeader.svelte";
 
   let {
@@ -58,7 +60,7 @@ Provides consistent styling and interaction patterns for all generation setting 
     if (clickable && cardElement) {
       return attachRipple(cardElement, {
         color: "rgba(255, 255, 255, 0.25)",
-        duration: 350,
+        duration: motionDuration(DURATION.dramatic),
         opacity: 0.15,
       });
     }
@@ -185,9 +187,9 @@ Provides consistent styling and interaction patterns for all generation setting 
       /* Inner highlight for 3D effect */ inset 0 1px 0 var(--theme-stroke);
 
     transition:
-      transform var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
-      box-shadow var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
-      filter var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+      transform var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-emphasis) var(--ease-standard),
+      filter var(--duration-emphasis) var(--ease-standard);
     overflow: visible; /* Allow hover effects to overflow and pop over neighbors */
     color: white;
     text-align: center;
@@ -260,7 +262,7 @@ Provides consistent styling and interaction patterns for all generation setting 
   /* 🎯 ELASTIC PRESS - Universal click/tap feedback for ALL devices */
   .base-card.clickable:active {
     transform: scale(0.97);
-    transition: transform var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .base-card.quiet.clickable:active {
@@ -303,11 +305,16 @@ Provides consistent styling and interaction patterns for all generation setting 
       inset 0 1px 0 var(--theme-stroke, var(--theme-stroke));
 
     /* Faster transition on press */
-    transition: all var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      border-color var(--duration-instant) var(--ease-standard),
+      background var(--duration-instant) var(--ease-standard),
+      box-shadow var(--duration-instant) var(--ease-standard),
+      filter var(--duration-instant) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard),
+      outline var(--duration-instant) var(--ease-standard);
 
     /* 🎯 SPRING BOUNCE - Trigger bounce animation on release */
-    animation: springBounce var(--duration-dramatic)
-      cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: springBounce var(--duration-dramatic) var(--ease-spring);
   }
 
   /* 🎯 Spring bounce animation - overshoot and settle */
@@ -362,7 +369,7 @@ Provides consistent styling and interaction patterns for all generation setting 
     height: 20px;
     color: var(--theme-stroke-strong, var(--theme-text-dim));
     opacity: 0;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   @media (hover: hover) {
@@ -383,7 +390,7 @@ Provides consistent styling and interaction patterns for all generation setting 
     background-size: 300% 300% !important;
 
     /* Apply mesh gradient flow animation */
-    animation: meshGradientFlow 15s ease infinite !important;
+    animation: meshGradientFlow 15s var(--ease-standard) infinite !important;
 
     /* Standard shadow matching other cards - no purple glow */
     box-shadow:
@@ -413,7 +420,7 @@ Provides consistent styling and interaction patterns for all generation setting 
   /* Enhanced shadow on hover - matching other cards - only on hover-capable devices */
   @media (hover: hover) {
     .base-card.cap-card:hover {
-      animation: meshGradientFlow 15s ease infinite !important;
+      animation: meshGradientFlow 15s var(--ease-standard) infinite !important;
 
       box-shadow:
         0 2px 4px hsl(var(--shadow-color) / 0.12),

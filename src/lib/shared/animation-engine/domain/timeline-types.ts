@@ -16,6 +16,8 @@ import {
   DEFAULT_TIME_SIGNATURE,
 } from "#lib/shared/foundation/domain/models/time-signature.js";
 
+const DEFAULT_TIMELINE_DURATION_SECONDS = 60;
+
 // Time Units
 
 /**
@@ -48,7 +50,6 @@ export interface TimelineClip {
   /** Track this clip belongs to */
   trackId: string;
 
-
   /** Where the clip starts on the timeline (seconds) */
   startTime: TimeSeconds;
 
@@ -71,7 +72,6 @@ export interface TimelineClip {
    */
   outPoint: number;
 
-
   /** Playback speed multiplier (1 = normal, 0.5 = half speed, 2 = double) */
   playbackRate: number;
 
@@ -81,7 +81,6 @@ export interface TimelineClip {
   /** Number of times to loop (0 = infinite within duration) */
   loopCount: number;
 
-
   /** Trail effect settings for this clip's animation */
   trailSettings: TrailSettings;
 
@@ -90,7 +89,6 @@ export interface TimelineClip {
 
   /** Opacity (0-1) for compositing */
   opacity: number;
-
 
   /** User-provided label (optional) */
   label?: string;
@@ -126,7 +124,6 @@ export interface TimelineTrack {
 
   /** Clips on this track (ordered by startTime) */
   clips: TimelineClip[];
-
 
   /** Mute all clips on this track */
   muted: boolean;
@@ -198,7 +195,6 @@ export interface TimelineProject {
   /** Audio reference (actual audio state lives elsewhere) */
   audio: TimelineAudioRef;
 
-
   /** Total project duration (auto-calculated or manual) */
   duration: TimeSeconds;
 
@@ -213,7 +209,6 @@ export interface TimelineProject {
 
   /** Frame rate for export */
   frameRate: FrameRate;
-
 
   /** Creation timestamp */
   createdAt: Date;
@@ -463,7 +458,7 @@ export function createProject(name: string = "Untitled"): TimelineProject {
       duration: 0,
       bpm: null,
     },
-    duration: 60, // 1 minute default
+    duration: DEFAULT_TIMELINE_DURATION_SECONDS,
     defaultBpm: 120,
     timeSignature: DEFAULT_TIME_SIGNATURE,
     snap: createDefaultSnapSettings(),

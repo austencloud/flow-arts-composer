@@ -194,8 +194,8 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     cursor: pointer;
     transition:
-      color 0.15s ease,
-      background 0.15s ease;
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .close-btn:hover {

@@ -402,12 +402,12 @@
       0 0 0 2px var(--reading-playback-ring-strong),
       0 0 14px 2px var(--reading-playback-glow);
     transition:
-      transform 0.16s ease-out,
-      box-shadow 0.16s ease-out;
+      transform var(--duration-fast) var(--ease-standard-out),
+      box-shadow var(--duration-fast) var(--ease-standard-out);
   }
   .rb-cell.act-played {
     opacity: 0.5;
-    transition: opacity 0.2s ease-out;
+    transition: opacity var(--duration-normal) var(--ease-standard-out);
   }
 
   @media (prefers-reduced-motion: reduce) {

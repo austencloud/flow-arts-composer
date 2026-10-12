@@ -111,7 +111,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--duration-fast) ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
     overflow: hidden;
   }
 

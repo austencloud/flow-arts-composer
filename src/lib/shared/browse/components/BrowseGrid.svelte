@@ -267,7 +267,7 @@
   }
 
   .sequences-grid.grid-view.is-transitioning {
-    transition: gap 200ms ease-out;
+    transition: gap var(--duration-normal) var(--ease-standard-out);
   }
 
   @media (prefers-reduced-motion: reduce) {

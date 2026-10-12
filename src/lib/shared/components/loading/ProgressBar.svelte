@@ -73,7 +73,7 @@
     height: 100%;
     background: var(--bar-color, var(--theme-accent, #6366f1));
     border-radius: 9999px;
-    transition: width var(--duration-fast, 150ms) ease-out;
+    transition: width var(--duration-fast) var(--ease-standard-out);
     position: relative;
     overflow: hidden;
   }

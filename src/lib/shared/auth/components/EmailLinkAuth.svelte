@@ -619,7 +619,7 @@
     font-weight: 600;
     box-shadow: none;
     transform: none;
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .compact .submit-button:not(.submit-button--secondary):hover:not(:disabled) {
@@ -648,8 +648,8 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: var(--radius-md, 0.75rem);
     transition:
-      background-color var(--duration-normal, 200ms) ease,
-      border-color var(--duration-normal, 200ms) ease;
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .delivery-card--sending {
@@ -704,8 +704,8 @@
       transparent
     );
     transition:
-      color var(--duration-normal, 200ms) ease,
-      background-color var(--duration-normal, 200ms) ease;
+      color var(--duration-normal) var(--ease-standard),
+      background-color var(--duration-normal) var(--ease-standard);
   }
 
   .delivery-card--success .delivery-icon {
@@ -846,9 +846,9 @@
        viewport zoom or destabilize the software keyboard. */
     font-size: 16px;
     transition:
-      border-color var(--duration-normal, 200ms) ease,
-      box-shadow var(--duration-normal, 200ms) ease,
-      background var(--duration-normal, 200ms) ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard);
     background: var(
       --auth-input-background,
       color-mix(
@@ -927,8 +927,8 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 0fr);
     column-gap: 0;
     transition:
-      grid-template-columns var(--duration-normal, 200ms) ease,
-      column-gap var(--duration-normal, 200ms) ease;
+      grid-template-columns var(--duration-normal) var(--ease-standard),
+      column-gap var(--duration-normal) var(--ease-standard);
   }
 
   .form-actions--split {
@@ -960,12 +960,12 @@
     font-size: var(--font-size-min, 0.875rem);
     cursor: pointer;
     transition:
-      background-color var(--duration-normal, 200ms) ease,
-      border-color var(--duration-normal, 200ms) ease,
-      color var(--duration-normal, 200ms) ease,
-      box-shadow var(--duration-normal, 200ms) ease,
-      transform var(--duration-normal, 200ms) ease,
-      opacity var(--duration-normal, 200ms) ease;
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
     min-height: var(--min-touch-target);
     box-shadow: 0 4px 6px
       color-mix(

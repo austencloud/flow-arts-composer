@@ -59,7 +59,10 @@
   }
 
   // Calculate normalized input from offset
-  function calculateInput(offsetX: number, offsetY: number): { x: number; y: number } {
+  function calculateInput(
+    offsetX: number,
+    offsetY: number
+  ): { x: number; y: number } {
     const distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
 
     if (distance < deadzone) {
@@ -255,7 +258,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
     opacity: 0.6;
     pointer-events: auto;
     touch-action: none;
@@ -271,7 +274,7 @@
     border-radius: 50%;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.8));
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    transition: transform 0.05s ease-out;
+    transition: transform var(--duration-instant) var(--ease-standard-out);
   }
 
   .joystick-base.active .joystick-knob {

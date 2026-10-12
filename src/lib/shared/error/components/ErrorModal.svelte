@@ -285,7 +285,7 @@
     justify-content: center;
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
-    animation: fadeIn var(--duration-normal) ease-out;
+    animation: fadeIn var(--duration-normal) var(--ease-standard-out);
     padding: 24px;
   }
 
@@ -310,7 +310,7 @@
       0 0 60px var(--error-bg);
     width: 100%;
     max-width: 480px;
-    animation: slideUp var(--duration-normal) ease-out;
+    animation: slideUp var(--duration-normal) var(--ease-standard-out);
     overflow: hidden;
   }
 
@@ -376,7 +376,9 @@
     font-size: var(--font-size-compact);
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background-color var(--duration-fast),
+      color var(--duration-fast);
     flex-shrink: 0;
   }
 
@@ -396,7 +398,9 @@
     border-radius: 8px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background-color var(--duration-fast),
+      color var(--duration-fast);
     flex-shrink: 0;
   }
 
@@ -548,7 +552,12 @@
     font-size: var(--font-size-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background-color var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast);
   }
 
   .dismiss-button {

@@ -13,7 +13,14 @@
     height?: string;
     width?: string;
     onPanelChange?: (panelIndex: number) => void;
-    onContentAreaChange?: (bounds: { left: number; right: number; width: number; top: number; bottom: number; height: number }) => void;
+    onContentAreaChange?: (bounds: {
+      left: number;
+      right: number;
+      width: number;
+      top: number;
+      bottom: number;
+      height: number;
+    }) => void;
     initialPanelIndex?: number;
     freezeNavigation?: boolean; // Prevent navigation button recreation during transitions
     loop?: boolean; // Enable infinite scrolling - wraps from last to first and vice versa
@@ -261,7 +268,7 @@
       class="embla__button embla__button--prev"
       onclick={scrollPrev}
       disabled={!canScrollPrev}
-      aria-label="{t('slide_previous')}"
+      aria-label={t("slide_previous")}
       bind:this={prevArrowButton}
     >
       <svg class="embla__button__svg" viewBox="0 0 532 532">
@@ -297,7 +304,7 @@
       class="embla__button embla__button--next"
       onclick={scrollNext}
       disabled={!canScrollNext}
-      aria-label="{t('slide_next')}"
+      aria-label={t("slide_next")}
       bind:this={nextArrowButton}
     >
       <svg class="embla__button__svg" viewBox="0 0 532 532">
@@ -398,7 +405,19 @@
     color: rgba(255, 255, 255, 0.8);
 
     /* Smooth transitions matching app design system */
-    transition: all var(--transition-normal, var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1));
+    transition:
+      background-color
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      border-color
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      box-shadow
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      color
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      opacity
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      transform
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard));
 
     /* Ensure opacity stays at 1 and doesn't inherit transition effects */
     opacity: 1 !important;
@@ -414,7 +433,7 @@
 
   .embla__button:active:not(:disabled) {
     transform: translateY(-50%) scale(0.95);
-    transition: all var(--duration-instant) ease;
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .embla__button:focus-visible {

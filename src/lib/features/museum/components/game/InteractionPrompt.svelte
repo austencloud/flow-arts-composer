@@ -24,7 +24,11 @@
 </script>
 
 {#if hasInteractable}
-  <div class="interaction-prompt museum-gold-scope" role="status" aria-live="polite">
+  <div
+    class="interaction-prompt museum-gold-scope"
+    role="status"
+    aria-live="polite"
+  >
     <kbd>E</kbd>
     <span>Examine</span>
   </div>
@@ -44,7 +48,7 @@
     border: 1px solid var(--museum-gold-30);
     border-radius: 6px;
     z-index: 30;
-    animation: prompt-fade-in 0.2s ease;
+    animation: prompt-fade-in var(--duration-normal) var(--ease-standard);
     pointer-events: none;
   }
 
@@ -70,7 +74,13 @@
   }
 
   @keyframes prompt-fade-in {
-    from { opacity: 0; transform: translateX(-50%) translateY(4px); }
-    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
   }
 </style>

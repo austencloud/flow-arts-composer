@@ -15,7 +15,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
-  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import {
+    GridMode,
+    GridLocation,
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     HandSide,
     MotionType,
@@ -31,7 +34,17 @@
   const CANONICAL_SIZE = 500;
   const canvas2DRenderer = getCanvas2DRenderer();
 
-  type EraId = "cave" | "egypt" | "mosaic" | "medieval" | "renaissance" | "woodblock" | "blueprint" | "deco" | "bauhaus" | "punch";
+  type EraId =
+    | "cave"
+    | "egypt"
+    | "mosaic"
+    | "medieval"
+    | "renaissance"
+    | "woodblock"
+    | "blueprint"
+    | "deco"
+    | "bauhaus"
+    | "punch";
 
   interface Era {
     id: EraId;
@@ -42,16 +55,76 @@
   }
 
   const ERAS: readonly Era[] = [
-    { id: "cave",        file: "cave-painting.html",   year: "~40,000 BC", title: "Cave Painting",        color: "#C17F3A" },
-    { id: "egypt",       file: "egyptian.html",        year: "~3000 BC",   title: "Egyptian Hieroglyph",  color: "#C5A54E" },
-    { id: "mosaic",      file: "greek-mosaic.html",    year: "~500 BC",    title: "Greek Mosaic",         color: "#7BA089" },
-    { id: "medieval",    file: "medieval.html",        year: "~1200 AD",   title: "Illuminated Manuscript", color: "#D4AF37" },
-    { id: "renaissance", file: "renaissance.html",     year: "~1500 AD",   title: "Renaissance Diagram",  color: "#8B7355" },
-    { id: "woodblock",   file: "woodblock.html",       year: "~1800 AD",   title: "Japanese Woodblock",   color: "#D14836" },
-    { id: "blueprint",   file: "blueprint.html",       year: "~1850 AD",   title: "Technical Blueprint",  color: "#4A90D9" },
-    { id: "deco",        file: "art-deco.html",        year: "~1925 AD",   title: "Art Deco",             color: "#D4AF37" },
-    { id: "bauhaus",     file: "bauhaus.html",         year: "~1930 AD",   title: "Bauhaus",              color: "#E63B2E" },
-    { id: "punch",       file: "punch-card.html",      year: "~1976 AD",   title: "Line Printer",         color: "#33AA55" },
+    {
+      id: "cave",
+      file: "cave-painting.html",
+      year: "~40,000 BC",
+      title: "Cave Painting",
+      color: "#C17F3A",
+    },
+    {
+      id: "egypt",
+      file: "egyptian.html",
+      year: "~3000 BC",
+      title: "Egyptian Hieroglyph",
+      color: "#C5A54E",
+    },
+    {
+      id: "mosaic",
+      file: "greek-mosaic.html",
+      year: "~500 BC",
+      title: "Greek Mosaic",
+      color: "#7BA089",
+    },
+    {
+      id: "medieval",
+      file: "medieval.html",
+      year: "~1200 AD",
+      title: "Illuminated Manuscript",
+      color: "#D4AF37",
+    },
+    {
+      id: "renaissance",
+      file: "renaissance.html",
+      year: "~1500 AD",
+      title: "Renaissance Diagram",
+      color: "#8B7355",
+    },
+    {
+      id: "woodblock",
+      file: "woodblock.html",
+      year: "~1800 AD",
+      title: "Japanese Woodblock",
+      color: "#D14836",
+    },
+    {
+      id: "blueprint",
+      file: "blueprint.html",
+      year: "~1850 AD",
+      title: "Technical Blueprint",
+      color: "#4A90D9",
+    },
+    {
+      id: "deco",
+      file: "art-deco.html",
+      year: "~1925 AD",
+      title: "Art Deco",
+      color: "#D4AF37",
+    },
+    {
+      id: "bauhaus",
+      file: "bauhaus.html",
+      year: "~1930 AD",
+      title: "Bauhaus",
+      color: "#E63B2E",
+    },
+    {
+      id: "punch",
+      file: "punch-card.html",
+      year: "~1976 AD",
+      title: "Line Printer",
+      color: "#33AA55",
+    },
   ];
 
   //
@@ -75,7 +148,6 @@
     leftHand: RetroHandPayload;
     rightHand: RetroHandPayload;
   }
-
 
   let allPictographs = $state<PictographData[]>([]);
   let currentIndex = $state(0);
@@ -101,39 +173,56 @@
   // Per-era preference for "smart" mode. Hand-drawn eras keep their charm by
   // defaulting to data-driven; technical eras shine with canonical.
   const ERA_PREFERS_CANONICAL: Record<EraId, boolean> = {
-    cave:        false,  // pigmentStroke / pigmentArc flow is the era's voice
-    egypt:       false,  // flat tomb-painting staves + bold hieroglyphic arrows
-    mosaic:      false,  // tesserae tiles + Greek-key meander
-    medieval:    false,  // illuminated quill + gold leaf
-    renaissance: false,  // jittered construction-line sketch
-    woodblock:   false,  // brush taper + bokashi wash
-    blueprint:   true,   // technical linework matches canonical
-    deco:        true,   // faceted geometric arcs match canonical
-    bauhaus:     true,   // primary-color blocks match canonical
-    punch:       true,   // ASCII sampling of canonical is authentic
+    cave: false, // pigmentStroke / pigmentArc flow is the era's voice
+    egypt: false, // flat tomb-painting staves + bold hieroglyphic arrows
+    mosaic: false, // tesserae tiles + Greek-key meander
+    medieval: false, // illuminated quill + gold leaf
+    renaissance: false, // jittered construction-line sketch
+    woodblock: false, // brush taper + bokashi wash
+    blueprint: true, // technical linework matches canonical
+    deco: true, // faceted geometric arcs match canonical
+    bauhaus: true, // primary-color blocks match canonical
+    punch: true, // ASCII sampling of canonical is authentic
   };
 
   function shouldUseCanonical(eraId: EraId): boolean {
     if (renderMode === "canonical") return true;
-    if (renderMode === "data")      return false;
+    if (renderMode === "data") return false;
     return ERA_PREFERS_CANONICAL[eraId];
   }
 
-  const pictograph = $derived<PictographData | null>(allPictographs[currentIndex] ?? null);
+  const pictograph = $derived<PictographData | null>(
+    allPictographs[currentIndex] ?? null
+  );
 
   // iframe element refs and which ones have posted "ready"
   const iframeRefs: Record<EraId, HTMLIFrameElement | null> = {
-    cave: null, egypt: null, mosaic: null, medieval: null, renaissance: null,
-    woodblock: null, blueprint: null, deco: null, bauhaus: null, punch: null,
+    cave: null,
+    egypt: null,
+    mosaic: null,
+    medieval: null,
+    renaissance: null,
+    woodblock: null,
+    blueprint: null,
+    deco: null,
+    bauhaus: null,
+    punch: null,
   };
   const readyEras = new Set<EraId>();
 
   // Per-pictograph-per-era feedback notes (persisted to localStorage)
   let feedbackDraft = $state<Record<EraId, string>>({
-    cave: "", egypt: "", mosaic: "", medieval: "", renaissance: "",
-    woodblock: "", blueprint: "", deco: "", bauhaus: "", punch: "",
+    cave: "",
+    egypt: "",
+    mosaic: "",
+    medieval: "",
+    renaissance: "",
+    woodblock: "",
+    blueprint: "",
+    deco: "",
+    bauhaus: "",
+    punch: "",
   });
-
 
   function pictographId(p: PictographData): string {
     const b = p.motions?.[HandSide.LEFT];
@@ -171,7 +260,9 @@
         location: String(left?.startLocation ?? GridLocation.NORTH),
         endLocation: String(left?.endLocation ?? GridLocation.NORTH),
         motionType: String(left?.motionType ?? MotionType.STATIC),
-        rotationDirection: String(left?.rotationDirection ?? RotationDirection.NO_ROTATION),
+        rotationDirection: String(
+          left?.rotationDirection ?? RotationDirection.NO_ROTATION
+        ),
         orientation: String(left?.endOrientation ?? Orientation.IN),
         turns: typeof left?.turns === "number" ? left.turns : 0,
       },
@@ -180,7 +271,9 @@
         location: String(right?.startLocation ?? GridLocation.SOUTH),
         endLocation: String(right?.endLocation ?? GridLocation.SOUTH),
         motionType: String(right?.motionType ?? MotionType.STATIC),
-        rotationDirection: String(right?.rotationDirection ?? RotationDirection.NO_ROTATION),
+        rotationDirection: String(
+          right?.rotationDirection ?? RotationDirection.NO_ROTATION
+        ),
         orientation: String(right?.endOrientation ?? Orientation.IN),
         turns: typeof right?.turns === "number" ? right.turns : 0,
       },
@@ -196,12 +289,18 @@
   // ImageBitmap clone to recolor and stylize - it never reinvents motion
   // geometry.
 
-  let canonicalSource = $state<HTMLCanvasElement | OffscreenCanvas | null>(null);
+  let canonicalSource = $state<HTMLCanvasElement | OffscreenCanvas | null>(
+    null
+  );
 
-  async function buildCanonical(p: PictographData): Promise<HTMLCanvasElement | OffscreenCanvas | null> {
+  async function buildCanonical(
+    p: PictographData
+  ): Promise<HTMLCanvasElement | OffscreenCanvas | null> {
     try {
       await canvas2DRenderer.initialize();
-      const prepared = await pictographPreparer.prepareSingle(p, { themeMode: "dark" });
+      const prepared = await pictographPreparer.prepareSingle(p, {
+        themeMode: "dark",
+      });
       const cvs = await canvas2DRenderer.renderPictograph(prepared, {
         size: CANONICAL_SIZE,
         visibility: {
@@ -221,7 +320,9 @@
     }
   }
 
-  async function bitmapFor(cvs: HTMLCanvasElement | OffscreenCanvas | null): Promise<ImageBitmap | null> {
+  async function bitmapFor(
+    cvs: HTMLCanvasElement | OffscreenCanvas | null
+  ): Promise<ImageBitmap | null> {
     if (!cvs) return null;
     try {
       return await createImageBitmap(cvs);
@@ -237,8 +338,15 @@
       const iframe = iframeRefs[era.id];
       if (!iframe?.contentWindow || !readyEras.has(era.id)) return;
       const wantsCanonical = shouldUseCanonical(era.id);
-      const canonical = wantsCanonical ? await bitmapFor(canonicalSource) : null;
-      const msg: { type: string; data: RetroPayload; canonical?: ImageBitmap; canonicalSize?: number } = {
+      const canonical = wantsCanonical
+        ? await bitmapFor(canonicalSource)
+        : null;
+      const msg: {
+        type: string;
+        data: RetroPayload;
+        canonical?: ImageBitmap;
+        canonicalSize?: number;
+      } = {
         type: "pictograph",
         data: payload,
       };
@@ -258,7 +366,12 @@
     if (!iframe?.contentWindow) return;
     const wantsCanonical = shouldUseCanonical(eraId);
     const canonical = wantsCanonical ? await bitmapFor(canonicalSource) : null;
-    const msg: { type: string; data: RetroPayload; canonical?: ImageBitmap; canonicalSize?: number } = {
+    const msg: {
+      type: string;
+      data: RetroPayload;
+      canonical?: ImageBitmap;
+      canonicalSize?: number;
+    } = {
       type: "pictograph",
       data: toPayload(p),
     };
@@ -277,7 +390,9 @@
     dataLoading = true;
     error = null;
     try {
-      const pictographs = await motionQueryHandler.queryMotions({ gridMode: mode });
+      const pictographs = await motionQueryHandler.queryMotions({
+        gridMode: mode,
+      });
       allPictographs = pictographs;
       currentIndex = 0;
     } catch (e) {
@@ -292,7 +407,8 @@
 
   function prev() {
     if (allPictographs.length === 0) return;
-    currentIndex = (currentIndex - 1 + allPictographs.length) % allPictographs.length;
+    currentIndex =
+      (currentIndex - 1 + allPictographs.length) % allPictographs.length;
   }
   function next() {
     if (allPictographs.length === 0) return;
@@ -309,18 +425,32 @@
 
   function cycleRenderMode() {
     renderMode =
-      renderMode === "smart"     ? "canonical" :
-      renderMode === "canonical" ? "data"      :
-                                   "smart";
+      renderMode === "smart"
+        ? "canonical"
+        : renderMode === "canonical"
+          ? "data"
+          : "smart";
   }
 
   function handleKeydown(e: KeyboardEvent) {
     const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
     if (tag === "textarea" || tag === "input") return;
-    if (e.key === "ArrowLeft")  { prev();  e.preventDefault(); }
-    if (e.key === "ArrowRight") { next();  e.preventDefault(); }
-    if (e.key === "r" || e.key === "R") { randomize(); e.preventDefault(); }
-    if (e.key === "m" || e.key === "M") { cycleRenderMode(); e.preventDefault(); }
+    if (e.key === "ArrowLeft") {
+      prev();
+      e.preventDefault();
+    }
+    if (e.key === "ArrowRight") {
+      next();
+      e.preventDefault();
+    }
+    if (e.key === "r" || e.key === "R") {
+      randomize();
+      e.preventDefault();
+    }
+    if (e.key === "m" || e.key === "M") {
+      cycleRenderMode();
+      e.preventDefault();
+    }
   }
 
   // Listen for "ready" messages from era iframes
@@ -391,7 +521,9 @@
       canonicalSource = cvs;
       broadcast(p);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   });
 
   // Load feedback draft when pictograph changes
@@ -412,41 +544,64 @@
   <!-- Toolbar -->
   <div class="toolbar">
     <div class="toolbar-row">
-      <button class="nav-btn" onclick={prev} disabled={dataLoading} aria-label="Previous">
+      <button
+        class="nav-btn"
+        onclick={prev}
+        disabled={dataLoading}
+        aria-label="Previous"
+      >
         <i class="fas fa-chevron-left" aria-hidden="true"></i>
       </button>
 
       <span class="label">{label}</span>
 
-      <button class="nav-btn" onclick={next} disabled={dataLoading} aria-label="Next">
+      <button
+        class="nav-btn"
+        onclick={next}
+        disabled={dataLoading}
+        aria-label="Next"
+      >
         <i class="fas fa-chevron-right" aria-hidden="true"></i>
       </button>
 
-      <button class="randomize-btn" onclick={randomize} disabled={dataLoading} aria-label="Randomize">
+      <button
+        class="randomize-btn"
+        onclick={randomize}
+        disabled={dataLoading}
+        aria-label="Randomize"
+      >
         <i class="fas fa-dice" aria-hidden="true"></i>
       </button>
 
       <div class="spacer"></div>
 
-      <div class="mode-toggle" role="group" aria-label="Render mode" title="Render mode - press M to cycle">
+      <div
+        class="mode-toggle"
+        role="group"
+        aria-label="Render mode"
+        title="Render mode - press M to cycle"
+      >
         <button
           class="mode-btn"
           class:active={renderMode === "smart"}
           onclick={() => (renderMode = "smart")}
           title="Per-era best: hand-drawn eras use native primitives, technical eras use canonical"
-        >Smart</button>
+          >Smart</button
+        >
         <button
           class="mode-btn"
           class:active={renderMode === "canonical"}
           onclick={() => (renderMode = "canonical")}
           title="All eras use canonical-composed rendering (SVG filtered through palette)"
-        >Canonical</button>
+          >Canonical</button
+        >
         <button
           class="mode-btn"
           class:active={renderMode === "data"}
           onclick={() => (renderMode = "data")}
           title="All eras use native data-driven primitives (era's own hand-built vocabulary)"
-        >Data</button>
+          >Data</button
+        >
       </div>
 
       <div class="mode-toggle" role="group" aria-label="Grid mode">
@@ -454,21 +609,22 @@
           class="mode-btn"
           class:active={gridMode === GridMode.DIAMOND}
           onclick={() => (gridMode = GridMode.DIAMOND)}
-          disabled={dataLoading}
-        >Diamond</button>
+          disabled={dataLoading}>Diamond</button
+        >
         <button
           class="mode-btn"
           class:active={gridMode === GridMode.BOX}
           onclick={() => (gridMode = GridMode.BOX)}
-          disabled={dataLoading}
-        >Box</button>
+          disabled={dataLoading}>Box</button
+        >
       </div>
 
       {#if letters.length > 0}
         <select
           class="letter-jump"
           value={String(pictograph?.letter ?? "")}
-          onchange={(e) => jumpToLetter((e.currentTarget as HTMLSelectElement).value)}
+          onchange={(e) =>
+            jumpToLetter((e.currentTarget as HTMLSelectElement).value)}
           disabled={dataLoading}
           aria-label="Jump to letter"
         >
@@ -479,7 +635,8 @@
       {/if}
 
       <span class="hint">
-        <kbd>&larr;</kbd><kbd>&rarr;</kbd> step · <kbd>R</kbd> random · <kbd>M</kbd> mode
+        <kbd>&larr;</kbd><kbd>&rarr;</kbd> step · <kbd>R</kbd> random ·
+        <kbd>M</kbd> mode
       </span>
     </div>
   </div>
@@ -492,11 +649,7 @@
   <div class="gallery" class:has-focus={focusedEra !== null}>
     {#each ERAS as era (era.id)}
       {@const isFocused = era.id === focusedEra}
-      <div
-        class="era-card"
-        class:focused={isFocused}
-        class:thumb={!isFocused}
-      >
+      <div class="era-card" class:focused={isFocused} class:thumb={!isFocused}>
         {#if !isFocused}
           <button
             class="thumb-clicktarget"
@@ -507,7 +660,7 @@
         <div class="era-frame">
           <iframe
             bind:this={iframeRefs[era.id]}
-            src={`/retro-eras/${era.file}${era.file.includes('?') ? '&' : '?'}embed=1`}
+            src={`/retro-eras/${era.file}${era.file.includes("?") ? "&" : "?"}embed=1`}
             title={era.title}
             loading="lazy"
           ></iframe>
@@ -521,7 +674,11 @@
             class="feedback"
             placeholder="Notes for this pictograph…"
             value={feedbackDraft[era.id]}
-            oninput={(e) => onFeedbackInput(era.id, (e.currentTarget as HTMLTextAreaElement).value)}
+            oninput={(e) =>
+              onFeedbackInput(
+                era.id,
+                (e.currentTarget as HTMLTextAreaElement).value
+              )}
             aria-label="Feedback for {era.title}"
           ></textarea>
         {/if}
@@ -538,7 +695,6 @@
     color: var(--theme-text, #fff);
     min-height: 0;
   }
-
 
   .toolbar {
     padding: 8px 12px;
@@ -575,7 +731,9 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-size: 12px;
     cursor: pointer;
-    transition: border-color 150ms ease, color 150ms ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
   @media (hover: hover) {
     .nav-btn:not(:disabled):hover,
@@ -590,7 +748,9 @@
     cursor: not-allowed;
   }
 
-  .spacer { flex: 1; }
+  .spacer {
+    flex: 1;
+  }
 
   .mode-toggle {
     display: inline-flex;
@@ -605,13 +765,18 @@
     padding: 6px 12px;
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: background 150ms ease, color 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
   .mode-btn.active {
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.08));
     color: var(--theme-text, #fff);
   }
-  .mode-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .mode-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
 
   .letter-jump {
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
@@ -680,7 +845,11 @@
     grid-column: 1 / span 3;
     grid-row: 1 / span 3;
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.18));
-    background: color-mix(in srgb, var(--theme-card-bg, rgba(255, 255, 255, 0.05)) 100%, #fff 2%);
+    background: color-mix(
+      in srgb,
+      var(--theme-card-bg, rgba(255, 255, 255, 0.05)) 100%,
+      #fff 2%
+    );
   }
 
   /* Clickable overlay on thumbnails (iframe has pointer-events:none so it doesn't steal clicks) */
@@ -693,7 +862,7 @@
     padding: 0;
     margin: 0;
     cursor: pointer;
-    transition: background 150ms ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
   @media (hover: hover) {
     .era-card.thumb:hover .thumb-clicktarget {
@@ -792,7 +961,12 @@
     font-style: italic;
   }
   .feedback:focus {
-    background: color-mix(in srgb, var(--theme-overlay, rgba(0, 0, 0, 0.4)) 100%, #000 15%);
-    box-shadow: inset 0 0 0 1px var(--theme-stroke-strong, rgba(255, 255, 255, 0.15));
+    background: color-mix(
+      in srgb,
+      var(--theme-overlay, rgba(0, 0, 0, 0.4)) 100%,
+      #000 15%
+    );
+    box-shadow: inset 0 0 0 1px
+      var(--theme-stroke-strong, rgba(255, 255, 255, 0.15));
   }
 </style>

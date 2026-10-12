@@ -114,11 +114,11 @@
     font-weight: 500;
     cursor: pointer;
     transition:
-      filter var(--duration-emphasis) ease,
-      background var(--duration-emphasis) ease,
-      border-color var(--duration-emphasis) ease,
-      color var(--duration-emphasis) ease,
-      box-shadow var(--duration-emphasis) ease;
+      filter var(--duration-emphasis) var(--ease-standard),
+      background var(--duration-emphasis) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard),
+      color var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-emphasis) var(--ease-standard);
   }
 
   .follow-button:hover {

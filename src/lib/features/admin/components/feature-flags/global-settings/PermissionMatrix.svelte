@@ -7,8 +7,14 @@
 
   import type { FeatureFlagConfig } from "#lib/shared/auth/domain/models/feature-flag.js";
   import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
-  import { ROLE_HIERARCHY, ROLE_DISPLAY } from "#lib/shared/auth/domain/models/user-role.js";
-  import { featureFlagService, featureFlagState } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
+  import {
+    ROLE_HIERARCHY,
+    ROLE_DISPLAY,
+  } from "#lib/shared/auth/domain/models/user-role.js";
+  import {
+    featureFlagService,
+    featureFlagState,
+  } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import {
     buildFeatureHierarchy,
@@ -29,7 +35,9 @@
   let searchQuery = $state("");
   let savingFlags = $state<Set<string>>(new Set());
   let migrating = $state(false);
-  let migrationResult = $state<{ migrated: number; total: number } | null>(null);
+  let migrationResult = $state<{ migrated: number; total: number } | null>(
+    null
+  );
 
   async function migrateDeactivatedFlags() {
     migrating = true;
@@ -42,7 +50,8 @@
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const reason =
-          errorData.firebaseCode === "auth/id-token-expired" || response.status === 401
+          errorData.firebaseCode === "auth/id-token-expired" ||
+          response.status === 401
             ? "Session expired — sign in again"
             : errorData.message || `HTTP ${response.status}`;
         throw new Error(reason);
@@ -52,7 +61,9 @@
       migrationResult = { migrated: result.migrated, total: result.total };
 
       if (result.migrated > 0) {
-        toast.success(`Migrated ${result.migrated} deactivated flag(s) to 0% rollout`);
+        toast.success(
+          `Migrated ${result.migrated} deactivated flag(s) to 0% rollout`
+        );
       } else {
         toast.success("No deactivated flags found. All flags are healthy.");
       }
@@ -107,7 +118,10 @@
   ) {
     savingFlags = new Set([...savingFlags, flag.id]);
     try {
-      const result = await featureFlagService.updateGlobalFeatureFlag(flag.id, updates);
+      const result = await featureFlagService.updateGlobalFeatureFlag(
+        flag.id,
+        updates
+      );
 
       // Show success toast based on action type
       if (result.action === "created") {
@@ -125,11 +139,15 @@
         toast.success(`${flag.name} ${newState}`, 2000);
       } else if (result.action === "role_updated") {
         // Role changed
-        toast.success(`${flag.name} role updated to ${updates.minimumRole}`, 2000);
+        toast.success(
+          `${flag.name} role updated to ${updates.minimumRole}`,
+          2000
+        );
       }
     } catch (error) {
       console.error("Failed to update flag:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       toast.error(`Failed to update ${flag.name}: ${errorMessage}`);
       onError(`Failed to update ${flag.name}`);
     } finally {
@@ -153,7 +171,10 @@
   <div class="matrix-header">
     <div class="header-content">
       <h3>Permission Matrix</h3>
-      <p>Use chips above to toggle modules. Click role cells below to set minimum access level for tabs.</p>
+      <p>
+        Use chips above to toggle modules. Click role cells below to set minimum
+        access level for tabs.
+      </p>
     </div>
     <div class="header-actions">
       <div class="search-box">
@@ -182,7 +203,9 @@
 
   <!-- Quick toggle bar for modules (excludes core modules that can't be disabled) -->
   <ModuleQuickBar
-    modules={filteredModules.map(m => m.module).filter(m => !coreModuleIds.includes(m.id))}
+    modules={filteredModules
+      .map((m) => m.module)
+      .filter((m) => !coreModuleIds.includes(m.id))}
     {savingFlags}
     onToggle={handleEnabledToggle}
   />
@@ -192,7 +215,10 @@
     <div class="matrix-row header-row">
       <div class="feature-cell header-cell">Tab</div>
       {#each ROLE_HIERARCHY as role}
-        <div class="role-cell header-cell" style="--role-color: {getRoleColor(role)}">
+        <div
+          class="role-cell header-cell"
+          style="--role-color: {getRoleColor(role)}"
+        >
           <i class="fas {ROLE_DISPLAY[role].icon}" aria-hidden="true"></i>
           <span>{ROLE_DISPLAY[role].label}</span>
         </div>
@@ -206,9 +232,16 @@
       {@const hasTabs = tabs.length > 0}
 
       {#if hasTabs}
-        <div class="module-group" class:disabled={!module.enabled} style="--module-color: {moduleStyle.color}">
+        <div
+          class="module-group"
+          class:disabled={!module.enabled}
+          style="--module-color: {moduleStyle.color}"
+        >
           <div class="module-header">
-            <div class="module-icon" style="background: {moduleStyle.color}25; color: {moduleStyle.color}">
+            <div
+              class="module-icon"
+              style="background: {moduleStyle.color}25; color: {moduleStyle.color}"
+            >
               <i class="fas {moduleStyle.icon}" aria-hidden="true"></i>
             </div>
             <span class="module-name">{module.name}</span>
@@ -234,7 +267,9 @@
     <!-- Capabilities section -->
     {#if filteredCapabilities.length > 0}
       <div class="section-divider">
-        <span><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Capabilities</span>
+        <span
+          ><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Capabilities</span
+        >
       </div>
       {#each filteredCapabilities as capability}
         <MatrixRow
@@ -318,7 +353,13 @@
     font-weight: 500;
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .migrate-btn:hover:not(:disabled) {
@@ -462,7 +503,8 @@
     align-items: center;
     gap: 12px;
     padding: 10px 16px;
-    border-bottom: 1px solid color-mix(in srgb, var(--module-color) 20%, transparent);
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--module-color) 20%, transparent);
     background: color-mix(in srgb, var(--module-color) 12%, transparent);
   }
 

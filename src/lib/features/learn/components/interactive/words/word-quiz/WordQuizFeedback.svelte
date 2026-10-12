@@ -34,7 +34,7 @@ WordQuizFeedback - Feedback display with explanation
     max-width: 500px;
     padding: 1rem 1.25rem;
     border-radius: 12px;
-    animation: slideUp var(--duration-emphasis) ease;
+    animation: slideUp var(--duration-emphasis) var(--ease-standard);
   }
 
   @keyframes slideUp {
@@ -49,13 +49,23 @@ WordQuizFeedback - Feedback display with explanation
   }
 
   .feedback.correct {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 10%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 25%, transparent);
   }
 
   .feedback.incorrect {
-    background: color-mix(in srgb, var(--semantic-warning, #fb923c) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-warning, #fb923c) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #fb923c) 10%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-warning, #fb923c) 25%, transparent);
   }
 
   .feedback-header {

@@ -32,7 +32,8 @@
   // registered movable). Updates as you drag or nudge.
   const coords = $derived(selectedSnapshot());
   const canEditText = $derived(isEditable(guideEdit.selectedId));
-  const fmt = (n: number | undefined) => (Math.round((n ?? 0) * 10) / 10).toFixed(1);
+  const fmt = (n: number | undefined) =>
+    (Math.round((n ?? 0) * 10) / 10).toFixed(1);
 
   onMount(() => {
     initEdit(page.url.searchParams.has("edit"));
@@ -53,14 +54,28 @@
 {#if guideEdit.on}
   <div class="edit-dock">
     <div class="edit-bar" role="toolbar" aria-label="Guide edit tools">
-      <span class="brand"><span class="dot" aria-hidden="true"></span>Editing</span>
+      <span class="brand"
+        ><span class="dot" aria-hidden="true"></span>Editing</span
+      >
 
       <span class="sep" aria-hidden="true"></span>
 
-      <button class="btn" onclick={undo} disabled={hist.undo === 0} aria-label="Undo" title="Undo (Ctrl+Z)">
+      <button
+        class="btn"
+        onclick={undo}
+        disabled={hist.undo === 0}
+        aria-label="Undo"
+        title="Undo (Ctrl+Z)"
+      >
         <i class="fas fa-rotate-left" aria-hidden="true"></i>
       </button>
-      <button class="btn" onclick={redo} disabled={hist.redo === 0} aria-label="Redo" title="Redo (Ctrl+Shift+Z)">
+      <button
+        class="btn"
+        onclick={redo}
+        disabled={hist.redo === 0}
+        aria-label="Redo"
+        title="Redo (Ctrl+Shift+Z)"
+      >
         <i class="fas fa-rotate-right" aria-hidden="true"></i>
       </button>
 
@@ -90,7 +105,9 @@
         aria-label="Edit text"
         title="Edit text (or double-click the text)"
       >
-        <i class="fas fa-pen-to-square" aria-hidden="true"></i><span class="lbl">Text</span>
+        <i class="fas fa-pen-to-square" aria-hidden="true"></i><span class="lbl"
+          >Text</span
+        >
       </button>
       <button
         class="btn danger"
@@ -112,13 +129,20 @@
         <i class="fas {copied ? 'fa-check' : 'fa-copy'}" aria-hidden="true"></i>
         <span class="lbl">{copied ? "Copied" : "Copy changes"}</span>
       </button>
-      <button class="btn" onclick={() => setEdit(false)} aria-label="Exit edit mode" title="Exit edit mode (Esc)">
+      <button
+        class="btn"
+        onclick={() => setEdit(false)}
+        aria-label="Exit edit mode"
+        title="Exit edit mode (Esc)"
+      >
         <i class="fas fa-xmark" aria-hidden="true"></i>
       </button>
     </div>
 
     <p class="hint">
-      drag to move · <b>double-click text to retype</b> · arrows nudge <span class="k">Shift</span> ×10 ·
+      drag to move · <b>double-click text to retype</b> · arrows nudge
+      <span class="k">Shift</span>
+      ×10 ·
       <span class="k">Del</span> removes · <span class="k">E</span> toggles
     </p>
   </div>
@@ -189,12 +213,14 @@
     border: 1px solid #3a3a48;
     background: #24242d;
     color: #d3d3e2;
-    font: 600 12px/1 system-ui, sans-serif;
+    font:
+      600 12px/1 system-ui,
+      sans-serif;
     cursor: pointer;
     transition:
-      background 120ms ease,
-      border-color 120ms ease,
-      color 120ms ease;
+      background var(--duration-instant) var(--ease-standard),
+      border-color var(--duration-instant) var(--ease-standard),
+      color var(--duration-instant) var(--ease-standard);
   }
   .btn :global(i) {
     font-size: 13px;
@@ -286,7 +312,9 @@
     border-radius: 4px;
     background: #2a2a34;
     color: #cfcfe0;
-    font: 600 10px/1.6 ui-monospace, monospace;
+    font:
+      600 10px/1.6 ui-monospace,
+      monospace;
   }
 
   @media print {

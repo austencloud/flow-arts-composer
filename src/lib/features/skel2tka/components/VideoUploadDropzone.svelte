@@ -70,7 +70,9 @@
   ondragleave={handleDragLeave}
   ondrop={handleDrop}
   onclick={openFilePicker}
-  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') openFilePicker(); }}
+  onkeydown={(e) => {
+    if (e.key === "Enter" || e.key === " ") openFilePicker();
+  }}
 >
   <input
     bind:this={fileInputRef}
@@ -84,11 +86,11 @@
     <i class="fas fa-check-circle file-icon"></i>
     <span class="file-name">{selectedFile.name}</span>
     <span class="file-size">{formatFileSize(selectedFile.size)}</span>
-    <span class="hint">{t('skel2tka_drop_change')}</span>
+    <span class="hint">{t("skel2tka_drop_change")}</span>
   {:else}
     <i class="fas fa-cloud-arrow-up upload-icon"></i>
-    <span class="primary-text">{t('skel2tka_drop_video')}</span>
-    <span class="hint">{t('skel2tka_drop_hint')}</span>
+    <span class="primary-text">{t("skel2tka_drop_video")}</span>
+    <span class="hint">{t("skel2tka_drop_hint")}</span>
   {/if}
 </div>
 
@@ -104,7 +106,9 @@
     border-radius: 12px;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
+    transition:
+      border-color var(--duration-normal),
+      background var(--duration-normal);
     min-height: 140px;
   }
 

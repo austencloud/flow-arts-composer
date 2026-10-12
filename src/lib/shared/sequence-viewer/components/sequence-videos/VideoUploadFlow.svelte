@@ -159,8 +159,9 @@
       console.warn("Could not resolve the sequence revision:", error);
     }
     if (visibility === "public" && !sequenceRevision) {
-      uploadError =
-        t("viewer_detail_publish_this_sequence_before_sharing_a_public_performance_of_it");
+      uploadError = t(
+        "viewer_detail_publish_this_sequence_before_sharing_a_public_performance_of_it"
+      );
       return;
     }
 
@@ -226,7 +227,10 @@
       onUploaded(video);
     } catch (cause) {
       console.error("Upload failed:", cause);
-      uploadError = cause instanceof Error ? cause.message : t("viewer_detail_upload_failed");
+      uploadError =
+        cause instanceof Error
+          ? cause.message
+          : t("viewer_detail_upload_failed");
       toast.error(t("viewer_detail_video_upload_failed_please_try_again"));
       hapticService?.trigger("error");
       // Back to the preview so the same file can be sent again.
@@ -277,9 +281,12 @@
       <div class="state-icon">
         <i class="fas fa-bookmark" aria-hidden="true"></i>
       </div>
-      <span class="state-title">{t("viewer_detail_save_to_library_first")}</span>
+      <span class="state-title">{t("viewer_detail_save_to_library_first")}</span
+      >
       <span class="state-hint">
-        {t("viewer_detail_videos_are_attached_to_saved_sequences_save_this_one_to_your_library_then_you_can_upload_a_performance_video")}
+        {t(
+          "viewer_detail_videos_are_attached_to_saved_sequences_save_this_one_to_your_library_then_you_can_upload_a_performance_video"
+        )}
       </span>
       {#if onSaveFirst}
         <button
@@ -315,7 +322,9 @@
           ? t("viewer_detail_add_another_performance")
           : t("viewer_detail_upload_your_first_performance")}
       </span>
-      <span class="drop-hint">{t("viewer_detail_mp4_webm_mov_up_to_500mb")}</span>
+      <span class="drop-hint"
+        >{t("viewer_detail_mp4_webm_mov_up_to_500mb")}</span
+      >
     </button>
   {:else if flowState === "preview"}
     <div class="preview-stage">
@@ -466,7 +475,9 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -509,7 +520,9 @@
     border: 2px dashed var(--theme-stroke, rgba(255, 255, 255, 0.15));
     border-radius: 1rem;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -644,7 +657,7 @@
     height: 100%;
     background: var(--theme-accent, #6366f1);
     border-radius: 0.1875rem;
-    transition: width 0.2s ease;
+    transition: width var(--duration-normal) var(--ease-standard);
   }
 
   .error-banner {

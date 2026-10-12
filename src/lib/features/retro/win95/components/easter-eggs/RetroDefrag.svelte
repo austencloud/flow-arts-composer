@@ -29,8 +29,18 @@
 
   /** TKA letter labels sprinkled onto some blocks */
   const TKA_LABELS: string[] = [
-    "A", "B", "\u03A3", "\u03A6", "W", "\u03C4", "\u0393",
-    "\u0398", "\u039B", "\u03A8", "\u03A0", "\u03A9",
+    "A",
+    "B",
+    "\u03A3",
+    "\u03A6",
+    "W",
+    "\u03C4",
+    "\u0393",
+    "\u0398",
+    "\u039B",
+    "\u03A8",
+    "\u03A0",
+    "\u03A9",
   ];
 
   const STATUS_MESSAGES: string[] = [
@@ -97,7 +107,7 @@
         type = "system";
       } else if (rand < 0.03) {
         type = "bad";
-      } else if (rand < 0.30) {
+      } else if (rand < 0.3) {
         type = "free";
       } else {
         type = "used";
@@ -180,7 +190,8 @@
     if (optimizedIndices.length > 10) {
       /* Convert some back to "used" and scatter them */
       for (let n = 0; n < 5; n++) {
-        const idx = optimizedIndices[Math.floor(Math.random() * optimizedIndices.length)];
+        const idx =
+          optimizedIndices[Math.floor(Math.random() * optimizedIndices.length)];
         if (idx !== undefined && idx >= 8) {
           blocks[idx] = { type: "used", label: blocks[idx]!.label };
         }
@@ -225,20 +236,9 @@
 <div class="defrag-shell">
   <!-- Toolbar -->
   <div class="defrag-toolbar">
-    <RetroButton
-      label="Start"
-      onclick={handleStart}
-      disabled={running}
-    />
-    <RetroButton
-      label="Stop"
-      onclick={handleStop}
-      disabled={!running}
-    />
-    <RetroButton
-      label="Legend"
-      onclick={handleLegend}
-    />
+    <RetroButton label="Start" onclick={handleStart} disabled={running} />
+    <RetroButton label="Stop" onclick={handleStop} disabled={!running} />
+    <RetroButton label="Legend" onclick={handleLegend} />
   </div>
 
   <!-- Main content area -->
@@ -256,7 +256,9 @@
             class="defrag-block"
             class:defrag-block-moving={block.type === "moving"}
             style="background: {BLOCK_COLORS[block.type]};"
-            title="Cluster {i}: {block.type}{block.label ? ` [${block.label}]` : ''}"
+            title="Cluster {i}: {block.type}{block.label
+              ? ` [${block.label}]`
+              : ''}"
           >
             {#if block.label}
               <span class="defrag-label">{block.label}</span>
@@ -301,7 +303,12 @@
     flex-direction: column;
     height: 100%;
     background: var(--retro-button-face, #c0c0c0);
-    font-family: var(--retro-font-family, "Microsoft Sans Serif", Arial, sans-serif);
+    font-family: var(
+      --retro-font-family,
+      "Microsoft Sans Serif",
+      Arial,
+      sans-serif
+    );
     font-size: var(--retro-font-size, 11px);
     color: var(--retro-black, #000);
   }
@@ -351,13 +358,19 @@
   }
 
   .defrag-block-moving {
-    animation: defrag-flash 150ms ease-in-out;
+    animation: defrag-flash var(--duration-fast) var(--ease-standard);
   }
 
   @keyframes defrag-flash {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+    100% {
+      opacity: 1;
+    }
   }
 
   .defrag-label {
@@ -414,5 +427,4 @@
   .defrag-statusbar {
     flex-shrink: 0;
   }
-
 </style>

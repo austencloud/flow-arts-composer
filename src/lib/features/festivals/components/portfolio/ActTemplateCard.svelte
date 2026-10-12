@@ -12,26 +12,26 @@
 
   const PROP_ICONS: Record<string, string> = {
     "double-staves": "fa-grip-lines-vertical",
-    "staves": "fa-grip-lines-vertical",
-    "staff": "fa-grip-lines-vertical",
+    staves: "fa-grip-lines-vertical",
+    staff: "fa-grip-lines-vertical",
     "double staves": "fa-grip-lines-vertical",
-    "clubs": "fa-baseball-bat-ball",
-    "club": "fa-baseball-bat-ball",
+    clubs: "fa-baseball-bat-ball",
+    club: "fa-baseball-bat-ball",
     "mixed-static-props": "fa-shapes",
     "mixed props": "fa-shapes",
-    "mixed": "fa-shapes",
+    mixed: "fa-shapes",
     "contact-ball": "fa-circle",
-    "contact": "fa-circle",
-    "cj": "fa-circle",
+    contact: "fa-circle",
+    cj: "fa-circle",
     "crystal ball": "fa-circle",
-    "balloons": "fa-wind",
-    "balloon": "fa-wind",
-    "poi": "fa-yin-yang",
-    "fans": "fa-fan",
-    "fan": "fa-fan",
-    "buugeng": "fa-infinity",
+    balloons: "fa-wind",
+    balloon: "fa-wind",
+    poi: "fa-yin-yang",
+    fans: "fa-fan",
+    fan: "fa-fan",
+    buugeng: "fa-infinity",
     "s-staff": "fa-infinity",
-    "led": "fa-lightbulb",
+    led: "fa-lightbulb",
   };
 
   function getPropIcon(prop: string): string {
@@ -65,7 +65,7 @@
     const seed = patternSeed;
     const count = (seed % 2) + 2;
     return Array.from({ length: count }, (_, i) => ({
-      size: 30 + (((seed >> (i * 3)) % 7) * 10),
+      size: 30 + ((seed >> (i * 3)) % 7) * 10,
       top: ((seed >> (i * 4 + 1)) % 80) - 10,
       left: ((seed >> (i * 5 + 2)) % 90) - 5,
     }));
@@ -75,22 +75,26 @@
     const seed = patternSeed;
     const count = (seed % 2) + 2;
     return Array.from({ length: count }, (_, i) => ({
-      width: 50 + (((seed >> (i * 3 + 7)) % 7) * 12),
-      top: 20 + (((seed >> (i * 4 + 8)) % 6) * 12),
+      width: 50 + ((seed >> (i * 3 + 7)) % 7) * 12,
+      top: 20 + ((seed >> (i * 4 + 8)) % 6) * 12,
       left: ((seed >> (i * 5 + 9)) % 80) - 5,
-      angle: -40 + (((seed >> (i * 3 + 10)) % 9) * 10),
+      angle: -40 + ((seed >> (i * 3 + 10)) % 9) * 10,
     }));
   });
 
   const performerLabel = $derived(
-    act.performerCount === 1 ? "Solo" : act.performerCount === 2 ? "Duo" : `${act.performerCount} performers`
+    act.performerCount === 1
+      ? "Solo"
+      : act.performerCount === 2
+        ? "Duo"
+        : `${act.performerCount} performers`
   );
 </script>
 
 <button
   class="act-card"
   style="--act-color: {ACT_ACCENT}"
-  onclick={onclick}
+  {onclick}
   type="button"
 >
   <div class="act-accent"></div>
@@ -155,9 +159,10 @@
     border-radius: var(--radius-lg, 12px);
     overflow: hidden;
     cursor: pointer;
-    transition: border-color var(--transition-fast, 0.15s),
-      transform var(--transition-fast, 0.15s),
-      box-shadow var(--transition-fast, 0.15s);
+    transition:
+      border-color var(--transition-fast, var(--duration-fast)),
+      transform var(--transition-fast, var(--duration-fast)),
+      box-shadow var(--transition-fast, var(--duration-fast));
     position: relative;
     text-align: left;
   }
@@ -175,7 +180,11 @@
 
   .act-accent {
     height: 3px;
-    background: linear-gradient(90deg, var(--act-color), color-mix(in srgb, var(--act-color) 50%, transparent));
+    background: linear-gradient(
+      90deg,
+      var(--act-color),
+      color-mix(in srgb, var(--act-color) 50%, transparent)
+    );
   }
 
   .card-hero {
@@ -188,7 +197,11 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at 30% 20%, var(--act-color), transparent 70%);
+    background: radial-gradient(
+      ellipse at 30% 20%,
+      var(--act-color),
+      transparent 70%
+    );
     opacity: 0.12;
   }
 
@@ -199,7 +212,11 @@
     left: 0;
     right: 0;
     height: 70%;
-    background: linear-gradient(to top, var(--theme-card-bg, rgba(13, 13, 26, 0.95)), transparent);
+    background: linear-gradient(
+      to top,
+      var(--theme-card-bg, rgba(13, 13, 26, 0.95)),
+      transparent
+    );
   }
 
   .card-hero-image {

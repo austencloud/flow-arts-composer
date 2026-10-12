@@ -275,7 +275,10 @@
     font-size: var(--font-size-sm, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
   }
 
   .export-btn:hover:not(:disabled) {

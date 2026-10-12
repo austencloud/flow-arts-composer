@@ -10,6 +10,7 @@ Can operate as stepper (inline) or panel opener (click to select)
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
   import StepperCard from "#lib/shared/components/stepper-card/StepperCard.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   type LengthCardMode = "stepper" | "panel-opener";
 
@@ -48,7 +49,7 @@ Can operate as stepper (inline) or panel opener (click to select)
     if (mode === "panel-opener" && cardElement) {
       return attachRipple(cardElement, {
         color: "rgba(255, 255, 255, 0.25)",
-        duration: 350,
+        duration: DURATION.dramatic,
         opacity: 0.15,
       });
     }
@@ -192,12 +193,12 @@ Can operate as stepper (inline) or panel opener (click to select)
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
 
     transition:
-      box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow var(--duration-emphasis) var(--ease-standard),
+      transform var(--duration-emphasis) var(--ease-standard);
     overflow: visible;
     cursor: pointer;
 
-    animation: cardEnter var(--duration-dramatic) ease-out;
+    animation: cardEnter var(--duration-dramatic) var(--ease-standard-out);
   }
 
   .length-card.disabled {
@@ -239,7 +240,7 @@ Can operate as stepper (inline) or panel opener (click to select)
 
   .length-card:active {
     transform: scale(0.97);
-    transition: transform var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .length-card:focus-visible {
@@ -296,7 +297,7 @@ Can operate as stepper (inline) or panel opener (click to select)
     height: 20px;
     color: var(--theme-text-dim);
     opacity: 0;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
     z-index: 2;
   }
 

@@ -357,9 +357,9 @@
     /* Width too, not just position: when the option count changes the segments
        resize, and an un-animated indicator would snap while they glide. */
     transition:
-      left var(--duration-normal, 200ms) cubic-bezier(0.22, 1, 0.36, 1),
-      width var(--duration-normal, 200ms) cubic-bezier(0.22, 1, 0.36, 1),
-      background-color var(--duration-normal, 200ms) ease;
+      left var(--duration-normal) var(--ease-out),
+      width var(--duration-normal) var(--ease-out),
+      background-color var(--duration-normal) var(--ease-standard);
     z-index: 0;
   }
 
@@ -441,11 +441,11 @@
     top: calc(3px + (100% - 6px) / var(--rows) * var(--row));
     height: calc((100% - 6px) / var(--rows) - 2px);
     transition:
-      left var(--duration-normal, 200ms) cubic-bezier(0.22, 1, 0.36, 1),
-      top var(--duration-normal, 200ms) cubic-bezier(0.22, 1, 0.36, 1),
-      width var(--duration-normal, 200ms) cubic-bezier(0.22, 1, 0.36, 1),
-      height var(--duration-normal, 200ms) cubic-bezier(0.22, 1, 0.36, 1),
-      background-color var(--duration-normal, 200ms) ease;
+      left var(--duration-normal) var(--ease-out),
+      top var(--duration-normal) var(--ease-out),
+      width var(--duration-normal) var(--ease-out),
+      height var(--duration-normal) var(--ease-out),
+      background-color var(--duration-normal) var(--ease-standard);
   }
 
   .grid.compact .indicator {

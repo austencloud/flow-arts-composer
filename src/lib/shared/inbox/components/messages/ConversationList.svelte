@@ -54,7 +54,11 @@
   }
 </script>
 
-<div class="conversation-list" role="region" aria-label={t("inbox_ui_conversations")}>
+<div
+  class="conversation-list"
+  role="region"
+  aria-label={t("inbox_ui_conversations")}
+>
   <!-- Mark all read appears when there are unread messages -->
   {#if conversations.length > 0 && hasUnread}
     <div class="header-actions">
@@ -79,7 +83,11 @@
   {:else if conversations.length === 0}
     <EmptyConversations />
   {:else}
-    <div class="conversations" role="list" aria-label={t("inbox_ui_conversation_list")}>
+    <div
+      class="conversations"
+      role="list"
+      aria-label={t("inbox_ui_conversation_list")}
+    >
       {#each conversations as conversation, index (conversation.id)}
         <div
           class="conversation-wrapper"
@@ -124,8 +132,8 @@
     font-size: var(--font-size-sm);
     cursor: pointer;
     transition:
-      background 0.2s ease,
-      opacity 0.2s ease;
+      background var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .mark-all-read:hover:not(:disabled) {
@@ -149,8 +157,9 @@
   }
 
   .conversation-wrapper {
-    animation: slideInStagger var(--duration-emphasis) ease-out backwards;
-    animation-delay: calc(var(--stagger-index) * 30ms);
+    animation: slideInStagger var(--duration-emphasis) var(--ease-standard-out)
+      backwards;
+    animation-delay: calc(var(--stagger-index) * var(--stagger-micro));
   }
 
   @keyframes slideInStagger {

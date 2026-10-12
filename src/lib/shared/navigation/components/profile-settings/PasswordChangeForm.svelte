@@ -9,10 +9,13 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
-  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import {
+    Crossfade,
+    growFade,
+    opaqueFade,
+  } from "#lib/shared/transitions/motion.js";
   import { getProfileSettingsContext } from "../../state/profile-settings-context.svelte";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
-  import { slide, fade } from "svelte/transition";
 
   const ctx = getProfileSettingsContext();
 
@@ -149,13 +152,20 @@
     {:else}
       <div class="password-form" class:success={showSuccess}>
         {#if showSuccess}
-          <div class="success-message" in:fade={{ duration: 200 }}>
+          <div
+            class="success-message"
+            in:opaqueFade={{ duration: DURATION.normal }}
+          >
             <i class="fas fa-check-circle" aria-hidden="true"></i>
             {t("nav_ui_password_updated")}
           </div>
         {:else}
           {#if errorMessage}
-            <div class="error-banner" role="alert" in:slide={{ duration: 200 }}>
+            <div
+              class="error-banner"
+              role="alert"
+              in:growFade={{ duration: DURATION.normal }}
+            >
               <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
               {errorMessage}
             </div>
@@ -287,9 +297,11 @@
     opacity: 0;
     transform: translateY(12px);
     transition:
-      opacity 250ms cubic-bezier(0.22, 1, 0.36, 1),
-      transform 250ms cubic-bezier(0.22, 1, 0.36, 1);
-    transition-delay: calc(var(--stagger, 0) * 80ms + 100ms);
+      opacity var(--duration-normal) var(--ease-out),
+      transform var(--duration-normal) var(--ease-out);
+    transition-delay: calc(
+      var(--stagger, 0) * var(--stagger-relaxed) + var(--duration-instant)
+    );
   }
 
   .stagger-field.revealed {
@@ -320,7 +332,7 @@
     border: 1px solid var(--theme-stroke);
     border-radius: 12px;
     padding: 20px;
-    transition: border-color 300ms ease;
+    transition: border-color var(--duration-emphasis) var(--ease-standard);
   }
 
   .password-form.success {
@@ -351,7 +363,9 @@
     border-radius: 8px;
     color: var(--theme-text);
     font-size: var(--font-size-sm);
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .input:focus {
@@ -390,7 +404,10 @@
     border-radius: 6px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .toggle-visibility:hover {
@@ -462,8 +479,8 @@
     height: 100%;
     border-radius: 2px;
     transition:
-      width 300ms ease,
-      background 300ms ease;
+      width var(--duration-emphasis) var(--ease-standard),
+      background var(--duration-emphasis) var(--ease-standard);
   }
 
   .strength-fill.strength--weak {
@@ -521,7 +538,13 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      filter var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     border: none;
   }
 

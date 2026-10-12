@@ -75,7 +75,8 @@
     {/if}
   </div>
 
-  <button aria-label="Delete conversation"
+  <button
+    aria-label="Delete conversation"
     class="delete-btn"
     onclick={handleDeleteClick}
     title="Delete conversation"
@@ -94,7 +95,10 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 8px;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .history-item:hover {
@@ -109,7 +113,11 @@
 
   .history-item.active {
     border-color: var(--theme-accent, #6366f1);
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 10%,
+      transparent
+    );
   }
 
   .item-content {
@@ -163,7 +171,10 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.4));
     cursor: pointer;
     opacity: 0;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .history-item:hover .delete-btn,
@@ -172,7 +183,11 @@
   }
 
   .delete-btn:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
   }
 

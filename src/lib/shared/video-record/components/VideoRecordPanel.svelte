@@ -14,10 +14,7 @@
     type CameraAcquisition,
   } from "#lib/shared/train/services/camera-manager.js";
   import { getVideoRecorder } from "../services/video-recorder";
-  import type {
-    RecordingProgress,
-    RecordingResult,
-  } from "../services/types";
+  import type { RecordingProgress, RecordingResult } from "../services/types";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { createVideoRecordSettings } from "../state/video-record-settings.svelte";
   import GridPreview from "./GridPreview.svelte";
@@ -398,11 +395,7 @@
           <div class="reference-wrapper">
             {#if activeReferenceView === "animation"}
               {#await import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte") then mod}
-                <mod.default
-                  {sequence}
-                  autoPlay={true}
-                  showControls={false}
-                />
+                <mod.default {sequence} autoPlay={true} showControls={false} />
               {/await}
             {:else if activeReferenceView === "grid"}
               <GridPreview
@@ -578,7 +571,10 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-base);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .settings-fab:hover {
@@ -742,7 +738,13 @@
     border-radius: 50%;
     font-size: var(--font-size-base);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      border-width var(--duration-normal) var(--ease-standard);
   }
 
   .control-btn.primary {
@@ -809,7 +811,10 @@
     border: 3px solid var(--theme-stroke-strong);
     border-radius: 50%;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .record-btn:hover {
@@ -826,7 +831,9 @@
     height: 32px;
     background: var(--semantic-error, var(--semantic-error));
     border-radius: 50%;
-    transition: all var(--duration-normal) ease;
+    transition:
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .record-btn:hover .record-dot {
@@ -880,7 +887,7 @@
     color: var(--theme-text, white);
     font-size: var(--font-size-sm);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .retry-btn:hover {

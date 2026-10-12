@@ -18,9 +18,7 @@
     danger?: boolean;
   }
 
-  const {
-    actions = [],
-  } = $props<{
+  const { actions = [] } = $props<{
     actions: ActionItem[];
   }>();
 
@@ -55,7 +53,8 @@
 </script>
 
 <div class="action-menu" bind:this={menuRef}>
-  <button aria-label="More actions"
+  <button
+    aria-label="More actions"
     class="menu-trigger"
     class:active={isOpen}
     onclick={toggle}
@@ -69,7 +68,8 @@
   {#if isOpen}
     <div class="menu-dropdown" role="menu">
       {#each actions as action (action.id)}
-        <button aria-label={action.label}
+        <button
+          aria-label={action.label}
           class="menu-item"
           class:active={action.active}
           class:danger={action.danger}
@@ -109,7 +109,11 @@
     color: var(--theme-text, #ffffff);
     font-size: 16px;
     cursor: pointer;
-    transition: all var(--duration-normal, 0.3s) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
     box-shadow: var(--shadow-sm);
   }
@@ -122,12 +126,16 @@
 
   .menu-trigger:active {
     transform: scale(0.95);
-    transition: transform 0.1s ease;
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .menu-trigger.active {
     background: var(--theme-accent, rgba(99, 102, 241, 0.9));
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 30%,
+      transparent
+    );
   }
 
   .menu-trigger:focus-visible {
@@ -146,7 +154,7 @@
     box-shadow: var(--shadow-lg);
     z-index: var(--z-dropdown);
     overflow: hidden;
-    animation: slideDown var(--duration-normal, 0.3s) ease;
+    animation: slideDown var(--duration-normal) var(--ease-standard);
     padding: 6px;
   }
 
@@ -174,7 +182,11 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal, 0.3s) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
     text-align: left;
   }
 
@@ -196,7 +208,11 @@
   }
 
   .menu-item.danger:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
   }
 
   .menu-item i:first-child {

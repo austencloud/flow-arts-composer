@@ -24,7 +24,10 @@
     const portfolio = festivalState.portfolio;
     if (!uid || !portfolio) return;
     const credits = portfolio.performanceCredits.filter((_, i) => i !== index);
-    festivalState.savePortfolio(uid, { ...portfolio, performanceCredits: credits });
+    festivalState.savePortfolio(uid, {
+      ...portfolio,
+      performanceCredits: credits,
+    });
   }
 
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -99,22 +102,44 @@
   function startFieldEdit(field: string) {
     editingField = field;
     switch (field) {
-      case "website": editingFieldOriginal = slWebsite; break;
-      case "instagram": editingFieldOriginal = slInstagram; break;
-      case "facebook": editingFieldOriginal = slFacebook; break;
-      case "youtube": editingFieldOriginal = slYoutube; break;
-      case "tiktok": editingFieldOriginal = slTiktok; break;
-      case "homeCity": editingFieldOriginal = aHomeCity; break;
-      case "homeCountry": editingFieldOriginal = aHomeCountry; break;
-      case "yearsTeaching": editingFieldOriginal = aYearsTeaching; break;
-      case "yearsPerforming": editingFieldOriginal = aYearsPerforming; break;
-      case "insuranceProvider": editingFieldOriginal = aInsuranceProvider; break;
+      case "website":
+        editingFieldOriginal = slWebsite;
+        break;
+      case "instagram":
+        editingFieldOriginal = slInstagram;
+        break;
+      case "facebook":
+        editingFieldOriginal = slFacebook;
+        break;
+      case "youtube":
+        editingFieldOriginal = slYoutube;
+        break;
+      case "tiktok":
+        editingFieldOriginal = slTiktok;
+        break;
+      case "homeCity":
+        editingFieldOriginal = aHomeCity;
+        break;
+      case "homeCountry":
+        editingFieldOriginal = aHomeCountry;
+        break;
+      case "yearsTeaching":
+        editingFieldOriginal = aYearsTeaching;
+        break;
+      case "yearsPerforming":
+        editingFieldOriginal = aYearsPerforming;
+        break;
+      case "insuranceProvider":
+        editingFieldOriginal = aInsuranceProvider;
+        break;
     }
   }
 
   function finishFieldEdit(field: string) {
     editingField = null;
-    if (["website", "instagram", "facebook", "youtube", "tiktok"].includes(field)) {
+    if (
+      ["website", "instagram", "facebook", "youtube", "tiktok"].includes(field)
+    ) {
       handleSocialChange();
     } else {
       handleAboutChange();
@@ -123,16 +148,36 @@
 
   function cancelFieldEdit(field: string) {
     switch (field) {
-      case "website": slWebsite = editingFieldOriginal as string; break;
-      case "instagram": slInstagram = editingFieldOriginal as string; break;
-      case "facebook": slFacebook = editingFieldOriginal as string; break;
-      case "youtube": slYoutube = editingFieldOriginal as string; break;
-      case "tiktok": slTiktok = editingFieldOriginal as string; break;
-      case "homeCity": aHomeCity = editingFieldOriginal as string; break;
-      case "homeCountry": aHomeCountry = editingFieldOriginal as string; break;
-      case "yearsTeaching": aYearsTeaching = editingFieldOriginal as number; break;
-      case "yearsPerforming": aYearsPerforming = editingFieldOriginal as number; break;
-      case "insuranceProvider": aInsuranceProvider = editingFieldOriginal as string; break;
+      case "website":
+        slWebsite = editingFieldOriginal as string;
+        break;
+      case "instagram":
+        slInstagram = editingFieldOriginal as string;
+        break;
+      case "facebook":
+        slFacebook = editingFieldOriginal as string;
+        break;
+      case "youtube":
+        slYoutube = editingFieldOriginal as string;
+        break;
+      case "tiktok":
+        slTiktok = editingFieldOriginal as string;
+        break;
+      case "homeCity":
+        aHomeCity = editingFieldOriginal as string;
+        break;
+      case "homeCountry":
+        aHomeCountry = editingFieldOriginal as string;
+        break;
+      case "yearsTeaching":
+        aYearsTeaching = editingFieldOriginal as number;
+        break;
+      case "yearsPerforming":
+        aYearsPerforming = editingFieldOriginal as number;
+        break;
+      case "insuranceProvider":
+        aInsuranceProvider = editingFieldOriginal as string;
+        break;
     }
     editingField = null;
   }
@@ -148,43 +193,75 @@
 
   function getSocialValue(key: string): string {
     switch (key) {
-      case "website": return slWebsite;
-      case "instagram": return slInstagram;
-      case "facebook": return slFacebook;
-      case "youtube": return slYoutube;
-      case "tiktok": return slTiktok;
-      default: return "";
+      case "website":
+        return slWebsite;
+      case "instagram":
+        return slInstagram;
+      case "facebook":
+        return slFacebook;
+      case "youtube":
+        return slYoutube;
+      case "tiktok":
+        return slTiktok;
+      default:
+        return "";
     }
   }
 
   function setSocialValue(key: string, value: string) {
     switch (key) {
-      case "website": slWebsite = value; break;
-      case "instagram": slInstagram = value; break;
-      case "facebook": slFacebook = value; break;
-      case "youtube": slYoutube = value; break;
-      case "tiktok": slTiktok = value; break;
+      case "website":
+        slWebsite = value;
+        break;
+      case "instagram":
+        slInstagram = value;
+        break;
+      case "facebook":
+        slFacebook = value;
+        break;
+      case "youtube":
+        slYoutube = value;
+        break;
+      case "tiktok":
+        slTiktok = value;
+        break;
     }
   }
 
   function getAboutValue(key: string): string | number {
     switch (key) {
-      case "homeCity": return aHomeCity;
-      case "homeCountry": return aHomeCountry;
-      case "yearsTeaching": return aYearsTeaching;
-      case "yearsPerforming": return aYearsPerforming;
-      case "insuranceProvider": return aInsuranceProvider;
-      default: return "";
+      case "homeCity":
+        return aHomeCity;
+      case "homeCountry":
+        return aHomeCountry;
+      case "yearsTeaching":
+        return aYearsTeaching;
+      case "yearsPerforming":
+        return aYearsPerforming;
+      case "insuranceProvider":
+        return aInsuranceProvider;
+      default:
+        return "";
     }
   }
 
   function setAboutValue(key: string, value: string) {
     switch (key) {
-      case "homeCity": aHomeCity = value; break;
-      case "homeCountry": aHomeCountry = value; break;
-      case "yearsTeaching": aYearsTeaching = Number(value) || 0; break;
-      case "yearsPerforming": aYearsPerforming = Number(value) || 0; break;
-      case "insuranceProvider": aInsuranceProvider = value; break;
+      case "homeCity":
+        aHomeCity = value;
+        break;
+      case "homeCountry":
+        aHomeCountry = value;
+        break;
+      case "yearsTeaching":
+        aYearsTeaching = Number(value) || 0;
+        break;
+      case "yearsPerforming":
+        aYearsPerforming = Number(value) || 0;
+        break;
+      case "insuranceProvider":
+        aInsuranceProvider = value;
+        break;
     }
   }
 </script>
@@ -192,7 +269,11 @@
 <section class="section-card">
   <div class="section-header">
     <h3 class="section-title">
-      <i class="fas fa-user" aria-hidden="true" style="margin-right: 6px; opacity: 0.5;"></i>
+      <i
+        class="fas fa-user"
+        aria-hidden="true"
+        style="margin-right: 6px; opacity: 0.5;"
+      ></i>
       Profile
     </h3>
   </div>
@@ -201,23 +282,18 @@
     <!-- Social Links column -->
     <div class="profile-column">
       <div class="profile-column-title">Social Links</div>
-      {#each [
-        { key: "website", icon: "fa-globe", iconClass: "fas", placeholder: "yourwebsite.com" },
-        { key: "instagram", icon: "fa-instagram", iconClass: "fab", placeholder: "@handle" },
-        { key: "facebook", icon: "fa-facebook", iconClass: "fab", placeholder: "facebook.com/page" },
-        { key: "youtube", icon: "fa-youtube", iconClass: "fab", placeholder: "youtube.com/@channel" },
-        { key: "tiktok", icon: "fa-tiktok", iconClass: "fab", placeholder: "@handle" },
-      ] as link (link.key)}
+      {#each [{ key: "website", icon: "fa-globe", iconClass: "fas", placeholder: "yourwebsite.com" }, { key: "instagram", icon: "fa-instagram", iconClass: "fab", placeholder: "@handle" }, { key: "facebook", icon: "fa-facebook", iconClass: "fab", placeholder: "facebook.com/page" }, { key: "youtube", icon: "fa-youtube", iconClass: "fab", placeholder: "youtube.com/@channel" }, { key: "tiktok", icon: "fa-tiktok", iconClass: "fab", placeholder: "@handle" }] as link (link.key)}
         <div
           class="social-row"
           onclick={() => editingField !== link.key && startFieldEdit(link.key)}
-          onkeydown={(e) => e.key === "Enter" && editingField !== link.key && startFieldEdit(link.key)}
+          onkeydown={(e) =>
+            e.key === "Enter" &&
+            editingField !== link.key &&
+            startFieldEdit(link.key)}
           role="button"
           tabindex="0"
         >
-          <i
-            class="{link.iconClass} {link.icon} social-icon"
-            aria-hidden="true"
+          <i class="{link.iconClass} {link.icon} social-icon" aria-hidden="true"
           ></i>
           {#if editingField === link.key}
             <!-- svelte-ignore a11y_autofocus -->
@@ -225,7 +301,8 @@
               class="social-edit-input"
               type="text"
               value={getSocialValue(link.key)}
-              oninput={(e) => setSocialValue(link.key, (e.target as HTMLInputElement).value)}
+              oninput={(e) =>
+                setSocialValue(link.key, (e.target as HTMLInputElement).value)}
               placeholder={link.placeholder}
               onblur={() => finishFieldEdit(link.key)}
               onkeydown={(e) => handleFieldKeydown(e, link.key)}
@@ -245,17 +322,15 @@
     <!-- About column -->
     <div class="profile-column">
       <div class="profile-column-title">About</div>
-      {#each [
-        { key: "homeCity", label: "City", type: "text", placeholder: "Chicago" },
-        { key: "homeCountry", label: "Country", type: "text", placeholder: "USA" },
-        { key: "yearsTeaching", label: "Years Teaching", type: "number", placeholder: "" },
-        { key: "yearsPerforming", label: "Years Performing", type: "number", placeholder: "" },
-        { key: "insuranceProvider", label: "Insurance", type: "text", placeholder: "e.g. Specialty Insurance" },
-      ] as field (field.key)}
+      {#each [{ key: "homeCity", label: "City", type: "text", placeholder: "Chicago" }, { key: "homeCountry", label: "Country", type: "text", placeholder: "USA" }, { key: "yearsTeaching", label: "Years Teaching", type: "number", placeholder: "" }, { key: "yearsPerforming", label: "Years Performing", type: "number", placeholder: "" }, { key: "insuranceProvider", label: "Insurance", type: "text", placeholder: "e.g. Specialty Insurance" }] as field (field.key)}
         <div
           class="about-row"
-          onclick={() => editingField !== field.key && startFieldEdit(field.key)}
-          onkeydown={(e) => e.key === "Enter" && editingField !== field.key && startFieldEdit(field.key)}
+          onclick={() =>
+            editingField !== field.key && startFieldEdit(field.key)}
+          onkeydown={(e) =>
+            e.key === "Enter" &&
+            editingField !== field.key &&
+            startFieldEdit(field.key)}
           role="button"
           tabindex="0"
         >
@@ -266,7 +341,8 @@
               class="social-edit-input"
               type={field.type}
               value={getAboutValue(field.key)}
-              oninput={(e) => setAboutValue(field.key, (e.target as HTMLInputElement).value)}
+              oninput={(e) =>
+                setAboutValue(field.key, (e.target as HTMLInputElement).value)}
               placeholder={field.placeholder}
               min={field.type === "number" ? "0" : undefined}
               onblur={() => finishFieldEdit(field.key)}
@@ -276,10 +352,7 @@
             />
           {:else}
             {@const val = getAboutValue(field.key)}
-            <span
-              class="about-value"
-              class:empty={!val && val !== 0}
-            >
+            <span class="about-value" class:empty={!val && val !== 0}>
               {#if val || val === 0}
                 {val}
               {:else}
@@ -346,7 +419,6 @@
     color: var(--theme-text, #ffffff);
   }
 
-
   .profile-layout {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -378,7 +450,6 @@
     min-width: 0;
     overflow: hidden;
   }
-
 
   .social-row {
     display: flex;
@@ -430,7 +501,6 @@
     outline: none;
   }
 
-
   .about-row {
     display: flex;
     justify-content: space-between;
@@ -465,7 +535,6 @@
     font-weight: 400;
   }
 
-
   .credits-flow {
     display: flex;
     flex-wrap: wrap;
@@ -478,8 +547,13 @@
     align-items: center;
     gap: 4px;
     padding: 4px 10px;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 10%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
     border-radius: 16px;
     font-size: var(--font-size-compact, 12px);
     color: var(--theme-text, #ffffff);
@@ -505,7 +579,9 @@
     cursor: pointer;
     border-radius: 50%;
     font-size: 10px;
-    transition: opacity 0.15s, color 0.15s;
+    transition:
+      opacity var(--duration-fast),
+      color var(--duration-fast);
   }
 
   .credit-pill:hover .credit-remove,

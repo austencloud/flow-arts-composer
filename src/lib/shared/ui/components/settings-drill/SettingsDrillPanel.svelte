@@ -41,8 +41,7 @@ named in .claude/rules/crossfade-primitive.md.
 </script>
 
 <script lang="ts">
-  import { fly } from "svelte/transition";
-  import { quintOut } from "svelte/easing";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { Snippet } from "svelte";
   import SettingsDrillRow from "./SettingsDrillRow.svelte";
@@ -107,10 +106,7 @@ named in .claude/rules/crossfade-primitive.md.
 <div class="drill-panel">
   {#key selected ?? "__root__"}
     <div class="stage">
-      <div
-        class="layer"
-        in:fly={{ x: enterX, duration: motionMs, easing: quintOut }}
-      >
+      <div class="layer" in:flyFade={{ x: enterX, duration: motionMs }}>
         {#if !activeItem}
           {#if listHeader}
             <div class="layer-header">{@render listHeader()}</div>
@@ -271,8 +267,8 @@ named in .claude/rules/crossfade-primitive.md.
     color: var(--theme-text, rgba(255, 255, 255, 0.9));
     cursor: pointer;
     transition:
-      background var(--duration-normal) ease,
-      border-color var(--duration-normal) ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .back-button:hover {

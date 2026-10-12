@@ -135,7 +135,10 @@
     min-height: var(--min-touch-target);
     border-radius: 10px;
     cursor: pointer;
-    transition: all var(--duration-fast, 100ms) ease;
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
     text-align: center;
     background: linear-gradient(
       135deg,
@@ -155,7 +158,7 @@
 
   .mobile-action-btn:active:not(:disabled) {
     transform: scale(0.95);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   .mobile-action-btn.unavailable {

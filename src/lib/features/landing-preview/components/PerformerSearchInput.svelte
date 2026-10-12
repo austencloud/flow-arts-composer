@@ -222,7 +222,9 @@
           />
           <div class="result-info">
             <span class="result-name">{user.displayName || "No name"}</span>
-            <span class="result-username">@{user.username || user.uid.slice(0, 8)}</span>
+            <span class="result-username"
+              >@{user.username || user.uid.slice(0, 8)}</span
+            >
           </div>
           <i class="fas fa-check result-action" aria-hidden="true"></i>
         </button>
@@ -285,13 +287,21 @@
     border-radius: 12px;
     color: var(--theme-text, #fff);
     font-size: var(--font-size-sm, 14px);
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard);
   }
 
   .search-input:focus {
     outline: none;
     border-color: var(--theme-accent, #6366f1);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
+    box-shadow: 0 0 0 3px
+      color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
   }
 
   .search-input::placeholder {
@@ -325,7 +335,15 @@
     border: none;
     border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.05));
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      max-height var(--duration-fast) var(--ease-standard);
     text-align: left;
     color: var(--theme-text, #fff);
   }
@@ -335,7 +353,11 @@
   }
 
   .result-item:hover {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 15%,
+      transparent
+    );
   }
 
   .result-item.external {
@@ -350,7 +372,14 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+    background: linear-gradient(
+      45deg,
+      #f09433,
+      #e6683c,
+      #dc2743,
+      #cc2366,
+      #bc1888
+    );
     display: flex;
     align-items: center;
     justify-content: center;
@@ -393,7 +422,7 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
     font-size: var(--font-size-sm, 14px);
     opacity: 0;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
     flex-shrink: 0;
   }
 

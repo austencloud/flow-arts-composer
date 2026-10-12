@@ -1027,7 +1027,13 @@
     padding: 6px 10px;
     border-radius: 8px;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     text-align: left;
     min-height: var(--min-touch-target, 44px);
     height: 100%;
@@ -1064,7 +1070,7 @@
 
   .grid-btn:active:not(:disabled) {
     transform: scale(0.97);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   .btn-icon {
@@ -1274,7 +1280,7 @@
     background-clip: text;
     -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 0 6px rgba(var(--btn-color), 0.35));
-    transition: filter 200ms ease;
+    transition: filter var(--duration-normal) var(--ease-standard);
   }
   .actions-container.desktop .grid-btn:hover:not(:disabled) .btn-icon i {
     filter: drop-shadow(0 0 10px rgba(var(--btn-color), 0.6)) brightness(1.05);

@@ -46,7 +46,9 @@
 
     const { stage, progress } = exportProgress;
     if (stage === "capturing") {
-      return t("export_capturing", { progress: Math.round(progress * 100).toString() });
+      return t("export_capturing", {
+        progress: Math.round(progress * 100).toString(),
+      });
     } else if (stage === "encoding") {
       return t("export_encoding");
     } else if (stage === "complete") {
@@ -126,7 +128,9 @@
             class:active={loopCount === count}
             onclick={() => handleRepetitionClick(count)}
             type="button"
-            aria-label={t("export_repetitions_aria", { count: count.toString() })}
+            aria-label={t("export_repetitions_aria", {
+              count: count.toString(),
+            })}
           >
             {count}x
           </button>
@@ -166,7 +170,12 @@
     border-radius: 12px;
     color: white;
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      filter var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     overflow: hidden;
     background: var(--theme-accent);
@@ -176,7 +185,7 @@
   .save-btn .main-icon {
     font-size: var(--font-size-lg);
     color: white;
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .btn-label {
@@ -252,9 +261,8 @@
   .progress-fill {
     height: 100%;
     background: var(--theme-accent, rgba(139, 92, 246, 1));
-    transition: width var(--duration-emphasis) ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
-
 
   .repetitions-row {
     display: flex;
@@ -307,7 +315,11 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -328,7 +340,6 @@
     border-color: var(--theme-accent);
     color: white;
   }
-
 
   @media (max-width: 360px) {
     .save-btn {
@@ -367,7 +378,6 @@
       padding: 8px 12px;
     }
   }
-
 
   @media (prefers-reduced-motion: reduce) {
     .save-btn,

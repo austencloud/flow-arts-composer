@@ -23,7 +23,7 @@
 
 <div class="sticky-cta">
   <div class="price-info">
-    <span class="price">{t('premium_sticky_price', { price, period })}</span>
+    <span class="price">{t("premium_sticky_price", { price, period })}</span>
   </div>
   <button
     class="cta-button"
@@ -33,7 +33,7 @@
     {#if isLoading}
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
     {:else}
-      <span>{t('premium_sticky_cta_button')}</span>
+      <span>{t("premium_sticky_cta_button")}</span>
     {/if}
   </button>
 </div>
@@ -90,7 +90,10 @@
     font-size: var(--font-size-base);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast, var(--duration-fast) ease);
+    transition:
+      transform
+        var(--transition-fast, var(--duration-fast) var(--ease-standard)),
+      opacity var(--transition-fast, var(--duration-fast) var(--ease-standard));
   }
 
   .cta-button:active:not(:disabled) {

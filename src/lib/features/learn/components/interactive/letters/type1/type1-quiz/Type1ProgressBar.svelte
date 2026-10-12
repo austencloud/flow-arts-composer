@@ -44,9 +44,13 @@ Type1ProgressBar - Progress indicator for Type 1 letter quiz
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--theme-accent, #22d3ee), var(--theme-accent, #06b6d4));
+    background: linear-gradient(
+      90deg,
+      var(--theme-accent, #22d3ee),
+      var(--theme-accent, #06b6d4)
+    );
     border-radius: 3px;
-    transition: width var(--duration-emphasis) ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
 
   .progress-text {

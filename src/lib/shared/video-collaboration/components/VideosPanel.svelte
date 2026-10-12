@@ -91,8 +91,17 @@
 <div class="videos-panel">
   <!-- Header -->
   <header class="panel-header">
-    <button class="back-button" onclick={handleBack} aria-label="Back to details">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <button
+      class="back-button"
+      onclick={handleBack}
+      aria-label="Back to details"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
         <path d="M19 12H5M12 19l-7-7 7-7" />
       </svg>
     </button>
@@ -240,7 +249,7 @@
     flex-direction: column;
     background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
     z-index: 10;
-    animation: slideIn var(--duration-normal) ease-out;
+    animation: slideIn var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes slideIn {
@@ -282,7 +291,9 @@
     border-radius: 50%;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .back-button svg {
@@ -307,7 +318,9 @@
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .record-button:hover {
@@ -387,7 +400,9 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .primary-button:hover {
@@ -411,7 +426,11 @@
     border-radius: 12px;
     overflow: hidden;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .video-card:hover {
@@ -471,7 +490,7 @@
     justify-content: center;
     background: rgba(0, 0, 0, 0.4);
     opacity: 0;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .play-overlay i {
@@ -555,7 +574,7 @@
     border: 1px solid var(--theme-stroke);
     border-radius: 16px;
     overflow: hidden;
-    animation: modalIn var(--duration-normal) ease-out;
+    animation: modalIn var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes modalIn {
@@ -609,7 +628,9 @@
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .video-player-invite:hover {
@@ -628,7 +649,9 @@
     border-radius: 8px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .video-player-close:hover {

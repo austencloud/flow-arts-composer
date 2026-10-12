@@ -30,7 +30,6 @@
   let showStats = $state(false);
 
   onMount(() => {
-
     // Update performance stats every 500ms
     perfInterval = window.setInterval(() => {
       if (detectionService?.getPerformanceStats) {
@@ -56,28 +55,34 @@
       class="status-item"
       class:active={isCameraReady}
       onclick={() => (showStats = !showStats)}
-      aria-label="{t('train_status_camera')}: {isCameraReady ? t('train_status_ready') : t('train_status_not_ready')}"
+      aria-label="{t('train_status_camera')}: {isCameraReady
+        ? t('train_status_ready')
+        : t('train_status_not_ready')}"
     >
       <div class="status-dot"></div>
-      <span class="status-label">{t('train_status_camera')}</span>
+      <span class="status-label">{t("train_status_camera")}</span>
     </button>
     <button
       class="status-item"
       class:active={isDetectionReady}
       onclick={() => (showStats = !showStats)}
-      aria-label="{t('train_status_tracking')}: {isDetectionReady ? t('train_status_ready') : t('train_status_not_ready')}"
+      aria-label="{t('train_status_tracking')}: {isDetectionReady
+        ? t('train_status_ready')
+        : t('train_status_not_ready')}"
     >
       <div class="status-dot"></div>
-      <span class="status-label">{t('train_status_tracking')}</span>
+      <span class="status-label">{t("train_status_tracking")}</span>
     </button>
     <button
       class="status-item"
       class:active={isDetectionActive}
       onclick={() => (showStats = !showStats)}
-      aria-label="{t('train_status_active')}: {isDetectionActive ? t('train_status_active') : t('train_status_inactive')}"
+      aria-label="{t('train_status_active')}: {isDetectionActive
+        ? t('train_status_active')
+        : t('train_status_inactive')}"
     >
       <div class="status-dot"></div>
-      <span class="status-label">{t('train_status_active')}</span>
+      <span class="status-label">{t("train_status_active")}</span>
     </button>
   </div>
 
@@ -85,13 +90,13 @@
   {#if showStats && isDetectionActive && fps > 0}
     <div class="performance-stats">
       <div class="stat-row">
-        <span class="stat-label">{t('train_status_fps')}:</span>
+        <span class="stat-label">{t("train_status_fps")}:</span>
         <span class="stat-value" class:warn={fps < 20} class:error={fps < 10}
           >{fps}</span
         >
       </div>
       <div class="stat-row">
-        <span class="stat-label">{t('train_status_frame')}:</span>
+        <span class="stat-label">{t("train_status_frame")}:</span>
         <span
           class="stat-value"
           class:warn={avgFrameTime > 50}
@@ -99,7 +104,7 @@
         >
       </div>
       <div class="stat-row">
-        <span class="stat-label">{t('train_status_resolution')}:</span>
+        <span class="stat-label">{t("train_status_resolution")}:</span>
         <span class="stat-value">{videoResolution}</span>
       </div>
     </div>
@@ -120,10 +125,8 @@
     border-radius: var(--radius-2026-md, 14px);
     box-shadow: var(--shadow-2026-md, 0 2px 8px rgba(0, 0, 0, 0.08));
     transition:
-      background var(--duration-fast)
-        var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1)),
-      border-color var(--duration-fast)
-        var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1));
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
   }
 
   .status-indicators {
@@ -142,10 +145,8 @@
     border-radius: var(--radius-2026-sm, 10px);
     opacity: 0.5;
     transition:
-      opacity var(--duration-fast)
-        var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1)),
-      background var(--duration-fast)
-        var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1));
+      opacity var(--duration-fast) var(--ease-out),
+      background var(--duration-fast) var(--ease-out);
     color: color-mix(in srgb, var(--theme-text, white) 90%, transparent);
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
@@ -166,8 +167,9 @@
     height: 6px;
     border-radius: 50%;
     background: var(--theme-text-dim);
-    transition: all var(--duration-fast)
-      var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1));
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out);
     flex-shrink: 0;
   }
 

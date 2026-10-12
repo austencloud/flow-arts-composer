@@ -423,8 +423,8 @@
     cursor: pointer;
     border-radius: clamp(4px, 1cqi, 8px);
     transition:
-      transform 0.12s ease,
-      background 0.12s ease;
+      transform var(--duration-instant) var(--ease-standard),
+      background var(--duration-instant) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;

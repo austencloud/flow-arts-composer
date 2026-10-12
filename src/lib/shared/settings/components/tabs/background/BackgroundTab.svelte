@@ -23,6 +23,8 @@
   import SettingsSectionHeader from "../../SettingsSectionHeader.svelte";
   import ThemePreview from "./ThemePreview.svelte";
 
+  const SAVE_ERROR_TOAST_MS = 10_000;
+
   let { settings, onUpdate } = $props<{
     settings: AppSettings;
     onUpdate?: (event: { key: string; value: unknown }) => void;
@@ -91,7 +93,7 @@
     showToast({
       message: accountSetupState.saveError,
       type: "error",
-      duration: 10_000,
+      duration: SAVE_ERROR_TOAST_MS,
       announcement: "polite",
       action: {
         label: t("common_retry"),

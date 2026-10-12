@@ -45,7 +45,12 @@
     </div>
 
     <div class="dialog-content">
-      <p class="message">{message ?? t("create_review_this_sequence_needs_to_be_saved_to_your_library_before_you_can_proceed_this_allows_you_to_")}</p>
+      <p class="message">
+        {message ??
+          t(
+            "create_review_this_sequence_needs_to_be_saved_to_your_library_before_you_can_proceed_this_allows_you_to_"
+          )}
+      </p>
 
       <div class="info-box">
         <i class="fas fa-info-circle" aria-hidden="true"></i>
@@ -140,7 +145,10 @@
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
     font-weight: 500;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     border: none;
     cursor: pointer;
   }

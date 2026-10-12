@@ -5,17 +5,23 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  let {
-    typingUsers,
-  } = $props<{
+  let { typingUsers } = $props<{
     typingUsers: string[];
   }>();
 
   const displayText = $derived.by(() => {
     if (typingUsers.length === 0) return "";
-    if (typingUsers.length === 1) return t("inbox_typing_one", { name: typingUsers[0] ?? "" });
-    if (typingUsers.length === 2) return t("inbox_typing_two", { first: typingUsers[0] ?? "", second: typingUsers[1] ?? "" });
-    return t("inbox_typing_many", { name: typingUsers[0] ?? "", count: typingUsers.length - 1 });
+    if (typingUsers.length === 1)
+      return t("inbox_typing_one", { name: typingUsers[0] ?? "" });
+    if (typingUsers.length === 2)
+      return t("inbox_typing_two", {
+        first: typingUsers[0] ?? "",
+        second: typingUsers[1] ?? "",
+      });
+    return t("inbox_typing_many", {
+      name: typingUsers[0] ?? "",
+      count: typingUsers.length - 1,
+    });
   });
 </script>
 
@@ -38,7 +44,7 @@
     padding: 8px 16px;
     font-size: var(--font-size-sm, 14px);
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
-    animation: fade-in var(--duration-normal) ease-out;
+    animation: fade-in var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes fade-in {
@@ -70,11 +76,11 @@
   }
 
   .dot:nth-child(2) {
-    animation-delay: 0.16s;
+    animation-delay: var(--duration-fast);
   }
 
   .dot:nth-child(3) {
-    animation-delay: 0.32s;
+    animation-delay: var(--duration-emphasis);
   }
 
   @keyframes bounce {

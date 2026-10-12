@@ -89,7 +89,7 @@
     background: var(--performer-color);
     box-shadow: 0 0 0.6rem var(--performer-color);
     transform: translate(-50%, -50%);
-    transition: top 80ms linear;
+    transition: top var(--duration-instant) linear;
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -12,7 +12,8 @@
    * Domain: Create module - Workspace presentation
    */
 
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { IToolPanelMethods } from "../types/create-module-types";
   import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
   import WorkspacePanel from "../workspace-panel/core/WorkspacePanel.svelte";
@@ -232,8 +233,8 @@
 <div
   class="workspace-panel-wrapper"
   style:padding-bottom="{buttonPanelHeight}px"
-  in:fade={{ duration: 400, delay: 200 }}
-  out:fade={{ duration: 300 }}
+  in:opaqueFade={{ duration: DURATION.dramatic, delay: DURATION.normal }}
+  out:opaqueFade={{ duration: DURATION.emphasis }}
 >
   <!-- Duration pattern preview renders inside the editable workspace timeline
        (SequenceDisplay swaps in panelState.previewSequence) — there is no

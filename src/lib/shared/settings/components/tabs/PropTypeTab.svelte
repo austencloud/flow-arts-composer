@@ -57,6 +57,8 @@
     PropChiralitySeam,
   } from "./prop-type/prop-chirality-seam";
 
+  const PRESET_UNDO_TOAST_MS = 6_000;
+
   let { settings, onUpdate } = $props<{
     settings: AppSettings;
     onUpdate?: (event: { key: string; value: unknown }) => void;
@@ -177,7 +179,7 @@
     showToast({
       message,
       type: "info",
-      duration: 6000,
+      duration: PRESET_UNDO_TOAST_MS,
       action: {
         label: t("settings_preset_undo"),
         onClick: () => writePresets(previous, previousSelected),

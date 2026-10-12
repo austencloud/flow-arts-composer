@@ -6,8 +6,7 @@
    * Shows real-time state from all managers - position, biome, fog, water,
    * textures, chunks, vegetation, and performance metrics.
    */
-  import { ChipToggle } from '@austencloud/chip-toggle';
-
+  import { ChipToggle } from "@austencloud/chip-toggle";
 
   interface AtmosphereState {
     fogEnabled: boolean;
@@ -35,7 +34,6 @@
     bushes: number;
     grass: number;
   }
-
 
   interface Props {
     // Position & Navigation
@@ -86,22 +84,40 @@
     seed = "",
   }: Props = $props();
 
-
   let isCollapsed = $state(false);
   let activeSection = $state<string | null>(null); // For expanding detail sections
 
   // Toggle states are now passed directly as props (fogEnabled, waterVisible, texturesEnabled)
   // No need to derive - they're reactive from the parent
 
-
   const BIOME_PRESETS = [
     { name: "Forest", x: 0, y: 60, z: 0, color: "#22c55e", icon: "fa-tree" },
-    { name: "Plains", x: 500, y: 60, z: 500, color: "#84cc16", icon: "fa-seedling" },
-    { name: "Mountains", x: 0, y: 80, z: 1500, color: "#94a3b8", icon: "fa-mountain" },
+    {
+      name: "Plains",
+      x: 500,
+      y: 60,
+      z: 500,
+      color: "#84cc16",
+      icon: "fa-seedling",
+    },
+    {
+      name: "Mountains",
+      x: 0,
+      y: 80,
+      z: 1500,
+      color: "#94a3b8",
+      icon: "fa-mountain",
+    },
     { name: "Desert", x: 2000, y: 60, z: 0, color: "#f59e0b", icon: "fa-sun" },
-    { name: "Ocean", x: -800, y: 60, z: -800, color: "#0ea5e9", icon: "fa-water" },
+    {
+      name: "Ocean",
+      x: -800,
+      y: 60,
+      z: -800,
+      color: "#0ea5e9",
+      icon: "fa-water",
+    },
   ];
-
 
   function handleTeleport(preset: (typeof BIOME_PRESETS)[0]) {
     onTeleport(preset.x, preset.y, preset.z);
@@ -123,7 +139,6 @@
     activeSection = activeSection === section ? null : section;
   }
 
-
   function formatCoord(val: number): string {
     return val.toFixed(1);
   }
@@ -133,12 +148,16 @@
   }
 
   const currentBiomeColor = $derived(
-    BIOME_PRESETS.find((p) => p.name.toLowerCase() === biome)?.color ?? "#64748b"
+    BIOME_PRESETS.find((p) => p.name.toLowerCase() === biome)?.color ??
+      "#64748b"
   );
 
   // Total vegetation count
   const totalVegetation = $derived(
-    vegetationStats.trees + vegetationStats.rocks + vegetationStats.bushes + vegetationStats.grass
+    vegetationStats.trees +
+      vegetationStats.rocks +
+      vegetationStats.bushes +
+      vegetationStats.grass
   );
 </script>
 
@@ -148,13 +167,21 @@
     onclick={() => (isCollapsed = !isCollapsed)}
     aria-label={isCollapsed ? "Expand panel" : "Collapse panel"}
   >
-    <i class="fas {isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'}" aria-hidden="true"></i>
+    <i
+      class="fas {isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'}"
+      aria-hidden="true"
+    ></i>
   </button>
 
   {#if !isCollapsed}
     <!-- Performance Stats (Always Visible) -->
     <div class="perf-bar">
-      <span class="fps" class:good={fps >= 55} class:warning={fps >= 30 && fps < 55} class:bad={fps < 30}>
+      <span
+        class="fps"
+        class:good={fps >= 55}
+        class:warning={fps >= 30 && fps < 55}
+        class:bad={fps < 30}
+      >
         {fps} FPS
       </span>
       <span class="stat">
@@ -172,7 +199,12 @@
       <button class="section-header" onclick={() => toggleSection("position")}>
         <i class="fas fa-location-dot" aria-hidden="true"></i>
         <span>Position</span>
-        <i class="fas fa-chevron-{activeSection === 'position' ? 'up' : 'down'} chevron" aria-hidden="true"></i>
+        <i
+          class="fas fa-chevron-{activeSection === 'position'
+            ? 'up'
+            : 'down'} chevron"
+          aria-hidden="true"
+        ></i>
       </button>
       <div class="coords-grid">
         <div class="coord-item">
@@ -232,10 +264,18 @@
 
     <!-- Environment Toggles with State Readouts -->
     <div class="section">
-      <button class="section-header" onclick={() => toggleSection("environment")}>
+      <button
+        class="section-header"
+        onclick={() => toggleSection("environment")}
+      >
         <i class="fas fa-sliders" aria-hidden="true"></i>
         <span>Environment</span>
-        <i class="fas fa-chevron-{activeSection === 'environment' ? 'up' : 'down'} chevron" aria-hidden="true"></i>
+        <i
+          class="fas fa-chevron-{activeSection === 'environment'
+            ? 'up'
+            : 'down'} chevron"
+          aria-hidden="true"
+        ></i>
       </button>
 
       <div class="toggle-chips">
@@ -271,7 +311,11 @@
           {#if waterState}
             <div class="state-group">
               <div class="state-title">
-                <i class="fas fa-droplet" style="color: #0ea5e9" aria-hidden="true"></i>
+                <i
+                  class="fas fa-droplet"
+                  style="color: #0ea5e9"
+                  aria-hidden="true"
+                ></i>
                 Water
               </div>
               <div class="detail-row">
@@ -280,11 +324,16 @@
               </div>
               <div class="detail-row">
                 <span class="detail-label">Opacity</span>
-                <span class="detail-value">{(waterState.opacity * 100).toFixed(0)}%</span>
+                <span class="detail-value"
+                  >{(waterState.opacity * 100).toFixed(0)}%</span
+                >
               </div>
               <div class="detail-row">
                 <span class="detail-label">Color</span>
-                <span class="color-swatch" style="background: {waterState.color}"></span>
+                <span
+                  class="color-swatch"
+                  style="background: {waterState.color}"
+                ></span>
               </div>
             </div>
           {/if}
@@ -293,7 +342,11 @@
           {#if atmosphereState}
             <div class="state-group">
               <div class="state-title">
-                <i class="fas fa-cloud" style="color: #94a3b8" aria-hidden="true"></i>
+                <i
+                  class="fas fa-cloud"
+                  style="color: #94a3b8"
+                  aria-hidden="true"
+                ></i>
                 Fog
               </div>
               <div class="detail-row">
@@ -302,11 +355,16 @@
               </div>
               <div class="detail-row">
                 <span class="detail-label">Density</span>
-                <span class="detail-value">{formatDensity(atmosphereState.fogDensity)}</span>
+                <span class="detail-value"
+                  >{formatDensity(atmosphereState.fogDensity)}</span
+                >
               </div>
               <div class="detail-row">
                 <span class="detail-label">Color</span>
-                <span class="color-swatch" style="background: {atmosphereState.fogColor}"></span>
+                <span
+                  class="color-swatch"
+                  style="background: {atmosphereState.fogColor}"
+                ></span>
               </div>
             </div>
           {/if}
@@ -314,16 +372,23 @@
           <!-- Texture State -->
           <div class="state-group">
             <div class="state-title">
-              <i class="fas fa-image" style="color: #84cc16" aria-hidden="true"></i>
+              <i class="fas fa-image" style="color: #84cc16" aria-hidden="true"
+              ></i>
               Textures
             </div>
             <div class="detail-row">
               <span class="detail-label">Mode</span>
-              <span class="detail-value">{texturesEnabled ? "PBR Textures" : "Vertex Colors"}</span>
+              <span class="detail-value"
+                >{texturesEnabled ? "PBR Textures" : "Vertex Colors"}</span
+              >
             </div>
             <div class="detail-row">
               <span class="detail-label">Loaded</span>
-              <span class="detail-value status" class:ok={texturesLoaded} class:pending={!texturesLoaded}>
+              <span
+                class="detail-value status"
+                class:ok={texturesLoaded}
+                class:pending={!texturesLoaded}
+              >
                 {texturesLoaded ? "Yes" : "Loading..."}
               </span>
             </div>
@@ -337,7 +402,12 @@
       <button class="section-header" onclick={() => toggleSection("stats")}>
         <i class="fas fa-chart-bar" aria-hidden="true"></i>
         <span>World Stats</span>
-        <i class="fas fa-chevron-{activeSection === 'stats' ? 'up' : 'down'} chevron" aria-hidden="true"></i>
+        <i
+          class="fas fa-chevron-{activeSection === 'stats'
+            ? 'up'
+            : 'down'} chevron"
+          aria-hidden="true"
+        ></i>
       </button>
 
       {#if activeSection === "stats"}
@@ -345,7 +415,8 @@
           <!-- Chunks -->
           <div class="state-group">
             <div class="state-title">
-              <i class="fas fa-cube" style="color: #60a5fa" aria-hidden="true"></i>
+              <i class="fas fa-cube" style="color: #60a5fa" aria-hidden="true"
+              ></i>
               Chunks
             </div>
             <div class="detail-row">
@@ -354,7 +425,11 @@
             </div>
             <div class="detail-row">
               <span class="detail-label">Loading</span>
-              <span class="detail-value status" class:ok={chunkStats.loading === 0} class:pending={chunkStats.loading > 0}>
+              <span
+                class="detail-value status"
+                class:ok={chunkStats.loading === 0}
+                class:pending={chunkStats.loading > 0}
+              >
                 {chunkStats.loading}
               </span>
             </div>
@@ -367,31 +442,47 @@
           <!-- Vegetation -->
           <div class="state-group">
             <div class="state-title">
-              <i class="fas fa-tree" style="color: var(--semantic-success, #22c55e)" aria-hidden="true"></i>
+              <i
+                class="fas fa-tree"
+                style="color: var(--semantic-success, #22c55e)"
+                aria-hidden="true"
+              ></i>
               Vegetation
             </div>
             <div class="detail-row">
               <span class="detail-label">Trees</span>
-              <span class="detail-value">{vegetationStats.trees.toLocaleString()}</span>
+              <span class="detail-value"
+                >{vegetationStats.trees.toLocaleString()}</span
+              >
             </div>
             <div class="detail-row">
               <span class="detail-label">Rocks</span>
-              <span class="detail-value">{vegetationStats.rocks.toLocaleString()}</span>
+              <span class="detail-value"
+                >{vegetationStats.rocks.toLocaleString()}</span
+              >
             </div>
             <div class="detail-row">
               <span class="detail-label">Bushes</span>
-              <span class="detail-value">{vegetationStats.bushes.toLocaleString()}</span>
+              <span class="detail-value"
+                >{vegetationStats.bushes.toLocaleString()}</span
+              >
             </div>
             <div class="detail-row">
               <span class="detail-label">Grass</span>
-              <span class="detail-value">{vegetationStats.grass.toLocaleString()}</span>
+              <span class="detail-value"
+                >{vegetationStats.grass.toLocaleString()}</span
+              >
             </div>
           </div>
 
           <!-- Physics -->
           <div class="state-group">
             <div class="state-title">
-              <i class="fas fa-shapes" style="color: var(--semantic-warning, #f59e0b)" aria-hidden="true"></i>
+              <i
+                class="fas fa-shapes"
+                style="color: var(--semantic-warning, #f59e0b)"
+                aria-hidden="true"
+              ></i>
               Physics
             </div>
             <div class="detail-row">
@@ -413,7 +504,10 @@
     background: rgba(15, 15, 25, 0.95);
     padding: 12px;
     border-radius: 16px;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family:
+      system-ui,
+      -apple-system,
+      sans-serif;
     font-size: 13px;
     color: white;
     min-width: 220px;
@@ -446,7 +540,11 @@
     align-items: center;
     justify-content: center;
     font-size: 11px;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
   }
 
   .collapse-btn:hover {
@@ -620,7 +718,11 @@
     cursor: pointer;
     font-size: 11px;
     font-weight: 500;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
     font-family: inherit;
   }
 

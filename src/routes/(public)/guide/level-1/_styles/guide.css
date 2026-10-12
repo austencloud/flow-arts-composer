@@ -370,8 +370,8 @@
   overflow: hidden;
   background: oklch(0.14 0.015 270 / 0.5);
   transition:
-    border-color 200ms ease,
-    box-shadow 200ms ease;
+    border-color var(--duration-normal) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard);
 }
 
 .guide-pictograph.bordered .pictograph-wrapper {
@@ -431,7 +431,7 @@
   flex-shrink: 0;
   cursor: pointer;
   border-radius: 6px;
-  transition: box-shadow 0.15s ease;
+  transition: box-shadow var(--duration-fast) var(--ease-standard);
 }
 
 .guide-sequence-player .beat-cell.active {
@@ -460,7 +460,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 200ms ease;
+  transition: background var(--duration-normal) var(--ease-standard);
 }
 
 .guide-sequence-player .play-btn:hover {
@@ -533,7 +533,8 @@
     0 0 12px rgba(251, 191, 36, 0.6),
     0 0 0 3px rgba(251, 191, 36, 0.9);
   pointer-events: none;
-  animation: guideStepRingIn 0.4s ease-out forwards;
+  animation: guideStepRingIn var(--duration-dramatic) var(--ease-standard-out)
+    forwards;
 }
 @keyframes guideStepRingIn {
   0% {

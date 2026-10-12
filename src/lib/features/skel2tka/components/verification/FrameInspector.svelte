@@ -196,7 +196,10 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="frame-inspector" bind:this={containerEl}>
-  <div class="video-container" style="width: {displayWidth}px; height: {displayHeight}px;">
+  <div
+    class="video-container"
+    style="width: {displayWidth}px; height: {displayHeight}px;"
+  >
     <video
       bind:this={videoEl}
       src={videoUrl}
@@ -222,26 +225,51 @@
     {:else}
       <div class="video-loading" aria-live="polite">
         <i class="fas fa-circle-notch fa-spin"></i>
-        <span>{t('skel2tka_loading_video')}</span>
+        <span>{t("skel2tka_loading_video")}</span>
       </div>
     {/if}
   </div>
 
   <div class="controls">
     <div class="scrubber-row">
-      <button class="control-btn" onclick={prevStep} title={t('skel2tka_prev_beat_hint')} aria-label={t('skel2tka_prev_beat')}>
+      <button
+        class="control-btn"
+        onclick={prevStep}
+        title={t("skel2tka_prev_beat_hint")}
+        aria-label={t("skel2tka_prev_beat")}
+      >
         <i class="fas fa-step-backward"></i>
       </button>
-      <button class="control-btn" onclick={prevFrame} title={t('skel2tka_prev_frame_hint')} aria-label={t('skel2tka_prev_frame')}>
+      <button
+        class="control-btn"
+        onclick={prevFrame}
+        title={t("skel2tka_prev_frame_hint")}
+        aria-label={t("skel2tka_prev_frame")}
+      >
         <i class="fas fa-chevron-left"></i>
       </button>
-      <button class="control-btn play-btn" onclick={togglePlayback} title={t('skel2tka_play_pause_hint')} aria-label={isPlaying ? t('skel2tka_pause') : t('skel2tka_play')}>
+      <button
+        class="control-btn play-btn"
+        onclick={togglePlayback}
+        title={t("skel2tka_play_pause_hint")}
+        aria-label={isPlaying ? t("skel2tka_pause") : t("skel2tka_play")}
+      >
         <i class="fas {isPlaying ? 'fa-pause' : 'fa-play'}"></i>
       </button>
-      <button class="control-btn" onclick={nextFrame} title={t('skel2tka_next_frame_hint')} aria-label={t('skel2tka_next_frame')}>
+      <button
+        class="control-btn"
+        onclick={nextFrame}
+        title={t("skel2tka_next_frame_hint")}
+        aria-label={t("skel2tka_next_frame")}
+      >
         <i class="fas fa-chevron-right"></i>
       </button>
-      <button class="control-btn" onclick={nextStep} title={t('skel2tka_next_beat_hint')} aria-label={t('skel2tka_next_beat')}>
+      <button
+        class="control-btn"
+        onclick={nextStep}
+        title={t("skel2tka_next_beat_hint")}
+        aria-label={t("skel2tka_next_beat")}
+      >
         <i class="fas fa-step-forward"></i>
       </button>
     </div>
@@ -254,14 +282,17 @@
         value={currentFrameIndex}
         oninput={handleSliderChange}
         class="frame-slider"
-        aria-label={t('skel2tka_frame_scrubber')}
+        aria-label={t("skel2tka_frame_scrubber")}
       />
     </div>
 
     <div class="keyboard-hints">
-      <span><kbd>&larr;</kbd><kbd>&rarr;</kbd> {t('skel2tka_kbd_frame')}</span>
-      <span><kbd>Shift</kbd>+<kbd>&larr;</kbd><kbd>&rarr;</kbd> {t('skel2tka_kbd_beat')}</span>
-      <span><kbd>Space</kbd> {t('skel2tka_kbd_play')}</span>
+      <span><kbd>&larr;</kbd><kbd>&rarr;</kbd> {t("skel2tka_kbd_frame")}</span>
+      <span
+        ><kbd>Shift</kbd>+<kbd>&larr;</kbd><kbd>&rarr;</kbd>
+        {t("skel2tka_kbd_beat")}</span
+      >
+      <span><kbd>Space</kbd> {t("skel2tka_kbd_play")}</span>
     </div>
   </div>
 
@@ -335,7 +366,7 @@
     color: var(--theme-text, #ffffff);
     cursor: pointer;
     font-size: 14px;
-    transition: background 0.15s;
+    transition: background var(--duration-fast);
   }
 
   .control-btn:hover {

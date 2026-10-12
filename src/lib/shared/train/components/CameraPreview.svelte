@@ -93,7 +93,7 @@ Features frame processing loop for pose estimation and overlay support.
         return;
       }
       const message =
-        error instanceof Error ? error.message : t('train_camera_failed');
+        error instanceof Error ? error.message : t("train_camera_failed");
       errorMessage = message;
       onCameraError?.(message);
     }
@@ -134,7 +134,7 @@ Features frame processing loop for pose estimation and overlay support.
     {#if isInitializing}
       <div class="loading-state">
         <ProgressRing percent={-1} size={32} strokeWidth={3} />
-        <p>{t('train_camera_initializing')}</p>
+        <p>{t("train_camera_initializing")}</p>
       </div>
     {/if}
 
@@ -152,7 +152,9 @@ Features frame processing loop for pose estimation and overlay support.
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
         <p>{errorMessage}</p>
-        <button class="retry-button" onclick={initCamera}> {t('train_camera_retry')} </button>
+        <button class="retry-button" onclick={initCamera}>
+          {t("train_camera_retry")}
+        </button>
       </div>
     {/if}
   </div>
@@ -221,7 +223,9 @@ Features frame processing loop for pose estimation and overlay support.
     border-radius: var(--border-radius-md, 8px);
     cursor: pointer;
     font-size: var(--font-size-md);
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .retry-button:hover {
@@ -247,5 +251,4 @@ Features frame processing loop for pose estimation and overlay support.
   .overlay-container :global(*) {
     pointer-events: auto;
   }
-
 </style>

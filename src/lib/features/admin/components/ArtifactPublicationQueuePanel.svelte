@@ -137,8 +137,8 @@
         Public Visuals
       </h2>
       <p class="subtitle">
-        Everything currently live in Explore, newest first. Remove anything
-        that breaks the rules — removal is permanent for that exact content.
+        Everything currently live in Explore, newest first. Remove anything that
+        breaks the rules — removal is permanent for that exact content.
       </p>
     </div>
     {#if !isLoading && !error}
@@ -358,7 +358,14 @@
     border-radius: 0.5rem;
     color: var(--theme-text);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .retry-button:hover {
@@ -393,7 +400,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .entry-card.processing {
@@ -481,7 +496,13 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .action-btn:disabled {

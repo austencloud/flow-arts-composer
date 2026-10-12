@@ -94,9 +94,9 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      border-color 140ms ease,
-      background 140ms ease,
-      color 140ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .thumb {
@@ -117,14 +117,22 @@
 
   .preview-option:hover {
     color: var(--theme-text, #fff);
-    background: color-mix(in srgb, var(--theme-accent, #4cc9f0) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #4cc9f0) 10%,
+      transparent
+    );
   }
 
   /* Selection rings the whole tile — the picture is the choice, so the picture
      is what gets marked. */
   .preview-option.active {
     border-color: var(--theme-accent, #4cc9f0);
-    background: color-mix(in srgb, var(--theme-accent, #4cc9f0) 16%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #4cc9f0) 16%,
+      transparent
+    );
     color: var(--theme-text, #fff);
   }
 

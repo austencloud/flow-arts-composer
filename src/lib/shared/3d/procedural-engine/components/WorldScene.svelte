@@ -1,6 +1,5 @@
 <script lang="ts">
-
-// propInterpolator and sequenceConverter are now module-level functions
+  // propInterpolator and sequenceConverter are now module-level functions
   /**
    * WorldScene
    *
@@ -19,7 +18,10 @@
   import WorldSceneContent from "./WorldSceneContent.svelte";
   import VirtualJoystick from "#lib/shared/components/touch/VirtualJoystick.svelte";
 
-  import type { PhysicsWorldState, PlayerControllerState } from "#lib/shared/3d/physics/types.js";
+  import type {
+    PhysicsWorldState,
+    PlayerControllerState,
+  } from "#lib/shared/3d/physics/types.js";
   import type { PhysicsProvider } from "#lib/shared/3d/camera/types.js";
   import { TerrainPhysicsManager } from "#lib/shared/3d/physics/terrain-collider.js";
   import { teleportPlayer } from "#lib/shared/3d/physics/player-controller.js";
@@ -27,7 +29,11 @@
   import { cameraPreferences } from "#lib/shared/3d/camera/camera-preferences.svelte.js";
 
   import { type HybridChunkManager } from "../core/hybrid-chunk-manager";
-  import { generateWorldSeed, encodeSeed, SeededNoise } from "../generation/seed-generator";
+  import {
+    generateWorldSeed,
+    encodeSeed,
+    SeededNoise,
+  } from "../generation/seed-generator";
   import { VegetationManager } from "../rendering/instanced-vegetation";
   import { AtmosphereManager } from "../rendering/atmosphere";
   import { WaterManager } from "../rendering/water";
@@ -43,12 +49,8 @@
     createPerformerManager,
     type PerformerManager,
   } from "#lib/shared/3d/state/performer-manager.svelte.js";
-  import {
-    DEFAULT_AVATAR_ID,
-    type AvatarId,
-  } from "@austencloud/scene-3d";
+  import { DEFAULT_AVATAR_ID, type AvatarId } from "@austencloud/scene-3d";
   import DuetOrchestrator from "#lib/shared/3d/components/DuetOrchestrator.svelte";
-
 
   interface Props {
     /** Realm configuration (defines terrain, physics, features, spawn) */
@@ -62,7 +64,9 @@
     /** Enable stage mode - flat performance area with grid planes */
     stageMode?: boolean;
     /** Real-world terrain data (destinations import their own JSON and pass it down) */
-    terrainData?: import("../generation/real-terrain-zone").ImportedTerrainData | null;
+    terrainData?:
+      | import("../generation/real-terrain-zone").ImportedTerrainData
+      | null;
   }
 
   let {
@@ -152,7 +156,7 @@
     | ((
         origin?: { x: number; y: number; z: number },
         direction?: { x: number; y: number; z: number },
-        maxDistance?: number,
+        maxDistance?: number
       ) => import("#lib/shared/3d/debug/game-bridge-types.js").RaycastResult)
     | null
   >(null);
@@ -213,7 +217,12 @@
 
   // Terrain zone state
   let hannonsLoaded = $state(false);
-  let zoneBounds = $state<{ minX: number; maxX: number; minZ: number; maxZ: number } | null>(null);
+  let zoneBounds = $state<{
+    minX: number;
+    maxX: number;
+    minZ: number;
+    maxZ: number;
+  } | null>(null);
   let zoneBoundary = $state<Array<{ x: number; z: number }>>([]);
   let isInsideZone = $state(false);
 
@@ -276,53 +285,81 @@
     if (!physicsProvider || !performerManager) return;
     if (gameBridgeInitialized) return;
 
-    import("#lib/shared/3d/debug/game-bridge.js").then(async ({ initGameBridge, isGameBridgeEnabled, shouldConnectGameBridge }) => {
-      // Opt-in only — see isGameBridgeEnabled. Skip silently otherwise.
-      if (!isGameBridgeEnabled()) return;
-      gameBridgeInitialized = true;
+    import("#lib/shared/3d/debug/game-bridge.js").then(
+      async ({
+        initGameBridge,
+        isGameBridgeEnabled,
+        shouldConnectGameBridge,
+      }) => {
+        // Opt-in only — see isGameBridgeEnabled. Skip silently otherwise.
+        if (!isGameBridgeEnabled()) return;
+        gameBridgeInitialized = true;
 
-      const bridge = initGameBridge({
-        physics: {
-          getPlayerPosition: () => physicsProvider?.getPlayerPosition() ?? null,
-          getPlayerVelocity: () => physicsProvider?.getVelocity() ?? { x: 0, y: 0, z: 0 },
-          isGrounded: () => physicsProvider?.isGrounded() ?? false,
-          movePlayer: (movement, deltaTime) => physicsProvider?.movePlayer(movement, deltaTime),
-          teleportPlayer: (position) => physicsProvider?.teleport?.(position),
-          raycast: (origin, direction, maxDistance) =>
-            sceneRaycast ? sceneRaycast(origin, direction, maxDistance) : { hit: false },
-        },
-        camera: {
-          getMode: () => cameraMode === CameraMode.FIRST_PERSON ? "first_person" : cameraMode === CameraMode.THIRD_PERSON ? "third_person" : "orbit",
-          setMode: (mode: string) => {
-            if (mode === "first_person") cameraMode = CameraMode.FIRST_PERSON;
-            else if (mode === "third_person") cameraMode = CameraMode.THIRD_PERSON;
-            else if (mode === "orbit") cameraMode = CameraMode.ORBIT;
+        const bridge = initGameBridge(
+          {
+            physics: {
+              getPlayerPosition: () =>
+                physicsProvider?.getPlayerPosition() ?? null,
+              getPlayerVelocity: () =>
+                physicsProvider?.getVelocity() ?? { x: 0, y: 0, z: 0 },
+              isGrounded: () => physicsProvider?.isGrounded() ?? false,
+              movePlayer: (movement, deltaTime) =>
+                physicsProvider?.movePlayer(movement, deltaTime),
+              teleportPlayer: (position) =>
+                physicsProvider?.teleport?.(position),
+              raycast: (origin, direction, maxDistance) =>
+                sceneRaycast
+                  ? sceneRaycast(origin, direction, maxDistance)
+                  : { hit: false },
+            },
+            camera: {
+              getMode: () =>
+                cameraMode === CameraMode.FIRST_PERSON
+                  ? "first_person"
+                  : cameraMode === CameraMode.THIRD_PERSON
+                    ? "third_person"
+                    : "orbit",
+              setMode: (mode: string) => {
+                if (mode === "first_person")
+                  cameraMode = CameraMode.FIRST_PERSON;
+                else if (mode === "third_person")
+                  cameraMode = CameraMode.THIRD_PERSON;
+                else if (mode === "orbit") cameraMode = CameraMode.ORBIT;
+              },
+              getYaw: () => playerYaw,
+              getPitch: () => 0, // Pitch tracked separately in camera controller
+              setYaw: (yaw: number) => {
+                playerYaw = yaw;
+              },
+              setPitch: (_pitch: number) => {
+                /* Not directly settable */
+              },
+            },
+            playback: {
+              getPerformerManager: () => performerManager,
+              getSpeed: () => playbackSpeed,
+              setSpeed: (s: number) => {
+                playbackSpeed = s;
+              },
+            },
           },
-          getYaw: () => playerYaw,
-          getPitch: () => 0, // Pitch tracked separately in camera controller
-          setYaw: (yaw: number) => { playerYaw = yaw; },
-          setPitch: (_pitch: number) => { /* Not directly settable */ },
-        },
-        playback: {
-          getPerformerManager: () => performerManager,
-          getSpeed: () => playbackSpeed,
-          setSpeed: (s: number) => { playbackSpeed = s; },
-        },
-      }, {
-        debug: true,
-      });
+          {
+            debug: true,
+          }
+        );
 
-      // Only open the WebSocket when the MCP controller is actually running.
-      // Direct driving via window.__gameBridge needs no socket; connecting to
-      // an absent server is what produced the reconnect spam.
-      if (shouldConnectGameBridge()) {
-        try {
-          await bridge.connect();
-        } catch {
-          // MCP Game Bridge not available — ignored silently
+        // Only open the WebSocket when the MCP controller is actually running.
+        // Direct driving via window.__gameBridge needs no socket; connecting to
+        // an absent server is what produced the reconnect spam.
+        if (shouldConnectGameBridge()) {
+          try {
+            await bridge.connect();
+          } catch {
+            // MCP Game Bridge not available — ignored silently
+          }
         }
       }
-    });
+    );
   });
 
   // ============================================================================
@@ -474,7 +511,7 @@
   <!-- UI Overlays (outside Threlte Canvas) -->
   {#if showTouchUI}
     <VirtualJoystick
-      onInput={(x, y) => joystickInput = { x, z: y }}
+      onInput={(x, y) => (joystickInput = { x, z: y })}
       enabled={true}
       left={24}
       bottom={24}
@@ -499,7 +536,11 @@
       <div class="zone-info">
         <div class="info-row">
           <span class="label">Position:</span>
-          <span class="value">X: {playerPosition.x.toFixed(0)}, Z: {playerPosition.z.toFixed(0)}</span>
+          <span class="value"
+            >X: {playerPosition.x.toFixed(0)}, Z: {playerPosition.z.toFixed(
+              0
+            )}</span
+          >
         </div>
       </div>
     </div>
@@ -513,12 +554,17 @@
       </div>
       <div class="debug-row">
         <span class="label">Position:</span>
-        <span class="value">({playerPosition.x.toFixed(1)}, {playerPosition.y.toFixed(1)}, {playerPosition.z.toFixed(1)})</span>
+        <span class="value"
+          >({playerPosition.x.toFixed(1)}, {playerPosition.y.toFixed(1)}, {playerPosition.z.toFixed(
+            1
+          )})</span
+        >
       </div>
       <div class="debug-row">
         <span class="label">Chunks:</span>
         <span class="value">
-          {chunkStats.loaded} loaded / {chunkStats.loading} loading / {chunkStats.pending} pending
+          {chunkStats.loaded} loaded / {chunkStats.loading} loading / {chunkStats.pending}
+          pending
         </span>
       </div>
       <div class="debug-row">
@@ -547,7 +593,10 @@
       class="controls-overlay"
       onclick={() => {
         cameraMode = CameraMode.THIRD_PERSON;
-        cameraPreferences.setModeForDestination(activeConfig.id, CameraMode.THIRD_PERSON);
+        cameraPreferences.setModeForDestination(
+          activeConfig.id,
+          CameraMode.THIRD_PERSON
+        );
       }}
     >
       <h2>{activeConfig.name}</h2>
@@ -571,7 +620,7 @@
     <div class="playback-controls">
       <button
         class="control-btn"
-        onclick={() => sequenceBrowserOpen = true}
+        onclick={() => (sequenceBrowserOpen = true)}
         title="Load sequence"
         aria-label="Load sequence"
       >
@@ -580,7 +629,9 @@
 
       {#if activePerformerState.hasSequence}
         <div class="sequence-info">
-          <span class="sequence-name">{activePerformerState.loadedSequence?.word ?? 'Sequence'}</span>
+          <span class="sequence-name"
+            >{activePerformerState.loadedSequence?.word ?? "Sequence"}</span
+          >
           <span class="step-counter">
             {activePerformerState.currentStepIndex + 1} / {activePerformerState.totalSteps}
           </span>
@@ -599,10 +650,15 @@
         <button
           class="control-btn play-btn"
           onclick={() => activePerformerState?.togglePlay()}
-          title={activePerformerState.isPlaying ? 'Pause' : 'Play'}
-          aria-label={activePerformerState.isPlaying ? 'Pause' : 'Play'}
+          title={activePerformerState.isPlaying ? "Pause" : "Play"}
+          aria-label={activePerformerState.isPlaying ? "Pause" : "Play"}
         >
-          <i class="fas" class:fa-pause={activePerformerState.isPlaying} class:fa-play={!activePerformerState.isPlaying} aria-hidden="true"></i>
+          <i
+            class="fas"
+            class:fa-pause={activePerformerState.isPlaying}
+            class:fa-play={!activePerformerState.isPlaying}
+            aria-hidden="true"
+          ></i>
         </button>
 
         <button
@@ -610,7 +666,8 @@
           onclick={() => activePerformerState?.nextStep()}
           title="Next step"
           aria-label="Next step"
-          disabled={activePerformerState.currentStepIndex >= activePerformerState.totalSteps - 1}
+          disabled={activePerformerState.currentStepIndex >=
+            activePerformerState.totalSteps - 1}
         >
           <i class="fas fa-step-forward" aria-hidden="true"></i>
         </button>
@@ -628,10 +685,13 @@
           class="control-btn"
           class:active={activePerformerState.loop}
           onclick={() => {
-            if (activePerformerState) activePerformerState.loop = !activePerformerState.loop;
+            if (activePerformerState)
+              activePerformerState.loop = !activePerformerState.loop;
           }}
-          title={activePerformerState.loop ? 'Looping enabled' : 'Enable loop'}
-          aria-label={activePerformerState.loop ? 'Looping enabled' : 'Enable loop'}
+          title={activePerformerState.loop ? "Looping enabled" : "Enable loop"}
+          aria-label={activePerformerState.loop
+            ? "Looping enabled"
+            : "Enable loop"}
         >
           <i class="fas fa-sync" aria-hidden="true"></i>
         </button>
@@ -816,13 +876,19 @@
     font-weight: 500;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
     pointer-events: none;
-    animation: fadeInOut 4s ease-in-out;
+    animation: fadeInOut var(--duration-scene) var(--ease-standard);
     z-index: 100;
   }
 
   @keyframes fadeInOut {
-    0%, 100% { opacity: 0; }
-    15%, 85% { opacity: 1; }
+    0%,
+    100% {
+      opacity: 0;
+    }
+    15%,
+    85% {
+      opacity: 1;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -860,7 +926,12 @@
     color: white;
     font-size: 16px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .control-btn:hover:not(:disabled) {

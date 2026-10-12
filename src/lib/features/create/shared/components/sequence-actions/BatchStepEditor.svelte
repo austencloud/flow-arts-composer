@@ -20,7 +20,7 @@
   import { calculateGridLayout } from "#lib/shared/create/utils/grid-calculations.js";
   import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
   import { flip } from "svelte/animate";
-  import { scale } from "svelte/transition";
+  import { popIn } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
@@ -129,8 +129,8 @@
         <div
           class="pictograph-box"
           style:width={`${layout.cellSize}px`}
-          in:scale={{ duration: flipDuration, start: 0.7, opacity: 0 }}
-          out:scale={{ duration: outDuration, start: 0.7, opacity: 0 }}
+          in:popIn={{ duration: flipDuration, start: 0.7 }}
+          out:popIn={{ duration: outDuration, start: 0.7 }}
           animate:flip={{ duration: flipDuration }}
         >
           <PictographContainer
@@ -185,7 +185,7 @@
     font-size: var(--font-size-sm, 0.875rem);
     font-weight: 600;
     cursor: pointer;
-    transition: background var(--duration-fast) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .header-btn:hover {

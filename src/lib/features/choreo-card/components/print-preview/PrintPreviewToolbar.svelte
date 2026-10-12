@@ -239,9 +239,9 @@
     cursor: pointer;
     white-space: nowrap;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .rerender-btn:hover:not(:disabled) {
@@ -318,7 +318,11 @@
     border-radius: 10px;
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .print-btn:hover:not(:disabled) {

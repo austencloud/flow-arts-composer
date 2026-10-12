@@ -28,12 +28,7 @@
       <span class="owner">by {sequence.ownerName}</span>
     {/if}
   </div>
-  <button
-    class="remove-btn"
-    onclick={onRemove}
-    {disabled}
-    title="Remove link"
-  >
+  <button class="remove-btn" onclick={onRemove} {disabled} title="Remove link">
     <i class="fas fa-times" aria-hidden="true"></i>
   </button>
 </div>
@@ -44,8 +39,13 @@
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: color-mix(in srgb, var(--semantic-success, #10b981) 8%, transparent);
-    border: 2px solid color-mix(in srgb, var(--semantic-success, #10b981) 50%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 8%,
+      transparent
+    );
+    border: 2px solid
+      color-mix(in srgb, var(--semantic-success, #10b981) 50%, transparent);
     border-radius: 10px;
     position: relative;
   }
@@ -121,12 +121,24 @@
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast),
+      height var(--duration-fast);
     flex-shrink: 0;
   }
 
   .remove-btn:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
   }
 

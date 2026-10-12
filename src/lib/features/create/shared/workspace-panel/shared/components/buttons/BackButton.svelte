@@ -58,11 +58,11 @@
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    transition: all
-      var(
-        --transition-normal,
-        var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1)
-      );
+    transition:
+      transform
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      outline
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard));
     font-size: var(--font-size-lg);
     color: var(--theme-text);
 
@@ -77,7 +77,9 @@
 
   .panel-button:active {
     transform: scale(0.95);
-    transition: all var(--duration-instant) ease;
+    transition:
+      transform var(--duration-instant) var(--ease-standard),
+      outline var(--duration-instant) var(--ease-standard);
   }
 
   .panel-button:focus-visible {

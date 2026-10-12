@@ -312,7 +312,11 @@
     font-size: var(--font-size-sm);
     font-weight: 650;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .disclosure-button:hover {
@@ -331,7 +335,7 @@
 
   .disclosure-button i {
     font-size: var(--font-size-compact);
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
     color: color-mix(in srgb, var(--semantic-error, #ef4444) 70%, transparent);
   }
 
@@ -442,7 +446,11 @@
     border-radius: 8px;
     color: var(--theme-text);
     outline: none;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .confirmation-input::placeholder {
@@ -493,7 +501,12 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     border: none;
   }
 

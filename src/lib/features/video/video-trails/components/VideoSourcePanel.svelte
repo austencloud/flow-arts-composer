@@ -27,16 +27,25 @@
   class:drag-over={isDragOver}
   role="button"
   tabindex="0"
-  ondragover={(e) => { e.preventDefault(); isDragOver = true; }}
-  ondragleave={() => { isDragOver = false; }}
+  ondragover={(e) => {
+    e.preventDefault();
+    isDragOver = true;
+  }}
+  ondragleave={() => {
+    isDragOver = false;
+  }}
   ondrop={handleDrop}
   onclick={() => fileInput?.click()}
-  onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") fileInput?.click(); }}
+  onkeydown={(e) => {
+    if (e.key === "Enter" || e.key === " ") fileInput?.click();
+  }}
 >
   {#if trailsState.source}
     <div class="source-info">
       <i class="fas fa-film" aria-hidden="true"></i>
-      <span class="file-name">{trailsState.source.originalFileName ?? "Video loaded"}</span>
+      <span class="file-name"
+        >{trailsState.source.originalFileName ?? "Video loaded"}</span
+      >
       {#if trailsState.source.duration > 0}
         <span class="duration">{trailsState.source.duration.toFixed(1)}s</span>
       {/if}
@@ -65,7 +74,9 @@
     padding: 24px;
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      background var(--duration-fast);
   }
 
   .source-panel:hover,
@@ -101,12 +112,16 @@
     color: var(--theme-text, #ffffff);
   }
 
-  .file-name { font-weight: 500; }
+  .file-name {
+    font-weight: 500;
+  }
 
   .duration {
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.5));
     font-size: var(--font-size-compact, 12px);
   }
 
-  .hidden-input { display: none; }
+  .hidden-input {
+    display: none;
+  }
 </style>

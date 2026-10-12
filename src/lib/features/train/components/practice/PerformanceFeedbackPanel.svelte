@@ -29,14 +29,14 @@
   <div class="performance-feedback-panel">
     <!-- Score Display -->
     <div class="metric">
-      <span class="metric-label">{t('train_score_label')}</span>
+      <span class="metric-label">{t("train_score_label")}</span>
       <span class="metric-value score">{currentScore.toLocaleString()}</span>
     </div>
 
     <!-- Combo Display (only when active) -->
     {#if currentCombo > 0}
       <div class="metric combo-metric">
-        <span class="metric-label">{t('train_combo_label')}</span>
+        <span class="metric-label">{t("train_combo_label")}</span>
         <span class="metric-value combo">{currentCombo}x</span>
       </div>
     {/if}
@@ -48,13 +48,13 @@
         class:hit={lastHitResult}
         class:miss={!lastHitResult}
       >
-        {lastHitResult ? `+${lastHitPoints}` : t('train_miss')}
+        {lastHitResult ? `+${lastHitPoints}` : t("train_miss")}
       </div>
     {/if}
   </div>
 {:else}
   <div class="performance-feedback-panel empty">
-    <span class="empty-text">{t('train_ready')}</span>
+    <span class="empty-text">{t("train_ready")}</span>
   </div>
 {/if}
 
@@ -156,7 +156,7 @@
     border-radius: var(--radius-2026-sm, 10px);
     font-weight: 700;
     font-size: 1.125rem;
-    animation: fadeInOut 0.8s ease-out forwards;
+    animation: fadeInOut var(--duration-scene) var(--ease-standard-out) forwards;
     border: 1px solid;
   }
 

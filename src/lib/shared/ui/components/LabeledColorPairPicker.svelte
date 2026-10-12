@@ -381,8 +381,8 @@
     overflow: hidden;
     -webkit-tap-highlight-color: transparent;
     transition:
-      border-color var(--transition-fast, 150ms),
-      box-shadow var(--transition-fast, 150ms);
+      border-color var(--transition-fast, var(--duration-fast)),
+      box-shadow var(--transition-fast, var(--duration-fast));
   }
 
   .color-control:hover {

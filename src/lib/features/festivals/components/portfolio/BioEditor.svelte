@@ -1,7 +1,10 @@
 <script lang="ts">
   import { getFestivalContext } from "../../context/festival-context";
   import { auth } from "#lib/shared/auth/firebase.js";
-  import type { BioVersion, TeachingPortfolio } from "../../domain/models/teaching-portfolio";
+  import type {
+    BioVersion,
+    TeachingPortfolio,
+  } from "../../domain/models/teaching-portfolio";
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
   import ModalFooter from "#lib/shared/foundation/ui/modal/ModalFooter.svelte";
@@ -53,7 +56,9 @@
     const updated: TeachingPortfolio = {
       ...festivalState.portfolio,
       bios: festivalState.portfolio.bios.map((b) =>
-        b.id === editingBioId ? { ...b, text: editingText, label: editingLabel } : b
+        b.id === editingBioId
+          ? { ...b, text: editingText, label: editingLabel }
+          : b
       ),
     };
     festivalState.savePortfolio(uid, updated);
@@ -108,7 +113,12 @@
   {/if}
 </div>
 
-<BaseModal bind:open={modalOpen} onclose={() => closeModal()} size="fit" animation="pop">
+<BaseModal
+  bind:open={modalOpen}
+  onclose={() => closeModal()}
+  size="fit"
+  animation="pop"
+>
   {#snippet header()}
     <ModalHeader
       title={editingLabel || "Edit Bio"}
@@ -143,14 +153,25 @@
   {#snippet footer()}
     <ModalFooter align="between">
       <div class="modal-left-actions">
-        <button class="ghost" onclick={copyBio} type="button" title="Copy bio text">
+        <button
+          class="ghost"
+          onclick={copyBio}
+          type="button"
+          title="Copy bio text"
+        >
           <i class="fas fa-copy" aria-hidden="true"></i>
           Copy
         </button>
         {#if confirmingDelete}
           <span class="confirm-delete-label">Delete?</span>
-          <button class="ghost danger-text" onclick={deleteBio} type="button">Yes</button>
-          <button class="ghost" onclick={() => (confirmingDelete = false)} type="button">No</button>
+          <button class="ghost danger-text" onclick={deleteBio} type="button"
+            >Yes</button
+          >
+          <button
+            class="ghost"
+            onclick={() => (confirmingDelete = false)}
+            type="button">No</button
+          >
         {:else}
           <button
             class="ghost danger-text"
@@ -164,8 +185,15 @@
         {/if}
       </div>
       <div class="modal-right-actions">
-        <button class="secondary" onclick={() => closeModal()} type="button">Cancel</button>
-        <button class="primary" onclick={saveEdit} disabled={!editingLabel.trim()} type="button">
+        <button class="secondary" onclick={() => closeModal()} type="button"
+          >Cancel</button
+        >
+        <button
+          class="primary"
+          onclick={saveEdit}
+          disabled={!editingLabel.trim()}
+          type="button"
+        >
           Save
         </button>
       </div>
@@ -192,7 +220,7 @@
     border-radius: var(--radius-lg, 12px);
     padding: 16px;
     cursor: pointer;
-    transition: border-color 0.15s;
+    transition: border-color var(--duration-fast);
     position: relative;
   }
 
@@ -247,7 +275,6 @@
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.45));
     font-style: italic;
   }
-
 
   .bio-modal-body {
     padding: 20px;

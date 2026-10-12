@@ -299,7 +299,9 @@
     cursor: pointer;
     font-size: 0.875rem;
     font-weight: 500;
-    transition: all 150ms ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .delete-btn:hover {

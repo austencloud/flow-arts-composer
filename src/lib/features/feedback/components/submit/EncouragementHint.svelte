@@ -22,10 +22,10 @@
     opacity: 1;
     overflow: hidden;
     transition:
-      max-height var(--duration-fast, 150ms) ease-out,
-      opacity var(--duration-fast, 150ms) ease-out,
-      margin var(--duration-fast, 150ms) ease-out,
-      padding var(--duration-fast, 150ms) ease-out;
+      max-height var(--duration-fast) var(--ease-standard-out),
+      opacity var(--duration-fast) var(--ease-standard-out),
+      margin var(--duration-fast) var(--ease-standard-out),
+      padding var(--duration-fast) var(--ease-standard-out);
     background: linear-gradient(
       135deg,
       color-mix(

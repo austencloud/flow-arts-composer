@@ -18,7 +18,8 @@
   // Rows are REAL links (right-click → Copy Link Address, middle-click → new
   // tab); a plain left click is intercepted for the smooth in-pane scroll.
   function navClick(e: MouseEvent, index: number) {
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+      return;
     e.preventDefault();
     onSelect(index);
   }
@@ -64,7 +65,9 @@
     box-sizing: border-box;
   }
   .grp {
-    font: 700 0.72rem/1 system-ui, sans-serif;
+    font:
+      700 0.72rem/1 system-ui,
+      sans-serif;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.45));
@@ -82,8 +85,10 @@
     border-radius: 8px;
     cursor: pointer;
     color: var(--theme-text, #e8e6f0);
-    font: 500 0.9rem/1.2 system-ui, sans-serif;
-    transition: background var(--duration-fast, 150ms) ease;
+    font:
+      500 0.9rem/1.2 system-ui,
+      sans-serif;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
   @media (hover: hover) and (pointer: fine) {
     .row:hover {
@@ -91,11 +96,16 @@
     }
   }
   .row:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--theme-accent, #8b5cf6) 70%, transparent);
+    outline: 2px solid
+      color-mix(in srgb, var(--theme-accent, #8b5cf6) 70%, transparent);
     outline-offset: -2px;
   }
   .row.active {
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 22%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 22%,
+      transparent
+    );
     color: color-mix(in srgb, var(--theme-accent, #c4b5fd) 85%, white);
     font-weight: 700;
   }
@@ -117,7 +127,9 @@
   }
   .tag {
     flex: 0 0 auto;
-    font: 700 0.6rem/1 system-ui, sans-serif;
+    font:
+      700 0.6rem/1 system-ui,
+      sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));

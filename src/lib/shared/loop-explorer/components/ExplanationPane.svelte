@@ -28,7 +28,10 @@
               class:active={state.highlightedRelation === i}
               onpointerenter={() => state.hoverRelation(i)}
               onpointerleave={() => state.hoverRelation(null)}
-              onclick={() => state.selectRelation(state.highlightedRelation === i ? null : i)}
+              onclick={() =>
+                state.selectRelation(
+                  state.highlightedRelation === i ? null : i
+                )}
             >
               {citation}
             </button>
@@ -40,7 +43,8 @@
     <p class="length-math">{explanation.lengthMath}</p>
   {:else}
     <p class="hint">
-      {state.legality.reason ?? "Select a legal combination to see how it's built."}
+      {state.legality.reason ??
+        "Select a legal combination to see how it's built."}
     </p>
   {/if}
 </div>
@@ -89,14 +93,18 @@
     line-height: 1.4;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .citation:hover,
   .citation.active {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 14%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 14%,
+      transparent
+    );
     border-color: var(--theme-accent, #6366f1);
     color: var(--theme-text, #fff);
   }

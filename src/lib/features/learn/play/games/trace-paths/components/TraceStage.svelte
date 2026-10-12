@@ -555,8 +555,8 @@ Pointer discipline
     cursor: pointer;
     touch-action: manipulation;
     transition:
-      background var(--duration-fast) ease,
-      transform var(--duration-fast) ease;
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .control:last-child {

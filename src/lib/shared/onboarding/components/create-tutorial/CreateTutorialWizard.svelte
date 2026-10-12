@@ -92,10 +92,10 @@
     "ready",
   ];
   const stepLabels = $derived({
-    'pick-start': t('tutorial_pick_start'),
-    'add-step': t('tutorial_step_add'),
-    'play-sequence': t('tutorial_step_play'),
-    ready: t('tutorial_workspace'),
+    "pick-start": t("tutorial_pick_start"),
+    "add-step": t("tutorial_step_add"),
+    "play-sequence": t("tutorial_step_play"),
+    ready: t("tutorial_workspace"),
   });
   const viewedSteps = new Set<CreateTutorialStep>();
 
@@ -258,10 +258,13 @@
   <!-- Navigation buttons -->
   {#if createTutorialState.currentStepIndex > 0}
     <button class="back-button" onclick={handleBack}>
-      <i class="fas fa-arrow-left" aria-hidden="true"></i> {t('learn_back')}
+      <i class="fas fa-arrow-left" aria-hidden="true"></i>
+      {t("learn_back")}
     </button>
   {/if}
-  <button class="skip-button" onclick={handleSkip}>{t('tutorial_skip_tutorial')}</button>
+  <button class="skip-button" onclick={handleSkip}
+    >{t("tutorial_skip_tutorial")}</button
+  >
 
   <!-- Step content. aria-live announces each step swap (title + body) to
        screen readers without moving focus, per the tours' announcement
@@ -284,7 +287,10 @@
       {#if i < createTutorialState.currentStepIndex}
         <button
           class="dot completed"
-          aria-label={t("tutorial_go_back_step", { number: i + 1, step: stepLabels[step] })}
+          aria-label={t("tutorial_go_back_step", {
+            number: i + 1,
+            step: stepLabels[step],
+          })}
           onclick={() => handleDotClick(i)}
         >
           <i class="fas {STEP_ICONS[step]}" aria-hidden="true"></i>
@@ -298,7 +304,10 @@
           class="dot"
           class:active={i === createTutorialState.currentStepIndex}
           role="img"
-          aria-label={t("tutorial_step_label", { number: i + 1, step: stepLabels[step] })}
+          aria-label={t("tutorial_step_label", {
+            number: i + 1,
+            step: stepLabels[step],
+          })}
         >
           <i class="fas {STEP_ICONS[step]}" aria-hidden="true"></i>
         </div>
@@ -352,7 +361,7 @@
   .progress-fill {
     height: 100%;
     background: var(--theme-accent-strong, #8b5cf6);
-    transition: width var(--duration-emphasis, 0.6s) ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
 
   /* Back button */
@@ -371,7 +380,10 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: all var(--duration-normal, 200ms) var(--ease-out);
+    transition:
+      background var(--duration-normal) var(--ease-out),
+      color var(--duration-normal) var(--ease-out),
+      border-color var(--duration-normal) var(--ease-out);
   }
 
   .back-button:hover {
@@ -393,7 +405,10 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     font-size: 0.875rem;
     cursor: pointer;
-    transition: all var(--duration-normal, 200ms) var(--ease-out);
+    transition:
+      background var(--duration-normal) var(--ease-out),
+      color var(--duration-normal) var(--ease-out),
+      border-color var(--duration-normal) var(--ease-out);
   }
 
   .skip-button:hover {
@@ -431,8 +446,8 @@
     opacity: 0;
     transform: translateY(26px) scale(0.965);
     transition:
-      opacity 240ms ease,
-      transform 440ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-dramatic) var(--ease-spring);
   }
 
   .create-tutorial-wizard.animate-in :global(.tutorial-step) {
@@ -461,7 +476,12 @@
     border: 2px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     font-size: 0.9rem;
-    transition: all var(--duration-normal, 200ms) var(--ease-out);
+    transition:
+      background var(--duration-normal) var(--ease-out),
+      border-color var(--duration-normal) var(--ease-out),
+      color var(--duration-normal) var(--ease-out),
+      transform var(--duration-normal) var(--ease-out),
+      padding var(--duration-normal) var(--ease-out);
   }
 
   .dot.active {

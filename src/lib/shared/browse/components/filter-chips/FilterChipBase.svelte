@@ -378,10 +378,10 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     cursor: pointer;
     flex-shrink: 0;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   /* Denser variant for tight scrollable filter rows. Padding/gap tighten;
@@ -522,7 +522,7 @@ Popover uses fixed positioning to escape overflow:hidden containers.
 
   .chip-arrow {
     font-size: 8px;
-    transition: transform var(--duration-fast, 150ms) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
     opacity: 0.6;
   }
 
@@ -558,8 +558,7 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     box-shadow:
       0 4px 12px rgba(0, 0, 0, 0.3),
       0 1px 3px rgba(0, 0, 0, 0.2);
-    animation: popoverIn var(--duration-fast, 150ms)
-      cubic-bezier(0.4, 0, 0.2, 1);
+    animation: popoverIn var(--duration-fast) var(--ease-standard);
   }
 
   @keyframes popoverIn {

@@ -12,8 +12,10 @@
 import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
 import { attachRipple } from "#lib/shared/application/services/ripple-effect.js";
 import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
-import type { DeviceDetector } from '#lib/shared/device/services/device-detector.js'
+import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
 import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+import { motionDuration } from "#lib/shared/transitions/motion.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 
 // Touch tolerance constants
 // 75px is very generous for lazy/casual taps on mobile
@@ -67,12 +69,13 @@ export function createToggleCardState<T>(props: {
       isLandscapeMobile = deviceDetector?.isLandscapeMobile() ?? false;
 
       // Subscribe to device capability changes
-      const cleanupDeviceListener = deviceDetector?.onCapabilitiesChanged(() => {
-        const detector = getDeviceDetector();
-        if (detector) {
-          isLandscapeMobile = detector.isLandscapeMobile();
-        }
-      }) ?? (() => {});
+      const cleanupDeviceListener =
+        deviceDetector?.onCapabilitiesChanged(() => {
+          const detector = getDeviceDetector();
+          if (detector) {
+            isLandscapeMobile = detector.isLandscapeMobile();
+          }
+        }) ?? (() => {});
 
       // Track card dimensions to determine if options are side-by-side
       let resizeObserver: ResizeObserver | null = null;
@@ -90,12 +93,12 @@ export function createToggleCardState<T>(props: {
 
       // Attach subtle ripple effect to card
       const cleanupRipple = cardElement
-          ? attachRipple(cardElement, {
-              color: "rgba(255, 255, 255, 0.25)",
-              duration: 350,
-              opacity: 0.15,
-            })
-          : () => {};
+        ? attachRipple(cardElement, {
+            color: "rgba(255, 255, 255, 0.25)",
+            duration: motionDuration(DURATION.dramatic),
+            opacity: 0.15,
+          })
+        : () => {};
 
       // Return consolidated cleanup function
       return () => {

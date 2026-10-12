@@ -8,6 +8,8 @@
   import { logAccountSetupReminder } from "#lib/shared/analytics/services/onboarding-events.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
+  const REMINDER_DURATION_MS = 10_000;
+
   const accountSetup = getAccountSetupContext();
 
   $effect(() => {
@@ -39,7 +41,7 @@
           total: accountSetup.totalCount,
         }),
         type: "info",
-        duration: 10_000,
+        duration: REMINDER_DURATION_MS,
         announcement: "polite",
         onDismiss: () => {
           if (!resolved) {

@@ -45,7 +45,9 @@
 
   $effect(() => {
     /* Slight delay before sliding in so the transition fires */
-    const id = setTimeout(() => { visible = true; }, 50);
+    const id = setTimeout(() => {
+      visible = true;
+    }, 50);
     return () => clearTimeout(id);
   });
 
@@ -141,27 +143,25 @@
     <!-- Staff body -->
     <rect x="16" y="10" width="8" height="80" rx="2" fill="#8B4513" />
     <!-- Staff highlight -->
-    <rect x="17" y="10" width="2" height="80" rx="1" fill="#A0522D" opacity="0.5" />
+    <rect
+      x="17"
+      y="10"
+      width="2"
+      height="80"
+      rx="1"
+      fill="#A0522D"
+      opacity="0.5"
+    />
 
     <!-- Left eye - white -->
     <circle cx="14" cy="18" r="7" fill="#fff" stroke="#333" stroke-width="1" />
     <!-- Left pupil -->
-    <circle
-      cx={14 + pupilOffsetX}
-      cy={18 + pupilOffsetY}
-      r="3"
-      fill="#000"
-    />
+    <circle cx={14 + pupilOffsetX} cy={18 + pupilOffsetY} r="3" fill="#000" />
 
     <!-- Right eye - white -->
     <circle cx="26" cy="18" r="7" fill="#fff" stroke="#333" stroke-width="1" />
     <!-- Right pupil -->
-    <circle
-      cx={26 + pupilOffsetX}
-      cy={18 + pupilOffsetY}
-      r="3"
-      fill="#000"
-    />
+    <circle cx={26 + pupilOffsetX} cy={18 + pupilOffsetY} r="3" fill="#000" />
   </svg>
 </div>
 
@@ -177,7 +177,7 @@
     align-items: center;
     gap: 4px;
     transform: translateY(160px);
-    transition: transform 300ms ease-out;
+    transition: transform var(--duration-emphasis) var(--ease-standard-out);
     pointer-events: auto;
   }
 
@@ -188,12 +188,17 @@
   /* Speech bubble                                                       */
   .speech-bubble {
     position: relative;
-    background: #FFFFCC;
+    background: #ffffcc;
     border: 1px solid #000;
     border-radius: 4px;
     padding: 8px 24px 8px 8px;
     max-width: 220px;
-    font-family: var(--retro-font-family, "Microsoft Sans Serif", Arial, sans-serif);
+    font-family: var(
+      --retro-font-family,
+      "Microsoft Sans Serif",
+      Arial,
+      sans-serif
+    );
     font-size: var(--retro-font-size, 11px);
     color: #000;
     box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.25);
@@ -210,7 +215,7 @@
     height: 0;
     border-left: 6px solid transparent;
     border-right: 6px solid transparent;
-    border-top: 8px solid #FFFFCC;
+    border-top: 8px solid #ffffcc;
   }
 
   .speech-bubble::before {
@@ -238,7 +243,12 @@
     padding: 0;
     border: 1px solid #808080;
     background: #c0c0c0;
-    font-family: var(--retro-font-family, "Microsoft Sans Serif", Arial, sans-serif);
+    font-family: var(
+      --retro-font-family,
+      "Microsoft Sans Serif",
+      Arial,
+      sans-serif
+    );
     font-size: 9px;
     font-weight: bold;
     line-height: 1;
@@ -247,7 +257,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: inset -1px -1px #808080, inset 1px 1px #fff;
+    box-shadow:
+      inset -1px -1px #808080,
+      inset 1px 1px #fff;
     text-shadow: none;
   }
 

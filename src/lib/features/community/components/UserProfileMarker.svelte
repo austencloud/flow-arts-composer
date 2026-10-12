@@ -25,7 +25,7 @@
 </script>
 
 <div class="marker-popup">
-  <button class="close-btn" onclick={onClose} aria-label={t('community_close')}>
+  <button class="close-btn" onclick={onClose} aria-label={t("community_close")}>
     <i class="fas fa-times" aria-hidden="true"></i>
   </button>
 
@@ -47,7 +47,7 @@
   <div class="stats-grid">
     <div class="stat">
       <i class="fas fa-layer-group" aria-hidden="true"></i>
-      <span class="stat-label">{t('community_stat_sequences')}</span>
+      <span class="stat-label">{t("community_stat_sequences")}</span>
       <span class="stat-value">{user.sequenceCount}</span>
     </div>
   </div>
@@ -68,7 +68,7 @@
   {/if}
 
   <button class="view-profile-btn" onclick={handleViewProfile}>
-    {t('community_view_profile')}
+    {t("community_view_profile")}
     <i class="fas fa-arrow-right" aria-hidden="true"></i>
   </button>
 </div>
@@ -99,7 +99,10 @@
     justify-content: center;
     cursor: pointer;
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.7));
-    transition: all 0.2s ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .close-btn:hover {
@@ -119,7 +122,6 @@
     gap: 12px;
     margin-bottom: 16px;
   }
-
 
   .profile-info {
     flex: 1;
@@ -206,7 +208,9 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;

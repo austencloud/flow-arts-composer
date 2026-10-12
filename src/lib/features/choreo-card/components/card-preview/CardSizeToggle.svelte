@@ -8,7 +8,10 @@
 
   let { selected, onchange }: Props = $props();
 
-  const sizes = Object.entries(CARD_SIZES) as [CardSizeId, (typeof CARD_SIZES)[CardSizeId]][];
+  const sizes = Object.entries(CARD_SIZES) as [
+    CardSizeId,
+    (typeof CARD_SIZES)[CardSizeId],
+  ][];
 </script>
 
 <div class="size-toggle" role="radiogroup" aria-label="Card size">
@@ -44,7 +47,9 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.6));
     border: none;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast);
     white-space: nowrap;
   }
 

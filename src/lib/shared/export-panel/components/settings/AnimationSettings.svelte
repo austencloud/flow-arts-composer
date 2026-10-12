@@ -191,7 +191,7 @@
     background: var(--theme-accent);
     border-radius: 50%;
     cursor: pointer;
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .slider::-webkit-slider-thumb:hover {
@@ -210,7 +210,7 @@
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .slider::-moz-range-thumb:hover {
@@ -276,7 +276,11 @@
     border: 2px solid var(--theme-stroke);
     border-radius: 14px;
     cursor: pointer;
-    transition: all var(--duration-emphasis) ease;
+    transition:
+      background var(--duration-emphasis) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard),
+      transform var(--duration-emphasis) var(--ease-standard),
+      outline-color var(--duration-emphasis) var(--ease-standard);
     flex-shrink: 0;
   }
 
@@ -302,7 +306,7 @@
     height: 20px;
     background: white;
     border-radius: 50%;
-    transition: transform var(--duration-emphasis) ease;
+    transition: transform var(--duration-emphasis) var(--ease-standard);
   }
 
   .toggle-button.active .toggle-thumb {

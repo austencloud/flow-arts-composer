@@ -111,7 +111,7 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
 
     /* Animation */
-    animation: slideUp 150ms ease-out;
+    animation: slideUp var(--duration-fast) var(--ease-standard-out);
   }
 
   /* When VirtualKeyboard API is available, trust CSS env() completely */
@@ -167,7 +167,11 @@
     font-weight: 600;
 
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
 
     /* Ensure touch target */
     touch-action: manipulation;

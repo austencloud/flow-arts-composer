@@ -38,8 +38,15 @@
 <script lang="ts">
   import type { CoverCard } from "../domain/models/product";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import { renderCoverFront, renderCoverBack, prewarmCovers } from "../services/cover-front-renderer";
-  import { DEFAULT_SHOP_PROP, bakedCoverUrl } from "../domain/shop-prop-options";
+  import {
+    renderCoverFront,
+    renderCoverBack,
+    prewarmCovers,
+  } from "../services/cover-front-renderer";
+  import {
+    DEFAULT_SHOP_PROP,
+    bakedCoverUrl,
+  } from "../domain/shop-prop-options";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   interface Props {
@@ -148,7 +155,8 @@
     return n;
   });
   const shown = $derived(cards.slice(0, count));
-  const tilt = (i: number, n: number) => (n <= 1 ? 0 : -12 + (24 * i) / (n - 1));
+  const tilt = (i: number, n: number) =>
+    n <= 1 ? 0 : -12 + (24 * i) / (n - 1);
 
   // ── deal choreography (only when `deal`) ─────────────────────────────────
   // Timing lives outside the DURATION scale on purpose: this is a one-shot
@@ -190,7 +198,9 @@
 
   const maxW = $derived(maxCardWidth ?? Math.round(cardWidth * 1.8));
   const cardW = $derived(
-    shown.length && boxW ? Math.round(Math.min(maxW, fitW(shown.length))) : cardWidth
+    shown.length && boxW
+      ? Math.round(Math.min(maxW, fitW(shown.length)))
+      : cardWidth
   );
 
   // Live preview renders target the ON-SCREEN size (largest displayed width ×
@@ -260,7 +270,8 @@
         continue;
       }
       // Baked covers load straight from Storage — no print pipeline. Fronts only.
-      const baked = face === "front" && !freshFront ? bakedCoverUrl(c, prop) : undefined;
+      const baked =
+        face === "front" && !freshFront ? bakedCoverUrl(c, prop) : undefined;
       if (baked) {
         urls[k] = baked;
         resolvedCovers.set(k, baked);
@@ -271,7 +282,9 @@
         face === "back"
           ? renderCoverBack(c, { propType: prop })
           : renderCoverFront(c, {
-              deckId, deckName, propType: prop,
+              deckId,
+              deckName,
+              propType: prop,
               ...(freshFront
                 ? { qrUrl, showQRCode: Boolean(qrUrl), usePhysicalLayout: true }
                 : { maxWidthPx: renderWidth }),
@@ -314,9 +327,17 @@
       <div
         class="fan-tilt"
         style:transform={slotTransform(i, shown.length)}
-        style:transition-duration={deal ? `${dealt ? DEAL_MS : GATHER_MS}ms` : undefined}
-        style:transition-timing-function={deal ? (dealt ? DEAL_EASE : GATHER_EASE) : undefined}
-        style:transition-delay={deal && dealt ? `${i * DEAL_STAGGER}ms` : undefined}
+        style:transition-duration={deal
+          ? `${dealt ? DEAL_MS : GATHER_MS}ms`
+          : undefined}
+        style:transition-timing-function={deal
+          ? dealt
+            ? DEAL_EASE
+            : GATHER_EASE
+          : undefined}
+        style:transition-delay={deal && dealt
+          ? `${i * DEAL_STAGGER}ms`
+          : undefined}
       >
         <!-- `data-card-box` is the measurement seam: this element is exactly
              the TRIMMED card (the guillotine cut, 5:7), so a host that needs
@@ -362,8 +383,8 @@
        the card slipping back INTO the fan instead of a static snap after the
        shrink (which is exactly how it read when delayed to the end). */
     transition:
-      transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-      z-index 0s 0.18s;
+      transform var(--duration-emphasis) var(--ease-spring),
+      z-index 0s var(--duration-fast);
     /* Pop grows AROUND the card's base, never sliding it away from the
        pointer. Bottom-center origin means every edge either stays put (bottom)
        or moves outward — the hit area under a stationary cursor only ever
@@ -384,7 +405,7 @@
     transform: scale(1.14);
     z-index: 9;
     transition:
-      transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+      transform var(--duration-normal) var(--ease-out),
       z-index 0s 0s;
   }
   .fan.interactive .fan-slot:hover .card-box,
@@ -416,7 +437,7 @@
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
     background: #f4f4f4;
     /* Shadow deepens in step with the hover pop. */
-    transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: box-shadow var(--duration-normal) var(--ease-out);
   }
 
   /* Clickable overlay: fills the card box so the whole card is the hit target
@@ -451,7 +472,7 @@
     left: -4.8%;
     top: -3.4286%;
     display: block;
-    animation: card-in 220ms ease both;
+    animation: card-in var(--duration-normal) var(--ease-standard) both;
   }
 
   @keyframes card-in {

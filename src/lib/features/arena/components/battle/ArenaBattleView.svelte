@@ -64,7 +64,12 @@
   // A version belongs to the pick (versionAfterPick): a V2 tile sets Version 2,
   // and a different prop, including a random one, starts at Version 1.
   function setMatchupProp(prop: PropType, look?: PropLook): void {
-    matchupPropLook = versionAfterPick(matchupPropType, matchupPropLook, prop, look);
+    matchupPropLook = versionAfterPick(
+      matchupPropType,
+      matchupPropLook,
+      prop,
+      look
+    );
     matchupPropType = prop;
   }
 
@@ -423,8 +428,8 @@
     border-radius: 10px;
     cursor: pointer;
     transition:
-      border-color 0.15s ease,
-      background 0.15s ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
     padding: 6px;
     flex-shrink: 0;
   }
@@ -456,8 +461,8 @@
     border-radius: 10px;
     cursor: pointer;
     transition:
-      border-color 0.15s ease,
-      background 0.15s ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
     flex-shrink: 0;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     font-size: 16px;
@@ -506,8 +511,8 @@
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
     transition:
-      border-color 0.2s ease,
-      color 0.2s ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .skip-button:hover:not(:disabled) {

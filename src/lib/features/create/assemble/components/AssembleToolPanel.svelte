@@ -20,6 +20,7 @@
   import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
 
   const props: { tabState: AssembleTabState } = $props();
@@ -39,7 +40,7 @@
       return;
     }
 
-    const duration = motionDuration(240);
+    const duration = motionDuration(DURATION.normal);
     if (duration === 0) return;
     const targets = builderSurfaceRef.querySelectorAll<HTMLElement>(
       ".stage-actions, .dock-hand-row"

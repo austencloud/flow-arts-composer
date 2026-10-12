@@ -19,9 +19,13 @@
 <div class="toast">
   <span>{message}</span>
   {#if showUndo && onUndo}
-    <button type="button" class="toast-btn" onclick={onUndo}>{t("settings_undo")}</button>
+    <button type="button" class="toast-btn" onclick={onUndo}
+      >{t("settings_undo")}</button
+    >
   {:else if showRedo && onRedo}
-    <button type="button" class="toast-btn" onclick={onRedo}>{t("settings_redo")}</button>
+    <button type="button" class="toast-btn" onclick={onRedo}
+      >{t("settings_redo")}</button
+    >
   {/if}
 </div>
 
@@ -42,7 +46,7 @@
     font-size: var(--font-size-compact);
     color: var(--theme-text, var(--theme-text));
     z-index: var(--z-toast);
-    animation: slideUp var(--duration-normal) ease-out;
+    animation: slideUp var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes slideUp {
@@ -74,7 +78,13 @@
     font-size: var(--font-size-compact);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .toast-btn:hover {

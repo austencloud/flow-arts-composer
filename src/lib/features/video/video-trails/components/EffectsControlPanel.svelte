@@ -20,12 +20,15 @@
   let detectorDropdownOpen = $state(false);
 
   const activeDetectorLabel = $derived(
-    DETECTOR_REGISTRY.find((r) => r.id === trailsState.activeDetectorId)?.name ?? "Unknown",
+    DETECTOR_REGISTRY.find((r) => r.id === trailsState.activeDetectorId)
+      ?.name ?? "Unknown"
   );
 
   function toggleEffect(key: EffectSection["key"]) {
     const current = trailsState.effectConfig[key];
-    trailsState.setEffectConfig({ [key]: { ...current, enabled: !current.enabled } });
+    trailsState.setEffectConfig({
+      [key]: { ...current, enabled: !current.enabled },
+    });
   }
 
   function selectDetector(id: string) {
@@ -38,11 +41,16 @@
   <h3 class="panel-title">Effects</h3>
 
   {#each sections as section}
-    <div class="effect-section" class:enabled={trailsState.effectConfig[section.key].enabled}>
+    <div
+      class="effect-section"
+      class:enabled={trailsState.effectConfig[section.key].enabled}
+    >
       <button class="effect-toggle" onclick={() => toggleEffect(section.key)}>
         <i class="fas {section.icon}" aria-hidden="true"></i>
         <span>{section.label}</span>
-        <span class="toggle-indicator">{trailsState.effectConfig[section.key].enabled ? "ON" : "OFF"}</span>
+        <span class="toggle-indicator"
+          >{trailsState.effectConfig[section.key].enabled ? "ON" : "OFF"}</span
+        >
       </button>
     </div>
   {/each}
@@ -58,10 +66,15 @@
         max="1"
         step="0.05"
         value={trailsState.detectionConfig.threshold}
-        oninput={(e) => trailsState.setDetectionConfig({ threshold: Number((e.target as HTMLInputElement).value) })}
+        oninput={(e) =>
+          trailsState.setDetectionConfig({
+            threshold: Number((e.target as HTMLInputElement).value),
+          })}
         aria-label="Threshold"
       />
-      <span class="value">{trailsState.detectionConfig.threshold.toFixed(2)}</span>
+      <span class="value"
+        >{trailsState.detectionConfig.threshold.toFixed(2)}</span
+      >
     </div>
 
     <div class="slider-row">
@@ -72,16 +85,24 @@
         max="2"
         step="0.1"
         value={trailsState.detectionConfig.sensitivity}
-        oninput={(e) => trailsState.setDetectionConfig({ sensitivity: Number((e.target as HTMLInputElement).value) })}
+        oninput={(e) =>
+          trailsState.setDetectionConfig({
+            sensitivity: Number((e.target as HTMLInputElement).value),
+          })}
         aria-label="Sensitivity"
       />
-      <span class="value">{trailsState.detectionConfig.sensitivity.toFixed(1)}</span>
+      <span class="value"
+        >{trailsState.detectionConfig.sensitivity.toFixed(1)}</span
+      >
     </div>
 
     <div class="select-row">
       <span class="select-label">Detector</span>
       <div class="custom-select">
-        <button class="select-trigger" onclick={() => (detectorDropdownOpen = !detectorDropdownOpen)}>
+        <button
+          class="select-trigger"
+          onclick={() => (detectorDropdownOpen = !detectorDropdownOpen)}
+        >
           <span>{activeDetectorLabel}</span>
           <i class="fas fa-chevron-down" aria-hidden="true"></i>
         </button>
@@ -121,7 +142,10 @@
     color: var(--theme-text, #ffffff);
   }
 
-  .effect-section { border-radius: 6px; overflow: hidden; }
+  .effect-section {
+    border-radius: 6px;
+    overflow: hidden;
+  }
 
   .effect-toggle {
     display: flex;
@@ -135,14 +159,16 @@
     cursor: pointer;
     font-size: var(--font-size-min, 14px);
     text-align: left;
-    transition: background 0.15s;
+    transition: background var(--duration-fast);
   }
 
   .effect-toggle:hover {
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
   }
 
-  .enabled .effect-toggle { color: var(--theme-text, #ffffff); }
+  .enabled .effect-toggle {
+    color: var(--theme-text, #ffffff);
+  }
 
   .toggle-indicator {
     margin-left: auto;
@@ -162,7 +188,6 @@
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
   }
 
-
   .slider-row {
     display: flex;
     align-items: center;
@@ -172,7 +197,9 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.6));
   }
 
-  .slider-label { min-width: 70px; }
+  .slider-label {
+    min-width: 70px;
+  }
 
   .slider-row input[type="range"] {
     -webkit-appearance: none;
@@ -210,7 +237,6 @@
     font-variant-numeric: tabular-nums;
   }
 
-
   .select-row {
     display: flex;
     align-items: center;
@@ -220,7 +246,9 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.6));
   }
 
-  .select-label { min-width: 70px; }
+  .select-label {
+    min-width: 70px;
+  }
 
   .custom-select {
     position: relative;

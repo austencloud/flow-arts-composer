@@ -24,9 +24,21 @@
   const opts = { tipEnds: 1 as const, pathShape: "arc" as const };
   const tip = { dx: 150, dy: 0 };
   const pathA =
-    calculateMandalaGeometry(seq.steps.slice(0, 2), undefined, undefined, opts, tip).right[0]?.d ?? "";
+    calculateMandalaGeometry(
+      seq.steps.slice(0, 2),
+      undefined,
+      undefined,
+      opts,
+      tip
+    ).right[0]?.d ?? "";
   const pathB =
-    calculateMandalaGeometry(seq.steps.slice(2, 4), undefined, undefined, opts, tip).right[0]?.d ?? "";
+    calculateMandalaGeometry(
+      seq.steps.slice(2, 4),
+      undefined,
+      undefined,
+      opts,
+      tip
+    ).right[0]?.d ?? "";
 
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
 
@@ -83,9 +95,20 @@
 </script>
 
 <div class="assembly">
-  <svg class="assembly-stage" viewBox="-176 -176 352 352" role="img" aria-label="The two halves of the CAP drawing on and joining into one closed loop">
+  <svg
+    class="assembly-stage"
+    viewBox="-176 -176 352 352"
+    role="img"
+    aria-label="The two halves of the CAP drawing on and joining into one closed loop"
+  >
     <defs>
-      <filter id="caps-assembly-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <filter
+        id="caps-assembly-glow"
+        x="-30%"
+        y="-30%"
+        width="160%"
+        height="160%"
+      >
         <feGaussianBlur stdDeviation="4" result="b" />
         <feMerge>
           <feMergeNode in="b" />
@@ -210,8 +233,8 @@
     font-size: 0.9rem;
     cursor: pointer;
     transition:
-      background 0.2s ease,
-      border-color 0.2s ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
   .replay:hover,
   .replay:focus-visible {

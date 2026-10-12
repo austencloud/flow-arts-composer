@@ -44,7 +44,10 @@
   <button
     type="button"
     class="fs-close-btn"
-    onclick={(e) => { e.stopPropagation(); onExit(); }}
+    onclick={(e) => {
+      e.stopPropagation();
+      onExit();
+    }}
     aria-label={t("viewer_ui_exit_fullscreen")}
   >
     <i class="fas fa-compress" aria-hidden="true"></i>
@@ -52,19 +55,23 @@
 
   {#if viewMode !== "image"}
     <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-    <div class="fs-transport" role="presentation" onclick={(e) => e.stopPropagation()}>
+    <div
+      class="fs-transport"
+      role="presentation"
+      onclick={(e) => e.stopPropagation()}
+    >
       <TransportControls
         {isPlaying}
-        onPlaybackToggle={onPlaybackToggle}
-        onStepHalfBeatBackward={onStepHalfBeatBackward}
-        onStepHalfBeatForward={onStepHalfBeatForward}
-        onStepFullBeatBackward={onStepFullBeatBackward}
-        onStepFullBeatForward={onStepFullBeatForward}
-        onRestartToStart={onRestartToStart}
+        {onPlaybackToggle}
+        {onStepHalfBeatBackward}
+        {onStepHalfBeatForward}
+        {onStepFullBeatBackward}
+        {onStepFullBeatForward}
+        {onRestartToStart}
       />
       <TempoControl
         {bpm}
-        onBpmChange={onBpmChange}
+        {onBpmChange}
         showPresets={false}
         showPractice={false}
       />
@@ -83,7 +90,8 @@
     padding: 16px;
     pointer-events: none;
     opacity: 0;
-    transition: opacity var(--duration-normal, 200ms) var(--ease-out, ease-out);
+    transition: opacity var(--duration-normal)
+      var(--ease-out, var(--ease-standard-out));
     z-index: 10;
   }
 
@@ -110,7 +118,9 @@
     cursor: pointer;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
   }
 
   .fs-close-btn:hover {

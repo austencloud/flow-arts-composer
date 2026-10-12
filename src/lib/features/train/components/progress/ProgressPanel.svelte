@@ -34,7 +34,6 @@
 
   onMount(async () => {
     try {
-
       const [statsData, bestsData, sessionsData] = await Promise.all([
         historyService.getStatsOverview(),
         historyService.getPersonalBests(),
@@ -219,7 +218,6 @@
     text-align: center;
   }
 
-
   .empty-state {
     display: flex;
     flex-direction: column;
@@ -315,7 +313,9 @@
     background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke);
     border-radius: 16px;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .stat-card:hover {
@@ -497,7 +497,9 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     position: relative;
     overflow: hidden;
   }
@@ -531,13 +533,12 @@
   .start-btn i:last-child {
     font-size: var(--font-size-sm);
     opacity: 0.8;
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .start-btn:hover i:last-child {
     transform: translateX(4px);
   }
-
 
   .section {
     display: flex;
@@ -552,7 +553,6 @@
     padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--theme-stroke, var(--theme-stroke));
   }
-
 
   @media (max-width: 480px) {
     .progress-panel {

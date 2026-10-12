@@ -159,7 +159,9 @@
     background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke, var(--theme-stroke));
     border-radius: clamp(12px, 2vh, 18px);
-    transition: all var(--duration-normal) ease;
+    transition:
+      padding var(--duration-normal) var(--ease-standard),
+      border-radius var(--duration-normal) var(--ease-standard);
   }
 
   .email-change-section.compact {
@@ -267,7 +269,10 @@
     border-radius: 8px;
     color: var(--theme-text);
     font-size: clamp(14px, 1.9vh, 17px);
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .email-change-section.compact .input {
@@ -357,7 +362,12 @@
     font-size: clamp(14px, 1.9vh, 17px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     border: none;
   }
 

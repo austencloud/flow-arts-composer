@@ -175,7 +175,8 @@
     box-shadow:
       0 5px 14px color-mix(in srgb, var(--semantic-success) 45%, transparent),
       0 0 18px color-mix(in srgb, var(--semantic-success) 20%, transparent);
-    animation: play-arrive 400ms ease-out both;
+    animation: play-arrive var(--duration-dramatic) var(--ease-standard-out)
+      both;
   }
 
   .view-sequence-button.play-purpose::after {
@@ -311,7 +312,7 @@
 
   .view-sequence-button:active {
     transform: scale(0.92);
-    transition: transform 80ms ease;
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .view-sequence-button.play-purpose:active {

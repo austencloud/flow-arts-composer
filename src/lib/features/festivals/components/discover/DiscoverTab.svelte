@@ -13,7 +13,9 @@
   async function handleBookmark(festivalId: string) {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
-    await festivalState.updateTracker(uid, festivalId, { status: "interested" });
+    await festivalState.updateTracker(uid, festivalId, {
+      status: "interested",
+    });
   }
 </script>
 
@@ -35,7 +37,8 @@
           <FestivalGridCard
             {festival}
             tracker={festivalState.trackers.get(festival.id)}
-            attendanceCount={festivalState.attendanceCounts.get(festival.id) ?? 0}
+            attendanceCount={festivalState.attendanceCounts.get(festival.id) ??
+              0}
             onselect={() => (festivalState.selectedFestival = festival)}
             onbookmark={() => handleBookmark(festival.id)}
           />
@@ -78,7 +81,8 @@
     gap: 1.25rem;
     align-content: start;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2)) transparent;
+    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2))
+      transparent;
   }
 
   .festival-grid::-webkit-scrollbar {
@@ -141,7 +145,10 @@
     cursor: pointer;
     font-size: var(--font-size-min, 14px);
     padding: 10px 24px;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .submit-festival-btn:hover {

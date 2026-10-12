@@ -155,9 +155,10 @@
     opacity: 1;
     transform: translateY(0);
     transition:
-      opacity var(--duration-dramatic, 350ms) var(--ease-out, ease-out),
-      transform var(--duration-dramatic, 350ms) var(--ease-out, ease-out);
-    transition-delay: calc(var(--card-index) * 40ms);
+      opacity var(--duration-dramatic) var(--ease-out, var(--ease-standard-out)),
+      transform var(--duration-dramatic)
+        var(--ease-out, var(--ease-standard-out));
+    transition-delay: calc(var(--card-index) * var(--stagger-normal));
   }
 
   @starting-style {
@@ -191,8 +192,9 @@
     border-radius: var(--radius-2026-lg, 18px);
     /* Hover/press animate transform + box-shadow only (compositor). */
     transition:
-      transform var(--duration-normal, 200ms) var(--ease-out, ease-out),
-      box-shadow var(--duration-normal, 200ms) var(--ease-out, ease-out);
+      transform var(--duration-normal) var(--ease-out, var(--ease-standard-out)),
+      box-shadow var(--duration-normal)
+        var(--ease-out, var(--ease-standard-out));
   }
 
   .game-card:hover .card-inner {

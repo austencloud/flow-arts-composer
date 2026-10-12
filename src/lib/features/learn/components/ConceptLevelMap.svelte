@@ -139,7 +139,9 @@
           <div class="place-heading">
             <span class="selected-id">{selectedPlace.id}</span>
             <div>
-              <h3 id="selected-place-title">{placeText(selectedPlace.id, "name")}</h3>
+              <h3 id="selected-place-title">
+                {placeText(selectedPlace.id, "name")}
+              </h3>
               <p>{placeText(selectedPlace.id, "description")}</p>
             </div>
           </div>
@@ -170,7 +172,11 @@
                     class="resource-action primary"
                     onclick={() => onLessonStart(lesson, selectedPlace.id)}
                   >
-                    <span>{tDynamic("learn_place_lesson_named", { name: localizedConcept(lesson, "name") })}</span>
+                    <span
+                      >{tDynamic("learn_place_lesson_named", {
+                        name: localizedConcept(lesson, "name"),
+                      })}</span
+                    >
                     {#if lessonRef.coverage === "partial"}
                       <small>{t("learn_ui_part_of_concept")}</small>
                     {/if}
@@ -192,7 +198,11 @@
                   class="resource-action secondary"
                   href="/guide/level-1/{guide.slug}"
                 >
-                  <span>{t("learn_ui_read_named", { name: guideText(guide.slug) })}</span>
+                  <span
+                    >{t("learn_ui_read_named", {
+                      name: guideText(guide.slug),
+                    })}</span
+                  >
                   {#if guide.coverage === "partial"}
                     <small>{t("learn_ui_related_section")}</small>
                   {/if}
@@ -361,9 +371,9 @@
     text-align: left;
     cursor: pointer;
     transition:
-      background-color var(--duration-normal) ease,
-      border-color var(--duration-normal) ease,
-      box-shadow var(--duration-normal) ease;
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .place-button:hover {
@@ -538,8 +548,8 @@
     text-decoration: none;
     cursor: pointer;
     transition:
-      background-color var(--duration-normal) ease,
-      border-color var(--duration-normal) ease;
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .resource-action.primary {

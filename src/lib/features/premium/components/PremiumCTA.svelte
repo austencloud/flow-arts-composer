@@ -23,8 +23,8 @@
 
 <div class="cta">
   <div class="price-display">
-    <span class="amount">{t('premium_cta_price_amount', { price })}</span>
-    <span class="period">{t('premium_cta_price_period', { period })}</span>
+    <span class="amount">{t("premium_cta_price_amount", { price })}</span>
+    <span class="period">{t("premium_cta_price_period", { period })}</span>
   </div>
   <button
     class="subscribe-button"
@@ -33,13 +33,13 @@
   >
     {#if isLoading}
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-      <span>{t('premium_cta_processing')}</span>
+      <span>{t("premium_cta_processing")}</span>
     {:else}
       <i class="fas fa-unlock" aria-hidden="true"></i>
-      <span>{t('premium_cta_unlock')}</span>
+      <span>{t("premium_cta_unlock")}</span>
     {/if}
   </button>
-  <p class="note">{t('premium_cta_cancel_note')}</p>
+  <p class="note">{t("premium_cta_cancel_note")}</p>
 </div>
 
 <style>
@@ -91,7 +91,10 @@
     font-size: var(--font-size-lg);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast, var(--duration-fast) ease);
+    transition:
+      transform
+        var(--transition-fast, var(--duration-fast) var(--ease-standard)),
+      opacity var(--transition-fast, var(--duration-fast) var(--ease-standard));
     margin-bottom: var(--spacing-md, 16px);
   }
 

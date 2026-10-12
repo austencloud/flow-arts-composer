@@ -145,10 +145,10 @@
     border: 1px solid color-mix(in srgb, var(--card-accent) 18%, transparent);
     border-radius: 14px;
     transition:
-      background 0.3s ease,
-      border-color 0.3s ease,
-      box-shadow 0.2s ease,
-      transform 0.2s ease;
+      background var(--duration-emphasis) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     cursor: pointer;
   }
 
@@ -184,7 +184,7 @@
       var(--card-accent-light) 100%
     );
     border-radius: 50%;
-    transition: background var(--duration-emphasis) ease;
+    transition: background var(--duration-emphasis) var(--ease-standard);
   }
 
   .user-avatar img,
@@ -202,7 +202,8 @@
     justify-content: center;
     background: linear-gradient(
       135deg,
-      color-mix(in srgb, var(--card-accent) 20%, var(--theme-panel-bg, #1a1a2e)) 0%,
+      color-mix(in srgb, var(--card-accent) 20%, var(--theme-panel-bg, #1a1a2e))
+        0%,
       var(--theme-panel-bg, #1a1a2e) 100%
     );
   }
@@ -210,7 +211,7 @@
   .avatar-placeholder i {
     font-size: var(--font-size-xl);
     color: var(--card-accent-light);
-    transition: color var(--duration-emphasis) ease;
+    transition: color var(--duration-emphasis) var(--ease-standard);
   }
 
   /* Role badge */
@@ -276,8 +277,8 @@
     color: var(--card-accent);
     opacity: 0.75;
     transition:
-      opacity 0.2s ease,
-      color 0.3s ease;
+      opacity var(--duration-normal) var(--ease-standard),
+      color var(--duration-emphasis) var(--ease-standard);
   }
 
   .user-card:hover .stat i {

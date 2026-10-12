@@ -55,7 +55,10 @@ MotionTypeButton - Answer button for motion type selection
     border-radius: 10px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     position: relative;
   }
 
@@ -76,13 +79,21 @@ MotionTypeButton - Answer button for motion type selection
   }
 
   .answer-button.correct {
-    background: color-mix(in srgb, var(--semantic-success, #4ade80) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #4ade80) 15%,
+      transparent
+    );
     border-color: var(--semantic-success, #4ade80);
     color: var(--semantic-success, #4ade80);
   }
 
   .answer-button.incorrect {
-    background: color-mix(in srgb, var(--semantic-error, #f87171) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #f87171) 15%,
+      transparent
+    );
     border-color: var(--semantic-error);
     color: var(--semantic-error);
   }

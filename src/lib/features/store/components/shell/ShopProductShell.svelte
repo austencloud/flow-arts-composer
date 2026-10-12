@@ -168,7 +168,9 @@
 
   let viewportWidth = $state(0);
   const narrow = $derived(viewportWidth > 0 && viewportWidth < 720);
-  const dockVisible = $derived(Boolean(dock) && narrow && !buyRailInView && !loading && !error);
+  const dockVisible = $derived(
+    Boolean(dock) && narrow && !buyRailInView && !loading && !error
+  );
 </script>
 
 <svelte:window bind:innerWidth={viewportWidth} />
@@ -192,7 +194,11 @@
       <p class="state loading">{loadingLabel}</p>
     {:else}
       <section class="hero">
-        <div class="hero-media" class:framed={mediaFrame} style:--media-h={mediaHeight}>
+        <div
+          class="hero-media"
+          class:framed={mediaFrame}
+          style:--media-h={mediaHeight}
+        >
           {@render media?.()}
         </div>
 
@@ -229,7 +235,10 @@
             {#if assurances.length > 0}
               <ul class="assurance">
                 {#each assurances as line (line.text)}
-                  <li><i class={line.icon} aria-hidden="true"></i> {line.text}</li>
+                  <li>
+                    <i class={line.icon} aria-hidden="true"></i>
+                    {line.text}
+                  </li>
                 {/each}
               </ul>
             {/if}
@@ -311,7 +320,9 @@
     text-decoration: none;
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
-    transition: background 0.2s, border-color 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal);
   }
   .back-button:hover {
     background: var(--theme-card-bg-hover, rgba(255, 255, 255, 0.08));
@@ -414,7 +425,11 @@
     font-family: var(--page-title-font, "Fraunces", Georgia, serif);
     font-style: italic;
     font-weight: 700;
-    font-variation-settings: "opsz" 144, "wght" 700, "SOFT" 0, "WONK" 1;
+    font-variation-settings:
+      "opsz" 144,
+      "wght" 700,
+      "SOFT" 0,
+      "WONK" 1;
     font-size: clamp(1.8rem, 3vw, 2.4rem);
     margin: 0;
     letter-spacing: -0.015em;

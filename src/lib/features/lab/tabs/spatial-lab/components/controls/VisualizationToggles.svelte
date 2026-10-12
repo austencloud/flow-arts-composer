@@ -24,28 +24,62 @@
         class:on={labState[t.key]}
         aria-pressed={labState[t.key]}
         aria-label={t.label}
-        onclick={() => { labState[t.key] = !labState[t.key]; }}
+        onclick={() => {
+          labState[t.key] = !labState[t.key];
+        }}
       ></button>
     </div>
   {/each}
 </div>
 
 <style>
-  .panel-section { display: flex; flex-direction: column; gap: 8px; }
+  .panel-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
   .panel-label {
-    font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
-    color: #666; font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #666;
+    font-weight: 600;
   }
-  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; }
-  .toggle-label { font-size: 12px; color: #ccc; }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 0;
+  }
+  .toggle-label {
+    font-size: 12px;
+    color: #ccc;
+  }
   .toggle-btn {
-    width: 36px; height: 20px; border-radius: 10px; border: none; cursor: pointer;
-    position: relative; transition: background 0.2s; background: #2a2a4a;
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: background var(--duration-normal);
+    background: #2a2a4a;
   }
-  .toggle-btn.on { background: #4a6aff; }
+  .toggle-btn.on {
+    background: #4a6aff;
+  }
   .toggle-btn::after {
-    content: ''; position: absolute; top: 2px; left: 2px;
-    width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.2s;
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform var(--duration-normal);
   }
-  .toggle-btn.on::after { transform: translateX(16px); }
+  .toggle-btn.on::after {
+    transform: translateX(16px);
+  }
 </style>

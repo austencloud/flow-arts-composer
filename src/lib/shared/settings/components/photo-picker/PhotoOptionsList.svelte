@@ -213,7 +213,7 @@
     color: var(--semantic-error, #ef4444);
     cursor: pointer;
     opacity: 0.7;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
     margin: -8px -8px -8px 0;
   }
 
@@ -239,7 +239,15 @@
     border-radius: var(--radius-md, 12px);
     color: var(--theme-text, #ffffff);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     text-align: left;
     width: 100%;
   }

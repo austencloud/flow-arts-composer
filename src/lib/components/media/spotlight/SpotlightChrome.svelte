@@ -186,10 +186,23 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--spotlight-chrome-padding, 16px);
-    padding-top: calc(var(--spotlight-chrome-padding, 16px) + var(--spotlight-safe-area-top, 0px));
-    padding-left: calc(var(--spotlight-chrome-padding, 16px) + var(--spotlight-safe-area-left, 0px));
-    padding-right: calc(var(--spotlight-chrome-padding, 16px) + var(--spotlight-safe-area-right, 0px));
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+    padding-top: calc(
+      var(--spotlight-chrome-padding, 16px) +
+        var(--spotlight-safe-area-top, 0px)
+    );
+    padding-left: calc(
+      var(--spotlight-chrome-padding, 16px) +
+        var(--spotlight-safe-area-left, 0px)
+    );
+    padding-right: calc(
+      var(--spotlight-chrome-padding, 16px) +
+        var(--spotlight-safe-area-right, 0px)
+    );
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.6) 0%,
+      transparent 100%
+    );
     z-index: 10;
   }
 
@@ -231,8 +244,8 @@
     align-items: center;
     justify-content: center;
     transition:
-      background 150ms ease,
-      transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-spring);
   }
 
   .spotlight-close:hover {
@@ -274,9 +287,9 @@
     justify-content: center;
     pointer-events: auto;
     transition:
-      background 200ms ease,
-      transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1),
-      opacity 200ms ease;
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-spring),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .spotlight-arrow:hover:not(:disabled) {
@@ -325,7 +338,10 @@
 
     .spotlight-chrome-top {
       padding: var(--spotlight-chrome-padding-mobile, 12px);
-      padding-top: calc(var(--spotlight-chrome-padding-mobile, 12px) + var(--spotlight-safe-area-top, 0px));
+      padding-top: calc(
+        var(--spotlight-chrome-padding-mobile, 12px) +
+          var(--spotlight-safe-area-top, 0px)
+      );
     }
   }
 

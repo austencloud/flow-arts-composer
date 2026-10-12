@@ -144,8 +144,8 @@
 
     /* Smooth transition for layout changes (prevents jarring snap during animations) */
     transition:
-      grid-template-columns 300ms cubic-bezier(0.4, 0, 0.2, 1),
-      grid-template-rows 300ms cubic-bezier(0.4, 0, 0.2, 1);
+      grid-template-columns var(--duration-emphasis) var(--ease-standard),
+      grid-template-rows var(--duration-emphasis) var(--ease-standard);
   }
 
   /* During layout stabilization, hide content until container dimensions settle */
@@ -155,7 +155,8 @@
 
   /* Fade in once stabilization complete */
   .pictograph-row:not(.layout-stabilizing) {
-    animation: fadeInGrid var(--duration-normal) ease-out forwards;
+    animation: fadeInGrid var(--duration-normal) var(--ease-standard-out)
+      forwards;
   }
 
   @keyframes fadeInGrid {
@@ -216,7 +217,8 @@
 
   /* Entrance animation similar to StepCell */
   .pictograph-container.animate {
-    animation: scaleInStaggered 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation: scaleInStaggered var(--duration-dramatic) var(--ease-spring)
+      forwards;
     animation-delay: var(--animation-delay, 0ms);
   }
 
@@ -239,7 +241,13 @@
     display: block; /* Use block instead of flex to avoid sizing conflicts */
     position: relative;
     box-sizing: border-box;
-    transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      transform var(--duration-emphasis) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-emphasis) var(--ease-standard),
+      filter var(--duration-emphasis) var(--ease-standard),
+      background var(--duration-emphasis) var(--ease-standard),
+      outline var(--duration-emphasis) var(--ease-standard);
     border: 2px solid transparent;
     border-radius: 0px;
     box-shadow:
@@ -284,7 +292,7 @@
   /* Mobile/universal active state */
   .pictograph-container:active .pictograph-wrapper {
     transform: scale(0.97);
-    transition: transform var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .pictograph-container.selected .pictograph-wrapper {

@@ -201,8 +201,8 @@
     justify-content: center;
     flex-shrink: 0;
     transition:
-      opacity 0.15s ease,
-      filter 0.15s ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard);
     /* Prevent icon from blocking button clicks */
     pointer-events: none;
   }
@@ -281,7 +281,7 @@
     font-weight: 600;
     line-height: 16px;
     text-align: center;
-    animation: badgePop var(--duration-emphasis) ease;
+    animation: badgePop var(--duration-emphasis) var(--ease-standard);
     pointer-events: none;
     z-index: 5;
   }

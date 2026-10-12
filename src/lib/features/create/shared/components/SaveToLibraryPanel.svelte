@@ -258,7 +258,12 @@
             disabled={s.isSaving}
           />
           <p class="field-note">
-            {t("create_save_solo_hand", { hand: s.authoredHand === 'left' ? t('create_save_hand_left') : t('create_save_hand_right') })}
+            {t("create_save_solo_hand", {
+              hand:
+                s.authoredHand === "left"
+                  ? t("create_save_hand_left")
+                  : t("create_save_hand_right"),
+            })}
           </p>
         </div>
       {:else if s.isMixed}
@@ -266,10 +271,14 @@
           <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
           <div>
             <strong
-              >{t("create_review_this_choreography_mixes_paired_and_single_hand_beats")}</strong
+              >{t(
+                "create_review_this_choreography_mixes_paired_and_single_hand_beats"
+              )}</strong
             >
             <p>
-              {t("create_review_keep_editing_until_every_beat_uses_both_hands_or_the_same_single_hand")}
+              {t(
+                "create_review_keep_editing_until_every_beat_uses_both_hands_or_the_same_single_hand"
+              )}
             </p>
           </div>
         </div>
@@ -283,7 +292,9 @@
             <span>{t("create_review_content_flagged_by_moderation")}</span>
           </div>
           <p class="warning-text">
-            {t("create_review_this_sequence_contains_content_that_cannot_be_published_to_the_public_gallery_you_can_stil")}
+            {t(
+              "create_review_this_sequence_contains_content_that_cannot_be_published_to_the_public_gallery_you_can_stil"
+            )}
           </p>
           <div class="flagged-terms">
             {#each s.moderationResult.flaggedTerms as term}
@@ -399,7 +410,9 @@
           <CardFooterEditor
             value={s.cardPresentation}
             onchange={(value) => (s.cardPresentation = value)}
-            description={t("create_review_saved_with_this_card_private_notes_stay_private")}
+            description={t(
+              "create_review_saved_with_this_card_private_notes_stay_private"
+            )}
             idBase="save-card-footer"
           />
         </div>
@@ -517,7 +530,10 @@
     background: var(--theme-card-bg);
     color: var(--theme-text);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -708,7 +724,9 @@
     font-size: var(--font-size-sm, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .appeal-button:hover {
@@ -741,7 +759,10 @@
     font-size: var(--font-size-sm, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .shame-button:hover:not(:disabled) {
@@ -871,7 +892,11 @@
     color: var(--theme-text);
     font-size: var(--font-size-base, 16px);
     font-family: inherit;
-    transition: all var(--duration-normal) ease;
+    transition:
+      outline var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     box-sizing: border-box;
   }
 
@@ -909,7 +934,12 @@
     font-size: var(--font-size-lg, 18px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1110,7 +1140,7 @@
     border-radius: 12px;
     background: var(--theme-stroke);
     position: relative;
-    transition: background var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .toggle-on .toggle-track {
@@ -1126,7 +1156,7 @@
     position: absolute;
     top: 2px;
     left: 2px;
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 

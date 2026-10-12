@@ -1955,8 +1955,10 @@
     font-size: 14px;
     cursor: pointer;
     transition:
-      border-color var(--transition-fast, 150ms ease),
-      background-color var(--transition-fast, 150ms ease);
+      border-color
+        var(--transition-fast, var(--duration-fast) var(--ease-standard)),
+      background-color
+        var(--transition-fast, var(--duration-fast) var(--ease-standard));
   }
 
   .drill-back .fas {
@@ -2036,8 +2038,10 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      border-color var(--transition-fast, 150ms ease),
-      background-color var(--transition-fast, 150ms ease);
+      border-color
+        var(--transition-fast, var(--duration-fast) var(--ease-standard)),
+      background-color
+        var(--transition-fast, var(--duration-fast) var(--ease-standard));
   }
 
   .look-chip:hover {

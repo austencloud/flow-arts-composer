@@ -35,8 +35,12 @@
     class="rail-chip mode-chip"
     role="switch"
     aria-checked={renderMode === "3d"}
-    aria-label={renderMode === "3d" ? t("viewer_detail_switch_to_2d") : t("viewer_detail_switch_to_3d")}
-    data-tooltip={renderMode === "3d" ? t("viewer_detail_switch_to_2d") : t("viewer_detail_switch_to_3d")}
+    aria-label={renderMode === "3d"
+      ? t("viewer_detail_switch_to_2d")
+      : t("viewer_detail_switch_to_3d")}
+    data-tooltip={renderMode === "3d"
+      ? t("viewer_detail_switch_to_2d")
+      : t("viewer_detail_switch_to_3d")}
     data-ghost="safe"
     data-ghost-kind="curio"
     data-ghost-label={renderMode === "3d" ? "2D" : "3D"}
@@ -61,7 +65,15 @@
     align-items: center;
     justify-content: center;
     position: relative;
-    transition: all 180ms cubic-bezier(0.2, 0, 0.13, 1.5);
+    transition:
+      background var(--duration-fast) var(--ease-spring),
+      border-color var(--duration-fast) var(--ease-spring),
+      color var(--duration-fast) var(--ease-spring),
+      transform var(--duration-fast) var(--ease-spring),
+      outline-color var(--duration-fast) var(--ease-spring),
+      right var(--duration-fast) var(--ease-spring),
+      top var(--duration-fast) var(--ease-spring),
+      padding var(--duration-fast) var(--ease-spring);
   }
   .rail-chip:hover {
     color: #fff;

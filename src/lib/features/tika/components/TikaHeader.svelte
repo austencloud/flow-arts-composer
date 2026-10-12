@@ -8,7 +8,10 @@
   import TikaModelSwitcher from "./TikaModelSwitcher.svelte";
   import TikaActionMenu from "./TikaActionMenu.svelte";
   import type { ModelOption } from "../types";
-  import type { ReviewStatus, ReviewMetadata } from "../domain/models/tika-conversation-models";
+  import type {
+    ReviewStatus,
+    ReviewMetadata,
+  } from "../domain/models/tika-conversation-models";
 
   let {
     reviewStatus,
@@ -57,7 +60,9 @@
     switch (reviewStatus) {
       case "approved":
         return {
-          label: reviewMetadata?.grade ? `Reviewed: ${reviewMetadata.grade}` : "Approved",
+          label: reviewMetadata?.grade
+            ? `Reviewed: ${reviewMetadata.grade}`
+            : "Approved",
           icon: "fa-check-circle",
           color: "green",
         };
@@ -81,7 +86,9 @@
         };
       case "archived":
         return {
-          label: reviewMetadata?.grade ? `Archived: ${reviewMetadata.grade}` : "Archived",
+          label: reviewMetadata?.grade
+            ? `Archived: ${reviewMetadata.grade}`
+            : "Archived",
           icon: "fa-archive",
           color: "gray",
         };
@@ -106,7 +113,8 @@
     {#if reviewBadge()}
       {@const badge = reviewBadge()}
       {#if badge}
-        <button aria-label={`Review status: ${badge.label}`}
+        <button
+          aria-label={`Review status: ${badge.label}`}
           class="review-badge review-badge-{badge.color}"
           title={reviewMetadata?.aiNotes || `Status: ${reviewStatus}`}
         >
@@ -126,7 +134,8 @@
       />
     {/if}
     {#if onNewChat}
-      <button aria-label="Start new conversation"
+      <button
+        aria-label="Start new conversation"
         class="action-btn new-chat-btn"
         onclick={onNewChat}
         title="New conversation"
@@ -135,7 +144,8 @@
       </button>
     {/if}
     {#if onOpenHistory}
-      <button aria-label="Open chat history"
+      <button
+        aria-label="Open chat history"
         class="action-btn history-btn"
         onclick={onOpenHistory}
         title="Chat history"
@@ -146,7 +156,10 @@
 
     <!-- Flag for Review: Shows when there's a saved session -->
     {#if sessionId && onFlagForReview}
-      <button aria-label={isFlagged ? "Remove from review queue" : "Flag conversation for review"}
+      <button
+        aria-label={isFlagged
+          ? "Remove from review queue"
+          : "Flag conversation for review"}
         class="action-btn flag-btn"
         class:flagged={isFlagged}
         onclick={() => onFlagForReview(!isFlagged)}
@@ -159,11 +172,16 @@
 
     <!-- Compare Mode Toggle: Desktop only -->
     {#if onToggleCompare}
-      <button aria-label={compareMode ? "Exit compare mode" : "Compare models side by side"}
+      <button
+        aria-label={compareMode
+          ? "Exit compare mode"
+          : "Compare models side by side"}
         class="action-btn compare-btn"
         class:active={compareMode}
         onclick={onToggleCompare}
-        title={compareMode ? "Exit compare mode" : "Compare models side by side"}
+        title={compareMode
+          ? "Exit compare mode"
+          : "Compare models side by side"}
       >
         <i class="fas fa-columns" aria-hidden="true"></i>
       </button>
@@ -184,7 +202,9 @@
           ? [
               {
                 id: "tools",
-                label: showToolDetails ? "Hide tool details" : "Show tool details",
+                label: showToolDetails
+                  ? "Hide tool details"
+                  : "Show tool details",
                 icon: "fa-wrench",
                 onClick: onToggleToolDetails,
                 active: showToolDetails,
@@ -260,7 +280,10 @@
     font-weight: 600;
     border: 1px solid;
     cursor: help;
-    transition: all var(--duration-normal, 0.3s) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .review-badge i {
@@ -268,53 +291,113 @@
   }
 
   .review-badge-green {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 15%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 15%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 40%,
+      transparent
+    );
     color: var(--semantic-success, #22c55e);
   }
 
   .review-badge-green:hover {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 25%,
+      transparent
+    );
   }
 
   .review-badge-red {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 15%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 15%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 40%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
   }
 
   .review-badge-red:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 25%,
+      transparent
+    );
   }
 
   .review-badge-blue {
-    background: color-mix(in srgb, var(--semantic-info, #3b82f6) 15%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-info, #3b82f6) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 15%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 40%,
+      transparent
+    );
     color: var(--semantic-info, #3b82f6);
   }
 
   .review-badge-blue:hover {
-    background: color-mix(in srgb, var(--semantic-info, #3b82f6) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 25%,
+      transparent
+    );
   }
 
   .review-badge-purple {
-    background: color-mix(in srgb, var(--theme-accent, #a855f7) 15%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #a855f7) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #a855f7) 15%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #a855f7) 40%,
+      transparent
+    );
     color: var(--theme-accent, #a855f7);
   }
 
   .review-badge-purple:hover {
-    background: color-mix(in srgb, var(--theme-accent, #a855f7) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #a855f7) 25%,
+      transparent
+    );
   }
 
   .review-badge-gray {
-    background: color-mix(in srgb, var(--theme-text-secondary, #9ca3af) 15%, transparent);
-    border-color: color-mix(in srgb, var(--theme-text-secondary, #9ca3af) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-text-secondary, #9ca3af) 15%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-text-secondary, #9ca3af) 40%,
+      transparent
+    );
     color: var(--theme-text-secondary, #9ca3af);
   }
 
   .review-badge-gray:hover {
-    background: color-mix(in srgb, var(--theme-text-secondary, #9ca3af) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-text-secondary, #9ca3af) 25%,
+      transparent
+    );
   }
 
   .header-title {
@@ -327,7 +410,11 @@
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: linear-gradient(135deg, var(--theme-accent, #818cf8) 0%, color-mix(in srgb, var(--theme-accent, #6366f1) 85%, black) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #818cf8) 0%,
+      color-mix(in srgb, var(--theme-accent, #6366f1) 85%, black) 100%
+    );
     display: flex;
     align-items: center;
     justify-content: center;
@@ -377,7 +464,9 @@
     color: var(--theme-text, #ffffff);
     font-size: 16px;
     cursor: pointer;
-    transition: all var(--duration-normal, 0.3s) ease;
+    transition:
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
     box-shadow: var(--shadow-dark-sm);
   }
@@ -389,7 +478,7 @@
 
   .action-btn:active {
     transform: scale(0.95);
-    transition: transform 0.1s ease;
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .action-btn:focus-visible {
@@ -399,25 +488,49 @@
 
   /* New chat button - green gradient for "create new" action */
   .new-chat-btn {
-    background: linear-gradient(135deg, var(--semantic-success, #22c55e), color-mix(in srgb, var(--semantic-success, #22c55e) 80%, black));
-    border-color: color-mix(in srgb, var(--semantic-success, #22c55e) 30%, transparent);
+    background: linear-gradient(
+      135deg,
+      var(--semantic-success, #22c55e),
+      color-mix(in srgb, var(--semantic-success, #22c55e) 80%, black)
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 30%,
+      transparent
+    );
     box-shadow: var(--shadow-success-sm);
   }
 
   .new-chat-btn:hover {
-    background: linear-gradient(135deg, var(--semantic-success, #22c55e), color-mix(in srgb, var(--semantic-success, #22c55e) 75%, black));
+    background: linear-gradient(
+      135deg,
+      var(--semantic-success, #22c55e),
+      color-mix(in srgb, var(--semantic-success, #22c55e) 75%, black)
+    );
     box-shadow: var(--shadow-success-md);
   }
 
   /* History button - indigo gradient for navigation */
   .history-btn {
-    background: linear-gradient(135deg, var(--theme-accent, #6366f1), color-mix(in srgb, var(--theme-accent, #6366f1) 80%, black));
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #6366f1),
+      color-mix(in srgb, var(--theme-accent, #6366f1) 80%, black)
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 30%,
+      transparent
+    );
     box-shadow: var(--shadow-accent-sm);
   }
 
   .history-btn:hover {
-    background: linear-gradient(135deg, var(--theme-accent, #6366f1), color-mix(in srgb, var(--theme-accent, #6366f1) 75%, black));
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #6366f1),
+      color-mix(in srgb, var(--theme-accent, #6366f1) 75%, black)
+    );
     box-shadow: var(--shadow-accent-md);
   }
 
@@ -428,19 +541,39 @@
   }
 
   .flag-btn:hover {
-    background: linear-gradient(135deg, var(--semantic-warning, #f59e0b), color-mix(in srgb, var(--semantic-warning, #f59e0b) 80%, black));
-    border-color: color-mix(in srgb, var(--semantic-warning, #f59e0b) 30%, transparent);
+    background: linear-gradient(
+      135deg,
+      var(--semantic-warning, #f59e0b),
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 80%, black)
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 30%,
+      transparent
+    );
     box-shadow: var(--shadow-warning-md);
   }
 
   .flag-btn.flagged {
-    background: linear-gradient(135deg, var(--semantic-warning, #f59e0b), color-mix(in srgb, var(--semantic-warning, #f59e0b) 80%, black));
-    border-color: color-mix(in srgb, var(--semantic-warning, #f59e0b) 40%, transparent);
+    background: linear-gradient(
+      135deg,
+      var(--semantic-warning, #f59e0b),
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 80%, black)
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 40%,
+      transparent
+    );
     box-shadow: var(--shadow-warning-sm);
   }
 
   .flag-btn.flagged:hover {
-    background: linear-gradient(135deg, var(--semantic-warning, #f59e0b), color-mix(in srgb, var(--semantic-warning, #f59e0b) 75%, black));
+    background: linear-gradient(
+      135deg,
+      var(--semantic-warning, #f59e0b),
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 75%, black)
+    );
     box-shadow: var(--shadow-warning-lg);
   }
 
@@ -458,14 +591,30 @@
   }
 
   .compare-btn:hover {
-    background: linear-gradient(135deg, var(--theme-accent, #6366f1), color-mix(in srgb, var(--theme-accent, #6366f1) 80%, black));
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #6366f1),
+      color-mix(in srgb, var(--theme-accent, #6366f1) 80%, black)
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 30%,
+      transparent
+    );
     box-shadow: var(--shadow-accent-md);
   }
 
   .compare-btn.active {
-    background: linear-gradient(135deg, var(--theme-accent, #6366f1), color-mix(in srgb, var(--theme-accent, #6366f1) 80%, black));
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #6366f1),
+      color-mix(in srgb, var(--theme-accent, #6366f1) 80%, black)
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 40%,
+      transparent
+    );
     box-shadow: var(--shadow-accent-sm2);
   }
 

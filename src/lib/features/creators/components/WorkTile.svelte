@@ -47,7 +47,10 @@
       activation="ambient"
       allowQR={false}
       onopen={() => onselect(sequence)}
-      openLabel={t("browse_verified_open_creators_sequence", { name: creator.displayName, word: sequenceWord })}
+      openLabel={t("browse_verified_open_creators_sequence", {
+        name: creator.displayName,
+        word: sequenceWord,
+      })}
     />
   </div>
 
@@ -60,7 +63,9 @@
     class="credit"
     type="button"
     onclick={() => oncreator(creator)}
-    aria-label={t("browse_verified_view_creator_profile", { name: creator.displayName })}
+    aria-label={t("browse_verified_view_creator_profile", {
+      name: creator.displayName,
+    })}
   >
     <RobustAvatar
       src={creator.avatar}
@@ -82,8 +87,8 @@
     border-radius: 0.85em;
     overflow: hidden;
     transition:
-      border-color var(--duration-quick, 120ms) ease,
-      transform var(--duration-quick, 120ms) ease;
+      border-color var(--duration-quick) var(--ease-standard),
+      transform var(--duration-quick) var(--ease-standard);
   }
 
   .tile:hover {
@@ -115,7 +120,7 @@
     font-size: 0.8em;
     text-align: left;
     cursor: pointer;
-    transition: color var(--duration-quick, 120ms) ease;
+    transition: color var(--duration-quick) var(--ease-standard);
   }
 
   .credit:hover,

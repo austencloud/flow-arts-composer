@@ -13,7 +13,7 @@
 -->
 <script lang="ts">
   import { browser } from "$app/env";
-  import { scale } from "svelte/transition";
+  import { popIn } from "#lib/shared/transitions/motion.js";
   import type { TunnelConfig } from "./tunnel-config";
   import { performerRing, depthRadiusFraction } from "./performer-ring-model";
 
@@ -24,7 +24,7 @@
   }: { config: TunnelConfig; size?: number; animate?: boolean } = $props();
 
   const reduced = $derived(
-    browser && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    browser && window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
   const dur = $derived(animate && !reduced ? 260 : 0);
 
@@ -66,14 +66,19 @@
 >
   <!-- Guide ring + center -->
   <circle
-    cx={cx}
-    cy={cy}
+    {cx}
+    {cy}
     r={ringR}
     fill="none"
     stroke="var(--theme-stroke-strong, rgba(255,255,255,0.22))"
     stroke-width="1"
   />
-  <circle cx={cx} cy={cy} r={size * 0.028} fill="var(--theme-text-dim, rgba(255,255,255,0.4))" />
+  <circle
+    {cx}
+    {cy}
+    r={size * 0.028}
+    fill="var(--theme-text-dim, rgba(255,255,255,0.4))"
+  />
 
   {#each performers as p (p.id)}
     {@const h = hands(p.angleDeg, p.depth)}
@@ -81,7 +86,7 @@
     <g
       class="performer"
       style="transform-box: fill-box; transform-origin: center;"
-      transition:scale={{ duration: dur, start: 0.3 }}
+      transition:popIn={{ duration: dur, start: 0.3 }}
     >
       {#if p.id === "f0"}
         <!-- The base performer ("you") — the seed everything multiplies from. -->
@@ -108,8 +113,20 @@
         opacity="0.75"
       />
       <!-- Hand ends (blue thumb / red pinky), semantic prop colors. -->
-      <circle class="end" cx={h.left.x} cy={h.left.y} r={endR} fill="var(--prop-blue, #2E86DE)" />
-      <circle class="end" cx={h.right.x} cy={h.right.y} r={endR} fill="var(--prop-red, #E74C3C)" />
+      <circle
+        class="end"
+        cx={h.left.x}
+        cy={h.left.y}
+        r={endR}
+        fill="var(--prop-blue, #2E86DE)"
+      />
+      <circle
+        class="end"
+        cx={h.right.x}
+        cy={h.right.y}
+        r={endR}
+        fill="var(--prop-red, #E74C3C)"
+      />
     </g>
   {/each}
 </svg>

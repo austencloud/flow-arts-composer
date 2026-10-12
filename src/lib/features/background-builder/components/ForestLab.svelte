@@ -1,8 +1,17 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import type { ForestLayers, TreeTypeVisibility, EcologicalPattern, QualityLevel, TreeCategory, RenderedTree, } from "@austencloud/backgrounds";
+  import type {
+    ForestLayers,
+    TreeTypeVisibility,
+    EcologicalPattern,
+    QualityLevel,
+    TreeCategory,
+    RenderedTree,
+  } from "@austencloud/backgrounds";
   import {
-    getForestSettings, updateForestSettings, } from "../state/background-builder-state.svelte";
+    getForestSettings,
+    updateForestSettings,
+  } from "../state/background-builder-state.svelte";
   import { getPreviewAnimationController } from "../get-preview-animation-controller";
   import type { PreviewStats } from "../services/types";
 
@@ -12,7 +21,6 @@
 
   // Get services from getter
   const previewController = getPreviewAnimationController();
-
 
   type LabMode = "preview" | "treeLab";
   let mode: LabMode = $state("preview");
@@ -31,7 +39,10 @@
   let density = $state(0.5);
   let style = $state(0.5);
   let stats = $state<PreviewStats>({
-    fireflies: 0, stars: 0, ambientParticles: 0, hasShootingStar: false,
+    fireflies: 0,
+    stars: 0,
+    ambientParticles: 0,
+    hasShootingStar: false,
   });
 
   // Ecological pattern state
@@ -40,7 +51,6 @@
 
   // Stats polling
   let statsInterval: ReturnType<typeof setInterval> | null = null;
-
 
   function initializePreview() {
     if (!canvas) return;
@@ -129,7 +139,6 @@
     previewController.handleResize();
   }
 
-
   function setMode(newMode: LabMode) {
     mode = newMode;
     if (newMode === "treeLab") {
@@ -152,7 +161,6 @@
     }
   }
 
-
   onMount(() => {
     initializePreview();
     window.addEventListener("resize", handleResize);
@@ -174,11 +182,19 @@
 
     <!-- Mode Toggle -->
     <div class="mode-toggle">
-      <button class="mode-btn" class:active={mode === "preview"} onclick={() => setMode("preview")}>
+      <button
+        class="mode-btn"
+        class:active={mode === "preview"}
+        onclick={() => setMode("preview")}
+      >
         <i class="fas fa-eye"></i>
         Preview
       </button>
-      <button class="mode-btn" class:active={mode === "treeLab"} onclick={() => setMode("treeLab")}>
+      <button
+        class="mode-btn"
+        class:active={mode === "treeLab"}
+        onclick={() => setMode("treeLab")}
+      >
         <i class="fas fa-images"></i>
         Gallery
       </button>
@@ -205,13 +221,21 @@
         onRandomPattern={handleRandomPattern}
       />
     {:else}
-      <p class="gallery-hint">Click the trash icon on any tree to remove it from the scene.</p>
+      <p class="gallery-hint">
+        Click the trash icon on any tree to remove it from the scene.
+      </p>
     {/if}
   </div>
 
   <!-- Content Area -->
   {#if mode === "preview"}
-    <div class="preview" onmousemove={handleMouseMove} onmouseleave={handleMouseLeave} role="application" aria-label="Forest preview">
+    <div
+      class="preview"
+      onmousemove={handleMouseMove}
+      onmouseleave={handleMouseLeave}
+      role="application"
+      aria-label="Forest preview"
+    >
       {#if isLoading}
         <div class="loading-overlay">
           <i class="fas fa-spinner fa-spin"></i>
@@ -265,7 +289,11 @@
 
   .badge {
     padding: 4px 10px;
-    background: linear-gradient(135deg, rgba(132, 204, 22, 0.3), rgba(163, 230, 53, 0.3));
+    background: linear-gradient(
+      135deg,
+      rgba(132, 204, 22, 0.3),
+      rgba(163, 230, 53, 0.3)
+    );
     border: 1px solid rgba(163, 230, 53, 0.4);
     border-radius: 20px;
     font-size: var(--font-size-compact, 0.75rem);
@@ -297,7 +325,13 @@
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .mode-btn:hover {
@@ -306,7 +340,11 @@
   }
 
   .mode-btn.active {
-    background: linear-gradient(135deg, rgba(132, 204, 22, 0.2), rgba(163, 230, 53, 0.2));
+    background: linear-gradient(
+      135deg,
+      rgba(132, 204, 22, 0.2),
+      rgba(163, 230, 53, 0.2)
+    );
     color: #a3e635;
   }
 
@@ -314,7 +352,12 @@
     position: relative;
     border-radius: 16px;
     overflow: hidden;
-    background: linear-gradient(to bottom, #0a1628 0%, #162033 50%, #1a2a3d 100%);
+    background: linear-gradient(
+      to bottom,
+      #0a1628 0%,
+      #162033 50%,
+      #1a2a3d 100%
+    );
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
   }
 

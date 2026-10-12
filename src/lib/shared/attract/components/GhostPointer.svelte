@@ -93,13 +93,14 @@
    * family) — it should look settled, not sleepy, which is why it slows the
    * breath without dimming the colour the way `bored` does.
    */
-  const MOODS: Record<GhostMood, { hue: number; breath: number; sat: number }> = {
-    curious: { hue: 0, breath: 3.4, sat: 1 },
-    delighted: { hue: -28, breath: 2.1, sat: 1.25 },
-    bored: { hue: 8, breath: 5.2, sat: 0.55 },
-    unsure: { hue: 22, breath: 2.7, sat: 0.75 },
-    still: { hue: -8, breath: 4.6, sat: 0.9 },
-  };
+  const MOODS: Record<GhostMood, { hue: number; breath: number; sat: number }> =
+    {
+      curious: { hue: 0, breath: 3.4, sat: 1 },
+      delighted: { hue: -28, breath: 2.1, sat: 1.25 },
+      bored: { hue: 8, breath: 5.2, sat: 0.55 },
+      unsure: { hue: 22, breath: 2.7, sat: 0.75 },
+      still: { hue: -8, breath: 4.6, sat: 0.9 },
+    };
 
   const tone = $derived(MOODS[mood] ?? MOODS.curious);
 
@@ -167,7 +168,7 @@
     z-index: 6;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 200ms ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
     will-change: transform;
     /* One knob every child sizes off, so stage mode is a single override
        instead of six. */
@@ -223,9 +224,9 @@
     /* Overshooting curve = the recoil. The motor holds still for ~120ms after
        a click precisely so this can play out (see moveAndPress). */
     transition:
-      transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
-      box-shadow 200ms ease,
-      filter 600ms ease;
+      transform var(--duration-normal) var(--ease-spring),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      filter var(--duration-scene) var(--ease-standard);
   }
 
   .core.pressed {
@@ -292,7 +293,7 @@
   /* Parked: breathe harder than at rest, so the corner dot reads as an
      invitation rather than as leftover decoration. */
   .ghost.parked .dot {
-    animation-duration: 2.4s;
+    animation-duration: calc(var(--duration-scene) * 3);
   }
 
   .ghost.parked:hover .dot {

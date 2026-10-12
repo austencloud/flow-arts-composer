@@ -5,8 +5,7 @@
   Shows thumbnail, word, category, vote count, and voting controls.
 -->
 <script lang="ts">
-
-import { getHallOfShameVoter } from "#lib/features/hall-of-shame/get-hall-of-shame-voter.js";
+  import { getHallOfShameVoter } from "#lib/features/hall-of-shame/get-hall-of-shame-voter.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import type { HallOfShameEntry } from "../domain/models/hall-of-shame-models";
@@ -110,12 +109,15 @@ import { getHallOfShameVoter } from "#lib/features/hall-of-shame/get-hall-of-sha
     {/if}
 
     {#if entry.featured}
-      <div class="featured-badge" title={t('hall_of_shame_featured')}>
+      <div class="featured-badge" title={t("hall_of_shame_featured")}>
         <i class="fas fa-star" aria-hidden="true"></i>
       </div>
     {/if}
 
-    <div class="category-badge" style="--category-color: {getCategoryColor(entry.category)}">
+    <div
+      class="category-badge"
+      style="--category-color: {getCategoryColor(entry.category)}"
+    >
       {entry.category}
     </div>
   </div>
@@ -137,8 +139,16 @@ import { getHallOfShameVoter } from "#lib/features/hall-of-shame/get-hall-of-sha
       class:voted={hasVoted}
       onclick={handleVote}
       disabled={!currentUser || hasVoted || isVoting}
-      title={hasVoted ? t('hall_of_shame_already_voted') : currentUser ? t('hall_of_shame_vote_for_this') : t('hall_of_shame_sign_in_to_vote')}
-      aria-label={hasVoted ? t('hall_of_shame_already_voted') : currentUser ? t('hall_of_shame_vote_for_this') : t('hall_of_shame_sign_in_to_vote')}
+      title={hasVoted
+        ? t("hall_of_shame_already_voted")
+        : currentUser
+          ? t("hall_of_shame_vote_for_this")
+          : t("hall_of_shame_sign_in_to_vote")}
+      aria-label={hasVoted
+        ? t("hall_of_shame_already_voted")
+        : currentUser
+          ? t("hall_of_shame_vote_for_this")
+          : t("hall_of_shame_sign_in_to_vote")}
     >
       {#if isVoting}
         <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
@@ -158,7 +168,13 @@ import { getHallOfShameVoter } from "#lib/features/hall-of-shame/get-hall-of-sha
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
     overflow: hidden;
-    transition: all var(--duration-normal, 0.2s) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .shame-card:hover {
@@ -167,8 +183,13 @@ import { getHallOfShameVoter } from "#lib/features/hall-of-shame/get-hall-of-sha
   }
 
   .shame-card.featured {
-    border-color: color-mix(in srgb, var(--semantic-warning, #f59e0b) 50%, transparent);
-    box-shadow: 0 0 20px color-mix(in srgb, var(--semantic-warning, #f59e0b) 20%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 50%,
+      transparent
+    );
+    box-shadow: 0 0 20px
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 20%, transparent);
   }
 
   .card-media {
@@ -271,18 +292,34 @@ import { getHallOfShameVoter } from "#lib/features/hall-of-shame/get-hall-of-sha
     gap: 8px;
     width: 100%;
     padding: 10px;
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
     border-radius: 8px;
     color: var(--semantic-error, #ef4444);
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast, 0.15s) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
   }
 
   .vote-button:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 25%,
+      transparent
+    );
     border-color: var(--semantic-error, #ef4444);
   }
 

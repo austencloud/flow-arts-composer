@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import type { ComparisonMode } from '../services/viewer-state-persistence';
+  import type { ComparisonMode } from "../services/viewer-state-persistence";
 
   interface Props {
     current: ComparisonMode;
@@ -13,10 +13,10 @@
   let { current, onSelect, allowed }: Props = $props();
 
   const ALL_MODES: { id: ComparisonMode; label: string }[] = [
-    { id: '2d-card', label: '2D + Card' },
-    { id: '3d-card', label: '3D + Card' },
-    { id: '2d-3d', label: '2D + 3D' },
-    { id: '2d-mandala', label: '2D + Mandala' }
+    { id: "2d-card", label: "2D + Card" },
+    { id: "3d-card", label: "3D + Card" },
+    { id: "2d-3d", label: "2D + 3D" },
+    { id: "2d-mandala", label: "2D + Mandala" },
   ];
   const modes = $derived(
     allowed ? ALL_MODES.filter((m) => allowed.includes(m.id)) : ALL_MODES
@@ -27,7 +27,11 @@
   }
 </script>
 
-<div class="comparison-bar" role="group" aria-label={t("viewer_detail_comparison_mode")}>
+<div
+  class="comparison-bar"
+  role="group"
+  aria-label={t("viewer_detail_comparison_mode")}
+>
   {#each modes as mode (mode.id)}
     <button
       type="button"
@@ -67,7 +71,9 @@
     font-weight: 500;
     white-space: nowrap;
     cursor: pointer;
-    transition: background 120ms ease, color 120ms ease;
+    transition:
+      background var(--duration-instant) var(--ease-standard),
+      color var(--duration-instant) var(--ease-standard);
   }
 
   .mode-chip:hover {

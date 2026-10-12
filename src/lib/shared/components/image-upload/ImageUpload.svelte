@@ -285,7 +285,11 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
     flex-shrink: 0;
   }
 
@@ -342,7 +346,7 @@
     border-radius: 12px;
     overflow: hidden;
     border: 1.5px solid var(--theme-stroke);
-    transition: border-color 200ms ease;
+    transition: border-color var(--duration-normal) var(--ease-standard);
   }
 
   .image-chip:hover {
@@ -384,7 +388,7 @@
     height: 100%;
     width: var(--progress);
     background: var(--semantic-success, #22c55e);
-    transition: width 200ms ease-out;
+    transition: width var(--duration-normal) var(--ease-standard-out);
     border-radius: 0 2px 2px 0;
   }
 
@@ -444,8 +448,8 @@
     justify-content: center;
     opacity: 0;
     transition:
-      opacity 150ms ease,
-      background 150ms ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
     z-index: 2;
   }
 
@@ -483,7 +487,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 150ms ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
     min-height: var(--min-touch-target, 44px);
   }
 

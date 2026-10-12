@@ -43,8 +43,12 @@
   }
 </script>
 
-<div class="submit-tab" class:input-mode={isInputMode}
-  style={isInputMode && keyboardHeight > 0 ? `height: calc(100% - ${keyboardHeight}px)` : ''}
+<div
+  class="submit-tab"
+  class:input-mode={isInputMode}
+  style={isInputMode && keyboardHeight > 0
+    ? `height: calc(100% - ${keyboardHeight}px)`
+    : ""}
 >
   <div class="submit-container">
     <!-- Centered header - collapses in input mode -->
@@ -121,8 +125,8 @@
     justify-content: center;
     width: clamp(32px, 5cqi, 40px);
     height: clamp(32px, 5cqi, 40px);
-    background: rgba(16, 185, 129, 0.10);
-    border: 1px solid rgba(16, 185, 129, 0.20);
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
     border-radius: clamp(8px, 1.5cqi, 12px);
     color: var(--semantic-success);
     font-size: clamp(13px, 2cqi, 18px);
@@ -259,10 +263,10 @@
   /* Header collapse animation */
   .submit-header {
     transition:
-      max-height var(--duration-fast, 150ms) ease-out,
-      opacity var(--duration-fast, 150ms) ease-out,
-      padding var(--duration-fast, 150ms) ease-out,
-      margin var(--duration-fast, 150ms) ease-out;
+      max-height var(--duration-fast) var(--ease-standard-out),
+      opacity var(--duration-fast) var(--ease-standard-out),
+      padding var(--duration-fast) var(--ease-standard-out),
+      margin var(--duration-fast) var(--ease-standard-out);
     max-height: 200px;
     overflow: hidden;
   }

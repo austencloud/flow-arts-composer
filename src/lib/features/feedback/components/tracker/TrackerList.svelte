@@ -8,7 +8,9 @@
   import TrackerCard from "./TrackerCard.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-  const { trackerState }: {
+  const {
+    trackerState,
+  }: {
     trackerState: FeedbackTrackerState;
   } = $props();
 
@@ -21,18 +23,50 @@
 
   // Type filter options
   const typeOptions = $derived([
-    { value: "all" as TrackerTypeFilter, label: t("feedback_filter_all"), icon: "fa-layer-group" },
-    { value: "bug" as TrackerTypeFilter, label: t("feedback_filter_bugs"), icon: "fa-bug" },
-    { value: "feature" as TrackerTypeFilter, label: t("feedback_filter_features"), icon: "fa-lightbulb" },
-    { value: "general" as TrackerTypeFilter, label: t("feedback_filter_general"), icon: "fa-comment" },
+    {
+      value: "all" as TrackerTypeFilter,
+      label: t("feedback_filter_all"),
+      icon: "fa-layer-group",
+    },
+    {
+      value: "bug" as TrackerTypeFilter,
+      label: t("feedback_filter_bugs"),
+      icon: "fa-bug",
+    },
+    {
+      value: "feature" as TrackerTypeFilter,
+      label: t("feedback_filter_features"),
+      icon: "fa-lightbulb",
+    },
+    {
+      value: "general" as TrackerTypeFilter,
+      label: t("feedback_filter_general"),
+      icon: "fa-comment",
+    },
   ]);
 
   // Status filter options
   const statusOptions = $derived([
-    { value: "all" as TrackerStatusFilter, label: t("feedback_filter_all"), icon: "fa-layer-group" },
-    { value: "reported" as TrackerStatusFilter, label: t("feedback_filter_reported"), icon: "fa-inbox" },
-    { value: "in-progress" as TrackerStatusFilter, label: t("feedback_filter_in_progress"), icon: "fa-spinner" },
-    { value: "fixed" as TrackerStatusFilter, label: t("feedback_filter_fixed"), icon: "fa-check-circle" },
+    {
+      value: "all" as TrackerStatusFilter,
+      label: t("feedback_filter_all"),
+      icon: "fa-layer-group",
+    },
+    {
+      value: "reported" as TrackerStatusFilter,
+      label: t("feedback_filter_reported"),
+      icon: "fa-inbox",
+    },
+    {
+      value: "in-progress" as TrackerStatusFilter,
+      label: t("feedback_filter_in_progress"),
+      icon: "fa-spinner",
+    },
+    {
+      value: "fixed" as TrackerStatusFilter,
+      label: t("feedback_filter_fixed"),
+      icon: "fa-check-circle",
+    },
   ]);
 </script>
 
@@ -41,7 +75,11 @@
   <div class="filter-bar">
     <div class="filter-row">
       <span class="filter-label">{t("feedback_filter_type")}</span>
-      <div class="filter-chips" role="radiogroup" aria-label={t("create_review_filter_by_type")}>
+      <div
+        class="filter-chips"
+        role="radiogroup"
+        aria-label={t("create_review_filter_by_type")}
+      >
         {#each typeOptions as opt}
           <button
             class="filter-chip"
@@ -60,7 +98,11 @@
 
     <div class="filter-row">
       <span class="filter-label">{t("feedback_filter_status")}</span>
-      <div class="filter-chips" role="radiogroup" aria-label={t("create_review_filter_by_status")}>
+      <div
+        class="filter-chips"
+        role="radiogroup"
+        aria-label={t("create_review_filter_by_status")}
+      >
         {#each statusOptions as opt}
           <button
             class="filter-chip"
@@ -81,7 +123,12 @@
   <!-- Content -->
   <div class="list-content themed-scrollbar">
     {#if trackerState.isLoading}
-      <div class="loading-state" role="status" aria-live="polite" aria-busy="true">
+      <div
+        class="loading-state"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
         <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
         <span>{t("feedback_loading_feedback")}</span>
       </div>
@@ -158,7 +205,13 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-size: var(--font-size-compact, 0.75rem);
     cursor: pointer;
-    transition: all var(--duration-normal, 200ms) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .filter-chip i {

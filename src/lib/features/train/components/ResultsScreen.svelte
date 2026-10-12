@@ -76,7 +76,9 @@
       <div class="results-header">
         <h1>{t("train_training_complete")}</h1>
         {#if sequenceName}
-          <p class="sequence-name"><TKAWordGlyph word={sequenceName} height={16} darkMode /></p>
+          <p class="sequence-name">
+            <TKAWordGlyph word={sequenceName} height={16} darkMode />
+          </p>
         {/if}
       </div>
 
@@ -168,7 +170,9 @@
         <div class="detail-row">
           <span class="detail-label">{t("train_perfect_combo")}</span>
           <span class="detail-value"
-            >{maxCombo === totalSteps ? t("train_perfect_yes") + " 🎉" : t("common_no")}</span
+            >{maxCombo === totalSteps
+              ? t("train_perfect_yes") + " 🎉"
+              : t("common_no")}</span
           >
         </div>
       </div>
@@ -193,7 +197,9 @@
         </button>
       {/if}
       {#if onExit}
-        <button class="secondary-button" onclick={onExit}>{t("train_exit")}</button>
+        <button class="secondary-button" onclick={onExit}
+          >{t("train_exit")}</button
+        >
       {/if}
     </div>
   </div>
@@ -208,7 +214,7 @@
     justify-content: center;
     background: rgba(0, 0, 0, 0.98);
     z-index: 100;
-    animation: fadeIn var(--duration-dramatic) ease-out;
+    animation: fadeIn var(--duration-dramatic) var(--ease-standard-out);
   }
 
   @keyframes fadeIn {
@@ -226,7 +232,7 @@
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    animation: slideUp 0.5s ease-out;
+    animation: slideUp var(--duration-dramatic) var(--ease-standard-out);
   }
 
   /* Scrollable content area */
@@ -394,7 +400,7 @@
     background: var(--theme-card-bg, var(--theme-card-bg));
     border: 1px solid var(--theme-stroke, var(--theme-stroke));
     border-radius: 8px;
-    transition: all var(--duration-emphasis);
+    transition: background var(--duration-emphasis);
   }
 
   .stat-card:hover {
@@ -532,7 +538,7 @@
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition: background var(--duration-normal);
   }
 
   .primary-button {

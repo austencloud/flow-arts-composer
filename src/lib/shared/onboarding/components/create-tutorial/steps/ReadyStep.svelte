@@ -105,8 +105,8 @@
 
 <div class="tutorial-step">
   <div class="step-header">
-    <h1 id="tutorial-step-title" class="title">{t('tutorial_workspace')}</h1>
-    <p class="subtitle">{t('tutorial_workspace_intro')}</p>
+    <h1 id="tutorial-step-title" class="title">{t("tutorial_workspace")}</h1>
+    <p class="subtitle">{t("tutorial_workspace_intro")}</p>
   </div>
 
   <!-- Desktop: side-by-side mockup + legend -->
@@ -129,14 +129,17 @@
       <div class="grid-area">
         {#if beatSteps.length > 0}
           {#await import("#lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte") then mod}
-            <mod.default steps={beatSteps} startPlacement={startPlacementStep} />
+            <mod.default
+              steps={beatSteps}
+              startPlacement={startPlacementStep}
+            />
           {/await}
         {/if}
 
         <div class="tap-hint">
           <span class="badge grid-badge">{gridButton?.order}</span>
           <i class="fas fa-hand-pointer" aria-hidden="true"></i>
-          <span>{t('tutorial_tap_edit')}</span>
+          <span>{t("tutorial_tap_edit")}</span>
         </div>
       </div>
 
@@ -201,7 +204,8 @@
   </div>
 
   <button class="go-button" onclick={onAdvance}>
-    {t('tutorial_start_building')} <i class="fas fa-arrow-right" aria-hidden="true"></i>
+    {t("tutorial_start_building")}
+    <i class="fas fa-arrow-right" aria-hidden="true"></i>
   </button>
 </div>
 
@@ -237,7 +241,6 @@
     margin: 0;
     line-height: 1.5;
   }
-
 
   .desktop-only {
     display: grid;
@@ -582,7 +585,6 @@
     line-height: 1.4;
   }
 
-
   .accordion-list {
     display: none;
     flex-direction: column;
@@ -601,7 +603,7 @@
     color: var(--theme-text, #fff);
     cursor: pointer;
     text-align: left;
-    transition: border-color var(--duration-fast, 150ms) var(--ease-out);
+    transition: border-color var(--duration-fast) var(--ease-out);
   }
 
   .accordion-item.expanded {
@@ -629,7 +631,7 @@
   .accordion-chevron {
     font-size: 0.7rem;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
-    transition: transform var(--duration-fast, 150ms) var(--ease-out);
+    transition: transform var(--duration-fast) var(--ease-out);
   }
 
   .accordion-item.expanded .accordion-chevron {
@@ -643,7 +645,6 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     line-height: 1.45;
   }
-
 
   .go-button {
     display: flex;
@@ -663,7 +664,10 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
     margin-top: 4px;
     flex-shrink: 0;
   }
@@ -728,7 +732,6 @@
       padding: 12px 24px;
     }
   }
-
 
   @media (prefers-reduced-motion: reduce) {
     .mock-button.glow.accent,

@@ -40,7 +40,9 @@
     const plain = htmlLines.map(stripHtml).join("\n");
     await navigator.clipboard.writeText(plain);
     copied = true;
-    setTimeout(() => { copied = false; }, 1500);
+    setTimeout(() => {
+      copied = false;
+    }, 1500);
   }
 </script>
 
@@ -89,7 +91,8 @@
     flex: 1;
     min-height: 0;
     container-type: inline-size;
-    font-family: "Cascadia Mono", "SF Mono", "Fira Code", "Courier New", monospace;
+    font-family:
+      "Cascadia Mono", "SF Mono", "Fira Code", "Courier New", monospace;
     font-size: clamp(6px, calc((100cqw - 40px) / 66), 14px);
     line-height: 1.15;
     white-space: pre;
@@ -100,12 +103,24 @@
   }
 
   /* Inherit the DOS terminal color classes for span coloring */
-  .raw-canvas :global(.dos-blue) { color: #4fc3f7; }
-  .raw-canvas :global(.dos-red) { color: #ef5350; }
-  .raw-canvas :global(.dos-cyan) { color: #80deea; }
-  .raw-canvas :global(.dos-green) { color: #33ff33; }
-  .raw-canvas :global(.dos-gray) { color: rgba(255, 255, 255, 0.25); }
-  .raw-canvas :global(.dos-white) { color: rgba(255, 255, 255, 0.7); }
+  .raw-canvas :global(.dos-blue) {
+    color: #4fc3f7;
+  }
+  .raw-canvas :global(.dos-red) {
+    color: #ef5350;
+  }
+  .raw-canvas :global(.dos-cyan) {
+    color: #80deea;
+  }
+  .raw-canvas :global(.dos-green) {
+    color: #33ff33;
+  }
+  .raw-canvas :global(.dos-gray) {
+    color: rgba(255, 255, 255, 0.25);
+  }
+  .raw-canvas :global(.dos-white) {
+    color: rgba(255, 255, 255, 0.7);
+  }
 
   .compact-divider {
     height: 1px;
@@ -126,8 +141,8 @@
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
     transition:
-      color var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease;
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   @media (hover: hover) {

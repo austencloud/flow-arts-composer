@@ -56,21 +56,21 @@
     padding: 12px 16px;
     background: transparent;
     border: 1px solid transparent;
-    border-bottom-color: color-mix(in srgb, var(--theme-stroke) 50%, transparent);
+    border-bottom-color: color-mix(
+      in srgb,
+      var(--theme-stroke) 50%,
+      transparent
+    );
     border-radius: 0;
     cursor: pointer;
     text-align: left;
     transition:
-      background var(--duration-normal, 200ms) ease,
-      border-color var(--duration-normal, 200ms) ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .version-list-item:hover {
-    background: color-mix(
-      in srgb,
-      var(--theme-accent) 4%,
-      transparent
-    );
+    background: color-mix(in srgb, var(--theme-accent) 4%, transparent);
   }
 
   /* The whole row marks the release you are reading — an accent bar on one

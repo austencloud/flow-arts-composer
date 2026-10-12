@@ -48,7 +48,9 @@
     {:else}
       <span class="cap-media-fallback">{title}</span>
     {/if}
-    <span class="cap-media-play" aria-hidden="true"><i class="fas fa-play"></i></span>
+    <span class="cap-media-play" aria-hidden="true"
+      ><i class="fas fa-play"></i></span
+    >
   </a>
   <figcaption>
     <strong>{title}</strong>
@@ -99,8 +101,8 @@
     color: #fff;
     font-size: 1.1rem;
     transition:
-      background 0.2s ease,
-      scale 0.2s ease;
+      background var(--duration-normal) var(--ease-standard),
+      scale var(--duration-normal) var(--ease-standard);
   }
   .cap-media-thumb:hover .cap-media-play,
   .cap-media-thumb:focus-visible .cap-media-play {

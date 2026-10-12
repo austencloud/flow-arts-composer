@@ -167,9 +167,9 @@
     border: 1px solid transparent;
     border-radius: 0.75em;
     transition:
-      background-color var(--duration-quick, 120ms) ease,
-      border-color var(--duration-quick, 120ms) ease,
-      transform var(--duration-quick, 120ms) ease;
+      background-color var(--duration-quick) var(--ease-standard),
+      border-color var(--duration-quick) var(--ease-standard),
+      transform var(--duration-quick) var(--ease-standard);
   }
 
   .open {

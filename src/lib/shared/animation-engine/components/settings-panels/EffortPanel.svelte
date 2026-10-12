@@ -188,7 +188,11 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast, 100ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
   }
 
   .effort-btn:hover {
@@ -306,7 +310,7 @@
     stroke-linejoin: round;
     opacity: 0.5;
     vector-effect: non-scaling-stroke;
-    transition: opacity var(--duration-fast, 100ms) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .effort-btn:hover .curve-line {

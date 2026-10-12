@@ -230,7 +230,14 @@
     border-top: 3px solid var(--column-color);
     border-radius: var(--kc-radius-md);
     overflow: hidden;
-    transition: all var(--duration-normal) var(--spring-smooth);
+    transition:
+      background var(--duration-normal) var(--spring-smooth),
+      border-color var(--duration-normal) var(--spring-smooth),
+      color var(--duration-normal) var(--spring-smooth),
+      opacity var(--duration-normal) var(--spring-smooth),
+      transform var(--duration-normal) var(--spring-smooth),
+      box-shadow var(--duration-normal) var(--spring-smooth),
+      width var(--duration-normal) var(--spring-smooth);
     /* Subtle glow */
     box-shadow:
       0 4px 20px color-mix(in srgb, var(--column-color) 15%, transparent),
@@ -482,7 +489,7 @@
     background: color-mix(in srgb, var(--column-color) 10%, transparent);
     backdrop-filter: blur(4px);
     pointer-events: none;
-    animation: pulseIn var(--duration-normal) ease;
+    animation: pulseIn var(--duration-normal) var(--ease-standard);
   }
 
   .drop-indicator i {

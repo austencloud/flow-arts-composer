@@ -112,7 +112,9 @@
   let showGridSettings = $state(false);
 
   // Extract propType from sequence (from first step's motion)
-  const propType = $derived(sequence?.steps?.[0]?.motions?.left?.propType ?? null);
+  const propType = $derived(
+    sequence?.steps?.[0]?.motions?.left?.propType ?? null
+  );
 </script>
 
 <div class="bento-layout">
@@ -151,7 +153,11 @@
       <section class="sequence-cell">
         <button class="sequence-info" onclick={onBrowseSequences}>
           <span class="seq-name">{sequence.word || sequence.name}</span>
-          <span class="seq-meta">{t('train_step_count', { count: sequence.steps?.length || 0 })}</span>
+          <span class="seq-meta"
+            >{t("train_step_count", {
+              count: sequence.steps?.length || 0,
+            })}</span
+          >
           <i class="fas fa-exchange-alt" aria-hidden="true"></i>
         </button>
       </section>
@@ -176,7 +182,7 @@
         aria-controls="grid-settings-panel"
       >
         <i class="fas fa-sliders-h" aria-hidden="true"></i>
-        <span>{t('train_grid_settings')}</span>
+        <span>{t("train_grid_settings")}</span>
         <i
           class="fas fa-chevron-{showGridSettings ? 'up' : 'down'} toggle-icon"
           aria-hidden="true"
@@ -286,7 +292,9 @@
     color: var(--theme-text, var(--theme-text));
     font-size: 0.85rem;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast);
   }
 
   .sequence-info:hover {
@@ -355,7 +363,9 @@
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast);
   }
 
   .settings-toggle:hover {
