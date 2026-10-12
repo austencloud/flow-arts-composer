@@ -11,7 +11,7 @@
   import { page } from "$app/state";
   import { signInWithCustomToken } from "firebase/auth";
   import { QrCode } from "@austencloud/phone-sign-in/svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
   import { auth, configureAuthPersistence } from "#lib/shared/auth/firebase.js";

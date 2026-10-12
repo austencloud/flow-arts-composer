@@ -19,7 +19,7 @@
   import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import GuideStepStrip from "./GuideStepStrip.svelte";
   import GuidePictograph from "./GuidePictograph.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { describePictograph } from "#lib/shared/pictograph/shared/domain/utils/pictograph-description.js";

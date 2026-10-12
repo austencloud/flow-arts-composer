@@ -31,7 +31,7 @@
   import { activateWhenNear } from "#lib/actions/activate-when-near.js";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import {
     isNamedRouteMorphActive,
     runAfterNamedRouteMorph,

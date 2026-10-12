@@ -34,7 +34,7 @@
   import { DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
   import { getCardColors } from "#lib/shared/create/domain/card-colors.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import LOOPExpandedOverlay from "#lib/features/create/generate/components/cards/LOOPExpandedOverlay.svelte";
   import { LOOPType } from "#lib/features/create/generate/circular/domain/models/circular-models.js";
   import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";

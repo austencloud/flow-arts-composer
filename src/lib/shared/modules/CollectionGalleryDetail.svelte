@@ -25,7 +25,7 @@
 <script lang="ts">
   import { onMount, type Snippet } from "svelte";
   import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
 
   interface DetailArgs {

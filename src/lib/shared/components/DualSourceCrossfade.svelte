@@ -2,7 +2,7 @@
   Two live, stateful sources share one fixed stage. The host prepares content in
   the hidden source, then changes `active` only after that source is ready. This
   keeps a canvas, editor, or other expensive surface alive while its replacement
-  starts behind it. Cheap keyed swaps still belong in Crossfade.svelte.
+  starts behind it. Cheap keyed swaps still belong in Crossfade.
 
   Both sources always fill the stage, so the hidden one is inert but still laid
   out: `data-inert-keeps-layout` tells a canvas inside it to keep following the

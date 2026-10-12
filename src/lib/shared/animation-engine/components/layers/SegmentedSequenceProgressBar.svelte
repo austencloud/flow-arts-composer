@@ -15,8 +15,8 @@ Design variants supported:
 -->
 <script lang="ts">
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
-  import { safeSlide } from "#lib/shared/utils/transitions.js";
-  import { cubicOut } from "svelte/easing";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { SLIDE } from "#lib/shared/transitions/transitions.js";
 
   let {
     steps = [],
@@ -252,7 +252,7 @@ Design variants supported:
     onpointermove={handlePointerMove}
     onpointerup={handlePointerUp}
     onkeydown={handleKeyDown}
-    transition:safeSlide={{ duration: 300, easing: cubicOut }}
+    transition:flyFade={{ y: SLIDE.md }}
   >
     {#if showLabels}
       <div class="labels-row">

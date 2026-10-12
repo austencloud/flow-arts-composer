@@ -26,7 +26,7 @@
     flipDuration,
     motionDuration,
   } from "#lib/shared/transitions/motion.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { formatTimeAgo } from "#lib/shared/i18n/i18n-formatters.js";
   import { getChoreoSheetRepository } from "../../services/choreo-sheet-repository";
   import type { ChoreoSheet } from "../../domain/types/choreo-sheet";

@@ -23,7 +23,7 @@
   } from "../firebase";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { recordAuthSubmission } from "#lib/shared/auth/services/auth-analytics-bridge.js";

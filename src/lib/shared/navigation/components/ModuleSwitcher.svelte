@@ -29,7 +29,7 @@
   import { userPreviewState } from "../../debug/state/user-preview-state.svelte";
   import { supportModalState } from "../../support/state/support-modal-state.svelte";
   import { whatsNewState } from "../../settings/state/whats-new-state.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     growFade,

@@ -14,7 +14,7 @@
     notMeNotice,
     type NotMeNotice,
   } from "@austencloud/phone-sign-in";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
   import { growFade } from "#lib/shared/transitions/motion.js";
