@@ -22,6 +22,10 @@ import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/servi
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import {
+  TND_BY_FAMILY,
+  type TnDElement,
+} from "#lib/features/choreo-card/domain/tnd-element.js";
 
 export const DUAL_SHIFTS_TOPIC_UNITS = {
   title: "verified_level1_hm_type1_105",
@@ -52,10 +56,64 @@ export function dualShiftsTopicHtml(unit: DualShiftsTopicUnit): string {
 
 /** A line without its markup, for a plain-text slot such as the lede. */
 export function plainLine(html: string): string {
-  return html.replace(/<[^>]+>/g, "").replace(/\s{2,}/g, " ").trim();
+  return html
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
-export type DualShiftModeId = "split-same" | "tog-same" | "split-opp" | "tog-opp";
+/**
+ * Web-only copy beside the verified units: the web page spells the four modes
+ * out and drops two of the book's sentences, while the printed sheet keeps
+ * the proof's words. Timing and direction are named with the Timing and
+ * Direction lesson's own lines, so the Guide and the lesson say the same.
+ */
+export const DUAL_SHIFTS_WEB_COPY = {
+  modesLead: "guide_topic_dual_shifts_modes_lead",
+} as const satisfies Record<string, TranslationKey>;
+
+export type DualShiftTiming = "split" | "tog";
+export type DualShiftDirection = "same" | "opp";
+
+/** The lesson's name and one-line meaning for each timing and direction. */
+export const DUAL_SHIFT_KEY = {
+  timing: {
+    split: {
+      name: "learn_timing_intro_option_split",
+      says: "learn_timing_intro_timing_split",
+    },
+    tog: {
+      name: "learn_timing_intro_option_together",
+      says: "learn_timing_intro_timing_together",
+    },
+  },
+  direction: {
+    same: {
+      name: "learn_timing_intro_option_same",
+      says: "learn_timing_intro_direction_same",
+    },
+    opp: {
+      name: "learn_timing_intro_option_opposite",
+      says: "learn_timing_intro_direction_opposite",
+    },
+  },
+} as const satisfies Record<
+  string,
+  Record<string, { name: TranslationKey; says: TranslationKey }>
+>;
+
+/** The web page keeps only the book's turn to moving between α and β. */
+export function dualShiftsWebLeadLines(): string[] {
+  const lines = dualShiftsTopicLines("betweenPositions");
+  const turn = lines.findIndex((line) => /Dual<\/span>/.test(line));
+  return turn === -1 ? lines : lines.slice(turn);
+}
+
+export type DualShiftModeId =
+  | "split-same"
+  | "tog-same"
+  | "split-opp"
+  | "tog-opp";
 
 /** [leftFrom, leftTo, rightFrom, rightTo]; a start box holds (from === to). */
 type Move = [GridLocation, GridLocation, GridLocation, GridLocation];
@@ -63,8 +121,9 @@ type Move = [GridLocation, GridLocation, GridLocation, GridLocation];
 export type DualShiftMode = {
   id: DualShiftModeId;
   name: TranslationKey;
+  timing: DualShiftTiming;
   /** Same modes stay in one placement; Opp modes travel between the two. */
-  pair: "same" | "opp";
+  pair: DualShiftDirection;
   /** The book's row label: where the loop travels. */
   travel: "α→α" | "β→β" | "α↔β";
   /** Letter of each box; the start box has none. */
@@ -84,6 +143,7 @@ export const DUAL_SHIFT_MODES: readonly DualShiftMode[] = [
   {
     id: "split-same",
     name: DUAL_SHIFTS_TOPIC_UNITS.splitSame,
+    timing: "split",
     pair: "same",
     travel: "α→α",
     letters: [null, Letter.A, Letter.A, Letter.A, Letter.A],
@@ -99,6 +159,7 @@ export const DUAL_SHIFT_MODES: readonly DualShiftMode[] = [
   {
     id: "tog-same",
     name: DUAL_SHIFTS_TOPIC_UNITS.togSame,
+    timing: "tog",
     pair: "same",
     travel: "β→β",
     letters: [null, Letter.G, Letter.G, Letter.G, Letter.G],
@@ -114,6 +175,7 @@ export const DUAL_SHIFT_MODES: readonly DualShiftMode[] = [
   {
     id: "split-opp",
     name: DUAL_SHIFTS_TOPIC_UNITS.splitOpp,
+    timing: "split",
     pair: "opp",
     travel: "α↔β",
     letters: [null, Letter.D, Letter.J, Letter.D, Letter.J],
@@ -129,6 +191,7 @@ export const DUAL_SHIFT_MODES: readonly DualShiftMode[] = [
   {
     id: "tog-opp",
     name: DUAL_SHIFTS_TOPIC_UNITS.togOpp,
+    timing: "tog",
     pair: "opp",
     travel: "α↔β",
     letters: [null, Letter.D, Letter.J, Letter.D, Letter.J],
@@ -141,6 +204,26 @@ export const DUAL_SHIFT_MODES: readonly DualShiftMode[] = [
     ],
   },
 ];
+
+/** The mode's element (water, earth, fire, air) and its colours, from the
+ *  choreo-card owner every other surface reads. */
+export function dualShiftElement(mode: DualShiftMode): TnDElement {
+  const element = TND_BY_FAMILY[mode.id];
+  if (!element) throw new Error(`No TnD element for ${mode.id}`);
+  return element;
+}
+
+/** The mode at one timing and direction, for the 2 x 2 key. */
+export function dualShiftModeAt(
+  timing: DualShiftTiming,
+  direction: DualShiftDirection
+): DualShiftMode {
+  const mode = DUAL_SHIFT_MODES.find(
+    (m) => m.timing === timing && m.pair === direction
+  );
+  if (!mode) throw new Error(`No mode for ${timing}-${direction}`);
+  return mode;
+}
 
 export const DUAL_SHIFT_MODES_BY_PAIR = {
   same: DUAL_SHIFT_MODES.filter((mode) => mode.pair === "same"),
