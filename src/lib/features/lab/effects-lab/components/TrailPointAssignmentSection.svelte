@@ -42,12 +42,16 @@
   let mode = $derived(deriveMode());
 
   // Which tip index is active for each side (-1 = none selected)
-  let leftTipIndex = $derived(leftSource?.type === "tip" ? leftSource.index : -1);
-  let rightTipIndex = $derived(rightSource?.type === "tip" ? rightSource.index : -1);
+  let leftTipIndex = $derived(
+    leftSource?.type === "tip" ? leftSource.index : -1
+  );
+  let rightTipIndex = $derived(
+    rightSource?.type === "tip" ? rightSource.index : -1
+  );
 
   function seedCustomSource(
     source: TrailPointSource | null,
-    fallback: TrailPointSource,
+    fallback: TrailPointSource
   ): TrailPointSource {
     const seed = source && source.type !== "none" ? source : fallback;
     if (seed.type === "custom") return seed;
@@ -75,7 +79,7 @@
 
     if (newMode === "tip") {
       editorState.saveTrailConfig(
-        getDefaultTrailPointConfig(editorState.selectedPropType),
+        getDefaultTrailPointConfig(editorState.selectedPropType)
       );
       return;
     }
@@ -102,18 +106,22 @@
     const thisSide: TrailPointSource = { type: "tip", index: tipIndex };
 
     // Preserve the other side's current value, or default to tip 0
-    const otherValue: TrailPointSource = otherSide?.type === "tip"
-      ? otherSide
-      : { type: "tip", index: 0 };
+    const otherValue: TrailPointSource =
+      otherSide?.type === "tip" ? otherSide : { type: "tip", index: 0 };
 
-    const config: TrailPointConfig = side === "left"
-      ? { left: thisSide, right: otherValue }
-      : { left: otherValue, right: thisSide };
+    const config: TrailPointConfig =
+      side === "left"
+        ? { left: thisSide, right: otherValue }
+        : { left: otherValue, right: thisSide };
 
     editorState.saveTrailConfig(config);
   }
 
-  function handleCustomDxDy(side: "left" | "right", field: "dx" | "dy", raw: string) {
+  function handleCustomDxDy(
+    side: "left" | "right",
+    field: "dx" | "dy",
+    raw: string
+  ) {
     const value = parseFloat(raw);
     if (!Number.isFinite(value)) return;
     const rounded = Math.round(value * 10) / 10;
@@ -134,11 +142,16 @@
     }
 
     const other = side === "left" ? rightSource : leftSource;
-    const otherValue: TrailPointSource = other ?? { type: "custom", dx: 0, dy: 0 };
+    const otherValue: TrailPointSource = other ?? {
+      type: "custom",
+      dx: 0,
+      dy: 0,
+    };
 
-    const config: TrailPointConfig = side === "left"
-      ? { left: updated, right: otherValue }
-      : { left: otherValue, right: updated };
+    const config: TrailPointConfig =
+      side === "left"
+        ? { left: updated, right: otherValue }
+        : { left: otherValue, right: updated };
 
     editorState.saveTrailConfig(config);
   }
@@ -153,7 +166,8 @@
     {#if isSingleEnded}
       Pick which tip point the trail emits from.
     {:else}
-      Pick where trail lines emit from. Tip mode lets you assign each end separately.
+      Pick where trail lines emit from. Tip mode lets you assign each end
+      separately.
     {/if}
   </p>
 
@@ -165,8 +179,8 @@
       role="radio"
       aria-checked={mode === "auto"}
       onclick={() => selectMode("auto")}
-      title="Use geometric calculation (default)"
-    >Auto</button>
+      title="Use geometric calculation (default)">Auto</button
+    >
 
     <button
       class="chip"
@@ -174,8 +188,8 @@
       role="radio"
       aria-checked={mode === "tip"}
       onclick={() => selectMode("tip")}
-      title="Assign tip points to each trail end"
-    >Tip</button>
+      title="Assign tip points to each trail end">Tip</button
+    >
 
     <button
       class="chip"
@@ -217,8 +231,8 @@
                 role="radio"
                 aria-checked={leftTipIndex === i}
                 onclick={() => selectTip("left", i)}
-                title="Tip {i + 1}: ({tipPt.dx}, {tipPt.dy})"
-              >{i + 1}</button>
+                title="Tip {i + 1}: ({tipPt.dx}, {tipPt.dy})">{i + 1}</button
+              >
             {/each}
           </div>
         </div>
@@ -234,8 +248,8 @@
                 role="radio"
                 aria-checked={leftTipIndex === i}
                 onclick={() => selectTip("left", i)}
-                title="Tip {i + 1}: ({tipPt.dx}, {tipPt.dy})"
-              >{i + 1}</button>
+                title="Tip {i + 1}: ({tipPt.dx}, {tipPt.dy})">{i + 1}</button
+              >
             {/each}
           </div>
         </div>
@@ -249,8 +263,8 @@
                 role="radio"
                 aria-checked={rightTipIndex === i}
                 onclick={() => selectTip("right", i)}
-                title="Tip {i + 1}: ({tipPt.dx}, {tipPt.dy})"
-              >{i + 1}</button>
+                title="Tip {i + 1}: ({tipPt.dx}, {tipPt.dy})">{i + 1}</button
+              >
             {/each}
           </div>
         </div>
@@ -271,7 +285,12 @@
               class="coord-input"
               step="0.1"
               value={leftSource?.type === "custom" ? leftSource.dx : 0}
-              onchange={(e) => handleCustomDxDy("left", "dx", (e.target as HTMLInputElement).value)}
+              onchange={(e) =>
+                handleCustomDxDy(
+                  "left",
+                  "dx",
+                  (e.target as HTMLInputElement).value
+                )}
             />
           </label>
           <label class="coord-field">
@@ -281,7 +300,12 @@
               class="coord-input"
               step="0.1"
               value={leftSource?.type === "custom" ? leftSource.dy : 0}
-              onchange={(e) => handleCustomDxDy("left", "dy", (e.target as HTMLInputElement).value)}
+              onchange={(e) =>
+                handleCustomDxDy(
+                  "left",
+                  "dy",
+                  (e.target as HTMLInputElement).value
+                )}
             />
           </label>
         </div>
@@ -297,7 +321,12 @@
                 class="coord-input"
                 step="0.1"
                 value={rightSource?.type === "custom" ? rightSource.dx : 0}
-                onchange={(e) => handleCustomDxDy("right", "dx", (e.target as HTMLInputElement).value)}
+                onchange={(e) =>
+                  handleCustomDxDy(
+                    "right",
+                    "dx",
+                    (e.target as HTMLInputElement).value
+                  )}
               />
             </label>
             <label class="coord-field">
@@ -307,7 +336,12 @@
                 class="coord-input"
                 step="0.1"
                 value={rightSource?.type === "custom" ? rightSource.dy : 0}
-                onchange={(e) => handleCustomDxDy("right", "dy", (e.target as HTMLInputElement).value)}
+                onchange={(e) =>
+                  handleCustomDxDy(
+                    "right",
+                    "dy",
+                    (e.target as HTMLInputElement).value
+                  )}
               />
             </label>
           </div>
@@ -362,7 +396,14 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 120ms ease;
+    transition:
+      background var(--duration-instant) var(--ease-standard),
+      border-color var(--duration-instant) var(--ease-standard),
+      color var(--duration-instant) var(--ease-standard),
+      opacity var(--duration-instant) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard),
+      box-shadow var(--duration-instant) var(--ease-standard),
+      height var(--duration-instant) var(--ease-standard);
     user-select: none;
   }
 
@@ -381,8 +422,13 @@
   .chip.active {
     border-color: var(--theme-accent, #8b5cf6);
     color: var(--theme-accent, #8b5cf6);
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 12%, transparent);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--theme-accent, #8b5cf6) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 12%,
+      transparent
+    );
+    box-shadow: 0 0 8px
+      color-mix(in srgb, var(--theme-accent, #8b5cf6) 25%, transparent);
   }
 
   /* Numbered tip chips */
@@ -396,8 +442,13 @@
   .chip-off.active {
     border-color: var(--semantic-error, #ef4444);
     color: var(--semantic-error, #ef4444);
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
+    box-shadow: 0 0 8px
+      color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
   }
 
   /* L/R endpoint rows */

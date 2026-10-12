@@ -114,7 +114,7 @@
     width: 100%;
     flex-shrink: 0;
     min-height: 48px;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .control-bar.dimmed {

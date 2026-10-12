@@ -23,7 +23,9 @@
   const uncuratedCount = $derived(controller.uncuratedVideos.length);
   const currentIndex = $derived(controller.currentIndex);
   const progressPercent = $derived(
-    Math.round((controller.curationProgress.done / controller.stats.total) * 100)
+    Math.round(
+      (controller.curationProgress.done / controller.stats.total) * 100
+    )
   );
   const isLastVideo = $derived(currentIndex >= uncuratedCount - 1);
   const canFinish = $derived(isComplete && isLastVideo);
@@ -96,10 +98,7 @@
       Skip
     </button>
     {#if canFinish}
-      <button
-        class="action-btn primary complete"
-        onclick={controller.close}
-      >
+      <button class="action-btn primary complete" onclick={controller.close}>
         Done
         <i class="fas fa-check" aria-hidden="true"></i>
       </button>
@@ -170,7 +169,15 @@
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
   }
 
   .nav-btn:hover:not(:disabled) {
@@ -207,7 +214,13 @@
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .action-btn.secondary {
@@ -222,16 +235,28 @@
 
   .action-btn.primary {
     flex: 1;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 20%,
+      transparent
+    );
     color: var(--theme-accent-light, #a5b4fc);
   }
 
   .action-btn.primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 30%,
+      transparent
+    );
   }
 
   .action-btn.primary.complete {
-    background: linear-gradient(135deg, var(--theme-accent, #6366f1) 0%, #8b5cf6 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #6366f1) 0%,
+      #8b5cf6 100%
+    );
     color: white;
   }
 
@@ -249,7 +274,11 @@
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--semantic-success, #10b981), #06b6d4);
-    transition: width 0.5s ease;
+    background: linear-gradient(
+      90deg,
+      var(--semantic-success, #10b981),
+      #06b6d4
+    );
+    transition: width var(--duration-dramatic) var(--ease-standard);
   }
 </style>

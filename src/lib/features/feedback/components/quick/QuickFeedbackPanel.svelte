@@ -341,7 +341,15 @@
     background: var(--accent);
     border-radius: 2px;
     opacity: 0.3;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
   }
 
   .hidden {
@@ -408,7 +416,15 @@
     border-radius: clamp(8px, 2cqi, 12px);
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     flex-shrink: 0;
   }
 
@@ -600,7 +616,7 @@
     padding: 6px var(--panel-padding);
     border-bottom: 1px solid var(--border-subtle);
     flex-shrink: 0;
-    animation: fadeSlideDown 150ms ease-out;
+    animation: fadeSlideDown var(--duration-fast) var(--ease-standard-out);
     gap: 8px;
   }
 
@@ -648,7 +664,13 @@
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
   }
 
@@ -681,9 +703,9 @@
   /* Panel header transitions for input mode */
   .panel-header {
     transition:
-      opacity var(--duration-fast) ease-out,
-      transform var(--duration-fast) ease-out,
-      max-height var(--duration-fast) ease-out;
+      opacity var(--duration-fast) var(--ease-standard-out),
+      transform var(--duration-fast) var(--ease-standard-out),
+      max-height var(--duration-fast) var(--ease-standard-out);
     max-height: 100px;
     overflow: hidden;
   }

@@ -7,9 +7,8 @@
   The animation engine reads effect state directly from the visibility manager.
 -->
 <script lang="ts">
-
-import { getGenerationOrchestrator } from "#lib/features/create/generate/shared/get-generation-orchestrator.js";
-import { sequenceTransformer } from "#lib/shared/create/services/sequence-transformer.js";
+  import { getGenerationOrchestrator } from "#lib/features/create/generate/shared/get-generation-orchestrator.js";
+  import { sequenceTransformer } from "#lib/shared/create/services/sequence-transformer.js";
   import { onMount, onDestroy, untrack } from "svelte";
   import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
@@ -37,7 +36,10 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
   import { SpinnerMetricsRepository } from "#lib/features/landing/services/spinner-metrics-repository.js";
   import { orientationCycleExtender } from "#lib/features/create/generate/circular/services/orientation-cycle-extender.js";
   import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
-  import { createEndlessPlayback, type EndlessPlaybackState } from "#lib/shared/animation-engine/state/endless-playback-state.svelte.js";
+  import {
+    createEndlessPlayback,
+    type EndlessPlaybackState,
+  } from "#lib/shared/animation-engine/state/endless-playback-state.svelte.js";
   import type { SourceMode } from "#lib/shared/animation-engine/domain/chaining-types.js";
 
   import { getEffectDescriptor } from "../domain/effect-descriptor";
@@ -65,7 +67,10 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
   // The trail look (width, brightness, colours) lives on the effects config,
   // which the trail renderer never reads, so fold it into the trail settings.
   const trailSettings = $derived(
-    foldTrailIntentIntoSettings(animationSettings.trail, effectsConfigState.trails)
+    foldTrailIntentIntoSettings(
+      animationSettings.trail,
+      effectsConfigState.trails
+    )
   );
 
   // ─── Persisted state (playback only - effect params managed by VM) ────
@@ -79,7 +84,9 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) return JSON.parse(raw);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return {};
   }
 
@@ -91,7 +98,9 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
         sourceMode,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   const persisted = loadPersistedState();
@@ -113,7 +122,24 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
   // The EffectsPanel writes to the VM; we read from it to know which mode
   // is active for the canvas conditional props and accent color theming.
   let vmActiveMode = $state<
-    "fire" | "charcoal" | "led" | "trails" | "zap" | "sparkles" | "ghost" | "bloom" | "goo" | "bubbles" | "petals" | "smoke" | "ink" | "frost" | "silk" | "animal" | "pulse" | "none"
+    | "fire"
+    | "charcoal"
+    | "led"
+    | "trails"
+    | "zap"
+    | "sparkles"
+    | "ghost"
+    | "bloom"
+    | "goo"
+    | "bubbles"
+    | "petals"
+    | "smoke"
+    | "ink"
+    | "frost"
+    | "silk"
+    | "animal"
+    | "pulse"
+    | "none"
   >("none");
 
   function syncActiveMode() {
@@ -128,9 +154,9 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
     return () => visibilityManager.unregisterObserver(syncActiveMode);
   });
 
-  let descriptor = $derived(getEffectDescriptor(
-    vmActiveMode === "none" ? "trails" : vmActiveMode
-  ));
+  let descriptor = $derived(
+    getEffectDescriptor(vmActiveMode === "none" ? "trails" : vmActiveMode)
+  );
 
   // ─── Animation state (provided by the factory) ────────────────────────
   let animationState = $derived(playback?.animationState ?? null);
@@ -150,8 +176,12 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
   });
 
   // Derived values from factory
-  let currentLetter = $derived((playback?.currentLetter ?? null) as Letter | null);
-  let currentStepData = $derived((playback?.currentStepData ?? null) as StepData | StartPlacementData | null);
+  let currentLetter = $derived(
+    (playback?.currentLetter ?? null) as Letter | null
+  );
+  let currentStepData = $derived(
+    (playback?.currentStepData ?? null) as StepData | StartPlacementData | null
+  );
   let gridMode = $derived((playback?.gridMode ?? null) as GridMode | null);
 
   $effect(() => {
@@ -185,7 +215,8 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
         getViewerAnimationPropConfig
       );
       playbackController = new AnimationPlaybackController(
-        animOrchestrator, loop
+        animOrchestrator,
+        loop
       );
 
       const browseLoader = getBrowseLoader();
@@ -263,7 +294,8 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
   }
 
   async function loadAnimation() {
-    if (!sequenceService || !playbackController || !sequence || !animationState) return;
+    if (!sequenceService || !playbackController || !sequence || !animationState)
+      return;
     loading = true;
     error = null;
 
@@ -276,7 +308,10 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
       if (!ok) throw new Error("Playback init failed");
 
       if (playbackStartTimer !== null) clearTimeout(playbackStartTimer);
-      playbackStartTimer = setTimeout(() => { playbackController?.togglePlayback(); playbackStartTimer = null; }, 300);
+      playbackStartTimer = setTimeout(() => {
+        playbackController?.togglePlayback();
+        playbackStartTimer = null;
+      }, 300);
     } catch (err) {
       console.error("Effects Lab: load failed:", err);
       error = err instanceof Error ? err.message : "Load failed";
@@ -285,10 +320,13 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
     }
   }
 
-  async function loadSequenceData(seq: SequenceData): Promise<SequenceData | null> {
+  async function loadSequenceData(
+    seq: SequenceData
+  ): Promise<SequenceData | null> {
     if (!sequenceService) return null;
     const hasMotion = (s: SequenceData) =>
-      Array.isArray(s.steps) && s.steps.length > 0 &&
+      Array.isArray(s.steps) &&
+      s.steps.length > 0 &&
       s.steps.some((b) => b?.motions?.left && b?.motions?.right);
     if (hasMotion(seq)) return seq;
     const id = seq.word || seq.name || seq.id;
@@ -387,7 +425,9 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
 
   async function saveHistoryEntry(entry: { sequenceData: unknown }) {
     try {
-      const plain: SequenceData = JSON.parse(JSON.stringify(entry.sequenceData));
+      const plain: SequenceData = JSON.parse(
+        JSON.stringify(entry.sequenceData)
+      );
       await persistSaveSequence(plain);
       toast.success(`Saved "${plain.word ?? plain.name ?? "sequence"}"`);
     } catch (err) {
@@ -416,7 +456,9 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
 
     if (e.code === "KeyD" && !e.repeat) {
       e.preventDefault();
-      getDebugData().then((data) => navigator.clipboard.writeText(data)).catch(() => {});
+      getDebugData()
+        .then((data) => navigator.clipboard.writeText(data))
+        .catch(() => {});
     }
   }
 </script>
@@ -427,7 +469,11 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
     <div class="canvas-area">
       {#if !sequence && sourceMode === "pick"}
         <div class="empty-state">
-          <i class="{descriptor.icon}" style="color: {descriptor.accentColorBorder}" aria-hidden="true"></i>
+          <i
+            class={descriptor.icon}
+            style="color: {descriptor.accentColorBorder}"
+            aria-hidden="true"
+          ></i>
           <p>Load a sequence to start</p>
           <button
             class="pick-btn"
@@ -503,7 +549,8 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
 
       <SequenceHistoryPanel
         entries={sequenceHistory}
-        getEntryData={(entry) => getHistoryDebugData(entry.sequenceData as SequenceData)}
+        getEntryData={(entry) =>
+          getHistoryDebugData(entry.sequenceData as SequenceData)}
         onSave={saveHistoryEntry}
         onView={viewHistoryEntry}
       />
@@ -601,7 +648,13 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .pick-btn:hover {
@@ -637,5 +690,4 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
       min-height: 300px;
     }
   }
-
 </style>

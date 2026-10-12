@@ -99,7 +99,11 @@
         style="background: {selectedGradient.gradient};"
       >
         {#if currentPropImage}
-          <img src={currentPropImage} alt={t("settings_avatar_prop")} class="prop-silhouette" />
+          <img
+            src={currentPropImage}
+            alt={t("settings_avatar_prop")}
+            class="prop-silhouette"
+          />
         {/if}
       </div>
       <span class="gradient-name"
@@ -194,7 +198,11 @@
         style="background: {selectedGradient.gradient};"
       >
         {#if currentPropImage}
-          <img src={currentPropImage} alt={t("settings_avatar_prop")} class="prop-silhouette" />
+          <img
+            src={currentPropImage}
+            alt={t("settings_avatar_prop")}
+            class="prop-silhouette"
+          />
         {/if}
       </div>
       <span class="gradient-name"
@@ -446,7 +454,13 @@
     font-size: var(--font-size-sm, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
   }
 
@@ -488,7 +502,15 @@
     border-radius: var(--radius-md, 12px);
     border: 2px solid transparent;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -526,7 +548,15 @@
     color: var(--theme-text, #ffffff);
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .shuffle-btn.compact {
@@ -559,7 +589,15 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: var(--radius-sm, 8px);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .prop-btn.compact {
@@ -604,7 +642,15 @@
     font-size: var(--font-size-sm, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
     margin-top: var(--spacing-sm, 8px);
   }
 

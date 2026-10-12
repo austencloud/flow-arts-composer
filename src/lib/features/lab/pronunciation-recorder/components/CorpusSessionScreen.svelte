@@ -41,7 +41,9 @@
    */
   const spoken = (word: readonly string[] | null) =>
     word
-      ?.map((letter) => getLetterPronunciation(letter as never)?.shortName ?? letter)
+      ?.map(
+        (letter) => getLetterPronunciation(letter as never)?.shortName ?? letter
+      )
       .join(" ") ?? "";
 
   // -60 dBFS reads as empty, 0 as full. A linear map of dBFS is the only meter
@@ -94,12 +96,17 @@
   {#if session.status === "idle"}
     <h1 class="title">Record the pronunciation corpus</h1>
     <p class="hint">
-      Words appear one at a time. Read each one out loud in your normal voice — it hears you
-      stop, saves the audio, and moves to the next one on its own. Nothing to press between
-      words. Anything it cannot make out goes back into the list to come round again.
+      Words appear one at a time. Read each one out loud in your normal voice —
+      it hears you stop, saves the audio, and moves to the next one on its own.
+      Nothing to press between words. Anything it cannot make out goes back into
+      the list to come round again.
     </p>
-    <button class="start" onclick={() => session.start()}>Start recording</button>
-    <p class="hint">Starting asks for your microphone. The recordings save to your account.</p>
+    <button class="start" onclick={() => session.start()}
+      >Start recording</button
+    >
+    <p class="hint">
+      Starting asks for your microphone. The recordings save to your account.
+    </p>
   {:else if session.status === "running"}
     <!-- The running commentary, and the only place a finished read is confirmed.
          `assertive` because it corrects what he is doing right now: a re-queue
@@ -107,7 +114,10 @@
     <p class="state-line" data-read={session.readState} aria-live="assertive">
       <!-- One span, so the icon and the words are inline neighbours in a single
            grid item. As two items the grid gave each its own row. -->
-      <span><i class="fas {STATE_ICONS[session.readState]}" aria-hidden="true"></i>{stateLine}</span>
+      <span
+        ><i class="fas {STATE_ICONS[session.readState]}" aria-hidden="true"
+        ></i>{stateLine}</span
+      >
     </p>
 
     <p class="prompt" data-read={session.readState} aria-live="polite">
@@ -120,7 +130,9 @@
     </p>
 
     <div class="status">
-      <p class="progress" aria-live="off">Word {session.completed + 1} of {total}</p>
+      <p class="progress" aria-live="off">
+        Word {session.completed + 1} of {total}
+      </p>
       <span class="level" class:hearing={session.hearing}>
         <!-- Not a live region any more. The state line above announces the same
              transition with more to say, and two regions firing on one event
@@ -135,13 +147,17 @@
       </span>
     </div>
 
-    <p class="trouble" class:shown={session.failure !== null} aria-live="polite">
+    <p
+      class="trouble"
+      class:shown={session.failure !== null}
+      aria-live="polite"
+    >
       {session.failure ?? ""}
     </p>
   {:else if session.status === "failed"}
     <p class="prompt-failed">
-      Could not start. Allow the microphone when the browser asks, and make sure you are signed
-      in — the recordings save to your account.
+      Could not start. Allow the microphone when the browser asks, and make sure
+      you are signed in — the recordings save to your account.
     </p>
     {#if session.failure}
       <p class="reason">{session.failure}</p>
@@ -421,7 +437,7 @@
     height: 100%;
     background: var(--theme-accent, currentColor);
     transform-origin: left center;
-    transition: transform 80ms linear;
+    transition: transform var(--duration-instant) linear;
   }
 
   @media (prefers-reduced-motion: reduce) {

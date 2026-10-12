@@ -206,7 +206,7 @@
     font-size: var(--font-size-sm);
     font-weight: 500;
     outline: none;
-    transition: border-color var(--duration-normal) ease;
+    transition: border-color var(--duration-normal) var(--ease-standard);
   }
 
   .admin-label-input:focus-visible,
@@ -275,7 +275,7 @@
     font-size: var(--font-size-sm);
     line-height: 1.5;
     outline: none;
-    transition: border-color var(--duration-normal) ease;
+    transition: border-color var(--duration-normal) var(--ease-standard);
   }
 
   .notes-hint {

@@ -47,7 +47,9 @@
     if (!status || status.completed === prevCompleted) return;
     prevCompleted = status.completed;
     countBump = true;
-    const timeout = setTimeout(() => { countBump = false; }, 300);
+    const timeout = setTimeout(() => {
+      countBump = false;
+    }, 300);
     return () => clearTimeout(timeout);
   });
 
@@ -150,12 +152,13 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 8px;
-    animation: slideUp var(--duration-normal, 200ms) var(--ease-out, ease-out);
+    animation: slideUp var(--duration-normal)
+      var(--ease-out, var(--ease-standard-out));
   }
 
   .capture-progress.failed {
     border-color: var(--semantic-error, #ef4444);
-    animation: shake 0.5s ease;
+    animation: shake var(--duration-dramatic) var(--ease-standard);
   }
 
   .capture-progress.completed {
@@ -176,7 +179,8 @@
 
   .complete-icon {
     color: var(--semantic-success, #22c55e);
-    animation: popIn var(--duration-emphasis, 280ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    animation: popIn var(--duration-emphasis)
+      var(--ease-spring, var(--ease-spring));
   }
 
   .error-icon {
@@ -190,11 +194,13 @@
   .count {
     font-variant-numeric: tabular-nums;
     display: inline-block;
-    transition: transform var(--duration-instant, 100ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    transition: transform var(--duration-instant)
+      var(--ease-spring, var(--ease-spring));
   }
 
   .count.bump {
-    animation: scaleIn var(--duration-fast, 150ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    animation: scaleIn var(--duration-fast)
+      var(--ease-spring, var(--ease-spring));
   }
 
   .elapsed {
@@ -216,7 +222,7 @@
     height: 100%;
     border-radius: 3px;
     background: var(--theme-accent, #3b82f6);
-    transition: width 0.3s ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
     position: relative;
   }
 

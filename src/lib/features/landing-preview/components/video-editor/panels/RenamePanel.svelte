@@ -34,9 +34,16 @@
 
   // Greek letter substitution
   const GREEK_MAP: Record<string, string> = {
-    sig: "Σ", del: "Δ", the: "Θ", ome: "Ω",
-    phi: "Φ", psi: "Ψ", lam: "Λ",
-    alp: "α", bet: "β", gam: "γ",
+    sig: "Σ",
+    del: "Δ",
+    the: "Θ",
+    ome: "Ω",
+    phi: "Φ",
+    psi: "Ψ",
+    lam: "Λ",
+    alp: "α",
+    bet: "β",
+    gam: "γ",
   };
 
   function substituteGreek(text: string): string {
@@ -51,8 +58,11 @@
 
   // Initialize/reset when video changes
   $effect(() => {
-    const isShortcode = !video.title || video.title === video.shortcode || /^[A-Za-z0-9_-]{8,}$/.test(video.title);
-    editedTitle = isShortcode ? "" : (video.title || "");
+    const isShortcode =
+      !video.title ||
+      video.title === video.shortcode ||
+      /^[A-Za-z0-9_-]{8,}$/.test(video.title);
+    editedTitle = isShortcode ? "" : video.title || "";
     titleSuggestions = [];
     showSuggestions = false;
     highlightedIndex = -1;
@@ -78,7 +88,7 @@
       sequenceCandidates = results.slice(0, 6);
       // Auto-select if exact match
       const exactMatch = sequenceCandidates.find(
-        s => stripWordNotation(s.word).toUpperCase() === query.toUpperCase()
+        (s) => stripWordNotation(s.word).toUpperCase() === query.toUpperCase()
       );
       if (exactMatch) {
         selectedSequence = exactMatch;
@@ -126,14 +136,21 @@
       if (e.key === "ArrowDown") {
         e.preventDefault();
         hasNavigatedSuggestions = true;
-        highlightedIndex = Math.min(highlightedIndex + 1, titleSuggestions.length - 1);
+        highlightedIndex = Math.min(
+          highlightedIndex + 1,
+          titleSuggestions.length - 1
+        );
         return;
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         hasNavigatedSuggestions = true;
         highlightedIndex = Math.max(highlightedIndex - 1, -1);
         return;
-      } else if (e.key === "Enter" && hasNavigatedSuggestions && highlightedIndex >= 0) {
+      } else if (
+        e.key === "Enter" &&
+        hasNavigatedSuggestions &&
+        highlightedIndex >= 0
+      ) {
         e.preventDefault();
         const suggestion = titleSuggestions[highlightedIndex];
         if (suggestion) {
@@ -210,7 +227,9 @@
 
   // Check if a candidate is an exact match
   function isExactMatch(seq: MatchedSequence): boolean {
-    return stripWordNotation(seq.word).toUpperCase() === editedTitle.toUpperCase();
+    return (
+      stripWordNotation(seq.word).toUpperCase() === editedTitle.toUpperCase()
+    );
   }
 </script>
 
@@ -272,7 +291,9 @@
               {#if seq.thumbnail}
                 <img src={seq.thumbnail} alt="" class="suggestion-thumb" />
               {/if}
-              <span class="suggestion-word"><TKAWordGlyph word={seq.word} height={13} /></span>
+              <span class="suggestion-word"
+                ><TKAWordGlyph word={seq.word} height={13} /></span
+              >
               {#if seq.ownerName}
                 <span class="suggestion-owner">by {seq.ownerName}</span>
               {/if}
@@ -291,7 +312,11 @@
         Link Sequence
         <span class="optional-badge">optional</span>
       </div>
-      <div class="candidates-grid" role="group" aria-labelledby="link-sequence-label">
+      <div
+        class="candidates-grid"
+        role="group"
+        aria-labelledby="link-sequence-label"
+      >
         {#each sequenceCandidates as seq}
           <button
             class="candidate-card"
@@ -306,7 +331,9 @@
                 <i class="fas fa-image" aria-hidden="true"></i>
               </div>
             {/if}
-            <span class="candidate-word"><TKAWordGlyph word={seq.word} height={13} /></span>
+            <span class="candidate-word"
+              ><TKAWordGlyph word={seq.word} height={13} /></span
+            >
             {#if selectedSequence?.id === seq.id}
               <div class="selected-check">
                 <i class="fas fa-check" aria-hidden="true"></i>
@@ -359,7 +386,9 @@
   <div class="progress-bar">
     <div
       class="progress-fill"
-      style="width: {Math.round((renamingProgress.named / (renamingProgress.named + unnamedCount)) * 100)}%"
+      style="width: {Math.round(
+        (renamingProgress.named / (renamingProgress.named + unnamedCount)) * 100
+      )}%"
     ></div>
   </div>
 </div>
@@ -414,7 +443,15 @@
     align-items: center;
     justify-content: center;
     font-size: 11px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
   }
 
   .nav-btn:hover:not(:disabled) {
@@ -487,7 +524,14 @@
     border-radius: 10px;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     color: var(--theme-text, white);
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal);
     text-transform: uppercase;
     letter-spacing: 1px;
   }
@@ -529,7 +573,7 @@
     color: var(--theme-text, white);
     cursor: pointer;
     text-align: left;
-    transition: background 0.15s;
+    transition: background var(--duration-fast);
   }
 
   .suggestion-item:hover,
@@ -574,7 +618,14 @@
     border-radius: 8px;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      grid-template-columns var(--duration-fast);
   }
 
   .candidate-card:hover {
@@ -583,8 +634,16 @@
   }
 
   .candidate-card.exact {
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 10%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 50%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 10%,
+      transparent
+    );
   }
 
   .candidate-card.selected {
@@ -662,7 +721,13 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .action-btn.secondary {
@@ -710,6 +775,6 @@
   .progress-fill {
     height: 100%;
     background: linear-gradient(90deg, #f59e0b, #f97316);
-    transition: width 0.5s ease;
+    transition: width var(--duration-dramatic) var(--ease-standard);
   }
 </style>

@@ -68,7 +68,9 @@
       <span class="status-dot" class:loading={livePreview && !sceneReady}
       ></span>
       {#if livePreview}
-        {sceneReady ? t("settings_showroom_live") : t("settings_showroom_building")}
+        {sceneReady
+          ? t("settings_showroom_live")
+          : t("settings_showroom_building")}
       {:else if fallbackReason === "connection"}
         {t("settings_showroom_low_data")}
       {:else}
@@ -102,7 +104,9 @@
       </button>
     </div>
     <p class="interaction-note">
-      {livePreview ? t("settings_showroom_drag_hint") : t("settings_showroom_fallback_hint")}
+      {livePreview
+        ? t("settings_showroom_drag_hint")
+        : t("settings_showroom_fallback_hint")}
     </p>
   </div>
 </section>
@@ -129,7 +133,7 @@
   .environment-art {
     overflow: hidden;
     background: var(--card-gradient);
-    transition: background 500ms ease;
+    transition: background var(--duration-dramatic) var(--ease-standard);
   }
 
   .art-orb {
@@ -257,8 +261,8 @@
     opacity: 0.38;
     transform: scale(1.015);
     transition:
-      opacity 700ms ease,
-      transform 900ms cubic-bezier(0.2, 0.75, 0.2, 1);
+      opacity var(--duration-scene) var(--ease-standard),
+      transform var(--duration-scene) var(--ease-smooth);
   }
 
   .live-layer.ready {
@@ -392,9 +396,9 @@
     cursor: pointer;
     pointer-events: auto;
     transition:
-      transform 160ms ease,
-      box-shadow 160ms ease,
-      filter 160ms ease;
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard);
   }
 
   .select-button:hover:not(:disabled) {
@@ -484,9 +488,9 @@
     *,
     *::before,
     *::after {
-      animation-duration: 0.01ms;
+      animation-duration: 0s;
       animation-iteration-count: 1;
-      transition-duration: 0.01ms;
+      transition-duration: 0s;
     }
   }
 </style>

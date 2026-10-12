@@ -15,6 +15,7 @@
 
   // Configuration
   const CHECK_DELAY_MS = 1500; // Delay before checking (let app stabilize)
+  const WHATS_NEW_TOAST_MS = 10_000;
 
   // Track if we've already checked this session
   let hasChecked = false;
@@ -42,9 +43,8 @@
     // Load cloud data before checking - ensures cross-device persistence works.
     // Without this, hasSeenVersion falls back to localStorage which is empty
     // on new devices, causing the modal to show every time.
-    const { syncOnboardingFromCloud } = await import(
-      "#lib/shared/onboarding/config/storage-keys.js"
-    );
+    const { syncOnboardingFromCloud } =
+      await import("#lib/shared/onboarding/config/storage-keys.js");
     await syncOnboardingFromCloud();
 
     const currentVersion = __APP_VERSION__;
@@ -76,9 +76,12 @@
         whatsNewState.markVersionAsSeen(currentVersion);
         const count = versionData.changelogEntries.length;
         showToast({
-          message: t("settings_update_count_toast", { version: currentVersion, count }),
+          message: t("settings_update_count_toast", {
+            version: currentVersion,
+            count,
+          }),
           type: "info",
-          duration: 10000,
+          duration: WHATS_NEW_TOAST_MS,
           action: {
             label: t("settings_see_whats_new"),
             onClick: () => whatsNewState.openDetail(versionData),

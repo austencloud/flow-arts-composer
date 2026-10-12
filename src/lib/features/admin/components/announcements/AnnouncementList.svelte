@@ -98,7 +98,9 @@
             {#if announcement.expiresAt}
               <span class="expires-date">
                 <i class="fas fa-clock" aria-hidden="true"></i>
-                {t("admin_expires", { date: formatDate(announcement.expiresAt) })}
+                {t("admin_expires", {
+                  date: formatDate(announcement.expiresAt),
+                })}
               </span>
             {/if}
           </div>
@@ -153,7 +155,14 @@
     background: var(--theme-panel-bg, rgba(255, 255, 255, 0.03));
     border: 1px solid var(--theme-stroke);
     border-radius: 12px;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      grid-template-columns var(--duration-normal) var(--ease-standard);
   }
 
   .announcement-card:hover {
@@ -229,7 +238,15 @@
     border-radius: 8px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
   }
 
   .action-button:hover {

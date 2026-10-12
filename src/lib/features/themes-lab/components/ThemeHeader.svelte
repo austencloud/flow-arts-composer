@@ -25,14 +25,14 @@
       role="radio"
       aria-checked={mode === "2d"}
       class:active={mode === "2d"}
-      onclick={() => onModeChange("2d")}
-    >2D</button>
+      onclick={() => onModeChange("2d")}>2D</button
+    >
     <button
       role="radio"
       aria-checked={mode === "3d"}
       class:active={mode === "3d"}
-      onclick={() => onModeChange("3d")}
-    >3D</button>
+      onclick={() => onModeChange("3d")}>3D</button
+    >
   </div>
 </div>
 
@@ -71,13 +71,21 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 700;
     letter-spacing: 0.04em;
-    background: color-mix(in srgb, var(--theme-accent, #38bdf8) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #38bdf8) 15%,
+      transparent
+    );
     color: color-mix(in srgb, var(--theme-accent, #7dd3fc) 70%, white);
   }
 
   /* 3D keeps a distinct tint while still deriving from the active theme accent. */
   .mode-badge.is-3d {
-    background: color-mix(in srgb, var(--theme-accent, #a855f7) 18%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #a855f7) 18%,
+      transparent
+    );
     color: color-mix(in srgb, var(--theme-accent, #c4b5fd) 60%, white);
   }
 
@@ -98,7 +106,13 @@
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .toggle button:hover {

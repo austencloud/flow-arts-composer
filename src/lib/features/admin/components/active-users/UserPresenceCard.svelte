@@ -1,7 +1,10 @@
 <!-- UserPresenceCard.svelte - Vertical user card with avatar-based color theming -->
 <script lang="ts">
   import type { UserPresenceWithId } from "#lib/shared/presence/domain/models/presence-models.js";
-  import { formatActivityTime, formatLocationLabel } from "#lib/shared/presence/domain/models/presence-models.js";
+  import {
+    formatActivityTime,
+    formatLocationLabel,
+  } from "#lib/shared/presence/domain/models/presence-models.js";
   import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import {
     extractDominantColor,
@@ -133,10 +136,10 @@
     border: 1px solid color-mix(in srgb, var(--card-accent) 18%, transparent);
     border-radius: 14px;
     transition:
-      background 0.3s ease,
-      border-color 0.3s ease,
-      box-shadow 0.2s ease,
-      transform 0.2s ease;
+      background var(--duration-emphasis) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     cursor: pointer;
     text-align: center;
   }
@@ -184,7 +187,7 @@
       var(--card-accent-light) 100%
     );
     border-radius: 50%;
-    transition: background var(--duration-emphasis) ease;
+    transition: background var(--duration-emphasis) var(--ease-standard);
   }
 
   .avatar-ring :global(.robust-avatar) {
@@ -301,7 +304,7 @@
     background: color-mix(in srgb, var(--card-accent) 15%, transparent);
     color: var(--card-accent);
     font-size: var(--font-size-compact);
-    transition: background var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .user-card:hover .device-badge {

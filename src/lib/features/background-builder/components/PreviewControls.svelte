@@ -5,7 +5,7 @@
     EcologicalPattern,
     QualityLevel,
   } from "@austencloud/backgrounds";
-  import { ChipToggle, ChipGroup } from '@austencloud/chip-toggle';
+  import { ChipToggle, ChipGroup } from "@austencloud/chip-toggle";
 
   interface PreviewStats {
     fireflies: number;
@@ -55,49 +55,158 @@
   }: Props = $props();
 
   // Get current pattern details for description
-  let currentPattern = $derived(patterns.find(p => p.id === currentPatternId));
+  let currentPattern = $derived(
+    patterns.find((p) => p.id === currentPatternId)
+  );
 </script>
 
 <!-- Quality Chips -->
 <ChipGroup>
-  <ChipToggle label="High" active={quality === "high"} color="lime" onclick={() => onQualityChange("high")} />
-  <ChipToggle label="Medium" active={quality === "medium"} color="lime" onclick={() => onQualityChange("medium")} />
-  <ChipToggle label="Low" active={quality === "low"} color="lime" onclick={() => onQualityChange("low")} />
+  <ChipToggle
+    label="High"
+    active={quality === "high"}
+    color="lime"
+    onclick={() => onQualityChange("high")}
+  />
+  <ChipToggle
+    label="Medium"
+    active={quality === "medium"}
+    color="lime"
+    onclick={() => onQualityChange("medium")}
+  />
+  <ChipToggle
+    label="Low"
+    active={quality === "low"}
+    color="lime"
+    onclick={() => onQualityChange("low")}
+  />
 </ChipGroup>
 
 <!-- Layer Chips -->
 <ChipGroup>
-  <ChipToggle label="Gradient" icon="fill-drip" active={layers.gradient} color="lime" onclick={() => onLayerToggle("gradient")} />
-  <ChipToggle label="Stars" icon="star" active={layers.stars} color="lime" onclick={() => onLayerToggle("stars")} />
-  <ChipToggle label="Moon" icon="moon" active={layers.moon} color="lime" onclick={() => onLayerToggle("moon")} />
-  <ChipToggle label="Shooting Stars" icon="meteor" active={layers.shootingStars} color="lime" onclick={() => onLayerToggle("shootingStars")} />
-  <ChipToggle label="Trees" icon="tree" active={layers.trees} color="lime" onclick={() => onLayerToggle("trees")} />
-  <ChipToggle label="Grass" icon="seedling" active={layers.grass} color="lime" onclick={() => onLayerToggle("grass")} />
-  <ChipToggle label="Dust Motes" icon="wand-magic-sparkles" active={layers.ambientParticles} color="lime" onclick={() => onLayerToggle("ambientParticles")} />
-  <ChipToggle label="Campfire" icon="fire" active={layers.campfire} color="red" onclick={() => onLayerToggle("campfire")} />
-  <ChipToggle label="Fireflies" icon="lightbulb" active={layers.fireflies} color="lime" onclick={() => onLayerToggle("fireflies")} />
+  <ChipToggle
+    label="Gradient"
+    icon="fill-drip"
+    active={layers.gradient}
+    color="lime"
+    onclick={() => onLayerToggle("gradient")}
+  />
+  <ChipToggle
+    label="Stars"
+    icon="star"
+    active={layers.stars}
+    color="lime"
+    onclick={() => onLayerToggle("stars")}
+  />
+  <ChipToggle
+    label="Moon"
+    icon="moon"
+    active={layers.moon}
+    color="lime"
+    onclick={() => onLayerToggle("moon")}
+  />
+  <ChipToggle
+    label="Shooting Stars"
+    icon="meteor"
+    active={layers.shootingStars}
+    color="lime"
+    onclick={() => onLayerToggle("shootingStars")}
+  />
+  <ChipToggle
+    label="Trees"
+    icon="tree"
+    active={layers.trees}
+    color="lime"
+    onclick={() => onLayerToggle("trees")}
+  />
+  <ChipToggle
+    label="Grass"
+    icon="seedling"
+    active={layers.grass}
+    color="lime"
+    onclick={() => onLayerToggle("grass")}
+  />
+  <ChipToggle
+    label="Dust Motes"
+    icon="wand-magic-sparkles"
+    active={layers.ambientParticles}
+    color="lime"
+    onclick={() => onLayerToggle("ambientParticles")}
+  />
+  <ChipToggle
+    label="Campfire"
+    icon="fire"
+    active={layers.campfire}
+    color="red"
+    onclick={() => onLayerToggle("campfire")}
+  />
+  <ChipToggle
+    label="Fireflies"
+    icon="lightbulb"
+    active={layers.fireflies}
+    color="lime"
+    onclick={() => onLayerToggle("fireflies")}
+  />
 </ChipGroup>
 
 <!-- Tree Type Chips -->
 <ChipGroup>
-  <ChipToggle label="Pine" active={treeTypes.pine} color="lime" onclick={() => onTreeTypeToggle("pine")} />
-  <ChipToggle label="Fir" active={treeTypes.fir} color="lime" onclick={() => onTreeTypeToggle("fir")} />
-  <ChipToggle label="Spruce" active={treeTypes.spruce} color="lime" onclick={() => onTreeTypeToggle("spruce")} />
-  <ChipToggle label="Oak" active={treeTypes.oak} color="lime" onclick={() => onTreeTypeToggle("oak")} />
-  <ChipToggle label="Maple" active={treeTypes.maple} color="lime" onclick={() => onTreeTypeToggle("maple")} />
-  <ChipToggle label="Poplar" active={treeTypes.poplar} color="lime" onclick={() => onTreeTypeToggle("poplar")} />
+  <ChipToggle
+    label="Pine"
+    active={treeTypes.pine}
+    color="lime"
+    onclick={() => onTreeTypeToggle("pine")}
+  />
+  <ChipToggle
+    label="Fir"
+    active={treeTypes.fir}
+    color="lime"
+    onclick={() => onTreeTypeToggle("fir")}
+  />
+  <ChipToggle
+    label="Spruce"
+    active={treeTypes.spruce}
+    color="lime"
+    onclick={() => onTreeTypeToggle("spruce")}
+  />
+  <ChipToggle
+    label="Oak"
+    active={treeTypes.oak}
+    color="lime"
+    onclick={() => onTreeTypeToggle("oak")}
+  />
+  <ChipToggle
+    label="Maple"
+    active={treeTypes.maple}
+    color="lime"
+    onclick={() => onTreeTypeToggle("maple")}
+  />
+  <ChipToggle
+    label="Poplar"
+    active={treeTypes.poplar}
+    color="lime"
+    onclick={() => onTreeTypeToggle("poplar")}
+  />
 </ChipGroup>
 
 <!-- Ecological Pattern Selector -->
 <div class="pattern-section">
   <div class="section-header">
     <span class="label">Ecological Pattern</span>
-    <button class="random-btn" onclick={onRandomPattern} title="Pick random pattern">
+    <button
+      class="random-btn"
+      onclick={onRandomPattern}
+      title="Pick random pattern"
+    >
       <i class="fas fa-dice"></i>
     </button>
   </div>
 
-  <select class="pattern-select" value={currentPatternId} onchange={(e) => onPatternChange(e.currentTarget.value)}>
+  <select
+    class="pattern-select"
+    value={currentPatternId}
+    onchange={(e) => onPatternChange(e.currentTarget.value)}
+  >
     {#each patterns as pattern}
       <option value={pattern.id}>{pattern.name}</option>
     {/each}
@@ -112,7 +221,11 @@
 <div class="placement-section">
   <div class="section-header">
     <span class="label">Tree Placement</span>
-    <button class="reset-btn" onclick={onResetPlacement} title="Reset to defaults">
+    <button
+      class="reset-btn"
+      onclick={onResetPlacement}
+      title="Reset to defaults"
+    >
       <i class="fas fa-undo"></i>
     </button>
   </div>
@@ -120,20 +233,42 @@
   <div class="slider-group">
     <label class="slider-label" for="density-slider">
       <span>Density</span>
-      <span class="slider-value">{density < 0.33 ? "Sparse" : density > 0.66 ? "Dense" : "Medium"}</span>
+      <span class="slider-value"
+        >{density < 0.33 ? "Sparse" : density > 0.66 ? "Dense" : "Medium"}</span
+      >
     </label>
-    <input id="density-slider" type="range" min="0" max="1" step="0.05" value={density}
-      oninput={(e) => onDensityChange(parseFloat(e.currentTarget.value))} />
+    <input
+      id="density-slider"
+      type="range"
+      min="0"
+      max="1"
+      step="0.05"
+      value={density}
+      oninput={(e) => onDensityChange(parseFloat(e.currentTarget.value))}
+    />
     <div class="slider-labels"><span>Sparse</span><span>Dense</span></div>
   </div>
 
   <div class="slider-group">
     <label class="slider-label" for="style-slider">
       <span>Style</span>
-      <span class="slider-value">{style < 0.33 ? "Natural" : style > 0.66 ? "Composed" : "Balanced"}</span>
+      <span class="slider-value"
+        >{style < 0.33
+          ? "Natural"
+          : style > 0.66
+            ? "Composed"
+            : "Balanced"}</span
+      >
     </label>
-    <input id="style-slider" type="range" min="0" max="1" step="0.05" value={style}
-      oninput={(e) => onStyleChange(parseFloat(e.currentTarget.value))} />
+    <input
+      id="style-slider"
+      type="range"
+      min="0"
+      max="1"
+      step="0.05"
+      value={style}
+      oninput={(e) => onStyleChange(parseFloat(e.currentTarget.value))}
+    />
     <div class="slider-labels"><span>Natural</span><span>Composed</span></div>
   </div>
 </div>
@@ -161,7 +296,9 @@
     </div>
     <div class="stat easter-egg-stat" class:active={stats.hasShootingStar}>
       <i class="fas fa-meteor"></i>
-      <span class="stat-label">{stats.hasShootingStar ? "Shooting!" : "Waiting..."}</span>
+      <span class="stat-label"
+        >{stats.hasShootingStar ? "Shooting!" : "Waiting..."}</span
+      >
     </div>
   </div>
 </div>
@@ -188,7 +325,13 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .action-btn:hover {
@@ -196,7 +339,9 @@
     box-shadow: 0 8px 20px rgba(132, 204, 22, 0.35);
   }
 
-  .action-btn:active { transform: translateY(0); }
+  .action-btn:active {
+    transform: translateY(0);
+  }
 
   .action-btn:focus-visible {
     outline: 2px solid #a3e635;
@@ -222,7 +367,14 @@
     color: #ffffff;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
@@ -256,17 +408,31 @@
 
   .random-btn {
     padding: 6px 10px;
-    background: linear-gradient(135deg, rgba(132, 204, 22, 0.2), rgba(163, 230, 53, 0.2));
+    background: linear-gradient(
+      135deg,
+      rgba(132, 204, 22, 0.2),
+      rgba(163, 230, 53, 0.2)
+    );
     border: 1px solid rgba(163, 230, 53, 0.3);
     border-radius: 6px;
     color: #a3e635;
     font-size: 0.75rem;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .random-btn:hover {
-    background: linear-gradient(135deg, rgba(132, 204, 22, 0.3), rgba(163, 230, 53, 0.3));
+    background: linear-gradient(
+      135deg,
+      rgba(132, 204, 22, 0.3),
+      rgba(163, 230, 53, 0.3)
+    );
     border-color: rgba(163, 230, 53, 0.5);
     transform: rotate(10deg);
   }
@@ -295,7 +461,13 @@
     color: #9ca3af;
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .reset-btn:hover {
@@ -350,10 +522,12 @@
     background: linear-gradient(135deg, #84cc16, #65a30d);
     border-radius: 50%;
     cursor: pointer;
-    transition: transform 0.15s ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
-  .placement-section input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+  .placement-section input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
 
   .placement-section input[type="range"]:focus-visible {
     outline: 2px solid rgba(132, 204, 22, 0.7);
@@ -414,12 +588,25 @@
   .easter-egg-stat i {
     font-size: 1rem;
     opacity: 0.5;
-    transition: all 0.3s ease;
+    transition:
+      background var(--duration-emphasis) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard),
+      color var(--duration-emphasis) var(--ease-standard),
+      opacity var(--duration-emphasis) var(--ease-standard),
+      transform var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-emphasis) var(--ease-standard);
   }
 
-  .easter-egg-stat.active { background: rgba(250, 204, 21, 0.1); }
-  .easter-egg-stat.active i { color: #facc15; opacity: 1; }
-  .easter-egg-stat.active .stat-label { color: #facc15; }
+  .easter-egg-stat.active {
+    background: rgba(250, 204, 21, 0.1);
+  }
+  .easter-egg-stat.active i {
+    color: #facc15;
+    opacity: 1;
+  }
+  .easter-egg-stat.active .stat-label {
+    color: #facc15;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .action-btn,

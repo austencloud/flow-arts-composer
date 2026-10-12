@@ -96,7 +96,9 @@
       const hours = Math.floor(diff / (1000 * 60 * 60));
       if (hours === 0) {
         const minutes = Math.floor(diff / (1000 * 60));
-        return minutes <= 1 ? t("feedback_time_just_now") : t("feedback_time_minutes_ago", { count: minutes });
+        return minutes <= 1
+          ? t("feedback_time_just_now")
+          : t("feedback_time_minutes_ago", { count: minutes });
       }
       return t("feedback_time_hours_ago", { count: hours });
     }
@@ -381,7 +383,7 @@
     font-size: var(--fb-text-sm);
     font-weight: 600;
     color: white;
-    transition: transform var(--duration-instant) ease;
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .action-content i {
@@ -419,10 +421,10 @@
     text-align: left;
     cursor: pointer;
     transition:
-      background 0.2s ease,
-      border-color 0.2s ease,
-      box-shadow 0.2s ease,
-      transform 0.35s var(--spring-bounce);
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-dramatic) var(--spring-bounce);
     will-change: transform;
   }
 
@@ -512,7 +514,15 @@
     border-radius: var(--fb-radius-sm);
     color: var(--type-color);
     font-size: var(--font-size-lg);
-    transition: all var(--duration-normal) var(--spring-bounce);
+    transition:
+      background var(--duration-normal) var(--spring-bounce),
+      border-color var(--duration-normal) var(--spring-bounce),
+      color var(--duration-normal) var(--spring-bounce),
+      opacity var(--duration-normal) var(--spring-bounce),
+      transform var(--duration-normal) var(--spring-bounce),
+      box-shadow var(--duration-normal) var(--spring-bounce),
+      width var(--duration-normal) var(--spring-bounce),
+      height var(--duration-normal) var(--spring-bounce);
   }
 
   .feedback-card:hover:not(.swiping) .card-type {

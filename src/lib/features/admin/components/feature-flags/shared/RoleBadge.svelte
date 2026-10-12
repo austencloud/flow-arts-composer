@@ -44,11 +44,7 @@
     {/if}
   </button>
 {:else}
-  <span
-    class="role-badge {size}"
-    style="--role-color: {color}"
-    title={label}
-  >
+  <span class="role-badge {size}" style="--role-color: {color}" title={label}>
     <i class="fas {icon}" aria-hidden="true"></i>
     {#if showLabel}
       <span>{label}</span>
@@ -99,7 +95,13 @@
 
   .role-badge.interactive {
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     border: 1.5px solid transparent;
   }
 

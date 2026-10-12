@@ -3,7 +3,8 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { ChangelogEntry } from "#lib/shared/versioning/domain/models/version-models.js";
   import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
-  import { fly, scale } from "svelte/transition";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import ContributorBadge from "./ContributorBadge.svelte";
   import ContributorPicker from "./ContributorPicker.svelte";
   import ChangelogRichText from "./ChangelogRichText.svelte";
@@ -178,15 +179,22 @@
     {/if}
 
     {#if error}
-      <div class="error-message" in:fly={{ y: -10, duration: 200 }}>
+      <div
+        class="error-message"
+        in:flyFade={{ y: -10, duration: DURATION.normal }}
+      >
         {error}
       </div>
     {/if}
 
     {#if showDeleteConfirm}
-      <div class="delete-confirm" in:fly={{ y: 10, duration: 200 }}>
+      <div
+        class="delete-confirm"
+        in:flyFade={{ y: 10, duration: DURATION.normal }}
+      >
         <span class="confirm-text"
-          >{t("settings_delete_confirm")} <span class="hint">{t("settings_delete_confirm_hint")}</span></span
+          >{t("settings_delete_confirm")}
+          <span class="hint">{t("settings_delete_confirm_hint")}</span></span
         >
         <div class="confirm-actions">
           <button
@@ -213,7 +221,10 @@
         </div>
       </div>
     {:else}
-      <div class="edit-actions" in:fly={{ y: 10, duration: 200 }}>
+      <div
+        class="edit-actions"
+        in:flyFade={{ y: 10, duration: DURATION.normal }}
+      >
         {#if onDelete}
           <button
             type="button"
@@ -331,8 +342,8 @@
     text-align: left;
     cursor: default;
     transition:
-      background 0.2s,
-      transform 0.2s;
+      background var(--duration-normal),
+      transform var(--duration-normal);
     position: relative;
   }
 
@@ -391,7 +402,14 @@
     font-size: var(--font-size-compact);
     cursor: pointer;
     border-radius: 8px;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      height var(--duration-normal);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -483,7 +501,13 @@
     font-weight: 500;
     color: var(--theme-text);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .glass-btn.flex-2 {

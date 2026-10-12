@@ -35,7 +35,8 @@
   // Create state wrapper ONCE - do NOT use $derived as it recreates state on every item change
   // This was causing showDeleteConfirm to reset when real-time updates arrived
   // Use factory function to avoid state_referenced_locally warning
-  const createState = () => createFeedbackDetailState(item, manageState, readOnly);
+  const createState = () =>
+    createFeedbackDetailState(item, manageState, readOnly);
   const detailState = createState();
 
   // Sync item updates (state internally handles ID-based change detection)
@@ -451,7 +452,7 @@
     font-size: var(--fb-text-lg);
     font-weight: 700;
     font-family: inherit;
-    transition: border-color var(--duration-normal) ease;
+    transition: border-color var(--duration-normal) var(--ease-standard);
   }
 
   .title-input:focus {
@@ -486,7 +487,14 @@
     font-family: inherit;
     resize: none;
     min-height: 80px;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard);
   }
 
   .inline-edit-textarea:focus {
@@ -584,7 +592,13 @@
     border-radius: 999px;
     color: var(--fb-text-muted);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     font-size: var(--fb-text-xs);
     font-weight: 500;
     white-space: nowrap;
@@ -629,7 +643,14 @@
     font-size: var(--fb-text-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard);
   }
 
   .screenshots-button:hover {
@@ -669,7 +690,15 @@
     border: 1px solid var(--fb-border);
     background: transparent;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
   }
 
   .screenshot-btn:hover {
@@ -697,7 +726,7 @@
     color: white;
     font-size: 1rem;
     opacity: 0;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .screenshot-btn:hover .screenshot-overlay {
@@ -726,7 +755,15 @@
     color: var(--fb-text);
     font-size: 1rem;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .cycle-btn:hover:not(:disabled) {

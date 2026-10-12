@@ -39,7 +39,6 @@
     onCancelLongPress,
   }: Props = $props();
 
-
   const MODULE_NAMES: Record<string, string> = {
     public: "Public Pages",
     create: "Create",
@@ -56,16 +55,35 @@
     { name: string; w: number; h: number; category: DeviceCategory }
   > = {
     "iphone-se": { name: "iPhone SE", w: 375, h: 667, category: "phone" },
-    "iphone-16-pro": { name: "iPhone 16 Pro", w: 393, h: 852, category: "phone" },
-    "iphone-16-pro-max": { name: "iPhone 16 Pro Max", w: 430, h: 932, category: "phone" },
+    "iphone-16-pro": {
+      name: "iPhone 16 Pro",
+      w: 393,
+      h: 852,
+      category: "phone",
+    },
+    "iphone-16-pro-max": {
+      name: "iPhone 16 Pro Max",
+      w: 430,
+      h: 932,
+      category: "phone",
+    },
     "galaxy-s24": { name: "Galaxy S24", w: 360, h: 780, category: "phone" },
-    "galaxy-s24-ultra": { name: "Galaxy S24 Ultra", w: 412, h: 915, category: "phone" },
+    "galaxy-s24-ultra": {
+      name: "Galaxy S24 Ultra",
+      w: 412,
+      h: 915,
+      category: "phone",
+    },
     "ipad-mini": { name: "iPad Mini", w: 768, h: 1024, category: "tablet" },
     "ipad-air": { name: "iPad Air", w: 820, h: 1180, category: "tablet" },
     "desktop-hd": { name: "Desktop HD", w: 1366, h: 768, category: "desktop" },
-    "desktop-fhd": { name: "Desktop FHD", w: 1920, h: 1080, category: "desktop" },
+    "desktop-fhd": {
+      name: "Desktop FHD",
+      w: 1920,
+      h: 1080,
+      category: "desktop",
+    },
   };
-
 
   function getAspectRatio(slug: string): number {
     const d = DEVICE_MAP[slug];
@@ -94,7 +112,9 @@
   }
 
   function formatRouteLabel(label: string): string {
-    return label.replace(/--/g, " / ").replace(/(^|\s)\w/g, (c) => c.toUpperCase());
+    return label
+      .replace(/--/g, " / ")
+      .replace(/(^|\s)\w/g, (c) => c.toUpperCase());
   }
 
   function getTagById(tagId: string): MediaTag | undefined {
@@ -114,7 +134,10 @@
   {#each [...moduleGroups.entries()] as [moduleId, routeMap], sectionIdx (moduleId)}
     {@const isCollapsed = collapsedModules[moduleId] ?? false}
     {@const routeCount = routeMap.size}
-    {@const captureCount = [...routeMap.values()].reduce((sum, arr) => sum + arr.length, 0)}
+    {@const captureCount = [...routeMap.values()].reduce(
+      (sum, arr) => sum + arr.length,
+      0
+    )}
 
     <section class="module-section" style="--section-i: {sectionIdx};">
       <button
@@ -124,7 +147,9 @@
       >
         <i class="fas fa-chevron-right" class:expanded={!isCollapsed}></i>
         <span class="module-name">{MODULE_NAMES[moduleId] ?? moduleId}</span>
-        <span class="module-stats">{captureCount} captures, {routeCount} routes</span>
+        <span class="module-stats"
+          >{captureCount} captures, {routeCount} routes</span
+        >
       </button>
 
       {#if !isCollapsed}
@@ -151,10 +176,19 @@
                     ontouchend={onCancelLongPress}
                     ontouchmove={onCancelLongPress}
                     ontouchcancel={onCancelLongPress}
-                    aria-label="{selectionMode ? (isSelected ? 'Deselect' : 'Select') : 'View'} {item.deviceName} screenshot of {formatRouteLabel(item.routeLabel)}"
+                    aria-label="{selectionMode
+                      ? isSelected
+                        ? 'Deselect'
+                        : 'Select'
+                      : 'View'} {item.deviceName} screenshot of {formatRouteLabel(
+                      item.routeLabel
+                    )}"
                   >
                     <!-- Selection checkbox overlay -->
-                    <div class="selection-checkbox" class:visible={selectionMode}>
+                    <div
+                      class="selection-checkbox"
+                      class:visible={selectionMode}
+                    >
                       <div class="checkbox-inner" class:checked={isSelected}>
                         {#if isSelected}
                           <i class="fas fa-check"></i>
@@ -165,7 +199,9 @@
                     <div class="screenshot-frame">
                       <img
                         src={item.imageUrl}
-                        alt="{formatRouteLabel(item.routeLabel)} on {item.deviceName}"
+                        alt="{formatRouteLabel(
+                          item.routeLabel
+                        )} on {item.deviceName}"
                         loading="lazy"
                         decoding="async"
                       />
@@ -173,23 +209,33 @@
                     <div class="card-footer">
                       <span
                         class="device-badge"
-                        style="--badge-color: {getCategoryColor(item.deviceSlug)}"
+                        style="--badge-color: {getCategoryColor(
+                          item.deviceSlug
+                        )}"
                       >
                         {getCategoryLabel(item.deviceSlug)}
                       </span>
                       <span class="device-name">{item.deviceName}</span>
-                      <span class="device-dims">{getDeviceDims(item.deviceSlug)}</span>
+                      <span class="device-dims"
+                        >{getDeviceDims(item.deviceSlug)}</span
+                      >
                     </div>
                     {#if item.tagIds.length > 0}
                       <div class="card-tags">
                         {#each item.tagIds.slice(0, 3) as tagId (tagId)}
                           {@const tag = getTagById(tagId)}
                           {#if tag}
-                            <TagChip label={tag.name} color={tag.color} size="sm" />
+                            <TagChip
+                              label={tag.name}
+                              color={tag.color}
+                              size="sm"
+                            />
                           {/if}
                         {/each}
                         {#if item.tagIds.length > 3}
-                          <span class="tag-overflow">+{item.tagIds.length - 3}</span>
+                          <span class="tag-overflow"
+                            >+{item.tagIds.length - 3}</span
+                          >
                         {/if}
                       </div>
                     {/if}
@@ -216,8 +262,9 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    animation: slideUp var(--duration-normal, 200ms) var(--ease-out, ease-out) both;
-    animation-delay: calc(var(--stagger-normal, 50ms) * var(--section-i, 0));
+    animation: slideUp var(--duration-normal)
+      var(--ease-out, var(--ease-standard-out)) both;
+    animation-delay: calc(var(--stagger-normal) * var(--section-i, 0));
   }
 
   .module-header {
@@ -236,8 +283,8 @@
     text-align: left;
     width: 100%;
     transition:
-      transform var(--duration-instant, 100ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
-      background var(--duration-fast, 150ms) var(--ease-out, ease-out);
+      transform var(--duration-instant) var(--ease-spring, var(--ease-spring)),
+      background var(--duration-fast) var(--ease-out, var(--ease-standard-out));
   }
 
   .module-header:hover {
@@ -252,7 +299,8 @@
   .module-header i {
     font-size: 10px;
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.5));
-    transition: transform var(--duration-fast, 150ms) var(--ease-out, ease-out);
+    transition: transform var(--duration-fast)
+      var(--ease-out, var(--ease-standard-out));
   }
 
   .module-header i.expanded {
@@ -298,7 +346,8 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
     gap: 10px;
-    transition: grid-template-columns var(--duration-normal, 200ms) var(--ease-out, ease-out);
+    transition: grid-template-columns var(--duration-normal)
+      var(--ease-out, var(--ease-standard-out));
   }
 
   /* Capture cards */
@@ -310,19 +359,22 @@
     overflow: hidden;
     cursor: pointer;
     transition:
-      transform var(--duration-instant, 100ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
-      border-color var(--duration-fast, 150ms) var(--ease-out, ease-out),
-      box-shadow var(--duration-fast, 150ms) var(--ease-out, ease-out);
+      transform var(--duration-instant) var(--ease-spring, var(--ease-spring)),
+      border-color var(--duration-fast)
+        var(--ease-out, var(--ease-standard-out)),
+      box-shadow var(--duration-fast) var(--ease-out, var(--ease-standard-out));
     padding: 0;
     font-family: inherit;
     color: inherit;
     text-align: left;
-    animation: popIn var(--duration-emphasis, 280ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
-    animation-delay: calc(var(--stagger-micro, 30ms) * var(--card-i, 0));
+    animation: popIn var(--duration-emphasis)
+      var(--ease-spring, var(--ease-spring)) both;
+    animation-delay: calc(var(--stagger-micro) * var(--card-i, 0));
   }
 
   .capture-card:hover {
-    transform: scale(var(--hover-scale-md, 1.02)) translateY(var(--hover-lift-sm, -1px));
+    transform: scale(var(--hover-scale-md, 1.02))
+      translateY(var(--hover-lift-sm, -1px));
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.15));
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   }
@@ -333,8 +385,10 @@
 
   .capture-card.selected {
     border-color: var(--theme-accent, #3b82f6);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-accent, #3b82f6) 30%, transparent),
-                0 4px 16px rgba(0, 0, 0, 0.3);
+    box-shadow:
+      0 0 0 2px
+        color-mix(in srgb, var(--theme-accent, #3b82f6) 30%, transparent),
+      0 4px 16px rgba(0, 0, 0, 0.3);
   }
 
   /* Selection checkbox */
@@ -345,7 +399,8 @@
     z-index: 2;
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--duration-fast, 150ms) var(--ease-out, ease-out);
+    transition: opacity var(--duration-fast)
+      var(--ease-out, var(--ease-standard-out));
   }
 
   .selection-checkbox.visible {
@@ -368,7 +423,15 @@
     justify-content: center;
     font-size: 12px;
     color: #fff;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out, ease-out),
+      border-color var(--duration-fast) var(--ease-out, ease-out),
+      color var(--duration-fast) var(--ease-out, ease-out),
+      opacity var(--duration-fast) var(--ease-out, ease-out),
+      transform var(--duration-fast) var(--ease-out, ease-out),
+      box-shadow var(--duration-fast) var(--ease-out, ease-out),
+      width var(--duration-fast) var(--ease-out, ease-out),
+      height var(--duration-fast) var(--ease-out, ease-out);
   }
 
   .checkbox-inner.checked {

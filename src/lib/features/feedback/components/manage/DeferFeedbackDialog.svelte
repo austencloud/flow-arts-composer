@@ -55,7 +55,9 @@
       <div class="dialog-icon">
         <i class="fas fa-clock" aria-hidden="true"></i>
       </div>
-      <h3 class="dialog-title" id="defer-dialog-title">{t("feedback_defer_title")}</h3>
+      <h3 class="dialog-title" id="defer-dialog-title">
+        {t("feedback_defer_title")}
+      </h3>
       <button
         type="button"
         class="close-button"
@@ -85,8 +87,7 @@
           type="date"
           class="date-input"
           value={boardState.deferDate}
-          onchange={(e) =>
-            boardState.setDeferDate(e.currentTarget.value)}
+          onchange={(e) => boardState.setDeferDate(e.currentTarget.value)}
           min={new Date().toISOString().split("T")[0]}
           required
         />
@@ -101,8 +102,7 @@
           id="defer-notes"
           class="notes-input"
           value={boardState.deferNotes}
-          onchange={(e) =>
-            boardState.setDeferNotes(e.currentTarget.value)}
+          onchange={(e) => boardState.setDeferNotes(e.currentTarget.value)}
           placeholder={t("feedback_defer_placeholder")}
           rows="3"
         ></textarea>
@@ -146,7 +146,7 @@
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(8px);
     z-index: var(--z-modal);
-    animation: fadeIn var(--duration-normal) ease;
+    animation: fadeIn var(--duration-normal) var(--ease-standard);
   }
 
   .defer-dialog {
@@ -164,7 +164,7 @@
     box-shadow:
       0 20px 60px rgba(0, 0, 0, 0.5),
       inset 0 1px 0 var(--theme-stroke, var(--theme-stroke));
-    animation: slideUp var(--duration-emphasis) cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: slideUp var(--duration-emphasis) var(--ease-spring);
   }
 
   .dialog-header {
@@ -218,7 +218,15 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: clamp(16px, 4cqi, 18px);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
   }
 
   .close-button:hover {
@@ -290,7 +298,14 @@
     color: var(--theme-text);
     font-size: clamp(0.875rem, 2.5cqi, 1rem);
     font-family: inherit;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard);
   }
 
   .date-input:focus,
@@ -329,7 +344,13 @@
     font-size: clamp(0.875rem, 2.5cqi, 1rem);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .cancel-button {
@@ -371,17 +392,31 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .defer-dialog-overlay { animation: none; }
-    .defer-dialog { animation: none; }
+    .defer-dialog-overlay {
+      animation: none;
+    }
+    .defer-dialog {
+      animation: none;
+    }
   }
 </style>

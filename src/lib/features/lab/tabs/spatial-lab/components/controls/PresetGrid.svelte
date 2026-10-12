@@ -21,16 +21,43 @@
 </div>
 
 <style>
-  .panel-section { display: flex; flex-direction: column; gap: 8px; }
+  .panel-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
   .panel-label {
-    font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
-    color: #666; font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #666;
+    font-weight: 600;
   }
-  .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .preset-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
   .preset-btn {
-    padding: 7px 8px; border: 1px solid #2a2a4a; background: #1a1a35;
-    color: #aaa; font-size: 10px; cursor: pointer; border-radius: 5px;
-    transition: all 0.15s; text-align: center;
+    padding: 7px 8px;
+    border: 1px solid #2a2a4a;
+    background: #1a1a35;
+    color: #aaa;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
+    text-align: center;
   }
-  .preset-btn:hover { border-color: #4a4a6a; color: #ddd; background: #222250; }
+  .preset-btn:hover {
+    border-color: #4a4a6a;
+    color: #ddd;
+    background: #222250;
+  }
 </style>

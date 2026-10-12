@@ -350,7 +350,15 @@
     cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .back-header-button:hover {
@@ -374,7 +382,7 @@
 
   .back-header-button i {
     font-size: var(--font-size-sm);
-    transition: transform var(--duration-fast) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .back-header-button:hover i {
@@ -487,8 +495,8 @@
     }
 
     :global(
-        html[data-theme-luminance="bright"]:has(.settings-module)
-      )::view-transition-group(settings-surface) {
+      html[data-theme-luminance="bright"]:has(.settings-module)
+    )::view-transition-group(settings-surface) {
       background: color-mix(
         in srgb,
         var(--theme-panel-bg, rgba(255, 255, 255, 0.88)) 14%,
@@ -583,8 +591,8 @@
     opacity: 0;
     transform: translateX(-100%);
     transition:
-      opacity 0.15s ease,
-      transform 0.15s ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .swipe-indicator.active {
@@ -622,7 +630,7 @@
     color: var(--theme-accent);
     font-size: var(--font-size-sm);
     transform: translateX(calc(var(--swipe-progress, 0) * 2px));
-    transition: transform var(--duration-instant) ease;
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   /* Reduced motion */
@@ -630,8 +638,8 @@
     *,
     *::before,
     *::after {
-      transition-duration: 0.01ms !important;
-      animation-duration: 0.01ms !important;
+      transition-duration: 0s !important;
+      animation-duration: 0s !important;
     }
 
     .swipe-indicator,

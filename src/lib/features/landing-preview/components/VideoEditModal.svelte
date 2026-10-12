@@ -37,8 +37,21 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="edit-modal" onclick={onCancel} onkeydown={(e) => { if (e.key === 'Escape') onCancel(); }} role="dialog" aria-modal="true" tabindex="-1">
-  <div class="edit-content" onclick={(e) => e.stopPropagation()} role="document">
+<div
+  class="edit-modal"
+  onclick={onCancel}
+  onkeydown={(e) => {
+    if (e.key === "Escape") onCancel();
+  }}
+  role="dialog"
+  aria-modal="true"
+  tabindex="-1"
+>
+  <div
+    class="edit-content"
+    onclick={(e) => e.stopPropagation()}
+    role="document"
+  >
     <h2>Edit Video</h2>
 
     <div class="form-group">
@@ -57,7 +70,8 @@
       <select
         id="edit-category"
         value={editCategory}
-        onchange={(e) => onUpdateCategory((e.target as HTMLSelectElement).value)}
+        onchange={(e) =>
+          onUpdateCategory((e.target as HTMLSelectElement).value)}
       >
         <option value="">None</option>
         {#each categories as cat}
@@ -78,7 +92,9 @@
     </div>
 
     <div class="form-actions">
-      <button class="cancel-btn" onclick={onCancel} disabled={saving}>Cancel</button>
+      <button class="cancel-btn" onclick={onCancel} disabled={saving}
+        >Cancel</button
+      >
       <button class="save-btn" onclick={onSave} disabled={saving}>
         {saving ? "Saving..." : "Save"}
       </button>
@@ -147,7 +163,13 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
   }
 
   .cancel-btn {

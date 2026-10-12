@@ -90,7 +90,14 @@
     font: inherit;
     cursor: pointer;
     text-align: left;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard);
   }
 
   .version-card:hover {
@@ -167,8 +174,8 @@
     height: 28px;
     color: var(--theme-text-dim);
     transition:
-      color 0.2s ease,
-      transform 0.2s ease;
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .version-card:hover .arrow-icon {

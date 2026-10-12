@@ -112,8 +112,8 @@
     text-decoration: none;
     cursor: pointer;
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .action-button:hover,

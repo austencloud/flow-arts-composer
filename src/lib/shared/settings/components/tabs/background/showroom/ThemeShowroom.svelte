@@ -17,6 +17,8 @@
   import { getShowroomTheme, SHOWROOM_THEMES } from "./theme-showroom-data";
   import { preloadThemeScene } from "./theme-scene-loader";
 
+  const SAVE_ERROR_TOAST_MS = 10_000;
+
   interface Props {
     settings: AppSettings;
     onUpdate?: (event: { key: string; value: unknown }) => void;
@@ -107,7 +109,7 @@
     showToast({
       message: accountSetupState.saveError,
       type: "error",
-      duration: 10_000,
+      duration: SAVE_ERROR_TOAST_MS,
       announcement: "polite",
       action: {
         label: t("common_retry"),
@@ -236,7 +238,7 @@
     filter: blur(100px);
     opacity: 0.16;
     pointer-events: none;
-    transition: background 600ms ease;
+    transition: background var(--duration-scene) var(--ease-standard);
   }
 
   .ambient-one {

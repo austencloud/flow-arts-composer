@@ -30,7 +30,9 @@
   let lastVideoSrc = $state<string | null>(null);
   let savedCurrentTime = 0;
 
-  const currentVideoSrc = $derived(controller.videoUrl || controller.currentVideo?.videoUrl || null);
+  const currentVideoSrc = $derived(
+    controller.videoUrl || controller.currentVideo?.videoUrl || null
+  );
 
   // Reset saved time when video source changes
   $effect(() => {
@@ -107,7 +109,10 @@
         <div class="progress-pill rename">
           <span class="progress-num">{controller.renamingProgress.named}</span>
           <span class="progress-sep">/</span>
-          <span class="progress-total">{controller.renamingProgress.named + controller.unnamedVideos.length}</span>
+          <span class="progress-total"
+            >{controller.renamingProgress.named +
+              controller.unnamedVideos.length}</span
+          >
           <span class="progress-suffix">named</span>
         </div>
       {:else}
@@ -116,7 +121,11 @@
     </header>
 
     <!-- Main content -->
-    <main class="main" class:curate-layout={mode === "curate"} class:rename-layout={mode === "rename"}>
+    <main
+      class="main"
+      class:curate-layout={mode === "curate"}
+      class:rename-layout={mode === "rename"}
+    >
       {#if mode === "curate"}
         <!-- Curate: 3-column layout -->
         <div class="side-panel left-panel">
@@ -153,11 +162,7 @@
         />
 
         <div class="side-panel rename-panel-container">
-          <RenamePanel
-            video={currentVideo}
-            {controller}
-            {formatDate}
-          />
+          <RenamePanel video={currentVideo} {controller} {formatDate} />
         </div>
       {:else}
         <!-- Browse/Link: 2-column layout -->
@@ -175,17 +180,9 @@
 
         <div class="info-panel">
           {#if mode === "browse"}
-            <BrowsePanel
-              video={currentVideo}
-              {controller}
-              {formatDate}
-            />
+            <BrowsePanel video={currentVideo} {controller} {formatDate} />
           {:else if mode === "link"}
-            <LinkPanel
-              video={currentVideo}
-              {controller}
-              {formatDate}
-            />
+            <LinkPanel video={currentVideo} {controller} {formatDate} />
           {/if}
         </div>
       {/if}
@@ -248,7 +245,15 @@
     align-items: center;
     justify-content: center;
     font-size: 16px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
     backdrop-filter: blur(8px);
   }
 

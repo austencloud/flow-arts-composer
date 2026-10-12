@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { slide } from "svelte/transition";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import VoiceInputButton from "./VoiceInputButton.svelte";
   import VoiceWaveform from "./VoiceWaveform.svelte";
   import ImageUpload from "#lib/shared/components/image-upload/ImageUpload.svelte";
@@ -125,14 +126,14 @@
     {#if isVoiceRecording && audioAnalyzer}
       <div
         class="waveform-strip"
-        transition:slide={{ duration: prefersReducedMotion ? 0 : 200 }}
+        transition:growFade={{ duration: DURATION.normal }}
       >
         <VoiceWaveform analyzer={audioAnalyzer} />
       </div>
     {:else if isTranscribing}
       <div
         class="waveform-strip transcribing"
-        transition:slide={{ duration: prefersReducedMotion ? 0 : 200 }}
+        transition:growFade={{ duration: DURATION.normal }}
       >
         <div class="transcribing-content">
           <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
@@ -281,8 +282,8 @@
       );
     border-radius: clamp(8px, 1.8cqi, 12px);
     transition:
-      border-color 200ms ease,
-      background 200ms ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard);
   }
 
   .textarea-wrapper:hover {
@@ -360,7 +361,15 @@
     font-size: 11px;
     cursor: pointer;
     opacity: 0.5;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     z-index: 3;
   }
 
@@ -436,7 +445,14 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     flex-shrink: 0;
   }
 
@@ -481,7 +497,7 @@
       var(--theme-text-dim, var(--theme-text-dim)) 80%,
       transparent
     );
-    transition: color var(--duration-fast) ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
 
   .char-count.met {
@@ -502,7 +518,7 @@
     font-size: clamp(0.7rem, 1.8cqi, 0.8rem);
     font-weight: 500;
     color: var(--semantic-success);
-    animation: fadeInOut 2s ease-in-out;
+    animation: fadeInOut var(--duration-scene) var(--ease-standard);
   }
 
   .draft-saved i {

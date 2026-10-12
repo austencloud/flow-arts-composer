@@ -59,7 +59,13 @@
     font-weight: 600;
     letter-spacing: 0.02em;
     cursor: pointer;
-    transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
   }
 
@@ -70,7 +76,7 @@
 
   button:active {
     transform: scale(0.97);
-    transition: transform 80ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   button.active {

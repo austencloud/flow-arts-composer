@@ -70,7 +70,7 @@
       rgba(118, 118, 128, 0.12) 100%
     );
     background-size: 936px 104px;
-    animation: ios-shimmer 1.8s cubic-bezier(0.36, 0.66, 0.04, 1) infinite;
+    animation: ios-shimmer 1.8s var(--ease-smooth) infinite;
     border-radius: 4px;
   }
 

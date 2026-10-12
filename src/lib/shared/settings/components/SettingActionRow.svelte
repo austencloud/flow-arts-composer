@@ -77,7 +77,7 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
-    transition: background var(--duration-fast) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -111,7 +111,7 @@
     color: var(--theme-text-dim);
     background: color-mix(in srgb, var(--theme-text) 4%, transparent);
     font-size: max(1rem, var(--font-size-base));
-    transition: transform var(--duration-fast) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .setting-action:active:not(:disabled) .action-mark {
