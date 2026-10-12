@@ -203,8 +203,14 @@ preference: `animation-engine/services/animation-grid-join.ts`
 (`resolveAnimationGridJoin`) reads `conjoined` off the sequence data the
 animation plays and lines it up with the grid drawn, so the animation, the
 cards and every picture made from the sequence show the same pair of grids.
-Overlaid tunnel layers share one grid, so with any present the animation
-stays single. The viewer's old Conjoined switch is gone and nothing below the
+Layers overlaid on the sequence (the viewer's Tunnel copies, Studio's tunnel
+hook, an arrangement cell's performers) share its join:
+`FrameSystem.applyGridJoin` moves every layer's hands by the same per-hand
+offsets as the base pair through `shiftLayerProps` (a pooled copy; the host's
+layer objects are never written), trails and effects read the shifted tips,
+and the motion sub-sampler shifts its layer samples to match
+(`MotionPlanInput.gridJoinOffsets`). Do not null the join for layers
+anywhere. The viewer's old Conjoined switch is gone and nothing below the
 viewer offers the join. A link that carried the switch's choice still opens
 joined: `sequence-viewer/services/viewer-url-slices/gj-slice.ts` turns a `gj`
 payload into a join, and `legacyConjoinedOverride` turns the retired switch's
