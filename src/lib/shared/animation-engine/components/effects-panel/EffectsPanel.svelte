@@ -1362,7 +1362,11 @@
     font-weight: 600;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: all 150ms ease;
+    transition:
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
   }
 
   .reset-all-btn:hover {
@@ -1403,7 +1407,12 @@
     font-weight: 600;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: all 150ms ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
   }
 
   .anchor-btn:hover:not(:disabled) {
@@ -1497,7 +1506,10 @@
     text-transform: uppercase;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
   .off-chip:hover {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.07));
@@ -1531,7 +1543,7 @@
     justify-content: center;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: all 150ms ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
   .back-btn:hover {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.07));
@@ -1607,7 +1619,7 @@
     color: var(--theme-text, rgba(255, 255, 255, 0.8));
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: all 150ms ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
   .tune-back:hover {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.07));
@@ -1640,7 +1652,12 @@
     font-weight: 600;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: all 150ms ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
   }
   .tune-anchor.active {
     border-color: color-mix(in srgb, var(--fx-accent) 55%, transparent);

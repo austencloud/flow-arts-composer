@@ -14,7 +14,8 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { ExportOptionsStateManager } from "../state/export-options-state.svelte";
   import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
   import {
@@ -850,7 +851,9 @@
   let lastAnnouncement = $state("");
   $effect(() => {
     if (activePillLabel) {
-      lastAnnouncement = t("viewer_ui_section_settings", { name: activePillLabel });
+      lastAnnouncement = t("viewer_ui_section_settings", {
+        name: activePillLabel,
+      });
     }
   });
 </script>
@@ -1072,7 +1075,11 @@
                 class="rt-chip"
                 aria-pressed={exportOptions.videoOpener === option.value}
                 onclick={() => setVideoOpener(option.value)}
-                >{option.value === "first-beat" ? t("share_first_beat") : option.value === "this-frame" ? t("share_current_frame") : t("share_mandala")}</button
+                >{option.value === "first-beat"
+                  ? t("share_first_beat")
+                  : option.value === "this-frame"
+                    ? t("share_current_frame")
+                    : t("share_mandala")}</button
               >
             {/each}
           </div>
@@ -1161,14 +1168,16 @@
               type="button"
               class="rt-chip"
               aria-pressed={exportOptions.videoQuality === "standard"}
-              onclick={() => setExportQuality("standard")}>{t("share_quality_standard")}</button
+              onclick={() => setExportQuality("standard")}
+              >{t("share_quality_standard")}</button
             >
             <button
               type="button"
               class="rt-chip"
               aria-pressed={exportOptions.videoQuality === "cinema"}
               onclick={() => setExportQuality("cinema")}
-              ><i class="fas fa-film" aria-hidden="true"></i> {t("share_quality_cinema")}</button
+              ><i class="fas fa-film" aria-hidden="true"></i>
+              {t("share_quality_cinema")}</button
             >
           </div>
         </div>
@@ -1184,7 +1193,8 @@
             onclick={() =>
               setStartHold(!exportOptions.videoIncludeStartPlacement)}
           >
-            <i class="fas fa-step-backward" aria-hidden="true"></i> {t("animation_export_start_hold")}
+            <i class="fas fa-step-backward" aria-hidden="true"></i>
+            {t("animation_export_start_hold")}
           </button>
           <button
             type="button"
@@ -1192,7 +1202,8 @@
             aria-pressed={exportOptions.videoIncludeEndHold}
             onclick={() => setEndHold(!exportOptions.videoIncludeEndHold)}
           >
-            <i class="fas fa-step-forward" aria-hidden="true"></i> {t("animation_export_end_hold")}
+            <i class="fas fa-step-forward" aria-hidden="true"></i>
+            {t("animation_export_end_hold")}
           </button>
         </div>
       </div>
@@ -1279,7 +1290,7 @@
        ============================================================ -->
   <div
     class="mobile-export"
-    transition:fade={{ duration: reduceMotion ? 0 : 200 }}
+    transition:opaqueFade={{ duration: reduceMotion ? 0 : DURATION.normal }}
     role="region"
     aria-label={effectiveRegionLabel}
   >
@@ -1287,7 +1298,9 @@
       <div class="mobile-progress" role="status" aria-live="polite">
         <div class="progress-info">
           <span class="progress-stage">
-            {#if !exportProgress}{t("animation_export_starting")}{:else}{t("export_exporting")}{/if}
+            {#if !exportProgress}{t("animation_export_starting")}{:else}{t(
+                "export_exporting"
+              )}{/if}
           </span>
           <span class="progress-pct"
             >{exportProgress
@@ -1862,7 +1875,7 @@
     height: 100%;
     background: var(--theme-accent, #6366f1);
     border-radius: 3px;
-    transition: width 0.2s ease;
+    transition: width var(--duration-normal) var(--ease-standard);
   }
 
   .cancel-btn {
@@ -1880,7 +1893,10 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .cancel-btn:hover {

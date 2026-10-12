@@ -18,7 +18,10 @@
     getAnimationVisibilityManager,
     type TrailVisibility,
   } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
-  import { isBilateralProp, getBilateralEndLabels } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+  import {
+    isBilateralProp,
+    getBilateralEndLabels,
+  } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   const animationVisibilityManager = getAnimationVisibilityManager();
@@ -48,8 +51,10 @@
   // Check if ANY selected prop is bilateral (staff, buugeng, etc.)
   // Toggle shown when at least one prop has trackable ends
   const showBilateralToggle = $derived.by(() => {
-    const leftIsBilateral = effectiveLeftPropType != null && isBilateralProp(effectiveLeftPropType);
-    const rightIsBilateral = effectiveRightPropType != null && isBilateralProp(effectiveRightPropType);
+    const leftIsBilateral =
+      effectiveLeftPropType != null && isBilateralProp(effectiveLeftPropType);
+    const rightIsBilateral =
+      effectiveRightPropType != null && isBilateralProp(effectiveRightPropType);
 
     // Show toggle if ANY prop is bilateral
     // (applies to whichever prop has trackable ends)
@@ -75,11 +80,16 @@
     if (propToCheck && isBilateralProp(propToCheck)) {
       const localizeEnd = (label: string): string => {
         switch (label) {
-          case "Pinky": return t("animation_trail_pinky");
-          case "Thumb": return t("animation_trail_thumb");
-          case "Knob": return t("animation_trail_knob");
-          case "Bulb": return t("animation_trail_bulb");
-          default: return label;
+          case "Pinky":
+            return t("animation_trail_pinky");
+          case "Thumb":
+            return t("animation_trail_thumb");
+          case "Knob":
+            return t("animation_trail_knob");
+          case "Bulb":
+            return t("animation_trail_bulb");
+          default:
+            return label;
         }
       };
       const [left, right] = getBilateralEndLabels(propToCheck);
@@ -90,8 +100,9 @@
 
   // Get current trail visibility from visibility manager (global state)
   function isTrailsActive(): boolean {
-    const tipMap = animationVisibilityManager.effectsConfigState?.tipEffectMap ?? {};
-    return Object.values(tipMap).some(a => a.effect === "trails");
+    const tipMap =
+      animationVisibilityManager.effectsConfigState?.tipEffectMap ?? {};
+    return Object.values(tipMap).some((a) => a.effect === "trails");
   }
   let currentPreset = $state<TrailVisibility>(isTrailsActive() ? "on" : "off");
 
@@ -115,7 +126,9 @@
 
   function setPreset(preset: TrailVisibility) {
     // Update global visibility state
-    animationVisibilityManager.setActiveEffect(preset === "on" ? "trails" : "none");
+    animationVisibilityManager.setActiveEffect(
+      preset === "on" ? "trails" : "none"
+    );
 
     // Apply trail settings - hardcoded vivid style when enabled
     if (preset === "off") {
@@ -237,7 +250,12 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -291,7 +309,6 @@
       inset 0 1px 0 var(--theme-stroke);
   }
 
-
   .ends-selector {
     display: flex;
     gap: 4px;
@@ -314,7 +331,11 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     white-space: nowrap;
   }
@@ -359,15 +380,13 @@
       var(--theme-accent-strong, var(--theme-accent-strong)) 35%,
       white
     );
-    box-shadow:
-      0 1px 4px
-        color-mix(
-          in srgb,
-          var(--theme-accent-strong, var(--theme-accent-strong)) 18%,
-          transparent
-        );
+    box-shadow: 0 1px 4px
+      color-mix(
+        in srgb,
+        var(--theme-accent-strong, var(--theme-accent-strong)) 18%,
+        transparent
+      );
   }
-
 
   @media (prefers-reduced-motion: reduce) {
     .preset-btn,

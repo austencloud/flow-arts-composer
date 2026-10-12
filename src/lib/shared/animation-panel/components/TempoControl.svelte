@@ -93,7 +93,6 @@
     SEMANTIC_TEMPO_PRESETS.find((preset) => preset.bpm === bpm)?.label ?? null
   );
 
-
   function adjustBpm(direction: 1 | -1) {
     const elapsed = performance.now() - holdStartTime;
     const step = elapsed > HOLD_ACCEL_MS ? STEP_FAST : STEP_NORMAL;
@@ -188,124 +187,150 @@
 </script>
 
 <div class="tempo-wrapper">
-<div class="tempo-control" class:vertical>
-  <!-- +/- with BPM display -->
-  <div class="bpm-adjuster">
-    <button
-      class="adjust-btn"
-      onpointerdown={() => startHold(-1)}
-      onpointerup={stopHold}
-      onpointerleave={stopHold}
-      onpointercancel={stopHold}
-      disabled={bpm <= BPM_MIN}
-      aria-label={t("compose_decrease_bpm")}
-      type="button"
-    >
-      <i class="fas fa-minus" aria-hidden="true"></i>
-    </button>
+  <div class="tempo-control" class:vertical>
+    <!-- +/- with BPM display -->
+    <div class="bpm-adjuster">
+      <button
+        class="adjust-btn"
+        onpointerdown={() => startHold(-1)}
+        onpointerup={stopHold}
+        onpointerleave={stopHold}
+        onpointercancel={stopHold}
+        disabled={bpm <= BPM_MIN}
+        aria-label={t("compose_decrease_bpm")}
+        type="button"
+      >
+        <i class="fas fa-minus" aria-hidden="true"></i>
+      </button>
 
-    <button
-      class="bpm-display"
-      onclick={handleBpmButtonClick}
-      type="button"
-      aria-label={presetsMode === "popover" ? t("compose_custom_bpm") : t("compose_tap_to_set_tempo")}
-      title={presetsMode === "popover" ? t("compose_custom_bpm") : t("compose_tap_tempo_hint")}
-      aria-haspopup={presetsMode === "popover" ? "dialog" : undefined}
-      aria-expanded={presetsMode === "popover" ? showPopover : undefined}
-      style="--bpm-color: {bpmColor}"
-    >
-      <span class="bpm-value">{bpm}</span>
-      <span class="bpm-label">{isTapping ? t("compose_tap") : t("compose_bpm")}</span>
-    </button>
-
-    <button
-      class="adjust-btn"
-      onpointerdown={() => startHold(1)}
-      onpointerup={stopHold}
-      onpointerleave={stopHold}
-      onpointercancel={stopHold}
-      disabled={bpm >= BPM_MAX}
-      aria-label={t("compose_increase_bpm")}
-      type="button"
-    >
-      <i class="fas fa-plus" aria-hidden="true"></i>
-    </button>
-  </div>
-
-  <!-- Semantic presets (hidden on mobile / in popover mode) -->
-  {#if showPresets && presetsMode === "inline"}
-    <div class="presets">
-      {#each SEMANTIC_TEMPO_PRESETS as preset}
-        <button
-          class="preset-btn"
-          class:active={activePreset === preset.label}
-          data-ghost={activePreset === preset.label ? undefined : "safe"}
-          data-ghost-kind={activePreset === preset.label ? undefined : "tempo"}
-          data-ghost-label={preset.label}
-          onclick={() => selectPreset(preset.bpm)}
-          type="button"
-          aria-label={t("compose_set_bpm_to", { bpm: preset.bpm })}
+      <button
+        class="bpm-display"
+        onclick={handleBpmButtonClick}
+        type="button"
+        aria-label={presetsMode === "popover"
+          ? t("compose_custom_bpm")
+          : t("compose_tap_to_set_tempo")}
+        title={presetsMode === "popover"
+          ? t("compose_custom_bpm")
+          : t("compose_tap_tempo_hint")}
+        aria-haspopup={presetsMode === "popover" ? "dialog" : undefined}
+        aria-expanded={presetsMode === "popover" ? showPopover : undefined}
+        style="--bpm-color: {bpmColor}"
+      >
+        <span class="bpm-value">{bpm}</span>
+        <span class="bpm-label"
+          >{isTapping ? t("compose_tap") : t("compose_bpm")}</span
         >
-          {preset.label}
-        </button>
-      {/each}
-    </div>
-  {/if}
+      </button>
 
-  <!-- Practice button -->
-  {#if showPractice}
-    <button
-      class="practice-btn"
-      class:active={practiceActive}
-      onclick={handlePracticeClick}
-      type="button"
-      aria-label={practiceActive ? "Stop practice training" : "Start practice training"}
-    >
-      <i class="fas {practiceActive ? 'fa-stop' : 'fa-signal'}" aria-hidden="true"></i>
-      <span>{practiceActive ? "Stop" : "Practice"}</span>
-    </button>
-  {/if}
-</div>
-
-{#if showPopover && presetsMode === "popover"}
-  <div class="bpm-popover" role="dialog" tabindex="-1" aria-label={t("compose_custom_bpm")} onkeydown={(e) => { if (e.key === "Escape") { e.stopPropagation(); closePopover(); } }}>
-    <ScrubbableNumber
-      label={t("compose_custom_bpm")}
-      value={bpm}
-      min={BPM_MIN}
-      max={BPM_MAX}
-      step={1}
-      unit=" BPM"
-      onchange={onBpmChange}
-    />
-    <div class="bpm-popover-presets">
-      {#each NUMERIC_TEMPO_PRESETS as preset}
-        <button
-          type="button"
-          class="preset-btn"
-          class:active={bpm === preset}
-          onclick={() => selectPresetFromPopover(preset)}
-          aria-label={t("compose_set_bpm_to", { bpm: preset })}
-        >
-          {preset}
-        </button>
-      {/each}
+      <button
+        class="adjust-btn"
+        onpointerdown={() => startHold(1)}
+        onpointerup={stopHold}
+        onpointerleave={stopHold}
+        onpointercancel={stopHold}
+        disabled={bpm >= BPM_MAX}
+        aria-label={t("compose_increase_bpm")}
+        type="button"
+      >
+        <i class="fas fa-plus" aria-hidden="true"></i>
+      </button>
     </div>
 
+    <!-- Semantic presets (hidden on mobile / in popover mode) -->
+    {#if showPresets && presetsMode === "inline"}
+      <div class="presets">
+        {#each SEMANTIC_TEMPO_PRESETS as preset}
+          <button
+            class="preset-btn"
+            class:active={activePreset === preset.label}
+            data-ghost={activePreset === preset.label ? undefined : "safe"}
+            data-ghost-kind={activePreset === preset.label
+              ? undefined
+              : "tempo"}
+            data-ghost-label={preset.label}
+            onclick={() => selectPreset(preset.bpm)}
+            type="button"
+            aria-label={t("compose_set_bpm_to", { bpm: preset.bpm })}
+          >
+            {preset.label}
+          </button>
+        {/each}
+      </div>
+    {/if}
 
-    <button
-      type="button"
-      class="bpm-popover-tap"
-      class:tapping={isTapping}
-      onclick={handleTap}
-      aria-label={t("compose_tap_to_set_tempo")}
-    >
-      <i class="fas fa-hand-pointer" aria-hidden="true"></i>
-      <span>{isTapping ? `${t("compose_tap")} · ${tapTimes.length}` : t("compose_tap_to_set_tempo")}</span>
-    </button>
-
+    <!-- Practice button -->
+    {#if showPractice}
+      <button
+        class="practice-btn"
+        class:active={practiceActive}
+        onclick={handlePracticeClick}
+        type="button"
+        aria-label={practiceActive
+          ? "Stop practice training"
+          : "Start practice training"}
+      >
+        <i
+          class="fas {practiceActive ? 'fa-stop' : 'fa-signal'}"
+          aria-hidden="true"
+        ></i>
+        <span>{practiceActive ? "Stop" : "Practice"}</span>
+      </button>
+    {/if}
   </div>
-{/if}
+
+  {#if showPopover && presetsMode === "popover"}
+    <div
+      class="bpm-popover"
+      role="dialog"
+      tabindex="-1"
+      aria-label={t("compose_custom_bpm")}
+      onkeydown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          closePopover();
+        }
+      }}
+    >
+      <ScrubbableNumber
+        label={t("compose_custom_bpm")}
+        value={bpm}
+        min={BPM_MIN}
+        max={BPM_MAX}
+        step={1}
+        unit=" BPM"
+        onchange={onBpmChange}
+      />
+      <div class="bpm-popover-presets">
+        {#each NUMERIC_TEMPO_PRESETS as preset}
+          <button
+            type="button"
+            class="preset-btn"
+            class:active={bpm === preset}
+            onclick={() => selectPresetFromPopover(preset)}
+            aria-label={t("compose_set_bpm_to", { bpm: preset })}
+          >
+            {preset}
+          </button>
+        {/each}
+      </div>
+
+      <button
+        type="button"
+        class="bpm-popover-tap"
+        class:tapping={isTapping}
+        onclick={handleTap}
+        aria-label={t("compose_tap_to_set_tempo")}
+      >
+        <i class="fas fa-hand-pointer" aria-hidden="true"></i>
+        <span
+          >{isTapping
+            ? `${t("compose_tap")} · ${tapTimes.length}`
+            : t("compose_tap_to_set_tempo")}</span
+        >
+      </button>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -368,7 +393,13 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-size: 0.75rem;
     cursor: pointer;
-    transition: all var(--duration-normal, 200ms) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
     user-select: none;
@@ -412,7 +443,11 @@
     border: 1.5px solid color-mix(in srgb, var(--bpm-color) 30%, transparent);
     border-radius: 12px;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
@@ -452,7 +487,6 @@
     margin-top: 2px;
   }
 
-
   .presets {
     display: flex;
     gap: 6px;
@@ -469,16 +503,31 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal, 200ms) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     white-space: nowrap;
   }
 
   .preset-btn.active {
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 15%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #8b5cf6) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 15%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 40%,
+      transparent
+    );
     color: var(--theme-accent, #a78bfa);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--theme-accent, #8b5cf6) 15%, transparent);
+    box-shadow: 0 0 12px
+      color-mix(in srgb, var(--theme-accent, #8b5cf6) 15%, transparent);
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -490,8 +539,16 @@
     }
 
     .preset-btn.active:hover {
-      background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 20%, transparent);
-      border-color: color-mix(in srgb, var(--theme-accent, #8b5cf6) 50%, transparent);
+      background: color-mix(
+        in srgb,
+        var(--theme-accent, #8b5cf6) 20%,
+        transparent
+      );
+      border-color: color-mix(
+        in srgb,
+        var(--theme-accent, #8b5cf6) 50%,
+        transparent
+      );
     }
   }
 
@@ -503,7 +560,6 @@
     outline: 2px solid var(--theme-accent, #6366f1);
     outline-offset: 2px;
   }
-
 
   .practice-btn {
     display: flex;
@@ -521,22 +577,40 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal, 200ms) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     white-space: nowrap;
   }
 
   .practice-btn.active {
     background: var(--semantic-error-dim, rgba(239, 68, 68, 0.15));
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 40%,
+      transparent
+    );
     color: color-mix(in srgb, var(--semantic-error, #ef4444) 70%, white);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    box-shadow: 0 0 12px
+      color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
     animation: practice-pulse 2s ease-in-out infinite;
   }
 
   @keyframes practice-pulse {
-    0%, 100% { box-shadow: 0 0 12px color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent); }
-    50% { box-shadow: 0 0 20px color-mix(in srgb, var(--semantic-error, #ef4444) 35%, transparent); }
+    0%,
+    100% {
+      box-shadow: 0 0 12px
+        color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 20px
+        color-mix(in srgb, var(--semantic-error, #ef4444) 35%, transparent);
+    }
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -548,8 +622,16 @@
     }
 
     .practice-btn.active:hover {
-      background: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
-      border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 50%, transparent);
+      background: color-mix(
+        in srgb,
+        var(--semantic-error, #ef4444) 20%,
+        transparent
+      );
+      border-color: color-mix(
+        in srgb,
+        var(--semantic-error, #ef4444) 50%,
+        transparent
+      );
     }
   }
 
@@ -566,7 +648,6 @@
     font-size: 14px;
   }
 
-
   @media (max-width: 480px) {
     .bpm-display {
       min-width: 64px;
@@ -577,7 +658,6 @@
       font-size: 1.1rem;
     }
   }
-
 
   @media (prefers-reduced-motion: reduce) {
     .adjust-btn,
@@ -620,17 +700,28 @@
     flex-direction: column;
     gap: 12px;
     padding: 14px;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 6%, var(--theme-card-bg, rgba(255, 255, 255, 0.04)));
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 6%,
+      var(--theme-card-bg, rgba(255, 255, 255, 0.04))
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-    animation: bpm-popIn 180ms cubic-bezier(0.4, 0, 0.2, 1);
+    animation: bpm-popIn var(--duration-fast) var(--ease-standard);
     transform-origin: top center;
   }
 
   @keyframes bpm-popIn {
-    from { opacity: 0; transform: translateY(-6px) scaleY(0.94); }
-    to { opacity: 1; transform: translateY(0) scaleY(1); }
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scaleY(0.94);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scaleY(1);
+    }
   }
 
   .bpm-popover-presets {
@@ -659,7 +750,10 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -669,8 +763,16 @@
   }
 
   .bpm-popover-tap.tapping {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 18%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 18%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 50%,
+      transparent
+    );
     color: var(--theme-accent, #a78bfa);
   }
 

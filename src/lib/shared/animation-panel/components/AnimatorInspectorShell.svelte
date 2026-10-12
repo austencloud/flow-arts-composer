@@ -1,6 +1,7 @@
 <script lang="ts" generics="T extends string">
   import type { Snippet } from "svelte";
-  import { fade, fly } from "svelte/transition";
+  import { flyFade, opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import IconRailNav from "../pill-nav/IconRailNav.svelte";
@@ -69,7 +70,7 @@
   class:art-settings-panel={artPanel}
   class:page-only={pageOnly}
   class:exporting
-  transition:fade={{ duration: reduceMotion ? 0 : 200 }}
+  transition:opaqueFade={{ duration: reduceMotion ? 0 : DURATION.normal }}
   role="region"
   aria-label={regionLabel}
   inert={exporting || undefined}
@@ -92,14 +93,14 @@
             {#key activeId}
               <div
                 class="panel-transition"
-                in:fly={{
+                in:flyFade={{
                   y: reduceMotion ? 0 : direction * 24,
-                  duration: reduceMotion ? 0 : 200,
-                  delay: reduceMotion ? 0 : 60,
+                  duration: reduceMotion ? 0 : DURATION.normal,
+                  delay: reduceMotion ? 0 : DURATION.instant,
                 }}
-                out:fly={{
+                out:flyFade={{
                   y: reduceMotion ? 0 : direction * -12,
-                  duration: reduceMotion ? 0 : 120,
+                  duration: reduceMotion ? 0 : DURATION.instant,
                 }}
               >
                 <div
