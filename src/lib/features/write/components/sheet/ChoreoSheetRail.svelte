@@ -468,8 +468,8 @@
     border-radius: 999px;
     background: var(--theme-panel-bg);
     transition:
-      background-color var(--duration-fast) ease,
-      border-color var(--duration-fast) ease;
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .switch.on::before {
@@ -486,7 +486,7 @@
     transform: translateY(-50%);
     border-radius: 50%;
     background: var(--theme-text);
-    transition: left var(--duration-fast) ease;
+    transition: left var(--duration-fast) var(--ease-standard);
   }
 
   .switch.on .thumb {
