@@ -54,7 +54,7 @@ describe("Staff Placements topic record", () => {
       const cells = STAFF_CELLS_BY_KIND[kind];
       expect(cells).toHaveLength(THUMB_COLUMNS.length);
       cells.forEach((cell, n) => {
-        const { left, right } = cell.motions as Record<
+        const { left, right } = cell.motions as unknown as Record<
           "left" | "right",
           { startLocation: never; startOrientation: unknown }
         >;

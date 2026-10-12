@@ -1,4 +1,8 @@
-import type { ItemKindUi } from "@austencloud/video-editor";
+import type {
+  ItemKindUi,
+  SelectionLayerHandle,
+  SelectionLayerProps,
+} from "@austencloud/video-editor";
 import {
   faArrowsUpDownLeftRight,
   faHeading,
@@ -11,6 +15,7 @@ import TkaArrangementSelection from "./TkaArrangementSelection.svelte";
 import TkaArrangementTools from "./TkaArrangementTools.svelte";
 import { tkaEditorOf } from "./tka-editor-context";
 import TkaKindTools from "./TkaKindTools.svelte";
+import type { Component } from "svelte";
 
 /**
  * The icons and names the editor shows for tka's kinds, and the item tool's
@@ -56,6 +61,11 @@ export const TKA_KIND_UI: Record<
       const place = cell.row * item.snapshot.gridCols + cell.col + 1;
       return `${item.label ?? "Arrangement"} · Cell ${place}`;
     },
-    selectionLayer: TkaArrangementSelection,
+    // Plain tsc types every .svelte import as svelte's legacy component, which
+    // does not carry the layer's exports; the cast names what the file is.
+    selectionLayer: TkaArrangementSelection as Component<
+      SelectionLayerProps,
+      SelectionLayerHandle
+    >,
   },
 };
