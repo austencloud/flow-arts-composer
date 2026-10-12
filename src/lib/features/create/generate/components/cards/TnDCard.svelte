@@ -6,7 +6,7 @@
   under a LOOP tag. A link between the tiles says turns are matched.
 
   Each tile is its own button: a tap grows the card into TnDPanel through the
-  card morph, with that tile's section spotlit.
+  card morph, showing only that tile's side.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
