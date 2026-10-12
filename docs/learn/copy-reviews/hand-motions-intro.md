@@ -251,6 +251,14 @@ the lesson does not repeat Water, Earth, Sun, Fire, Air, or Moon as headings.
 - 2026-10-12 — Austen asked for the three motions before the grid and chose
   the book's flowchart as a new first stage. It uses only the approved book
   lines and captions above; no new text was added.
+- 2026-10-12 — Austen asked for more hand holding on the six combinations and
+  chose optional hints: tapping an unfound combination marks it as the goal,
+  shows its rule, and rings the points that would make it. He chose adding
+  “Stuck? Tap one for a hint.” to the prompt, which now reads “Move the blue
+  hand, then the red hand. Find all six. Stuck? Tap one for a hint.” Each
+  hint control is named “Hint for {name}”. German: “… Finde alle sechs.
+  Kommst du nicht weiter? Tippe auf eins für einen Tipp.” and “Tipp für
+  {name}”.
 
 ## Shared-path Refinement Verification — 2026-09-04
 
