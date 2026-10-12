@@ -17,13 +17,13 @@ vi.mock("#lib/shared/application/get-error-handler.js", () => ({
     showWarning: (message: string) => fake.warnings.push(message),
   }),
 }));
-vi.mock("#lib/features/compose/analytics/compose-events.js", () => ({
+vi.mock("#lib/features/post/compose-import/compose-events.js", () => ({
   trackCompositionDeleted: () => {},
   trackCompositionFavoriteChanged: () => {},
   trackCompositionSaved: () => {},
 }));
 vi.mock(
-  "#lib/features/compose/services/dexie-composition-repository.js",
+  "#lib/features/post/compose-import/dexie-composition-repository.js",
   () => ({
     getCompositions: vi.fn(async () => [...fake.local]),
     getLegacyCompositions: vi.fn(async () =>
@@ -44,7 +44,7 @@ vi.mock(
   })
 );
 vi.mock(
-  "#lib/features/compose/services/firebase-composition-repository.js",
+  "#lib/features/post/compose-import/firebase-composition-repository.js",
   () => ({
     getUserId: () => fake.uid,
     getCompositions: vi.fn(async (uid: string) => {
@@ -63,7 +63,7 @@ vi.mock(
   })
 );
 
-import { CompositionSyncer } from "#lib/features/compose/services/composition-syncer.js";
+import { CompositionSyncer } from "#lib/features/post/compose-import/composition-syncer.js";
 
 function composition(
   id: string,

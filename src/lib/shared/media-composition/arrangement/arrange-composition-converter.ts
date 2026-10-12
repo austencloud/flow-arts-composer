@@ -1,18 +1,21 @@
 /**
  * ArrangeCompositionConverter
  *
- * Converts between the Arrange tab's GridCell[] format (localStorage-era)
- * and the Composition/CellConfig format used by Dexie and the Browse tab.
+ * Converts between the retired Arrange tab's GridCell[] format and the
+ * Composition format its saved compositions still use, so Studio can import
+ * them (`studio-arrangement-projects.ts`).
  *
  * GridCell stores layers as TunnelLayerConfig[] with per-layer sequences.
  * CellConfig stores sequences[] at the cell level, with optional tunnelLayers.
  */
 
 import type {
+  AppliedTransform,
   Composition,
   CellConfig,
   CellType,
   MediaDisplayType,
+  TransformType,
 } from "#lib/shared/animation-engine/domain/compose-types.js";
 import {
   getDefaultTrailSettings,
@@ -20,10 +23,9 @@ import {
 } from "#lib/shared/animation-engine/domain/compose-types.js";
 import type { CellMediaType } from "#lib/shared/animation-engine/domain/compose-types.js";
 import type { TunnelLayerConfig } from "#lib/shared/animation-engine/domain/compose-types.js";
-import type { GridCell } from "../state/arrange-grid-state.svelte";
 import { validateArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
 import { legacyCellFieldsFrom } from "#lib/shared/media-composition/domain/arrangement-migration.js";
-import type { GridStateSnapshot } from "./types";
+import type { GridCell, GridStateSnapshot } from "./types";
 
 /**
  * Map CellMediaType (Arrange) → MediaDisplayType (Composition).
@@ -220,4 +222,26 @@ export function compositionToGridState(
     bpm: 120, // Composition doesn't store BPM; default
     skipStartPlacement: true,
   };
+}
+
+/**
+ * Migrates a layer's legacy `appliedTransforms` (string[]) to `transformStack`
+ * (AppliedTransform[]). A layer that already has a `transformStack` keeps it;
+ * each legacy entry is wrapped with `hand: "both"` and `timestamp: 0`.
+ */
+export function migrateAppliedTransforms(layer: {
+  appliedTransforms?: TransformType[];
+  transformStack?: AppliedTransform[];
+}): { transformStack: AppliedTransform[] } {
+  if (layer.transformStack) return { transformStack: layer.transformStack };
+  if (layer.appliedTransforms) {
+    return {
+      transformStack: layer.appliedTransforms.map((type) => ({
+        type,
+        hand: "both" as const,
+        timestamp: 0,
+      })),
+    };
+  }
+  return { transformStack: [] };
 }

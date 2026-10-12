@@ -35,7 +35,7 @@ import {
   trackCompositionDeleted,
   trackCompositionFavoriteChanged,
   trackCompositionSaved,
-} from "#lib/features/compose/analytics/compose-events.js";
+} from "./compose-events";
 
 export class CompositionSyncer {
   private syncedOwner: string | null = null;

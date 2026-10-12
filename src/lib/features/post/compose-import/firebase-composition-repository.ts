@@ -18,8 +18,8 @@ import {
   firestoreSet,
   firestoreDelete,
 } from "#lib/shared/firestore/index.js";
-import { CompositionSchema } from "../compose/domain/composition-schemas";
-import { getUserCompositionsPath } from "../data/firestore-paths";
+import { CompositionSchema } from "./composition-schemas";
+import { getUserCompositionsPath } from "./firestore-paths";
 import type { Composition } from "#lib/shared/animation-engine/domain/compose-types.js";
 
 /**

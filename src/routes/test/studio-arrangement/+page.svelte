@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { page } from "$app/state";
   import { VideoEditor } from "@austencloud/video-editor/ui";
   import TkaEditorScope from "#lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
   import ToastContainer from "#lib/shared/toast/components/ToastContainer.svelte";
@@ -13,9 +12,6 @@
 
   const fixture = createStudioArrangementFixture();
   let exportUrl = $state<string | null>(null);
-  const editArrangementOnOpen = $derived(
-    page.url.searchParams.get("edit") === "1"
-  );
 
   type FixtureProbe = {
     initialProject: PostProject;
@@ -97,7 +93,6 @@
   <TkaEditorScope
     sequence={fixture.sequence}
     initialProject={fixture.project}
-    {editArrangementOnOpen}
     cardPreviewUrl={null}
     animationPreviewUrl={null}
     onRequestAnimation={() => undefined}

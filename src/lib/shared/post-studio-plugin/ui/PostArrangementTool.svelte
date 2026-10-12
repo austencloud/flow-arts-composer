@@ -63,7 +63,7 @@
   import { EFFORTS, type EffortId } from "#lib/shared/effort/domain/effort-types.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { untrack } from "svelte";
-  import { applyTransform } from "#lib/features/compose/tabs/arrange/services/arrange-layer-transformer.js";
+  import { applyTransform } from "#lib/shared/media-composition/arrangement/arrange-layer-transformer.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
