@@ -1,13 +1,15 @@
 <!--
   Type 1 Dual-Shifts as a Guide web page, on the topic template The Grid set
-  (2026-10-10). The Dual-Shift definition opens the page; a 2 x 2 key names
-  the four modes by timing and direction in the lesson's words; Split-Same
-  and Tog-Same stand side by side, each a start box and its four-count loop
-  in its element's colour; the book's turn to moving between α and β leads
-  Split-Opp and Tog-Opp in the same shape. The loops and the book's lines
-  come from the shared Dual-Shifts record the print sheet also reads; the web
-  page sets one sentence per line, as the book does, and keeps the book's
-  modes and start-position sentences for print only.
+  (2026-10-10). The Dual-Shift definition opens the page; a centered 2 x 2
+  key names the four modes by timing and direction in the lesson's words,
+  each chip a link to that mode's Timing and Direction guide, the one place
+  that teaches timing and direction (one explainer per concept); Split-Same
+  and Tog-Same stand side by side under a line each on where they travel,
+  each a start box and its four-count loop in its element's colour;
+  Split-Opp and Tog-Opp follow under their shared line. The loops come from
+  the shared Dual-Shifts record the print sheet also reads; the web page
+  sets one sentence per line, as the book does, and keeps the book's modes,
+  start-position and between-positions sentences for print only.
 -->
 <script lang="ts">
   import { onMount } from "svelte";
@@ -21,6 +23,7 @@
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import {
     DUAL_SHIFT_KEY,
+    DUAL_SHIFT_MODE_GUIDES,
     DUAL_SHIFT_MODES,
     DUAL_SHIFT_MODES_BY_PAIR,
     DUAL_SHIFTS_WEB_COPY,
@@ -29,7 +32,6 @@
     dualShiftSteps,
     dualShiftsTopicHtml,
     dualShiftsTopicLines,
-    dualShiftsWebLeadLines,
     plainLine,
     type DualShiftMode,
     type DualShiftModeId,
@@ -42,8 +44,14 @@
 
   /** Austen's definition opens the page as its lede. */
   const lede = plainLine(dualShiftsTopicLines("intro")[0] ?? "");
-  /** The book's turn to the Opp pair, one sentence per line as printed. */
-  const leadLines = dualShiftsWebLeadLines();
+  /** Each pair's lead: where its modes travel, one sentence per line. */
+  const LEADS = {
+    same: [
+      DUAL_SHIFTS_WEB_COPY.sameLeadSplit,
+      DUAL_SHIFTS_WEB_COPY.sameLeadTog,
+    ],
+    opp: [DUAL_SHIFTS_WEB_COPY.oppLead],
+  } as const;
   const TIMINGS = ["split", "tog"] as const;
   const DIRECTIONS = ["same", "opp"] as const;
 
@@ -209,6 +217,14 @@
   />
 {/snippet}
 
+{#snippet lead(name: "same" | "opp")}
+  <p class="lead">
+    {#each LEADS[name] as key (key)}
+      <span class="line">{t(key)}</span>
+    {/each}
+  </p>
+{/snippet}
+
 {#snippet pair(name: "same" | "opp")}
   <div class="pair-wrap" bind:this={pairEls[name]}>
     <ul class="pair">
@@ -258,66 +274,71 @@
 <article class="dual-shifts-topic" class:dark={darkMode}>
   <TopicHeader {kicker} title={t("verified_level1_hm_type1_105")} {lede} />
 
-  <p class="intro">{@html t(DUAL_SHIFTS_WEB_COPY.modesLead)}</p>
+  <section class="set">
+    <p class="intro">{@html t(DUAL_SHIFTS_WEB_COPY.modesLead)}</p>
 
-  <!-- The four modes as timing x direction, in the lesson's words. -->
-  <div class="key-wrap">
-    <table class="key">
-      <thead>
-        <tr>
-          <td></td>
-          {#each DIRECTIONS as direction (direction)}
-            <th scope="col">
-              <span class="axis"
-                >{t(DUAL_SHIFT_KEY.direction[direction].name)}</span
-              >
-              <span class="says"
-                >{t(DUAL_SHIFT_KEY.direction[direction].says)}</span
-              >
-            </th>
-          {/each}
-        </tr>
-      </thead>
-      <tbody>
-        {#each TIMINGS as timing (timing)}
+    <!-- The four modes as timing x direction, in the lesson's words; each
+       chip opens that mode's Timing and Direction guide. -->
+    <div class="key-wrap">
+      <table class="key">
+        <thead>
           <tr>
-            <th scope="row">
-              <span class="axis">{t(DUAL_SHIFT_KEY.timing[timing].name)}</span>
-              <span class="says">{t(DUAL_SHIFT_KEY.timing[timing].says)}</span>
-            </th>
+            <td></td>
             {#each DIRECTIONS as direction (direction)}
-              {@const mode = dualShiftModeAt(timing, direction)}
-              <td>
-                <a
-                  class="mode-chip"
-                  href="#dual-shift-{mode.id}"
-                  style:--el={dualShiftElement(mode).accentColor}
-                  style:--el-deep={dualShiftElement(mode).darkComplement}
+              <th scope="col">
+                <span class="axis"
+                  >{t(DUAL_SHIFT_KEY.direction[direction].name)}</span
                 >
-                  <img
-                    class="element"
-                    src={getElementImagePath(dualShiftElement(mode).element)}
-                    alt=""
-                  />
-                  {t(mode.name)}
-                </a>
-              </td>
+                <span class="says"
+                  >{t(DUAL_SHIFT_KEY.direction[direction].says)}</span
+                >
+              </th>
             {/each}
           </tr>
-        {/each}
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          {#each TIMINGS as timing (timing)}
+            <tr>
+              <th scope="row">
+                <span class="axis">{t(DUAL_SHIFT_KEY.timing[timing].name)}</span
+                >
+                <span class="says">{t(DUAL_SHIFT_KEY.timing[timing].says)}</span
+                >
+              </th>
+              {#each DIRECTIONS as direction (direction)}
+                {@const mode = dualShiftModeAt(timing, direction)}
+                <td>
+                  <a
+                    class="mode-chip"
+                    href={DUAL_SHIFT_MODE_GUIDES[mode.id]}
+                    style:--el={dualShiftElement(mode).accentColor}
+                    style:--el-deep={dualShiftElement(mode).darkComplement}
+                  >
+                    <img
+                      class="element"
+                      src={getElementImagePath(dualShiftElement(mode).element)}
+                      alt=""
+                    />
+                    {t(mode.name)}
+                  </a>
+                </td>
+              {/each}
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+  </section>
 
-  {@render pair("same")}
+  <section class="set">
+    {@render lead("same")}
+    {@render pair("same")}
+  </section>
 
-  <p class="lead">
-    {#each leadLines as line, n (n)}
-      <span class="line">{@html line}</span>
-    {/each}
-  </p>
-
-  {@render pair("opp")}
+  <section class="set">
+    {@render lead("opp")}
+    {@render pair("opp")}
+  </section>
 
   <aside class="remember">
     <p>{@html dualShiftsTopicHtml("notice")}</p>
@@ -343,7 +364,7 @@
     margin: 0 auto;
     padding: 1.5rem clamp(1rem, 4cqw, 2.5rem) 2rem;
     display: grid;
-    gap: clamp(1.5rem, 3cqw, 2.5rem);
+    gap: clamp(1.25rem, 2.4cqw, 2rem);
     font-family: Inter, system-ui, sans-serif;
     color: var(--ink, #1a1a1a);
     text-align: left;
@@ -371,28 +392,51 @@
   .lead .line {
     display: block;
   }
+  /* A line and the pictures it introduces stay together. */
+  .set {
+    display: grid;
+    gap: 0.85rem;
+  }
 
-  /* The 2 x 2 key: timing down the side, direction across the top, each
-     mode a chip in its element's colour that jumps to its loop. */
+  /* The 2 x 2 key: the four chips sit centered on the page, the timing
+     words to their left and the direction words above, labelling the grid.
+     Each chip opens that mode's Timing and Direction guide. */
   .key-wrap {
     container-type: inline-size;
-    display: grid;
-    justify-items: center;
   }
   .key {
-    justify-self: center;
-    border-collapse: separate;
-    border-spacing: 0.5rem;
-    margin: -0.5rem;
+    display: grid;
+    grid-template-columns: 1fr auto auto 1fr;
+    gap: 0.5rem 0.6rem;
+    width: 100%;
     font-size: clamp(0.95rem, 1.3cqw, 1.05rem);
   }
+  .key thead,
+  .key tbody,
+  .key tr {
+    display: contents;
+  }
+  .key thead td {
+    display: none;
+  }
+  .key th,
+  .key td {
+    display: block;
+    padding: 0;
+  }
   .key th {
-    padding: 0.25rem 0.5rem;
+    align-self: center;
     text-align: center;
-    vertical-align: middle;
     font-weight: 400;
   }
+  .key thead th:first-of-type {
+    grid-column: 2;
+  }
   .key th[scope="row"] {
+    grid-column: 1;
+    justify-self: end;
+    max-width: 14rem;
+    padding-right: 0.4rem;
     text-align: right;
   }
   .key .axis {
@@ -404,10 +448,6 @@
     font-size: 0.86em;
     color: color-mix(in srgb, var(--ink, #1a1a1a) 72%, transparent);
     text-wrap: balance;
-  }
-  .key td {
-    padding: 0;
-    vertical-align: middle;
   }
   /* On a light page the pale elements (air) need their deep colour mixed in
      to be seen; on a dark page the element colour stands on its own. */
@@ -451,27 +491,18 @@
      chips: the direction words stay above, the timing words go between. */
   @container (width < 38rem) {
     .key {
-      display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.5rem;
-      width: 100%;
-      margin: 0;
     }
-    .key thead,
-    .key tbody,
-    .key tr {
-      display: contents;
-    }
-    .key thead td {
-      display: none;
-    }
-    .key th,
-    .key td {
-      display: block;
+    .key thead th:first-of-type {
+      grid-column: auto;
     }
     .key th[scope="row"] {
       grid-column: 1 / -1;
+      justify-self: stretch;
+      max-width: none;
       margin-top: 0.5rem;
+      padding-right: 0;
       text-align: center;
     }
     .mode-chip {
