@@ -408,15 +408,14 @@
     // loop - this tick is what actually walks positions toward the target
     // slots over the canonical motion window. Without it, applyFormationFromUI flips
     // activeFormation but nothing visibly moves.
-    if (!viewer3DState.isExporting) {
-      performerManager.updateFormationTransition();
-    }
-
     // Props, hand anchors and the rig take their transforms from Svelte
     // effects, which would otherwise run after this frame is drawn. Effects
     // and the avatar's hand IK read the new pose in later tasks this frame,
-    // so apply it now or the drawn props trail them by one frame.
-    flushSync();
+    // so apply them now. A departing performer can finish this frame; flush
+    // before removing it, since unmounting its Threlte tasks during this
+    // scheduler stage's iteration can stop the render loop.
+    if (viewer3DState.isExporting) flushSync();
+    else performerManager.updateFormationTransition(undefined, flushSync);
   });
 
   let performerInteraction = $state<PerformerPointerInteraction | null>(null);
