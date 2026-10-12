@@ -5,8 +5,7 @@ Animates forward in z-axis and expands to fill the container space
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
-  import { scale } from "svelte/transition";
-  import { quintOut } from "svelte/easing";
+  import { popIn } from "#lib/shared/transitions/motion.js";
   import { onMount, tick } from "svelte";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
@@ -454,10 +453,9 @@ Animates forward in z-axis and expands to fill the container space
   bind:this={overlayElement}
   class="loop-expanded-overlay"
   class:combo-mode={isMultiSelectMode}
-  transition:scale={{
+  transition:popIn={{
     start: entrance === "none" ? 1 : 0.95,
-    duration: entrance === "none" ? 0 : motionDuration(DURATION.emphasis),
-    easing: quintOut,
+    duration: entrance === "none" ? 0 : DURATION.emphasis,
   }}
 >
   <LoopOverlayHeader

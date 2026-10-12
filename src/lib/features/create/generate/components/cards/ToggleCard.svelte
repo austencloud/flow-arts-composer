@@ -146,11 +146,11 @@ Hides header when card height is below 65px for space optimization
     /* Only what hover and press change. `all` also eased the container-unit
        padding, so every resize of the panel re-laid the grid out each frame. */
     transition:
-      transform var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
-      box-shadow var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
-      filter var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
-      background-color var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
-      border-color var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+      transform var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-emphasis) var(--ease-standard),
+      filter var(--duration-emphasis) var(--ease-standard),
+      background-color var(--duration-emphasis) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard);
     overflow: visible; /* Allow hover effects to overflow and pop over neighbors */
     color: white;
     text-align: center;
@@ -224,7 +224,7 @@ Hides header when card height is below 65px for space optimization
   /* 🎯 ELASTIC PRESS - Universal click/tap feedback for ALL devices */
   .toggle-card:active {
     transform: scale(0.97);
-    transition: transform var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .toggle-card.quiet:active {

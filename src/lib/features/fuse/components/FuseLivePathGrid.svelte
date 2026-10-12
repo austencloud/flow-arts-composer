@@ -194,9 +194,9 @@
     background: var(--theme-card-bg);
     box-shadow: inset 0 0 0 1px var(--theme-stroke);
     transition:
-      background-color 180ms ease,
-      box-shadow 180ms ease,
-      opacity 180ms ease;
+      background-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   button.live-cell {

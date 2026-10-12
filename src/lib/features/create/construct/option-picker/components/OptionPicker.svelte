@@ -545,14 +545,18 @@ Delegates all rendering to child components.
 
 {#if initError}
   <div class="error" role="alert">
-    <p>{t("create_construct_option_picker_start_error", { error: initError })}</p>
+    <p>
+      {t("create_construct_option_picker_start_error", { error: initError })}
+    </p>
     <button onclick={initialize}>{t("action_retry")}</button>
   </div>
 {:else if !isReady || isAwaitingFirstOptions}
   <div class="loading">{t("create_ui_loading_options")}</div>
 {:else if pickerState?.error}
   <div class="error" role="alert">
-    <p>{t("create_construct_option_picker_error", { error: pickerState.error })}</p>
+    <p>
+      {t("create_construct_option_picker_error", { error: pickerState.error })}
+    </p>
     <button onclick={retryLoadOptions}>{t("action_retry")}</button>
   </div>
 {:else}
@@ -608,7 +612,7 @@ Delegates all rendering to child components.
     cursor: pointer;
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .error button:hover {

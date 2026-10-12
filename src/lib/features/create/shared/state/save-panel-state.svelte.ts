@@ -34,6 +34,8 @@ import {
   type CardPresentation,
 } from "#lib/shared/share/domain/models/card-presentation.js";
 
+const TOAST_DURATION_MS = 6_000;
+
 type ContentModerator = {
   checkWord: (word: string) => ContentModerationResult;
 };
@@ -69,13 +71,31 @@ export function createSavePanelState(deps: SavePanelDeps) {
 
   // Save steps definition (static)
   const saveSteps = [
-    { icon: "fa-save", get label() { return t("create_save_saving_locally"); } },
-    { icon: "fa-tags", get label() { return t("create_save_creating_tags"); } },
-    { icon: "fa-cloud-upload-alt", get label() { return t("create_save_syncing_to_cloud"); } },
-    { icon: "fa-sync", get label() { return t("create_save_refreshing_library"); } },
+    {
+      icon: "fa-save",
+      get label() {
+        return t("create_save_saving_locally");
+      },
+    },
+    {
+      icon: "fa-tags",
+      get label() {
+        return t("create_save_creating_tags");
+      },
+    },
+    {
+      icon: "fa-cloud-upload-alt",
+      get label() {
+        return t("create_save_syncing_to_cloud");
+      },
+    },
+    {
+      icon: "fa-sync",
+      get label() {
+        return t("create_save_refreshing_library");
+      },
+    },
   ];
-
-
 
   // Reactive state
 
@@ -310,9 +330,11 @@ export function createSavePanelState(deps: SavePanelDeps) {
       if (!soloPropSaveOrchestrator || !authoredHand || !soloHand) {
         logger.error("SoloPropSaveOrchestrator not available");
         showToast({
-          message: t("create_save_solo_choreography_could_not_be_saved_try_again"),
+          message: t(
+            "create_save_solo_choreography_could_not_be_saved_try_again"
+          ),
           type: "error",
-          duration: 6000,
+          duration: TOAST_DURATION_MS,
         });
         return;
       }
@@ -360,7 +382,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
             ? t("create_save_already_in_your_solo_library")
             : t("create_save_saved_to_your_solo_library"),
           type: "success",
-          duration: 6000,
+          duration: TOAST_DURATION_MS,
           action: {
             label: t("create_save_go_to_library"),
             onClick: () => void handleModuleChange("browse", "library"),
@@ -370,10 +392,9 @@ export function createSavePanelState(deps: SavePanelDeps) {
       } catch (error) {
         logger.error("Failed to save solo choreography:", error);
         showToast({
-          message:
-            t("create_save_choreo_failed"),
+          message: t("create_save_choreo_failed"),
           type: "error",
-          duration: 6000,
+          duration: TOAST_DURATION_MS,
         });
       } finally {
         isSaving = false;
@@ -454,7 +475,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
       showToast({
         message: t("create_save_saved_to_your_library"),
         type: "success",
-        duration: 6000,
+        duration: TOAST_DURATION_MS,
         action: {
           label: t("create_save_go_to_library"),
           // Route through the coordinator, not navigationState.setCurrentModule
@@ -485,9 +506,11 @@ export function createSavePanelState(deps: SavePanelDeps) {
         error instanceof LibraryError && error.code === "ALREADY_EXISTS"
           ? t("create_save_this_exact_sequence_is_already_in_your_library")
           : error instanceof LibraryError && error.code === "PERSIST_FAILED"
-            ? t("create_save_couldn_t_save_this_sequence_local_storage_write_failed_try_again")
+            ? t(
+                "create_save_couldn_t_save_this_sequence_local_storage_write_failed_try_again"
+              )
             : t("create_save_sequence_failed");
-      showToast({ message, type: "error", duration: 6000 });
+      showToast({ message, type: "error", duration: TOAST_DURATION_MS });
     } finally {
       isSaving = false;
       saveStep = 0;
@@ -579,7 +602,9 @@ export function createSavePanelState(deps: SavePanelDeps) {
     },
     // Static data
     saveSteps,
-    get headerTitle() { return t("create_review_save_to_library"); },
+    get headerTitle() {
+      return t("create_review_save_to_library");
+    },
 
     // Read props reactively (call from component to bind props)
     setPropsGetter(getter: () => SavePanelProps) {

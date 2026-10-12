@@ -62,7 +62,7 @@
   import type { MethodPreviewSceneProps } from "./method-preview-scenes";
 
   /** The step grid's entrance easing. */
-  const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+  const EASE = "var(--ease-out)";
   /**
    * Where a new path's half pops in from: a little smaller, still centered
    * on its cell (sources scale from their top-left corner).
@@ -529,8 +529,7 @@
 
   .scene.sliding .source.on-top::before {
     opacity: 0;
-    transition: opacity var(--slide-ms, 520ms)
-      var(--slide-ease, cubic-bezier(0.22, 1, 0.36, 1));
+    transition: opacity var(--slide-ms) var(--slide-ease);
   }
 
   @media (prefers-reduced-motion: reduce) {

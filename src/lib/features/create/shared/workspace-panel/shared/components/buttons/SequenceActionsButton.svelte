@@ -65,10 +65,10 @@
     color: var(--theme-text);
     cursor: pointer;
     transition:
-      transform var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
-      background var(--duration-fast) ease,
-      border-color var(--duration-fast) ease,
-      box-shadow var(--duration-fast) ease;
+      transform var(--duration-emphasis) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     box-shadow:
       0 5px 14px
         color-mix(in srgb, var(--semantic-success, #22c55e) 52%, transparent),

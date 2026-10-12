@@ -67,7 +67,9 @@ Simple header with title and close button
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     padding: 8px;
     width: var(--min-touch-target);
     height: var(--min-touch-target);

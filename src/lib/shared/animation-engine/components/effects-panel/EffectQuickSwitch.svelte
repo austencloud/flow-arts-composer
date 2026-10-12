@@ -558,7 +558,7 @@
     font-weight: 600;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: opacity var(--duration-fast) ease-out;
+    transition: opacity var(--duration-fast) var(--ease-standard-out);
   }
   .fx-quick-trigger:active {
     opacity: 0.6;
@@ -580,7 +580,7 @@
     padding: 0 12px 0 10px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--theme-text, #fff) 8%, transparent);
-    transition: background var(--duration-fast) ease-out;
+    transition: background var(--duration-fast) var(--ease-standard-out);
   }
   @media (hover: hover) and (pointer: fine) {
     .fx-quick-trigger:hover .fx-quick-face {
@@ -710,9 +710,9 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      color var(--duration-fast) ease-out,
-      border-color var(--duration-fast) ease-out,
-      background var(--duration-fast) ease-out;
+      color var(--duration-fast) var(--ease-standard-out),
+      border-color var(--duration-fast) var(--ease-standard-out),
+      background var(--duration-fast) var(--ease-standard-out);
   }
   .fx-quick-off span {
     overflow: hidden;
@@ -759,8 +759,8 @@
     background: color-mix(in srgb, var(--theme-text, #fff) 10%, transparent);
     font-size: var(--font-size-min, 14px);
     transition:
-      background var(--duration-fast) ease-out,
-      color var(--duration-fast) ease-out;
+      background var(--duration-fast) var(--ease-standard-out),
+      color var(--duration-fast) var(--ease-standard-out);
   }
   @media (hover: hover) and (pointer: fine) {
     .fx-quick-close:hover,
@@ -919,9 +919,9 @@
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition:
-      color var(--duration-fast) ease-out,
-      border-color var(--duration-fast) ease-out,
-      background var(--duration-fast) ease-out;
+      color var(--duration-fast) var(--ease-standard-out),
+      border-color var(--duration-fast) var(--ease-standard-out),
+      background var(--duration-fast) var(--ease-standard-out);
   }
   .fx-quick-off-tile i {
     font-size: 16px;

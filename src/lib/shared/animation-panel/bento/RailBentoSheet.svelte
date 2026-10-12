@@ -10,8 +10,8 @@
   snippet.
 -->
 <script lang="ts">
-  import { fade, fly } from "svelte/transition";
-  import { cubicOut } from "svelte/easing";
+  import { flyFade, opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { Snippet } from "svelte";
   import { onMount, tick } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -42,7 +42,7 @@
   let reduceMotion = $state(
     typeof window !== "undefined" &&
       typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 
   onMount(() => {
@@ -56,7 +56,9 @@
       typeof window !== "undefined" && typeof window.matchMedia === "function"
         ? window.matchMedia("(prefers-reduced-motion: reduce)")
         : null;
-    const handler = (e: MediaQueryListEvent) => { reduceMotion = e.matches; };
+    const handler = (e: MediaQueryListEvent) => {
+      reduceMotion = e.matches;
+    };
     mq?.addEventListener("change", handler);
 
     // Move initial focus into the sheet so the keyboard user lands inside it.
@@ -70,7 +72,11 @@
       // Restore focus to the activating element on unmount. Only if it is
       // still connected to the DOM - otherwise focus falls silently to
       // document.body and keyboard users lose their place.
-      if (focusTarget && typeof focusTarget.focus === "function" && focusTarget.isConnected) {
+      if (
+        focusTarget &&
+        typeof focusTarget.focus === "function" &&
+        focusTarget.isConnected
+      ) {
         focusTarget.focus();
       }
     };
@@ -79,7 +85,7 @@
   function getFocusables(): HTMLElement[] {
     if (!sheetEl) return [];
     return Array.from(
-      sheetEl.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      sheetEl.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
     ).filter((el) => {
       // Visible-element filter: prefer checkVisibility() (modern), fall back
       // to offsetParent (pre-2023). The fallback misses position:fixed
@@ -88,7 +94,9 @@
       // browser bug (Edge legacy has thrown here) from collapsing the whole
       // focus trap - a single bad element should fall back, not poison the
       // whole filter pass.
-      const maybeCheckVisibility = (el as HTMLElement & { checkVisibility?: () => boolean }).checkVisibility;
+      const maybeCheckVisibility = (
+        el as HTMLElement & { checkVisibility?: () => boolean }
+      ).checkVisibility;
       if (typeof maybeCheckVisibility === "function") {
         try {
           return maybeCheckVisibility.call(el);
@@ -117,8 +125,12 @@
       // `.closest`, which - without a handler - bubbles to Svelte's error
       // boundary and freezes the sheet until remount.
       const target = e.target;
-      if (target instanceof Element &&
-          target.closest('select, [role="combobox"], [role="listbox"], [role="dialog"], [popover]')) {
+      if (
+        target instanceof Element &&
+        target.closest(
+          'select, [role="combobox"], [role="listbox"], [role="dialog"], [popover]'
+        )
+      ) {
         return;
       }
       e.preventDefault();
@@ -172,7 +184,7 @@
     aria-label={t("viewer_ui_close_section", { name: title })}
     tabindex="-1"
     onclick={onBackdropClick}
-    transition:fade={{ duration: reduceMotion ? 0 : 180 }}
+    transition:opaqueFade={{ duration: reduceMotion ? 0 : DURATION.fast }}
   ></button>
 
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -184,7 +196,10 @@
     aria-label={title}
     tabindex="-1"
     onkeydown={onSheetKeydown}
-    transition:fly={{ y: reduceMotion ? 0 : 80, duration: reduceMotion ? 0 : 240, easing: cubicOut }}
+    transition:flyFade={{
+      y: reduceMotion ? 0 : 80,
+      duration: reduceMotion ? 0 : DURATION.normal,
+    }}
   >
     <div class="bento-sheet-head">
       <span class="bento-sheet-title">{title}</span>
@@ -273,7 +288,9 @@
     justify-content: center;
     padding: 0;
     -webkit-tap-highlight-color: transparent;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .bento-sheet-close:hover {

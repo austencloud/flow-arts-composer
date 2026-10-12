@@ -73,7 +73,7 @@
   } from "./method-preview-shape";
 
   /** The Matrix reveal's easing. */
-  const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+  const EASE = "var(--ease-out)";
 
   /** A page and its lit crossing; no spot yet means the layout's own. */
   interface ShapeRoll {
@@ -653,8 +653,10 @@
   .rowhead,
   .cell {
     transition:
-      background var(--duration-fast, 150ms) var(--transition-easing, ease),
-      box-shadow var(--duration-fast, 150ms) var(--transition-easing, ease);
+      background var(--duration-fast)
+        var(--transition-easing, var(--ease-standard)),
+      box-shadow var(--duration-fast)
+        var(--transition-easing, var(--ease-standard));
   }
 
   .cell {
@@ -733,14 +735,14 @@
      a turn starts, or after a cut, is instant. */
   .scene.growing .cell {
     transition:
-      background var(--grow-ms) cubic-bezier(0.22, 1, 0.36, 1),
-      border-color var(--grow-ms) cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow var(--grow-ms) cubic-bezier(0.22, 1, 0.36, 1);
+      background var(--grow-ms) var(--ease-out),
+      border-color var(--grow-ms) var(--ease-out),
+      box-shadow var(--grow-ms) var(--ease-out);
   }
 
   .scene.growing .cell .artwork,
   .scene.growing .cell::after {
-    transition: opacity var(--grow-ms) cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity var(--grow-ms) var(--ease-out);
   }
 
   /* The stage the chosen tile grows into, like the Matrix's detail hero. */

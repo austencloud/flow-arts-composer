@@ -303,7 +303,9 @@ Allows user to set name, visibility, tags, collections, and notes.
     background: var(--sheet-close-bg);
     color: var(--theme-text, var(--theme-text));
     cursor: pointer;
-    transition: all var(--sheet-transition-smooth);
+    transition:
+      background var(--sheet-transition-smooth),
+      transform var(--sheet-transition-smooth);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -381,7 +383,11 @@ Allows user to set name, visibility, tags, collections, and notes.
     color: var(--theme-text, var(--theme-text));
     font-size: var(--font-size-sm);
     font-family: inherit;
-    transition: all var(--duration-normal) ease;
+    transition:
+      outline var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     box-sizing: border-box;
   }
 
@@ -454,7 +460,10 @@ Allows user to set name, visibility, tags, collections, and notes.
     border-radius: 8px;
     color: var(--theme-accent-strong, var(--theme-accent-strong));
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -519,7 +528,7 @@ Allows user to set name, visibility, tags, collections, and notes.
     align-items: center;
     justify-content: center;
     opacity: 0.7;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .tag-remove:hover {
@@ -543,7 +552,12 @@ Allows user to set name, visibility, tags, collections, and notes.
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;

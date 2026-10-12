@@ -56,7 +56,7 @@
       [{ width: `${width}px` }, { width: `${settledWidth}px` }],
       {
         duration: settleMs,
-        easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+        easing: "var(--ease-standard)",
         fill: "forwards",
       }
     );

@@ -195,7 +195,7 @@
     transform-origin: left center;
     pointer-events: none;
     transition:
-      opacity var(--duration-fast) ease,
+      opacity var(--duration-fast) var(--ease-standard),
       transform var(--duration-emphasis) var(--ease-spring),
       visibility 0s linear var(--duration-emphasis);
   }
@@ -263,7 +263,7 @@
       transform-origin: center top;
       transition:
         min-height var(--duration-emphasis) var(--ease-spring),
-        opacity var(--duration-fast) ease,
+        opacity var(--duration-fast) var(--ease-standard),
         transform var(--duration-emphasis) var(--ease-spring),
         visibility 0s linear var(--duration-emphasis);
     }

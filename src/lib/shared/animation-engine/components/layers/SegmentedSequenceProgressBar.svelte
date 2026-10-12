@@ -44,7 +44,14 @@ Design variants supported:
     /** Fires when the user releases the scrubber (pointerup/cancel) */
     onScrubEnd?: (() => void) | null;
     /** Visual style variant */
-    variant?: "minimal" | "raised" | "rounded" | "neon" | "gradient" | "labeled" | "gradient-labeled";
+    variant?:
+      | "minimal"
+      | "raised"
+      | "rounded"
+      | "neon"
+      | "gradient"
+      | "labeled"
+      | "gradient-labeled";
     /** Show beat numbers above segments */
     showLabels?: boolean;
   } = $props();
@@ -66,7 +73,10 @@ Design variants supported:
   const segments = $derived.by((): Segment[] => {
     if (steps.length === 0) return [];
 
-    const totalDuration = steps.reduce((sum, step) => sum + (step.duration ?? 1), 0);
+    const totalDuration = steps.reduce(
+      (sum, step) => sum + (step.duration ?? 1),
+      0
+    );
     let cumulativeStart = 0;
 
     return steps.map((step, index) => {
@@ -135,14 +145,20 @@ Design variants supported:
     }
 
     // Clamp and convert to percentage
-    const clampedDuration = Math.max(0, Math.min(totalDuration, completedDuration));
+    const clampedDuration = Math.max(
+      0,
+      Math.min(totalDuration, completedDuration)
+    );
     return (clampedDuration / totalDuration) * 100;
   });
 
   /**
    * Calculate which beat was clicked based on mouse position
    */
-  function calculateTargetStep(event: PointerEvent, container: HTMLElement): number {
+  function calculateTargetStep(
+    event: PointerEvent,
+    container: HTMLElement
+  ): number {
     const rect = container.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
     const clickPercent = clickX / rect.width;
@@ -272,7 +288,10 @@ Design variants supported:
       <!-- Segment dividers (always visible, proportional widths show duration) -->
       <div class="segments-background">
         {#each segments as segment}
-          <div class="segment segment-divider" style="width: {segment.widthPercent}%"></div>
+          <div
+            class="segment segment-divider"
+            style="width: {segment.widthPercent}%"
+          ></div>
         {/each}
       </div>
 
@@ -289,7 +308,7 @@ Design variants supported:
     padding: clamp(6px, 3cqw, 12px) 0;
     box-sizing: border-box;
     background: var(--theme-panel-bg, rgba(240, 240, 240, 0.98));
-    transition: background 150ms ease-out;
+    transition: background var(--duration-fast) var(--ease-standard-out);
   }
 
   .segmented-progress-container.dark-mode {
@@ -321,7 +340,7 @@ Design variants supported:
   .label {
     text-align: center;
     color: var(--theme-text-dim, rgba(0, 0, 0, 0.4));
-    transition: color 0.2s ease;
+    transition: color var(--duration-normal) var(--ease-standard);
   }
 
   .dark-mode .label {
@@ -383,13 +402,23 @@ Design variants supported:
     top: 0;
     left: 0;
     height: 100%;
-    background: linear-gradient(90deg, var(--theme-accent) 0%, var(--theme-accent-light, var(--theme-accent)) 50%, var(--theme-accent) 100%);
-    transition: background 150ms ease-out;
+    background: linear-gradient(
+      90deg,
+      var(--theme-accent) 0%,
+      var(--theme-accent-light, var(--theme-accent)) 50%,
+      var(--theme-accent) 100%
+    );
+    transition: background var(--duration-fast) var(--ease-standard-out);
     z-index: 1; /* Below white dividers, above track */
   }
 
   .dark-mode .progress-fill {
-    background: linear-gradient(90deg, var(--theme-accent) 0%, var(--theme-accent-light, var(--theme-accent)) 50%, var(--theme-accent) 100%);
+    background: linear-gradient(
+      90deg,
+      var(--theme-accent) 0%,
+      var(--theme-accent-light, var(--theme-accent)) 50%,
+      var(--theme-accent) 100%
+    );
   }
 
   /* ========================================
@@ -473,11 +502,21 @@ Design variants supported:
      VARIANT: GRADIENT (colorful gradient fill)
      ======================================== */
   [data-variant="gradient"] .progress-fill {
-    background: linear-gradient(90deg, var(--theme-accent) 0%, var(--prop-blue, var(--theme-accent)) 50%, var(--theme-accent) 100%);
+    background: linear-gradient(
+      90deg,
+      var(--theme-accent) 0%,
+      var(--prop-blue, var(--theme-accent)) 50%,
+      var(--theme-accent) 100%
+    );
   }
 
   .dark-mode[data-variant="gradient"] .progress-fill {
-    background: linear-gradient(90deg, var(--theme-accent) 0%, var(--theme-accent-light, var(--theme-accent)) 50%, var(--theme-accent) 100%);
+    background: linear-gradient(
+      90deg,
+      var(--theme-accent) 0%,
+      var(--theme-accent-light, var(--theme-accent)) 50%,
+      var(--theme-accent) 100%
+    );
   }
 
   /* ========================================
@@ -500,7 +539,7 @@ Design variants supported:
 
   /* Make segment dividers visible even over progress fill */
   [data-variant="labeled"] .segments-background::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -530,16 +569,26 @@ Design variants supported:
   }
 
   [data-variant="gradient-labeled"] .progress-fill {
-    background: linear-gradient(90deg, var(--theme-accent) 0%, var(--prop-blue, var(--theme-accent)) 50%, var(--theme-accent) 100%);
+    background: linear-gradient(
+      90deg,
+      var(--theme-accent) 0%,
+      var(--prop-blue, var(--theme-accent)) 50%,
+      var(--theme-accent) 100%
+    );
   }
 
   .dark-mode[data-variant="gradient-labeled"] .progress-fill {
-    background: linear-gradient(90deg, var(--theme-accent) 0%, var(--theme-accent-light, var(--theme-accent)) 50%, var(--theme-accent) 100%);
+    background: linear-gradient(
+      90deg,
+      var(--theme-accent) 0%,
+      var(--theme-accent-light, var(--theme-accent)) 50%,
+      var(--theme-accent) 100%
+    );
   }
 
   /* Make segment dividers visible over gradient */
   [data-variant="gradient-labeled"] .segments-background::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;

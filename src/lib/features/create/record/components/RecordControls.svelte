@@ -183,7 +183,11 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
     font-size: var(--font-size-md);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
   }
 
   .control-button:hover {
@@ -260,7 +264,10 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
     border-radius: var(--border-radius-md, 8px);
     font-size: var(--font-size-lg);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
   }
 
   .bpm-adjust-button:hover {
@@ -286,7 +293,9 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
     background: var(--theme-accent, var(--primary, var(--semantic-info)));
     border-radius: 50%;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      transform var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
   }
 
   .speed-slider::-webkit-slider-thumb:hover {
@@ -300,7 +309,9 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      transform var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
   }
 
   .speed-slider::-moz-range-thumb:hover {
@@ -335,7 +346,7 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
       var(--theme-stroke, var(--border-color, var(--theme-stroke)));
     border-radius: 12px;
     position: relative;
-    transition: all var(--duration-emphasis) ease;
+    transition: background var(--duration-emphasis) var(--ease-standard);
   }
 
   .toggle-thumb {
@@ -346,7 +357,7 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
     background: var(--theme-text, var(--foreground, #ffffff));
     left: 2px;
     top: 2px;
-    transition: all var(--duration-emphasis) ease;
+    transition: left var(--duration-emphasis) var(--ease-standard);
   }
 
   .toggle-track.on {

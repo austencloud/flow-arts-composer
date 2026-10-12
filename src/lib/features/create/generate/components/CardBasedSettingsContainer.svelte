@@ -62,6 +62,10 @@ Delegates ALL logic to services (SRP compliant)
   import { MAX_AVAILABLE_LEVEL } from "#lib/shared/create/utils/config-mapper.js";
   import { DifficultyLevel as SharedDifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+
+  const LONG_TOAST_DURATION_MS = 6_000;
+  const NORMAL_TOAST_DURATION_MS = 4_000;
+  const EXPLANATION_TOAST_DURATION_MS = 5_000;
   import { fitLoopRhythmToLength } from "#lib/shared/create/services/loop-rhythm-gating.js";
   import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
   // Card components
@@ -408,7 +412,7 @@ Delegates ALL logic to services (SRP compliant)
       showToast({
         message: `Clock/Counter changed to In for Level ${newLevelNum}.`,
         type: "info",
-        duration: 6000,
+        duration: LONG_TOAST_DURATION_MS,
         action: {
           label: "Undo",
           onClick: () => {
@@ -441,13 +445,13 @@ Delegates ALL logic to services (SRP compliant)
         showToast({
           message: `LOOP rhythm changed to fit ${length} steps.`,
           type: "info",
-          duration: 4000,
+          duration: NORMAL_TOAST_DURATION_MS,
         });
       } else if (!fitted) {
         showToast({
           message: `LOOP turned off so this can be exactly ${length} steps.`,
           type: "info",
-          duration: 5000,
+          duration: EXPLANATION_TOAST_DURATION_MS,
         });
       }
     }
@@ -873,11 +877,11 @@ Delegates ALL logic to services (SRP compliant)
     min-height: 0; /* Allow flex to shrink */
     overflow: visible; /* Allow cards to pop over neighbors and modals to escape */
 
-    /* Smooth transition for size changes (syncs with workspace 450ms animation) */
+    /* Smooth transition for size changes (syncs with workspace var(--duration-dramatic) animation) */
     transition:
-      max-width 450ms cubic-bezier(0.4, 0, 0.2, 1),
-      max-height 450ms cubic-bezier(0.4, 0, 0.2, 1),
-      padding 450ms cubic-bezier(0.4, 0, 0.2, 1);
+      max-width var(--duration-dramatic) var(--ease-standard),
+      max-height var(--duration-dramatic) var(--ease-standard),
+      padding var(--duration-dramatic) var(--ease-standard);
   }
 
   .level-toolbar {

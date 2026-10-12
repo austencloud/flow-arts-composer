@@ -273,8 +273,8 @@ Shows description in Quick Apply mode, compact in Build Combo mode
       border-radius var(--expansion-duration) var(--expansion-easing),
       box-shadow var(--expansion-duration) var(--expansion-easing),
       transform var(--duration-normal) var(--expansion-easing),
-      opacity var(--duration-normal) ease,
-      filter var(--duration-normal) ease;
+      opacity var(--duration-normal) var(--ease-standard),
+      filter var(--duration-normal) var(--ease-standard);
     width: 100%;
     height: auto;
   }
@@ -327,7 +327,7 @@ Shows description in Quick Apply mode, compact in Build Combo mode
     visibility: hidden;
     transition:
       grid-template-rows var(--expansion-duration) var(--expansion-easing),
-      opacity var(--duration-fast) ease,
+      opacity var(--duration-fast) var(--ease-standard),
       visibility 0s linear var(--expansion-duration);
   }
 
@@ -337,7 +337,7 @@ Shows description in Quick Apply mode, compact in Build Combo mode
     visibility: visible;
     transition:
       grid-template-rows var(--expansion-duration) var(--expansion-easing),
-      opacity var(--duration-fast) ease var(--duration-instant),
+      opacity var(--duration-fast) var(--ease-standard) var(--duration-instant),
       visibility 0s;
   }
 
@@ -549,7 +549,7 @@ Shows description in Quick Apply mode, compact in Build Combo mode
       color-mix(in srgb, var(--component-color) 55%, transparent);
     transition:
       transform var(--duration-fast) var(--ease-out),
-      background var(--duration-fast) ease;
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .configure-button:hover .configure-button-visual,

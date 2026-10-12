@@ -389,7 +389,8 @@
   }
 
   .active .motion-pulse {
-    animation: preview-pulse 1.8s ease-in-out infinite;
+    animation: preview-pulse var(--preview-cycle-duration, 1.8s) ease-in-out
+      infinite;
     transform-box: fill-box;
     transform-origin: center;
   }
@@ -405,7 +406,7 @@
     animation-delay: -0.6s;
   }
   .active .slow {
-    animation-duration: 2.6s;
+    --preview-cycle-duration: 2.6s;
   }
 
   @keyframes preview-pulse {

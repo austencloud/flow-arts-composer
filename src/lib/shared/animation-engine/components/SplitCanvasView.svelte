@@ -258,8 +258,8 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
     overflow: hidden;
     /* Collapse: fade out quickly, no delay */
     transition:
-      max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-      opacity 0.2s ease-in;
+      max-height var(--duration-dramatic) var(--ease-out),
+      opacity var(--duration-normal) var(--ease-standard-in);
   }
 
   .split-canvases.expanded {
@@ -268,8 +268,9 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
     opacity: 1;
     /* Expand: delay opacity so engines have time to render before becoming visible */
     transition:
-      max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-      opacity 0.3s ease-out 0.2s;
+      max-height var(--duration-dramatic) var(--ease-out),
+      opacity var(--duration-emphasis) var(--ease-standard-out)
+        var(--duration-normal);
   }
 
   /* Embedded square stages place the split pair beside the hero instead of

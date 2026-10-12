@@ -1097,8 +1097,8 @@
     column-gap: 0;
     row-gap: var(--fuse-col-gap);
     overflow: hidden;
-    transition: grid-template-columns var(--duration-emphasis, 280ms)
-      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    transition: grid-template-columns var(--duration-emphasis)
+      var(--ease-out, var(--ease-out));
   }
 
   .fuse-workspace.full-card-workspace.recipe-workspace {
@@ -1120,7 +1120,7 @@
       "left . preview . right . recipe";
   }
 
-  /* A dragged seam must sit under the pointer, not ease toward it: the same
+  /* A dragged seam must sit under the pointer, not var(--ease-standard) toward it: the same
      transition that carries the recipe open would make every pointermove a
      280ms catch-up and the handle would swim. */
   .fuse-workspace.full-card-workspace.dragging,
@@ -1178,8 +1178,8 @@
     background: color-mix(in srgb, var(--theme-text, #fff) 8%, transparent);
     border-radius: 1px;
     transition:
-      background 150ms ease,
-      width 150ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
   }
 
   .split-handle:focus-visible::before {
@@ -1243,8 +1243,8 @@
     border-radius: 2px;
     background: color-mix(in srgb, var(--theme-text, #fff) 18%, transparent);
     transition:
-      background 150ms ease,
-      height 150ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .split-flow {

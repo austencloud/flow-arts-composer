@@ -332,7 +332,12 @@
     border: 1.5px solid var(--theme-stroke);
     border-radius: 14px;
     -webkit-overflow-scrolling: touch;
-    transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      flex var(--duration-emphasis) var(--ease-standard),
+      max-height var(--duration-emphasis) var(--ease-standard),
+      padding var(--duration-emphasis) var(--ease-standard),
+      gap var(--duration-emphasis) var(--ease-standard),
+      background var(--duration-emphasis) var(--ease-standard);
   }
 
   .controls-panel.mobile-compact {
@@ -414,7 +419,10 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 

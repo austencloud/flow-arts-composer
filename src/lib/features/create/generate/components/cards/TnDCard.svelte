@@ -191,8 +191,8 @@
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     transition:
-      transform var(--duration-instant, 120ms) cubic-bezier(0.4, 0, 0.2, 1),
-      filter var(--duration-instant, 120ms) ease;
+      transform var(--duration-instant) var(--ease-standard),
+      filter var(--duration-instant) var(--ease-standard);
   }
 
   /* A mode is set: the tile wears its element, with a glossy top light. */

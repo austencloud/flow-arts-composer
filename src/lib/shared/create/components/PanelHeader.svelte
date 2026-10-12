@@ -140,11 +140,13 @@
     color: #ffffff; /* White icons */
     font-size: var(--font-size-lg);
     cursor: pointer;
-    transition: all
-      var(
-        --transition-normal,
-        var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1)
-      );
+    transition:
+      transform
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      outline
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard)),
+      background
+        var(--transition-normal, var(--duration-emphasis) var(--ease-standard));
     flex-shrink: 0;
   }
 
@@ -156,7 +158,10 @@
   :global(.panel-header .action-button:active),
   .close-button:active {
     transform: scale(0.95);
-    transition: all var(--duration-instant) ease;
+    transition:
+      transform var(--duration-instant) var(--ease-standard),
+      outline var(--duration-instant) var(--ease-standard),
+      background var(--duration-instant) var(--ease-standard);
   }
 
   :global(.panel-header .action-button:focus-visible),
