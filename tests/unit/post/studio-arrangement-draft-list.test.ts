@@ -23,7 +23,10 @@ vi.mock(
   })
 );
 
-import { listPostProjects } from "#lib/features/post/services/post-workspace-projects.js";
+import {
+  listPostProjects,
+  rememberPostSequence,
+} from "#lib/features/post/services/post-workspace-projects.js";
 
 afterEach(() => {
   account.uid = "account-a";
@@ -143,4 +146,20 @@ it("summarizes an arrangement project's shown grid and populated cells", async (
     listed.projects.find((choice) => choice.sequenceId === project.sequenceId)
       ?.arrangement
   ).toEqual({ rows: 2, cols: 2, sequences: 2 });
+
+  // Opening the project puts it in the recent list, which rebuilds its entry.
+  rememberPostSequence({
+    id: project.sequenceId,
+    name: "Arrangement",
+    word: "",
+  } as unknown as Parameters<typeof rememberPostSequence>[0]);
+  const reopened = await listPostProjects();
+  expect(
+    reopened.projects.find(
+      (choice) => choice.sequenceId === project.sequenceId
+    )
+  ).toMatchObject({
+    hasDraft: true,
+    arrangement: { rows: 2, cols: 2, sequences: 2 },
+  });
 });

@@ -393,6 +393,7 @@ export async function listPostProjects(): Promise<{
       word: recent.word,
       updatedAt: Math.max(draft?.updatedAt ?? 0, recent.openedAt),
       hasDraft: !!draft,
+      ...(draft?.arrangement ? { arrangement: draft.arrangement } : {}),
     });
   }
   for (const choice of choices.values()) {
