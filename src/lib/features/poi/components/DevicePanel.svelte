@@ -50,11 +50,7 @@
 <div class="device-panel">
   <div class="panel-header">
     <h3 class="section-title">Devices</h3>
-    <button
-      class="scan-btn"
-      onclick={handleScan}
-      disabled={scanning}
-    >
+    <button class="scan-btn" onclick={handleScan} disabled={scanning}>
       {scanning ? "Scanning..." : "Scan"}
     </button>
   </div>
@@ -73,7 +69,9 @@
         <div class="device-card">
           <div class="device-info">
             <span class="device-name">{device.name}</span>
-            <span class="device-meta">{device.model} ({device.ledCount} LEDs)</span>
+            <span class="device-meta"
+              >{device.model} ({device.ledCount} LEDs)</span
+            >
           </div>
           <div class="device-actions">
             <button
@@ -81,7 +79,9 @@
               onclick={() => handleUpload(device.id)}
               disabled={!poi.activePattern || poi.uploadProgress !== null}
             >
-              {poi.uploadProgress !== null ? `${Math.round(poi.uploadProgress)}%` : "Upload"}
+              {poi.uploadProgress !== null
+                ? `${Math.round(poi.uploadProgress)}%`
+                : "Upload"}
             </button>
           </div>
         </div>
@@ -137,7 +137,7 @@
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
     min-height: 36px;
-    transition: border-color 0.15s;
+    transition: border-color var(--duration-fast);
   }
 
   .scan-btn:hover:not(:disabled),
@@ -156,7 +156,11 @@
   .error-msg {
     padding: 0.5rem;
     border-radius: 6px;
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 15%,
+      transparent
+    );
     color: color-mix(in srgb, var(--semantic-error, #ef4444) 70%, white);
     font-size: var(--font-size-compact, 12px);
   }
@@ -215,6 +219,6 @@
   .progress-fill {
     height: 100%;
     background: var(--theme-accent, #3b82f6);
-    transition: width 0.2s;
+    transition: width var(--duration-normal);
   }
 </style>

@@ -123,8 +123,8 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .toggle-chip:hover {

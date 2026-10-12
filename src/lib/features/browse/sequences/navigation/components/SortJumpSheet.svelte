@@ -171,7 +171,10 @@ Touch-friendly interface for changing sort method and jumping to sections
     border: 1px solid var(--theme-stroke, var(--theme-stroke));
     border-radius: 12px;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     text-align: left;
   }
 
@@ -248,7 +251,10 @@ Touch-friendly interface for changing sort method and jumping to sections
     border: 1px solid var(--theme-stroke, var(--theme-stroke));
     border-radius: 10px;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .jump-button:hover {

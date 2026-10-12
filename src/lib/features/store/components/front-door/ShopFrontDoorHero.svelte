@@ -35,9 +35,19 @@
     <h1><em>Choreo Cards</em></h1>
     <p class="lede">The latest evolution of flow arts technology</p>
     <ol class="steps">
-      <li><b>1</b><span>Draw a card, learn the sequence, and teach it to a friend.</span></li>
-      <li><b>2</b><span>Scan the QR code to animate it and practice at your own pace.</span></li>
-      <li><b>3</b><span>Expand your repertoire and share it with others</span></li>
+      <li>
+        <b>1</b><span
+          >Draw a card, learn the sequence, and teach it to a friend.</span
+        >
+      </li>
+      <li>
+        <b>2</b><span
+          >Scan the QR code to animate it and practice at your own pace.</span
+        >
+      </li>
+      <li>
+        <b>3</b><span>Expand your repertoire and share it with others</span>
+      </li>
     </ol>
     <a class="scroll-cta" href="#{catalogId}">
       See the catalog
@@ -160,7 +170,11 @@
     font-family: var(--page-title-font, "Fraunces", Georgia, serif);
     font-style: italic;
     font-weight: 700;
-    font-variation-settings: "opsz" 144, "wght" 700, "SOFT" 0, "WONK" 1;
+    font-variation-settings:
+      "opsz" 144,
+      "wght" 700,
+      "SOFT" 0,
+      "WONK" 1;
     font-size: clamp(2.4rem, 5vw, 4.75rem);
     line-height: 1;
     letter-spacing: -0.02em;
@@ -215,7 +229,9 @@
     text-decoration: none;
     font-size: var(--font-size-min, 14px);
     font-weight: 700;
-    transition: background 0.2s, border-color 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal);
   }
   .scroll-cta:hover {
     background: var(--theme-card-bg-hover, rgba(255, 255, 255, 0.12));

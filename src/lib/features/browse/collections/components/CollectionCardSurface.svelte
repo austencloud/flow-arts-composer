@@ -149,9 +149,9 @@
     border-radius: 14px;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .collection-card:hover {
@@ -305,7 +305,7 @@
     background: none;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.55));
     cursor: pointer;
-    transition: color var(--duration-fast, 150ms) ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
 
   .kebab:hover {

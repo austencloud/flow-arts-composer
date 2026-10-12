@@ -9,7 +9,10 @@
 <script lang="ts">
   import type { CatalogEntry } from "../../domain/catalog-listings";
   import { formatUsd } from "../../domain/preorder-pricing";
-  import { resolvePurchaseState, SALES_LIVE } from "../../domain/purchase-state";
+  import {
+    resolvePurchaseState,
+    SALES_LIVE,
+  } from "../../domain/purchase-state";
   import ShopEntryArt from "../ShopEntryArt.svelte";
 
   interface Props {
@@ -36,7 +39,11 @@
         : "Not on sale yet"
   );
   const ctaLabel = $derived(
-    purchase === "preorder" ? "Pre-order" : purchase === "buy" ? "View" : "See details"
+    purchase === "preorder"
+      ? "Pre-order"
+      : purchase === "buy"
+        ? "View"
+        : "See details"
   );
 
   // The art box reserves its height in CSS from its own width (see the .art
@@ -56,7 +63,12 @@
 
   let artW = $state(0);
   const cardPx = $derived(
-    artW ? Math.max(64, Math.floor(artW / (artW >= FOUR_CARD_MIN ? PITCH_4 : PITCH_3))) : 105
+    artW
+      ? Math.max(
+          64,
+          Math.floor(artW / (artW >= FOUR_CARD_MIN ? PITCH_4 : PITCH_3))
+        )
+      : 105
   );
 </script>
 
@@ -80,7 +92,9 @@
   <p class="blurb">{entry.blurb}</p>
   <div class="foot">
     <span class="price">
-      {#if entry.priceIsFrom}<span class="from">from</span>{/if}{formatUsd(entry.priceCents)}
+      {#if entry.priceIsFrom}<span class="from">from</span>{/if}{formatUsd(
+        entry.priceCents
+      )}
     </span>
     <span class="status" class:live={purchase !== "notify"}>{statusLabel}</span>
     <span class="cta">
@@ -103,8 +117,8 @@
     color: inherit;
     text-decoration: none;
     transition:
-      transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-      border-color 0.2s;
+      transform var(--duration-normal) var(--ease-out),
+      border-color var(--duration-normal);
   }
   .tile:hover {
     transform: translateY(-0.25rem);
@@ -169,7 +183,11 @@
     font-family: var(--page-title-font, "Fraunces", Georgia, serif);
     font-style: italic;
     font-weight: 700;
-    font-variation-settings: "opsz" 144, "wght" 700, "SOFT" 0, "WONK" 1;
+    font-variation-settings:
+      "opsz" 144,
+      "wght" 700,
+      "SOFT" 0,
+      "WONK" 1;
     font-size: clamp(1.25rem, 1.5vw, 1.75rem);
     line-height: 1.1;
     letter-spacing: -0.015em;

@@ -206,7 +206,9 @@
     } catch (err) {
       console.error("[NewMessageSheet] Failed to start conversation:", err);
       error =
-        err instanceof Error ? err.message : t("inbox_ui_failed_to_start_conversation");
+        err instanceof Error
+          ? err.message
+          : t("inbox_ui_failed_to_start_conversation");
       hapticService?.trigger("error");
       isCreating = false;
     }
@@ -278,7 +280,9 @@
                   type="button"
                   class="chip-remove"
                   onclick={() => removeUser(user.id)}
-                  aria-label={t("inbox_remove_person", { name: identity.primary })}
+                  aria-label={t("inbox_remove_person", {
+                    name: identity.primary,
+                  })}
                 >
                   <i class="fas fa-times" aria-hidden="true"></i>
                 </button>
@@ -292,7 +296,8 @@
       {#if isGroup}
         <div class="group-name-section">
           <label for="group-name" class="form-label">
-            {t("inbox_ui_group_name")} <span class="required">{t("inbox_ui__required")}</span>
+            {t("inbox_ui_group_name")}
+            <span class="required">{t("inbox_ui__required")}</span>
           </label>
           <input
             id="group-name"
@@ -546,7 +551,7 @@
     background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke);
     border-radius: 20px;
-    animation: chipIn var(--duration-normal) ease-out;
+    animation: chipIn var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes chipIn {
@@ -579,8 +584,8 @@
     color: var(--theme-text-dim);
     cursor: pointer;
     transition:
-      background 0.2s ease,
-      color 0.2s ease;
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .chip-remove:hover {
@@ -617,8 +622,8 @@
     color: var(--theme-text);
     font-size: var(--font-size-sm);
     transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .name-input:focus {
@@ -707,9 +712,9 @@
     border-radius: 12px;
     cursor: pointer;
     transition:
-      background 0.2s ease,
-      border-color 0.2s ease,
-      transform 0.15s ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .suggestion-card:hover {
@@ -765,7 +770,7 @@
     border: none;
     border-radius: 12px;
     cursor: pointer;
-    transition: background var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .suggestion-row:hover {
@@ -812,7 +817,7 @@
     font-size: var(--font-size-compact);
     color: var(--theme-accent);
     opacity: 0;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .suggestion-row:hover .suggestion-add {
@@ -863,8 +868,8 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background 0.2s ease,
-      transform 0.15s ease;
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .btn-cancel {

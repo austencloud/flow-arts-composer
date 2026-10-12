@@ -176,10 +176,10 @@
     min-width: 2px;
     transform: translateY(-50%);
     transition:
-      left var(--duration-normal) var(--ease-out, ease-out),
-      width var(--duration-normal) var(--ease-out, ease-out),
-      filter var(--duration-fast) ease,
-      opacity var(--duration-fast) ease;
+      left var(--duration-normal) var(--ease-out, var(--ease-standard-out)),
+      width var(--duration-normal) var(--ease-out, var(--ease-standard-out)),
+      filter var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .travel-group.dragging {
@@ -247,7 +247,7 @@
     opacity: 0;
     text-overflow: ellipsis;
     text-shadow: 0 1px 2px black;
-    transition: opacity var(--duration-fast) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
   }
 
@@ -309,7 +309,7 @@
   @media (prefers-reduced-motion: reduce) {
     .travel-group,
     .travel-control span {
-      transition-duration: 0.01ms;
+      transition-duration: 0s;
     }
   }
 </style>

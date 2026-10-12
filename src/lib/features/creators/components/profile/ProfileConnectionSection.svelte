@@ -61,7 +61,10 @@
     try {
       connectionInfo = await getConnectionInfo(targetUserId);
     } catch (err) {
-      console.error("[ProfileConnectionSection] Error loading connection:", err);
+      console.error(
+        "[ProfileConnectionSection] Error loading connection:",
+        err
+      );
       error = "Failed to load connection info";
     } finally {
       isLoading = false;
@@ -241,7 +244,7 @@
     color: var(--theme-text);
     cursor: pointer;
     text-align: left;
-    transition: background-color var(--duration-normal, 200ms) ease;
+    transition: background-color var(--duration-normal) var(--ease-standard);
   }
 
   .section-header:hover:not(:disabled) {
@@ -286,7 +289,7 @@
   .expand-icon {
     font-size: 12px;
     color: var(--theme-text-dim);
-    transition: transform var(--duration-normal, 200ms) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .expand-icon.rotated {
@@ -295,8 +298,9 @@
 
   .section-content {
     padding: 0 16px 16px 16px;
-    transition: max-height var(--duration-normal, 200ms) ease,
-      opacity var(--duration-normal, 200ms) ease;
+    transition:
+      max-height var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .section-content.collapsed {

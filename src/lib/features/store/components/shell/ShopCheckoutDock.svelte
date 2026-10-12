@@ -5,8 +5,8 @@
   configurator and the Deck Architect; this is the single copy both now use.
 -->
 <script lang="ts">
-  import { fly } from "svelte/transition";
-  import { quintOut } from "svelte/easing";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
     /** What's being bought right now (a pack name, a volume, a bundle). */
@@ -21,7 +21,10 @@
   let { label, price, ctaLabel, disabled = false, onclick }: Props = $props();
 </script>
 
-<div class="checkout-dock" transition:fly={{ y: 72, duration: 220, easing: quintOut }}>
+<div
+  class="checkout-dock"
+  transition:flyFade={{ y: 72, duration: DURATION.normal }}
+>
   <div class="dock-meter">
     <span class="dock-label">{label}</span>
     <span class="dock-price">{price}</span>
@@ -78,7 +81,7 @@
     font-weight: 700;
     font-family: inherit;
     cursor: pointer;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
   .dock-buy:disabled {
     opacity: 0.45;

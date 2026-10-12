@@ -1620,9 +1620,9 @@
     font-size: 0.9375rem;
     font-weight: 750;
     transition:
-      border-color var(--duration-fast) ease,
-      background-color var(--duration-fast) ease,
-      opacity var(--duration-fast) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .step-editor button:hover:not(:disabled),
@@ -1925,8 +1925,8 @@
     visibility: hidden;
     pointer-events: none;
     transition:
-      opacity var(--duration-normal, 240ms) ease,
-      visibility 0s linear var(--duration-normal, 240ms);
+      opacity var(--duration-normal) var(--ease-standard),
+      visibility 0s linear var(--duration-normal);
   }
 
   .context-layer.active,
@@ -2086,7 +2086,7 @@
       color-mix(in srgb, var(--formation-accent) 15%, transparent)
     );
     content: "";
-    transition: width 120ms ease;
+    transition: width var(--duration-instant) var(--ease-standard);
   }
   .transition-handle:hover::before,
   .transition-handle:focus-visible::before {

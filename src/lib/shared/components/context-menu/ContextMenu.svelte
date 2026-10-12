@@ -335,11 +335,11 @@
 
   /* Entrance animation via bits-ui data-state */
   :global(.ctx-menu-content[data-state="open"]) {
-    animation: ctx-menu-enter 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: ctx-menu-enter var(--duration-fast) var(--ease-out) both;
   }
 
   :global(.ctx-menu-content.ctx-submenu[data-state="open"]) {
-    animation: ctx-submenu-enter 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: ctx-submenu-enter var(--duration-fast) var(--ease-out) both;
   }
 
   @keyframes ctx-menu-enter {
@@ -408,11 +408,11 @@
     text-align: left;
     user-select: none;
     outline: none;
-    animation: ctx-item-enter 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: calc(var(--item-index, 0) * 30ms);
+    animation: ctx-item-enter var(--duration-fast) var(--ease-out) both;
+    animation-delay: calc(var(--item-index, 0) * var(--stagger-micro));
     transition:
-      background 120ms ease,
-      transform 120ms ease;
+      background var(--duration-instant) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard);
   }
 
   :global(.ctx-menu-item[data-highlighted]),
@@ -502,7 +502,7 @@
     font-size: var(--font-size-compact, 12px);
     opacity: 0.5;
     flex-shrink: 0;
-    transition: transform 120ms ease;
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   :global(.ctx-menu-item[data-state="open"] .ctx-menu-chevron) {

@@ -121,7 +121,7 @@ Uses 4x4 pictograph grid with all 16 variations
     border: none;
     color: white;
     cursor: pointer;
-    transition: background var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
     text-align: left;
   }
 
@@ -195,7 +195,7 @@ Uses 4x4 pictograph grid with all 16 variations
   .chevron {
     width: 24px;
     height: 24px;
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .chevron.expanded {

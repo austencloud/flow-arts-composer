@@ -21,7 +21,8 @@
 -->
 <script lang="ts">
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
   import AvatarImage from "#lib/shared/browse/components/AvatarImage.svelte";
@@ -107,7 +108,7 @@
 
 <div
   class="rail"
-  transition:fade={{ duration: 300 }}
+  transition:opaqueFade={{ duration: DURATION.emphasis }}
   style:--profile-color={accentColor}
 >
   <div class="rail-ambient" aria-hidden="true"></div>
@@ -172,8 +173,9 @@
                 alt={getPropTypeDisplayInfo(prop).label}
               />
               {#if prop === featuredProp}
-                <span class="favorite-star" aria-label={t("browse_verified_profile_prop")}
-                  >&#9733;</span
+                <span
+                  class="favorite-star"
+                  aria-label={t("browse_verified_profile_prop")}>&#9733;</span
                 >
               {/if}
             </div>
@@ -211,7 +213,9 @@
         target="_blank"
         rel="noopener noreferrer"
         class="instagram-link"
-        aria-label={t("browse_verified_view_instagram", { name: userProfile.displayName })}
+        aria-label={t("browse_verified_view_instagram", {
+          name: userProfile.displayName,
+        })}
       >
         <i class="fab fa-instagram" aria-hidden="true"></i>
         <span>@{userProfile.instagramUsername}</span>
@@ -267,20 +271,28 @@
           disabled={followInProgress}
           onclick={onFollowToggle}
           aria-label={userProfile.isFollowing
-            ? t("browse_verified_unfollow_person", { name: userProfile.displayName })
-            : t("browse_verified_follow_person", { name: userProfile.displayName })}
+            ? t("browse_verified_unfollow_person", {
+                name: userProfile.displayName,
+              })
+            : t("browse_verified_follow_person", {
+                name: userProfile.displayName,
+              })}
         >
           {#if followInProgress}
             <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
           {:else}
-            {userProfile.isFollowing ? t("browse_audit_following") : t("browse_audit_follow")}
+            {userProfile.isFollowing
+              ? t("browse_audit_following")
+              : t("browse_audit_follow")}
           {/if}
         </button>
 
         <button
           class="report-button"
           onclick={handleReportUser}
-          aria-label={t("browse_verified_report_person", { name: userProfile.displayName })}
+          aria-label={t("browse_verified_report_person", {
+            name: userProfile.displayName,
+          })}
           title={t("browse_verified_report_user")}
         >
           <i class="fas fa-flag" aria-hidden="true"></i>
@@ -518,7 +530,10 @@
     font-size: var(--font-size-sm);
     font-weight: 500;
     text-decoration: none;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     width: fit-content;
   }
 
@@ -578,7 +593,14 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      filter var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
     white-space: nowrap;
   }
 
@@ -623,7 +645,10 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-sm);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .report-button:hover {

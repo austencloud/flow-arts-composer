@@ -309,7 +309,8 @@ dialog.base-modal[data-entered="true"] [data-animate="6"] {
 
 /* Icon bounce animation */
 dialog.base-modal[data-entered="true"] [data-animate-icon] {
-  animation: modalIconBounce 0.5s var(--modal-ease-spring) backwards;
+  animation: modalIconBounce var(--duration-dramatic) var(--modal-ease-spring)
+    backwards;
   animation-delay: calc(var(--modal-stagger-base) * 1);
 }
 

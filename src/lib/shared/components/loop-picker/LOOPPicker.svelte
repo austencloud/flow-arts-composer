@@ -16,7 +16,8 @@
   import type { LOOPOption } from "../../../features/create/shared/services/loop-validator";
   import type { CircularizationOption } from "#lib/shared/create/domain/spell-models.js";
   import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
-  import { slide } from "svelte/transition";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     loopTypeTint,
     loopOptionTint,
@@ -95,7 +96,10 @@
 
     <!-- Direct LOOP Options -->
     {#if hasDirectOptions || showRepeat}
-      <section class="options-section" transition:slide={{ duration: 200 }}>
+      <section
+        class="options-section"
+        transition:growFade={{ duration: DURATION.normal }}
+      >
         <div class="options-grid" data-count={choiceCount}>
           {#each directOptions as option}
             <LOOPChoiceButton
@@ -137,7 +141,10 @@
 
     <!-- Bridge Letter Options -->
     {#if showBridgeSection}
-      <section class="bridge-section" transition:slide={{ duration: 200 }}>
+      <section
+        class="bridge-section"
+        transition:growFade={{ duration: DURATION.normal }}
+      >
         <div class="section-header">
           <span class="section-label"
             >{tDynamic("loop_picker_bridge_heading")}</span

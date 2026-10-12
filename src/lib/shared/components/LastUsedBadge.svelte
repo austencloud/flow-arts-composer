@@ -61,8 +61,8 @@
     translate: 0 -50%;
     opacity: 1;
     transition:
-      opacity var(--duration-normal, 200ms) ease,
-      translate var(--duration-normal, 200ms) cubic-bezier(0.2, 0.8, 0.2, 1);
+      opacity var(--duration-normal) var(--ease-standard),
+      translate var(--duration-normal) var(--ease-out);
   }
 
   @starting-style {

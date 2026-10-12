@@ -103,9 +103,9 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background 160ms ease,
-      color 160ms ease,
-      border-color 160ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
     min-width: var(--min-touch-target, 44px);
     min-height: var(--min-touch-target, 44px);
   }

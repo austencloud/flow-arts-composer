@@ -59,7 +59,11 @@
   });
 </script>
 
-<div class="notification-list" role="region" aria-label={t("notifications_title")}>
+<div
+  class="notification-list"
+  role="region"
+  aria-label={t("notifications_title")}
+>
   <!-- Filter UI -->
   <NotificationFilter onFilterChange={(newFilters) => (filters = newFilters)} />
 
@@ -124,8 +128,9 @@
   }
 
   .notification-wrapper {
-    animation: slideInStagger var(--duration-emphasis) ease-out backwards;
-    animation-delay: calc(var(--stagger-index) * 30ms);
+    animation: slideInStagger var(--duration-emphasis) var(--ease-standard-out)
+      backwards;
+    animation-delay: calc(var(--stagger-index) * var(--stagger-micro));
   }
 
   @keyframes slideInStagger {

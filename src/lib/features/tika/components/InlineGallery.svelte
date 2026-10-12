@@ -25,7 +25,12 @@
   // Module-level SVG cache (shared across instances)
   const svgCache = new Map<string, string>();
 
-  function buildSvgCacheKey(letter: string, variation: number, gridMode: string, propType?: string): string {
+  function buildSvgCacheKey(
+    letter: string,
+    variation: number,
+    gridMode: string,
+    propType?: string
+  ): string {
     const parts = [letter, String(variation), gridMode];
     if (propType) parts.push(propType);
     return parts.join("-");
@@ -66,7 +71,11 @@
       : false;
 
   // Generate cache key
-  function getCacheKey(letter: string, variation: number, size: number): string {
+  function getCacheKey(
+    letter: string,
+    variation: number,
+    size: number
+  ): string {
     return `${letter}-${variation}-${size}`;
   }
 
@@ -82,7 +91,11 @@
   });
 
   // Build cache key including grid mode and render context
-  function buildCacheKey(letter: string, variation: number, size: number): string {
+  function buildCacheKey(
+    letter: string,
+    variation: number,
+    size: number
+  ): string {
     const context = gallery.renderContext;
     const mode = gallery.gridMode ?? "diamond";
     const base = `${letter}-${variation}-${size}-${mode}`;
@@ -95,7 +108,10 @@
   /**
    * Build static file key for a pictograph.
    */
-  function buildStaticKey(letter: string, variation: number): PictographFileKey {
+  function buildStaticKey(
+    letter: string,
+    variation: number
+  ): PictographFileKey {
     const context = gallery.renderContext;
     return {
       letter,
@@ -110,7 +126,9 @@
    * Note: HEAD requests don't work reliably in Vite dev (returns 200 for non-existent files)
    * Instead, we fetch the file and check Content-Type to verify it's actually an image.
    */
-  async function checkStaticFile(key: PictographFileKey): Promise<string | null> {
+  async function checkStaticFile(
+    key: PictographFileKey
+  ): Promise<string | null> {
     const path = getStaticPictographPath(key);
     try {
       const response = await fetch(path, { method: "GET" });
@@ -166,7 +184,12 @@
 
     for (const { letter, variation } of allItems) {
       const imageKey = getImageKey(letter, variation);
-      const cacheKey = buildSvgCacheKey(letter, variation, gridMode, context?.propType);
+      const cacheKey = buildSvgCacheKey(
+        letter,
+        variation,
+        gridMode,
+        context?.propType
+      );
 
       // Check SVG cache first (instant, no API call)
       const cached = svgCache.get(cacheKey);
@@ -228,7 +251,10 @@
       const cacheKey = buildCacheKey(letter, variation, fetchSize);
       const cached = await tikaPictographCache.get(cacheKey);
       if (cached) {
-        newImages.set(getImageKey(letter, variation), `data:image/png;base64,${cached}`);
+        newImages.set(
+          getImageKey(letter, variation),
+          `data:image/png;base64,${cached}`
+        );
         loadedCount++;
         continue;
       }
@@ -248,10 +274,15 @@
   class:grid={gallery.layout === "grid"}
   class:responsive={!itemSize}
   class:comparison={!itemSize && gallery.items.length <= 2}
-  class:small-gallery={!itemSize && gallery.items.length > 2 && gallery.items.length <= 4}
+  class:small-gallery={!itemSize &&
+    gallery.items.length > 2 &&
+    gallery.items.length <= 4}
   class:large-gallery={!itemSize && gallery.items.length > 4}
 >
-  <div class="gallery-items" style={itemSize ? `--item-size: ${itemSize}px` : undefined}>
+  <div
+    class="gallery-items"
+    style={itemSize ? `--item-size: ${itemSize}px` : undefined}
+  >
     {#each gallery.items as item}
       {@const imageKey = getImageKey(item.letter, item.variation ?? 0)}
       {@const imageUrl = images.get(imageKey)}
@@ -304,7 +335,10 @@
   /* Grid layout - responsive grid */
   .inline-gallery.grid .gallery-items {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(var(--item-size, 100px), 1fr));
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(var(--item-size, 100px), 1fr)
+    );
     gap: 8px;
     max-width: 100%;
   }
@@ -318,7 +352,7 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 8px;
-    transition: border-color var(--duration-fast, 0.15s) ease;
+    transition: border-color var(--duration-fast) var(--ease-standard);
   }
 
   .gallery-item:hover {
@@ -406,21 +440,36 @@
   }
 
   .item-label.pro {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 20%,
+      transparent
+    );
     color: var(--semantic-success, #22c55e);
-    border: 1px solid color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
   }
 
   .item-label.anti {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
-    border: 1px solid color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
   }
 
   .item-label.hybrid {
-    background: color-mix(in srgb, var(--semantic-info, #a855f7) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-info, #a855f7) 20%,
+      transparent
+    );
     color: var(--semantic-info, #a855f7);
-    border: 1px solid color-mix(in srgb, var(--semantic-info, #a855f7) 40%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-info, #a855f7) 40%, transparent);
   }
 
   /* Default label */
@@ -483,28 +532,28 @@
   }
 
   .svg-pictograph.animate :global(.svg-bg) {
-    animation: svgReveal 0.3s ease-out both;
+    animation: svgReveal var(--duration-emphasis) var(--ease-standard-out) both;
     animation-delay: 0ms;
   }
 
   .svg-pictograph.animate :global(.svg-grid) {
-    animation: svgReveal 0.3s ease-out both;
-    animation-delay: 80ms;
+    animation: svgReveal var(--duration-emphasis) var(--ease-standard-out) both;
+    animation-delay: var(--stagger-relaxed);
   }
 
   .svg-pictograph.animate :global(.svg-prop) {
-    animation: svgReveal 0.35s ease-out both;
-    animation-delay: 200ms;
+    animation: svgReveal var(--duration-dramatic) var(--ease-standard-out) both;
+    animation-delay: var(--duration-normal);
   }
 
   .svg-pictograph.animate :global(.svg-arrow) {
-    animation: svgReveal 0.35s ease-out both;
-    animation-delay: 350ms;
+    animation: svgReveal var(--duration-dramatic) var(--ease-standard-out) both;
+    animation-delay: var(--duration-dramatic);
   }
 
   .svg-pictograph.animate :global(.svg-glyph) {
-    animation: svgReveal 0.3s ease-out both;
-    animation-delay: 480ms;
+    animation: svgReveal var(--duration-emphasis) var(--ease-standard-out) both;
+    animation-delay: calc(var(--stagger-relaxed) * 6);
   }
 
   @keyframes svgReveal {

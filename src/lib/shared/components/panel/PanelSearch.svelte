@@ -117,7 +117,10 @@
     border-radius: 12px;
     color: var(--theme-text, white);
     font-size: var(--font-size-sm);
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .panel-search__input:focus {

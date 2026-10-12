@@ -120,13 +120,13 @@
   .look-label {
     grid-area: label;
     color: var(--theme-text-dim);
-    transition: opacity var(--duration-fast, 150ms) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
   .swatches {
     grid-area: swatches;
     display: inline-flex;
     gap: 4px;
-    transition: opacity var(--duration-fast, 150ms) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
   .swatch {
     width: 14px;
@@ -138,7 +138,7 @@
     grid-area: text;
     min-width: 0;
     overflow-wrap: anywhere;
-    transition: opacity var(--duration-fast, 150ms) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
   .look :global(.filter-chip) {
     grid-area: chip;

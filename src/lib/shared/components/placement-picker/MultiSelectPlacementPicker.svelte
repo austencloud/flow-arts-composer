@@ -487,10 +487,10 @@ through two custom properties, --placement-grid-size (stacked) and
     cursor: pointer;
     padding: 4px;
     transition:
-      background-color var(--duration-normal) ease,
-      border-color var(--duration-normal) ease,
-      opacity var(--duration-normal) ease,
-      transform var(--duration-normal) ease;
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     overflow: hidden;
   }
 

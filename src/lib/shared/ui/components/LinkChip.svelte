@@ -73,8 +73,8 @@
     text-decoration: none;
     text-align: left;
     transition:
-      border-color 140ms ease,
-      background-color 140ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard);
   }
 
   .link-chip i {

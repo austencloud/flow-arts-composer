@@ -20,7 +20,7 @@
     margin: var(--sheet-handle-spacing) auto;
     border-radius: var(--sheet-handle-radius);
     background: var(--sheet-handle-bg);
-    transition: background var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
     /* Open-hand affordance: signals the sheet can be grabbed and slid.
        Matches base Drawer's .drawer-handle (see drawer/Drawer.css). */
@@ -49,7 +49,7 @@
   }
 
   .sheet-drag-handle {
-    animation: handlePulse 2s ease-in-out;
+    animation: handlePulse var(--duration-scene) var(--ease-standard);
   }
 
   /* High contrast mode */

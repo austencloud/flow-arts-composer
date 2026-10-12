@@ -91,7 +91,9 @@
     <h4 class="feedback-title deleted-title">
       {attachment.metadata?.feedbackTitle || t("inbox_ui_untitled_feedback")}
     </h4>
-    <p class="deleted-notice">{t("inbox_ui_this_feedback_item_no_longer_exists")}</p>
+    <p class="deleted-notice">
+      {t("inbox_ui_this_feedback_item_no_longer_exists")}
+    </p>
   {:else}
     <!-- Normal state -->
     <button
@@ -154,7 +156,11 @@
     width: 100%;
     min-width: 200px;
     max-width: 280px;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .feedback-card.clickable:hover {

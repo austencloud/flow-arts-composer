@@ -44,9 +44,7 @@
       sortedModifiers.length === 1 &&
       sortedModifiers[0] === "shift"
   );
-  const displayModifiers = $derived(
-    isQuestionMarkCombo ? [] : sortedModifiers
-  );
+  const displayModifiers = $derived(isQuestionMarkCombo ? [] : sortedModifiers);
   const displayKey = $derived(isQuestionMarkCombo ? "?" : resolvedParsed.key);
 
   // Format modifier for display
@@ -147,7 +145,12 @@
     letter-spacing: 0.3px;
     white-space: nowrap;
 
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      border-bottom-width var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   /* Modifier keys - theme accent tint */

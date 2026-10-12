@@ -26,7 +26,11 @@
   } from "./components/shell/ShopProductShell.svelte";
   import ShopPurchaseCta from "./components/shell/ShopPurchaseCta.svelte";
   import { deriveCrossSell } from "./domain/catalog-listings";
-  import { purchaseCtaLabel, resolvePurchaseState, SALES_LIVE } from "./domain/purchase-state";
+  import {
+    purchaseCtaLabel,
+    resolvePurchaseState,
+    SALES_LIVE,
+  } from "./domain/purchase-state";
   import DeckFanCover, {
     DEAL_MS as FAN_DEAL_MS,
     DEAL_STAGGER as FAN_DEAL_STAGGER,
@@ -35,8 +39,13 @@
   import BuyButton from "./components/BuyButton.svelte";
   import CardAnatomyExplainer from "./components/CardAnatomyExplainer.svelte";
   import PreorderPriceNote from "./components/PreorderPriceNote.svelte";
-  import { activePriceCents, preorderWindowOpen, formatUsd } from "./domain/preorder-pricing";
-  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import {
+    activePriceCents,
+    preorderWindowOpen,
+    formatUsd,
+  } from "./domain/preorder-pricing";
+  import { Crossfade, popIn } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import BaseCard from "#lib/features/create/generate/components/cards/BaseCard.svelte";
   import { LOOPType } from "#lib/features/create/generate/circular/domain/models/circular-models.js";
   import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
@@ -49,9 +58,10 @@
   import { BackgroundType } from "@austencloud/backgrounds";
   import { DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
   import { untrack } from "svelte";
-  import { scale } from "svelte/transition";
-  import { quintOut } from "svelte/easing";
-  import { prewarmCovers, renderCoverFront } from "./services/cover-front-renderer";
+  import {
+    prewarmCovers,
+    renderCoverFront,
+  } from "./services/cover-front-renderer";
   import { DEFAULT_SHOP_PROP, bakedCoverUrl } from "./domain/shop-prop-options";
   import ShopPropPicker from "./components/ShopPropPicker.svelte";
   import { loopPreviewCards } from "./services/loop-preview-cards";
@@ -77,7 +87,10 @@
     type LoopConfig,
   } from "./domain/loop-config";
   import { getActivityLogger } from "#lib/shared/analytics/get-activity-logger.js";
-  import { trackVariantSelected, trackPropSelected } from "./analytics/shop-funnel";
+  import {
+    trackVariantSelected,
+    trackPropSelected,
+  } from "./analytics/shop-funnel";
   import { trackViewOnceLoaded } from "./analytics/shop-funnel-view.svelte";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -93,7 +106,10 @@
   // $state rune (svelte store_rune_conflict).
   const store = createStoreState(getProductLoader(), singleBuyCheckoutCreator);
   setStoreContext({ state: store });
-  store.loadProducts(false, untrack(() => seedProducts));
+  store.loadProducts(
+    false,
+    untrack(() => seedProducts)
+  );
 
   // The ONE purchasable SKU. Flat $30 regardless of dials.
   const customSku = $derived(
@@ -111,8 +127,12 @@
   const skuByFlavor = $derived(
     new Map(
       flavorSkus
-        .map((p) => [flavorSlugFromComponents(p.loopComponents ?? []), p] as const)
-        .filter((e): e is [LoopFlavor, (typeof flavorSkus)[number]] => e[0] != null)
+        .map(
+          (p) => [flavorSlugFromComponents(p.loopComponents ?? []), p] as const
+        )
+        .filter(
+          (e): e is [LoopFlavor, (typeof flavorSkus)[number]] => e[0] != null
+        )
     )
   );
 
@@ -121,7 +141,11 @@
   // this fires on the first flush; cold, it fires when the fetch settles. A
   // failed load still trips it (isLoading goes false in the finally), so step 1
   // never silently goes missing.
-  trackViewOnceLoaded("loop-deck", () => store.isLoading, () => customSku);
+  trackViewOnceLoaded(
+    "loop-deck",
+    () => store.isLoading,
+    () => customSku
+  );
 
   // ── the packs vs the dials: packs are RECIPES the dials can't express
   //    (multi-length, multi-level, per-slice turn caps), so the pack selection
@@ -134,7 +158,9 @@
     // Two events on purpose: shop_loop_pack_selected is the usage gate that
     // decides whether the pack picker survives; shop_variant_selected is funnel
     // step 2. Different questions — don't collapse one into the other.
-    getActivityLogger().logActivity("shop_loop_pack_selected", "shop", { pack: id });
+    getActivityLogger().logActivity("shop_loop_pack_selected", "shop", {
+      pack: id,
+    });
     trackVariantSelected({
       listing: "loop-deck",
       productId: customSku?.id,
@@ -169,7 +195,9 @@
   const currentLoopType = $derived(
     flavor === "variety"
       ? LOOPType.ROTATED
-      : (generateLOOPType(new Set(flavor.split("-") as unknown as LOOPComponent[])) ??
+      : (generateLOOPType(
+          new Set(flavor.split("-") as unknown as LOOPComponent[])
+        ) ??
           // Every LOOP_FLAVORS slug maps to an implemented type; this guard
           // only matters if the checkout whitelist ever drifts ahead of the engine.
           LOOPType.ROTATED)
@@ -220,7 +248,9 @@
   function startPayoff() {
     dealNonce++;
     haptics?.trigger("success");
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
     // Vertical layout: the buy button always sits below the stage — bring the
     // flourish into view so the payoff isn't playing off-screen.
     previewBoxEl?.scrollIntoView({
@@ -229,7 +259,9 @@
     });
     clearTimeout(payoffTimer);
     // Shimmer + ready-chip once the re-deal settles (gather, deal, last stagger).
-    const settle = reduced ? 0 : FAN_GATHER_MS + FAN_DEAL_MS + FAN_DEAL_STAGGER * 5;
+    const settle = reduced
+      ? 0
+      : FAN_GATHER_MS + FAN_DEAL_MS + FAN_DEAL_STAGGER * 5;
     payoffTimer = setTimeout(() => {
       shineRun = true;
       payoffShown = true;
@@ -260,18 +292,22 @@
   };
   // The 4th chip: Custom. Violet (the app accent family) so it reads as a
   // sibling option, not a heat level.
-  const CUSTOM_BG = "linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #6d28d9 100%)";
+  const CUSTOM_BG =
+    "linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #6d28d9 100%)";
 
   // ── bento palette: LOOP/prop tile gradients (shared with the deck-releaser
   //    LoopBentoBoard so the surfaces match). ──
   const cc = getCardColors(BackgroundType.COSMIC);
   // LOOP identity gold, brightened off the drab olive so the hero tile reads warm.
-  const LOOP_COLOR = "linear-gradient(135deg, #d9c24a 0%, #a89a2c 48%, #6f6318 100%)";
+  const LOOP_COLOR =
+    "linear-gradient(135deg, #d9c24a 0%, #a89a2c 48%, #6f6318 100%)";
   const LOOP_SHADOW = "50deg 60% 42%";
-  const PROP_TILE_COLOR = "linear-gradient(135deg, #a855f7 0%, #9333ea 50%, #7e22ce 100%)";
+  const PROP_TILE_COLOR =
+    "linear-gradient(135deg, #a855f7 0%, #9333ea 50%, #7e22ce 100%)";
   const PROP_TILE_SHADOW = "275deg 70% 50%";
   // Mix = a bit of every level: baby-blue → silver → gold.
-  const MIX_LEVEL_COLOR = "linear-gradient(135deg, #7dd3fc 0%, #cbd5e1 45%, #fbbf24 100%)";
+  const MIX_LEVEL_COLOR =
+    "linear-gradient(135deg, #7dd3fc 0%, #cbd5e1 45%, #fbbf24 100%)";
   // Alpha-gradient with a faint violet bias (not flat opacity-grey — the dark-mode
   // "cheap tell" the 2026 research flagged).
   const SECONDARY_TILE_COLOR =
@@ -300,7 +336,10 @@
   function stepLevel(dir: number) {
     enterCustom();
     if (level === "mix") level = dir > 0 ? "3" : "1";
-    else level = String(Math.max(1, Math.min(3, Number(level) + dir))) as LoopLevel;
+    else
+      level = String(
+        Math.max(1, Math.min(3, Number(level) + dir))
+      ) as LoopLevel;
     buzz();
   }
   const LENGTH_STEPS = AVAILABLE_LENGTHS.map(Number);
@@ -311,7 +350,8 @@
       length = "8";
     } else {
       const i = LENGTH_STEPS.indexOf(Number(length));
-      const next = LENGTH_STEPS[Math.max(0, Math.min(LENGTH_STEPS.length - 1, i + dir))];
+      const next =
+        LENGTH_STEPS[Math.max(0, Math.min(LENGTH_STEPS.length - 1, i + dir))];
       length = String(next) as LoopLength;
     }
     buzz();
@@ -329,7 +369,9 @@
   //    default instead of a warning label. Half steps unlock at Level 3. ──
   let turnIntensity = $state(DEFAULT_MAX_TURNS);
   const showTurns = $derived(level !== "1");
-  const turnAllowed = $derived(level === "3" ? TURN_VALUES_HALF : TURN_VALUES_WHOLE);
+  const turnAllowed = $derived(
+    level === "3" ? TURN_VALUES_HALF : TURN_VALUES_WHOLE
+  );
   // Dropping from L3 snaps a fractional ceiling onto the whole-turn scale.
   $effect(() => {
     if (level !== "3" && (turnIntensity * 1) % 1 !== 0)
@@ -421,7 +463,9 @@
         await Promise.all(
           cards.map((c) =>
             c.sequence && !bakedCoverUrl(c, propType)
-              ? renderCoverFront(c, { propType, maxWidthPx: renderW }).catch(() => {})
+              ? renderCoverFront(c, { propType, maxWidthPx: renderW }).catch(
+                  () => {}
+                )
               : Promise.resolve()
           )
         );
@@ -436,7 +480,8 @@
     });
   });
   const fanCards = $derived(
-    previewCards ?? (selectedSku ? (selectedSku.coverCards ?? []) : varietyCards)
+    previewCards ??
+      (selectedSku ? (selectedSku.coverCards ?? []) : varietyCards)
   );
   // Stage caption stays short: whole sentences up to ~160 chars. The full
   // flavor copy lives in the flavor modal — the stage is for the cards.
@@ -454,7 +499,7 @@
         : flavor === "variety"
           ? VARIETY_COPY
           : (selectedSku?.description ??
-              generateExplanationText(currentLoopComponents))
+            generateExplanationText(currentLoopComponents))
     )
   );
 
@@ -496,7 +541,10 @@
           .then((cards) => {
             cards?.forEach((c) => {
               if (!bakedCoverUrl(c, prop))
-                void renderCoverFront(c, { propType: prop, maxWidthPx: renderW });
+                void renderCoverFront(c, {
+                  propType: prop,
+                  maxWidthPx: renderW,
+                });
             });
           })
           .catch(() => {});
@@ -662,7 +710,7 @@
       {#if payoffShown}
         <div
           class="payoff-chip"
-          transition:scale={{ duration: 300, easing: quintOut, start: 0.85 }}
+          transition:popIn={{ duration: DURATION.emphasis, start: 0.85 }}
         >
           Your deck is ready · 54 cards · {price}
         </div>
@@ -671,87 +719,86 @@
   {/snippet}
 
   {#snippet configurator()}
-          <!-- ── one visible 4-way choice: three difficulty tiers + Custom.
+    <!-- ── one visible 4-way choice: three difficulty tiers + Custom.
                The big numeral is the "achievable bubble" a newcomer reads
                first (1 → 2 → 3, easy to hard); the pack name + range sit under
                it so the personality survives. Custom is the 4th bubble. ── -->
-          <span class="picker-label">Pick a difficulty</span>
-          <div class="preset-row" role="group" aria-label="Deck difficulty">
-            {#each LOOP_PACKS as p, i (p.id)}
-              <button
-                type="button"
-                class="preset"
-                class:active={pack === p.id}
-                aria-pressed={pack === p.id}
-                style:--preset-bg={PACK_BG[p.id]}
-                style:--preset-text={PACK_TEXT[p.id]}
-                onclick={() => leaveCustom(p.id)}
-              >
-                <span class="preset-num" aria-hidden="true">{i + 1}</span>
-                <span class="preset-body">
-                  <span class="preset-name">{p.name}</span>
-                  <span class="preset-sub">{p.sub}</span>
-                </span>
-                {#if pack === p.id}
-                  <i class="fas fa-check-circle preset-check" aria-hidden="true"></i>
-                {/if}
-              </button>
-            {/each}
-            <!-- Custom hands off to the Deck Architect — its slice builder
+    <span class="picker-label">Pick a difficulty</span>
+    <div class="preset-row" role="group" aria-label="Deck difficulty">
+      {#each LOOP_PACKS as p, i (p.id)}
+        <button
+          type="button"
+          class="preset"
+          class:active={pack === p.id}
+          aria-pressed={pack === p.id}
+          style:--preset-bg={PACK_BG[p.id]}
+          style:--preset-text={PACK_TEXT[p.id]}
+          onclick={() => leaveCustom(p.id)}
+        >
+          <span class="preset-num" aria-hidden="true">{i + 1}</span>
+          <span class="preset-body">
+            <span class="preset-name">{p.name}</span>
+            <span class="preset-sub">{p.sub}</span>
+          </span>
+          {#if pack === p.id}
+            <i class="fas fa-check-circle preset-check" aria-hidden="true"></i>
+          {/if}
+        </button>
+      {/each}
+      <!-- Custom hands off to the Deck Architect — its slice builder
                  outgrew the inline dials, so the listing stays a dead-simple
                  pick-a-difficulty choice. -->
-            <a
-              class="preset preset-custom"
-              href="/shop/loop-deck/architect"
-              style:--preset-bg={CUSTOM_BG}
-              style:--preset-text="#ffffff"
-            >
-              <span class="preset-num" aria-hidden="true">
-                <i class="fas fa-sliders"></i>
-              </span>
-              <span class="preset-body">
-                <span class="preset-name">Custom</span>
-                <span class="preset-sub">open the Deck Architect</span>
-              </span>
-              <i class="fas fa-arrow-right preset-check" aria-hidden="true"></i>
-            </a>
-          </div>
-          <!-- Composition line: names the selected option and its recipe.
+      <a
+        class="preset preset-custom"
+        href="/shop/loop-deck/architect"
+        style:--preset-bg={CUSTOM_BG}
+        style:--preset-text="#ffffff"
+      >
+        <span class="preset-num" aria-hidden="true">
+          <i class="fas fa-sliders"></i>
+        </span>
+        <span class="preset-body">
+          <span class="preset-name">Custom</span>
+          <span class="preset-sub">open the Deck Architect</span>
+        </span>
+        <i class="fas fa-arrow-right preset-check" aria-hidden="true"></i>
+      </a>
+    </div>
+    <!-- Composition line: names the selected option and its recipe.
                Reserved height so pack↔custom swaps never shove the board. -->
-          <p class="composition-line" class:custom={!activePack}>
-            {activePack
-              ? `${activePack.name}: ${activePack.composition}`
-              : "Custom: the dials below drive your order."}
-          </p>
+    <p class="composition-line" class:custom={!activePack}>
+      {activePack
+        ? `${activePack.name}: ${activePack.composition}`
+        : "Custom: the dials below drive your order."}
+    </p>
 
-          <!-- ── the bento board. Custom dials moved to the Deck Architect —
+    <!-- ── the bento board. Custom dials moved to the Deck Architect —
                a pack buyer sees three packs and a prop, nothing else. ── -->
-          <div class="bento-board">
-            <!-- Prop: always visible, pack or custom — picking your prop is
+    <div class="bento-board">
+      <!-- Prop: always visible, pack or custom — picking your prop is
                  giving us your order, not customizing the recipe. -->
-            <div class="tile-row">
-              <div class="tile prop-shell">
-                <BaseCard
-                  title="Prop"
-                  currentValue=""
-                  clickable={false}
-                  color={SECONDARY_TILE_COLOR}
-                  shadowColor="0deg 0% 0%"
-                  gridColumnSpan={2}
-                >
-                  <ShopPropPicker
-                    value={propType}
-                    onchange={(p) => {
-                      propType = p;
-                      buzz();
-                      trackPropSelected("loop-deck", customSku?.id, p);
-                    }}
-                  />
-                </BaseCard>
-              </div>
-            </div>
-
-          </div>
+      <div class="tile-row">
+        <div class="tile prop-shell">
+          <BaseCard
+            title="Prop"
+            currentValue=""
+            clickable={false}
+            color={SECONDARY_TILE_COLOR}
+            shadowColor="0deg 0% 0%"
+            gridColumnSpan={2}
+          >
+            <ShopPropPicker
+              value={propType}
+              onchange={(p) => {
+                propType = p;
+                buzz();
+                trackPropSelected("loop-deck", customSku?.id, p);
+              }}
+            />
+          </BaseCard>
+        </div>
+      </div>
+    </div>
   {/snippet}
 
   {#snippet priceNote()}
@@ -797,20 +844,22 @@
     <span class="section-kicker">How it works</span>
     <h2 class="section-title">What's on the card</h2>
     <p class="section-body">
-      Every card in the deck holds one sequence. Scan the code in the corner and that
-      sequence opens in the app, where you can watch it with any prop at any speed,
-      save it to your catalog, and practice it a step at a time.
+      Every card in the deck holds one sequence. Scan the code in the corner and
+      that sequence opens in the app, where you can watch it with any prop at
+      any speed, save it to your catalog, and practice it a step at a time.
     </p>
     <p class="section-body">
-      A LOOP Deck is generated, not curated: 54 sequences dealt from the dials you
-      picked, so the deck you order is not the deck anyone else gets.
+      A LOOP Deck is generated, not curated: 54 sequences dealt from the dials
+      you picked, so the deck you order is not the deck anyone else gets.
     </p>
     <p class="section-hint">
-      Tap or point at any part of the card, or any row in the list. Its match lights up.
+      Tap or point at any part of the card, or any row in the list. Its match
+      lights up.
     </p>
     <CardAnatomyExplainer card={anatomyCard} showShuffle={false} />
     <p class="section-note">
-      That QR code is live. Scan it with your phone and this card's sequence opens.
+      That QR code is live. Scan it with your phone and this card's sequence
+      opens.
     </p>
   {/snippet}
 </ShopProductShell>
@@ -833,9 +882,21 @@
     /* Nebula glow painted into the background layers (always behind content, so
        no z-index fight with the crossfade). Premium dark-mode cue, not a flat box. */
     background:
-      radial-gradient(56% 48% at 50% 40%, rgba(139, 108, 255, 0.34), transparent 68%),
-      radial-gradient(38% 34% at 68% 66%, rgba(84, 209, 196, 0.12), transparent 70%),
-      radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+      radial-gradient(
+        56% 48% at 50% 40%,
+        rgba(139, 108, 255, 0.34),
+        transparent 68%
+      ),
+      radial-gradient(
+        38% 34% at 68% 66%,
+        rgba(84, 209, 196, 0.12),
+        transparent 70%
+      ),
+      radial-gradient(
+        circle at 50% 38%,
+        rgba(255, 255, 255, 0.05),
+        rgba(255, 255, 255, 0.015)
+      );
     /* FIXED stage height: fill-mode crossfade layers stack absolutely inside,
        so no config swap can resize the box (no-layout-shift by construction).
        Hero-scaled: the fan is the beauty shot and the cards have to read as
@@ -866,7 +927,7 @@
        line instead of wrapping mid-phrase. Padding is the only guard. */
     padding: 0 16px;
     align-self: center;
-    transition: opacity 250ms ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
   /* While the ready chip is up it owns the stage: the description fades but
      keeps its space (visibility trick, no layout shift). */
@@ -890,7 +951,8 @@
     z-index: 2;
   }
   .payoff-shine.run {
-    animation: payoff-sweep 950ms ease-out forwards;
+    animation: payoff-sweep var(--duration-scene) var(--ease-standard-out)
+      forwards;
   }
   @keyframes payoff-sweep {
     from {
@@ -959,12 +1021,23 @@
     border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.18);
     /* Each preset wears its level color — the one-tap row is the headline act. */
-    background: var(--preset-bg, linear-gradient(135deg, rgba(139, 108, 255, 0.1), rgba(139, 108, 255, 0.02)));
+    background: var(
+      --preset-bg,
+      linear-gradient(
+        135deg,
+        rgba(139, 108, 255, 0.1),
+        rgba(139, 108, 255, 0.02)
+      )
+    );
     color: var(--preset-text, var(--theme-text, #fff));
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
     cursor: pointer;
     text-align: left;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease, filter 0.15s ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard);
   }
   .preset:hover {
     border-color: rgba(255, 255, 255, 0.55);
@@ -1056,7 +1129,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    transition: opacity 0.25s ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
     /* theme vars the real generate cards read for their type scale */
     --card-text-size: 22px;
     --card-text-weight: 800;

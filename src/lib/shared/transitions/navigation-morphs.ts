@@ -1,4 +1,5 @@
 import { LAUNCHPAD_TILES } from "#lib/shared/landing/components/launchpad/launchpad-tiles.js";
+import type { NavigationLike } from "@austencloud/motion";
 
 /** Landing destinations with a shared-element counterpart on the home page. */
 export const LAUNCHPAD_MORPH_PATHS: readonly string[] = Object.freeze(
@@ -7,10 +8,7 @@ export const LAUNCHPAD_MORPH_PATHS: readonly string[] = Object.freeze(
 
 const launchpadMorphPaths = new Set(LAUNCHPAD_MORPH_PATHS);
 
-type RouteLocation = {
-  url: Pick<URL, "pathname">;
-  route: { id: string | null };
-};
+type RouteLocation = NonNullable<NavigationLike["from"]>;
 
 const SHOP_INDEX_PATH = "/shop";
 

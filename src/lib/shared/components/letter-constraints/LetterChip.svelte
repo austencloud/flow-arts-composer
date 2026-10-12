@@ -50,7 +50,13 @@ Supports include (green) and exclude (red) modes
       sans-serif;
 
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      border-width var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
 
     touch-action: manipulation;
   }

@@ -744,8 +744,8 @@
     white-space: nowrap;
     flex-shrink: 0;
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .back-pill:hover {
@@ -783,8 +783,8 @@
     cursor: pointer;
     white-space: nowrap;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   /* Touch screens get the full target. The 36px button is a mouse size; on a
@@ -829,10 +829,10 @@
     cursor: pointer;
     white-space: nowrap;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .sort-trigger:hover {
@@ -876,8 +876,7 @@
   .sort-chevron {
     font-size: 10px;
     opacity: 0.5;
-    transition: transform var(--duration-fast, 150ms)
-      cubic-bezier(0.34, 1.2, 0.64, 1);
+    transition: transform var(--duration-fast) var(--ease-spring);
   }
 
   .sort-chevron.rotated {
@@ -902,8 +901,8 @@
     transform: scale(0.92) translateY(-4px);
     transform-origin: top left;
     transition:
-      opacity 180ms ease,
-      transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-spring);
   }
 
   .sort-popover.visible {
@@ -930,19 +929,19 @@
     opacity: 0;
     transform: translateY(-4px);
     transition:
-      background var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .sort-popover.visible .sort-option {
     opacity: 1;
     transform: translateY(0);
     transition:
-      background var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease,
-      opacity 150ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .sort-option:hover,
@@ -983,7 +982,7 @@
   .check-icon {
     font-size: var(--font-size-compact, 12px);
     color: var(--theme-accent);
-    animation: checkPop 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: checkPop var(--duration-normal) var(--ease-spring);
   }
 
   @keyframes checkPop {
@@ -1046,8 +1045,8 @@
     white-space: nowrap;
     flex-shrink: 0;
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .filters-pill:hover {
@@ -1212,8 +1211,8 @@
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .zoom-btn:hover:not(:disabled) {

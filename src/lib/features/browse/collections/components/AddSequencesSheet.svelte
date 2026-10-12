@@ -474,7 +474,7 @@ compensation), so the detail view behind this sheet updates on its own.
     font-size: var(--font-size-sm, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .done-btn:hover {

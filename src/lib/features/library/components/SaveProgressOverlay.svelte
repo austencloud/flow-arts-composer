@@ -112,7 +112,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeIn var(--duration-emphasis) ease;
+    animation: fadeIn var(--duration-emphasis) var(--ease-standard);
   }
 
   @keyframes fadeIn {
@@ -240,7 +240,9 @@
     gap: 12px;
     padding: 8px 12px;
     border-radius: 8px;
-    transition: all var(--duration-emphasis) ease;
+    transition:
+      background-color var(--duration-emphasis) var(--ease-standard),
+      opacity var(--duration-emphasis) var(--ease-standard);
   }
 
   .step.completed {
@@ -273,7 +275,9 @@
     font-size: var(--font-size-compact);
     font-weight: 600;
     flex-shrink: 0;
-    transition: all var(--duration-emphasis) ease;
+    transition:
+      background-color var(--duration-emphasis) var(--ease-standard),
+      color var(--duration-emphasis) var(--ease-standard);
   }
 
   .step.completed .step-indicator {
@@ -318,7 +322,7 @@
   .step-label {
     font-size: var(--font-size-compact);
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.8));
-    transition: color var(--duration-emphasis) ease;
+    transition: color var(--duration-emphasis) var(--ease-standard);
   }
 
   .step.completed .step-label {
@@ -347,7 +351,7 @@
       var(--semantic-success, var(--semantic-success))
     );
     border-radius: 2px;
-    transition: width 0.5s ease;
+    transition: width var(--duration-dramatic) var(--ease-standard);
   }
 
   /* Success Animation */
@@ -356,7 +360,7 @@
     flex-direction: column;
     align-items: center;
     gap: 16px;
-    animation: successBounce 0.5s ease;
+    animation: successBounce var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes successBounce {
@@ -392,8 +396,8 @@
   .success-circle i {
     font-size: var(--font-size-3xl);
     color: white;
-    animation: checkPop var(--duration-emphasis) ease var(--duration-normal)
-      both;
+    animation: checkPop var(--duration-emphasis) var(--ease-standard)
+      var(--duration-normal) both;
   }
 
   @keyframes checkPop {

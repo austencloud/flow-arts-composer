@@ -2,7 +2,10 @@
   import { getFestivalContext } from "../../context/festival-context";
   import { auth } from "#lib/shared/auth/firebase.js";
   import { Timestamp } from "firebase/firestore";
-  import type { TeachingPortfolio, BioVersion } from "../../domain/models/teaching-portfolio";
+  import type {
+    TeachingPortfolio,
+    BioVersion,
+  } from "../../domain/models/teaching-portfolio";
   import { AUSTEN_PORTFOLIO_SEED } from "../../data/portfolio-seed";
   import WorkshopSection from "./WorkshopSection.svelte";
   import ActSection from "./ActSection.svelte";
@@ -71,7 +74,8 @@
       <i class="fas fa-chalkboard-teacher empty-icon" aria-hidden="true"></i>
       <h3 class="empty-title">Set up your teaching portfolio</h3>
       <p class="empty-body">
-        Add your workshops, bios, and performance history so festival organizers can find you.
+        Add your workshops, bios, and performance history so festival organizers
+        can find you.
       </p>
       <div class="empty-actions">
         <button class="primary-btn" onclick={createBlankPortfolio}>
@@ -122,7 +126,6 @@
     max-width: 1400px;
     margin: 0 auto;
   }
-
 
   .empty-state {
     flex: 1;
@@ -235,7 +238,7 @@
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.4));
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: color var(--transition-fast, 0.15s);
+    transition: color var(--transition-fast, var(--duration-fast));
   }
 
   .ghost-add-btn:hover {

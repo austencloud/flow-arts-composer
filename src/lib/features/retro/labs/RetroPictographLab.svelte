@@ -39,8 +39,14 @@
   });
 
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === "ArrowLeft") { labState.prev(); e.preventDefault(); }
-    if (e.key === "ArrowRight") { labState.next(); e.preventDefault(); }
+    if (e.key === "ArrowLeft") {
+      labState.prev();
+      e.preventDefault();
+    }
+    if (e.key === "ArrowRight") {
+      labState.next();
+      e.preventDefault();
+    }
   }
 </script>
 
@@ -99,7 +105,10 @@
       <div class="size-grid">
         {#each PREVIEW_SIZES as size (size)}
           <div class="size-card">
-            <div class="canvas-frame" style="width: {size}px; height: {size}px;">
+            <div
+              class="canvas-frame"
+              style="width: {size}px; height: {size}px;"
+            >
               <canvas
                 bind:this={canvasRefs[size]}
                 width={INTERNAL_SIZE}
@@ -134,7 +143,6 @@
     gap: 0.75rem;
   }
 
-
   .nav-bar {
     display: flex;
     align-items: center;
@@ -155,9 +163,9 @@
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   @media (hover: hover) {
@@ -191,14 +199,12 @@
     letter-spacing: 0.5px;
   }
 
-
   .layer-chips {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
     justify-content: center;
   }
-
 
   .lab-status {
     display: flex;
@@ -212,7 +218,6 @@
   .lab-error {
     color: var(--semantic-error, #ef4444);
   }
-
 
   .lab-preview {
     flex: 1;

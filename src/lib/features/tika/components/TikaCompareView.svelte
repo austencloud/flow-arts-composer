@@ -42,7 +42,9 @@
   const modelAOption = $derived(availableModels.find((m) => m.id === modelA));
   const modelBOption = $derived(availableModels.find((m) => m.id === modelB));
 
-  const combinedStatus = $derived<"submitted" | "streaming" | "ready" | "error">(
+  const combinedStatus = $derived<
+    "submitted" | "streaming" | "ready" | "error"
+  >(
     statusA === "streaming" || statusB === "streaming"
       ? "streaming"
       : statusA === "submitted" || statusB === "submitted"
@@ -62,7 +64,11 @@
         onModelChange={onModelAChange}
       />
     </div>
-    <button aria-label="Exit compare mode" class="exit-compare" onclick={onExitCompare}>
+    <button
+      aria-label="Exit compare mode"
+      class="exit-compare"
+      onclick={onExitCompare}
+    >
       <i class="fas fa-times" aria-hidden="true"></i>
       Exit Compare
     </button>
@@ -97,11 +103,7 @@
   </div>
 
   <div class="compare-input">
-    <TikaInputArea
-      status={combinedStatus}
-      {onSubmit}
-      {onStop}
-    />
+    <TikaInputArea status={combinedStatus} {onSubmit} {onStop} />
   </div>
 </div>
 
@@ -140,7 +142,9 @@
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.6));
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
   }
 
@@ -180,6 +184,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .exit-compare { transition: none; }
+    .exit-compare {
+      transition: none;
+    }
   }
 </style>

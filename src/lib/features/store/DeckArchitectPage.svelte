@@ -25,7 +25,11 @@
   import DeckFanCover from "./components/DeckFanCover.svelte";
   import BuyButton from "./components/BuyButton.svelte";
   import PreorderPriceNote from "./components/PreorderPriceNote.svelte";
-  import { activePriceCents, preorderWindowOpen, formatUsd } from "./domain/preorder-pricing";
+  import {
+    activePriceCents,
+    preorderWindowOpen,
+    formatUsd,
+  } from "./domain/preorder-pricing";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import ShopPropPicker from "./components/ShopPropPicker.svelte";
   import StepperCard from "#lib/shared/components/stepper-card/StepperCard.svelte";
@@ -34,7 +38,12 @@
   import { DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
   import { getCardColors } from "#lib/shared/create/domain/card-colors.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import {
+    Crossfade,
+    growFade,
+    popIn,
+  } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import LOOPExpandedOverlay from "#lib/features/create/generate/components/cards/LOOPExpandedOverlay.svelte";
   import { LOOPType } from "#lib/features/create/generate/circular/domain/models/circular-models.js";
   import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
@@ -43,8 +52,6 @@
     generateLOOPType,
   } from "#lib/shared/create/services/loop-type-utils.js";
   import { LOOP_COMPONENT_MAP } from "#lib/features/create/generate/shared/domain/constants/loop-constants.js";
-  import { scale, slide } from "svelte/transition";
-  import { quintOut } from "svelte/easing";
   import { DEFAULT_SHOP_PROP } from "./domain/shop-prop-options";
   import { prewarmCovers } from "./services/cover-front-renderer";
   import {
@@ -65,7 +72,10 @@
     type LoopConfig,
   } from "./domain/loop-config";
   import { getActivityLogger } from "#lib/shared/analytics/get-activity-logger.js";
-  import { trackVariantSelected, trackPropSelected } from "./analytics/shop-funnel";
+  import {
+    trackVariantSelected,
+    trackPropSelected,
+  } from "./analytics/shop-funnel";
   import { trackViewOnceLoaded } from "./analytics/shop-funnel-view.svelte";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -96,7 +106,11 @@
   // into it: that one is the usage gate deciding whether the Architect stays,
   // this one is the funnel's entry step. Gated on the load settling so
   // price/preorder are real (see the identical guard in the configurator).
-  trackViewOnceLoaded("loop-deck-architect", () => store.isLoading, () => customSku);
+  trackViewOnceLoaded(
+    "loop-deck-architect",
+    () => store.isLoading,
+    () => customSku
+  );
 
   const flavorSkus = $derived(
     store.products
@@ -106,8 +120,12 @@
   const skuByFlavor = $derived(
     new Map(
       flavorSkus
-        .map((p) => [flavorSlugFromComponents(p.loopComponents ?? []), p] as const)
-        .filter((e): e is [LoopFlavor, (typeof flavorSkus)[number]] => e[0] != null)
+        .map(
+          (p) => [flavorSlugFromComponents(p.loopComponents ?? []), p] as const
+        )
+        .filter(
+          (e): e is [LoopFlavor, (typeof flavorSkus)[number]] => e[0] != null
+        )
     )
   );
 
@@ -163,10 +181,19 @@
     } else {
       // Full (or over): donate cards from the biggest slice so a valid
       // recipe stays valid across the add.
-      const biggest = slices.reduce((a, b) => (b.count > a.count ? b : a), slices[0]!);
+      const biggest = slices.reduce(
+        (a, b) => (b.count > a.count ? b : a),
+        slices[0]!
+      );
       const give = Math.min(6, Math.max(1, biggest.count - 1));
       biggest.count -= give;
-      slices.push({ id: ++uid, count: give, flavor: "rotated", level: 1, steps: 8 });
+      slices.push({
+        id: ++uid,
+        count: give,
+        flavor: "rotated",
+        level: 1,
+        steps: 8,
+      });
     }
     buzz();
     trackRecipeShape();
@@ -258,12 +285,15 @@
     const snapshot = slices.map((s) => ({ ...s }));
     const token = ++sliceToken;
     snapshot.forEach((s, i) => {
-      recipeSliceCard(s, propType, skuByFlavor.get(s.flavor), i).then((card) => {
-        if (token !== sliceToken) return;
-        sliceCards[i] = card;
-      });
+      recipeSliceCard(s, propType, skuByFlavor.get(s.flavor), i).then(
+        (card) => {
+          if (token !== sliceToken) return;
+          sliceCards[i] = card;
+        }
+      );
     });
-    if (sliceCards.length > snapshot.length) sliceCards.length = snapshot.length;
+    if (sliceCards.length > snapshot.length)
+      sliceCards.length = snapshot.length;
   });
 
   // ── hero fan: settled-commit like the listing; re-deals only when a slice
@@ -318,7 +348,8 @@
   /** Low-opacity wash for the card frame. */
   function flavorWash(flavor: LoopFlavor): string {
     const stops = flavorColors(flavor).map(
-      (c, i, a) => `color-mix(in srgb, ${c} 13%, transparent) ${(i / Math.max(1, a.length - 1)) * 55}%`
+      (c, i, a) =>
+        `color-mix(in srgb, ${c} 13%, transparent) ${(i / Math.max(1, a.length - 1)) * 55}%`
     );
     return stops.length > 1
       ? `linear-gradient(135deg, ${stops.join(", ")}, transparent 80%)`
@@ -356,7 +387,8 @@
     const s = slices[i];
     if (!s) return;
     const idx = RECIPE_STEPS.indexOf(s.steps as (typeof RECIPE_STEPS)[number]);
-    const next = RECIPE_STEPS[Math.max(0, Math.min(RECIPE_STEPS.length - 1, idx + dir))];
+    const next =
+      RECIPE_STEPS[Math.max(0, Math.min(RECIPE_STEPS.length - 1, idx + dir))];
     if (next !== undefined && next !== s.steps) setSteps(i, next);
   }
   const TURN_STEPS_WHOLE = [1, 2, 3];
@@ -468,7 +500,11 @@
   {#snippet media()}
     <!-- The live deck preview: the running receipt for the recipe below.
          Fill-mode crossfade, so the stage never resizes mid-edit. -->
-    <div class="rail-stage" bind:clientWidth={previewW} bind:clientHeight={previewH}>
+    <div
+      class="rail-stage"
+      bind:clientWidth={previewW}
+      bind:clientHeight={previewH}
+    >
       <Crossfade key={settledFanKey} fill>
         <div class="preview-inner">
           <DeckFanCover
@@ -541,148 +577,154 @@
          its own tile board, read as a cramped list beside the buy cluster. -->
     <!-- workbench bar: the one invariant + the one action, always visible -->
     <div class="workbench-bar">
-              <div
-                class="total-meter"
-                class:ok={problem === null}
-                role="status"
-                aria-live="polite"
-              >
-                <span class="total-count">{total} / {DECK_SIZE}</span>
-                <span class="total-note">{problem ?? "Ready to preorder."}</span>
-              </div>
-              {#if slices.length < MAX_RECIPE_SLICES}
-                <button type="button" class="add-slice" onclick={addSlice}>
-                  <i class="fas fa-plus" aria-hidden="true"></i> Add a slice
-                </button>
-              {/if}
-            </div>
+      <div
+        class="total-meter"
+        class:ok={problem === null}
+        role="status"
+        aria-live="polite"
+      >
+        <span class="total-count">{total} / {DECK_SIZE}</span>
+        <span class="total-note">{problem ?? "Ready to preorder."}</span>
+      </div>
+      {#if slices.length < MAX_RECIPE_SLICES}
+        <button type="button" class="add-slice" onclick={addSlice}>
+          <i class="fas fa-plus" aria-hidden="true"></i> Add a slice
+        </button>
+      {/if}
+    </div>
 
-            <div class="slice-list">
-              {#each slices as slice, i (slice.id)}
-                {@const accent = flavorColors(slice.flavor)[0]!}
-                <!-- No row transition: slide outros hung inside the grid
+    <div class="slice-list">
+      {#each slices as slice, i (slice.id)}
+        {@const accent = flavorColors(slice.flavor)[0]!}
+        <!-- No row transition: slide outros hung inside the grid
                      (inert ghost rows), and correctness beats choreography.
                      Each slice wears its LOOP components' canonical colors
                      (combos juxtapose as gradient stops, never mixed). -->
-                <div
-                  class="slice-row"
-                  style:--slice-accent={accent}
-                  style:--slice-wash={flavorWash(slice.flavor)}
-                >
-                  {#if sliceCards[i]}
-                    <!-- The sample is a real card — tap it to read it full
+        <div
+          class="slice-row"
+          style:--slice-accent={accent}
+          style:--slice-wash={flavorWash(slice.flavor)}
+        >
+          {#if sliceCards[i]}
+            <!-- The sample is a real card — tap it to read it full
                          size. maxCardWidth pins it: the fan sizes from its
                          container, and an uncapped card ballooned to page
                          width on phones. -->
-                    <button
-                      type="button"
-                      class="slice-sample"
-                      aria-label="View this sample card full size"
-                      onclick={() => (sampleView = i)}
-                    >
-                      <DeckFanCover
-                        cards={[sliceCards[i]]}
-                        deckName={flavorLabel(slice.flavor)}
-                        {propType}
-                        cardWidth={sampleCardW}
-                        maxCardWidth={sampleCardW}
-                        exactCount={1}
-                        interactive={false}
-                      />
-                      <span class="sample-hint" aria-hidden="true">
-                        <i class="fas fa-magnifying-glass-plus"></i>
-                      </span>
-                    </button>
-                  {:else}
-                    <div class="slice-sample" aria-hidden="true">
-                      <div class="sample-skeleton"></div>
-                    </div>
-                  {/if}
-                  <div class="slice-controls">
-                    {#if slices.length > 1}
-                      <button
-                        type="button"
-                        class="remove-btn"
-                        aria-label="Remove slice"
-                        onclick={() => removeSlice(i)}
-                      >
-                        <i class="fas fa-times" aria-hidden="true"></i>
-                      </button>
-                    {/if}
-                    <!-- ONE control language: every dial is a bento tile (the
-                         listing page's exact components) — no pill/tile mix. -->
-                    <div class="tile-grid" class:has-turns={slice.level >= 2}>
-                      <div class="tile">
-                        <StepperCard
-                          title="Cards"
-                          currentValue={slice.count}
-                          minValue={1}
-                          maxValue={DECK_SIZE}
-                          description="THIS SLICE"
-                          color="linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #6d28d9 100%)"
-                          shadowColor="262deg 60% 45%"
-                          onIncrement={() => setCount(i, slice.count + 1)}
-                          onDecrement={() => setCount(i, slice.count - 1)}
-                        />
-                      </div>
-                      <div
-                        class="tile flavor-tile"
-                        style:--flavor-size={flavorLabel(slice.flavor).length > 28
-                          ? "12px"
-                          : flavorLabel(slice.flavor).length > 14
-                            ? "15px"
-                            : "22px"}
-                      >
-                        <BaseCard
-                          title="Flavor"
-                          currentValue={flavorLabel(slice.flavor)}
-                          color={flavorTileBg(slice.flavor)}
-                          shadowColor="0deg 0% 0%"
-                          onClick={() => (flavorEdit = i)}
-                        />
-                      </div>
-                      <div class="tile">
-                        <StepperCard
-                          title="Level"
-                          currentValue={slice.level}
-                          minValue={1}
-                          maxValue={3}
-                          description={LEVEL_DESC[slice.level] ?? ""}
-                          color={DIFFICULTY_LEVELS[slice.level]?.cssBg ?? cc.level.color}
-                          textColor={DIFFICULTY_LEVELS[slice.level]?.text ?? "white"}
-                          shadowColor="0deg 0% 0%"
-                          onIncrement={() => stepSliceLevel(i, 1)}
-                          onDecrement={() => stepSliceLevel(i, -1)}
-                        />
-                      </div>
-                      <div class="tile">
-                        <StepperCard
-                          title="Steps"
-                          currentValue={slice.steps}
-                          minValue={4}
-                          maxValue={16}
-                          description="PER CARD"
-                          color={cc.length.color}
-                          shadowColor={cc.length.shadowColor}
-                          onIncrement={() => stepSliceSteps(i, 1)}
-                          onDecrement={() => stepSliceSteps(i, -1)}
-                        />
-                      </div>
-                      {#if slice.level >= 2}
-                        <div class="tile turns-tile" transition:slide={{ duration: 200, easing: quintOut, axis: "y" }}>
-                          <TurnIntensityCard
-                            currentIntensity={slice.maxTurns ?? 1}
-                            allowedValues={slice.level === 3 ? TURN_STEPS_HALF : TURN_STEPS_WHOLE}
-                            onIntensityChange={(v: number) => setTurns(i, v)}
-                            shadowColor="140deg 70% 45%"
-                          />
-                        </div>
-                      {/if}
-                    </div>
-                  </div>
-                </div>
-              {/each}
+            <button
+              type="button"
+              class="slice-sample"
+              aria-label="View this sample card full size"
+              onclick={() => (sampleView = i)}
+            >
+              <DeckFanCover
+                cards={[sliceCards[i]]}
+                deckName={flavorLabel(slice.flavor)}
+                {propType}
+                cardWidth={sampleCardW}
+                maxCardWidth={sampleCardW}
+                exactCount={1}
+                interactive={false}
+              />
+              <span class="sample-hint" aria-hidden="true">
+                <i class="fas fa-magnifying-glass-plus"></i>
+              </span>
+            </button>
+          {:else}
+            <div class="slice-sample" aria-hidden="true">
+              <div class="sample-skeleton"></div>
             </div>
+          {/if}
+          <div class="slice-controls">
+            {#if slices.length > 1}
+              <button
+                type="button"
+                class="remove-btn"
+                aria-label="Remove slice"
+                onclick={() => removeSlice(i)}
+              >
+                <i class="fas fa-times" aria-hidden="true"></i>
+              </button>
+            {/if}
+            <!-- ONE control language: every dial is a bento tile (the
+                         listing page's exact components) — no pill/tile mix. -->
+            <div class="tile-grid" class:has-turns={slice.level >= 2}>
+              <div class="tile">
+                <StepperCard
+                  title="Cards"
+                  currentValue={slice.count}
+                  minValue={1}
+                  maxValue={DECK_SIZE}
+                  description="THIS SLICE"
+                  color="linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #6d28d9 100%)"
+                  shadowColor="262deg 60% 45%"
+                  onIncrement={() => setCount(i, slice.count + 1)}
+                  onDecrement={() => setCount(i, slice.count - 1)}
+                />
+              </div>
+              <div
+                class="tile flavor-tile"
+                style:--flavor-size={flavorLabel(slice.flavor).length > 28
+                  ? "12px"
+                  : flavorLabel(slice.flavor).length > 14
+                    ? "15px"
+                    : "22px"}
+              >
+                <BaseCard
+                  title="Flavor"
+                  currentValue={flavorLabel(slice.flavor)}
+                  color={flavorTileBg(slice.flavor)}
+                  shadowColor="0deg 0% 0%"
+                  onClick={() => (flavorEdit = i)}
+                />
+              </div>
+              <div class="tile">
+                <StepperCard
+                  title="Level"
+                  currentValue={slice.level}
+                  minValue={1}
+                  maxValue={3}
+                  description={LEVEL_DESC[slice.level] ?? ""}
+                  color={DIFFICULTY_LEVELS[slice.level]?.cssBg ??
+                    cc.level.color}
+                  textColor={DIFFICULTY_LEVELS[slice.level]?.text ?? "white"}
+                  shadowColor="0deg 0% 0%"
+                  onIncrement={() => stepSliceLevel(i, 1)}
+                  onDecrement={() => stepSliceLevel(i, -1)}
+                />
+              </div>
+              <div class="tile">
+                <StepperCard
+                  title="Steps"
+                  currentValue={slice.steps}
+                  minValue={4}
+                  maxValue={16}
+                  description="PER CARD"
+                  color={cc.length.color}
+                  shadowColor={cc.length.shadowColor}
+                  onIncrement={() => stepSliceSteps(i, 1)}
+                  onDecrement={() => stepSliceSteps(i, -1)}
+                />
+              </div>
+              {#if slice.level >= 2}
+                <div
+                  class="tile turns-tile"
+                  transition:growFade={{ duration: DURATION.normal, axis: "y" }}
+                >
+                  <TurnIntensityCard
+                    currentIntensity={slice.maxTurns ?? 1}
+                    allowedValues={slice.level === 3
+                      ? TURN_STEPS_HALF
+                      : TURN_STEPS_WHOLE}
+                    onIntensityChange={(v: number) => setTurns(i, v)}
+                    shadowColor="140deg 70% 45%"
+                  />
+                </div>
+              {/if}
+            </div>
+          </div>
+        </div>
+      {/each}
+    </div>
   {/snippet}
 </ShopProductShell>
 
@@ -696,7 +738,7 @@
   >
     <div
       class="sample-lightbox"
-      transition:scale={{ start: 0.92, duration: 220, easing: quintOut }}
+      transition:popIn={{ start: 0.92, duration: DURATION.normal }}
     >
       <!-- Front AND back, side by side — the full physical card, both faces. -->
       <div class="lightbox-faces">
@@ -732,9 +774,7 @@
       <div class="lightbox-anim">
         <LazyMount
           loader={() =>
-            import(
-              "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte"
-            )}
+            import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
           active={sampleView !== null}
           props={{
             sequence: sliceCards[sampleView]!.sequence,
@@ -759,7 +799,11 @@
           <i class="fas fa-shuffle" aria-hidden="true"></i>
           {rerolling ? "Dealing..." : "Deal another"}
         </button>
-        <button type="button" class="lightbox-close" onclick={() => (sampleView = null)}>
+        <button
+          type="button"
+          class="lightbox-close"
+          onclick={() => (sampleView = null)}
+        >
           Done
         </button>
       </div>
@@ -777,7 +821,7 @@
   >
     <div
       class="loop-col"
-      transition:scale={{ start: 0.95, duration: 250, easing: quintOut }}
+      transition:popIn={{ start: 0.95, duration: DURATION.normal }}
     >
       <div class="loop-host">
         <LOOPExpandedOverlay
@@ -805,8 +849,16 @@
     border-radius: 16px;
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     background:
-      radial-gradient(70% 60% at 50% 40%, rgba(139, 108, 255, 0.3), transparent 70%),
-      radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+      radial-gradient(
+        70% 60% at 50% 40%,
+        rgba(139, 108, 255, 0.3),
+        transparent 70%
+      ),
+      radial-gradient(
+        circle at 50% 38%,
+        rgba(255, 255, 255, 0.05),
+        rgba(255, 255, 255, 0.015)
+      );
     padding: 14px;
     /* Tall enough that the sampled cards read as cards. The info column beside
        it runs taller than this at every desktop width, so the stage claiming
@@ -882,7 +934,8 @@
     padding: 16px 18px;
     border-radius: 16px;
     /* Flavor identity: the slice wears its flavor's accent on the frame. */
-    border: 1px solid color-mix(in srgb, var(--slice-accent, #8b6cff) 45%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--slice-accent, #8b6cff) 45%, transparent);
     background:
       var(
         --slice-wash,
@@ -893,7 +946,8 @@
         )
       ),
       var(--theme-card-bg, rgba(255, 255, 255, 0.03));
-    box-shadow: 0 4px 18px color-mix(in srgb, var(--slice-accent, #8b6cff) 14%, transparent);
+    box-shadow: 0 4px 18px
+      color-mix(in srgb, var(--slice-accent, #8b6cff) 14%, transparent);
   }
   /* An odd straggler in a 2-up grid spans the band instead of orphaning a hole. */
   .slice-row:last-child:nth-child(odd):not(:first-child) {
@@ -912,7 +966,7 @@
     color: inherit;
     border-radius: 12px;
     cursor: pointer;
-    transition: transform 0.18s ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
   button.slice-sample:hover {
     transform: scale(1.03);
@@ -934,7 +988,7 @@
     color: rgba(255, 255, 255, 0.9);
     font-size: 12px;
     opacity: 0.65;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
     pointer-events: none;
   }
   .sample-skeleton {
@@ -967,7 +1021,9 @@
     background: none;
     color: rgba(255, 255, 255, 0.55);
     cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition:
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
   .remove-btn:hover {
     color: #ff8a8a;
@@ -1025,7 +1081,9 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 700;
     cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
   .add-slice:hover {
     border-color: rgba(216, 180, 254, 0.9);
@@ -1176,7 +1234,6 @@
     background: rgba(255, 255, 255, 0.06);
     color: #fff;
   }
-
 
   @media (max-width: 720px) {
     /* Phone slice card: the (bigger, tappable) sample centered up top, the

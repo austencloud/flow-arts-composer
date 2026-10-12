@@ -41,10 +41,10 @@
   const loadedSequence = $derived(poi.loadedSequence);
   const loadedSteps = $derived(poi.loadedSteps);
   const sequenceWord = $derived(
-    loadedSequence ? (loadedSequence.word || loadedSequence.name || null) : null,
+    loadedSequence ? loadedSequence.word || loadedSequence.name || null : null
   );
   const headerTitle = $derived(
-    sequenceWord ? `${sequenceWord} - Pattern Timeline` : "Pattern Timeline",
+    sequenceWord ? `${sequenceWord} - Pattern Timeline` : "Pattern Timeline"
   );
 
   // Playhead position as a percentage of the lane width. Playhead lives
@@ -135,9 +135,7 @@
     const types = e.dataTransfer?.types;
     if (!types) return;
     const isFile = types.includes("Files");
-    const isLibrary = types.includes(
-      "application/x-tka-poi-library-id",
-    );
+    const isLibrary = types.includes("application/x-tka-poi-library-id");
     if (!isFile && !isLibrary) return;
     e.preventDefault();
     e.dataTransfer!.dropEffect = "copy";
@@ -163,18 +161,12 @@
     // MIME types are present, prefer the precomputed library entry
     // since it skips a file-decode round trip.
     const libraryId = e.dataTransfer?.getData(
-      "application/x-tka-poi-library-id",
+      "application/x-tka-poi-library-id"
     );
     if (libraryId) {
-      const entry = poi.libraryEntries.find(
-        (lib) => lib.id === libraryId,
-      );
+      const entry = poi.libraryEntries.find((lib) => lib.id === libraryId);
       if (entry) {
-        await poi.dropLibraryEntryAsClip(
-          entry,
-          fileDragStart,
-          fileDragEnd,
-        );
+        await poi.dropLibraryEntryAsClip(entry, fileDragStart, fileDragEnd);
       }
       return;
     }
@@ -214,9 +206,7 @@
   }
 
   // Beat markers for the ruler
-  const beats = $derived(
-    Array.from({ length: totalSteps }, (_, i) => i + 1)
-  );
+  const beats = $derived(Array.from({ length: totalSteps }, (_, i) => i + 1));
 
   // Blend-zone overlays - one band per clip whose predecessor abuts it,
   // spanning the first `blendSteps` of the clip. Shown only in blend
@@ -257,7 +247,8 @@
       onclick={togglePlayback}
       aria-label={isPlaying ? "Pause timeline" : "Play timeline"}
     >
-      <i class="fas {isPlaying ? 'fa-pause' : 'fa-play'}" aria-hidden="true"></i>
+      <i class="fas {isPlaying ? 'fa-pause' : 'fa-play'}" aria-hidden="true"
+      ></i>
     </button>
 
     <button
@@ -308,7 +299,7 @@
       class:active={timeline.transition === "blend"}
       onclick={() =>
         poi.setTransitionMode(
-          timeline.transition === "blend" ? "hard" : "blend",
+          timeline.transition === "blend" ? "hard" : "blend"
         )}
       aria-label={timeline.transition === "blend"
         ? "Blend mode on (click for hard)"
@@ -316,7 +307,9 @@
       title="Transition: {timeline.transition}"
     >
       <i
-        class="fas {timeline.transition === 'blend' ? 'fa-wave-square' : 'fa-square'}"
+        class="fas {timeline.transition === 'blend'
+          ? 'fa-wave-square'
+          : 'fa-square'}"
         aria-hidden="true"
       ></i>
     </button>
@@ -406,8 +399,11 @@
     {#if fileDragOver}
       <div
         class="file-drop-preview"
-        style:left="{((Math.min(fileDragStart, fileDragEnd) - 1) / totalSteps) * 100}%"
-        style:width="{((Math.abs(fileDragEnd - fileDragStart) + 1) / totalSteps) * 100}%"
+        style:left="{((Math.min(fileDragStart, fileDragEnd) - 1) / totalSteps) *
+          100}%"
+        style:width="{((Math.abs(fileDragEnd - fileDragStart) + 1) /
+          totalSteps) *
+          100}%"
       >
         <i class="fas fa-image" aria-hidden="true"></i>
       </div>
@@ -468,7 +464,7 @@
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    transition: border-color 0.15s;
+    transition: border-color var(--duration-fast);
     flex-shrink: 0;
   }
 
@@ -478,7 +474,11 @@
 
   .icon-btn.active {
     border-color: var(--theme-accent, #3b82f6);
-    background: color-mix(in srgb, var(--theme-accent, #3b82f6) 18%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #3b82f6) 18%,
+      transparent
+    );
     color: var(--theme-accent, #3b82f6);
   }
 
@@ -491,12 +491,18 @@
     color: var(--theme-text-secondary, #94a3b8);
     cursor: pointer;
     font-size: var(--font-size-compact, 12px);
-    transition: border-color 0.15s, color 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      color var(--duration-fast);
     margin-left: auto;
   }
 
   .text-btn:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 60%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 60%,
+      transparent
+    );
     color: color-mix(in srgb, var(--semantic-error, #ef4444) 70%, white);
   }
 
@@ -606,16 +612,23 @@
       color-mix(in srgb, var(--theme-accent, #3b82f6) 5%, transparent) 4px,
       color-mix(in srgb, var(--theme-accent, #3b82f6) 5%, transparent) 8px
     );
-    border-left: 1px dashed color-mix(in srgb, var(--theme-accent, #3b82f6) 50%, transparent);
-    border-right: 1px dashed color-mix(in srgb, var(--theme-accent, #3b82f6) 30%, transparent);
+    border-left: 1px dashed
+      color-mix(in srgb, var(--theme-accent, #3b82f6) 50%, transparent);
+    border-right: 1px dashed
+      color-mix(in srgb, var(--theme-accent, #3b82f6) 30%, transparent);
   }
 
   .drag-preview {
     position: absolute;
     top: 4px;
     bottom: 4px;
-    background: color-mix(in srgb, var(--theme-accent, #3b82f6) 15%, transparent);
-    border: 1.5px dashed color-mix(in srgb, var(--theme-accent, #3b82f6) 60%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #3b82f6) 15%,
+      transparent
+    );
+    border: 1.5px dashed
+      color-mix(in srgb, var(--theme-accent, #3b82f6) 60%, transparent);
     border-radius: 6px;
     pointer-events: none;
     z-index: 3;
@@ -625,15 +638,24 @@
     position: absolute;
     top: 4px;
     bottom: 4px;
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 15%, transparent);
-    border: 2px dashed color-mix(in srgb, var(--semantic-success, #22c55e) 70%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 15%,
+      transparent
+    );
+    border: 2px dashed
+      color-mix(in srgb, var(--semantic-success, #22c55e) 70%, transparent);
     border-radius: 6px;
     pointer-events: none;
     z-index: 3;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: color-mix(in srgb, var(--semantic-success, #22c55e) 90%, transparent);
+    color: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 90%,
+      transparent
+    );
     font-size: 16px;
   }
 

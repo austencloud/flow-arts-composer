@@ -93,9 +93,9 @@ Consumers: VariationPill (cycle versions), PreviewPlayChip (play the sequence).
     /* Interaction */
     cursor: pointer;
     transition:
-      transform var(--duration-fast) ease,
-      background-color var(--duration-fast) ease,
-      border-color var(--duration-fast) ease;
+      transform var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .card-chip:hover {

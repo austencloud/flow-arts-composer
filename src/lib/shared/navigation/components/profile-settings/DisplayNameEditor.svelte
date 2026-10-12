@@ -200,7 +200,10 @@
     border-radius: 0.5rem;
     border: 1px solid transparent;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .icon-btn.save {
@@ -241,7 +244,10 @@
     border-radius: 0.5rem;
     color: var(--theme-text);
     font-size: var(--font-size-sm);
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .input:focus {

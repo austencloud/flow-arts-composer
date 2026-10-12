@@ -54,7 +54,9 @@
     getUserIdentityLabels(conversation.otherParticipant, t("inbox_ui_unknown"))
   );
   const displayName = $derived(
-    isGroup ? conversation.groupName || t("inbox_ui_unnamed_group") : directIdentity.primary
+    isGroup
+      ? conversation.groupName || t("inbox_ui_unnamed_group")
+      : directIdentity.primary
   );
   const draft = $derived(messageDeliveryState?.draftFor(conversation.id));
   const draftPreview = $derived.by(() => {
@@ -172,7 +174,9 @@
   {:else if conversation.unreadCount > 0}
     <span
       class="unread-badge"
-      aria-label={t("inbox_unread_messages", { count: conversation.unreadCount })}
+      aria-label={t("inbox_unread_messages", {
+        count: conversation.unreadCount,
+      })}
     >
       {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
     </span>
@@ -193,8 +197,8 @@
     text-align: left;
     cursor: pointer;
     transition:
-      background 0.2s ease,
-      transform 0.15s ease;
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .conversation-item:hover {
@@ -251,7 +255,7 @@
   .avatar-wrapper {
     position: relative;
     flex-shrink: 0;
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .conversation-item:hover .avatar-wrapper {

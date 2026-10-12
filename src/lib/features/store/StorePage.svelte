@@ -502,8 +502,8 @@
     font-weight: 700;
     text-decoration: none;
     transition:
-      filter 0.18s ease,
-      transform 0.18s ease;
+      filter var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
   .hero-cta:hover {
     filter: brightness(1.08);
@@ -554,8 +554,8 @@
     color: inherit;
     text-decoration: none;
     transition:
-      transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-      border-color 0.2s;
+      transform var(--duration-normal) var(--ease-out),
+      border-color var(--duration-normal);
   }
   .starter-tile:hover {
     transform: translateY(-4px);
@@ -628,8 +628,8 @@
     color: inherit;
     text-decoration: none;
     transition:
-      transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-      border-color 0.2s;
+      transform var(--duration-normal) var(--ease-out),
+      border-color var(--duration-normal);
   }
   .deck-tile:hover {
     transform: translateY(-4px);
@@ -736,8 +736,8 @@
     color: inherit;
     text-decoration: none;
     transition:
-      transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-      border-color 0.2s;
+      transform var(--duration-normal) var(--ease-out),
+      border-color var(--duration-normal);
   }
   .book-tile:hover {
     transform: translateY(-4px);

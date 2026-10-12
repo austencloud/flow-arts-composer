@@ -217,7 +217,12 @@
     color: #ffffff;
     font-size: 16px;
     cursor: pointer;
-    transition: all var(--duration-normal, 0.3s) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
 
     /* Amber/orange gradient for image/camera action */
@@ -226,8 +231,10 @@
       color-mix(in srgb, var(--semantic-warning, #f59e0b) 90%, transparent),
       color-mix(in srgb, var(--semantic-warning, #f59e0b) 70%, #000)
     );
-    border: 1px solid color-mix(in srgb, var(--semantic-warning, #f59e0b) 30%, transparent);
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--semantic-warning, #f59e0b) 25%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 30%, transparent);
+    box-shadow: 0 2px 8px
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 25%, transparent);
   }
 
   .capture-btn:hover:not(:disabled) {
@@ -236,13 +243,14 @@
       var(--semantic-warning, #f59e0b),
       color-mix(in srgb, var(--semantic-warning, #f59e0b) 80%, #000)
     );
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--semantic-warning, #f59e0b) 40%, transparent);
+    box-shadow: 0 4px 14px
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 40%, transparent);
     transform: scale(1.05);
   }
 
   .capture-btn:active:not(:disabled) {
     transform: scale(0.95);
-    transition: transform 0.1s ease;
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .capture-btn:focus-visible {
@@ -257,15 +265,26 @@
       color-mix(in srgb, var(--semantic-success, #22c55e) 90%, transparent),
       color-mix(in srgb, var(--semantic-success, #22c55e) 70%, #000)
     );
-    border-color: color-mix(in srgb, var(--semantic-success, #22c55e) 30%, transparent);
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--semantic-success, #22c55e) 25%, transparent);
-    animation: success-pulse var(--duration-normal, 0.3s) ease-out;
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 30%,
+      transparent
+    );
+    box-shadow: 0 2px 8px
+      color-mix(in srgb, var(--semantic-success, #22c55e) 25%, transparent);
+    animation: success-pulse var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes success-pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
 
   /* Error state */
@@ -275,8 +294,13 @@
       color-mix(in srgb, var(--semantic-error, #ef4444) 90%, transparent),
       color-mix(in srgb, var(--semantic-error, #ef4444) 70%, #000)
     );
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--semantic-error, #ef4444) 25%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 30%,
+      transparent
+    );
+    box-shadow: 0 2px 8px
+      color-mix(in srgb, var(--semantic-error, #ef4444) 25%, transparent);
   }
 
   .capture-btn:disabled {

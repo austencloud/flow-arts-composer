@@ -14,7 +14,7 @@
   keep running off screen and the budget would mean nothing.
 -->
 <script lang="ts">
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { untrack } from "svelte";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
@@ -258,7 +258,6 @@
    * medium restated, which the artwork itself already makes obvious.
    */
   const headerWord = $derived(label.split(/\s[—–-]\s/)[0]?.trim() || label);
-
 </script>
 
 <div
@@ -311,7 +310,10 @@
            keep its mandala visible under the props. -->
       <div class="composite">
         <div class="canvas-zone">
-          <div class="mandala-floor floor" style="--engine-align: {overlayAlign}">
+          <div
+            class="mandala-floor floor"
+            style="--engine-align: {overlayAlign}"
+          >
             <SequenceMandala
               sequence={{ steps: (sequence.steps ?? []) as unknown[] }}
               mode="gallery"
@@ -328,12 +330,13 @@
             />
           </div>
           {#if live}
-            <div class="live-layer" transition:fade={{ duration: DURATION.normal }}>
+            <div
+              class="live-layer"
+              transition:opaqueFade={{ duration: DURATION.normal }}
+            >
               <LazyMount
                 loader={() =>
-                  import(
-                    "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte"
-                  )}
+                  import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
                 active
                 props={{
                   sequence,
@@ -392,7 +395,10 @@
            artifact — QR, full step grid, turns — meant to be read deliberately,
            so it is a request, never the resting state. -->
       {#if hovered}
-        <div class="card-overlay" transition:fade={{ duration: DURATION.fast }}>
+        <div
+          class="card-overlay"
+          transition:opaqueFade={{ duration: DURATION.fast }}
+        >
           <PropAwareThumbnail
             {sequence}
             {lightMode}
@@ -435,12 +441,13 @@
         <div class="poster floor empty">No preview</div>
       {/if}
       {#if live}
-        <div class="live-layer" transition:fade={{ duration: DURATION.normal }}>
+        <div
+          class="live-layer"
+          transition:opaqueFade={{ duration: DURATION.normal }}
+        >
           <LazyMount
             loader={() =>
-              import(
-                "#lib/features/tunnel-collection/components/TunnelDetailPreview.svelte"
-              )}
+              import("#lib/features/tunnel-collection/components/TunnelDetailPreview.svelte")}
             active
             props={{ tunnel }}
           />
@@ -463,12 +470,13 @@
         <div class="poster floor empty">No preview</div>
       {/if}
       {#if live}
-        <div class="live-layer" transition:fade={{ duration: DURATION.normal }}>
+        <div
+          class="live-layer"
+          transition:opaqueFade={{ duration: DURATION.normal }}
+        >
           <LazyMount
             loader={() =>
-              import(
-                "#lib/features/scene-3d-collection/components/Scene3DPreview.svelte"
-              )}
+              import("#lib/features/scene-3d-collection/components/Scene3DPreview.svelte")}
             active
             props={{ scene }}
           />
@@ -480,7 +488,6 @@
       <div class="poster empty">No preview</div>
     {/if}
   </button>
-
 </div>
 
 <style>
@@ -508,8 +515,8 @@
     background: var(--theme-card-bg);
     cursor: pointer;
     transition:
-      border-color var(--duration-normal) ease,
-      transform var(--duration-normal) ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .stage:hover {
@@ -689,7 +696,7 @@
   }
 
   .tile-head {
-    transition: opacity var(--duration-fast, 150ms) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -460,7 +460,9 @@
     } catch (error) {
       console.error("Failed to send message:", error);
       showComposerFailure(
-        t("inbox_ui_this_message_could_not_be_placed_in_the_outbox_your_draft_is_still_here"),
+        t(
+          "inbox_ui_this_message_could_not_be_placed_in_the_outbox_your_draft_is_still_here"
+        ),
         error,
         "queueMessage"
       );
@@ -609,7 +611,9 @@
       maxlength={2000}
       spellcheck="true"
       disabled={isSending || !messageDeliveryState.ready}
-      aria-label={isEditing ? t("inbox_ui_edit_message") : t("inbox_ui_message_input")}
+      aria-label={isEditing
+        ? t("inbox_ui_edit_message")
+        : t("inbox_ui_message_input")}
       aria-describedby={isReplying ? "message-reply-context" : undefined}
     ></textarea>
     <button
@@ -693,7 +697,9 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 4px;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .cancel-edit-button:hover {
@@ -729,8 +735,8 @@
     overflow-y: hidden;
     outline: none;
     transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .compose-grid.editing textarea {
@@ -773,9 +779,9 @@
     color: white;
     cursor: pointer;
     transition:
-      background 0.2s ease,
-      transform 0.15s ease,
-      box-shadow 0.2s ease;
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .compose-grid.editing .send-button {
@@ -812,7 +818,7 @@
 
   .send-button i {
     font-size: var(--font-size-base);
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .send-button:hover:not(:disabled) i {

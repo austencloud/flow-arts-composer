@@ -28,7 +28,9 @@
   let errorMessage = $state("");
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const canSubmit = $derived(EMAIL_RE.test(email.trim()) && status !== "submitting");
+  const canSubmit = $derived(
+    EMAIL_RE.test(email.trim()) && status !== "submitting"
+  );
   const inputId = `waitlist-email-${source.replace(/[^a-z0-9-]/gi, "")}`;
 
   async function handleSubmit(e: Event) {
@@ -130,7 +132,9 @@
     color: var(--theme-text, #fff);
     font-size: var(--font-size-sm, 0.95rem);
     font-family: inherit;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard);
   }
   .text-input::placeholder {
     color: rgba(255, 255, 255, 0.4);
@@ -158,7 +162,9 @@
     font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
-    transition: filter 0.18s ease, transform 0.18s ease;
+    transition:
+      filter var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
   .notify-btn:hover:not(:disabled) {
     filter: brightness(1.08);

@@ -57,7 +57,10 @@
     border-radius: 8px;
     color: white;
     font-size: var(--font-size-sm);
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .user-search__input:focus {

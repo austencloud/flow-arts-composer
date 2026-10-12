@@ -893,7 +893,7 @@
     position: relative;
     z-index: 2;
     overflow: hidden;
-    transition: all var(--duration-emphasis) ease;
+    transition: height var(--duration-emphasis) var(--ease-standard);
     background: transparent;
     --text-color: rgba(255, 255, 255, 0.95);
     --foreground: rgba(255, 255, 255, 0.95);

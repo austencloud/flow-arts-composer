@@ -27,7 +27,13 @@
   let wImageProgress = $state(0);
   let imageFileInput: HTMLInputElement | undefined = $state(undefined);
 
-  const LEVELS: WorkshopLevel[] = ["introductory", "beginner", "intermediate", "advanced", "mixed"];
+  const LEVELS: WorkshopLevel[] = [
+    "introductory",
+    "beginner",
+    "intermediate",
+    "advanced",
+    "mixed",
+  ];
 
   function openNewWorkshopForm() {
     editingWorkshopId = null;
@@ -72,7 +78,8 @@
     wImageProgress = 0;
 
     try {
-      const { ref, uploadBytesResumable, getDownloadURL } = await import("firebase/storage");
+      const { ref, uploadBytesResumable, getDownloadURL } =
+        await import("firebase/storage");
       const storage = await getStorageInstance();
       const storageRef = ref(storage, `workshops/${uid}/${workshopId}/cover`);
 
@@ -81,7 +88,8 @@
       });
 
       uploadTask.on("state_changed", (snapshot) => {
-        wImageProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        wImageProgress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
       });
 
       await uploadTask;
@@ -116,7 +124,15 @@
         ...portfolio,
         classes: portfolio.classes.map((c) =>
           c.id === editingWorkshopId
-            ? { ...c, title: wTitle, level: wLevel, props, description: wDescription, solo: wSolo, imageUrl: wImageUrl }
+            ? {
+                ...c,
+                title: wTitle,
+                level: wLevel,
+                props,
+                description: wDescription,
+                solo: wSolo,
+                imageUrl: wImageUrl,
+              }
             : c
         ),
       };
@@ -221,7 +237,10 @@
       {/if}
       {#if wImageUploading}
         <div class="upload-progress-overlay">
-          <div class="upload-progress-bar" style="width: {wImageProgress}%"></div>
+          <div
+            class="upload-progress-bar"
+            style="width: {wImageProgress}%"
+          ></div>
         </div>
       {/if}
     </button>
@@ -275,8 +294,18 @@
     <label class="field-label">
       Format
       <div class="level-toggle-row">
-        <button class="level-btn" class:active={wSolo} onclick={() => (wSolo = true)} type="button">Solo</button>
-        <button class="level-btn" class:active={!wSolo} onclick={() => (wSolo = false)} type="button">Partner</button>
+        <button
+          class="level-btn"
+          class:active={wSolo}
+          onclick={() => (wSolo = true)}
+          type="button">Solo</button
+        >
+        <button
+          class="level-btn"
+          class:active={!wSolo}
+          onclick={() => (wSolo = false)}
+          type="button">Partner</button
+        >
       </div>
     </label>
   </div>
@@ -296,7 +325,10 @@
           </button>
           <button
             class="ghost danger-text"
-            onclick={() => { deleteWorkshop(editingWorkshopId!); cancelWorkshopForm(); }}
+            onclick={() => {
+              deleteWorkshop(editingWorkshopId!);
+              cancelWorkshopForm();
+            }}
             title="Delete this workshop"
             type="button"
           >
@@ -306,8 +338,16 @@
         {/if}
       </div>
       <div class="modal-right-actions">
-        <button class="secondary" onclick={cancelWorkshopForm} type="button">Cancel</button>
-        <button data-save-shortcut class="primary" onclick={saveWorkshopForm} disabled={!wTitle.trim()} type="button">
+        <button class="secondary" onclick={cancelWorkshopForm} type="button"
+          >Cancel</button
+        >
+        <button
+          data-save-shortcut
+          class="primary"
+          onclick={saveWorkshopForm}
+          disabled={!wTitle.trim()}
+          type="button"
+        >
           {editingWorkshopId ? "Save Changes" : "Add Workshop"}
         </button>
       </div>
@@ -353,17 +393,26 @@
     align-items: center;
     gap: 6px;
     padding: 6px 14px;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
     border-radius: 8px;
     color: var(--theme-accent, #6366f1);
     font-size: var(--font-size-sm, 14px);
     cursor: pointer;
-    transition: background var(--transition-fast, 0.15s);
+    transition: background var(--transition-fast, var(--duration-fast));
   }
 
   .add-btn:not(:disabled):hover {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 25%,
+      transparent
+    );
   }
 
   .workshop-list {
@@ -371,7 +420,6 @@
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 16px;
   }
-
 
   .workshop-form-body {
     padding: 20px;
@@ -440,7 +488,10 @@
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
     text-transform: capitalize;
-    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    transition:
+      color var(--duration-fast),
+      border-color var(--duration-fast),
+      background var(--duration-fast);
   }
 
   .level-btn.active {
@@ -448,7 +499,6 @@
     border-color: var(--theme-accent, #6366f1);
     color: #fff;
   }
-
 
   .hidden-file-input {
     display: none;
@@ -466,7 +516,7 @@
     justify-content: center;
     cursor: pointer;
     overflow: hidden;
-    transition: border-color var(--transition-fast, 0.15s);
+    transition: border-color var(--transition-fast, var(--duration-fast));
     box-sizing: border-box;
   }
 
@@ -514,7 +564,7 @@
     color: rgba(255, 255, 255, 0.8);
     font-size: var(--font-size-compact, 12px);
     opacity: 0;
-    transition: opacity var(--transition-fast, 0.15s);
+    transition: opacity var(--transition-fast, var(--duration-fast));
   }
 
   .image-upload-area:hover .image-change-overlay {
@@ -533,7 +583,7 @@
   .upload-progress-bar {
     height: 100%;
     background: var(--theme-accent, #6366f1);
-    transition: width 0.2s;
+    transition: width var(--duration-normal);
   }
 
   @media (prefers-reduced-motion: reduce) {

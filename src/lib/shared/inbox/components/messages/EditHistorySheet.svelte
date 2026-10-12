@@ -39,7 +39,9 @@
     <DialogPrimitive.Overlay class="history-backdrop" onclick={handleClose} />
     <DialogPrimitive.Content class="history-sheet">
       <div class="sheet-header">
-        <DialogPrimitive.Title class="sheet-title">{t("inbox_ui_edit_history")}</DialogPrimitive.Title>
+        <DialogPrimitive.Title class="sheet-title"
+          >{t("inbox_ui_edit_history")}</DialogPrimitive.Title
+        >
         <button
           type="button"
           class="close-button"
@@ -100,7 +102,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: slide-up var(--duration-normal) ease-out;
+    animation: slide-up var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes slide-up {
@@ -138,7 +140,9 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     cursor: pointer;
     border-radius: 8px;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .close-button:hover {
@@ -162,7 +166,11 @@
   }
 
   .history-item.current {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 8%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 8%,
+      transparent
+    );
     margin: 0 -20px;
     padding: 12px 20px;
     border-radius: 8px;
@@ -178,7 +186,11 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     color: var(--theme-accent, #6366f1);
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 15%,
+      transparent
+    );
     border-radius: 4px;
   }
 
@@ -221,7 +233,7 @@
       max-height: 60vh;
       border-radius: 16px;
       border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-      animation: fade-scale-in var(--duration-normal) ease-out;
+      animation: fade-scale-in var(--duration-normal) var(--ease-standard-out);
     }
 
     @keyframes fade-scale-in {

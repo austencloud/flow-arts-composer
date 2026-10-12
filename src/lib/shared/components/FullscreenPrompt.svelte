@@ -181,7 +181,7 @@ the actual fullscreen state rather than inferring from viewport size.
     cursor: pointer;
 
     /* Smooth fade-in */
-    animation: fadeIn var(--duration-emphasis) ease-out;
+    animation: fadeIn var(--duration-emphasis) var(--ease-standard-out);
   }
 
   .fullscreen-prompt-overlay:hover {
@@ -211,8 +211,7 @@ the actual fullscreen state rather than inferring from viewport size.
     gap: clamp(12px, 3vh, 20px);
 
     /* Scale-in animation */
-    animation: scaleIn var(--duration-emphasis)
-      cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: scaleIn var(--duration-emphasis) var(--ease-spring);
   }
 
   @keyframes scaleIn {
