@@ -106,7 +106,13 @@
     inset: 0;
     opacity: 0;
     animation: audition 6s ease-in-out infinite;
-    animation-delay: calc(var(--cand) * 3s);
+    animation-delay: calc(
+      var(--cand) *
+        (
+          var(--duration-scene) * 3 + var(--duration-dramatic) +
+            var(--duration-normal) + var(--stagger-normal)
+        )
+    );
   }
 
   .ring {
@@ -120,20 +126,44 @@
   }
 
   @keyframes audition {
-    0% { opacity: 0; }
-    8% { opacity: 1; }
-    46% { opacity: 1; }
-    54% { opacity: 0; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 0;
+    }
+    8% {
+      opacity: 1;
+    }
+    46% {
+      opacity: 1;
+    }
+    54% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 
   /* Ring lands as each candidate settles, releases during the swap. */
   @keyframes ring-land {
-    0%, 20% { opacity: 0; }
-    32%, 42% { opacity: 1; }
-    50%, 70% { opacity: 0; }
-    82%, 92% { opacity: 1; }
-    100% { opacity: 0; }
+    0%,
+    20% {
+      opacity: 0;
+    }
+    32%,
+    42% {
+      opacity: 1;
+    }
+    50%,
+    70% {
+      opacity: 0;
+    }
+    82%,
+    92% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

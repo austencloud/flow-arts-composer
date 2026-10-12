@@ -204,7 +204,9 @@ MotionGridSvg - SVG grid with motion arrows and hand positions
 
   .hand-point {
     filter: drop-shadow(0 0 4px currentColor);
-    transition: all 0.05s linear;
+    transition:
+      cx var(--duration-instant) linear,
+      cy var(--duration-instant) linear;
   }
 
   @media (prefers-reduced-motion: reduce) {

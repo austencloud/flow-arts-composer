@@ -125,14 +125,21 @@
           </div>
         {:else if filteredSequences.length === 0}
           <div class="empty-state">
-            {searchQuery ? "No sequences match your search" : "No sequences available"}
+            {searchQuery
+              ? "No sequences match your search"
+              : "No sequences available"}
           </div>
         {:else}
           {#each filteredSequences as seq (seq.id)}
             {@const thumbUrl = getThumbnailUrl(seq)}
             <button class="sequence-card" onclick={() => handleSelect(seq)}>
               {#if thumbUrl}
-                <img src={thumbUrl} alt={seq.word || seq.name} class="card-thumbnail" loading="lazy" />
+                <img
+                  src={thumbUrl}
+                  alt={seq.word || seq.name}
+                  class="card-thumbnail"
+                  loading="lazy"
+                />
               {:else}
                 <div class="card-placeholder">
                   <i class="fas fa-image"></i>
@@ -231,7 +238,8 @@
     gap: 12px;
     align-content: start;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2)) var(--scrollbar-track, transparent);
+    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2))
+      var(--scrollbar-track, transparent);
   }
 
   .loading-state,
@@ -259,7 +267,7 @@
     color: var(--theme-text, #ffffff);
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: border-color 0.15s;
+    transition: border-color var(--duration-fast);
   }
 
   .retry-btn:hover {
@@ -276,7 +284,7 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
     border-radius: 8px;
     cursor: pointer;
-    transition: border-color 0.15s;
+    transition: border-color var(--duration-fast);
     color: inherit;
     font: inherit;
   }

@@ -219,7 +219,9 @@ Provides instant visual feedback (correct = green glow, wrong = red shake).
 
   <!-- Question prompt -->
   <div class="prompt">
-    {#each parseStrongTags(currentQuestion?.prompt ?? "") as segment}{#if segment.bold}<strong>{segment.text}</strong>{:else}{segment.text}{/if}{/each}
+    {#each parseStrongTags(currentQuestion?.prompt ?? "") as segment}{#if segment.bold}<strong
+          >{segment.text}</strong
+        >{:else}{segment.text}{/if}{/each}
   </div>
 
   <!-- Grid with clickable points -->
@@ -285,7 +287,7 @@ Provides instant visual feedback (correct = green glow, wrong = red shake).
     height: 100%;
     background: var(--theme-accent);
     border-radius: 3px;
-    transition: width var(--duration-dramatic) cubic-bezier(0.22, 1, 0.36, 1);
+    transition: width var(--duration-dramatic) var(--ease-out);
   }
 
   .progress-text {
@@ -314,7 +316,7 @@ Provides instant visual feedback (correct = green glow, wrong = red shake).
     max-width: 360px;
     border-radius: 12px;
     overflow: hidden;
-    transition: box-shadow var(--duration-emphasis) ease;
+    transition: box-shadow var(--duration-emphasis) var(--ease-standard);
   }
 
   .quiz-grid {
@@ -328,8 +330,8 @@ Provides instant visual feedback (correct = green glow, wrong = red shake).
     fill: transparent;
     cursor: pointer;
     transition:
-      fill 0.2s ease,
-      stroke 0.2s ease;
+      fill var(--duration-normal) var(--ease-standard),
+      stroke var(--duration-normal) var(--ease-standard);
   }
 
   .click-target:hover {
@@ -344,22 +346,30 @@ Provides instant visual feedback (correct = green glow, wrong = red shake).
   /* Correct feedback - green glow */
   .click-target.correct {
     fill: color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
-    animation: correct-pulse 0.6s ease;
+    animation: correct-pulse var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes correct-pulse {
     0% {
-      fill: color-mix(in srgb, var(--semantic-success, #22c55e) 60%, transparent);
+      fill: color-mix(
+        in srgb,
+        var(--semantic-success, #22c55e) 60%,
+        transparent
+      );
     }
     100% {
-      fill: color-mix(in srgb, var(--semantic-success, #22c55e) 30%, transparent);
+      fill: color-mix(
+        in srgb,
+        var(--semantic-success, #22c55e) 30%,
+        transparent
+      );
     }
   }
 
   /* Incorrect feedback - red shake */
   .click-target.incorrect {
     fill: color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
-    animation: incorrect-shake var(--duration-dramatic) ease;
+    animation: incorrect-shake var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes incorrect-shake {
@@ -390,8 +400,12 @@ Provides instant visual feedback (correct = green glow, wrong = red shake).
     letter-spacing: 0.5px;
     background: color-mix(in srgb, var(--prop-blue, #4a9eff) 20%, transparent);
     color: var(--prop-blue, #4a9eff);
-    border: 2px solid color-mix(in srgb, var(--prop-blue, #4a9eff) 30%, transparent);
-    transition: all var(--duration-emphasis) ease;
+    border: 2px solid
+      color-mix(in srgb, var(--prop-blue, #4a9eff) 30%, transparent);
+    transition:
+      background var(--duration-emphasis) var(--ease-standard),
+      color var(--duration-emphasis) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard);
   }
 
   .mode-badge.box {

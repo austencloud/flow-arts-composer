@@ -16,10 +16,7 @@ Only renders if there are actual type-confusion gaps to report.
   function openInTika(group: ConfusionGroup) {
     if (!browser) return;
 
-    const comparison = compare(
-      group.correctLabel,
-      group.chosenLabel
-    );
+    const comparison = compare(group.correctLabel, group.chosenLabel);
 
     let question: string;
     if (comparison) {
@@ -27,9 +24,15 @@ Only renders if there are actual type-confusion gaps to report.
         `${tDynamic("learn_controls_tika_confused_intro", { correct: group.correctLabel, chosen: group.chosenLabel, count: group.count })}\n\n` +
         `${tDynamic("learn_controls_tika_letter_type", { summary: comparison.letterA.summary, number: comparison.letterA.typeNumber, name: comparison.letterA.typeName })}\n` +
         `${tDynamic("learn_controls_tika_letter_type", { summary: comparison.letterB.summary, number: comparison.letterB.typeNumber, name: comparison.letterB.typeName })}\n\n` +
-        tDynamic("learn_controls_tika_key_difference", { explanation: comparison.explanation });
+        tDynamic("learn_controls_tika_key_difference", {
+          explanation: comparison.explanation,
+        });
     } else {
-      question = tDynamic("learn_controls_tika_confused_question", { correct: group.correctLabel, chosen: group.chosenLabel, count: group.count });
+      question = tDynamic("learn_controls_tika_confused_question", {
+        correct: group.correctLabel,
+        chosen: group.chosenLabel,
+        count: group.count,
+      });
     }
 
     sessionStorage.setItem("tika-seed-message", question);
@@ -78,12 +81,18 @@ Only renders if there are actual type-confusion gaps to report.
           class="confusion-item"
           class:known={!!group.explanation}
           onclick={() => openInTika(group)}
-          aria-label={tDynamic("learn_controls_ask_tika_pair", { correct: group.correctLabel, chosen: group.chosenLabel })}
+          aria-label={tDynamic("learn_controls_ask_tika_pair", {
+            correct: group.correctLabel,
+            chosen: group.chosenLabel,
+          })}
         >
           <div class="confusion-content">
             <div class="confusion-header">
               <span class="confusion-pair">
-                {tDynamic("learn_controls_pair_versus", { correct: group.correctLabel, chosen: group.chosenLabel })}
+                {tDynamic("learn_controls_pair_versus", {
+                  correct: group.correctLabel,
+                  chosen: group.chosenLabel,
+                })}
               </span>
               {#if group.count > 1}
                 <span class="confusion-count">{group.count}x</span>
@@ -94,7 +103,16 @@ Only renders if there are actual type-confusion gaps to report.
             {/if}
           </div>
           <span class="confusion-arrow" aria-hidden="true">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </span>
@@ -134,7 +152,7 @@ Only renders if there are actual type-confusion gaps to report.
     border-radius: 8px;
     cursor: pointer;
     text-align: left;
-    transition: filter var(--duration-fast, 150ms) ease;
+    transition: filter var(--duration-fast) var(--ease-standard);
   }
 
   .confusion-item:hover {
@@ -146,8 +164,16 @@ Only renders if there are actual type-confusion gaps to report.
   }
 
   .confusion-item.known {
-    border-color: color-mix(in srgb, var(--semantic-info, #3b82f6) 30%, transparent);
-    background: color-mix(in srgb, var(--semantic-info, #3b82f6) 5%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 30%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 5%,
+      transparent
+    );
   }
 
   .confusion-content {

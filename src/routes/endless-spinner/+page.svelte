@@ -85,7 +85,10 @@
   // Same seam the CSS uses, so the strip's geometry matches the box it is given.
   let laneVertical = $state(false);
   $effect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function")
+    if (
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function"
+    )
       return;
     const mq = window.matchMedia(
       "(min-width: 1050px) and (min-height: 601px), (min-width: 601px) and (min-height: 601px) and (orientation: landscape)"
@@ -462,7 +465,6 @@
         />
       {/if}
     </main>
-
   </div>
 </div>
 
@@ -539,7 +541,9 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-size: var(--font-size-min, 0.875rem);
     text-decoration: none;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      color var(--duration-normal);
   }
 
   .home-link:hover {
@@ -805,7 +809,10 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal);
   }
 
   .retry-btn:hover {
@@ -854,7 +861,7 @@
       color-mix(in srgb, var(--theme-accent, #6366f1) 85%, white);
     box-shadow: inset 0 0 3.5rem
       color-mix(in srgb, var(--theme-accent, #6366f1) 32%, transparent);
-    animation: swap-pulse 640ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: swap-pulse var(--duration-dramatic) var(--ease-out) forwards;
   }
 
   @keyframes swap-pulse {
@@ -878,7 +885,8 @@
   }
 
   /* Responsive */
-  @media (min-width: 1050px), (min-width: 601px) and (min-height: 601px) and (orientation: landscape) {
+  @media (min-width: 1050px),
+    (min-width: 601px) and (min-height: 601px) and (orientation: landscape) {
     /* Side-by-side composition. Fires on real desktops (≥1050) AND on
        landscape mid-size windows (601–1049 wide but wider than tall, e.g. a
        ~900×780 restored window) — a stacked column there shrinks the canvas
@@ -1154,7 +1162,6 @@
       backdrop-filter: blur(12px);
       border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     }
-
   }
 
   @media (min-width: 700px) and (max-height: 600px) {

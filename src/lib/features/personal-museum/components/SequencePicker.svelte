@@ -63,12 +63,17 @@
           type="button"
           {disabled}
           aria-pressed={currentId === seqId}
-          aria-label="Place {nameFor(seqId)}{currentId === seqId ? ' (currently shown)' : ''}"
+          aria-label="Place {nameFor(seqId)}{currentId === seqId
+            ? ' (currently shown)'
+            : ''}"
           onclick={() => onPick(seqId)}
         >
           <span class="thumb">
             {#if firstStep(seqId)}
-              <PictographContainer pictographData={firstStep(seqId)} disableTransitions />
+              <PictographContainer
+                pictographData={firstStep(seqId)}
+                disableTransitions
+              />
             {/if}
           </span>
           <span class="pick-name">{nameFor(seqId)}</span>
@@ -102,8 +107,8 @@
     color: inherit;
     cursor: pointer;
     transition:
-      border-color 150ms ease,
-      background 150ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
   .pick:focus-visible {
     outline: 2px solid var(--theme-accent, #f59e0b);
@@ -111,7 +116,11 @@
   }
   @media (hover: hover) {
     .pick:not(:disabled):hover {
-      border-color: color-mix(in srgb, var(--theme-accent, #f59e0b) 45%, transparent);
+      border-color: color-mix(
+        in srgb,
+        var(--theme-accent, #f59e0b) 45%,
+        transparent
+      );
     }
   }
   .picker-grid.is-disabled .pick {
@@ -119,7 +128,11 @@
   }
   .pick.current {
     border-color: var(--theme-accent, #f59e0b);
-    background: color-mix(in srgb, var(--theme-accent, #f59e0b) 14%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #f59e0b) 14%,
+      transparent
+    );
   }
   .pick:disabled {
     cursor: default;

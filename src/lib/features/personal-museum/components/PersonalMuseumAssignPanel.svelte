@@ -70,7 +70,9 @@
   <header class="panel-head">
     <h2>Curate your gallery</h2>
     <p>
-      {#if armedSlot}Pick a sequence to place into <strong>{slotIds.indexOf(armedSlot) + 1}</strong>.
+      {#if armedSlot}Pick a sequence to place into <strong
+          >{slotIds.indexOf(armedSlot) + 1}</strong
+        >.
       {:else}Tap a frame, then tap a sequence to hang it.{/if}
     </p>
   </header>
@@ -86,13 +88,20 @@
           class:empty={!seqId}
           type="button"
           aria-pressed={armedSlot === slotId}
-          aria-label="Frame {i + 1}: {nameFor(seqId)}{pinned ? ', pinned' : seqId ? ', auto-filled' : ''}"
+          aria-label="Frame {i + 1}: {nameFor(seqId)}{pinned
+            ? ', pinned'
+            : seqId
+              ? ', auto-filled'
+              : ''}"
           onclick={() => toggleArm(slotId)}
         >
           <span class="slot-num">{i + 1}</span>
           <span class="thumb">
             {#if firstStep(seqId)}
-              <PictographContainer pictographData={firstStep(seqId)} disableTransitions />
+              <PictographContainer
+                pictographData={firstStep(seqId)}
+                disableTransitions
+              />
             {:else}
               <i class="fas fa-plus" aria-hidden="true"></i>
             {/if}
@@ -100,13 +109,23 @@
           <span class="slot-name">{nameFor(seqId)}</span>
           <span class="slot-tag" class:is-pinned={pinned}>
             {#if seqId}
-              <i class={pinned ? "fas fa-thumbtack" : "fas fa-wand-magic-sparkles"} aria-hidden="true"></i>
+              <i
+                class={pinned
+                  ? "fas fa-thumbtack"
+                  : "fas fa-wand-magic-sparkles"}
+                aria-hidden="true"
+              ></i>
               {pinned ? "Pinned" : "Auto"}
             {:else}Open{/if}
           </span>
         </button>
         {#if pinned}
-          <button class="clear" type="button" aria-label="Unpin frame {i + 1}" onclick={() => clearSlot(slotId)}>
+          <button
+            class="clear"
+            type="button"
+            aria-label="Unpin frame {i + 1}"
+            onclick={() => clearSlot(slotId)}
+          >
             <i class="fas fa-xmark" aria-hidden="true"></i>
           </button>
         {/if}
@@ -184,9 +203,9 @@
     color: inherit;
     cursor: pointer;
     transition:
-      border-color 150ms ease,
-      background 150ms ease,
-      transform 150ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
   .slot:focus-visible,
   .clear:focus-visible {
@@ -195,12 +214,20 @@
   }
   @media (hover: hover) {
     .slot:hover {
-      border-color: color-mix(in srgb, var(--theme-accent, #f59e0b) 45%, transparent);
+      border-color: color-mix(
+        in srgb,
+        var(--theme-accent, #f59e0b) 45%,
+        transparent
+      );
     }
   }
   .slot.armed {
     border-color: var(--theme-accent, #f59e0b);
-    background: color-mix(in srgb, var(--theme-accent, #f59e0b) 14%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #f59e0b) 14%,
+      transparent
+    );
   }
   .slot.empty .thumb {
     color: var(--theme-text-dim, rgba(242, 239, 230, 0.5));

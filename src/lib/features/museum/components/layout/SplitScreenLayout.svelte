@@ -22,7 +22,8 @@
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = parseFloat(stored);
-        if (!isNaN(parsed) && parsed >= MIN_RATIO && parsed <= MAX_RATIO) return parsed;
+        if (!isNaN(parsed) && parsed >= MIN_RATIO && parsed <= MAX_RATIO)
+          return parsed;
       }
     } catch {
       // localStorage unavailable
@@ -154,7 +155,7 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     border-left: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-right: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    transition: background 0.15s;
+    transition: background var(--duration-fast);
     position: relative;
   }
 
@@ -195,7 +196,10 @@
     align-items: center;
     justify-content: center;
     font-size: 10px;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast),
+      border-color var(--duration-fast);
     padding: 0;
   }
 

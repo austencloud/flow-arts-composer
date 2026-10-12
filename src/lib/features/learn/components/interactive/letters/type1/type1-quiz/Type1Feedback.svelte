@@ -40,7 +40,7 @@ Type1Feedback - Shows feedback after answer
     border-radius: 10px;
     font-size: 0.9375rem;
     text-align: center;
-    animation: slideUp var(--duration-emphasis) ease;
+    animation: slideUp var(--duration-emphasis) var(--ease-standard);
   }
 
   @keyframes slideUp {
@@ -55,14 +55,24 @@ Type1Feedback - Shows feedback after answer
   }
 
   .feedback.correct {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent);
     color: var(--theme-accent, #22d3ee);
   }
 
   .feedback.incorrect {
-    background: color-mix(in srgb, var(--semantic-warning, #fb923c) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-warning, #fb923c) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #fb923c) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-warning, #fb923c) 30%, transparent);
     color: var(--semantic-warning, #fb923c);
   }
 

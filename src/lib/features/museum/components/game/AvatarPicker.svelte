@@ -22,9 +22,18 @@
     <!-- Large preview -->
     <div class="preview-large">
       <div class="preview-shadow"></div>
-      <div class="preview-hair" style="background: {avatar.config.hairColor};"></div>
-      <div class="preview-head" style="background: {avatar.skinGradient};"></div>
-      <div class="preview-body" style="background: {avatar.jacketGradient};"></div>
+      <div
+        class="preview-hair"
+        style="background: {avatar.config.hairColor};"
+      ></div>
+      <div
+        class="preview-head"
+        style="background: {avatar.skinGradient};"
+      ></div>
+      <div
+        class="preview-body"
+        style="background: {avatar.jacketGradient};"
+      ></div>
     </div>
 
     <!-- Tile-size previews -->
@@ -110,7 +119,13 @@
       </div>
     </div>
 
-    <button class="enter-btn" onclick={() => { avatar.markChosen(); onenter(); }}>
+    <button
+      class="enter-btn"
+      onclick={() => {
+        avatar.markChosen();
+        onenter();
+      }}
+    >
       Enter the Archive
     </button>
 
@@ -172,7 +187,7 @@
     height: 18px;
     border-radius: 50% 50% 30% 30%;
     z-index: 3;
-    transition: background 0.2s;
+    transition: background var(--duration-normal);
   }
 
   .preview-head {
@@ -184,7 +199,7 @@
     border-radius: 50%;
     border: 1px solid rgba(0, 0, 0, 0.1);
     z-index: 2;
-    transition: background 0.2s;
+    transition: background var(--duration-normal);
   }
 
   .preview-body {
@@ -196,7 +211,7 @@
     border-radius: 10px 10px 5px 5px;
     border: 1px solid rgba(0, 0, 0, 0.08);
     z-index: 1;
-    transition: background 0.2s;
+    transition: background var(--duration-normal);
   }
 
   /* Tile previews */
@@ -223,7 +238,7 @@
     position: absolute;
     border-radius: 50% 50% 30% 30%;
     z-index: 3;
-    transition: background 0.2s;
+    transition: background var(--duration-normal);
   }
 
   .mini-head {
@@ -231,7 +246,7 @@
     border-radius: 50%;
     border: 1px solid rgba(0, 0, 0, 0.1);
     z-index: 2;
-    transition: background 0.2s;
+    transition: background var(--duration-normal);
   }
 
   .mini-body {
@@ -239,7 +254,7 @@
     border-radius: 3px 3px 2px 2px;
     border: 1px solid rgba(0, 0, 0, 0.08);
     z-index: 1;
-    transition: background 0.2s;
+    transition: background var(--duration-normal);
   }
 
   .preview-tile-label {
@@ -273,7 +288,10 @@
     border-radius: 50%;
     border: 2.5px solid transparent;
     cursor: pointer;
-    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
     padding: 0;
   }
 
@@ -297,7 +315,10 @@
     font-size: 15px;
     letter-spacing: 0.05em;
     cursor: pointer;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal);
   }
 
   .enter-btn:hover {

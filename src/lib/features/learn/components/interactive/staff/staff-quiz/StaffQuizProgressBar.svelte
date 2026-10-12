@@ -54,7 +54,7 @@ StaffQuizProgressBar - Progress indicator for staff quiz
       var(--theme-accent, #06b6d4)
     );
     border-radius: 3px;
-    transition: width var(--duration-emphasis) ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
 
   .progress-text {

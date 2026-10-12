@@ -49,7 +49,7 @@ StaffQuizFeedback - Feedback display after answer
     border-radius: 10px;
     font-size: 0.9375rem;
     text-align: center;
-    animation: slideUp var(--duration-emphasis) ease;
+    animation: slideUp var(--duration-emphasis) var(--ease-standard);
   }
 
   @keyframes slideUp {

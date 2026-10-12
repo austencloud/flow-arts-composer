@@ -49,7 +49,11 @@ MotionTypePage - Displays a single motion type with visualizer
       showLabels={true}
       showMotionType={false}
     />
-    <button class="cycle-button" onclick={onCycleExample} aria-label="Next example">
+    <button
+      class="cycle-button"
+      onclick={onCycleExample}
+      aria-label="Next example"
+    >
       <i class="fa-solid fa-shuffle" aria-hidden="true"></i>
       Show Another Example
     </button>
@@ -80,7 +84,7 @@ MotionTypePage - Displays a single motion type with visualizer
     max-width: 700px;
     margin: 0 auto;
     width: 100%;
-    animation: slideInUp var(--duration-dramatic) cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideInUp var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes slideInUp {
@@ -103,7 +107,12 @@ MotionTypePage - Displays a single motion type with visualizer
     background: linear-gradient(
       135deg,
       var(--type-color, var(--theme-accent, #22d3ee)) 0%,
-      color-mix(in srgb, var(--type-color, var(--theme-accent, #22d3ee)) 70%, transparent) 100%
+      color-mix(
+          in srgb,
+          var(--type-color, var(--theme-accent, #22d3ee)) 70%,
+          transparent
+        )
+        100%
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -128,7 +137,9 @@ MotionTypePage - Displays a single motion type with visualizer
     color: var(--theme-text-dim);
     font-size: 0.875rem;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .cycle-button:hover {
@@ -148,13 +159,17 @@ MotionTypePage - Displays a single motion type with visualizer
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent) 100%
     );
-    border: 2px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
+    border: 2px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
     border-radius: 12px;
     color: white;
     font-size: 1.0625rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all var(--duration-emphasis);
+    transition:
+      background var(--duration-emphasis),
+      border-color var(--duration-emphasis),
+      transform var(--duration-emphasis);
     min-height: 54px;
     margin-top: 0.5rem;
   }
@@ -165,7 +180,11 @@ MotionTypePage - Displays a single motion type with visualizer
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent) 100%
     );
-    border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 80%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 80%,
+      transparent
+    );
     transform: translateY(-2px);
   }
 

@@ -449,7 +449,7 @@
   /* Static has no arrow; its ring settles in and stays, as on the map. */
   .ring circle.shown {
     opacity: 1;
-    animation: hold-ring var(--duration-dramatic, 350ms) ease-out both;
+    animation: hold-ring var(--duration-dramatic) var(--ease-standard-out) both;
   }
 
   @keyframes hold-ring {

@@ -92,8 +92,8 @@
         <i class="fas fa-brain" aria-hidden="true"></i>
       </div>
       <div class="header-content">
-        <h3 class="panel-title">{t('train_practice_mode')}</h3>
-        <p class="panel-subtitle">{t('train_practice_mode_subtitle')}</p>
+        <h3 class="panel-title">{t("train_practice_mode")}</h3>
+        <p class="panel-subtitle">{t("train_practice_mode_subtitle")}</p>
       </div>
       <button class="close-btn" onclick={handleClose} aria-label="Close">
         <i class="fas fa-times" aria-hidden="true"></i>
@@ -220,7 +220,9 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: 0.8rem;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
   }
 
@@ -245,7 +247,9 @@
     border-radius: 12px;
     color: var(--theme-text);
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal);
     text-align: left;
   }
 

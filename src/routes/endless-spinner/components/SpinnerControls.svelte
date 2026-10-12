@@ -157,7 +157,14 @@
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      background var(--duration-normal),
+      color var(--duration-normal),
+      border-color var(--duration-normal),
+      outline-color var(--duration-normal);
   }
 
   .control-btn:disabled {

@@ -4,8 +4,7 @@
   Uses Library service instead of Browse to avoid dependency issues.
 -->
 <script lang="ts">
-
-import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -49,7 +48,8 @@ import { getLibraryRepository } from "#lib/shared/library/get-library-repository
       sequences = loaded;
     } catch (err) {
       console.error("Failed to load sequences:", err);
-      error = err instanceof Error ? err.message : t('train_load_sequences_failed');
+      error =
+        err instanceof Error ? err.message : t("train_load_sequences_failed");
     } finally {
       isLoading = false;
     }
@@ -70,7 +70,7 @@ import { getLibraryRepository } from "#lib/shared/library/get-library-repository
 <Drawer isOpen={show} onclose={onClose}>
   <div class="sequence-browser">
     <header class="browser-header">
-      <h2>{t('train_select_sequence')}</h2>
+      <h2>{t("train_select_sequence")}</h2>
       <button class="close-button" onclick={onClose} aria-label="Close">
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
@@ -81,7 +81,7 @@ import { getLibraryRepository } from "#lib/shared/library/get-library-repository
       <i class="fas fa-search" aria-hidden="true"></i>
       <input
         type="text"
-        placeholder={t('train_search_sequences')}
+        placeholder={t("train_search_sequences")}
         bind:value={searchQuery}
       />
     </div>
@@ -91,21 +91,21 @@ import { getLibraryRepository } from "#lib/shared/library/get-library-repository
       {#if isLoading}
         <div class="loading-state">
           <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-          <p>{t('train_loading_sequences')}</p>
+          <p>{t("train_loading_sequences")}</p>
         </div>
       {:else if error}
         <div class="error-state">
           <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
           <p>{error}</p>
-          <button onclick={loadSequences}>{t('train_retry')}</button>
+          <button onclick={loadSequences}>{t("train_retry")}</button>
         </div>
       {:else if filteredSequences.length === 0}
         <div class="empty-state">
           <i class="fas fa-folder-open" aria-hidden="true"></i>
           <p>
             {searchQuery
-              ? t('train_no_sequences_match')
-              : t('train_no_sequences')}
+              ? t("train_no_sequences_match")
+              : t("train_no_sequences")}
           </p>
         </div>
       {:else}
@@ -116,11 +116,13 @@ import { getLibraryRepository } from "#lib/shared/library/get-library-repository
               onclick={() => handleSelect(sequence)}
             >
               <div class="sequence-info">
-                <h3>{sequence.word || sequence.name || t('train_untitled')}</h3>
+                <h3>{sequence.word || sequence.name || t("train_untitled")}</h3>
                 <div class="sequence-meta">
                   <span
                     ><i class="fas fa-drum" aria-hidden="true"></i>
-                    {t('train_step_count', { count: sequence.steps?.length || 0 })}</span
+                    {t("train_step_count", {
+                      count: sequence.steps?.length || 0,
+                    })}</span
                   >
                   {#if sequence.author}
                     <span
@@ -173,7 +175,7 @@ import { getLibraryRepository } from "#lib/shared/library/get-library-repository
     border-radius: 8px;
     color: var(--theme-text, white);
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition: background var(--duration-normal);
   }
 
   .close-button:hover {
@@ -244,7 +246,12 @@ import { getLibraryRepository } from "#lib/shared/library/get-library-repository
     color: var(--theme-text, white);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      padding var(--duration-normal),
+      color var(--duration-normal),
+      font-size var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
   }
 
   .error-state button:hover {
@@ -274,7 +281,11 @@ import { getLibraryRepository } from "#lib/shared/library/get-library-repository
     border-radius: 12px;
     color: var(--theme-text, white);
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      transform var(--duration-normal),
+      color var(--duration-normal);
     text-align: left;
   }
 
@@ -316,7 +327,9 @@ import { getLibraryRepository } from "#lib/shared/library/get-library-repository
 
   .sequence-card > i {
     color: var(--theme-stroke-strong);
-    transition: all var(--duration-normal);
+    transition:
+      color var(--duration-normal),
+      transform var(--duration-normal);
   }
 
   .sequence-card:hover > i {

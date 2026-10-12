@@ -520,7 +520,7 @@ competing ones.
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: background var(--duration-fast) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .action.secondary,

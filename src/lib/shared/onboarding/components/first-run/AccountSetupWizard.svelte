@@ -88,8 +88,8 @@
     opacity: 0;
     transform: translateY(20px);
     transition:
-      opacity 0.4s ease,
-      transform 0.4s ease;
+      opacity var(--duration-dramatic) var(--ease-standard),
+      transform var(--duration-dramatic) var(--ease-standard);
   }
 
   .account-setup-wizard.animate-in :global(.account-setup-step) {

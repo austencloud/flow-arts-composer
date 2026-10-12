@@ -22,14 +22,16 @@
 
   // Pick a color based on which sides use the path.
   const sideColor = $derived.by(() => {
-    const hasBoth = group.sides.has(HandSide.LEFT) && group.sides.has(HandSide.RIGHT);
+    const hasBoth =
+      group.sides.has(HandSide.LEFT) && group.sides.has(HandSide.RIGHT);
     if (hasBoth) return "#a855f7"; // purple = both
     if (group.sides.has(HandSide.LEFT)) return "var(--prop-blue, #3b82f6)";
     return "var(--prop-red, #ef4444)"; // red
   });
 
   const sideBadgeLabel = $derived.by(() => {
-    const hasBoth = group.sides.has(HandSide.LEFT) && group.sides.has(HandSide.RIGHT);
+    const hasBoth =
+      group.sides.has(HandSide.LEFT) && group.sides.has(HandSide.RIGHT);
     if (hasBoth) return "both";
     if (group.sides.has(HandSide.LEFT)) return "left";
     return "right";
@@ -37,11 +39,16 @@
 
   const gridModeLabel = $derived.by(() => {
     switch (group.handPath.impliedGridMode) {
-      case GridMode.DIAMOND: return "diamond";
-      case GridMode.BOX: return "box";
-      case GridMode.SKEWED: return "skewed";
-      case GridMode.CENTRIC: return "centric";
-      default: return group.handPath.impliedGridMode;
+      case GridMode.DIAMOND:
+        return "diamond";
+      case GridMode.BOX:
+        return "box";
+      case GridMode.SKEWED:
+        return "skewed";
+      case GridMode.CENTRIC:
+        return "centric";
+      default:
+        return group.handPath.impliedGridMode;
     }
   });
 
@@ -66,7 +73,8 @@
   role="button"
   tabindex="0"
   aria-pressed={isSelected}
-  aria-label="Hand path {group.name}, used in {group.sequences.length} sequences"
+  aria-label="Hand path {group.name}, used in {group.sequences
+    .length} sequences"
 >
   <div class="card__viz">
     <PathMiniViz locations={group.handPath.locations} color={sideColor} />
@@ -105,9 +113,9 @@
     border-radius: 10px;
     cursor: pointer;
     transition:
-      border-color 0.15s ease,
-      background 0.15s ease,
-      transform 0.1s ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard);
     user-select: none;
   }
 

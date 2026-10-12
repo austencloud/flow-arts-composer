@@ -21,7 +21,9 @@
     class="bubble"
     class:playing={player.isPlaying}
     class:muted={player.muted}
-    aria-label={player.panelOpen ? "Close soundscape panel" : "Open soundscape panel"}
+    aria-label={player.panelOpen
+      ? "Close soundscape panel"
+      : "Open soundscape panel"}
     aria-expanded={player.panelOpen}
     onclick={() => player.togglePanel()}
   >
@@ -67,7 +69,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+    transition:
+      transform var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
   }
 
@@ -95,7 +100,13 @@
   }
 
   @keyframes pulse-ring {
-    0% { transform: scale(0.9); opacity: 0.7; }
-    100% { transform: scale(1.25); opacity: 0; }
+    0% {
+      transform: scale(0.9);
+      opacity: 0.7;
+    }
+    100% {
+      transform: scale(1.25);
+      opacity: 0;
+    }
   }
 </style>

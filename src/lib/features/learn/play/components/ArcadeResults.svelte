@@ -310,8 +310,8 @@ heavier 400ms beat on the last one → best line → stats → actions.
     opacity: 0;
     transform: translateY(8px);
     transition:
-      opacity var(--duration-normal, 200ms) ease,
-      transform var(--duration-normal, 200ms) ease;
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .reveal.shown {
@@ -356,16 +356,15 @@ heavier 400ms beat on the last one → best line → stats → actions.
     opacity: 1;
     transform: scale(1);
     transition:
-      transform var(--duration-emphasis, 280ms)
-        cubic-bezier(0.34, 1.56, 0.64, 1),
-      opacity var(--duration-fast, 150ms) ease;
+      transform var(--duration-emphasis) var(--ease-spring),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   /* The last earned star lands heavier: longer pop, bigger overshoot */
   .result-star.earned.heavy.popped {
     transition:
-      transform var(--duration-dramatic, 350ms) cubic-bezier(0.34, 1.9, 0.64, 1),
-      opacity var(--duration-fast, 150ms) ease;
+      transform var(--duration-dramatic) var(--ease-spring),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   /* Best delta — reserved line height, both states same footprint */
@@ -442,7 +441,7 @@ heavier 400ms beat on the last one → best line → stats → actions.
     font-weight: 600;
     color: var(--theme-text, #ffffff);
     cursor: pointer;
-    transition: filter var(--duration-fast, 150ms) ease;
+    transition: filter var(--duration-fast) var(--ease-standard);
   }
 
   .action-button:hover {

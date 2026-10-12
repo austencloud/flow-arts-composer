@@ -626,9 +626,9 @@
   .expected-indicator {
     /* Only transition color/opacity changes, not position (handled by JS animation) */
     transition:
-      fill 0.3s ease,
-      stroke 0.3s ease,
-      opacity 0.3s ease,
-      stroke-dasharray 0.3s ease;
+      fill var(--duration-emphasis) var(--ease-standard),
+      stroke var(--duration-emphasis) var(--ease-standard),
+      opacity var(--duration-emphasis) var(--ease-standard),
+      stroke-dasharray var(--duration-emphasis) var(--ease-standard);
   }
 </style>

@@ -56,7 +56,7 @@ MotionsIntroPage - Introduction to hand motions
     max-width: 700px;
     margin: 0 auto;
     width: 100%;
-    animation: slideInUp var(--duration-dramatic) cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideInUp var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes slideInUp {
@@ -76,7 +76,11 @@ MotionsIntroPage - Introduction to hand motions
     color: white;
     margin: 0;
     text-align: center;
-    background: linear-gradient(135deg, var(--theme-accent, #22d3ee) 0%, var(--theme-accent, #06b6d4) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #22d3ee) 0%,
+      var(--theme-accent, #06b6d4) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -115,13 +119,17 @@ MotionsIntroPage - Introduction to hand motions
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent) 100%
     );
-    border: 2px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
+    border: 2px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
     border-radius: 12px;
     color: white;
     font-size: 1.0625rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all var(--duration-emphasis);
+    transition:
+      background var(--duration-emphasis),
+      border-color var(--duration-emphasis),
+      transform var(--duration-emphasis);
     min-height: 54px;
     margin-top: 0.5rem;
   }
@@ -132,7 +140,11 @@ MotionsIntroPage - Introduction to hand motions
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent) 100%
     );
-    border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 80%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 80%,
+      transparent
+    );
     transform: translateY(-2px);
   }
 
