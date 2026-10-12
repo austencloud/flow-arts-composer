@@ -64,12 +64,16 @@ export function plainLine(html: string): string {
 
 /**
  * Web-only copy beside the verified units: the web page spells the four modes
- * out and drops two of the book's sentences, while the printed sheet keeps
- * the proof's words. Timing and direction are named with the Timing and
- * Direction lesson's own lines, so the Guide and the lesson say the same.
+ * out, leads each pair with where its modes travel, and drops three of the
+ * book's sentences, while the printed sheet keeps the proof's words. Timing
+ * and direction are named with the Timing and Direction lesson's own lines,
+ * so the Guide and the lesson say the same.
  */
 export const DUAL_SHIFTS_WEB_COPY = {
   modesLead: "guide_topic_dual_shifts_modes_lead",
+  sameLeadSplit: "guide_topic_dual_shifts_same_lead_split",
+  sameLeadTog: "guide_topic_dual_shifts_same_lead_tog",
+  oppLead: "guide_topic_dual_shifts_opp_lead",
 } as const satisfies Record<string, TranslationKey>;
 
 export type DualShiftTiming = "split" | "tog";
@@ -102,18 +106,23 @@ export const DUAL_SHIFT_KEY = {
   Record<string, { name: TranslationKey; says: TranslationKey }>
 >;
 
-/** The web page keeps only the book's turn to moving between α and β. */
-export function dualShiftsWebLeadLines(): string[] {
-  const lines = dualShiftsTopicLines("betweenPositions");
-  const turn = lines.findIndex((line) => /Dual<\/span>/.test(line));
-  return turn === -1 ? lines : lines.slice(turn);
-}
-
 export type DualShiftModeId =
   | "split-same"
   | "tog-same"
   | "split-opp"
   | "tog-opp";
+
+/**
+ * Each mode's one full explainer: its Timing and Direction mode guide. The
+ * Guide page names the modes and links here rather than teaching timing and
+ * direction again (one explainer per concept, 2026-10-12).
+ */
+export const DUAL_SHIFT_MODE_GUIDES = {
+  "split-same": "/timing-and-direction/split-time-same-direction",
+  "tog-same": "/timing-and-direction/together-time-same-direction",
+  "split-opp": "/timing-and-direction/split-time-opposite-direction",
+  "tog-opp": "/timing-and-direction/together-time-opposite-direction",
+} as const satisfies Record<DualShiftModeId, `/timing-and-direction/${string}`>;
 
 /** [leftFrom, leftTo, rightFrom, rightTo]; a start box holds (from === to). */
 type Move = [GridLocation, GridLocation, GridLocation, GridLocation];
