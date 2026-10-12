@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { PostVideoItem } from "#lib/shared/media-composition/domain/post-project.js";
-import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
-import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
+import type { PostVideoItem } from "@austencloud/video-editor/core";
+import {
+  compilePostProject,
+  evaluatePresetFrame,
+} from "#lib/shared/post-studio-plugin/index.js";
 import { NOW, project, take, video } from "./post-project-fixtures";
 
 const BAND = {

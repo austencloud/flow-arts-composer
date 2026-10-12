@@ -2,10 +2,13 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   PostProjectSchema,
-  POST_BOX,
   type PostAnimationItem,
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
+import {
+  POST_BOX,
   type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
+} from "@austencloud/video-editor/core";
 import {
   addTunnelHook,
   findTunnelHook,
@@ -16,11 +19,12 @@ import { createPostEditorState } from "#lib/shared/media-composition/state/post-
 import {
   animationAppearanceForItem,
   tunnelHidesMandala,
-} from "#lib/shared/share/components/post-studio/post-item-render-options.js";
-import { toolRow } from "#lib/shared/share/components/post-studio/editor/post-editor-tools.js";
+} from "#lib/shared/post-studio-plugin/ui/post-item-render-options.js";
+import { coreToolRow } from "@austencloud/video-editor/ui";
+import { tkaRow, tkaRowFacts } from "#lib/shared/post-studio-plugin/ui/tka-row.js";
 import { NOW, overlay, project, video } from "./post-project-fixtures";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 
 function withTunnel(): PostProject {
   const base = project(
@@ -39,6 +43,37 @@ function withTunnel(): PostProject {
     ]
   );
   return addTunnelHook(base, ctx, { seconds: 5 })!.project;
+}
+
+/** The tunnel with footage behind it, as lining it up on a timed take leaves it. */
+function withBackdrop(base: PostProject): PostProject {
+  const hook = findTunnelHook(base)!;
+  return {
+    ...base,
+    tracks: base.tracks.map((track) => ({
+      ...track,
+      items: track.items.map((item) =>
+        item.id === hook.id
+          ? { ...hook, tunnelHook: { ...hook.tunnelHook!, backdrop: true } }
+          : item
+      ),
+    })),
+  };
+}
+
+function editorWithTunnel(start: PostProject = withTunnel()) {
+  let clock = 1_000;
+  const editor = createPostEditorState({
+    getSequence: () =>
+      ({
+        id: "seq-tunnel",
+        displayName: "DCK",
+        steps: Array.from({ length: 8 }, () => ({ duration: 1 })),
+      }) as unknown as SequenceData,
+    now: () => (clock += 1),
+  });
+  editor.edit(() => start);
+  return editor;
 }
 
 describe("the opening tunnel's own look", () => {
@@ -146,20 +181,34 @@ describe("the look the canvas draws", () => {
 });
 
 describe("the tunnel's tools", () => {
+  beforeEach(() => localStorage.clear());
+
+  /** The selected item's row, as tka's plugin builds it. */
+  function rowOf(editor: ReturnType<typeof editorWithTunnel>) {
+    const item = editor.selectedItem!;
+    return tkaRow(
+      item,
+      coreToolRow({ kind: item.kind, music: false }),
+      tkaRowFacts(item, editor)
+    );
+  }
+
   it("are its look, its speed, its footage framing and removing it", () => {
-    expect(
-      toolRow({
-        kind: "animation",
-        hasLayout: false,
-        isTunnel: true,
-        isTunnelHook: true,
-        hasBackdrop: true,
-      })
-    ).toEqual(["back", "appearance", "speed", "crop", "delete"]);
+    const editor = editorWithTunnel(withBackdrop(withTunnel()));
+    editor.selectTunnel("anim");
+    expect(rowOf(editor)).toEqual([
+      "back",
+      "appearance",
+      "speed",
+      "crop",
+      "delete",
+    ]);
   });
 
   it("leave the animation's own row without the tunnel's speed or framing", () => {
-    const row = toolRow({ kind: "animation", hasLayout: false });
+    const editor = editorWithTunnel(withBackdrop(withTunnel()));
+    editor.selectedItemId = "anim";
+    const row = rowOf(editor);
     expect(row).not.toContain("speed");
     expect(row).not.toContain("crop");
   });
@@ -167,21 +216,6 @@ describe("the tunnel's tools", () => {
 
 describe("selecting the tunnel in the editor", () => {
   beforeEach(() => localStorage.clear());
-
-  function editorWithTunnel() {
-    let clock = 1_000;
-    const editor = createPostEditorState({
-      getSequence: () =>
-        ({
-          id: "seq-tunnel",
-          displayName: "DCK",
-          steps: Array.from({ length: 8 }, () => ({ duration: 1 })),
-        }) as unknown as SequenceData,
-      now: () => (clock += 1),
-    });
-    editor.edit(() => withTunnel());
-    return editor;
-  }
 
   it("holds the tunnel as the part in hand until another pick", () => {
     const editor = editorWithTunnel();

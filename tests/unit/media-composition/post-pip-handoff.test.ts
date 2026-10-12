@@ -1,20 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
   POST_BOX,
-  type PostAnimationItem,
-  type PostMovesItem,
   type PostVideoItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
-import { takeRole } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
-import {
+  takeRole,
   pipHandoffLanding,
-  pipHandoffOf,
   pipHandoffSample,
   type PipHandoffClocks,
-} from "#lib/shared/media-composition/domain/pip-handoff.js";
+} from "@austencloud/video-editor/core";
+import type {
+  PostAnimationItem,
+  PostMovesItem,
+} from "#lib/shared/post-studio-plugin/index.js";
+import {
+  compilePostProject,
+  evaluatePresetFrame,
+} from "#lib/shared/post-studio-plugin/index.js";
+import { pipHandoffOf } from "#lib/shared/media-composition/domain/pip-handoff.js";
 import type { TakeSample } from "#lib/shared/media-composition/domain/take-timing.js";
-import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import { NOW, overlay, project, video } from "./post-project-fixtures";
 

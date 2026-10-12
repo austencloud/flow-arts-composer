@@ -1,69 +1,66 @@
 import {
   POST_BACKGROUNDS,
   POST_CANVAS_RATIOS,
-  POST_QR_URL_RULE,
   findItem,
-  isPostCardQrUrl,
-  type PostAnimationItem,
   type PostItem,
   type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import {
+  PostTakeSchema,
+  takeFileKey,
+  TunnelHookSchema,
+  type TunnelHook,
+  resolvePostTime,
+  resolveTrackTime,
+  type PostTimeRef,
+  POST_MUSIC_LENGTH_SLACK,
+  POST_MUSIC_MAX_BEATS_PER_BAR,
+  POST_MUSIC_MAX_GAIN,
+  POST_MUSIC_MAX_SECONDS,
+  type PostMusic,
+  EASING_PRESETS,
   addTake,
-  addTitlesItem,
-  addTunnelHook,
   appendCardClip,
   appendVideoClip,
   deleteItem,
-  findTunnelHook,
-  lineUpTunnelHook,
   relinkTake,
   removeTake,
-  removeTunnelHook,
   setProjectAudio,
   setProjectBackground,
   setProjectCanvas,
-  setTunnelHookBackdropFrame,
-  setTunnelHookSpeed,
   trimItem,
   updateItem,
   type EditContext,
   type PostItemPatch,
-} from "#lib/shared/media-composition/domain/post-project-edits.js";
-import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
-import {
-  PostTakeSchema,
-  takeFileKey,
-} from "#lib/shared/media-composition/domain/post-plan.js";
-import { EASING_PRESETS } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
-import {
-  TunnelHookSchema,
-  type TunnelHook,
-} from "#lib/shared/media-composition/domain/tunnel-hook.js";
-import {
-  resolvePostTime,
-  resolveTrackTime,
-  type PostTimeRef,
-} from "#lib/shared/media-composition/domain/music-grid.js";
-import {
   POST_MUSIC_MIN_SECONDS,
   removeMusic,
   setMusic,
   syncedSourceIn,
   updateMusic,
   type MusicPatch,
-} from "#lib/shared/media-composition/domain/post-music-edits.js";
+} from "@austencloud/video-editor/core";
 import {
-  POST_MUSIC_LENGTH_SLACK,
-  POST_MUSIC_MAX_BEATS_PER_BAR,
-  POST_MUSIC_MAX_GAIN,
-  POST_MUSIC_MAX_SECONDS,
-  type PostMusic,
-} from "#lib/shared/media-composition/domain/post-music.js";
+  POST_QR_URL_RULE,
+  isPostCardQrUrl,
+  type PostAnimationItem,
+} from "#lib/shared/post-studio-plugin/index.js";
+import {
+  addTitlesItem,
+  addTunnelHook,
+  findTunnelHook,
+  lineUpTunnelHook,
+  removeTunnelHook,
+  setTunnelHookBackdropFrame,
+  setTunnelHookSpeed,
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,
 } from "#lib/shared/media-composition/domain/take-timing.js";
+import {
+  WalkthroughCaptureSchema,
+  WalkthroughScriptSchema,
+  buildWalkthrough,
+} from "#lib/shared/media-composition/domain/post-walkthrough.js";
 
 /**
  * Named edits for saved posts, in a form a command line can send. Each op is
@@ -169,6 +166,17 @@ export type PostProjectOp =
       item: string;
       /** The music's own time minus the take's own time at one moment, as align-take reports it. */
       offsetSeconds: number;
+    }
+  | {
+      op: "build-walkthrough";
+      /** The take the recording plays in. */
+      take: string;
+      /** The recording's capture.json: its clicks and page size. */
+      capture: unknown;
+      /** The lines file (see post-walkthrough.ts). */
+      script: unknown;
+      /** Build only this chapter. */
+      chapter?: string;
     };
 
 /** The curve names the hook's speed panel offers, plus `default` for the original ease. */
@@ -673,6 +681,32 @@ function applyOp(
     case "remove-music":
       if (!project.music) throw new Error(NO_MUSIC);
       return removeMusic(project, ctx);
+    case "build-walkthrough": {
+      if (typeof op.take !== "string" || op.take.length === 0)
+        throw new Error("take must name a take.");
+      if (op.chapter !== undefined && typeof op.chapter !== "string")
+        throw new Error("chapter must be a chapter's name.");
+      const capture = WalkthroughCaptureSchema.safeParse(op.capture);
+      if (!capture.success)
+        throw new Error(
+          `The capture does not read: ${firstIssue(capture.error)}`
+        );
+      const script = WalkthroughScriptSchema.safeParse(op.script);
+      if (!script.success)
+        throw new Error(
+          `The lines file does not read: ${firstIssue(script.error)}`
+        );
+      return buildWalkthrough(
+        project,
+        {
+          takeId: op.take,
+          capture: capture.data,
+          script: script.data,
+          ...(op.chapter !== undefined ? { chapter: op.chapter } : {}),
+        },
+        ctx
+      ).project;
+    }
     case "add-card": {
       if (op.qrUrl !== undefined && !isPostCardQrUrl(op.qrUrl))
         throw new Error(POST_QR_URL_RULE);
@@ -747,6 +781,16 @@ function applyOp(
 }
 
 /** Applies the ops in order. Throws, naming the failing op, before returning anything partial. */
+/** A schema's first complaint, with where it is: `lines.3.after: ...`. */
+function firstIssue(error: {
+  issues: readonly { path: readonly PropertyKey[]; message: string }[];
+}): string {
+  const issue = error.issues[0];
+  if (!issue) return "it is not valid.";
+  const where = issue.path.map(String).join(".");
+  return where ? `${where}: ${issue.message}` : issue.message;
+}
+
 export function applyPostProjectOps(
   project: PostProject,
   ops: PostProjectOp[],

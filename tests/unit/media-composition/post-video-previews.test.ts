@@ -1,10 +1,10 @@
 import { flushSync } from "svelte";
 import { describe, expect, it, vi } from "vitest";
-import type { PreviewVideoState } from "#lib/shared/media-composition/domain/preview-video.js";
+import type { PreviewVideoState } from "@austencloud/video-editor/core";
 import type {
   IPreviewVideoCache,
   PreviewVideoHandle,
-} from "#lib/shared/media-composition/services/contracts/IPreviewVideoCache.js";
+} from "@austencloud/video-editor/render";
 import {
   createPostVideoPreviewsHarness,
   type HarnessVideoSource,

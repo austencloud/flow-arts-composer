@@ -1,33 +1,29 @@
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountPlaybackMediaLayer } from "./post-studio-media-layer-harness.svelte";
-import { previewClockStep } from "#lib/shared/media-composition/services/post-preview-clock.js";
-import { FOLLOW_AHEAD_SECONDS } from "#lib/shared/media-composition/services/video-preview-seek.js";
+import {
+  previewClockStep,
+  FOLLOW_AHEAD_SECONDS,
+} from "@austencloud/video-editor/render";
 
-vi.mock(
-  "#lib/shared/media-composition/state/media-composition-context.js",
-  () => ({
-    tryGetMediaCompositionContext: () => null,
-  })
-);
 vi.mock(
   "#lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte",
   () => ({ default: () => ({}) })
 );
 vi.mock(
-  "#lib/shared/share/components/post-studio/PostStudioSequenceAnimationLayer.svelte",
+  "#lib/shared/post-studio-plugin/ui/PostStudioSequenceAnimationLayer.svelte",
   () => ({ default: () => ({}) })
 );
 vi.mock(
-  "#lib/shared/share/components/post-studio/PostStudioChoreoLayer.svelte",
+  "#lib/shared/post-studio-plugin/ui/PostStudioChoreoLayer.svelte",
   () => ({ default: () => ({}) })
 );
 vi.mock(
-  "#lib/shared/share/components/post-studio/PostStudioTunnelLayer.svelte",
+  "#lib/shared/post-studio-plugin/ui/PostStudioTunnelLayer.svelte",
   () => ({ default: () => ({}) })
 );
 vi.mock(
-  "#lib/shared/share/components/post-studio/PostStudioMandalaLayer.svelte",
+  "#lib/shared/post-studio-plugin/ui/PostStudioMandalaLayer.svelte",
   () => ({ default: () => ({}) })
 );
 

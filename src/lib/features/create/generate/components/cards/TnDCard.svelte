@@ -1,7 +1,8 @@
 <!--
-  TnDCard: the timing-and-direction bento card. Two lines, Hands and Props,
-  each the mode's words with its element icon when one is set. The card wears
-  the hand element's accent, else the prop element's, else the neutral card
+  TnDCard: the timing-and-direction bento card. Two columns, Hands and Props,
+  each a small H or P over the mode's element icon, the mode's words beneath.
+  The icons say what the card is, so it carries no title. The card wears the
+  hand element's accent, else the prop element's, else the neutral card
   surface. Click grows it into TnDPanel through the card morph.
 -->
 <script lang="ts">
@@ -12,7 +13,6 @@
   import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
   import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
   import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
-  import CardHeader from "./shared/CardHeader.svelte";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import { buildTnDCardDisplay } from "./tnd-card-display";
   import { describeCreateTnDSelection } from "./tnd-presentation";
@@ -23,13 +23,13 @@
     matchHandTurns,
     blockedHandModes = {},
     cardIndex = 0,
-    headerFontSize = "9px",
   } = $props<{
     handRelationship: TnDSelection;
     propRelationship: TnDSelection;
     matchHandTurns: boolean;
     blockedHandModes?: Partial<Record<VtgMode, string>>;
     cardIndex?: number;
+    /** Kept for the bento's shared card props; the card has no title. */
     headerFontSize?: string;
   }>();
 
@@ -60,18 +60,6 @@
     })
   );
 
-  // Icon size tracks the card, like the LOOP card's strip: a fixed 16px is
-  // punctuation on a 4K card and crowds the words on a phone.
-  // Read from the resize observer rather than `bind:clientHeight`, which also
-  // reads the height synchronously as the card mounts and forces a layout of
-  // the whole half-built Generate panel. The observer reports before the first
-  // paint, and the button has no border, so its border box is its client box.
-  let cardBox = $state<readonly ResizeObserverSize[]>();
-  const cardHeight = $derived(Math.round(cardBox?.[0]?.blockSize ?? 0));
-  const iconSize = $derived(
-    Math.min(28, Math.max(14, Math.round(cardHeight * 0.2)))
-  );
-
   function handleClick() {
     hapticService?.trigger("selection");
     morphGenerateCard("tnd", () => panelState.openTnDPanel());
@@ -95,36 +83,27 @@
   <button
     class="tnd-card"
     class:active={display.active}
-    bind:borderBoxSize={cardBox}
     onclick={handleClick}
     onkeydown={handleKeydown}
     aria-label={ariaLabel}
   >
-    <CardHeader title={t("create_ui_timing_and_direction")} {headerFontSize} />
     <div class="tnd-body" aria-hidden="true">
       {#each [display.hands, display.props] as line (line.label)}
+        {@const isHands = line.label === "Hands"}
         <div
-          class="tnd-line"
-          class:blocked={line.label === "Hands" && display.handBlocked}
+          class="tnd-col"
+          class:blocked={isHands && display.handBlocked}
+          class:no-icon={!line.element}
         >
-          <span class="line-label"
-            >{line.label === "Hands"
-              ? t("create_ui_hands")
-              : t("create_ui_props")}</span
+          <span class="col-letter"
+            >{(isHands ? t("create_ui_hands") : t("create_ui_props")).charAt(
+              0
+            )}</span
           >
-          <span class="line-value">
-            {#if line.element}
-              <img
-                class="line-icon"
-                src={line.element.iconPath}
-                alt=""
-                style="width: {iconSize}px; height: {iconSize}px;"
-              />
-            {/if}
-            <span class="line-words"
-              >{line.label === "Hands" ? handValue : propValue}</span
-            >
-          </span>
+          {#if line.element}
+            <img class="col-icon" src={line.element.iconPath} alt="" />
+          {/if}
+          <span class="col-words">{isHands ? handValue : propValue}</span>
         </div>
       {/each}
     </div>
@@ -234,97 +213,78 @@
 
   .tnd-body {
     display: flex;
-    flex-direction: column;
+    align-items: stretch;
     justify-content: center;
-    gap: clamp(2px, 1cqh, 6px);
+    gap: clamp(6px, 4cqw, 24px);
     flex: 1;
     min-height: 0;
     width: 100%;
     z-index: 2;
   }
 
-  .tnd-line {
+  .tnd-col {
+    flex: 1 1 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: clamp(4px, 1.5cqw, 8px);
+    gap: clamp(2px, 2cqh, 8px);
     min-width: 0;
   }
 
-  .line-label {
-    font-size: calc(var(--card-text-size) * 0.8);
-    font-weight: var(--card-text-weight);
-    letter-spacing: var(--card-text-spacing);
-    color: color-mix(in srgb, white 75%, transparent);
+  .col-letter {
+    font-size: calc(var(--card-text-size) * 0.65);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    color: color-mix(in srgb, white 70%, transparent);
     text-transform: uppercase;
   }
 
-  .line-value {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
+  /* Big enough to read the element at a glance, sized by whichever side of
+     the card runs out first. */
+  .col-icon {
+    flex: none;
+    width: clamp(20px, min(38cqh, 30cqw), 72px);
+    height: clamp(20px, min(38cqh, 30cqw), 72px);
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
+
+  .col-words {
     max-width: 100%;
-    font-size: var(--card-text-size);
+    font-size: calc(var(--card-text-size) * 0.62);
     font-weight: var(--card-text-weight);
     letter-spacing: var(--card-text-spacing);
-    color: white;
-  }
-
-  .line-words {
+    line-height: 1.15;
+    color: color-mix(in srgb, white 90%, transparent);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
 
-  .line-icon {
-    flex: none;
+  /* Free, or off with the LOOP: no icon, so the words take its place. */
+  .tnd-col.no-icon .col-words {
+    font-size: calc(var(--card-text-size) * 0.8);
   }
 
-  .tnd-line.blocked .line-value {
+  .tnd-col.blocked .col-words {
     color: color-mix(in srgb, white 70%, transparent);
     font-style: italic;
   }
 
-  /* Too short for two lines under the header: stacked, they rode up over the
-     title. A wide card puts Hands and Props side by side, each label over its
-     value, the way the panel lays them out. */
-  @container tnd-card (max-height: 88px) and (min-width: 240px) {
-    .tnd-body {
-      flex-direction: row;
-      align-items: center;
-      gap: clamp(12px, 6cqw, 28px);
-    }
-
-    .tnd-line {
-      flex: 0 1 auto;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .line-label {
-      font-size: calc(var(--card-text-size) * 0.65);
-      line-height: 1;
-    }
-
-    .line-value {
-      line-height: 1.15;
-    }
-  }
-
-  /* A narrow one keeps the lines stacked, without labels, set tight enough to
-     clear the title; the icons and words still say it all. */
-  @container tnd-card (max-height: 88px) and (max-width: 239.98px) {
-    .tnd-body {
-      gap: 2px;
-    }
-
-    .tnd-line {
-      line-height: 1;
-    }
-
-    .line-label {
+  /* A short card drops the words under an icon; the icon carries the mode. */
+  @container tnd-card (max-height: 96px) {
+    .tnd-col:not(.no-icon) .col-words {
       display: none;
+    }
+
+    .col-icon {
+      width: clamp(18px, 50cqh, 48px);
+      height: clamp(18px, 50cqh, 48px);
     }
   }
 </style>

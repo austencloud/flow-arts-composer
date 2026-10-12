@@ -10,13 +10,15 @@ import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/a
 import { validateArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
 import { createArrangementItem } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
 import {
-  createEmptyPostProject,
-  PostProjectSchema,
   POST_MIN_ITEM_SECONDS,
   wrapDegrees,
-  type PostArrangementItem,
   type PostTrack,
-} from "#lib/shared/media-composition/domain/post-project.js";
+} from "@austencloud/video-editor/core";
+import {
+  createEmptyPostProject,
+  PostProjectSchema,
+  type PostArrangementItem,
+} from "#lib/shared/post-studio-plugin/index.js";
 import {
   assertStudioAccount,
   hasStudioDraft,

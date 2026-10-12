@@ -11,11 +11,9 @@ import {
 import {
   takeFileKey,
   type PostTake,
-} from "#lib/shared/media-composition/domain/post-plan.js";
-import {
-  createEmptyPostProject,
   type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
+} from "@austencloud/video-editor/core";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
 import { createTakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
 
 const NOW = 1_780_000_000_000;

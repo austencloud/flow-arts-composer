@@ -9,7 +9,7 @@
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
   import { createCardPreviewState } from "#lib/shared/share/state/card-preview-state.svelte.js";
-  import PostStudio from "#lib/shared/share/components/post-studio/PostStudio.svelte";
+  import TkaEditorScope from "#lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import {
     listSyncedPostProjects,
@@ -19,7 +19,7 @@
     cancelPostCloudRetries,
   } from "./services/post-account-projects";
   import { savePostDraft } from "#lib/shared/media-composition/services/post-draft-storage.js";
-  import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+  import type { PostProject } from "@austencloud/video-editor/core";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     createPostModuleState,
@@ -27,7 +27,10 @@
   } from "./state/post-module-state.svelte";
   import { setPostModuleContext } from "./context/post-module-context";
   import { canAccessPostStudio } from "#lib/shared/sequence-viewer/services/post-studio-access.js";
-  import { providePostEditorHeader } from "#lib/shared/share/components/post-studio/editor/post-editor-header.svelte.js";
+  import {
+    providePostEditorHeader,
+    VideoEditor,
+  } from "@austencloud/video-editor/ui";
 
   interface Props {
     visible?: boolean;
@@ -227,35 +230,48 @@
         </div>
       {:else}
         {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${moduleState.selectedId}`}
-          <PostStudio
+          <TkaEditorScope
             editArrangementOnOpen={!!moduleState.selectedId?.startsWith(
               "studio-arrangement:"
             )}
             active={visible && !moduleState.showingProjects}
             sequence={moduleState.sequence}
-            initialFootage={footageToImport?.projectId ===
-            moduleState.selectedId
-              ? footageToImport.file
-              : null}
             feature={moduleState.feature ?? undefined}
             initialProject={moduleState.feature
               ? moduleState.feature.initialProject
               : (moduleState.draft ?? undefined)}
-            onSaveDraft={moduleState.feature
-              ? moduleState.feature.save
-              : authState.user && !authState.user.isAnonymous
-                ? saveSyncedFor(authState.user.uid, moduleState.sequence)
-                : moduleState.diskAvailable
-                  ? savePostDraft
-                  : undefined}
-            draftLoadError={moduleState.projectError}
             cardPreviewUrl={cardPreview.url}
             cardRenderOptions={cardPreview.renderOptions}
             animationPreviewUrl={null}
             isPreparingCard={cardPreview.isPreparing}
             isPreparingAnimation={false}
             onRequestAnimation={() => undefined}
-          />
+          >
+            {#snippet children(scope)}
+              <VideoEditor
+                host={scope.editor.host}
+                plugin={scope.plugin}
+                editor={scope.editor}
+                inspectorTarget={scope.inspectorTarget}
+                registerExport={scope.registerExport}
+                audioSeed={scope.audioSeed}
+                onAudioChange={scope.onAudioChange}
+                active={visible && !moduleState.showingProjects}
+                initialFootage={footageToImport?.projectId ===
+                moduleState.selectedId
+                  ? footageToImport.file
+                  : null}
+                onSaveDraft={moduleState.feature
+                  ? moduleState.feature.save
+                  : authState.user && !authState.user.isAnonymous
+                    ? saveSyncedFor(authState.user.uid, moduleState.sequence)
+                    : moduleState.diskAvailable
+                      ? savePostDraft
+                      : undefined}
+                draftLoadError={moduleState.projectError}
+              />
+            {/snippet}
+          </TkaEditorScope>
         {/key}
       {/if}
     </div>

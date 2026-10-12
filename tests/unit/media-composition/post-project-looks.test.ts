@@ -1,13 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
   PostProjectSchema,
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
+import {
   POST_BOX,
   POST_DEFAULT_CARD_SECONDS,
   findItem,
   mainItems,
   overlaysAnchoredTo,
   type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
+  isAnimated,
+  setTrackFlag,
+  updateItem,
+} from "@austencloud/video-editor/core";
 import {
   TUTORIAL_FADE_SECONDS,
   applyLook,
@@ -15,11 +21,6 @@ import {
   applyTutorialTemplate,
   lookOf,
 } from "#lib/shared/media-composition/domain/post-project-looks.js";
-import {
-  setTrackFlag,
-  updateItem,
-} from "#lib/shared/media-composition/domain/post-project-edits.js";
-import { isAnimated } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import {
   NOW,
   card,
@@ -31,7 +32,7 @@ import {
   video,
 } from "./post-project-fixtures";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 const LABELS = { runThrough: "Run through", slowMo: "Slow mo", card: "Card" };
 
 function valid(p: PostProject): PostProject {

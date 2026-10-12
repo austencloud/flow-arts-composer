@@ -6,10 +6,12 @@ Popover uses fixed positioning to escape overflow:hidden containers.
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import { Icon, type IconDefinition } from "@austencloud/video-editor/icons";
 
   interface Props {
     label: string;
-    icon?: string;
+    /** A FontAwesome class, or an icon definition from the video editor package. */
+    icon?: string | IconDefinition;
     /** Custom leading glyph rendered in the icon slot in place of `icon`
      *  (e.g. an inline SVG mark). Takes precedence over `icon` when set. */
     iconSnippet?: Snippet;
@@ -236,7 +238,11 @@ Popover uses fixed positioning to escape overflow:hidden containers.
   {#if iconSnippet}
     {@render iconSnippet()}
   {:else if icon}
-    <i class={icon} aria-hidden="true"></i>
+    {#if typeof icon === "string"}
+      <i class={icon} aria-hidden="true"></i>
+    {:else}
+      <Icon {icon} />
+    {/if}
   {/if}
 
   <span class="chip-label">{label}</span>
@@ -433,7 +439,8 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     border-color: var(--chip-color);
     color: var(--theme-text-on-accent, #fff);
   }
-  .filter-chip.solid.active i:not(.chip-arrow) {
+  .filter-chip.solid.active i:not(.chip-arrow),
+  .filter-chip.solid.active :global(.ve-icon) {
     color: var(--theme-text-on-accent, #fff);
   }
   @media (hover: hover) {
@@ -476,7 +483,8 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     outline-offset: 2px;
   }
 
-  .filter-chip i:not(.chip-arrow) {
+  .filter-chip i:not(.chip-arrow),
+  .filter-chip :global(.ve-icon) {
     font-size: var(--font-size-compact, 12px);
   }
 
@@ -488,7 +496,8 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     font-size: var(--font-size-sm, 14px);
   }
 
-  .filter-chip.scale-readable i:not(.chip-arrow) {
+  .filter-chip.scale-readable i:not(.chip-arrow),
+  .filter-chip.scale-readable :global(.ve-icon) {
     font-size: var(--font-size-sm, 14px);
   }
 

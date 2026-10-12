@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
-import {
-  PostProjectSchema,
-  type PostEasing,
-} from "#lib/shared/media-composition/domain/post-project.js";
+import { normalizeProject, PostProjectSchema } from "#lib/shared/post-studio-plugin/index.js";
+import type {
+  PostEasing,
+} from "@austencloud/video-editor/core";
 import {
   card,
   overlay,

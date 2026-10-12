@@ -6,7 +6,7 @@ import {
   loadPostProject,
   savePostProject,
 } from "#lib/shared/media-composition/services/post-project-store.js";
-import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
 
 const PREFIX = "tka:post-studio:project:v2:";
 

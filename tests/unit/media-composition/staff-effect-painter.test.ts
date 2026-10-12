@@ -3,18 +3,18 @@ import {
   createStaffEffectPainter,
   createStaffPointMapper,
 } from "#lib/shared/media-composition/services/staff-effect-painter.js";
-import { POST_STAFF_EFFECTS } from "#lib/shared/media-composition/domain/post-project.js";
-import type { StaffTipTrack } from "#lib/shared/media-composition/domain/staff-tip-track.js";
 import {
+  POST_STAFF_EFFECTS,
   compilePostProject,
   staffEffectRole,
-} from "#lib/shared/media-composition/domain/post-project-compiler.js";
-import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
-import { renderPostStudioFrame } from "#lib/shared/media-composition/services/post-studio-frame-compositor.js";
+  evaluatePresetFrame,
+} from "#lib/shared/post-studio-plugin/index.js";
+import type { StaffTipTrack } from "#lib/shared/media-composition/domain/staff-tip-track.js";
+import { renderPostStudioFrame } from "@austencloud/video-editor/render";
 import type {
   PaintFrame,
   PostStudioLayerPainter,
-} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+} from "@austencloud/video-editor/render";
 import { CANVAS2D_HOSTED_EFFECTS } from "#lib/shared/effects/services/canvas2d-effect-host.js";
 import {
   EFFECT_ICONS,
@@ -353,7 +353,7 @@ describe("the staff effect painter", () => {
         root: {} as HTMLElement,
         preset: result.preset,
         layers,
-        cardFrameCache: new Map(),
+        surfaceCache: new Map(),
         painters: new Map([[staffEffectRole("v1"), record(owns)]]),
         timeSeconds: 1,
       });
@@ -408,7 +408,7 @@ describe("the staff effect painter", () => {
       root: {} as HTMLElement,
       preset: result.preset,
       layers: [layer],
-      cardFrameCache: new Map(),
+      surfaceCache: new Map(),
       painters: new Map([[staffEffectRole("v1"), painter]]),
       timeSeconds: 1,
     });

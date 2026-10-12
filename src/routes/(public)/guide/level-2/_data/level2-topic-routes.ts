@@ -166,7 +166,7 @@ export const LEVEL2_TOPIC_PAGES: Level2TopicPage[] = [
 ];
 
 /** Anchor id (a live `<GuideSection id="...">`) → the route slug that now
- *  hosts it. Used by GuideSidebar to link straight to a topic route instead
+ *  hosts it. Used by guide-toc.ts to link straight to a topic route instead
  *  of the old `/guide/level-2/turns#<id>` / `/guide/level-2/double-turns#<id>`
  *  in-page anchors, now that the sections live on their own routes. */
 export const LEVEL2_ANCHOR_ROUTE_SLUG: Record<string, string> =

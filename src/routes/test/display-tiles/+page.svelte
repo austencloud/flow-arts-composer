@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import DisplayPanel from "#lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
-  import PostToolPanel from "#lib/shared/share/components/post-studio/editor/PostToolPanel.svelte";
-  import PostAnimationAppearanceTool from "#lib/shared/share/components/post-studio/editor/PostAnimationAppearanceTool.svelte";
+  import { PostToolPanel } from "@austencloud/video-editor/ui";
+  import PostAnimationAppearanceTool from "#lib/shared/post-studio-plugin/ui/PostAnimationAppearanceTool.svelte";
   import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
   import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
   import { hydrateSequence } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
@@ -119,7 +119,7 @@
         data-post-box="Responsive Post appearance"
         style="width: 100%; height: min(70dvh, 1000px)"
       >
-        <PostToolPanel tool="appearance" placement="side" bare fitContent>
+        <PostToolPanel tool="appearance" placement="side" bare>
           <div class="item-tool">
             <PostAnimationAppearanceTool
               fill
@@ -171,7 +171,7 @@
           data-post-box={box.label}
           style="width: {box.px}px; height: {box.h}px"
         >
-          <PostToolPanel tool="appearance" placement="side" bare fitContent>
+          <PostToolPanel tool="appearance" placement="side" bare>
             <div class="item-tool">
               <PostAnimationAppearanceTool
                 fill

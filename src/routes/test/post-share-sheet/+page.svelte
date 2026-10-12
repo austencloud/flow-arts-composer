@@ -27,7 +27,8 @@
   import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
   import { SequenceModalExporter } from "#lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte.js";
   import PostShareSheet from "#lib/shared/share/components/PostShareSheet.svelte";
-  import PostStudio from "#lib/shared/share/components/post-studio/PostStudio.svelte";
+  import TkaEditorScope from "#lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
+  import { VideoEditor } from "@austencloud/video-editor/ui";
   import type { MetaPublishStatus } from "#lib/shared/share/services/meta-publish.js";
   import type { InstagramCapabilitySnapshot } from "#lib/shared/share/domain/instagram/instagram-capability-schema.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -442,15 +443,29 @@
      path. A hardcoded link would skip the real link-preparation behavior. -->
 {#if studioHarness && sequence}
   <main class="studio-harness">
-    <PostStudio
-      {sequence}
-      cardPreviewUrl={studioCardUrl}
-      animationPreviewUrl={studioAnimationUrl}
-      animationPreviewType={studioAnimationType}
-      isPreparingCard={!studioCardUrl}
-      isPreparingAnimation={isExportingVideo}
-      onRequestAnimation={fakeRender}
-    />
+    {#key sequence.id}
+      <TkaEditorScope
+        {sequence}
+        cardPreviewUrl={studioCardUrl}
+        animationPreviewUrl={studioAnimationUrl}
+        animationPreviewType={studioAnimationType}
+        isPreparingCard={!studioCardUrl}
+        isPreparingAnimation={isExportingVideo}
+        onRequestAnimation={fakeRender}
+      >
+        {#snippet children(scope)}
+          <VideoEditor
+            host={scope.editor.host}
+            plugin={scope.plugin}
+            editor={scope.editor}
+            inspectorTarget={scope.inspectorTarget}
+            registerExport={scope.registerExport}
+            audioSeed={scope.audioSeed}
+            onAudioChange={scope.onAudioChange}
+          />
+        {/snippet}
+      </TkaEditorScope>
+    {/key}
   </main>
 {:else}
   <PostShareSheet

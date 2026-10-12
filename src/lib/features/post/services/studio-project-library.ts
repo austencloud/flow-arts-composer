@@ -2,11 +2,13 @@ import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence
 import {
   POST_BOX,
   POST_DEFAULT_CANVAS,
-  PostProjectSchema,
-  createEmptyPostProject,
   projectDurationSeconds,
   type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
+} from "@austencloud/video-editor/core";
+import {
+  PostProjectSchema,
+  createEmptyPostProject,
+} from "#lib/shared/post-studio-plugin/index.js";
 import { studioProjectKindFromId } from "#lib/shared/media-composition/domain/studio-project-id.js";
 import { loadPostDraft } from "#lib/shared/media-composition/services/post-draft-storage.js";
 import { loadPostProject } from "#lib/shared/media-composition/services/post-project-store.js";

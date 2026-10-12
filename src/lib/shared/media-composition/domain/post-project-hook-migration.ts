@@ -1,16 +1,19 @@
 import {
   POST_BOX,
-  POST_MAX_SPOKEN_LENGTH,
   POST_TIME_EPSILON,
   createIdAllocator,
   itemEnd,
   mainItemAt,
-  type PostAnimationItem,
   type PostItem,
   type PostItemKeyframes,
   type PostProject,
+} from "@austencloud/video-editor/core";
+// Not the plugin index: this module runs inside the plugin's normalize hooks (see post-studio-plugin/normalize-hooks.ts).
+import {
+  POST_MAX_SPOKEN_LENGTH,
+  type PostAnimationItem,
   type PostTitlesItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
+} from "#lib/shared/post-studio-plugin/item-kinds.js";
 import { openingTitlesSpan } from "#lib/shared/media-composition/domain/tunnel-titles.js";
 
 /**

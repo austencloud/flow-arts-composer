@@ -1,33 +1,11 @@
 import { describe, expect, it } from "vitest";
-import {
-  POST_MAX_EDGE_BORDER,
-  POST_PLAIN_EDGE,
-  PostProjectSchema,
-  type PostProject,
-  type PostVideoItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import {
-  POST_EDGE_COLOR_HEX,
-  mergeEdge,
-  regionEdge,
-} from "#lib/shared/media-composition/domain/post-clip-edge.js";
-import { updateItem } from "#lib/shared/media-composition/domain/post-project-edits.js";
-import {
-  compilePostProject,
-  staffEffectRole,
-} from "#lib/shared/media-composition/domain/post-project-compiler.js";
-import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
-import { renderPostStudioFrame } from "#lib/shared/media-composition/services/post-studio-frame-compositor.js";
-import {
-  paintEdgeBorder,
-  paintEdgeShadow,
-  regionEdgePixels,
-} from "#lib/shared/media-composition/services/region-edge-painter.js";
-import { traceRoundedRect } from "#lib/shared/render/utils/trace-rounded-rect.js";
-import type { PostStudioLayerPainter } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+import { POST_MAX_EDGE_BORDER, POST_PLAIN_EDGE, type PostProject, type PostVideoItem, POST_EDGE_COLOR_HEX, mergeEdge, regionEdge, updateItem } from "@austencloud/video-editor/core";
+import { PostProjectSchema, compilePostProject, staffEffectRole, evaluatePresetFrame, editContext } from "#lib/shared/post-studio-plugin/index.js";
+import { renderPostStudioFrame, paintEdgeBorder, paintEdgeShadow, regionEdgePixels, traceRoundedRect } from "@austencloud/video-editor/render";
+import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
 import { NOW, project, video } from "./post-project-fixtures";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 
 function valid(p: PostProject): PostProject {
   const parsed = PostProjectSchema.safeParse(p);
@@ -344,7 +322,7 @@ describe("the export", () => {
       root: {} as HTMLElement,
       preset: result.preset,
       layers,
-      cardFrameCache: new Map(),
+      surfaceCache: new Map(),
       painters: new Map([[staffEffectRole("v1"), painter]]),
       timeSeconds: 1,
     });
@@ -397,7 +375,7 @@ describe("the export", () => {
       root: {} as HTMLElement,
       preset: result.preset,
       layers,
-      cardFrameCache: new Map(),
+      surfaceCache: new Map(),
       painters: new Map([[staffEffectRole("v1"), painter]]),
       timeSeconds: 1,
     });

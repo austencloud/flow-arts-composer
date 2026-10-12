@@ -23,7 +23,7 @@ node scripts/post-project.mjs ops --file ops.json        # several edits, one un
 
 `--item` takes an id, `hook` (the animation that opens with the tunnel), `animations` or `all`. The opening tunnel is part of the animation item itself, one canvas from the first frame to the last; a post saved with the tunnel as a separate item is merged into its animation when it opens. `--set key=value` accepts `true`, `false`, `null` (clears the flag), numbers and text. `ops.json` is an array such as `[{"op":"add-hook"},{"op":"hook-speed","speed":"smooth"}]`; a failing edit names its position and nothing is applied. A change that alters nothing returns `unchanged`. The editor tab must be open on the post, because the open editor owns the saved draft: a script never writes the draft file itself.
 
-Ownership: `post-project-ops.ts` maps each named edit onto the existing pure edit in `post-project-edits.ts`; `queuePostProjectOps` in the bridge applies them to the session snapshot and reuses the manifest queue below.
+Ownership: `post-project-ops.ts` maps each named edit onto the existing pure edit, in `core/edit/project-edits.ts` of `@austencloud/video-editor` (the music ops in `core/edit/music-edits.ts`) or, for the titles and tunnel edits only tka has, in tka's `post-project-edits.ts`; `queuePostProjectOps` in the bridge applies them to the session snapshot and reuses the manifest queue below.
 
 ## Whole-manifest replacement
 
@@ -47,7 +47,7 @@ The replacement must be a complete, valid `PostProject` for the same sequence. T
 
 The server endpoint is `/api/dev/post-project`: `GET` lists sessions, `GET ?sessionId=...` reads one, and `GET ?sessionId=...&commandId=...` reads status. `POST` accepts `kind: "apply"` with `sessionId`, `baseRevision`, `baseFingerprint`, and `project`. The browser sends `kind: "heartbeat"` about once a second, including a snapshot when it changes. The endpoint does not accept arbitrary file paths; the CLI reads the JSON file locally.
 
-Ownership: `post-editor-state.svelte.ts` validates and commits replacements; `post-project-dev-bridge.ts` owns dev session state, queueing, and backups; `post-project-dev-client.ts` owns browser polling. `PostProjectSchema` and `normalizeProject` remain the schema and layout owners. The CLI is only a local endpoint client.
+Ownership: `post-editor-state.svelte.ts` validates replacements (`replaceManifestFromDev`) and commits them through the package state, `state/video-editor-state.svelte.ts` in `@austencloud/video-editor`; `post-project-dev-bridge.ts` owns dev session state, queueing, and backups; `post-project-dev-client.ts` owns browser polling. `PostProjectSchema` and `normalizeProject` remain the schema and layout owners. The CLI is only a local endpoint client.
 
 ## Feature videos
 
@@ -110,7 +110,7 @@ A time on the command line (`--start`, `--from`, `--to`, `add-titles --at`, `tri
 
 In the editor, the music has its own row under the tracks. Drag it to move it. Selecting it shows its ends and the bar 1 flag: drag an end to trim the music, or the flag to move the grid. With the music selected, Music opens its panel (level, fades, the beat grid with Tap the beat and Suggest BPM, and the credit) and Delete removes it. The ruler numbers the bars, and clips snap to the music's edges and bars, and to its beats once they are far enough apart to pick out. Suggest BPM only offers a tempo; it never sets one.
 
-Ownership: `post-music.ts` owns the music's schema, `music-grid.ts` bars, beats and the times that name a bar, `post-music-edits.ts` its edits, and `post-audio-plan.ts` its sound for the export and the preview (`planMusicAudio`). `music-preview-sync.ts` and `PostMusicPreview.svelte` keep the preview's player and clock on the music; `PostTimelineMusicLane.svelte` and `PostMusicTool.svelte` are its lane and panel. `scripts/feature-video/music-import.mjs`, `align-take.mjs`, `loudness.mjs` and `time-args.mjs` serve the CLI.
+Ownership, in `@austencloud/video-editor`: `core/music/post-music.ts` owns the music's schema, `core/music/music-grid.ts` bars, beats and the times that name a bar, and `core/music/audio-plan.ts` its sound for the export and the preview (`planMusicAudio`); `core/edit/music-edits.ts` owns its edits. The package's `render/music-preview-sync.ts` and tka's `PostMusicPreview.svelte` keep the preview's player and clock on the music; `PostTimelineMusicLane.svelte` and `PostMusicTool.svelte` are its lane and panel. `scripts/feature-video/music-import.mjs`, `align-take.mjs`, `loudness.mjs` and `time-args.mjs` serve the CLI.
 
 ### App recordings
 

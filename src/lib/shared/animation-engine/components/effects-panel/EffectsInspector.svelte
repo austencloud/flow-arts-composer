@@ -147,6 +147,7 @@
       <EffectPresetsSection
         presetGroup={registration.presetGroup}
         {activePresetId}
+        {propType}
         {defaultChipId}
         {customChipId}
         {customDisabled}

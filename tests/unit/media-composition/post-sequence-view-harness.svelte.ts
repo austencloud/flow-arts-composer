@@ -1,7 +1,7 @@
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
 import type { HandLabeledSequenceResolver } from "#lib/shared/sequence-viewer/services/hand-labeled-sequence.js";
-import type { PostSequenceAction } from "#lib/shared/media-composition/domain/post-project.js";
+import type { PostSequenceAction } from "#lib/shared/post-studio-plugin/index.js";
 import type { PostSequenceTransforms } from "#lib/shared/media-composition/domain/post-sequence-actions.js";
 import { createPostSequenceView } from "#lib/shared/media-composition/services/post-sequence-view.svelte.js";
 

@@ -3,13 +3,13 @@ import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js"
 import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   PostProjectSchema,
-  findItem,
-} from "#lib/shared/media-composition/domain/post-project.js";
-import { updateItem } from "#lib/shared/media-composition/domain/post-project-edits.js";
-import { animationAppearanceForItem, cardOptionsForItem } from "#lib/shared/share/components/post-studio/post-item-render-options.js";
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
+import { findItem, updateItem } from "@austencloud/video-editor/core";
+import { animationAppearanceForItem, cardOptionsForItem } from "#lib/shared/post-studio-plugin/ui/post-item-render-options.js";
 import { card, overlay, project } from "./post-project-fixtures";
 
-const ctx = { now: 1_700_000_000_001 };
+const ctx = editContext(1_700_000_000_001);
 
 describe("selected media appearance", () => {
   it("keeps PiP appearance and effects scoped through draft serialization", () => {

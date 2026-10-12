@@ -12,8 +12,8 @@ import {
 import {
   PostProjectSchema,
   createEmptyPostProject,
-  type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
+} from "#lib/shared/post-studio-plugin/index.js";
+import type { PostProject } from "@austencloud/video-editor/core";
 import {
   createTakeTiming,
   type TakeTiming,

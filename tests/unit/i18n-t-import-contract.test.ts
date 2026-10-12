@@ -18,9 +18,13 @@ import { describe, expect, it } from "vitest";
 const CALLS_T = /(^|[^.\w$])t\(/m;
 /** `import { t }`, `import { getLocale, t }`, `import { translate as t }`. */
 const IMPORTS_T = /import\s*\{[^}]*\bt\b[^}]*\}\s*from/;
+/** `const t = useStrings();`: a component that takes `t` from the package's strings context. */
+const BINDS_T = /\bconst\s+t\s*=\s*useStrings\(\)/;
 
 function callsTWithoutImport(source: string): boolean {
-  return CALLS_T.test(source) && !IMPORTS_T.test(source);
+  return (
+    CALLS_T.test(source) && !IMPORTS_T.test(source) && !BINDS_T.test(source)
+  );
 }
 
 /**
@@ -69,6 +73,11 @@ describe("t() imports", () => {
     ).toBe(false);
     expect(
       callsTWithoutImport('{format(x)} {items.at(1)} {i18n.t("x")} {$t("x")}')
+    ).toBe(false);
+    expect(
+      callsTWithoutImport(
+        'import { useStrings } from "@austencloud/video-editor/strings";\nconst t = useStrings();\n<h2>{t("x")}</h2>'
+      )
     ).toBe(false);
   });
 

@@ -7,8 +7,9 @@ import {
 } from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   createEmptyPostProject,
-  type PostProject,
-} from "#lib/shared/media-composition/domain/post-project.js";
+  editContext,
+} from "#lib/shared/post-studio-plugin/index.js";
+import type { PostProject } from "@austencloud/video-editor/core";
 import { applyPostProjectOps } from "#lib/shared/media-composition/domain/post-project-ops.js";
 import { addTakeTap } from "#lib/shared/media-composition/domain/take-timing.js";
 import {
@@ -339,7 +340,7 @@ describe("a feature video in the Post editor", () => {
             durationSeconds: 10,
           },
         ],
-        { now: NOW + 1 }
+        editContext(NOW + 1)
       ),
     });
     const sync = createFeatureVideoSync(server.file, {

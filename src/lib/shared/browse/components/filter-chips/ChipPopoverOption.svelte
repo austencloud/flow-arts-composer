@@ -14,13 +14,15 @@
   their place as the selection moves.
 -->
 <script lang="ts">
+  import { Icon, type IconDefinition } from "@austencloud/video-editor/icons";
+
   interface Props {
     label: string;
     selected?: boolean;
     /** Contextual match count, rendered dimmed after the label. */
     count?: number | null;
-    /** FontAwesome class for a leading glyph (LOOP's per-component marks). */
-    icon?: string;
+    /** FontAwesome class, or an icon definition from the video editor package, for a leading glyph (LOOP's per-component marks). */
+    icon?: string | IconDefinition;
     /**
      * Overrides the accent for this one row. Options that carry their own
      * identity colour (LOOP components) pass it here; everything else inherits
@@ -57,7 +59,11 @@
 >
   <i class="opt-tick fas fa-check" aria-hidden="true"></i>
   {#if icon}
-    <i class="opt-icon {icon}" aria-hidden="true"></i>
+    {#if typeof icon === "string"}
+      <i class="opt-icon {icon}" aria-hidden="true"></i>
+    {:else}
+      <Icon {icon} class="opt-icon" />
+    {/if}
   {/if}
   <span class="opt-label">{label}</span>
   {#if count != null}
@@ -100,7 +106,8 @@
     visibility: visible;
   }
 
-  .opt-icon {
+  .opt-icon,
+  .chip-popover-option :global(.opt-icon) {
     flex-shrink: 0;
     width: 16px;
     font-size: 13px;

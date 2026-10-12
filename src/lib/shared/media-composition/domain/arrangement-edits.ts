@@ -1,4 +1,8 @@
 import type { TunnelLayerConfig } from "#lib/shared/animation-engine/domain/compose-types.js";
+import type {
+  TipEffectMap,
+  TipEffortMap,
+} from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 import {
   ARRANGEMENT_MAX_GRID_SIZE,
   type ArrangementCell,
@@ -22,6 +26,9 @@ import type { PostAnimationAppearance } from "./post-animation-appearance.js";
 export const ARRANGEMENT_MAX_LAYERS = 4;
 export const ARRANGEMENT_MIN_CELL_SPEED = 0.25;
 export const ARRANGEMENT_MAX_CELL_SPEED = 4;
+/** The tempo range of an arrangement, the same as a music take's. */
+export const ARRANGEMENT_MIN_BPM = 20;
+export const ARRANGEMENT_MAX_BPM = 300;
 
 export interface ArrangementCellOffset {
   /** Beats before this cell starts; floored at 0. */
@@ -381,6 +388,19 @@ export function setCellOffset(
   return next === cell ? snapshot : replaceCell(snapshot, cellId, next);
 }
 
+/** The grid's tempo, clamped to 20..300 BPM. The clip rescale lives in `setArrangementBpm`. */
+export function setBpm(
+  snapshot: ArrangementSnapshot,
+  bpm: number
+): ArrangementSnapshot {
+  if (!Number.isFinite(bpm)) return snapshot;
+  const next = Math.max(
+    ARRANGEMENT_MIN_BPM,
+    Math.min(ARRANGEMENT_MAX_BPM, bpm)
+  );
+  return next === snapshot.bpm ? snapshot : { ...snapshot, bpm: next };
+}
+
 /** The look for one cell, or for the grid when `cellId` is null; `undefined` removes it. */
 export function setCellAppearance(
   snapshot: ArrangementSnapshot,
@@ -396,6 +416,61 @@ export function setCellAppearance(
   if (!cell || sameJson(cell.appearance, appearance)) return snapshot;
   const { appearance: _previous, ...rest } = cell;
   return replaceCell(snapshot, cellId, appearance ? { ...rest, appearance } : rest);
+}
+
+/** Per-hand and per-tip effects for one cell; an empty map removes the field. */
+export function setCellTipEffects(
+  snapshot: ArrangementSnapshot,
+  cellId: string,
+  map: TipEffectMap | undefined
+): ArrangementSnapshot {
+  const cell = findCell(snapshot, cellId);
+  if (!cell) return snapshot;
+  const next = map && Object.keys(map).length > 0 ? map : undefined;
+  if (sameJson(cell.tipEffectMap, next)) return snapshot;
+  const { tipEffectMap: _previous, ...rest } = cell;
+  return replaceCell(
+    snapshot,
+    cellId,
+    next ? { ...rest, tipEffectMap: next } : rest
+  );
+}
+
+/** Per-hand and per-tip efforts for one cell; an empty map removes the field. */
+export function setCellTipEfforts(
+  snapshot: ArrangementSnapshot,
+  cellId: string,
+  map: TipEffortMap | undefined
+): ArrangementSnapshot {
+  const cell = findCell(snapshot, cellId);
+  if (!cell) return snapshot;
+  const next = map && Object.keys(map).length > 0 ? map : undefined;
+  if (sameJson(cell.tipEffortMap, next)) return snapshot;
+  const { tipEffortMap: _previous, ...rest } = cell;
+  return replaceCell(
+    snapshot,
+    cellId,
+    next ? { ...rest, tipEffortMap: next } : rest
+  );
+}
+
+/** Which hands a cell draws. Shown is the default, so a shown hand carries no flag. */
+export function setCellMotionVisibility(
+  snapshot: ArrangementSnapshot,
+  cellId: string,
+  visible: { left?: boolean; right?: boolean }
+): ArrangementSnapshot {
+  const cell = findCell(snapshot, cellId);
+  if (!cell) return snapshot;
+  const left = visible.left ?? cell.leftMotionVisible ?? true;
+  const right = visible.right ?? cell.rightMotionVisible ?? true;
+  const { leftMotionVisible: _left, rightMotionVisible: _right, ...rest } = cell;
+  const next: ArrangementCell = {
+    ...rest,
+    ...(left ? {} : { leftMotionVisible: false }),
+    ...(right ? {} : { rightMotionVisible: false }),
+  };
+  return sameJson(cell, next) ? snapshot : replaceCell(snapshot, cellId, next);
 }
 
 /** Empties the cell: no layers, no offset. Its span, look and media type stay. */
