@@ -14,7 +14,6 @@
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
-  import { describePictograph } from "#lib/shared/pictograph/shared/domain/utils/pictograph-description.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import {
@@ -51,18 +50,14 @@
   type Loop = {
     mode: DualShiftMode;
     start: StepData;
-    counts: { step: StepData; pose: PictographData | null; label: string }[];
+    counts: { step: StepData; pose: PictographData | null }[];
   };
   const loop = (mode: DualShiftMode): Loop => {
     const [start, ...counts] = dualShiftSteps(mode);
     return {
       mode,
       start: start!,
-      counts: counts.map((step) => ({
-        step,
-        pose: startPose(step),
-        label: describePictograph(step as unknown as PictographData),
-      })),
+      counts: counts.map((step) => ({ step, pose: startPose(step) })),
     };
   };
   const LOOPS = {
@@ -85,6 +80,11 @@
   const startedAt = new Map<DualShiftModeId, number>();
   let frame: number | null = null;
   let pairEls: Partial<Record<"same" | "opp", HTMLElement>> = $state({});
+  /** A pair plays once its loops are in view and every count has drawn. */
+  const inView = new Set<"same" | "opp">();
+  const played = new Set<"same" | "opp">();
+  const drawn = new Set<string>();
+  let armed = false;
 
   function countProgress(id: DualShiftModeId, count: number): number | null {
     const ms = elapsed[id];
@@ -115,6 +115,19 @@
     if (elapsed[id] === LOOP_MS) play([id]);
   }
 
+  function playWhenReady(pair: "same" | "opp") {
+    if (!armed || played.has(pair) || !inView.has(pair)) return;
+    const loops = LOOPS[pair];
+    if (!loops.every((l) => l.counts.every((c) => drawn.has(c.step.id)))) return;
+    played.add(pair);
+    play(loops.map((l) => l.mode.id));
+  }
+
+  function onCountDrawn(pair: "same" | "opp", stepId: string) {
+    drawn.add(stepId);
+    playWhenReady(pair);
+  }
+
   function settle() {
     startedAt.clear();
     if (frame !== null) cancelAnimationFrame(frame);
@@ -125,6 +138,7 @@
   onMount(() => {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     // The loops wait at their start points until their pair is in view.
+    armed = true;
     for (const mode of DUAL_SHIFT_MODES) elapsed[mode.id] = 0;
     const observers = (["same", "opp"] as const).flatMap((pair) => {
       const el = pairEls[pair];
@@ -133,7 +147,8 @@
         (entries) => {
           if (!entries.some((entry) => entry.isIntersecting)) return;
           observer.disconnect();
-          play(DUAL_SHIFT_MODES_BY_PAIR[pair].map((mode) => mode.id));
+          inView.add(pair);
+          playWhenReady(pair);
         },
         { threshold: 0.35 }
       );
@@ -144,6 +159,7 @@
     return () => {
       for (const observer of observers) observer.disconnect();
       window.removeEventListener("beforeprint", settle);
+      armed = false;
       settle();
     };
   });
@@ -153,10 +169,12 @@
   step: StepData,
   isStart: boolean,
   progress: number | null,
-  pose: PictographData | null
+  pose: PictographData | null,
+  onDrawn?: () => void
 )}
   <PictographContainer
     pictographData={step}
+    onReady={onDrawn}
     gridMode={GridMode.DIAMOND}
     leftPropTypeOverride={PropType.HAND}
     rightPropTypeOverride={PropType.HAND}
@@ -193,13 +211,19 @@
             <span class="travel">{mode.travel}</span>
           </header>
           <div class="loop">
-            <div class="cell start" role="img" aria-label={describePictograph(start as unknown as PictographData)}>
+            <div class="cell start">
               {@render pictograph(start, true, null, null)}
             </div>
             <div class="counts">
-              {#each counts as { step, pose, label }, n (step.id)}
-                <div class="cell" role="img" aria-label={label}>
-                  {@render pictograph(step, false, countProgress(mode.id, n + 1), pose)}
+              {#each counts as { step, pose }, n (step.id)}
+                <div class="cell">
+                  {@render pictograph(
+                    step,
+                    false,
+                    countProgress(mode.id, n + 1),
+                    pose,
+                    () => onCountDrawn(name, step.id)
+                  )}
                 </div>
               {/each}
             </div>
