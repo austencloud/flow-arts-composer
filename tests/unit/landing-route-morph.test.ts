@@ -188,38 +188,31 @@ describe("landing shared-element contract", () => {
 
   it("styles every named group and suppresses only the scoped root capture", () => {
     const css = readSource("src/lib/shared/transitions/view-transitions.css");
+    const namedMorphCss = readSource(
+      "node_modules/@austencloud/motion/css/named-route-morph.css"
+    );
     for (const morphName of LAUNCHPAD_TILES.map((tile) => tile.morphName)) {
       expect(css).toContain(`::view-transition-group(${morphName})`);
     }
 
-    expect(css).toMatch(
+    expect(namedMorphCss).toMatch(
       /html\.named-route-morph\s*\{\s*view-transition-name:\s*none;/
     );
-    expect(css).toMatch(
+    expect(namedMorphCss).toMatch(
       /html\.named-route-morph::view-transition\s*\{\s*background:\s*transparent;/
     );
   });
 
-  it("feature-detects View Transitions and bypasses motion-sensitive navigation", () => {
+  it("delegates route motion decisions to the shared package", () => {
     const layout = readSource("src/routes/+layout.svelte");
-    const runIndex = layout.indexOf("runNamedRouteMorph(() =>");
-    const guards = [
-      "if (!document.startViewTransition) return;",
-      "if (reducedMotion()) return;",
-      "if (!navigationMorphs(navigation.from, navigation.to)) return;",
-    ];
 
-    expect(runIndex).toBeGreaterThan(-1);
-    for (const guard of guards) {
-      const guardIndex = layout.indexOf(guard);
-      expect(guardIndex, `missing route-morph guard: ${guard}`).toBeGreaterThan(
-        -1
-      );
-      expect(
-        guardIndex,
-        `route-morph guard runs too late: ${guard}`
-      ).toBeLessThan(runIndex);
-    }
+    expect(layout).toContain(
+      'import { installRouteMotion } from "@austencloud/motion";'
+    );
+    expect(layout).toContain("installRouteMotion({");
+    expect(layout).toContain("morphs: navigationMorphs,");
+    expect(layout).toContain("isShallow: isShallowGoto,");
+    expect(layout).not.toContain("runNamedRouteMorph(() =>");
   });
 
   it("links the shop book listing and detail cover with one named participant", () => {
@@ -246,10 +239,10 @@ describe("landing shared-element contract", () => {
     );
     expect(chrome).toContain("isNamedRouteMorphActive()");
     expect(chrome).toMatch(
-      /duration:\s*suppressContentFade\s*\?\s*0\s*:\s*motionDuration\(200\)/
+      /duration:\s*suppressContentFade\s*\?\s*0\s*:\s*DURATION\.normal/
     );
     expect(chrome).toContain(
-      'import { motionDuration } from "#lib/shared/transitions/motion.js";'
+      'import { DURATION } from "#lib/shared/transitions/transitions.js";'
     );
     expect(chrome).not.toContain("MORPH_PATHS.has(path)");
   });

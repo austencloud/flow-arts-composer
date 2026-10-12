@@ -181,6 +181,7 @@
 {/if}
 
 <nav
+  data-route-hold="nav"
   class="bottom-navigation"
   class:hidden={!isUIVisible}
   class:floating={isDashboard}
