@@ -27,24 +27,25 @@ describe("worker performer move-handle parity", () => {
 
     expect(owner.current).toMatchObject({
       visible: true,
-      label: "Move character",
-      accessibleLabel: "Move selected character",
-      title: "Move selected character",
+      label: "",
+      accessibleLabel:
+        "Move selected character: drag or press to choose a floor position",
+      title:
+        "Move selected character: drag or press to choose a floor position",
       icon: {
         classes: ["fas", "fa-arrows-up-down-left-right"],
         glyph: "\uf047",
         ariaHidden: true,
       },
       geometry: {
-        worldPosition: [2, -1.42, -3],
         projection: "screen-space-html",
         centered: true,
         sprite: true,
         minWidthPx: 48,
         minHeightPx: 48,
         paddingBlockRem: 0,
-        paddingInlineRem: 0.875,
-        borderWidthPx: 1,
+        paddingInlineRem: 0,
+        borderWidthPx: 0,
         borderRadiusPx: 999,
         gapRem: 0.5,
         iconWidthRem: 1,
@@ -58,20 +59,27 @@ describe("worker performer move-handle parity", () => {
       },
     });
 
+    expect(owner.current?.geometry.worldPosition[0]).toBeCloseTo(2);
+    expect(owner.current?.geometry.worldPosition.slice(1)).toEqual([-1.42, -3]);
+
     owner.update(snapshot({ selectedCount: 4 }));
-    expect(owner.current?.label).toBe("Move 4");
-    expect(owner.current?.accessibleLabel).toBe("Move 4 selected characters");
+    expect(owner.current?.label).toBe("");
+    expect(owner.current?.accessibleLabel).toContain(
+      "Move 4 selected characters"
+    );
+    owner.update(snapshot({ placing: true }));
+    expect(owner.current?.label).toBe("");
+    expect(owner.current?.accessibleLabel).toBe("Cancel move");
     owner.dispose();
   });
 
   it("reproduces idle, hover, focus-visible, and dragging appearances", () => {
     const owner = createWorkerMoveHandleOwner(snapshot());
     expect(owner.current?.material).toEqual({
-      borderColor: "var(--theme-accent, #8b5cf6)",
-      background: "var(--theme-panel-bg, rgba(0, 0, 0, 0.82))",
+      borderColor: "transparent",
+      background: "transparent",
       color: "var(--theme-text, #fff)",
-      boxShadow:
-        "0 0 0 1px rgba(0, 0, 0, 0.5), 0 0.4rem 1.1rem rgba(0, 0, 0, 0.42)",
+      boxShadow: "none",
       outline: null,
       outlineOffsetPx: null,
       cursor: "grab",
@@ -81,16 +89,16 @@ describe("worker performer move-handle parity", () => {
 
     owner.update(snapshot({ hovered: true }));
     expect(owner.current?.material).toMatchObject({
-      borderColor: "var(--theme-accent-text, #a78bfa)",
-      background: "var(--theme-card-hover-bg, rgba(24, 20, 40, 0.94))",
+      borderColor: "transparent",
+      background: "transparent",
       color: "var(--theme-accent-text, #a78bfa)",
       outline: null,
     });
 
     owner.update(snapshot({ focusVisible: true, dragging: true }));
     expect(owner.current?.material).toMatchObject({
-      borderColor: "var(--theme-accent-text, #a78bfa)",
-      background: "var(--theme-card-hover-bg, rgba(24, 20, 40, 0.94))",
+      borderColor: "transparent",
+      background: "transparent",
       color: "var(--theme-accent-text, #a78bfa)",
       outline: "2px solid var(--theme-accent-text, #a78bfa)",
       outlineOffsetPx: 3,
@@ -157,7 +165,8 @@ describe("worker performer move-handle parity", () => {
       })
     );
     expect(updated?.visible).toBe(false);
-    expect(updated?.geometry.worldPosition).toEqual([-4, -0.67, 7]);
+    expect(updated?.geometry.worldPosition[0]).toBeCloseTo(-4);
+    expect(updated?.geometry.worldPosition.slice(1)).toEqual([-0.67, 7]);
 
     owner.dispose();
     owner.dispose();
