@@ -9,8 +9,12 @@ move between options. The untouched option of each axis is marked "Default"
 under its name. Fuse's other recipe fields use the same control, so its Style
 section now matches them.
 
-From 36rem of panel width each axis lays out as a row, name and hint on the
-left and the control on the right; narrower, the hint sits above the control.
+Two arrangements. `list` (default, Fuse and the Style screen): from 36rem of
+panel width each axis lays out as a row, name and hint on the left and the
+control on the right; narrower, the hint sits above the control. `columns`
+(the Customize overview's Style tile): from 42rem the three axes stand side by
+side, name over control over hint; narrower, it falls back to the stacked
+list.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -36,6 +40,7 @@ left and the control on the right; narrower, the hint sits above the control.
     onPropsChange,
     onHandsChange,
     onDashesChange,
+    arrangement = "list",
   }: {
     constraintPreset: GenerationStyleAxis;
     handPathMode: GenerationStyleAxis;
@@ -51,6 +56,8 @@ left and the control on the right; narrower, the hint sits above the control.
     onPropsChange: (v: GenerationStyleAxis) => void;
     onHandsChange: (v: GenerationStyleAxis) => void;
     onDashesChange: (v: GenerationDashChoice) => void;
+    /** `columns` puts the three axes side by side when there is room. */
+    arrangement?: "list" | "columns";
   } = $props();
 
   const uid = $props.id();
@@ -142,13 +149,11 @@ left and the control on the right; narrower, the hint sits above the control.
   </span>
 {/snippet}
 
-<div class="style-panel">
+<div class="style-panel" class:columns={arrangement === "columns"}>
   <div class="style-axes">
     <section class="style-axis">
-      <div class="axis-text">
-        <span class="axis-name" id="{uid}-props">{t("create_ui_props")}</span>
-        {@render hint(GENERATION_STYLE_OPTIONS, constraintPreset)}
-      </div>
+      <span class="axis-name" id="{uid}-props">{t("create_ui_props")}</span>
+      {@render hint(GENERATION_STYLE_OPTIONS, constraintPreset)}
       <SegmentedControl
         options={styleOptions}
         value={constraintPreset}
@@ -161,10 +166,8 @@ left and the control on the right; narrower, the hint sits above the control.
     </section>
 
     <section class="style-axis">
-      <div class="axis-text">
-        <span class="axis-name" id="{uid}-hands">{t("create_ui_hands")}</span>
-        {@render hint(GENERATION_STYLE_OPTIONS, handPathMode)}
-      </div>
+      <span class="axis-name" id="{uid}-hands">{t("create_ui_hands")}</span>
+      {@render hint(GENERATION_STYLE_OPTIONS, handPathMode)}
       <SegmentedControl
         options={styleOptions}
         value={handPathMode}
@@ -177,10 +180,8 @@ left and the control on the right; narrower, the hint sits above the control.
     </section>
 
     <section class="style-axis">
-      <div class="axis-text">
-        <span class="axis-name" id="{uid}-dashes">{t("create_ui_dashes")}</span>
-        {@render hint(GENERATION_DASH_OPTIONS, currentDashValue)}
-      </div>
+      <span class="axis-name" id="{uid}-dashes">{t("create_ui_dashes")}</span>
+      {@render hint(GENERATION_DASH_OPTIONS, currentDashValue)}
       <SegmentedControl
         options={dashOptions}
         value={currentDashValue}
@@ -210,11 +211,30 @@ left and the control on the right; narrower, the hint sits above the control.
     margin-inline: auto;
   }
 
+  /* Three placed parts, so each arrangement can order them without touching
+     the markup: name, hint and the control. */
   .style-axis {
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "name"
+      "hint"
+      "control";
+    row-gap: 0.25rem;
     padding-block: 1rem;
+  }
+
+  .axis-name {
+    grid-area: name;
+  }
+
+  .style-hint {
+    grid-area: hint;
+    margin-bottom: 0.375rem;
+  }
+
+  .style-axis > :global(.segmented-control) {
+    grid-area: control;
   }
 
   .style-axis + .style-axis {
@@ -223,13 +243,6 @@ left and the control on the right; narrower, the hint sits above the control.
 
   .style-axis:first-child {
     padding-top: 0.25rem;
-  }
-
-  .axis-text {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    min-width: 0;
   }
 
   .axis-name {
@@ -292,12 +305,39 @@ left and the control on the right; narrower, the hint sits above the control.
   }
 
   @container generation-style (min-width: 36rem) {
-    .style-axis {
-      display: grid;
+    .style-panel:not(.columns) .style-axis {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+      grid-template-areas:
+        "name control"
+        "hint control";
       align-items: center;
       column-gap: 1.5rem;
       padding-block: 1.125rem;
+    }
+  }
+
+  /* Side by side: name over control over hint, no rules between axes. */
+  @container generation-style (min-width: 42rem) {
+    .columns .style-axes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 1rem;
+      max-width: none;
+    }
+
+    .columns .style-axis {
+      grid-template-areas:
+        "name"
+        "control"
+        "hint";
+      align-content: start;
+      padding-block: 0;
+      border-top: 0;
+    }
+
+    .columns .style-hint {
+      margin-top: 0.375rem;
+      margin-bottom: 0;
     }
   }
 </style>

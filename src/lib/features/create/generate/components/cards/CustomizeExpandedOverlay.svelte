@@ -1,11 +1,11 @@
 <!--
 CustomizeExpandedOverlay.svelte - Customize panel, one decision at a time.
 
-A SettingsDrillPanel over Style, Start Placement and End Placement. The landing
-screen is CustomizeOverview: one tile per setting, each drawing a small picture
-of its own screen next to the current value. Choosing a tile gives that setting
-the whole panel. Single column at every size; see SettingsDrillPanel's header
-for why the two-pane variant was removed.
+A SettingsDrillPanel whose landing screen is CustomizeOverview: the Style
+controls live on the landing screen itself, and the Start and End Placement
+tiles preview their pickers with the real pictographs. Choosing a placement
+tile gives that picker the whole panel. Single column at every size; see
+SettingsDrillPanel's header for why the two-pane variant was removed.
 
 Replaced an accordion that put start placement and end placement on the same
 screen (end placement nested INSIDE start placement) and, because the expanded
@@ -34,7 +34,6 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     getBlockedPlacementsForPreset,
     StartPlacementPreset,
   } from "../../shared/domain/start-placement-presets";
-  import GenerationStylePanel from "#lib/shared/create/components/GenerationStylePanel.svelte";
   import SettingsDrillPanel, {
     type SettingsDrillItem,
   } from "#lib/shared/ui/components/settings-drill/SettingsDrillPanel.svelte";
@@ -43,7 +42,6 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { buildStartEndOptions } from "./customize-start-end-options";
   import {
-    buildCustomizeSummary,
     PRODUCTION_STYLE_BASELINE,
     type CustomizeStyleBaseline,
   } from "./customize-summary";
@@ -230,33 +228,14 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     emitStartEndChange();
   }
 
-  // Names the axes that differ instead of saying "Custom". The bare word left
-  // the collapsed card ("Props: Mixed") looking like it had singled out one of
-  // three axes at random, when Props was simply the only one off its default.
-  // Same resolver the card uses, so the two can't disagree.
-  const styleSummary = $derived.by(() => {
-    const { isDefault, facts } = buildCustomizeSummary(
-      {
-        constraintPreset: localConstraintPreset,
-        handPathMode: localHandPathMode,
-        motionTypeFilter: localMotionTypeFilter,
-        startEndOptions: null,
-      },
-      styleBaseline
-    );
-    return isDefault ? t("create_ui_default") : facts.join(" · ");
-  });
-
-  // The three rows. Start orientation used to be a fourth, which asked the user
-  // to set where the props start in one place and which way they point in
-  // another — the same decision, split in two. It now lives under Start
-  // Placement, where the picker is already drawing the props it describes.
+  // The two screens behind the landing tiles. Style has no screen of its own:
+  // its three controls sit on the landing tile. Start orientation lives under
+  // Start Placement, where the picker is already drawing the props it
+  // describes, instead of on a screen of its own.
   //
-  // End Placement stays present and locked when LOOP owns it — dropping the row
-  // would change the list length and move the row below it, and leave a user
-  // who saw the setting once with no explanation.
+  // End Placement stays present and locked when LOOP owns it, so a user who
+  // saw the setting once is not left with no explanation.
   const drillItems = $derived<SettingsDrillItem[]>([
-    { id: "style", label: t("create_ui_style_label"), value: styleSummary },
     {
       id: "startPos",
       label: t("create_ui_start_placement_label"),
@@ -378,9 +357,24 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
           constraintPreset={localConstraintPreset}
           handPathMode={localHandPathMode}
           motionTypeFilter={localMotionTypeFilter}
-          styleValue={styleSummary}
+          {styleBaseline}
+          haptic={hapticService}
+          onPropsChange={(v) => {
+            localConstraintPreset = v;
+            onConstraintPresetChange(v);
+          }}
+          onHandsChange={(v) => {
+            localHandPathMode = v;
+            onHandPathModeChange(v);
+          }}
+          onDashesChange={(v) => {
+            localMotionTypeFilter = v === "mixed" ? null : v;
+            onMotionTypeFilterChange(v);
+          }}
           startBlocked={localBlockedPlacements}
           startValue={startPosDisplay}
+          leftStartOrientation={localLeftOri}
+          rightStartOrientation={localRightOri}
           endAllowed={localEndPlacements}
           endValue={endPosDisplay}
           endLocked={!isFreeformMode}
@@ -389,27 +383,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
       {/snippet}
 
       {#snippet detail(id)}
-        {#if id === "style"}
-          <GenerationStylePanel
-            constraintPreset={localConstraintPreset}
-            handPathMode={localHandPathMode}
-            motionTypeFilter={localMotionTypeFilter}
-            baseline={styleBaseline}
-            haptic={hapticService}
-            onPropsChange={(v) => {
-              localConstraintPreset = v;
-              onConstraintPresetChange(v);
-            }}
-            onHandsChange={(v) => {
-              localHandPathMode = v;
-              onHandPathModeChange(v);
-            }}
-            onDashesChange={(v) => {
-              localMotionTypeFilter = v === "mixed" ? null : v;
-              onMotionTypeFilterChange(v);
-            }}
-          />
-        {:else if id === "startPos"}
+        {#if id === "startPos"}
           <div class="drill-fill grid-fill">
             <MultiSelectPlacementPicker
               layout="split"
