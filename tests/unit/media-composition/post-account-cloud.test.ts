@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
+import { createArrangementProject } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
+import { validateArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
@@ -144,6 +146,54 @@ describe("account Post writes", () => {
     mocks.auth.currentUser.uid = "other";
     const other = await listSyncedPostProjects();
     expect(other.projects).toEqual([]);
+  });
+
+  it("captions a signed-in arrangement project with its shown grid", async () => {
+    mocks.cachedSource = source("studio-arrangement:caption");
+    const layer = {
+      sequence: { id: "seq", steps: [] },
+      beatOffset: 0,
+      propColors: { left: "#f00", right: "#00f" },
+      transformStack: [],
+    };
+    const cell = (row: number, col: number, layers: (typeof layer)[]) => ({
+      id: `cell-${row}-${col}`,
+      row,
+      col,
+      layers,
+      beatOffset: 0,
+      colSpan: 1,
+      rowSpan: 1,
+      mediaType: "animation" as const,
+    });
+    const project = createArrangementProject(
+      validateArrangementSnapshot({
+        schemaVersion: 2,
+        // Two populated cells show; the third sits outside the 2 × 2 grid.
+        cells: [
+          cell(0, 0, [layer]),
+          cell(0, 1, []),
+          cell(1, 0, [layer]),
+          cell(3, 3, [layer]),
+        ],
+        gridRows: 2,
+        gridCols: 2,
+        bpm: 120,
+        skipStartPlacement: true,
+      }),
+      "studio-arrangement:caption",
+      11
+    );
+    expect(savePostProject(project).ok).toBe(true);
+
+    const listed = await listSyncedPostProjects();
+
+    expect(listed.projects).toEqual([
+      expect.objectContaining({
+        sequenceId: project.sequenceId,
+        arrangement: { rows: 2, cols: 2, sequences: 2 },
+      }),
+    ]);
   });
 
   it("puts a missing source on the project's card, not the page", async () => {
