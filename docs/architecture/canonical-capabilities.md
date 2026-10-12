@@ -198,16 +198,22 @@ an interrupted slide restarts from the shown frame. Every live pictograph
 Searches: join slide, grid join tween, re-join animation. Do not animate a
 join anywhere else.
 
-The 2D animation's Conjoined switch stays a viewing choice;
-`animation-engine/services/conjoined-grid-layout.ts` owns its fixed join and
-`withAnimationGridJoin`, which stamps that join on a sequence that has none of
-its own. `followAnimationGridLayout` (`animation-engine/state/`) is the one
-reactive reader of the switch. While it is on, the cards in the viewer join
-through `sequence-viewer/context/card-grid-layout-context.ts` (set by
-`SequenceViewerOrchestrator`; cards elsewhere and scanned cards keep only saved
-joins), and the share and Post Studio pictures (`card-preview-state`), the
-viewer's card export and the composite video's step grid come out joined.
-Links, library saves and QR codes keep the sequence as saved.
+The 2D animation draws the join its sequence carries, never a viewer
+preference: `animation-engine/services/animation-grid-join.ts`
+(`resolveAnimationGridJoin`) reads `conjoined` off the sequence data the
+animation plays and lines it up with the grid drawn, so the animation, the
+cards and every picture made from the sequence show the same pair of grids.
+Overlaid tunnel layers share one grid, so with any present the animation
+stays single. The viewer's old Conjoined switch is gone and nothing below the
+viewer offers the join. A link that carried the switch's choice still opens
+joined: `sequence-viewer/services/viewer-url-slices/gj-slice.ts` turns a `gj`
+payload into a join, and `legacyConjoinedOverride` turns the retired switch's
+`an.visibility.gridLayout: "conjoined"` into east, one point, when the
+sequence has no join of its own. `SequenceViewerOrchestrator` layers that
+join over the saved sequence through `withSequenceGridJoin`
+(`grid-join/sequence-grid-join.ts`) and re-captures it as seeded, so the
+address bar stays stable, nothing is written to storage, and another sequence
+arriving in the viewer starts from its own saved join.
 
 A join saved on a sequence travels with it.
 `foundation/domain/models/grid-join-token.ts` spells the sequence's join as text
