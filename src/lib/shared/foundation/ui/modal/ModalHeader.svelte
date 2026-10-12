@@ -64,7 +64,7 @@
     <button
       class="close-btn"
       onclick={handleClose}
-      aria-label="{t('create_ui_close_modal')}"
+      aria-label={t("create_ui_close_modal")}
       data-animate="2"
     >
       <i class="fas fa-times" aria-hidden="true"></i>
@@ -137,9 +137,9 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
     cursor: pointer;
     transition:
-      background 0.15s ease,
-      color 0.15s ease,
-      border-color 0.15s ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
     flex-shrink: 0;
     font-size: var(--font-size-base, 16px);
   }

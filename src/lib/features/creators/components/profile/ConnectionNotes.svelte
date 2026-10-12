@@ -168,7 +168,7 @@
     resize: vertical;
     min-height: 80px;
     outline: none;
-    transition: border-color var(--duration-normal, 200ms) ease;
+    transition: border-color var(--duration-normal) var(--ease-standard);
   }
 
   .notes-input:focus {

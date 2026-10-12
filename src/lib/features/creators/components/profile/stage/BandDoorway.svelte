@@ -202,7 +202,7 @@
     font-size: 0.9375em;
     font-weight: 600;
     cursor: pointer;
-    transition: background var(--duration-normal, 250ms) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .enter:hover {

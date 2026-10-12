@@ -18,7 +18,9 @@
   }: Props = $props();
 
   let isOpen = $state(false);
-  $effect.pre(() => { isOpen = defaultOpen; });
+  $effect.pre(() => {
+    isOpen = defaultOpen;
+  });
 
   function toggle() {
     isOpen = !isOpen;
@@ -81,7 +83,11 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
     border-radius: 12px;
-    transition: all var(--duration-normal) ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      border-radius var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .collapsible-section.expanded {
@@ -102,7 +108,10 @@
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-radius var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .collapsible-section.expanded .section-toggle {
@@ -130,7 +139,7 @@
     margin-left: auto;
     font-size: 0.65rem;
     opacity: 0.5;
-    transition: transform var(--duration-normal) cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform var(--duration-normal) var(--ease-spring);
   }
 
   .collapsible-section.expanded .chevron {
@@ -139,7 +148,7 @@
 
   .section-content {
     padding: 8px 14px 14px;
-    animation: slideDown var(--duration-normal) ease-out;
+    animation: slideDown var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes slideDown {

@@ -106,7 +106,11 @@ Empty quadrant = not present (freeform)
 
   // Keyboard handler for accessibility
   function handleKeyDown(event: KeyboardEvent, component: LOOPComponent) {
-    if (interactive && onToggle && (event.key === "Enter" || event.key === " ")) {
+    if (
+      interactive &&
+      onToggle &&
+      (event.key === "Enter" || event.key === " ")
+    ) {
       event.preventDefault();
       onToggle(component);
     }
@@ -197,7 +201,9 @@ Empty quadrant = not present (freeform)
   }
 
   .quadrant {
-    transition: fill 0.15s ease, opacity 0.15s ease;
+    transition:
+      fill var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .quadrant.active {

@@ -42,7 +42,7 @@
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
     min-height: 44px;
-    transition: border-color 0.15s;
+    transition: border-color var(--duration-fast);
   }
 
   .export-btn:hover {

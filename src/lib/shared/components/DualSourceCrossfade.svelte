@@ -208,7 +208,7 @@
     contain: layout paint;
     will-change: opacity;
     transition: opacity var(--dual-source-duration)
-      var(--transition-easing, ease) 0ms;
+      var(--transition-easing, var(--ease-standard)) 0ms;
   }
 
   .source.active {

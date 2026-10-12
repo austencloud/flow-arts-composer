@@ -11,7 +11,8 @@
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import { fly, fade } from "svelte/transition";
+  import { flyFade, opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import {
@@ -137,7 +138,10 @@
 
       <div class="header-center">
         {#if value}
-          <div class="notation-display" transition:fade={{ duration: 150 }}>
+          <div
+            class="notation-display"
+            transition:opaqueFade={{ duration: DURATION.fast }}
+          >
             {value}
           </div>
         {:else}
@@ -147,7 +151,7 @@
           <div
             class="result-badge"
             class:none={resultCount === 0}
-            transition:fly={{ y: -10, duration: 200 }}
+            transition:flyFade={{ y: -10, duration: DURATION.normal }}
           >
             {t("shared_keyboard_matches", { count: resultCount })}
           </div>
@@ -321,7 +325,10 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.2s ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .mode-toggle.spelled {
@@ -411,7 +418,13 @@
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    transition: all 0.1s ease;
+    transition:
+      background-color var(--duration-instant) var(--ease-standard),
+      border-color var(--duration-instant) var(--ease-standard),
+      box-shadow var(--duration-instant) var(--ease-standard),
+      filter var(--duration-instant) var(--ease-standard),
+      opacity var(--duration-instant) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard);
   }
 
   .key:active:not(.disabled) {

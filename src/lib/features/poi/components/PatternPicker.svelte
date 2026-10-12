@@ -60,8 +60,13 @@
     class:active={poi.hasUploadedImage}
     role="button"
     tabindex="0"
-    ondragover={(e) => { e.preventDefault(); dragOver = true; }}
-    ondragleave={() => { dragOver = false; }}
+    ondragover={(e) => {
+      e.preventDefault();
+      dragOver = true;
+    }}
+    ondragleave={() => {
+      dragOver = false;
+    }}
     ondrop={handleFileDrop}
   >
     <label class="upload-label">
@@ -113,7 +118,7 @@
     border-radius: 8px;
     background: var(--theme-card-bg, rgba(255 255 255 / 0.05));
     cursor: pointer;
-    transition: border-color 0.15s;
+    transition: border-color var(--duration-fast);
     min-height: 44px;
   }
 
@@ -123,7 +128,11 @@
 
   .preset-card.active {
     border-color: var(--theme-accent, #3b82f6);
-    background: color-mix(in srgb, var(--theme-accent, #3b82f6) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #3b82f6) 15%,
+      transparent
+    );
   }
 
   .preset-preview {
@@ -142,20 +151,30 @@
     border-radius: 8px;
     padding: 1rem;
     text-align: center;
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      background var(--duration-fast);
     cursor: pointer;
   }
 
   .upload-zone:hover,
   .upload-zone.drag-over {
     border-color: var(--theme-accent, #3b82f6);
-    background: color-mix(in srgb, var(--theme-accent, #3b82f6) 8%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #3b82f6) 8%,
+      transparent
+    );
   }
 
   .upload-zone.active {
     border-color: var(--theme-accent, #3b82f6);
     border-style: solid;
-    background: color-mix(in srgb, var(--theme-accent, #3b82f6) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #3b82f6) 15%,
+      transparent
+    );
   }
 
   .upload-zone.active .upload-label {
