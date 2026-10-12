@@ -31,6 +31,7 @@ export interface BlossomAtmosphereOptions {
 export interface BlossomAtmosphere {
   object: Group;
   update(deltaSeconds: number, camera: Camera): void;
+  setLayout(atmosphereScale: number, stageZOffset: number): void;
   dispose(): void;
 }
 
@@ -270,6 +271,7 @@ export function createBlossomAtmosphere(
   const particleRoot = new Group();
   particleRoot.name = "blossom-decorative-atmosphere";
   particleRoot.position.z = options.runtime.stage.position[2];
+  const initialAtmosphereScale = options.runtime.stage.atmosphereScale;
   if (options.decorativeAtmosphereEnabled) {
     const definitions = [
       [options.config.petals, options.runtime.particles.petals, "petals"],
@@ -307,6 +309,11 @@ export function createBlossomAtmosphere(
       sky.update(camera);
       starfield.update(deltaSeconds);
       for (const field of fields) field.update(deltaSeconds);
+    },
+    setLayout(atmosphereScale, stageZOffset) {
+      const ratio = atmosphereScale / initialAtmosphereScale;
+      particleRoot.scale.set(ratio, 1, ratio);
+      particleRoot.position.z = stageZOffset;
     },
     dispose() {
       sky.dispose();

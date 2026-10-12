@@ -9,9 +9,11 @@
  * points show and turns the layout into circles.
  */
 import {
+  BOX_OUTER_RING_WIDTH,
   DIAMOND_OUTER_POINTS,
   JOIN_GRID_LOCATIONS,
   JOIN_HAND_RADIUS,
+  JOINED_POINT_RADIUS,
   gridPointsSvg,
   joinedPointColors,
   type GridJoinLayout,
@@ -47,10 +49,39 @@ export function joinedGridMarkup(
   return pointsMarkup(layout.points, options, true);
 }
 
+/**
+ * The joined layout's dots mid-turn: each outer dot is `ring` of the way
+ * from a filled diamond dot (0) to a box ring (1), the same fill and stroke
+ * fade the single grid's outer points make while GridSvg turns it. Every
+ * other dot is drawn as at rest.
+ */
+export function turningGridMarkup(
+  layout: Pick<GridJoinLayout, "points">,
+  ring: number,
+  options: JoinedGridMarkupOptions
+): string {
+  return pointsMarkup(layout.points, options, true, ring);
+}
+
+/**
+ * One outer dot between filled and ring, drawn as GridSvg draws its outer
+ * points (one circle whose fill and stroke opacities cross), so the midway
+ * look matches a single grid's turn.
+ */
+function morphingOuterPointSvg(
+  point: JoinedGridPoint,
+  color: string,
+  ring: number
+): string {
+  const clamped = ring <= 0 ? 0 : ring >= 1 ? 1 : ring;
+  return `<circle cx="${point.x}" cy="${point.y}" r="${JOINED_POINT_RADIUS.outer}" fill="${color}" fill-opacity="${(1 - clamped).toFixed(3)}" stroke="${color}" stroke-width="${BOX_OUTER_RING_WIDTH}" stroke-opacity="${clamped.toFixed(3)}"/>`;
+}
+
 function pointsMarkup(
   points: readonly JoinedGridPoint[],
   options: JoinedGridMarkupOptions,
-  tinted: boolean
+  tinted: boolean,
+  outerRing?: number
 ): string {
   const base = options.darkMode
     ? GRID_POINT_COLOR_DARK
@@ -68,9 +99,14 @@ function pointsMarkup(
           active[member.hand].has(member.location)
         )));
   return points
-    .map((point, index) =>
-      shown(point) ? gridPointsSvg([point], point.ring, colors[index]!) : ""
-    )
+    .map((point, index) => {
+      if (!shown(point)) return "";
+      const color = colors[index]!;
+      if (outerRing !== undefined && point.kind === "outer") {
+        return morphingOuterPointSvg(point, color, outerRing);
+      }
+      return gridPointsSvg([point], point.ring, color);
+    })
     .join("");
 }
 

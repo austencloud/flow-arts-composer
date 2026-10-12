@@ -26,6 +26,7 @@ import {
 } from "../../domain/models/scene-configs";
 import {
   createBlossomRuntimeConfig,
+  createBlossomStageTransform,
   type BlossomQualityTier,
 } from "../../scenes/cherry-blossom/blossom-runtime";
 import { getBlossomActiveProductionPhase } from "../../scenes/cherry-blossom/blossom-site";
@@ -83,6 +84,12 @@ export interface BlossomEnvironmentWorld {
   maxPixelRatio: number;
   update(deltaSeconds: number, camera: Camera): void;
   setGroundY(groundY: number): void;
+  setLayout(
+    stageWidth: number,
+    stageDepth: number,
+    stageZOffset: number,
+    showDirectionCues: boolean
+  ): void;
   setActive(active: boolean): void;
   dispose(): void;
 }
@@ -396,6 +403,29 @@ export function createBlossomEnvironmentWorld(
     lighting.setGroundY(groundY);
   }
 
+  function setLayout(
+    nextWidth: number,
+    nextDepth: number,
+    nextStageZOffset: number,
+    showDirectionCues: boolean
+  ): void {
+    const effectiveWidth = Math.max(nextWidth, footprint.width);
+    const effectiveDepth = Math.max(nextDepth, footprint.depth);
+    stage.setLayout(effectiveWidth, effectiveDepth, showDirectionCues);
+    const stageTransform = createBlossomStageTransform({
+      stageWidth: effectiveWidth,
+      stageDepth: effectiveDepth,
+      stageZOffset: nextStageZOffset,
+      groundY: authored.position.y,
+    });
+    atmosphere.setLayout(stageTransform.atmosphereScale, nextStageZOffset);
+    if (authored.position.z !== nextStageZOffset) {
+      authored.position.z = nextStageZOffset;
+      river?.setStageZOffset(nextStageZOffset);
+      lighting.setStageZOffset(nextStageZOffset);
+    }
+  }
+
   return {
     root,
     reflector: river?.object ?? null,
@@ -410,6 +440,7 @@ export function createBlossomEnvironmentWorld(
       river?.update(deltaSeconds);
     },
     setGroundY,
+    setLayout,
     setActive(active) {
       root.visible = active;
       river?.setActive(active);

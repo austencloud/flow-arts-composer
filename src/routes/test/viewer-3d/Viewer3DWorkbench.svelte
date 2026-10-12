@@ -9,6 +9,7 @@
   import { SCENE_FEATURES } from "#lib/shared/3d/scene-features/domain/scene-feature-registry.js";
   import { goto } from "$app/navigation";
   import { onDestroy, onMount } from "svelte";
+  import type { Material, Object3D, Scene, WebGLRenderer } from "three";
   import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import { readReviewEffect } from "./effect-review.js";
 
@@ -50,6 +51,176 @@
   const workerReview =
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("renderer") === "worker";
+  const pasteProbeEnabled =
+    import.meta.env.DEV &&
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("pasteProbe") === "1";
+
+  type ProbeHandles = { scene: Scene; renderer: WebGLRenderer };
+  type ProbeWindow = Window & { __sceneHandles?: ProbeHandles };
+  let probeRoot: HTMLDivElement;
+  let probeReady = $state<boolean | null>(null);
+  let probeLines = $state<string[]>([]);
+  let probeRunning = $state(false);
+  let canUndoProbePaste = $state(false);
+  let canRedoProbePaste = $state(false);
+  let probeTimer: ReturnType<typeof setTimeout> | undefined;
+  let probeSampleTimer: ReturnType<typeof setTimeout> | undefined;
+  let probeStart = 0;
+  let lastProbeState = "";
+  const objectIds = new WeakMap<object, number>();
+  let nextObjectId = 1;
+
+  function objectId(value: object | null | undefined): number | null {
+    if (!value) return null;
+    let id = objectIds.get(value);
+    if (!id) {
+      id = nextObjectId++;
+      objectIds.set(value, id);
+    }
+    return id;
+  }
+
+  function materialVisible(object: Object3D): boolean {
+    const material = (object as Object3D & { material?: Material | Material[] })
+      .material;
+    if (!material) return true;
+    return (Array.isArray(material) ? material : [material]).some(
+      (item) => item.visible
+    );
+  }
+
+  function probeSnapshot(): string {
+    const host = probeRoot?.querySelector<HTMLElement>(".viewer-3d-canvas");
+    const canvas = host?.querySelector<HTMLCanvasElement>("canvas");
+    const publishedHandles = (window as ProbeWindow).__sceneHandles;
+    const handles =
+      publishedHandles?.renderer.domElement === canvas
+        ? publishedHandles
+        : undefined;
+    const scene = handles?.scene;
+    let meshes = 0;
+    let visibleMeshes = 0;
+    if (scene) {
+      scene.traverse((object) => {
+        if (!(object as Object3D & { isMesh?: boolean }).isMesh) return;
+        meshes++;
+        let visible = materialVisible(object);
+        for (
+          let parent: Object3D | null = object;
+          parent;
+          parent = parent.parent
+        ) {
+          if (!parent.visible) visible = false;
+        }
+        if (visible) visibleMeshes++;
+      });
+    }
+    const canvasStyle = canvas ? getComputedStyle(canvas) : null;
+    return JSON.stringify({
+      performers: viewer.performerManager.performers.length,
+      selected: viewer.selectedPerformerIndex,
+      background: viewer.seededBackgroundType,
+      backend: host?.dataset.rendererBackend ?? null,
+      ready: probeReady,
+      handles: handles ? "current" : publishedHandles ? "stale" : "missing",
+      scene: objectId(scene),
+      children: scene?.children.length ?? null,
+      meshes,
+      visibleMeshes,
+      sceneBackground: scene?.background?.constructor.name ?? null,
+      sceneEnvironment: scene?.environment?.constructor.name ?? null,
+      fog: scene?.fog?.constructor.name ?? null,
+      canvas: canvas ? `${canvas.width}x${canvas.height}` : null,
+      canvasDisplay: canvasStyle?.display ?? null,
+      canvasOpacity: canvasStyle?.opacity ?? null,
+    });
+  }
+
+  function recordProbe(label: string, force = false): void {
+    const state = probeSnapshot();
+    if (!force && state === lastProbeState) return;
+    lastProbeState = state;
+    const handles = (window as ProbeWindow).__sceneHandles;
+    const render = handles
+      ? ` frame=${handles.renderer.info.render.frame} calls=${handles.renderer.info.render.calls}`
+      : "";
+    const line = `${Math.round(performance.now() - probeStart)}ms ${label}${render} ${state}`;
+    probeLines = [...probeLines.slice(-119), line];
+    console.info("[paste-probe]", line);
+  }
+
+  function stopProbe(): void {
+    if (probeTimer) clearTimeout(probeTimer);
+    if (probeSampleTimer) clearTimeout(probeSampleTimer);
+    probeRunning = false;
+  }
+
+  function beginProbe(label: string, action: () => boolean): void {
+    stopProbe();
+    probeStart = performance.now();
+    lastProbeState = "";
+    probeLines = [];
+    recordProbe("before", true);
+    const succeeded = action();
+    recordProbe(`${label}=${succeeded}`, true);
+    probeRunning = true;
+    let lastHeartbeat = probeStart;
+    function sample(): void {
+      const now = performance.now();
+      if (now - lastHeartbeat >= 500) {
+        recordProbe("heartbeat", true);
+        lastHeartbeat = now;
+      } else {
+        recordProbe("change");
+      }
+      if (now - probeStart < 4000) probeSampleTimer = setTimeout(sample, 100);
+      else {
+        recordProbe("end", true);
+        probeRunning = false;
+      }
+    }
+    probeSampleTimer = setTimeout(sample, 100);
+    probeTimer = setTimeout(() => {
+      if (!probeRunning) return;
+      recordProbe("wall-clock-end", true);
+      stopProbe();
+    }, 4500);
+  }
+
+  function pasteForProbe(): void {
+    beginProbe("copy-paste", () => {
+      const copied = viewer.copySelectedPerformer();
+      const pasted = copied && viewer.pasteSelectedPerformer();
+      canUndoProbePaste = pasted;
+      canRedoProbePaste = false;
+      return pasted;
+    });
+  }
+
+  function undoProbePaste(): void {
+    if (!canUndoProbePaste) return;
+    beginProbe("undo", () => {
+      const undone = Boolean(viewer.undo());
+      if (undone) {
+        canUndoProbePaste = false;
+        canRedoProbePaste = true;
+      }
+      return undone;
+    });
+  }
+
+  function redoProbePaste(): void {
+    if (!canRedoProbePaste) return;
+    beginProbe("redo", () => {
+      const redone = Boolean(viewer.redo());
+      if (redone) {
+        canRedoProbePaste = false;
+        canUndoProbePaste = true;
+      }
+      return redone;
+    });
+  }
 
   function requestedScene(): BackgroundType {
     if (typeof window === "undefined") return BackgroundType.BLOSSOM;
@@ -174,6 +345,13 @@
       playback.pause();
       playback.play();
     }
+    if (!pasteProbeEnabled) return;
+    const onProbeEvent = (event: Event) => {
+      if (probeRunning)
+        recordProbe((event as CustomEvent<string>).detail, true);
+    };
+    window.addEventListener("tka:paste-probe", onProbeEvent);
+    return () => window.removeEventListener("tka:paste-probe", onProbeEvent);
   });
 
   $effect(() => {
@@ -198,12 +376,13 @@
   });
 
   onDestroy(() => {
+    stopProbe();
     playback.destroy();
     viewer.dispose();
   });
 </script>
 
-<div class="workbench" data-viewer-3d-workbench>
+<div class="workbench" data-viewer-3d-workbench bind:this={probeRoot}>
   <Viewer3DFullscreen
     effectsConfig={reviewEffects}
     sequenceData={sequence}
@@ -216,6 +395,9 @@
     initialRevealMode={workerReview ? "gated" : "streaming"}
     cameraFov={requestedCamera()?.fov}
     initialRevealDeferredFeatures={STREAMED_SCENE_FEATURES}
+    onSceneReadyChange={pasteProbeEnabled
+      ? (ready) => (probeReady = ready)
+      : undefined}
     onClose={() => history.back()}
     onPlaybackToggle={playback.togglePlay}
     onBpmChange={(nextBpm) => (bpm = nextBpm)}
@@ -224,6 +406,25 @@
       playback.setProgress(0);
     }}
   />
+  {#if pasteProbeEnabled}
+    <div class="paste-probe" data-paste-probe>
+      <div class="paste-probe-actions">
+        <button onclick={pasteForProbe} disabled={probeRunning}
+          >Copy + paste selected</button
+        >
+        <button
+          onclick={undoProbePaste}
+          disabled={probeRunning || !canUndoProbePaste}>Undo probe paste</button
+        >
+        <button
+          onclick={redoProbePaste}
+          disabled={probeRunning || !canRedoProbePaste}>Redo probe paste</button
+        >
+        <span>{probeRunning ? "Capturing 4 seconds…" : "Ready"}</span>
+      </div>
+      <pre data-paste-probe-trace>{probeLines.join("\n")}</pre>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -234,5 +435,32 @@
     min-height: 0;
     overflow: hidden;
     background: var(--theme-panel-bg, #0a0a14);
+  }
+  .paste-probe {
+    position: absolute;
+    z-index: 1000;
+    bottom: 5rem;
+    left: 0.5rem;
+    width: min(52rem, calc(100vw - 1rem));
+    max-height: 38vh;
+    padding: 0.5rem;
+    overflow: auto;
+    background: rgb(0 0 0 / 88%);
+    color: white;
+    font: 11px/1.4 monospace;
+  }
+  .paste-probe-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .paste-probe button {
+    padding: 0.35rem 0.5rem;
+  }
+  .paste-probe pre {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 </style>

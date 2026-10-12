@@ -12,6 +12,7 @@ export interface WorkerMoveHandleSnapshot {
   groundY: number;
   selectedCount: number;
   dragging: boolean;
+  placing?: boolean;
   hovered: boolean;
   focusVisible: boolean;
   visible: boolean;
@@ -28,8 +29,8 @@ export interface WorkerMoveHandleGeometry {
   minWidthPx: 48;
   minHeightPx: 48;
   paddingBlockRem: 0;
-  paddingInlineRem: 0.875;
-  borderWidthPx: 1;
+  paddingInlineRem: 0;
+  borderWidthPx: 0;
   borderRadiusPx: 999;
   gapRem: 0.5;
   iconWidthRem: 1;
@@ -89,13 +90,8 @@ export interface WorkerMoveHandleOwner {
   dispose(): void;
 }
 
-const IDLE_BORDER = "var(--theme-accent, #8b5cf6)";
-const IDLE_BACKGROUND = "var(--theme-panel-bg, rgba(0, 0, 0, 0.82))";
 const IDLE_TEXT = "var(--theme-text, #fff)";
 const ACTIVE_COLOR = "var(--theme-accent-text, #a78bfa)";
-const ACTIVE_BACKGROUND = "var(--theme-card-hover-bg, rgba(24, 20, 40, 0.94))";
-const BOX_SHADOW =
-  "0 0 0 1px rgba(0, 0, 0, 0.5), 0 0.4rem 1.1rem rgba(0, 0, 0, 0.42)";
 const VISUAL_TRANSITION =
   "border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast)";
 
@@ -107,10 +103,12 @@ function presentation(
   snapshot: WorkerMoveHandleSnapshot
 ): WorkerMoveHandlePresentation {
   const multiple = snapshot.selectedCount !== 1;
-  const label = multiple ? `Move ${snapshot.selectedCount}` : "Move character";
-  const accessibleLabel = multiple
-    ? `Move ${snapshot.selectedCount} selected characters`
-    : "Move selected character";
+  const label = "";
+  const accessibleLabel = snapshot.placing
+    ? "Cancel move"
+    : multiple
+      ? `Move ${snapshot.selectedCount} selected characters: drag or press to choose a floor position`
+      : "Move selected character: drag or press to choose a floor position";
   const active = snapshot.hovered || snapshot.focusVisible;
   const progress = snapshot.reducedMotion
     ? 1
@@ -138,17 +136,17 @@ function presentation(
       minWidthPx: 48,
       minHeightPx: 48,
       paddingBlockRem: 0,
-      paddingInlineRem: 0.875,
-      borderWidthPx: 1,
+      paddingInlineRem: 0,
+      borderWidthPx: 0,
       borderRadiusPx: 999,
       gapRem: 0.5,
       iconWidthRem: 1,
     },
     material: {
-      borderColor: active ? ACTIVE_COLOR : IDLE_BORDER,
-      background: active ? ACTIVE_BACKGROUND : IDLE_BACKGROUND,
+      borderColor: "transparent",
+      background: "transparent",
       color: active ? ACTIVE_COLOR : IDLE_TEXT,
-      boxShadow: BOX_SHADOW,
+      boxShadow: "none",
       outline: snapshot.focusVisible ? `2px solid ${ACTIVE_COLOR}` : null,
       outlineOffsetPx: snapshot.focusVisible ? 3 : null,
       cursor: snapshot.dragging ? "grabbing" : "grab",

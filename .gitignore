@@ -443,6 +443,7 @@ mcp-server/deploy/auth.local.cmd
 vite.debug*.config.mts
 
 # Agent/session-local review artifacts and generated previews
+/.local/
 /.codex-qft-review.md
 /.codex/visualizations/
 /output/

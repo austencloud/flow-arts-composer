@@ -6,6 +6,7 @@ import {
   Mesh,
   MeshStandardMaterial,
   PerspectiveCamera,
+  Scene,
   Texture,
   Vector3,
   type WebGLRenderer,
@@ -17,6 +18,7 @@ import { createBlossomRuntimeConfig } from "#lib/shared/3d/environments/scenes/c
 import { createBlossomAtmosphere } from "#lib/shared/3d/environments/worlds/blossom/blossom-atmosphere.js";
 import {
   BLOSSOM_AUTHORED_RESOURCE_URLS,
+  attachBlossomEnvironmentWorld,
   createBlossomEnvironmentWorld,
   type BlossomEnvironmentAssets,
 } from "#lib/shared/3d/environments/worlds/blossom/blossom-environment-world.js";
@@ -203,6 +205,66 @@ describe("Blossom renderer-neutral world", () => {
     world.setActive(false);
     expect(world.root.visible).toBe(false);
     expect(world.reflector!.visible).toBe(false);
+    world.dispose();
+  });
+
+  it("updates stage layout in place while keeping the mounted background and assets", () => {
+    const bundle = assets();
+    const world = createBlossomEnvironmentWorld(
+      {
+        renderer,
+        groundY: 0,
+        stageWidth: 8,
+        stageDepth: 7,
+        qualityTier: "high",
+      },
+      bundle
+    );
+    const scene = new Scene();
+    const detach = attachBlossomEnvironmentWorld(scene, world);
+    scene.background = world.background;
+    scene.fog = world.fog;
+    const court = world.root.getObjectByName("blossom-stage-slate") as Mesh;
+    const originalGeometry = court.geometry;
+    const disposeOriginal = vi.spyOn(originalGeometry, "dispose");
+    const authored = world.root.getObjectByName("BlossomEnvironment")!;
+    const marker = world.root.getObjectByName("blossom-stage-right-marker")!;
+    const particleRoot = world.root.getObjectByName(
+      "blossom-decorative-atmosphere"
+    )!;
+    const moon = world.root.getObjectByName("blossom-moon-key")!;
+    const initialMoonZ = moon.position.z;
+
+    world.setLayout(8.04, 7, 0, true);
+    expect(court.geometry).toBe(originalGeometry);
+    expect(disposeOriginal).not.toHaveBeenCalled();
+    expect(scene.children).toContain(world.root);
+    expect(scene.background).toBe(world.background);
+    expect(scene.fog).toBe(world.fog);
+
+    world.setLayout(16, 10, 2, false);
+    const bounds = new Box3().setFromObject(court);
+    expect(bounds.min.x).toBeCloseTo(-8);
+    expect(bounds.max.x).toBeCloseTo(8);
+    expect(bounds.min.z).toBeCloseTo(-5);
+    expect(bounds.max.z).toBeCloseTo(5);
+    expect(disposeOriginal).toHaveBeenCalledTimes(1);
+    expect(marker.visible).toBe(false);
+    expect(marker.position.x).toBeCloseTo(7.55);
+    expect(authored.position.z).toBe(2);
+    expect(particleRoot.position.z).toBe(2);
+    expect(particleRoot.scale.x).toBeGreaterThan(1);
+    expect(world.reflector?.position.z).toBeGreaterThan(2);
+    expect(moon.position.z).toBeCloseTo(initialMoonZ + 2);
+    expect(scene.children).toContain(world.root);
+    expect(scene.background).toBe(world.background);
+    expect(scene.fog).toBe(world.fog);
+
+    world.setLayout(8, 7, 0, true);
+    expect(new Box3().setFromObject(court).max.x).toBeCloseTo(6);
+    expect(marker.visible).toBe(true);
+    expect(authored.position.z).toBe(0);
+    detach();
     world.dispose();
   });
 

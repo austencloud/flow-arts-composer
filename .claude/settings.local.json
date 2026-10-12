@@ -1,6 +1,11 @@
 {
   "permissions": {
     "allow": [
+      "PowerShell(ssh -o BatchMode=yes -l austen d2 *)",
+      "PowerShell(pwsh scripts/d2-run.ps1 *)",
+      "PowerShell(scp -q -o BatchMode=yes *)",
+      "PowerShell(scp -q -r -o BatchMode=yes *)",
+      "Bash(ssh -o BatchMode=yes -l austen d2 *)",
       "Edit",
       "Write",
       "Bash(git:*)",
@@ -580,7 +585,9 @@
       "Bash(pnpm install *)",
       "Bash(winget install *)",
       "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\tka-platform\\\\launchers\\\\start-dev.ps1\")",
-      "Read(//c/Users/Austen/.cloudflared/**)"
+      "Read(//c/Users/Austen/.cloudflared/**)",
+      "PowerShell(Set-Location E:/tka-platform; git worktree add E:/worktrees/tka-platform/join-as-sequence -b codex/join-as-sequence main 2>&1; cmd /c mklink /J E:\\\\worktrees\\\\tka-platform\\\\join-as-sequence\\\\node_modules E:\\\\tka-platform\\\\node_modules; Get-ChildItem E:/tka-platform/packages -Directory | ForEach-Object { if \\(Test-Path \"E:/tka-platform/packages/$\\($_.Name\\)/node_modules\"\\) { \"pkg nm: $\\($_.Name\\)\" } })",
+      "PowerShell(Set-Location E:/tka-platform; git worktree add --detach E:/worktrees/tka-platform/join-mandala-pictures main 2>&1 | Select-Object -Last 1; $wt='E:\\\\worktrees\\\\tka-platform\\\\join-mandala-pictures'; cmd /c mklink /J \"$wt\\\\node_modules\" E:\\\\tka-platform\\\\node_modules; cmd /c mklink /J \"$wt\\\\mcp-server\\\\node_modules\" E:\\\\tka-platform\\\\mcp-server\\\\node_modules)"
     ]
   },
   "enableAllProjectMcpServers": true,

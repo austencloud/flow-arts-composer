@@ -35,10 +35,9 @@ describe("performer manager count transitions", () => {
     expect(original?.position.x).toBe(0);
     expect(original?.position.z).toBe(0);
     expect(added?.presenceProgress).toBe(0);
-    expect(manager.renderablePerformers.map((item) => item.presencePhase)).toEqual([
-      "present",
-      "entering",
-    ]);
+    expect(
+      manager.renderablePerformers.map((item) => item.presencePhase)
+    ).toEqual(["present", "entering"]);
 
     manager.updateFormationTransition(now + 140);
     expect(original?.position.x).toBeCloseTo(-0.5);
@@ -106,8 +105,9 @@ describe("performer manager count transitions", () => {
     expect(survivor?.position.x).toBeCloseTo(-0.5);
     expect(survivor?.position.z).toBe(0);
     expect(
-      manager.renderablePerformers.find((item) => item.presencePhase === "exiting")
-        ?.performer.presenceProgress
+      manager.renderablePerformers.find(
+        (item) => item.presencePhase === "exiting"
+      )?.performer.presenceProgress
     ).toBeCloseTo(0.5);
 
     manager.updateFormationTransition(now + 280);
@@ -115,6 +115,29 @@ describe("performer manager count transitions", () => {
     expect(survivor?.position.z).toBe(0);
     expect(manager.renderablePerformers).toHaveLength(1);
 
+    manager.destroy();
+  });
+
+  it("lets the render stage flush layout before an exiting rig is removed", () => {
+    const manager = createPerformerManager({
+      initialCharacterId: DEFAULT_CHARACTER_ID,
+      maxPerformers: 8,
+    });
+    manager.initialize();
+    manager.addPerformer();
+    manager.updateFormationTransition(now + 280);
+    now = 2_000;
+    manager.removePerformer();
+
+    const flushLayout = vi.fn(() => {
+      expect(manager.performers[0]?.position.x).toBeCloseTo(0);
+      expect(manager.renderablePerformers).toHaveLength(2);
+      expect(manager.renderablePerformers[1]?.presencePhase).toBe("exiting");
+    });
+    manager.updateFormationTransition(now + 280, flushLayout);
+
+    expect(flushLayout).toHaveBeenCalledOnce();
+    expect(manager.renderablePerformers).toHaveLength(1);
     manager.destroy();
   });
 
@@ -181,10 +204,7 @@ describe("performer manager count transitions", () => {
   });
 
   it("settles character presence and layout immediately for reduced motion", () => {
-    vi.stubGlobal(
-      "matchMedia",
-      vi.fn().mockReturnValue({ matches: true })
-    );
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true }));
     const manager = createPerformerManager({
       initialCharacterId: DEFAULT_CHARACTER_ID,
       maxPerformers: 8,
@@ -192,14 +212,13 @@ describe("performer manager count transitions", () => {
     manager.initialize();
 
     manager.addPerformer();
-    expect(manager.performers.map((performer) => performer.position.x)).toEqual([
-      -1, 1,
-    ]);
+    expect(manager.performers.map((performer) => performer.position.x)).toEqual(
+      [-1, 1]
+    );
     expect(manager.performers[1]?.presenceProgress).toBe(1);
-    expect(manager.renderablePerformers.map((item) => item.presencePhase)).toEqual([
-      "present",
-      "present",
-    ]);
+    expect(
+      manager.renderablePerformers.map((item) => item.presencePhase)
+    ).toEqual(["present", "present"]);
 
     manager.removePerformer();
     expect(manager.performers[0]?.position.x).toBe(0);

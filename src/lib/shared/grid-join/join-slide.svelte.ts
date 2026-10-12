@@ -1,22 +1,36 @@
 /**
- * The join slide for one pictograph. When the same drawing's join changes
- * (the sequence was re-joined, or the change was undone), each hand's grid,
- * props and arrows glide from the old layout to the new one through the
- * shared GridJoinTween instead of jumping. A different drawing (a new
- * sequence, another letter, a transform) snaps, the same rule the animation
- * canvas follows.
+ * The join slide and the join turn for one pictograph, the shared owner of
+ * how a joined drawing moves when a sequence edit changes it.
  *
- * Call during component init. `read` is reactive; the slide starts in a
- * pre-effect, so the frame that first paints the new layout already carries
- * the slide's starting position.
+ * Slide: when the same drawing's join changes (the sequence was re-joined,
+ * or the change was undone), each hand's grid, props and arrows glide from
+ * the old layout to the new one through the shared GridJoinTween instead of
+ * jumping. A different drawing (a new sequence, another letter) snaps, the
+ * same rule the animation canvas follows.
+ *
+ * Turn: when a joined drawing's grid mode flips between diamond and box (a
+ * rotate of the whole sequence turns the join with every hand location),
+ * the joined grids turn 45° about the cell center in the rotation's
+ * direction while their outer dots morph between filled and ring, the way
+ * GridSvg turns a single grid; the props and arrows move on their own
+ * transitions alongside, as they do on one grid.
+ *
+ * Call during component init. `read` is reactive; a slide or turn starts in
+ * a pre-effect, so the frame that first paints the new layout already
+ * carries the motion's starting position.
  */
 import type { GridJoin } from "@tka/tka-types";
 import {
+  isBoxGrid,
+  isJoinedGridModes,
   joinedGridModes,
   joinedGridModesKey,
   type JoinedGridModes,
 } from "@tka/render-core";
 import { motionDuration } from "#lib/shared/transitions/motion.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
+import { cssCubicBezier } from "#lib/shared/transitions/ws-ease.js";
+import { getGridRotationDirection } from "#lib/shared/pictograph/grid/state/grid-rotation-state.svelte.js";
 import { gridJoinsEqual } from "./grid-join-controller";
 import {
   GRID_JOIN_TWEEN_MS,
@@ -52,10 +66,33 @@ export interface JoinSlideFrame {
   readonly secondGridAlpha: number;
 }
 
+export interface JoinTurnFrame {
+  /**
+   * Degrees the joined picture is still turned from rest about the scene
+   * center (SVG sense, clockwise positive); 0 at rest.
+   */
+  readonly angle: number;
+  /** How much of a ring each outer dot is: 0 a filled dot, 1 a box ring. */
+  readonly ring: number;
+  /** The shown fit scale about the scene center. */
+  readonly scale: number;
+}
+
 export interface JoinSlide {
   /** The running slide this frame, or null at rest. */
   readonly current: JoinSlideFrame | null;
+  /** The running turn this frame, or null at rest. Never set with `current`. */
+  readonly turn: JoinTurnFrame | null;
 }
+
+/**
+ * The single grid's turn: DURATION.normal on CSS `ease`, the clock and curve
+ * GridSvg turns on and the props move on, so the joined grids keep step with
+ * the props exactly as one grid does.
+ */
+export const GRID_TURN_MS = DURATION.normal;
+const gridTurnEase = cssCubicBezier(0.25, 0.1, 0.25, 1);
+const GRID_TURN_DEGREES = 45;
 
 /**
  * The parts of a pictograph that, when unchanged, make a new join a re-join
@@ -106,14 +143,51 @@ function secondGridAlphaFor(
   return startAlpha + ((to ? 1 : 0) - startAlpha) * t;
 }
 
+/**
+ * The one grid both hands draw for a mode, or null when they draw different
+ * grids (a skewed drawing, or one hand on a diamond grid and the other on a
+ * box grid), which no turn goes between.
+ */
+function oneGrid(
+  gridMode: string | undefined | JoinedGridModes
+): "diamond" | "box" | null {
+  if (isJoinedGridModes(gridMode)) {
+    return gridMode.left === gridMode.right && gridMode.left !== "skewed"
+      ? gridMode.left
+      : null;
+  }
+  if (gridMode === "skewed") return null;
+  return isBoxGrid(gridMode) ? "box" : "diamond";
+}
+
+/** True when the two modes draw different grids, one diamond and one box. */
+export function flipsDiamondBox(
+  from: string | undefined | JoinedGridModes,
+  to: string | undefined | JoinedGridModes
+): boolean {
+  const a = oneGrid(from);
+  const b = oneGrid(to);
+  return a !== null && b !== null && a !== b;
+}
+
+function clamp01(value: number): number {
+  return value <= 0 ? 0 : value >= 1 ? 1 : value;
+}
+
 export function followJoinSlide(read: () => JoinSlideSource): JoinSlide {
   const tween = new GridJoinTween();
   let current = $state<JoinSlideFrame | null>(null);
+  let turn = $state<JoinTurnFrame | null>(null);
   let previous: JoinSlideSource | null = null;
   let frameId: number | null = null;
   let from: GridJoin | null = null;
   let to: GridJoin | null = null;
   let startSecondAlpha = 1;
+  let turnRunning = false;
+  let turnFrom: JoinTurnFrame = { angle: 0, ring: 0, scale: 1 };
+  let turnTo: Pick<JoinTurnFrame, "ring" | "scale"> = { ring: 0, scale: 1 };
+  let turnStartMs = 0;
+  let turnDurationMs = 0;
 
   function stopLoop(): void {
     if (frameId !== null) cancelAnimationFrame(frameId);
@@ -135,9 +209,71 @@ export function followJoinSlide(read: () => JoinSlideSource): JoinSlide {
     };
   }
 
+  function sampleTurnAt(now: number): JoinTurnFrame | null {
+    if (!turnRunning) return null;
+    const t = clamp01((now - turnStartMs) / turnDurationMs);
+    if (t >= 1) {
+      turnRunning = false;
+      return null;
+    }
+    const eased = gridTurnEase(t);
+    return {
+      angle: turnFrom.angle * (1 - eased),
+      ring: turnFrom.ring + (turnTo.ring - turnFrom.ring) * eased,
+      scale: turnFrom.scale + (turnTo.scale - turnFrom.scale) * eased,
+    };
+  }
+
   function tick(now: number): void {
     current = sampleAt(now);
-    frameId = current ? requestAnimationFrame(tick) : null;
+    turn = sampleTurnAt(now);
+    frameId = current || turn ? requestAnimationFrame(tick) : null;
+  }
+
+  function settle(): void {
+    tween.stop();
+    turnRunning = false;
+    stopLoop();
+    current = null;
+    turn = null;
+  }
+
+  /**
+   * Starts the turn from the picture on screen: the old layout, which the new
+   * one is turned 45° from, or wherever a running turn had got to. A second
+   * rotate mid-turn (or the first one undone) carries on from there, so the
+   * picture never jumps.
+   */
+  function startTurn(last: JoinSlideSource, next: JoinSlideSource): void {
+    const duration = motionDuration(GRID_TURN_MS);
+    if (duration <= 0) {
+      settle();
+      return;
+    }
+    const now = performance.now();
+    const shown = turn;
+    const toBox = oneGrid(next.gridMode) === "box";
+    turnFrom = {
+      angle:
+        (shown?.angle ?? 0) - GRID_TURN_DEGREES * getGridRotationDirection(),
+      ring: shown?.ring ?? (toBox ? 0 : 1),
+      scale:
+        shown?.scale ??
+        pictographJoinFrame(last.join, last.gridMode).scale ??
+        1,
+    };
+    turnTo = {
+      ring: toBox ? 1 : 0,
+      scale: pictographJoinFrame(next.join, next.gridMode).scale ?? 1,
+    };
+    turnStartMs = now;
+    turnDurationMs = duration;
+    turnRunning = true;
+    tween.stop();
+    current = null;
+    turn = sampleTurnAt(now);
+    stopLoop();
+    if (turn) frameId = requestAnimationFrame(tick);
   }
 
   $effect.pre(() => {
@@ -150,6 +286,14 @@ export function followJoinSlide(read: () => JoinSlideSource): JoinSlide {
       gridsKey(last.gridMode) === gridsKey(next.gridMode)
     )
       return;
+    if (
+      last.join &&
+      next.join &&
+      flipsDiamondBox(last.gridMode, next.gridMode)
+    ) {
+      startTurn(last, next);
+      return;
+    }
     const nextFrame = pictographJoinFrame(next.join, next.gridMode);
     const lastFrame = pictographJoinFrame(last.join, last.gridMode);
     const duration = motionDuration(GRID_JOIN_TWEEN_MS);
@@ -158,9 +302,7 @@ export function followJoinSlide(read: () => JoinSlideSource): JoinSlide {
       duration <= 0 ||
       handOffsetsEqual(lastFrame, nextFrame)
     ) {
-      tween.stop();
-      stopLoop();
-      current = null;
+      settle();
       return;
     }
     const now = performance.now();
@@ -168,6 +310,8 @@ export function followJoinSlide(read: () => JoinSlideSource): JoinSlide {
     from = last.join;
     to = next.join;
     tween.start(lastFrame, nextFrame, now, duration);
+    turnRunning = false;
+    turn = null;
     current = sampleAt(now);
     stopLoop();
     if (current) frameId = requestAnimationFrame(tick);
@@ -178,6 +322,9 @@ export function followJoinSlide(read: () => JoinSlideSource): JoinSlide {
   return {
     get current() {
       return current;
+    },
+    get turn() {
+      return turn;
     },
   };
 }

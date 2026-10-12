@@ -61,6 +61,9 @@ importers:
       '@austencloud/media-tagging-ui':
         specifier: ^0.1.0
         version: 0.1.0(svelte@5.57.2(@typescript-eslint/types@8.59.4))
+      '@austencloud/motion':
+        specifier: file:vendor/austencloud-motion-0.2.0.tgz
+        version: file:vendor/austencloud-motion-0.2.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/phone-sign-in':
         specifier: file:vendor/austencloud-phone-sign-in-0.1.0.tgz
         version: file:vendor/austencloud-phone-sign-in-0.1.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
@@ -866,6 +869,12 @@ packages:
 
   '@austencloud/media-tagging-ui@0.1.0':
     resolution: {integrity: sha512-XOhRlb3aGA67Cgiju2A5uvGU8zAB9N+nMWOKBnjaeNPtCipUNKTOdizYhWdchSodrYVRaT3Mj0cdmE3cZI/sog==}
+    peerDependencies:
+      svelte: ^5.0.0
+
+  '@austencloud/motion@file:vendor/austencloud-motion-0.2.0.tgz':
+    resolution: {integrity: sha512-4bObub3wRxOlbmS5Gs+azngk+oopiAwX3zx/muPpU8zH8XxQuLNkZ5rv7peFl1leiBLP6zDnAoCDG9PVUZReew==, tarball: file:vendor/austencloud-motion-0.2.0.tgz}
+    version: 0.2.0
     peerDependencies:
       svelte: ^5.0.0
 
@@ -9669,6 +9678,10 @@ snapshots:
     dependencies:
       '@austencloud/media-tagging-core': 0.1.0
       '@austencloud/media-tagging-types': 0.1.0
+      svelte: 5.57.2(@typescript-eslint/types@8.59.4)
+
+  '@austencloud/motion@file:vendor/austencloud-motion-0.2.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
+    dependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 
   '@austencloud/phone-sign-in@file:vendor/austencloud-phone-sign-in-0.1.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
