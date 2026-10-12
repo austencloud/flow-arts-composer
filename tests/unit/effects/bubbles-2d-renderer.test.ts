@@ -93,8 +93,9 @@ function makeCtx(): CanvasRenderingContext2D {
       }
     ),
     clearRect: vi.fn(),
-    createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
-    createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+    clip: vi.fn(),
+    closePath: vi.fn(),
+    drawImage: vi.fn(),
   } as unknown as CanvasRenderingContext2D;
   return ctx;
 }
@@ -136,306 +137,192 @@ const WITH_LAYER: EmitterTip[] = [
   { x: 420, y: 100, propIndex: 3, tipIndex: 1, end: "B", color: "#ff5a5a" },
 ];
 
+interface BubbleView {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  age: number;
+  maxAge: number;
+  baseR: number;
+  popping: 0 | 1;
+}
+
+function internals(r: Bubbles2DRenderer) {
+  return r as unknown as { bubbles: BubbleView[]; flecks: unknown[] };
+}
+
+/** Deterministic rand so counts and positions are stable. */
+function seeded(seed = 7): () => number {
+  let s = seed;
+  return () => {
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function shiftTips(tips: EmitterTip[], dx: number): EmitterTip[] {
+  return tips.map((t) => ({ ...t, x: t.x + dx }));
+}
+
 describe("Bubbles2DRenderer", () => {
-  it("spawns bubbles at rest under ambient emission", () => {
-    const r = new Bubbles2DRenderer();
+  it("spawns bubbles at rest under ambient emission and draws them", () => {
+    const r = new Bubbles2DRenderer(seeded());
     const ctx = makeCtx();
-    const params = makeParams({
-      ambientEmission: 1,
-      motionEmission: 0,
-      ambientSpawnRate: 60,
-    });
-    // One second of frames at 60fps - should reliably spawn many bubbles.
-    for (let i = 0; i < 60; i++) {
-      r.render(ctx, params, ALL_TIPS, 1 / 60);
-    }
-    // Each live bubble draws at least a fill (interior) + stroke (rim).
-    expect(
-      (ctx.arc as ReturnType<typeof vi.fn>).mock.calls.length
-    ).toBeGreaterThan(0);
-    expect(
-      (ctx.stroke as ReturnType<typeof vi.fn>).mock.calls.length
-    ).toBeGreaterThan(0);
+    const params = makeParams({ motionEmission: 0, ambientSpawnRate: 60 });
+    for (let i = 0; i < 60; i++) r.render(ctx, params, ALL_TIPS, 1 / 60);
+    expect(r.count).toBeGreaterThan(0);
+    // No canvas under jsdom: the plain vector bubble is drawn instead.
+    expect(vi.mocked(ctx.arc).mock.calls.length).toBeGreaterThan(0);
   });
 
   it("motion emission outpaces ambient emission", () => {
-    const ctxA = makeCtx();
-    const ctxB = makeCtx();
-    const rA = new Bubbles2DRenderer();
-    const rB = new Bubbles2DRenderer();
+    const rest = new Bubbles2DRenderer(seeded());
+    const moving = new Bubbles2DRenderer(seeded());
     const restParams = makeParams({ ambientEmission: 1, motionEmission: 0 });
     const moveParams = makeParams({ ambientEmission: 0, motionEmission: 1 });
-
-    const step = 0.02;
     for (let i = 0; i < 40; i++) {
-      rA.render(ctxA, restParams, ALL_TIPS, step);
-      const moving = toEmitters({
-        leftPosA: { x: 100 + i * 30, y: 100 },
-        leftPosB: { x: 120 + i * 30, y: 100 },
-        rightPosA: { x: 200 + i * 30, y: 100 },
-        rightPosB: { x: 220 + i * 30, y: 100 },
-      });
-      rB.render(ctxB, moveParams, moving, step);
+      rest.render(makeCtx(), restParams, ALL_TIPS, 0.02);
+      moving.render(makeCtx(), moveParams, shiftTips(ALL_TIPS, i * 6), 0.02);
     }
-    const aFills = (ctxA.fill as ReturnType<typeof vi.fn>).mock.calls.length;
-    const bFills = (ctxB.fill as ReturnType<typeof vi.fn>).mock.calls.length;
-    expect(bFills).toBeGreaterThan(aFills);
+    expect(moving.count).toBeGreaterThan(rest.count);
   });
 
-  it("respects trackingMode left_end (no crash, still draws)", () => {
-    const r = new Bubbles2DRenderer();
-    const ctx = makeCtx();
+  it("left_end tracking emits from the A ends only", () => {
+    const r = new Bubbles2DRenderer(seeded());
     const params = makeParams({
-      ambientEmission: 1,
       ambientSpawnRate: 80,
       motionEmission: 0,
       trackingMode: "left_end",
     });
-    for (let i = 0; i < 60; i++) {
-      r.render(ctx, params, ALL_TIPS, 1 / 60);
+    for (let i = 0; i < 30; i++) r.render(makeCtx(), params, ALL_TIPS, 1 / 60);
+    const xs = internals(r).bubbles.map((b) => b.x);
+    expect(xs.length).toBeGreaterThan(0);
+    // A ends sit at x 100 and 200; B ends at 120 and 220.
+    for (const x of xs) {
+      expect(Math.min(Math.abs(x - 100), Math.abs(x - 200))).toBeLessThan(8);
     }
-    expect(
-      (ctx.arc as ReturnType<typeof vi.fn>).mock.calls.length
-    ).toBeGreaterThan(0);
   });
 
-  it("caps pool size", () => {
-    const r = new Bubbles2DRenderer();
-    const ctx = makeCtx();
-    const params = makeParams({
-      ambientEmission: 1,
-      ambientSpawnRate: 10000,
-      poolSize: 50,
-      // Zero buoyancy so bubbles don't exit screen before pop. Short life
-      // via small intensity won't apply here because lifetime floors at 1s.
-    });
-    // Let the pool saturate.
-    for (let i = 0; i < 120; i++) {
-      r.render(ctx, params, ALL_TIPS, 1 / 60);
-    }
-    // Can't directly read pool size externally - assert via draw-call rate.
-    // With poolSize=50, each frame draws at most ~50 bubbles × (fill + stroke
-    // + highlight) + pop fragments. Frame-over-frame call count should be
-    // bounded. Absent pool cap, this would explode unboundedly.
-    const framesBefore = (ctx.fill as ReturnType<typeof vi.fn>).mock.calls
-      .length;
-    for (let i = 0; i < 60; i++) {
-      r.render(ctx, params, ALL_TIPS, 1 / 60);
-    }
-    const framesAfter = (ctx.fill as ReturnType<typeof vi.fn>).mock.calls
-      .length;
-    const perFrame = (framesAfter - framesBefore) / 60;
-    // Upper bound: ~3 fills per alive bubble (body/highlight + some bursts)
-    // plus ~8 bursts per pop per frame. Generous cap of ~8× poolSize.
-    expect(perFrame).toBeLessThanOrEqual(params.poolSize * 10);
+  it("caps the live pool at poolSize", () => {
+    const r = new Bubbles2DRenderer(seeded());
+    const params = makeParams({ ambientSpawnRate: 10000, poolSize: 50 });
+    for (let i = 0; i < 120; i++) r.render(makeCtx(), params, ALL_TIPS, 1 / 60);
+    expect(r.count).toBeLessThanOrEqual(50);
+    expect(r.count).toBeGreaterThan(40);
   });
 
   it("preserves a caller-owned non-identity transform", () => {
-    const r = new Bubbles2DRenderer();
+    const r = new Bubbles2DRenderer(seeded());
     const ctx = makeCtx();
     ctx.setTransform(2, 0.2, -0.1, 1.5, 40, 25);
     const before = ctx.getTransform();
     const params = makeParams({ ambientSpawnRate: 120, motionEmission: 0 });
-
     for (let frame = 0; frame < 10; frame++) {
       r.render(ctx, params, ALL_TIPS, 1 / 60);
     }
-
     expect(ctx.getTransform()).toEqual(before);
     expect(ctx.save).toHaveBeenCalled();
     expect(ctx.restore).toHaveBeenCalled();
   });
 
-  it("caches gradients per context, palette, and incoming transform", () => {
-    const r = new Bubbles2DRenderer();
-    const ctxA = makeCtx();
-    const ctxB = makeCtx();
-    const params = makeParams({ ambientSpawnRate: 120, motionEmission: 0 });
-
-    r.render(ctxA, params, ALL_TIPS, 1 / 60);
-    r.render(ctxA, params, ALL_TIPS, 1 / 60);
-    expect(ctxA.createRadialGradient).toHaveBeenCalledTimes(3);
-    expect(ctxB.createRadialGradient).not.toHaveBeenCalled();
-
-    r.render(ctxB, params, ALL_TIPS, 1 / 60);
-    expect(ctxB.createRadialGradient).toHaveBeenCalledTimes(3);
-    ctxA.setTransform(2, 0, 0, 2, 0, 0);
-    r.render(ctxA, params, ALL_TIPS, 1 / 60);
-    expect(ctxA.createRadialGradient).toHaveBeenCalledTimes(6);
-  });
-
-  it("bounds changing-transform gradients and deterministically evicts the oldest", () => {
-    const r = new Bubbles2DRenderer();
-    const ctx = makeCtx();
-    const params = makeParams({ ambientSpawnRate: 120, motionEmission: 0 });
-
-    for (let transformIndex = 0; transformIndex < 9; transformIndex++) {
-      ctx.setTransform(1, 0, 0, 1, transformIndex, 0);
-      r.render(ctx, params, ALL_TIPS, 1 / 60);
-    }
-    expect(ctx.createRadialGradient).toHaveBeenCalledTimes(27);
-
-    // The newest transform remains reusable after saturation.
-    ctx.setTransform(1, 0, 0, 1, 8, 0);
-    r.render(ctx, params, ALL_TIPS, 1 / 60);
-    expect(ctx.createRadialGradient).toHaveBeenCalledTimes(27);
-
-    // The first transform was evicted when the ninth entry arrived.
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    r.render(ctx, params, ALL_TIPS, 1 / 60);
-    expect(ctx.createRadialGradient).toHaveBeenCalledTimes(30);
-  });
-
-  it("bounds a synchronized pop burst to the configured pool", () => {
-    const r = new Bubbles2DRenderer();
-    const ctx = makeCtx();
-    const params = makeParams({ poolSize: 8, ambientEmission: 0 });
-    const internal = r as unknown as {
-      bubbles: Array<Record<string, number>>;
-      bursts: unknown[];
-    };
-    internal.bubbles = Array.from({ length: 20 }, () => ({
-      x: 100,
-      y: 100,
-      vx: 0,
-      vy: 0,
-      age: 1,
-      maxAge: 1,
-      baseR: 6,
-      wobbleAmp: 0,
-      wobbleFreq: 1,
-      wobblePhase: 0,
-      filmPhase: 0,
-      popping: 0,
-      popAge: 0,
-      popR: 6,
-    }));
-
-    r.render(ctx, params, [], 1 / 60);
-    expect(internal.bursts).toHaveLength(8);
-  });
-
-  it("damps bursts by elapsed time rather than frame count", () => {
-    const makeRenderer = () => {
-      const renderer = new Bubbles2DRenderer();
-      const internal = renderer as unknown as {
-        bursts: Array<Record<string, number | string>>;
-        integrateBursts(dt: number): void;
-      };
-      internal.bursts = [
-        {
-          x: 0,
-          y: 0,
-          vx: 100,
-          vy: 50,
-          age: 0,
-          maxAge: 10,
-          r: 1,
-          angle: 0,
-          spin: 0,
-          color: "#fff",
-        },
-      ];
-      return internal;
-    };
-    const sixtyFps = makeRenderer();
-    const thirtyFps = makeRenderer();
-    for (let frame = 0; frame < 60; frame++) sixtyFps.integrateBursts(1 / 60);
-    for (let frame = 0; frame < 30; frame++) thirtyFps.integrateBursts(1 / 30);
-
-    expect(sixtyFps.bursts[0]!.vx).toBeCloseTo(
-      thirtyFps.bursts[0]!.vx as number,
-      8
-    );
-    expect(sixtyFps.bursts[0]!.vy).toBeCloseTo(
-      thirtyFps.bursts[0]!.vy as number,
-      8
-    );
-  });
-
-  it("bubbles rise upward (negative vy after steady state)", () => {
-    const r = new Bubbles2DRenderer();
-    const ctx = makeCtx();
+  it("bubbles from a still tip rise up the screen", () => {
+    const r = new Bubbles2DRenderer(seeded());
     const params = makeParams({
-      ambientEmission: 1,
       ambientSpawnRate: 30,
       motionEmission: 0,
-      buoyancy: 1.0,
+      buoyancy: 1,
     });
-    // Track translate y-values for bubbles. Bubbles2DRenderer draws via
-    // ctx.arc(x, y, r) (no translate), so we read from arc's 2nd arg.
-    for (let i = 0; i < 20; i++) {
-      r.render(ctx, params, ALL_TIPS, 1 / 60);
-    }
-    const arcCalls = (ctx.arc as ReturnType<typeof vi.fn>).mock.calls;
-    expect(arcCalls.length).toBeGreaterThan(0);
-    const ys = arcCalls.map((c) => c[1] as number);
-    const minY = Math.min(...ys);
-    // Tip y is 100; with buoyancy=1, some bubbles should be at least a
-    // few pixels above spawn after 20 frames (333ms).
-    expect(minY).toBeLessThan(95);
+    for (let i = 0; i < 30; i++) r.render(makeCtx(), params, ALL_TIPS, 1 / 60);
+    const live = internals(r).bubbles.filter((b) => b.popping === 0);
+    expect(live.length).toBeGreaterThan(0);
+    for (const b of live) expect(b.vy).toBeLessThan(0);
+    expect(Math.min(...live.map((b) => b.y))).toBeLessThan(95);
   });
 
-  it("breaks a popping film into collapsed ellipses instead of expanding circles", () => {
-    const r = new Bubbles2DRenderer();
-    const ctx = makeCtx();
-    const params = makeParams({
-      ambientEmission: 1,
-      ambientSpawnRate: 60,
-      motionEmission: 0,
-      intensity: 0,
-      poolSize: 16,
-    });
-
-    for (let i = 0; i < 100; i++) {
-      r.render(ctx, params, ALL_TIPS, 1 / 60);
+  it("new bubbles carry part of a moving tip's swing, capped", () => {
+    const r = new Bubbles2DRenderer(seeded());
+    const params = makeParams({ ambientEmission: 0, motionEmission: 1 });
+    // 10 px a frame at 60 fps: 600 px/s to the right.
+    for (let i = 0; i < 12; i++) {
+      r.render(makeCtx(), params, shiftTips(ALL_TIPS, i * 10), 1 / 60);
     }
+    const vx = internals(r).bubbles.map((b) => b.vx);
+    expect(vx.length).toBeGreaterThan(0);
+    expect(vx.filter((v) => v > 5).length).toBeGreaterThan(vx.length / 2);
+    // Capped at 0.8 world units/s, plus a little jitter.
+    for (const v of vx) expect(v).toBeLessThan(0.8 * 60 + 3);
+  });
 
-    const ellipseCalls = (ctx.ellipse as ReturnType<typeof vi.fn>).mock.calls;
-    expect(ellipseCalls.length).toBeGreaterThan(0);
-    expect(
-      ellipseCalls.some((call) => {
-        const radiusX = call[2] as number;
-        const radiusY = call[3] as number;
-        return radiusY < radiusX * 0.6;
-      })
-    ).toBe(true);
+  it("a tip that jumps across the stage does not fling bubbles", () => {
+    const r = new Bubbles2DRenderer(seeded());
+    const params = makeParams({ ambientEmission: 0, motionEmission: 1 });
+    r.render(makeCtx(), params, ALL_TIPS, 1 / 60);
+    r.render(makeCtx(), params, shiftTips(ALL_TIPS, 600), 1 / 60);
+    r.render(makeCtx(), params, shiftTips(ALL_TIPS, 600), 1 / 60);
+    for (const b of internals(r).bubbles) {
+      expect(Math.abs(b.vx)).toBeLessThan(3);
+    }
+  });
+
+  it("a mature film bursts, sheds droplets, and is gone a fifth of a second later", () => {
+    const r = new Bubbles2DRenderer(seeded());
+    const params = makeParams({ ambientEmission: 0, motionEmission: 0 });
+    r.render(makeCtx(), makeParams({ ambientSpawnRate: 60 }), ALL_TIPS, 1 / 60);
+    const view = internals(r);
+    expect(view.bubbles.length).toBeGreaterThan(0);
+    for (const b of view.bubbles) b.age = b.maxAge - 0.001;
+
+    r.render(makeCtx(), params, [], 1 / 60);
+    expect(view.bubbles.every((b) => b.popping === 1)).toBe(true);
+    expect(view.flecks.length).toBeGreaterThan(0);
+
+    for (let i = 0; i < 12; i++) r.render(makeCtx(), params, [], 1 / 60);
+    expect(r.count).toBe(0);
+  });
+
+  it("a stalled frame resumes calmly instead of jumping", () => {
+    const r = new Bubbles2DRenderer(seeded());
+    r.render(makeCtx(), makeParams({ ambientSpawnRate: 60 }), ALL_TIPS, 1 / 60);
+    const b = internals(r).bubbles[0]!;
+    const y0 = b.y;
+    r.render(makeCtx(), makeParams({ ambientEmission: 0 }), [], 2);
+    // Two seconds at full rise would be far more; a stall steps 1/15 s.
+    expect(Math.abs(b.y - y0)).toBeLessThan(Math.abs(b.vy) / 15 + 10);
+  });
+
+  it("draws big bubbles in front of small ones", () => {
+    const r = new Bubbles2DRenderer(seeded());
+    const params = makeParams({ ambientSpawnRate: 200, sizeJitter: 1 });
+    for (let i = 0; i < 20; i++) r.render(makeCtx(), params, ALL_TIPS, 1 / 60);
+    const sizes = internals(r).bubbles.map((b) => b.baseR);
+    for (let i = 1; i < sizes.length; i++) {
+      expect(sizes[i]).toBeGreaterThanOrEqual(sizes[i - 1]!);
+    }
   });
 
   it("dispose resets state", () => {
-    const r = new Bubbles2DRenderer();
-    const ctx = makeCtx();
+    const r = new Bubbles2DRenderer(seeded());
     const params = makeParams();
-    for (let i = 0; i < 20; i++) {
-      r.render(ctx, params, ALL_TIPS, 1 / 60);
-    }
+    for (let i = 0; i < 20; i++) r.render(makeCtx(), params, ALL_TIPS, 1 / 60);
+    expect(r.count).toBeGreaterThan(0);
     r.dispose();
-    // Call render again after dispose - should not crash.
-    r.render(ctx, params, ALL_TIPS, 1 / 60);
-    expect(true).toBe(true);
+    expect(r.count).toBe(0);
+    expect(internals(r).flecks).toHaveLength(0);
+    r.render(makeCtx(), params, ALL_TIPS, 1 / 60);
   });
 
   it("spawns from tunnel layer emitters (propIndex >= 2)", () => {
-    const ctxBase = makeCtx();
-    const ctxLayer = makeCtx();
-    const rBase = new Bubbles2DRenderer();
-    const rLayer = new Bubbles2DRenderer();
-    const params = makeParams({
-      ambientEmission: 1,
-      ambientSpawnRate: 60,
-      motionEmission: 0,
-    });
+    const base = new Bubbles2DRenderer(seeded());
+    const layered = new Bubbles2DRenderer(seeded());
+    const params = makeParams({ ambientSpawnRate: 60, motionEmission: 0 });
     for (let i = 0; i < 30; i++) {
-      rBase.render(ctxBase, params, ALL_TIPS, 1 / 60);
-      rLayer.render(ctxLayer, params, WITH_LAYER, 1 / 60);
+      base.render(makeCtx(), params, ALL_TIPS, 1 / 60);
+      layered.render(makeCtx(), params, WITH_LAYER, 1 / 60);
     }
-    const baseFills = (ctxBase.fill as ReturnType<typeof vi.fn>).mock.calls
-      .length;
-    const layerFills = (ctxLayer.fill as ReturnType<typeof vi.fn>).mock.calls
-      .length;
-    // The layered run emits from 4 extra tips (propIndex 2/3), so it must
-    // draw strictly more bubble fills than the base-only run.
-    expect(layerFills).toBeGreaterThan(baseFills);
+    expect(layered.count).toBeGreaterThan(base.count);
   });
 });
 

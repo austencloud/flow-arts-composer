@@ -123,6 +123,9 @@
 
   .map-layout {
     --map-gap: clamp(1rem, 2.5vw, 2.5rem);
+    /* A slot's picture beside the map grows with the screen's height. */
+    --slot-art: clamp(4.5rem, calc(12 * var(--lesson-vh, 1svh)), 8rem);
+    --slots: calc(var(--slot-art) + 16rem);
     display: grid;
     justify-items: center;
     align-items: center;
@@ -134,7 +137,11 @@
      lesson controls fit one screen. Stacked, the slots sit under the map and
      the controls are taller, so the map gives up more height. */
   .figure {
-    width: min(100%, max(16rem, calc(100svh - 36rem)), 44rem);
+    width: min(
+      100%,
+      max(16rem, calc(100 * var(--lesson-vh, 1svh) - 37rem)),
+      48rem
+    );
   }
 
   .moves {
@@ -167,45 +174,65 @@
       border-color var(--transition-normal);
   }
 
-  @container hand-map (min-width: 40rem) {
-    /* The map takes its full size first; the slots get what is left. */
-    .map-layout {
-      grid-template-columns:
-        min(
-          max(17rem, calc(100svh - 21rem)),
-          44rem,
-          calc(100% - 15rem - var(--map-gap))
-        )
-        minmax(15rem, 22rem);
-      justify-content: center;
-    }
+  /* A stacked slot's picture stays small, so a tall tablet keeps the map
+     big over the slots. */
+  .moves .art {
+    justify-self: center;
+    max-width: 10rem;
+  }
 
-    .figure {
-      width: 100%;
-    }
+  /* Side by side on a landscape screen; a portrait tablet stacks, since the
+     map beside the slots would be a third of its width. */
+  @media (min-aspect-ratio: 1 / 1) {
+    @container hand-map (min-width: 40rem) {
+      /* The map takes its full size first; the slots get what is left. */
+      .map-layout {
+        grid-template-columns:
+          min(
+            max(
+              17rem,
+              min(
+                calc(100 * var(--lesson-vh, 1svh) - 25rem),
+                calc(72 * var(--lesson-vh, 1svh))
+              )
+            ),
+            calc(100% - 15rem - var(--map-gap))
+          )
+          minmax(15rem, var(--slots));
+        justify-content: center;
+      }
 
-    .moves {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 0.6rem;
-      width: min(100%, 22rem);
-    }
+      .figure {
+        width: 100%;
+      }
 
-    .moves li {
-      grid-template-columns: clamp(4.5rem, 12svh, 6.5rem) minmax(0, 1fr);
-      grid-template-areas:
-        "art name"
-        "art caption";
-      align-content: center;
-      gap: 0.2rem 0.85rem;
-      padding: 0.6rem 2.5rem 0.6rem 0.6rem;
-    }
+      .moves {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.6rem;
+        width: min(100%, var(--slots));
+      }
 
-    .name {
-      align-self: end;
-    }
+      .moves .art {
+        max-width: none;
+      }
 
-    .caption {
-      align-self: start;
+      .moves li {
+        grid-template-columns: var(--slot-art) minmax(0, 1fr);
+        grid-template-areas:
+          "art name"
+          "art caption";
+        align-content: center;
+        gap: 0.2rem 0.85rem;
+        padding: 0.6rem 2.5rem 0.6rem 0.6rem;
+      }
+
+      .name {
+        align-self: end;
+      }
+
+      .caption {
+        align-self: start;
+      }
     }
   }
 
