@@ -16,6 +16,7 @@ import type { PropAssets } from "../../../prop/domain/models/prop-assets";
 import type { ArrowAssets } from "../../../arrow/orchestration/domain/arrow-models";
 import type { HandSide } from "../enums/pictograph-enums";
 import type { GridJoin } from "@tka/tka-types";
+import type { JoinedGridModes } from "@tka/render-core";
 
 /**
  * Pre-calculated rendering data attached to a pictograph
@@ -30,9 +31,11 @@ export interface PreparedRenderData {
   /**
    * Set when the pictograph is drawn on two joined grids. Positions above
    * already include each hand's grid offset; painters derive the grid layout
-   * and fit scale from this join and `gridMode`.
+   * and fit scale from this join and `joinedGrids`.
    */
   join?: GridJoin;
+  /** The grid each hand draws when joined (set with `join`). */
+  joinedGrids?: JoinedGridModes;
 }
 
 /**

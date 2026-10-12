@@ -78,11 +78,11 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     transition:
-      background var(--duration-2026-fast, 150ms)
+      background var(--duration-fast)
         var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1)),
-      border-color var(--duration-2026-fast, 150ms)
+      border-color var(--duration-fast)
         var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1)),
-      transform var(--duration-2026-instant, 100ms)
+      transform var(--duration-instant)
         var(--ease-2026-out, cubic-bezier(0.33, 1, 0.68, 1));
     color: color-mix(in srgb, var(--theme-text, white) 85%, transparent);
     width: 100%;
@@ -114,7 +114,7 @@
 
   .sequence-info-panel:active {
     transform: translateY(0) scale(0.98);
-    transition-duration: var(--duration-2026-instant, 100ms);
+    transition-duration: var(--duration-instant);
   }
 
   .sequence-info-panel.has-sequence {

@@ -328,6 +328,16 @@ export function combinationFor(blue: HandMove, red: HandMove): HandCombination {
   return combination;
 }
 
+/** The two moves a combination is made of, whichever hand makes which. */
+export function combinationMoves(id: HandCombinationId): [HandMove, HandMove] {
+  const pair = Object.keys(PAIR_COMBINATION).find(
+    (key) => PAIR_COMBINATION[key] === id
+  );
+  if (!pair) throw new Error(`No moves for ${id}`);
+  const [first, second] = pair.split("+") as [HandMove, HandMove];
+  return [first, second];
+}
+
 /**
  * A combination name in its letter-type colors, as the book prints it: a
  * hyphenated name takes the first color up to the hyphen, the second after.

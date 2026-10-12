@@ -13,8 +13,8 @@ Canonical owners:
 </Crossfade>
 ```
 
-- Cheap mutually exclusive content uses
-  `src/lib/shared/components/Crossfade.svelte`.
+- Cheap mutually exclusive content uses `Crossfade` from
+  `#lib/shared/transitions/motion.js` (the `@austencloud/motion` component).
 - Materially different natural heights add `animateHeight`; a sized parent uses
   `fill`.
 - Heavy or stateful sources that must stay mounted use

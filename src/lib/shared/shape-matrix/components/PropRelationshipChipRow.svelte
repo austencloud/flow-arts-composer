@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { TnDElement } from "#lib/features/choreo-card/domain/tnd-element.js";
   import type { PropRelationship } from "../domain/prop-relationship";

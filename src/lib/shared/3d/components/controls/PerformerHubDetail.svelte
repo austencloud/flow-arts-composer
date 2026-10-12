@@ -429,6 +429,10 @@
       false
     );
   }
+
+  function startFloorPlacement(): void {
+    viewer.startPerformerPlacement();
+  }
 </script>
 
 <div
@@ -452,6 +456,13 @@
     onSelectAll={selectAllFromEmptyScope}
     {onSettingChange}
   />
+
+  {#if selectedIndices.length > 0}
+    <button class="place-action" type="button" onclick={startFloorPlacement}>
+      <i class="fas fa-location-dot" aria-hidden="true"></i>
+      Tap floor to place
+    </button>
+  {/if}
 
   <div class="header-divider" aria-hidden="true"></div>
 
@@ -670,6 +681,23 @@
 />
 
 <style>
+  .place-action {
+    align-self: flex-start;
+    margin: 8px 14px;
+    min-height: 48px;
+    padding: 8px 12px;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 8px;
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    font: inherit;
+    font-size: var(--font-size-min, 14px);
+    cursor: pointer;
+  }
+  .place-action:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
   .hub-detail {
     width: 100%;
     max-width: 100%;

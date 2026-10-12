@@ -189,9 +189,9 @@
     white-space: nowrap;
     text-decoration: none;
     transition:
-      transform 160ms ease,
-      box-shadow 160ms ease,
-      filter 160ms ease;
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard);
   }
   .composer-cta:hover {
     transform: translateY(-2px);
@@ -217,9 +217,9 @@
     font-weight: 600;
     text-decoration: none;
     transition:
-      transform 160ms ease,
-      border-color 160ms ease,
-      background 160ms ease;
+      transform var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
   .pointer-link:hover {
     transform: translateY(-2px);

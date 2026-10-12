@@ -34,11 +34,17 @@ export function applyJoinedGridFit(
 /**
  * Paint `points`, each at its kind's radius: in its entry of `colors` when
  * given (in point order), else in the current fill and stroke style. Box
- * grids draw their outer points as rings.
+ * grids draw their outer points as rings; a point that says so itself
+ * (`ring`, as joined points do) is a ring whatever the grid.
  */
 export function paintGridPoints(
   ctx: RenderContext2D,
-  points: readonly { kind: GridPointKind; x: number; y: number }[],
+  points: readonly {
+    kind: GridPointKind;
+    x: number;
+    y: number;
+    ring?: boolean;
+  }[],
   size: number,
   box: boolean,
   colors?: readonly string[]
@@ -58,7 +64,7 @@ export function paintGridPoints(
       0,
       Math.PI * 2
     );
-    if (box && point.kind === "outer") {
+    if (point.ring ?? (box && point.kind === "outer")) {
       ctx.lineWidth = BOX_OUTER_RING_WIDTH * scale;
       ctx.stroke();
     } else {
@@ -69,14 +75,14 @@ export function paintGridPoints(
 
 /**
  * Paint the layout's points that `include` accepts, each in its entry of
- * `colors` (in point order, from `joinedPointColors`). Box grids draw their
- * outer points as rings, as one box grid does.
+ * `colors` (in point order, from `joinedPointColors`). A box grid's outer
+ * points are rings, as one box grid draws them, whichever hand's grid is
+ * the box.
  */
 export function paintJoinedGridPoints(
   ctx: RenderContext2D,
   layout: GridJoinLayout,
   size: number,
-  box: boolean,
   colors: readonly string[],
   include: (point: JoinedGridPoint) => boolean
 ): void {
@@ -87,7 +93,7 @@ export function paintJoinedGridPoints(
     ctx,
     shown.map(({ point }) => point),
     size,
-    box,
+    false,
     shown.map(({ color }) => color)
   );
 }

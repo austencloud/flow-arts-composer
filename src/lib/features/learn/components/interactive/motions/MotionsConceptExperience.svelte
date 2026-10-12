@@ -10,7 +10,7 @@
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick } from "svelte";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import HandCombinationBoard from "#lib/shared/guide-topics/HandCombinationBoard.svelte";
   import {
     HAND_COMBINATIONS,
@@ -150,7 +150,9 @@
         ? handMotionsTopicText("mapPrompt")
         : stepIndex === PAIRS_STAGE
           ? handMotionsTopicText("pairsPrompt")
-          : handMotionsTopicText("combinationsLead")
+          : // The pairs stage already named all six, so the board needs no
+            // lead (Austen, 2026-10-12).
+            ""
   );
 
   function goToStep(next: number): void {
@@ -257,7 +259,7 @@
   <LessonStageFrame artifactLayout="workshop">
     {#snippet heading()}
       <LessonStageHeading key={stepIndex} title={handMotionsTopicText("title")}>
-        <p class="stage-description">{description}</p>
+        {#if description}<p class="stage-description">{description}</p>{/if}
       </LessonStageHeading>
     {/snippet}
 
@@ -271,10 +273,7 @@
           <HandPairsStage found={pairsFound} onFind={foundCombination} />
         {:else}
           <div class="board-stage">
-            <HandCombinationBoard
-              showDescriptions
-              label={handMotionsTopicText("combinationsLead")}
-            />
+            <HandCombinationBoard showDescriptions />
           </div>
         {/if}
       </Crossfade>

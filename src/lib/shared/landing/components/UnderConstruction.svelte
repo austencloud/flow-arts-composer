@@ -159,9 +159,9 @@
     border: 1px solid oklch(0.5 0.05 270 / 0.28);
     border-radius: 12px;
     transition:
-      color 160ms ease,
-      background 160ms ease,
-      border-color 160ms ease;
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
   /* Phones: one per line anyway, so stack them at a shared width instead of
      letting each size to its own label and read as a staircase. */

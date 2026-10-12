@@ -6,7 +6,7 @@ Action-oriented pattern: Shows the mode you can switch TO (not current mode)
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
 
   const { currentGridMode = GridMode.DIAMOND, onGridModeChange } = $props<{
     currentGridMode?: GridMode;

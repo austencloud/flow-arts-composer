@@ -35,6 +35,7 @@ import {
   isGridJoin,
 } from "@tka/render-core";
 import { getBetaOffsetSize } from "#lib/shared/render/core/constants/prop-classification.js";
+import { pictographJoinedGrids } from "#lib/shared/grid-join/joined-grid-modes.js";
 // Prop-type defaults used when callers don't pass explicit options.
 // Formerly imported getSettings() from app-state.svelte, but that module chain
 // pulls in Firebase auth which accesses `window` — crashing in Web Workers.
@@ -230,8 +231,13 @@ export class PictographPreparer {
       this.doPrepare(pinned, { ...options, showRightMotion: false }),
       this.doPrepare(pinned, { ...options, showLeftMotion: false }),
     ]);
-    // The layout lines the join up with this grid; draw and nudge by that.
-    const layout = getGridJoinLayout(join, gridMode);
+    // Each hand draws its own grid (a skewed pictograph puts one hand on a
+    // diamond grid and the other on a box grid). The layout lines the join up
+    // with those grids; draw and nudge by that.
+    const layout = getGridJoinLayout(
+      join,
+      pictographJoinedGrids(pictograph, gridMode)
+    );
     const { offsets } = layout;
 
     const prepared: PreparedRenderData = {
@@ -242,6 +248,7 @@ export class PictographPreparer {
       propPositions: {},
       propAssets: {},
       join: layout.join,
+      joinedGrids: layout.grids,
     };
     for (const [hand, prep, offset] of [
       [HandSide.LEFT, leftPrep, offsets.left],

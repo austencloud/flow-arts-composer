@@ -240,9 +240,9 @@
     font-size: 0.9rem;
     font-weight: 600;
     transition:
-      border-color 0.2s ease,
-      background 0.2s ease,
-      color 0.2s ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
   .composer-cta:hover,
   .composer-cta:focus-visible {
@@ -276,7 +276,7 @@
     list-style: none;
     text-align: left;
     cursor: pointer;
-    transition: background 0.18s ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
   .col-toggle::-webkit-details-marker {
     display: none;
@@ -295,7 +295,7 @@
   .col-chevron {
     color: #8f8bb0;
     font-size: 0.75rem;
-    transition: transform 0.25s ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
   .col-disclosure[open] .col-chevron {
     transform: rotate(180deg);
@@ -345,9 +345,9 @@
     text-decoration: none;
     font-size: 0.875rem;
     transition:
-      border-color 0.2s ease,
-      background 0.2s ease,
-      color 0.2s ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
   .bottom-links a:hover,
   .bottom-links a:focus-visible {

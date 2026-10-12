@@ -7,6 +7,7 @@ import {
 import {
   joinedGridFitTransform,
   joinedGridMarkup,
+  slidingGridsMarkup,
 } from "#lib/shared/pictograph/grid/services/joined-grid-markup.js";
 
 const HAND_COLORS = { left: "#2e3192", right: "#ed1c24" } as const;
@@ -18,12 +19,12 @@ describe("joinedGridMarkup", () => {
   it("draws every layout point with render-core's tinted colors", () => {
     const svg = joinedGridMarkup(layout, {
       darkMode: true,
-      box: false,
+      grids: layout.grids,
       handColors: HAND_COLORS,
     });
     const colors = joinedPointColors(layout.points, "#ffffff", HAND_COLORS);
     const expected = layout.points
-      .map((point, i) => gridPointsSvg([point], false, colors[i]!))
+      .map((point, i) => gridPointsSvg([point], point.ring, colors[i]!))
       .join("");
     expect(svg).toBe(expected);
     expect(circles(svg).length).toBeGreaterThan(9);
@@ -34,7 +35,7 @@ describe("joinedGridMarkup", () => {
   it("mixes the tint into black on a light background", () => {
     const svg = joinedGridMarkup(layout, {
       darkMode: false,
-      box: false,
+      grids: layout.grids,
       handColors: HAND_COLORS,
     });
     const colors = joinedPointColors(layout.points, "#000000", HAND_COLORS);
@@ -48,7 +49,7 @@ describe("joinedGridMarkup", () => {
 
     const none = joinedGridMarkup(layout, {
       darkMode: true,
-      box: false,
+      grids: layout.grids,
       handColors: HAND_COLORS,
       handPointVisibility: "none",
     });
@@ -57,7 +58,7 @@ describe("joinedGridMarkup", () => {
     const lit = handPoints[0]!.members[0]!;
     const active = joinedGridMarkup(layout, {
       darkMode: true,
-      box: false,
+      grids: layout.grids,
       handColors: HAND_COLORS,
       handPointVisibility: "active",
       activeHandPoints: {
@@ -66,6 +67,37 @@ describe("joinedGridMarkup", () => {
       },
     });
     expect(circles(active)).toHaveLength(others + 1);
+  });
+
+  it("rings only the box hand's outer points when one hand turned 45°", () => {
+    const mixed = getGridJoinLayout(
+      { toward: "e", steps: 1 },
+      { left: "box", right: "diamond" }
+    );
+    const svg = joinedGridMarkup(mixed, {
+      darkMode: true,
+      grids: mixed.grids,
+      handColors: HAND_COLORS,
+    });
+    const rings = circles(svg).filter((c) => c.includes('fill="none"'));
+    expect(rings).toHaveLength(
+      mixed.points.filter(
+        (p) => p.kind === "outer" && p.members[0]!.hand === "left"
+      ).length
+    );
+    expect(rings.length).toBeGreaterThan(0);
+    // The slide draws blue's box grid and red's diamond grid whole: blue's
+    // four outer rings, drawn twice mid-slide (plain under tint) and once
+    // at rest.
+    const options = {
+      darkMode: true,
+      grids: mixed.grids,
+      handColors: HAND_COLORS,
+    };
+    const ringsIn = (svg: string) =>
+      circles(svg).filter((c) => c.includes('fill="none"')).length;
+    expect(ringsIn(slidingGridsMarkup(mixed.offsets, 0.5, options))).toBe(8);
+    expect(ringsIn(slidingGridsMarkup(mixed.offsets, 1, options))).toBe(4);
   });
 
   it("fits the joined content with the layout's scale about the center", () => {

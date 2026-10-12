@@ -5,7 +5,7 @@
   import { browser } from "$app/env";
   import { TIMING_DIRECTION_MODES } from "#lib/features/learn/components/interactive/foundations/pictograph-foundation-content.js";
   import Seo from "#lib/shared/components/Seo.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";

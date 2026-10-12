@@ -43,7 +43,7 @@ Last audit: 2025-12-27
     type ReparentOptions,
   } from "#lib/shared/sequence-viewer/components/reparent-to-inspector.js";
   import SequenceProgressBar from "#lib/shared/animation-engine/components/layers/SequenceProgressBar.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { createAnimatorPlaybackAdapter } from "#lib/shared/timeline/adapters/animator-playback-adapter.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";

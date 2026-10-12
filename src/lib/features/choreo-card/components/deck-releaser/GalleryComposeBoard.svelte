@@ -9,7 +9,7 @@
     buildFilterSpecFromEngine,
   } from "#lib/shared/browse/services/smart-filter-spec.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
   import FilterWorkspace from "#lib/features/browse/gallery-home/FilterWorkspace.svelte";

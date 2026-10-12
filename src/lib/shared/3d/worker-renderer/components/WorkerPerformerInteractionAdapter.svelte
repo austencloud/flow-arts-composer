@@ -31,13 +31,11 @@
     type WorkerPerformerInteractionViewer,
   } from "../services/worker-performer-interaction";
   import type { WorkerPerformerInteractionCapability } from "../services/worker-performer-interaction-capability";
-  import WorkerPerformerMoveHandle from "./WorkerPerformerMoveHandle.svelte";
+  import WorkerPerformerMoveHint from "./WorkerPerformerMoveHint.svelte";
   import PerformerPlacementPrompt from "../../components/performer-interaction/PerformerPlacementPrompt.svelte";
 
-  interface WorkerMoveHandleSelection {
+  interface WorkerMoveHintSelection {
     key: string;
-    anchorIndex: number;
-    selectedCount: number;
     position: { x: number; z: number };
     groundY: number;
   }
@@ -176,52 +174,40 @@
     }
   }
 
-  function forwardMoveHandleKeydown(event: KeyboardEvent): void {
-    bridge?.onMoveHandleKeyDown(event);
-    scheduleStateUpdate();
-  }
+  const moveHintSelection = $derived.by((): WorkerMoveHintSelection | null => {
+    void projectionRevision;
+    if (!supported || viewer.performerSelectionMode) return null;
 
-  const moveHandleSelection = $derived.by(
-    (): WorkerMoveHandleSelection | null => {
-      void projectionRevision;
-      if (!supported || viewer.performerSelectionMode) return null;
-
-      const interactivePerformers = new Map(
-        frame.performers
-          .filter((performer) => performer.interactive !== false)
-          .map((performer) => [performer.index, performer] as const)
-      );
-      const selected = viewer.selectedPerformerIndices.filter((index) =>
-        interactivePerformers.has(index)
-      );
-      if (selected.length === 0) return null;
-      const positions = selected.flatMap((index) => {
-        const viewerPosition =
-          viewer.performerManager.performers[index]?.position;
-        const framePosition = interactivePerformers.get(index)?.position;
-        const position = viewerPosition ?? framePosition;
-        return position ? [{ ...position }] : [];
-      });
-      if (positions.length === 0) return null;
-      const anchorIndex = selected.includes(viewer.primaryPerformerIndex ?? -1)
-        ? (viewer.primaryPerformerIndex ?? selected[0])
-        : selected[0];
-      return {
-        anchorIndex,
-        key: selected.join(":"),
-        selectedCount: positions.length,
-        position: {
-          x:
-            positions.reduce((total, position) => total + position.x, 0) /
-            positions.length,
-          z:
-            positions.reduce((total, position) => total + position.z, 0) /
-            positions.length,
-        },
-        groundY: frame.groundY,
-      };
-    }
-  );
+    const interactivePerformers = new Map(
+      frame.performers
+        .filter((performer) => performer.interactive !== false)
+        .map((performer) => [performer.index, performer] as const)
+    );
+    const selected = viewer.selectedPerformerIndices.filter((index) =>
+      interactivePerformers.has(index)
+    );
+    if (selected.length === 0) return null;
+    const positions = selected.flatMap((index) => {
+      const viewerPosition =
+        viewer.performerManager.performers[index]?.position;
+      const framePosition = interactivePerformers.get(index)?.position;
+      const position = viewerPosition ?? framePosition;
+      return position ? [{ ...position }] : [];
+    });
+    if (positions.length === 0) return null;
+    return {
+      key: selected.join(":"),
+      position: {
+        x:
+          positions.reduce((total, position) => total + position.x, 0) /
+          positions.length,
+        z:
+          positions.reduce((total, position) => total + position.z, 0) /
+          positions.length,
+      },
+      groundY: frame.groundY,
+    };
+  });
 
   $effect(() => {
     void frame;
@@ -243,6 +229,12 @@
 
   onMount(() => {
     mounted = true;
+    const detachPlacement = viewer.registerPerformerPlacement?.(() => {
+      if (!bridge?.placing) {
+        bridge?.togglePlacement();
+        updateInteractionState(true);
+      }
+    });
     try {
       bridge = createWorkerPerformerInteractionBridge({
         interactionSurface,
@@ -272,6 +264,7 @@
 
     return () => {
       mounted = false;
+      detachPlacement?.();
       if (stateFrame !== null) {
         cancelAnimationFrame(stateFrame);
         stateFrame = null;
@@ -287,19 +280,14 @@
   });
 </script>
 
-{#if bridge && moveHandleSelection}
-  {#key moveHandleSelection.key}
-    <WorkerPerformerMoveHandle
+{#if bridge && moveHintSelection}
+  {#key moveHintSelection.key}
+    <WorkerPerformerMoveHint
       {bridge}
-      position={moveHandleSelection.position}
-      groundY={moveHandleSelection.groundY}
-      selectedCount={moveHandleSelection.selectedCount}
-      anchorIndex={moveHandleSelection.anchorIndex}
-      dragging={interactionState.draggingIndex !== null}
+      position={moveHintSelection.position}
+      groundY={moveHintSelection.groundY}
       {placing}
       {projectionRevision}
-      onkeydown={forwardMoveHandleKeydown}
-      onInteractionStateMayHaveChanged={scheduleStateUpdate}
     />
   {/key}
 {/if}

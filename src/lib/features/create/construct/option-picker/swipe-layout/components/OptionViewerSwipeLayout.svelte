@@ -16,7 +16,7 @@ Features:
   import type { EmblaCarouselType } from "embla-carousel";
   import type { Snippet } from "svelte";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import HorizontalSwipeContainer from "#lib/shared/foundation/ui/HorizontalSwipeContainer.svelte";
   import { runAtBackgroundPriority } from "#lib/shared/foundation/utils/background-scheduling.js";
   import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
