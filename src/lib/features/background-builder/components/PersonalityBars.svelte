@@ -58,7 +58,7 @@
     height: 100%;
     background: linear-gradient(90deg, #06b6d4, #22d3ee);
     border-radius: 3px;
-    transition: width 0.3s ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -749,7 +749,7 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background var(--duration-fast);
   }
 
   .zoom-btn:first-child {

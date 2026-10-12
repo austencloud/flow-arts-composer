@@ -16,7 +16,9 @@
   const label = $derived(effort?.label ?? phrase.effortId);
 
   const left = $derived(((phrase.startStep - 1) / totalSteps) * 100);
-  const width = $derived(((phrase.endStep - phrase.startStep + 1) / totalSteps) * 100);
+  const width = $derived(
+    ((phrase.endStep - phrase.startStep + 1) / totalSteps) * 100
+  );
 </script>
 
 <button
@@ -45,7 +47,13 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    transition: all var(--duration-fast, 100ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     z-index: 1;
   }
 
@@ -56,7 +64,8 @@
 
   .phrase-region.selected {
     border-color: var(--phrase-color);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--phrase-color) 40%, transparent);
+    box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--phrase-color) 40%, transparent);
     z-index: 2;
   }
 

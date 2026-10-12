@@ -25,9 +25,15 @@
   <div class="browser-header">
     <div>
       <span class="browser-label">{t("settings_showroom_environments")}</span>
-      <strong>{t("settings_showroom_selected_theme", { theme: themeName(selectedTheme) })}</strong>
+      <strong
+        >{t("settings_showroom_selected_theme", {
+          theme: themeName(selectedTheme),
+        })}</strong
+      >
     </div>
-    <span class="scene-count">{t("settings_showroom_scene_count", { count: themes.length })}</span>
+    <span class="scene-count"
+      >{t("settings_showroom_scene_count", { count: themes.length })}</span
+    >
   </div>
 
   <div class="theme-grid">
@@ -41,7 +47,12 @@
         style:--card-gradient={theme.card.gradient}
         data-theme={theme.id}
         aria-pressed={previewedType === theme.id}
-        aria-label={t(selectedTheme.id === theme.id ? "settings_showroom_preview_selected" : "settings_showroom_preview_theme", { theme: themeName(theme) })}
+        aria-label={t(
+          selectedTheme.id === theme.id
+            ? "settings_showroom_preview_selected"
+            : "settings_showroom_preview_theme",
+          { theme: themeName(theme) }
+        )}
         onpointerenter={() => onPrepare(theme.id)}
         onfocus={() => onPrepare(theme.id)}
         onclick={() => onPreview(theme.id)}
@@ -141,10 +152,10 @@
     cursor: pointer;
     isolation: isolate;
     transition:
-      transform 180ms ease,
-      border-color 180ms ease,
-      box-shadow 180ms ease,
-      filter 180ms ease;
+      transform var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard);
   }
 
   .theme-card:hover,

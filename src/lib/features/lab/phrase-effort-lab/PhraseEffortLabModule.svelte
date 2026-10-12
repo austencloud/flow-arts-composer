@@ -30,7 +30,10 @@
 
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-  import { getFirestoreInstance, getAuthSync } from "#lib/shared/auth/firebase.js";
+  import {
+    getFirestoreInstance,
+    getAuthSync,
+  } from "#lib/shared/auth/firebase.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
@@ -158,7 +161,6 @@
     updatePropStates();
     lab.rafId = requestAnimationFrame(onFrame);
   }
-
 
   /**
    * Find the next phrase after the given beat, for blend crossfade.
@@ -625,7 +627,6 @@
     background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
   }
 
-
   .lab-header {
     display: flex;
     align-items: center;
@@ -668,7 +669,6 @@
     border: 1px solid color-mix(in srgb, var(--phrase-accent) 30%, transparent);
   }
 
-
   .pick-btn,
   .save-btn {
     display: flex;
@@ -679,7 +679,13 @@
     font-weight: 600;
     border-radius: 8px;
     cursor: pointer;
-    transition: all var(--duration-fast, 100ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     min-height: var(--min-touch-target, 44px);
     -webkit-tap-highlight-color: transparent;
   }
@@ -740,7 +746,6 @@
     color: color-mix(in srgb, var(--semantic-error, #ef4444) 70%, white);
   }
 
-
   .empty-state {
     flex: 1;
     display: flex;
@@ -771,7 +776,13 @@
       color-mix(in srgb, var(--phrase-accent) 40%, transparent);
     color: var(--phrase-accent-text);
     cursor: pointer;
-    transition: all var(--duration-fast, 100ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     min-height: var(--min-touch-target, 44px);
   }
 
@@ -779,7 +790,6 @@
     background: color-mix(in srgb, var(--phrase-accent) 30%, transparent);
     border-color: color-mix(in srgb, var(--phrase-accent) 60%, transparent);
   }
-
 
   .canvas-area {
     flex: 1;
@@ -789,7 +799,6 @@
     justify-content: center;
     overflow: hidden;
   }
-
 
   .transport-bar {
     display: flex;
@@ -801,13 +810,11 @@
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
   }
 
-
   .palette-section {
     padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
     flex-shrink: 0;
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
   }
-
 
   .timeline-section {
     padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
@@ -835,7 +842,13 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     cursor: pointer;
-    transition: all var(--duration-fast, 100ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .action-btn:hover {
@@ -862,7 +875,6 @@
     );
   }
 
-
   .restart-btn {
     display: flex;
     align-items: center;
@@ -874,7 +886,15 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     cursor: pointer;
-    transition: all var(--duration-fast, 100ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     font-size: var(--font-size-compact, 12px);
   }
 
@@ -883,7 +903,6 @@
     border-color: var(--phrase-accent);
     background: color-mix(in srgb, var(--phrase-accent) 15%, transparent);
   }
-
 
   .preset-wrapper {
     position: relative;
@@ -926,7 +945,7 @@
     color: var(--theme-text, white);
     cursor: pointer;
     text-align: left;
-    transition: background var(--duration-fast, 100ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .preset-option:hover {
@@ -943,7 +962,6 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     text-transform: capitalize;
   }
-
 
   .transition-bar {
     display: flex;
@@ -978,7 +996,13 @@
     background: transparent;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
     cursor: pointer;
-    transition: all var(--duration-fast, 100ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     min-height: var(--min-touch-target, 44px);
     -webkit-tap-highlight-color: transparent;
   }
@@ -992,7 +1016,6 @@
     color: var(--theme-text, #ffffff);
     background: rgba(255, 255, 255, 0.04);
   }
-
 
   @media (prefers-reduced-motion: reduce) {
     .pick-btn,

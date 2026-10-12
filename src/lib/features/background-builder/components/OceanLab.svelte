@@ -1194,9 +1194,9 @@
           <div class="info-item">
             <span class="info-label">Speed</span>
             <span class="info-value"
-              >{(selectedFish.speed / Math.max(1, selectedFish.bodyLength)).toFixed(
-                2
-              )} BL/s</span
+              >{(
+                selectedFish.speed / Math.max(1, selectedFish.bodyLength)
+              ).toFixed(2)} BL/s</span
             >
           </div>
           <div class="info-item">
@@ -1515,7 +1515,15 @@
     border-radius: 50%;
     color: #9ca3af;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -1796,7 +1804,15 @@
     font-size: var(--font-size-min, 0.875rem);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      grid-template-columns var(--duration-fast) var(--ease-standard),
+      grid-template-rows var(--duration-fast) var(--ease-standard);
   }
 
   .retry-btn:hover {

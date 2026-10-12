@@ -67,7 +67,9 @@
     </div>
     <time>{formattedDate}</time>
     {#if totalChanges > 0}
-      <span class="total">{t("settings_change_count", { count: totalChanges })}</span>
+      <span class="total"
+        >{t("settings_change_count", { count: totalChanges })}</span
+      >
     {/if}
     {#if onSelect}
       <button type="button" class="edit-link" onclick={onSelect}>
@@ -167,7 +169,13 @@
     font-size: var(--font-size-compact);
     cursor: pointer;
     opacity: 0;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
   }
 
   .history-entry:hover .edit-link,
@@ -254,5 +262,4 @@
     gap: 0.5rem;
     margin-top: 1rem;
   }
-
 </style>

@@ -41,10 +41,13 @@
   class:disabled={!flag.enabled}
   role={onclick ? "button" : undefined}
   tabindex={onclick ? 0 : undefined}
-  onclick={onclick}
+  {onclick}
   onkeydown={(e) => e.key === "Enter" && onclick?.()}
 >
-  <div class="feature-icon" style="background: {style.color}18; color: {style.color}">
+  <div
+    class="feature-icon"
+    style="background: {style.color}18; color: {style.color}"
+  >
     <i class="fas {style.icon}" aria-hidden="true"></i>
   </div>
 
@@ -79,7 +82,13 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
     border-radius: 10px;
     border: 1px solid transparent;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .feature-row.indent {
@@ -97,8 +106,16 @@
   }
 
   .feature-row.selected {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 10%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 10%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 30%,
+      transparent
+    );
   }
 
   .feature-row.disabled {

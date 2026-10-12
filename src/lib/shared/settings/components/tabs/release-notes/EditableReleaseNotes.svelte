@@ -1,7 +1,8 @@
 <!-- EditableReleaseNotes - Release notes with inline editing for admins -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { fly, scale } from "svelte/transition";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   let {
     text,
@@ -119,17 +120,23 @@
     ></textarea>
 
     {#if error}
-      <div class="error-message" in:fly={{ y: -10, duration: 200 }}>
+      <div
+        class="error-message"
+        in:flyFade={{ y: -10, duration: DURATION.normal }}
+      >
         {error}
       </div>
     {:else if !hasChanges}
-      <div class="hint" in:fly={{ y: -10, duration: 200 }}>
+      <div class="hint" in:flyFade={{ y: -10, duration: DURATION.normal }}>
         {t("settings_edit_hint")}
       </div>
     {/if}
 
     {#if hasChanges}
-      <div class="edit-actions" in:fly={{ y: 10, duration: 200 }}>
+      <div
+        class="edit-actions"
+        in:flyFade={{ y: 10, duration: DURATION.normal }}
+      >
         <button
           type="button"
           class="action-btn save"
@@ -192,8 +199,8 @@
     text-align: left;
     cursor: default;
     transition:
-      background 0.2s,
-      border-color 0.2s;
+      background var(--duration-normal),
+      border-color var(--duration-normal);
   }
 
   .release-notes-text.clickable {
@@ -298,7 +305,13 @@
     font-size: var(--font-size-compact);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
   }
 
   .action-btn:disabled {

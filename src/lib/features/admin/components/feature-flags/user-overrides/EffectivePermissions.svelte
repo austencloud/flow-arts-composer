@@ -101,7 +101,10 @@
       <div class="feature-chips">
         {#each effectiveAccess().blocked.slice(0, showAll ? undefined : displayLimit) as flag}
           {@const style = getFeatureIconAndColor(flag.id)}
-          <span class="feature-chip blocked" style="--chip-color: {style.color}">
+          <span
+            class="feature-chip blocked"
+            style="--chip-color: {style.color}"
+          >
             <i class="fas {style.icon}" aria-hidden="true"></i>
             {flag.name}
           </span>
@@ -222,7 +225,13 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .show-more:hover {

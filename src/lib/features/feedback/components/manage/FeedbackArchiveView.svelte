@@ -250,7 +250,9 @@
   bind:isOpen={isVersionDetailOpen}
   placement={isMobile ? "bottom" : "right"}
   onclose={closeVersionDetail}
-  ariaLabel={selectedVersion ? `Edit release v${selectedVersion.version}` : "Edit release"}
+  ariaLabel={selectedVersion
+    ? `Edit release v${selectedVersion.version}`
+    : "Edit release"}
 >
   {#if selectedVersion}
     <VersionDetailContent
@@ -303,7 +305,14 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: var(--font-size-compact);
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal);
     width: fit-content;
   }
 
@@ -387,7 +396,13 @@
     color: var(--theme-text, var(--theme-text));
     font-size: var(--font-size-compact);
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
   }
 
   .detail-error button:hover {

@@ -203,7 +203,9 @@
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 160ms ease, border-color 160ms ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .action-button:hover {

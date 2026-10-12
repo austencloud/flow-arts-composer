@@ -464,7 +464,13 @@
     overflow: hidden;
     /* Prevent browser from intercepting touch for scroll - drag is JS-handled */
     touch-action: none;
-    transition: all var(--duration-normal) var(--spring-smooth);
+    transition:
+      background var(--duration-normal) var(--spring-smooth),
+      border-color var(--duration-normal) var(--spring-smooth),
+      color var(--duration-normal) var(--spring-smooth),
+      opacity var(--duration-normal) var(--spring-smooth),
+      transform var(--duration-normal) var(--spring-smooth),
+      box-shadow var(--duration-normal) var(--spring-smooth);
   }
 
   .kanban-card:hover {
@@ -751,7 +757,7 @@
     color: var(--kc-text-subtle);
     font-size: clamp(9px, 1.8cqi, 11px);
     opacity: 0;
-    transition: opacity var(--duration-fast) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .kanban-card:hover .drag-handle {

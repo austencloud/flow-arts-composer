@@ -24,7 +24,9 @@
   <div class="tutorial-planner">
     <header class="planner-header">
       <h1>Tutorial Planner</h1>
-      <p>Scripts 12–38, read-only preview of the generated voiceover content.</p>
+      <p>
+        Scripts 12–38, read-only preview of the generated voiceover content.
+      </p>
     </header>
 
     {#each groups() as group (group.part)}
@@ -93,7 +95,9 @@
     background: var(--theme-surface);
     color: var(--theme-text);
     text-decoration: none;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .script-row:hover,

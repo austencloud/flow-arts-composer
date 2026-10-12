@@ -6,9 +6,7 @@
     ChangelogEntry,
   } from "#lib/shared/versioning/domain/models/version-models.js";
   import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
-  import {
-    CATEGORY_ICONS,
-  } from "#lib/shared/versioning/domain/constants/changelog-constants.js";
+  import { CATEGORY_ICONS } from "#lib/shared/versioning/domain/constants/changelog-constants.js";
   import EditableChangelogItem from "./EditableChangelogItem.svelte";
 
   let {
@@ -98,7 +96,8 @@
             onclick={() => void onConfirmAdd()}
             disabled={!newEntryText.trim()}
           >
-            <i class="fas fa-plus" aria-hidden="true"></i> {t("action_add")}
+            <i class="fas fa-plus" aria-hidden="true"></i>
+            {t("action_add")}
           </button>
           <button type="button" class="glass-btn" onclick={onCancelAdd}
             >{t("action_cancel")}</button
@@ -187,7 +186,14 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: var(--font-size-compact);
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal);
   }
 
   .add-entry-btn:hover {
@@ -257,7 +263,14 @@
     font-weight: 500;
     color: var(--theme-text);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
   }
 
   .glass-btn:hover:not(:disabled) {

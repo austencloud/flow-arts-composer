@@ -157,10 +157,7 @@
       };
 
       if (announcement) {
-        await updateAnnouncement(
-          announcement.id,
-          announcementData
-        );
+        await updateAnnouncement(announcement.id, announcementData);
       } else {
         await createAnnouncement(announcementData);
       }
@@ -177,8 +174,16 @@
 
 <div class="announcement-form">
   <div class="form-header">
-    <h2>{announcement ? t("admin_edit_announcement") : t("admin_create_announcement")}</h2>
-    <button class="close-button" onclick={onCancel} aria-label={t("common_close")}>
+    <h2>
+      {announcement
+        ? t("admin_edit_announcement")
+        : t("admin_create_announcement")}
+    </h2>
+    <button
+      class="close-button"
+      onclick={onCancel}
+      aria-label={t("common_close")}
+    >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
   </div>
@@ -193,7 +198,9 @@
 
     <!-- Title -->
     <div class="form-section">
-      <label class="section-label" for="announcement-title">{t("form_title")}</label>
+      <label class="section-label" for="announcement-title"
+        >{t("form_title")}</label
+      >
       <input
         id="announcement-title"
         type="text"
@@ -209,7 +216,9 @@
 
     <!-- Message -->
     <div class="form-section">
-      <label class="section-label" for="announcement-message">{t("form_message")}</label>
+      <label class="section-label" for="announcement-message"
+        >{t("form_message")}</label
+      >
       <textarea
         id="announcement-message"
         class="text-input"
@@ -224,7 +233,8 @@
 
     <!-- Severity Selection (Chips) -->
     <div class="form-section">
-      <span class="section-label" id="severity-label">{t("form_severity")}</span>
+      <span class="section-label" id="severity-label">{t("form_severity")}</span
+      >
       <div class="chip-group" role="group" aria-labelledby="severity-label">
         {#each severityOptions as option}
           <button
@@ -247,7 +257,9 @@
 
     <!-- Target Audience Selection (Chips) -->
     <div class="form-section">
-      <span class="section-label" id="audience-label">{t("form_target_audience")}</span>
+      <span class="section-label" id="audience-label"
+        >{t("form_target_audience")}</span
+      >
       <div class="chip-group" role="group" aria-labelledby="audience-label">
         {#each audienceOptions as option}
           <button
@@ -270,7 +282,9 @@
     <!-- Specific User Search (conditional) -->
     {#if targetAudience === "specific-user"}
       <div class="form-section indented">
-        <label class="section-label" for="user-search-input">{t("form_select_user")}</label>
+        <label class="section-label" for="user-search-input"
+          >{t("form_select_user")}</label
+        >
         <UserSearchInput
           selectedUserId={targetUserId}
           selectedUserDisplay={targetUserDisplay}
@@ -283,7 +297,11 @@
     <!-- Display Options (Toggle Chips) -->
     <div class="form-section">
       <span class="section-label">{t("form_display_options")}</span>
-      <div class="chip-group" role="group" aria-label={t("form_display_options")}>
+      <div
+        class="chip-group"
+        role="group"
+        aria-label={t("form_display_options")}
+      >
         <button
           type="button"
           class="toggle-chip"
@@ -317,7 +335,9 @@
     <!-- Expiration Date (conditional) -->
     {#if hasExpiration}
       <div class="form-section indented">
-        <label class="section-label" for="expiration-date">{t("form_expiration_date")}</label>
+        <label class="section-label" for="expiration-date"
+          >{t("form_expiration_date")}</label
+        >
         <input
           id="expiration-date"
           type="date"
@@ -331,7 +351,8 @@
     <!-- Action URL (optional) -->
     <div class="form-section">
       <label class="section-label" for="action-url"
-        >{t("form_action_url")} <span class="optional">({t("form_optional")})</span></label
+        >{t("form_action_url")}
+        <span class="optional">({t("form_optional")})</span></label
       >
       <input
         id="action-url"
@@ -345,7 +366,9 @@
 
     {#if actionUrl}
       <div class="form-section indented">
-        <label class="section-label" for="action-label">{t("form_action_label")}</label>
+        <label class="section-label" for="action-label"
+          >{t("form_action_label")}</label
+        >
         <input
           id="action-label"
           type="text"
@@ -422,7 +445,13 @@
     border-radius: 12px;
     color: var(--theme-text);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .close-button:hover {
@@ -471,17 +500,19 @@
     padding: 16px 20px;
     min-height: var(--min-touch-target);
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    border: 2px solid
-      color-mix(
-        in srgb,
-        var(--theme-accent) 30%,
-        transparent
-      );
+    border: 2px solid color-mix(in srgb, var(--theme-accent) 30%, transparent);
     border-radius: 12px;
     color: var(--theme-text, #ffffff);
     font-size: var(--font-size-sm);
     font-family: inherit;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard);
     resize: vertical;
   }
 
@@ -494,11 +525,7 @@
     border-color: var(--theme-accent);
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
     box-shadow: 0 0 0 4px
-      color-mix(
-        in srgb,
-        var(--theme-accent) 15%,
-        transparent
-      );
+      color-mix(in srgb, var(--theme-accent) 15%, transparent);
   }
 
   textarea.text-input {
@@ -544,7 +571,13 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
@@ -590,7 +623,7 @@
   .chip-check {
     margin-left: auto;
     font-size: var(--font-size-sm);
-    animation: checkPop var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    animation: checkPop var(--duration-normal) var(--ease-standard);
   }
 
   @keyframes checkPop {
@@ -633,7 +666,13 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 

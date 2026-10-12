@@ -37,7 +37,11 @@
   import { MmLocomotionController } from "#lib/features/stage/locomotion/motion-matching/mm-locomotion-controller.js";
   import type { RigBinding } from "#lib/features/stage/locomotion/motion-matching/rig-binding.js";
   import type { MotionConfig3D } from "#lib/shared/3d/domain/models/motion-data-3d.js";
-  import type { DodgePlan, DodgeKnob, DodgeSide } from "#lib/features/stage/locomotion/dodge/dodge-types.js";
+  import type {
+    DodgePlan,
+    DodgeKnob,
+    DodgeSide,
+  } from "#lib/features/stage/locomotion/dodge/dodge-types.js";
   import DodgeDriver from "./DodgeDriver.svelte";
 
   // Letter A, variation 3 (alpha1 -> alpha3), from the Flow Arts Knowledge MCP:
@@ -95,7 +99,13 @@
    *  that maps the glyph's right edge to world +X and its top to world -Z, so the
    *  glyph renders rotated 180°. Pre-rotate the glyph 180° on the canvas (scale
    *  x AND y by -1) so it reads upright from a top-down, north-up view. */
-  function makeFloorLabel(text: string, color: string, size: number, x: number, z: number): Mesh {
+  function makeFloorLabel(
+    text: string,
+    color: string,
+    size: number,
+    x: number,
+    z: number
+  ): Mesh {
     const cv = document.createElement("canvas");
     cv.width = cv.height = 128;
     const ctx = cv.getContext("2d")!;
@@ -131,7 +141,8 @@
       { n: "3", x: -1.2, z: -1.2 },
       { n: "4", x: 1.2, z: -1.2 },
     ];
-    for (const q of quads) g.add(makeFloorLabel(q.n, "#7dd3fc", 0.55, q.x, q.z));
+    for (const q of quads)
+      g.add(makeFloorLabel(q.n, "#7dd3fc", 0.55, q.x, q.z));
     const comp: { t: string; x: number; z: number }[] = [
       { t: "N", x: 0, z: 2 },
       { t: "S", x: 0, z: -2 },
@@ -148,10 +159,19 @@
         "/animations/locomotion-pack/X%20Bot.glb",
         [
           { clipId: "idle", url: "/animations/locomotion-pack/idle.glb" },
-          { clipId: "walk-forward", url: "/animations/locomotion-pack/walk-forward.glb" },
-          { clipId: "turn-left", url: "/animations/locomotion-pack/turn-left.glb" },
-          { clipId: "turn-right", url: "/animations/locomotion-pack/turn-right.glb" },
-        ],
+          {
+            clipId: "walk-forward",
+            url: "/animations/locomotion-pack/walk-forward.glb",
+          },
+          {
+            clipId: "turn-left",
+            url: "/animations/locomotion-pack/turn-left.glb",
+          },
+          {
+            clipId: "turn-right",
+            url: "/animations/locomotion-pack/turn-right.glb",
+          },
+        ]
       );
       const ctrl = new MmLocomotionController(loaded);
       await ctrl.initialize();
@@ -162,7 +182,9 @@
       status = "Ready";
 
       if (typeof window !== "undefined") {
-        (window as unknown as { __dodgeController?: MmLocomotionController }).__dodgeController = ctrl;
+        (
+          window as unknown as { __dodgeController?: MmLocomotionController }
+        ).__dodgeController = ctrl;
         (window as unknown as { __dodgeRig?: RigBinding }).__dodgeRig = loaded;
       }
     } catch (err) {
@@ -220,7 +242,11 @@
 <div class="page">
   <Canvas>
     <T.PerspectiveCamera makeDefault position={[2.4, 1.6, 3.2]} fov={50}>
-      <OrbitControls enableDamping target={[0, 1, 0]} maxPolarAngle={Math.PI / 2} />
+      <OrbitControls
+        enableDamping
+        target={[0, 1, 0]}
+        maxPolarAngle={Math.PI / 2}
+      />
     </T.PerspectiveCamera>
 
     <T.AmbientLight intensity={0.6} />
@@ -278,14 +304,17 @@
           onchange={(v) => (knob = { ...knob, side: v })}
         />
         <label class="slider">
-          <span class="slabel">Aggression <b>{(knob.aggression * 100).toFixed(0)}%</b></span>
+          <span class="slabel"
+            >Aggression <b>{(knob.aggression * 100).toFixed(0)}%</b></span
+          >
           <input
             type="range"
             min="0"
             max="1"
             step="0.05"
             value={knob.aggression}
-            oninput={(e) => (knob = { ...knob, aggression: +e.currentTarget.value })}
+            oninput={(e) =>
+              (knob = { ...knob, aggression: +e.currentTarget.value })}
           />
         </label>
       </div>
@@ -293,20 +322,29 @@
 
     <div class="readout" class:clear={cleared} class:hit={!cleared}>
       <span class="readout-label">Body clearance</span>
-      <span class="readout-value">{clearanceM > 0 ? "+" : ""}{clearanceCm} cm</span>
+      <span class="readout-value"
+        >{clearanceM > 0 ? "+" : ""}{clearanceCm} cm</span
+      >
       <span class="readout-state">{cleared ? "clear" : "IMPALED"}</span>
     </div>
 
     {#if planFoot}
       <p class="solved">
-        step ({planFoot.footOffsetX.toFixed(2)}, {planFoot.footOffsetZ.toFixed(2)})
-        · yaw {((planFoot.rootYawRad * 180) / Math.PI).toFixed(0)}°
-        · twist {((planFoot.torsoTwistRad * 180) / Math.PI).toFixed(0)}°
-        · {plan?.feasible ? "feasible" : "best-effort"}
+        step ({planFoot.footOffsetX.toFixed(2)}, {planFoot.footOffsetZ.toFixed(
+          2
+        )}) · yaw {((planFoot.rootYawRad * 180) / Math.PI).toFixed(0)}° · twist {(
+          (planFoot.torsoTwistRad * 180) /
+          Math.PI
+        ).toFixed(0)}° · {plan?.feasible ? "feasible" : "best-effort"}
       </p>
     {/if}
 
-    <button type="button" class="action" onclick={copyDiagnostic} disabled={!plan}>
+    <button
+      type="button"
+      class="action"
+      onclick={copyDiagnostic}
+      disabled={!plan}
+    >
       Copy Diagnostic
     </button>
   </div>
@@ -365,7 +403,7 @@
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 120ms ease;
+    transition: background var(--duration-instant) var(--ease-standard);
   }
 
   .toggle.on {
@@ -383,7 +421,7 @@
     height: 12px;
     border-radius: 50%;
     background: #555;
-    transition: background 120ms ease;
+    transition: background var(--duration-instant) var(--ease-standard);
   }
 
   .dot.on {
@@ -488,7 +526,7 @@
     font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 120ms ease;
+    transition: background var(--duration-instant) var(--ease-standard);
   }
 
   .action:hover:not(:disabled) {

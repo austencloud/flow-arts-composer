@@ -106,12 +106,29 @@
     background: var(--theme-panel-bg, rgba(18, 18, 28, 0.5));
     cursor: pointer;
     text-align: left;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard),
+      grid-template-columns var(--duration-fast) var(--ease-standard);
   }
 
   .preset-button:hover {
-    background: color-mix(in srgb, var(--preset-color, #6b7280) 10%, transparent);
-    border-color: color-mix(in srgb, var(--preset-color, #6b7280) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--preset-color, #6b7280) 10%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--preset-color, #6b7280) 30%,
+      transparent
+    );
   }
 
   .preset-button:active {
@@ -129,7 +146,11 @@
     align-items: center;
     justify-content: center;
     border-radius: 8px;
-    background: color-mix(in srgb, var(--preset-color, #6b7280) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--preset-color, #6b7280) 15%,
+      transparent
+    );
     color: var(--preset-color, #6b7280);
     font-size: 14px;
     flex-shrink: 0;

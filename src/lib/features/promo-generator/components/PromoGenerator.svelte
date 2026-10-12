@@ -78,15 +78,28 @@
   );
 
   // Environment options with visual representation
-  const environments: { id: EnvironmentType; label: string; color: string }[] = [
-    { id: "studio", label: "Studio", color: "#1a1a2e" },
-    { id: "gradient", label: "Gradient", color: "linear-gradient(135deg, #1a1a2e, #0f0f1a)" },
-    { id: "space", label: "Space", color: "#000000" },
-    { id: "sunset", label: "Sunset", color: "linear-gradient(135deg, #ff6b35, #f7931e)" },
-  ];
+  const environments: { id: EnvironmentType; label: string; color: string }[] =
+    [
+      { id: "studio", label: "Studio", color: "#1a1a2e" },
+      {
+        id: "gradient",
+        label: "Gradient",
+        color: "linear-gradient(135deg, #1a1a2e, #0f0f1a)",
+      },
+      { id: "space", label: "Space", color: "#000000" },
+      {
+        id: "sunset",
+        label: "Sunset",
+        color: "linear-gradient(135deg, #ff6b35, #f7931e)",
+      },
+    ];
 
   // Resolution options
-  const resolutions: { id: "720p" | "1080p" | "4k"; label: string; dims: string }[] = [
+  const resolutions: {
+    id: "720p" | "1080p" | "4k";
+    label: string;
+    dims: string;
+  }[] = [
     { id: "720p", label: "HD", dims: "1280×720" },
     { id: "1080p", label: "Full HD", dims: "1920×1080" },
     { id: "4k", label: "4K", dims: "3840×2160" },
@@ -324,7 +337,9 @@
       <div class="empty-state">
         <i class="fas fa-cube empty-icon" aria-hidden="true"></i>
         <span class="empty-title">No model loaded</span>
-        <p class="empty-desc">Load a 3D model to start building your promo video.</p>
+        <p class="empty-desc">
+          Load a 3D model to start building your promo video.
+        </p>
         <button class="empty-action" onclick={() => modelInput?.click()}>
           <i class="fas fa-cube" aria-hidden="true"></i>
           Load 3D Model
@@ -345,7 +360,9 @@
           onkeydown={handleExportModalKeydown}
         >
           <div class="export-header">
-            <span class="export-title" id="export-modal-title">Rendering Video</span>
+            <span class="export-title" id="export-modal-title"
+              >Rendering Video</span
+            >
             <span class="export-stage">{exportStage}</span>
           </div>
           <div class="export-progress-ring">
@@ -356,10 +373,13 @@
                 cx="50"
                 cy="50"
                 r="45"
-                style="stroke-dashoffset: {283 - (283 * generatorState.exportProgress) / 100}"
+                style="stroke-dashoffset: {283 -
+                  (283 * generatorState.exportProgress) / 100}"
               />
             </svg>
-            <span class="progress-text">{Math.round(generatorState.exportProgress)}%</span>
+            <span class="progress-text"
+              >{Math.round(generatorState.exportProgress)}%</span
+            >
           </div>
           <button class="cancel-btn" onclick={cancelExport}>Cancel</button>
         </div>
@@ -427,7 +447,11 @@
               size="sm"
             />
           </div>
-          <button class="render-btn" onclick={exportVideo} disabled={generatorState.isExporting}>
+          <button
+            class="render-btn"
+            onclick={exportVideo}
+            disabled={generatorState.isExporting}
+          >
             <i class="fas fa-film" aria-hidden="true"></i>
             Render Video
           </button>
@@ -438,7 +462,12 @@
     <!-- Floating Controls - Bottom Center: Playback -->
     <div class="floating-controls bottom-center">
       <div class="playback-bar">
-        <button class="playback-btn" onclick={togglePlayback} disabled={!generatorState.isReady} aria-label={isPlaying ? "Pause" : "Play"}>
+        <button
+          class="playback-btn"
+          onclick={togglePlayback}
+          disabled={!generatorState.isReady}
+          aria-label={isPlaying ? "Pause" : "Play"}
+        >
           {#if isPlaying}
             <i class="fas fa-pause" aria-hidden="true"></i>
           {:else}
@@ -458,7 +487,12 @@
           />
           <div class="timeline-fill" style="width: {progress * 100}%"></div>
         </div>
-        <button class="playback-btn stop" onclick={stopPreview} disabled={!generatorState.isReady} aria-label="Stop">
+        <button
+          class="playback-btn stop"
+          onclick={stopPreview}
+          disabled={!generatorState.isReady}
+          aria-label="Stop"
+        >
           <i class="fas fa-stop" aria-hidden="true"></i>
         </button>
         <span class="time-display">
@@ -474,8 +508,8 @@
       <h3 class="section-title">Animation</h3>
       <div class="animation-info">
         <p class="animation-desc">
-          7 cinematic shots with hard cuts between angles.
-          Each shot showcases a different screenshot.
+          7 cinematic shots with hard cuts between angles. Each shot showcases a
+          different screenshot.
         </p>
         <div class="shot-list">
           <div class="shot-item">
@@ -546,8 +580,16 @@
        artwork (3D scene background / device render). */
     --promo-accent: var(--theme-accent, #6366f1);
     --promo-accent-2: color-mix(in srgb, var(--promo-accent) 55%, #8b5cf6);
-    --promo-accent-soft: color-mix(in srgb, var(--promo-accent) 20%, transparent);
-    --promo-accent-glow: color-mix(in srgb, var(--promo-accent) 40%, transparent);
+    --promo-accent-soft: color-mix(
+      in srgb,
+      var(--promo-accent) 20%,
+      transparent
+    );
+    --promo-accent-glow: color-mix(
+      in srgb,
+      var(--promo-accent) 40%,
+      transparent
+    );
     --promo-surface-0: #0a0a0f;
     --promo-surface-1: #1a1a2e;
     --promo-panel-bg: rgba(20, 20, 30, 0.95);
@@ -651,12 +693,16 @@
     padding: 10px 16px;
     border: none;
     border-radius: 12px;
-    background: linear-gradient(135deg, var(--promo-accent), var(--promo-accent-2));
+    background: linear-gradient(
+      135deg,
+      var(--promo-accent),
+      var(--promo-accent-2)
+    );
     color: var(--promo-text);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .empty-action:hover {
@@ -698,7 +744,15 @@
     color: var(--promo-text-strong);
     font-size: 18px;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
     backdrop-filter: blur(8px);
   }
 
@@ -721,12 +775,22 @@
     padding: 10px 16px;
     border: none;
     border-radius: 12px;
-    background: linear-gradient(135deg, var(--promo-accent), var(--promo-accent-2));
+    background: linear-gradient(
+      135deg,
+      var(--promo-accent),
+      var(--promo-accent-2)
+    );
     color: var(--promo-text);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .export-trigger:hover:not(:disabled) {
@@ -776,12 +840,23 @@
     padding: 12px;
     border: none;
     border-radius: 10px;
-    background: linear-gradient(135deg, var(--promo-accent), var(--promo-accent-2));
+    background: linear-gradient(
+      135deg,
+      var(--promo-accent),
+      var(--promo-accent-2)
+    );
     color: var(--promo-text);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard);
   }
 
   .render-btn:hover:not(:disabled) {
@@ -806,11 +881,23 @@
     height: 40px;
     border: none;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--promo-accent), var(--promo-accent-2));
+    background: linear-gradient(
+      135deg,
+      var(--promo-accent),
+      var(--promo-accent-2)
+    );
     color: var(--promo-text);
     font-size: 14px;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -856,7 +943,11 @@
     left: 0;
     top: 0;
     height: 100%;
-    background: linear-gradient(90deg, var(--promo-accent), var(--promo-accent-2));
+    background: linear-gradient(
+      90deg,
+      var(--promo-accent),
+      var(--promo-accent-2)
+    );
     border-radius: 3px;
     pointer-events: none;
   }
@@ -923,7 +1014,7 @@
     padding: 8px 10px;
     background: var(--promo-fill-3);
     border-radius: 8px;
-    transition: background var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .shot-item:hover {
@@ -960,7 +1051,15 @@
     border-radius: 12px;
     background: var(--promo-fill-2);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      grid-template-columns var(--duration-normal) var(--ease-standard);
   }
 
   .env-card:hover:not(:disabled) {
@@ -1065,7 +1164,7 @@
   .progress-fill {
     stroke: var(--promo-accent);
     stroke-dasharray: 283;
-    transition: stroke-dashoffset var(--duration-emphasis) ease;
+    transition: stroke-dashoffset var(--duration-emphasis) var(--ease-standard);
   }
 
   .progress-text {
@@ -1087,7 +1186,13 @@
     color: var(--promo-text-dim);
     font-size: 14px;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .cancel-btn:hover {
@@ -1101,8 +1206,13 @@
     align-items: center;
     gap: 10px;
     padding: 12px 16px;
-    background: color-mix(in srgb, var(--theme-error, #fb7185) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-error, #fb7185) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-error, #fb7185) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-error, #fb7185) 30%, transparent);
     border-radius: 10px;
     color: var(--theme-error, #fb7185);
     font-size: 13px;
@@ -1131,5 +1241,4 @@
       grid-template-columns: repeat(3, 1fr);
     }
   }
-
 </style>

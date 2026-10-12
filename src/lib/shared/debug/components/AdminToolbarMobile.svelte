@@ -5,7 +5,8 @@
   and action cards in a grid layout.
 -->
 <script lang="ts">
-  import { fly } from "svelte/transition";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import UserSearchInput from "#lib/shared/user-search/UserSearchInput.svelte";
   import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import { createSwipeDismiss } from "#lib/shared/foundation/ui/gestures/create-swipe-dismiss.svelte.js";
@@ -85,13 +86,13 @@
   onkeydown={(e) => {
     if (e.key === "Escape") onClose();
   }}
-  transition:fly={{ duration: 200, opacity: 0 }}
+  transition:flyFade={{ duration: DURATION.normal }}
 ></div>
 
 <div
   class="mobile-sheet"
   bind:this={swipe.element}
-  transition:fly={{ y: 300, duration: 250 }}
+  transition:flyFade={{ y: 300, duration: DURATION.normal }}
 >
   <!-- Handle bar - visual hint for swipe -->
   <div class="sheet-handle"></div>
@@ -186,7 +187,11 @@
         <span>First Run Wizard</span>
       </button>
 
-      <button type="button" class="action-card" onclick={onPreviewCreateTutorial}>
+      <button
+        type="button"
+        class="action-card"
+        onclick={onPreviewCreateTutorial}
+      >
         <i class="fas fa-graduation-cap" aria-hidden="true"></i>
         <span>Create Tutorial</span>
       </button>
@@ -348,7 +353,15 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-lg);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast),
+      height var(--duration-fast);
     flex-shrink: 0;
   }
 
@@ -395,7 +408,14 @@
     color: var(--theme-text);
     font-size: var(--font-size-sm);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      height var(--duration-fast);
     flex-shrink: 0;
   }
 
@@ -428,7 +448,15 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-compact);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast),
+      height var(--duration-fast);
   }
 
   .mobile-chip-remove:active {
@@ -450,7 +478,14 @@
     font-size: var(--font-size-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      height var(--duration-fast);
     flex-shrink: 0;
   }
 
@@ -490,7 +525,14 @@
     font-size: var(--font-size-sm);
     text-align: center;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      grid-template-columns var(--duration-fast);
   }
 
   .action-card:active:not(:disabled) {
@@ -538,7 +580,7 @@
     color: #86efac;
     font-size: var(--font-size-sm);
     font-weight: 500;
-    animation: fadeIn var(--duration-normal) ease;
+    animation: fadeIn var(--duration-normal) var(--ease-standard);
   }
 
   @keyframes fadeIn {

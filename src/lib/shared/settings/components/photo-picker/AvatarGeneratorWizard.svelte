@@ -331,7 +331,8 @@
 
   /* Animated step wrapper */
   .wizard-step-animated {
-    animation: wizardFadeSlideIn 0.25s ease-out forwards;
+    animation: wizardFadeSlideIn var(--duration-normal) var(--ease-standard-out)
+      forwards;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -390,7 +391,15 @@
     border-radius: 50%;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.1));
     border: 2px solid var(--theme-stroke, rgba(255, 255, 255, 0.2));
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
   }
 
   .progress-dot.active::after {
@@ -408,7 +417,7 @@
     width: 32px;
     height: 2px;
     background: var(--theme-stroke, rgba(255, 255, 255, 0.2));
-    transition: background 0.2s ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .progress-line.filled {
@@ -456,7 +465,15 @@
     font-size: var(--font-size-md, 16px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     width: 100%;
   }
 
@@ -500,7 +517,14 @@
     font-size: var(--font-size-md, 16px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   }
 
@@ -562,7 +586,17 @@
     border-radius: var(--radius-sm, 8px);
     color: var(--theme-text, #ffffff);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard),
+      grid-template-columns var(--duration-fast) var(--ease-standard);
   }
 
   .wizard-prop:hover {
@@ -647,7 +681,16 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.08));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.15));
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     color: var(--theme-text);
     font-size: var(--font-size-md, 16px);
   }
@@ -690,7 +733,14 @@
     font-size: var(--font-size-sm, 13px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
     margin-top: var(--spacing-md, 12px);
   }
 
@@ -729,7 +779,15 @@
     font-size: var(--font-size-sm, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
   }
 
   .save-btn:hover:not(:disabled) {

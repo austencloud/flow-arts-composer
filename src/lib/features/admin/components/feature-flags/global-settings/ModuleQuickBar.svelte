@@ -30,7 +30,9 @@
         style="--chip-color: {style.color}"
         disabled={isSaving}
         onclick={() => onToggle(module)}
-        title={module.enabled ? `Disable ${module.name}` : `Enable ${module.name}`}
+        title={module.enabled
+          ? `Disable ${module.name}`
+          : `Enable ${module.name}`}
         aria-pressed={module.enabled}
         aria-label="{module.name}: {module.enabled ? 'enabled' : 'disabled'}"
       >
@@ -39,7 +41,7 @@
         {:else}
           <i class="fas {style.icon}" aria-hidden="true"></i>
         {/if}
-        <span class="chip-label">{module.name.replace(/ Module$/, '')}</span>
+        <span class="chip-label">{module.name.replace(/ Module$/, "")}</span>
       </button>
     {/each}
   </div>
@@ -89,7 +91,13 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
   }
 

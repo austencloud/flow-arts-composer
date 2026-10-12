@@ -419,7 +419,7 @@
 
   summary .chevron {
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.56));
-    transition: transform var(--duration-fast, 150ms);
+    transition: transform var(--duration-fast);
   }
 
   details[open] summary .chevron {

@@ -164,7 +164,7 @@
 
   .email-topics {
     border-top: 1px solid var(--theme-stroke);
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .email-topics.topics-disabled {

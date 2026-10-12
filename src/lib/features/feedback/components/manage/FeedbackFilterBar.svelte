@@ -176,7 +176,7 @@
     color: var(--theme-text-dim);
     font-size: 0.875rem;
     pointer-events: none;
-    transition: color var(--duration-normal) ease;
+    transition: color var(--duration-normal) var(--ease-standard);
   }
 
   .search-input {
@@ -189,7 +189,15 @@
     color: var(--theme-text);
     font-size: var(--font-size-base);
     font-family: inherit;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
   }
 
   .search-input::placeholder {
@@ -227,7 +235,15 @@
     color: var(--theme-text-dim);
     cursor: pointer;
     border-radius: 50%;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .search-clear::before {
@@ -278,7 +294,14 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     border-radius: 12px;
   }
 

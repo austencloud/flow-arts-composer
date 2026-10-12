@@ -313,7 +313,13 @@
     font-size: var(--fb-text-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .retry-btn:hover {
@@ -331,7 +337,8 @@
     background: var(--fb-surface);
     border: 1px solid var(--fb-border);
     border-radius: var(--fb-radius-md);
-    animation: skeletonFadeIn var(--duration-emphasis) ease backwards;
+    animation: skeletonFadeIn var(--duration-emphasis) var(--ease-standard)
+      backwards;
   }
 
   @keyframes skeletonFadeIn {
@@ -461,7 +468,15 @@
     font-size: var(--fb-text-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
   }
 
   .load-more-btn:hover {

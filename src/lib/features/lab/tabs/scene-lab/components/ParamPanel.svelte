@@ -16,7 +16,13 @@
     children: Snippet;
   }
 
-  let { title, defaultOpen = true, enabled = undefined, onToggle, children }: Props = $props();
+  let {
+    title,
+    defaultOpen = true,
+    enabled = undefined,
+    onToggle,
+    children,
+  }: Props = $props();
 
   let open = $state(untrack(() => defaultOpen));
 
@@ -24,7 +30,11 @@
   const isEnabled = $derived(enabled ?? true);
 </script>
 
-<div class="param-panel" class:open={open && isEnabled} class:disabled={!isEnabled}>
+<div
+  class="param-panel"
+  class:open={open && isEnabled}
+  class:disabled={!isEnabled}
+>
   <div class="panel-header">
     <button
       class="header-label"
@@ -104,7 +114,7 @@
     display: inline-block;
     font-size: 10px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
-    transition: transform 150ms ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .chevron.rotated {
@@ -113,7 +123,7 @@
 
   .title {
     flex: 1;
-    transition: color 150ms ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
 
   .toggle-pill {
@@ -126,7 +136,7 @@
     border: none;
     background: rgba(255, 255, 255, 0.12);
     cursor: pointer;
-    transition: background 150ms ease;
+    transition: background var(--duration-fast) var(--ease-standard);
     flex-shrink: 0;
     padding: 0;
   }
@@ -143,7 +153,7 @@
     height: 14px;
     border-radius: 50%;
     background: white;
-    transition: transform 150ms ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .toggle-pill.on .toggle-knob {

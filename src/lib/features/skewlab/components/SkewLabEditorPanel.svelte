@@ -62,12 +62,16 @@
   // Get prop types from settings
   const leftPropType = $derived.by(() => {
     const settings = getSettings();
-    return (settings.leftPropType ?? settings.propType ?? PropType.STAFF) as PropType;
+    return (settings.leftPropType ??
+      settings.propType ??
+      PropType.STAFF) as PropType;
   });
 
   const rightPropType = $derived.by(() => {
     const settings = getSettings();
-    return (settings.rightPropType ?? settings.propType ?? PropType.STAFF) as PropType;
+    return (settings.rightPropType ??
+      settings.propType ??
+      PropType.STAFF) as PropType;
   });
 
   // Convert PictographData to StepData format for ArrowAdjustmentPanel
@@ -184,7 +188,10 @@
     // TODO: Implement turns modification for skewed pictographs
   }
 
-  function handleRotationChange(_color: HandSide, _direction: RotationDirection) {
+  function handleRotationChange(
+    _color: HandSide,
+    _direction: RotationDirection
+  ) {
     // TODO: Implement rotation modification for skewed pictographs
   }
 
@@ -374,17 +381,33 @@
     border-radius: 50%;
     cursor: pointer;
     font-size: 1rem;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     border: 1px solid var(--theme-stroke-strong);
   }
 
   .icon-btn.close {
-    background: linear-gradient(135deg, rgba(100, 100, 120, 0.85), rgba(70, 70, 90, 0.85));
+    background: linear-gradient(
+      135deg,
+      rgba(100, 100, 120, 0.85),
+      rgba(70, 70, 90, 0.85)
+    );
     color: white;
   }
 
   .icon-btn.close:hover {
-    background: linear-gradient(135deg, rgba(120, 120, 140, 0.95), rgba(90, 90, 110, 0.95));
+    background: linear-gradient(
+      135deg,
+      rgba(120, 120, 140, 0.95),
+      rgba(90, 90, 110, 0.95)
+    );
   }
 
   /* Navigation */
@@ -410,7 +433,15 @@
     background: transparent;
     color: var(--theme-text);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .nav-btn:hover:not(:disabled) {

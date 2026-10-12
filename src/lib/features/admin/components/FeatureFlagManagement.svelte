@@ -11,7 +11,10 @@
    * - Impact summary before saving changes
    */
 
-  import { featureFlagService, featureFlagState } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
+  import {
+    featureFlagService,
+    featureFlagState,
+  } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
   import FeatureFlagHeader from "./feature-flags/FeatureFlagHeader.svelte";
   import PermissionMatrix from "./feature-flags/global-settings/PermissionMatrix.svelte";
   import UserOverrides from "./feature-flags/user-overrides/UserOverrides.svelte";
@@ -93,7 +96,7 @@
     border-bottom: 1px solid rgba(239, 68, 68, 0.2);
     color: #fca5a5;
     font-size: var(--font-size-sm, 14px);
-    animation: slideDown var(--duration-normal) ease-out;
+    animation: slideDown var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes slideDown {
@@ -128,7 +131,15 @@
     color: inherit;
     cursor: pointer;
     opacity: 0.7;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .error-banner button:hover {

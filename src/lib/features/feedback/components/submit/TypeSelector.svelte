@@ -50,9 +50,9 @@
     opacity: 1;
     overflow: hidden;
     transition:
-      max-height var(--duration-fast, 150ms) ease-out,
-      opacity var(--duration-fast, 150ms) ease-out,
-      margin var(--duration-fast, 150ms) ease-out;
+      max-height var(--duration-fast) var(--ease-standard-out),
+      opacity var(--duration-fast) var(--ease-standard-out),
+      margin var(--duration-fast) var(--ease-standard-out);
   }
 
   .type-selector.collapsed {
@@ -89,7 +89,13 @@
     font-size: clamp(0.8rem, 2.5cqi, 0.9375rem);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     position: relative;
     overflow: hidden;
   }
@@ -104,14 +110,14 @@
       color-mix(in srgb, var(--type-color) 8%, transparent) 100%
     );
     opacity: 0;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .segment i {
     position: relative;
     z-index: 1;
     font-size: clamp(0.9em, 2cqi, 1.15em);
-    transition: color var(--duration-normal) ease;
+    transition: color var(--duration-normal) var(--ease-standard);
   }
 
   .segment-label {
