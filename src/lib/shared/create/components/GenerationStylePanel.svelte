@@ -2,6 +2,15 @@
 GenerationStylePanel.svelte - shared 3-axis generation style control
 
 Used by Generate and Fuse so both tools expose one style vocabulary and policy.
+
+Each axis is a SegmentedControl radio group: the selected option carries the
+control's sliding indicator, so the choice reads at a glance, and arrow keys
+move between options. The untouched option of each axis is marked "Default"
+under its name. Fuse's other recipe fields use the same control, so its Style
+section now matches them.
+
+From 36rem of panel width each axis lays out as a row, name and hint on the
+left and the control on the right; narrower, the hint sits above the control.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -16,6 +25,7 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
     GENERATION_DASH_OPTIONS,
     GENERATION_STYLE_OPTIONS,
   } from "#lib/shared/create/domain/generation-style-display.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   let {
     constraintPreset,
@@ -43,21 +53,38 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
     onDashesChange: (v: GenerationDashChoice) => void;
   } = $props();
 
-  let currentDashValue = $derived.by(() => {
+  const uid = $props.id();
+
+  let currentDashValue = $derived.by((): GenerationDashChoice => {
     if (motionTypeFilter === "no-dash") return "no-dash";
     if (motionTypeFilter === "prefer-dash") return "prefer-dash";
     return "mixed";
   });
 
   // Which option is the untouched one, per axis. null when no baseline was
-  // given, which leaves the row rendering exactly as it did before.
+  // given, which leaves no option marked.
   const defaultProps = $derived(baseline?.constraintPreset ?? null);
   const defaultHands = $derived(baseline?.handPathMode ?? null);
-  const defaultDashes = $derived.by(() => {
+  const defaultDashes = $derived.by((): GenerationDashChoice | null => {
     if (!baseline) return null;
     const f = baseline.motionTypeFilter;
     return f === "no-dash" || f === "prefer-dash" ? f : "mixed";
   });
+
+  // Read inside the derived so the labels follow a language change.
+  const styleOptions = $derived(
+    GENERATION_STYLE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))
+  );
+  const dashOptions = $derived(
+    GENERATION_DASH_OPTIONS.map((o) => ({ value: o.value, label: o.label }))
+  );
+
+  function labelOf(
+    options: readonly { value: string; label: string }[],
+    value: string
+  ): string {
+    return options.find((o) => o.value === value)?.label ?? value;
+  }
 
   function handleProps(v: GenerationStyleAxis) {
     haptic?.trigger("selection");
@@ -75,122 +102,150 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
   }
 </script>
 
+<!-- The marker hangs under the name without taking part in the layout, so
+     every name sits on the same centre line whether or not it is marked, and
+     moving the selection never changes a segment's height. -->
+{#snippet optionBody(label: string, isDefault: boolean)}
+  <span class="option-body">
+    <span class="option-label">{label}</span>
+    <span class="option-default" class:shown={isDefault}
+      >{t("create_ui_default")}</span
+    >
+  </span>
+{/snippet}
+
+{#snippet propsOption(value: GenerationStyleAxis)}
+  {@render optionBody(labelOf(styleOptions, value), defaultProps === value)}
+{/snippet}
+
+{#snippet handsOption(value: GenerationStyleAxis)}
+  {@render optionBody(labelOf(styleOptions, value), defaultHands === value)}
+{/snippet}
+
+{#snippet dashesOption(value: GenerationDashChoice)}
+  {@render optionBody(labelOf(dashOptions, value), defaultDashes === value)}
+{/snippet}
+
+<!-- Every hint variant is stacked in one grid cell so the hint box is always
+     as tall as its longest line; switching options cannot move the axes
+     below it. -->
+{#snippet hint(
+  options: readonly { value: string; hint: string }[],
+  current: string
+)}
+  <span class="style-hint">
+    {#each options as opt (opt.value)}
+      <span class="hint-layer" class:live={current === opt.value}
+        >{opt.hint}</span
+      >
+    {/each}
+  </span>
+{/snippet}
+
 <div class="style-panel">
-  <div class="style-axis-group">
-    <div class="style-axis">
-      <span class="style-axis-label">{t("create_ui_props")}</span>
-      <div class="style-axis-options">
-        {#each GENERATION_STYLE_OPTIONS as opt}
-          <button
-            class="option-btn"
-            class:selected={constraintPreset === opt.value}
-            onclick={() => handleProps(opt.value)}
-          >
-            <span class="option-label">{opt.label}</span>
-            {#if defaultProps === opt.value}<span class="option-default"
-                >{t("create_ui_default")}</span
-              >{/if}
-          </button>
-        {/each}
+  <div class="style-axes">
+    <section class="style-axis">
+      <div class="axis-text">
+        <span class="axis-name" id="{uid}-props">{t("create_ui_props")}</span>
+        {@render hint(GENERATION_STYLE_OPTIONS, constraintPreset)}
       </div>
-    </div>
-    <!-- Every variant is stacked in one grid cell so the hint box is always as
-         tall as its longest line — switching options can't shove the axes
-         below it around. -->
-    <span class="style-hint">
-      {#each GENERATION_STYLE_OPTIONS as opt}
-        <span class="hint-layer" class:live={constraintPreset === opt.value}
-          >{opt.hint}</span
-        >
-      {/each}
-    </span>
-  </div>
+      <SegmentedControl
+        options={styleOptions}
+        value={constraintPreset}
+        onchange={handleProps}
+        color="accent"
+        semantics="radiogroup"
+        ariaLabelledby="{uid}-props"
+        optionContent={propsOption}
+      />
+    </section>
 
-  <div class="style-axis-group">
-    <div class="style-axis">
-      <span class="style-axis-label">{t("create_ui_hands")}</span>
-      <div class="style-axis-options">
-        {#each GENERATION_STYLE_OPTIONS as opt}
-          <button
-            class="option-btn"
-            class:selected={handPathMode === opt.value}
-            onclick={() => handleHands(opt.value)}
-          >
-            <span class="option-label">{opt.label}</span>
-            {#if defaultHands === opt.value}<span class="option-default"
-                >{t("create_ui_default")}</span
-              >{/if}
-          </button>
-        {/each}
+    <section class="style-axis">
+      <div class="axis-text">
+        <span class="axis-name" id="{uid}-hands">{t("create_ui_hands")}</span>
+        {@render hint(GENERATION_STYLE_OPTIONS, handPathMode)}
       </div>
-    </div>
-    <span class="style-hint">
-      {#each GENERATION_STYLE_OPTIONS as opt}
-        <span class="hint-layer" class:live={handPathMode === opt.value}
-          >{opt.hint}</span
-        >
-      {/each}
-    </span>
-  </div>
+      <SegmentedControl
+        options={styleOptions}
+        value={handPathMode}
+        onchange={handleHands}
+        color="accent"
+        semantics="radiogroup"
+        ariaLabelledby="{uid}-hands"
+        optionContent={handsOption}
+      />
+    </section>
 
-  <div class="style-axis-group">
-    <div class="style-axis">
-      <span class="style-axis-label">{t("create_ui_dashes")}</span>
-      <div class="style-axis-options">
-        {#each GENERATION_DASH_OPTIONS as opt}
-          <button
-            class="option-btn"
-            class:selected={currentDashValue === opt.value}
-            onclick={() => handleDashes(opt.value)}
-          >
-            <span class="option-label">{opt.label}</span>
-            {#if defaultDashes === opt.value}<span class="option-default"
-                >{t("create_ui_default")}</span
-              >{/if}
-          </button>
-        {/each}
+    <section class="style-axis">
+      <div class="axis-text">
+        <span class="axis-name" id="{uid}-dashes">{t("create_ui_dashes")}</span>
+        {@render hint(GENERATION_DASH_OPTIONS, currentDashValue)}
       </div>
-    </div>
-    <span class="style-hint">
-      {#each GENERATION_DASH_OPTIONS as opt}
-        <span class="hint-layer" class:live={currentDashValue === opt.value}
-          >{opt.hint}</span
-        >
-      {/each}
-    </span>
+      <SegmentedControl
+        options={dashOptions}
+        value={currentDashValue}
+        onchange={handleDashes}
+        color="accent"
+        semantics="radiogroup"
+        ariaLabelledby="{uid}-dashes"
+        optionContent={dashesOption}
+      />
+    </section>
   </div>
 </div>
 
 <style>
+  /* The outer box is the container the layout asks about; the inner one is
+     what changes shape. A container cannot restyle itself from its own width. */
   .style-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+    container: generation-style / inline-size;
     width: 100%;
-    flex: 1;
-    justify-content: center;
   }
 
-  .style-axis-group {
+  .style-axes {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    width: 100%;
+    max-width: 46rem;
+    margin-inline: auto;
   }
 
   .style-axis {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
+    gap: 0.625rem;
+    padding-block: 1rem;
+  }
+
+  .style-axis + .style-axis {
+    border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
+  }
+
+  .style-axis:first-child {
+    padding-top: 0.25rem;
+  }
+
+  .axis-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  .axis-name {
+    font-size: var(--font-size-base, 1rem);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--theme-text, white);
   }
 
   /* Ghost-sizer stack: all variants share one cell, so the box is sized to the
      tallest and only the live one is painted. */
   .style-hint {
     display: grid;
-    padding-left: 64px;
-    font-size: var(--font-size-compact, 12px);
-    line-height: 1.35;
-    color: rgba(255, 255, 255, 0.5);
+    font-size: var(--font-size-sm, 0.875rem);
+    line-height: 1.4;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
   }
 
   .hint-layer {
@@ -202,79 +257,47 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
     visibility: visible;
   }
 
-  .style-axis-label {
-    font-size: var(--font-size-compact, 12px);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: rgba(255, 255, 255, 0.5);
-    min-width: 52px;
-    flex-shrink: 0;
-  }
-
-  .style-axis-options {
-    display: flex;
-    gap: 4px;
-    flex: 1;
-  }
-
-  /* Two stacked lines: the value, and the "default" marker on whichever option
-     is the untouched one. The marker's row is reserved on every button so
-     nothing moves between the marked and unmarked options. */
-  .option-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1px;
-    min-height: 44px;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.15));
-    border-radius: 10px;
-    color: rgba(255, 255, 255, 0.7);
-    cursor: pointer;
-    font-weight: 600;
-    font-size: var(--font-size-compact, 12px);
-    padding: 4px 6px;
-    transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
-  }
-
-  .option-btn:active {
-    transform: scale(0.96);
+  .option-body {
+    position: relative;
+    display: block;
+    line-height: 1.2;
   }
 
   .option-label {
-    line-height: 1.2;
+    font-weight: 600;
   }
 
   .option-default {
-    font-size: var(--font-size-compact, 12px);
-    font-weight: 700;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    line-height: 1.2;
-    color: rgba(255, 255, 255, 0.45);
+    position: absolute;
+    top: calc(100% + 0.125rem);
+    left: 50%;
+    translate: -50% 0;
+    font-size: var(--font-size-compact, 0.75rem);
+    font-weight: 500;
+    white-space: nowrap;
+    visibility: hidden;
+    opacity: 0.8;
   }
 
-  .option-btn.selected .option-default {
-    color: rgba(255, 255, 255, 0.7);
+  .option-default.shown {
+    visibility: visible;
   }
 
-  .option-btn.selected {
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.25));
-    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.5));
-    color: #fff;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  .style-axis :global(.segment) {
+    min-height: 3.5rem;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .option-btn {
-      transition: none;
+  .style-axis :global(.segment.selected) {
+    color: var(--theme-text, white);
+  }
+
+  @container generation-style (min-width: 36rem) {
+    .style-axis {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+      align-items: center;
+      column-gap: 1.5rem;
+      padding-block: 1.125rem;
     }
   }
 </style>

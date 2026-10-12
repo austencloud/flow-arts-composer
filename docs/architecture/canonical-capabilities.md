@@ -186,7 +186,18 @@ the step cells' right-click "Grid join" submenu change it through the
 `GridJoinController` that `CreateModule` provides, which records an undoable
 `SET_GRID_JOIN` edit. `GridJoinSection` is the one join picker. The viewer is
 look-only: `SequenceViewerOrchestrator` clears the controller context, and old
-`gj` or `an` links still open joined through its override.
+`gj` or `an` links still open joined through its override. Two authoring
+owners may lay a join of their own over a copy of the sequence, saved with
+their scene or project rather than as a preference, each with the same
+tri-state (undefined follows the sequence, null is one grid, a join is the
+pair): a 3D performer (`3d/components/controls/PerformerGridPanel.svelte`
+over `CharacterInstanceState.settings.gridJoin`) and a Studio arrangement
+cell (`ArrangementCell.gridJoin`, resolved by
+`media-composition/domain/arrangement-grid-join.ts` and applied once in
+`arrangementCellSequence`; the cell's Grids panel in
+`post-studio-plugin/ui/PostArrangementTool.svelte` edits it through
+`setArrangementCellGridJoin`, one undo step). Both reuse `GridJoinSection`
+in controlled mode. Do not add a third owner or a second picker.
 
 The join slide is owned by `shared/grid-join/join-slide.svelte.ts`
 (`followJoinSlide`) on top of `GridJoinTween` in `grid-join-tween.ts`. When
@@ -210,8 +221,9 @@ offsets as the base pair through `shiftLayerProps` (a pooled copy; the host's
 layer objects are never written), trails and effects read the shifted tips,
 and the motion sub-sampler shifts its layer samples to match
 (`MotionPlanInput.gridJoinOffsets`). Do not null the join for layers
-anywhere. The viewer's old Conjoined switch is gone and nothing below the
-viewer offers the join. A link that carried the switch's choice still opens
+anywhere. The viewer's old Conjoined switch is gone; the viewer offers no
+join, and below it only an arrangement cell's own join (above) changes what
+is drawn. A link that carried the switch's choice still opens
 joined: `sequence-viewer/services/viewer-url-slices/gj-slice.ts` turns a `gj`
 payload into a join, and `legacyConjoinedOverride` turns the retired switch's
 `an.visibility.gridLayout: "conjoined"` into east, one point, when the

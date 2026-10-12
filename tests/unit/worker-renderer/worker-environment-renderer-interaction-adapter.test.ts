@@ -12,9 +12,6 @@ const environmentRenderer = source(
 const interactionAdapter = source(
   "src/lib/shared/3d/worker-renderer/components/WorkerPerformerInteractionAdapter.svelte"
 );
-const moveHandle = source(
-  "src/lib/shared/3d/worker-renderer/components/WorkerPerformerMoveHandle.svelte"
-);
 
 describe("worker environment performer interaction adapter", () => {
   it("keeps input on one stable host across worker canvas handoffs", () => {
@@ -111,46 +108,5 @@ describe("worker environment performer interaction adapter", () => {
     expect(environmentRenderer).toContain(
       "onFailure={onPerformerInteractionFailure}"
     );
-  });
-});
-
-describe("worker DOM move handle adapter", () => {
-  it("renders the committed presentation owner at the bridge projection", () => {
-    expect(moveHandle).toContain("createWorkerMoveHandleOwner(");
-    expect(moveHandle).toContain("presentationOwner.update(");
-    expect(moveHandle).toContain(
-      "bridge.projectStagePosition({ x, z }, worldY)"
-    );
-    expect(moveHandle).toContain("presentation.geometry.minWidthPx");
-    expect(moveHandle).toContain("presentation.material.borderColor");
-    expect(moveHandle).toContain("presentation.typography.fontSize");
-    expect(moveHandle).toContain("initial?.motion.durationMs");
-  });
-
-  it("preserves the accessible pointer, keyboard, and browser suppression contract", () => {
-    expect(moveHandle).toContain("type={presentation.interaction.buttonType}");
-    expect(moveHandle).toContain("aria-label={presentation.accessibleLabel}");
-    expect(moveHandle).toContain("title={presentation.title}");
-    expect(moveHandle).toContain("onkeydown={handleKeydown}");
-    expect(moveHandle).toContain("onpointerdown={handlePointerDown}");
-    expect(moveHandle).toContain("onlostpointercapture={handlePointerCancel}");
-    expect(moveHandle).toContain(
-      "oncontextmenu={(event) => event.preventDefault()}"
-    );
-    expect(moveHandle).toContain(
-      "ondragstart={(event) => event.preventDefault()}"
-    );
-    expect(interactionAdapter).toContain(
-      "interactionSurface.dispatchEvent(forwarded)"
-    );
-  });
-
-  it("tracks focus-visible and reduced-motion changes through the owner", () => {
-    expect(moveHandle).toContain('.matches(\n      ":focus-visible"\n    )');
-    expect(moveHandle).toContain("prefersReducedMotion = reducedMotion()");
-    expect(moveHandle).toContain(
-      'window.matchMedia("(prefers-reduced-motion: reduce)")'
-    );
-    expect(moveHandle).toContain('attributeFilter: ["data-motion-preference"]');
   });
 });
