@@ -348,7 +348,7 @@ export function createPropPlacementAimState(
   }
 
   function isPressable(location: GridLocation, hand?: HandSide): boolean {
-    if (placement.canPlace) return true;
+    if (placement.canPlace || placement.tapHand !== null) return true;
     return (
       (inputs.getCanAim() || placement.canEdit) &&
       resolvePressColor(location, null, hand) !== null
@@ -563,6 +563,14 @@ export function createPropPlacementAimState(
     event: MouseEvent | null = null,
     hand?: HandSide
   ): void {
+    const tap = placement.tapHand;
+    if (tap !== null && !inputs.getCanAim()) {
+      // A press on the hand's own point keeps it there: a Static move.
+      placement.selectPoint(location, tap);
+      const point = pointsFor(tap).find((each) => each.location === location);
+      if (point) landing = { point, color: tap };
+      return;
+    }
     if (
       !inputs.getCanAim() &&
       placement.canEdit &&

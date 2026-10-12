@@ -50,7 +50,7 @@
 
   const targets = $derived.by((): PlacementTarget[] => {
     if (!handPoints) return activePoints;
-    const active = placement.activeHand;
+    const active = placement.activeHand ?? placement.tapHand;
     const hands = active !== null ? [active] : [HandSide.LEFT, HandSide.RIGHT];
     return hands.flatMap((hand) =>
       handPoints[hand]
@@ -58,6 +58,15 @@
         .map((point) => ({ ...point, hand }))
     );
   });
+  // Every point a press moves the hand to wears Assemble's ring, in the color
+  // the hand is drawn in on this theme's board.
+  const ringColor = $derived(
+    placement.tapHand === null || aim.grabbedLocationColor !== null
+      ? null
+      : placement.tapHand === HandSide.RIGHT
+        ? "var(--dm-motion-red, var(--prop-red, #ed1c24))"
+        : "var(--dm-motion-blue, var(--prop-blue, #2e8bf0))"
+  );
   const dropPoints = $derived(
     handPoints && aim.grabbedLocationColor !== null
       ? handPoints[aim.grabbedLocationColor]
@@ -240,7 +249,7 @@
     </g>
   {/if}
 
-  <g class="click-targets">
+  <g class="click-targets" style:--ring={ringColor}>
     {#each targets as point (`${point.hand ?? ""}${point.location}`)}
       <circle
         cx={point.x}
@@ -248,6 +257,7 @@
         r={hitTargetRadius * pointScale}
         fill="transparent"
         class="click-target"
+        class:ring={ringColor !== null}
         class:tappable={aim.isPressable(point.location, point.hand)}
         class:occupied={isLeftAt(point) || isRightAt(point)}
         onpointerdown={(event) =>
@@ -466,6 +476,30 @@
     stroke-dasharray: 10 5;
   }
 
+  /* Assemble's hit-target ring (HitTargetOverlay, blue/red phase), drawn in
+     screen pixels so it stays clear on a small grid. */
+  .click-target.ring {
+    fill: color-mix(in srgb, var(--ring) 8%, transparent);
+    stroke: color-mix(in srgb, var(--ring) 50%, transparent);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+    transition:
+      fill 0.15s ease,
+      stroke 0.15s ease;
+  }
+
+  .click-target.ring:hover {
+    fill: color-mix(in srgb, var(--ring) 20%, transparent);
+    stroke: var(--ring);
+    stroke-width: 2.5;
+  }
+
+  .click-target.ring:focus-visible {
+    stroke: var(--theme-accent, #60a5fa);
+    stroke-width: 3;
+    stroke-dasharray: none;
+  }
+
   .beta-ripple {
     animation: ripple-expand 1.5s ease-out infinite;
   }
@@ -518,7 +552,8 @@
     }
 
     .point-solid,
-    .aim-tick {
+    .aim-tick,
+    .click-target.ring {
       transition: none;
     }
 
