@@ -237,6 +237,11 @@ list.
     grid-area: control;
   }
 
+  /* Under a tile heading, the axis names are the second level. */
+  .columns .axis-name {
+    font-size: var(--font-size-sm, 0.875rem);
+  }
+
   .style-axis + .style-axis {
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
   }
@@ -338,11 +343,6 @@ list.
     .columns .style-hint {
       margin-top: 0.375rem;
       margin-bottom: 0;
-    }
-
-    /* Under a tile heading, the axis names are the second level. */
-    .columns .axis-name {
-      font-size: var(--font-size-sm, 0.875rem);
     }
   }
 </style>
