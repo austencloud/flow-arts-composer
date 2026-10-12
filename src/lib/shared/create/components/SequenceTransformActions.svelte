@@ -898,11 +898,14 @@
      there's room. With 6 transform/pattern actions that's 3 rows → 2 rows; a
      7th+ action just adds a row (grid-auto-flow: row). The max-width cap above
      keeps it at 3 cols + centered on ultra-wide panels (no 5–6 col sprawl). */
+  .actions-container.desktop {
+    --tile-gap: clamp(8px, 1.6cqh, 13px);
+  }
   .actions-container.desktop .section-grid {
     flex: none;
     grid-template-columns: repeat(2, 1fr);
     grid-auto-rows: auto;
-    gap: clamp(8px, 1.6cqh, 13px);
+    gap: var(--tile-gap);
   }
   @container (min-width: 560px) {
     .actions-container.desktop .section-grid {
@@ -921,11 +924,11 @@
     height: auto;
     aspect-ratio: 1 / 0.84;
     min-height: 88px;
-    /* Height budget is row-count-aware. The default (2-col) tier stacks SEVEN
-       tile rows (3 transform + 3 patterns + 1 edit); labels, section gaps, and
-       grid gaps eat ~21cqh, leaving (100 - 21) / 7 ≈ 11.28cqh per row. The
-       3-col tier (5 rows) restores 17cqh below. */
-    max-height: clamp(96px, 11.25cqh, 152px);
+    /* Height budget is row-count-aware. The default (2-col) tier stacks up to
+       EIGHT tile rows (3 transform + 3 patterns + 1 grid + 1 edit); labels,
+       section gaps, and grid gaps eat ~24cqh, leaving (100 - 24) / 8 = 9.5cqh
+       per row. The 3-col tier (5 rows) restores 15.5cqh below. */
+    max-height: clamp(96px, 9.5cqh, 152px);
     /* Grid items with an aspect-ratio default to start-alignment, so the
        capped height transfers to a narrow width and strands each tile at the
        left of its column. Stretch fills the column; max-height still rules. */
@@ -1030,25 +1033,65 @@
   .actions-container.desktop .edit-section .grid-btn {
     flex: 0 1 clamp(140px, 30cqw, 264px);
   }
-  /* Grid beside Edit: each section sizes to its tiles and the pair is
-     centered, like the sparse Edit row was on its own. */
+  /* Grid + Edit share one tile grid with the sections above, so every tile
+     keeps the same column width. At the 2-col tier the two sections stack
+     (Grid join alone in the left slot, the two Edit tiles in one row). At
+     the 3-col tier the row splits 1 + 2: the first column is sized exactly
+     like a section-grid column (one third of the width minus two gaps) and
+     Edit takes the rest with its own two columns, so all three tiles line up
+     with the three columns above. Without a Grid section, Edit is the only
+     child and spans the full row on three columns (two tiles, left-aligned
+     like a sparse Patterns row). */
   .actions-container.desktop .tail-row {
     display: flex;
-    justify-content: center;
-    gap: clamp(12px, 2.4cqw, 24px);
+    flex-direction: column;
+    gap: clamp(8px, 1.6cqh, 13px);
     flex-shrink: 0;
   }
   .actions-container.desktop .tail-row .section {
-    flex: 0 1 auto;
     min-width: 0;
   }
-  .actions-container.desktop .grid-section .section-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+  @container (min-width: 560px) {
+    .actions-container.desktop .tail-row {
+      display: grid;
+      grid-template-columns: calc((100% - 2 * var(--tile-gap)) / 3) 1fr;
+      gap: var(--tile-gap);
+    }
+    .actions-container.desktop .grid-section .section-grid {
+      grid-template-columns: 1fr;
+    }
+    .actions-container.desktop .edit-section .section-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .actions-container.desktop .tail-row .edit-section:first-child {
+      grid-column: 1 / -1;
+    }
+    .actions-container.desktop
+      .tail-row
+      .edit-section:first-child
+      .section-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
-  .actions-container.desktop .tail-row .grid-btn {
-    flex: 0 1 clamp(112px, 24cqw, 220px);
+  .actions-container.desktop.three-column .tail-row {
+    display: grid;
+    grid-template-columns: calc((100% - 2 * var(--tile-gap)) / 3) 1fr;
+    gap: var(--tile-gap);
+  }
+  .actions-container.desktop.three-column .grid-section .section-grid {
+    grid-template-columns: 1fr;
+  }
+  .actions-container.desktop.three-column .edit-section .section-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .actions-container.desktop.three-column .tail-row .edit-section:first-child {
+    grid-column: 1 / -1;
+  }
+  .actions-container.desktop.three-column
+    .tail-row
+    .edit-section:first-child
+    .section-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
   .actions-container.desktop .source-section .section-grid {
     display: flex;
