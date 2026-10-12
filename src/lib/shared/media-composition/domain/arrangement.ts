@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { GridJoin } from "@tka/tka-types";
 import type {
   TunnelLayerConfig,
   CellMediaType,
@@ -33,6 +34,12 @@ export interface ArrangementCell {
   tipEffortMap?: TipEffortMap;
   leftMotionVisible?: boolean;
   rightMotionVisible?: boolean;
+  /**
+   * The cell's own join: undefined follows the first layer's sequence, null
+   * draws one grid, a join is the cell's pair. The same tri-state as a 3D
+   * performer's; `arrangement-grid-join.ts` resolves it.
+   */
+  gridJoin?: GridJoin | null;
 }
 
 export interface ArrangementSnapshot {
@@ -100,6 +107,10 @@ export const arrangementCellSchema = z
     tipEffortMap: z.record(z.string(), jsonValueSchema).optional(),
     leftMotionVisible: z.boolean().optional(),
     rightMotionVisible: z.boolean().optional(),
+    // The resolver, not the schema, decides what a stored join means, so a
+    // malformed value from an older build follows the sequence instead of
+    // making the whole arrangement unreadable.
+    gridJoin: z.unknown().optional(),
   })
   .passthrough();
 
