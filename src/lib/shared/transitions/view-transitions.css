@@ -90,6 +90,80 @@ html.generate-card-morph-tnd::view-transition-group(generate-card-tnd) {
   z-index: 2;
 }
 
+/* Timing and direction grows from the tile that was tapped, not the whole
+   card: the tile takes the card's name (beating the wrapper's inline claim),
+   the box carries it to the panel, and its element icon flies on its own into
+   the option already chosen there. Closing runs the same path back. The tile
+   is marked only while the panel is closed and the panel's chosen icon only
+   exists while it is open, so each name has one owner at every capture.
+   Owner: features/create/generate/components/cards/TnDCard.svelte. */
+html.generate-card-morph-tnd .card-wrapper:has(.tnd-tile[data-morph-source]) {
+  view-transition-name: none !important;
+}
+
+html.generate-card-morph-tnd .tnd-tile[data-morph-source] {
+  view-transition-name: generate-card-tnd !important;
+}
+
+html.generate-card-morph-tnd .tnd-tile[data-morph-source] .tile-icon-slot,
+html.generate-card-morph-tnd
+  .tnd-panel.single
+  .relationship-choice.active
+  :is(.choice-icon, .choice-dot) {
+  view-transition-name: tnd-choice-icon;
+}
+
+/* The box keeps the panel's opaque ground, so the hand-off between the tile's
+   face and the panel's never shows the grid through it. The outgoing face
+   leaves early, the incoming one arrives once the box has mostly grown. */
+html.generate-card-morph-tnd::view-transition-group(generate-card-tnd) {
+  overflow: clip;
+  border-radius: 16px;
+  background-color: #12141c;
+}
+
+html.generate-card-morph-tnd::view-transition-old(generate-card-tnd),
+html.generate-card-morph-tnd::view-transition-new(generate-card-tnd) {
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: normal;
+}
+
+html.generate-card-morph-tnd::view-transition-old(generate-card-tnd) {
+  animation: tnd-tile-face-out var(--duration-dramatic) linear both;
+}
+
+html.generate-card-morph-tnd::view-transition-new(generate-card-tnd) {
+  animation: tnd-tile-face-in var(--duration-dramatic) linear both;
+}
+
+html.generate-card-morph-tnd::view-transition-group(tnd-choice-icon) {
+  z-index: 3;
+  animation-duration: var(--duration-dramatic);
+  animation-timing-function: var(--ease-in-out);
+}
+
+@keyframes tnd-tile-face-out {
+  0% {
+    opacity: 1;
+  }
+  35%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes tnd-tile-face-in {
+  0%,
+  25% {
+    opacity: 0;
+  }
+  65%,
+  100% {
+    opacity: 1;
+  }
+}
+
 /* The /composer 3D card opening into the viewer's frame over the dimmed page,
    and closing back into the card. The card's picture and the frame share one
    name, so the group carries the box between them while the dimmed page fades
