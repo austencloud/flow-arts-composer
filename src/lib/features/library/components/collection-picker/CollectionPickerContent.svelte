@@ -345,9 +345,9 @@ Two modes:
     color: var(--theme-text, white);
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .collection-tile:hover {
@@ -447,8 +447,8 @@ Two modes:
     opacity: 0;
     transform: scale(0.6);
     transition:
-      opacity var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .collection-tile.selected .tile-check,
@@ -520,7 +520,7 @@ Two modes:
     background: color-mix(in srgb, var(--theme-accent) 22%, transparent);
     color: var(--theme-text, white);
     cursor: pointer;
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .confirm-create:hover:not(:disabled) {

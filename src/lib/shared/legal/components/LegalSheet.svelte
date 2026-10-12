@@ -65,10 +65,11 @@
         {#if type === "terms"}
           <div class="summary-banner">
             <p>
-              <strong>This is a summary for quick reference.</strong> The
-              full and authoritative Terms of Service are at
-              <LinkChip size="inline" href="/terms">/terms</LinkChip>. In case of any difference between
-              this summary and the full terms, the full terms control.
+              <strong>This is a summary for quick reference.</strong> The full
+              and authoritative Terms of Service are at
+              <LinkChip size="inline" href="/terms">/terms</LinkChip>. In case
+              of any difference between this summary and the full terms, the
+              full terms control.
             </p>
           </div>
 
@@ -84,8 +85,8 @@
           <section>
             <h3>2. Description of Service</h3>
             <p>
-              Flow Arts Composer is an educational platform for learning, creating,
-              and sharing TKA sequences. Some features require a paid
+              Flow Arts Composer is an educational platform for learning,
+              creating, and sharing TKA sequences. Some features require a paid
               subscription.
             </p>
           </section>
@@ -125,11 +126,11 @@
           <section>
             <h3>6. Automated Access</h3>
             <p>
-              You may not use bots, scrapers, or automated tools to extract
-              data from the service. You may not reverse-engineer or decompile
-              the application. The TKA notation and sequence data are open
-              knowledge; this restriction targets automated bulk extraction
-              from the hosted service.
+              You may not use bots, scrapers, or automated tools to extract data
+              from the service. You may not reverse-engineer or decompile the
+              application. The TKA notation and sequence data are open
+              knowledge; this restriction targets automated bulk extraction from
+              the hosted service.
             </p>
           </section>
 
@@ -147,14 +148,15 @@
             <h3>8. Intellectual Property</h3>
             <p>
               The Flow Arts Composer application is licensed under the Elastic
-              License 2.0. "The Kinetic Alphabet", "TKA", and "Flow Arts Composer"
-              are trademarks of Austen Cloud. The TKA notation system is an
-              open standard under CC BY-SA 4.0.
+              License 2.0. "The Kinetic Alphabet", "TKA", and "Flow Arts
+              Composer" are trademarks of Austen Cloud. The TKA notation system
+              is an open standard under CC BY-SA 4.0.
             </p>
             <p>
               If you believe content on the service infringes your copyright,
               send a DMCA notice per the procedure in
-              <LinkChip size="inline" href="/terms#dmca">the full terms</LinkChip
+              <LinkChip size="inline" href="/terms#dmca"
+                >the full terms</LinkChip
               >.
             </p>
           </section>
@@ -171,20 +173,20 @@
           <section>
             <h3>10. Code Contributions</h3>
             <p>
-              By submitting code contributions to TKA repositories, you agree
-              to the inbound=outbound terms in
-              <code>CONTRIBUTING.md</code>: your contribution is licensed
-              under the same license as the file you modify, and you grant
-              Austen Cloud the right to relicense it under the Post-Mortem
-              Open Source Provision. You retain ownership of your work.
+              By submitting code contributions to TKA repositories, you agree to
+              the inbound=outbound terms in
+              <code>CONTRIBUTING.md</code>: your contribution is licensed under
+              the same license as the file you modify, and you grant Austen
+              Cloud the right to relicense it under the Post-Mortem Open Source
+              Provision. You retain ownership of your work.
             </p>
           </section>
 
           <section>
             <h3>11. Disclaimers &amp; Liability</h3>
             <p>
-              Flow Arts Composer is provided "as is" without warranties of any kind.
-              Total liability shall not exceed the amount you paid in the
+              Flow Arts Composer is provided "as is" without warranties of any
+              kind. Total liability shall not exceed the amount you paid in the
               twelve months preceding the claim.
             </p>
           </section>
@@ -213,8 +215,8 @@
           <section>
             <h3>1. Information We Collect</h3>
             <p>
-              When you use Flow Arts Composer, we may collect the following types of
-              information:
+              When you use Flow Arts Composer, we may collect the following
+              types of information:
             </p>
             <ul>
               <li>
@@ -226,9 +228,9 @@
                 including sequences you create and features you use
               </li>
               <li>
-                <strong>User-Uploaded Content:</strong> Sequences, videos,
-                images, and other content you upload or share, along with
-                associated metadata (upload time, file size, format)
+                <strong>User-Uploaded Content:</strong> Sequences, videos, images,
+                and other content you upload or share, along with associated metadata
+                (upload time, file size, format)
               </li>
               <li>
                 <strong>Device Information:</strong> Browser type, device type, and
@@ -266,11 +268,12 @@
           <section>
             <h3>4. Messages and Communications</h3>
             <p>
-              When you use our messaging feature to communicate with other users,
-              we store your messages to deliver them and maintain your conversation
-              history. Messages may be reviewed by our team to provide support,
-              investigate abuse reports, or improve the service. We do not sell
-              or share your private messages with third parties.
+              When you use our messaging feature to communicate with other
+              users, we store your messages to deliver them and maintain your
+              conversation history. Messages may be reviewed by our team to
+              provide support, investigate abuse reports, or improve the
+              service. We do not sell or share your private messages with third
+              parties.
             </p>
           </section>
 
@@ -306,8 +309,8 @@
             <h3>7. Cookies and Local Storage</h3>
             <p>
               Flow Arts Composer uses local storage and cookies to maintain your
-              session and remember your preferences. These are essential for
-              the application to function properly.
+              session and remember your preferences. These are essential for the
+              application to function properly.
             </p>
           </section>
 
@@ -331,9 +334,9 @@
           <section>
             <h3>9. Children's Privacy</h3>
             <p>
-              Flow Arts Composer is not intended for children under 13 years of age. We
-              do not knowingly collect personal information from children under
-              13.
+              Flow Arts Composer is not intended for children under 13 years of
+              age. We do not knowingly collect personal information from
+              children under 13.
             </p>
           </section>
 
@@ -368,7 +371,7 @@
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    animation: fadeIn var(--duration-normal) ease;
+    animation: fadeIn var(--duration-normal) var(--ease-standard);
     isolation: isolate;
   }
 
@@ -388,7 +391,7 @@
     border-radius: 20px 20px 0 0;
     display: flex;
     flex-direction: column;
-    animation: slideUp var(--duration-emphasis) ease;
+    animation: slideUp var(--duration-emphasis) var(--ease-standard);
     isolation: isolate;
     position: relative;
     z-index: 1;
@@ -431,7 +434,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .close-btn:hover {

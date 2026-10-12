@@ -1,7 +1,9 @@
 import type { RippleOptions } from "./types";
+import { motionDuration } from "#lib/shared/transitions/motion.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 
 const DEFAULT_OPTIONS: Required<RippleOptions> = {
-  duration: 350,
+  duration: DURATION.dramatic,
   color: "rgba(255, 255, 255, 0.3)",
   opacity: 0.3,
 };
@@ -9,9 +11,10 @@ const DEFAULT_OPTIONS: Required<RippleOptions> = {
 export function createRipple(
   element: HTMLElement,
   event: MouseEvent | TouchEvent,
-  options: RippleOptions = {},
+  options: RippleOptions = {}
 ): void {
   const opts = { ...DEFAULT_OPTIONS, ...options };
+  const duration = motionDuration(opts.duration);
 
   const rect = element.getBoundingClientRect();
   let x: number;
@@ -32,7 +35,7 @@ export function createRipple(
       Math.sqrt(x * x + y * y),
       Math.sqrt((rect.width - x) ** 2 + y ** 2),
       Math.sqrt(x ** 2 + (rect.height - y) ** 2),
-      Math.sqrt((rect.width - x) ** 2 + (rect.height - y) ** 2),
+      Math.sqrt((rect.width - x) ** 2 + (rect.height - y) ** 2)
     ) * 2;
 
   const ripple = document.createElement("span");
@@ -48,8 +51,8 @@ export function createRipple(
   ripple.style.pointerEvents = "none";
   ripple.style.zIndex = "10";
   ripple.style.transition = `
-    transform ${opts.duration}ms cubic-bezier(0.4, 0, 0.2, 1),
-    opacity ${opts.duration}ms cubic-bezier(0.4, 0, 0.2, 1)
+    transform ${duration}ms var(--ease-standard),
+    opacity ${duration}ms var(--ease-standard)
   `;
 
   const originalPosition = getComputedStyle(element).position;
@@ -65,24 +68,35 @@ export function createRipple(
 
     setTimeout(() => {
       ripple.style.opacity = "0";
-    }, opts.duration * 0.4);
+    }, duration * 0.4);
   });
 
   setTimeout(() => {
     ripple.remove();
-  }, opts.duration);
+  }, duration);
 }
 
-export function attachRipple(element: HTMLElement, options: RippleOptions = {}): () => void {
+export function attachRipple(
+  element: HTMLElement,
+  options: RippleOptions = {}
+): () => void {
   const handleInteraction = (event: MouseEvent | TouchEvent) => {
     createRipple(element, event, options);
   };
 
   element.addEventListener("mousedown", handleInteraction as EventListener);
-  element.addEventListener("touchstart", handleInteraction as EventListener, { passive: true });
+  element.addEventListener("touchstart", handleInteraction as EventListener, {
+    passive: true,
+  });
 
   return () => {
-    element.removeEventListener("mousedown", handleInteraction as EventListener);
-    element.removeEventListener("touchstart", handleInteraction as EventListener);
+    element.removeEventListener(
+      "mousedown",
+      handleInteraction as EventListener
+    );
+    element.removeEventListener(
+      "touchstart",
+      handleInteraction as EventListener
+    );
   };
 }

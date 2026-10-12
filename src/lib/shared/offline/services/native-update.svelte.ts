@@ -27,6 +27,7 @@ export type NativeUpdateStatus =
 // A check that never hears back (offline, Doze, a cached 429) shouldn't leave
 // the button spinning forever.
 const CHECK_TIMEOUT_MS = 30_000;
+const UPDATE_ACTION_TOAST_MS = 15_000;
 
 class NativeUpdateState {
   /** True once the updater plugin has loaded inside the phone app. */
@@ -65,15 +66,22 @@ function markReady(bundle: { id: string; version: string }): void {
   showToast({
     message: t("settings_app_update_ready"),
     type: "info",
-    duration: 15_000,
-    action: { label: t("settings_app_update_restart"), onClick: applyNativeUpdate },
+    duration: UPDATE_ACTION_TOAST_MS,
+    action: {
+      label: t("settings_app_update_restart"),
+      onClick: applyNativeUpdate,
+    },
   });
 }
 
 function settleCheck(status: "up-to-date" | "failed"): void {
   // Only a check the person asked for reports back; the plugin's own
   // foreground checks stay silent unless they find something.
-  if (nativeUpdate.status !== "checking" && nativeUpdate.status !== "downloading") return;
+  if (
+    nativeUpdate.status !== "checking" &&
+    nativeUpdate.status !== "downloading"
+  )
+    return;
   clearCheckTimer();
   nativeUpdate.status = status;
 }
@@ -101,10 +109,18 @@ export async function startNativeUpdates(): Promise<void> {
   });
   // downloadComplete fires at 100%, a moment before the plugin queues the
   // bundle; updateAvailable fires once it's saved. Either one means ready.
-  await CapacitorUpdater.addListener("downloadComplete", ({ bundle }) => markReady(bundle));
-  await CapacitorUpdater.addListener("updateAvailable", ({ bundle }) => markReady(bundle));
-  await CapacitorUpdater.addListener("noNeedUpdate", () => settleCheck("up-to-date"));
-  await CapacitorUpdater.addListener("downloadFailed", () => settleCheck("failed"));
+  await CapacitorUpdater.addListener("downloadComplete", ({ bundle }) =>
+    markReady(bundle)
+  );
+  await CapacitorUpdater.addListener("updateAvailable", ({ bundle }) =>
+    markReady(bundle)
+  );
+  await CapacitorUpdater.addListener("noNeedUpdate", () =>
+    settleCheck("up-to-date")
+  );
+  await CapacitorUpdater.addListener("downloadFailed", () =>
+    settleCheck("failed")
+  );
   await CapacitorUpdater.addListener("updateCheckResult", ({ kind }) => {
     if (kind === "failed") settleCheck("failed");
   });
@@ -112,13 +128,18 @@ export async function startNativeUpdates(): Promise<void> {
   // A bundle downloaded earlier in this session (or before a crash) may
   // already be queued; offer it straight away.
   const next = await CapacitorUpdater.getNextBundle();
-  if (next && (next.status === "pending" || next.status === "success")) markReady(next);
+  if (next && (next.status === "pending" || next.status === "success"))
+    markReady(next);
 }
 
 /** Ask Capgo for a newer bundle now instead of waiting for the next app switch. */
 export async function checkForNativeUpdate(): Promise<void> {
   if (!updater || nativeUpdate.status === "ready") return;
-  if (nativeUpdate.status === "checking" || nativeUpdate.status === "downloading") return;
+  if (
+    nativeUpdate.status === "checking" ||
+    nativeUpdate.status === "downloading"
+  )
+    return;
   nativeUpdate.status = "checking";
   nativeUpdate.percent = 0;
   clearCheckTimer();

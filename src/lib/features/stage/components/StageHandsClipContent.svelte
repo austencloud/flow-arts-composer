@@ -136,10 +136,10 @@
     background: rgba(6, 8, 14, 0.62);
     box-shadow: 0 0.15rem 0.35rem rgba(0, 0, 0, 0.28);
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease,
-      box-shadow var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .step-card.current {
@@ -201,8 +201,8 @@
     font-size: var(--font-size-compact, 0.75rem);
     opacity: 0;
     transition:
-      opacity var(--duration-fast, 150ms) ease,
-      visibility 0s linear var(--duration-fast, 150ms);
+      opacity var(--duration-fast) var(--ease-standard),
+      visibility 0s linear var(--duration-fast);
     visibility: hidden;
   }
 

@@ -68,7 +68,10 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-base, 16px);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .expand-chip:hover {
@@ -115,7 +118,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .collapse-btn:hover {

@@ -19,26 +19,26 @@
   const defaultFAQs: FAQItem[] = $derived([
     {
       id: "what-included",
-      question: t('premium_faq_q_included'),
-      answer: t('premium_faq_a_included'),
+      question: t("premium_faq_q_included"),
+      answer: t("premium_faq_a_included"),
       category: "features" as const,
     },
     {
       id: "cancel",
-      question: t('premium_faq_q_cancel'),
-      answer: t('premium_faq_a_cancel'),
+      question: t("premium_faq_q_cancel"),
+      answer: t("premium_faq_a_cancel"),
       category: "billing" as const,
     },
     {
       id: "secure",
-      question: t('premium_faq_q_secure'),
-      answer: t('premium_faq_a_secure'),
+      question: t("premium_faq_q_secure"),
+      answer: t("premium_faq_a_secure"),
       category: "billing" as const,
     },
     {
       id: "refund",
-      question: t('premium_faq_q_refund'),
-      answer: t('premium_faq_a_refund'),
+      question: t("premium_faq_q_refund"),
+      answer: t("premium_faq_a_refund"),
       category: "billing" as const,
     },
   ]);
@@ -67,7 +67,7 @@
 </script>
 
 <div class="faq">
-  <h3>{t('premium_faq_heading')}</h3>
+  <h3>{t("premium_faq_heading")}</h3>
   <div class="faq-list">
     {#each displayItems as item (item.id)}
       <div class="faq-item">
@@ -132,7 +132,8 @@
     font-weight: 600;
     text-align: left;
     cursor: pointer;
-    transition: background var(--transition-fast, var(--duration-fast) ease);
+    transition: background
+      var(--transition-fast, var(--duration-fast) var(--ease-standard));
   }
 
   .faq-question:hover {
@@ -142,7 +143,8 @@
   .faq-question i {
     flex-shrink: 0;
     color: var(--theme-accent, var(--theme-accent));
-    transition: transform var(--transition-fast, var(--duration-fast) ease);
+    transition: transform
+      var(--transition-fast, var(--duration-fast) var(--ease-standard));
   }
 
   .faq-answer {
@@ -150,7 +152,7 @@
     font-size: var(--font-size-min);
     color: var(--theme-text-dim);
     line-height: 1.6;
-    animation: slideDown var(--duration-normal) ease;
+    animation: slideDown var(--duration-normal) var(--ease-standard);
   }
 
   @keyframes slideDown {
