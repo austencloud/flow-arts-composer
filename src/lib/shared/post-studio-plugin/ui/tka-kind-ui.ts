@@ -62,8 +62,8 @@ export const TKA_KIND_UI: Record<
       return `${item.label ?? "Arrangement"} · Cell ${place}`;
     },
     // Plain tsc types every .svelte import as svelte's legacy component, which
-    // does not carry the layer's exports; the cast names what the file is.
-    selectionLayer: TkaArrangementSelection as Component<
+    // does not overlap a Component with exports; the cast names what the file is.
+    selectionLayer: TkaArrangementSelection as unknown as Component<
       SelectionLayerProps,
       SelectionLayerHandle
     >,
