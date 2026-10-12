@@ -1581,6 +1581,11 @@ export class AnimationRenderLoop {
             layerCount: props.additionalLayers.length,
             layersAt: params.additionalLayersAt ?? null,
             liveLayers: props.additionalLayers,
+            // The same condition the frame system uses for its sample source.
+            gridJoinOffsets:
+              params.gridJoin || params.gridJoinSlide
+                ? (params.gridJoinOffsets ?? null)
+                : null,
             previousTimeMs: currentTime - rafGap,
             currentTimeMs: currentTime,
           })

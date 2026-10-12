@@ -39,6 +39,12 @@ export interface MotionSubSampleLayer {
   right: PropState | null;
 }
 
+/** A pooled layer slot: the public pair plus the scratch the shift writes. */
+interface PooledSubSampleLayer extends MotionSubSampleLayer {
+  readonly leftPose: PropState;
+  readonly rightPose: PropState;
+}
+
 /** One intermediate pose between the previous frame and the current one. */
 export interface MotionSubSample {
   readonly left: PropState;
@@ -266,6 +272,12 @@ export interface MotionPlanInput {
   /** Tunnel copies at a step, index-aligned with `liveLayers`. */
   layersAt: ((step: number) => readonly AdditionalLayerProps[]) | null;
   liveLayers: readonly AdditionalLayerProps[] | null;
+  /**
+   * The shift each hand gets this frame on joined grids, which the live
+   * layers already carry while `layersAt` returns raw poses; null or absent
+   * for one centered grid. (`source` applies the base pair's own shift.)
+   */
+  gridJoinOffsets?: HandOffsets | null;
   previousTimeMs: number;
   currentTimeMs: number;
 }
@@ -293,6 +305,8 @@ export class MotionSubSampler {
   private readonly view: MotionSubSample[] = [];
   private readonly guardLeft = newPose();
   private readonly guardRight = newPose();
+  private readonly guardLayerLeft = newPose();
+  private readonly guardLayerRight = newPose();
 
   /** Fills and returns the samples for this frame; empty when none apply. */
   plan(input: MotionPlanInput): readonly MotionSubSample[] {
@@ -336,9 +350,12 @@ export class MotionSubSampler {
     }
 
     // Same check per tunnel copy; a copy that is mid formation travel is
-    // skipped on its own while the base pair keeps its samples.
+    // skipped on its own while the base pair keeps its samples. On joined
+    // grids the live copies were shifted by the frame system, so the raw
+    // sample is shifted the same way before the comparison.
     const layerCount =
       input.layersAt && input.liveLayers ? input.layerCount : 0;
+    const offsets = input.gridJoinOffsets ?? null;
     let layerOk: boolean[] | null = null;
     if (layerCount > 0) {
       const liveAt = input.layersAt!(input.currentStep);
@@ -351,10 +368,28 @@ export class MotionSubSampler {
           !!live &&
           (!live.leftProp ||
             (!!sampled.leftProp &&
-              propPosesMatch(sampled.leftProp, live.leftProp))) &&
+              propPosesMatch(
+                offsets
+                  ? shiftPropState(
+                      sampled.leftProp,
+                      offsets.left,
+                      this.guardLayerLeft
+                    )
+                  : sampled.leftProp,
+                live.leftProp
+              ))) &&
           (!live.rightProp ||
             (!!sampled.rightProp &&
-              propPosesMatch(sampled.rightProp, live.rightProp)));
+              propPosesMatch(
+                offsets
+                  ? shiftPropState(
+                      sampled.rightProp,
+                      offsets.right,
+                      this.guardLayerRight
+                    )
+                  : sampled.rightProp,
+                live.rightProp
+              )));
         if (!ok) this.stats.layerGuardRejections++;
         layerOk.push(ok);
       }
@@ -369,10 +404,18 @@ export class MotionSubSampler {
       if (layerCount > 0) {
         const at = input.layersAt!(step);
         for (let li = 0; li < layerCount; li++) {
-          const layer = sample.layers[li]!;
+          const layer = sample.layers[li] as PooledSubSampleLayer;
           const src = layerOk![li] ? at[li] : undefined;
-          layer.left = src?.leftProp ?? null;
-          layer.right = src?.rightProp ?? null;
+          layer.left = src?.leftProp
+            ? offsets
+              ? shiftPropState(src.leftProp, offsets.left, layer.leftPose)
+              : src.leftProp
+            : null;
+          layer.right = src?.rightProp
+            ? offsets
+              ? shiftPropState(src.rightProp, offsets.right, layer.rightPose)
+              : src.rightProp
+            : null;
         }
       }
       this.view.push(sample);
@@ -391,7 +434,13 @@ export class MotionSubSampler {
       this.pool[index] = sample;
     }
     while (sample.layers.length < layerCount) {
-      sample.layers.push({ left: null, right: null });
+      const pooled: PooledSubSampleLayer = {
+        left: null,
+        right: null,
+        leftPose: newPose(),
+        rightPose: newPose(),
+      };
+      sample.layers.push(pooled);
     }
     sample.layers.length = layerCount;
     return sample;
