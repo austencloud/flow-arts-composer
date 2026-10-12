@@ -1363,8 +1363,8 @@
 
   .card-item.clickable .card-cell {
     transition:
-      transform 0.15s ease,
-      box-shadow 0.15s ease;
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .card-item.clickable:hover .card-cell {
@@ -1397,8 +1397,8 @@
   .card-cell.clickable {
     cursor: pointer;
     transition:
-      transform 0.15s ease,
-      box-shadow 0.15s ease;
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .card-cell.clickable:hover {
@@ -1443,7 +1443,7 @@
     top: 0;
     height: 100%;
     background: var(--theme-accent-bg, rgba(100, 180, 255, 0.3));
-    transition: width 0.2s ease;
+    transition: width var(--duration-normal) var(--ease-standard);
   }
 
   /* Indeterminate sweep for the setup phase (code resolution + worker warm),

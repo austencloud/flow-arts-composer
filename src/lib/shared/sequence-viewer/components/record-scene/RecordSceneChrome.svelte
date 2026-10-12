@@ -152,7 +152,7 @@
     font-weight: 700;
     letter-spacing: 0.02em;
     cursor: pointer;
-    transition: filter var(--duration-fast, 150ms) ease;
+    transition: filter var(--duration-fast) var(--ease-standard);
   }
 
   .record:hover:not(:disabled) {

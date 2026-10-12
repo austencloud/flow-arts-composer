@@ -210,9 +210,9 @@
     font: inherit;
     padding: 0;
     transition:
-      background 0.15s ease,
-      transform 0.1s ease,
-      box-shadow 0.15s ease;
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     position: relative;
   }
 

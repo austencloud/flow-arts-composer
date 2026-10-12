@@ -56,11 +56,11 @@
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
+    growFade,
     motionDuration,
     reducedMotion,
   } from "#lib/shared/transitions/motion.js";
   import { focusFirstOrContainer } from "#lib/shared/foundation/ui/modal/helpers/focus-restore.js";
-  import { slide } from "svelte/transition";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
@@ -958,7 +958,7 @@
         {#if phase !== "play" && !isGuidedBuild && (!isContinuous || !isCompactDemo)}
           <div
             class="turns-pair"
-            transition:slide={{ duration: motionDuration(DURATION.normal) }}
+            transition:growFade={{ duration: DURATION.normal }}
           >
             <div class="tool-group turns-group blue">
               <span class="tool-label"
@@ -1583,10 +1583,10 @@
     color: var(--theme-text, #fff);
     cursor: pointer;
     transition:
-      transform var(--duration-emphasis, 240ms) cubic-bezier(0.4, 0, 0.2, 1),
-      background var(--duration-fast, 140ms) ease,
-      box-shadow var(--duration-fast, 140ms) ease,
-      opacity var(--duration-fast, 140ms) ease;
+      transform var(--duration-emphasis) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
     box-shadow: 0 4px 12px
       color-mix(in srgb, var(--theme-accent-strong, #6b5cff) 40%, transparent);
   }
@@ -1597,7 +1597,7 @@
   }
   .history-button:active:not(:disabled) {
     transform: scale(0.95);
-    transition-duration: var(--duration-instant, 80ms);
+    transition-duration: var(--duration-instant);
   }
   .history-button:focus-visible {
     outline: 2px solid var(--theme-accent, #8b8cff);

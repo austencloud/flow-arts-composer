@@ -57,6 +57,7 @@ const shortcuts: EditorShortcuts = {
     }),
   suppress: (test) => getKeyboardShortcutManager().addInputSuppressor(test),
 };
+const SYNC_TOAST_DURATION_MS = 8_000;
 
 /**
  * A feature video's folder on this computer keeps its post: disk's newer copy
@@ -72,7 +73,7 @@ function featureSync(featureVideo: FeatureVideoSync): EditorSync {
         showToast({
           message: "Loaded the newer copy from disk.",
           type: "info",
-          duration: 8000,
+          duration: SYNC_TOAST_DURATION_MS,
           action: {
             label: t("post_editor_undo"),
             onClick: () => {

@@ -93,8 +93,8 @@
     aspect-ratio: 1;
     overflow: visible;
     transition:
-      transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-      box-shadow 0.2s ease;
+      transform var(--duration-dramatic) var(--ease-spring),
+      box-shadow var(--duration-normal) var(--ease-standard);
     box-sizing: border-box;
     border: 1px solid rgba(0, 0, 0, 0.08);
     background: none;
@@ -121,7 +121,7 @@
     -webkit-user-drag: none;
     user-select: none;
     /* Fade the pictograph in when it finishes loading instead of popping. */
-    animation: cellImgIn var(--duration-fast, 150ms) ease;
+    animation: cellImgIn var(--duration-fast) var(--ease-standard);
   }
   @keyframes cellImgIn {
     from {
@@ -159,7 +159,8 @@
     box-shadow:
       0 0 12px rgba(251, 191, 36, 0.6),
       0 0 0 3px rgba(251, 191, 36, 0.9);
-    animation: cellSelectionGlowIn 0.4s ease-out forwards;
+    animation: cellSelectionGlowIn var(--duration-dramatic)
+      var(--ease-standard-out) forwards;
   }
 
   @keyframes cellSelectionGlowIn {
@@ -193,7 +194,8 @@
     filter: blur(7px);
     z-index: -1;
     pointer-events: none;
-    animation: cellShadowIn 0.32s ease-out forwards;
+    animation: cellShadowIn var(--duration-emphasis) var(--ease-standard-out)
+      forwards;
   }
   @keyframes cellShadowIn {
     from {
@@ -209,7 +211,7 @@
   /* Played cells dim to distinguish from upcoming */
   .pictograph-cell.played {
     opacity: 0.6;
-    transition: opacity 0.15s ease-out;
+    transition: opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   /* Light mode needs stronger dimming */

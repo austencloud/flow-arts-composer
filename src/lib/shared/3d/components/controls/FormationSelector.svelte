@@ -33,14 +33,17 @@
 
 <div class="formation-bar" class:transitioning={isTransitioning}>
   {#each FORMATION_PRESET_INFO as preset}
-    {@const isDisabled = isTransitioning || (disabledPresets?.has(preset.id) ?? false)}
+    {@const isDisabled =
+      isTransitioning || (disabledPresets?.has(preset.id) ?? false)}
     <button
       class="formation-btn"
       class:active={value === preset.id}
       onclick={() => onchange(preset.id)}
       aria-label={preset.description}
       aria-pressed={value === preset.id}
-      title={disabledPresets?.has(preset.id) ? `${preset.name} - not valid for ${performerCount} performers` : preset.description}
+      title={disabledPresets?.has(preset.id)
+        ? `${preset.name} - not valid for ${performerCount} performers`
+        : preset.description}
       disabled={isDisabled}
     >
       <i class="fa-solid fa-{preset.icon}" aria-hidden="true"></i>
@@ -80,7 +83,10 @@
     border-radius: 8px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast);
   }
 
   .formation-btn:hover:not(:disabled) {

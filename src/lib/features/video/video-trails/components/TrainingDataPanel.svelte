@@ -35,7 +35,9 @@
   let imageExportProgress = $state(0);
   let imageExportTotal = $state(0);
 
-  const detectedFrameCount = $derived(Object.keys(trailsState.frameDetections).length);
+  const detectedFrameCount = $derived(
+    Object.keys(trailsState.frameDetections).length
+  );
 
   // Average pixel distance between detected and corrected positions across all corrections
   const avgCorrectionDrift = $derived.by((): number => {
@@ -79,13 +81,17 @@
     return buckets;
   });
 
-  const maxBucketCount = $derived(Math.max(1, ...driftBuckets.map((b) => b.count)));
+  const maxBucketCount = $derived(
+    Math.max(1, ...driftBuckets.map((b) => b.count))
+  );
 
   // Top 5 frames by average drift magnitude
   const worstFrames = $derived.by((): WorstFrame[] => {
     const perFrame: WorstFrame[] = [];
 
-    for (const [frameStr, correctionList] of Object.entries(trailsState.corrections)) {
+    for (const [frameStr, correctionList] of Object.entries(
+      trailsState.corrections
+    )) {
       let total = 0;
       let count = 0;
       for (const c of correctionList) {
@@ -121,7 +127,9 @@
     return { occluded, total };
   });
 
-  const hasAnyData = $derived(detectedFrameCount > 0 || trailsState.correctionCount > 0);
+  const hasAnyData = $derived(
+    detectedFrameCount > 0 || trailsState.correctionCount > 0
+  );
   const hasCorrectedFrames = $derived(trailsState.correctionCount > 0);
 
   function handleExport() {
@@ -133,7 +141,9 @@
       detections: trailsState.frameDetections,
     };
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -145,7 +155,9 @@
   async function handleExportWithImages() {
     if (!videoElement || !trailsState.source) return;
 
-    const correctedFrameNumbers = Object.keys(trailsState.corrections).map(Number);
+    const correctedFrameNumbers = Object.keys(trailsState.corrections).map(
+      Number
+    );
     if (correctedFrameNumbers.length === 0) return;
 
     isExportingImages = true;
@@ -153,8 +165,10 @@
     imageExportTotal = correctedFrameNumbers.length;
 
     const canvas = document.createElement("canvas");
-    canvas.width = trailsState.source.resolution.width || videoElement.videoWidth;
-    canvas.height = trailsState.source.resolution.height || videoElement.videoHeight;
+    canvas.width =
+      trailsState.source.resolution.width || videoElement.videoWidth;
+    canvas.height =
+      trailsState.source.resolution.height || videoElement.videoHeight;
     const ctx = canvas.getContext("2d");
 
     if (!ctx) {
@@ -205,7 +219,9 @@
       trainingPairs,
     };
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -232,7 +248,9 @@
     </div>
     <div class="stat-row">
       <dt>Corrected frames</dt>
-      <dd class:has-data={trailsState.correctionCount > 0}>{trailsState.correctionCount}</dd>
+      <dd class:has-data={trailsState.correctionCount > 0}>
+        {trailsState.correctionCount}
+      </dd>
     </div>
     <div class="stat-row">
       <dt>Low confidence frames</dt>
@@ -299,7 +317,9 @@
                 onclick={() => trailsState.setCurrentFrame(entry.frameIndex)}
               />
               <span class="frame-drift">{entry.avgDrift.toFixed(1)} px</span>
-              <span class="frame-corrections">{entry.correctionCount} corr.</span>
+              <span class="frame-corrections"
+                >{entry.correctionCount} corr.</span
+              >
             </li>
           {/each}
         </ul>
@@ -309,11 +329,7 @@
 
   <!-- Export buttons -->
   <div class="export-buttons">
-    <button
-      class="export-btn"
-      onclick={handleExport}
-      disabled={!hasAnyData}
-    >
+    <button class="export-btn" onclick={handleExport} disabled={!hasAnyData}>
       <i class="fas fa-download" aria-hidden="true"></i>
       Export Training Data
     </button>
@@ -439,7 +455,7 @@
     height: 100%;
     background: var(--theme-accent, #f43f5e);
     border-radius: 3px;
-    transition: width 0.2s ease;
+    transition: width var(--duration-normal) var(--ease-standard);
     min-width: 2px;
   }
 
@@ -498,15 +514,23 @@
     padding: 8px 12px;
     border-radius: 6px;
     border: 1px solid var(--theme-accent, #f43f5e);
-    background: color-mix(in srgb, var(--theme-accent, #f43f5e) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #f43f5e) 15%,
+      transparent
+    );
     color: var(--theme-accent, #f43f5e);
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background var(--duration-fast);
   }
 
   .export-btn:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--theme-accent, #f43f5e) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #f43f5e) 25%,
+      transparent
+    );
   }
 
   .export-btn:disabled {

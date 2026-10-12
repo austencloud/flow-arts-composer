@@ -150,7 +150,7 @@
     background: var(--theme-panel-bg);
     border-left: 1px solid var(--theme-stroke);
     box-shadow: -4px 0 24px color-mix(in srgb, #000 50%, transparent);
-    animation: slideIn var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideIn var(--duration-normal) var(--ease-standard);
   }
 
   .settings-header {
@@ -180,7 +180,10 @@
     border-radius: 8px;
     color: var(--theme-text, white);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard);
   }
 
   .close-button:hover {

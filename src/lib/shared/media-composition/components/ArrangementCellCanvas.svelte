@@ -170,7 +170,12 @@
   // orchestrator is 1-based (step 1 = steps[0]); see arrangementLayerStep.
   const primaryCurrentStep = $derived(
     primaryLayer
-      ? arrangementLayerStep(currentStep, cell, primaryLayer, skipStartPlacement)
+      ? arrangementLayerStep(
+          currentStep,
+          cell,
+          primaryLayer,
+          skipStartPlacement
+        )
       : 0
   );
 
@@ -502,8 +507,8 @@
     overflow: hidden;
     cursor: pointer;
     transition:
-      border-color 0.15s ease,
-      box-shadow 0.15s ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     container-type: size;
     /* Flex to center the canvas content */
     display: flex;
@@ -591,7 +596,7 @@
   .empty-cell i {
     font-size: clamp(16px, 20cqw, 32px);
     opacity: 0.5;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .cell-canvas:hover .empty-cell i {
@@ -664,7 +669,7 @@
       color-mix(in srgb, var(--semantic-error, #ef4444) 35%, transparent);
     border-radius: var(--border-radius-sm, 6px);
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .cell-error-retry:hover {

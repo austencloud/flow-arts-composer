@@ -629,8 +629,8 @@ even when Svelte recreates the component instance.
     /* Smooth transition for position, rotation, and prop type changes */
     /* IMPORTANT: transform must be a CSS property (not SVG attribute) for transitions to work */
     transition:
-      transform var(--duration-normal) ease,
-      opacity 150ms ease;
+      transform var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   /* Brief fade when prop type changes (SVG content swap) */

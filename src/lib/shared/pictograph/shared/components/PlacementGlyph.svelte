@@ -286,8 +286,8 @@ Based on legacy start_to_end_pos_glyph.py implementation.
     /* Beautiful fade in/out effect + dark mode filter transition */
     opacity: 0;
     transition:
-      opacity 0.2s ease,
-      filter 150ms ease-out;
+      opacity var(--duration-normal) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard-out);
   }
 
   .placement-glyph.visible {
@@ -336,7 +336,7 @@ Based on legacy start_to_end_pos_glyph.py implementation.
   .pulse-target.animating {
     transform-box: fill-box;
     transform-origin: center;
-    animation: placement-pulse 400ms ease-out;
+    animation: placement-pulse var(--duration-dramatic) var(--ease-standard-out);
   }
 
   /* Respect reduced motion preference */

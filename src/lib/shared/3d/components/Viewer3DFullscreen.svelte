@@ -375,8 +375,7 @@
     z-index: 3;
     pointer-events: none;
     opacity: 1;
-    transition: opacity var(--duration-normal, 200ms)
-      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    transition: opacity var(--duration-normal) var(--ease-out, var(--ease-out));
   }
 
   .word-label {
@@ -404,8 +403,8 @@
     min-height: 0;
     overflow: hidden;
     margin-right: var(--scene-control-reserved-width, 0px);
-    transition: margin-right var(--duration-emphasis, 280ms)
-      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    transition: margin-right var(--duration-emphasis)
+      var(--ease-out, var(--ease-out));
   }
 
   .scene-command-bar {
@@ -438,8 +437,7 @@
     z-index: 3;
     pointer-events: none;
     opacity: 1;
-    transition: opacity var(--duration-normal, 200ms)
-      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    transition: opacity var(--duration-normal) var(--ease-out, var(--ease-out));
   }
 
   .host-overlay > :global(*) {
@@ -458,8 +456,7 @@
     z-index: 4;
     pointer-events: none;
     opacity: 1;
-    transition: opacity var(--duration-normal, 200ms)
-      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    transition: opacity var(--duration-normal) var(--ease-out, var(--ease-out));
   }
   .scene-controls :global(button),
   .scene-controls :global([role="button"]),

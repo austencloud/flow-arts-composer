@@ -29,6 +29,7 @@ export function createViewerDestinationActions(
   inputs: ViewerDestinationInputs,
   dependencies: ViewerDestinationDependencies
 ) {
+  const NAVIGATION_TOAST_DURATION_MS = 2_000;
   async function handleOpenInCompose(
     preset: "stagger" | "mirror" | "combo-export" = "stagger"
   ): Promise<void> {
@@ -54,7 +55,7 @@ export function createViewerDestinationActions(
           ? "Opening in Studio for combined export..."
           : "Opening in Studio...",
       type: "info",
-      duration: 2000,
+      duration: NAVIGATION_TOAST_DURATION_MS,
     });
     await dependencies.navigate("/compose?handoff=true");
   }
@@ -73,7 +74,7 @@ export function createViewerDestinationActions(
     dependencies.showToast({
       message: "Opening for editing...",
       type: "info",
-      duration: 2000,
+      duration: NAVIGATION_TOAST_DURATION_MS,
     });
     void dependencies.openCreateConstruct();
   }

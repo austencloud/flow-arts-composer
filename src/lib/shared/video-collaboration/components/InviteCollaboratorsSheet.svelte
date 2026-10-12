@@ -82,14 +82,12 @@
     hapticService?.trigger("selection");
 
     try {
-      await inviteCollaborator(
-        video.id,
-        user.id,
-        user.displayName
-      );
+      await inviteCollaborator(video.id, user.id, user.displayName);
       hapticService?.trigger("success");
 
-      searchResults = searchResults.filter((u: EnhancedUserProfile) => u.id !== user.id);
+      searchResults = searchResults.filter(
+        (u: EnhancedUserProfile) => u.id !== user.id
+      );
 
       onInviteSent?.();
     } catch (e) {
@@ -327,7 +325,9 @@
     border-radius: 8px;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .close-button:hover {
@@ -376,7 +376,10 @@
     border-radius: 12px;
     color: var(--text-primary);
     font-size: 1rem;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard);
   }
 
   .search-input-wrapper input:focus {
@@ -442,7 +445,7 @@
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 10px;
-    transition: all var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .collaborator-item:hover,
@@ -523,7 +526,10 @@
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     white-space: nowrap;
   }
 

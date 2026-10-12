@@ -58,9 +58,10 @@
     ).map((m) => ({
       id: m.id,
       icon: m.icon,
-      label: m.id === "post-studio" && onOpenPost
-        ? t("viewer_ui_edit_in_post")
-        : viewerModeLabel(m.id),
+      label:
+        m.id === "post-studio" && onOpenPost
+          ? t("viewer_ui_edit_in_post")
+          : viewerModeLabel(m.id),
     })),
     // Practice is only listed when a toggle handler is wired (feature not ready — entry point withheld).
     ...(onPracticeToggle
@@ -217,10 +218,14 @@
         aria-pressed={mode.id === "practice"
           ? practiceActive
           : activeMode === mode.id}
-        aria-label={mode.id === "practice" && practiceActive ? t("viewer_ui_stop") : mode.label}
+        aria-label={mode.id === "practice" && practiceActive
+          ? t("viewer_ui_stop")
+          : mode.label}
         data-ghost={ghostKindFor(mode.id) ? "safe" : undefined}
         data-ghost-kind={ghostKindFor(mode.id)}
-        data-ghost-label={mode.id === "practice" && practiceActive ? t("viewer_ui_stop") : mode.label}
+        data-ghost-label={mode.id === "practice" && practiceActive
+          ? t("viewer_ui_stop")
+          : mode.label}
         onclick={() => {
           if (mode.id === "split") onSelectSplit();
           else if (mode.id === "practice") onPracticeToggle?.();
@@ -299,7 +304,7 @@
     border-right: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     overflow: hidden;
     flex-shrink: 0;
-    transition: width 180ms cubic-bezier(0.2, 0, 0, 1);
+    transition: width var(--duration-fast) var(--ease-out);
   }
 
   .content-rail.dragging {
@@ -334,9 +339,9 @@
     cursor: pointer;
     position: relative;
     transition:
-      background 120ms cubic-bezier(0.2, 0, 0, 1),
-      color 120ms cubic-bezier(0.2, 0, 0, 1),
-      border-color 120ms cubic-bezier(0.2, 0, 0, 1);
+      background var(--duration-instant) var(--ease-out),
+      color var(--duration-instant) var(--ease-out),
+      border-color var(--duration-instant) var(--ease-out);
   }
 
   .rail-mode-btn:hover:not(.active) {
@@ -387,8 +392,8 @@
     cursor: pointer;
     font: inherit;
     transition:
-      background 120ms cubic-bezier(0.2, 0, 0, 1),
-      color 120ms cubic-bezier(0.2, 0, 0, 1);
+      background var(--duration-instant) var(--ease-out),
+      color var(--duration-instant) var(--ease-out);
   }
 
   .rail-footer-action:hover {

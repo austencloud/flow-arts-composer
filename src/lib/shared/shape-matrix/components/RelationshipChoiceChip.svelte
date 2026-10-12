@@ -93,10 +93,10 @@
     text-align: center;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      box-shadow var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .relationship-choice:hover:not(:disabled) {
@@ -134,8 +134,8 @@
     opacity: 0;
     transform: scale(0.5);
     transition:
-      opacity var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .relationship-choice.active .choice-check {
@@ -161,7 +161,7 @@
     flex: 0 0 auto;
     object-fit: contain;
     opacity: 0.68;
-    transition: opacity var(--duration-fast, 150ms) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .relationship-choice.active .choice-icon,
@@ -193,7 +193,7 @@
     color: color-mix(in srgb, var(--choice-accent) 65%, white);
     font-size: var(--choice-copy-size, var(--font-size-compact, 0.75rem));
     letter-spacing: 0.02em;
-    transition: color var(--duration-fast, 150ms) ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
 
   .relationship-choice.active .choice-copy strong {

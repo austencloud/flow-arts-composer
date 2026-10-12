@@ -131,7 +131,7 @@
     color: var(--theme-text-dim, rgb(255 255 255 / 0.62));
     font-size: 0.95rem;
     cursor: pointer;
-    transition: color var(--duration-fast, 0.15s) ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
 
   .control-info:hover,

@@ -242,8 +242,8 @@
     font-weight: 700;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .open-modal-button:hover {

@@ -65,7 +65,7 @@
   const speedLabel = $derived(
     playbackSpeed >= 1000
       ? `${(playbackSpeed / 1000).toFixed(1)}s`
-      : `${playbackSpeed}ms`,
+      : `${playbackSpeed}ms`
   );
 </script>
 
@@ -94,7 +94,9 @@
     </div>
     <div class="info-item">
       <span class="info-value">{junctionCount}</span>
-      <span class="info-label">{junctionCount === 1 ? "junction" : "junctions"}</span>
+      <span class="info-label"
+        >{junctionCount === 1 ? "junction" : "junctions"}</span
+      >
     </div>
     <div class="info-item">
       <span class="info-value">{pointCount}</span>
@@ -145,7 +147,8 @@
         max="2000"
         step="100"
         value={playbackSpeed}
-        oninput={(e) => onSpeedChange(Number((e.target as HTMLInputElement).value))}
+        oninput={(e) =>
+          onSpeedChange(Number((e.target as HTMLInputElement).value))}
         class="speed-slider"
         aria-label="Playback speed (interval per pair)"
         aria-valuetext={speedLabel}
@@ -192,7 +195,9 @@
       <div class="grid-chip">
         <span class="grid-id">{grid.id}</span>
         <span class="grid-mode">{grid.mode}</span>
-        <span class="grid-pos">({grid.center.x.toFixed(1)}, {grid.center.y.toFixed(1)})</span>
+        <span class="grid-pos"
+          >({grid.center.x.toFixed(1)}, {grid.center.y.toFixed(1)})</span
+        >
       </div>
     {/each}
   </div>
@@ -216,7 +221,8 @@
     padding: 16px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2)) var(--scrollbar-track, transparent);
+    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2))
+      var(--scrollbar-track, transparent);
   }
 
   .section-label {
@@ -245,7 +251,9 @@
     border-radius: 8px;
     color: var(--theme-text, #ffffff);
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      background var(--duration-fast);
     font-size: var(--font-size-compact, 12px);
   }
 
@@ -326,7 +334,9 @@
     border-radius: 8px;
     color: var(--theme-text, #ffffff);
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      background var(--duration-fast);
     font-size: 14px;
   }
 
@@ -412,7 +422,9 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     text-align: center;
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      background var(--duration-fast);
   }
 
   .mode-button:hover {
@@ -420,15 +432,15 @@
   }
 
   .blue-mode.active {
-    border-color: #3575E2;
+    border-color: #3575e2;
     background: rgba(53, 117, 226, 0.15);
-    color: #3575E2;
+    color: #3575e2;
   }
 
   .red-mode.active {
-    border-color: #ED1C24;
+    border-color: #ed1c24;
     background: rgba(237, 28, 36, 0.15);
-    color: #ED1C24;
+    color: #ed1c24;
   }
 
   /* Grid details */
@@ -478,7 +490,7 @@
     color: var(--theme-text, #ffffff);
     cursor: pointer;
     font-size: var(--font-size-min, 14px);
-    transition: border-color 0.15s;
+    transition: border-color var(--duration-fast);
   }
 
   .toggle-button:hover {

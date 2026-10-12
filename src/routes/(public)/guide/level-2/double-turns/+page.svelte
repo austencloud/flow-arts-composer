@@ -24,7 +24,10 @@
     { name: tDynamic("guide_paths_home"), path: "/" },
     { name: tDynamic("guide_paths_part_of"), path: "/guide" },
     { name: tDynamic("guide_level2_subtitle"), path: "/guide/level-2" },
-    { name: tDynamic("guide_l2_double_turns_title"), path: "/guide/level-2/double-turns" },
+    {
+      name: tDynamic("guide_l2_double_turns_title"),
+      path: "/guide/level-2/double-turns",
+    },
   ]}
 />
 
@@ -75,8 +78,8 @@
     text-decoration: none;
     color: inherit;
     transition:
-      border-color 0.15s,
-      box-shadow 0.15s;
+      border-color var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
   .topic-list a:hover {
     border-color: #4ea7e8;

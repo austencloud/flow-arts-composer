@@ -10,8 +10,8 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { scale } from "svelte/transition";
-  import { backOut, cubicOut } from "svelte/easing";
+  import { popIn } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { getViewerVisibilityContext } from "../context/viewer-visibility-context";
   import MotionColorChips from "#lib/shared/components/MotionColorChips.svelte";
   import PrimaryPropColorSettings from "#lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
@@ -106,8 +106,8 @@
       class="motion-vis-popover"
       role="dialog"
       aria-label={t("viewer_ui_motion_visibility")}
-      in:scale={{ duration: 180, start: 0.96, opacity: 0, easing: backOut }}
-      out:scale={{ duration: 120, start: 0.98, opacity: 0, easing: cubicOut }}
+      in:popIn={{ duration: DURATION.fast, start: 0.96 }}
+      out:popIn={{ duration: DURATION.instant, start: 0.98 }}
     >
       <MotionColorChips
         showLeft={visibility.leftMotion}
@@ -150,10 +150,10 @@
     gap: 3px;
     padding: 0 6px;
     transition:
-      background 150ms ease,
-      border-color 150ms ease,
-      box-shadow 150ms ease,
-      transform 150ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .motion-vis-btn:hover,
@@ -177,8 +177,8 @@
     height: 18px;
     border-radius: 2px;
     transition:
-      background 160ms ease,
-      opacity 160ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
   .prop-silhouette.blue {
     background: var(--motion-left-color, var(--prop-blue, #2196f3));

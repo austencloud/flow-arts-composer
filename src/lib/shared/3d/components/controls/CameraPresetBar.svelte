@@ -62,7 +62,9 @@
     font-size: var(--font-size-sm, 0.875rem);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast);
   }
 
   .preset-btn:hover {

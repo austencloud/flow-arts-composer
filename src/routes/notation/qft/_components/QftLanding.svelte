@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { getQftAppContext } from "../_context/qft-app-context";
 
@@ -13,7 +13,10 @@
   }
 </script>
 
-<div class="landing qft-app" transition:fade={{ duration: DURATION.normal }}>
+<div
+  class="landing qft-app"
+  transition:opaqueFade={{ duration: DURATION.normal }}
+>
   <div class="landing-card">
     <h1>QfT Notation</h1>
     <p class="attribution">Quantized Field Theory · Charlie Cushing</p>
@@ -94,9 +97,9 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background-color var(--duration-fast, 140ms) ease,
-      border-color var(--duration-fast, 140ms) ease,
-      color var(--duration-fast, 140ms) ease;
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .primary {

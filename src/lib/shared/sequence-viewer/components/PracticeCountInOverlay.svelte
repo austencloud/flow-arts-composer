@@ -30,7 +30,9 @@
      inserted already-populated is commonly skipped by screen readers, so keeping
      it in the a11y tree lets the 0→3 transition announce the first "3". Announces
      "3" "2" "1" without reading the raw (aria-hidden) glyph or double-announcing. -->
-<div class="sr-only" role="timer" aria-live="assertive" aria-atomic="true">{count > 0 ? count : ""}</div>
+<div class="sr-only" role="timer" aria-live="assertive" aria-atomic="true">
+  {count > 0 ? count : ""}
+</div>
 
 <style>
   .countin-overlay {
@@ -50,15 +52,25 @@
     color: #fff;
     text-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
     font-variant-numeric: tabular-nums;
-    animation: countin-pop 0.35s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    animation: countin-pop var(--duration-dramatic)
+      var(--ease-out, var(--ease-out));
   }
 
   /* Pops in then holds full opacity until the next {#key} swap replaces it, so
      the beat reads as a crisp tick rather than a fade. */
   @keyframes countin-pop {
-    0% { transform: scale(1.5); opacity: 0; }
-    45% { transform: scale(1); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
+    0% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+    45% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 
   /* Standard visually-hidden region for the announcement only. */
@@ -77,6 +89,8 @@
   /* The count-in is information, not decoration — under reduced motion it still
      counts at the same cadence; only the pop scale is removed. */
   @media (prefers-reduced-motion: reduce) {
-    .countin-number { animation: none; }
+    .countin-number {
+      animation: none;
+    }
   }
 </style>

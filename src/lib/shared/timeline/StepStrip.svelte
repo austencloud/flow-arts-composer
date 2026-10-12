@@ -532,7 +532,8 @@
     bottom: 0;
     left: 0;
     will-change: transform;
-    transition: transform var(--slide-dur, 420ms) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--slide-dur, var(--duration-dramatic))
+      var(--ease-standard);
   }
   .step-viewport.vertical .step-track {
     right: 0;
@@ -550,13 +551,13 @@
     pointer-events: none;
     z-index: 2;
     overflow: hidden; /* clip the countdown line to the rounded frame */
-    transition: left 0.2s ease;
+    transition: left var(--duration-normal) var(--ease-standard);
   }
   .step-viewport.vertical .step-focus {
     top: auto;
     left: 50%;
     transform: translateX(-50%);
-    transition: top 0.2s ease;
+    transition: top var(--duration-normal) var(--ease-standard);
   }
   /* Calm per-step countdown: a thin amber line fills left→right across the step,
      reaching full as the next move takes focus. Replaces the distracting border
@@ -578,7 +579,8 @@
     border: 1.5px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
     overflow: hidden;
-    transition: opacity var(--slide-dur, 420ms) ease;
+    transition: opacity var(--slide-dur, var(--duration-dramatic))
+      var(--ease-standard);
   }
   .step-viewport.vertical .step-cell {
     top: auto;
@@ -600,7 +602,8 @@
     width: 100%;
     height: 100%;
     transform-origin: center;
-    transition: transform var(--slide-dur, 420ms) ease;
+    transition: transform var(--slide-dur, var(--duration-dramatic))
+      var(--ease-standard);
   }
 
   .step-viewport.continuous-strip {

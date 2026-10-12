@@ -457,9 +457,9 @@
     cursor: pointer;
     text-align: left;
     transition:
-      border-color 150ms ease,
-      background 150ms ease,
-      opacity 150ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .group-row:hover:not(:disabled) {
@@ -511,7 +511,7 @@
     background: rgba(255, 255, 255, 0.15);
     position: relative;
     flex-shrink: 0;
-    transition: background 150ms ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .group-row[aria-checked="true"] .switch {
@@ -526,7 +526,7 @@
     height: 16px;
     border-radius: 50%;
     background: white;
-    transition: transform 150ms ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .group-row[aria-checked="true"] .knob {
@@ -561,8 +561,8 @@
     font-weight: 700;
     cursor: pointer;
     transition:
-      transform 150ms ease,
-      box-shadow 150ms ease;
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   @media (hover: hover) {

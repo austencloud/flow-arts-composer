@@ -531,7 +531,7 @@
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
     text-align: left;
-    transition: background 0.1s;
+    transition: background var(--duration-instant);
   }
 
   .popover-option:hover {

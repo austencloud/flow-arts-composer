@@ -52,14 +52,13 @@
   // cards (and, for the performer, Three.js on demand). Load the preview map
   // only after hydration so the section's SSR/initial payload stays the
   // reserved dark stages plus their titles — no heavy chunks, no layout shift.
-  let getPreview = $state<((id: GameId) => Component<{ accent: string }>) | null>(
-    null
-  );
+  let getPreview = $state<
+    ((id: GameId) => Component<{ accent: string }>) | null
+  >(null);
 
   onMount(async () => {
-    const mod = await import(
-      "#lib/features/learn/play/components/previews/preview-map.js"
-    );
+    const mod =
+      await import("#lib/features/learn/play/components/previews/preview-map.js");
     getPreview = mod.getGamePreview;
   });
 
@@ -97,7 +96,11 @@
     </p>
   </header>
 
-  <div class="strip-scroll themed-scrollbar" role="list" aria-label="Arcade games">
+  <div
+    class="strip-scroll themed-scrollbar"
+    role="list"
+    aria-label="Arcade games"
+  >
     {#each orderedGames as game, index (game.id)}
       <article
         class="tile"
@@ -204,7 +207,8 @@
      draw the eye to the front of the strip. */
   .tile.lead {
     border-color: color-mix(in srgb, var(--game-accent) 45%, transparent);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--game-accent) 22%, transparent),
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--game-accent) 22%, transparent),
       0 10px 26px color-mix(in srgb, var(--game-accent) 14%, transparent);
   }
 
@@ -236,7 +240,8 @@
     position: absolute;
     inset: 0;
     opacity: 1;
-    transition: opacity var(--duration-dramatic, 350ms) var(--ease-out, ease-out);
+    transition: opacity var(--duration-dramatic)
+      var(--ease-out, var(--ease-standard-out));
   }
 
   @starting-style {

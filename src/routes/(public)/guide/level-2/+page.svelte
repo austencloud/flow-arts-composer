@@ -93,7 +93,8 @@
     margin-bottom: 2rem;
   }
 
-  .intro, .download {
+  .intro,
+  .download {
     text-align: left;
     margin: 2rem 0;
   }
@@ -120,7 +121,9 @@
     border-radius: 8px;
     text-decoration: none;
     color: inherit;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .toc a:hover {

@@ -10,12 +10,12 @@
 
   const filteredProjects = $derived(
     trailsState.projects.filter((p) =>
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()),
-    ),
+      p.title.toLowerCase().includes(searchQuery.toLowerCase())
+    )
   );
 
   const selectedProject = $derived(
-    filteredProjects.find((p) => p.id === selectedProjectId) ?? null,
+    filteredProjects.find((p) => p.id === selectedProjectId) ?? null
   );
 
   $effect(() => {
@@ -131,11 +131,11 @@
   }
 
   const canSave = $derived(
-    trailsState.source !== null || trailsState.currentProject !== null,
+    trailsState.source !== null || trailsState.currentProject !== null
   );
 
   const saveLabel = $derived(
-    trailsState.currentProject ? "Update Project" : "Save Current",
+    trailsState.currentProject ? "Update Project" : "Save Current"
   );
 </script>
 
@@ -193,13 +193,16 @@
         >
           <div
             class="card-thumbnail"
-            style="background: linear-gradient(135deg, {hashColor(project.title)}, {hashColorEnd(project.title)});"
+            style="background: linear-gradient(135deg, {hashColor(
+              project.title
+            )}, {hashColorEnd(project.title)});"
           >
             <div class="thumb-overlay">
               <i class="fas fa-video" aria-hidden="true"></i>
             </div>
             {#if project.source.frameCount > 0}
-              <span class="frame-badge">{project.source.frameCount} frames</span>
+              <span class="frame-badge">{project.source.frameCount} frames</span
+              >
             {/if}
           </div>
           <div class="card-body">
@@ -223,23 +226,35 @@
         <div class="detail-header">
           <h3>{selectedProject.title}</h3>
           <div class="detail-actions">
-            <button class="action-btn primary" onclick={() => handleOpenWorkspace(selectedProject)}>
+            <button
+              class="action-btn primary"
+              onclick={() => handleOpenWorkspace(selectedProject)}
+            >
               <i class="fas fa-drafting-compass" aria-hidden="true"></i>
               Open in Workspace
             </button>
-            <button class="action-btn" onclick={() => handleOpenStudio(selectedProject)}>
+            <button
+              class="action-btn"
+              onclick={() => handleOpenStudio(selectedProject)}
+            >
               <i class="fas fa-crosshairs" aria-hidden="true"></i>
               Open in Studio
             </button>
             {#if confirmingDeleteId === selectedProject.id}
-              <button class="action-btn danger" onclick={() => handleDeleteConfirm(selectedProject.id)}>
+              <button
+                class="action-btn danger"
+                onclick={() => handleDeleteConfirm(selectedProject.id)}
+              >
                 Confirm Delete
               </button>
               <button class="action-btn" onclick={handleDeleteCancel}>
                 Cancel
               </button>
             {:else}
-              <button class="action-btn danger" onclick={() => handleDeleteClick(selectedProject.id)}>
+              <button
+                class="action-btn danger"
+                onclick={() => handleDeleteClick(selectedProject.id)}
+              >
                 <i class="fas fa-trash" aria-hidden="true"></i>
                 Delete
               </button>
@@ -249,33 +264,46 @@
 
         <div class="detail-info-note">
           <i class="fas fa-info-circle" aria-hidden="true"></i>
-          The video file is not stored with the project. You'll need to re-upload the video after opening.
+          The video file is not stored with the project. You'll need to re-upload
+          the video after opening.
         </div>
 
         <div class="detail-grid">
           <div class="detail-item">
             <span class="detail-label">Created</span>
-            <span class="detail-value">{formatDate(selectedProject.createdAt)}</span>
+            <span class="detail-value"
+              >{formatDate(selectedProject.createdAt)}</span
+            >
           </div>
           <div class="detail-item">
             <span class="detail-label">Updated</span>
-            <span class="detail-value">{formatDate(selectedProject.updatedAt)}</span>
+            <span class="detail-value"
+              >{formatDate(selectedProject.updatedAt)}</span
+            >
           </div>
           <div class="detail-item">
             <span class="detail-label">Source</span>
-            <span class="detail-value">{selectedProject.source.originalFileName ?? "Unknown"}</span>
+            <span class="detail-value"
+              >{selectedProject.source.originalFileName ?? "Unknown"}</span
+            >
           </div>
           <div class="detail-item">
             <span class="detail-label">Duration</span>
-            <span class="detail-value">{formatDuration(selectedProject.source.duration)}</span>
+            <span class="detail-value"
+              >{formatDuration(selectedProject.source.duration)}</span
+            >
           </div>
           <div class="detail-item">
             <span class="detail-label">Resolution</span>
-            <span class="detail-value">{selectedProject.source.resolution.width}x{selectedProject.source.resolution.height}</span>
+            <span class="detail-value"
+              >{selectedProject.source.resolution.width}x{selectedProject.source
+                .resolution.height}</span
+            >
           </div>
           <div class="detail-item">
             <span class="detail-label">Frames</span>
-            <span class="detail-value">{selectedProject.source.frameCount}</span>
+            <span class="detail-value">{selectedProject.source.frameCount}</span
+            >
           </div>
           <div class="detail-item">
             <span class="detail-label">FPS</span>
@@ -283,11 +311,15 @@
           </div>
           <div class="detail-item">
             <span class="detail-label">Detector</span>
-            <span class="detail-value">{selectedProject.detection.detectorId}</span>
+            <span class="detail-value"
+              >{selectedProject.detection.detectorId}</span
+            >
           </div>
           <div class="detail-item">
             <span class="detail-label">Corrections</span>
-            <span class="detail-value">{correctionCountFor(selectedProject)} frames</span>
+            <span class="detail-value"
+              >{correctionCountFor(selectedProject)} frames</span
+            >
           </div>
           <div class="detail-item">
             <span class="detail-label">Exports</span>
@@ -295,7 +327,11 @@
           </div>
           <div class="detail-item">
             <span class="detail-label">Training Exported</span>
-            <span class="detail-value">{selectedProject.detection.trainingDataExported ? "Yes" : "No"}</span>
+            <span class="detail-value"
+              >{selectedProject.detection.trainingDataExported
+                ? "Yes"
+                : "No"}</span
+            >
           </div>
         </div>
       </div>
@@ -344,7 +380,9 @@
     color: var(--theme-text, #fff);
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      background var(--duration-fast);
     white-space: nowrap;
   }
 
@@ -364,7 +402,11 @@
   }
 
   .toolbar-btn.save-btn:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--theme-accent, #f43f5e) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #f43f5e) 10%,
+      transparent
+    );
   }
 
   .search-wrapper {
@@ -448,7 +490,9 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     overflow: hidden;
     cursor: pointer;
-    transition: border-color 0.15s, transform 0.1s;
+    transition:
+      border-color var(--duration-fast),
+      transform var(--duration-instant);
     text-align: left;
     padding: 0;
     color: inherit;
@@ -561,7 +605,9 @@
     color: var(--theme-text, #fff);
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      background var(--duration-fast);
     white-space: nowrap;
   }
 
@@ -576,7 +622,11 @@
   }
 
   .action-btn.primary:hover {
-    background: color-mix(in srgb, var(--theme-accent, #f43f5e) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #f43f5e) 10%,
+      transparent
+    );
   }
 
   .action-btn.danger {
@@ -585,7 +635,11 @@
   }
 
   .action-btn.danger:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
   }
 
   .detail-info-note {
@@ -594,10 +648,19 @@
     gap: 8px;
     padding: 8px 12px;
     border-radius: 6px;
-    background: color-mix(in srgb, var(--semantic-warning, #facc15) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-warning, #facc15) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #facc15) 8%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-warning, #facc15) 20%, transparent);
     font-size: var(--font-size-compact, 12px);
-    color: color-mix(in srgb, var(--semantic-warning, #facc15) 80%, transparent);
+    color: color-mix(
+      in srgb,
+      var(--semantic-warning, #facc15) 80%,
+      transparent
+    );
   }
 
   .detail-grid {

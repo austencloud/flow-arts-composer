@@ -56,7 +56,7 @@
     inset: 0;
     background: var(--theme-text);
     opacity: 0;
-    animation: tap-flash var(--tap-duration) ease-out;
+    animation: tap-flash var(--tap-duration) var(--ease-standard-out);
     pointer-events: none;
   }
   @keyframes tap-flash {

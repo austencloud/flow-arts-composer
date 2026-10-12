@@ -406,8 +406,8 @@
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
     transition:
-      background 0.1s,
-      border-color 0.1s;
+      background var(--duration-instant),
+      border-color var(--duration-instant);
     text-align: left;
   }
 
@@ -474,8 +474,8 @@
     font-size: 11px;
     cursor: pointer;
     transition:
-      color 0.1s,
-      background 0.1s;
+      color var(--duration-instant),
+      background var(--duration-instant);
     flex-shrink: 0;
   }
 
@@ -512,8 +512,8 @@
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
     transition:
-      background 0.1s,
-      border-color 0.1s;
+      background var(--duration-instant),
+      border-color var(--duration-instant);
     text-align: left;
   }
 
@@ -567,7 +567,7 @@
     height: 100%;
     border-radius: 3px;
     background: var(--theme-accent, #f43f5e);
-    transition: width 0.2s ease;
+    transition: width var(--duration-normal) var(--ease-standard);
   }
 
   .progress-detail {

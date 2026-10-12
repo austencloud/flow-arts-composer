@@ -46,7 +46,9 @@
 
   onDestroy(() => session.destroy());
 
-  const result = $derived(session.phase.name === "results" ? session.phase.result : null);
+  const result = $derived(
+    session.phase.name === "results" ? session.phase.result : null
+  );
   const questionCount = $derived(
     level?.mode.kind === "fixed" ? level.mode.questionCount : 0
   );
@@ -59,7 +61,12 @@
     <span class="hud-cell">Score <strong>{session.score}</strong></span>
     <span class="hud-cell">Streak <strong>{session.streak}</strong></span>
     <span class="hud-cell">
-      Question <strong>{Math.min(session.questionIndex + 1, questionCount)}/{questionCount}</strong>
+      Question <strong
+        >{Math.min(
+          session.questionIndex + 1,
+          questionCount
+        )}/{questionCount}</strong
+      >
     </span>
   </div>
 
@@ -181,9 +188,9 @@
     cursor: pointer;
     text-decoration: none;
     transition:
-      transform 160ms ease,
-      background 160ms ease,
-      border-color 160ms ease;
+      transform var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
   .play-again {
     color: #fff;

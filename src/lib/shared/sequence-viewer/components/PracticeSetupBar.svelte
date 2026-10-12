@@ -193,17 +193,16 @@
     letter-spacing: 0.01em;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease,
-      box-shadow var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     animation: setup-start-ready 2.6s ease-in-out infinite;
   }
   .setup-start i {
     font-size: 1.05rem;
-    transition: transform var(--duration-fast, 150ms)
-      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    transition: transform var(--duration-fast) var(--ease-out, var(--ease-out));
   }
   @keyframes setup-start-ready {
     0%,

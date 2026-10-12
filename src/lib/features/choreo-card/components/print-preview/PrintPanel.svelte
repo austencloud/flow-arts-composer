@@ -531,7 +531,10 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast);
   }
 
   .test-sheet-btn:hover:not(:disabled) {
@@ -564,7 +567,7 @@
     border: none;
     border-radius: 12px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: opacity var(--duration-fast);
   }
 
   .action:disabled {

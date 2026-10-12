@@ -8,10 +8,7 @@
 
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { userProportionsState } from "@austencloud/scene-3d";
-  import {
-    COMMON_HEIGHTS,
-    COMMON_STAFF_LENGTHS,
-  } from "@austencloud/scene-3d";
+  import { COMMON_HEIGHTS, COMMON_STAFF_LENGTHS } from "@austencloud/scene-3d";
 
   interface Props {
     compact?: boolean;
@@ -99,9 +96,15 @@
           <span>in</span>
         </div>
         <div class="btn-row">
-          <button class="apply-btn" onclick={applyCustomHeight} aria-label="Apply custom height">Apply</button>
-          <button class="cancel-btn" onclick={() => (useCustomHeight = false)} aria-label="Cancel custom height"
-            >Cancel</button
+          <button
+            class="apply-btn"
+            onclick={applyCustomHeight}
+            aria-label="Apply custom height">Apply</button
+          >
+          <button
+            class="cancel-btn"
+            onclick={() => (useCustomHeight = false)}
+            aria-label="Cancel custom height">Cancel</button
           >
         </div>
       </div>
@@ -146,9 +149,15 @@
           <span>inches</span>
         </div>
         <div class="btn-row">
-          <button class="apply-btn" onclick={applyCustomStaff} aria-label="Apply custom staff length">Apply</button>
-          <button class="cancel-btn" onclick={() => (useCustomStaff = false)} aria-label="Cancel custom staff length"
-            >Cancel</button
+          <button
+            class="apply-btn"
+            onclick={applyCustomStaff}
+            aria-label="Apply custom staff length">Apply</button
+          >
+          <button
+            class="cancel-btn"
+            onclick={() => (useCustomStaff = false)}
+            aria-label="Cancel custom staff length">Cancel</button
           >
         </div>
       </div>
@@ -233,7 +242,10 @@
     border-radius: 6px;
     color: var(--theme-text, white);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .preset-btn:hover {
@@ -295,7 +307,7 @@
     font-size: 0.75rem;
     border-radius: 6px;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .apply-btn {

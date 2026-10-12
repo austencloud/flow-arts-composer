@@ -1,6 +1,5 @@
 <script lang="ts">
-
-import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
+  import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
   /**
    * DuetBrowserPanel
    *
@@ -142,9 +141,13 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
 
   <!-- Create Duet Button -->
   {#if viewMode === "duets"}
-    <button class="create-btn" onclick={onCreateDuet} aria-label="Create new duet">
+    <button
+      class="create-btn"
+      onclick={onCreateDuet}
+      aria-label="Create new duet"
+    >
       <i class="fas fa-plus" aria-hidden="true"></i>
-      {t('duet_create')}
+      {t("duet_create")}
     </button>
   {/if}
 
@@ -153,20 +156,24 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
     {#if isLoading}
       <div class="loading">
         <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-        <span>{t('loading_data')}</span>
+        <span>{t("loading_data")}</span>
       </div>
     {:else if error}
       <div class="error">
         <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
         <span>{error}</span>
-        <button class="retry-btn" onclick={loadDuets} aria-label="Retry loading duets">Retry</button>
+        <button
+          class="retry-btn"
+          onclick={loadDuets}
+          aria-label="Retry loading duets">Retry</button
+        >
       </div>
     {:else if viewMode === "duets"}
       {#if duets.length === 0}
         <div class="empty-state">
           <i class="fas fa-users" aria-hidden="true"></i>
-          <p>{t('empty_no_duets')}</p>
-          <p class="hint">{t('empty_create_duet')}</p>
+          <p>{t("empty_no_duets")}</p>
+          <p class="hint">{t("empty_create_duet")}</p>
         </div>
       {:else}
         <div class="duet-list">
@@ -193,13 +200,13 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
 
               <div class="duet-info">
                 <div class="sequence-pair">
-                  <span class="performer-label">{t('duet_p1')}</span>
+                  <span class="performer-label">{t("duet_p1")}</span>
                   <span class="sequence-id" title={duet.performer1SequenceId}>
                     {duet.performer1SequenceId.slice(0, 8)}...
                   </span>
                 </div>
                 <div class="sequence-pair">
-                  <span class="performer-label">{t('duet_p2')}</span>
+                  <span class="performer-label">{t("duet_p2")}</span>
                   <span class="sequence-id" title={duet.performer2SequenceId}>
                     {duet.performer2SequenceId.slice(0, 8)}...
                   </span>
@@ -225,8 +232,8 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
       {/if}
     {:else}
       <div class="sequences-placeholder">
-        <p>{t('duet_sequence_browser')}</p>
-        <p class="hint">{t('duet_switch_manage')}</p>
+        <p>{t("duet_sequence_browser")}</p>
+        <p class="hint">{t("duet_switch_manage")}</p>
       </div>
     {/if}
   </div>
@@ -264,7 +271,9 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .toggle-btn:hover {
@@ -291,7 +300,9 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
     font-size: var(--font-size-sm, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .create-btn:hover {
@@ -369,7 +380,10 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
     border-radius: 10px;
     text-align: left;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .duet-card:hover {
@@ -398,7 +412,10 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
     font-size: 0.75rem;
     cursor: pointer;
     opacity: 0;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .duet-card:hover .delete-btn {
@@ -407,7 +424,11 @@ import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
 
   .delete-btn:hover {
     color: var(--semantic-error, #ef4444);
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
   }
 
   .duet-info {

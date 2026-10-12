@@ -463,7 +463,7 @@
 		text-decoration: none;
 		white-space: nowrap;
 		cursor: pointer;
-		transition: border-color var(--duration-fast, 150ms) ease, background var(--duration-fast, 150ms) ease;
+		transition: border-color var(--duration-fast) var(--ease-standard), background var(--duration-fast) var(--ease-standard);
 	}
 
 	.lane-track a,
@@ -536,7 +536,7 @@
 		font-size: 0.9rem;
 		line-height: 0.7;
 		rotate: 0deg;
-		transition: rotate var(--duration-fast, 150ms) ease;
+		transition: rotate var(--duration-fast) var(--ease-standard);
 	}
 
 	.cluster-marker[aria-expanded="true"] .cluster-chevron {
