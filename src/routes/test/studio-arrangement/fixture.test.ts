@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import rawFixtures from "../../../../tests/fixtures/loop-audit/real-loop-fixtures.json";
 import { arrangementDurationSeconds } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
 import { validateArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+import { arrangementCellGridJoin } from "#lib/shared/media-composition/domain/arrangement-grid-join.js";
 import { createStudioArrangementFixture } from "./fixture";
 
 describe("offline Studio arrangement harness", () => {
@@ -23,6 +24,22 @@ describe("offline Studio arrangement harness", () => {
     expect(snapshot.cells[1]!.layers[0]!.sequence.steps[0]!.id).toBe(
       sequence.steps[1]!.id
     );
+    // The first cell carries its own east join over two layers; the third
+    // cell's one sequence carries a north join and the cell follows it.
+    expect(snapshot.cells[0]!.gridJoin).toEqual({ toward: "e", steps: 1 });
+    expect(arrangementCellGridJoin(snapshot.cells[0]!)).toEqual({
+      toward: "e",
+      steps: 1,
+    });
+    expect(snapshot.cells[8]!.layers[0]!.sequence.conjoined).toEqual({
+      toward: "n",
+      steps: 2,
+    });
+    expect(snapshot.cells[8]).not.toHaveProperty("gridJoin");
+    expect(arrangementCellGridJoin(snapshot.cells[8]!)).toEqual({
+      toward: "n",
+      steps: 2,
+    });
     expect(validateArrangementSnapshot(snapshot)).toEqual(snapshot);
     expect(arrangementDurationSeconds(snapshot)).toBe(2);
     expect(project.tracks[0]!.items[0]!.kind).toBe("arrangement");

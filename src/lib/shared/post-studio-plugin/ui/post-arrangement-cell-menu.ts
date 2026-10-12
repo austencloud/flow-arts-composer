@@ -1,7 +1,11 @@
 import type { ContextMenuEntry } from "#lib/shared/components/context-menu/context-menu-types.js";
 import type { ArrangementCell } from "#lib/shared/media-composition/domain/arrangement.js";
 
-export type ArrangementCellMenuTool = "sequence" | "layers" | "offset";
+export type ArrangementCellMenuTool =
+  | "sequence"
+  | "layers"
+  | "grids"
+  | "offset";
 
 export interface ArrangementCellMenuCallbacks {
   onOpenTool: (tool: ArrangementCellMenuTool) => void;
@@ -36,6 +40,12 @@ export function buildArrangementCellMenu(
       label: `Layers (${count})`,
       icon: "fa-layer-group",
       action: () => callbacks.onOpenTool("layers"),
+    },
+    {
+      id: "grids",
+      label: "Grids",
+      icon: "fa-diamond",
+      action: () => callbacks.onOpenTool("grids"),
     },
     {
       id: "offset",

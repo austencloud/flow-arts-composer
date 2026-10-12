@@ -1956,6 +1956,8 @@ function buildViewer3DState(
 
   // Camera snap callback - registered by Viewer3DCamera, called by Viewer3DViewPresets
   let _snapToFn: CameraSnapTo | null = null;
+  let _startPerformerPlacement: (() => void) | null = null;
+  let performerPlacementRequest = $state(0);
   let prepareEnvironment: ((environment: SceneEnvironmentId) => void) | null =
     null;
 
@@ -2424,6 +2426,20 @@ function buildViewer3DState(
   }
 
   return {
+    registerPerformerPlacement(fn: () => void) {
+      _startPerformerPlacement = fn;
+      return () => {
+        if (_startPerformerPlacement === fn) _startPerformerPlacement = null;
+      };
+    },
+    startPerformerPlacement() {
+      if (!_startPerformerPlacement) return;
+      _startPerformerPlacement();
+      performerPlacementRequest += 1;
+    },
+    get performerPlacementRequest() {
+      return performerPlacementRequest;
+    },
     get webgl2Available() {
       return _webgl2Available;
     },

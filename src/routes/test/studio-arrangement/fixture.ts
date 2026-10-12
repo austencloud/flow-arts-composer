@@ -13,6 +13,7 @@ import {
 import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
 import { createArrangementProject } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
 import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { withSequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
 
 type RawStep = {
   stepNumber: number;
@@ -79,6 +80,12 @@ export function createStudioArrangementFixture() {
     id: "test-studio-arrangement-shifted-loop",
     steps: [...primary.steps.slice(1), primary.steps[0]!],
   };
+  // The third cell's sequence carries a join of its own, so a cell that
+  // follows its sequence shows a pair without any cell join.
+  const northern = withSequenceGridJoin(
+    { ...secondary, id: "test-studio-arrangement-north-loop" },
+    { toward: "n", steps: 2 }
+  );
   const cells: ArrangementSnapshot["cells"] = Array.from(
     { length: 64 },
     (_, index) => {
@@ -101,7 +108,7 @@ export function createStudioArrangementFixture() {
                 },
               ]
             : row === 1 && col === 0
-              ? [layer(secondary, 3)]
+              ? [layer(northern, 3)]
               : row === 1 && col === 1
                 ? [layer(primary, 1)]
                 : [];
@@ -114,6 +121,11 @@ export function createStudioArrangementFixture() {
         colSpan: 1,
         rowSpan: 1,
         mediaType: "animation" as const,
+        // The first cell owns an east join over its two layers; the engine
+        // puts both layers on that pair.
+        ...(row === 0 && col === 0
+          ? { gridJoin: { toward: "e" as const, steps: 1 as const } }
+          : {}),
         // One cell with its own look, so the per-cell path is exercised: the
         // fourth cell burns while the others follow the grid.
         ...(row === 1 && col === 1

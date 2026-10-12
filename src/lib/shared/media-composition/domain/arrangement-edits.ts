@@ -1,4 +1,6 @@
+import type { GridJoin } from "@tka/tka-types";
 import type { TunnelLayerConfig } from "#lib/shared/animation-engine/domain/compose-types.js";
+import { gridJoinsEqual } from "#lib/shared/grid-join/grid-join-controller.js";
 import type {
   TipEffectMap,
   TipEffortMap,
@@ -473,15 +475,48 @@ export function setCellMotionVisibility(
   return sameJson(cell, next) ? snapshot : replaceCell(snapshot, cellId, next);
 }
 
-/** Empties the cell: no layers, no offset. Its span, look and media type stay. */
+/**
+ * The cell's own join: a pair, one grid (null), or undefined to follow its
+ * first sequence again. Undefined removes the field rather than storing it.
+ * The same snapshot comes back for a missing cell or a value that already
+ * matches, with undefined compared on its own.
+ */
+export function setCellGridJoin(
+  snapshot: ArrangementSnapshot,
+  cellId: string,
+  join: GridJoin | null | undefined
+): ArrangementSnapshot {
+  const cell = findCell(snapshot, cellId);
+  if (!cell) return snapshot;
+  const current = cell.gridJoin;
+  const same =
+    join === undefined || current === undefined
+      ? join === current
+      : gridJoinsEqual(join, current);
+  if (same) return snapshot;
+  const { gridJoin: _previous, ...rest } = cell;
+  return replaceCell(
+    snapshot,
+    cellId,
+    join === undefined ? rest : { ...rest, gridJoin: join }
+  );
+}
+
+/** Empties the cell: no layers, no offset, no join of its own. Its span, look and media type stay. */
 export function clearCell(
   snapshot: ArrangementSnapshot,
   cellId: string
 ): ArrangementSnapshot {
   const cell = findCell(snapshot, cellId);
-  if (!cell || (cell.layers.length === 0 && cell.beatOffset === 0))
+  if (
+    !cell ||
+    (cell.layers.length === 0 &&
+      cell.beatOffset === 0 &&
+      cell.gridJoin === undefined)
+  )
     return snapshot;
-  return replaceCell(snapshot, cellId, { ...cell, layers: [], beatOffset: 0 });
+  const { gridJoin: _join, ...rest } = cell;
+  return replaceCell(snapshot, cellId, { ...rest, layers: [], beatOffset: 0 });
 }
 
 /** Offsets the visible cells that hold layers by `beatsPerCell` each, in reading order: 0, 1×, 2×, … */

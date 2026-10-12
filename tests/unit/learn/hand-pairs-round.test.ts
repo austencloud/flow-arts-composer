@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
+  goalPoints,
   isMirrorPair,
   placeHand,
   roundHands,
@@ -121,5 +122,32 @@ describe("the fused picture", () => {
     expect(roundTravel(round, 1, 800)).toBeNull();
     round = placeHand(placeHand(startRound(W, E), BLUE, W), RED, E);
     expect(roundTravel(round, 1, 800)).toBeNull();
+  });
+});
+
+describe("a goal's hint points", () => {
+  const POINTS = [N, E, S, W];
+
+  it("offers blue either of the goal's moves", () => {
+    const round = startRound(W, E);
+    expect(goalPoints(round, BLUE, "dual-shift", POINTS)).toEqual([N, S]);
+    expect(goalPoints(round, BLUE, "dash", POINTS).sort()).toEqual(
+      [E, W].sort()
+    );
+    expect(goalPoints(round, BLUE, "static", POINTS)).toEqual([W]);
+  });
+
+  it("offers red only the move that completes blue's", () => {
+    const shifted = placeHand(startRound(W, E), BLUE, N);
+    expect(goalPoints(shifted, RED, "cross-shift", POINTS)).toEqual([W]);
+    expect(goalPoints(shifted, RED, "shift", POINTS)).toEqual([E]);
+    const stayed = placeHand(startRound(W, E), BLUE, W);
+    expect(goalPoints(stayed, RED, "shift", POINTS)).toEqual([N, S]);
+  });
+
+  it("offers red nothing once blue's move is not in the goal", () => {
+    const dashed = placeHand(startRound(W, E), BLUE, E);
+    expect(goalPoints(dashed, RED, "dual-shift", POINTS)).toEqual([]);
+    expect(goalPoints(startRound(W, E), RED, "static", POINTS)).toEqual([]);
   });
 });
