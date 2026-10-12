@@ -1,7 +1,11 @@
 <script lang="ts">
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { onMount } from "svelte";
-  import { getPending, approve, reject } from "../../services/festival-submission-reviewer";
+  import {
+    getPending,
+    approve,
+    reject,
+  } from "../../services/festival-submission-reviewer";
   import { getFestivalContext } from "../../context/festival-context";
   import type { FestivalSubmission } from "../../domain/models/festival";
 
@@ -24,7 +28,8 @@
     try {
       pending = await getPending();
     } catch (err) {
-      loadError = err instanceof Error ? err.message : "Failed to load submissions.";
+      loadError =
+        err instanceof Error ? err.message : "Failed to load submissions.";
     } finally {
       isLoading = false;
     }
@@ -62,16 +67,22 @@
     }
   }
 
-  function formatDate(ts: { toDate?: () => Date; seconds?: number } | null | undefined): string {
+  function formatDate(
+    ts: { toDate?: () => Date; seconds?: number } | null | undefined
+  ): string {
     if (!ts) return "-";
     // Firebase Timestamp has toDate(); plain objects from tests may have seconds
-    if (typeof ts.toDate === "function") return ts.toDate().toLocaleDateString();
+    if (typeof ts.toDate === "function")
+      return ts.toDate().toLocaleDateString();
     if (ts.seconds) return new Date(ts.seconds * 1000).toLocaleDateString();
     return "-";
   }
 </script>
 
-<section class="moderation-queue" aria-label="Festival submission moderation queue">
+<section
+  class="moderation-queue"
+  aria-label="Festival submission moderation queue"
+>
   <header class="queue-header">
     <h3>
       <i class="fas fa-inbox" aria-hidden="true"></i>
@@ -119,7 +130,9 @@
               {/if}
             </span>
             <span class="submission-dates">
-              {formatDate(submission.dates?.start)} – {formatDate(submission.dates?.end)}
+              {formatDate(submission.dates?.start)} – {formatDate(
+                submission.dates?.end
+              )}
             </span>
             <LinkChip
               class="submission-website"
@@ -208,7 +221,6 @@
     overflow: hidden;
   }
 
-
   .queue-header {
     display: flex;
     align-items: center;
@@ -258,7 +270,9 @@
     border-radius: var(--radius-sm, 6px);
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.5));
     cursor: pointer;
-    transition: color 0.15s ease, background-color 0.15s ease;
+    transition:
+      color var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard);
   }
 
   .refresh-btn:hover:not(:disabled) {
@@ -270,7 +284,6 @@
     opacity: 0.4;
     cursor: not-allowed;
   }
-
 
   .queue-loading,
   .queue-empty,
@@ -294,7 +307,6 @@
   .queue-error {
     color: var(--semantic-error, #ef4444);
   }
-
 
   .submission-list {
     list-style: none;
@@ -378,7 +390,6 @@
     line-height: 1.5;
   }
 
-
   .action-error {
     display: flex;
     align-items: center;
@@ -390,7 +401,6 @@
     color: var(--semantic-error, #ef4444);
     font-size: var(--font-size-compact, 12px);
   }
-
 
   .submission-actions {
     display: flex;
@@ -408,7 +418,9 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
     min-height: 36px;
     border: none;
   }
@@ -441,8 +453,8 @@
     *,
     *::before,
     *::after {
-      transition-duration: 0.01ms !important;
-      animation-duration: 0.01ms !important;
+      transition-duration: 0s !important;
+      animation-duration: 0s !important;
     }
   }
 </style>

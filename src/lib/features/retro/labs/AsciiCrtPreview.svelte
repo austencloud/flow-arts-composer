@@ -29,14 +29,21 @@
   let copied = $state(false);
 
   function stripHtml(html: string): string {
-    return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+    return html
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&");
   }
 
   async function copyToClipboard() {
     const plain = htmlLines.map(stripHtml).join("\n");
     await navigator.clipboard.writeText(plain);
     copied = true;
-    setTimeout(() => { copied = false; }, 1500);
+    setTimeout(() => {
+      copied = false;
+    }, 1500);
   }
 </script>
 
@@ -98,7 +105,11 @@
      Uses full size containment for both cqw and cqh. */
   .monitor-wrap :global(.dos-terminal) {
     container-type: size;
-    font-size: clamp(4px, min(calc((100cqw - 24px) / 80), calc((100cqh - 24px) / 68)), 14px);
+    font-size: clamp(
+      4px,
+      min(calc((100cqw - 24px) / 80), calc((100cqh - 24px) / 68)),
+      14px
+    );
   }
 
   /* Let content start at top and scroll naturally */
@@ -126,8 +137,8 @@
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
     transition:
-      color var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease;
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   @media (hover: hover) {

@@ -24,12 +24,7 @@
     onSelect?: (index: number) => void;
   }
 
-  let {
-    items,
-    currentIndex,
-    visible,
-    onSelect,
-  }: Props = $props();
+  let { items, currentIndex, visible, onSelect }: Props = $props();
 
   let containerRef = $state<HTMLElement | null>(null);
   let thumbnailRefs = $state<(HTMLButtonElement | null)[]>([]);
@@ -43,7 +38,7 @@
       const containerWidth = containerRef.offsetWidth;
       const thumbLeft = activeThumb.offsetLeft;
       const thumbWidth = activeThumb.offsetWidth;
-      const scrollLeft = thumbLeft - (containerWidth / 2) + (thumbWidth / 2);
+      const scrollLeft = thumbLeft - containerWidth / 2 + thumbWidth / 2;
 
       containerRef.scrollTo({
         left: scrollLeft,
@@ -105,7 +100,9 @@
             stroke-linecap="round"
             stroke-linejoin="round"
           >
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path
+              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+            />
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
           </svg>
         </div>
@@ -122,8 +119,15 @@
     right: 0;
     height: var(--spotlight-filmstrip-height, 80px);
     padding: var(--spotlight-chrome-padding, 16px);
-    padding-bottom: calc(var(--spotlight-chrome-padding, 16px) + var(--spotlight-safe-area-bottom, 0px));
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+    padding-bottom: calc(
+      var(--spotlight-chrome-padding, 16px) +
+        var(--spotlight-safe-area-bottom, 0px)
+    );
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.8) 0%,
+      transparent 100%
+    );
     overflow-x: auto;
     overflow-y: hidden;
     display: flex;
@@ -160,9 +164,9 @@
     padding: 0;
     position: relative;
     transition:
-      transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1),
-      border-color 150ms ease,
-      box-shadow 150ms ease;
+      transform var(--duration-fast) var(--ease-spring),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .spotlight-filmstrip-thumb img {
@@ -207,7 +211,10 @@
   @media (max-width: 768px) {
     .spotlight-filmstrip {
       padding: var(--spotlight-chrome-padding-mobile, 12px);
-      padding-bottom: calc(var(--spotlight-chrome-padding-mobile, 12px) + var(--spotlight-safe-area-bottom, 0px));
+      padding-bottom: calc(
+        var(--spotlight-chrome-padding-mobile, 12px) +
+          var(--spotlight-safe-area-bottom, 0px)
+      );
     }
 
     .spotlight-filmstrip-thumb {

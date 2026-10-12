@@ -13,7 +13,7 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-import { getDeepLinkResolver } from "#lib/shared/application/get-deep-link-resolver.js";
+  import { getDeepLinkResolver } from "#lib/shared/application/get-deep-link-resolver.js";
   import { onMount, onDestroy } from "svelte";
   import {
     getModalUrlState,
@@ -75,7 +75,10 @@ import { getDeepLinkResolver } from "#lib/shared/application/get-deep-link-resol
     isLoading = false;
 
     if (!result.sequence) {
-      console.warn("[ModalUrlRestorer] Could not resolve sequence:", result.error);
+      console.warn(
+        "[ModalUrlRestorer] Could not resolve sequence:",
+        result.error
+      );
       loadError = result.error;
       return;
     }
@@ -102,7 +105,7 @@ import { getDeepLinkResolver } from "#lib/shared/application/get-deep-link-resol
   <div class="deep-link-overlay">
     <div class="deep-link-loading" role="status" aria-live="polite">
       <ProgressRing percent={-1} size={32} strokeWidth={3} />
-      <p>{t('sequence_loading')}</p>
+      <p>{t("sequence_loading")}</p>
     </div>
   </div>
 {/if}
@@ -119,19 +122,20 @@ import { getDeepLinkResolver } from "#lib/shared/application/get-deep-link-resol
     >
       {#if loadError === "not_found"}
         <i class="fas fa-unlink error-icon" aria-hidden="true"></i>
-        <h2>{t('sequence_not_found_title')}</h2>
-        <p>{t('sequence_unavailable_private')}</p>
+        <h2>{t("sequence_not_found_title")}</h2>
+        <p>{t("sequence_unavailable_private")}</p>
       {:else if loadError === "network"}
         <i class="fas fa-wifi error-icon" aria-hidden="true"></i>
-        <h2>{t('connection_error_title')}</h2>
-        <p>{t('connection_retry_body')}</p>
+        <h2>{t("connection_error_title")}</h2>
+        <p>{t("connection_retry_body")}</p>
       {:else}
-        <i class="fas fa-exclamation-triangle error-icon" aria-hidden="true"></i>
-        <h2>{t('loading_failed_title')}</h2>
-        <p>{t('sequence_load_failed_body')}</p>
+        <i class="fas fa-exclamation-triangle error-icon" aria-hidden="true"
+        ></i>
+        <h2>{t("loading_failed_title")}</h2>
+        <p>{t("sequence_load_failed_body")}</p>
       {/if}
       <button class="dismiss-button" onclick={dismissError}>
-        {t('action_go_back')}
+        {t("action_go_back")}
       </button>
     </div>
   </div>
@@ -201,7 +205,7 @@ import { getDeepLinkResolver } from "#lib/shared/application/get-deep-link-resol
     border: none;
     border-radius: var(--radius-md, 8px);
     cursor: pointer;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .dismiss-button:hover {

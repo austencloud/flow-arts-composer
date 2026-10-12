@@ -116,7 +116,7 @@
     letter-spacing: 0.04em;
     text-align: right;
     text-transform: uppercase;
-    transition: opacity var(--duration-fast, 150ms) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .suggestion-status.inactive {
@@ -140,9 +140,9 @@
     font-family: inherit;
     font-size: var(--font-size-sm, 14px);
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      box-shadow var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   input.suggested-value:not(:focus) {

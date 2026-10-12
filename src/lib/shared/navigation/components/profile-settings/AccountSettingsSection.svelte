@@ -117,9 +117,9 @@
         var(--theme-text) 8%
       );
       transition:
-        background var(--duration-fast) ease,
-        border-color var(--duration-fast) ease,
-        box-shadow var(--duration-fast) ease;
+        background var(--duration-fast) var(--ease-standard),
+        border-color var(--duration-fast) var(--ease-standard),
+        box-shadow var(--duration-fast) var(--ease-standard);
     }
 
     .field-cell:hover {

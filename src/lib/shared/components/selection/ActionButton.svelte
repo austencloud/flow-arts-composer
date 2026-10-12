@@ -83,9 +83,9 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      transform var(--duration-normal) ease,
-      box-shadow var(--duration-normal) ease,
-      opacity var(--duration-normal) ease;
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
     box-shadow: var(--action-shadow);
     -webkit-tap-highlight-color: transparent;
   }

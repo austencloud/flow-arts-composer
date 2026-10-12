@@ -1074,7 +1074,7 @@ instead of showing an empty shell.
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .art-back:hover {
@@ -1198,7 +1198,7 @@ instead of showing an empty shell.
     background: color-mix(in srgb, var(--theme-accent) 22%, transparent);
     color: var(--theme-text, white);
     cursor: pointer;
-    transition: background var(--duration-fast, 150ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .confirm-create:hover:not(:disabled) {

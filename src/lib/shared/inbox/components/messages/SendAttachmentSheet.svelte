@@ -117,7 +117,10 @@
     <!-- The card IS the preview. The title says "Send sequence" and the card
          shows the word, so a caption repeating both only stole height from
          the card it captioned. -->
-    <article class="sequence-preview" aria-label={t("inbox_ui_attachment_being_shared")}>
+    <article
+      class="sequence-preview"
+      aria-label={t("inbox_ui_attachment_being_shared")}
+    >
       <div class="preview-thumbnail">
         {#if payload && previewThumbnailUrl && !thumbnailFailed}
           <img
@@ -348,9 +351,9 @@
     font-weight: 800;
     cursor: pointer;
     transition:
-      filter var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease,
-      opacity var(--duration-fast, 150ms) ease;
+      filter var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .send-button:hover:not(:disabled) {

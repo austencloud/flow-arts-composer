@@ -1,7 +1,8 @@
 <script lang="ts">
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import PanelState from "#lib/shared/components/panel/PanelState.svelte";
   import SortPopover from "#lib/features/browse/shared/components/SortPopover.svelte";
@@ -26,12 +27,15 @@
   let hapticService: HapticFeedback | undefined;
 
   let reducedMotion = $state(
-    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 
   $effect(() => {
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handler = (e: MediaQueryListEvent) => { reducedMotion = e.matches; };
+    const handler = (e: MediaQueryListEvent) => {
+      reducedMotion = e.matches;
+    };
     mql.addEventListener("change", handler);
     return () => mql.removeEventListener("change", handler);
   });
@@ -58,7 +62,10 @@
   let sortMethod = $state<BrowseSortMethod>(BrowseSortMethod.DATE_ADDED);
 
   const sortedSequences = $derived(
-    sortSequences([...userSequences] as SequenceData[], sortMethod) as LibrarySequence[]
+    sortSequences(
+      [...userSequences] as SequenceData[],
+      sortMethod
+    ) as LibrarySequence[]
   );
 
   // Group by exact step count so a row never mixes thumbnail heights (mixed
@@ -117,11 +124,17 @@
     <span class="gallery-count">
       {userSequences.length === 1
         ? t("profile_sequence_count_one")
-        : t("profile_sequence_count_other", { count: String(userSequences.length) })}
+        : t("profile_sequence_count_other", {
+            count: String(userSequences.length),
+          })}
     </span>
     <!-- align="end": the trigger sits at the toolbar's right edge and the
          profile scroller clips overflow-x, so the panel must open leftward. -->
-    <SortPopover currentMethod={sortMethod} onSortChange={(m) => (sortMethod = m)} align="end" />
+    <SortPopover
+      currentMethod={sortMethod}
+      onSortChange={(m) => (sortMethod = m)}
+      align="end"
+    />
   </div>
 
   <div class="gallery-content">
@@ -137,8 +150,10 @@
           <button
             class="gallery-card"
             onclick={() => handleSequenceClick(sequence)}
-            transition:fade={{ duration: reducedMotion ? 0 : 200 }}
-            aria-label={t("browse_verified_view_sequence", { name: getDisplayName(sequence) })}
+            transition:opaqueFade={{ duration: DURATION.normal }}
+            aria-label={t("browse_verified_view_sequence", {
+              name: getDisplayName(sequence),
+            })}
           >
             <div class="card-thumbnail">
               <PropAwareThumbnail {sequence} {lightMode} />
@@ -202,7 +217,11 @@
     border: 1px solid var(--theme-stroke);
     border-radius: 12px;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     overflow: hidden;
     padding: 0;
     text-align: left;
@@ -212,7 +231,7 @@
     background: var(--theme-card-hover-bg);
     border-color: var(--theme-stroke-strong);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-glass-hover, 0 4px 12px rgba(0,0,0,0.3));
+    box-shadow: var(--shadow-glass-hover, 0 4px 12px rgba(0, 0, 0, 0.3));
   }
 
   .card-thumbnail {
@@ -234,7 +253,9 @@
     border-radius: 6px;
     opacity: 0;
     transform: translateY(4px);
-    transition: all var(--duration-normal) ease;
+    transition:
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     pointer-events: none;
   }
 

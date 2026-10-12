@@ -29,7 +29,6 @@
 
   const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-
   const monthStart = $derived(startOfMonth(currentMonth));
   const monthEnd = $derived(endOfMonth(currentMonth));
   const gridStart = $derived(startOfWeek(monthStart));
@@ -149,11 +148,17 @@
       </button>
     </div>
 
-    <h2 class="month-title" aria-live="polite" aria-atomic="true">{monthTitle}</h2>
+    <h2 class="month-title" aria-live="polite" aria-atomic="true">
+      {monthTitle}
+    </h2>
   </div>
 
   <!-- Month grid -->
-  <div class="month-grid" role="grid" aria-label="Monthly calendar - {monthTitle}">
+  <div
+    class="month-grid"
+    role="grid"
+    aria-label="Monthly calendar - {monthTitle}"
+  >
     <!-- Day name header row -->
     <div class="header-row" role="row">
       {#each DAY_NAMES as name}
@@ -187,7 +192,6 @@
     gap: 0;
   }
 
-
   .calendar-nav {
     display: flex;
     align-items: center;
@@ -220,8 +224,8 @@
     font-family: inherit;
     cursor: pointer;
     transition:
-      background 0.15s ease,
-      border-color 0.15s ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
   }
 
@@ -251,7 +255,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-
 
   .month-grid {
     display: flex;
@@ -298,7 +301,6 @@
     display: flex;
     flex-direction: column;
   }
-
 
   @media (max-width: 767px) {
     .calendar-nav {

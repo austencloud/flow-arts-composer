@@ -307,8 +307,8 @@
     transition:
       transform var(--transition-smooth),
       opacity var(--transition-smooth),
-      background 0.4s ease-out,
-      border-color 0.4s ease-out;
+      background var(--duration-dramatic) var(--ease-standard-out),
+      border-color var(--duration-dramatic) var(--ease-standard-out);
   }
 
   /* Hidden state - consistent positioning, only transform/opacity change */
@@ -468,8 +468,8 @@
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     transition:
-      opacity 0.15s ease,
-      transform 0.1s ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard);
   }
 
   .bottom-navigation :global(.nav-button.special:hover) {
@@ -607,7 +607,7 @@
     border: none;
     cursor: pointer;
     z-index: calc(var(--z-sticky) - 1);
-    transition: background var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .peek-indicator:hover {
@@ -634,8 +634,8 @@
 
   /* Single entrance animation - plays once when indicator appears */
   .peek-indicator.animate-entrance i {
-    animation: peek-entrance var(--duration-dramatic)
-      cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation: peek-entrance var(--duration-dramatic) var(--ease-spring)
+      forwards;
   }
 
   @keyframes peek-entrance {
@@ -682,7 +682,8 @@
      ENTRY ANIMATION - Slide up from bottom after first-run wizard
      ============================================================================ */
   .bottom-navigation.entry-animating {
-    animation: nav-slide-up 350ms cubic-bezier(0.16, 1, 0.3, 1) 200ms both;
+    animation: nav-slide-up var(--duration-dramatic) var(--ease-out)
+      var(--duration-normal) both;
   }
 
   @keyframes nav-slide-up {

@@ -321,7 +321,9 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     cursor: pointer;
     border-radius: 0.25rem;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     display: flex;
     align-items: center;
   }
@@ -354,7 +356,10 @@
     font-weight: 600;
     text-align: center;
     text-decoration: none;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     border: none;
     cursor: pointer;
     font-size: 1rem;
@@ -394,5 +399,4 @@
       text-align: left;
     }
   }
-
 </style>

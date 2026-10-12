@@ -179,11 +179,10 @@
        border-radius is paint-only, so it IS morphed: the corner rounding eases
        22px↔12px so the circle↔rounded-rect change animates instead of snapping. */
     transition:
-      background var(--duration-normal) ease,
-      border-color var(--duration-normal) ease,
-      color var(--duration-normal) ease,
-      border-radius var(--duration-emphasis)
-        var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      border-radius var(--duration-emphasis) var(--ease-out, var(--ease-out));
     font-size: var(--font-size-sm);
     font-weight: 500;
   }
@@ -315,7 +314,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    animation: label-fade-in var(--duration-normal) ease-out
+    animation: label-fade-in var(--duration-normal) var(--ease-standard-out)
       var(--duration-fast) both;
   }
 
@@ -344,7 +343,7 @@
   .chevron {
     font-size: var(--font-size-compact, 12px);
     opacity: 0.5;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .account-row:hover .chevron {

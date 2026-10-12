@@ -257,7 +257,9 @@
       <span class="read-receipt read" aria-label={t("inbox_ui_read")}>
         <i class="fas fa-check-double" aria-hidden="true"></i>
         {#if readTimestamp}
-          <span class="read-time">{t("inbox_ui_seen")} {formatReadTime(readTimestamp)}</span>
+          <span class="read-time"
+            >{t("inbox_ui_seen")} {formatReadTime(readTimestamp)}</span
+          >
         {/if}
       </span>
     {/if}
@@ -356,7 +358,7 @@
       role="article"
       tabindex="-1"
       aria-label="{isOwn
-        ? t("inbox_you")
+        ? t('inbox_you')
         : message.senderName}: {accessibleMessage}{deliveryLabel
         ? `, ${deliveryLabel}`
         : ''}"
@@ -384,7 +386,7 @@
     flex-direction: column;
     align-items: flex-start;
     max-width: 80%;
-    animation: slideIn var(--duration-normal) ease-out;
+    animation: slideIn var(--duration-normal) var(--ease-standard-out);
     transform-origin: bottom left;
   }
 
@@ -410,7 +412,7 @@
   }
 
   .message-bubble.is-new {
-    animation: slideInNew var(--duration-emphasis) ease-out;
+    animation: slideInNew var(--duration-emphasis) var(--ease-standard-out);
   }
 
   .message-bubble:focus {
@@ -445,7 +447,7 @@
     border-radius: 18px;
     background: var(--theme-card-bg);
     overflow: visible;
-    transition: transform var(--duration-fast) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .bubble:hover {
@@ -453,7 +455,7 @@
   }
 
   .message-bubble.highlighted .bubble {
-    animation: reply-target-pulse 1.4s ease-out;
+    animation: reply-target-pulse var(--duration-scene) var(--ease-standard-out);
   }
 
   @keyframes reply-target-pulse {
@@ -648,7 +650,7 @@
   .read-receipt {
     font-size: var(--font-size-compact);
     opacity: 0.7;
-    transition: color var(--duration-normal) ease;
+    transition: color var(--duration-normal) var(--ease-standard);
   }
 
   .read-receipt.read {

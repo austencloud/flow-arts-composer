@@ -64,7 +64,7 @@
         {#if toast.imageUrl}
           <img
             src={toast.imageUrl}
-            alt="{t('toast_captured_preview')}"
+            alt={t("toast_captured_preview")}
             class="toast-thumbnail"
           />
         {/if}
@@ -86,7 +86,7 @@
             <button
               class="toast-close accessible-touch-target"
               onclick={() => removeToast(toast.id, "dismissed")}
-              aria-label="{t('create_ui_dismiss')}"
+              aria-label={t("create_ui_dismiss")}
             >
               <i class="fas fa-times" aria-hidden="true"></i>
             </button>
@@ -122,7 +122,7 @@
       0 8px 32px rgba(0, 0, 0, 0.4),
       0 2px 8px rgba(0, 0, 0, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    animation: slideIn var(--duration-normal) cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: slideIn var(--duration-normal) var(--ease-spring);
     pointer-events: auto;
   }
 
@@ -199,7 +199,9 @@
     border-radius: 6px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background-color var(--duration-fast),
+      color var(--duration-fast);
     flex-shrink: 0;
   }
 

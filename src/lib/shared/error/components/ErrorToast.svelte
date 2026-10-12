@@ -48,9 +48,12 @@
         <span class="toast-message">{toast.message}</span>
 
         {#if isWarning}
-          <span class="toast-logged" aria-label={t("notifications_error_logged")}>
+          <span
+            class="toast-logged"
+            aria-label={t("notifications_error_logged")}
+          >
             <i class="fas fa-check" aria-hidden="true"></i>
-{t("notifications_logged")}
+            {t("notifications_logged")}
           </span>
         {/if}
 
@@ -75,7 +78,6 @@
 </div>
 
 <style>
-
   .toast-region {
     position: fixed;
     bottom: 24px;
@@ -88,7 +90,6 @@
     max-width: 380px;
     width: calc(100vw - 48px);
   }
-
 
   .overflow-badge {
     pointer-events: auto;
@@ -105,7 +106,6 @@
     user-select: none;
   }
 
-
   .toast {
     pointer-events: auto;
     position: relative;
@@ -118,7 +118,8 @@
     -webkit-backdrop-filter: blur(16px);
 
     /* Entrance animation */
-    animation: toast-enter var(--duration-emphasis, 300ms) ease-out both;
+    animation: toast-enter var(--duration-emphasis) var(--ease-standard-out)
+      both;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -149,7 +150,6 @@
       color-mix(in srgb, var(--semantic-info, #3b82f6) 20%, transparent);
   }
 
-
   .toast-body {
     display: flex;
     align-items: center;
@@ -158,7 +158,6 @@
     /* leave 3px at the bottom for the progress bar */
     padding-bottom: 11px;
   }
-
 
   .toast-icon {
     flex-shrink: 0;
@@ -174,7 +173,6 @@
     color: var(--semantic-info, #60a5fa);
   }
 
-
   .toast-message {
     flex: 1;
     font-size: var(--font-size-sm, 14px);
@@ -183,7 +181,6 @@
     min-width: 0;
     word-break: break-word;
   }
-
 
   .toast-logged {
     flex-shrink: 0;
@@ -199,7 +196,6 @@
     font-size: 10px;
     color: rgba(134, 239, 172, 0.7);
   }
-
 
   .toast-close {
     flex-shrink: 0;
@@ -217,8 +213,8 @@
     font-size: 13px;
     border-radius: 8px;
     transition:
-      color var(--duration-fast, 150ms) ease,
-      background var(--duration-fast, 150ms) ease;
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .toast-close:hover {
@@ -230,7 +226,6 @@
     outline: 2px solid rgba(255, 255, 255, 0.4);
     outline-offset: -2px;
   }
-
 
   .toast-progress {
     position: absolute;
@@ -274,7 +269,6 @@
       opacity: 0.3;
     }
   }
-
 
   @keyframes toast-enter {
     from {

@@ -22,7 +22,10 @@
   import TikaReviewPanel from "./components/TikaReviewPanel.svelte";
   import TikaCompareView from "./components/TikaCompareView.svelte";
   import TikaHistoryDrawer from "./components/TikaHistoryDrawer.svelte";
-  import { getEffectiveUserId, authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import {
+    getEffectiveUserId,
+    authState,
+  } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { auth } from "#lib/shared/auth/firebase.js";
   import type { ConceptProgressTracker } from "#lib/features/learn/services/concept-progress-tracker.js";
   import type { MasteryContext } from "#lib/features/learn/domain/quiz-history-types.js";
@@ -67,7 +70,7 @@
     if (!browser) return fallback;
     try {
       const stored = localStorage.getItem(key);
-      return stored ? resolveTikaModelKey(stored) ?? fallback : fallback;
+      return stored ? (resolveTikaModelKey(stored) ?? fallback) : fallback;
     } catch {
       return fallback;
     }
@@ -112,7 +115,7 @@
 
   // Progress tracker and mastery services via module singleton getters
   const progressTracker: ConceptProgressTracker | null = browser
-    ? (getConceptProgressTracker() as ConceptProgressTracker) ?? null
+    ? ((getConceptProgressTracker() as ConceptProgressTracker) ?? null)
     : null;
 
   // Interaction tracker for quiz persistence and topic tracking
@@ -224,7 +227,7 @@
         welcomeContext = buildWelcome(
           masteryContext,
           topicHistory ?? undefined,
-          historySummary ?? undefined,
+          historySummary ?? undefined
         );
       })
       .catch((error) => {
@@ -316,7 +319,8 @@
   // Track topics from assistant tool calls for welcome suggestions
   let lastTrackedMessageCount = $state(0);
   $effect(() => {
-    if (!interactionTracker || !isAuthenticated || userId === "anonymous") return;
+    if (!interactionTracker || !isAuthenticated || userId === "anonymous")
+      return;
     if (chatMessages.length <= lastTrackedMessageCount) return;
 
     // Only scan newly added messages
@@ -332,10 +336,13 @@
         const toolPart = part as { input?: Record<string, unknown> };
         if (!toolPart.input) continue;
         const input = toolPart.input;
-        if (typeof input.letter === "string") topics.add(`letter-${input.letter}`);
+        if (typeof input.letter === "string")
+          topics.add(`letter-${input.letter}`);
         if (typeof input.type === "number") topics.add(`type-${input.type}`);
-        if (typeof input.position === "string") topics.add(`position-${input.position}`);
-        if (typeof input.motionType === "string") topics.add(`motion-${input.motionType}`);
+        if (typeof input.position === "string")
+          topics.add(`position-${input.position}`);
+        if (typeof input.motionType === "string")
+          topics.add(`motion-${input.motionType}`);
         if (typeof input.topic === "string") topics.add(input.topic);
       }
     }
@@ -397,17 +404,25 @@
       availableModels = data.models || [];
 
       // Validate saved preference still exists
-      if (availableModels.length > 0 && !availableModels.find((m) => m.id === selectedModel)) {
+      if (
+        availableModels.length > 0 &&
+        !availableModels.find((m) => m.id === selectedModel)
+      ) {
         selectedModel = availableModels[0]?.id || DEFAULT_TIKA_MODEL;
       }
       if (!availableModels.some((model) => model.id === compareModelA)) {
         compareModelA = availableModels[0]?.id ?? DEFAULT_TIKA_MODEL;
       }
       if (!availableModels.some((model) => model.id === compareModelB)) {
-        compareModelB = availableModels[1]?.id ?? availableModels[0]?.id ?? DEFAULT_TIKA_MODEL;
+        compareModelB =
+          availableModels[1]?.id ??
+          availableModels[0]?.id ??
+          DEFAULT_TIKA_MODEL;
       }
       if (compareModelA === compareModelB && availableModels.length > 1) {
-        compareModelB = availableModels.find((model) => model.id !== compareModelA)!.id;
+        compareModelB = availableModels.find(
+          (model) => model.id !== compareModelA
+        )!.id;
       }
     } catch (error) {
       console.error("[TIKA] Failed to fetch models:", error);
@@ -514,7 +529,8 @@
 
   // Handle inline quiz completion (persist results)
   function handleQuizComplete(quizId: string, topic: string, correct: boolean) {
-    if (!interactionTracker || !isAuthenticated || userId === "anonymous") return;
+    if (!interactionTracker || !isAuthenticated || userId === "anonymous")
+      return;
 
     interactionTracker
       .recordQuizResult(userId, topic, correct, quizId)
@@ -526,7 +542,11 @@
   // Start a new conversation
   async function handleNewChat() {
     // Save current session if it has messages
-    if (isAuthenticated && sessionRepository && chatMessages.length >= TIKA_LIMITS.MIN_MESSAGES_FOR_SAVE) {
+    if (
+      isAuthenticated &&
+      sessionRepository &&
+      chatMessages.length >= TIKA_LIMITS.MIN_MESSAGES_FOR_SAVE
+    ) {
       try {
         await sessionRepository.saveSession(
           currentSessionId ?? undefined,
@@ -677,8 +697,15 @@
           // Extract tool output (new AI SDK format: type is "tool-{toolName}")
           let hasToolOutput = false;
           for (const part of message.parts) {
-            if (part.type.startsWith("tool-") && part.type !== "tool-invocation") {
-              const toolPart = part as { output?: unknown; state?: string; input?: Record<string, unknown> };
+            if (
+              part.type.startsWith("tool-") &&
+              part.type !== "tool-invocation"
+            ) {
+              const toolPart = part as {
+                output?: unknown;
+                state?: string;
+                input?: Record<string, unknown>;
+              };
               if (toolPart.state === "output-available" && toolPart.output) {
                 hasToolOutput = true;
                 // Extract explanation field if present (canonical response format)
@@ -700,7 +727,9 @@
               for (const part of toolParts) {
                 if (!isToolInvocationPart(part)) continue;
                 const inv = part.toolInvocation;
-                lines.push(`- **${inv.toolName}**: \`${JSON.stringify(inv.args)}\``);
+                lines.push(
+                  `- **${inv.toolName}**: \`${JSON.stringify(inv.args)}\``
+                );
                 // Include result if available
                 if (inv.state === "result" && inv.result) {
                   const result = inv.result as Record<string, unknown>;
@@ -728,7 +757,6 @@
 
     return lines.join("\n");
   }
-
 </script>
 
 <div class="tika-module">
@@ -845,7 +873,7 @@
     width: 320px;
     max-width: 90vw;
     height: 100%;
-    animation: slideIn var(--duration-normal) ease;
+    animation: slideIn var(--duration-normal) var(--ease-standard);
   }
 
   @keyframes slideIn {

@@ -215,7 +215,7 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
     border: none;
     display: flex;
     align-items: center;

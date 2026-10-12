@@ -219,14 +219,18 @@
         );
         target = context.find((message) => message.id === messageId);
         if (!target) {
-          navigationAnnouncement = t("inbox_ui_original_message_is_unavailable");
+          navigationAnnouncement = t(
+            "inbox_ui_original_message_is_unavailable"
+          );
           toast.error(t("inbox_ui_original_message_is_unavailable"));
           return;
         }
         contextualMessages = context;
         contextTargetId = messageId;
       } catch {
-        navigationAnnouncement = t("inbox_ui_could_not_load_the_original_message");
+        navigationAnnouncement = t(
+          "inbox_ui_could_not_load_the_original_message"
+        );
         toast.error(t("inbox_ui_couldn_t_load_the_original_message"));
         return;
       } finally {
@@ -538,8 +542,8 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 120ms) ease,
-      border-color var(--duration-fast, 120ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .context-toolbar button:hover,

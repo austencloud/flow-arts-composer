@@ -24,7 +24,7 @@
 
   function handleTileKeydown(
     e: KeyboardEvent,
-    entry: PoiImageLibraryEntry,
+    entry: PoiImageLibraryEntry
   ): void {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -32,23 +32,17 @@
     }
   }
 
-  function handleDragStart(
-    e: DragEvent,
-    entry: PoiImageLibraryEntry,
-  ): void {
+  function handleDragStart(e: DragEvent, entry: PoiImageLibraryEntry): void {
     if (!e.dataTransfer) return;
     // Custom MIME type so PatternTimeline can distinguish a library
     // drag from a fresh file drop and skip the decode step.
-    e.dataTransfer.setData(
-      "application/x-tka-poi-library-id",
-      entry.id,
-    );
+    e.dataTransfer.setData("application/x-tka-poi-library-id", entry.id);
     e.dataTransfer.effectAllowed = "copy";
   }
 
   async function handleDelete(
     e: MouseEvent,
-    entry: PoiImageLibraryEntry,
+    entry: PoiImageLibraryEntry
   ): Promise<void> {
     e.stopPropagation();
     const ok = confirm(`Delete "${entry.name}" from your library?`);
@@ -70,9 +64,7 @@
       Sign in to save uploaded images to a library you can reuse later.
     </p>
   {:else if poi.libraryEntries.length === 0}
-    <p class="empty-hint">
-      Images you upload will appear here.
-    </p>
+    <p class="empty-hint">Images you upload will appear here.</p>
   {:else}
     <div class="library-grid">
       {#each poi.libraryEntries as entry (entry.id)}
@@ -160,7 +152,9 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    transition: border-color 0.15s, transform 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      transform var(--duration-fast);
   }
 
   .library-tile:hover {
@@ -209,7 +203,9 @@
     justify-content: center;
     font-size: 10px;
     opacity: 0;
-    transition: opacity 0.15s, background 0.15s;
+    transition:
+      opacity var(--duration-fast),
+      background var(--duration-fast);
   }
 
   .library-tile:hover .tile-delete,
@@ -218,7 +214,11 @@
   }
 
   .tile-delete:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 85%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 85%,
+      transparent
+    );
     color: #fff;
   }
 </style>

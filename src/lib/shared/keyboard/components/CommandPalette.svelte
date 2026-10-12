@@ -32,7 +32,9 @@
     )
   );
   const resultsLabel = $derived(
-    commandPaletteState.query ? t("keyboard_palette_results") : t("keyboard_palette_suggestions")
+    commandPaletteState.query
+      ? t("keyboard_palette_results")
+      : t("keyboard_palette_suggestions")
   );
 
   onMount(() => {
@@ -169,14 +171,22 @@
 
   function translateCategory(category: string): string {
     switch (category) {
-      case "Places": return t("keyboard_palette_places");
-      case "Actions": return t("keyboard_palette_actions");
-      case "Help": return t("keyboard_palette_help");
-      case "Recent": return t("keyboard_palette_recent");
-      case "Often used": return t("keyboard_palette_often_used");
-      case "Actions here": return t("keyboard_palette_actions_here");
-      case "Other": return t("keyboard_palette_other");
-      default: return category;
+      case "Places":
+        return t("keyboard_palette_places");
+      case "Actions":
+        return t("keyboard_palette_actions");
+      case "Help":
+        return t("keyboard_palette_help");
+      case "Recent":
+        return t("keyboard_palette_recent");
+      case "Often used":
+        return t("keyboard_palette_often_used");
+      case "Actions here":
+        return t("keyboard_palette_actions_here");
+      case "Other":
+        return t("keyboard_palette_other");
+      default:
+        return category;
     }
   }
 
@@ -252,7 +262,9 @@
       aria-label={resultsLabel}
     >
       {#if commandPaletteState.isLoading}
-        <div class="command-palette__status">{t("keyboard_palette_searching")}</div>
+        <div class="command-palette__status">
+          {t("keyboard_palette_searching")}
+        </div>
       {:else if commandPaletteState.results.length === 0}
         <div class="command-palette__empty">
           <span class="command-palette__empty-icon">
@@ -260,7 +272,9 @@
           </span>
           <strong>
             {commandPaletteState.query
-              ? t("keyboard_palette_no_matches", { query: commandPaletteState.query })
+              ? t("keyboard_palette_no_matches", {
+                  query: commandPaletteState.query,
+                })
               : t("keyboard_palette_search_app")}
           </strong>
           {#if commandPaletteState.query}
@@ -451,8 +465,8 @@
     cursor: pointer;
     text-align: left;
     transition:
-      background var(--duration-fast) ease,
-      border-color var(--duration-fast) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .command-palette__item:hover,
@@ -562,7 +576,7 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-compact, 12px);
     opacity: 0;
-    transition: opacity var(--duration-fast) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .command-palette__item:hover .command-palette__item-arrow,

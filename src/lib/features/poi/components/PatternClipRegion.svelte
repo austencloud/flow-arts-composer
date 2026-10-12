@@ -99,7 +99,9 @@
     display: flex;
     flex-direction: column;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .clip-region:hover {
@@ -110,7 +112,8 @@
     border-color: var(--theme-accent, #3b82f6);
     box-shadow:
       0 0 0 1px var(--theme-accent, #3b82f6),
-      0 2px 12px color-mix(in srgb, var(--theme-accent, #3b82f6) 30%, transparent);
+      0 2px 12px
+        color-mix(in srgb, var(--theme-accent, #3b82f6) 30%, transparent);
   }
 
   .clip-preview {

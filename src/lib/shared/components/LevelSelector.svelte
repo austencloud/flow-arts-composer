@@ -146,10 +146,10 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     cursor: pointer;
     transition:
-      background var(--duration-fast, 0.15s) ease,
-      border-color var(--duration-fast, 0.15s) ease,
-      box-shadow var(--duration-fast, 0.15s) ease,
-      transform var(--duration-fast, 0.15s) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .level-selector.compact .lvl {
@@ -177,9 +177,9 @@
     /* Unselected levels keep their colour but sit back. */
     opacity: 0.62;
     transition:
-      opacity var(--duration-fast, 0.15s) ease,
-      transform var(--duration-normal, 0.2s) cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow var(--duration-fast, 0.15s) ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .name {
@@ -188,7 +188,7 @@
     letter-spacing: 0.01em;
     white-space: nowrap;
     color: rgba(255, 255, 255, 0.62);
-    transition: color var(--duration-fast, 0.15s) ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
 
   .lvl:hover .numeral {

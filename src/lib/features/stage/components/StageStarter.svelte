@@ -771,9 +771,9 @@
     border-radius: 0.875rem;
     background: var(--theme-card-bg);
     transition:
-      background-color var(--duration-normal, 200ms) ease,
-      border-color var(--duration-normal, 200ms) ease,
-      box-shadow var(--duration-normal, 200ms) ease;
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .ensemble-picker.chosen {
@@ -828,9 +828,9 @@
     font-weight: 750;
     cursor: pointer;
     transition:
-      background-color var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .ensemble-counts button:hover,
@@ -873,10 +873,10 @@
     text-align: left;
     cursor: pointer;
     transition:
-      background-color var(--duration-normal, 200ms) ease,
-      border-color var(--duration-normal, 200ms) ease,
-      transform var(--duration-fast, 150ms) ease,
-      box-shadow var(--duration-normal, 200ms) ease;
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .choice-card.compact {

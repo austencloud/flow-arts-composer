@@ -12,7 +12,8 @@
     onselect: () => void;
     onbookmark: () => void;
   }
-  let { festival, tracker, attendanceCount, onselect, onbookmark }: Props = $props();
+  let { festival, tracker, attendanceCount, onselect, onbookmark }: Props =
+    $props();
 
   let imageLoaded = $state(false);
   let imageError = $state(false);
@@ -26,8 +27,8 @@
   const now = new Date();
   const applicationsOpen = $derived(
     festival.applicationDeadline != null &&
-    toDate(festival.applicationDeadline) > now &&
-    (festival.seekingInstructors || festival.seekingPerformers)
+      toDate(festival.applicationDeadline) > now &&
+      (festival.seekingInstructors || festival.seekingPerformers)
   );
 
   const daysLeft = $derived(
@@ -95,12 +96,16 @@
       <span>{festival.name}</span>
     </div>
 
-    <span class="region-badge">{regionLabels[festival.region] ?? festival.region}</span>
+    <span class="region-badge"
+      >{regionLabels[festival.region] ?? festival.region}</span
+    >
 
     <button
       class="bookmark-btn"
       onclick={handleBookmark}
-      aria-label={tracker?.status === "interested" ? "Remove bookmark" : "Bookmark festival"}
+      aria-label={tracker?.status === "interested"
+        ? "Remove bookmark"
+        : "Bookmark festival"}
       aria-pressed={tracker?.status === "interested"}
     >
       <i
@@ -145,7 +150,10 @@
     overflow: hidden;
     cursor: pointer;
     color: var(--theme-text, #ffffff);
-    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .grid-card:hover {
@@ -177,7 +185,7 @@
     height: 100%;
     object-fit: cover;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
   }
 
   .festival-img.loaded {
@@ -232,7 +240,9 @@
     color: rgba(255, 255, 255, 0.85);
     cursor: pointer;
     font-size: 14px;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .bookmark-btn:hover {
@@ -292,9 +302,14 @@
     border-radius: 8px;
     font-size: var(--font-size-xs, 11px);
     font-weight: 500;
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 15%,
+      transparent
+    );
     color: var(--semantic-success, #22c55e);
-    border: 1px solid color-mix(in srgb, var(--semantic-success, #22c55e) 30%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-success, #22c55e) 30%, transparent);
     white-space: nowrap;
   }
 

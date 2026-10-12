@@ -14,7 +14,8 @@
    * NotificationFilter - Modern chip-based filter controls
    */
 
-  import { slide } from "svelte/transition";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   // Note: UserNotification type is imported in the module script above
 
@@ -44,19 +45,32 @@
   }> = $derived([
     { value: "all", label: t("notifications_filter_all_types") },
     { value: "feedback-resolved", label: t("notifications_filter_resolved") },
-    { value: "feedback-in-progress", label: t("notifications_filter_in_progress") },
-    { value: "feedback-needs-info", label: t("notifications_filter_needs_info") },
+    {
+      value: "feedback-in-progress",
+      label: t("notifications_filter_in_progress"),
+    },
+    {
+      value: "feedback-needs-info",
+      label: t("notifications_filter_needs_info"),
+    },
     { value: "feedback-response", label: t("notifications_filter_response") },
     { value: "sequence-liked", label: t("notifications_filter_likes") },
     { value: "user-followed", label: t("notifications_filter_follows") },
-    { value: "achievement-unlocked", label: t("notifications_filter_achievements") },
+    {
+      value: "achievement-unlocked",
+      label: t("notifications_filter_achievements"),
+    },
     { value: "message-received", label: t("notifications_filter_messages") },
-    { value: "system-announcement", label: t("notifications_filter_announcements") },
+    {
+      value: "system-announcement",
+      label: t("notifications_filter_announcements"),
+    },
   ]);
 
   function getTypeLabel(value: UserNotification["type"] | "all"): string {
     return (
-      notificationTypes.find((t) => t.value === value)?.label || t("notifications_filter_all_types")
+      notificationTypes.find((t) => t.value === value)?.label ||
+      t("notifications_filter_all_types")
     );
   }
 </script>
@@ -90,7 +104,9 @@
         class:active={showTypeFilters}
         onclick={() => (showTypeFilters = !showTypeFilters)}
         aria-label={t("notifications_toggle_filters")}
-        title={showTypeFilters ? t("notifications_hide_filters") : t("notifications_filter_by_type")}
+        title={showTypeFilters
+          ? t("notifications_hide_filters")
+          : t("notifications_filter_by_type")}
       >
         <i class="fas fa-filter" aria-hidden="true"></i>
         <span>{t("notifications_filter_by_type")}</span>
@@ -103,7 +119,10 @@
 
   <!-- Collapsible type filters -->
   {#if showTypeFilters}
-    <div class="type-filter" transition:slide={{ duration: 200 }}>
+    <div
+      class="type-filter"
+      transition:growFade={{ duration: DURATION.normal }}
+    >
       <!-- Desktop: Single-select segmented control -->
       <div class="segmented-wrap desktop-only">
         <SegmentedControl
@@ -216,7 +235,9 @@
     border-radius: 8px;
     color: var(--theme-text);
     font-size: var(--font-size-min);
-    transition: all var(--duration-normal) ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .search-box input::placeholder {
@@ -243,7 +264,9 @@
     border-radius: 4px;
     color: var(--theme-text-dim, var(--theme-text-dim));
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .clear-search:hover {
@@ -271,7 +294,10 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: var(--font-size-min);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .filter-toggle-btn:hover {
@@ -329,7 +355,10 @@
     color: var(--theme-text);
     font-size: var(--font-size-min);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .type-selector-btn:hover {
@@ -360,7 +389,7 @@
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
     z-index: var(--z-modal);
-    animation: fadeIn var(--duration-normal) ease;
+    animation: fadeIn var(--duration-normal) var(--ease-standard);
   }
 
   .sheet {
@@ -371,7 +400,7 @@
     max-height: 70vh;
     background: var(--theme-panel-bg);
     border-radius: 16px 16px 0 0;
-    animation: slideUp var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideUp var(--duration-emphasis) var(--ease-standard);
   }
 
   .sheet-header {
@@ -400,7 +429,9 @@
     border-radius: 8px;
     color: var(--theme-text-dim, var(--theme-text-dim));
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .close-btn:hover {
@@ -428,7 +459,9 @@
     font-size: var(--font-size-min);
     text-align: left;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .type-option:hover {

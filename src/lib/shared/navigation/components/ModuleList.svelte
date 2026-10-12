@@ -359,12 +359,15 @@
        delay, then hands transform back to the hover, press, and active rules;
        `forwards` pinned transform over them. The rise stays inside the list's
        bottom padding so the entrance never makes the list scrollable. */
-    animation: cellEntrance 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-    animation-delay: calc(var(--stagger-index, 0) * 50ms + 100ms);
+    animation: cellEntrance var(--duration-dramatic) var(--ease-spring)
+      backwards;
+    animation-delay: calc(
+      var(--stagger-index, 0) * var(--stagger-normal) + var(--duration-instant)
+    );
 
     transition:
-      transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-      box-shadow 0.2s ease;
+      transform var(--duration-normal) var(--ease-spring),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   @keyframes cellEntrance {
@@ -385,7 +388,11 @@
     border: 1px solid
       color-mix(in srgb, var(--module-color) 25%, var(--theme-stroke));
     border-radius: 16px;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      border-width var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     z-index: 0;
   }
 
@@ -398,7 +405,7 @@
       transparent 60%
     );
     opacity: 0.1;
-    transition: opacity var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
     z-index: 1;
     mix-blend-mode: screen;
   }
@@ -495,7 +502,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .module-cell:hover .cell-icon {
@@ -522,7 +529,7 @@
     letter-spacing: 0.01em;
     line-height: 1.2;
     overflow-wrap: break-word;
-    transition: color var(--duration-normal) ease;
+    transition: color var(--duration-normal) var(--ease-standard);
   }
 
   .cell-badge {
@@ -555,7 +562,7 @@
     font-weight: 600;
     line-height: 18px;
     text-align: center;
-    animation: badgePop var(--duration-emphasis) ease;
+    animation: badgePop var(--duration-emphasis) var(--ease-standard);
     z-index: 3;
   }
 

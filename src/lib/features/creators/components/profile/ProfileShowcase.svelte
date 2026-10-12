@@ -1,5 +1,8 @@
 <script lang="ts">
-  import type { PinnedItem, PinnableContentType } from "#lib/shared/community/domain/models/pinned-item.js";
+  import type {
+    PinnedItem,
+    PinnableContentType,
+  } from "#lib/shared/community/domain/models/pinned-item.js";
 
   let {
     pinnedItems = [],
@@ -9,7 +12,10 @@
     isOwnProfile: boolean;
   } = $props();
 
-  const typeConfig: Record<PinnableContentType, { label: string; color: string; icon: string }> = {
+  const typeConfig: Record<
+    PinnableContentType,
+    { label: string; color: string; icon: string }
+  > = {
     sequence: { label: "Sequence", color: "#3b82f6", icon: "fa-list" },
     composition: { label: "Composition", color: "#8b5cf6", icon: "fa-th" },
     mandala: { label: "Mandala", color: "#10b981", icon: "fa-circle-notch" },
@@ -77,7 +83,8 @@
     overflow-x: auto;
     padding-bottom: 4px;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb, rgba(255,255,255,0.15)) transparent;
+    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.15))
+      transparent;
   }
 
   .showcase-card {
@@ -87,7 +94,11 @@
     border: 1px solid color-mix(in srgb, var(--card-accent) 25%, transparent);
     border-radius: 12px;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -101,7 +112,8 @@
     border-color: color-mix(in srgb, var(--card-accent) 50%, transparent);
     background: var(--theme-card-hover-bg);
     transform: translateY(-2px);
-    box-shadow: 0 4px 16px color-mix(in srgb, var(--card-accent) 15%, transparent);
+    box-shadow: 0 4px 16px
+      color-mix(in srgb, var(--card-accent) 15%, transparent);
   }
 
   .card-placeholder {

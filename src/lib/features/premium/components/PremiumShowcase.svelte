@@ -68,8 +68,7 @@
         priceId: PRICE_ID,
       });
 
-      const checkoutUrl =
-        await createCheckoutSession(PRICE_ID);
+      const checkoutUrl = await createCheckoutSession(PRICE_ID);
 
       trackEvent("checkout_redirect", {
         source,
@@ -89,7 +88,7 @@
 
       // Surface the failure: a silent paywall failure leaves the user with a
       // reset button and no idea what happened. Show both a toast and inline text.
-      checkoutError = t('premium_checkout_error');
+      checkoutError = t("premium_checkout_error");
       toast.error(checkoutError);
 
       isLoading = false;
@@ -98,22 +97,22 @@
 
   const features = $derived([
     {
-      name: t('premium_feature_sequence_generator'),
+      name: t("premium_feature_sequence_generator"),
       icon: "fa-wand-magic-sparkles",
-      free: t('premium_feature_daily_limit'),
-      premium: t('premium_feature_unlimited'),
+      free: t("premium_feature_daily_limit"),
+      premium: t("premium_feature_unlimited"),
     },
     {
-      name: t('premium_feature_compose_module'),
+      name: t("premium_feature_compose_module"),
       icon: "fa-photo-film",
-      free: t('premium_feature_not_available'),
-      premium: t('premium_feature_full_access'),
+      free: t("premium_feature_not_available"),
+      premium: t("premium_feature_full_access"),
     },
     {
-      name: t('premium_feature_train_module'),
+      name: t("premium_feature_train_module"),
       icon: "fa-running",
-      free: t('premium_feature_not_available'),
-      premium: t('premium_feature_full_access'),
+      free: t("premium_feature_not_available"),
+      premium: t("premium_feature_full_access"),
     },
   ]);
 </script>
@@ -121,28 +120,26 @@
 <div class="premium-showcase">
   <!-- Hero -->
   <PremiumHero
-    title={t('premium_hero_title')}
-    subtitle={t('premium_hero_subtitle')}
+    title={t("premium_hero_title")}
+    subtitle={t("premium_hero_subtitle")}
   />
 
   <!-- Price Highlight (Mobile Only) -->
-  <PriceHighlight price={10} period={t('premium_period_month')} />
+  <PriceHighlight price={10} period={t("premium_period_month")} />
 
   <!-- Early Access Banner -->
   <div class="banner-section">
-    <EarlyAccessBanner
-      message={t('premium_early_access_message')}
-    />
+    <EarlyAccessBanner message={t("premium_early_access_message")} />
   </div>
 
   <!-- About TKA -->
   <section class="about-section">
-    <InfoCard title={t('premium_about_title')}>
+    <InfoCard title={t("premium_about_title")}>
       <p>
-        {t('premium_about_description')}
+        {t("premium_about_description")}
       </p>
       <p>
-        {t('premium_about_support')}
+        {t("premium_about_support")}
       </p>
     </InfoCard>
   </section>
@@ -151,7 +148,7 @@
   <section class="cta-section desktop-only">
     <PremiumCTA
       price={10}
-      period={t('premium_period_month')}
+      period={t("premium_period_month")}
       {isLoading}
       disabled={!PRICE_ID}
       onSubscribe={() => handleSubscribe("desktop")}
@@ -163,13 +160,13 @@
       </p>
     {/if}
     <p class="support-note">
-      {t('premium_support_note')}
+      {t("premium_support_note")}
     </p>
   </section>
 
   <!-- Feature Comparison -->
   <section class="comparison-section">
-    <h2>{t('premium_whats_included')}</h2>
+    <h2>{t("premium_whats_included")}</h2>
     <FeatureComparisonTable {features} />
   </section>
 
@@ -185,7 +182,11 @@
 
   <!-- Close Button (for modal mode) -->
   {#if onClose}
-    <button class="close-button" onclick={onClose} aria-label={t('premium_close')}>
+    <button
+      class="close-button"
+      onclick={onClose}
+      aria-label={t("premium_close")}
+    >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
   {/if}
@@ -194,7 +195,7 @@
 <!-- Sticky mobile CTA (hidden on desktop) -->
 <StickyPremiumCTA
   price={10}
-  period={t('premium_period_month')}
+  period={t("premium_period_month")}
   {isLoading}
   disabled={!PRICE_ID}
   onSubscribe={() => handleSubscribe("mobile")}
@@ -290,7 +291,9 @@
     border-radius: 50%;
     color: var(--theme-text-dim, var(--theme-text-dim));
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .close-button:hover {

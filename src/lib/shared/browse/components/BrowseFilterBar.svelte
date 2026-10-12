@@ -376,7 +376,7 @@ Reads from / writes to a headless BrowseEngine instance.
     font-weight: 500;
     white-space: nowrap;
     flex-shrink: 0;
-    animation: chipIn var(--duration-fast, 150ms) ease;
+    animation: chipIn var(--duration-fast) var(--ease-standard);
   }
 
   @keyframes chipIn {
@@ -427,8 +427,8 @@ Reads from / writes to a headless BrowseEngine instance.
     position: relative;
     flex-shrink: 0;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   /* Expanded touch target — 44px WCAG floor without growing the visual chip */

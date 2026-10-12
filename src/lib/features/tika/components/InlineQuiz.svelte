@@ -496,7 +496,7 @@
     height: 100%;
     background: var(--theme-accent, #6366f1);
     border-radius: 2px;
-    transition: width 0.3s ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
@@ -508,7 +508,7 @@
     align-items: center;
     gap: 12px;
     padding: 24px 16px;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn var(--duration-emphasis) var(--ease-standard);
   }
 
   .summary-score {
@@ -564,7 +564,7 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .restart-button:hover {
@@ -598,7 +598,10 @@
     border: 2px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .quiz-pictograph-option:hover:not(:disabled) {
@@ -662,7 +665,7 @@
       var(--semantic-success, #22c55e) 15%,
       transparent
     );
-    animation: pulse-correct 0.3s ease;
+    animation: pulse-correct var(--duration-emphasis) var(--ease-standard);
   }
 
   .quiz-pictograph-option.incorrect {
@@ -672,7 +675,7 @@
       var(--semantic-error, #ef4444) 15%,
       transparent
     );
-    animation: shake 0.3s ease;
+    animation: shake var(--duration-emphasis) var(--ease-standard);
   }
 
   .quiz-pictograph-option.faded {
@@ -703,7 +706,11 @@
     font-size: 15px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .quiz-motion-chip:hover:not(:disabled) {
@@ -758,7 +765,7 @@
       var(--semantic-success, #22c55e) 15%,
       transparent
     );
-    animation: pulse-correct 0.3s ease;
+    animation: pulse-correct var(--duration-emphasis) var(--ease-standard);
   }
 
   .quiz-motion-chip.correct .chip-indicator {
@@ -772,7 +779,7 @@
       var(--semantic-error, #ef4444) 15%,
       transparent
     );
-    animation: shake 0.3s ease;
+    animation: shake var(--duration-emphasis) var(--ease-standard);
   }
 
   .quiz-motion-chip.incorrect .chip-indicator {
@@ -811,7 +818,11 @@
     font-size: 15px;
     text-align: left;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .quiz-options.compact .quiz-option {
@@ -884,7 +895,7 @@
       var(--semantic-success, #22c55e) 15%,
       transparent
     );
-    animation: pulse-correct 0.3s ease;
+    animation: pulse-correct var(--duration-emphasis) var(--ease-standard);
   }
 
   .quiz-option.correct .option-letter {
@@ -903,7 +914,7 @@
       var(--semantic-error, #ef4444) 15%,
       transparent
     );
-    animation: shake 0.3s ease;
+    animation: shake var(--duration-emphasis) var(--ease-standard);
   }
 
   .quiz-option.incorrect .option-letter {
@@ -926,7 +937,7 @@
     margin-top: 16px;
     padding: 14px 16px;
     border-radius: 10px;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn var(--duration-emphasis) var(--ease-standard);
   }
 
   .quiz-feedback.correct {
@@ -1006,7 +1017,8 @@
     width: 10px;
     height: 10px;
     border-radius: 2px;
-    animation: confetti-fall 1s ease-out forwards;
+    animation: confetti-fall var(--duration-scene) var(--ease-standard-out)
+      forwards;
     animation-delay: var(--delay);
   }
 

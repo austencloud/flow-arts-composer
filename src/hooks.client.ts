@@ -17,6 +17,8 @@ import {
   printChunkRecoveryReloadBreadcrumb,
 } from "#lib/shared/offline/services/chunk-recovery-marker.js";
 
+const UPDATE_ACTION_TOAST_MS = 15_000;
+
 // Dev: explain the previous automatic reload (if any) before the boot noise
 // starts, and arm the tracers for Vite's own full-reload/ws-disconnect reloads.
 // Every automatic reload path in dev records a reason first; this is the print.
@@ -357,7 +359,7 @@ export const init: ClientInit = async () => {
         showToast({
           message: "An update is ready.",
           type: "info",
-          duration: 15_000,
+          duration: UPDATE_ACTION_TOAST_MS,
           action: { label: "Reload", onClick: apply },
         });
       },

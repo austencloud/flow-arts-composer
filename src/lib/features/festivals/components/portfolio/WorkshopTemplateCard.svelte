@@ -1,5 +1,8 @@
 <script lang="ts">
-  import type { WorkshopTemplate, WorkshopLevel } from "../../domain/models/teaching-portfolio";
+  import type {
+    WorkshopTemplate,
+    WorkshopLevel,
+  } from "../../domain/models/teaching-portfolio";
 
   interface Props {
     workshop: WorkshopTemplate;
@@ -16,28 +19,30 @@
     mixed: "#3b82f6",
   };
 
-  const levelColor = $derived(levelColors[workshop.level] ?? "var(--theme-accent, #6366f1)");
+  const levelColor = $derived(
+    levelColors[workshop.level] ?? "var(--theme-accent, #6366f1)"
+  );
 
   const PROP_ICONS: Record<string, string> = {
     "double-staves": "fa-grip-lines-vertical",
-    "staves": "fa-grip-lines-vertical",
-    "staff": "fa-grip-lines-vertical",
+    staves: "fa-grip-lines-vertical",
+    staff: "fa-grip-lines-vertical",
     "double staves": "fa-grip-lines-vertical",
-    "clubs": "fa-baseball-bat-ball",
-    "club": "fa-baseball-bat-ball",
+    clubs: "fa-baseball-bat-ball",
+    club: "fa-baseball-bat-ball",
     "mixed-static-props": "fa-shapes",
     "mixed props": "fa-shapes",
-    "mixed": "fa-shapes",
+    mixed: "fa-shapes",
     "contact-ball": "fa-circle",
-    "contact": "fa-circle",
-    "cj": "fa-circle",
+    contact: "fa-circle",
+    cj: "fa-circle",
     "crystal ball": "fa-circle",
-    "balloons": "fa-wind",
-    "balloon": "fa-wind",
-    "poi": "fa-yin-yang",
-    "fans": "fa-fan",
-    "fan": "fa-fan",
-    "buugeng": "fa-infinity",
+    balloons: "fa-wind",
+    balloon: "fa-wind",
+    poi: "fa-yin-yang",
+    fans: "fa-fan",
+    fan: "fa-fan",
+    buugeng: "fa-infinity",
     "s-staff": "fa-infinity",
   };
 
@@ -72,7 +77,7 @@
     const seed = patternSeed;
     const count = (seed % 2) + 2;
     return Array.from({ length: count }, (_, i) => ({
-      size: 30 + (((seed >> (i * 3)) % 7) * 10),
+      size: 30 + ((seed >> (i * 3)) % 7) * 10,
       top: ((seed >> (i * 4 + 1)) % 80) - 10,
       left: ((seed >> (i * 5 + 2)) % 90) - 5,
     }));
@@ -82,10 +87,10 @@
     const seed = patternSeed;
     const count = (seed % 2) + 2;
     return Array.from({ length: count }, (_, i) => ({
-      width: 50 + (((seed >> (i * 3 + 7)) % 7) * 12),
-      top: 20 + (((seed >> (i * 4 + 8)) % 6) * 12),
+      width: 50 + ((seed >> (i * 3 + 7)) % 7) * 12,
+      top: 20 + ((seed >> (i * 4 + 8)) % 6) * 12,
       left: ((seed >> (i * 5 + 9)) % 80) - 5,
-      angle: -40 + (((seed >> (i * 3 + 10)) % 9) * 10),
+      angle: -40 + ((seed >> (i * 3 + 10)) % 9) * 10,
     }));
   });
 </script>
@@ -93,14 +98,18 @@
 <button
   class="workshop-card level-{workshop.level}"
   style="--level-color: {levelColor}"
-  onclick={onclick}
+  {onclick}
   type="button"
 >
   <div class="level-accent"></div>
 
   <div class="card-hero">
     {#if workshop.imageUrl}
-      <img class="card-hero-image" src={workshop.imageUrl} alt="{workshop.title} cover" />
+      <img
+        class="card-hero-image"
+        src={workshop.imageUrl}
+        alt="{workshop.title} cover"
+      />
     {:else}
       <div class="card-pattern">
         {#each circles as circle}
@@ -153,9 +162,10 @@
     border-radius: var(--radius-lg, 12px);
     overflow: hidden;
     cursor: pointer;
-    transition: border-color var(--transition-fast, 0.15s),
-      transform var(--transition-fast, 0.15s),
-      box-shadow var(--transition-fast, 0.15s);
+    transition:
+      border-color var(--transition-fast, var(--duration-fast)),
+      transform var(--transition-fast, var(--duration-fast)),
+      box-shadow var(--transition-fast, var(--duration-fast));
     position: relative;
     text-align: left;
   }
@@ -173,7 +183,11 @@
 
   .level-accent {
     height: 3px;
-    background: linear-gradient(90deg, var(--level-color), color-mix(in srgb, var(--level-color) 50%, transparent));
+    background: linear-gradient(
+      90deg,
+      var(--level-color),
+      color-mix(in srgb, var(--level-color) 50%, transparent)
+    );
   }
 
   .card-hero {
@@ -186,7 +200,11 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at 30% 20%, var(--level-color), transparent 70%);
+    background: radial-gradient(
+      ellipse at 30% 20%,
+      var(--level-color),
+      transparent 70%
+    );
     opacity: 0.12;
   }
 
@@ -197,7 +215,11 @@
     left: 0;
     right: 0;
     height: 70%;
-    background: linear-gradient(to top, var(--theme-card-bg, rgba(13, 13, 26, 0.95)), transparent);
+    background: linear-gradient(
+      to top,
+      var(--theme-card-bg, rgba(13, 13, 26, 0.95)),
+      transparent
+    );
   }
 
   .card-hero-image {

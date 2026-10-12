@@ -25,11 +25,16 @@
     const portfolio = festivalState.portfolio;
     if (!uid || !portfolio) return;
     const videos = portfolio.performanceVideos.filter((_, i) => i !== index);
-    festivalState.savePortfolio(uid, { ...portfolio, performanceVideos: videos });
+    festivalState.savePortfolio(uid, {
+      ...portfolio,
+      performanceVideos: videos,
+    });
   }
 
   function extractYouTubeId(url: string): string | null {
-    const match = url.match(/(?:youtu\.be\/|(?:v|embed|shorts)[=\/])([a-zA-Z0-9_-]{11})/);
+    const match = url.match(
+      /(?:youtu\.be\/|(?:v|embed|shorts)[=\/])([a-zA-Z0-9_-]{11})/
+    );
     return match?.[1] ?? null;
   }
 </script>
@@ -82,7 +87,11 @@
       placeholder="Paste YouTube URL..."
       onkeydown={(e) => e.key === "Enter" && addVideo()}
     />
-    <button class="add-inline-btn" onclick={addVideo} disabled={!newVideo.trim()}>
+    <button
+      class="add-inline-btn"
+      onclick={addVideo}
+      disabled={!newVideo.trim()}
+    >
       Add
     </button>
   </div>
@@ -113,7 +122,6 @@
     font-weight: 600;
     color: var(--theme-text, #ffffff);
   }
-
 
   .video-grid {
     display: grid;
@@ -173,7 +181,9 @@
     font-size: 12px;
     opacity: 0;
     pointer-events: auto;
-    transition: opacity 0.15s, background 0.15s;
+    transition:
+      opacity var(--duration-fast),
+      background var(--duration-fast);
   }
 
   .video-card:hover .video-remove-btn,

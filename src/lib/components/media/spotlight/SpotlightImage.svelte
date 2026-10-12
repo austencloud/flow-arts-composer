@@ -101,7 +101,7 @@
         class="spotlight-image"
         class:loaded={isLoaded}
         class:entering={isTransitioning}
-        style:transform={transform}
+        style:transform
         onload={handleLoad}
         onerror={handleError}
         draggable="false"
@@ -169,7 +169,7 @@
     -webkit-user-drag: none;
     touch-action: none;
     opacity: 0;
-    transition: opacity 200ms ease-out;
+    transition: opacity var(--duration-normal) var(--ease-standard-out);
     will-change: transform, opacity;
   }
 
@@ -179,7 +179,8 @@
 
   /* Entry animation when transitioning */
   .spotlight-image.entering {
-    animation: spotlightImageEnter 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: spotlightImageEnter var(--duration-emphasis) var(--ease-out)
+      forwards;
   }
 
   @keyframes spotlightImageEnter {
@@ -229,8 +230,8 @@
     font-size: 14px;
     cursor: pointer;
     transition:
-      background 150ms ease,
-      transform 150ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .spotlight-retry:hover {

@@ -1,8 +1,8 @@
 <script lang="ts">
-
-import { prefetch as prefetchSequenceData } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+  import { prefetch as prefetchSequenceData } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-  import { slide } from "svelte/transition";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { onMount, onDestroy } from "svelte";
   import type { BrowseThumbnailProvider } from "#lib/shared/browse/services/browse-thumbnail-provider.js";
   import ChoreoCardThumbnail from "#lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
@@ -50,7 +50,11 @@ import { prefetch as prefetchSequenceData } from "#lib/shared/sequence-viewer/se
     viewMode?: "grid" | "list";
     thumbnailService: BrowseThumbnailProvider | null;
     showSections?: boolean;
-    onAction?: (action: string, sequence: SequenceData, variations?: SequenceData[]) => void;
+    onAction?: (
+      action: string,
+      sequence: SequenceData,
+      variations?: SequenceData[]
+    ) => void;
     /** Pinch-to-zoom column override. Mobile: 2-3, Desktop: 2-5. */
     pinchColumnOverride?: number;
     /** True for ~200ms after column change (for CSS transition timing) */
@@ -62,7 +66,11 @@ import { prefetch as prefetchSequenceData } from "#lib/shared/sequence-viewer/se
     /** Callback when the virtualized grid is ready (exposes scroll API for sidebar) */
     onGridReady?: (api: VirtualGridApi) => void;
     /** When rendering a collection's members: adds "Remove from this collection" to each card's menu */
-    collectionContext?: { id: string; name: string; onRemove: (sequenceId: string) => void };
+    collectionContext?: {
+      id: string;
+      name: string;
+      onRemove: (sequenceId: string) => void;
+    };
     selectedIds?: ReadonlySet<string>;
     selectionMode?: boolean;
     onSelectionToggle?: (sequence: SequenceData) => void;
@@ -207,102 +215,102 @@ import { prefetch as prefetchSequenceData } from "#lib/shared/sequence-viewer/se
   function handleSequenceHover(seq: SequenceData) {
     prefetchSequenceData(seq);
   }
-
 </script>
 
 <div bind:this={containerRef}>
-{#if useVirtualization}
-  <!-- 🚀 VIRTUALIZED: Large flat list with 50+ items -->
-  <VirtualizedSequenceGrid
-    {sequences}
-    {thumbnailService}
-    {onAction}
-    {pinchColumnOverride}
-    {onGridReady}
-    {collectionContext}
-    {selectedIds}
-    {selectionMode}
-    {onSelectionToggle}
-  />
-{:else if showSections && sections.length > 0}
-  <!-- Section-based organization (desktop app style) -->
-  <div class="sections-container">
-    {#each sections as section, sectionIndex (section.id)}
-      <div class="sequence-section" data-section={section.title}>
-        <SectionHeader title={section.title} />
+  {#if useVirtualization}
+    <!-- 🚀 VIRTUALIZED: Large flat list with 50+ items -->
+    <VirtualizedSequenceGrid
+      {sequences}
+      {thumbnailService}
+      {onAction}
+      {pinchColumnOverride}
+      {onGridReady}
+      {collectionContext}
+      {selectedIds}
+      {selectionMode}
+      {onSelectionToggle}
+    />
+  {:else if showSections && sections.length > 0}
+    <!-- Section-based organization (desktop app style) -->
+    <div class="sections-container">
+      {#each sections as section, sectionIndex (section.id)}
+        <div class="sequence-section" data-section={section.title}>
+          <SectionHeader title={section.title} />
 
-        {#if section.sequences.length > 0}
-          <div
-            bind:this={sectionGridRefs[sectionIndex]}
-            class="sequences-grid"
-            class:list-view={viewMode === "list"}
-            class:grid-view={viewMode === "grid"}
-            class:is-transitioning={isTransitioning}
-            style:grid-template-columns={viewMode === "grid"
-              ? `repeat(${Math.min(columnCount, section.sequences.length)}, 1fr)`
-              : undefined}
-            style:max-width={viewMode === "grid" && section.sequences.length < columnCount
-              ? `${(section.sequences.length / columnCount) * 100}%`
-              : undefined}
-          >
-            {#each section.sequences as sequence (sequence.id)}
-              {@const seqVariations = getVariationsForSequence(sequence)}
-              <ChoreoCardThumbnail
-                {sequence}
-                variations={seqVariations}
-                onPrimaryAction={(seq) =>
-                  handleSequenceAction("view-detail", seq, seqVariations)}
-                onHover={handleSequenceHover}
-                leftPropType={propSettings.leftPropType}
-                rightPropType={propSettings.rightPropType}
-                catDogModeEnabled={isCatDog}
-                {lightMode}
-                {eager}
-                {collectionContext}
-                {selectedIds}
-                {selectionMode}
-                {onSelectionToggle}
-              />
-            {/each}
-          </div>
-        {/if}
-      </div>
-    {/each}
-  </div>
-{:else if sequences.length > 0}
-  <!-- Flat organization (fallback) -->
-  <div
-    bind:this={flatGridRef}
-    class="sequences-grid"
-    class:list-view={viewMode === "list"}
-    class:grid-view={viewMode === "grid"}
-    class:is-transitioning={isTransitioning}
-    style:grid-template-columns={viewMode === "grid"
-      ? `repeat(${columnCount}, 1fr)`
-      : undefined}
-    transition:slide={{ duration: 300 }}
-  >
-    {#each sequences as sequence (sequence.id)}
-      {@const seqVariations = getVariationsForSequence(sequence)}
-      <ChoreoCardThumbnail
-        {sequence}
-        variations={seqVariations}
-        onPrimaryAction={(seq) =>
-          handleSequenceAction("view-detail", seq, seqVariations)}
-        onHover={handleSequenceHover}
-        leftPropType={propSettings.leftPropType}
-        rightPropType={propSettings.rightPropType}
-        catDogModeEnabled={isCatDog}
-        {lightMode}
-        {eager}
-        {collectionContext}
-        {selectedIds}
-        {selectionMode}
-        {onSelectionToggle}
-      />
-    {/each}
-  </div>
-{/if}
+          {#if section.sequences.length > 0}
+            <div
+              bind:this={sectionGridRefs[sectionIndex]}
+              class="sequences-grid"
+              class:list-view={viewMode === "list"}
+              class:grid-view={viewMode === "grid"}
+              class:is-transitioning={isTransitioning}
+              style:grid-template-columns={viewMode === "grid"
+                ? `repeat(${Math.min(columnCount, section.sequences.length)}, 1fr)`
+                : undefined}
+              style:max-width={viewMode === "grid" &&
+              section.sequences.length < columnCount
+                ? `${(section.sequences.length / columnCount) * 100}%`
+                : undefined}
+            >
+              {#each section.sequences as sequence (sequence.id)}
+                {@const seqVariations = getVariationsForSequence(sequence)}
+                <ChoreoCardThumbnail
+                  {sequence}
+                  variations={seqVariations}
+                  onPrimaryAction={(seq) =>
+                    handleSequenceAction("view-detail", seq, seqVariations)}
+                  onHover={handleSequenceHover}
+                  leftPropType={propSettings.leftPropType}
+                  rightPropType={propSettings.rightPropType}
+                  catDogModeEnabled={isCatDog}
+                  {lightMode}
+                  {eager}
+                  {collectionContext}
+                  {selectedIds}
+                  {selectionMode}
+                  {onSelectionToggle}
+                />
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/each}
+    </div>
+  {:else if sequences.length > 0}
+    <!-- Flat organization (fallback) -->
+    <div
+      bind:this={flatGridRef}
+      class="sequences-grid"
+      class:list-view={viewMode === "list"}
+      class:grid-view={viewMode === "grid"}
+      class:is-transitioning={isTransitioning}
+      style:grid-template-columns={viewMode === "grid"
+        ? `repeat(${columnCount}, 1fr)`
+        : undefined}
+      transition:growFade={{ duration: DURATION.emphasis }}
+    >
+      {#each sequences as sequence (sequence.id)}
+        {@const seqVariations = getVariationsForSequence(sequence)}
+        <ChoreoCardThumbnail
+          {sequence}
+          variations={seqVariations}
+          onPrimaryAction={(seq) =>
+            handleSequenceAction("view-detail", seq, seqVariations)}
+          onHover={handleSequenceHover}
+          leftPropType={propSettings.leftPropType}
+          rightPropType={propSettings.rightPropType}
+          catDogModeEnabled={isCatDog}
+          {lightMode}
+          {eager}
+          {collectionContext}
+          {selectedIds}
+          {selectionMode}
+          {onSelectionToggle}
+        />
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -330,7 +338,7 @@ import { prefetch as prefetchSequenceData } from "#lib/shared/sequence-viewer/se
 
   /* Smooth gap transition when columns change (iOS Photos style) */
   .sequences-grid.grid-view.is-transitioning {
-    transition: gap 200ms ease-out;
+    transition: gap var(--duration-normal) var(--ease-standard-out);
   }
 
   .sequences-grid.list-view {

@@ -461,9 +461,9 @@
     cursor: pointer;
     overflow: hidden;
     transition:
-      background-color var(--duration-normal) ease,
-      border-color var(--duration-normal) ease,
-      color var(--duration-normal) ease;
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     font-size: var(--font-size-sm);
     font-weight: 500;
   }
@@ -494,7 +494,7 @@
     font-weight: 500;
     white-space: nowrap;
     opacity: 1;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .settings-back-button.collapsed .back-label {

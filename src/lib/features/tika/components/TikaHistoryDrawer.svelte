@@ -10,7 +10,10 @@
   import { onMount } from "svelte";
   import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
   import TikaHistoryItem from "./TikaHistoryItem.svelte";
-  import type { TikaSessionPreview, TikaSessionQueryOptions } from "../domain/models/tika-conversation-models";
+  import type {
+    TikaSessionPreview,
+    TikaSessionQueryOptions,
+  } from "../domain/models/tika-conversation-models";
 
   interface SessionRepository {
     subscribeToSessions(
@@ -126,7 +129,11 @@
 
   <!-- New Chat Button -->
   <div class="new-chat-section">
-    <button aria-label="New conversation" class="new-chat-btn" onclick={handleNewChat}>
+    <button
+      aria-label="New conversation"
+      class="new-chat-btn"
+      onclick={handleNewChat}
+    >
       <i class="fas fa-plus" aria-hidden="true"></i>
       <span>New Conversation</span>
     </button>
@@ -208,7 +215,9 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      filter var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .new-chat-btn:hover {
@@ -343,7 +352,12 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
   }
 
   .btn-cancel {

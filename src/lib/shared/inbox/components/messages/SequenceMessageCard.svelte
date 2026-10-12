@@ -196,7 +196,9 @@
       </div>
     </div>
     <h4 class="sequence-title deleted-title">{sequenceWord}</h4>
-    <p class="deleted-notice">{t("inbox_ui_this_sequence_is_no_longer_available")}</p>
+    <p class="deleted-notice">
+      {t("inbox_ui_this_sequence_is_no_longer_available")}
+    </p>
   {:else}
     <div class="card-content">
       <SequenceMessagePreview
@@ -334,8 +336,8 @@
     white-space: nowrap;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 120ms) ease,
-      border-color var(--duration-fast, 120ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .open-sequence i {

@@ -86,7 +86,10 @@
   {title}
   {onclick}
 >
-  <span class="loop-glyph" aria-hidden={components.size > 0 ? undefined : "true"}>
+  <span
+    class="loop-glyph"
+    aria-hidden={components.size > 0 ? undefined : "true"}
+  >
     {#if components.size > 0}
       <LOOPIconStrip
         activeComponents={components}
@@ -141,7 +144,13 @@
     color: var(--theme-text, #ffffff);
     font-size: var(--font-size-md, 16px);
     font-weight: 600;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   }

@@ -29,7 +29,12 @@
       aria-checked={value === p}
       onclick={() => onchange(p)}
     >
-      <img class="prop-chip-img" src={shopPropImage(p)} alt="" draggable="false" />
+      <img
+        class="prop-chip-img"
+        src={shopPropImage(p)}
+        alt=""
+        draggable="false"
+      />
       <span class="prop-chip-label">{shopPropLabel(p)}</span>
     </button>
   {/each}
@@ -63,7 +68,10 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
     color: var(--theme-text, #fff);
     cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard);
   }
   .prop-chip:hover {
     border-color: rgba(216, 180, 254, 0.55);

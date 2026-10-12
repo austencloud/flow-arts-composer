@@ -14,6 +14,8 @@
 -->
 <script lang="ts">
   import RetroProgressBar from "../primitives/RetroProgressBar.svelte";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   type BootPhase = "startup" | "splash" | "interrupted" | "done";
 
@@ -29,7 +31,7 @@
     "Loading NOTATION.DLL...",
     "Initializing SPIRAL.SYS...",
     "Calibrating prop physics engine...",
-    'Checking for Order surveillance... NONE DETECTED',
+    "Checking for Order surveillance... NONE DETECTED",
     "Loading flame subsystem... (this may take a while)",
     "Resolving kinetic dependencies...",
     "Defragmenting movement database...",
@@ -38,15 +40,15 @@
   /* Progress waypoints - the bar lies                                   */
 
   const progressWaypoints = [
-    { target: 12, duration: 1500 },
-    { target: 35, duration: 1000 },
-    { target: 28, duration: 800 },
-    { target: 55, duration: 2000 },
-    { target: 54, duration: 500 },
-    { target: 78, duration: 1500 },
-    { target: 92, duration: 2000 },
-    { target: 99, duration: 2500 },
-    { target: 100, duration: 500 },
+    { target: 12, duration: DURATION.scene * 2 },
+    { target: 35, duration: DURATION.scene },
+    { target: 28, duration: DURATION.scene },
+    { target: 55, duration: DURATION.scene * 2 },
+    { target: 54, duration: DURATION.dramatic },
+    { target: 78, duration: DURATION.scene * 2 },
+    { target: 92, duration: DURATION.scene * 2 },
+    { target: 99, duration: DURATION.scene * 3 },
+    { target: 100, duration: DURATION.dramatic },
   ];
 
   /* Animation state                                                     */
@@ -129,7 +131,13 @@
     const wp = progressWaypoints[waypointIndex]!;
     animationFrom = progress;
     animationTarget = wp.target;
-    animationDuration = wp.duration;
+    animationDuration = motionDuration(wp.duration);
+    if (animationDuration === 0) {
+      progress = wp.target;
+      waypointIndex++;
+      beginNextWaypoint();
+      return;
+    }
     animationStart = performance.now();
 
     rafId = requestAnimationFrame(tickProgress);
@@ -196,7 +204,6 @@
       <span class="startup-text">Starting TKA-OS v1.0...</span>
       <span class="cursor"></span>
     </div>
-
   {:else if phase === "splash"}
     <!-- Phase 2: Splash screen with branding + lying progress -->
     <div class="splash-screen">
@@ -217,7 +224,6 @@
         <div class="status-message">{statusMessages[messageIndex]}</div>
       </div>
     </div>
-
   {:else if phase === "interrupted"}
     <!-- Click-to-skip: brief interruption message -->
     <div class="interrupted-screen">

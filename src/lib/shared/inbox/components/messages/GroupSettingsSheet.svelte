@@ -114,7 +114,10 @@
       isEditingName = false;
     } catch (err) {
       console.error("[GroupSettings] Failed to update name:", err);
-      error = err instanceof Error ? err.message : t("inbox_ui_failed_to_update_name");
+      error =
+        err instanceof Error
+          ? err.message
+          : t("inbox_ui_failed_to_update_name");
       hapticService?.trigger("error");
     } finally {
       isSaving = false;
@@ -139,7 +142,8 @@
       searchUserDisplay = "";
     } catch (err) {
       console.error("[GroupSettings] Failed to add member:", err);
-      error = err instanceof Error ? err.message : t("inbox_ui_failed_to_add_member");
+      error =
+        err instanceof Error ? err.message : t("inbox_ui_failed_to_add_member");
       hapticService?.trigger("error");
     } finally {
       isAddingMember = false;
@@ -156,7 +160,10 @@
       hapticService?.trigger("success");
     } catch (err) {
       console.error("[GroupSettings] Failed to remove member:", err);
-      error = err instanceof Error ? err.message : t("inbox_ui_failed_to_remove_member");
+      error =
+        err instanceof Error
+          ? err.message
+          : t("inbox_ui_failed_to_remove_member");
       hapticService?.trigger("error");
     }
   }
@@ -177,7 +184,10 @@
       hapticService?.trigger("success");
     } catch (err) {
       console.error("[GroupSettings] Failed to toggle admin:", err);
-      error = err instanceof Error ? err.message : t("inbox_ui_failed_to_update_admin");
+      error =
+        err instanceof Error
+          ? err.message
+          : t("inbox_ui_failed_to_update_admin");
       hapticService?.trigger("error");
     }
   }
@@ -191,7 +201,10 @@
       onGroupLeft();
     } catch (err) {
       console.error("[GroupSettings] Failed to leave group:", err);
-      error = err instanceof Error ? err.message : t("inbox_ui_failed_to_leave_group");
+      error =
+        err instanceof Error
+          ? err.message
+          : t("inbox_ui_failed_to_leave_group");
       hapticService?.trigger("error");
       confirmLeave = false;
     }
@@ -328,7 +341,9 @@
                 type="button"
                 class="action-btn"
                 onclick={() => toggleAdmin(member.userId)}
-                title={member.isAdmin ? t("inbox_ui_remove_admin") : t("inbox_ui_make_admin")}
+                title={member.isAdmin
+                  ? t("inbox_ui_remove_admin")
+                  : t("inbox_ui_make_admin")}
               >
                 <i
                   class="fas {member.isAdmin ? 'fa-user-shield' : 'fa-shield'}"
@@ -409,7 +424,7 @@
     border-radius: 50%;
     color: var(--theme-text);
     cursor: pointer;
-    transition: background var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .back-btn:hover {
@@ -468,8 +483,8 @@
     font-size: var(--font-size-compact);
     cursor: pointer;
     transition:
-      border-color 0.2s ease,
-      color 0.2s ease;
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .edit-btn:hover {
@@ -519,7 +534,7 @@
     font-size: var(--font-size-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: filter var(--duration-normal) ease;
+    transition: filter var(--duration-normal) var(--ease-standard);
   }
 
   .btn-secondary {
@@ -564,7 +579,7 @@
     gap: 12px;
     padding: 10px 12px;
     border-radius: 10px;
-    transition: background var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .member-row:hover {
@@ -610,7 +625,7 @@
     display: flex;
     gap: 4px;
     opacity: 0;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .member-row:hover .member-actions {
@@ -630,9 +645,9 @@
     color: var(--theme-text-dim);
     cursor: pointer;
     transition:
-      background 0.2s ease,
-      border-color 0.2s ease,
-      color 0.2s ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .action-btn:hover {
@@ -666,8 +681,8 @@
     font-weight: 500;
     cursor: pointer;
     transition:
-      background 0.2s ease,
-      transform 0.15s ease;
+      background var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .leave-btn:hover {
@@ -703,7 +718,7 @@
     font-size: var(--font-size-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: filter var(--duration-normal) ease;
+    transition: filter var(--duration-normal) var(--ease-standard);
   }
 
   .btn-danger:hover {

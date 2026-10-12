@@ -20,7 +20,11 @@
   import PropPicker from "./components/PropPicker.svelte";
   import CardAnatomyExplainer from "./components/CardAnatomyExplainer.svelte";
   import PreorderPriceNote from "./components/PreorderPriceNote.svelte";
-  import { activePriceCents, preorderWindowOpen, formatUsd } from "./domain/preorder-pricing";
+  import {
+    activePriceCents,
+    preorderWindowOpen,
+    formatUsd,
+  } from "./domain/preorder-pricing";
   import { deriveCrossSell } from "./domain/catalog-listings";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { TND_ELEMENTS } from "#lib/features/choreo-card/domain/tnd-element.js";
@@ -50,7 +54,11 @@
   let propType = $state<PropType>(DEFAULT_SHOP_PROP);
 
   // Funnel step 1, once the volume list settles so the resolved SKU is real.
-  trackViewOnceLoaded("tnd-trilogy", () => store.isLoading, () => selected);
+  trackViewOnceLoaded(
+    "tnd-trilogy",
+    () => store.isLoading,
+    () => selected
+  );
 
   // ONE worker seed covering every volume's covers for the picked prop (see
   // cover-front-renderer). Baked covers skip this; it backs live fallbacks.
@@ -97,8 +105,10 @@
     if (!selected || volumes.length === 0) return;
     const idx = volumes.findIndex((v) => v.id === selected.id);
     let next = -1;
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (idx + 1) % volumes.length;
-    if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (idx - 1 + volumes.length) % volumes.length;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown")
+      next = (idx + 1) % volumes.length;
+    if (e.key === "ArrowLeft" || e.key === "ArrowUp")
+      next = (idx - 1 + volumes.length) % volumes.length;
     const target = next >= 0 ? volumes[next] : undefined;
     if (!target) return;
     e.preventDefault();
@@ -123,7 +133,9 @@
   loading={store.isLoading && volumes.length === 0}
   loadingLabel="Loading the trilogy..."
   error={store.error ??
-    (!store.isLoading && !selected ? "The trilogy isn't available right now." : null)}
+    (!store.isLoading && !selected
+      ? "The trilogy isn't available right now."
+      : null)}
 >
   {#snippet media()}
     {#if selected}
@@ -160,7 +172,11 @@
     {#if selected}
       <div class="field">
         <span class="field-label" id="volume-label">Volume</span>
-        <div class="volume-grid" role="radiogroup" aria-labelledby="volume-label">
+        <div
+          class="volume-grid"
+          role="radiogroup"
+          aria-labelledby="volume-label"
+        >
           {#each volumes as volume (volume.id)}
             {@const active = volume.id === selected.id}
             {@const [num, title] = nameParts(volume.name)}
@@ -177,7 +193,11 @@
             >
               <span class="volume-num">{num}</span>
               <span class="volume-title">{title}</span>
-              <span class="volume-meta">{volume.cardCount} cards · {formatUsd(activePriceCents(volume, now))}</span>
+              <span class="volume-meta"
+                >{volume.cardCount} cards · {formatUsd(
+                  activePriceCents(volume, now)
+                )}</span
+              >
             </button>
           {/each}
           <!-- Package option: visible so the offer is legible, gated until priced. -->
@@ -215,20 +235,23 @@
     <span class="section-kicker">How it works</span>
     <h2 class="section-title">What's on the card</h2>
     <p class="section-body">
-      Every card in the trilogy holds one sequence. Scan the code in the corner and
-      that sequence opens in the app, where you can watch it with any prop at any
-      speed, save it to your catalog, and practice it a step at a time.
+      Every card in the trilogy holds one sequence. Scan the code in the corner
+      and that sequence opens in the app, where you can watch it with any prop
+      at any speed, save it to your catalog, and practice it a step at a time.
     </p>
     <p class="section-body">
-      The trilogy is the curated half of the line: organized by timing and direction,
-      the same in every copy, so you can learn it and reference it deliberately.
+      The trilogy is the curated half of the line: organized by timing and
+      direction, the same in every copy, so you can learn it and reference it
+      deliberately.
     </p>
     <p class="section-hint">
-      Tap or point at any part of the card, or any row in the list. Its match lights up.
+      Tap or point at any part of the card, or any row in the list. Its match
+      lights up.
     </p>
     <CardAnatomyExplainer card={anatomyCard} showShuffle={false} />
     <p class="section-note">
-      That QR code is live. Scan it with your phone and this card's sequence opens.
+      That QR code is live. Scan it with your phone and this card's sequence
+      opens.
     </p>
   {/snippet}
 </ShopProductShell>
@@ -302,7 +325,9 @@
     color: var(--theme-text, #fff);
     cursor: pointer;
     text-align: left;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
     font-family: inherit;
   }
   .volume-option:hover:not(.package) {

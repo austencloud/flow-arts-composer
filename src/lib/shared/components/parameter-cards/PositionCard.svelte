@@ -9,6 +9,7 @@ Supports Alpha, Beta, Gamma placements with Greek symbol pills
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     type StartingPlacement,
     STARTING_PLACEMENTS_LIST,
@@ -39,7 +40,7 @@ Supports Alpha, Beta, Gamma placements with Greek symbol pills
     if (cardElement) {
       return attachRipple(cardElement, {
         color: "rgba(255, 255, 255, 0.25)",
-        duration: 350,
+        duration: DURATION.dramatic,
         opacity: 0.15,
       });
     }
@@ -132,11 +133,11 @@ Supports Alpha, Beta, Gamma placements with Greek symbol pills
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
 
     transition:
-      box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow var(--duration-emphasis) var(--ease-standard),
+      transform var(--duration-emphasis) var(--ease-standard);
     overflow: visible;
 
-    animation: cardEnter var(--duration-dramatic) ease-out;
+    animation: cardEnter var(--duration-dramatic) var(--ease-standard-out);
   }
 
   .position-card.disabled {
@@ -179,7 +180,7 @@ Supports Alpha, Beta, Gamma placements with Greek symbol pills
 
   .position-card:active {
     transform: scale(0.97);
-    transition: transform var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   @keyframes cardEnter {
@@ -242,7 +243,10 @@ Supports Alpha, Beta, Gamma placements with Greek symbol pills
     border-radius: 100px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .pill-option:hover:not(.selected):not(:disabled) {

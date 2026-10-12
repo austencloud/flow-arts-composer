@@ -9,6 +9,7 @@ Landscape: Left half decrements, right half increments (horizontal layout)
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import LandscapeLayout from "./StepperLandscapeLayout.svelte";
   import PortraitLayout from "./StepperPortraitLayout.svelte";
 
@@ -69,7 +70,7 @@ Landscape: Left half decrements, right half increments (horizontal layout)
     if (cardElement) {
       return attachRipple(cardElement, {
         color: "rgba(255, 255, 255, 0.25)",
-        duration: 350,
+        duration: DURATION.dramatic,
         opacity: 0.15,
       });
     }
@@ -211,8 +212,8 @@ Landscape: Left half decrements, right half increments (horizontal layout)
 
     /* Remove background transition - handled by ::before crossfade */
     transition:
-      box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow var(--duration-emphasis) var(--ease-standard),
+      transform var(--duration-emphasis) var(--ease-standard);
     overflow: visible; /* Allow hover effects to overflow and pop over neighbors */
     color: white;
     text-align: center;
@@ -254,7 +255,7 @@ Landscape: Left half decrements, right half increments (horizontal layout)
     opacity: 1; /* Start visible */
     z-index: -1;
     pointer-events: none;
-    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity var(--duration-dramatic) var(--ease-standard);
   }
 
   /* Trigger crossfade: fade out old gradient to reveal new */
@@ -307,7 +308,7 @@ Landscape: Left half decrements, right half increments (horizontal layout)
   /* Elastic press - Universal click/tap feedback for ALL devices */
   .stepper-card:active {
     transform: scale(0.97);
-    transition: transform var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .stepper-card.quiet:active {
