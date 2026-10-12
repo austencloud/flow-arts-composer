@@ -107,30 +107,13 @@
         ? "/guide"
         : path
   );
-  const footerVariant = $derived(
-    path === "/" ||
-      path === "/composer" ||
-      path === "/history" ||
-      path === "/timing-and-direction"
-      ? "compact"
-      : path === "/about"
-        ? "sitemap"
-        : "full"
-  );
 
   // A page that paints its own opaque surface to the viewport edge hands it to
-  // the footer, which continues that surface instead of settling onto the star
-  // field. Without it the footer's standing 4.5rem margin shows a band of sky
-  // between the two, and its scrim and hairline finish the job of making the
-  // bottom of the page look like a different site.
+  // the footer, which paints the same surface so the page simply continues.
+  // Every other page floats on the star field and the footer stays
+  // transparent over it.
   const footerSurface = $derived(pageSurface(path));
   const pageOwnsSurface = $derived(footerSurface !== undefined);
-
-  // The archive is a single-room research surface on larger viewports. Its
-  // header already carries every site destination, while a second navigation
-  // slab below a viewport-sized room creates a fake extra page. Phones keep the
-  // compact footer after their document-flow chronology; larger tiers omit it.
-  const footerImmersive = $derived(path === "/history");
 
   // Named route morphs suppress the keyed content fade only while that exact
   // allowlisted navigation is active. Ordinary marketing navigation keeps the
@@ -165,15 +148,10 @@
     <!-- Persistent chrome like the header: outside the keyed crossfade, so it
          never re-fades between pages; below the growing stage, so it pins to
          the viewport bottom on short pages (sticky-footer flex column). -->
-    <!-- The homepage and archive already carry complete navigation in their
-         primary surfaces. The host owns the route decision so SiteFooter also
-         remains safe for its independent GuideShell host. -->
+    <!-- One footer on every page inside this chrome. The timing lesson is a
+         full-viewport instrument and keeps none. -->
     {#if !isTimingLesson}
-      <SiteFooter
-        variant={footerVariant}
-        surface={footerSurface}
-        immersive={footerImmersive}
-      />
+      <SiteFooter surface={footerSurface} />
     {/if}
   </div>
   <ToastContainer />
