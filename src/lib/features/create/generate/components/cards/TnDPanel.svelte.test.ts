@@ -121,6 +121,37 @@ describe("TnDPanel", () => {
     expect(onPropRelationshipChange).toHaveBeenCalledWith("SS");
   });
 
+  it("closes a one-sided panel on a pick but not on Match turns", async () => {
+    const onClose = vi.fn();
+    const onHandRelationshipChange = vi.fn();
+    const onMatchHandTurnsChange = vi.fn();
+    render(
+      TnDPanel,
+      props({
+        section: "hands",
+        onClose,
+        onHandRelationshipChange,
+        onMatchHandTurnsChange,
+      })
+    );
+
+    await page.getByRole("button", { name: "Match turns" }).click();
+    expect(onMatchHandTurnsChange).toHaveBeenCalledWith(true);
+    expect(onClose).not.toHaveBeenCalled();
+
+    await page.getByRole("button", { name: /Split Same/ }).click();
+    expect(onHandRelationshipChange).toHaveBeenCalledWith("SS");
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the two-sided panel open on a pick", async () => {
+    const onClose = vi.fn();
+    render(TnDPanel, props({ onClose }));
+
+    await page.getByRole("button", { name: "Free hands" }).click();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it("disables blocked hand modes with the reason", () => {
     const { container } = render(
       TnDPanel,
