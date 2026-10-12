@@ -1,5 +1,6 @@
 import type { PluginTool } from "@austencloud/video-editor";
 import {
+  faDiamond,
   faDrum,
   faEraser,
   faHashtag,
@@ -20,8 +21,8 @@ import { tkaEditorOf } from "./tka-editor-context";
  * tka's own tools on the row, with the names and icons the row shows today
  * (the package's ui/editor/post-editor-labels.ts, `toolLabel` and
  * `TOOL_ICON`). Beats and Clear act at once; the rest open a panel. Grid is
- * an arrangement's; Layers, Offset, Effort and Clear belong to its cell in
- * hand. Look is an arrangement's own look there, else
+ * an arrangement's; Layers, Grids, Offset, Effort and Clear belong to its
+ * cell in hand. Look is an arrangement's own look there, else
  * the post's animation defaults.
  */
 export const TKA_TOOLS: readonly PluginTool[] = [
@@ -88,6 +89,12 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     icon: faLayerGroup,
   },
   {
+    id: "grids",
+    type: "panel",
+    label: () => "Grids",
+    icon: faDiamond,
+  },
+  {
     id: "offset",
     type: "panel",
     label: () => "Offset",
@@ -109,7 +116,9 @@ export const TKA_TOOLS: readonly PluginTool[] = [
       return (
         editor.selectionEditable &&
         !!cell &&
-        (cell.layers.length > 0 || (cell.beatOffset ?? 0) !== 0)
+        (cell.layers.length > 0 ||
+          (cell.beatOffset ?? 0) !== 0 ||
+          cell.gridJoin !== undefined)
       );
     },
     run: (editor) => void tkaEditorOf(editor)?.wrapper.clearSelectedCell(),
