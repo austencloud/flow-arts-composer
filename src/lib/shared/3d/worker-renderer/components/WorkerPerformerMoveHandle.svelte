@@ -17,6 +17,7 @@
     selectedCount: number;
     anchorIndex: number;
     dragging: boolean;
+    placing: boolean;
     projectionRevision: number;
     visible?: boolean;
     onkeydown: (event: KeyboardEvent) => void;
@@ -30,6 +31,7 @@
     selectedCount,
     anchorIndex,
     dragging,
+    placing,
     projectionRevision,
     visible = true,
     onkeydown,
@@ -39,6 +41,10 @@
   let hovered = $state(false);
   let focusVisible = $state(false);
   let prefersReducedMotion = $state(reducedMotion());
+  let showHint = $state(bridge.takeMoveHint());
+  const hintTimer = showHint
+    ? setTimeout(() => (showHint = false), 2200)
+    : null;
 
   function moveHandleSnapshot(
     entranceProgress: number
@@ -48,6 +54,7 @@
       groundY,
       selectedCount,
       dragging,
+      placing,
       hovered,
       focusVisible,
       visible,
@@ -143,19 +150,23 @@
     };
   });
 
-  onDestroy(() => presentationOwner.dispose());
+  onDestroy(() => {
+    if (hintTimer) clearTimeout(hintTimer);
+    presentationOwner.dispose();
+  });
 </script>
 
 {#if presentation && projected?.visible && presentation.visible}
   <div
     class="move-handle-anchor"
-    style:left={`${projected.x}px`}
+    style:left={`clamp(24px, ${projected.x + 36}px, calc(100% - 24px))`}
     style:top={`${projected.y}px`}
   >
     <button
       class="move-handle"
       type={presentation.interaction.buttonType}
       aria-label={presentation.accessibleLabel}
+      aria-pressed={placing}
       title={presentation.title}
       draggable="false"
       style:min-width={`${presentation.geometry.minWidthPx}px`}
@@ -197,13 +208,15 @@
       oncontextmenu={(event) => event.preventDefault()}
       ondragstart={(event) => event.preventDefault()}
     >
-      <i
-        class={presentation.icon.classes.join(" ")}
-        aria-hidden={presentation.icon.ariaHidden}
-        style:width={`${presentation.geometry.iconWidthRem}rem`}
-      ></i>
-      <span>{presentation.label}</span>
+      <span class="grip"
+        ><i
+          class={placing ? "fas fa-xmark" : presentation.icon.classes.join(" ")}
+          aria-hidden={presentation.icon.ariaHidden}
+        ></i></span
+      >
     </button>
+    {#if showHint && !placing}<span class="placement-note">Drag to move</span
+      >{/if}
   </div>
 {/if}
 
@@ -223,6 +236,37 @@
     box-sizing: border-box;
     user-select: none;
     -webkit-user-select: none;
+  }
+
+  .grip {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--theme-accent, #8b5cf6);
+    border-radius: 50%;
+    background: var(--theme-panel-bg, rgba(0, 0, 0, 0.82));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
+  }
+  .move-handle:hover .grip,
+  .move-handle:focus-visible .grip,
+  .move-handle[aria-pressed="true"] .grip {
+    color: var(--theme-accent-text, #a78bfa);
+    border-color: var(--theme-accent-text, #a78bfa);
+  }
+  .placement-note {
+    position: absolute;
+    left: 44px;
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    padding: 0.3rem 0.5rem;
+    border-radius: 0.4rem;
+    background: var(--theme-panel-bg, rgba(0, 0, 0, 0.82));
+    color: var(--theme-text, #fff);
+    font-size: max(14px, var(--font-size-min, 0.875rem));
+    pointer-events: none;
   }
 
   .move-handle i {
