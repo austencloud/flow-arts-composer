@@ -1,8 +1,9 @@
 <!--
-  Hand Motions in three stages: the motion map (one hand, three moves), two
-  hands finding the six combinations, then the six on one board before
-  Timing and Direction. Each of the first two stages is done once everything
-  in it is found; what was found is saved with the stage.
+  Hand Motions in four stages: the book's chart of the three motions, the
+  motion map (one hand, three moves), two hands finding the six combinations,
+  then the six on one board before Timing and Direction. The map and the two
+  hands are each done once everything in them is found; what was found is
+  saved with the stage.
   Spec: docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md
 -->
 <script lang="ts">
@@ -14,10 +15,14 @@
   import {
     HAND_COMBINATIONS,
     MOTION_MAP_MOVES,
+    classifyHandMove,
+    handMotionsTopicLines,
     handMotionsTopicText,
+    type ComboHand,
     type HandCombinationId,
     type HandMove,
   } from "#lib/shared/guide-topics/hand-motions-topic.js";
+  import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
@@ -33,6 +38,7 @@
     migrateHandMotionsSavedStep,
   } from "./hand-motions-stage";
   import type { HandPair } from "./hand-pairs-round";
+  import HandMotionsIntroStage from "./HandMotionsIntroStage.svelte";
   import HandMotionsMapStage from "./HandMotionsMapStage.svelte";
   import HandPairsStage from "./HandPairsStage.svelte";
 
@@ -46,10 +52,16 @@
     viewMode?: ExperienceViewMode;
   }>();
 
-  const MAP_STAGE = 0;
-  const PAIRS_STAGE = 1;
+  const INTRO_STAGE = 0;
+  const MAP_STAGE = 1;
+  const PAIRS_STAGE = 2;
   const BOARD_STAGE = HAND_MOTIONS_STAGE_COUNT - 1;
-  const MOVE_IDS = new Set<string>(MOTION_MAP_MOVES.map((move) => move.id));
+  const HAND_POINTS = new Set<string>([
+    GridLocation.NORTH,
+    GridLocation.EAST,
+    GridLocation.SOUTH,
+    GridLocation.WEST,
+  ]);
   const COMBINATION_IDS = new Set<string>(
     HAND_COMBINATIONS.map((combination) => combination.id)
   );
@@ -74,12 +86,24 @@
   const current = savedSchemaVersion >= HAND_MOTIONS_STAGE_SCHEMA_VERSION;
 
   let stepIndex = $state(viewMode === "scroll" ? BOARD_STAGE : savedStep - 1);
-  let mapFound = $state<HandMove[]>(
+  /** A saved move counts only if it is still the move it was saved as. */
+  function isSavedMove([id, made]: [string, ComboHand]): boolean {
+    return (
+      HAND_POINTS.has(made?.from) &&
+      HAND_POINTS.has(made?.to) &&
+      classifyHandMove(made.from, made.to) === id &&
+      made.move === id
+    );
+  }
+
+  let mapMoves = $state<Partial<Record<HandMove, ComboHand>>>(
     current
-      ? persistence
-          .getPhaseData<string[]>("mapFound", [])
-          .filter((id): id is HandMove => MOVE_IDS.has(id))
-      : []
+      ? Object.fromEntries(
+          Object.entries(
+            persistence.getPhaseData<Record<string, ComboHand>>("mapMoves", {})
+          ).filter(isSavedMove)
+        )
+      : {}
   );
   let pairsFound = $state<Partial<Record<HandCombinationId, HandPair>>>(
     current
@@ -114,21 +138,23 @@
   const isLast = $derived(stepIndex === BOARD_STAGE);
   const stageDone = $derived(
     stepIndex === MAP_STAGE
-      ? mapFound.length === MOTION_MAP_MOVES.length
+      ? Object.keys(mapMoves).length === MOTION_MAP_MOVES.length
       : stepIndex === PAIRS_STAGE
         ? Object.keys(pairsFound).length === HAND_COMBINATIONS.length
         : true
   );
   const description = $derived(
-    stepIndex === MAP_STAGE
-      ? handMotionsTopicText("mapPrompt")
-      : stepIndex === PAIRS_STAGE
-        ? handMotionsTopicText("pairsPrompt")
-        : handMotionsTopicText("combinationsLead")
+    stepIndex === INTRO_STAGE
+      ? (handMotionsTopicLines("intro")[0] ?? "")
+      : stepIndex === MAP_STAGE
+        ? handMotionsTopicText("mapPrompt")
+        : stepIndex === PAIRS_STAGE
+          ? handMotionsTopicText("pairsPrompt")
+          : handMotionsTopicText("combinationsLead")
   );
 
   function goToStep(next: number): void {
-    const clamped = Math.min(BOARD_STAGE, Math.max(MAP_STAGE, next));
+    const clamped = Math.min(BOARD_STAGE, Math.max(INTRO_STAGE, next));
     if (clamped === stepIndex) return;
     const revision = ++layoutRevision;
     const captured = stageMotion.capture();
@@ -145,12 +171,14 @@
     haptic?.trigger("selection");
   }
 
-  function foundMove(move: HandMove): void {
-    if (mapFound.includes(move)) return;
-    mapFound = [...mapFound, move];
-    persistence.savePhaseData("mapFound", mapFound);
+  function foundMove(made: ComboHand): void {
+    if (mapMoves[made.move]) return;
+    mapMoves = { ...mapMoves, [made.move]: made };
+    persistence.savePhaseData("mapMoves", mapMoves);
     haptic?.trigger(
-      mapFound.length === MOTION_MAP_MOVES.length ? "success" : "selection"
+      Object.keys(mapMoves).length === MOTION_MAP_MOVES.length
+        ? "success"
+        : "selection"
     );
   }
 
@@ -209,7 +237,7 @@
       onBack?.();
       return;
     }
-    if (stepIndex > MAP_STAGE) {
+    if (stepIndex > INTRO_STAGE) {
       goToStep(stepIndex - 1);
       return;
     }
@@ -235,8 +263,10 @@
 
     {#snippet artifact()}
       <Crossfade key={stepIndex} duration={DURATION.emphasis}>
-        {#if stepIndex === MAP_STAGE}
-          <HandMotionsMapStage found={mapFound} onFind={foundMove} />
+        {#if stepIndex === INTRO_STAGE}
+          <HandMotionsIntroStage />
+        {:else if stepIndex === MAP_STAGE}
+          <HandMotionsMapStage found={mapMoves} onFind={foundMove} />
         {:else if stepIndex === PAIRS_STAGE}
           <HandPairsStage found={pairsFound} onFind={foundCombination} />
         {:else}
@@ -265,7 +295,7 @@
         previousLabel={viewMode === "scroll"
           ? t("learn_ui_close_review")
           : t("learn_ui_previous")}
-        previousDisabled={viewMode !== "scroll" && stepIndex === MAP_STAGE}
+        previousDisabled={viewMode !== "scroll" && stepIndex === INTRO_STAGE}
         actionDisabled={!stageDone}
         {curriculumLabel}
       />

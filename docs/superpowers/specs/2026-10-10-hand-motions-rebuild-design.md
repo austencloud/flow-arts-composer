@@ -75,9 +75,24 @@ The six example pictographs start from the authored `COMBO_DEMOS` in
 
 ## Lesson (`hand-motions-intro`)
 
-Three stages replace the five. The lesson keeps its concept ID, place in the
-curriculum and registry entry.
+Four stages replace the five (three until 2026-10-12, when the chart came
+first). The lesson keeps its concept ID, place in the curriculum and registry
+entry.
 
+0. **The three motions** (added 2026-10-12). Austen: "Instead of just being
+   presented with the grid right away we should be introduced to the three
+   concepts first." He chose the book's flowchart: the blue hand's Start box
+   branches to Shift, Dash and Static, each with its name and caption and real
+   pictographs of the move from that start (both shifts, the dash, static).
+   Once on screen each plays in turn, its arrow fading in and then the hand
+   travelling along it; a tap plays one again, and static's ring settles in
+   and stays. Under the chart sit the book's two lines on what the arrow and
+   the hand show; the heading is the book's first line. A played picture holds
+   its finished pose rather than dropping its start pose, so a replay never
+   waits on a re-prepare. One-hand pictures take their start pose from the
+   Start box's static hand, because the start deriver wants both hands. Wide
+   screens lay the chart out left to right; narrow ones put Start on top and
+   the three branches side by side under it.
 1. **Motion map.** Opens with the self-build playing. The hand can be grabbed
    at once; grabbing it ends the demonstration. While it is dragged, one arrow
    runs from its point to the point it would land on, and that move's caption
@@ -86,6 +101,20 @@ curriculum and registry entry.
    gets a found mark, and after a beat the arrow fades. Every drop is one of the three moves, so no answer is wrong. The hand
    stays where it lands, and the next drag starts from there. The stage is done
    once all three moves are found.
+
+   **Redesign, 2026-10-12 (Austen).** He found the move cards "understated"
+   and saw the old arrow flash at another point before the right one came in.
+   A tap now draws the move's arrow on from tail to tip, a shift around the
+   centre and the dash straight across; the hand holds its start, follows
+   along the arrow, and both stay as one finished picture until the next tap.
+   The arrows are drawn ahead in two banks, and one shows only once its bank
+   has drawn it from the hand's current point, so no stale arrow can flash.
+   The idle bank redraws only after the move has played, because drawing
+   three arrows takes a frame of over 100 ms. Beside the map are three slots,
+   Shift, Dash and Static. The first time a move is made, the learner's own
+   move fills its slot as a small picture with its name, as the two-hand
+   board fills; every later move pings its slot.
+
 2. **Two hands.** The stage starts with blue at West and red at East. The
    learner drags each hand to a target (dropping a hand on its own point
    chooses static). A target shows a ghost hand and its arrow. When both hands
@@ -111,8 +140,10 @@ curriculum and registry entry.
 3. **Wrap-up.** The full six-cell board. The primary action continues to Timing
    and Direction.
 
-Saved progress: bump `HAND_MOTIONS_STAGE_SCHEMA_VERSION` to 3. Older saved
-places restart at stage 1.
+Saved progress: `HAND_MOTIONS_STAGE_SCHEMA_VERSION` is 4 (3 before the chart
+came first). Older saved places restart at stage 1. The map saves each found
+move as the learner made it (`mapMoves`, start and end points), so the slots
+show the same pictures after a reload.
 
 Keyboard: the placement grid's existing keyboard targets carry the drags. Each
 found move and combination is announced through its existing live region.
@@ -188,7 +219,9 @@ motion, hero build, LETTER_TYPE_COLORS, TOPIC_PAGES, combination.
 
 Everything shown comes from approved copy in `messages/*.json`
 (`verified_level1_hand_motions_*`) and the lesson's approved captions. No new
-teaching explanation is added.
+teaching explanation is added. The chart stage splits the book's intro
+(`verified_level1_hand_motions_72`) at its line breaks: the first line is its
+heading, the other two sit under the chart.
 
 Austen approved the three new lesson prompts as written on 2026-10-11 (copy
 gate in `docs/learn/copy-reviews/hand-motions-intro.md`):
