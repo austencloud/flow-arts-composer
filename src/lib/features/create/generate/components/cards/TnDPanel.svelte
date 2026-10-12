@@ -16,6 +16,9 @@
   Each half of the TnD card opens its own side: `section` "hands" or "props"
   shows only that section, titled for it, with Match turns beneath either
   (it is a hand rule that prop timing forces). Without `section` both show.
+
+  A one-sided panel holds a single choice, so picking a mode or Free closes
+  it. Match turns is a separate switch and leaves it open.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -58,6 +61,16 @@
     onMatchHandTurnsChange: (value: boolean) => void;
     onClose: () => void;
   } = $props();
+
+  function pickHand(value: TnDSelection) {
+    onHandRelationshipChange(value);
+    if (section) onClose();
+  }
+
+  function pickProp(value: TnDSelection) {
+    onPropRelationshipChange(value);
+    if (section) onClose();
+  }
 
   const showHands = $derived(section !== "props");
   const showProps = $derived(section !== "hands");
@@ -118,7 +131,7 @@
               direction={t("create_deep_no_constraints")}
               active={handRelationship === "free"}
               ariaLabel={t("create_deep_free_hands")}
-              onpick={() => onHandRelationshipChange("free")}
+              onpick={() => pickHand("free")}
             />
             <TnDModeGrid
               fullLabels
@@ -126,7 +139,7 @@
               disabledModes={blockedModes}
               reasons={blockedHandModes}
               ariaLabel={t("create_deep_hand_tnd")}
-              onpick={onHandRelationshipChange}
+              onpick={pickHand}
             />
           </div>
         </section>
@@ -150,13 +163,13 @@
               direction={t("create_deep_no_constraints")}
               active={propRelationship === "free"}
               ariaLabel={t("create_deep_free_props")}
-              onpick={() => onPropRelationshipChange("free")}
+              onpick={() => pickProp("free")}
             />
             <TnDModeGrid
               fullLabels
               selected={propRelationship === "free" ? null : propRelationship}
               ariaLabel={t("create_deep_prop_tnd")}
-              onpick={onPropRelationshipChange}
+              onpick={pickProp}
             />
           </div>
         </section>
