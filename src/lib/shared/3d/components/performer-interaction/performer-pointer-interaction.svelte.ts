@@ -322,8 +322,14 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
   let pressed = $state<PressedPointer | null>(null);
   let hoveredIndex = $state<number | null>(null);
   let draggingIndex = $state<number | null>(null);
+  let placing = $state(false);
+  let moveHintClaimed = false;
   let announcement = $state("");
-  let emptyPress = $state<{ pointerId: number; start: Point2 } | null>(null);
+  let emptyPress = $state<{
+    pointerId: number;
+    start: Point2;
+    placing: boolean;
+  } | null>(null);
   let holdTimer: ReturnType<typeof setTimeout> | null = null;
   let diagnosticFrame: number | null = null;
   let cameraWasEnabled = true;
@@ -333,6 +339,7 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
   }
 
   function announceSelection(openInspector: boolean): void {
+    placing = false;
     const selected = options.viewer.selectedPerformerIndices;
     const primary = options.viewer.primaryPerformerIndex;
     window.dispatchEvent(
@@ -627,6 +634,7 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
 
   function startDrag(): void {
     if (!pressed || draggingIndex !== null) return;
+    placing = false;
     clearHoldTimer();
     if (!isSelected(pressed.performerIndex)) {
       if (pressed.additive || options.viewer.performerSelectionMode) {
@@ -689,6 +697,60 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
     options.canvas.style.cursor = hoveredIndex === null ? "" : "grab";
   }
 
+  function togglePlacement(): void {
+    if (options.viewer.selectedPerformerIndices.length === 0) return;
+    placing = !placing;
+    announcement = placing
+      ? "Tap the floor to move the selection. Press Escape to cancel."
+      : "Move cancelled";
+    window.dispatchEvent(
+      new CustomEvent("tka-performer-interaction-announcement", {
+        detail: announcement,
+      })
+    );
+  }
+
+  function placeSelectedAt(event: PointerEvent): void {
+    if (!setRayFromEvent(event)) return;
+    const target = intersectHorizontalPlane(
+      raycaster.ray.origin,
+      raycaster.ray.direction,
+      options.groundY(),
+      { x: 0, z: 0 }
+    );
+    if (!target) return;
+    const selected = options.viewer.selectedPerformerIndices;
+    const positions = selected.flatMap((index) => {
+      const performer = options.viewer.performerManager.performers[index];
+      return performer ? [[index, { ...performer.position }] as const] : [];
+    });
+    const anchor =
+      positions.find(
+        ([index]) => index === options.viewer.primaryPerformerIndex
+      ) ?? positions[0];
+    if (!anchor) {
+      placing = false;
+      return;
+    }
+    const delta = clampGroupTranslation(
+      positions.map(([, position]) => position),
+      { x: target.x - anchor[1].x, z: target.z - anchor[1].z },
+      options.stageBounds()
+    );
+    placing = false;
+    if (Math.abs(delta.x) + Math.abs(delta.z) < POSITION_EPSILON) return;
+    options.viewer.beginSpatialEdit();
+    for (const [index, position] of positions) {
+      options.viewer.performerManager.handleDrag(index, {
+        x: position.x + delta.x,
+        z: position.z + delta.z,
+      });
+    }
+    options.viewer.markFormationCustom();
+    options.viewer.endSpatialEdit();
+    options.onHintDismissed?.();
+  }
+
   function onPointerDown(event: PointerEvent): void {
     if (event.button !== 0) return;
     activePointers.add(event.pointerId);
@@ -702,7 +764,12 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
       emptyPress = {
         pointerId: event.pointerId,
         start: { x: event.clientX, y: event.clientY },
+        placing,
       };
+      if (placing) {
+        options.canvas.setPointerCapture(event.pointerId);
+        event.stopImmediatePropagation();
+      }
       return;
     }
     const { performerIndex } = hit;
@@ -881,13 +948,18 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
   function onPointerUp(event: PointerEvent): void {
     activePointers.delete(event.pointerId);
     if (emptyPress?.pointerId === event.pointerId) {
-      if (
+      const isClick =
         getPointerIntent(emptyPress.start, {
           x: event.clientX,
           y: event.clientY,
-        }) === "click" &&
-        !options.viewer.isCameraDragging
-      ) {
+        }) === "click";
+      if (emptyPress.placing) {
+        if (isClick && placing && !options.viewer.isCameraDragging) {
+          placeSelectedAt(event);
+        }
+        if (options.canvas.hasPointerCapture?.(event.pointerId))
+          options.canvas.releasePointerCapture(event.pointerId);
+      } else if (isClick && !options.viewer.isCameraDragging) {
         options.viewer.clearPerformerSelection();
         announceSelection(false);
       }
@@ -896,8 +968,10 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
     }
     if (pressed?.pointerId !== event.pointerId) return;
     if (draggingIndex !== null) finishPointer(true);
-    else if (pressed.target === "move-handle") finishPointer(false);
-    else if (!pressed.longPressSelected) {
+    else if (pressed.target === "move-handle") {
+      finishPointer(false);
+      togglePlacement();
+    } else if (!pressed.longPressSelected) {
       const additive =
         pressed.additive || options.viewer.performerSelectionMode;
       if (additive) {
@@ -928,7 +1002,15 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
     const selected = options.viewer.selectedPerformerIndices;
     if (event.key === "Escape") {
       if (draggingIndex !== null) cancelDrag();
-      else if (options.viewer.performerSelectionMode) {
+      else if (placing) {
+        placing = false;
+        if (emptyPress) {
+          const pointerId = emptyPress.pointerId;
+          emptyPress = null;
+          if (options.canvas.hasPointerCapture?.(pointerId))
+            options.canvas.releasePointerCapture(pointerId);
+        }
+      } else if (options.viewer.performerSelectionMode) {
         options.viewer.setPerformerSelectionMode(false);
       } else if (selected.length > 0) {
         options.viewer.clearPerformerSelection();
@@ -1014,6 +1096,22 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
   }
 
   return {
+    get placing() {
+      return placing;
+    },
+    togglePlacement,
+    takeMoveHint() {
+      if (moveHintClaimed) return false;
+      moveHintClaimed = true;
+      return true;
+    },
+    onMoveHandleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        event.stopPropagation();
+        togglePlacement();
+      } else onKeyDown(event);
+    },
     get hoveredIndex() {
       return hoveredIndex;
     },

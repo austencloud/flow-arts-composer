@@ -32,6 +32,7 @@
   } from "../services/worker-performer-interaction";
   import type { WorkerPerformerInteractionCapability } from "../services/worker-performer-interaction-capability";
   import WorkerPerformerMoveHandle from "./WorkerPerformerMoveHandle.svelte";
+  import PerformerPlacementPrompt from "../../components/performer-interaction/PerformerPlacementPrompt.svelte";
 
   interface WorkerMoveHandleSelection {
     key: string;
@@ -74,6 +75,7 @@
     hoveredIndex: null,
     draggingIndex: null,
   });
+  let placing = $state(false);
   let mounted = $state(false);
   let failed = $state(false);
   let stateFrame: number | null = null;
@@ -100,6 +102,7 @@
   }
 
   function updateInteractionState(force = false): void {
+    placing = supported ? (bridge?.placing ?? false) : false;
     const next = supported
       ? {
           hoveredIndex: bridge?.hoveredIndex ?? null,
@@ -174,22 +177,8 @@
   }
 
   function forwardMoveHandleKeydown(event: KeyboardEvent): void {
-    const forwarded = new KeyboardEvent("keydown", {
-      key: event.key,
-      code: event.code,
-      location: event.location,
-      ctrlKey: event.ctrlKey,
-      shiftKey: event.shiftKey,
-      altKey: event.altKey,
-      metaKey: event.metaKey,
-      repeat: event.repeat,
-      isComposing: event.isComposing,
-      bubbles: true,
-      cancelable: true,
-    });
-    interactionSurface.dispatchEvent(forwarded);
-    if (forwarded.defaultPrevented) event.preventDefault();
-    if (forwarded.cancelBubble) event.stopPropagation();
+    bridge?.onMoveHandleKeyDown(event);
+    scheduleStateUpdate();
   }
 
   const moveHandleSelection = $derived.by(
@@ -307,9 +296,18 @@
       selectedCount={moveHandleSelection.selectedCount}
       anchorIndex={moveHandleSelection.anchorIndex}
       dragging={interactionState.draggingIndex !== null}
+      {placing}
       {projectionRevision}
       onkeydown={forwardMoveHandleKeydown}
       onInteractionStateMayHaveChanged={scheduleStateUpdate}
     />
   {/key}
+{/if}
+{#if bridge && placing}
+  <PerformerPlacementPrompt
+    oncancel={() => {
+      bridge?.togglePlacement();
+      updateInteractionState(true);
+    }}
+  />
 {/if}

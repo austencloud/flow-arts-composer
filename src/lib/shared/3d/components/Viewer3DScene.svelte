@@ -1,6 +1,6 @@
 <script lang="ts">
   import { T, useTask, useThrelte, useScheduler } from "@threlte/core";
-  import { layers, type ThrelteLayers } from "@threlte/extras";
+  import { HTML, layers, type ThrelteLayers } from "@threlte/extras";
   import { flushSync, onMount, onDestroy, tick, type Snippet } from "svelte";
   import {
     PerformerRig,
@@ -66,6 +66,7 @@
   import PerformerVisualPickTarget from "./performer-interaction/PerformerVisualPickTarget.svelte";
   import PerformerHoverRing from "./performer-interaction/PerformerHoverRing.svelte";
   import PerformerMoveHandle from "./performer-interaction/PerformerMoveHandle.svelte";
+  import PerformerPlacementPrompt from "./performer-interaction/PerformerPlacementPrompt.svelte";
   import {
     createPerformerPointerInteraction,
     type PerformerPointerInteraction,
@@ -408,15 +409,14 @@
     // loop - this tick is what actually walks positions toward the target
     // slots over the canonical motion window. Without it, applyFormationFromUI flips
     // activeFormation but nothing visibly moves.
-    if (!viewer3DState.isExporting) {
-      performerManager.updateFormationTransition();
-    }
-
     // Props, hand anchors and the rig take their transforms from Svelte
     // effects, which would otherwise run after this frame is drawn. Effects
     // and the avatar's hand IK read the new pose in later tasks this frame,
-    // so apply it now or the drawn props trail them by one frame.
-    flushSync();
+    // so apply them now. A departing performer can finish this frame; flush
+    // before removing it, since unmounting its Threlte tasks during this
+    // scheduler stage's iteration can stop the render loop.
+    if (viewer3DState.isExporting) flushSync();
+    else performerManager.updateFormationTransition(undefined, flushSync);
   });
 
   let performerInteraction = $state<PerformerPointerInteraction | null>(null);
@@ -773,7 +773,9 @@
             <T.MeshBasicMaterial
               color={selectionColor}
               transparent
-              opacity={ringPulse * 0.9}
+              opacity={performerInteraction?.draggingIndex != null
+                ? 1
+                : ringPulse * 0.75}
               blending={AdditiveBlending}
               depthWrite={false}
             />
@@ -783,7 +785,9 @@
             <T.MeshBasicMaterial
               color={selectionColor}
               transparent
-              opacity={ringPulse * 0.3}
+              opacity={performerInteraction?.draggingIndex != null
+                ? 0.45
+                : ringPulse * 0.18}
               blending={AdditiveBlending}
               depthWrite={false}
             />
@@ -793,7 +797,7 @@
             <T.MeshBasicMaterial
               color={selectionColor}
               transparent
-              opacity={0.15}
+              opacity={0.06}
             />
           </T.Mesh>
         </T.Group>
@@ -998,8 +1002,12 @@
           ]}
           rotation={[-Math.PI / 2, 0, 0]}
         >
-          <T.CircleGeometry args={[0.35, 32]} />
-          <T.MeshBasicMaterial color={0x6b7280} transparent opacity={0.15} />
+          <T.RingGeometry args={[0.42, 0.58, 48]} />
+          <T.MeshBasicMaterial
+            color={0x8b5cf6}
+            transparent
+            opacity={performerInteraction?.draggingIndex != null ? 0.9 : 0.45}
+          />
         </T.Mesh>
       {/if}
 
@@ -1028,6 +1036,9 @@
         groundY={performerGroundLevel}
         selectedCount={selectionMoveHandle.selectedCount}
         dragging={performerInteraction.draggingIndex !== null}
+        placing={performerInteraction.placing}
+        takeHint={() => performerInteraction?.takeMoveHint() ?? false}
+        onkeydown={(event) => performerInteraction?.onMoveHandleKeyDown(event)}
         onpointerdown={(event) =>
           performerInteraction?.onMoveHandlePointerDown(
             event,
@@ -1047,5 +1058,19 @@
         }}
       />
     {/key}
+  {/if}
+  {#if performerInteraction?.placing}
+    <HTML
+      fullscreen
+      calculatePosition={(_object, _camera, size) => [
+        size.width / 2,
+        size.height / 2,
+      ]}
+      style="pointer-events: none"
+    >
+      <PerformerPlacementPrompt
+        oncancel={() => performerInteraction?.togglePlacement()}
+      />
+    </HTML>
   {/if}
 </T.Group>

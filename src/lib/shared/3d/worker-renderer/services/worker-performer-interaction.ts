@@ -248,6 +248,22 @@ export class WorkerPerformerInteractionBridge {
     return this.interaction.draggingIndex;
   }
 
+  get placing(): boolean {
+    return this.interaction.placing;
+  }
+
+  togglePlacement(): void {
+    this.interaction.togglePlacement();
+  }
+
+  onMoveHandleKeyDown(event: KeyboardEvent): void {
+    this.interaction.onMoveHandleKeyDown(event);
+  }
+
+  takeMoveHint(): boolean {
+    return this.interaction.takeMoveHint();
+  }
+
   update(
     frame: WorkerPerformerInteractionFrame
   ): WorkerPerformerInteractionCapability {
