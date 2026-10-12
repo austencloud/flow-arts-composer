@@ -380,13 +380,13 @@
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
+  /* The pictograph paints its own ground once drawn; until then the cell
+     shows a faint tint in either theme (the host settles dark mode after
+     first paint, so a fixed white would flash on dark). */
   .cell {
     aspect-ratio: 1;
     overflow: hidden;
-    background: #fff;
-  }
-  .dark .cell {
-    background: #121214;
+    background: color-mix(in srgb, currentColor 5%, transparent);
   }
   .start {
     border: 1px solid var(--seam);
