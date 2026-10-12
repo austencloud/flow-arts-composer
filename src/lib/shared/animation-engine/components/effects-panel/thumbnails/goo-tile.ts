@@ -78,7 +78,10 @@ function beads(p: GooIntent, rand: Rand): Bead[] {
       out.push({
         x: pos.x + (rand() - 0.5) * 2,
         y: pos.y + fall * u,
-        r: k === 6 ? r : r * (0.45 + 0.35 * (1 - u)) * Math.min(1.2, neck * 0.45),
+        r:
+          k === 6
+            ? r
+            : r * (0.45 + 0.35 * (1 - u)) * Math.min(1.2, neck * 0.45),
         body: false,
       });
     }

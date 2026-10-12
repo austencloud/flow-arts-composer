@@ -115,7 +115,8 @@ function whiskersAlong(path: Vec2[], headR: number): Vec2[][] {
   const tail = path[path.length - 1]!;
   const pair: Vec2[][] = [[], []];
   for (let w = 0; w < 2; w++) {
-    for (let i = 0; i < WHISKER_NODES; i++) pair[w]!.push({ x: tail.x, y: tail.y });
+    for (let i = 0; i < WHISKER_NODES; i++)
+      pair[w]!.push({ x: tail.x, y: tail.y });
   }
   for (let k = path.length - 2; k >= 0; k--) {
     const head = path[k]!;
@@ -172,7 +173,8 @@ interface Geometry {
 
 function geometry(p: AnimalIntent, chain: Vec2[], scale: number): Geometry {
   const N = chain.length;
-  const build = p.creature === "caterpillar" ? 1.55 : p.creature === "dragon" ? 1.15 : 1;
+  const build =
+    p.creature === "caterpillar" ? 1.55 : p.creature === "dragon" ? 1.15 : 1;
   const baseHalf = (2.5 + p.width * 13) * scale * vis(p.intensity) * build;
   // The coil is staged at renderer scale while widths are boosted, so the
   // wave amplitude takes only half the boost or the tail kinks on the loop.
@@ -195,7 +197,8 @@ function geometry(p: AnimalIntent, chain: Vec2[], scale: number): Geometry {
     ty /= tl;
     const ramp = Math.pow(i / (N - 1), 1.3);
     const phase = WAVENUMBER * s[i]! - SLITHER_SPEED * TIME;
-    const wave = (Math.sin(phase) + 0.22 * Math.sin(phase * 2.1 + 0.7)) * ampPx * ramp;
+    const wave =
+      (Math.sin(phase) + 0.22 * Math.sin(phase * 2.1 + 0.7)) * ampPx * ramp;
     cx[i] = chain[i]!.x + -ty * wave;
     cy[i] = chain[i]!.y + tx * wave;
   }
@@ -229,7 +232,23 @@ function geometry(p: AnimalIntent, chain: Vec2[], scale: number): Geometry {
     shadeX[i] = cx[i]! - nx[i]! * half * 0.5;
     shadeY[i] = cy[i]! - ny[i]! * half * 0.5;
   }
-  return { N, baseHalf, cx, cy, nx, ny, hw, leftX, leftY, rightX, rightY, litX, litY, shadeX, shadeY };
+  return {
+    N,
+    baseHalf,
+    cx,
+    cy,
+    nx,
+    ny,
+    hw,
+    leftX,
+    leftY,
+    rightX,
+    rightY,
+    litX,
+    litY,
+    shadeX,
+    shadeY,
+  };
 }
 
 /** First self-crossing of the centreline: segment indices (i, j) and the point. */
@@ -277,9 +296,15 @@ function drawCrest(
     if (h < 1) continue;
     const spikeH = h * 1.3;
     ctx.beginPath();
-    ctx.moveTo(cx[i - 1]! + nx[i - 1]! * hw[i - 1]!, cy[i - 1]! + ny[i - 1]! * hw[i - 1]!);
+    ctx.moveTo(
+      cx[i - 1]! + nx[i - 1]! * hw[i - 1]!,
+      cy[i - 1]! + ny[i - 1]! * hw[i - 1]!
+    );
     ctx.lineTo(cx[i]! + nx[i]! * (h + spikeH), cy[i]! + ny[i]! * (h + spikeH));
-    ctx.lineTo(cx[i + 1]! + nx[i + 1]! * hw[i + 1]!, cy[i + 1]! + ny[i + 1]! * hw[i + 1]!);
+    ctx.lineTo(
+      cx[i + 1]! + nx[i + 1]! * hw[i + 1]!,
+      cy[i + 1]! + ny[i + 1]! * hw[i + 1]!
+    );
     ctx.closePath();
     ctx.fill();
   }
@@ -355,7 +380,23 @@ function drawBody(
   b: number,
   scale: number
 ): void {
-  const { N, baseHalf, cx, cy, nx, ny, hw, leftX, leftY, rightX, rightY, litX, litY, shadeX, shadeY } = g;
+  const {
+    N,
+    baseHalf,
+    cx,
+    cy,
+    nx,
+    ny,
+    hw,
+    leftX,
+    leftY,
+    rightX,
+    rightY,
+    litX,
+    litY,
+    shadeX,
+    shadeY,
+  } = g;
   const I = vis(p.intensity);
   const outline = () => {
     ctx.beginPath();
@@ -371,7 +412,14 @@ function drawBody(
     ctx.globalAlpha = 0.1 * I;
     for (let i = a; i <= b; i += AURA_STRIDE) {
       const r = hw[i]! * 2.2 + 1.5 * scale;
-      const grad = ctx.createRadialGradient(cx[i]!, cy[i]!, 0, cx[i]!, cy[i]!, r);
+      const grad = ctx.createRadialGradient(
+        cx[i]!,
+        cy[i]!,
+        0,
+        cx[i]!,
+        cy[i]!,
+        r
+      );
       grad.addColorStop(0, pal.edge);
       grad.addColorStop(1, "rgba(0,0,0,0)");
       ctx.beginPath();
@@ -390,7 +438,12 @@ function drawBody(
   }
   ctx.globalAlpha = 0.94 * I;
   if (pal.hueShift && pal.bodyAlt) {
-    const grad = ctx.createLinearGradient(cx[0]!, cy[0]!, cx[N - 1]!, cy[N - 1]!);
+    const grad = ctx.createLinearGradient(
+      cx[0]!,
+      cy[0]!,
+      cx[N - 1]!,
+      cy[N - 1]!
+    );
     grad.addColorStop(0, pal.body);
     grad.addColorStop(1, pal.bodyAlt);
     ctx.fillStyle = grad;
@@ -422,13 +475,23 @@ function drawBody(
       if (h < 1) continue;
       ctx.beginPath();
       ctx.moveTo(cx[i]! + nx[i]! * h * 0.9, cy[i]! + ny[i]! * h * 0.9);
-      ctx.quadraticCurveTo(cx[i - 1]!, cy[i - 1]!, cx[i]! - nx[i]! * h * 0.9, cy[i]! - ny[i]! * h * 0.9);
+      ctx.quadraticCurveTo(
+        cx[i - 1]!,
+        cy[i - 1]!,
+        cx[i]! - nx[i]! * h * 0.9,
+        cy[i]! - ny[i]! * h * 0.9
+      );
       ctx.stroke();
     }
   }
   ctx.restore();
 
-  const sheen = ctx.createLinearGradient(cx[0]!, cy[0]!, cx[N - 1]!, cy[N - 1]!);
+  const sheen = ctx.createLinearGradient(
+    cx[0]!,
+    cy[0]!,
+    cx[N - 1]!,
+    cy[N - 1]!
+  );
   const sheenColor = mixHex(pal.edge, "#ffffff", 0.35);
   sheen.addColorStop(0, sheenColor);
   sheen.addColorStop(0.7, sheenColor);
@@ -460,7 +523,8 @@ function drawWhiskers(
   for (const whisk of pair) {
     ctx.beginPath();
     ctx.moveTo(whisk[0]!.x, whisk[0]!.y);
-    for (let i = 1; i < WHISKER_NODES; i++) ctx.lineTo(whisk[i]!.x, whisk[i]!.y);
+    for (let i = 1; i < WHISKER_NODES; i++)
+      ctx.lineTo(whisk[i]!.x, whisk[i]!.y);
     ctx.stroke();
   }
 }
@@ -536,12 +600,28 @@ function drawHead(
   ctx.globalAlpha = 0.3 * I;
   ctx.fillStyle = mixHex(pal.body, "#000000", 0.6);
   ctx.beginPath();
-  ctx.ellipse(-headR * 0.05, headR * 0.36, headR * 1.15, headR * 0.5, 0, 0, TAU);
+  ctx.ellipse(
+    -headR * 0.05,
+    headR * 0.36,
+    headR * 1.15,
+    headR * 0.5,
+    0,
+    0,
+    TAU
+  );
   ctx.fill();
   ctx.globalAlpha = 0.26 * I;
   ctx.fillStyle = mixHex(pal.edge, "#ffffff", 0.4);
   ctx.beginPath();
-  ctx.ellipse(headR * 0.18, -headR * 0.34, headR * 0.75, headR * 0.28, 0, 0, TAU);
+  ctx.ellipse(
+    headR * 0.18,
+    -headR * 0.34,
+    headR * 0.75,
+    headR * 0.28,
+    0,
+    0,
+    TAU
+  );
   ctx.fill();
   ctx.restore();
 
@@ -638,7 +718,8 @@ function drawCreature(
     ctx.restore();
   }
 
-  if (p.creature === "dragon") drawWhiskers(ctx, p, pal, path, g.baseHalf, scale);
+  if (p.creature === "dragon")
+    drawWhiskers(ctx, p, pal, path, g.baseHalf, scale);
   drawHead(ctx, p, pal, g, scale);
   ctx.globalAlpha = 1;
 }
@@ -647,7 +728,10 @@ function drawCreature(
 function stage(p: AnimalIntent): { chain: Vec2[]; path: Vec2[]; zoom: number } {
   const path = densePath();
   const bodyLen = (160 + p.bodyLength * 440) * LENGTH_SCALE;
-  const chain: Vec2[] = Array.from({ length: SEGMENTS }, () => ({ x: 0, y: 0 }));
+  const chain: Vec2[] = Array.from({ length: SEGMENTS }, () => ({
+    x: 0,
+    y: 0,
+  }));
   resampleAlongPath(path, chain, bodyLen / (SEGMENTS - 1));
   let acc = 0;
   let cut = path.length;
@@ -676,7 +760,11 @@ function stage(p: AnimalIntent): { chain: Vec2[]; path: Vec2[]; zoom: number } {
   const dy = TILE_H / 2 - (minY + maxY) / 2;
   // Fit: zoom the whole figure (widths included) so a short hook does not
   // sit as a small mark in a wide frame; capped so creatures still differ.
-  const zoom = Math.min(1.45, (TILE_H * 0.8) / (maxY - minY), (TILE_W * 0.9) / (maxX - minX));
+  const zoom = Math.min(
+    1.45,
+    (TILE_H * 0.8) / (maxY - minY),
+    (TILE_W * 0.9) / (maxX - minX)
+  );
   const fit = (q: Vec2) => {
     q.x = TILE_W / 2 + (q.x + dx - TILE_W / 2) * zoom;
     q.y = TILE_H / 2 + (q.y + dy - TILE_H / 2) * zoom;
@@ -697,7 +785,16 @@ export function paintAnimalTile(
   const dark = !pal.emissive && lum < 0.08;
   ground(ctx, dark ? [0.3, 0.29, 0.34] : [0.03, 0.03, 0.045]);
   if (dark) blob(ctx, 380, 120, 400, 220, [0.68, 0.66, 0.74], 0.8);
-  else blob(ctx, 360, 140, 360, 200, edge, pal.emissive ? 0.14 : 0.06 + 0.04 * intent.intensity);
+  else
+    blob(
+      ctx,
+      360,
+      140,
+      360,
+      200,
+      edge,
+      pal.emissive ? 0.14 : 0.06 + 0.04 * intent.intensity
+    );
 
   const { chain, path, zoom } = stage(intent);
   const layer = document.createElement("canvas");

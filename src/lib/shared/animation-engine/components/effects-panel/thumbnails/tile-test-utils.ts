@@ -7,7 +7,7 @@
  * working `getImageData`.
  */
 import { createCanvas } from "canvas";
-import { expect, vi } from "vitest";
+import { expect, type vi } from "vitest";
 import { TILE_H, TILE_W } from "./tile-paint";
 
 type CreateElement = typeof document.createElement;
