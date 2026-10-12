@@ -55,6 +55,45 @@ describe("placement motion state", () => {
     expect(motion.active).toBe(false);
   });
 
+  it("holds the start pose for the move's delay, then travels", () => {
+    vi.useFakeTimers({
+      toFake: ["requestAnimationFrame", "cancelAnimationFrame", "performance"],
+    });
+    const move: PlacementMotionMove = {
+      epoch: 1,
+      color: HandSide.LEFT,
+      from: GridLocation.WEST,
+      to: GridLocation.NORTH,
+      direction: "clockwise",
+      durationMs: DURATION.scene,
+      delayMs: DURATION.dramatic,
+    };
+    const motion = createPropPlacementMotionState({
+      getMove: () => move,
+      getGridMode: () => GridMode.DIAMOND,
+      getLeftPropType: () => PropType.HAND,
+      getRightPropType: () => PropType.HAND,
+      getLeftOrientation: () => Orientation.IN,
+      getRightOrientation: () => Orientation.IN,
+      getLeftLocation: () => GridLocation.NORTH,
+      getRightLocation: () => null,
+      getBetaSwapped: () => false,
+      getPreviewPictographData: () => null,
+    });
+
+    motion.synchronize();
+    vi.advanceTimersByTime(DURATION.dramatic - 20);
+    expect(motion.active).toBe(true);
+    expect(motion.progress).toBe(0);
+
+    vi.advanceTimersByTime(DURATION.scene / 2 + 20);
+    expect(motion.progress).toBeGreaterThan(0);
+    expect(motion.progress).toBeLessThan(1);
+
+    vi.advanceTimersByTime(DURATION.scene);
+    expect(motion.active).toBe(false);
+  });
+
   it("moves both hands together when the move has a partner", () => {
     vi.useFakeTimers({
       toFake: ["requestAnimationFrame", "cancelAnimationFrame", "performance"],
