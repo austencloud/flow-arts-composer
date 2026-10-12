@@ -9268,7 +9268,7 @@
   "create_ui_orientation_counter_short": "CCW",
   "create_ui_orientation_in_short": "In",
   "create_ui_orientation_out_short": "Out",
-  "create_ui_reversal_hint_choppy": "A reversal on every step — a narrow target, so results repeat more.",
+  "create_ui_reversal_hint_choppy": "A reversal on every step, so results repeat more.",
   "create_ui_reversal_hint_mixed": "Reversals allowed where they fit.",
   "create_ui_reversal_hint_smooth": "Reversals kept to a minimum.",
   "create_spell_loop_custom": "Custom",

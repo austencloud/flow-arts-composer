@@ -339,5 +339,10 @@ list.
       margin-top: 0.375rem;
       margin-bottom: 0;
     }
+
+    /* Under a tile heading, the axis names are the second level. */
+    .columns .axis-name {
+      font-size: var(--font-size-sm, 0.875rem);
+    }
   }
 </style>
