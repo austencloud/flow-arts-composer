@@ -31,6 +31,9 @@
   import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   import { getSoloPropSaveOrchestrator } from "#lib/features/library/get-solo-prop-save-orchestrator.js";
   import CardFooterEditor from "#lib/shared/share/components/CardFooterEditor.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SettingToggleButton from "#lib/shared/settings/components/SettingToggleButton.svelte";
+  import { popIn } from "#lib/shared/transitions/motion.js";
   import {
     cardPresentationFromFooterSettings,
     resolveCardFooter,
@@ -180,19 +183,18 @@
       <h2>{s.headerTitle}</h2>
     </div>
 
-    <div class="panel-body">
-      {#if !s.isSolo}
-        <PropPairField bind:value={s.saveProps} disabled={s.isSaving} />
-        <p>{t("create_review_used_when_someone_chooses_as_saved")}</p>
-      {/if}
-      <!-- Sequence Preview — WYSIWYG: the same card the save will produce.
-           Every toggle comes from the composition manager / app settings (the
-           same sources buildCardRenderOptions reads for the saved PNG), so the
-           prop, QR, mandala, LOOP glyph and footer match the saved file on every
-           screen size (desktop included). -->
-      {#if s.sequence}
-        <div class="choreo-group">
-          <div class="choreo-preview">
+    <!-- Two regions: the card the save will produce, and the choices about it.
+         Stacked when the panel is narrow; side by side once it has the room
+         (a 4K side drawer, or 1920 and up). The card keeps a definite box in
+         both so it never shrinks to make room for the options. -->
+    <div class="panel-layout">
+      <section class="card-column" aria-label={t("create_save_preview_label")}>
+        {#if s.sequence}
+          <!-- WYSIWYG: the same card the save will produce. Every toggle comes
+               from the composition manager / app settings (the same sources
+               buildCardRenderOptions reads for the saved PNG), so the prop, QR,
+               mandala, LOOP glyph and footer match the saved file. -->
+          <div class="card-stage">
             <ChoreoCard
               sequence={{
                 ...s.sequence,
@@ -224,171 +226,155 @@
                   }
                 : undefined}
             />
+            <!-- Status rides on the preview instead of taking a row under it. -->
+            {#if s.isExactDuplicate && !s.isFlagged}
+              <span class="card-badge card-badge-saved" transition:popIn>
+                <i class="fas fa-check-circle" aria-hidden="true"></i>
+                {t("create_review_already_saved")}
+              </span>
+            {:else if s.hasDuplicate && !s.isFlagged}
+              <span class="card-badge card-badge-variation" transition:popIn>
+                <i class="fas fa-layer-group" aria-hidden="true"></i>
+                {t("create_save_variation", { count: s.duplicateCount + 1 })}
+              </span>
+            {/if}
           </div>
-        </div>
+        {/if}
 
-        <!-- Compact info row: variation / saved status (fixed-height slot) -->
-        <div class="info-row">
-          {#if s.isExactDuplicate && !s.isFlagged}
-            <span class="info-tag info-tag-saved">
-              <i class="fas fa-check-circle" aria-hidden="true"></i>
-              {t("create_review_already_saved")}
-            </span>
-          {:else if s.hasDuplicate && !s.isFlagged}
-            <span class="info-tag info-tag-variation">
-              <i class="fas fa-layer-group" aria-hidden="true"></i>
-              Variation {s.duplicateCount + 1}
-            </span>
-          {/if}
-        </div>
-      {/if}
+        {#if !s.isSolo}
+          <div class="card-settings">
+            <PropPairField
+              bind:value={s.saveProps}
+              disabled={s.isSaving}
+              hint={t("prop_pair_saved_default_hint")}
+            />
+          </div>
+        {/if}
+      </section>
 
-      {#if s.isSolo}
-        <div class="form-group">
-          <label for="solo-title">
-            {t("create_review_title")} <span class="required">*</span>
-          </label>
-          <input
-            id="solo-title"
-            type="text"
-            bind:value={s.title}
-            placeholder={t("create_ui_name_this_choreography")}
-            class="input-field"
-            maxlength="100"
-            disabled={s.isSaving}
-          />
-          <p class="field-note">
-            {t("create_save_solo_hand", {
-              hand:
-                s.authoredHand === "left"
-                  ? t("create_save_hand_left")
-                  : t("create_save_hand_right"),
-            })}
-          </p>
-        </div>
-      {:else if s.isMixed}
-        <div class="format-warning" role="alert">
-          <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
-          <div>
-            <strong
-              >{t(
-                "create_review_this_choreography_mixes_paired_and_single_hand_beats"
-              )}</strong
-            >
-            <p>
+      <section class="options-column">
+        {#if s.isSolo}
+          <div class="form-group">
+            <label for="solo-title">
+              {t("create_review_title")} <span class="required">*</span>
+            </label>
+            <input
+              id="solo-title"
+              type="text"
+              bind:value={s.title}
+              placeholder={t("create_ui_name_this_choreography")}
+              class="input-field"
+              maxlength="100"
+              disabled={s.isSaving}
+            />
+            <p class="field-note">
+              {t("create_save_solo_hand", {
+                hand:
+                  s.authoredHand === "left"
+                    ? t("create_save_hand_left")
+                    : t("create_save_hand_right"),
+              })}
+            </p>
+          </div>
+        {:else if s.isMixed}
+          <div class="format-warning" role="alert">
+            <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+            <div>
+              <strong
+                >{t(
+                  "create_review_this_choreography_mixes_paired_and_single_hand_beats"
+                )}</strong
+              >
+              <p>
+                {t(
+                  "create_review_keep_editing_until_every_beat_uses_both_hands_or_the_same_single_hand"
+                )}
+              </p>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Content Moderation Warning -->
+        {#if s.isFlagged && s.moderationResult}
+          <div class="moderation-warning">
+            <div class="warning-header">
+              <i class="fas fa-shield-alt" aria-hidden="true"></i>
+              <span>{t("create_review_content_flagged_by_moderation")}</span>
+            </div>
+            <p class="warning-text">
               {t(
-                "create_review_keep_editing_until_every_beat_uses_both_hands_or_the_same_single_hand"
+                "create_review_this_sequence_contains_content_that_cannot_be_published_to_the_public_gallery_you_can_stil"
               )}
             </p>
-          </div>
-        </div>
-      {/if}
-
-      <!-- Content Moderation Warning -->
-      {#if s.isFlagged && s.moderationResult}
-        <div class="moderation-warning">
-          <div class="warning-header">
-            <i class="fas fa-shield-alt" aria-hidden="true"></i>
-            <span>{t("create_review_content_flagged_by_moderation")}</span>
-          </div>
-          <p class="warning-text">
-            {t(
-              "create_review_this_sequence_contains_content_that_cannot_be_published_to_the_public_gallery_you_can_stil"
-            )}
-          </p>
-          <div class="flagged-terms">
-            {#each s.moderationResult.flaggedTerms as term}
-              <span class="flagged-term">
-                {term.category}: "{term.matchedPattern}"
-              </span>
-            {/each}
-          </div>
-          <div class="moderation-actions">
-            <button
-              type="button"
-              class="appeal-button"
-              onclick={s.handleOpenAppeal}
-            >
-              <i class="fas fa-gavel" aria-hidden="true"></i>
-              {t("create_review_appeal")}
-            </button>
-            <button
-              type="button"
-              class="shame-button"
-              onclick={s.handleSubmitToShame}
-              disabled={s.isSubmittingToShame}
-            >
-              {#if s.isSubmittingToShame}
-                <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-                {t("create_review_submitting_to_hall_of_shame")}
-              {:else}
-                <i class="fas fa-skull" aria-hidden="true"></i>
-                Hall of Shame
-              {/if}
-            </button>
-          </div>
-          {#if s.shameSubmitError}
-            <div class="shame-error" role="alert">
-              <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-              <span>{s.shameSubmitError}</span>
+            <div class="flagged-terms">
+              {#each s.moderationResult.flaggedTerms as term}
+                <span class="flagged-term">
+                  {term.category}: "{term.matchedPattern}"
+                </span>
+              {/each}
             </div>
-          {/if}
-        </div>
-      {/if}
-
-      <!-- Community visibility section -->
-      {#if !s.isFlagged && !s.isSolo && !s.isMixed}
-        <div
-          class="community-section"
-          class:disabled={!s.canPublishToCommunity}
-        >
-          <label class="toggle-row">
-            <div class="toggle-label">
-              <i class="fas fa-globe" aria-hidden="true"></i>
-              <div class="toggle-label-text">
-                <span class="toggle-label-main"
-                  >{t("create_ui_make_this_sequence_public")}</span
-                >
-                <span class="toggle-label-sub"
-                  >{t(
-                    "create_ui_anyone_can_find_and_view_it_in_the_community_library"
-                  )}</span
-                >
+            <div class="moderation-actions">
+              <button
+                type="button"
+                class="appeal-button"
+                onclick={s.handleOpenAppeal}
+              >
+                <i class="fas fa-gavel" aria-hidden="true"></i>
+                {t("create_review_appeal")}
+              </button>
+              <button
+                type="button"
+                class="shame-button"
+                onclick={s.handleSubmitToShame}
+                disabled={s.isSubmittingToShame}
+              >
+                {#if s.isSubmittingToShame}
+                  <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+                  {t("create_review_submitting_to_hall_of_shame")}
+                {:else}
+                  <i class="fas fa-skull" aria-hidden="true"></i>
+                  Hall of Shame
+                {/if}
+              </button>
+            </div>
+            {#if s.shameSubmitError}
+              <div class="shame-error" role="alert">
+                <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                <span>{s.shameSubmitError}</span>
               </div>
-            </div>
-            <button
-              type="button"
-              class="toggle-button"
-              class:toggle-on={s.publishToCommunity}
-              onclick={() => (s.publishToCommunity = !s.publishToCommunity)}
-              disabled={s.isSaving || !s.canPublishToCommunity}
-              aria-pressed={s.publishToCommunity}
-              aria-label={!s.canPublishToCommunity
-                ? t("create_save_min_public", { count: s.communityMinSteps })
-                : s.publishToCommunity
-                  ? t("create_save_publish_on_save")
-                  : t("create_save_private_only")}
-            >
-              <span class="toggle-track">
-                <span class="toggle-thumb"></span>
-              </span>
-            </button>
-          </label>
-          {#if !s.canPublishToCommunity}
-            <p class="community-note">
-              <i class="fas fa-circle-info" aria-hidden="true"></i>
-              {t("create_save_min_note", { count: s.communityMinSteps })}
-            </p>
-          {/if}
-        </div>
-      {/if}
+            {/if}
+          </div>
+        {/if}
 
-      <!-- Collections — file into your library's named collections -->
-      {#if !s.isFlagged && !s.isSolo && !s.isMixed && s.currentUser}
-        <div class="collections-section">
-          <div class="section-heading">
-            <i class="fas fa-folder-open" aria-hidden="true"></i>
-            <div class="section-heading-text">
+        <!-- Community visibility: one row, the whole row is the control. -->
+        {#if !s.isFlagged && !s.isSolo && !s.isMixed}
+          <SettingToggleButton
+            label={t("create_ui_make_this_sequence_public")}
+            description={s.canPublishToCommunity
+              ? t(
+                  "create_ui_anyone_can_find_and_view_it_in_the_community_library"
+                )
+              : t("create_save_min_note", { count: s.communityMinSteps })}
+            checked={s.publishToCommunity}
+            disabled={s.isSaving || !s.canPublishToCommunity}
+            onToggle={() => (s.publishToCommunity = !s.publishToCommunity)}
+            onLabel={t("create_save_state_public")}
+            offLabel={t("create_save_state_private")}
+            ariaLabel={!s.canPublishToCommunity
+              ? t("create_save_min_public", { count: s.communityMinSteps })
+              : s.publishToCommunity
+                ? t("create_save_publish_on_save")
+                : t("create_save_private_only")}
+            surface="card"
+            density="compact"
+          />
+        {/if}
+
+        <!-- Collections: file into your library's named collections -->
+        {#if !s.isFlagged && !s.isSolo && !s.isMixed && s.currentUser}
+          <div class="collections-section">
+            <div class="section-heading">
+              <i class="fas fa-folder-open" aria-hidden="true"></i>
               <span class="section-heading-main"
                 >{t("create_ui_add_to_a_collection")}</span
               >
@@ -396,63 +382,58 @@
                 >{t("create_ui_keep_it_organized_in_your_library")}</span
               >
             </div>
+            <CollectionPickerContent
+              mode="select"
+              selectedIds={s.selectedCollectionIds}
+              onChange={(ids) => (s.selectedCollectionIds = ids)}
+            />
           </div>
-          <CollectionPickerContent
-            mode="select"
-            selectedIds={s.selectedCollectionIds}
-            onChange={(ids) => (s.selectedCollectionIds = ids)}
-          />
-        </div>
-      {/if}
+        {/if}
 
-      {#if !s.isSolo && !s.isMixed}
-        <div class="card-presentation-section">
-          <CardFooterEditor
-            value={s.cardPresentation}
-            onchange={(value) => (s.cardPresentation = value)}
-            description={t(
-              "create_review_saved_with_this_card_private_notes_stay_private"
-            )}
-            idBase="save-card-footer"
-          />
-        </div>
-      {/if}
+        <!-- Card footer: a one-row setting, not a section of its own. -->
+        {#if !s.isSolo && !s.isMixed}
+          <div class="card-footer-row">
+            <CardFooterEditor
+              layout="inline"
+              value={s.cardPresentation}
+              onchange={(value) => (s.cardPresentation = value)}
+              idBase="save-card-footer"
+            />
+          </div>
+        {/if}
 
-      <!-- Notes (optional) -->
-      <div class="optional-section">
-        <ExpandableField
-          label={t("create_review_notes")}
-          expanded={s.showNotes}
-          onExpandedChange={(v) => (s.showNotes = v)}
-          onCollapse={() => (s.notes = "")}
-        >
-          <textarea
-            id="notes"
-            bind:value={s.notes}
-            placeholder={s.isSolo
-              ? t("create_save_notes_choreo")
-              : t("create_save_notes_sequence")}
-            class="textarea-field"
-            rows="3"
-            maxlength="500"
-          ></textarea>
-        </ExpandableField>
-      </div>
+        <!-- Notes (optional) -->
+        <div class="optional-section">
+          <ExpandableField
+            label={t("create_review_notes")}
+            expanded={s.showNotes}
+            onExpandedChange={(v) => (s.showNotes = v)}
+            onCollapse={() => (s.notes = "")}
+          >
+            <textarea
+              id="notes"
+              bind:value={s.notes}
+              placeholder={s.isSolo
+                ? t("create_save_notes_choreo")
+                : t("create_save_notes_sequence")}
+              class="textarea-field"
+              rows="3"
+              maxlength="500"
+            ></textarea>
+          </ExpandableField>
+        </div>
+      </section>
     </div>
 
     <div class="panel-footer">
-      <button
-        type="button"
-        class="button button-secondary"
-        onclick={s.handleClose}
-      >
+      <PanelButton variant="secondary" onclick={s.handleClose}>
         {t("create_review_cancel")}
-      </button>
-      <button
-        data-save-shortcut
-        type="button"
-        class="button button-primary"
-        class:button-saved={s.isExactDuplicate && !s.isFlagged}
+      </PanelButton>
+      <PanelButton
+        saveShortcut
+        accentColor={s.isExactDuplicate && !s.isFlagged
+          ? "var(--semantic-success, #22c55e)"
+          : undefined}
         onclick={s.handleSave}
         disabled={!s.canSave}
       >
@@ -472,7 +453,7 @@
           <i class="fas fa-bookmark" aria-hidden="true"></i>
           {t("create_review_save_to_library")}
         {/if}
-      </button>
+      </PanelButton>
     </div>
   </div>
 </CreatePanelDrawer>
@@ -510,6 +491,9 @@
     --sheet-filter: none;
   }
 
+  /* The panel is the size container: its width picks the composition and its
+     height sizes the card stage, so the same drawer composes itself for a
+     phone sheet, a laptop drawer and a 4K side panel. */
   .panel-inner {
     display: flex;
     flex-direction: column;
@@ -517,6 +501,8 @@
     height: 100%;
     padding-bottom: env(safe-area-inset-bottom);
     overflow: hidden;
+    container-type: size;
+    container-name: save-panel;
   }
 
   .close-button {
@@ -556,44 +542,128 @@
     pointer-events: none;
   }
 
-  /* Header - compact title only */
   .panel-header {
-    padding: 24px 32px 12px;
+    padding: 20px 32px 8px;
     flex-shrink: 0;
-    text-align: center;
   }
 
   .panel-header h2 {
     margin: 0;
-    font-size: var(--font-size-2xl, 1.5rem);
+    font-size: var(--font-size-xl, 1.25rem);
     font-weight: 600;
     color: var(--theme-text);
   }
 
-  /* Body - content flows from top */
-  .panel-body {
+  /* Stacked composition: one scroll region, card first at a definite height. */
+  .panel-layout {
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    padding: 24px 32px;
+    gap: 20px;
+    padding: 12px 32px 8px;
     overflow-y: auto;
     overscroll-behavior: contain;
-    gap: 20px;
   }
 
-  .choreo-group {
-    flex: 1;
-    min-height: 0;
+  .card-column {
     display: flex;
     flex-direction: column;
+    gap: 12px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .choreo-preview {
-    flex: 1;
-    min-height: 0;
+  .card-stage {
+    position: relative;
+    height: clamp(180px, 42cqh, 640px);
     border-radius: 12px;
     overflow: hidden;
+  }
+
+  .card-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: var(--font-size-compact, 12px);
+    font-weight: 600;
+    color: var(--theme-text);
+    background: color-mix(in srgb, var(--theme-panel-bg) 88%, transparent);
+    border: 1px solid var(--theme-stroke);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .card-badge-saved {
+    color: var(--semantic-success, #22c55e);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 45%,
+      transparent
+    );
+  }
+
+  .card-badge-variation {
+    color: var(--theme-accent);
+    border-color: color-mix(in srgb, var(--theme-accent) 45%, transparent);
+  }
+
+  .card-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card-settings > :global(.prop-pair-field) {
+    width: 100%;
+  }
+
+  .options-column {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  /* Side-by-side composition: the card owns the left, the choices scroll on
+     the right. The options keep a reading width; the card takes the rest. */
+  @container save-panel (min-width: 840px) {
+    .panel-layout {
+      flex-direction: row;
+      align-items: stretch;
+      gap: 32px;
+      padding: 12px 32px 8px;
+      overflow: hidden;
+    }
+
+    .card-column {
+      flex: 1 1 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      container-type: size;
+      container-name: card-column;
+      padding-right: 2px;
+    }
+
+    /* Fill the column minus the settings row, so the open prop picker scrolls
+       under the card instead of squeezing it. */
+    .card-stage {
+      flex: 0 0 auto;
+      height: calc(100cqh - 68px);
+    }
+
+    .options-column {
+      flex: 0 1 clamp(360px, 42cqw, 640px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-right: 2px;
+    }
   }
 
   .form-group {
@@ -799,88 +869,54 @@
     color: var(--semantic-error, #ef4444);
   }
 
-  /* Fixed-height slot so duplicate/saved status doesn't cause layout shift */
-  /* Compact info row - prop type + variation/saved status as inline tags */
-  .info-row {
+  /* Collections */
+  .collections-section {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    min-height: 28px;
-  }
-
-  .info-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: var(--font-size-compact, 12px);
-    font-weight: 500;
-    color: var(--theme-text-dim);
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px 16px;
     background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke);
+    border-radius: 12px;
   }
 
-  .info-tag i {
-    font-size: 10px;
-    opacity: 0.7;
+  .section-heading {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 8px;
   }
 
-  .info-tag-saved {
-    color: var(--semantic-success, #22c55e);
-    background: color-mix(
-      in srgb,
-      var(--semantic-success, #22c55e) 10%,
-      transparent
-    );
-    border-color: color-mix(
-      in srgb,
-      var(--semantic-success, #22c55e) 30%,
-      transparent
-    );
-  }
-
-  .info-tag-saved i {
-    opacity: 1;
-  }
-
-  .info-tag-variation {
+  .section-heading > i {
     color: var(--theme-accent);
-    background: color-mix(in srgb, var(--theme-accent) 10%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent) 25%, transparent);
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+    align-self: center;
   }
 
-  .info-tag-variation i {
-    opacity: 1;
+  .section-heading-main {
+    font-size: var(--font-size-sm, 14px);
+    font-weight: 600;
+    color: var(--theme-text);
   }
 
-  /* Saved state button - green checkmark instead of purple gradient */
-  .button-saved {
-    background: color-mix(
-      in srgb,
-      var(--semantic-success, #22c55e) 20%,
-      transparent
-    ) !important;
-    box-shadow: none !important;
-    color: var(--semantic-success, #22c55e) !important;
-    cursor: default !important;
+  .section-heading-sub {
+    font-size: var(--font-size-compact, 12px);
+    color: var(--theme-text-dim);
   }
 
-  /* Optional fields - collapsed by default */
+  .card-footer-row {
+    padding: 10px 16px;
+    background: var(--theme-card-bg);
+    border: 1px solid var(--theme-stroke);
+    border-radius: 12px;
+  }
+
   .optional-section {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
     gap: 8px;
-  }
-
-  .card-presentation-section {
-    padding: 16px;
-    border: 1.5px solid var(--theme-stroke);
-    border-radius: 12px;
-    background: var(--theme-card-bg);
   }
 
   .textarea-field {
@@ -898,6 +934,8 @@
       border-color var(--duration-normal) var(--ease-standard),
       box-shadow var(--duration-normal) var(--ease-standard);
     box-sizing: border-box;
+    resize: vertical;
+    min-height: 80px;
   }
 
   .textarea-field:focus {
@@ -912,264 +950,38 @@
     color: color-mix(in srgb, var(--theme-text-dim) 70%, transparent);
   }
 
-  .textarea-field {
-    resize: vertical;
-    min-height: 80px;
-  }
-
-  /* Footer - anchored at bottom with breathing room */
+  /* Footer: actions size to their labels and sit at the trailing edge. */
   .panel-footer {
     display: flex;
+    justify-content: flex-end;
     gap: 12px;
-    padding: 24px 32px;
+    padding: 16px 32px 24px;
     flex-shrink: 0;
   }
 
-  .button {
-    flex: 1;
-    min-height: 56px; /* Slightly larger for prominence */
-    padding: 16px 24px;
-    border: none;
-    border-radius: 14px;
-    font-size: var(--font-size-lg, 18px);
-    font-weight: 600;
-    cursor: pointer;
-    transition:
-      background var(--duration-normal) var(--ease-standard),
-      color var(--duration-normal) var(--ease-standard),
-      border-color var(--duration-normal) var(--ease-standard),
-      box-shadow var(--duration-normal) var(--ease-standard),
-      transform var(--duration-normal) var(--ease-standard);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-  }
-
-  .button-secondary {
-    background: var(--theme-card-bg);
-    color: var(--theme-text-dim);
-    border: 1.5px solid var(--theme-stroke);
-  }
-
-  .button-secondary:hover {
-    background: var(--theme-card-hover-bg);
-    color: var(--theme-text);
-  }
-
-  .button-primary {
-    background: linear-gradient(
-      135deg,
-      var(--theme-accent-strong) 0%,
-      color-mix(in srgb, var(--theme-accent-strong) 80%, #000) 100%
-    );
-    color: white;
-    box-shadow: 0 6px 20px
-      color-mix(in srgb, var(--theme-accent-strong) 50%, transparent);
-  }
-
-  .button-primary:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px
-      color-mix(in srgb, var(--theme-accent-strong) 60%, transparent);
-  }
-
-  .button-primary:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  .button-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  /* Mobile adjustments */
-  @media (max-width: 640px) {
+  /* Phone sheet: tighter gutters, actions share the row. */
+  @container save-panel (max-width: 639px) {
     .panel-header {
-      padding: 24px 24px 16px;
+      padding: 20px 20px 8px;
     }
 
-    .panel-header h2 {
-      font-size: var(--font-size-xl, 1.25rem);
-    }
-
-    .panel-body {
-      padding: 16px 24px;
+    .panel-layout {
+      padding: 8px 20px;
       gap: 16px;
     }
 
     .panel-footer {
-      padding: 20px 24px;
+      padding: 12px 20px 20px;
     }
 
-    .button {
-      min-height: 52px;
-      font-size: var(--font-size-base, 16px);
+    .panel-footer > :global(.panel-btn) {
+      flex: 1 1 0;
     }
-  }
-
-  /* Collections section — mirrors the community-section card language */
-  .collections-section {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 16px;
-    background: var(--theme-card-bg);
-    border: 1.5px solid var(--theme-stroke);
-    border-radius: 12px;
-  }
-
-  .section-heading {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .section-heading > i {
-    color: var(--theme-accent);
-    width: 16px;
-    text-align: center;
-    flex-shrink: 0;
-  }
-
-  .section-heading-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .section-heading-main {
-    font-size: var(--font-size-sm, 14px);
-    color: var(--theme-text);
-  }
-
-  .section-heading-sub {
-    font-size: var(--font-size-compact, 12px);
-    color: var(--theme-text-dim);
-  }
-
-  /* Community section */
-  .community-section {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 16px;
-    background: var(--theme-card-bg);
-    border: 1.5px solid var(--theme-stroke);
-    border-radius: 12px;
-  }
-
-  /* Under the community minimum: dim the label (the toggle dims via :disabled). */
-  .community-section.disabled .toggle-label {
-    opacity: 0.5;
-  }
-
-  .community-note {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 0;
-    font-size: var(--font-size-compact, 12px);
-    color: var(--theme-text-dim);
-  }
-
-  .community-note i {
-    color: var(--theme-accent);
-    flex-shrink: 0;
-  }
-
-  .toggle-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    gap: 12px;
-    user-select: none;
-  }
-
-  .toggle-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: var(--font-size-sm, 14px);
-    color: var(--theme-text);
-  }
-
-  .toggle-label i {
-    color: var(--theme-accent);
-    width: 16px;
-    text-align: center;
-    flex-shrink: 0;
-  }
-
-  .toggle-label-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .toggle-label-main {
-    font-size: var(--font-size-sm, 14px);
-    color: var(--theme-text);
-  }
-
-  .toggle-label-sub {
-    font-size: var(--font-size-compact, 12px);
-    color: var(--theme-text-dim);
-  }
-
-  .toggle-button {
-    appearance: none;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  .toggle-button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .toggle-track {
-    display: block;
-    width: 44px;
-    height: 24px;
-    border-radius: 12px;
-    background: var(--theme-stroke);
-    position: relative;
-    transition: background var(--duration-normal) var(--ease-standard);
-  }
-
-  .toggle-on .toggle-track {
-    background: var(--theme-accent);
-  }
-
-  .toggle-thumb {
-    display: block;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: white;
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    transition: transform var(--duration-normal) var(--ease-standard);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  }
-
-  .toggle-on .toggle-thumb {
-    transform: translateX(20px);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .button,
     .textarea-field,
-    .close-button,
-    .toggle-track,
-    .toggle-thumb {
+    .close-button {
       transition: none;
     }
   }
