@@ -12,6 +12,7 @@
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import HandCombinationBoard from "#lib/shared/guide-topics/HandCombinationBoard.svelte";
+  import { CombinationPlayback } from "#lib/shared/guide-topics/combination-playback.svelte.js";
   import {
     HAND_COMBINATIONS,
     MOTION_MAP_MOVES,
@@ -56,6 +57,10 @@
   const MAP_STAGE = 1;
   const PAIRS_STAGE = 2;
   const BOARD_STAGE = HAND_MOTIONS_STAGE_COUNT - 1;
+  // A hover or tap on a board cell plays its move, as on the Guide page
+  // (Austen, 2026-10-13).
+  const boardPlayback = new CombinationPlayback();
+  onDestroy(boardPlayback.settle);
   const HAND_POINTS = new Set<string>([
     GridLocation.NORTH,
     GridLocation.EAST,
@@ -273,7 +278,11 @@
           <HandPairsStage found={pairsFound} onFind={foundCombination} />
         {:else}
           <div class="board-stage">
-            <HandCombinationBoard showDescriptions />
+            <HandCombinationBoard
+              showDescriptions
+              cellProgress={boardPlayback.cellProgress}
+              onCellPlay={boardPlayback.replay}
+            />
           </div>
         {/if}
       </Crossfade>
