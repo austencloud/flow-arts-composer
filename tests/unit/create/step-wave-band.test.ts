@@ -58,7 +58,7 @@ describe("one diagonal wave", () => {
     expect(keyframes).toMatch(/@keyframes stepCascade \{/);
     expect(stepCell).not.toMatch(/@keyframes stepCascade/);
     expect(stepCell).toMatch(
-      /animation: stepCascade var\(--step-entrance-duration, 380ms\)/
+      /animation: stepCascade\s+var\(--step-entrance-duration, var\(--duration-dramatic\)\)/
     );
     const banner = keyframes.indexOf("REDUCED MOTION SUPPORT");
     expect(banner).toBeGreaterThan(-1);

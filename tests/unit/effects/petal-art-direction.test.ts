@@ -218,8 +218,15 @@ describe("petal art direction", () => {
     const intent = DEFAULT_EFFECTS_CONFIG.petals;
     const canvas = resolvePetals2D(intent);
     const scene = resolvePetals3D(intent);
-    expect(canvas.baseSize).toBe(8);
-    expect(canvas.motionSpawnRate).toBeGreaterThan(canvas.ambientSpawnRate);
+    // ab98cea273 rebuilt 2D petals as lit, turning petals; 14px reads as a
+    // petal instead of a speck while the shed stays sparse.
+    expect(canvas.baseSize).toBe(14);
+    // 2D motion shedding is per 100 px of tip travel (motionDensity) while
+    // ambient is per second; weighted by the default intent, a moving tip
+    // still sheds far more than a still one.
+    expect(canvas.motionDensity * intent.motionEmission).toBeGreaterThan(
+      canvas.ambientSpawnRate * intent.ambientEmission
+    );
     expect(scene.motionTipRate * intent.motionEmission).toBeGreaterThan(
       scene.ambientAboveRate * intent.ambientEmission
     );

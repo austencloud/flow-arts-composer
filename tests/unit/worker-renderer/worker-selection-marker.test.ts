@@ -63,21 +63,23 @@ describe("worker selection marker parity", () => {
       radius: 0.42,
       segments: 64,
     });
+    // Opacities follow Viewer3DScene: pulse = 0.6 + 0.4·sin(phase), inner
+    // = pulse · 0.75, outer = pulse · 0.18, center 0.06 (0095974000).
+    expect(inner.material.opacity).toBeCloseTo(0.45, 12);
     expect(inner.material).toMatchObject({
       transparent: true,
-      opacity: 0.54,
       blending: AdditiveBlending,
       depthWrite: false,
     });
+    expect(outer.material.opacity).toBeCloseTo(0.108, 12);
     expect(outer.material).toMatchObject({
       transparent: true,
-      opacity: 0.18,
       blending: AdditiveBlending,
       depthWrite: false,
     });
     expect(center.material).toMatchObject({
       transparent: true,
-      opacity: 0.15,
+      opacity: 0.06,
       blending: NormalBlending,
     });
     expect(center.material.depthWrite).toBe(true);
@@ -99,8 +101,8 @@ describe("worker selection marker parity", () => {
     const center = mesh(marker.root, "worker-selection-marker-center");
 
     expect(marker.root.position.toArray()).toEqual([-4, -0.75, 1.5]);
-    expect(inner.material.opacity).toBeCloseTo(0.9, 12);
-    expect(outer.material.opacity).toBeCloseTo(0.3, 12);
+    expect(inner.material.opacity).toBeCloseTo(0.75, 12);
+    expect(outer.material.opacity).toBeCloseTo(0.18, 12);
     expect(inner.material.color.getHex()).toBe(0xef4444);
     expect(outer.material.color.getHex()).toBe(0xef4444);
     expect(center.material.color.getHex()).toBe(0xef4444);
@@ -108,7 +110,7 @@ describe("worker selection marker parity", () => {
     marker.dispose();
   });
 
-  it("suppresses individual rings and shows the exact gray all-selected disc", () => {
+  it("suppresses individual rings and shows the exact violet all-selected ring", () => {
     const marker = createWorkerSelectionMarker(
       snapshot({ allPerformersSelected: true })
     );
@@ -121,14 +123,17 @@ describe("worker selection marker parity", () => {
     expect(all.visible).toBe(true);
     expect(all.position.toArray()).toEqual([0, 0.01, 0]);
     expect(all.rotation.x).toBeCloseTo(-Math.PI / 2, 12);
-    expect((all.geometry as CircleGeometry).parameters).toMatchObject({
-      radius: 0.35,
-      segments: 32,
+    // Viewer3DScene draws the all-selected state as a 0.42-0.58 violet ring
+    // (0095974000), replacing the gray disc.
+    expect((all.geometry as RingGeometry).parameters).toMatchObject({
+      innerRadius: 0.42,
+      outerRadius: 0.58,
+      thetaSegments: 48,
     });
-    expect(all.material.color.getHex()).toBe(0x6b7280);
+    expect(all.material.color.getHex()).toBe(0x8b5cf6);
     expect(all.material).toMatchObject({
       transparent: true,
-      opacity: 0.15,
+      opacity: 0.45,
       blending: NormalBlending,
       depthWrite: true,
     });
