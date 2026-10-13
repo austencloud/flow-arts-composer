@@ -244,6 +244,9 @@ export function createConstructTabState(
     setShowStartPlacementPicker(false);
     setSelectedStartPlacement(pictographData);
     sequenceState.setSelectedStartPlacement(startPlacementData);
+    // An accepted pick retires a "pick again" message from a failed attempt;
+    // the picker reads a lingering message as a refusal.
+    clearError();
 
     sequenceState
       .createSequence({

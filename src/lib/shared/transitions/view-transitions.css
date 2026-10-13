@@ -152,6 +152,42 @@ html.generate-card-morph-tnd::view-transition-group(tnd-choice-icon) {
   }
 }
 
+/* Construct: the start placement card the user picks travels into the
+   workspace's start cell while the workspace slides open, on the slide's own
+   clock. The tapped card holds the name for the old capture and the start
+   cell for the new one, so an existing start cell (re-picking a start) never
+   shares it. The live page stays under the flight, as in the card morph above.
+   Owner: features/create/construct/start-placement-picker/services/
+   start-placement-morph.ts. */
+html.construct-start-morph-active {
+  view-transition-name: none;
+}
+
+html.construct-start-morph-active::view-transition {
+  background: transparent;
+}
+
+html.construct-start-morph-from [data-start-morph-source],
+html.construct-start-morph-to
+  .workspace-container
+  [data-history-start-placement]
+  > .history-layout-shell {
+  view-transition-name: construct-start-placement;
+}
+
+/* Its copy in the outgoing picker would otherwise fade out where it started. */
+html.construct-start-morph-to [data-start-morph-source] {
+  visibility: hidden;
+}
+
+::view-transition-group(construct-start-placement) {
+  animation-duration: var(--duration-emphasis);
+  animation-timing-function: var(--ease-in-out);
+  /* The flight is re-keyed as translate + scale (start-placement-morph.ts);
+     scaling from the corner keeps the group's resting translate exact. */
+  transform-origin: 0 0;
+}
+
 /* The /composer 3D card opening into the viewer's frame over the dimmed page,
    and closing back into the card. The card's picture and the frame share one
    name, so the group carries the box between them while the dimmed page fades

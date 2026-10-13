@@ -59,6 +59,7 @@
     tabindex="0"
     data-ghost="safe"
     data-ghost-kind="start-placement"
+    data-start-morph-tile
     style:--letter-border-color={getLetterBorderColorSafe(
       pictographData.letter
     )}
@@ -67,7 +68,7 @@
     onkeydown={(e) => handleKeydown(e, pictographData)}
     onanimationend={() => onAnimationEnd(pictographData.id)}
   >
-    <div class="pictograph-wrapper">
+    <div class="pictograph-wrapper" data-start-morph-candidate>
       <PictographContainer
         pictographData={gridJoin
           ? withGridJoin(pictographData)

@@ -397,8 +397,11 @@
   {/if}
 
   <div class="grid-area">
+    <!-- data-placement-stage: the pose's own square, for callers that carry
+         it elsewhere (Construct flies it into the start cell). -->
     <div
       class="grid-wrapper"
+      data-placement-stage
       class:animating={motion.active}
       class:can-drag-locations={dragLocations}
       class:grabbed-left={aim.grabbedLocationColor === HandSide.LEFT}
