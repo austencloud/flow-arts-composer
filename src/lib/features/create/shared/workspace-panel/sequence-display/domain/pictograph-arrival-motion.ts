@@ -2,8 +2,13 @@ import { calculateMotionEndpoints } from "#lib/shared/animation-engine/services/
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
-/** A readable base pace for ordinary motions, including most zero-turn shifts. */
-export const PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS = 850;
+/**
+ * A readable base pace for ordinary motions, including most zero-turn shifts.
+ * With the 280ms entrance and landing around it, each pick holds the stage for
+ * about a second; the earlier 850ms floor made building a long sequence feel
+ * slow once the motions were familiar.
+ */
+export const PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS = 500;
 /** Keep repeated option selection responsive even at the highest turn setting. */
 export const PICTOGRAPH_ARRIVAL_PROP_MOTION_MAX_MS = 2000;
 /** The fastest either prop may rotate during the instructional preview. */

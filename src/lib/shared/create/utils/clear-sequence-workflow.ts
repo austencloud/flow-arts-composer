@@ -5,10 +5,9 @@
  * Extracted from CreateModule to reduce complexity and improve testability.
  *
  * Workflow:
- * 1. Push undo snapshot (Assemble's builder records its own entry in step 3)
- * 2. Wait for fade/layout animations (300ms)
- * 3. Clear ONLY the active tab's sequence data and UI state
- * 4. Close related panels
+ * 1. Push undo snapshot (Assemble's builder records its own entry in step 2)
+ * 2. Clear ONLY the active tab's sequence data and UI state
+ * 3. Close related panels
  *
  * IMPORTANT: This workflow is TAB-AWARE and only clears the currently active tab's state.
  * Each tab (Construct, Generate, Assembler) maintains independent state.
@@ -45,8 +44,8 @@ export async function executeClearSequenceWorkflow(
     // Determine which tab is currently active
     const activeTab = navigationState.activeTab;
 
-    // Capture a reference to the active tab's sequence state BEFORE the delay
-    // This prevents race conditions if the user switches tabs during the 300ms animation delay
+    // Capture a reference to the active tab's sequence state up front, so a
+    // tab switch while persistence clears cannot redirect the clear.
     const activeTabSequenceState = CreateModuleState.sequenceState;
     const assembleBuilder =
       activeTab === "assemble"
@@ -62,17 +61,15 @@ export async function executeClearSequenceWorkflow(
       });
     }
 
-    // Clear persistence FIRST, before animations, to prevent auto-save during the animation delay
+    // Clear persistence first so auto-save cannot write during the clear.
     if (activeTabSequenceState) {
       await activeTabSequenceState.clearPersistedState();
     }
 
-    // 2. Wait for fade and layout transition to complete (300ms)
-    // Everything fades together - steps, workspace, button panel, layout
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    // 3. After animations complete, clear the active tab's data and reset UI
-    // This happens after components have faded out to avoid visual popping
+    // 2. Clear the active tab's data and reset UI. The workspace fade and the
+    // tool panel's slide back to full width are driven by this state change
+    // (PanelGroup and the workspace wrapper own them), so there is nothing to
+    // wait for first; a fixed pause here was half a second of nothing moving.
 
     // Clear Construct tab state if we're in the Construct tab
     if (activeTab === "construct" && constructTabState) {
@@ -98,7 +95,7 @@ export async function executeClearSequenceWorkflow(
       activeTabSequenceState.clearError();
     }
 
-    // 4. End the quick preview and close all sequence-related panels
+    // 3. End the quick preview and close all sequence-related panels
     panelState.stopWorkspacePlayback();
     panelState.closeAllPanels();
   } catch (error) {
