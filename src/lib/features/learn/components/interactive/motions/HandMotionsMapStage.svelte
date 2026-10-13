@@ -60,10 +60,10 @@
 
 <div class="map-stage">
   <div class="map-layout">
-    <div class="figure">
+    <div class="figure" data-hand-grid="map">
       <MotionMapFigure interactive demo={false} bind:lit onMove={moved} />
     </div>
-    <ul class="moves">
+    <ul class="moves" data-hand-side="map">
       {#each MOTION_MAP_MOVES as move (move.id)}
         {@const made = found[move.id]}
         {@const picture = made

@@ -622,6 +622,7 @@
           <div
             class="backdrop"
             class:waiting={turn !== null && turn !== hand}
+            data-hand-grid={hand === RED ? "red-backdrop" : "blue-backdrop"}
             bind:this={backdrops[hand]}
           ></div>
         {/each}
@@ -634,6 +635,7 @@
           <div
             class="half"
             class:red
+            data-hand-grid={red ? "red" : "blue"}
             class:turn={turn === hand}
             class:waiting={turn !== null && turn !== hand}
             bind:this={halves[hand]}
@@ -738,7 +740,7 @@
       </div>
     </div>
 
-    <div class="results">
+    <div class="results" data-hand-side="pairs">
       <div class="readout" aria-hidden="true">
         {#if readout}
           {@const tones = LETTER_TYPE_COLORS[readout.combination.letterType]}
