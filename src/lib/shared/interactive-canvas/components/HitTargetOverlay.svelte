@@ -418,8 +418,11 @@
   .on-scene .hit-target.phase-red:not(.disabled):not(:focus-visible) {
     fill: color-mix(in srgb, var(--ring) 10%, transparent);
     stroke: var(--ring);
-    stroke-width: 3;
-    filter: drop-shadow(0 0 3px var(--theme-scene-mark-halo, rgb(0 0 0 / 0.6)));
+    stroke-width: 3.5;
+    /* A tight halo draws a crisp edge against busy scenery; the wider one
+       separates the ring from the background's overall tone. */
+    filter: drop-shadow(0 0 1px var(--theme-scene-mark-halo, rgb(0 0 0 / 0.6)))
+      drop-shadow(0 0 4px var(--theme-scene-mark-halo, rgb(0 0 0 / 0.6)));
   }
 
   @supports (color: oklch(from red l c h)) {
