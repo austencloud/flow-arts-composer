@@ -27,7 +27,6 @@
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
-  import { getConceptPlacesByLevel } from "../../../domain/concept-place-registry";
   import type { ExperienceViewMode } from "../../../domain/types";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
   import LessonStageControls from "../LessonStageControls.svelte";
@@ -72,16 +71,7 @@
     HAND_COMBINATIONS.map((combination) => combination.id)
   );
 
-  const levelOnePlaces = getConceptPlacesByLevel(1);
-  const curriculumIndex = levelOnePlaces.findIndex(
-    (place) => place.id === "1.3"
-  );
-  const curriculumLabel = $derived(
-    tDynamic("learn_motion_curriculum_label", {
-      current: curriculumIndex + 1,
-      total: levelOnePlaces.length,
-    })
-  );
+  const curriculumLabel = $derived(tDynamic("learn_ui_level_one"));
 
   const haptic = getHapticFeedback();
   const persistence = getExperiencePersistence("hand-motions-intro");
