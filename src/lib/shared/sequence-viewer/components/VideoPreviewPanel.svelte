@@ -365,7 +365,7 @@
 
   .action-btn:active {
     transform: scale(0.96);
-    transition-duration: var(--duration-instant);
+    transition-duration: calc(var(--duration-instant) / 2);
   }
 
   .action-btn:focus-visible {

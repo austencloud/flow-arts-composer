@@ -21,7 +21,7 @@ the geo dashboard).
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
-  import { EASE_STANDARD } from "@austencloud/motion";
+  import { EASE_OUT, EASE_SPRING } from "#lib/shared/transitions/motion.js";
   import { flyFade, motionDuration } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
@@ -371,8 +371,8 @@ the geo dashboard).
         },
       ],
       {
-        duration: motionDuration(DURATION.scene),
-        easing: EASE_STANDARD,
+        duration: motionDuration(DURATION.scene * 1.2),
+        easing: EASE_OUT,
         fill: "forwards",
       }
     );
@@ -388,7 +388,7 @@ the geo dashboard).
         { transform: "scale(1.25)", offset: 0.85 },
         { transform: "scale(1)", offset: 1 },
       ],
-      { duration: motionDuration(DURATION.scene), easing: EASE_STANDARD }
+      { duration: motionDuration(DURATION.scene * 1.3), easing: EASE_SPRING }
     );
   }
 

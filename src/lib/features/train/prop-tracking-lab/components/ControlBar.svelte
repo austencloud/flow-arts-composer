@@ -207,7 +207,10 @@
     border-radius: 50%;
     cursor: pointer;
     font-size: 1rem;
-    transition: transform var(--duration-normal);
+    transition:
+      transform var(--duration-normal),
+      background var(--duration-normal),
+      color var(--duration-normal);
   }
 
   .nav-btn {

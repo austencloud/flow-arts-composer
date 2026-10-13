@@ -158,7 +158,8 @@
 
   .capture-progress.failed {
     border-color: var(--semantic-error, #ef4444);
-    animation: shake var(--duration-dramatic) var(--ease-standard);
+    animation: shake calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-standard);
   }
 
   .capture-progress.completed {

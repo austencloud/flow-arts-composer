@@ -284,7 +284,8 @@
     background: transparent;
     backdrop-filter: none;
     box-shadow: none;
-    transition: background var(--duration-dramatic) var(--ease-standard);
+    transition: background calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-standard);
   }
 
   .board-viewport {

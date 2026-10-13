@@ -351,7 +351,8 @@
       var(--semantic-success, var(--semantic-success))
     );
     border-radius: 2px;
-    transition: width var(--duration-dramatic) var(--ease-standard);
+    transition: width calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-standard);
   }
 
   /* Success Animation */
@@ -360,7 +361,8 @@
     flex-direction: column;
     align-items: center;
     gap: 16px;
-    animation: successBounce var(--duration-dramatic) var(--ease-standard);
+    animation: successBounce
+      calc(var(--duration-dramatic) + var(--duration-fast)) var(--ease-standard);
   }
 
   @keyframes successBounce {

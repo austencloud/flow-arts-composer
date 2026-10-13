@@ -876,7 +876,7 @@
     font-weight: 500;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
     pointer-events: none;
-    animation: fadeInOut var(--duration-scene) var(--ease-standard);
+    animation: fadeInOut calc(var(--duration-scene) * 5) var(--ease-standard);
     z-index: 100;
   }
 

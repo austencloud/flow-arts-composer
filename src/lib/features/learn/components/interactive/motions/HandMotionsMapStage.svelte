@@ -291,7 +291,8 @@
     border: 2px solid var(--prop-blue, #3b82f6);
     border-radius: inherit;
     pointer-events: none;
-    animation: ping var(--duration-dramatic) var(--ease-standard-out) both;
+    animation: ping calc(var(--duration-scene) * 0.75) var(--ease-standard-out)
+      both;
   }
 
   @keyframes ping {

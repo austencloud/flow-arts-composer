@@ -217,8 +217,8 @@
 
   /* Entrance animation similar to StepCell */
   .pictograph-container.animate {
-    animation: scaleInStaggered var(--duration-dramatic) var(--ease-spring)
-      forwards;
+    animation: scaleInStaggered calc(var(--duration-scene) * 0.75)
+      var(--ease-spring) forwards;
     animation-delay: var(--animation-delay, 0ms);
   }
 

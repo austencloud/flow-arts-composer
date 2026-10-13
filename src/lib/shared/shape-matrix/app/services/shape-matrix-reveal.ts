@@ -32,18 +32,18 @@ export const SHAPE_MATRIX_REVEAL: Record<
 > = {
   rows: { at: 0, duration: DURATION.emphasis, stagger: STAGGER.normal },
   columns: {
-    at: DURATION.normal,
+    at: DURATION.normal + STAGGER.normal,
     duration: DURATION.emphasis,
     stagger: STAGGER.normal,
   },
   crossings: {
-    at: DURATION.dramatic + DURATION.instant,
-    duration: DURATION.emphasis,
+    at: DURATION.emphasis + DURATION.normal,
+    duration: DURATION.dramatic,
     stagger: 0,
   },
   chosen: {
     at: DURATION.scene,
-    duration: DURATION.dramatic,
+    duration: DURATION.dramatic + DURATION.fast,
     stagger: 0,
   },
   relationship: {
@@ -53,7 +53,7 @@ export const SHAPE_MATRIX_REVEAL: Record<
   },
   hero: {
     at: DURATION.scene + DURATION.normal,
-    duration: DURATION.dramatic,
+    duration: DURATION.dramatic + DURATION.instant,
     stagger: 0,
   },
 };

@@ -468,7 +468,7 @@
     color: rgba(200, 180, 140, 0.8);
     font-family: Georgia, "Times New Roman", serif;
     opacity: 1;
-    transition: opacity var(--duration-scene) var(--ease-standard);
+    transition: opacity calc(var(--duration-scene) * 0.75) var(--ease-standard);
   }
 
   .museum-loading-overlay.fading {

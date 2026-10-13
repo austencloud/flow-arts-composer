@@ -133,7 +133,8 @@
   .environment-art {
     overflow: hidden;
     background: var(--card-gradient);
-    transition: background var(--duration-dramatic) var(--ease-standard);
+    transition: background calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-standard);
   }
 
   .art-orb {

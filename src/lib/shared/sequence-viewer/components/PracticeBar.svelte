@@ -864,7 +864,8 @@
 
   /* One-shot celebration when the tempo crosses a staircase speed-up. */
   .pb-level.up.celebrate {
-    animation: pb-celebrate var(--duration-dramatic) var(--ease-spring);
+    animation: pb-celebrate calc(var(--duration-scene) * 0.775)
+      var(--ease-spring);
   }
   @keyframes pb-celebrate {
     0% {

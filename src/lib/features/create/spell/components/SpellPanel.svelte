@@ -578,7 +578,8 @@ Same functionality, different density.
 
   /* Generating state - shimmer sweep + initial pulse */
   .generate-button.generating {
-    animation: generatePulse var(--duration-dramatic) var(--ease-standard-out);
+    animation: generatePulse calc(var(--duration-scene) * 0.75)
+      var(--ease-standard-out);
     pointer-events: none;
     overflow: hidden;
   }

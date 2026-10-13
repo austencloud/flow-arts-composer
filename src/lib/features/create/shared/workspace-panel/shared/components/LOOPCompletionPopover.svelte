@@ -244,7 +244,7 @@
   }
   .component-button.available:active {
     transform: scale(0.95);
-    transition-duration: var(--duration-instant);
+    transition-duration: calc(var(--duration-instant) / 2);
   }
 
   /* Unavailable: gray, disabled */

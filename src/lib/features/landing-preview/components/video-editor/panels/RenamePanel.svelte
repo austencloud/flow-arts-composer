@@ -775,6 +775,7 @@
   .progress-fill {
     height: 100%;
     background: linear-gradient(90deg, #f59e0b, #f97316);
-    transition: width var(--duration-dramatic) var(--ease-standard);
+    transition: width calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-standard);
   }
 </style>

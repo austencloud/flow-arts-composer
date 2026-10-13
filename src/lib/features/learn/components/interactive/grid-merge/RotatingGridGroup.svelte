@@ -148,16 +148,24 @@
     animation-delay: var(--duration-dramatic);
   }
   .intro .hand-point[data-index="0"] {
-    animation-delay: var(--duration-dramatic);
+    animation-delay: calc(var(--duration-dramatic) + var(--duration-fast));
   }
   .intro .hand-point[data-index="1"] {
-    animation-delay: calc(var(--duration-dramatic) + var(--duration-normal));
+    animation-delay: calc(
+      var(--duration-dramatic) + var(--duration-fast) + var(--stagger-normal)
+    );
   }
   .intro .hand-point[data-index="2"] {
-    animation-delay: calc(var(--duration-normal) * 3);
+    animation-delay: calc(
+      var(--duration-dramatic) + var(--duration-fast) + var(--stagger-normal) *
+        2
+    );
   }
   .intro .hand-point[data-index="3"] {
-    animation-delay: calc(var(--duration-dramatic) + var(--duration-fast) * 2);
+    animation-delay: calc(
+      var(--duration-dramatic) + var(--duration-fast) + var(--stagger-normal) *
+        3
+    );
   }
 
   /* === SPLIT: Right/bottom, rotated, scaled === */
@@ -224,7 +232,7 @@
     animation-delay: var(--stagger-relaxed);
   }
   .highlight-hand .hand-point[data-index="2"] {
-    animation-delay: var(--duration-fast);
+    animation-delay: calc(var(--stagger-relaxed) * 2);
   }
   .highlight-hand .hand-point[data-index="3"] {
     animation-delay: calc(var(--stagger-relaxed) * 3);
@@ -246,7 +254,7 @@
     animation-delay: var(--stagger-relaxed);
   }
   .highlight-outer .outer-point[data-index="2"] {
-    animation-delay: var(--duration-fast);
+    animation-delay: calc(var(--stagger-relaxed) * 2);
   }
   .highlight-outer .outer-point[data-index="3"] {
     animation-delay: calc(var(--stagger-relaxed) * 3);

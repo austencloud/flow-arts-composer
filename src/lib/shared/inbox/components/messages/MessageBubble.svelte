@@ -455,7 +455,8 @@
   }
 
   .message-bubble.highlighted .bubble {
-    animation: reply-target-pulse var(--duration-scene) var(--ease-standard-out);
+    animation: reply-target-pulse calc(var(--duration-scene) * 1.75)
+      var(--ease-standard-out);
   }
 
   @keyframes reply-target-pulse {

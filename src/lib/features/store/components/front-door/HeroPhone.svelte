@@ -389,7 +389,7 @@
     transform: perspective(1400px) translateX(88%) rotateY(-52deg) scale(0.86);
     opacity: 0;
     transition:
-      transform var(--duration-scene) var(--ease-spring),
+      transform calc(var(--duration-scene) * 0.8) var(--ease-spring),
       opacity var(--duration-emphasis) var(--ease-standard-out);
     will-change: transform;
   }
@@ -577,7 +577,7 @@
       linear-gradient(168deg, #15203a, #0a0f1c 60%, #121a30);
     filter: blur(2px);
     transform: scale(1.04) translate(1.2%, -0.8%);
-    transition: transform var(--duration-scene) var(--ease-out);
+    transition: transform calc(var(--duration-scene) * 0.7) var(--ease-out);
   }
 
   /* The card as the camera sees it: a flat object lying in that room, taking a
@@ -594,7 +594,7 @@
     /* The drift: a hand holding a phone is never still. The card and the room
        move by DIFFERENT amounts and in opposite directions — that parallax is
        the whole depth cue. Slow enough to read as breathing. */
-    transition: transform var(--duration-scene) var(--ease-out);
+    transition: transform calc(var(--duration-scene) * 0.7) var(--ease-out);
     filter: drop-shadow(0 0.6rem 1.1rem rgba(0, 0, 0, 0.65));
   }
   .camera.live .shot {
@@ -680,7 +680,7 @@
     inset: var(--phone-safe-area-top) 0 0;
     background: #0b0d12;
     transform: translateY(100%);
-    transition: transform var(--duration-scene) var(--ease-out);
+    transition: transform calc(var(--duration-scene) * 0.7) var(--ease-out);
   }
   .page.up {
     transform: none;

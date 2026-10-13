@@ -130,7 +130,8 @@
         transparent
       );
     border-radius: 8px;
-    animation: pulse-combo var(--duration-dramatic) var(--ease-standard);
+    animation: pulse-combo calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-standard);
   }
 
   .combo-display.high-combo {
@@ -144,7 +145,8 @@
       )
     );
     border-color: color-mix(in srgb, var(--semantic-warning) 60%, transparent);
-    animation: pulse-high-combo var(--duration-dramatic) var(--ease-standard);
+    animation: pulse-high-combo
+      calc(var(--duration-dramatic) + var(--duration-fast)) var(--ease-standard);
   }
 
   .combo-value {

@@ -51,7 +51,8 @@ QuizLetterButton - Answer button for quiz
       background var(--duration-normal) var(--ease-out),
       border-color var(--duration-normal) var(--ease-out),
       transform var(--duration-normal) var(--ease-out),
-      box-shadow var(--duration-normal) var(--ease-out);
+      box-shadow var(--duration-normal) var(--ease-out),
+      opacity var(--duration-normal) var(--ease-out);
   }
 
   .answer-btn:hover:not(:disabled) {
@@ -85,7 +86,8 @@ QuizLetterButton - Answer button for quiz
   .answer-btn.correct {
     background: color-mix(in srgb, var(--semantic-success) 20%, transparent);
     border-color: color-mix(in srgb, var(--semantic-success) 60%, transparent);
-    animation: correctPulse var(--duration-dramatic) var(--ease-spring);
+    animation: correctPulse
+      calc(var(--duration-dramatic) + var(--duration-fast)) var(--ease-spring);
   }
 
   @keyframes correctPulse {

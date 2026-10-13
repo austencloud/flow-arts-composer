@@ -138,7 +138,10 @@
     transition:
       opacity var(--duration-fast) var(--ease-standard),
       transform var(--duration-fast) var(--ease-standard),
-      outline var(--duration-fast) var(--ease-standard);
+      outline var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     text-align: center;
     background: linear-gradient(
       135deg,
@@ -158,7 +161,7 @@
 
   .mobile-action-btn:active:not(:disabled) {
     transform: scale(0.95);
-    transition-duration: var(--duration-instant);
+    transition-duration: calc(var(--duration-instant) / 2);
   }
 
   .mobile-action-btn.unavailable {
