@@ -42,8 +42,11 @@ vi.mock("#lib/shared/application/state/app-state.svelte.js", () => ({
   getSettings: () => ({}),
   updateSettings: () => {},
 }));
-vi.mock("#lib/shared/components/Crossfade.svelte", async () => ({
-  default: (await import("./PassthroughStub.svelte")).default,
+vi.mock("#lib/shared/transitions/motion.js", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("#lib/shared/transitions/motion.js")
+  >()),
+  Crossfade: (await import("./PassthroughStub.svelte")).default,
 }));
 vi.mock(
   "#lib/features/create/shared/components/sequence-actions/StepEditorPanel.svelte",

@@ -73,14 +73,33 @@ export class FakeAnimation {
     };
   }
 
+  private readonly listeners = new Map<string, Set<() => void>>();
+
+  addEventListener(type: string, listener: () => void): void {
+    let set = this.listeners.get(type);
+    if (!set) this.listeners.set(type, (set = new Set()));
+    set.add(listener);
+  }
+
+  removeEventListener(type: string, listener: () => void): void {
+    this.listeners.get(type)?.delete(listener);
+  }
+
+  private emit(type: string): void {
+    for (const listener of this.listeners.get(type) ?? []) listener();
+  }
+
   cancel(): void {
+    if (this.playState === "idle") return;
     this.playState = "idle";
+    this.emit("cancel");
   }
 
   finish(): void {
     if (this.playState !== "running") return;
     this.playState = "finished";
     this.onfinish?.();
+    this.emit("finish");
   }
 }
 
