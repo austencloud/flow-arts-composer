@@ -1,4 +1,3 @@
-
 /**
  * A detected gap from a single wrong answer.
  */
@@ -80,6 +79,8 @@ export interface SerializedLearningProgress {
   concepts: Record<string, unknown>;
   completedConcepts: string[];
   currentConceptId?: string;
+  currentConceptVisitedAt?: string | null;
+  resetAt?: string | null;
   overallProgress: number;
   totalCorrect: number;
   totalTimeSpent: number;

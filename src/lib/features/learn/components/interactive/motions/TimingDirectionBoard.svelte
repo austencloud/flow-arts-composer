@@ -255,7 +255,6 @@
         <header class="mode-header">
           <div class="mode-identity">
             <img src={mode.element.iconPath} alt="" />
-            <strong>{codeFor(mode)}</strong>
             <span
               >{isFocused || focusedMode
                 ? fullNameFor(mode)
@@ -540,10 +539,6 @@
     height: clamp(2.75rem, 4cqw, 4rem);
   }
 
-  .mode-grid.has-focus .mode-tile:not(.is-focused) .mode-identity strong {
-    font-size: clamp(1.2rem, calc(1rem + 0.22cqw), 1.5rem);
-  }
-
   .mode-grid.has-focus .mode-tile:not(.is-focused) .mode-identity span {
     overflow: visible;
     font-size: clamp(1rem, 1.2cqw, 1.25rem);
@@ -580,13 +575,6 @@
     width: 2.75rem;
     height: 2.75rem;
     object-fit: contain;
-  }
-
-  .mode-identity strong {
-    color: var(--theme-text);
-    font-size: clamp(1.125rem, calc(0.9rem + 0.28cqw), 1.35rem);
-    font-weight: 800;
-    letter-spacing: 0.04em;
   }
 
   .mode-identity span {
@@ -820,7 +808,6 @@
       height: 2.5rem;
     }
 
-    .mode-identity strong,
     .mode-identity span {
       font-size: var(--font-size-min, 0.875rem);
     }

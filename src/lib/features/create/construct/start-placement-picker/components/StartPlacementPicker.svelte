@@ -31,6 +31,7 @@ Controls moved below the grid for better UX
     logConstructStartPlacementPath,
     type StartPlacementPath,
   } from "../../services/construct-analytics";
+  import { morphStartPlacementIntoWorkspace } from "../services/start-placement-morph";
 
   // The caller can replace this picker's heading with an inline guide offer.
   // Preview and tutorial embeds keep their existing heading ownership.
@@ -62,6 +63,7 @@ Controls moved below the grid for better UX
     onPlacementSubmitted = () => {},
     heading,
     suppressHeading = false,
+    morphIntoWorkspace = false,
   } = $props<{
     startPlacementState?: SimplifiedStartPlacementState | null;
     onNavigateToAdvanced?: () => void;
@@ -94,6 +96,9 @@ Controls moved below the grid for better UX
     /** The active Construct guide owns this instruction band. Keep the wrapper
      *  mounted so its height can collapse on the same clock as the guide. */
     suppressHeading?: boolean;
+    /** The Construct tab's picker hands the chosen card to the workspace start
+     *  cell (start-placement-morph.ts). Embeds have no workspace to land in. */
+    morphIntoWorkspace?: boolean;
   }>();
 
   // Create simplified state - use $derived to handle prop changes
@@ -282,6 +287,30 @@ Controls moved below the grid for better UX
     handleBackToDefault();
   }
 
+  // The card that travels into the workspace is the one under the press that
+  // chose it, so remember where the last click or key press landed.
+  let pickerElement: HTMLElement | undefined = $state();
+  let lastActivation: Element | null = null;
+
+  function noteActivation(event: Event) {
+    lastActivation = event.target instanceof Element ? event.target : null;
+  }
+
+  function morphSourceFor(): HTMLElement | null {
+    if (!morphIntoWorkspace) return null;
+    return (
+      lastActivation
+        ?.closest("[data-start-morph-tile]")
+        ?.querySelector<HTMLElement>("[data-start-morph-candidate]") ??
+      // Build applies from a button; the pose square being built flies.
+      (activePath === "build"
+        ? (pickerElement?.querySelector<HTMLElement>(
+            "[data-placement-stage]"
+          ) ?? null)
+        : null)
+    );
+  }
+
   // Handle placement selection
   async function handlePlacementSelect(placement: PictographData) {
     hapticService?.trigger("selection");
@@ -289,8 +318,13 @@ Controls moved below the grid for better UX
     if (submittedPath === "build") {
       buildPlacementSubmitted = true;
     }
-    onPlacementSubmitted(placement, submittedPath);
-    await pickerState.selectPlacement(placement);
+    await morphStartPlacementIntoWorkspace(morphSourceFor(), () => {
+      onPlacementSubmitted(placement, submittedPath);
+      void pickerState.selectPlacement(placement);
+      // A refused placement (it doesn't connect to step 1) reports back
+      // through the validation message before selection returns.
+      return !validationMessage;
+    });
   }
 
   function handlePathChange(path: StartPlacementPath) {
@@ -360,9 +394,12 @@ Controls moved below the grid for better UX
 
 <!-- The header keeps its geometry when the selected method changes. -->
 <div
+  bind:this={pickerElement}
   class="start-placement-picker"
   class:headerless={embedded && lockedPath !== undefined}
   data-testid="start-placement-picker"
+  onclickcapture={noteActivation}
+  onkeydowncapture={noteActivation}
 >
   {#if !embedded || lockedPath === undefined}
     <div class="picker-header">

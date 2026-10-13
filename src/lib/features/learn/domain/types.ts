@@ -103,6 +103,9 @@ export interface ConceptProgress {
 
   /** Time spent on this concept in seconds */
   timeSpentSeconds: number;
+
+  /** Last change to this lesson's progress, used for cross-device merging. */
+  updatedAt?: Date;
 }
 
 /**
@@ -120,6 +123,12 @@ export interface LearningProgress {
 
   /** Currently active concept */
   currentConceptId?: string;
+
+  /** When the current lesson was last opened. */
+  currentConceptVisitedAt?: Date;
+
+  /** Progress before this reset belongs to a previous learning history. */
+  resetAt?: Date;
 
   /** Overall completion percentage */
   overallProgress: number;

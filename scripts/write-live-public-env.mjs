@@ -4,11 +4,13 @@
  * public settings.
  *
  * The web deploy takes its PUBLIC_ settings from the Cloudflare dashboard, and
- * CI has no copy of them. The live site serves the same values at
- * /_app/env.js, so the bundle build copies them from there instead of
- * shipping .env.example's blanks (no analytics, no maps, a "development"
- * label). Other lines come from .env.example unchanged. Logs names, never
- * values.
+ * CI has no copy of them. The live site lists them at /public-settings.json
+ * (src/routes/public-settings.json), so the bundle build copies them from
+ * there instead of shipping .env.example's blanks (no analytics, no maps, a
+ * "development" label). /_app/env.js no longer works for this: SvelteKit 3
+ * serves only the dynamic settings there and inlines the PostHog and Maps keys
+ * into the bundle. Other lines come from .env.example unchanged. Logs names,
+ * never values.
  *
  *   node scripts/write-live-public-env.mjs [origin]
  */
@@ -20,12 +22,12 @@ const origin = process.argv[2] ?? "https://tkaflowarts.com";
 const envPath = resolve(repoRoot, ".env");
 const examplePath = resolve(repoRoot, ".env.example");
 
-// SvelteKit writes the file as `export const env=${JSON.stringify(public)}`.
-const ENV_MODULE_PREFIX = "export const env=";
 const PUBLIC_KEY = /^PUBLIC_[A-Z0-9_]+$/;
 // Unquoted .env values: Vite expands `$`, and spaces, quotes and `#` would
 // change how the line parses.
 const SAFE_VALUE = /^[\w\-.:/@+=,~%]*$/;
+// Without these the phone app builds and runs with analytics or maps off.
+const REQUIRED = ["PUBLIC_POSTHOG_KEY", "PUBLIC_GOOGLE_MAPS_API_KEY"];
 
 function fail(message) {
   console.error(`[live-env] ${message}`);
@@ -36,23 +38,16 @@ if (existsSync(envPath)) {
   fail(".env already exists. This script only fills a fresh CI checkout.");
 }
 
-const url = new URL("/_app/env.js", origin);
-let body;
+const url = new URL("/public-settings.json", origin);
+let live;
 try {
   const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
   if (!response.ok) fail(`${url} answered ${response.status}`);
-  body = (await response.text()).trim();
+  live = await response.json();
 } catch (error) {
-  fail(`Could not fetch ${url}: ${error.message}`);
+  fail(`Could not read ${url}: ${error.message}`);
 }
-
-if (!body.startsWith(ENV_MODULE_PREFIX)) {
-  fail(`${url} is not a SvelteKit env module`);
-}
-let live;
-try {
-  live = JSON.parse(body.slice(ENV_MODULE_PREFIX.length).replace(/;$/, ""));
-} catch {
+if (!live || typeof live !== "object" || Array.isArray(live)) {
   fail(`${url} does not hold a JSON object`);
 }
 
@@ -64,7 +59,9 @@ for (const [key, value] of Object.entries(live)) {
   }
   settings.set(key, value);
 }
-if (settings.size === 0) fail(`${url} holds no PUBLIC_ settings`);
+for (const key of REQUIRED) {
+  if (!settings.get(key)) fail(`${url} has no ${key}`);
+}
 
 // Each live key appears once: Vite keeps a key's last line and
 // generate-native-env.mjs its first.

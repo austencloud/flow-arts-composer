@@ -17,6 +17,7 @@
   import LegalSheet from "#lib/shared/legal/components/LegalSheet.svelte";
   import { trackCtaClick } from "#lib/shared/analytics/landing-events.js";
   import { siteCopy } from "../site-copy";
+  import { composerIntent } from "../services/composer-prefetch";
 
   let {
     surface,
@@ -119,6 +120,7 @@
           class="composer-cta"
           href="/create"
           data-sveltekit-reload
+          use:composerIntent
           onclick={() =>
             trackCtaClick("footer", {
               cta_type: "open_composer",
@@ -161,7 +163,7 @@
           ><i class="fas fa-heart heart" aria-hidden="true"></i>
           {siteCopy("Support")}</a
         >
-        <a href="/create?sheet=auth" data-sveltekit-reload
+        <a href="/create?sheet=auth" data-sveltekit-reload use:composerIntent
           >{siteCopy("Sign in")}</a
         >
         <a href="/terms" onclick={(e) => handleLegalClick(e, "terms")}

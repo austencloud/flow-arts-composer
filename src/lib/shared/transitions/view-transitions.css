@@ -33,6 +33,85 @@
   animation-timing-function: var(--ease-in-out);
 }
 
+/* Hand Motions: the one-hand map splits into the two hands' grids and merges
+   back. Names exist only while hand-grid-split.ts runs the change; it flies
+   each grid's group between its boxes, so the images here only fade. The
+   blue grid holds full strength under the map's fading picture, so it reads
+   as one object; red comes out from under it. Owner:
+   features/learn/components/interactive/motions/hand-grid-split.ts. */
+html.hand-grid-split [data-hand-grid="map"] {
+  view-transition-name: hand-grid-map;
+}
+html.hand-grid-split [data-hand-grid="red-backdrop"] {
+  view-transition-name: hand-grid-red-backdrop;
+}
+html.hand-grid-split [data-hand-grid="red"] {
+  view-transition-name: hand-grid-red;
+}
+html.hand-grid-split [data-hand-grid="blue-backdrop"] {
+  view-transition-name: hand-grid-blue-backdrop;
+}
+html.hand-grid-split [data-hand-grid="blue"] {
+  view-transition-name: hand-grid-blue;
+}
+html.hand-grid-split [data-hand-side="map"] {
+  view-transition-name: hand-side-map;
+}
+html.hand-grid-split [data-hand-side="pairs"] {
+  view-transition-name: hand-side-pairs;
+}
+
+::view-transition-group(hand-grid-red-backdrop) {
+  z-index: 1;
+}
+::view-transition-group(hand-grid-red) {
+  z-index: 2;
+}
+::view-transition-group(hand-grid-blue-backdrop) {
+  z-index: 3;
+}
+::view-transition-group(hand-grid-blue) {
+  z-index: 4;
+}
+::view-transition-group(hand-grid-map) {
+  z-index: 5;
+}
+
+::view-transition-new(hand-grid-blue-backdrop),
+::view-transition-new(hand-grid-blue),
+::view-transition-old(hand-grid-blue-backdrop),
+::view-transition-old(hand-grid-blue) {
+  animation: none;
+}
+
+::view-transition-old(hand-grid-map),
+::view-transition-new(hand-grid-red-backdrop),
+::view-transition-new(hand-grid-red),
+::view-transition-old(hand-grid-red-backdrop),
+::view-transition-old(hand-grid-red),
+::view-transition-group(hand-side-map),
+::view-transition-group(hand-side-pairs),
+::view-transition-old(hand-side-map),
+::view-transition-new(hand-side-pairs) {
+  animation-duration: var(--duration-dramatic);
+}
+
+/* Merging, the map shows over the blue grid only as the grids land, so it
+   never waits at its spot ahead of them. */
+::view-transition-new(hand-grid-map) {
+  animation: hand-grid-land var(--duration-dramatic) linear both;
+}
+
+@keyframes hand-grid-land {
+  0%,
+  60% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 /* A generate bento card growing into its workspace (Customize, LOOP, Setups,
    TnD). The card wrapper and the expanded stage share one name, so the group
    carries the box between the grid slot and the stage or viewport while the
@@ -150,6 +229,42 @@ html.generate-card-morph-tnd::view-transition-group(tnd-choice-icon) {
   100% {
     opacity: 1;
   }
+}
+
+/* Construct: the start placement card the user picks travels into the
+   workspace's start cell while the workspace slides open, on the slide's own
+   clock. The tapped card holds the name for the old capture and the start
+   cell for the new one, so an existing start cell (re-picking a start) never
+   shares it. The live page stays under the flight, as in the card morph above.
+   Owner: features/create/construct/start-placement-picker/services/
+   start-placement-morph.ts. */
+html.construct-start-morph-active {
+  view-transition-name: none;
+}
+
+html.construct-start-morph-active::view-transition {
+  background: transparent;
+}
+
+html.construct-start-morph-from [data-start-morph-source],
+html.construct-start-morph-to
+  .workspace-container
+  [data-history-start-placement]
+  > .history-layout-shell {
+  view-transition-name: construct-start-placement;
+}
+
+/* Its copy in the outgoing picker would otherwise fade out where it started. */
+html.construct-start-morph-to [data-start-morph-source] {
+  visibility: hidden;
+}
+
+::view-transition-group(construct-start-placement) {
+  animation-duration: var(--duration-emphasis);
+  animation-timing-function: var(--ease-in-out);
+  /* The flight is re-keyed as translate + scale (start-placement-morph.ts);
+     scaling from the corner keeps the group's resting translate exact. */
+  transform-origin: 0 0;
 }
 
 /* The /composer 3D card opening into the viewer's frame over the dimmed page,

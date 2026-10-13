@@ -731,9 +731,19 @@
       return;
     // A retargeted transition reports its cancel and its replacement's run in
     // the same frame, in either order, so wait for that frame's events to end.
+    // A pixel slide or basis handoff that pinned its wrapper has cancelled the
+    // declarative transition but its own run event can land a frame later;
+    // while one is outstanding the group is still moving. Closing the Create
+    // player settled here 14ms in, which dropped the workspace's content hold
+    // and re-laid it out on every frame of the slide.
     settleCheck = setTimeout(() => {
       settleCheck = null;
-      if (runningTrackTransitions === 0) settleMotion();
+      if (
+        runningTrackTransitions === 0 &&
+        pixelSlides.size === 0 &&
+        basisHandoffs.size === 0
+      )
+        settleMotion();
     }, 0);
   }
 

@@ -63,19 +63,20 @@ describe("worker selection marker parity", () => {
       radius: 0.42,
       segments: 64,
     });
-    // At rest the pulse sits at 0.6: inner 0.6 * 0.75, outer 0.6 * 0.18.
+    // Opacities follow Viewer3DScene: pulse = 0.6 + 0.4·sin(phase), inner
+    // = pulse · 0.75, outer = pulse · 0.18, center 0.06 (0095974000).
+    expect(inner.material.opacity).toBeCloseTo(0.45, 12);
     expect(inner.material).toMatchObject({
       transparent: true,
       blending: AdditiveBlending,
       depthWrite: false,
     });
-    expect(inner.material.opacity).toBeCloseTo(0.45, 12);
+    expect(outer.material.opacity).toBeCloseTo(0.108, 12);
     expect(outer.material).toMatchObject({
       transparent: true,
       blending: AdditiveBlending,
       depthWrite: false,
     });
-    expect(outer.material.opacity).toBeCloseTo(0.108, 12);
     expect(center.material).toMatchObject({
       transparent: true,
       opacity: 0.06,
@@ -122,6 +123,8 @@ describe("worker selection marker parity", () => {
     expect(all.visible).toBe(true);
     expect(all.position.toArray()).toEqual([0, 0.01, 0]);
     expect(all.rotation.x).toBeCloseTo(-Math.PI / 2, 12);
+    // Viewer3DScene draws the all-selected state as a 0.42-0.58 violet ring
+    // (0095974000), replacing the gray disc.
     expect((all.geometry as RingGeometry).parameters).toMatchObject({
       innerRadius: 0.42,
       outerRadius: 0.58,

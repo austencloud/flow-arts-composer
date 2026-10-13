@@ -16,14 +16,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const onSnapshot = vi.fn();
 const getFirestoreInstance = vi.fn();
-const setDoc = vi.fn();
-const DELETE_FIELD = Symbol("deleteField");
+const transactionGet = vi.fn();
+const transactionSet = vi.fn();
+const runTransaction = vi.fn(
+  async (
+    _firestore: unknown,
+    callback: (transaction: unknown) => Promise<unknown>
+  ) => callback({ get: transactionGet, set: transactionSet })
+);
 
 vi.mock("firebase/firestore", () => ({
   doc: vi.fn((_firestore: unknown, path: string) => ({ path })),
   getDoc: vi.fn(),
-  setDoc: (...args: unknown[]) => setDoc(...args),
-  deleteField: vi.fn(() => DELETE_FIELD),
+  runTransaction,
   onSnapshot: (...args: unknown[]) => onSnapshot(...args),
   serverTimestamp: vi.fn(() => "server-timestamp"),
 }));
@@ -174,14 +179,16 @@ describe("UserKnowledgeProfilePersister.subscribeToProgress", () => {
 
 describe("UserKnowledgeProfilePersister.saveProgress legacy id cleanup", () => {
   beforeEach(() => {
-    setDoc.mockReset();
+    transactionGet.mockReset();
+    transactionSet.mockReset();
+    runTransaction.mockClear();
+    transactionGet.mockResolvedValue({ exists: () => false });
     getFirestoreInstance.mockResolvedValue({});
   });
 
-  it("marks every legacy concept id in the alias table for deletion under concepts", async () => {
-    const { LEGACY_CONCEPT_ID_ALIASES } = await import(
-      "./concept-progress-tracker"
-    );
+  it("replaces legacy concept ids with canonical ids in the transaction", async () => {
+    const { LEGACY_CONCEPT_ID_ALIASES } =
+      await import("./concept-progress-tracker");
     const persister = new UserKnowledgeProfilePersister();
 
     await persister.saveProgress("user-1", {
@@ -210,19 +217,65 @@ describe("UserKnowledgeProfilePersister.saveProgress legacy id cleanup", () => {
       lastUpdated: new Date("2026-09-17T00:00:00.000Z"),
     });
 
-    expect(setDoc).toHaveBeenCalledTimes(1);
-    const written = setDoc.mock.calls[0]![1] as { concepts: Record<string, unknown> };
+    expect(runTransaction).toHaveBeenCalledTimes(1);
+    const written = transactionSet.mock.calls[0]![1] as {
+      concepts: Record<string, unknown>;
+      overallProgress: number;
+    };
 
     // The legitimate current-id entry survives the write untouched.
     expect(written.concepts["hand-placements"]).toMatchObject({
       status: "completed",
     });
 
-    // Every legacy id from the alias table carries a deleteField() sentinel,
-    // so a stale legacy entry left over from an older merge write (which
-    // `{ merge: true }` would otherwise never clear) is removed on this save.
+    // The full document replacement removes old keys after reconciliation.
     for (const legacyId of Object.keys(LEGACY_CONCEPT_ID_ALIASES)) {
-      expect(written.concepts[legacyId]).toBe(DELETE_FIELD);
+      expect(written.concepts[legacyId]).toBeUndefined();
     }
+    expect(written.overallProgress).toBeGreaterThan(0);
+  });
+
+  it("retains a concurrent legacy-only completion when a stale device saves", async () => {
+    transactionGet.mockResolvedValue({
+      exists: () => true,
+      data: () => ({
+        concepts: {
+          "hand-positions": {
+            conceptId: "hand-positions",
+            status: "completed",
+            percentComplete: 100,
+          },
+        },
+        completedConcepts: ["hand-positions"],
+        overallProgress: 0,
+        totalCorrect: 0,
+        totalTimeSpent: 0,
+        badges: [],
+        lastUpdated: "2026-09-17T01:00:00.000Z",
+      }),
+    });
+    const persister = new UserKnowledgeProfilePersister();
+    await persister.saveProgress("user-1", {
+      concepts: new Map(),
+      completedConcepts: new Set(["grid"]),
+      overallProgress: 0,
+      totalCorrect: 0,
+      totalTimeSpent: 0,
+      badges: [],
+      lastUpdated: new Date("2026-09-17T00:00:00.000Z"),
+    });
+
+    const written = transactionSet.mock.calls[0]![1] as {
+      concepts: Record<string, { status: string }>;
+      completedConcepts: string[];
+      overallProgress: number;
+    };
+    expect(written.concepts["hand-placements"].status).toBe("completed");
+    expect(written.concepts.grid.status).toBe("completed");
+    expect(written.concepts["hand-positions"]).toBeUndefined();
+    expect(written.completedConcepts).toEqual(
+      expect.arrayContaining(["grid", "hand-placements"])
+    );
+    expect(written.overallProgress).toBeGreaterThan(0);
   });
 });

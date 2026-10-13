@@ -10,8 +10,8 @@
  *
  * On initialization:
  * - Loads from localStorage first (instant)
- * - If a persister is provided, loads from Firestore and merges
- *   (Firestore wins on conflict if its lastUpdated is newer)
+ * - If a persister is provided, loads from Firestore and merges per-concept
+ *   records while honoring the newest reset epoch
  * - Subscribes to Firestore changes for cross-device sync
  * - Remote writes stay disabled until that first merge succeeds, so a failed
  *   or offline sign-in can never push un-merged local state over the server's
@@ -23,13 +23,19 @@
  * current id before the rest of reconciliation runs.
  */
 
-import { TKA_CONCEPTS, isConceptUnlocked } from "../domain/concepts";
+import { isConceptUnlocked } from "../domain/concepts";
 import type {
   ConceptProgress,
   ConceptStatus,
   LearningProgress,
 } from "../domain/types";
 import type { UserKnowledgeProfilePersister } from "./user-knowledge-profile-persister";
+import {
+  hasUnsharedProgress,
+  mergeLearningProgress,
+  normalizeLearningProgress,
+} from "./merge-learning-progress";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler";
 
 const STORAGE_KEY = "tka_learning_progress";
 
@@ -40,10 +46,7 @@ const STORAGE_KEY = "tka_learning_progress";
  * only the current one (via reconcileCompletion). Extend this table — don't
  * replace an entry — the next time a concept id changes.
  */
-export const LEGACY_CONCEPT_ID_ALIASES: Readonly<Record<string, string>> = {
-  "hand-positions": "hand-placements",
-  "staff-positions": "staff-placements",
-};
+export { LEGACY_CONCEPT_ID_ALIASES } from "./merge-learning-progress";
 
 export class ConceptProgressTracker {
   private progress: LearningProgress;
@@ -58,6 +61,23 @@ export class ConceptProgressTracker {
   // touches tracker state while its own generation is still current, so a slow
   // attempt for user A cannot land after a later one for user B has taken over.
   private syncGeneration = 0;
+  private syncWarningShown = false;
+  private storageWarningShown = false;
+  private localSaveSucceeded = true;
+
+  private reportSaveFailure(error: unknown): void {
+    console.error("[ConceptProgressTracker] Progress sync failed:", error);
+    if (this.syncWarningShown) return;
+    this.syncWarningShown = true;
+    getErrorHandler().showUserError({
+      message: this.localSaveSucceeded
+        ? "Your progress is saved on this device, but could not sync to your account. Reload after reconnecting to sync it."
+        : "Your progress could not be saved on this device or synced to your account. Free device storage and reload Learn.",
+      technicalDetails: error instanceof Error ? error.message : String(error),
+      severity: "warning",
+      context: { module: "learn", tab: "concepts", action: "saveProgress" },
+    });
+  }
 
   constructor(persister?: UserKnowledgeProfilePersister) {
     this.persister = persister ?? null;
@@ -120,6 +140,7 @@ export class ConceptProgressTracker {
     this.cleanupFirestoreSubscription();
     this.userId = null;
     this.initialized = false;
+    this.syncWarningShown = false;
   }
 
   private async connectUser(userId: string, generation: number): Promise<void> {
@@ -144,17 +165,17 @@ export class ConceptProgressTracker {
       if (!this.isCurrentSync(generation)) return;
 
       if (firestoreProgress) {
-        // Merge: Firestore wins if newer
-        const localTimestamp = this.progress.lastUpdated.getTime();
-        const firestoreTimestamp = firestoreProgress.lastUpdated.getTime();
-
-        if (firestoreTimestamp >= localTimestamp) {
-          this.progress = this.reconcileCompletion(firestoreProgress);
-          this.saveToLocalStorage();
-          this.notifySubscribers();
-        } else {
-          // Local is newer (offline edits), push to Firestore
-          await this.persister.saveProgress(userId, this.progress);
+        const combined = mergeLearningProgress(
+          this.progress,
+          firestoreProgress
+        );
+        const merged = this.reconcileCompletion(combined);
+        const localHadChanges = hasUnsharedProgress(merged, firestoreProgress);
+        this.progress = merged;
+        this.saveToLocalStorage();
+        this.notifySubscribers();
+        if (localHadChanges) {
+          await this.persister.saveProgress(userId, merged);
           if (!this.isCurrentSync(generation)) return;
         }
       } else {
@@ -179,6 +200,7 @@ export class ConceptProgressTracker {
       // A superseded attempt reports its own failure but owns none of the
       // state: retiring here would disconnect the user who took over.
       if (this.isCurrentSync(generation)) {
+        this.reportSaveFailure(error);
         this.retireRemoteOwnership();
       }
       return;
@@ -200,15 +222,21 @@ export class ConceptProgressTracker {
         // this callback owns the tracker's state, so it checks too.
         if (!this.isCurrentSync(generation)) return;
 
-        // Only apply remote changes if they're newer than local
-        if (
-          remoteProgress.lastUpdated.getTime() >
-          this.progress.lastUpdated.getTime()
-        ) {
-          this.progress = this.reconcileCompletion(remoteProgress);
-          this.saveToLocalStorage();
-          this.notifySubscribers();
-        }
+        const combined = mergeLearningProgress(this.progress, remoteProgress);
+        const merged = this.reconcileCompletion(combined);
+        const needsRepair = hasUnsharedProgress(merged, remoteProgress);
+        this.progress = merged;
+        this.saveToLocalStorage();
+        this.notifySubscribers();
+        if (needsRepair)
+          this.persister
+            ?.saveProgress(userId, merged)
+            .then(() => {
+              if (this.isCurrentSync(generation)) this.syncWarningShown = false;
+            })
+            .catch((error) => {
+              if (this.isCurrentSync(generation)) this.reportSaveFailure(error);
+            });
       },
       (error) => {
         if (!this.isCurrentSync(generation)) return;
@@ -216,6 +244,7 @@ export class ConceptProgressTracker {
           "[ConceptProgressTracker] Firestore progress subscription failed; cross-device sync is disabled until the next sign-in:",
           error
         );
+        this.reportSaveFailure(error);
       }
     );
   }
@@ -246,163 +275,8 @@ export class ConceptProgressTracker {
     return undefined;
   }
 
-  /**
-   * Reconcile the two records of "completed" that a hydrated progress object
-   * carries.
-   *
-   * `completedConcepts` is the authority everything downstream reads: it gates
-   * unlocking, feeds `overallProgress` and the badge thresholds, and is the
-   * completed list TIKA and the recommender consume. `concepts.get(id).status`
-   * is what the path and detail views render. Nothing inside this class can
-   * make the two disagree, but hydrated state can: a server-side write can add
-   * an id to `completedConcepts` without leaving a per-concept record, and a
-   * merged remote write can replace `completedConcepts` while stale concept
-   * records survive. Either way the user sees a finished lesson offered as
-   * unstarted (`getConceptStatus` falls through to "available"), or a lesson
-   * that renders completed but is missing from every count.
-   *
-   * Completion is never revoked here — the union of both records wins, which
-   * is the definition of completed this class already enforces on write.
-   *
-   * Everything derived from that union is then re-derived from it rather than
-   * trusted: a stored `overallProgress` and badge list were computed by
-   * whichever writer produced the document, and a completed record carrying
-   * less than 100% is the same contradiction one level down.
-   */
   private reconcileCompletion(progress: LearningProgress): LearningProgress {
-    this.aliasLegacyConceptIds(progress);
-
-    for (const [conceptId, concept] of progress.concepts) {
-      if (concept.status === "completed") {
-        progress.completedConcepts.add(conceptId);
-      }
-    }
-
-    for (const conceptId of progress.completedConcepts) {
-      const existing = progress.concepts.get(conceptId);
-      if (!existing) {
-        progress.concepts.set(
-          conceptId,
-          this.createConceptRecord(conceptId, "completed")
-        );
-        continue;
-      }
-      existing.status = "completed";
-      existing.percentComplete = 100;
-    }
-
-    // Both are pure functions of the reconciled state, and both are how the
-    // class computes them on every completion, so recomputing here cannot
-    // invent a number or a badge the normal write path would not have awarded.
-    this.updateOverallProgress(progress);
-    this.checkBadges(progress);
-
-    return progress;
-  }
-
-  /**
-   * Folds every legacy-id entry in `completedConcepts` and `concepts` onto
-   * its current id (LEGACY_CONCEPT_ID_ALIASES) before the rest of
-   * reconciliation runs. Completion is additive: a completed legacy record
-   * can only complete the current one, never un-complete it. The legacy key
-   * is deleted once merged — this only runs while it is still present, so a
-   * snapshot that has already been through this once is left alone, and the
-   * next saveProgress() persists only the current id.
-   */
-  private aliasLegacyConceptIds(progress: LearningProgress): void {
-    for (const [legacyId, currentId] of Object.entries(
-      LEGACY_CONCEPT_ID_ALIASES
-    )) {
-      if (progress.completedConcepts.has(legacyId)) {
-        progress.completedConcepts.add(currentId);
-        progress.completedConcepts.delete(legacyId);
-      }
-
-      const legacyRecord = progress.concepts.get(legacyId);
-      if (legacyRecord) {
-        progress.concepts.set(
-          currentId,
-          this.mergeConceptRecords(
-            currentId,
-            progress.concepts.get(currentId),
-            legacyRecord
-          )
-        );
-        progress.concepts.delete(legacyId);
-      }
-    }
-  }
-
-  /**
-   * Combines a legacy-id record into its current-id counterpart. Every
-   * numeric stat, including `timeSpentSeconds`, takes the higher of the two:
-   * the persister's `{ merge: true }` write never removes the legacy id from
-   * a saved document, so this merge can run again on the same legacy+current
-   * pair on a later hydration, and a running sum would double-count that
-   * practice time on every re-merge. Taking the max keeps the merge
-   * idempotent while still never throwing away either side's earned
-   * progress. Status takes whichever side is further along — a completed
-   * legacy record wins, an in-progress one never overwrites a completed
-   * current record.
-   */
-  private mergeConceptRecords(
-    conceptId: string,
-    current: ConceptProgress | undefined,
-    legacy: ConceptProgress
-  ): ConceptProgress {
-    if (!current) return { ...legacy, conceptId };
-
-    const statusRank: Record<ConceptStatus, number> = {
-      locked: 0,
-      available: 1,
-      "in-progress": 2,
-      completed: 3,
-    };
-    const status =
-      statusRank[legacy.status] > statusRank[current.status]
-        ? legacy.status
-        : current.status;
-
-    return {
-      conceptId,
-      status,
-      percentComplete: Math.max(
-        current.percentComplete,
-        legacy.percentComplete
-      ),
-      correctAnswers: Math.max(current.correctAnswers, legacy.correctAnswers),
-      incorrectAnswers: Math.max(
-        current.incorrectAnswers,
-        legacy.incorrectAnswers
-      ),
-      totalAttempts: Math.max(current.totalAttempts, legacy.totalAttempts),
-      accuracy: Math.max(current.accuracy, legacy.accuracy),
-      currentStreak: Math.max(current.currentStreak, legacy.currentStreak),
-      bestStreak: Math.max(current.bestStreak, legacy.bestStreak),
-      timeSpentSeconds: Math.max(
-        current.timeSpentSeconds,
-        legacy.timeSpentSeconds
-      ),
-      startedAt: this.earlierDate(current.startedAt, legacy.startedAt),
-      completedAt: this.earlierDate(current.completedAt, legacy.completedAt),
-      lastPracticedAt: this.laterDate(
-        current.lastPracticedAt,
-        legacy.lastPracticedAt
-      ),
-      nextPracticeAt: current.nextPracticeAt ?? legacy.nextPracticeAt,
-    };
-  }
-
-  private earlierDate(a?: Date, b?: Date): Date | undefined {
-    if (!a) return b;
-    if (!b) return a;
-    return a.getTime() <= b.getTime() ? a : b;
-  }
-
-  private laterDate(a?: Date, b?: Date): Date | undefined {
-    if (!a) return b;
-    if (!b) return a;
-    return a.getTime() >= b.getTime() ? a : b;
+    return normalizeLearningProgress(progress);
   }
 
   private createConceptRecord(
@@ -446,6 +320,7 @@ export class ConceptProgressTracker {
             completedAt: this.parseOptionalDate(value.completedAt),
             lastPracticedAt: this.parseOptionalDate(value.lastPracticedAt),
             nextPracticeAt: this.parseOptionalDate(value.nextPracticeAt),
+            updatedAt: this.parseOptionalDate(value.updatedAt),
           });
         }
         return this.reconcileCompletion({
@@ -453,6 +328,10 @@ export class ConceptProgressTracker {
           concepts,
           completedConcepts: new Set(data.completedConcepts || []),
           lastUpdated: new Date(data.lastUpdated),
+          currentConceptVisitedAt: this.parseOptionalDate(
+            data.currentConceptVisitedAt
+          ),
+          resetAt: this.parseOptionalDate(data.resetAt),
         });
       }
     } catch (error) {
@@ -474,6 +353,12 @@ export class ConceptProgressTracker {
     };
   }
 
+  private nextChangeDate(): Date {
+    return new Date(
+      Math.max(Date.now(), this.progress.lastUpdated.getTime() + 1)
+    );
+  }
+
   private saveToLocalStorage(): void {
     try {
       const data = {
@@ -483,8 +368,26 @@ export class ConceptProgressTracker {
         lastUpdated: this.progress.lastUpdated.toISOString(),
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      this.localSaveSucceeded = true;
+      this.storageWarningShown = false;
     } catch (error) {
       console.error("Failed to save learning progress to localStorage:", error);
+      this.localSaveSucceeded = false;
+      if (!this.storageWarningShown) {
+        this.storageWarningShown = true;
+        getErrorHandler().showUserError({
+          message:
+            "Your progress could not be saved on this device. Check available storage before leaving Learn.",
+          technicalDetails:
+            error instanceof Error ? error.message : String(error),
+          severity: "warning",
+          context: {
+            module: "learn",
+            tab: "concepts",
+            action: "saveLocalProgress",
+          },
+        });
+      }
     }
   }
 
@@ -495,9 +398,18 @@ export class ConceptProgressTracker {
 
     // Async Firestore write (fire-and-forget)
     if (this.persister && this.userId) {
-      this.persister.saveProgress(this.userId, this.progress).catch((error) => {
-        console.error("Failed to save progress to Firestore:", error);
-      });
+      const owner = this.userId;
+      const generation = this.syncGeneration;
+      this.persister
+        .saveProgress(owner, this.progress)
+        .then(() => {
+          if (this.isCurrentSync(generation) && this.userId === owner)
+            this.syncWarningShown = false;
+        })
+        .catch((error) => {
+          if (this.isCurrentSync(generation) && this.userId === owner)
+            this.reportSaveFailure(error);
+        });
     }
   }
 
@@ -543,14 +455,18 @@ export class ConceptProgressTracker {
 
     const progress = this.getConceptProgress(conceptId);
 
+    const visitedAt = this.nextChangeDate();
     if (progress.status === "available") {
       progress.status = "in-progress";
-      progress.startedAt = new Date();
+      progress.startedAt = visitedAt;
     }
+
+    progress.updatedAt = visitedAt;
 
     this.progress.concepts.set(conceptId, progress);
     this.progress.currentConceptId = conceptId;
-    this.progress.lastUpdated = new Date();
+    this.progress.currentConceptVisitedAt = progress.updatedAt;
+    this.progress.lastUpdated = visitedAt;
 
     this.saveProgress();
   }
@@ -592,6 +508,7 @@ export class ConceptProgressTracker {
     );
 
     progress.lastPracticedAt = new Date();
+    progress.updatedAt = progress.lastPracticedAt;
     progress.nextPracticeAt = this.calculateNextPracticeDate(progress);
 
     if (
@@ -615,13 +532,13 @@ export class ConceptProgressTracker {
 
     progress.status = "completed";
     progress.completedAt = new Date();
+    progress.updatedAt = progress.completedAt;
     progress.percentComplete = 100;
 
     this.progress.concepts.set(conceptId, progress);
     this.progress.completedConcepts.add(conceptId);
 
-    this.updateOverallProgress();
-    this.checkBadges();
+    this.progress = this.reconcileCompletion(this.progress);
 
     this.progress.lastUpdated = new Date();
     this.saveProgress();
@@ -651,66 +568,6 @@ export class ConceptProgressTracker {
     return nextDate;
   }
 
-  // Takes the record to update so reconciliation can run on progress that has
-  // not been adopted as `this.progress` yet (the constructor's first load).
-  private updateOverallProgress(
-    progress: LearningProgress = this.progress
-  ): void {
-    const totalConcepts = TKA_CONCEPTS.length;
-    const completedCount = progress.completedConcepts.size;
-    progress.overallProgress = (completedCount / totalConcepts) * 100;
-  }
-
-  // Additive by contract: a badge is only ever added, never taken back, and
-  // every threshold reads the reconciled completion set. Parameterized for the
-  // same reason as updateOverallProgress.
-  private checkBadges(progress: LearningProgress = this.progress): void {
-    const badges = new Set(progress.badges);
-    const completed = progress.completedConcepts.size;
-
-    if (this.isCategoryComplete("foundation", progress)) {
-      badges.add("foundation-master");
-    }
-    if (this.isCategoryComplete("letters", progress)) {
-      badges.add("letter-master");
-    }
-    if (this.isCategoryComplete("combinations", progress)) {
-      badges.add("combination-master");
-    }
-    if (this.isCategoryComplete("advanced", progress)) {
-      badges.add("advanced-master");
-    }
-
-    if (completed >= 5) badges.add("first-five");
-    if (completed >= 10) badges.add("halfway-there");
-    if (completed >= 20) badges.add("almost-there");
-    if (completed >= 28) badges.add("tka-master");
-
-    // reduce instead of Math.max(...spread): spreading a large concept map into
-    // a variadic call risks a call-stack overflow at high N, and Math.max() of
-    // an empty spread returns -Infinity. reduce is safe for any size, including
-    // an empty map (seeds at 0).
-    let maxStreak = 0;
-    for (const p of progress.concepts.values()) {
-      if (p.bestStreak > maxStreak) maxStreak = p.bestStreak;
-    }
-    if (maxStreak >= 10) badges.add("streak-10");
-    if (maxStreak >= 25) badges.add("streak-25");
-    if (maxStreak >= 50) badges.add("streak-50");
-
-    progress.badges = Array.from(badges);
-  }
-
-  private isCategoryComplete(
-    category: string,
-    progress: LearningProgress = this.progress
-  ): boolean {
-    const categoryConcepts = TKA_CONCEPTS.filter(
-      (c) => c.category === category
-    );
-    return categoryConcepts.every((c) => progress.completedConcepts.has(c.id));
-  }
-
   getConceptsDueForReview(): string[] {
     const now = new Date();
     const due: string[] = [];
@@ -729,7 +586,10 @@ export class ConceptProgressTracker {
   }
 
   resetProgress(): void {
+    const resetAt = this.nextChangeDate();
     this.progress = this.createEmptyProgress();
+    this.progress.resetAt = resetAt;
+    this.progress.lastUpdated = resetAt;
     this.saveProgress();
   }
 
@@ -744,6 +604,9 @@ export class ConceptProgressTracker {
         totalTimeSpent: this.progress.totalTimeSpent,
         badges: this.progress.badges,
         lastUpdated: this.progress.lastUpdated.toISOString(),
+        currentConceptVisitedAt:
+          this.progress.currentConceptVisitedAt?.toISOString(),
+        resetAt: this.progress.resetAt?.toISOString(),
       },
       null,
       2
@@ -771,6 +634,7 @@ export class ConceptProgressTracker {
           completedAt: this.parseOptionalDate(value.completedAt),
           lastPracticedAt: this.parseOptionalDate(value.lastPracticedAt),
           nextPracticeAt: this.parseOptionalDate(value.nextPracticeAt),
+          updatedAt: this.parseOptionalDate(value.updatedAt),
         });
       }
       this.progress = this.reconcileCompletion({
@@ -782,6 +646,10 @@ export class ConceptProgressTracker {
         totalTimeSpent: data.totalTimeSpent || 0,
         badges: data.badges || [],
         lastUpdated: new Date(data.lastUpdated || Date.now()),
+        currentConceptVisitedAt: this.parseOptionalDate(
+          data.currentConceptVisitedAt
+        ),
+        resetAt: this.parseOptionalDate(data.resetAt),
       });
       this.saveProgress();
     } catch (error) {

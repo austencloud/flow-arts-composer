@@ -23,7 +23,7 @@ function staticSpin(color: HandSide, turns: number) {
 }
 
 describe("pictograph arrival prop timing", () => {
-  it("keeps ordinary motions on the readable 850ms floor", () => {
+  it("keeps ordinary motions on the readable floor", () => {
     const step = createStepData({
       motions: {
         left: staticSpin(HandSide.LEFT, 1),

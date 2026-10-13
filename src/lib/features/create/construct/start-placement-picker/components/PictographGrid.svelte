@@ -92,6 +92,7 @@
       data-ghost="safe"
       data-ghost-kind="start-placement"
       data-ghost-label={pictographData.letter ?? ""}
+      data-start-morph-tile
       style:--letter-border-color={getLetterBorderColorSafe(
         pictographData.letter
       )}
@@ -106,7 +107,7 @@
       onanimationend={() => handleAnimationEnd(pictographData.id)}
     >
       <!-- Render pictograph using Pictograph component -->
-      <div class="pictograph-wrapper">
+      <div class="pictograph-wrapper" data-start-morph-candidate>
         <PictographContainer
           pictographData={gridJoin
             ? withGridJoin(pictographData)

@@ -77,8 +77,8 @@ importers:
         specifier: ^0.1.0
         version: 0.1.0(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/video-editor':
-        specifier: file:vendor/austencloud-video-editor-0.1.0.tgz
-        version: file:vendor/austencloud-video-editor-0.1.0.tgz(mediabunny@1.44.2)(svelte@5.57.2(@typescript-eslint/types@8.59.4))
+        specifier: ^0.1.2
+        version: 0.1.2(mediabunny@1.44.2)(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@capacitor-firebase/authentication':
         specifier: 8.3.0
         version: 8.3.0(@capacitor/core@8.4.2)(firebase@12.13.0)
@@ -873,7 +873,7 @@ packages:
       svelte: ^5.0.0
 
   '@austencloud/motion@file:vendor/austencloud-motion-0.2.1.tgz':
-    resolution: {integrity: sha512-lYcoUTXzT3lL1huYG0nhAXhSjzrbCoTEY6d4T7At8+u49S4STA3vA+3nucITXoTTLyy95aqCtLldXewNFel6NQ==, tarball: file:vendor/austencloud-motion-0.2.1.tgz}
+    resolution: {integrity: sha512-SEaZSZ8MH89TDd2iYb+MCbKyioEVz9UhxgovYm3e3CV5/nfT00+bPJDYNad/ERIftDJEHpxbUtCfaHDnec2IXA==, tarball: file:vendor/austencloud-motion-0.2.1.tgz}
     version: 0.2.1
     peerDependencies:
       svelte: ^5.0.0
@@ -906,9 +906,8 @@ packages:
     peerDependencies:
       svelte: ^5.0.0
 
-  '@austencloud/video-editor@file:vendor/austencloud-video-editor-0.1.0.tgz':
-    resolution: {integrity: sha512-SkBGnYCySFafRbho6k9Y2ETznLuqFmf1xbbsHnl5JFtwrIQQbcNKGQIRFYdVjJqmoIfBEuE6Xs3YzEuwqQdUyw==, tarball: file:vendor/austencloud-video-editor-0.1.0.tgz}
-    version: 0.1.0
+  '@austencloud/video-editor@0.1.2':
+    resolution: {integrity: sha512-CS0Q9rvvjT3jojThq8avmxWhi4Th6dUNOr/dv0UexvY9NuDHlTTHlfab9nCktQQkp2iQ/IrdJvwOpIORVe+YUg==}
     peerDependencies:
       mediabunny: ^1.44.0
       svelte: ^5.0.0
@@ -9705,7 +9704,7 @@ snapshots:
     dependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 
-  '@austencloud/video-editor@file:vendor/austencloud-video-editor-0.1.0.tgz(mediabunny@1.44.2)(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
+  '@austencloud/video-editor@0.1.2(mediabunny@1.44.2)(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
     dependencies:
       '@fortawesome/free-solid-svg-icons': 7.3.1
       dexie: 4.3.0

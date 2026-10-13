@@ -46,10 +46,6 @@ function timingOf(options: KeyframeAnimationOptions | number | undefined): {
  */
 export class FakeAnimation {
   onfinish: (() => void) | null = null;
-  readonly #listeners: Record<"finish" | "cancel", Set<() => void>> = {
-    finish: new Set(),
-    cancel: new Set(),
-  };
   currentTime = 0;
   playState: AnimationPlayState = "running";
   // Svelte clears `effect` once its own transitions finish, so it stays a
@@ -77,24 +73,33 @@ export class FakeAnimation {
     };
   }
 
-  addEventListener(type: "finish" | "cancel", listener: () => void): void {
-    this.#listeners[type].add(listener);
+  private readonly listeners = new Map<string, Set<() => void>>();
+
+  addEventListener(type: string, listener: () => void): void {
+    let set = this.listeners.get(type);
+    if (!set) this.listeners.set(type, (set = new Set()));
+    set.add(listener);
   }
 
-  removeEventListener(type: "finish" | "cancel", listener: () => void): void {
-    this.#listeners[type].delete(listener);
+  removeEventListener(type: string, listener: () => void): void {
+    this.listeners.get(type)?.delete(listener);
+  }
+
+  private emit(type: string): void {
+    for (const listener of this.listeners.get(type) ?? []) listener();
   }
 
   cancel(): void {
+    if (this.playState === "idle") return;
     this.playState = "idle";
-    for (const listener of this.#listeners.cancel) listener();
+    this.emit("cancel");
   }
 
   finish(): void {
     if (this.playState !== "running") return;
     this.playState = "finished";
     this.onfinish?.();
-    for (const listener of this.#listeners.finish) listener();
+    this.emit("finish");
   }
 }
 

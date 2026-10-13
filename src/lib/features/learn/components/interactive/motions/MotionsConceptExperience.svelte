@@ -12,6 +12,7 @@
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import HandCombinationBoard from "#lib/shared/guide-topics/HandCombinationBoard.svelte";
+  import { CombinationPlayback } from "#lib/shared/guide-topics/combination-playback.svelte.js";
   import {
     HAND_COMBINATIONS,
     MOTION_MAP_MOVES,
@@ -26,7 +27,6 @@
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
-  import { getConceptPlacesByLevel } from "../../../domain/concept-place-registry";
   import type { ExperienceViewMode } from "../../../domain/types";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
   import LessonStageControls from "../LessonStageControls.svelte";
@@ -41,6 +41,7 @@
   import HandMotionsIntroStage from "./HandMotionsIntroStage.svelte";
   import HandMotionsMapStage from "./HandMotionsMapStage.svelte";
   import HandPairsStage from "./HandPairsStage.svelte";
+  import { runHandGridSplit } from "./hand-grid-split";
 
   let {
     onComplete,
@@ -56,6 +57,10 @@
   const MAP_STAGE = 1;
   const PAIRS_STAGE = 2;
   const BOARD_STAGE = HAND_MOTIONS_STAGE_COUNT - 1;
+  // A hover or tap on a board cell plays its move, as on the Guide page
+  // (Austen, 2026-10-13).
+  const boardPlayback = new CombinationPlayback();
+  onDestroy(boardPlayback.settle);
   const HAND_POINTS = new Set<string>([
     GridLocation.NORTH,
     GridLocation.EAST,
@@ -66,16 +71,7 @@
     HAND_COMBINATIONS.map((combination) => combination.id)
   );
 
-  const levelOnePlaces = getConceptPlacesByLevel(1);
-  const curriculumIndex = levelOnePlaces.findIndex(
-    (place) => place.id === "1.3"
-  );
-  const curriculumLabel = $derived(
-    tDynamic("learn_motion_curriculum_label", {
-      current: curriculumIndex + 1,
-      total: levelOnePlaces.length,
-    })
-  );
+  const curriculumLabel = $derived(tDynamic("learn_ui_level_one"));
 
   const haptic = getHapticFeedback();
   const persistence = getExperiencePersistence("hand-motions-intro");
@@ -155,16 +151,34 @@
             ""
   );
 
+  /** The map and the two hands share one stage: the map splits into them. */
+  function isHandsStage(step: number): boolean {
+    return step === MAP_STAGE || step === PAIRS_STAGE;
+  }
+  /** The heading shares the key too: the split's view transition fades it, and
+      a stacked crossfade would hold both captions' height, so the grids would
+      land short of the settled layout and jump. */
+  const stageKey = $derived(isHandsStage(stepIndex) ? MAP_STAGE : stepIndex);
+
   function goToStep(next: number): void {
     const clamped = Math.min(BOARD_STAGE, Math.max(INTRO_STAGE, next));
     if (clamped === stepIndex) return;
     const revision = ++layoutRevision;
-    const captured = stageMotion.capture();
-    stepIndex = clamped;
-    if (captured) {
-      void tick().then(() => {
-        if (revision === layoutRevision) stageMotion.play();
-      });
+    if (isHandsStage(stepIndex) && isHandsStage(clamped)) {
+      stageMotion.cancel();
+      runHandGridSplit(
+        experienceElement,
+        clamped === PAIRS_STAGE ? "split" : "merge",
+        () => (stepIndex = clamped)
+      );
+    } else {
+      const captured = stageMotion.capture();
+      stepIndex = clamped;
+      if (captured) {
+        void tick().then(() => {
+          if (revision === layoutRevision) stageMotion.play();
+        });
+      }
     }
     if (viewMode !== "scroll") {
       persistence.saveStep(stepIndex + 1);
@@ -258,13 +272,13 @@
 >
   <LessonStageFrame artifactLayout="workshop">
     {#snippet heading()}
-      <LessonStageHeading key={stepIndex} title={handMotionsTopicText("title")}>
+      <LessonStageHeading key={stageKey} title={handMotionsTopicText("title")}>
         {#if description}<p class="stage-description">{description}</p>{/if}
       </LessonStageHeading>
     {/snippet}
 
     {#snippet artifact()}
-      <Crossfade key={stepIndex} duration={DURATION.emphasis}>
+      <Crossfade key={stageKey} duration={DURATION.emphasis}>
         {#if stepIndex === INTRO_STAGE}
           <HandMotionsIntroStage />
         {:else if stepIndex === MAP_STAGE}
@@ -273,7 +287,11 @@
           <HandPairsStage found={pairsFound} onFind={foundCombination} />
         {:else}
           <div class="board-stage">
-            <HandCombinationBoard showDescriptions />
+            <HandCombinationBoard
+              showDescriptions
+              cellProgress={boardPlayback.cellProgress}
+              onCellPlay={boardPlayback.replay}
+            />
           </div>
         {/if}
       </Crossfade>

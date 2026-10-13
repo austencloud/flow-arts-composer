@@ -109,6 +109,7 @@
               onPlacementSubmitted={onStartPlacementSubmitted}
               heading={startPlacementHeading}
               suppressHeading={constructTutorialState.isActive}
+              morphIntoWorkspace
             />
           {:else}
             <OptionPicker
