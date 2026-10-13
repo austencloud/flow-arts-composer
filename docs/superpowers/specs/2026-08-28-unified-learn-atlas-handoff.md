@@ -1,5 +1,55 @@
 # Unified Learn and Atlas - Handoff (2026-08-28)
 
+## Recovery pass, October 13, 2026
+
+Austen requested reliable lesson exit, truthful resume, and progress that survives device sync. He also requested a cohesive approach across lessons, the Guide, quiz/practice, and printable material, with fewer competing numbers and choices. The implementation in this pass covers the three reliability problems and removes the misleading lesson ordinal and whole-level completion claims. The product changes below are the proposed next slice.
+
+### What exists now
+
+| Surface | Current owner and role | Connection to repair |
+| --- | --- | --- |
+| Interactive lessons | [Course](../../../src/lib/features/learn/components/ConceptPathView.svelte), 12 published experiences | Resume and next action should lead; the full catalog is optional browsing. |
+| Written Guide | [Guide hub](<../../../src/routes/(public)/guide/+page.svelte>), published topic pages | Open the relevant explanation from the current lesson, preserving the return destination. |
+| Printable pages / PDFs | Existing Guide manifests and reader | Offer printing from the same topic so a learner need not discover a separate curriculum. |
+| Quiz / Play | [PlayHub](../../../src/lib/features/learn/play/components/PlayHub.svelte) and game registry | Recommend a relevant practice activity only when its concept mapping is supported. Current quiz attribution still uses a coarse fallback. |
+| Course map | [Concept-place registry](../../../src/lib/features/learn/domain/concept-place-registry.ts) | The collapsible map sits below all 12 lesson cards. Seven lessons are attached to places; five published lessons have no binding. |
+| Public Atlas | [Atlas route](<../../../src/routes/(public)/atlas/+page.svelte>) | Development shows the map; production currently shows Coming Soon. Do not promise it as a finished destination. |
+
+These are observations of the October 13 source. Earlier verification entries below are historical snapshots.
+
+### Delivery order
+
+1. **Protect continuity.** Header Back leaves the lesson immediately. Internal Previous changes steps. Resume follows the latest visited unfinished lesson. Sync combines independent completions, respects a deliberate reset, and reports a failed save.
+2. **Make the beginner entry coherent.** Refine the existing course route around one start/continue action. Keep topic browsing available without requiring it for the first interaction. The useful context is the current topic and next action; registry IDs and competing course ordinals should stay out of the beginner presentation.
+3. **Prove one complete learning loop.** Use Grid and Hand Placements: enter a lesson, interact, read its corresponding Guide explanation, return to the same step, complete it, and continue. Attach a practice activity only when it exercises that topic. Keep independent Guide and Play browsing available for people who came looking for them.
+4. **Extend the proven relationship.** Reconcile all 12 published lessons with the canonical concept graph and truthful coverage labels, then apply the same return and progress rules across the remaining topics. Keep official TKA level meaning intact. Completing currently published lessons must not claim mastery or completion of the whole TKA level.
+
+### Proposed first screen and behavior
+
+The existing Learn entry should offer **Start learning** for a new learner or **Continue [topic]** for a returning learner. That action opens the interaction directly. A secondary **Browse topics** path holds the full course overview. Reading, printing, and relevant practice appear beside the topic they help with.
+
+The course overview should use readable topic names, show actual completion, and bring a linked selection into view. One concept may have several activities; activity completion and concept understanding remain distinct. Official levels belong where they explain the material's scope. A local lesson counter must count the actual lesson sequence, never the concept-place graph.
+
+This is a proposal for the next design pass, not a claim that the entry screen, map, or practice mapping has been rebuilt by the reliability patch. Any change to teaching content still follows the existing concept and copy approval process.
+
+### Acceptance for the next slice
+
+- A new learner reaches a meaningful interaction through one clear action.
+- A returning learner recognizes the saved topic and resumes the same step.
+- Guide and print access preserve the originating topic and return destination.
+- Practice names the skill it exercises and requires an explicit start.
+- The learner never has to interpret internal IDs to choose the next action.
+- Topic links bring their selected item into view on a phone.
+- A completion message states exactly what was completed and offers one useful next action.
+
+### Persistence scope
+
+The reliability patch synchronizes lesson completion and progress records. Internal lesson steps still belong to the existing browser-local experience persistence owner. Cross-device step-by-step continuation is a separate implementation task and must not be advertised as delivered here. Concurrent attempts on the same lesson use conservative cumulative maxima because the current records have no individual attempt IDs; exact combined attempt history requires a different data model.
+
+### Display ownership for this pass
+
+The label search (`learn_motion_curriculum_label`, `getConceptPlacesByLevel`, and `learn_ui_level_complete`) found the wrong course ordinals in Hand Motions and Timing and Direction. Their existing `LessonStageHeading` remains the display owner; the shared i18n owner supplies the existing `learn_ui_level_one` label, also used by `GuideTab`. This is reuse. The map-place count is rejected as a lesson ordinal because several lessons share a place. This correction changes text only: the existing lesson components continue to own rendering, inspectable choices, and phone, tablet, tall, and wide composition.
+
 ## Mission
 
 Unify Interactive Lessons, Play, the written Guide, the Kinetic Atlas, the
@@ -169,8 +219,9 @@ is [`active/2026-08-28-unified-learn-atlas-design.md`](active/2026-08-28-unified
   vocabulary.
 - The public Atlas landing uses the official Level 1 concept graph. Glossary
   categories remain search and reference metadata, not curriculum structure.
-- Only seven lesson experiences are registered today. `docs/learn/concept-status.md`
-  is the status authority, and `CONFIRMED` requires human interaction.
+- As of October 13, 12 lesson experiences are published in
+  `concept-experience-registry.ts`. `docs/learn/concept-status.md` records review
+  status; `CONFIRMED` requires human interaction.
 - The public Learn route pulls a large client graph on a cold Vite start. The
   task-owned preview required one dependency-optimization reload before the
   interactive course replaced its prerendered fallback. Do not mistake that

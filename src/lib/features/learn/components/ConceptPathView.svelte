@@ -78,6 +78,12 @@
   // Find the current concept (first non-completed, non-locked)
   // The experience registry only contains lessons with a real component.
   const currentConcept = $derived((): LearnConcept => {
+    const saved = availableConcepts.find(
+      (concept) =>
+        concept.id === progress.currentConceptId &&
+        conceptProgressService.getConceptStatus(concept.id) === "in-progress"
+    );
+    if (saved) return saved;
     // First, find any in-progress concept
     const inProgress = availableConcepts.find(
       (c) => conceptProgressService.getConceptStatus(c.id) === "in-progress"
@@ -207,7 +213,7 @@
           <div class="celebration-icon">
             <i class="fa-solid fa-trophy" aria-hidden="true"></i>
           </div>
-          <h2>{t("learn_ui_level_complete")}</h2>
+          <h2>{t("learn_card_completed")}</h2>
           <p>{t("learn_ui_all_lessons_complete")}</p>
         </div>
       {:else}
