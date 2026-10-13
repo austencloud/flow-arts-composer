@@ -1337,6 +1337,18 @@
           cubic-bezier(0.4, 0, 0.2, 1) both;
       }
 
+      /* Pieces of the old page that keep a name of their own (the launchpad
+         sections) have no partner on the boot screen; :only-child picks
+         them, never the pressed link. They paint above both roots, so they
+         recede on the arriving page's curve to leave as the old page is
+         covered, instead of lingering over the boot screen. */
+      html:active-view-transition-type(tka-handoff)::view-transition-old(
+          *
+        ):only-child {
+        animation: tka-recede calc(350ms * var(--tka-handoff-slow, 1))
+          cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
       html:active-view-transition-type(tka-handoff)::view-transition-new(root) {
         animation: tka-arrive calc(350ms * var(--tka-handoff-slow, 1))
           cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -1362,11 +1374,35 @@
         animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
       }
 
+      /* Both pills are opaque: a normal crossfade avoids plus-lighter bloom.
+         The UA applies plus-lighter through an animation of its own, which a
+         plain mix-blend-mode declaration cannot override, so these replace
+         the UA animation names (timing still inherits from the group). */
       ::view-transition-old(composer-cta),
       ::view-transition-new(composer-cta) {
         animation-duration: calc(260ms * var(--tka-handoff-slow, 1));
-        /* Both pills are opaque: a normal crossfade avoids plus-lighter bloom. */
+        animation-fill-mode: both;
         mix-blend-mode: normal;
+      }
+
+      ::view-transition-old(composer-cta) {
+        animation-name: tka-cta-out;
+      }
+
+      ::view-transition-new(composer-cta) {
+        animation-name: tka-cta-in;
+      }
+
+      @keyframes tka-cta-out {
+        to {
+          opacity: 0;
+        }
+      }
+
+      @keyframes tka-cta-in {
+        from {
+          opacity: 0;
+        }
       }
 
       @media (prefers-reduced-motion: reduce) {
