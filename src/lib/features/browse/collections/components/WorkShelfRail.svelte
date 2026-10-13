@@ -80,10 +80,16 @@
       disabled: shelfId === "shared" && !sharedAvailable,
       ariaLabel:
         shelfId === "shared" && !sharedAvailable
-          ? t("browse_verified_shelf_no_collections", { short: shelves[shelfId].shortLabel, label: shelves[shelfId].label })
+          ? t("browse_verified_shelf_no_collections", {
+              short: shelves[shelfId].shortLabel,
+              label: shelves[shelfId].label,
+            })
           : shelves[shelfId].shortLabel === shelves[shelfId].label
             ? shelves[shelfId].label
-            : t("browse_verified_shelf_label", { short: shelves[shelfId].shortLabel, label: shelves[shelfId].label }),
+            : t("browse_verified_shelf_label", {
+                short: shelves[shelfId].shortLabel,
+                label: shelves[shelfId].label,
+              }),
     }))
   );
 </script>
@@ -95,10 +101,10 @@
   </span>
 {/snippet}
 
+<!-- The shelf tabs are the header. The module's own tab bar already says
+     "You" above this rail, so a second title row only spent a band of the
+     rail on a word; the tab group carries that name for assistive tech. -->
 <header class="rail-header">
-  <div class="title-row">
-    <h2>{t("browse_ui_you")}</h2>
-  </div>
   <SegmentedControl
     {options}
     {value}
@@ -106,7 +112,7 @@
     color="accent"
     density="tight"
     semantics="tabs"
-    ariaLabel="Choose a library shelf"
+    ariaLabel={t("browse_ui_you")}
     optionContent={tabContent}
   />
 </header>
@@ -132,23 +138,9 @@
     flex: 0 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: clamp(12px, 1.8cqi, 20px);
+    padding: clamp(8px, 1.2cqi, 12px) clamp(10px, 1.6cqi, 16px);
     border-bottom: 1px solid var(--theme-stroke);
     background: transparent;
-  }
-
-  .title-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .title-row h2 {
-    margin: 0;
-    color: var(--theme-text);
-    font-size: clamp(17px, 2.6cqi, 22px);
-    font-weight: 700;
   }
 
   .shelf-tab-content {
@@ -176,8 +168,8 @@
     scrollbar-gutter: stable;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: clamp(14px, 1.8cqi, 24px);
+    gap: 10px;
+    padding: clamp(10px, 1.4cqi, 14px) clamp(10px, 1.6cqi, 16px);
   }
 
   .shelf-panel-header {

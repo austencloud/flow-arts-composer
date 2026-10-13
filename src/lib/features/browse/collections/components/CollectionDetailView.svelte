@@ -13,6 +13,10 @@ becomes private while open, we bail back to the list instead of showing a ghost.
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { untrack, onDestroy } from "svelte";
+  import {
+    peekPendingLibraryReveal,
+    clearPendingLibraryReveal,
+  } from "#lib/features/browse/state/pending-browse-intent.svelte.js";
   import type {
     CollectionAccessRole,
     LibraryCollection,
@@ -117,6 +121,23 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   });
 
   onDestroy(() => engine.destroy());
+
+  // "Show me what I just filed here." The save toast parks the sequence id
+  // before routing to this collection; the panel scrolls to its card once
+  // the pool holds it. The collection's own order is kept — the new member
+  // sits at the end, which is where the owner put it.
+  let revealSequenceId = $state<string | null>(null);
+  $effect(() => {
+    const id = peekPendingLibraryReveal();
+    if (!id) return;
+    untrack(() => {
+      revealSequenceId = id;
+    });
+  });
+  function finishReveal(id: string) {
+    clearPendingLibraryReveal(id);
+    revealSequenceId = null;
+  }
 
   const isSystem = $derived(!!collection && isSystemCollection(collection));
   const isShared = $derived(!!foreignOwnerId && !!accessRole);
@@ -881,6 +902,8 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         selection={previewReadOnly ? undefined : panelSelection}
         showSelectionAction={false}
         hideSelectionToolbar
+        {revealSequenceId}
+        onRevealDone={finishReveal}
         collectionContext={canEdit
           ? {
               id: collectionId,
