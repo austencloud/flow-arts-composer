@@ -38,15 +38,13 @@ const glossaryCard = readSource(
 );
 
 describe("homepage hero notation rail contract", () => {
-  it("makes opening Composer the primary hero action", () => {
-    expect(homeHero).toContain('class="composer-cta"');
-    expect(homeHero).toContain('href="/create"');
-    expect(homeHero).toContain("data-sveltekit-reload");
-    expect(homeHero).toContain(
-      '<span>{siteCopy("Open Flow Arts Composer")}</span>'
-    );
-    expect(homeHero).toContain('cta_type: "open_composer"');
-    expect(homeHero).toContain("white-space: nowrap");
+  it("leaves the Composer button to the header and footer", () => {
+    // The fixed header's button is always on screen and the shared footer
+    // closes every page with another; a hero copy made three in one viewport.
+    expect(homeHero).not.toContain("composer-cta");
+    expect(homeHero).not.toContain('cta_type: "open_composer"');
+    expect(homeHero).toContain('class="pointer-link"');
+    expect(homeHero).toContain('cta_type: "what_is_tka"');
     expect(homeHero).toContain("onReroll={handleReroll}");
     expect(homeHero).toContain("rerolling={heroAct.rerolling}");
     expect(homeHero).toContain('trackDemoInteraction("try_another")');

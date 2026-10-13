@@ -4,6 +4,9 @@
   The homepage's above-the-fold hero: the H1 statement, the live per-visit
   sequence demo (promoted from the composer page so any host can use it),
   and a pointer link to the What is TKA first-read (/about) for strangers.
+  The hero carries no Composer button of its own: the fixed header's button
+  is always on screen and the shared footer closes the page with another,
+  so a third one here stacked three in one viewport.
 
   The fixed stage is present at SSR, but the player stays unmounted until the
   first per-visit sequence finishes generating after hydration. The hero
@@ -77,19 +80,6 @@
   />
 
   <nav class="hero-actions" aria-label={siteCopy("Start here")}>
-    <a
-      class="composer-cta"
-      href="/create"
-      data-sveltekit-reload
-      onclick={() =>
-        trackCtaClick("hero", {
-          cta_type: "open_composer",
-          destination: "/create",
-        })}
-    >
-      <span>{siteCopy("Open Flow Arts Composer")}</span>
-    </a>
-
     <a
       href="/about"
       class="pointer-link"
@@ -169,40 +159,6 @@
     margin-top: clamp(1rem, 2.5svh, 1.5rem);
   }
 
-  .composer-cta {
-    display: inline-flex;
-    align-items: center;
-    align-self: center;
-    justify-content: center;
-    min-height: var(--min-touch-target, 44px);
-    box-sizing: border-box;
-    padding: 0 clamp(1rem, 5cqi, 1.4rem);
-    border: 1px solid transparent;
-    border-radius: 999px;
-    color: #fff;
-    background: linear-gradient(135deg, #6f8cff, #8b6cff);
-    box-shadow: 0 4px 18px rgba(111, 140, 255, 0.4);
-    font-family: inherit;
-    font-size: clamp(0.95rem, 0.9rem + 0.12vw, 1.08rem);
-    font-weight: 650;
-    line-height: 1.2;
-    white-space: nowrap;
-    text-decoration: none;
-    transition:
-      transform var(--duration-fast) var(--ease-standard),
-      box-shadow var(--duration-fast) var(--ease-standard),
-      filter var(--duration-fast) var(--ease-standard);
-  }
-  .composer-cta:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(111, 140, 255, 0.55);
-    filter: brightness(1.06);
-  }
-  .composer-cta:focus-visible {
-    outline: 2px solid oklch(0.88 0.08 275);
-    outline-offset: 3px;
-    box-shadow: 0 10px 30px rgba(111, 140, 255, 0.55);
-  }
   /* Standalone CTA (not inline prose): a visible pill, not a bare text link,
      per clickables-look-like-buttons. */
   .pointer-link {
@@ -228,20 +184,15 @@
   }
 
   @media (pointer: coarse) {
-    .composer-cta {
-      transform: none;
-    }
     .pointer-link {
       transform: none;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .composer-cta,
     .pointer-link {
       transition: none;
     }
-    .composer-cta:hover,
     .pointer-link:hover {
       transform: none;
     }
@@ -325,10 +276,6 @@
     .hero-actions {
       margin-top: 0.25rem;
     }
-    .composer-cta {
-      padding-inline: 0.9rem;
-      font-size: 0.875rem;
-    }
   }
 
   /* Sideways phones get a single-line title and a rail-free animation. The
@@ -355,10 +302,6 @@
     }
     .hero-actions {
       margin-top: 0.25rem;
-    }
-    .composer-cta {
-      padding-inline: 0.75rem;
-      font-size: var(--font-size-min, 0.875rem);
     }
     .pointer-link {
       display: none;
@@ -397,10 +340,6 @@
       gap: 0.75rem;
       margin-top: clamp(1rem, 2.5svh, 1.35rem);
     }
-    .composer-cta {
-      padding-inline: 0.9rem;
-      font-size: var(--font-size-min, 0.875rem);
-    }
     .pointer-link {
       min-height: var(--min-touch-target, 44px);
       font-size: var(--font-size-min, 0.875rem);
@@ -432,10 +371,6 @@
     }
     .title-sub {
       font-size: 1.3rem;
-    }
-    .composer-cta {
-      min-height: 3.25rem;
-      padding-inline: 1.8rem;
     }
     .hero-actions {
       font-size: 0.95rem;
