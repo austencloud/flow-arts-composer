@@ -165,6 +165,9 @@
   function isHandsStage(step: number): boolean {
     return step === MAP_STAGE || step === PAIRS_STAGE;
   }
+  /** The heading shares the key too: the split's view transition fades it, and
+      a stacked crossfade would hold both captions' height, so the grids would
+      land short of the settled layout and jump. */
   const stageKey = $derived(isHandsStage(stepIndex) ? MAP_STAGE : stepIndex);
 
   function goToStep(next: number): void {
@@ -279,7 +282,7 @@
 >
   <LessonStageFrame artifactLayout="workshop">
     {#snippet heading()}
-      <LessonStageHeading key={stepIndex} title={handMotionsTopicText("title")}>
+      <LessonStageHeading key={stageKey} title={handMotionsTopicText("title")}>
         {#if description}<p class="stage-description">{description}</p>{/if}
       </LessonStageHeading>
     {/snippet}
