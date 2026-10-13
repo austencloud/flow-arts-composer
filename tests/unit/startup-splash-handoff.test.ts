@@ -37,7 +37,11 @@ describe("startup splash handoff", () => {
       page.window.eval(loadingScript!);
       expect(
         page.window.document.getElementById("loading-text")!.textContent
-      ).toBe(german ? "Das Alphabet wird geladen…" : "Loading the alphabet…");
+      ).toBe(
+        german
+          ? "Flow Arts Composer wird geöffnet"
+          : "Opening Flow Arts Composer"
+      );
       expect(
         page.window.document
           .getElementById("app-loading")!
@@ -47,8 +51,8 @@ describe("startup splash handoff", () => {
           ? "Flow Arts Composer wird geladen"
           : "Loading Flow Arts Composer"
       );
-      expect(page.window.eval('__tkaBootMessage("Checking session...")')).toBe(
-        german ? "Anmeldung wird geprüft…" : "Checking session..."
+      expect(page.window.eval('__tkaBootMessage("Almost there")')).toBe(
+        german ? "Gleich geschafft" : "Almost there"
       );
     }
   );

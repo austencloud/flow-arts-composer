@@ -243,13 +243,15 @@ describe("German translation contracts", () => {
     expect(mismatches).toEqual([]);
   });
 
-  it("translates boot checkpoints before the main locale bundle loads", () => {
+  it("translates the boot screen's status before the main locale bundle loads", () => {
     const html = readFileSync("src/app.html", "utf8");
     const dictionary = html.match(/var __tkaBootGerman = (\{[\s\S]*?\n\s*\});/);
     expect(dictionary).not.toBeNull();
     const boot = Function(`return (${dictionary![1]})`)() as Record<string, string>;
-    const source = readFileSync("src/lib/shared/application/components/MainApplication.svelte", "utf8");
-    const messages = [english.app_loading_services!, ...[...source.matchAll(/__tkaLoadProgress\?\.\(\d+, "([^"]+)"\)/g)].map(m => m[1]!)];
+    // The screen shows only these two; __tkaLoadProgress messages feed the
+    // boot profiler and never render.
+    const messages = [...html.matchAll(/__tkaBootMessage\("([^"]+)"\)/g)].map(m => m[1]!);
+    expect(new Set(messages)).toEqual(new Set(["Opening Flow Arts Composer", "Almost there"]));
     for (const message of messages) {
       expect(boot[message], message).toBeTruthy();
       expect(boot[message], message).not.toBe(message);
