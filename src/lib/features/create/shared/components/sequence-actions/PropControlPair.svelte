@@ -141,16 +141,6 @@
     border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.35);
   }
 
-  .prop-card.blue:hover {
-    background: linear-gradient(
-      135deg,
-      rgba(var(--user-left-rgb, 59, 130, 246), 0.2) 0%,
-      rgba(var(--user-left-rgb, 59, 130, 246), 0.1) 100%
-    );
-    border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.5);
-    box-shadow: 0 4px 16px rgba(var(--user-left-rgb, 59, 130, 246), 0.2);
-  }
-
   /* Red - Rose glass pane */
   .prop-card.red {
     background: linear-gradient(
@@ -159,16 +149,6 @@
       rgba(var(--user-right-rgb, 239, 68, 68), 0.05) 100%
     );
     border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.35);
-  }
-
-  .prop-card.red:hover {
-    background: linear-gradient(
-      135deg,
-      rgba(var(--user-right-rgb, 239, 68, 68), 0.2) 0%,
-      rgba(var(--user-right-rgb, 239, 68, 68), 0.1) 100%
-    );
-    border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.5);
-    box-shadow: 0 4px 16px rgba(var(--user-right-rgb, 239, 68, 68), 0.2);
   }
 
   .prop-label {
@@ -210,7 +190,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    /* Top-aligned so both hands' steppers share a row even when one card's
+       content is taller; the card's own min-height keeps the pair level. */
+    justify-content: flex-start;
     gap: 8px;
     /* Min height to accommodate turns controls (2 rows of buttons) */
     min-height: calc(var(--min-touch-target, 44px) * 2 + 8px);
