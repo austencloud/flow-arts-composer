@@ -20,6 +20,11 @@
     saving?: boolean;
     saveLabel?: string;
     idBase?: string;
+    /**
+     * "inline" puts the label and the mode control on one row with no
+     * description, for a compact settings row under a card preview.
+     */
+    layout?: "stacked" | "inline";
   }
 
   let {
@@ -31,6 +36,7 @@
     saving = false,
     saveLabel,
     idBase = "card-footer",
+    layout = "stacked",
   }: Props = $props();
 
   const options: { value: CardFooterMode; label: string }[] = $derived([
@@ -69,15 +75,21 @@
   }
 </script>
 
-<div class="card-footer-editor" data-card-footer-editor>
+<div
+  class="card-footer-editor"
+  class:inline={layout === "inline"}
+  data-card-footer-editor
+>
   <div class="editor-heading">
     <div>
       <div class="editor-label" id="{idBase}-label">
         {t("share_card_footer")}
       </div>
-      <p class="editor-description">
-        {description ?? t("share_footer_description")}
-      </p>
+      {#if layout !== "inline"}
+        <p class="editor-description">
+          {description ?? t("share_footer_description")}
+        </p>
+      {/if}
     </div>
     {#if onSave}
       <span class="save-status" aria-live="polite">
@@ -148,6 +160,25 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
+  }
+
+  /* Inline: label | control on one row, the custom field underneath. The
+     control keeps a content-sized width instead of spanning the row. */
+  .card-footer-editor.inline {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 8px;
+  }
+
+  .card-footer-editor.inline > :global(.segmented-control) {
+    width: min(100%, 280px);
+  }
+
+  .card-footer-editor.inline > .custom-field,
+  .card-footer-editor.inline > :global(.panel-btn) {
+    grid-column: 1 / -1;
   }
 
   .editor-label {

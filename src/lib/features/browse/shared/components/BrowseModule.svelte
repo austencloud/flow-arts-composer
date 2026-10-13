@@ -44,6 +44,7 @@
   import {
     peekPendingBrowseIntent,
     clearPendingBrowseIntent,
+    setPendingLibraryReveal,
   } from "../../state/pending-browse-intent.svelte";
   import { openSequenceViewer } from "../../../../shared/sequence-viewer/services/sequence-viewer-navigator";
   import {
@@ -317,6 +318,10 @@
       const contextId = intent.foreignOwnerId
         ? `${intent.foreignOwnerId}:${intent.collectionId}`
         : intent.collectionId;
+      // Park the reveal before routing: the detail view reads it on mount.
+      if (intent.revealSequenceId) {
+        setPendingLibraryReveal(intent.revealSequenceId);
+      }
       requestAnimationFrame(() =>
         browseNavigationState.viewCollectionDetail(
           contextId,
@@ -324,6 +329,9 @@
         )
       );
     } else {
+      if (intent.revealSequenceId) {
+        setPendingLibraryReveal(intent.revealSequenceId);
+      }
       requestAnimationFrame(() =>
         browseNavigationState.viewCollectionDetail("all", "All")
       );

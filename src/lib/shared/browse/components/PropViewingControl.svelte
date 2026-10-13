@@ -74,14 +74,16 @@
       })}
       ariaExpanded={open}
     >
+      {#if presentation === "toolbar"}<i
+          class="fas fa-eye viewing-icon"
+          aria-hidden="true"
+        ></i>{/if}
       <span class="prop-label"
         >{presentation === "default"
           ? t("browse_audit_viewing_prefix")
           : ""}{mixedGallery ? t("browse_audit_as_saved") : label}</span
       >
-      {#if !mixedGallery && presentation === "default"}<span class="source"
-          >· {sourceLabel}</span
-        >{/if}
+      {#if !mixedGallery}<span class="source">· {sourceLabel}</span>{/if}
       <i class="fas fa-chevron-down" aria-hidden="true"></i>
     </PanelButton>
   </div>
@@ -134,22 +136,34 @@
     padding: 6px 12px;
     flex: 0 0 auto;
   }
+  /* In a toolbar the control sizes to its words like the pills beside it,
+     capped so a long prop pair cannot push the row's right-hand group out. */
   .viewing-control.toolbar {
     padding: 0;
-    width: 132px;
+    min-width: 0;
+    max-width: 260px;
   }
   .toolbar :global(.panel-btn) {
     box-sizing: border-box;
-    width: 100%;
-    height: var(--min-touch-target, 44px);
+    max-width: 100%;
+    height: var(--min-touch-target, 48px);
     padding: 0 12px;
-    justify-content: space-between;
+    gap: 6px;
   }
-  .toolbar .prop-label {
+  .toolbar .viewing-icon {
+    font-size: 11px;
+    color: var(--theme-text-dim);
+    flex-shrink: 0;
+  }
+  .toolbar .prop-label,
+  .toolbar .source {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .toolbar .source {
+    flex-shrink: 1;
   }
   .current-props {
     color: var(--theme-text);

@@ -11,7 +11,7 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizeFilterChip } from "./localize-filter-chip";
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, type Snippet } from "svelte";
   import type { BrowseEngine } from "../engine/types";
   import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
   import ExpandableSearchBar from "#lib/shared/browse/components/ExpandableSearchBar.svelte";
@@ -56,6 +56,13 @@
     variant?: "panel" | "embedded";
     /** Host-visible total for contextual counts such as "10 of 15 shown". */
     resultTotal?: number;
+    /** One-row chrome (BrowsePanel at 900px+): the applied-filter chips,
+     * rendered beside the Filters pill instead of on a band of their own.
+     * Takes the row's slack, so everything after it sits at the right. */
+    inlineChips?: Snippet;
+    /** One-row chrome: controls that join Select and zoom at the right end
+     * (the prop viewing control). */
+    trailing?: Snippet;
   }
 
   let {
@@ -70,6 +77,8 @@
     curatedSortLabel,
     variant = "panel",
     resultTotal,
+    inlineChips,
+    trailing,
   }: Props = $props();
 
   const effectiveBackLabel = $derived(backLabel ?? t("browse_ui_start_here"));
@@ -549,6 +558,11 @@
     </span>
   {/if}
 
+  <!-- 3b. Applied chips beside the Filters pill (one-row chrome) -->
+  {#if inlineChips}
+    <div class="applied-slot">{@render inlineChips()}</div>
+  {/if}
+
   <!-- 4. Inline filter chips (wide screens only; sheet pattern replaces them) -->
   {#if !onOpenFilters && !hideFilterChips}
     <span class="toolbar-divider" aria-hidden="true"></span>
@@ -620,6 +634,12 @@
         </button>
       {/if}
     </div>
+  {/if}
+
+  <!-- 4a. Right-hand group (one-row chrome): viewing control, then Select
+       and zoom below. The slot's auto margin pushes the group to the end. -->
+  {#if trailing}
+    <div class="trailing-slot">{@render trailing()}</div>
   {/if}
 
   {#if onEnterSelection}
@@ -1085,19 +1105,49 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Inline active chips — same visual language as BrowseFilterBar's chips */
+  /* One-row chrome slots. The applied chips take the row's slack so the
+     trailing group lands at the right edge; when there are no chips the
+     trailing slot's own auto margin does the same job. */
+  .applied-slot {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .applied-slot > :global(.browse-filter-bar) {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .trailing-slot {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  /* Only one auto margin per row, or the slack splits between them. */
+  .trailing-slot ~ .result-count,
+  .browse-toolbar.embedded .trailing-slot ~ .zoom-control {
+    margin-left: 0;
+  }
+
+  /* Inline active chips — same visual language as BrowseFilterBar's chips.
+     A solid tint and a strong border: at 12% the chips vanished into the
+     scene behind the panel. */
   .active-chip {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-sm, 8px);
     padding: 4px 8px 4px 12px;
     min-height: 28px;
-    background: color-mix(in srgb, var(--chip-color) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--chip-color) 30%, transparent);
+    background: color-mix(in srgb, var(--chip-color) 30%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chip-color) 70%, transparent);
     border-radius: 100px;
     color: var(--theme-text);
     font-size: var(--font-size-compact, 12px);
-    font-weight: 500;
+    font-weight: 600;
     white-space: nowrap;
     flex-shrink: 0;
   }

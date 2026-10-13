@@ -769,6 +769,7 @@ Variation support:
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     class="choreo-card interactive"
+    data-sequence-id={displayedSequence.id}
     class:selected={isSelected}
     class:selection-mode={selectionMode}
     class:long-pressing={isLongPressing}
@@ -802,6 +803,7 @@ Variation support:
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     class="choreo-card static"
+    data-sequence-id={displayedSequence.id}
     class:light-mode={lightMode}
     oncontextmenu={handleContextMenu}
   >

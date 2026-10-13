@@ -665,9 +665,10 @@
   .link-text {
     flex: 1 1 220px;
     min-width: 0;
-    min-height: var(--min-touch-target, 44px);
-    display: flex;
-    align-items: center;
+    /* A block, not a flex box: text-overflow only draws its ellipsis on a
+       block container, and the line-height centres the single line. */
+    display: block;
+    line-height: var(--min-touch-target, 44px);
     padding: 0 12px;
     border: 1px solid var(--theme-stroke);
     border-radius: 12px;
