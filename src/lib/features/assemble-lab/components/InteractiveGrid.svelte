@@ -929,6 +929,7 @@
     labelForLocation={getTargetLabel}
     placeTarget={placeActiveTarget}
     targetScale={joinLayout?.scale ?? 1}
+    onScene
     onPointClick={handleTargetClick}
     onPointAim={(_location, orientation) => {
       builderState.setOrientation(orientation);
