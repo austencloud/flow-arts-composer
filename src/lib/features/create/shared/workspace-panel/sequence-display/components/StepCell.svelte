@@ -841,8 +841,9 @@
     inset: -4px;
     border: 2px solid rgba(251, 191, 36, 0.6);
     border-radius: 12px;
-    animation: practiceRing var(--duration-dramatic) var(--ease-standard-out)
-      forwards;
+    animation: practiceRing
+      calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-standard-out) forwards;
     pointer-events: none;
   }
 

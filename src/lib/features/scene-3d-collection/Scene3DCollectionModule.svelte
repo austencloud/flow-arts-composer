@@ -602,7 +602,7 @@
 
   .gallery-card:active {
     transform: scale(0.97);
-    transition-duration: var(--duration-instant);
+    transition-duration: calc(var(--duration-instant) / 2);
   }
 
   .gallery-card:focus-visible {
@@ -1009,7 +1009,7 @@
 
   .action-btn:active {
     transform: scale(0.98);
-    transition-duration: var(--duration-instant);
+    transition-duration: calc(var(--duration-instant) / 2);
   }
 
   /* ── Responsive (container-relative) ── */

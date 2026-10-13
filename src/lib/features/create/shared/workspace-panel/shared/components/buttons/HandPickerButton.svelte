@@ -80,7 +80,7 @@
 
   .hand-picker-button:active {
     transform: scale(0.95);
-    transition: transform var(--duration-instant) var(--ease-standard);
+    transition: transform calc(var(--duration-instant) / 2) var(--ease-standard);
   }
 
   .hand-picker-button:focus-visible {

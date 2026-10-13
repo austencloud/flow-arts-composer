@@ -237,7 +237,8 @@
     cursor: pointer;
     transition:
       color var(--duration-fast),
-      background var(--duration-fast);
+      background var(--duration-fast),
+      border-bottom-color var(--duration-fast);
   }
 
   .tab-target {

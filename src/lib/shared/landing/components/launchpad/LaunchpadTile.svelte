@@ -335,7 +335,8 @@
       box-shadow var(--duration-emphasis) var(--ease-standard),
       opacity var(--duration-dramatic) var(--ease-standard),
       filter var(--duration-dramatic) var(--ease-standard),
-      translate var(--duration-dramatic) var(--ease-standard);
+      translate calc(var(--duration-dramatic) + var(--duration-fast))
+        var(--ease-standard);
     /* Near-imperceptible breathing, staggered per tile via --i. */
     animation: tileBreathe 7.5s ease-in-out infinite;
     animation-delay: calc(var(--i, 0) * -0.9s);

@@ -354,7 +354,8 @@ wordLength constraint rides through the question generator as a soft filter.
     font-weight: 500;
     transition:
       background var(--duration-fast) var(--ease-standard),
-      color var(--duration-fast) var(--ease-standard);
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
   }
 

@@ -44,6 +44,9 @@ export const standardEasing = cssCubicBezier(0.4, 0, 0.2, 1);
  */
 export const EASE_OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
 
+/** JS twin of `--ease-spring` (app.css): the overshoot curve, for Web Animations. */
+export const EASE_SPRING = "cubic-bezier(0.34, 1.56, 0.64, 1)";
+
 /**
  * motion — reduced-motion-aware Svelte transitions on the DURATION tokens.
  *

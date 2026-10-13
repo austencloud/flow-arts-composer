@@ -110,7 +110,8 @@ Type1AnswerButton - Single answer option for motion pattern
   .answer-btn.correct {
     background: color-mix(in srgb, var(--pattern-color) 20%, transparent);
     border-color: var(--pattern-color);
-    animation: correctPulse var(--duration-dramatic) var(--ease-standard);
+    animation: correctPulse
+      calc(var(--duration-dramatic) + var(--duration-fast)) var(--ease-standard);
   }
 
   @keyframes correctPulse {

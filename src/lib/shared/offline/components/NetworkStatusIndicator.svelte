@@ -135,7 +135,8 @@
   }
 
   .network-status.error i {
-    animation: shake var(--duration-dramatic) var(--ease-standard);
+    animation: shake calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-standard);
   }
 
   /* Desktop variant - fixed overlay in bottom-left corner */

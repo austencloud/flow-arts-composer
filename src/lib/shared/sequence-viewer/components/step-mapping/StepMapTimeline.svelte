@@ -372,7 +372,7 @@
     );
     border-radius: 7px 0 0 7px;
     pointer-events: none;
-    transition: width var(--duration-instant) linear;
+    transition: width calc(var(--duration-instant) / 2) linear;
   }
 
   .playhead {
@@ -385,7 +385,7 @@
     transform: translateX(-1px);
     pointer-events: none;
     z-index: 2;
-    transition: left var(--duration-instant) linear;
+    transition: left calc(var(--duration-instant) / 2) linear;
   }
 
   .beat-marker {

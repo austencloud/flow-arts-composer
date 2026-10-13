@@ -586,7 +586,7 @@
     font-size: 0.9rem;
     font-weight: 600;
     white-space: nowrap;
-    animation: fadeInOut var(--duration-scene) var(--ease-standard);
+    animation: fadeInOut calc(var(--duration-scene) * 2.5) var(--ease-standard);
     pointer-events: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }

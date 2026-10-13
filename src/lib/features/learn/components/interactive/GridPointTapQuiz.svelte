@@ -346,7 +346,8 @@ Provides instant visual feedback (correct = green glow, wrong = red shake).
   /* Correct feedback - green glow */
   .click-target.correct {
     fill: color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
-    animation: correct-pulse var(--duration-dramatic) var(--ease-standard);
+    animation: correct-pulse calc(var(--duration-scene) * 0.75)
+      var(--ease-standard);
   }
 
   @keyframes correct-pulse {

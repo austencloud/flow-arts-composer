@@ -62,7 +62,8 @@
     z-index: var(--z-toast);
     pointer-events: none;
     /* iOS spring animation - exact curve */
-    animation: ios-toast-spring var(--duration-dramatic) var(--ease-spring);
+    animation: ios-toast-spring
+      calc(var(--duration-dramatic) + var(--duration-fast)) var(--ease-spring);
   }
 
   .toast i {

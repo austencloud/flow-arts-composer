@@ -40,15 +40,15 @@
   /* Progress waypoints - the bar lies                                   */
 
   const progressWaypoints = [
-    { target: 12, duration: DURATION.scene * 2 },
-    { target: 35, duration: DURATION.scene },
+    { target: 12, duration: DURATION.scene * 1.875 },
+    { target: 35, duration: DURATION.scene * 1.25 },
     { target: 28, duration: DURATION.scene },
-    { target: 55, duration: DURATION.scene * 2 },
-    { target: 54, duration: DURATION.dramatic },
-    { target: 78, duration: DURATION.scene * 2 },
-    { target: 92, duration: DURATION.scene * 2 },
-    { target: 99, duration: DURATION.scene * 3 },
-    { target: 100, duration: DURATION.dramatic },
+    { target: 55, duration: DURATION.scene * 2.5 },
+    { target: 54, duration: DURATION.dramatic + DURATION.fast },
+    { target: 78, duration: DURATION.scene * 1.875 },
+    { target: 92, duration: DURATION.scene * 2.5 },
+    { target: 99, duration: DURATION.scene * 3.125 },
+    { target: 100, duration: DURATION.dramatic + DURATION.fast },
   ];
 
   /* Animation state                                                     */
