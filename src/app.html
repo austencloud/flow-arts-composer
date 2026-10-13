@@ -186,6 +186,25 @@
         function clearName() {
           if (named) named.style.viewTransitionName = "";
           named = null;
+          var root = document.documentElement;
+          root.removeAttribute("data-tka-cta-travel");
+          root.style.removeProperty("--tka-cta-from");
+        }
+        // The travel runs on the compositor: the group keeps the capsule's
+        // size and only its transform animates (see the CSS). It starts as
+        // the capsule scaled to the pressed link's height and centred on that
+        // link, so the old snapshot, kept at its own aspect ratio, sits
+        // exactly on the button's box. The end is the group's own position.
+        function setTravel(source, target) {
+          if (!source || !target || !(source.h > 0) || !(target.h > 0)) return;
+          var scale = source.h / target.h;
+          var x = source.x + (source.w - target.w * scale) / 2;
+          var root = document.documentElement;
+          root.style.setProperty(
+            "--tka-cta-from",
+            "translate(" + x + "px, " + source.y + "px) scale(" + scale + ")"
+          );
+          root.setAttribute("data-tka-cta-travel", "");
         }
         function viewportRect(element) {
           var box = element.getBoundingClientRect();
@@ -354,6 +373,7 @@
           capsule.style.viewTransitionName = NAME;
           named = capsule;
           addType(transition);
+          setTravel(record.source, handoff.target);
           transition.finished.then(clearName, clearName);
         });
       })();
@@ -1367,11 +1387,40 @@
         }
       }
 
-      /* Keep the group's generated geometry animation: it carries the pill
-         from the button's box to the capsule's box. */
       ::view-transition-group(composer-cta) {
         animation-duration: calc(420ms * var(--tka-handoff-slow, 1));
         animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      /* The generated group keyframes animate width and height, which keeps
+         the travel on the main thread, where the arriving app's start-up
+         starves its first frames. With a travel start from pagereveal, the
+         group stays the capsule's size and animates transform alone, so the
+         compositor runs it. The end keyframe is implicit: the group's own
+         position. Both snapshots keep their aspect ratio, full height and
+         centred, so neither pill stretches. The travel eases in so the pill
+         is seen lifting off the button (the old curve covered 15% of the
+         trip in the first frame); the label crossfade keeps its own curve.
+         Without the attribute the generated animation runs as before. */
+      html[data-tka-cta-travel]::view-transition-group(composer-cta) {
+        animation-name: tka-cta-travel;
+        animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+        transform-origin: 0 0;
+      }
+
+      html[data-tka-cta-travel]::view-transition-old(composer-cta),
+      html[data-tka-cta-travel]::view-transition-new(composer-cta) {
+        animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+        inset-inline: 0;
+        inline-size: auto;
+        block-size: 100%;
+        margin-inline: auto;
+      }
+
+      @keyframes tka-cta-travel {
+        from {
+          transform: var(--tka-cta-from);
+        }
       }
 
       /* Both pills are opaque: a normal crossfade avoids plus-lighter bloom.
@@ -1594,8 +1643,10 @@
         white-space: nowrap;
       }
 
+      /* A deep brand tint, so the white label passes 4.5:1 on the unfilled
+         track over the light surface. */
       #app-loading[data-surface="light"] .boot-capsule {
-        background: rgba(79, 107, 239, 0.45);
+        background: rgba(63, 80, 190, 0.92);
       }
 
       .boot-capsule-fill {

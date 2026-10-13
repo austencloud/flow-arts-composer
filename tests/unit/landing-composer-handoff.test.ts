@@ -257,10 +257,24 @@ describe("composer handoff", () => {
     expect(handoff.source).toEqual(source);
     expect(handoff.target).toMatchObject({ x: 600, y: 426, w: 240, h: 48 });
 
+    // The compositor travel starts as the capsule scaled to the link's height
+    // and centred on it: 240 x 48 at 40/48 is 200 wide, so 10 px in from the
+    // 220 px link on each side.
+    const root = page.window.document.documentElement;
+    expect(root.hasAttribute("data-tka-cta-travel")).toBe(true);
+    const from = root.style.getPropertyValue("--tka-cta-from");
+    const [, x, y, scale] =
+      /^translate\((.+)px, (.+)px\) scale\((.+)\)$/.exec(from) ?? [];
+    expect(Number(x)).toBeCloseTo(1210, 6);
+    expect(Number(y)).toBe(20);
+    expect(Number(scale)).toBeCloseTo(40 / 48, 6);
+
     transition.finish();
     await transition.finished;
     await Promise.resolve();
     expect(capsule.style.viewTransitionName).toBe("");
+    expect(root.hasAttribute("data-tka-cta-travel")).toBe(false);
+    expect(root.style.getPropertyValue("--tka-cta-from")).toBe("");
     expect(handoff.readyMs).not.toBeNull();
     expect(handoff.finishedMs).not.toBeNull();
     expect(timings).toEqual([
@@ -281,7 +295,24 @@ describe("composer handoff", () => {
         .viewTransitionName
     ).toBe("");
     expect(transition.types.has("tka-handoff")).toBe(false);
+    expect(
+      page.window.document.documentElement.hasAttribute("data-tka-cta-travel")
+    ).toBe(false);
     expect(handoffOf(page)?.mode).toBe("fade");
+  });
+
+  it("moves the pill with transform alone, so the compositor runs the travel", () => {
+    const keyframes =
+      /@keyframes tka-cta-travel\s*\{\s*from\s*\{([^}]*)\}\s*\}/.exec(
+        template
+      )?.[1];
+    expect(keyframes).toBeDefined();
+    expect(keyframes).toContain("transform: var(--tka-cta-from)");
+    // width or height in the keyframes would put it back on the main thread.
+    expect(keyframes).not.toMatch(/\b(width|height)\b/);
+    expect(template).toMatch(
+      /html\[data-tka-cta-travel\]::view-transition-group\(composer-cta\)\s*\{[^}]*animation-name: tka-cta-travel;/
+    );
   });
 
   it("does not morph or instrument an arrival that was not handed off", () => {
