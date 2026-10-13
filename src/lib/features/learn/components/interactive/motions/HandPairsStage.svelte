@@ -162,7 +162,10 @@
   /** The combination the learner asked a hint for, until it is found. */
   let goal = $state<HandCombinationId | null>(null);
   let announcement = $state("");
-  let pending: { combination: HandCombination; pair: HandPair } | null = null;
+  let pending = $state.raw<{
+    combination: HandCombination;
+    pair: HandPair;
+  } | null>(null);
   let holding = false;
   /** The hands have moved and the pair is named; a tap may end the hold. */
   let landed = false;
@@ -180,9 +183,13 @@
   const goalCombination = $derived(
     HAND_COMBINATIONS.find((combination) => combination.id === goal) ?? null
   );
-  /** The readout: the goal while the learner picks, else the last find. */
+  /**
+   * The readout: the goal while the learner picks and while the grids fuse,
+   * else the last find. Holding the goal through the fusion keeps the last
+   * find from flashing back before the new one is named.
+   */
   const readout = $derived(
-    goalCombination && turn !== null
+    goalCombination && (turn !== null || pending !== null)
       ? {
           combination: goalCombination,
           mirror: false,
