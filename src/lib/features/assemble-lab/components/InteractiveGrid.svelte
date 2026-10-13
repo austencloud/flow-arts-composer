@@ -929,6 +929,7 @@
     labelForLocation={getTargetLabel}
     placeTarget={placeActiveTarget}
     targetScale={joinLayout?.scale ?? 1}
+    onScene
     onPointClick={handleTargetClick}
     onPointAim={(_location, orientation) => {
       builderState.setOrientation(orientation);
@@ -1095,7 +1096,8 @@
   /* Orientation ring indicator */
   .ori-indicator {
     pointer-events: none;
-    animation: ori-fade var(--duration-scene) var(--ease-standard) forwards;
+    animation: ori-fade calc(var(--duration-scene) * 1.5) var(--ease-standard)
+      forwards;
     filter: drop-shadow(0 0 8px var(--color-gold, #ffd700))
       drop-shadow(
         0 0 18px color-mix(in srgb, var(--color-gold, #ffd700) 50%, transparent)

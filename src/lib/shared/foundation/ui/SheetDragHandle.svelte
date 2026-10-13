@@ -49,7 +49,8 @@
   }
 
   .sheet-drag-handle {
-    animation: handlePulse var(--duration-scene) var(--ease-standard);
+    animation: handlePulse calc(var(--duration-scene) * 2.5)
+      var(--ease-standard);
   }
 
   /* High contrast mode */

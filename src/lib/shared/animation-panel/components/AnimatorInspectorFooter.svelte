@@ -174,7 +174,7 @@
 
   .export-btn:active:not(:disabled) {
     transform: scale(0.98);
-    transition-duration: var(--duration-instant);
+    transition-duration: calc(var(--duration-instant) / 2);
   }
 
   .export-btn:disabled,

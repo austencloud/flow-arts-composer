@@ -142,8 +142,9 @@ Reset triggers a crack/fade animation.
       8px -6px 0 var(--semantic-warning, #f59e0b),
       -4px -10px 0 var(--semantic-warning, #f59e0b),
       6px -2px 0 var(--semantic-warning, #f59e0b);
-    animation: particles-burst var(--duration-dramatic) var(--ease-standard-out)
-      forwards;
+    animation: particles-burst
+      calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-standard-out) forwards;
     pointer-events: none;
   }
 
@@ -157,7 +158,9 @@ Reset triggers a crack/fade animation.
 
   /* Reset: crack/fade */
   .just-reset .streak-number {
-    animation: streak-crack var(--duration-dramatic) var(--ease-standard-out);
+    animation: streak-crack
+      calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-standard-out);
     color: var(--semantic-error, #ef4444);
   }
 

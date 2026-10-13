@@ -301,7 +301,8 @@ Discover all three to unlock the quiz.
   }
 
   .tracker-slot.celebrating {
-    animation: celebrate-pop var(--duration-dramatic) var(--ease-spring);
+    animation: celebrate-pop calc(var(--duration-scene) * 0.75)
+      var(--ease-spring);
   }
 
   @keyframes celebrate-pop {

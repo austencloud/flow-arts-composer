@@ -1490,7 +1490,7 @@
 
   .chip:active {
     transform: scale(0.92);
-    transition-duration: var(--duration-instant);
+    transition-duration: calc(var(--duration-instant) / 2);
   }
 
   .chip.active {

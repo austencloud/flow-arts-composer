@@ -1070,7 +1070,7 @@
 
   .grid-btn:active:not(:disabled) {
     transform: scale(0.97);
-    transition-duration: var(--duration-instant);
+    transition-duration: calc(var(--duration-instant) / 2);
   }
 
   .btn-icon {

@@ -67,7 +67,7 @@
     justify-content: center;
     cursor: pointer;
     transition:
-      opacity var(--duration-dramatic) var(--ease-standard),
+      opacity calc(var(--duration-scene) * 0.75) var(--ease-standard),
       background var(--duration-normal) var(--ease-standard);
     opacity: 1;
     padding: 0;

@@ -392,7 +392,7 @@
     filter: drop-shadow(0 1.25rem 2.5rem rgba(0, 0, 0, 0.55));
     transform: translate(calc(-50% + var(--card-h) * var(--x)), var(--y, -50%))
       rotate(var(--rot));
-    transition: transform var(--duration-scene) var(--ease-out);
+    transition: transform calc(var(--duration-scene) * 0.8) var(--ease-out);
   }
 
   .slot.front {

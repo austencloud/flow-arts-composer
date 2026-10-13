@@ -659,12 +659,6 @@
     place-items: center;
   }
 
-  /* The step pictures sit on the theme's panel colour so a busy background
-     image doesn't compete with them, matching the grid panel below. */
-  .workspace-container.assemble-workspace {
-    background: var(--theme-panel-bg);
-  }
-
   /* Signals that the empty space around the preview closes it. */
   .workspace-container.playback-dismissible {
     cursor: pointer;

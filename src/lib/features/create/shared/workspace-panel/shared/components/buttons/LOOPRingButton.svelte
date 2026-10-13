@@ -133,7 +133,7 @@
 
   .loop-ring-button:active:not(:disabled) {
     transform: scale(0.95);
-    transition-duration: var(--duration-instant);
+    transition-duration: calc(var(--duration-instant) / 2);
   }
 
   .loop-ring-button:focus-visible {

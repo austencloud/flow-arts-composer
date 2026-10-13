@@ -102,7 +102,8 @@ StaffQuizAnswerButton - Single answer option button
   .answer-btn.correct {
     background: color-mix(in srgb, var(--type-color) 20%, transparent);
     border-color: var(--type-color);
-    animation: correctPulse var(--duration-dramatic) var(--ease-standard);
+    animation: correctPulse
+      calc(var(--duration-dramatic) + var(--duration-fast)) var(--ease-standard);
   }
 
   @keyframes correctPulse {

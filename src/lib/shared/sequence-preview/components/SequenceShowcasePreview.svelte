@@ -826,7 +826,7 @@
     }
 
     .spinner {
-      animation-duration: var(--duration-scene);
+      animation-duration: calc(var(--duration-scene) * 1.75);
     }
   }
 </style>

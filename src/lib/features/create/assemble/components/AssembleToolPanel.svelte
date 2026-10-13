@@ -189,12 +189,6 @@
 
 <style>
   .assemble-tool-panel {
-    --assemble-builder-surface: color-mix(
-      in srgb,
-      var(--theme-panel-bg, #10141f) 96%,
-      transparent
-    );
-    --assemble-builder-surface-raised: var(--theme-panel-bg, #10141f);
     --assemble-builder-stroke: color-mix(
       in srgb,
       var(--theme-stroke, rgba(255, 255, 255, 0.12)) 74%,
@@ -230,11 +224,9 @@
     overflow: hidden;
     border: 0;
     border-radius: 0;
-    background: linear-gradient(
-      180deg,
-      var(--assemble-builder-surface-raised),
-      var(--assemble-builder-surface)
-    );
+    /* The background scene stays visible across the tab. The touch rings
+       carry their own contrast (HitTargetOverlay onScene). */
+    background: transparent;
     box-shadow: none;
   }
 

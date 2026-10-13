@@ -861,7 +861,8 @@
       color-mix(in srgb, var(--theme-accent, #6366f1) 85%, white);
     box-shadow: inset 0 0 3.5rem
       color-mix(in srgb, var(--theme-accent, #6366f1) 32%, transparent);
-    animation: swap-pulse var(--duration-dramatic) var(--ease-out) forwards;
+    animation: swap-pulse calc(var(--duration-scene) * 0.8) var(--ease-out)
+      forwards;
   }
 
   @keyframes swap-pulse {

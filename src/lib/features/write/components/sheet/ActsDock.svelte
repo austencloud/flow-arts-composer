@@ -656,7 +656,8 @@
 
   /* One-shot success ring on the card a save just landed on. */
   .act-item.flash {
-    animation: saved-ring var(--duration-dramatic) var(--ease-standard-out);
+    animation: saved-ring calc(var(--duration-scene) * 1.5)
+      var(--ease-standard-out);
     animation-delay: 0ms;
   }
 

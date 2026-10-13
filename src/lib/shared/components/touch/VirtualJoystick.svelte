@@ -274,7 +274,8 @@
     border-radius: 50%;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.8));
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    transition: transform var(--duration-instant) var(--ease-standard-out);
+    transition: transform calc(var(--duration-instant) / 2)
+      var(--ease-standard-out);
   }
 
   .joystick-base.active .joystick-knob {

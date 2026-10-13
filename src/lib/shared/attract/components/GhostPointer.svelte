@@ -226,7 +226,7 @@
     transition:
       transform var(--duration-normal) var(--ease-spring),
       box-shadow var(--duration-normal) var(--ease-standard),
-      filter var(--duration-scene) var(--ease-standard);
+      filter calc(var(--duration-scene) * 0.75) var(--ease-standard);
   }
 
   .core.pressed {

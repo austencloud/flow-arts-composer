@@ -170,7 +170,8 @@ Shows:
 
   .segment-fill {
     filter: drop-shadow(0 0 6px currentColor);
-    transition: stroke-dashoffset var(--duration-dramatic) var(--ease-standard);
+    transition: stroke-dashoffset
+      calc(var(--duration-dramatic) + var(--duration-fast)) var(--ease-standard);
   }
 
   .center-content {

@@ -197,7 +197,7 @@
     animation-delay: var(--stagger-relaxed);
   }
   .highlight-hand .hand-point[data-index="2"] {
-    animation-delay: var(--duration-fast);
+    animation-delay: calc(var(--stagger-relaxed) * 2);
   }
   .highlight-hand .hand-point[data-index="3"] {
     animation-delay: calc(var(--stagger-relaxed) * 3);
@@ -219,7 +219,7 @@
     animation-delay: var(--stagger-relaxed);
   }
   .highlight-outer .outer-point[data-index="2"] {
-    animation-delay: var(--duration-fast);
+    animation-delay: calc(var(--stagger-relaxed) * 2);
   }
   .highlight-outer .outer-point[data-index="3"] {
     animation-delay: calc(var(--stagger-relaxed) * 3);

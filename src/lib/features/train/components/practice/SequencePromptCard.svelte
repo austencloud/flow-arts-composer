@@ -292,7 +292,7 @@
 
   .recent-card:active {
     transform: scale(0.98);
-    transition-duration: var(--duration-instant);
+    transition-duration: calc(var(--duration-instant) / 2);
   }
 
   .recent-name {
@@ -365,7 +365,7 @@
 
   .browse-button:active {
     transform: translateY(0);
-    transition-duration: var(--duration-instant);
+    transition-duration: calc(var(--duration-instant) / 2);
   }
 
   .browse-button i {
