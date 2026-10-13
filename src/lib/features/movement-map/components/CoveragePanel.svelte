@@ -54,10 +54,22 @@
       </div>
 
       <dl class="tallies">
-        <div><dt>Mapped</dt><dd>{report.mapped}</dd></div>
-        <div><dt>Started</dt><dd>{report.partial}</dd></div>
-        <div><dt>Untouched</dt><dd>{report.unseen}</dd></div>
-        <div><dt>In Level 1</dt><dd>{report.total}</dd></div>
+        <div>
+          <dt>Mapped</dt>
+          <dd>{report.mapped}</dd>
+        </div>
+        <div>
+          <dt>Started</dt>
+          <dd>{report.partial}</dd>
+        </div>
+        <div>
+          <dt>Untouched</dt>
+          <dd>{report.unseen}</dd>
+        </div>
+        <div>
+          <dt>In Level 1</dt>
+          <dd>{report.total}</dd>
+        </div>
       </dl>
 
       <p class="explainer">
@@ -73,8 +85,8 @@
 
       {#if report.outsideSpace > 0}
         <p class="warning" role="status">
-          {report.outsideSpace} observations describe movements outside Level 1.
-          They are stored but do not count toward this total.
+          {report.outsideSpace} observations describe movements outside Level 1. They
+          are stored but do not count toward this total.
         </p>
       {/if}
     </section>
@@ -94,7 +106,9 @@
     <section class="gaps">
       <h3>Not yet mapped</h3>
       {#if report.gaps.length === 0}
-        <p class="done">Every Level 1 movement is described. Level 2 is next.</p>
+        <p class="done">
+          Every Level 1 movement is described. Level 2 is next.
+        </p>
       {:else}
         <ul>
           {#each report.gaps.slice(0, GAPS_SHOWN) as gap (gap.movement.key)}
@@ -103,10 +117,7 @@
                 {describeSignature(gap.movement.signature)}
               </span>
               <span class="gap-meta">
-                <span
-                  class="letters"
-                  title={gap.movement.letters.join(" ")}
-                >
+                <span class="letters" title={gap.movement.letters.join(" ")}>
                   {letterHint(gap.movement.letters)}
                 </span>
                 <span class="phases">
@@ -186,7 +197,7 @@
     height: 100%;
     border-radius: 999px;
     background: var(--theme-accent, #6366f1);
-    transition: width var(--transition-normal, 240ms) ease;
+    transition: width var(--duration-normal) var(--ease-standard);
   }
 
   .tallies {

@@ -27,7 +27,9 @@
   });
 
   const remaining = $derived(
-    progress ? progress.totalCards - progress.bakedCards : countUnbaked(products)
+    progress
+      ? progress.totalCards - progress.bakedCards
+      : countUnbaked(products)
   );
 
   async function bake() {
@@ -42,7 +44,11 @@
 
 {#if remaining > 0 || baking || (progress && progress.errors.length)}
   <div class="bake-bar">
-    <button class="bake-btn" onclick={bake} disabled={baking || remaining === 0}>
+    <button
+      class="bake-btn"
+      onclick={bake}
+      disabled={baking || remaining === 0}
+    >
       <i class="fas fa-fire" aria-hidden="true"></i>
       {#if baking}
         Baking {progress?.bakedCards ?? 0}/{progress?.totalCards ?? "?"}
@@ -52,7 +58,9 @@
       {/if}
     </button>
     {#if progress && progress.errors.length}
-      <span class="bake-errors">{progress.errors.length} failed — see console</span>
+      <span class="bake-errors"
+        >{progress.errors.length} failed — see console</span
+      >
     {/if}
   </div>
 {/if}
@@ -83,7 +91,7 @@
     color: inherit;
     font-size: 0.95rem;
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
   .bake-btn:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.16);

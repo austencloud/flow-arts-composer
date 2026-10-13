@@ -47,7 +47,9 @@
 
   // Computed aspect ratio
   const targetAspect = $derived(
-    aspectLabel === "original" ? videoNativeAspect : ASPECT_RATIO_VALUES[aspectLabel]
+    aspectLabel === "original"
+      ? videoNativeAspect
+      : ASPECT_RATIO_VALUES[aspectLabel]
   );
 
   // Track video rendered dimensions for proper frame sizing
@@ -187,7 +189,10 @@
     if (!p1 || !p2) return;
 
     // Calculate distance between pointers
-    const curDist = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+    const curDist = Math.hypot(
+      p1.clientX - p2.clientX,
+      p1.clientY - p2.clientY
+    );
 
     // Calculate midpoint
     const curMidpoint = {
@@ -209,7 +214,7 @@
         // Apply pan with bounds checking
         position = {
           x: clampPosition(position.x + dx, newScale),
-          y: clampPosition(position.y + dy, newScale)
+          y: clampPosition(position.y + dy, newScale),
         };
       }
 
@@ -229,7 +234,7 @@
 
     position = {
       x: clampPosition(positionStart.x + dx, scale),
-      y: clampPosition(positionStart.y + dy, scale)
+      y: clampPosition(positionStart.y + dy, scale),
     };
   }
 
@@ -270,7 +275,7 @@
         const dy = -ev.deltaY / rect.height;
         position = {
           x: clampPosition(position.x + dx * 0.5, scale),
-          y: clampPosition(position.y + dy * 0.5, scale)
+          y: clampPosition(position.y + dy * 0.5, scale),
         };
       }
     }
@@ -298,7 +303,11 @@
     onApply(cropData);
   }
 
-  const aspectPresets: { label: AspectRatioPreset; display: string; icon: string }[] = [
+  const aspectPresets: {
+    label: AspectRatioPreset;
+    display: string;
+    icon: string;
+  }[] = [
     { label: "original", display: "Original", icon: "fa-expand" },
     { label: "16:9", display: "16:9", icon: "fa-rectangle-wide" },
     { label: "1:1", display: "1:1", icon: "fa-square" },
@@ -313,7 +322,11 @@
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
     <span class="header-title">Crop Video</span>
-    <button class="header-btn apply" onclick={applyCrop} aria-label="Apply crop">
+    <button
+      class="header-btn apply"
+      onclick={applyCrop}
+      aria-label="Apply crop"
+    >
       <i class="fas fa-check" aria-hidden="true"></i>
     </button>
   </header>
@@ -430,12 +443,8 @@
       <i class="fas fa-undo" aria-hidden="true"></i>
       Reset
     </button>
-    <button class="action-btn secondary" onclick={onCancel}>
-      Cancel
-    </button>
-    <button class="action-btn primary" onclick={applyCrop}>
-      Apply Crop
-    </button>
+    <button class="action-btn secondary" onclick={onCancel}> Cancel </button>
+    <button class="action-btn primary" onclick={applyCrop}> Apply Crop </button>
   </div>
 </div>
 
@@ -470,7 +479,15 @@
     align-items: center;
     justify-content: center;
     font-size: 16px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
   }
 
   .header-btn:hover {
@@ -581,7 +598,7 @@
     font-size: 13px;
     color: rgba(255, 255, 255, 0.7);
     pointer-events: none;
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn var(--duration-emphasis) var(--ease-standard-out);
   }
 
   /* Loading state */
@@ -627,7 +644,15 @@
     align-items: center;
     justify-content: center;
     font-size: 18px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
     z-index: 5;
   }
 
@@ -657,7 +682,13 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     cursor: pointer;
     font-size: 12px;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .aspect-btn i {
@@ -670,7 +701,11 @@
   }
 
   .aspect-btn.selected {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 20%,
+      transparent
+    );
     border-color: var(--theme-accent, #6366f1);
     color: var(--theme-accent-light, #a5b4fc);
   }
@@ -696,7 +731,15 @@
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast),
+      height var(--duration-fast);
   }
 
   .zoom-btn:hover:not(:disabled) {
@@ -762,7 +805,13 @@
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast);
   }
 
   .action-btn.secondary {

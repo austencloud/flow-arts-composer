@@ -102,7 +102,7 @@
       ? `Error: ${errorMessage}. Click to retry.`
       : isSuccess
         ? "Copied!"
-        : ariaLabel ?? defaultLabels.idle
+        : (ariaLabel ?? defaultLabels.idle)
   );
 
   // Screen reader announcement text
@@ -192,10 +192,10 @@
     font-weight: 500;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 0.15s),
-      border-color var(--duration-fast, 0.15s),
-      color var(--duration-fast, 0.15s),
-      transform var(--duration-micro, 0.1s);
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      transform var(--duration-micro);
   }
 
   /* Size variants */
@@ -245,10 +245,14 @@
 
   /* Success state with pulse animation */
   .success {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 15%,
+      transparent
+    );
     border-color: var(--semantic-success, #22c55e);
     color: var(--semantic-success, #22c55e);
-    animation: success-pulse var(--duration-normal, 0.3s) ease-out;
+    animation: success-pulse var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes success-pulse {
@@ -265,7 +269,11 @@
 
   /* Error state */
   .error {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 15%,
+      transparent
+    );
     border-color: var(--semantic-error, #ef4444);
     color: var(--semantic-error, #ef4444);
   }
@@ -279,7 +287,11 @@
 
     /* Subtle hover on error to indicate retry is possible */
     .copy-btn.error:hover:not(:disabled) {
-      background: color-mix(in srgb, var(--semantic-error, #ef4444) 25%, transparent);
+      background: color-mix(
+        in srgb,
+        var(--semantic-error, #ef4444) 25%,
+        transparent
+      );
     }
   }
 
@@ -335,7 +347,7 @@
 
   /* Icon transition for smooth state changes */
   .copy-btn i {
-    transition: transform var(--duration-fast, 0.15s) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .success i {

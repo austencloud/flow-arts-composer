@@ -131,7 +131,8 @@
 
   // Include chips read/write the global visibility settings so the Visibility tab,
   // the side-by-side preview, and the download view all stay in sync.
-  const imageComposition = imageCompositionOverride ?? getImageCompositionManager();
+  const imageComposition =
+    imageCompositionOverride ?? getImageCompositionManager();
   let compositionVersion = $state(0);
   function onCompositionChanged(): void {
     compositionVersion++;
@@ -474,8 +475,17 @@
                       imageComposition.setAddWord.bind(imageComposition)
                     )}>{t("viewer_ui_word")}</button
                 >
-                <button type="button" class="rt-chip" aria-pressed={showStepNumbers}
-                  onclick={() => toggleCompositionSetting("step_numbers", showStepNumbers, imageComposition.setAddBeatNumbers.bind(imageComposition))}>Steps</button>
+                <button
+                  type="button"
+                  class="rt-chip"
+                  aria-pressed={showStepNumbers}
+                  onclick={() =>
+                    toggleCompositionSetting(
+                      "step_numbers",
+                      showStepNumbers,
+                      imageComposition.setAddBeatNumbers.bind(imageComposition)
+                    )}>Steps</button
+                >
                 <button
                   type="button"
                   class="rt-chip"
@@ -587,8 +597,18 @@
                       vm.setNonRadialVisibility.bind(vm)
                     )}>{t("viewer_ui_non_radial")}</button
                 >
-                <button type="button" class="rt-chip" aria-pressed={reversalIndicators}
-                  onclick={() => togglePictographSetting("reversals", reversalIndicators, (value) => vm.setGlyphVisibility("reversalIndicators", value))}>Reversals</button>
+                <button
+                  type="button"
+                  class="rt-chip"
+                  aria-pressed={reversalIndicators}
+                  onclick={() =>
+                    togglePictographSetting(
+                      "reversals",
+                      reversalIndicators,
+                      (value) =>
+                        vm.setGlyphVisibility("reversalIndicators", value)
+                    )}>Reversals</button
+                >
               </div>
             </div>
             {#if hasInfoCell}
@@ -640,7 +660,9 @@
             {/if}
             {#if hasInfoCell && canQRCode}
               <p class="qr-scope-note">
-                {t("viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free")}
+                {t(
+                  "viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free"
+                )}
               </p>
             {/if}
             <!-- Start position is its own group: the Show toggle plus (when on) the
@@ -712,14 +734,16 @@
                   class="rt-chip"
                   aria-pressed={!exportOptions.imageDarkMode}
                   onclick={() => setTheme(false)}
-                  ><i class="fas fa-sun" aria-hidden="true"></i> {t("viewer_detail_light")}</button
+                  ><i class="fas fa-sun" aria-hidden="true"></i>
+                  {t("viewer_detail_light")}</button
                 >
                 <button
                   type="button"
                   class="rt-chip"
                   aria-pressed={exportOptions.imageDarkMode}
                   onclick={() => setTheme(true)}
-                  ><i class="fas fa-moon" aria-hidden="true"></i> {t("viewer_detail_dark")}</button
+                  ><i class="fas fa-moon" aria-hidden="true"></i>
+                  {t("viewer_detail_dark")}</button
                 >
               </div>
             </div>
@@ -789,9 +813,18 @@
                 )}
               aria-pressed={showWord}>{t("viewer_ui_word")}</button
             >
-            <button type="button" class="chip" class:active={showStepNumbers}
+            <button
+              type="button"
+              class="chip"
+              class:active={showStepNumbers}
               aria-pressed={showStepNumbers}
-              onclick={() => toggleCompositionSetting("step_numbers", showStepNumbers, imageComposition.setAddBeatNumbers.bind(imageComposition))}>Steps</button>
+              onclick={() =>
+                toggleCompositionSetting(
+                  "step_numbers",
+                  showStepNumbers,
+                  imageComposition.setAddBeatNumbers.bind(imageComposition)
+                )}>Steps</button
+            >
             <button
               type="button"
               class="chip"
@@ -923,9 +956,18 @@
                 )}
               aria-pressed={nonRadial}>{t("viewer_ui_non_radial")}</button
             >
-            <button type="button" class="chip" class:active={reversalIndicators}
+            <button
+              type="button"
+              class="chip"
+              class:active={reversalIndicators}
               aria-pressed={reversalIndicators}
-              onclick={() => togglePictographSetting("reversals", reversalIndicators, (value) => vm.setGlyphVisibility("reversalIndicators", value))}>Reversals</button>
+              onclick={() =>
+                togglePictographSetting(
+                  "reversals",
+                  reversalIndicators,
+                  (value) => vm.setGlyphVisibility("reversalIndicators", value)
+                )}>Reversals</button
+            >
           </div>
         </div>
 
@@ -961,7 +1003,8 @@
                         showQRCode,
                         imageComposition.setShowQRCode.bind(imageComposition)
                       )}
-                    aria-pressed={showQRCode}>{t("viewer_detail_qr_code")}</button
+                    aria-pressed={showQRCode}
+                    >{t("viewer_detail_qr_code")}</button
                   >
                 </div>
               </div>
@@ -990,7 +1033,9 @@
 
         {#if hasInfoCell && canQRCode}
           <p class="qr-scope-note">
-            {t("viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free")}
+            {t(
+              "viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free"
+            )}
           </p>
         {/if}
 
@@ -1065,7 +1110,8 @@
               onclick={() => setTheme(false)}
               aria-pressed={!exportOptions.imageDarkMode}
             >
-              <i class="fas fa-sun" aria-hidden="true"></i> {t("viewer_detail_light")}
+              <i class="fas fa-sun" aria-hidden="true"></i>
+              {t("viewer_detail_light")}
             </button>
             <button
               type="button"
@@ -1074,7 +1120,8 @@
               onclick={() => setTheme(true)}
               aria-pressed={exportOptions.imageDarkMode}
             >
-              <i class="fas fa-moon" aria-hidden="true"></i> {t("viewer_detail_dark")}
+              <i class="fas fa-moon" aria-hidden="true"></i>
+              {t("viewer_detail_dark")}
             </button>
           </div>
         </div>
@@ -1203,9 +1250,9 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
     z-index: -1;
     transition:
-      background 150ms ease,
-      border-color 150ms ease,
-      box-shadow 150ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
   .dock-dense :global(.rt-chip[aria-pressed="true"])::before {
     background: color-mix(
@@ -1303,7 +1350,11 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -1372,7 +1423,7 @@
     text-align: left;
     font-family: inherit;
     cursor: pointer;
-    transition: color 0.15s ease;
+    transition: color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -1421,7 +1472,13 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      outline-color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -1433,7 +1490,7 @@
 
   .chip:active {
     transform: scale(0.92);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   .chip.active {

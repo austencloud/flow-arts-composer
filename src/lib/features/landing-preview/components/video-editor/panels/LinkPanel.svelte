@@ -23,7 +23,9 @@
   const selectedSequence = $derived(controller.selectedSequenceForLink);
   const searching = $derived(controller.sequenceSearching);
   const progressPercent = $derived(
-    Math.round((controller.linkingProgress.linked / controller.stats.withWord) * 100)
+    Math.round(
+      (controller.linkingProgress.linked / controller.stats.withWord) * 100
+    )
   );
 </script>
 
@@ -35,7 +37,7 @@
     {#if video.performers.length > 0}
       <span class="performer-tag">
         <i class="fas fa-user" aria-hidden="true"></i>
-        {video.performers.map(p => p.displayName).join(', ')}
+        {video.performers.map((p) => p.displayName).join(", ")}
       </span>
     {/if}
   </div>
@@ -100,7 +102,9 @@
               {/if}
             </div>
             <div class="sequence-info">
-              <span class="sequence-word"><TKAWordGlyph word={seq.word} height={13} /></span>
+              <span class="sequence-word"
+                ><TKAWordGlyph word={seq.word} height={13} /></span
+              >
               <span class="sequence-name">{seq.name}</span>
               <span class="sequence-owner">
                 <i class="fas fa-user" aria-hidden="true"></i>
@@ -149,7 +153,9 @@
           Confirm Link
         </button>
       {:else if matchedSequences.length > 0}
-        <span class="select-prompt">Select a sequence above (1-{matchedSequences.length})</span>
+        <span class="select-prompt"
+          >Select a sequence above (1-{matchedSequences.length})</span
+        >
       {/if}
     </div>
   </div>
@@ -195,7 +201,11 @@
     gap: 6px;
     margin-top: 8px;
     padding: 4px 10px;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 20%,
+      transparent
+    );
     border-radius: 4px;
     font-size: 12px;
     color: var(--theme-accent-light, #a5b4fc);
@@ -224,7 +234,15 @@
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
   }
 
   .nav-btn:hover:not(:disabled) {
@@ -305,18 +323,34 @@
     border: 2px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     background: var(--theme-panel-bg, rgba(18, 18, 28, 0.5));
     cursor: pointer;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
     text-align: left;
   }
 
   .sequence-card:hover {
     border-color: var(--semantic-success, #10b981);
-    background: color-mix(in srgb, var(--semantic-success, #10b981) 5%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 5%,
+      transparent
+    );
   }
 
   .sequence-card.selected {
     border-color: var(--semantic-success, #10b981);
-    background: color-mix(in srgb, var(--semantic-success, #10b981) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 10%,
+      transparent
+    );
   }
 
   .sequence-card .key-hint {
@@ -401,7 +435,11 @@
   .public-badge {
     padding: 2px 6px;
     border-radius: 3px;
-    background: color-mix(in srgb, var(--semantic-success, #10b981) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 20%,
+      transparent
+    );
     color: var(--semantic-success, #10b981);
     font-size: 10px;
     font-weight: 600;
@@ -458,7 +496,13 @@
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
   }
 
   .action-btn.secondary {
@@ -468,7 +512,11 @@
   }
 
   .action-btn.secondary:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 50%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 50%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
   }
 
@@ -514,8 +562,11 @@
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--semantic-success, #10b981), #06b6d4);
-    transition: width 0.3s ease;
+    background: linear-gradient(
+      90deg,
+      var(--semantic-success, #10b981),
+      #06b6d4
+    );
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
-
 </style>

@@ -38,7 +38,11 @@
   style="--medal-color: {medal?.color ?? '#fff'}"
   onclick={onselect}
   type="button"
-  aria-label={t('arena_leaderboard_rank_detail', { rank: entry.rank, word: entry.entry.word, rating: Math.round(entry.rating.displayRating) })}
+  aria-label={t("arena_leaderboard_rank_detail", {
+    rank: entry.rank,
+    word: entry.entry.word,
+    rating: Math.round(entry.rating.displayRating),
+  })}
 >
   <div class="medal-row">
     <span class="medal" aria-hidden="true">{medal?.emoji ?? ""}</span>
@@ -48,7 +52,9 @@
   <span class="word">{entry.entry.word}</span>
 
   {#if entry.entry.ownerDisplayName}
-    <span class="author">{t('arena_by_creator', { name: entry.entry.ownerDisplayName })}</span>
+    <span class="author"
+      >{t("arena_by_creator", { name: entry.entry.ownerDisplayName })}</span
+    >
   {/if}
 
   <ArenaRatingBadge
@@ -57,7 +63,9 @@
     size={isFirst ? 56 : 48}
   />
 
-  <span class="win-rate">{t('arena_leaderboard_win_rate', { rate: winRate })}</span>
+  <span class="win-rate"
+    >{t("arena_leaderboard_win_rate", { rate: winRate })}</span
+  >
 </button>
 
 <style>
@@ -71,7 +79,7 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
     cursor: pointer;
-    transition: border-color 0.2s ease;
+    transition: border-color var(--duration-normal) var(--ease-standard);
     flex: 1;
     min-width: 0;
   }
@@ -86,7 +94,8 @@
   }
 
   .podium-card.first {
-    box-shadow: 0 0 20px color-mix(in srgb, var(--medal-color, #fbbf24) 15%, transparent);
+    box-shadow: 0 0 20px
+      color-mix(in srgb, var(--medal-color, #fbbf24) 15%, transparent);
   }
 
   .medal-row {

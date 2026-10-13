@@ -150,10 +150,10 @@
     border-radius: var(--radius-xl, 16px);
     color: var(--theme-text);
     transition:
-      background var(--duration-normal) ease,
-      border-color var(--duration-normal) ease,
-      transform var(--duration-normal) ease,
-      box-shadow var(--duration-normal) ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .creator-card::before {
@@ -388,7 +388,7 @@
 
   .profile-cue i {
     color: var(--creator-accent);
-    transition: transform var(--duration-fast) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .creator-card:hover .profile-cue i {

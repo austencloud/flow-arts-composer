@@ -1,10 +1,13 @@
 <script lang="ts">
-  import { doc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
-  import { getFirestoreInstance } from '#lib/shared/auth/firebase.js';
-  import { authState, getEffectiveUserId } from '#lib/shared/auth/state/auth-state.svelte.js';
-  import { acknowledgeWarning } from '../services/warning-acknowledger';
-  import { t } from '#lib/shared/i18n/i18n.svelte.js';
-  import { toast } from '#lib/shared/toast/state/toast-state.svelte.js';
+  import { doc, onSnapshot, type Unsubscribe } from "firebase/firestore";
+  import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+  import {
+    authState,
+    getEffectiveUserId,
+  } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { acknowledgeWarning } from "../services/warning-acknowledger";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   let isAcknowledging = $state(false);
   let hasActiveWarning = $state(false);
@@ -18,10 +21,10 @@
       await acknowledgeWarning();
       // The subscription will update hasActiveWarning automatically
     } catch (error) {
-      console.error('Failed to acknowledge warning:', error);
+      console.error("Failed to acknowledge warning:", error);
       // i18n NOTE: needs a dedicated key (e.g. moderation_acknowledge_failed) added to
       // messages/en.json, which is outside this feature's edit scope.
-      toast.error('Could not acknowledge the warning. Please try again.');
+      toast.error("Could not acknowledge the warning. Please try again.");
     } finally {
       isAcknowledging = false;
     }
@@ -49,12 +52,12 @@
           }
         },
         (error) => {
-          console.error('Warning status subscription error:', error);
+          console.error("Warning status subscription error:", error);
           hasActiveWarning = false;
         }
       );
     } catch (error) {
-      console.error('Failed to subscribe to warning status:', error);
+      console.error("Failed to subscribe to warning status:", error);
     }
   }
 
@@ -86,19 +89,20 @@
   });
 
   // Only show if user is logged in and has an active warning
-  const shouldShow = $derived(
-    authState.isAuthenticated && hasActiveWarning
-  );
+  const shouldShow = $derived(authState.isAuthenticated && hasActiveWarning);
 </script>
 
 {#if shouldShow}
   <div class="warning-banner" role="alert">
     <div class="warning-content">
-      <i class="fa-solid fa-triangle-exclamation warning-icon" aria-hidden="true"></i>
+      <i
+        class="fa-solid fa-triangle-exclamation warning-icon"
+        aria-hidden="true"
+      ></i>
       <div class="warning-text">
-        <p class="warning-title">{t('moderation_warning_title')}</p>
+        <p class="warning-title">{t("moderation_warning_title")}</p>
         <p class="warning-message">
-          {t('moderation_warning_message')}
+          {t("moderation_warning_message")}
         </p>
       </div>
     </div>
@@ -106,12 +110,12 @@
       class="acknowledge-button"
       onclick={handleAcknowledge}
       disabled={isAcknowledging}
-      aria-label={t('moderation_acknowledge')}
+      aria-label={t("moderation_acknowledge")}
     >
       {#if isAcknowledging}
         <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
       {:else}
-        {t('moderation_acknowledge')}
+        {t("moderation_acknowledge")}
       {/if}
     </button>
   </div>
@@ -178,7 +182,9 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s ease, border-color 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
     min-width: 100px;
     display: flex;
     align-items: center;

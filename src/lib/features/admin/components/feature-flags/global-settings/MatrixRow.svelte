@@ -6,8 +6,14 @@
 
   import type { FeatureFlagConfig } from "#lib/shared/auth/domain/models/feature-flag.js";
   import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
-  import { ROLE_HIERARCHY, hasRolePrivilege } from "#lib/shared/auth/domain/models/user-role.js";
-  import { getFeatureIconAndColor, getRoleColor } from "../shared/feature-utils";
+  import {
+    ROLE_HIERARCHY,
+    hasRolePrivilege,
+  } from "#lib/shared/auth/domain/models/user-role.js";
+  import {
+    getFeatureIconAndColor,
+    getRoleColor,
+  } from "../shared/feature-utils";
 
   interface Props {
     flag: FeatureFlagConfig;
@@ -59,7 +65,10 @@
 <div class="matrix-row" class:saving class:disabled={!flag.enabled}>
   <!-- Feature info -->
   <div class="feature-cell">
-    <div class="feature-icon" style="background: {style.color}18; color: {style.color}">
+    <div
+      class="feature-icon"
+      style="background: {style.color}18; color: {style.color}"
+    >
       <i class="fas {style.icon}" aria-hidden="true"></i>
     </div>
     <span class="feature-name">{flag.name}</span>
@@ -86,7 +95,9 @@
           : hasAccess
             ? `${role} has access`
             : `Click to set minimum to ${role}`}
-      aria-label="{role} role: {hasAccess ? 'has access' : 'no access'}{isMin ? ' (minimum required)' : ''}"
+      aria-label="{role} role: {hasAccess ? 'has access' : 'no access'}{isMin
+        ? ' (minimum required)'
+        : ''}"
     >
       {#if hasAccess}
         <i class="fas fa-check" aria-hidden="true"></i>
@@ -106,15 +117,24 @@
       disabled={saving || toggleLocked}
       onclick={onToggle}
       title={toggleLocked
-        ? toggleLockedReason ?? "This feature cannot be disabled"
-        : flag.enabled ? "Click to disable" : "Click to enable"}
-      aria-label="{flag.name} is {flag.enabled ? 'enabled' : 'disabled'}.{toggleLocked ? ' Cannot be toggled.' : ' Click to toggle.'}"
+        ? (toggleLockedReason ?? "This feature cannot be disabled")
+        : flag.enabled
+          ? "Click to disable"
+          : "Click to enable"}
+      aria-label="{flag.name} is {flag.enabled
+        ? 'enabled'
+        : 'disabled'}.{toggleLocked
+        ? ' Cannot be toggled.'
+        : ' Click to toggle.'}"
       aria-pressed={flag.enabled}
     >
       {#if toggleLocked}
         <i class="fas fa-lock" aria-hidden="true"></i>
       {:else}
-        <i class="fas {flag.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}" aria-hidden="true"></i>
+        <i
+          class="fas {flag.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"
+          aria-hidden="true"
+        ></i>
       {/if}
     </button>
   </div>
@@ -137,7 +157,7 @@
     padding: 6px 8px;
     border-radius: 8px;
     position: relative;
-    transition: background var(--duration-fast) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   @media (min-width: 700px) {
@@ -205,7 +225,14 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.3));
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
     font-size: var(--font-size-compact, 12px);
   }
 
@@ -258,7 +285,14 @@
     color: var(--semantic-error, #f87171);
     font-size: 18px;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
   }
 
   .enable-toggle:hover:not(:disabled) {

@@ -10,14 +10,20 @@
   - <900px: Compact mode (handled by parent switching to mobile)
 -->
 <script lang="ts">
-  import { slide, fly } from "svelte/transition";
+  import { flyFade, growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import UserSearchInput from "#lib/shared/user-search/UserSearchInput.svelte";
   import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import type { QuickAccessUser } from "../services/types";
   import type { PreviewUserProfile } from "../state/user-preview-state.svelte";
   import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
 
-  const ROLE_CONFIG: { role: UserRole; label: string; icon: string; color: string }[] = [
+  const ROLE_CONFIG: {
+    role: UserRole;
+    label: string;
+    icon: string;
+    color: string;
+  }[] = [
     { role: "admin", label: "Admin", icon: "fas fa-crown", color: "#ffd700" },
     { role: "tester", label: "Tester", icon: "fas fa-flask", color: "#10b981" },
     { role: "premium", label: "Premium", icon: "fas fa-gem", color: "#a855f7" },
@@ -131,7 +137,7 @@
 
 <svelte:window onpointerdown={handlePointerDownOutside} />
 
-<div class="admin-toolbar" transition:slide={{ duration: 150 }}>
+<div class="admin-toolbar" transition:growFade={{ duration: DURATION.fast }}>
   <div class="toolbar-row">
     {#if isUserPreview && previewProfile}
       <!-- PREVIEW MODE: three-column layout -->
@@ -234,15 +240,30 @@
       <div class="toolbar-spacer"></div>
 
       <!-- Inline onboarding preview actions -->
-      <button type="button" class="action-chip" onclick={onPreviewFirstRun} title="Preview First Run Wizard">
+      <button
+        type="button"
+        class="action-chip"
+        onclick={onPreviewFirstRun}
+        title="Preview First Run Wizard"
+      >
         <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
         <span>Preview First Run</span>
       </button>
-      <button type="button" class="action-chip" onclick={onPreviewCreateTutorial} title="Preview Create Tutorial">
+      <button
+        type="button"
+        class="action-chip"
+        onclick={onPreviewCreateTutorial}
+        title="Preview Create Tutorial"
+      >
         <i class="fas fa-graduation-cap" aria-hidden="true"></i>
         <span>Preview Tutorial</span>
       </button>
-      <button type="button" class="action-chip" onclick={onShowPwaBanner} title="Show PWA Migration Banner">
+      <button
+        type="button"
+        class="action-chip"
+        onclick={onShowPwaBanner}
+        title="Show PWA Migration Banner"
+      >
         <i class="fas fa-mobile-screen" aria-hidden="true"></i>
         <span>PWA Banner</span>
       </button>
@@ -256,9 +277,7 @@
           : "Let the ghost demonstrate the app (presentation mode)"}
         aria-pressed={ghostActive}
       >
-        <i
-          class="fas {ghostActive ? 'fa-stop' : 'fa-play'}"
-          aria-hidden="true"
+        <i class="fas {ghostActive ? 'fa-stop' : 'fa-play'}" aria-hidden="true"
         ></i>
         <span>{ghostActive ? "Stop Ghost" : "Ghost"}</span>
       </button>
@@ -286,7 +305,7 @@
         {#if isActionsOpen}
           <div
             class="actions-dropdown"
-            transition:fly={{ y: -8, duration: 150 }}
+            transition:flyFade={{ y: -8, duration: DURATION.fast }}
           >
             <button
               type="button"
@@ -361,7 +380,10 @@
 
       <!-- Intro reset feedback toast -->
       {#if introResetMessage}
-        <div class="toast" transition:fly={{ x: 20, duration: 200 }}>
+        <div
+          class="toast"
+          transition:flyFade={{ x: 20, duration: DURATION.normal }}
+        >
           <i class="fas fa-check" aria-hidden="true"></i>
           {introResetMessage}
         </div>
@@ -381,7 +403,7 @@
 
   <!-- Search dropdown -->
   {#if isSearchOpen}
-    <div class="search-panel" transition:slide={{ duration: 150 }}>
+    <div class="search-panel" transition:growFade={{ duration: DURATION.fast }}>
       <UserSearchInput
         onSelect={onSelectUser}
         selectedUserId={previewProfile?.uid || ""}
@@ -507,7 +529,15 @@
     color: rgba(255, 255, 255, 0.6);
     font-size: var(--font-size-compact);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast),
+      height var(--duration-fast);
   }
 
   .preview-action.save:hover {
@@ -527,7 +557,14 @@
     font-size: var(--font-size-compact);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      height var(--duration-fast);
   }
 
   .exit-preview-btn:hover {
@@ -552,7 +589,14 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-compact);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      height var(--duration-fast);
     flex-shrink: 0;
   }
 
@@ -589,7 +633,14 @@
     color: var(--theme-text);
     font-size: var(--font-size-compact);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      height var(--duration-fast);
     flex-shrink: 0;
   }
 
@@ -617,7 +668,15 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-sm);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast),
+      height var(--duration-fast);
     flex-shrink: 0;
   }
 
@@ -651,7 +710,14 @@
     font-size: var(--font-size-compact);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      height var(--duration-fast);
   }
 
   .actions-trigger:hover {
@@ -698,7 +764,14 @@
     font-size: var(--font-size-sm);
     text-align: left;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast);
   }
 
   .dropdown-item:hover:not(:disabled) {
@@ -753,7 +826,15 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-sm);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast),
+      height var(--duration-fast);
     flex-shrink: 0;
   }
 
@@ -794,7 +875,14 @@
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      height var(--duration-fast);
     flex-shrink: 0;
     white-space: nowrap;
   }
@@ -837,7 +925,6 @@
     border-color: rgba(239, 68, 68, 0.4);
     color: white;
   }
-
 
   /* Progressive collapse: 900-1200px */
   @media (max-width: 1200px) {

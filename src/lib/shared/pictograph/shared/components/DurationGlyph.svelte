@@ -44,9 +44,7 @@ Dark mode: Uses white text on dark backgrounds, dark text on light backgrounds.
   const effectiveDarkMode = $derived(darkMode ?? localDarkMode);
 
   // Fill color based on effective dark mode (white on dark, dark on light)
-  const fillColor = $derived(
-    effectiveDarkMode ? "#ffffff" : "#231f20"
-  );
+  const fillColor = $derived(effectiveDarkMode ? "#ffffff" : "#231f20");
 
   // Format duration for display
   const displayText = $derived.by(() => {
@@ -82,10 +80,14 @@ Dark mode: Uses white text on dark backgrounds, dark text on light backgrounds.
     let timeout: ReturnType<typeof setTimeout> | undefined;
     if (prevDuration !== undefined && duration !== prevDuration) {
       isAnimating = true;
-      timeout = setTimeout(() => { isAnimating = false; }, 180);
+      timeout = setTimeout(() => {
+        isAnimating = false;
+      }, 180);
     }
     prevDuration = duration;
-    return () => { if (timeout) clearTimeout(timeout); };
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
   });
 </script>
 
@@ -109,7 +111,7 @@ Dark mode: Uses white text on dark backgrounds, dark text on light backgrounds.
 
 <style>
   .duration-glyph {
-    transition: fill var(--duration-fast, 150ms) ease-out;
+    transition: fill var(--duration-fast) var(--ease-standard-out);
   }
 
   @keyframes duration-pulse {
@@ -125,7 +127,7 @@ Dark mode: Uses white text on dark backgrounds, dark text on light backgrounds.
   }
 
   .duration-glyph.animating {
-    animation: duration-pulse 180ms ease-in-out;
+    animation: duration-pulse var(--duration-fast) var(--ease-standard);
   }
 
   @media (prefers-reduced-motion: reduce) {

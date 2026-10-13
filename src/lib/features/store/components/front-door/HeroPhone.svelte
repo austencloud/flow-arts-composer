@@ -45,7 +45,7 @@
 -->
 <script lang="ts">
   import { untrack } from "svelte";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
@@ -263,7 +263,7 @@
       <div
         class="camera"
         class:live={viewfinder}
-        out:fade={{ duration: DURATION.fast }}
+        out:opaqueFade={{ duration: DURATION.fast }}
       >
         <span class="room" aria-hidden="true"></span>
         <span class="shot">
@@ -332,10 +332,7 @@
        placed above the phone, so it can appear and disappear with the gate
        without moving anything (no-layout-shift.md). -->
   {#if live}
-    <span
-      class="live-cue"
-      transition:fade={{ duration: reducedMotion ? 0 : DURATION.fast }}
-    >
+    <span class="live-cue" transition:opaqueFade={{ duration: DURATION.fast }}>
       <span class="dot" aria-hidden="true"></span>
       This screen is live
     </span>
@@ -350,7 +347,7 @@
       href="/q/{code}"
       target="_blank"
       rel="noopener"
-      transition:fade={{ duration: reducedMotion ? 0 : DURATION.fast }}
+      transition:opaqueFade={{ duration: DURATION.fast }}
     >
       Open this scan
       <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
@@ -392,8 +389,8 @@
     transform: perspective(1400px) translateX(88%) rotateY(-52deg) scale(0.86);
     opacity: 0;
     transition:
-      transform 640ms cubic-bezier(0.22, 1.12, 0.36, 1),
-      opacity 320ms ease-out;
+      transform var(--duration-scene) var(--ease-spring),
+      opacity var(--duration-emphasis) var(--ease-standard-out);
     will-change: transform;
   }
   .phone.onstage {
@@ -580,7 +577,7 @@
       linear-gradient(168deg, #15203a, #0a0f1c 60%, #121a30);
     filter: blur(2px);
     transform: scale(1.04) translate(1.2%, -0.8%);
-    transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform var(--duration-scene) var(--ease-out);
   }
 
   /* The card as the camera sees it: a flat object lying in that room, taking a
@@ -597,7 +594,7 @@
     /* The drift: a hand holding a phone is never still. The card and the room
        move by DIFFERENT amounts and in opposite directions — that parallax is
        the whole depth cue. Slow enough to read as breathing. */
-    transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform var(--duration-scene) var(--ease-out);
     filter: drop-shadow(0 0.6rem 1.1rem rgba(0, 0, 0, 0.65));
   }
   .camera.live .shot {
@@ -664,7 +661,7 @@
     letter-spacing: 0.01em;
     white-space: nowrap;
     box-shadow: 0 0.5rem 1.4rem rgba(0, 0, 0, 0.45);
-    animation: chip-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: chip-pop var(--duration-dramatic) var(--ease-spring) both;
   }
   @keyframes chip-pop {
     from {
@@ -683,7 +680,7 @@
     inset: var(--phone-safe-area-top) 0 0;
     background: #0b0d12;
     transform: translateY(100%);
-    transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform var(--duration-scene) var(--ease-out);
   }
   .page.up {
     transform: none;

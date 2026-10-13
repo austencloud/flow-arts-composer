@@ -144,7 +144,7 @@
         var(--dial-sweep, 0deg),
       transparent var(--dial-sweep, 0deg)
     );
-    transition: background var(--duration-fast, 140ms) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .dial-ring {
@@ -197,10 +197,10 @@
     font-variant-numeric: tabular-nums;
     line-height: 1.1;
     transition:
-      transform var(--duration-fast, 140ms) ease,
-      color var(--duration-fast, 140ms) ease,
-      border-color var(--duration-fast, 140ms) ease,
-      background var(--duration-fast, 140ms) ease;
+      transform var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .dial-point:hover:not(:disabled) .point-tick {

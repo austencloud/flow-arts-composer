@@ -23,7 +23,9 @@
 
   const title = $derived(listType === "followers" ? "Followers" : "Following");
   const icon = $derived(listType === "followers" ? "fa-users" : "fa-user-plus");
-  const emptyTitle = $derived(listType === "followers" ? "No Followers Yet" : "Not Following Anyone");
+  const emptyTitle = $derived(
+    listType === "followers" ? "No Followers Yet" : "Not Following Anyone"
+  );
   const emptyMessage = $derived(
     listType === "followers"
       ? "This user doesn't have any followers yet"
@@ -38,12 +40,7 @@
 
 <BaseModal bind:open size="md" animation="pop">
   {#snippet header()}
-    <ModalHeader
-      {title}
-      icon={icon}
-      showClose
-      onClose={() => (open = false)}
-    />
+    <ModalHeader {title} {icon} showClose onClose={() => (open = false)} />
   {/snippet}
 
   <div class="followers-list">
@@ -52,7 +49,7 @@
     {:else if users.length === 0}
       <PanelState
         type="empty"
-        icon={icon}
+        {icon}
         title={emptyTitle}
         message={emptyMessage}
       />
@@ -65,7 +62,12 @@
             aria-label="View profile of {user.displayName}"
           >
             <div class="user-avatar">
-              <AvatarImage src={user.avatar} alt={user.displayName} name={user.displayName} size={48} />
+              <AvatarImage
+                src={user.avatar}
+                alt={user.displayName}
+                name={user.displayName}
+                size={48}
+              />
             </div>
             <div class="user-info">
               <h4 class="user-name">{user.displayName}</h4>
@@ -109,7 +111,10 @@
     border: 1px solid var(--theme-stroke);
     border-radius: 12px;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     text-align: left;
     width: 100%;
   }
@@ -172,7 +177,7 @@
     font-size: var(--font-size-compact);
     color: var(--theme-text-dim);
     flex-shrink: 0;
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .user-card:hover .user-arrow {

@@ -15,7 +15,8 @@
    * to the /support URL, never the modal), so it's driven by props the route
    * passes and the modal omits.
    */
-  import { slide } from "svelte/transition";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   let {
@@ -86,9 +87,8 @@
     cardError = null;
     try {
       // Dynamic import keeps the firebase SDK out of the public/landing bundle.
-      const { createDonationCheckout } = await import(
-        "#lib/shared/support/donation-checkout.js"
-      );
+      const { createDonationCheckout } =
+        await import("#lib/shared/support/donation-checkout.js");
       const url = await createDonationCheckout(
         Math.round(dollars * 100),
         window.location.origin
@@ -105,9 +105,13 @@
 
 <section class="jar-card" class:in-modal={variant === "modal"}>
   {#if donated}
-    <p class="donated" role="status">Thank you, truly. Your support means a lot.</p>
+    <p class="donated" role="status">
+      Thank you, truly. Your support means a lot.
+    </p>
   {:else if canceled}
-    <p class="canceled" role="status">Checkout canceled. You weren't charged.</p>
+    <p class="canceled" role="status">
+      Checkout canceled. You weren't charged.
+    </p>
   {/if}
 
   <div class="tell">
@@ -117,7 +121,9 @@
         The Kinetic Alphabet is a continuously growing project, with
         <strong>4&nbsp;years of development</strong> behind it.
       </p>
-      <p class="line">Donations play a huge role in making this work possible.</p>
+      <p class="line">
+        Donations play a huge role in making this work possible.
+      </p>
       <p class="line accent">
         Please consider supporting, any amount is deeply appreciated!
       </p>
@@ -134,7 +140,10 @@
         color="accent"
       />
       {#if tier === "custom"}
-        <div class="custom-amount" transition:slide={{ duration: 220 }}>
+        <div
+          class="custom-amount"
+          transition:growFade={{ duration: DURATION.normal }}
+        >
           <span class="dollar" aria-hidden="true">$</span>
           <input
             type="number"
@@ -163,7 +172,8 @@
         {#if cardLoading}
           Starting checkout…
         {:else}
-          Donate{#if validAmount}&nbsp;<span class="amt">${dollars}</span>{/if} by card
+          Donate{#if validAmount}&nbsp;<span class="amt">${dollars}</span>{/if} by
+          card
         {/if}
       </span>
     </button>
@@ -171,7 +181,9 @@
       <p class="card-err" role="alert">{cardError}</p>
     {/if}
 
-    <p class="or">or send{#if validAmount}&nbsp;<span class="amt">${dollars}</span>{/if} directly</p>
+    <p class="or">
+      or send{#if validAmount}&nbsp;<span class="amt">${dollars}</span>{/if} directly
+    </p>
 
     <div class="jar">
       <a
@@ -260,7 +272,11 @@
     font-family: var(--page-title-font, "Fraunces", Georgia, serif);
     font-style: italic;
     font-weight: 700;
-    font-variation-settings: "opsz" 144, "wght" 700, "SOFT" 0, "WONK" 1;
+    font-variation-settings:
+      "opsz" 144,
+      "wght" 700,
+      "SOFT" 0,
+      "WONK" 1;
     font-size: clamp(2.5rem, 6vw, 3.5rem);
     line-height: 1.2;
     padding-bottom: 0.12em; /* room for the 'y' descender under background-clip:text */
@@ -351,7 +367,8 @@
   .custom-amount input:focus-visible {
     outline: none;
     border-color: var(--theme-accent, #818cf8);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-accent, #818cf8) 40%, transparent);
+    box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--theme-accent, #818cf8) 40%, transparent);
   }
 
   .amt {
@@ -377,9 +394,9 @@
     background: linear-gradient(135deg, #6f8cff, #8b6cff);
     box-shadow: 0 14px 34px rgba(110, 100, 255, 0.35);
     transition:
-      transform 0.16s ease,
-      box-shadow 0.16s ease,
-      filter 0.16s ease;
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard);
   }
   .card-cta:hover:not(:disabled),
   .card-cta:focus-visible:not(:disabled) {
@@ -435,17 +452,18 @@
         transparent 100%
       ),
       rgba(255, 255, 255, 0.045);
-    border: 1px solid color-mix(in srgb, var(--brand) 24%, rgba(255, 255, 255, 0.12));
+    border: 1px solid
+      color-mix(in srgb, var(--brand) 24%, rgba(255, 255, 255, 0.12));
     -webkit-backdrop-filter: blur(14px) saturate(1.15);
     backdrop-filter: blur(14px) saturate(1.15);
     box-shadow:
       0 8px 24px rgba(0, 0, 0, 0.32),
       inset 0 1px 0 rgba(255, 255, 255, 0.08);
     transition:
-      transform 0.18s ease,
-      border-color 0.18s ease,
-      background 0.18s ease,
-      box-shadow 0.18s ease;
+      transform var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
   .pay:hover,
   .pay:focus-visible {
@@ -474,7 +492,7 @@
     width: auto;
     display: block;
     fill: var(--brand);
-    transition: filter 0.18s ease;
+    transition: filter var(--duration-fast) var(--ease-standard);
   }
   .logo--venmo {
     height: auto;

@@ -37,7 +37,9 @@
   // Derived values
   const inPercent = $derived(duration > 0 ? (inPoint / duration) * 100 : 0);
   const outPercent = $derived(duration > 0 ? (outPoint / duration) * 100 : 100);
-  const currentPercent = $derived(duration > 0 ? (currentTime / duration) * 100 : 0);
+  const currentPercent = $derived(
+    duration > 0 ? (currentTime / duration) * 100 : 0
+  );
   const snippedDuration = $derived(outPoint - inPoint);
 
   // Format time as MM:SS.s
@@ -73,11 +75,17 @@
   function getTimeFromPosition(clientX: number): number {
     if (!timelineEl) return 0;
     const rect = timelineEl.getBoundingClientRect();
-    const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const percent = Math.max(
+      0,
+      Math.min(1, (clientX - rect.left) / rect.width)
+    );
     return percent * duration;
   }
 
-  function handlePointerDown(e: PointerEvent, target: "in" | "out" | "playhead") {
+  function handlePointerDown(
+    e: PointerEvent,
+    target: "in" | "out" | "playhead"
+  ) {
     e.preventDefault();
     dragging = target;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -204,8 +212,13 @@
       <button class="control-btn" onclick={seekToIn} title="Go to in-point">
         <i class="fas fa-step-backward" aria-hidden="true"></i>
       </button>
-      <button class="control-btn play-btn" onclick={togglePlay} title={isPlaying ? "Pause" : "Play"}>
-        <i class="fas {isPlaying ? 'fa-pause' : 'fa-play'}" aria-hidden="true"></i>
+      <button
+        class="control-btn play-btn"
+        onclick={togglePlay}
+        title={isPlaying ? "Pause" : "Play"}
+      >
+        <i class="fas {isPlaying ? 'fa-pause' : 'fa-play'}" aria-hidden="true"
+        ></i>
       </button>
       <button class="control-btn" onclick={seekToOut} title="Go to out-point">
         <i class="fas fa-step-forward" aria-hidden="true"></i>
@@ -271,12 +284,20 @@
 
     <!-- Set in/out buttons -->
     <div class="mark-controls">
-      <button class="mark-btn" onclick={setInAtCurrent} title="Set in-point at current time (I)">
+      <button
+        class="mark-btn"
+        onclick={setInAtCurrent}
+        title="Set in-point at current time (I)"
+      >
         <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
         Mark In
       </button>
       <span class="current-time">{formatTime(currentTime)}</span>
-      <button class="mark-btn" onclick={setOutAtCurrent} title="Set out-point at current time (O)">
+      <button
+        class="mark-btn"
+        onclick={setOutAtCurrent}
+        title="Set out-point at current time (O)"
+      >
         Mark Out
         <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
       </button>
@@ -376,7 +397,16 @@
     align-items: center;
     justify-content: center;
     font-size: 14px;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      filter var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .control-btn:hover {
@@ -410,7 +440,11 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 30%,
+      transparent
+    );
     border-radius: 8px;
   }
 
@@ -527,7 +561,13 @@
     color: var(--theme-text, white);
     cursor: pointer;
     font-size: 14px;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .mark-btn:hover {

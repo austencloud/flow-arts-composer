@@ -30,7 +30,10 @@ Shows pre-render progress and perfect playback badge.
   >
     <div class="badge-content">
       <ProgressRing percent={-1} size={24} strokeWidth={2} />
-      <span>{t("animation_optimizing")} {Math.round(preRenderProgress.percent)}%</span>
+      <span
+        >{t("animation_optimizing")}
+        {Math.round(preRenderProgress.percent)}%</span
+      >
     </div>
     <div class="progress-bar">
       <div
@@ -79,7 +82,7 @@ Shows pre-render progress and perfect playback badge.
   .progress-fill {
     height: 100%;
     background: linear-gradient(90deg, #4ade80, var(--semantic-success));
-    transition: width var(--duration-emphasis) ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
 
   .perfect-mode-badge {
@@ -93,8 +96,9 @@ Shows pre-render progress and perfect playback badge.
     font-size: var(--font-size-compact); /* Supplementary badge text */
     font-weight: 600;
     z-index: 10;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--semantic-success) 40%, transparent);
-    animation: fadeInOut 3s ease forwards;
+    box-shadow: 0 2px 8px
+      color-mix(in srgb, var(--semantic-success) 40%, transparent);
+    animation: fadeInOut var(--duration-scene) var(--ease-standard) forwards;
   }
 
   @keyframes fadeInOut {

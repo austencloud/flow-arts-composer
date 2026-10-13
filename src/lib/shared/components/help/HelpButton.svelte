@@ -43,7 +43,9 @@
     border-radius: 50%;
     cursor: pointer;
     font-size: 1.1rem;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     border: 1px solid var(--semantic-info-border, rgba(59, 130, 246, 0.3));
     background: linear-gradient(
       135deg,

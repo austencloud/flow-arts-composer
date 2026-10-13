@@ -5,7 +5,10 @@
   Displays Trails / Fire / LED buttons with effect-specific accent colors.
 -->
 <script lang="ts">
-  import { EFFECT_DESCRIPTORS, type EffectMode } from "../domain/effect-descriptor";
+  import {
+    EFFECT_DESCRIPTORS,
+    type EffectMode,
+  } from "../domain/effect-descriptor";
 
   interface Props {
     activeMode: EffectMode;
@@ -57,7 +60,10 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
+    transition:
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .mode-btn:hover {

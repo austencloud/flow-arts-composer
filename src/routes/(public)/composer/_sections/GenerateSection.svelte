@@ -1148,9 +1148,9 @@
     font-weight: 650;
     cursor: pointer;
     transition:
-      transform 160ms ease,
-      box-shadow 160ms ease,
-      opacity 160ms ease;
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .generate-button:hover:not(:disabled) {

@@ -271,7 +271,13 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     text-transform: capitalize;
   }
 
@@ -303,7 +309,13 @@
     border-radius: 8px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     text-align: left;
   }
 
@@ -362,7 +374,14 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      grid-template-columns var(--duration-fast) var(--ease-standard);
   }
 
   .ori-btn:hover {
@@ -401,7 +420,15 @@
     border-radius: 8px;
     color: var(--theme-text, #ffffff);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .switch-row:hover {
@@ -419,7 +446,7 @@
     height: 20px;
     border-radius: 999px;
     background: var(--theme-stroke, rgba(255, 255, 255, 0.15));
-    transition: background 0.15s ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .switch-row.active .switch-indicator {
@@ -434,7 +461,7 @@
     height: 16px;
     border-radius: 50%;
     background: #ffffff;
-    transition: transform 0.15s ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .switch-row.active .switch-knob {

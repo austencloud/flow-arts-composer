@@ -33,6 +33,9 @@ import {
 import { setCollectionMembershipResolver } from "#lib/shared/browse/services/browse-filter.js";
 import { followedCollectionsState } from "#lib/features/library/state/followed-collections-state.svelte.js";
 import { communityCollectionsState } from "#lib/features/browse/collections/state/community-collections-state.svelte.js";
+
+const UNDO_TOAST_MS = 6_000;
+const PARTIAL_FAILURE_TOAST_MS = 8_000;
 import {
   readOwnMirror,
   writeOwnMirror,
@@ -155,7 +158,7 @@ class CollectionsState {
         showToast({
           message: `Removed from "${c.name}"`,
           type: "info",
-          duration: 6000,
+          duration: UNDO_TOAST_MS,
           action: {
             label: "Undo",
             onClick: () => {
@@ -282,7 +285,8 @@ class CollectionsState {
       showToast({
         message,
         type: unprocessedCount > 0 ? "error" : "info",
-        duration: unprocessedCount > 0 ? 8000 : 6000,
+        duration:
+          unprocessedCount > 0 ? PARTIAL_FAILURE_TOAST_MS : UNDO_TOAST_MS,
         action: {
           label: "Undo",
           onClick: () => {

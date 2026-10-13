@@ -80,10 +80,10 @@
 
   const hasActiveFilters = $derived(
     filterCategory !== "all" ||
-    filterPerformer !== "all" ||
-    filterHasWord !== "all" ||
-    filterFeatured !== null ||
-    searchQuery.trim() !== ""
+      filterPerformer !== "all" ||
+      filterHasWord !== "all" ||
+      filterFeatured !== null ||
+      searchQuery.trim() !== ""
   );
 </script>
 
@@ -100,7 +100,11 @@
       class="search-input"
     />
     {#if searchQuery}
-      <button class="clear-search" onclick={() => onSearchChange("")} aria-label="Clear search">
+      <button
+        class="clear-search"
+        onclick={() => onSearchChange("")}
+        aria-label="Clear search"
+      >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
     {/if}
@@ -108,7 +112,13 @@
 
   <!-- Action buttons -->
   <div class="action-buttons-row">
-    <button class="icon-btn" onclick={onRefresh} disabled={loading} title="Refresh" aria-label="Refresh videos">
+    <button
+      class="icon-btn"
+      onclick={onRefresh}
+      disabled={loading}
+      title="Refresh"
+      aria-label="Refresh videos"
+    >
       <i class="fas fa-sync-alt" class:fa-spin={loading} aria-hidden="true"></i>
     </button>
 
@@ -259,7 +269,8 @@
         icon="far fa-star"
         chipColor="#6366f1"
         active={filterFeatured === false}
-        onclick={() => onFeaturedChange(filterFeatured === false ? null : false)}
+        onclick={() =>
+          onFeaturedChange(filterFeatured === false ? null : false)}
       />
     </div>
   </div>
@@ -283,16 +294,22 @@
       type="text"
       placeholder="Category name..."
       value={newCategoryLabel}
-      oninput={(e) => onUpdateCategoryLabel((e.target as HTMLInputElement).value)}
+      oninput={(e) =>
+        onUpdateCategoryLabel((e.target as HTMLInputElement).value)}
       onkeydown={(e) => e.key === "Enter" && onAddCategory()}
     />
     <input
       type="color"
       value={newCategoryColor}
-      oninput={(e) => onUpdateCategoryColor((e.target as HTMLInputElement).value)}
+      oninput={(e) =>
+        onUpdateCategoryColor((e.target as HTMLInputElement).value)}
       title="Category color"
     />
-    <button class="save-btn" onclick={onAddCategory} disabled={!newCategoryLabel.trim()}>
+    <button
+      class="save-btn"
+      onclick={onAddCategory}
+      disabled={!newCategoryLabel.trim()}
+    >
       Add
     </button>
     <button class="cancel-btn" onclick={() => onToggleAddCategory(false)}>
@@ -334,7 +351,14 @@
     background: var(--theme-card-bg);
     color: var(--theme-text);
     font-size: 14px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal);
   }
 
   .search-input:focus {
@@ -362,7 +386,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
   }
 
   .clear-search:hover {
@@ -388,7 +420,15 @@
     align-items: center;
     justify-content: center;
     font-size: 16px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
   }
 
   .icon-btn:hover:not(:disabled) {
@@ -413,7 +453,13 @@
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
   }
 
   .action-pill.curate {
@@ -495,7 +541,13 @@
     color: var(--theme-text);
     cursor: pointer;
     font-size: 13px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
   }
 
   .chip:hover {
@@ -530,9 +582,14 @@
     align-items: center;
     gap: 16px;
     padding: 10px 16px;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 10%,
+      transparent
+    );
     border-radius: 10px;
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
   }
 
   .filter-count {
@@ -552,11 +609,21 @@
     color: var(--theme-text-dim);
     cursor: pointer;
     font-size: 13px;
-    transition: all 0.2s;
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal);
   }
 
   .clear-all:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
   }
 

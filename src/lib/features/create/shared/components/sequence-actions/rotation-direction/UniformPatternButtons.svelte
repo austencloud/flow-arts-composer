@@ -72,7 +72,10 @@
     font-weight: 600;
     border-radius: 8px;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      opacity var(--duration-fast);
   }
 
   .uniform-btn.cw {

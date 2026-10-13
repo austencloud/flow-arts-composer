@@ -10,10 +10,8 @@
   import { pinDocumentLanguage } from "#lib/shared/i18n/i18n.svelte.js";
   import ViewCaptureListener from "#lib/shared/review/ViewCaptureListener.svelte";
   import { detectSiteMode, type SiteMode } from "../config/domains";
-  import { consumeSkipNextViewTransition } from "#lib/shared/transitions/sequence-drawer-state.svelte.js";
-  import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import { navigationMorphs } from "#lib/shared/transitions/navigation-morphs.js";
-  import { runNamedRouteMorph } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
+  import { installRouteMotion } from "@austencloud/motion";
   import { isConstrainedConnection } from "#lib/shared/platform/network-conditions.js";
   import { pruneRouteScopedParams } from "#lib/shared/navigation/services/url-parameter-policy.js";
   import {
@@ -26,6 +24,8 @@
   // Ringmaster and the website. app.css keeps the Composer's own ease and
   // composite tokens on top of it.
   import "@austencloud/motion/css/tokens.css";
+  import "@austencloud/motion/css/named-route-morph.css";
+  import "@austencloud/motion/css/route-transitions.css";
   import "../app.css";
   // Chip toggle tokens - maps --chip-* to TKA design values
   import "@austencloud/chip-toggle/css/tka-tokens.css";
@@ -35,15 +35,6 @@
   // to `.pane-results-body`; inert on every other surface.
   import "#lib/shared/transitions/results-motion.css";
 
-  // View Transitions driver (2026 canonical SvelteKit pattern), scoped to route
-  // pairs that provide matching named participants: browse <-> sequence, the
-  // landing launchpad <-> its destinations, and the shop book <-> its product
-  // detail. runNamedRouteMorph temporarily opts the document root out of
-  // capture, so persistent chrome and the cosmic WebGL canvas stay live while
-  // only the shared element is snapshotted. Every other route uses the regular
-  // Svelte content fade. Guards cover feature support, reduced motion,
-  // swipe-dismiss coordination, same-path query mutations, and the morph-pair
-  // allowlist. onNavigate never fires on a full-page F5.
   /**
    * Morph instrumentation (DEV only). Times named-snapshot preparation and flags
    * long tasks during the animation window, printed under the `[morph]` prefix.
@@ -108,36 +99,17 @@
     };
   }
 
-  onNavigate((navigation) => {
-    if (isShallowGoto(navigation)) return;
-    if (!document.startViewTransition) return;
-    if (reducedMotion()) return;
-    if (consumeSkipNextViewTransition()) return;
-    if (navigation.from?.url.pathname === navigation.to?.url.pathname) return;
-    if (!navigationMorphs(navigation.from, navigation.to)) return;
-
-    const probe = import.meta.env.DEV
-      ? startMorphProbe(
-          `${navigation.from?.url.pathname}→${navigation.to?.url.pathname}`
-        )
-      : null;
-
-    return new Promise((resolve) => {
-      try {
-        const vt = runNamedRouteMorph(() =>
-          document.startViewTransition(async () => {
-            resolve();
-            await navigation.complete;
-          })
-        );
-        probe?.attach(vt);
-      } catch {
-        // A startup failure must not strand SvelteKit's navigation. The helper
-        // has already released the transient root class and chrome ownership.
-        probe?.cancel();
-        resolve();
-      }
-    });
+  installRouteMotion({
+    routes: {},
+    onNavigate,
+    morphs: navigationMorphs,
+    isShallow: isShallowGoto,
+    onTransition: import.meta.env.DEV
+      ? (transition, navigation) =>
+          startMorphProbe(
+            `${navigation.from?.url.pathname}→${navigation.to?.url.pathname}`
+          ).attach(transition)
+      : undefined,
   });
 
   afterNavigate((navigation) => {
@@ -945,10 +917,14 @@
        cosmic background + SiteHeader shared across landing/about/roots/support). -->
   {#if isMarketing}
     <MarketingChrome>
-      {@render children()}
+      <div data-route-content>
+        {@render children()}
+      </div>
     </MarketingChrome>
   {:else}
-    {@render children()}
+    <div data-route-content>
+      {@render children()}
+    </div>
   {/if}
 
   {#if containerReady && FullscreenPromptComp}

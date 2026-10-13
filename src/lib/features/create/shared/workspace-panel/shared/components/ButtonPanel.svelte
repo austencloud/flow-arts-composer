@@ -22,7 +22,8 @@
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { PresenceAnimation } from "../../../../../../shared/ui-animation/animations.svelte";
   import { getCreateModuleContext } from "#lib/features/create/shared/context/create-module-context.js";
   import ClearSequencePanelButton from "./buttons/ClearSequenceButton.svelte";
@@ -200,16 +201,14 @@
       class="button-panel"
       class:assemble-layout={isAssembleTab}
       class:compact-rail={compact}
-      transition:fade={{ duration: 200 }}
+      transition:opaqueFade={{ duration: DURATION.normal }}
     >
       <!-- LEFT ZONE: destructive document actions -->
       <div class="left-zone">
         {#each leftButtons as btn (btn.id)}
           {#if btn.id === "clear" && canClearSequence && onClearSequence}
             <div transition:presenceTransition>
-              <ClearSequencePanelButton
-                onclick={() => onClearSequence?.()}
-              />
+              <ClearSequencePanelButton onclick={() => onClearSequence?.()} />
             </div>
           {/if}
         {/each}
@@ -220,8 +219,8 @@
         {#key centerZoneButtonCount()}
           <div
             class="center-zone"
-            out:fade={{ duration: 150 }}
-            in:fade={{ duration: 150, delay: 150 }}
+            out:opaqueFade={{ duration: DURATION.fast }}
+            in:opaqueFade={{ duration: DURATION.fast, delay: DURATION.fast }}
           >
             {#each centerButtons as btn (btn.id)}
               {#if btn.id === "view" && showViewSequenceButton && onViewSequence}
@@ -275,10 +274,7 @@
               />
             </div>
           {:else if btn.id === "share" && canShareSequence && !compact}
-            <div
-              class="share-slot"
-              transition:presenceTransition
-            >
+            <div class="share-slot" transition:presenceTransition>
               <ShareButton
                 sequence={currentSequence}
                 useMobileSheet={useMobileShareSheet}

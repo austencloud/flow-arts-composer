@@ -20,12 +20,9 @@
 -->
 <script lang="ts">
   import { flip } from "svelte/animate";
-  import { scale } from "svelte/transition";
   import { dockSlide } from "#lib/shared/transitions/dock-slide.js";
-  import {
-    flipDuration,
-    motionDuration,
-  } from "#lib/shared/transitions/motion.js";
+  import { flipDuration, popIn } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { formatTimeAgo } from "#lib/shared/i18n/i18n-formatters.js";
   import { getChoreoSheetRepository } from "../../services/choreo-sheet-repository";
@@ -369,7 +366,7 @@
                 class:flash={flashId === act.id}
                 style="--enter-delay: {Math.min(i * 35, 280)}ms"
                 animate:flip={{ duration: flipDuration() }}
-                out:scale={{ duration: motionDuration(160), start: 0.92 }}
+                out:popIn={{ duration: DURATION.fast, start: 0.92 }}
               >
                 <button
                   type="button"
@@ -531,14 +528,13 @@
     cursor: pointer;
     flex-shrink: 0;
     transition:
-      background-color var(--duration-fast, 0.12s) ease,
-      border-color var(--duration-fast, 0.12s) ease,
-      transform var(--duration-fast, 0.12s) ease;
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .new-act i {
-    transition: transform var(--duration-normal, 0.2s)
-      cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform var(--duration-normal) var(--ease-spring);
   }
 
   .new-act:hover:not(:disabled) {
@@ -612,13 +608,13 @@
     border-radius: 8px;
     /* Staggered entrance: each card rises in a beat after the one above it.
        `backwards` holds the from-state through the per-card --enter-delay. */
-    animation: act-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation: act-enter var(--duration-emphasis) var(--ease-out) backwards;
     animation-delay: var(--enter-delay, 0ms);
     transition:
-      background-color var(--duration-fast, 0.12s) ease,
-      border-color var(--duration-fast, 0.12s) ease,
-      transform var(--duration-fast, 0.12s) ease,
-      box-shadow var(--duration-fast, 0.12s) ease;
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   @keyframes act-enter {
@@ -660,7 +656,7 @@
 
   /* One-shot success ring on the card a save just landed on. */
   .act-item.flash {
-    animation: saved-ring 1.2s ease-out;
+    animation: saved-ring var(--duration-dramatic) var(--ease-standard-out);
     animation-delay: 0ms;
   }
 
@@ -732,7 +728,7 @@
     border: 1px solid
       color-mix(in srgb, var(--theme-accent, #6366f1) 45%, transparent);
     /* Springy pop when the badge lands on a newly-opened act. */
-    animation: badge-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+    animation: badge-pop var(--duration-emphasis) var(--ease-spring) backwards;
   }
 
   @keyframes badge-pop {
@@ -755,8 +751,8 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
     cursor: pointer;
     transition:
-      background-color var(--duration-fast, 0.12s) ease,
-      color var(--duration-fast, 0.12s) ease;
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .icon-btn:hover:not(:disabled) {
@@ -779,7 +775,7 @@
   .delete-btn.arming {
     background: var(--theme-danger, #ef4444);
     color: var(--theme-text-inverse, #fff);
-    animation: arm-wiggle 0.34s ease;
+    animation: arm-wiggle var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes arm-wiggle {
@@ -953,7 +949,7 @@
     color: var(--theme-accent, #6366f1);
     font-size: 1.15rem;
     /* Pops in with a slight overshoot so the warning registers immediately. */
-    animation: confirm-pop 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+    animation: confirm-pop var(--duration-dramatic) var(--ease-spring) backwards;
   }
 
   @keyframes confirm-pop {
@@ -1005,7 +1001,7 @@
     font-size: var(--font-size-sm, 0.875rem);
     font-weight: 600;
     cursor: pointer;
-    transition: background-color var(--duration-fast, 0.12s) ease;
+    transition: background-color var(--duration-fast) var(--ease-standard);
   }
 
   .btn:hover:not(:disabled) {

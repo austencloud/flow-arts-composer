@@ -42,16 +42,22 @@
     if (seq.name) return seq.name;
     const count = seq.steps?.length ?? 0;
     return count > 0
-      ? t(count === 1
-          ? "create_sequence_preview_unnamed_one_step"
-          : "create_sequence_preview_unnamed_steps", { count })
+      ? t(
+          count === 1
+            ? "create_sequence_preview_unnamed_one_step"
+            : "create_sequence_preview_unnamed_steps",
+          { count }
+        )
       : t("create_sequence_preview_empty");
   }
 
   function stepCountLabel(count: number): string {
-    return t(count === 1
-      ? "create_sequence_preview_one_step"
-      : "create_sequence_preview_steps", { count });
+    return t(
+      count === 1
+        ? "create_sequence_preview_one_step"
+        : "create_sequence_preview_steps",
+      { count }
+    );
   }
 
   // Derive display info
@@ -355,7 +361,10 @@
     font-size: var(--font-size-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     border: 2px solid transparent;
     min-width: 120px;
   }

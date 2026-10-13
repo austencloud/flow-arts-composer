@@ -78,15 +78,25 @@
     font-weight={SKEW_BRACE_FONT_WEIGHT}
     {fill}
   >
-    <text x={glyphs.open.x} y={glyphs.open.y} text-anchor="start" dominant-baseline="alphabetic">&#123;</text>
-    <text x={glyphs.close.x} y={glyphs.close.y} text-anchor="start" dominant-baseline="alphabetic">&#125;</text>
+    <text
+      x={glyphs.open.x}
+      y={glyphs.open.y}
+      text-anchor="start"
+      dominant-baseline="alphabetic">&#123;</text
+    >
+    <text
+      x={glyphs.close.x}
+      y={glyphs.close.y}
+      text-anchor="start"
+      dominant-baseline="alphabetic">&#125;</text
+    >
   </g>
 {/if}
 
 <style>
   .skew-braces {
     opacity: 0;
-    transition: opacity var(--duration-fast) ease-out;
+    transition: opacity var(--duration-fast) var(--ease-standard-out);
     pointer-events: none;
   }
 

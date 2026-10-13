@@ -222,9 +222,9 @@
     min-height: var(--min-touch-target, 44px);
     cursor: pointer;
     transition:
-      transform var(--duration-fast) ease,
-      background var(--duration-fast) ease,
-      border-color var(--duration-fast) ease;
+      transform var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   button.bridge-marker:hover {

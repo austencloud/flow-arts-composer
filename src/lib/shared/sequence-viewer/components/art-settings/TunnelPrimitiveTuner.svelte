@@ -178,7 +178,8 @@
       ? t("viewer_ui_performer")
       : t("viewer_ui_performers")}
     <span class="tr-mid">·</span>
-    <span class="tr-n">{controller.propCount}</span> {t("viewer_detail_props")}
+    <span class="tr-n">{controller.propCount}</span>
+    {t("viewer_detail_props")}
   </p>
   {#if tunnelFactors.length}
     <p class="tuner-build">
@@ -490,8 +491,8 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background 0.12s ease,
-      border-color 0.12s ease;
+      background var(--duration-instant) var(--ease-standard),
+      border-color var(--duration-instant) var(--ease-standard);
   }
   .save-preset-btn:hover {
     background: color-mix(in srgb, var(--theme-accent) 8%, transparent);
@@ -569,8 +570,8 @@
     color: inherit;
     cursor: pointer;
     transition:
-      background 0.12s,
-      border-color 0.12s;
+      background var(--duration-instant),
+      border-color var(--duration-instant);
   }
   .grid-toggle.active {
     background: var(--theme-accent, #8b5cf6);
@@ -589,8 +590,8 @@
     color: inherit;
     cursor: pointer;
     transition:
-      background 0.12s,
-      border-color 0.12s;
+      background var(--duration-instant),
+      border-color var(--duration-instant);
   }
   .step-btn:disabled {
     opacity: 0.35;

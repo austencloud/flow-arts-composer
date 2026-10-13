@@ -51,7 +51,13 @@
     font-size: clamp(0.75rem, 2.5vw, 0.85rem);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     font-variant-numeric: tabular-nums;
   }

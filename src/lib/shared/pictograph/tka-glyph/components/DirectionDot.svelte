@@ -58,9 +58,7 @@
   const effectiveDarkMode = $derived(darkMode ?? localDarkMode);
 
   // Fill color based on effective dark mode
-  const fillColor = $derived(
-    effectiveDarkMode ? "#ffffff" : "#231f20"
-  );
+  const fillColor = $derived(effectiveDarkMode ? "#ffffff" : "#231f20");
 
   // Only show dot for "s" (same) or "o" (opp) directions
   const shouldShow = $derived(direction === "s" || direction === "o");
@@ -95,12 +93,20 @@
     let timeout: ReturnType<typeof setTimeout> | undefined;
     // Skip initial mount (prevDirection is undefined)
     // Animate when direction changes to a new value
-    if (prevDirection !== undefined && direction !== prevDirection && direction !== null) {
+    if (
+      prevDirection !== undefined &&
+      direction !== prevDirection &&
+      direction !== null
+    ) {
       isAnimating = true;
-      timeout = setTimeout(() => { isAnimating = false; }, 180);
+      timeout = setTimeout(() => {
+        isAnimating = false;
+      }, 180);
     }
     prevDirection = direction;
-    return () => { if (timeout) clearTimeout(timeout); };
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
   });
 </script>
 
@@ -131,7 +137,7 @@
   .direction-dot {
     /* Match TKA glyph fade behavior */
     opacity: 0;
-    transition: opacity var(--duration-fast) ease-out;
+    transition: opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   .direction-dot.visible {
@@ -145,7 +151,7 @@
 
   /* Animate fill color changes for dark mode transition */
   .direction-dot circle {
-    transition: fill var(--duration-fast) ease-out;
+    transition: fill var(--duration-fast) var(--ease-standard-out);
   }
 
   /* Scale-pulse animation when direction changes */
@@ -162,7 +168,7 @@
   }
 
   .direction-dot circle.animating {
-    animation: direction-dot-pulse 180ms ease-in-out;
+    animation: direction-dot-pulse var(--duration-fast) var(--ease-standard);
   }
 
   /* Respect reduced motion preference */

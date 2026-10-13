@@ -233,9 +233,9 @@
     font-weight: 700;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .turns-trigger {
@@ -262,7 +262,7 @@
     flex: 0 0 auto;
     color: color-mix(in srgb, var(--theme-accent, #26c6da) 70%, white);
     font-size: 12px;
-    transition: transform var(--duration-fast, 150ms) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .phase-trigger i.flipped {
@@ -276,7 +276,7 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: var(--settings-radius-md, 14px);
     background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
-    animation: assemble-popover-in var(--duration-fast, 150ms) ease-out;
+    animation: assemble-popover-in var(--duration-fast) var(--ease-standard-out);
     z-index: var(--z-dropdown, 100);
   }
 

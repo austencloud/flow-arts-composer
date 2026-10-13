@@ -25,18 +25,6 @@
   animation: none;
 }
 
-/* Named route morphs do not need a root snapshot at all. Scoping this to the
-   class held by runNamedRouteMorph preserves the root-based module and drawer
-   transitions below. The transparent overlay leaves persistent chrome and the
-   incoming page visible beneath the named shared-element snapshots. */
-html.named-route-morph {
-  view-transition-name: none;
-}
-
-html.named-route-morph::view-transition {
-  background: transparent;
-}
-
 /* The Grid and Hand Positions lessons are one continuous curriculum journey.
    Their shared stage regions keep their names across the concept-state swap so
    the grid carries forward while the heading and controls settle around it. */
@@ -455,74 +443,6 @@ html.sequence-viewer-reduced-dissolve::view-transition-new(
   from {
     opacity: 0;
     transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* ============================================================================
-   FORWARD TRANSITION (Slide left)
-   Used when navigating to a "higher" or "next" module
-   ============================================================================ */
-.view-transition-forward::view-transition-old(root) {
-  animation-name: slide-out-left;
-}
-
-.view-transition-forward::view-transition-new(root) {
-  animation-name: slide-in-right;
-}
-
-@keyframes slide-out-left {
-  from {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(-10%);
-  }
-}
-
-@keyframes slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(10%);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* ============================================================================
-   BACKWARD TRANSITION (Slide right)
-   Used when navigating to a "lower" or "previous" module
-   ============================================================================ */
-.view-transition-backward::view-transition-old(root) {
-  animation-name: slide-out-right;
-}
-
-.view-transition-backward::view-transition-new(root) {
-  animation-name: slide-in-left;
-}
-
-@keyframes slide-out-right {
-  from {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(10%);
-  }
-}
-
-@keyframes slide-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-10%);
   }
   to {
     opacity: 1;

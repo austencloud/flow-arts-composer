@@ -1,6 +1,5 @@
 <script lang="ts">
-
-import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-sequence-validator.js";
+  import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-sequence-validator.js";
   /**
    * Validator Tab - Validate sequences for poi legality
    *
@@ -36,7 +35,7 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
 
   async function validateSequence() {
     if (!sequenceInput.trim()) {
-      error = t('poi_lab_error_empty_input');
+      error = t("poi_lab_error_empty_input");
       validationResult = null;
       return;
     }
@@ -54,7 +53,7 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
         .filter((c): c is Letter => knownLetters.has(c));
 
       if (letters.length === 0) {
-        error = t('poi_lab_error_no_letters');
+        error = t("poi_lab_error_no_letters");
         isValidating = false;
         return;
       }
@@ -62,14 +61,17 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
       // Fetch pictographs for each letter
       const pictographs: PictographData[] = [];
       for (const letter of letters) {
-        const pictograph = await letterQueryHandler.getPictographByLetter(letter, GridMode.DIAMOND);
+        const pictograph = await letterQueryHandler.getPictographByLetter(
+          letter,
+          GridMode.DIAMOND
+        );
         if (pictograph) {
           pictographs.push(pictograph);
         }
       }
 
       if (pictographs.length === 0) {
-        error = t('poi_lab_error_no_pictographs');
+        error = t("poi_lab_error_no_pictographs");
         isValidating = false;
         return;
       }
@@ -90,7 +92,8 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
 
       // Extract transition violations (those not tied to a specific beat)
       const transitionViolations = result.violations.filter(
-        (v: { message: string }) => v.message.includes("transition") || v.message.includes("reversal")
+        (v: { message: string }) =>
+          v.message.includes("transition") || v.message.includes("reversal")
       );
 
       validationResult = {
@@ -99,7 +102,8 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
         transitionViolations,
       };
     } catch (e) {
-      error = e instanceof Error ? e.message : t('poi_lab_error_validation_failed');
+      error =
+        e instanceof Error ? e.message : t("poi_lab_error_validation_failed");
     } finally {
       isValidating = false;
     }
@@ -122,19 +126,19 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
 
 <div class="validator-tab">
   <div class="input-section">
-    <h3>{t('poi_lab_validator_title')}</h3>
+    <h3>{t("poi_lab_validator_title")}</h3>
     <p class="description">
-      {t('poi_lab_validator_description')}
+      {t("poi_lab_validator_description")}
     </p>
 
     <div class="input-row">
       <input
         type="text"
         bind:value={sequenceInput}
-        placeholder={t('poi_lab_validator_placeholder')}
+        placeholder={t("poi_lab_validator_placeholder")}
         class="sequence-input"
         onkeydown={(e) => e.key === "Enter" && validateSequence()}
-        aria-label={t('poi_lab_validator_input_label')}
+        aria-label={t("poi_lab_validator_input_label")}
       />
       <button
         class="validate-btn"
@@ -146,17 +150,21 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
         {:else}
           <i class="fas fa-check-double" aria-hidden="true"></i>
         {/if}
-        {t('poi_lab_validate_button')}
+        {t("poi_lab_validate_button")}
       </button>
       {#if validationResult || error}
-        <button class="clear-btn" onclick={clearValidation} aria-label={t('poi_lab_clear_button')}>
+        <button
+          class="clear-btn"
+          onclick={clearValidation}
+          aria-label={t("poi_lab_clear_button")}
+        >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
       {/if}
     </div>
 
     <div class="examples">
-      <span class="examples-label">{t('poi_lab_try_label')}</span>
+      <span class="examples-label">{t("poi_lab_try_label")}</span>
       {#each examples as ex}
         <button
           class="example-chip"
@@ -180,7 +188,11 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
 
   {#if validationResult}
     <div class="results-section themed-scrollbar">
-      <div class="overall-result" class:valid={validationResult.isValid} class:invalid={!validationResult.isValid}>
+      <div
+        class="overall-result"
+        class:valid={validationResult.isValid}
+        class:invalid={!validationResult.isValid}
+      >
         <div class="result-icon">
           {#if validationResult.isValid}
             <i class="fas fa-check-circle" aria-hidden="true"></i>
@@ -190,22 +202,34 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
         </div>
         <div class="result-text">
           <span class="result-title">
-            {validationResult.isValid ? t('poi_lab_result_valid') : t('poi_lab_result_invalid')}
+            {validationResult.isValid
+              ? t("poi_lab_result_valid")
+              : t("poi_lab_result_invalid")}
           </span>
           <span class="result-subtitle">
-            {t('poi_lab_steps_analyzed', { count: String(validationResult.stepResults.length) })}
+            {t("poi_lab_steps_analyzed", {
+              count: String(validationResult.stepResults.length),
+            })}
           </span>
         </div>
       </div>
 
       <!-- Beat-by-beat results -->
       <div class="beat-results">
-        <h4>{t('poi_lab_beat_analysis')}</h4>
+        <h4>{t("poi_lab_beat_analysis")}</h4>
         <div class="steps-grid">
           {#each validationResult.stepResults as beat}
-            <div class="step-card" class:valid={beat.isValid} class:invalid={!beat.isValid}>
+            <div
+              class="step-card"
+              class:valid={beat.isValid}
+              class:invalid={!beat.isValid}
+            >
               <div class="beat-header">
-                <span class="beat-number">{t('poi_lab_beat_number', { beat: String(beat.stepIndex) })}</span>
+                <span class="beat-number"
+                  >{t("poi_lab_beat_number", {
+                    beat: String(beat.stepIndex),
+                  })}</span
+                >
                 <span class="beat-letter">{beat.letter}</span>
                 <span class="beat-status">
                   {#if beat.isValid}
@@ -230,7 +254,7 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
       <!-- Transition violations -->
       {#if validationResult.transitionViolations.length > 0}
         <div class="transition-results">
-          <h4>{t('poi_lab_transition_issues')}</h4>
+          <h4>{t("poi_lab_transition_issues")}</h4>
           <div class="transition-list">
             {#each validationResult.transitionViolations as v}
               <div class="transition-violation">
@@ -245,7 +269,7 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
   {:else if !error && !isValidating}
     <div class="empty-state">
       <i class="fas fa-clipboard-check" aria-hidden="true"></i>
-      <p>{t('poi_lab_empty_state')}</p>
+      <p>{t("poi_lab_empty_state")}</p>
     </div>
   {/if}
 </div>
@@ -320,7 +344,9 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .validate-btn:hover:not(:disabled) {
@@ -348,7 +374,9 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
     background: transparent;
     color: var(--theme-text-secondary, #888);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .clear-btn:hover {
@@ -384,7 +412,9 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   @media (pointer: coarse) {
@@ -410,7 +440,11 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
     gap: 0.5rem;
     padding: 0.75rem 1rem;
     border-radius: 8px;
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
     font-size: var(--font-size-min, 14px);
     margin-bottom: 1rem;
@@ -433,13 +467,23 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
   }
 
   .overall-result.valid {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-success, #22c55e) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 10%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-success, #22c55e) 30%, transparent);
   }
 
   .overall-result.invalid {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
   }
 
   .result-icon {
@@ -495,11 +539,19 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
   }
 
   .step-card.valid {
-    border-color: color-mix(in srgb, var(--semantic-success, #22c55e) 30%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 30%,
+      transparent
+    );
   }
 
   .step-card.invalid {
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 30%,
+      transparent
+    );
   }
 
   .beat-header {
@@ -539,7 +591,8 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
     gap: 0.25rem;
     margin-top: 0.5rem;
     padding-top: 0.5rem;
-    border-top: 1px solid color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    border-top: 1px solid
+      color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
   }
 
   .beat-violations .violation {
@@ -560,7 +613,11 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
     gap: 0.5rem;
     padding: 0.75rem;
     border-radius: 8px;
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
     font-size: var(--font-size-compact, 12px);
   }

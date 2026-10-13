@@ -6,7 +6,7 @@
     type RainbowPalette,
     type QualityLevel,
   } from "@austencloud/backgrounds";
-  import { ChipToggle, ChipGroup } from '@austencloud/chip-toggle';
+  import { ChipToggle, ChipGroup } from "@austencloud/chip-toggle";
   import LabPreviewCanvas from "./LabPreviewCanvas.svelte";
   import {
     getRainbowSettings,
@@ -143,19 +143,70 @@
 
     <!-- Quality Chips -->
     <ChipGroup>
-      <ChipToggle label="High" active={quality === "high"} color="rose" onclick={() => setQuality("high")} />
-      <ChipToggle label="Medium" active={quality === "medium"} color="rose" onclick={() => setQuality("medium")} />
-      <ChipToggle label="Low" active={quality === "low"} color="rose" onclick={() => setQuality("low")} />
+      <ChipToggle
+        label="High"
+        active={quality === "high"}
+        color="rose"
+        onclick={() => setQuality("high")}
+      />
+      <ChipToggle
+        label="Medium"
+        active={quality === "medium"}
+        color="rose"
+        onclick={() => setQuality("medium")}
+      />
+      <ChipToggle
+        label="Low"
+        active={quality === "low"}
+        color="rose"
+        onclick={() => setQuality("low")}
+      />
     </ChipGroup>
 
     <!-- Layer Chips -->
     <ChipGroup>
-      <ChipToggle label="Base" icon="square" active={layers.gradient} color="rose" onclick={() => toggleLayer("gradient")} />
-      <ChipToggle label="Bands" icon="rainbow" active={layers.bands} color="rose" onclick={() => toggleLayer("bands")} />
-      <ChipToggle label="Shimmer" icon="sparkle" active={layers.shimmer} color="rose" onclick={() => toggleLayer("shimmer")} />
-      <ChipToggle label="Bokeh" icon="circle" active={layers.bokeh} color="rose" onclick={() => toggleLayer("bokeh")} />
-      <ChipToggle label="Sparkles" icon="wand-magic-sparkles" active={layers.sparkles} color="rose" onclick={() => toggleLayer("sparkles")} />
-      <ChipToggle label="Hearts" icon="heart" active={layers.hearts} color="rose" onclick={() => toggleLayer("hearts")} />
+      <ChipToggle
+        label="Base"
+        icon="square"
+        active={layers.gradient}
+        color="rose"
+        onclick={() => toggleLayer("gradient")}
+      />
+      <ChipToggle
+        label="Bands"
+        icon="rainbow"
+        active={layers.bands}
+        color="rose"
+        onclick={() => toggleLayer("bands")}
+      />
+      <ChipToggle
+        label="Shimmer"
+        icon="sparkle"
+        active={layers.shimmer}
+        color="rose"
+        onclick={() => toggleLayer("shimmer")}
+      />
+      <ChipToggle
+        label="Bokeh"
+        icon="circle"
+        active={layers.bokeh}
+        color="rose"
+        onclick={() => toggleLayer("bokeh")}
+      />
+      <ChipToggle
+        label="Sparkles"
+        icon="wand-magic-sparkles"
+        active={layers.sparkles}
+        color="rose"
+        onclick={() => toggleLayer("sparkles")}
+      />
+      <ChipToggle
+        label="Hearts"
+        icon="heart"
+        active={layers.hearts}
+        color="rose"
+        onclick={() => toggleLayer("hearts")}
+      />
     </ChipGroup>
 
     <!-- Regenerate -->
@@ -195,9 +246,9 @@
     <div class="info-section">
       <span class="label">About</span>
       <p class="info-text">
-        Flowing rainbow wave bands, dreamy bokeh orbs,
-        twinkling sparkles, shimmer effects, and floating hearts.
-        Choose from 9 different color palettes.
+        Flowing rainbow wave bands, dreamy bokeh orbs, twinkling sparkles,
+        shimmer effects, and floating hearts. Choose from 9 different color
+        palettes.
       </p>
     </div>
 
@@ -260,7 +311,15 @@
 
   .badge {
     padding: 4px 10px;
-    background: linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(251, 146, 60, 0.3), rgba(250, 204, 21, 0.3), rgba(34, 197, 94, 0.3), rgba(59, 130, 246, 0.3), rgba(168, 85, 247, 0.3));
+    background: linear-gradient(
+      135deg,
+      rgba(244, 63, 94, 0.3),
+      rgba(251, 146, 60, 0.3),
+      rgba(250, 204, 21, 0.3),
+      rgba(34, 197, 94, 0.3),
+      rgba(59, 130, 246, 0.3),
+      rgba(168, 85, 247, 0.3)
+    );
     border: 1px solid rgba(244, 63, 94, 0.4);
     border-radius: 20px;
     font-size: var(--font-size-compact, 0.75rem); /* 12px minimum */
@@ -291,7 +350,13 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .action-btn:hover {

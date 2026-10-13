@@ -46,12 +46,10 @@
     );
     // Inject a default fill on the <svg> root so any path lacking an explicit
     // fill (browser default = black) also renders off-white.
-    return recolored.replace(
-      /<svg\b([^>]*)>/i,
-      (match, attrs) =>
-        /\bfill\s*=/.test(attrs)
-          ? match
-          : `<svg${attrs} fill="${DARK_GLYPH_COLOR}">`
+    return recolored.replace(/<svg\b([^>]*)>/i, (match, attrs) =>
+      /\bfill\s*=/.test(attrs)
+        ? match
+        : `<svg${attrs} fill="${DARK_GLYPH_COLOR}">`
     );
   }
 
@@ -383,7 +381,6 @@
 
   // Check if this letter needs a separate dash rendered
   const showDash = $derived(isDashLetter(letter));
-
 </script>
 
 <!-- TKA Glyph Group - only render when dimensions are loaded AND when visible
@@ -409,36 +406,36 @@
         }
       : {}}
   >
-      <!-- Main letter with exact legacy dimensions.
+    <!-- Main letter with exact legacy dimensions.
            Dark mode swaps `imageSrc` to a white-recolored data URL (see
            recolorSvgToWhite) rather than applying an SVG/CSS filter — iOS WebKit
            (bug 184601) defers filter rasterization on a <g> with an <image>, so
            a filtered glyph rendered black when static and only inverted while
            animating. A recolored source is white in every state and serializes
            correctly for export. -->
-      <image
-        x="0"
-        y="0"
-        href={imageSrc}
-        width={effectiveDimensions.width}
-        height={effectiveDimensions.height}
-        preserveAspectRatio="xMinYMin meet"
-        class="letter-image"
-      />
+    <image
+      x="0"
+      y="0"
+      href={imageSrc}
+      width={effectiveDimensions.width}
+      height={effectiveDimensions.height}
+      preserveAspectRatio="xMinYMin meet"
+      class="letter-image"
+    />
 
-      <!-- Dash for Type3/Type5 letters (rendered separately for dot centering).
+    <!-- Dash for Type3/Type5 letters (rendered separately for dot centering).
            Recolored to off-white in dark mode to match the source-recolored
            letter (no filter on the parent group anymore). -->
-      {#if showDash}
-        <Dash
-          letterWidth={effectiveDimensions.width}
-          letterHeight={effectiveDimensions.height}
-          {visible}
-          {previewMode}
-          {animateVisibility}
-          darkMode={effectiveDarkMode}
-        />
-      {/if}
+    {#if showDash}
+      <Dash
+        letterWidth={effectiveDimensions.width}
+        letterHeight={effectiveDimensions.height}
+        {visible}
+        {previewMode}
+        {animateVisibility}
+        darkMode={effectiveDarkMode}
+      />
+    {/if}
   </g>
 {/if}
 
@@ -448,7 +445,7 @@
     z-index: 4;
     /* Beautiful fade in/out effect */
     opacity: 0;
-    transition: opacity var(--duration-fast) ease-out;
+    transition: opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   .tka-glyph.visible {

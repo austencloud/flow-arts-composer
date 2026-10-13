@@ -11,13 +11,15 @@
   effects-config and animation-visibility contexts.
 -->
 <script lang="ts">
-
-import { createAnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller-factory.js";
-import { sequenceTransformer } from "#lib/shared/create/services/sequence-transformer.js";
+  import { createAnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller-factory.js";
+  import { sequenceTransformer } from "#lib/shared/create/services/sequence-transformer.js";
   import { onMount, onDestroy } from "svelte";
   import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import AnimationPanel from "#lib/shared/animation-panel/components/AnimationPanel.svelte";
-  import { createEndlessPlayback, type EndlessPlaybackState } from "#lib/shared/animation-engine/state/endless-playback-state.svelte.js";
+  import {
+    createEndlessPlayback,
+    type EndlessPlaybackState,
+  } from "#lib/shared/animation-engine/state/endless-playback-state.svelte.js";
   import * as propTypeApplier from "#lib/shared/landing/services/prop-type-applier.js";
   import { EndlessSpinnerOrchestrator } from "#lib/features/landing/services/endless-spinner-orchestrator.js";
   import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
@@ -31,7 +33,10 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
   import { SequenceViewerVisibilityState } from "#lib/shared/sequence-viewer/state/viewer-visibility-state.svelte.js";
   import { setViewerVisibilityContext } from "#lib/shared/sequence-viewer/context/viewer-visibility-context.js";
   import StepStrip from "#lib/shared/timeline/StepStrip.svelte";
-  import { buildNotationCells, type NotationCell } from "#lib/shared/timeline/notation-cell.js";
+  import {
+    buildNotationCells,
+    type NotationCell,
+  } from "#lib/shared/timeline/notation-cell.js";
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
@@ -51,7 +56,9 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
   // nothing leaks into (or from) the signed-in user's global app settings.
   // The visibility + effects sub-contexts point at the scope's instances so the
   // AnimationPanel sections (Effort/Display/Paths/Effects) drive THIS scope.
-  const scope = setAnimationScopeContext(createAnimationScope({ persistence: "ephemeral" }));
+  const scope = setAnimationScopeContext(
+    createAnimationScope({ persistence: "ephemeral" })
+  );
   const visibilityManager = setAnimationVisibilityContext(scope.visibility);
   const effectsConfigState = setEffectsConfigContext(scope.effects);
   visibilityManager.effectsConfigState = effectsConfigState;
@@ -87,9 +94,15 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
       window.matchMedia("(min-width: 920px)").matches
   );
   $effect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    if (
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function"
+    )
+      return;
     const mq = window.matchMedia("(min-width: 920px)");
-    const handler = (e: MediaQueryListEvent) => { isDesktopLayout = e.matches; };
+    const handler = (e: MediaQueryListEvent) => {
+      isDesktopLayout = e.matches;
+    };
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   });
@@ -196,7 +209,9 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
     // The swap is synchronous into the orchestrator but the mandala crossfade
     // runs on the render loop; hold the button briefly so a double-click can't
     // outrun the fade.
-    setTimeout(() => { isSwappingSequence = false; }, 400);
+    setTimeout(() => {
+      isSwappingSequence = false;
+    }, 400);
   }
 
   function nextProp() {
@@ -235,8 +250,9 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
         ""
     )
   );
-  let currentPropLabel = $derived(getPropTypeDisplayInfo(currentPropType).label);
-
+  let currentPropLabel = $derived(
+    getPropTypeDisplayInfo(currentPropType).label
+  );
 </script>
 
 <!-- Beat strip: one definition shared by both layouts. Lives inside the stage
@@ -277,14 +293,16 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
                 stepData={playback?.currentStepData}
                 sequenceData={playback?.animationState?.sequenceData}
                 currentStep={playback?.animationState?.currentStep ?? 0}
-                isPlaying={isPlaying}
-                trailSettings={trailSettings}
+                {isPlaying}
+                {trailSettings}
                 leftPropType={currentPropType}
                 rightPropType={currentPropType}
-                word={playback?.animationState?.sequenceData?.intendedWord ?? playback?.animationState?.sequenceData?.word ?? null}
+                word={playback?.animationState?.sequenceData?.intendedWord ??
+                  playback?.animationState?.sequenceData?.word ??
+                  null}
                 previewDarkMode={true}
                 visibilityManagerOverride={visibilityManager}
-                effectsConfigState={effectsConfigState}
+                {effectsConfigState}
                 onPlaybackToggle={togglePlayPause}
                 tapToToggle={true}
                 progressLine={true}
@@ -438,7 +456,6 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
     min-height: 0;
   }
 
-
   .swap-controls {
     display: flex;
     flex-direction: column;
@@ -474,9 +491,9 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
     font-weight: 600;
     cursor: pointer;
     transition:
-      transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
-      background 0.18s ease,
-      border-color 0.18s ease;
+      transform var(--duration-fast) var(--ease-spring),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .swap-btn:hover:not(:disabled),
@@ -680,5 +697,4 @@ import { sequenceTransformer } from "#lib/shared/create/services/sequence-transf
       inset: 0;
     }
   }
-
 </style>

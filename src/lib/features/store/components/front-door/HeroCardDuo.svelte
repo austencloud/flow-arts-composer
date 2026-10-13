@@ -77,7 +77,9 @@
     void resolveHeroScanCode(seq, null).then((code) => {
       if (!cancelled) frontCode = { card: currentCard, code };
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   });
   const frontQrUrl = $derived(
     frontCode?.card === card && frontCode.code
@@ -86,12 +88,17 @@
   );
   const qrCell = $derived(
     backSequence && frontQrUrl
-      ? computeFrontQrCellRect(backSequence, resolvePhysicalCoverLayout(backSequence, true))
+      ? computeFrontQrCellRect(
+          backSequence,
+          resolvePhysicalCoverLayout(backSequence, true)
+        )
       : null
   );
 
   let resolvedFront = $state<{ card: CoverCard; url: string } | null>(null);
-  const coverUrl = $derived(resolvedFront?.card === card ? resolvedFront.url : null);
+  const coverUrl = $derived(
+    resolvedFront?.card === card ? resolvedFront.url : null
+  );
   function frontResolved(resolvedCard: CoverCard, url: string): void {
     resolvedFront = { card: resolvedCard, url };
   }
@@ -385,7 +392,7 @@
     filter: drop-shadow(0 1.25rem 2.5rem rgba(0, 0, 0, 0.55));
     transform: translate(calc(-50% + var(--card-h) * var(--x)), var(--y, -50%))
       rotate(var(--rot));
-    transition: transform 640ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform var(--duration-scene) var(--ease-out);
   }
 
   .slot.front {
@@ -420,7 +427,7 @@
     --rot: calc(var(--part-rot-back) - 7deg);
   }
   .scene.dealing .slot {
-    transition-duration: 240ms;
+    transition-duration: var(--duration-emphasis);
   }
 
   /* Individual transform properties compose scene movement with HeroPhone's
@@ -432,9 +439,9 @@
     z-index: 3;
     translate: 0 -50%;
     transition:
-      translate 280ms cubic-bezier(0.22, 1, 0.36, 1),
-      rotate 280ms cubic-bezier(0.22, 1, 0.36, 1),
-      scale 280ms cubic-bezier(0.22, 1, 0.36, 1);
+      translate var(--duration-emphasis) var(--ease-out),
+      rotate var(--duration-emphasis) var(--ease-out),
+      scale var(--duration-emphasis) var(--ease-out);
   }
   .scene.parting .phone-holder {
     translate: 4% -52%;
@@ -459,20 +466,18 @@
 
   /* `both` fill keeps outgoing faces hidden across the offscreen swap. */
   .scene.deal-out .art {
-    animation: deal-out-front var(--deal-out-ms) cubic-bezier(0.5, 0, 0.75, 0)
-      both;
+    animation: deal-out-front var(--deal-out-ms) var(--ease-in) both;
   }
   .scene.deal-out .card-frame {
-    animation: deal-out-back var(--deal-out-ms) cubic-bezier(0.5, 0, 0.75, 0)
+    animation: deal-out-back var(--deal-out-ms) var(--ease-in)
       var(--deal-out-stagger) both;
   }
   /* Back lands first; slight overshoot makes both faces settle instead of glide. */
   .scene.deal-in .card-frame {
-    animation: deal-in-back var(--deal-in-ms) cubic-bezier(0.32, 1.34, 0.52, 1)
-      both;
+    animation: deal-in-back var(--deal-in-ms) var(--ease-spring) both;
   }
   .scene.deal-in .art {
-    animation: deal-in-front var(--deal-in-ms) cubic-bezier(0.32, 1.34, 0.52, 1)
+    animation: deal-in-front var(--deal-in-ms) var(--ease-spring)
       var(--deal-in-stagger) both;
   }
 
@@ -534,7 +539,7 @@
     visibility: hidden;
   }
   .scan-trigger > .live {
-    transition: opacity 240ms ease;
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
   }
   .scan-trigger.busy > .live {
     opacity: 0.55;

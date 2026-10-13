@@ -35,6 +35,7 @@
    * artwork) are clipped at the frame.
    */
   import { onDestroy, untrack } from "svelte";
+  import { EASE_OUT } from "#lib/shared/transitions/motion.js";
   import { SvelteSet } from "svelte/reactivity";
   import { loadBuilderPropArt } from "#lib/features/assemble-lab/services/builder-prop-art.js";
   import {
@@ -87,7 +88,7 @@
   /** InteractiveGrid's fallback circle, shown when a prop's artwork is missing. */
   const FALLBACK_RADIUS = 28;
   /** The step grid's entrance easing. */
-  const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+  const EASE = EASE_OUT;
 
   /** A beat not written yet, written by blue alone, or whole. */
   type BeatStage = "empty" | "blue" | "whole";
@@ -448,7 +449,7 @@
   .prop {
     opacity: 0.85;
     pointer-events: none;
-    transition: opacity var(--duration-fast, 150ms) ease-out;
+    transition: opacity var(--duration-fast) var(--ease-standard-out);
   }
 
   /* The hand adding its points shows at full strength and glows, like
@@ -503,7 +504,7 @@
     opacity: 1;
     transform: none;
     transition:
-      opacity var(--beat-pop) ease-out,
+      opacity var(--beat-pop) var(--ease-standard-out),
       transform var(--beat-pop) var(--beat-ease);
   }
 
@@ -512,7 +513,7 @@
      half-faded layers. */
   .beat[data-stage="whole"] .layer.whole {
     opacity: 1;
-    transition: opacity var(--beat-fill) ease-out;
+    transition: opacity var(--beat-fill) var(--ease-standard-out);
   }
 
   .beat[data-stage="whole"] .layer.blue {
@@ -522,6 +523,6 @@
 
   /* The clear at a turn's start. */
   .beat[data-stage="empty"] .layer.whole {
-    transition: opacity var(--beat-clear) ease-in;
+    transition: opacity var(--beat-clear) var(--ease-standard-in);
   }
 </style>

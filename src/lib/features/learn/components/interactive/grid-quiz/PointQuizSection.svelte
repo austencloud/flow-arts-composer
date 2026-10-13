@@ -131,7 +131,9 @@ PointQuizSection - Click on the correct grid point
               class="main-point"
               class:point-correct={showCorrect || revealCorrect}
               class:point-incorrect={showIncorrect}
-              class:point-default={!showCorrect && !revealCorrect && !showIncorrect}
+              class:point-default={!showCorrect &&
+                !revealCorrect &&
+                !showIncorrect}
             />
             <!-- Label on reveal -->
             {#if showCorrect || revealCorrect}
@@ -181,7 +183,7 @@ PointQuizSection - Click on the correct grid point
     flex-direction: column;
     align-items: center;
     gap: 1.25rem;
-    animation: fadeIn var(--duration-emphasis) ease;
+    animation: fadeIn var(--duration-emphasis) var(--ease-standard);
   }
 
   @keyframes fadeIn {
@@ -240,7 +242,9 @@ PointQuizSection - Click on the correct grid point
 
   .point-group {
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      transform var(--duration-normal) var(--ease-standard),
+      filter var(--duration-normal) var(--ease-standard);
   }
 
   .point-group:hover .main-point {
@@ -255,11 +259,11 @@ PointQuizSection - Click on the correct grid point
 
   .point-group.correct .main-point,
   .point-group.reveal .main-point {
-    animation: correctPop var(--duration-dramatic) ease;
+    animation: correctPop var(--duration-dramatic) var(--ease-standard);
   }
 
   .point-group.incorrect .main-point {
-    animation: shake var(--duration-dramatic) ease;
+    animation: shake var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes correctPop {
@@ -288,7 +292,7 @@ PointQuizSection - Click on the correct grid point
   }
 
   .point-label {
-    animation: fadeIn var(--duration-emphasis) ease;
+    animation: fadeIn var(--duration-emphasis) var(--ease-standard);
   }
 
   .glow {
@@ -310,7 +314,7 @@ PointQuizSection - Click on the correct grid point
     border-radius: 10px;
     font-size: 0.9375rem;
     text-align: center;
-    animation: slideUp var(--duration-emphasis) ease;
+    animation: slideUp var(--duration-emphasis) var(--ease-standard);
   }
 
   @keyframes slideUp {
@@ -325,26 +329,53 @@ PointQuizSection - Click on the correct grid point
   }
 
   .feedback.correct {
-    background: color-mix(in srgb, var(--semantic-success, #50c878) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-success, #50c878) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #50c878) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-success, #50c878) 30%, transparent);
     color: var(--semantic-success, #50c878);
   }
 
   .feedback.incorrect {
-    background: color-mix(in srgb, var(--semantic-warning, #f59e0b) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-warning, #f59e0b) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 30%, transparent);
     color: var(--semantic-warning, #f59e0b);
   }
 
   /* SVG point classes */
-  .glow-correct { fill: var(--semantic-success, #50c878); }
-  .glow-incorrect { fill: var(--semantic-error, #ef4444); }
-  .point-correct { fill: var(--semantic-success, #50c878); }
-  .point-incorrect { fill: var(--semantic-error, #ef4444); }
-  .point-default { fill: white; }
-  .point-label { fill: white; }
-  .point-label.label-reveal { fill: var(--semantic-success, #50c878); }
-  .center-glow, .center-point { fill: var(--semantic-warning, #ffd700); }
+  .glow-correct {
+    fill: var(--semantic-success, #50c878);
+  }
+  .glow-incorrect {
+    fill: var(--semantic-error, #ef4444);
+  }
+  .point-correct {
+    fill: var(--semantic-success, #50c878);
+  }
+  .point-incorrect {
+    fill: var(--semantic-error, #ef4444);
+  }
+  .point-default {
+    fill: white;
+  }
+  .point-label {
+    fill: white;
+  }
+  .point-label.label-reveal {
+    fill: var(--semantic-success, #50c878);
+  }
+  .center-glow,
+  .center-point {
+    fill: var(--semantic-warning, #ffd700);
+  }
 
   @media (max-width: 500px) {
     .quiz-title {

@@ -291,7 +291,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .loading-mark {
-      animation-duration: 1.6s;
+      animation-duration: calc(var(--duration-scene) * 2);
     }
   }
 </style>

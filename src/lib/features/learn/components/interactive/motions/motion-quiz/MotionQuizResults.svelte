@@ -75,12 +75,20 @@ MotionQuizResults - Final results display with score and review
   }
 
   .results-icon.passing {
-    background: color-mix(in srgb, var(--semantic-success, #4ade80) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #4ade80) 15%,
+      transparent
+    );
     color: var(--semantic-success, #4ade80);
   }
 
   .results-icon:not(.passing) {
-    background: color-mix(in srgb, var(--semantic-warning, #fb923c) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #fb923c) 15%,
+      transparent
+    );
     color: var(--semantic-warning, #fb923c);
   }
 
@@ -126,13 +134,17 @@ MotionQuizResults - Final results display with score and review
       color-mix(in srgb, var(--semantic-success, #4ade80) 30%, transparent) 0%,
       color-mix(in srgb, var(--semantic-success, #22c55e) 30%, transparent) 100%
     );
-    border: 2px solid color-mix(in srgb, var(--semantic-success, #4ade80) 50%, transparent);
+    border: 2px solid
+      color-mix(in srgb, var(--semantic-success, #4ade80) 50%, transparent);
     border-radius: 12px;
     color: white;
     font-size: 1.0625rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .finish-button:hover {
@@ -141,7 +153,11 @@ MotionQuizResults - Final results display with score and review
       color-mix(in srgb, var(--semantic-success, #4ade80) 40%, transparent) 0%,
       color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent) 100%
     );
-    border-color: color-mix(in srgb, var(--semantic-success, #4ade80) 70%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #4ade80) 70%,
+      transparent
+    );
     transform: translateY(-2px);
   }
 </style>

@@ -50,7 +50,6 @@
       onSectionChange(section.id);
     }
   }
-
 </script>
 
 <nav
@@ -143,10 +142,10 @@
     z-index: var(--z-sticky);
 
     transition:
-      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      background 0.4s ease-out,
-      border-color 0.4s ease-out;
+      transform var(--duration-emphasis) var(--ease-standard),
+      opacity var(--duration-emphasis) var(--ease-standard),
+      background var(--duration-dramatic) var(--ease-standard-out),
+      border-color var(--duration-dramatic) var(--ease-standard-out);
   }
 
   /* Hidden state for side layout - slide left */
@@ -170,7 +169,7 @@
     scrollbar-width: none;
     -ms-overflow-style: none;
     opacity: 1;
-    transition: opacity var(--duration-emphasis) ease;
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
     pointer-events: auto;
   }
 

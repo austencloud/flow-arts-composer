@@ -308,9 +308,9 @@
        reveals it. Animating width here would squeeze the flex icon column
        mid-flight (the left-then-right icon jump). */
     transition:
-      background var(--duration-normal) ease,
-      border-color var(--duration-normal) ease,
-      color var(--duration-normal) ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     font-size: var(--font-size-sm);
     font-weight: 500;
   }
@@ -372,7 +372,7 @@
     font-size: var(--font-size-base);
     border-radius: 8px;
     background: var(--theme-card-bg, var(--theme-card-bg));
-    transition: background var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .footer-button.collapsed .button-icon {
@@ -389,7 +389,7 @@
     font-weight: 500;
 
     /* Delayed fade-in animation when sidebar expands (Google Calendar-style) */
-    animation: label-fade-in var(--duration-normal) ease-out
+    animation: label-fade-in var(--duration-normal) var(--ease-standard-out)
       var(--duration-fast) both;
   }
 
@@ -464,8 +464,7 @@
     line-height: 18px;
     text-align: center;
     pointer-events: none;
-    animation: badgePop var(--duration-emphasis, 300ms)
-      cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: badgePop var(--duration-emphasis) var(--ease-spring);
   }
 
   .unread-label-badge {
@@ -521,7 +520,10 @@
     color: rgba(255, 255, 255, 0.25);
     font-size: 13px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .mic-button:hover {

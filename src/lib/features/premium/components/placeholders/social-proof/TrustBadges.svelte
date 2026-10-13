@@ -21,13 +21,13 @@
     {
       id: "stripe",
       type: "security" as const,
-      name: t('premium_badge_stripe'),
+      name: t("premium_badge_stripe"),
       icon: "fa-lock",
     },
     {
       id: "ssl",
       type: "security" as const,
-      name: t('premium_badge_ssl'),
+      name: t("premium_badge_ssl"),
       icon: "fa-shield-alt",
     },
   ]);
@@ -90,7 +90,12 @@
     font-size: var(--font-size-compact);
     color: var(--theme-text-dim, var(--theme-text-dim));
     text-decoration: none;
-    transition: all var(--transition-fast, var(--duration-fast) ease);
+    transition:
+      background-color
+        var(--transition-fast, var(--duration-fast) var(--ease-standard)),
+      border-color
+        var(--transition-fast, var(--duration-fast) var(--ease-standard)),
+      color var(--transition-fast, var(--duration-fast) var(--ease-standard));
   }
 
   a.trust-badge:hover {

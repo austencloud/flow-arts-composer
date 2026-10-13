@@ -14,17 +14,20 @@
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 
   // Lazy load PostHog Analytics Dashboard
-  let PostHogDashboard: typeof import("./analytics/PostHogDashboard.svelte").default | null =
-    $state(null);
+  let PostHogDashboard:
+    | typeof import("./analytics/PostHogDashboard.svelte").default
+    | null = $state(null);
   let postHogError = $state(false);
 
-  let SeoCommandCenter: typeof import("./seo/SeoCommandCenter.svelte").default | null =
-    $state(null);
+  let SeoCommandCenter:
+    | typeof import("./seo/SeoCommandCenter.svelte").default
+    | null = $state(null);
   let seoError = $state(false);
 
   // Lazy load Pulse Dashboard (live visitor activity)
-  let PulseDashboard: typeof import("./pulse/PulseDashboard.svelte").default | null =
-    $state(null);
+  let PulseDashboard:
+    | typeof import("./pulse/PulseDashboard.svelte").default
+    | null = $state(null);
   let pulseError = $state(false);
 
   function loadPostHog() {
@@ -72,7 +75,11 @@
       loadSeo();
     }
 
-    if ((!activeSection || activeSection === "pulse") && !PulseDashboard && !pulseError) {
+    if (
+      (!activeSection || activeSection === "pulse") &&
+      !PulseDashboard &&
+      !pulseError
+    ) {
       loadPulse();
     }
   });
@@ -114,11 +121,7 @@
           {/if}
         </div>
       {:else if activeSection === "users"}
-        <div
-          id="users-panel"
-          role="tabpanel"
-          aria-labelledby="users-tab"
-        >
+        <div id="users-panel" role="tabpanel" aria-labelledby="users-tab">
           <UsersDashboard />
         </div>
       {:else if activeSection === "flags"}
@@ -265,7 +268,7 @@
     color: var(--theme-text, #ffffff);
     font-size: var(--font-size-base, 1rem);
     cursor: pointer;
-    transition: background var(--duration-fast, 0.15s) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .retry-button:hover {

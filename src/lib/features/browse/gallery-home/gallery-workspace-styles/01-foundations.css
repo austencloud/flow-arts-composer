@@ -133,8 +133,8 @@
   border: 1px solid rgba(0, 0, 0, 0.35);
   cursor: pointer;
   transition:
-    transform 0.16s ease,
-    filter 0.16s ease;
+    transform var(--duration-fast) var(--ease-standard),
+    filter var(--duration-fast) var(--ease-standard);
 }
 .drill-ctx .level-tile:hover {
   transform: translateY(-1px);
@@ -159,8 +159,8 @@
   color: var(--theme-text, #e8edf6);
   cursor: pointer;
   transition:
-    border-color 0.16s ease,
-    transform 0.16s ease;
+    border-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
 }
 .drill-ctx .length-row:hover {
   border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.25));
@@ -366,8 +366,8 @@
   color: var(--theme-text, #e8edf6);
   cursor: pointer;
   transition:
-    border-color 0.16s ease,
-    transform 0.16s ease;
+    border-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
 }
 .drill-ctx .letter-chip:hover {
   border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.25));

@@ -129,7 +129,7 @@
   }
 
   .pulse-ring.delay {
-    animation-delay: 1s;
+    animation-delay: var(--duration-scene);
   }
 
   @keyframes pulse-ring {
@@ -196,7 +196,7 @@
       var(--theme-accent-strong, var(--theme-accent-strong))
     );
     border-radius: 2px;
-    transition: width var(--duration-emphasis) ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
 
   .resend-section {
@@ -223,7 +223,11 @@
     color: color-mix(in srgb, var(--theme-text, white) 80%, transparent);
     font-size: var(--font-size-sm);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      outline-color var(--duration-normal) var(--ease-standard);
   }
 
   .resend-btn:hover:not(:disabled) {

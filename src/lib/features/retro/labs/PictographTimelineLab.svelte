@@ -20,8 +20,17 @@
   import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
-  import type { RetroPictographData, RetroHandData } from "#lib/features/retro/shared/domain/pictograph-types.js";
-  import { HandSide, MotionType, Orientation, RotationDirection, GridLocation } from "#lib/features/retro/shared/domain/pictograph-types.js";
+  import type {
+    RetroPictographData,
+    RetroHandData,
+  } from "#lib/features/retro/shared/domain/pictograph-types.js";
+  import {
+    HandSide,
+    MotionType,
+    Orientation,
+    RotationDirection,
+    GridLocation,
+  } from "#lib/features/retro/shared/domain/pictograph-types.js";
   import { getCanvas2DRenderer } from "#lib/shared/render/get-canvas-2d-renderer.js";
   import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
   import "#lib/features/retro/dos/styles/dos-terminal.css";
@@ -30,16 +39,17 @@
   const xpRenderer = new XPRenderer(pictographPreparer);
   const svgToBraille = new SvgToBrailleConverter(
     getCanvas2DRenderer(),
-    pictographPreparer,
+    pictographPreparer
   );
 
   const PIXEL_INTERNAL_SIZE = 128;
   const XP_INTERNAL_SIZE = 256;
 
-
   let allPictographs = $state<PictographData[]>([]);
   let currentIndex = $state(0);
-  let pictograph = $derived<PictographData | null>(allPictographs[currentIndex] ?? null);
+  let pictograph = $derived<PictographData | null>(
+    allPictographs[currentIndex] ?? null
+  );
   let dataLoading = $state(true);
   let error = $state<string | null>(null);
 
@@ -56,14 +66,16 @@
   const label = $derived(
     allPictographs.length > 0
       ? `${pictograph?.letter ?? "?"} - ${currentIndex + 1} / ${allPictographs.length}`
-      : "Loading pictographs...",
+      : "Loading pictographs..."
   );
 
   // ── Load real pictographs ──
 
   onMount(async () => {
     try {
-      const pictographs = await motionQueryHandler.queryMotions({ gridMode: GridMode.DIAMOND });
+      const pictographs = await motionQueryHandler.queryMotions({
+        gridMode: GridMode.DIAMOND,
+      });
       allPictographs = pictographs;
       currentIndex = 0;
     } catch (e) {
@@ -86,7 +98,8 @@
       motionType: left?.motionType ?? MotionType.STATIC,
       orientation: left?.endOrientation ?? Orientation.IN,
       turns: typeof left?.turns === "number" ? left.turns : 0,
-      rotationDirection: left?.rotationDirection ?? RotationDirection.NO_ROTATION,
+      rotationDirection:
+        left?.rotationDirection ?? RotationDirection.NO_ROTATION,
     };
     const rightHand = {
       color: HandSide.RIGHT,
@@ -95,7 +108,8 @@
       motionType: right?.motionType ?? MotionType.STATIC,
       orientation: right?.endOrientation ?? Orientation.IN,
       turns: typeof right?.turns === "number" ? right.turns : 0,
-      rotationDirection: right?.rotationDirection ?? RotationDirection.NO_ROTATION,
+      rotationDirection:
+        right?.rotationDirection ?? RotationDirection.NO_ROTATION,
     };
 
     return {
@@ -136,20 +150,24 @@
       return;
     }
     brailleLoading = true;
-    svgToBraille.convert(data).then((result) => {
-      brailleLines = result.lines;
-      brailleLoading = false;
-    }).catch(() => {
-      brailleLines = [];
-      brailleLoading = false;
-    });
+    svgToBraille
+      .convert(data)
+      .then((result) => {
+        brailleLines = result.lines;
+        brailleLoading = false;
+      })
+      .catch(() => {
+        brailleLines = [];
+        brailleLoading = false;
+      });
   });
 
   // ── Navigation ──
 
   function prev() {
     if (allPictographs.length === 0) return;
-    currentIndex = (currentIndex - 1 + allPictographs.length) % allPictographs.length;
+    currentIndex =
+      (currentIndex - 1 + allPictographs.length) % allPictographs.length;
   }
 
   function next() {
@@ -163,8 +181,14 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === "ArrowLeft") { prev(); e.preventDefault(); }
-    if (e.key === "ArrowRight") { next(); e.preventDefault(); }
+    if (e.key === "ArrowLeft") {
+      prev();
+      e.preventDefault();
+    }
+    if (e.key === "ArrowRight") {
+      next();
+      e.preventDefault();
+    }
   }
 </script>
 
@@ -173,17 +197,32 @@
 <div class="timeline-lab">
   <!-- Toolbar -->
   <div class="lab-toolbar">
-    <button class="nav-btn" onclick={prev} disabled={dataLoading} aria-label="Previous">
+    <button
+      class="nav-btn"
+      onclick={prev}
+      disabled={dataLoading}
+      aria-label="Previous"
+    >
       <i class="fas fa-chevron-left" aria-hidden="true"></i>
     </button>
 
     <span class="nav-label">{label}</span>
 
-    <button class="nav-btn" onclick={next} disabled={dataLoading} aria-label="Next">
+    <button
+      class="nav-btn"
+      onclick={next}
+      disabled={dataLoading}
+      aria-label="Next"
+    >
       <i class="fas fa-chevron-right" aria-hidden="true"></i>
     </button>
 
-    <button class="randomize-btn" onclick={randomize} disabled={dataLoading} aria-label="Randomize">
+    <button
+      class="randomize-btn"
+      onclick={randomize}
+      disabled={dataLoading}
+      aria-label="Randomize"
+    >
       <i class="fas fa-dice" aria-hidden="true"></i>
     </button>
   </div>
@@ -201,7 +240,10 @@
         <div class="era-content">
           {#if brailleLoading}
             <div class="era-loading">Rendering...</div>
-          {:else if brailleLines.length > 0 && brailleLines.some(l => l.replace(/&nbsp;/g, '').replace(/<[^>]*>/g, '').trim().length > 0)}
+          {:else if brailleLines.length > 0 && brailleLines.some((l) => l
+                  .replace(/&nbsp;/g, "")
+                  .replace(/<[^>]*>/g, "")
+                  .trim().length > 0)}
             <div class="braille-frame">
               <AsciiRawPreview htmlLines={brailleLines} compact="" />
             </div>
@@ -275,7 +317,6 @@
     color: var(--theme-text, #fff);
   }
 
-
   .lab-toolbar {
     display: flex;
     align-items: center;
@@ -307,8 +348,8 @@
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   @media (hover: hover) {
@@ -336,8 +377,8 @@
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   @media (hover: hover) {
@@ -382,10 +423,18 @@
     font-family: "SF Mono", "Fira Code", "Courier New", monospace;
   }
 
-  .era-1989 { color: #33ff33; }
-  .era-1995 { color: #6666ff; }
-  .era-2003 { color: #FF9933; }
-  .era-2026 { color: var(--theme-text-dim, rgba(255, 255, 255, 0.6)); }
+  .era-1989 {
+    color: #33ff33;
+  }
+  .era-1995 {
+    color: #6666ff;
+  }
+  .era-2003 {
+    color: #ff9933;
+  }
+  .era-2026 {
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
+  }
 
   .era-content {
     flex: 1;
@@ -539,7 +588,6 @@
     font-size: var(--font-size-compact, 12px);
     font-family: "SF Mono", "Fira Code", "Courier New", monospace;
   }
-
 
   .lab-status {
     display: flex;

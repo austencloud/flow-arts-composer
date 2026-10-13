@@ -105,7 +105,7 @@
       let drawColors: Uint8Array;
       if (secondary) {
         const frameA = frameAt(secondary, cyclePos); // outgoing
-        const frameB = frameAt(primary, cyclePos);   // incoming
+        const frameB = frameAt(primary, cyclePos); // incoming
         const t = info.blendT;
         const oneMinusT = 1 - t;
         // Safe ledCount - if the two clips somehow disagree, use the
@@ -113,14 +113,20 @@
         const safeLedCount = Math.min(
           ledCount,
           secondary.ledCount,
-          primary.ledCount,
+          primary.ledCount
         );
         const blended = new Uint8Array(safeLedCount * 3);
         for (let led = 0; led < safeLedCount; led++) {
           const off = led * 3;
-          blended[off]     = Math.round(frameA.colors[off]!     * oneMinusT + frameB.colors[off]!     * t);
-          blended[off + 1] = Math.round(frameA.colors[off + 1]! * oneMinusT + frameB.colors[off + 1]! * t);
-          blended[off + 2] = Math.round(frameA.colors[off + 2]! * oneMinusT + frameB.colors[off + 2]! * t);
+          blended[off] = Math.round(
+            frameA.colors[off]! * oneMinusT + frameB.colors[off]! * t
+          );
+          blended[off + 1] = Math.round(
+            frameA.colors[off + 1]! * oneMinusT + frameB.colors[off + 1]! * t
+          );
+          blended[off + 2] = Math.round(
+            frameA.colors[off + 2]! * oneMinusT + frameB.colors[off + 2]! * t
+          );
         }
         drawColors = blended;
       } else {
@@ -134,7 +140,14 @@
       const startY = (h - totalStaffArea) / 2;
 
       drawStaff(ctx, w, startY, staffHeight, ledCount, drawColors);
-      drawStaff(ctx, w, startY + staffHeight + staffGap, staffHeight, ledCount, drawColors);
+      drawStaff(
+        ctx,
+        w,
+        startY + staffHeight + staffGap,
+        staffHeight,
+        ledCount,
+        drawColors
+      );
 
       rafId = requestAnimationFrame(draw);
     }
@@ -168,9 +181,8 @@
     y: number,
     staffH: number,
     ledCount: number,
-    colors: Uint8Array,
+    colors: Uint8Array
   ): void {
-
     // Staff geometry
     const staffMargin = w * 0.04;
     const staffLength = w - staffMargin * 2;
@@ -190,7 +202,12 @@
     // Subtle body outline
     ctx.strokeStyle = "rgba(255, 255, 255, 0.06)";
     ctx.lineWidth = 1;
-    ctx.strokeRect(staffMargin + 0.5, bodyTop + 0.5, staffLength - 1, bodyHeight - 1);
+    ctx.strokeRect(
+      staffMargin + 0.5,
+      bodyTop + 0.5,
+      staffLength - 1,
+      bodyHeight - 1
+    );
 
     // Grips - slightly darker than body, where your hands go
     ctx.fillStyle = "#050509";
@@ -267,7 +284,9 @@
   <div class="controls-bar">
     <button
       class="icon-btn"
-      onclick={() => { playing = !playing; }}
+      onclick={() => {
+        playing = !playing;
+      }}
       aria-label={playing ? "Pause" : "Play"}
     >
       <i class="fas {playing ? 'fa-pause' : 'fa-play'}" aria-hidden="true"></i>
@@ -332,7 +351,7 @@
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    transition: border-color 0.15s;
+    transition: border-color var(--duration-fast);
     flex-shrink: 0;
   }
 

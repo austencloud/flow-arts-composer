@@ -215,8 +215,8 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      opacity var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .email-link-confirm-button:hover:not(:disabled) {

@@ -1,7 +1,12 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { EmberBackgroundSystem, type QualityLevel, type HeatIntensity, type DensityPreset } from "@austencloud/backgrounds";
-  import { ChipToggle, ChipGroup } from '@austencloud/chip-toggle';
+  import {
+    EmberBackgroundSystem,
+    type QualityLevel,
+    type HeatIntensity,
+    type DensityPreset,
+  } from "@austencloud/backgrounds";
+  import { ChipToggle, ChipGroup } from "@austencloud/chip-toggle";
   import LabPreviewCanvas from "./LabPreviewCanvas.svelte";
   import {
     getEmberSettings,
@@ -125,42 +130,151 @@
 
     <!-- Quality Chips -->
     <ChipGroup>
-      <ChipToggle label="High" active={quality === "high"} color="amber" onclick={() => setQuality("high")} />
-      <ChipToggle label="Medium" active={quality === "medium"} color="amber" onclick={() => setQuality("medium")} />
-      <ChipToggle label="Low" active={quality === "low"} color="amber" onclick={() => setQuality("low")} />
+      <ChipToggle
+        label="High"
+        active={quality === "high"}
+        color="amber"
+        onclick={() => setQuality("high")}
+      />
+      <ChipToggle
+        label="Medium"
+        active={quality === "medium"}
+        color="amber"
+        onclick={() => setQuality("medium")}
+      />
+      <ChipToggle
+        label="Low"
+        active={quality === "low"}
+        color="amber"
+        onclick={() => setQuality("low")}
+      />
     </ChipGroup>
 
     <!-- Layer Chips -->
     <ChipGroup>
-      <ChipToggle label="Base" icon="square" active={layers.gradient} color="amber" onclick={() => toggleLayer("gradient")} />
-      <ChipToggle label="Coal Bed" icon="fire-burner" active={layers.coalBed} color="amber" onclick={() => toggleLayer("coalBed")} />
-      <ChipToggle label="Smoke" icon="cloud" active={layers.smoke} color="amber" onclick={() => toggleLayer("smoke")} />
-      <ChipToggle label="Embers" icon="fire" active={layers.embers} color="amber" onclick={() => toggleLayer("embers")} />
-      <ChipToggle label="Sparks" icon="sparkle" active={layers.sparks} color="amber" onclick={() => toggleLayer("sparks")} />
+      <ChipToggle
+        label="Base"
+        icon="square"
+        active={layers.gradient}
+        color="amber"
+        onclick={() => toggleLayer("gradient")}
+      />
+      <ChipToggle
+        label="Coal Bed"
+        icon="fire-burner"
+        active={layers.coalBed}
+        color="amber"
+        onclick={() => toggleLayer("coalBed")}
+      />
+      <ChipToggle
+        label="Smoke"
+        icon="cloud"
+        active={layers.smoke}
+        color="amber"
+        onclick={() => toggleLayer("smoke")}
+      />
+      <ChipToggle
+        label="Embers"
+        icon="fire"
+        active={layers.embers}
+        color="amber"
+        onclick={() => toggleLayer("embers")}
+      />
+      <ChipToggle
+        label="Sparks"
+        icon="sparkle"
+        active={layers.sparks}
+        color="amber"
+        onclick={() => toggleLayer("sparks")}
+      />
     </ChipGroup>
 
     <!-- Enhancement Chips -->
     <ChipGroup>
-      <ChipToggle label="Vignette" icon="circle" active={layers.vignette} color="amber" onclick={() => toggleLayer("vignette")} />
-      <ChipToggle label="Bottom Glow" icon="sun" active={layers.bottomGlow} color="amber" onclick={() => toggleLayer("bottomGlow")} />
-      <ChipToggle label="Spark Trails" icon="comet" active={layers.sparkTrails} color="amber" onclick={() => toggleLayer("sparkTrails")} />
-      <ChipToggle label="Breathing" icon="wind" active={layers.breathing} color="amber" onclick={() => toggleLayer("breathing")} />
+      <ChipToggle
+        label="Vignette"
+        icon="circle"
+        active={layers.vignette}
+        color="amber"
+        onclick={() => toggleLayer("vignette")}
+      />
+      <ChipToggle
+        label="Bottom Glow"
+        icon="sun"
+        active={layers.bottomGlow}
+        color="amber"
+        onclick={() => toggleLayer("bottomGlow")}
+      />
+      <ChipToggle
+        label="Spark Trails"
+        icon="comet"
+        active={layers.sparkTrails}
+        color="amber"
+        onclick={() => toggleLayer("sparkTrails")}
+      />
+      <ChipToggle
+        label="Breathing"
+        icon="wind"
+        active={layers.breathing}
+        color="amber"
+        onclick={() => toggleLayer("breathing")}
+      />
     </ChipGroup>
 
     <!-- Density Chips -->
     <ChipGroup>
-      <ChipToggle label="Sparse" active={densityPreset === "sparse"} color="amber" onclick={() => setDensity("sparse")} />
-      <ChipToggle label="Normal" active={densityPreset === "normal"} color="amber" onclick={() => setDensity("normal")} />
-      <ChipToggle label="Dense" active={densityPreset === "dense"} color="amber" onclick={() => setDensity("dense")} />
-      <ChipToggle label="Inferno" active={densityPreset === "inferno"} color="amber" onclick={() => setDensity("inferno")} />
+      <ChipToggle
+        label="Sparse"
+        active={densityPreset === "sparse"}
+        color="amber"
+        onclick={() => setDensity("sparse")}
+      />
+      <ChipToggle
+        label="Normal"
+        active={densityPreset === "normal"}
+        color="amber"
+        onclick={() => setDensity("normal")}
+      />
+      <ChipToggle
+        label="Dense"
+        active={densityPreset === "dense"}
+        color="amber"
+        onclick={() => setDensity("dense")}
+      />
+      <ChipToggle
+        label="Inferno"
+        active={densityPreset === "inferno"}
+        color="amber"
+        onclick={() => setDensity("inferno")}
+      />
     </ChipGroup>
 
     <!-- Heat Chips -->
     <ChipGroup>
-      <ChipToggle label="Smolder" active={heatIntensity === "smolder"} color="amber" onclick={() => setHeat("smolder")} />
-      <ChipToggle label="Warm" active={heatIntensity === "warm"} color="amber" onclick={() => setHeat("warm")} />
-      <ChipToggle label="Hot" active={heatIntensity === "hot"} color="amber" onclick={() => setHeat("hot")} />
-      <ChipToggle label="Blazing" active={heatIntensity === "blazing"} color="amber" onclick={() => setHeat("blazing")} />
+      <ChipToggle
+        label="Smolder"
+        active={heatIntensity === "smolder"}
+        color="amber"
+        onclick={() => setHeat("smolder")}
+      />
+      <ChipToggle
+        label="Warm"
+        active={heatIntensity === "warm"}
+        color="amber"
+        onclick={() => setHeat("warm")}
+      />
+      <ChipToggle
+        label="Hot"
+        active={heatIntensity === "hot"}
+        color="amber"
+        onclick={() => setHeat("hot")}
+      />
+      <ChipToggle
+        label="Blazing"
+        active={heatIntensity === "blazing"}
+        color="amber"
+        onclick={() => setHeat("blazing")}
+      />
     </ChipGroup>
 
     <!-- Regenerate -->
@@ -196,12 +310,12 @@
     <div class="info-section">
       <span class="label">About</span>
       <p class="info-text">
-        A warm, cozy atmosphere with a glowing coal bed at the bottom,
-        rising embers, drifting smoke particles, and bright sparks.
-        Heat intensity affects colors, speed, and glow. Density controls
-        particle count. The coal bed pulses with offset phases and random
-        flare hotspots. Enhancements add vignette, bottom glow, spark trails,
-        and breathing (scene-wide pulsing synced with the coals).
+        A warm, cozy atmosphere with a glowing coal bed at the bottom, rising
+        embers, drifting smoke particles, and bright sparks. Heat intensity
+        affects colors, speed, and glow. Density controls particle count. The
+        coal bed pulses with offset phases and random flare hotspots.
+        Enhancements add vignette, bottom glow, spark trails, and breathing
+        (scene-wide pulsing synced with the coals).
       </p>
     </div>
 
@@ -274,7 +388,11 @@
 
   .badge {
     padding: 4px 10px;
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(251, 191, 36, 0.3));
+    background: linear-gradient(
+      135deg,
+      rgba(245, 158, 11, 0.3),
+      rgba(251, 191, 36, 0.3)
+    );
     border: 1px solid rgba(251, 191, 36, 0.4);
     border-radius: 20px;
     font-size: var(--font-size-compact, 0.75rem);
@@ -305,7 +423,13 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .action-btn:hover {

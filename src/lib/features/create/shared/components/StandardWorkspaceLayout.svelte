@@ -423,14 +423,8 @@
         class="workspace-history-actions"
         inert={!!panelState.workspacePlayback}
       >
-        <UndoButton
-          {CreateModuleState}
-          onAction={handleWorkspaceUndo}
-        />
-        <UndoButton
-          {CreateModuleState}
-          direction="redo"
-        />
+        <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} />
+        <UndoButton {CreateModuleState} direction="redo" />
       </div>
     {/if}
 
@@ -589,8 +583,8 @@
     /* Smooth opacity and border transitions */
     opacity: 1;
     transition:
-      opacity 350ms cubic-bezier(0.4, 0, 0.2, 1),
-      border-color 300ms ease;
+      opacity var(--duration-dramatic) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard);
   }
 
   .workspace-container {
@@ -823,7 +817,7 @@
     pointer-events: auto;
     min-height: var(--min-touch-target, 44px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    transition: background 0.15s ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .build-another-btn:hover {

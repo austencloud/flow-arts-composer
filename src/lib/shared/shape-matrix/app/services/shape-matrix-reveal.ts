@@ -14,6 +14,10 @@
  * final state is already on screen and the recipe bar announces the draw.
  */
 
+import { EASE_STANDARD } from "@austencloud/motion";
+import { motionDuration } from "#lib/shared/transitions/motion.js";
+import { DURATION, STAGGER } from "#lib/shared/transitions/transitions.js";
+
 export interface RevealBeat {
   /** Delay from the roll, in milliseconds. */
   at: number;
@@ -26,19 +30,37 @@ export const SHAPE_MATRIX_REVEAL: Record<
   "rows" | "columns" | "crossings" | "chosen" | "relationship" | "hero",
   RevealBeat
 > = {
-  rows: { at: 0, duration: 280, stagger: 45 },
-  columns: { at: 240, duration: 280, stagger: 45 },
-  crossings: { at: 480, duration: 320, stagger: 0 },
-  chosen: { at: 800, duration: 520, stagger: 0 },
-  relationship: { at: 980, duration: 360, stagger: 0 },
-  hero: { at: 980, duration: 440, stagger: 0 },
+  rows: { at: 0, duration: DURATION.emphasis, stagger: STAGGER.normal },
+  columns: {
+    at: DURATION.normal,
+    duration: DURATION.emphasis,
+    stagger: STAGGER.normal,
+  },
+  crossings: {
+    at: DURATION.dramatic + DURATION.instant,
+    duration: DURATION.emphasis,
+    stagger: 0,
+  },
+  chosen: {
+    at: DURATION.scene,
+    duration: DURATION.dramatic,
+    stagger: 0,
+  },
+  relationship: {
+    at: DURATION.scene + DURATION.normal,
+    duration: DURATION.dramatic,
+    stagger: 0,
+  },
+  hero: {
+    at: DURATION.scene + DURATION.normal,
+    duration: DURATION.dramatic,
+    stagger: 0,
+  },
 };
 
 /** How long the chosen crossing and its headers keep their highlight class. */
-export const SHAPE_MATRIX_REVEAL_HOLD_MS = 1500;
+export const SHAPE_MATRIX_REVEAL_HOLD_MS = DURATION.scene * 2;
 export const SHAPE_MATRIX_REVEAL_CHOSEN_CLASS = "reveal-chosen";
-
-const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 export interface RevealAnimator {
   animate: (
@@ -75,8 +97,8 @@ function staggered(
   elements.forEach((element, index) => {
     animator.animate(element, keyframes, {
       delay: beat.at + index * beat.stagger,
-      duration: beat.duration,
-      easing: EASE,
+      duration: motionDuration(beat.duration),
+      easing: EASE_STANDARD,
       fill: "backwards",
     });
   });
@@ -142,8 +164,8 @@ export function runShapeMatrixGridReveal(
     ],
     {
       delay: SHAPE_MATRIX_REVEAL.chosen.at,
-      duration: SHAPE_MATRIX_REVEAL.chosen.duration,
-      easing: EASE,
+      duration: motionDuration(SHAPE_MATRIX_REVEAL.chosen.duration),
+      easing: EASE_STANDARD,
     }
   );
 }
@@ -173,8 +195,8 @@ export function runShapeMatrixDetailReveal(
       ],
       {
         delay: SHAPE_MATRIX_REVEAL.relationship.at,
-        duration: SHAPE_MATRIX_REVEAL.relationship.duration,
-        easing: EASE,
+        duration: motionDuration(SHAPE_MATRIX_REVEAL.relationship.duration),
+        easing: EASE_STANDARD,
       }
     );
   }
@@ -190,8 +212,8 @@ export function runShapeMatrixDetailReveal(
     ],
     {
       delay: SHAPE_MATRIX_REVEAL.hero.at,
-      duration: SHAPE_MATRIX_REVEAL.hero.duration,
-      easing: EASE,
+      duration: motionDuration(SHAPE_MATRIX_REVEAL.hero.duration),
+      easing: EASE_STANDARD,
       fill: "backwards",
     }
   );

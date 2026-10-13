@@ -234,7 +234,13 @@
     font-weight: 600;
     letter-spacing: 0.02em;
     cursor: pointer;
-    transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
     position: relative;
   }
@@ -246,7 +252,7 @@
 
   .scene-strip button:active {
     transform: scale(0.97);
-    transition: transform 80ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .scene-strip button.active {
@@ -315,7 +321,14 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
   }
 
   .action-btn:hover {

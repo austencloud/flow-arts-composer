@@ -20,7 +20,9 @@
   const progressPercent = $derived(
     totalToUpload > 0
       ? Math.round((progress.uploaded / totalToUpload) * 100)
-      : progress.phase === "completed" ? 100 : 0
+      : progress.phase === "completed"
+        ? 100
+        : 0
   );
 
   // Animate count changes
@@ -28,7 +30,9 @@
     if (progress.uploaded === prevUploaded) return;
     prevUploaded = progress.uploaded;
     countBump = true;
-    const timeout = setTimeout(() => { countBump = false; }, 300);
+    const timeout = setTimeout(() => {
+      countBump = false;
+    }, 300);
     return () => clearTimeout(timeout);
   });
 </script>
@@ -53,7 +57,9 @@
     {:else if progress.phase === "completed"}
       <i class="fas fa-check-circle complete-icon"></i>
       <span class="progress-text">
-        Uploaded {progress.uploaded} screenshot{progress.uploaded !== 1 ? "s" : ""}
+        Uploaded {progress.uploaded} screenshot{progress.uploaded !== 1
+          ? "s"
+          : ""}
         {#if progress.skipped > 0}
           <span class="skip-note">({progress.skipped} skipped)</span>
         {/if}
@@ -100,12 +106,13 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 8px;
-    animation: slideUp var(--duration-normal, 200ms) var(--ease-out, ease-out);
+    animation: slideUp var(--duration-normal)
+      var(--ease-out, var(--ease-standard-out));
   }
 
   .upload-progress.failed {
     border-color: var(--semantic-error, #ef4444);
-    animation: shake 0.5s ease;
+    animation: shake var(--duration-dramatic) var(--ease-standard);
   }
 
   .upload-progress.completed {
@@ -126,7 +133,8 @@
 
   .complete-icon {
     color: var(--semantic-success, #22c55e);
-    animation: popIn var(--duration-emphasis, 280ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    animation: popIn var(--duration-emphasis)
+      var(--ease-spring, var(--ease-spring));
   }
 
   .error-icon {
@@ -140,11 +148,13 @@
   .count {
     font-variant-numeric: tabular-nums;
     display: inline-block;
-    transition: transform var(--duration-instant, 100ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    transition: transform var(--duration-instant)
+      var(--ease-spring, var(--ease-spring));
   }
 
   .count.bump {
-    animation: scaleIn var(--duration-fast, 150ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    animation: scaleIn var(--duration-fast)
+      var(--ease-spring, var(--ease-spring));
   }
 
   .skip-note {
@@ -165,7 +175,7 @@
     height: 100%;
     border-radius: 3px;
     background: var(--theme-accent, #3b82f6);
-    transition: width 0.3s ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
     position: relative;
   }
 
@@ -224,7 +234,14 @@
     font-size: var(--font-size-compact, 12px);
     font-family: inherit;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out, ease-out),
+      border-color var(--duration-fast) var(--ease-out, ease-out),
+      color var(--duration-fast) var(--ease-out, ease-out),
+      opacity var(--duration-fast) var(--ease-out, ease-out),
+      transform var(--duration-fast) var(--ease-out, ease-out),
+      box-shadow var(--duration-fast) var(--ease-out, ease-out),
+      max-height var(--duration-fast) var(--ease-out, ease-out);
   }
 
   .retry-btn:hover {

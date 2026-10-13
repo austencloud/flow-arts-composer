@@ -1297,10 +1297,10 @@
     text-decoration: none;
     cursor: pointer;
     transition:
-      transform 160ms ease,
-      border-color 160ms ease,
-      background 160ms ease,
-      box-shadow 160ms ease;
+      transform var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .primary-action {
@@ -1346,7 +1346,7 @@
   }
 
   .open-app i {
-    transition: transform 160ms ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .open-app:hover i {

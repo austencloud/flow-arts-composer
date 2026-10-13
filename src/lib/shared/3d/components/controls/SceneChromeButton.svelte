@@ -53,10 +53,10 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.66));
     cursor: pointer;
     transition:
-      border-color 160ms ease,
-      background 160ms ease,
-      color 160ms ease,
-      transform 160ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .scene-chrome-button:hover,

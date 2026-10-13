@@ -5,15 +5,14 @@
   view a command log, and test commands manually.
 -->
 <script lang="ts">
-
-import { getVoiceSessionAnalyzer } from "#lib/features/voice-sessions/get-voice-session-analyzer.js";
-import { getVoiceSessionFormatter } from "#lib/features/voice-sessions/get-voice-session-formatter.js";
-import { getVoiceSessionReplayer } from "#lib/features/voice-sessions/get-voice-session-replayer.js";
-import { getVoiceSessionRepository } from "#lib/shared/voice-sessions/get-voice-session-repository.js";
-import { getCommandDispatcher } from "#lib/shared/voice-control/get-command-dispatcher.js";
-import { getCommandInterpreter } from "#lib/shared/voice-control/get-command-interpreter.js";
-import { getVoiceSessionRecorder } from "#lib/shared/voice-control/get-voice-session-recorder.js";
-import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-detector.js";
+  import { getVoiceSessionAnalyzer } from "#lib/features/voice-sessions/get-voice-session-analyzer.js";
+  import { getVoiceSessionFormatter } from "#lib/features/voice-sessions/get-voice-session-formatter.js";
+  import { getVoiceSessionReplayer } from "#lib/features/voice-sessions/get-voice-session-replayer.js";
+  import { getVoiceSessionRepository } from "#lib/shared/voice-sessions/get-voice-session-repository.js";
+  import { getCommandDispatcher } from "#lib/shared/voice-control/get-command-dispatcher.js";
+  import { getCommandInterpreter } from "#lib/shared/voice-control/get-command-interpreter.js";
+  import { getVoiceSessionRecorder } from "#lib/shared/voice-control/get-voice-session-recorder.js";
+  import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-detector.js";
   import { onMount } from "svelte";
   import type { WakeWordDetector } from "#lib/shared/voice-control/services/wake-word-detector.js";
   import type { CommandInterpreter } from "#lib/shared/voice-control/services/command-interpreter.js";
@@ -34,8 +33,12 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
   let interpreter: CommandInterpreter | null = null;
   let dispatcher: CommandDispatcher | null = null;
   let sessionRecorder: VoiceSessionRecorder | null = null;
-  let sessionFormatter = $state<typeof VoiceSessionFormatterModule | null>(null);
-  let sessionRepository = $state<typeof VoiceSessionRepositoryModule | null>(null);
+  let sessionFormatter = $state<typeof VoiceSessionFormatterModule | null>(
+    null
+  );
+  let sessionRepository = $state<typeof VoiceSessionRepositoryModule | null>(
+    null
+  );
   let sessionAnalyzer = $state<typeof VoiceSessionAnalyzerModule | null>(null);
   let sessionReplayer = $state<VoiceSessionReplayer | null>(null);
 
@@ -93,7 +96,10 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
     });
 
     const unsubCommand = detector.onCommand(async (event) => {
-      addLog("command", `"${event.command}" (confidence: ${event.confidence.toFixed(2)})`);
+      addLog(
+        "command",
+        `"${event.command}" (confidence: ${event.confidence.toFixed(2)})`
+      );
 
       if (!interpreter || !dispatcher) return;
 
@@ -109,7 +115,10 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
         return;
       }
 
-      addLog("info", `Interpreted: ${command.category}:${command.action} → "${command.target}"`);
+      addLog(
+        "info",
+        `Interpreted: ${command.category}:${command.action} → "${command.target}"`
+      );
       const result = await dispatcher.dispatch(command);
       addLog("result", `${result.success ? "OK" : "FAIL"}: ${result.message}`);
     });
@@ -168,7 +177,10 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
       return;
     }
 
-    addLog("info", `Interpreted: ${command.category}:${command.action} → "${command.target}"`);
+    addLog(
+      "info",
+      `Interpreted: ${command.category}:${command.action} → "${command.target}"`
+    );
     const result = await dispatcher.dispatch(command);
     addLog("result", `${result.success ? "OK" : "FAIL"}: ${result.message}`);
   }
@@ -208,7 +220,8 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
       if (sessionStartTime) {
         const elapsed = Date.now() - sessionStartTime;
         const secs = Math.floor(elapsed / 1000);
-        sessionDuration = secs < 60 ? `${secs}s` : `${Math.floor(secs / 60)}m ${secs % 60}s`;
+        sessionDuration =
+          secs < 60 ? `${secs}s` : `${Math.floor(secs / 60)}m ${secs % 60}s`;
       }
       // Update event count from recorder
       const current = sessionRecorder?.getCurrentSession();
@@ -229,7 +242,10 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
 
     if (session) {
       lastSession = session;
-      addLog("info", `Session ended: ${session.events.length} events, ${formatDuration(session.durationMs)}`);
+      addLog(
+        "info",
+        `Session ended: ${session.events.length} events, ${formatDuration(session.durationMs)}`
+      );
       sessionStatusMessage = `${session.events.length} events recorded`;
     } else {
       addLog("info", "No session data");
@@ -243,7 +259,9 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
       await navigator.clipboard.writeText(markdown);
       copySuccess = true;
       addLog("info", "Session copied to clipboard");
-      setTimeout(() => { copySuccess = false; }, 2000);
+      setTimeout(() => {
+        copySuccess = false;
+      }, 2000);
     } catch (err) {
       addLog("error", `Failed to copy: ${err}`);
     }
@@ -257,7 +275,9 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
       saveSuccess = true;
       addLog("info", `Session saved: ${lastSession.id}`);
       refreshTrigger++;
-      setTimeout(() => { saveSuccess = false; }, 2000);
+      setTimeout(() => {
+        saveSuccess = false;
+      }, 2000);
     } catch (err) {
       addLog("error", `Failed to save: ${err}`);
     } finally {
@@ -284,7 +304,9 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
 <div class="voice-lab">
   <header class="lab-header">
     <h1>Voice Control Lab</h1>
-    <p class="subtitle">Test "Hey Tika" wake word detection and command dispatch</p>
+    <p class="subtitle">
+      Test "Hey Tika" wake word detection and command dispatch
+    </p>
   </header>
 
   <div class="lab-content">
@@ -306,7 +328,12 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
         </div>
         <div class="state-row">
           <span class="label">Command Mode</span>
-          <span class="value" style="color: {voiceControlState.commandMode ? '#3b82f6' : '#64748b'}">
+          <span
+            class="value"
+            style="color: {voiceControlState.commandMode
+              ? '#3b82f6'
+              : '#64748b'}"
+          >
             {voiceControlState.commandMode ? "ACTIVE (mic hot)" : "OFF"}
           </span>
         </div>
@@ -332,7 +359,8 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
           onclick={toggleListening}
           disabled={!supported}
         >
-          <i class="fas {listening ? 'fa-microphone-slash' : 'fa-microphone'}"></i>
+          <i class="fas {listening ? 'fa-microphone-slash' : 'fa-microphone'}"
+          ></i>
           {listening ? "Stop Listening" : "Start Listening"}
         </button>
         <button class="lab-button" onclick={clearLog}>
@@ -352,7 +380,10 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
           class:primary={!recording}
           onclick={toggleRecording}
         >
-          <i class="fas {recording ? 'fa-stop' : 'fa-circle'}" style="color: var(--semantic-error)"></i>
+          <i
+            class="fas {recording ? 'fa-stop' : 'fa-circle'}"
+            style="color: var(--semantic-error)"
+          ></i>
           {recording ? "Stop Recording" : "Record Session"}
         </button>
 
@@ -378,7 +409,8 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
             onclick={saveSession}
             disabled={saving || saveSuccess}
           >
-            <i class="fas {saveSuccess ? 'fa-check' : 'fa-cloud-upload-alt'}"></i>
+            <i class="fas {saveSuccess ? 'fa-check' : 'fa-cloud-upload-alt'}"
+            ></i>
             {saveSuccess ? "Saved" : saving ? "Saving..." : "Save Session"}
           </button>
         {/if}
@@ -392,15 +424,21 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
           </div>
           <div class="state-row">
             <span class="label">Success</span>
-            <span class="value" style="color: var(--semantic-success)">{lastSession.stats.successCount}</span>
+            <span class="value" style="color: var(--semantic-success)"
+              >{lastSession.stats.successCount}</span
+            >
           </div>
           <div class="state-row">
             <span class="label">Failed</span>
-            <span class="value" style="color: var(--semantic-error)">{lastSession.stats.failureCount}</span>
+            <span class="value" style="color: var(--semantic-error)"
+              >{lastSession.stats.failureCount}</span
+            >
           </div>
           <div class="state-row">
             <span class="label">Unresolved</span>
-            <span class="value" style="color: var(--semantic-warning)">{lastSession.stats.unresolvedCount}</span>
+            <span class="value" style="color: var(--semantic-warning)"
+              >{lastSession.stats.unresolvedCount}</span
+            >
           </div>
           <div class="state-row">
             <span class="label">Avg Latency</span>
@@ -435,7 +473,10 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
     <!-- Manual input -->
     <section class="manual-section">
       <h2>Manual Command</h2>
-      <p class="hint">Type a command as if you just said "Hey Tika, ..." (don't include the wake word)</p>
+      <p class="hint">
+        Type a command as if you just said "Hey Tika, ..." (don't include the
+        wake word)
+      </p>
       <div class="manual-input-row">
         <input
           type="text"
@@ -444,7 +485,11 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
           placeholder="go to compose"
           class="manual-input"
         />
-        <button class="lab-button primary" onclick={sendManualCommand} disabled={!manualInput.trim()}>
+        <button
+          class="lab-button primary"
+          onclick={sendManualCommand}
+          disabled={!manualInput.trim()}
+        >
           <i class="fas fa-paper-plane"></i>
           Send
         </button>
@@ -497,7 +542,9 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
       <h2>Event Log</h2>
       <div class="log-container themed-scrollbar">
         {#if log.length === 0}
-          <div class="log-empty">No events yet. Say "Hey Tika" or use manual input.</div>
+          <div class="log-empty">
+            No events yet. Say "Hey Tika" or use manual input.
+          </div>
         {:else}
           {#each log as entry}
             <div class="log-entry {entry.type}">
@@ -587,8 +634,12 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
     font-family: monospace;
   }
 
-  .value.success { color: #22c55e; }
-  .value.fail { color: #ef4444; }
+  .value.success {
+    color: #22c55e;
+  }
+  .value.fail {
+    color: #ef4444;
+  }
 
   .button-grid {
     display: flex;
@@ -609,7 +660,13 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
     font-size: var(--font-size-sm, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .lab-button:hover:not(:disabled) {
@@ -628,7 +685,11 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
   }
 
   .lab-button.primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--theme-accent-strong, #8b5cf6) 85%, white);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent-strong, #8b5cf6) 85%,
+      white
+    );
   }
 
   .lab-button.danger {
@@ -669,8 +730,13 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
   }
 
   .session-stat {
@@ -783,10 +849,22 @@ import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-det
     flex-shrink: 0;
   }
 
-  .log-badge.command { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-  .log-badge.result { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
-  .log-badge.error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-  .log-badge.info { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+  .log-badge.command {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+  }
+  .log-badge.result {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+  }
+  .log-badge.error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+  }
+  .log-badge.info {
+    background: rgba(148, 163, 184, 0.2);
+    color: #94a3b8;
+  }
 
   .log-text {
     color: var(--theme-text, white);

@@ -517,7 +517,12 @@
         {stepLabel}
         {#if cascadeCount > 0 && !isStartPlacementSelected}
           <span class="cascade-indicator" class:pulse={showCascadePulse}>
-            → +{t(cascadeCount === 1 ? "create_deep_step_count_one" : "create_deep_step_count_many", { count: cascadeCount })}
+            → +{t(
+              cascadeCount === 1
+                ? "create_deep_step_count_one"
+                : "create_deep_step_count_many",
+              { count: cascadeCount }
+            )}
           </span>
         {/if}
         {#if isBetaPlacement && isBetaSwapped}
@@ -528,7 +533,9 @@
             data-ghost-kind={onBetaSwapToggle ? "step-edit" : undefined}
             data-ghost-label="Beta swap"
             title={t("create_review_beta_offset_swapped_b_to_toggle")}
-            aria-label={t("create_review_beta_offset_swapped_press_b_to_toggle")}
+            aria-label={t(
+              "create_review_beta_offset_swapped_press_b_to_toggle"
+            )}
             aria-pressed="true">β⇄</button
           >
         {:else if isBetaPlacement}
@@ -786,11 +793,11 @@
     color: var(--theme-accent, #60a5fa);
     font-size: 0.75rem;
     opacity: 0.9;
-    transition: opacity var(--duration-fast) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .cascade-indicator.pulse {
-    animation: cascade-pulse 300ms ease-out;
+    animation: cascade-pulse var(--duration-emphasis) var(--ease-standard-out);
   }
 
   .beta-swap-badge {
@@ -802,7 +809,10 @@
     background: rgba(168, 85, 247, 0.1);
     color: rgba(168, 85, 247, 0.6);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
     line-height: 1.2;
   }
 
@@ -883,7 +893,9 @@
     border-radius: 50%;
     cursor: pointer;
     font-size: var(--font-size-base);
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     border: 1px solid var(--theme-stroke-strong);
   }
 
@@ -1062,7 +1074,7 @@
   .tour-dim {
     opacity: 0.25;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-emphasis) var(--ease-standard);
   }
 
   .tour-highlight {
@@ -1076,8 +1088,8 @@
         color-mix(in srgb, var(--feature-edit, #8b5cf6) 35%, transparent);
     border-radius: 8px;
     transition:
-      opacity 0.3s ease,
-      box-shadow 0.3s ease;
+      opacity var(--duration-emphasis) var(--ease-standard),
+      box-shadow var(--duration-emphasis) var(--ease-standard);
   }
 
   @media (prefers-reduced-motion: reduce) {

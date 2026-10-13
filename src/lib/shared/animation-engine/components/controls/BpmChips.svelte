@@ -129,10 +129,13 @@
 
   $effect(() => {
     if (showCustomPopover) {
-      let addListenerTimer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
-        document.addEventListener("click", handleDocumentClick);
-        addListenerTimer = null;
-      }, 0);
+      let addListenerTimer: ReturnType<typeof setTimeout> | null = setTimeout(
+        () => {
+          document.addEventListener("click", handleDocumentClick);
+          addListenerTimer = null;
+        },
+        0
+      );
       return () => {
         if (addListenerTimer !== null) {
           clearTimeout(addListenerTimer);
@@ -167,7 +170,9 @@
           title={t("compose_tap_tempo_hint")}
         >
           <span class="bpm-value">{bpm}</span>
-          <span class="bpm-label">{tapTimes.length > 0 ? t("compose_tap") : t("compose_bpm")}</span>
+          <span class="bpm-label"
+            >{tapTimes.length > 0 ? t("compose_tap") : t("compose_bpm")}</span
+          >
         </button>
 
         <button
@@ -326,7 +331,11 @@
     border: 1.5px solid color-mix(in srgb, var(--theme-accent) 30%, transparent);
     border-radius: 12px;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     box-shadow:
       0 0 20px color-mix(in srgb, var(--theme-accent) 20%, transparent),
       inset 0 1px 0 var(--theme-stroke);
@@ -367,7 +376,6 @@
     margin-top: 2px;
   }
 
-
   .adjust-btn {
     display: flex;
     align-items: center;
@@ -381,7 +389,12 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -402,7 +415,6 @@
     opacity: 0.3;
     cursor: not-allowed;
   }
-
 
   .preset-chips {
     display: flex;
@@ -432,7 +444,12 @@
     font-size: clamp(0.75rem, 2.5vw, 0.85rem);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      transform var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     font-variant-numeric: tabular-nums;
   }
@@ -501,7 +518,7 @@
       0 8px 32px color-mix(in srgb, black 50%, transparent),
       0 0 0 1px var(--theme-stroke),
       0 0 24px color-mix(in srgb, var(--theme-accent) 50%, transparent);
-    animation: popoverSlide var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    animation: popoverSlide var(--duration-normal) var(--ease-standard);
     pointer-events: auto;
   }
 
@@ -544,7 +561,13 @@
     border-radius: 50%;
     color: var(--theme-text-dim, var(--theme-text-dim));
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
     font-size: var(--font-size-compact, 12px);
   }
 
@@ -598,7 +621,6 @@
     margin-top: 2px;
   }
 
-
   @media (max-width: 480px) {
     .adjust-btn {
       width: 44px;
@@ -612,7 +634,6 @@
       font-size: var(--font-size-compact, 12px);
     }
   }
-
 
   @media (prefers-reduced-motion: reduce) {
     .adjust-btn,

@@ -86,7 +86,9 @@
     {/if}
 
     <div class="form-group">
-      <label for="reply-textarea" class="field-label">{t("feedback_your_reply")}</label>
+      <label for="reply-textarea" class="field-label"
+        >{t("feedback_your_reply")}</label
+      >
       <div class="textarea-wrapper">
         <textarea
           id="reply-textarea"
@@ -246,7 +248,14 @@
     font-size: 0.9375rem;
     line-height: 1.5;
     resize: vertical;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard);
   }
 
   .reply-textarea:focus {
@@ -282,7 +291,7 @@
       var(--theme-text-dim, var(--theme-text-dim)) 80%,
       transparent
     );
-    transition: color var(--duration-normal) ease;
+    transition: color var(--duration-normal) var(--ease-standard);
   }
 
   .char-count.met {
@@ -306,7 +315,13 @@
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .cancel-btn {

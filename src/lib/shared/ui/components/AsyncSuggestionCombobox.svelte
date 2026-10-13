@@ -204,7 +204,9 @@
     }, debounceMs);
   }
 
-  function handleSearchInput(event: Event & { currentTarget: HTMLInputElement }) {
+  function handleSearchInput(
+    event: Event & { currentTarget: HTMLInputElement }
+  ) {
     // Half-composed text is not a query. Searching "ｋ" on the way to "京都"
     // burns a request per keystroke and shows results for a syllable the user
     // never asked about. `compositionend` runs the search once the word exists.
@@ -346,44 +348,49 @@
     class:inline={inlineResults}
     style={inlineResults ? "" : dropdownStyle}
   >
-  <div id={resultsId} class="results-list" role="listbox" aria-label={listLabel}>
-    {#if searchResults.length > 0}
-      {#each searchResults as item, index (getKey(item))}
-        <button
-          id="{resultsId}-option-{index}"
-          type="button"
-          class="result-item"
-          class:selected={isSelected(item)}
-          class:active={index === activeIndex}
-          role="option"
-          aria-selected={isSelected(item)}
-          tabindex="-1"
-          onclick={() => handleSelect(item)}
-          onmouseenter={() => {
-            activeIndex = index;
-          }}
-        >
-          {@render row(item, {
-            index,
-            active: index === activeIndex,
-            selected: isSelected(item),
-          })}
-        </button>
-      {/each}
-    {:else}
-      <div class="no-results">
-        {#if empty}
-          {@render empty(searchError)}
-        {:else if searchError}
-          <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-          {errorMessage}
-        {:else}
-          <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
-          {emptyMessage}
-        {/if}
-      </div>
-    {/if}
-  </div>
+    <div
+      id={resultsId}
+      class="results-list"
+      role="listbox"
+      aria-label={listLabel}
+    >
+      {#if searchResults.length > 0}
+        {#each searchResults as item, index (getKey(item))}
+          <button
+            id="{resultsId}-option-{index}"
+            type="button"
+            class="result-item"
+            class:selected={isSelected(item)}
+            class:active={index === activeIndex}
+            role="option"
+            aria-selected={isSelected(item)}
+            tabindex="-1"
+            onclick={() => handleSelect(item)}
+            onmouseenter={() => {
+              activeIndex = index;
+            }}
+          >
+            {@render row(item, {
+              index,
+              active: index === activeIndex,
+              selected: isSelected(item),
+            })}
+          </button>
+        {/each}
+      {:else}
+        <div class="no-results">
+          {#if empty}
+            {@render empty(searchError)}
+          {:else if searchError}
+            <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+            {errorMessage}
+          {:else}
+            <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+            {emptyMessage}
+          {/if}
+        </div>
+      {/if}
+    </div>
     {#if listFooter}
       <!-- Outside the listbox: a listbox's children are options, and a mark
            announced as one would be selectable. -->
@@ -427,7 +434,7 @@
         type="button"
         class="clear-btn"
         onclick={clearSelection}
-        aria-label="{t('browse_clear_search')}"
+        aria-label={t("browse_clear_search")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
@@ -437,7 +444,7 @@
   <!-- Screen reader status announcement -->
   <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
     {#if isSearching}
-      {t('search_searching')}
+      {t("search_searching")}
     {:else if showResults && searchResults.length > 0}
       {announceCount(searchResults.length)}
     {:else if showResults && searchResults.length === 0 && searchQuery.length >= minQueryLength}
@@ -503,7 +510,7 @@
     border-radius: 50%;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition: color var(--duration-fast) var(--ease-standard);
     z-index: 2;
   }
 
@@ -514,7 +521,7 @@
     height: 28px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
-    transition: all var(--duration-fast) ease;
+    transition: background-color var(--duration-fast) var(--ease-standard);
   }
 
   .clear-btn:hover::before {
@@ -542,7 +549,10 @@
     border-radius: 12px;
     color: var(--theme-text);
     font-size: var(--font-size-sm);
-    transition: all var(--duration-normal) ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard);
     box-shadow: var(--theme-shadow, none);
   }
 
@@ -646,7 +656,7 @@
     border: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition: background-color var(--duration-fast) var(--ease-standard);
     text-align: start;
   }
 

@@ -13,7 +13,12 @@
 
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { fade, scale, slide } from "svelte/transition";
+  import {
+    growFade,
+    opaqueFade,
+    popIn,
+  } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { TextRenderer } from "#lib/shared/render/services/text-renderer.js";
   import { ensureCardFonts } from "#lib/shared/render/services/gelasio-fonts.js";
   import { cubicOut } from "svelte/easing";
@@ -110,9 +115,12 @@
   const exportHeaderLabel = $derived.by(() => {
     const title = customTitleText?.trim() || (wordVisible ? sequence.word : "");
     const parts = title ? [title] : [];
-    if (showDifficultyLevel) parts.push(t("create_difficulty_level", { level: difficultyLevel }));
+    if (showDifficultyLevel)
+      parts.push(t("create_difficulty_level", { level: difficultyLevel }));
     if (showLoopGlyph && loopComponents?.size) {
-      parts.push(`LOOP ${[...loopComponents].map(loopComponentLabel).join(", ")}`);
+      parts.push(
+        `LOOP ${[...loopComponents].map(loopComponentLabel).join(", ")}`
+      );
     }
     return parts.join(". ") || t("viewer_detail_card_header");
   });
@@ -167,8 +175,8 @@
     role={exportPresentation ? "img" : undefined}
     aria-label={exportPresentation ? exportHeaderLabel : undefined}
     style="height: {scaledHeaderHeight}px;"
-    transition:slide|local={{
-      duration: exportPresentation ? 0 : HEADER_MOTION_MS,
+    transition:growFade|local={{
+      duration: exportPresentation ? 0 : DURATION.normal,
       easing: cubicOut,
     }}
   >
@@ -186,15 +194,19 @@
           ? 'var(--prop-blue, #2196f3)'
           : 'var(--prop-red, #f44336)'};"
       >
-        {soloHand === "left" ? t("viewer_detail_left") : t("viewer_detail_right")}
-        {browseViewMode?.subject === "hands" ? t("viewer_detail_hand_path") : t("viewer_detail_prop_path")}
+        {soloHand === "left"
+          ? t("viewer_detail_left")
+          : t("viewer_detail_right")}
+        {browseViewMode?.subject === "hands"
+          ? t("viewer_detail_hand_path")
+          : t("viewer_detail_prop_path")}
       </span>
     {:else}
       {#if showDifficultyLevel}
         <div
           class="badge-wrapper"
           style="left: {badgePadding}px;"
-          transition:scale|local={{ duration: 200, easing: cubicOut }}
+          transition:popIn|local={{ duration: DURATION.normal }}
         >
           <DifficultyBadge
             level={difficultyLevel}
@@ -209,7 +221,7 @@
           class="word-title text-title"
           style:width={`max(0px, calc(100% - ${Math.ceil(wordSideInset * 2)}px))`}
           style:font-size={`max(var(--font-size-min, 14px), ${wordTitleFontSize}px)`}
-          transition:fade|local={{ duration: 200 }}
+          transition:opaqueFade|local={{ duration: DURATION.normal }}
         >
           {customTitleText}
         </div>
@@ -217,7 +229,7 @@
         <div
           class="word-title"
           style:width={`max(0px, calc(100% - ${Math.ceil(wordSideInset * 2)}px))`}
-          transition:fade|local={{ duration: 200 }}
+          transition:opaqueFade|local={{ duration: DURATION.normal }}
         >
           <TKAWordGlyph
             word={simplifyRepeatedWord(sequence.word!)}
@@ -232,7 +244,7 @@
         <div
           class="loop-icon-badge"
           style="height: {badgeSize}px; right: {badgePadding}px;"
-          transition:fade|local={{ duration: 200 }}
+          transition:opaqueFade|local={{ duration: DURATION.normal }}
         >
           <LOOPIconStrip
             activeComponents={loopComponents}
@@ -264,8 +276,8 @@
     box-sizing: border-box;
     overflow: hidden;
     transition:
-      background-color 350ms ease,
-      border-color 350ms ease;
+      background-color var(--duration-dramatic) var(--ease-standard),
+      border-color var(--duration-dramatic) var(--ease-standard);
   }
 
   .header-section.dark-mode {

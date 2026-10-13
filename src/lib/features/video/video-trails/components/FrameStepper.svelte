@@ -71,13 +71,16 @@
     onclick={onToggleSlowPlay}
     aria-label={slowPlaying ? "Pause slow playback" : "Start slow playback"}
   >
-    <i class="fas {slowPlaying ? 'fa-pause' : 'fa-play'}" aria-hidden="true"></i>
+    <i class="fas {slowPlaying ? 'fa-pause' : 'fa-play'}" aria-hidden="true"
+    ></i>
     {slowPlaying ? "Pause" : "Slow Play"}
   </button>
 
   <div class="shortcuts-hint">
     <span class="key-hint"><kbd>&larr;</kbd><kbd>&rarr;</kbd> ±1</span>
-    <span class="key-hint"><kbd>Shift</kbd>+<kbd>&larr;</kbd><kbd>&rarr;</kbd> ±10</span>
+    <span class="key-hint"
+      ><kbd>Shift</kbd>+<kbd>&larr;</kbd><kbd>&rarr;</kbd> ±10</span
+    >
   </div>
 </div>
 
@@ -109,7 +112,9 @@
     color: var(--theme-text, #ffffff);
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      background var(--duration-fast);
   }
 
   .step-btn:hover:not(:disabled) {
@@ -152,7 +157,9 @@
     color: var(--theme-text, #ffffff);
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      background var(--duration-fast);
   }
 
   .slow-play-btn:hover {
@@ -162,7 +169,11 @@
 
   .slow-play-btn.active {
     border-color: var(--theme-accent, #f43f5e);
-    background: color-mix(in srgb, var(--theme-accent, #f43f5e) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #f43f5e) 15%,
+      transparent
+    );
     color: var(--theme-accent, #f43f5e);
   }
 

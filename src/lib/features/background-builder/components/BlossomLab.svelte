@@ -1,7 +1,13 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { BlossomBackgroundSystem, type BlossomLayers, type QualityLevel, type TimeOfDay, getTimeOfDayPreset } from "@austencloud/backgrounds";
-  import { ChipToggle, ChipGroup } from '@austencloud/chip-toggle';
+  import {
+    BlossomBackgroundSystem,
+    type BlossomLayers,
+    type QualityLevel,
+    type TimeOfDay,
+    getTimeOfDayPreset,
+  } from "@austencloud/backgrounds";
+  import { ChipToggle, ChipGroup } from "@austencloud/chip-toggle";
   import LabPreviewCanvas from "./LabPreviewCanvas.svelte";
   import {
     getBlossomSettings,
@@ -204,31 +210,103 @@
 
     <!-- Quality Chips -->
     <ChipGroup>
-      <ChipToggle label="High" active={quality === "high"} color="rose" onclick={() => setQuality("high")} />
-      <ChipToggle label="Medium" active={quality === "medium"} color="rose" onclick={() => setQuality("medium")} />
-      <ChipToggle label="Low" active={quality === "low"} color="rose" onclick={() => setQuality("low")} />
+      <ChipToggle
+        label="High"
+        active={quality === "high"}
+        color="rose"
+        onclick={() => setQuality("high")}
+      />
+      <ChipToggle
+        label="Medium"
+        active={quality === "medium"}
+        color="rose"
+        onclick={() => setQuality("medium")}
+      />
+      <ChipToggle
+        label="Low"
+        active={quality === "low"}
+        color="rose"
+        onclick={() => setQuality("low")}
+      />
     </ChipGroup>
 
     <!-- Core Layer Toggles -->
     <ChipGroup>
-      <ChipToggle label="Gradient" icon="fill-drip" active={layers.gradient} color="rose" onclick={() => toggleLayer("gradient")} />
-      <ChipToggle label="Petals" icon="leaf" active={layers.petals} color="rose" onclick={() => toggleLayer("petals")} />
+      <ChipToggle
+        label="Gradient"
+        icon="fill-drip"
+        active={layers.gradient}
+        color="rose"
+        onclick={() => toggleLayer("gradient")}
+      />
+      <ChipToggle
+        label="Petals"
+        icon="leaf"
+        active={layers.petals}
+        color="rose"
+        onclick={() => toggleLayer("petals")}
+      />
     </ChipGroup>
 
     <!-- Parallax Depth Toggles -->
     <ChipGroup>
-      <ChipToggle label="Far" active={layers.petalsFar} color="default" onclick={() => toggleLayer("petalsFar")} />
-      <ChipToggle label="Mid" active={layers.petalsMid} color="default" onclick={() => toggleLayer("petalsMid")} />
-      <ChipToggle label="Near" active={layers.petalsNear} color="default" onclick={() => toggleLayer("petalsNear")} />
+      <ChipToggle
+        label="Far"
+        active={layers.petalsFar}
+        color="default"
+        onclick={() => toggleLayer("petalsFar")}
+      />
+      <ChipToggle
+        label="Mid"
+        active={layers.petalsMid}
+        color="default"
+        onclick={() => toggleLayer("petalsMid")}
+      />
+      <ChipToggle
+        label="Near"
+        active={layers.petalsNear}
+        color="default"
+        onclick={() => toggleLayer("petalsNear")}
+      />
     </ChipGroup>
 
     <!-- Environmental Layers -->
     <ChipGroup>
-      <ChipToggle label="Moon" icon="moon" active={layers.moon} color="cyan" onclick={() => toggleLayer("moon")} />
-      <ChipToggle label="Stars" icon="star" active={layers.stars} color="cyan" onclick={() => toggleLayer("stars")} />
-      <ChipToggle label="Trees" icon="tree" active={layers.trees} color="emerald" onclick={() => toggleLayer("trees")} />
-      <ChipToggle label="Lanterns" icon="lightbulb" active={layers.lanterns} color="amber" onclick={() => toggleLayer("lanterns")} />
-      <ChipToggle label="Reflection" icon="water" active={layers.reflection} color="cyan" onclick={() => toggleLayer("reflection")} />
+      <ChipToggle
+        label="Moon"
+        icon="moon"
+        active={layers.moon}
+        color="cyan"
+        onclick={() => toggleLayer("moon")}
+      />
+      <ChipToggle
+        label="Stars"
+        icon="star"
+        active={layers.stars}
+        color="cyan"
+        onclick={() => toggleLayer("stars")}
+      />
+      <ChipToggle
+        label="Trees"
+        icon="tree"
+        active={layers.trees}
+        color="emerald"
+        onclick={() => toggleLayer("trees")}
+      />
+      <ChipToggle
+        label="Lanterns"
+        icon="lightbulb"
+        active={layers.lanterns}
+        color="amber"
+        onclick={() => toggleLayer("lanterns")}
+      />
+      <ChipToggle
+        label="Reflection"
+        icon="water"
+        active={layers.reflection}
+        color="cyan"
+        onclick={() => toggleLayer("reflection")}
+      />
     </ChipGroup>
 
     <!-- Moon Settings (shown when moon is enabled) -->
@@ -236,7 +314,11 @@
       <div class="slider-section">
         <div class="slider-header">
           <span class="label">Moon Settings</span>
-          <button class="copy-btn" onclick={copyMoonSettings} title="Copy settings">
+          <button
+            class="copy-btn"
+            onclick={copyMoonSettings}
+            title="Copy settings"
+          >
             <i class="fas fa-copy"></i>
           </button>
         </div>
@@ -293,25 +375,83 @@
 
     <!-- Effect Layers -->
     <ChipGroup>
-      <ChipToggle label="Trails" icon="wind" active={layers.trails} color="rose" onclick={() => toggleLayer("trails")} />
-      <ChipToggle label="Accumulation" icon="layer-group" active={layers.accumulation} color="rose" onclick={() => toggleLayer("accumulation")} />
-      <ChipToggle label="Vortex" icon="hurricane" active={layers.vortex} color="rose" onclick={() => toggleLayer("vortex")} />
+      <ChipToggle
+        label="Trails"
+        icon="wind"
+        active={layers.trails}
+        color="rose"
+        onclick={() => toggleLayer("trails")}
+      />
+      <ChipToggle
+        label="Accumulation"
+        icon="layer-group"
+        active={layers.accumulation}
+        color="rose"
+        onclick={() => toggleLayer("accumulation")}
+      />
+      <ChipToggle
+        label="Vortex"
+        icon="hurricane"
+        active={layers.vortex}
+        color="rose"
+        onclick={() => toggleLayer("vortex")}
+      />
     </ChipGroup>
 
     <!-- Density Chips -->
     <ChipGroup>
-      <ChipToggle label="Sparse" active={densityPreset === "sparse"} color="rose" onclick={() => setDensity("sparse")} />
-      <ChipToggle label="Normal" active={densityPreset === "normal"} color="rose" onclick={() => setDensity("normal")} />
-      <ChipToggle label="Dense" active={densityPreset === "dense"} color="rose" onclick={() => setDensity("dense")} />
-      <ChipToggle label="Ultra" active={densityPreset === "ultra"} color="rose" onclick={() => setDensity("ultra")} />
+      <ChipToggle
+        label="Sparse"
+        active={densityPreset === "sparse"}
+        color="rose"
+        onclick={() => setDensity("sparse")}
+      />
+      <ChipToggle
+        label="Normal"
+        active={densityPreset === "normal"}
+        color="rose"
+        onclick={() => setDensity("normal")}
+      />
+      <ChipToggle
+        label="Dense"
+        active={densityPreset === "dense"}
+        color="rose"
+        onclick={() => setDensity("dense")}
+      />
+      <ChipToggle
+        label="Ultra"
+        active={densityPreset === "ultra"}
+        color="rose"
+        onclick={() => setDensity("ultra")}
+      />
     </ChipGroup>
 
     <!-- Wind Chips -->
     <ChipGroup>
-      <ChipToggle label="Calm" active={windPreset === "calm"} color="default" onclick={() => setWindPreset("calm")} />
-      <ChipToggle label="Gentle" active={windPreset === "gentle"} color="default" onclick={() => setWindPreset("gentle")} />
-      <ChipToggle label="Breezy" active={windPreset === "breezy"} color="default" onclick={() => setWindPreset("breezy")} />
-      <ChipToggle label="Gusty" active={windPreset === "gusty"} color="default" onclick={() => setWindPreset("gusty")} />
+      <ChipToggle
+        label="Calm"
+        active={windPreset === "calm"}
+        color="default"
+        onclick={() => setWindPreset("calm")}
+      />
+      <ChipToggle
+        label="Gentle"
+        active={windPreset === "gentle"}
+        color="default"
+        onclick={() => setWindPreset("gentle")}
+      />
+      <ChipToggle
+        label="Breezy"
+        active={windPreset === "breezy"}
+        color="default"
+        onclick={() => setWindPreset("breezy")}
+      />
+      <ChipToggle
+        label="Gusty"
+        active={windPreset === "gusty"}
+        color="default"
+        onclick={() => setWindPreset("gusty")}
+      />
     </ChipGroup>
 
     <!-- Actions -->
@@ -404,7 +544,11 @@
 
   .badge {
     padding: 4px 10px;
-    background: linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(251, 113, 133, 0.3));
+    background: linear-gradient(
+      135deg,
+      rgba(244, 63, 94, 0.3),
+      rgba(251, 113, 133, 0.3)
+    );
     border: 1px solid rgba(251, 113, 133, 0.4);
     border-radius: 20px;
     font-size: var(--font-size-compact, 12px);
@@ -441,7 +585,13 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .action-btn:hover {
@@ -523,7 +673,11 @@
   }
 
   .pill.complete {
-    background: color-mix(in srgb, var(--theme-success, #34d399) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-success, #34d399) 15%,
+      transparent
+    );
     color: var(--theme-success, #34d399);
   }
 
@@ -539,8 +693,13 @@
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
   }
 
   .slider-section {
@@ -567,7 +726,14 @@
     color: #9ca3af;
     font-size: 0.75rem;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      grid-template-columns var(--duration-fast) var(--ease-standard);
   }
 
   .copy-btn:hover {
@@ -611,7 +777,7 @@
     background: #06b6d4;
     border-radius: 50%;
     cursor: pointer;
-    transition: transform 0.15s ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .slider-section input[type="range"]::-webkit-slider-thumb:hover {

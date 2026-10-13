@@ -120,8 +120,8 @@
     font-size: 11px;
     font-weight: 600;
     transition:
-      background var(--duration-fast, 150ms) ease-out,
-      border-color var(--duration-fast, 150ms) ease-out;
+      background var(--duration-fast) var(--ease-standard-out),
+      border-color var(--duration-fast) var(--ease-standard-out);
   }
 
   .completed .dot {
@@ -189,7 +189,7 @@
     height: 12px;
     margin-left: 11px;
     background: var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    transition: background var(--duration-fast, 150ms) ease-out;
+    transition: background var(--duration-fast) var(--ease-standard-out);
   }
 
   .connector.completed {

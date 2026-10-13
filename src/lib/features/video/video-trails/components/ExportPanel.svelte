@@ -2,7 +2,10 @@
   import { getVideoTrailsContext } from "../context/video-trails-context";
   import type { ExportConfig } from "../domain/types";
   import { shareOrDownloadBlob } from "#lib/shared/foundation/services/file-downloader.js";
-  import { shareTarget, saveActionLabel } from "#lib/shared/mobile/share-action.svelte.js";
+  import {
+    shareTarget,
+    saveActionLabel,
+  } from "#lib/shared/mobile/share-action.svelte.js";
 
   const { state: trailsState } = getVideoTrailsContext();
 
@@ -22,14 +25,21 @@
     { value: "mp4", label: "MP4" },
   ];
 
-  const resolutionOptions: { value: "720p" | "1080p" | "original"; label: string }[] = [
+  const resolutionOptions: {
+    value: "720p" | "1080p" | "original";
+    label: string;
+  }[] = [
     { value: "720p", label: "720p" },
     { value: "1080p", label: "1080p" },
     { value: "original", label: "Original" },
   ];
 
-  const formatLabel = $derived(formatOptions.find((o) => o.value === format)?.label ?? format);
-  const resolutionLabel = $derived(resolutionOptions.find((o) => o.value === resolution)?.label ?? resolution);
+  const formatLabel = $derived(
+    formatOptions.find((o) => o.value === format)?.label ?? format
+  );
+  const resolutionLabel = $derived(
+    resolutionOptions.find((o) => o.value === resolution)?.label ?? resolution
+  );
 
   function getResolution(): { width: number; height: number } {
     if (resolution === "720p") return { width: 1280, height: 720 };
@@ -47,12 +57,16 @@
   }
 
   async function handleDownload() {
-    if (trailsState.exportState.phase !== "complete" || !trailsState.exportState.blob) return;
+    if (
+      trailsState.exportState.phase !== "complete" ||
+      !trailsState.exportState.blob
+    )
+      return;
     // Device-gated: native share sheet on mobile, download on desktop.
     await shareOrDownloadBlob(
       trailsState.exportState.blob,
       `video-trails-export.${format}`,
-      { title: "Video Trails" },
+      { title: "Video Trails" }
     );
   }
 
@@ -74,7 +88,13 @@
     <div class="select-row">
       <span class="select-label">Format</span>
       <div class="custom-select">
-        <button class="select-trigger" onclick={() => { formatDropdownOpen = !formatDropdownOpen; resolutionDropdownOpen = false; }}>
+        <button
+          class="select-trigger"
+          onclick={() => {
+            formatDropdownOpen = !formatDropdownOpen;
+            resolutionDropdownOpen = false;
+          }}
+        >
           <span>{formatLabel}</span>
           <i class="fas fa-chevron-down" aria-hidden="true"></i>
         </button>
@@ -97,7 +117,13 @@
     <div class="select-row">
       <span class="select-label">Resolution</span>
       <div class="custom-select">
-        <button class="select-trigger" onclick={() => { resolutionDropdownOpen = !resolutionDropdownOpen; formatDropdownOpen = false; }}>
+        <button
+          class="select-trigger"
+          onclick={() => {
+            resolutionDropdownOpen = !resolutionDropdownOpen;
+            formatDropdownOpen = false;
+          }}
+        >
           <span>{resolutionLabel}</span>
           <i class="fas fa-chevron-down" aria-hidden="true"></i>
         </button>
@@ -119,22 +145,36 @@
   </div>
 
   {#if trailsState.exportState.phase === "idle" || trailsState.exportState.phase === "complete" || trailsState.exportState.phase === "error"}
-    <button class="export-btn" onclick={handleExport} disabled={!trailsState.source}>
+    <button
+      class="export-btn"
+      onclick={handleExport}
+      disabled={!trailsState.source}
+    >
       <i class="fas fa-download" aria-hidden="true"></i>
       Download Animation
     </button>
   {:else}
     <div class="progress-section">
       <div class="progress-bar">
-        <div class="progress-fill" style="width: {(trailsState.exportState.progress ?? 0) * 100}%"></div>
+        <div
+          class="progress-fill"
+          style="width: {(trailsState.exportState.progress ?? 0) * 100}%"
+        ></div>
       </div>
-      <span class="progress-label">{trailsState.exportState.phase}... {Math.round((trailsState.exportState.progress ?? 0) * 100)}%</span>
+      <span class="progress-label"
+        >{trailsState.exportState.phase}... {Math.round(
+          (trailsState.exportState.progress ?? 0) * 100
+        )}%</span
+      >
     </div>
   {/if}
 
   {#if trailsState.exportState.phase === "complete"}
     <button class="download-btn" onclick={handleDownload}>
-      <i class="fas {shareTarget.isMobile ? 'fa-share-nodes' : 'fa-file-video'}" aria-hidden="true"></i>
+      <i
+        class="fas {shareTarget.isMobile ? 'fa-share-nodes' : 'fa-file-video'}"
+        aria-hidden="true"
+      ></i>
       {saveActionLabel()}
     </button>
   {/if}
@@ -167,7 +207,6 @@
     gap: 4px;
   }
 
-
   .select-row {
     display: flex;
     align-items: center;
@@ -176,7 +215,9 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.6));
   }
 
-  .select-label { min-width: 70px; }
+  .select-label {
+    min-width: 70px;
+  }
 
   .custom-select {
     position: relative;
@@ -236,7 +277,6 @@
     color: var(--theme-accent, #f43f5e);
   }
 
-
   .export-btn,
   .download-btn {
     display: flex;
@@ -253,9 +293,14 @@
     cursor: pointer;
   }
 
-  .export-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .export-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 
-  .download-btn { background: var(--semantic-success, #22c55e); }
+  .download-btn {
+    background: var(--semantic-success, #22c55e);
+  }
 
   .progress-section {
     display: flex;
@@ -273,7 +318,7 @@
   .progress-fill {
     height: 100%;
     background: var(--theme-accent, #f43f5e);
-    transition: width 0.2s;
+    transition: width var(--duration-normal);
   }
 
   .progress-label {

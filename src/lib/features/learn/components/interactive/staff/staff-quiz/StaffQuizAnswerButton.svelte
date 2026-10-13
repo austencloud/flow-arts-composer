@@ -71,7 +71,11 @@ StaffQuizAnswerButton - Single answer option button
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     position: relative;
   }
 
@@ -98,7 +102,7 @@ StaffQuizAnswerButton - Single answer option button
   .answer-btn.correct {
     background: color-mix(in srgb, var(--type-color) 20%, transparent);
     border-color: var(--type-color);
-    animation: correctPulse 0.5s ease;
+    animation: correctPulse var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes correctPulse {
@@ -116,7 +120,7 @@ StaffQuizAnswerButton - Single answer option button
   .answer-btn.incorrect {
     background: color-mix(in srgb, var(--semantic-error) 20%, transparent);
     border-color: color-mix(in srgb, var(--semantic-error) 60%, transparent);
-    animation: shake var(--duration-dramatic) ease;
+    animation: shake var(--duration-dramatic) var(--ease-standard);
   }
 
   @keyframes shake {

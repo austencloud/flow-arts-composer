@@ -46,7 +46,11 @@
       : false;
 
   // Generate cache key (includes grid mode)
-  function getCacheKey(letter: string, variation: number, size: number): string {
+  function getCacheKey(
+    letter: string,
+    variation: number,
+    size: number
+  ): string {
     const gridMode = stepGrid.gridMode ?? "diamond";
     return `${letter}-${variation}-${size}-${gridMode}`;
   }
@@ -57,7 +61,10 @@
   }
 
   // Build static file key
-  function buildStaticKey(letter: string, variation: number): PictographFileKey {
+  function buildStaticKey(
+    letter: string,
+    variation: number
+  ): PictographFileKey {
     return {
       letter,
       variation,
@@ -68,7 +75,9 @@
   // Check if static file exists using GET + Content-Type verification.
   // HEAD requests return 200 for non-existent files in Vite dev, so we
   // fetch the file and verify Content-Type to confirm it's actually an image.
-  async function checkStaticFile(key: PictographFileKey): Promise<string | null> {
+  async function checkStaticFile(
+    key: PictographFileKey
+  ): Promise<string | null> {
     const path = getStaticPictographPath(key);
     try {
       const response = await fetch(path, { method: "GET" });
@@ -100,7 +109,11 @@
     loadedCount = 0;
     const newImages = new Map<number, string>();
     const newSvgMarkups = new Map<number, string>();
-    const stepsNeedingPng: Array<{ stepNumber: number; letter: string; variation: number }> = [];
+    const stepsNeedingPng: Array<{
+      stepNumber: number;
+      letter: string;
+      variation: number;
+    }> = [];
     const gridMode = stepGrid.gridMode ?? "diamond";
 
     // Step 1: Try SVG for all items sequentially (matches InlineGallery pattern)
@@ -277,7 +290,7 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 10px;
-    transition: border-color var(--duration-fast, 0.15s) ease;
+    transition: border-color var(--duration-fast) var(--ease-standard);
   }
 
   .step-item:hover {
@@ -381,28 +394,28 @@
   }
 
   .svg-pictograph.animate :global(.svg-bg) {
-    animation: svgReveal 0.3s ease-out both;
+    animation: svgReveal var(--duration-emphasis) var(--ease-standard-out) both;
     animation-delay: 0ms;
   }
 
   .svg-pictograph.animate :global(.svg-grid) {
-    animation: svgReveal 0.3s ease-out both;
-    animation-delay: 80ms;
+    animation: svgReveal var(--duration-emphasis) var(--ease-standard-out) both;
+    animation-delay: var(--stagger-relaxed);
   }
 
   .svg-pictograph.animate :global(.svg-prop) {
-    animation: svgReveal 0.35s ease-out both;
-    animation-delay: 200ms;
+    animation: svgReveal var(--duration-dramatic) var(--ease-standard-out) both;
+    animation-delay: var(--duration-normal);
   }
 
   .svg-pictograph.animate :global(.svg-arrow) {
-    animation: svgReveal 0.35s ease-out both;
-    animation-delay: 350ms;
+    animation: svgReveal var(--duration-dramatic) var(--ease-standard-out) both;
+    animation-delay: var(--duration-dramatic);
   }
 
   .svg-pictograph.animate :global(.svg-glyph) {
-    animation: svgReveal 0.3s ease-out both;
-    animation-delay: 480ms;
+    animation: svgReveal var(--duration-emphasis) var(--ease-standard-out) both;
+    animation-delay: calc(var(--stagger-relaxed) * 6);
   }
 
   @keyframes svgReveal {

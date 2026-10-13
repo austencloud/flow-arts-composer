@@ -1223,7 +1223,7 @@
     width: 100%;
     overflow: hidden;
     position: relative;
-    transition: background-color var(--duration-normal) ease-out;
+    transition: background-color var(--duration-normal) var(--ease-standard-out);
   }
 
   .create-loading {

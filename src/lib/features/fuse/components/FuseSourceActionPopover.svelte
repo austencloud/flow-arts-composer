@@ -136,8 +136,8 @@
     font-weight: 500;
     cursor: pointer;
     transition:
-      background var(--duration-normal) ease,
-      border-color var(--duration-normal) ease;
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .adjust-trigger:disabled {

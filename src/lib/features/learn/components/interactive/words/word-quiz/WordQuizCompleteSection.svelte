@@ -59,7 +59,7 @@ WordQuizCompleteSection - Score display and completion actions
     flex-direction: column;
     align-items: center;
     gap: 1.25rem;
-    animation: fadeIn var(--duration-emphasis) ease;
+    animation: fadeIn var(--duration-emphasis) var(--ease-standard);
   }
 
   @keyframes fadeIn {
@@ -100,7 +100,11 @@ WordQuizCompleteSection - Score display and completion actions
   .score-value {
     font-size: 3rem;
     font-weight: 800;
-    background: linear-gradient(135deg, var(--theme-accent, #a855f7), var(--theme-accent, #ec4899));
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #a855f7),
+      var(--theme-accent, #ec4899)
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -142,7 +146,10 @@ WordQuizCompleteSection - Score display and completion actions
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .action-btn.secondary {
@@ -162,7 +169,8 @@ WordQuizCompleteSection - Score display and completion actions
       color-mix(in srgb, var(--theme-accent, #a855f7) 30%, transparent),
       color-mix(in srgb, var(--theme-accent, #a855f7) 30%, transparent)
     );
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #a855f7) 40%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #a855f7) 40%, transparent);
     color: white;
   }
 
@@ -172,7 +180,11 @@ WordQuizCompleteSection - Score display and completion actions
       color-mix(in srgb, var(--theme-accent, #a855f7) 40%, transparent),
       color-mix(in srgb, var(--theme-accent, #a855f7) 40%, transparent)
     );
-    border-color: color-mix(in srgb, var(--theme-accent, #a855f7) 60%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #a855f7) 60%,
+      transparent
+    );
     transform: translateY(-2px);
   }
 

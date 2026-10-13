@@ -35,9 +35,9 @@
     const diff = now.getTime() - date.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (days === 0) return t('train_time_today');
-    if (days === 1) return t('train_time_yesterday');
-    if (days < 7) return t('train_time_days_ago', { count: days });
+    if (days === 0) return t("train_time_today");
+    if (days === 1) return t("train_time_yesterday");
+    if (days < 7) return t("train_time_days_ago", { count: days });
     return date.toLocaleDateString();
   }
 </script>
@@ -61,7 +61,7 @@
         </div>
         <div class="stat">
           <i class="fas fa-fire"></i>
-          <span>{best.bestCombo} {t('train_combo_label').toLowerCase()}</span>
+          <span>{best.bestCombo} {t("train_combo_label").toLowerCase()}</span>
         </div>
         <div class="stat date">
           <i class="fas fa-calendar"></i>
@@ -87,7 +87,10 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.05));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 0.75rem;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      transform var(--duration-normal);
   }
 
   .best-card:hover {

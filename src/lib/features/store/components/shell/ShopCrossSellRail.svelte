@@ -47,9 +47,13 @@
           <span class="blurb">{entry.blurb}</span>
           <span class="foot">
             <span class="price">
-              {#if entry.priceIsFrom}from&nbsp;{/if}{formatUsd(entry.priceCents)}
+              {#if entry.priceIsFrom}from&nbsp;{/if}{formatUsd(
+                entry.priceCents
+              )}
             </span>
-            <span class="go">View <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+            <span class="go"
+              >View <i class="fas fa-arrow-right" aria-hidden="true"></i></span
+            >
           </span>
         </a>
       {/each}
@@ -71,7 +75,11 @@
     font-family: var(--page-title-font, "Fraunces", Georgia, serif);
     font-style: italic;
     font-weight: 700;
-    font-variation-settings: "opsz" 144, "wght" 700, "SOFT" 0, "WONK" 1;
+    font-variation-settings:
+      "opsz" 144,
+      "wght" 700,
+      "SOFT" 0,
+      "WONK" 1;
     font-size: clamp(1.35rem, 2vw, 1.9rem);
     letter-spacing: -0.015em;
   }
@@ -101,8 +109,8 @@
     color: inherit;
     text-decoration: none;
     transition:
-      transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-      border-color 0.2s;
+      transform var(--duration-normal) var(--ease-out),
+      border-color var(--duration-normal);
   }
   .rail-card:hover {
     transform: translateY(-0.25rem);

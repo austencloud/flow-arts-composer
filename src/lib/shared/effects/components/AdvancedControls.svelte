@@ -75,7 +75,7 @@
     text-transform: uppercase;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: color var(--duration-fast, 150ms) ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
   .advanced-toggle:hover {
     color: var(--theme-text, #fff);
@@ -88,7 +88,7 @@
 
   .chevron {
     font-size: 0.7rem;
-    transition: transform var(--duration-normal, 200ms) cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform var(--duration-normal) var(--ease-spring);
   }
   .advanced-toggle.open .chevron {
     transform: rotate(180deg);
@@ -119,7 +119,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    animation: advanced-slide var(--duration-normal, 200ms) ease-out;
+    animation: advanced-slide var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes advanced-slide {

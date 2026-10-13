@@ -2,7 +2,11 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { FeedbackUploadProgress } from "#lib/shared/feedback/domain/models/feedback-models.js";
 
-  const { isSubmitting, disabled, uploadProgress = null } = $props<{
+  const {
+    isSubmitting,
+    disabled,
+    uploadProgress = null,
+  } = $props<{
     isSubmitting: boolean;
     disabled: boolean;
     uploadProgress?: FeedbackUploadProgress | null;
@@ -19,7 +23,8 @@
 
   const submitLabel = $derived.by(() => {
     if (!isSubmitting) return t("feedback_submit_button");
-    if (isUploading) return t("feedback_uploading_images_pct", { pct: percentText });
+    if (isUploading)
+      return t("feedback_uploading_images_pct", { pct: percentText });
     return t("feedback_submitting");
   });
 
@@ -82,7 +87,13 @@
     font-weight: 700;
     letter-spacing: 0.01em;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     overflow: hidden;
   }
 
@@ -104,7 +115,7 @@
     transform-origin: left center;
     transform: scaleX(calc(var(--progress) / 100));
     /* Smooth out the jumps between progress events */
-    transition: transform 200ms ease-out;
+    transition: transform var(--duration-normal) var(--ease-standard-out);
     border-radius: inherit;
   }
 

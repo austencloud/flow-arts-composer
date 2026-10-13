@@ -78,8 +78,8 @@
     font-weight: 500;
     cursor: pointer;
     transition:
-      background 0.15s ease,
-      transform 0.1s ease;
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard);
   }
 
   .modal-footer :global(button:active) {
@@ -91,7 +91,8 @@
     background: var(--theme-accent, #3b82f6);
     border: none;
     color: white;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-accent, #3b82f6) 30%, transparent);
+    box-shadow: 0 2px 8px
+      color-mix(in srgb, var(--theme-accent, #3b82f6) 30%, transparent);
   }
 
   .modal-footer :global(button.primary:hover) {

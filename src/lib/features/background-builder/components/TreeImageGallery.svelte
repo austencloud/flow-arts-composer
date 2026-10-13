@@ -8,9 +8,19 @@
     sceneTrees: RenderedTree[];
   }
 
-  let { selectedCategory, onCategoryChange, onDeleteTree, sceneTrees }: Props = $props();
+  let { selectedCategory, onCategoryChange, onDeleteTree, sceneTrees }: Props =
+    $props();
 
-  const CATEGORIES: TreeCategory[] = ["pine", "fir", "spruce", "oak", "maple", "poplar", "willow", "dead"];
+  const CATEGORIES: TreeCategory[] = [
+    "pine",
+    "fir",
+    "spruce",
+    "oak",
+    "maple",
+    "poplar",
+    "willow",
+    "dead",
+  ];
   const BASE_PATH = "/images/trees/curated";
 
   interface TreeImageInfo {
@@ -54,7 +64,7 @@
   function getCategoryCounts(images: TreeImageInfo[]): Record<string, number> {
     const counts: Record<string, number> = { all: images.length };
     for (const cat of CATEGORIES) {
-      counts[cat] = images.filter(img => img.category === cat).length;
+      counts[cat] = images.filter((img) => img.category === cat).length;
     }
     return counts;
   }
@@ -79,7 +89,9 @@
           class:active={selectedCategory === category}
           onclick={() => onCategoryChange(category)}
         >
-          {category.charAt(0).toUpperCase() + category.slice(1)} ({categoryCounts[category] ?? 0})
+          {category.charAt(0).toUpperCase() + category.slice(1)} ({categoryCounts[
+            category
+          ] ?? 0})
         </button>
       {/if}
     {/each}
@@ -149,7 +161,13 @@
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .category-btn:hover {
@@ -158,7 +176,11 @@
   }
 
   .category-btn.active {
-    background: linear-gradient(135deg, rgba(132, 204, 22, 0.3), rgba(163, 230, 53, 0.3));
+    background: linear-gradient(
+      135deg,
+      rgba(132, 204, 22, 0.3),
+      rgba(163, 230, 53, 0.3)
+    );
     border-color: rgba(163, 230, 53, 0.5);
     color: #a3e635;
   }
@@ -189,7 +211,14 @@
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 10px;
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      grid-template-columns var(--duration-normal) var(--ease-standard);
   }
 
   .image-card:hover {
@@ -217,7 +246,15 @@
     color: #ffffff;
     cursor: pointer;
     opacity: 0.7;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     z-index: 1;
   }
 
@@ -278,7 +315,11 @@
 
   .tree-count {
     padding: 2px 6px;
-    background: color-mix(in srgb, var(--theme-success, #a3e635) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-success, #a3e635) 20%,
+      transparent
+    );
     border-radius: 8px;
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;

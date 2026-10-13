@@ -7,8 +7,8 @@ center label opens an anchored popover with all four orientations.
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { Popover } from "bits-ui";
-  import { scale } from "svelte/transition";
-  import { backOut, cubicOut } from "svelte/easing";
+  import { popIn } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
     orientation: Orientation;
@@ -285,17 +285,13 @@ center label opens an anchored popover with all four orientations.
                 class="orientation-popover"
                 class:color-blue={color === "blue"}
                 class:color-red={color === "red"}
-                in:scale={{
-                  duration: 180,
+                in:popIn={{
+                  duration: DURATION.fast,
                   start: 0.92,
-                  opacity: 0,
-                  easing: backOut,
                 }}
-                out:scale={{
-                  duration: 130,
+                out:popIn={{
+                  duration: DURATION.instant,
                   start: 0.95,
-                  opacity: 0,
-                  easing: cubicOut,
                 }}
               >
                 <div class="orientation-options">

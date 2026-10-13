@@ -116,7 +116,9 @@
   const messageActionLabel = $derived(
     isOwn
       ? t("inbox_ui_actions_for_your_message")
-      : t("inbox_actions_sender", { name: message.senderName || t("inbox_ui_unknown") })
+      : t("inbox_actions_sender", {
+          name: message.senderName || t("inbox_ui_unknown"),
+        })
   );
   const swipeProgress = $derived(
     Math.min(1, swipeDistance / REPLY_SWIPE_THRESHOLD)
@@ -781,8 +783,14 @@
           onkeydown={handleMenuKeydown}
           onfocusout={handleMenuFocusout}
         >
-          <div class="reaction-menu" role="group" aria-label={t("inbox_ui_react_to_message")}>
-            <span class="reaction-menu-label" aria-hidden="true">{t("inbox_ui_react")}</span>
+          <div
+            class="reaction-menu"
+            role="group"
+            aria-label={t("inbox_ui_react_to_message")}
+          >
+            <span class="reaction-menu-label" aria-hidden="true"
+              >{t("inbox_ui_react")}</span
+            >
             {#each REACTIONS as emoji}
               <button
                 type="button"
@@ -905,7 +913,9 @@
 <ConfirmDialog
   bind:isOpen={showDeleteConfirm}
   title={t("inbox_ui_delete_message")}
-  message={t("inbox_ui_this_message_will_be_deleted_for_everyone_this_action_cannot_be_undone")}
+  message={t(
+    "inbox_ui_this_message_will_be_deleted_for_everyone_this_action_cannot_be_undone"
+  )}
   confirmText={t("inbox_ui_delete")}
   cancelText={t("inbox_ui_cancel")}
   variant="danger"
@@ -941,7 +951,7 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform var(--duration-emphasis) var(--ease-out);
     will-change: transform;
   }
 
@@ -973,7 +983,7 @@
     cursor: pointer;
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--duration-fast, 120ms) ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
   .message-action-trigger::before {
@@ -986,9 +996,9 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
     transform: scale(0.88);
     transition:
-      transform var(--duration-fast, 120ms) ease,
-      background var(--duration-fast, 120ms) ease,
-      border-color var(--duration-fast, 120ms) ease;
+      transform var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .message-action-trigger i {
@@ -1057,8 +1067,8 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.08));
     transform: translate(-100%, -50%) scale(0.82);
     transition:
-      transform var(--duration-fast, 120ms) ease,
-      background var(--duration-fast, 120ms) ease;
+      transform var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
     pointer-events: none;
   }
 
@@ -1081,8 +1091,7 @@
     border-radius: 24px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     z-index: 100;
-    animation: bar-pop var(--duration-normal)
-      cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: bar-pop var(--duration-normal) var(--ease-spring) forwards;
   }
 
   .reaction-bar.own {
@@ -1130,11 +1139,10 @@
     background: transparent;
     cursor: pointer;
     border-radius: 50%;
-    transition: transform var(--duration-fast) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
     padding: 0;
     opacity: 0;
-    animation: emoji-pop var(--duration-normal)
-      cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: emoji-pop var(--duration-normal) var(--ease-spring) forwards;
     animation-delay: var(--delay);
   }
 
@@ -1170,7 +1178,9 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     cursor: pointer;
     border-radius: 50%;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     font-size: var(--font-size-sm, 14px);
     padding: 0;
   }
@@ -1200,7 +1210,7 @@
       #121218;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    animation: menu-slide var(--duration-fast) ease-out;
+    animation: menu-slide var(--duration-fast) var(--ease-standard-out);
     translate: 0 var(--menu-shift-y, 0);
     z-index: 101;
   }
@@ -1250,7 +1260,7 @@
     font-size: var(--font-size-sm, 14px);
     cursor: pointer;
     border-radius: 8px;
-    transition: background 0.12s ease;
+    transition: background var(--duration-instant) var(--ease-standard);
     text-align: left;
   }
 
@@ -1304,9 +1314,9 @@
     font-size: 1.25rem;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 120ms) ease,
-      border-color var(--duration-fast, 120ms) ease,
-      transform var(--duration-fast, 120ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .reaction-menu-option:hover,

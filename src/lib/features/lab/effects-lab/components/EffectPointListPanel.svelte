@@ -44,7 +44,10 @@
       await navigator.clipboard.writeText(editorState.toJSON());
       copyFeedback = true;
       if (copyFeedbackTimer !== null) clearTimeout(copyFeedbackTimer);
-      copyFeedbackTimer = setTimeout(() => { copyFeedback = false; copyFeedbackTimer = null; }, 1500);
+      copyFeedbackTimer = setTimeout(() => {
+        copyFeedback = false;
+        copyFeedbackTimer = null;
+      }, 1500);
     } catch {
       toast.error("Couldn't copy to clipboard");
     }
@@ -126,7 +129,11 @@
     }
   }
 
-  function handleInputKeydown(e: KeyboardEvent, pointIndex: number, field: "dx" | "dy") {
+  function handleInputKeydown(
+    e: KeyboardEvent,
+    pointIndex: number,
+    field: "dx" | "dy"
+  ) {
     switch (e.key) {
       case "Escape":
         e.preventDefault();
@@ -138,7 +145,10 @@
           if (field === "dx") {
             e.preventDefault();
             const dyInput = dyInputEls[pointIndex];
-            if (dyInput) { dyInput.focus(); dyInput.select(); }
+            if (dyInput) {
+              dyInput.focus();
+              dyInput.select();
+            }
           } else if (field === "dy") {
             // Jump to next point's dx
             const nextIndex = pointIndex + 1;
@@ -154,7 +164,10 @@
           if (field === "dy") {
             e.preventDefault();
             const dxInput = dxInputEls[pointIndex];
-            if (dxInput) { dxInput.focus(); dxInput.select(); }
+            if (dxInput) {
+              dxInput.focus();
+              dxInput.select();
+            }
           } else if (field === "dx") {
             const prevIndex = pointIndex - 1;
             if (prevIndex >= 0) {
@@ -162,7 +175,10 @@
               editorState.selectedPointIndex = prevIndex;
               requestAnimationFrame(() => {
                 const dyInput = dyInputEls[prevIndex];
-                if (dyInput) { dyInput.focus(); dyInput.select(); }
+                if (dyInput) {
+                  dyInput.focus();
+                  dyInput.select();
+                }
               });
             }
             // else: let Shift+Tab naturally leave the list
@@ -181,7 +197,10 @@
             else {
               requestAnimationFrame(() => {
                 const dyInput = dyInputEls[nextIndex];
-                if (dyInput) { dyInput.focus(); dyInput.select(); }
+                if (dyInput) {
+                  dyInput.focus();
+                  dyInput.select();
+                }
               });
             }
           } else {
@@ -254,10 +273,17 @@
                     bind:this={dxInputEls[i]}
                     value={point.dx}
                     tabindex={-1}
-                    onchange={(e) => handleCoordChange(i, "dx", (e.target as HTMLInputElement).value)}
+                    onchange={(e) =>
+                      handleCoordChange(
+                        i,
+                        "dx",
+                        (e.target as HTMLInputElement).value
+                      )}
                     onclick={(e) => handleInputClick(e, i)}
                     onkeydown={(e) => handleInputKeydown(e, i, "dx")}
-                    onfocus={() => { editorState.selectedPointIndex = i; }}
+                    onfocus={() => {
+                      editorState.selectedPointIndex = i;
+                    }}
                   />
                 </label>
                 <label class="coord-field">
@@ -269,17 +295,27 @@
                     bind:this={dyInputEls[i]}
                     value={point.dy}
                     tabindex={-1}
-                    onchange={(e) => handleCoordChange(i, "dy", (e.target as HTMLInputElement).value)}
+                    onchange={(e) =>
+                      handleCoordChange(
+                        i,
+                        "dy",
+                        (e.target as HTMLInputElement).value
+                      )}
                     onclick={(e) => handleInputClick(e, i)}
                     onkeydown={(e) => handleInputKeydown(e, i, "dy")}
-                    onfocus={() => { editorState.selectedPointIndex = i; }}
+                    onfocus={() => {
+                      editorState.selectedPointIndex = i;
+                    }}
                   />
                 </label>
               </div>
               <button
                 class="icon-btn center-btn"
                 tabindex={-1}
-                onclick={(e) => { e.stopPropagation(); handleCenterPoint(i); }}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  handleCenterPoint(i);
+                }}
                 aria-label="Move point {i + 1} to center"
                 title="Move to center (0, 0)"
               >
@@ -288,7 +324,10 @@
               <button
                 class="icon-btn delete-btn"
                 tabindex={-1}
-                onclick={(e) => { e.stopPropagation(); editorState.deletePoint(i); }}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  editorState.deletePoint(i);
+                }}
                 aria-label="Delete point {i + 1}"
                 title="Delete point"
               >
@@ -320,11 +359,17 @@
       <button
         class="action-btn reset-btn"
         onclick={() => editorState.resetToUserDefault()}
-        aria-label={editorState.hasUserDefault ? "Reset to my saved default" : "Reset to system defaults"}
-        title={editorState.hasUserDefault ? "Revert to your saved default" : "Revert to system defaults (no custom default set)"}
+        aria-label={editorState.hasUserDefault
+          ? "Reset to my saved default"
+          : "Reset to system defaults"}
+        title={editorState.hasUserDefault
+          ? "Revert to your saved default"
+          : "Revert to system defaults (no custom default set)"}
       >
         <i class="fas fa-undo" aria-hidden="true"></i>
-        {editorState.hasUserDefault ? "Reset to My Default" : "Reset to Defaults"}
+        {editorState.hasUserDefault
+          ? "Reset to My Default"
+          : "Reset to Defaults"}
       </button>
 
       {#if editorState.isOverridingCodeTable}
@@ -354,21 +399,28 @@
       <button
         class="action-btn copy-btn"
         onclick={handleCopyJSON}
-        aria-label={copyFeedback ? "Copied to clipboard" : "Copy points as JSON"}
+        aria-label={copyFeedback
+          ? "Copied to clipboard"
+          : "Copy points as JSON"}
       >
-        <i class="fas {copyFeedback ? 'fa-check' : 'fa-copy'}" aria-hidden="true"></i>
+        <i
+          class="fas {copyFeedback ? 'fa-check' : 'fa-copy'}"
+          aria-hidden="true"
+        ></i>
         {copyFeedback ? "Copied!" : "Copy JSON"}
       </button>
 
       <button
         class="action-btn import-btn"
-        onclick={() => { showImport = !showImport; importError = null; }}
+        onclick={() => {
+          showImport = !showImport;
+          importError = null;
+        }}
         aria-label={showImport ? "Cancel import" : "Import points from JSON"}
       >
         <i class="fas fa-file-import" aria-hidden="true"></i>
         Import JSON
       </button>
-
     </div>
 
     {#if showImport}
@@ -382,7 +434,11 @@
         {#if importError}
           <p class="import-error">{importError}</p>
         {/if}
-        <button class="action-btn" onclick={handleImport} aria-label="Apply imported JSON">
+        <button
+          class="action-btn"
+          onclick={handleImport}
+          aria-label="Apply imported JSON"
+        >
           Apply Import
         </button>
       </div>
@@ -395,7 +451,8 @@
   <!-- Status -->
   <div class="status-bar">
     <span class="status-info">
-      {editorState.points.length} {editorState.points.length === 1 ? "point" : "points"}
+      {editorState.points.length}
+      {editorState.points.length === 1 ? "point" : "points"}
       {#if editorState.hasUserDefault}
         <span class="status-has-default" title="Custom default set">
           <i class="fas fa-bookmark" aria-hidden="true"></i>
@@ -410,11 +467,17 @@
           Overriding code table
         </span>
       {:else if editorState.tipSource === "render-key"}
-        <span class="status-source" title="Tips come from the build-specific table in prop-tip-points.ts">
+        <span
+          class="status-source"
+          title="Tips come from the build-specific table in prop-tip-points.ts"
+        >
           build table
         </span>
       {:else}
-        <span class="status-source" title="Tips come from the notation table in prop-tip-points.ts">
+        <span
+          class="status-source"
+          title="Tips come from the notation table in prop-tip-points.ts"
+        >
           code table
         </span>
       {/if}
@@ -499,7 +562,7 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: background 100ms ease;
+    transition: background var(--duration-instant) var(--ease-standard);
   }
 
   .add-center-btn:hover {
@@ -525,7 +588,7 @@
     border: 1px solid transparent;
     border-radius: var(--border-radius-md, 8px);
     cursor: pointer;
-    transition: background 100ms ease;
+    transition: background var(--duration-instant) var(--ease-standard);
   }
 
   .point-row:hover {
@@ -623,7 +686,15 @@
     border-radius: var(--border-radius-md, 8px);
     background: transparent;
     cursor: pointer;
-    transition: all 100ms ease;
+    transition:
+      background var(--duration-instant) var(--ease-standard),
+      border-color var(--duration-instant) var(--ease-standard),
+      color var(--duration-instant) var(--ease-standard),
+      opacity var(--duration-instant) var(--ease-standard),
+      transform var(--duration-instant) var(--ease-standard),
+      box-shadow var(--duration-instant) var(--ease-standard),
+      width var(--duration-instant) var(--ease-standard),
+      height var(--duration-instant) var(--ease-standard);
     flex-shrink: 0;
   }
 
@@ -674,7 +745,13 @@
     color: var(--theme-text, white);
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .action-btn:hover:not(:disabled) {
@@ -786,7 +863,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    animation: fade-in-out 1.2s ease;
+    animation: fade-in-out var(--duration-scene) var(--ease-standard);
   }
 
   .status-action-feedback {
@@ -795,22 +872,42 @@
     align-items: center;
     gap: 4px;
     font-weight: 500;
-    animation: action-pop 2s ease;
+    animation: action-pop var(--duration-scene) var(--ease-standard);
   }
 
   @keyframes fade-in-out {
-    0% { opacity: 0; }
-    15% { opacity: 1; }
-    75% { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 0;
+    }
+    15% {
+      opacity: 1;
+    }
+    75% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 
   @keyframes action-pop {
-    0% { opacity: 0; transform: scale(0.95); }
-    10% { opacity: 1; transform: scale(1.02); }
-    20% { transform: scale(1); }
-    80% { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    10% {
+      opacity: 1;
+      transform: scale(1.02);
+    }
+    20% {
+      transform: scale(1);
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

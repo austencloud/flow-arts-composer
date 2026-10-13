@@ -505,7 +505,11 @@ Container-aware responsive design (2-tier):
     font-size: calc(14px * var(--scale));
     font-weight: 600;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      transform var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .section-option:active {
@@ -555,7 +559,12 @@ Container-aware responsive design (2-tier):
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      outline var(--duration-fast) var(--ease-standard);
   }
 
   .loop-toggle-chip:hover {
@@ -585,7 +594,7 @@ Container-aware responsive design (2-tier):
   .loop-toggle-chip i {
     font-size: 18px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
-    transition: color 150ms ease;
+    transition: color var(--duration-fast) var(--ease-standard);
   }
 
   .loop-toggle-chip:focus-visible {

@@ -51,10 +51,10 @@ Non-interactive visual element that shows +/- icons
     z-index: 2;
 
     transition:
-      color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-      background 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-      border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-      transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      color var(--duration-dramatic) var(--ease-standard),
+      background var(--duration-dramatic) var(--ease-standard),
+      border-color var(--duration-dramatic) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .stepper-button-visual svg {

@@ -24,8 +24,7 @@
   (crossfade-primitive.md §The Routing Rule).
 -->
 <script lang="ts">
-  import { fade } from "svelte/transition";
-  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { Crossfade, opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   let {
@@ -102,7 +101,7 @@
     class:stage
     style={`width:${WIDTH}px;height:${HEIGHT}px;transform:translate(${left}px, ${top}px)`}
     aria-live="polite"
-    transition:fade={{ duration: DURATION.normal }}
+    transition:opaqueFade={{ duration: DURATION.normal }}
   >
     <div class="body">
       <Crossfade key={thought} duration={DURATION.emphasis} fill>

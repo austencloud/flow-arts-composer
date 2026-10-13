@@ -217,11 +217,11 @@
     );
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      box-shadow var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .mode-button {
@@ -296,7 +296,7 @@
 
   .guide-button i {
     font-size: 11px;
-    transition: transform var(--duration-fast, 150ms) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .guide-button.open {
@@ -348,8 +348,7 @@
     backdrop-filter: blur(22px) saturate(1.18);
     color: var(--theme-text, #fff);
     z-index: var(--z-dropdown, 100);
-    animation: keyboard-guide-in var(--duration-normal, 200ms)
-      var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+    animation: keyboard-guide-in var(--duration-normal) var(--ease-out);
   }
 
   :global(.keyboard-guide-panel)::before {

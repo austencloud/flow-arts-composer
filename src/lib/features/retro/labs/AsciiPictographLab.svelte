@@ -21,13 +21,14 @@
 
   const svgToBraille = new SvgToBrailleConverter(
     getCanvas2DRenderer(),
-    pictographPreparer,
+    pictographPreparer
   );
-
 
   let allPictographs = $state<PictographData[]>([]);
   let currentIndex = $state(0);
-  let pictograph = $derived<PictographData | null>(allPictographs[currentIndex] ?? null);
+  let pictograph = $derived<PictographData | null>(
+    allPictographs[currentIndex] ?? null
+  );
   let brailleLines = $state<string[]>([]);
   let brailleLoading = $state(false);
   let renderTimeMs = $state(0);
@@ -37,13 +38,15 @@
   const label = $derived(
     allPictographs.length > 0
       ? `${pictograph?.letter ?? "?"} - ${currentIndex + 1} / ${allPictographs.length}`
-      : "Loading pictographs...",
+      : "Loading pictographs..."
   );
 
   // Load real pictographs from CSV dataframe
   onMount(async () => {
     try {
-      const pictographs = await motionQueryHandler.queryMotions({ gridMode: GridMode.DIAMOND });
+      const pictographs = await motionQueryHandler.queryMotions({
+        gridMode: GridMode.DIAMOND,
+      });
       allPictographs = pictographs;
       currentIndex = 0;
     } catch (e) {
@@ -61,15 +64,18 @@
       return;
     }
     brailleLoading = true;
-    svgToBraille.convert(data).then((result) => {
-      brailleLines = result.lines;
-      renderTimeMs = result.renderTimeMs;
-      brailleLoading = false;
-    }).catch((e) => {
-      console.error("Braille conversion failed:", e);
-      brailleLines = [];
-      brailleLoading = false;
-    });
+    svgToBraille
+      .convert(data)
+      .then((result) => {
+        brailleLines = result.lines;
+        renderTimeMs = result.renderTimeMs;
+        brailleLoading = false;
+      })
+      .catch((e) => {
+        console.error("Braille conversion failed:", e);
+        brailleLines = [];
+        brailleLoading = false;
+      });
   });
 
   function randomize() {
@@ -79,7 +85,8 @@
 
   function prev() {
     if (allPictographs.length === 0) return;
-    currentIndex = (currentIndex - 1 + allPictographs.length) % allPictographs.length;
+    currentIndex =
+      (currentIndex - 1 + allPictographs.length) % allPictographs.length;
   }
 
   function next() {
@@ -88,8 +95,14 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === "ArrowLeft") { prev(); e.preventDefault(); }
-    if (e.key === "ArrowRight") { next(); e.preventDefault(); }
+    if (e.key === "ArrowLeft") {
+      prev();
+      e.preventDefault();
+    }
+    if (e.key === "ArrowRight") {
+      next();
+      e.preventDefault();
+    }
   }
 </script>
 
@@ -97,7 +110,12 @@
 
 <div class="lab">
   <div class="lab-toolbar">
-    <button class="nav-btn" onclick={prev} disabled={dataLoading} aria-label="Previous">
+    <button
+      class="nav-btn"
+      onclick={prev}
+      disabled={dataLoading}
+      aria-label="Previous"
+    >
       <i class="fas fa-chevron-left" aria-hidden="true"></i>
     </button>
 
@@ -106,7 +124,12 @@
       Randomize
     </button>
 
-    <button class="nav-btn" onclick={next} disabled={dataLoading} aria-label="Next">
+    <button
+      class="nav-btn"
+      onclick={next}
+      disabled={dataLoading}
+      aria-label="Next"
+    >
       <i class="fas fa-chevron-right" aria-hidden="true"></i>
     </button>
   </div>
@@ -167,7 +190,6 @@
     color: var(--theme-text, #fff);
   }
 
-
   .lab-toolbar {
     display: flex;
     align-items: center;
@@ -209,8 +231,8 @@
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
     transition:
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   @media (hover: hover) {
@@ -244,8 +266,8 @@
     font-weight: 500;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   @media (hover: hover) {
@@ -264,7 +286,6 @@
     outline: 2px solid #33ff33;
     outline-offset: 2px;
   }
-
 
   .compare-split {
     display: flex;
@@ -327,7 +348,6 @@
     min-height: 0;
     overflow: auto;
   }
-
 
   .lab-status {
     display: flex;

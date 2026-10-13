@@ -746,8 +746,8 @@
     background: var(--theme-panel-bg, oklch(0.15 0.02 270 / 0.6));
     border-left: 0 solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
     transition:
-      width 240ms ease,
-      min-width 240ms ease;
+      width var(--duration-normal) var(--ease-standard),
+      min-width var(--duration-normal) var(--ease-standard);
   }
   .reader-companion.open {
     width: clamp(360px, 40vw, 560px);
@@ -790,7 +790,7 @@
       border-radius: 16px 16px 0 0;
       box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.4);
       transform: translateY(100%);
-      transition: transform 240ms ease;
+      transition: transform var(--duration-normal) var(--ease-standard);
     }
     .reader-companion.mobile.open {
       width: auto;

@@ -134,7 +134,9 @@ collection-picker-state for why.
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
     font-size: 18px;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 

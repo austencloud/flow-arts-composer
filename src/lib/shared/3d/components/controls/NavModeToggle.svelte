@@ -51,7 +51,11 @@
   }
 </script>
 
-<div class="nav-mode-toggle" role="radiogroup" aria-label="Camera navigation mode">
+<div
+  class="nav-mode-toggle"
+  role="radiogroup"
+  aria-label="Camera navigation mode"
+>
   {#each modes as m}
     <button
       type="button"
@@ -98,7 +102,9 @@
     font-weight: 500;
     letter-spacing: 0.01em;
     cursor: pointer;
-    transition: background 150ms ease, color 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
   }
 

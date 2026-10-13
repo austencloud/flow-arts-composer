@@ -47,7 +47,11 @@ QuizLetterButton - Answer button for quiz
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     border-radius: 14px;
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.16, 1, 0.3, 1);
+    transition:
+      background var(--duration-normal) var(--ease-out),
+      border-color var(--duration-normal) var(--ease-out),
+      transform var(--duration-normal) var(--ease-out),
+      box-shadow var(--duration-normal) var(--ease-out);
   }
 
   .answer-btn:hover:not(:disabled) {
@@ -74,19 +78,21 @@ QuizLetterButton - Answer button for quiz
     font-weight: 800;
     color: var(--theme-text, #ffffff);
     font-family: Georgia, serif;
-    text-shadow: 0 2px 8px color-mix(in srgb, var(--theme-panel-bg) 60%, transparent);
+    text-shadow: 0 2px 8px
+      color-mix(in srgb, var(--theme-panel-bg) 60%, transparent);
   }
 
   .answer-btn.correct {
     background: color-mix(in srgb, var(--semantic-success) 20%, transparent);
     border-color: color-mix(in srgb, var(--semantic-success) 60%, transparent);
-    animation: correctPulse 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: correctPulse var(--duration-dramatic) var(--ease-spring);
   }
 
   @keyframes correctPulse {
     0% {
       transform: scale(1);
-      box-shadow: 0 0 0 0 color-mix(in srgb, var(--semantic-success) 40%, transparent);
+      box-shadow: 0 0 0 0
+        color-mix(in srgb, var(--semantic-success) 40%, transparent);
     }
     50% {
       transform: scale(1.04);
@@ -101,7 +107,7 @@ QuizLetterButton - Answer button for quiz
   .answer-btn.incorrect {
     background: color-mix(in srgb, var(--semantic-error) 20%, transparent);
     border-color: color-mix(in srgb, var(--semantic-error) 60%, transparent);
-    animation: incorrectShake var(--duration-dramatic) ease-out;
+    animation: incorrectShake var(--duration-dramatic) var(--ease-standard-out);
   }
 
   @keyframes incorrectShake {
@@ -134,7 +140,7 @@ QuizLetterButton - Answer button for quiz
     right: 6px;
     font-size: 0.9rem;
     font-weight: bold;
-    animation: iconPop var(--duration-emphasis) cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: iconPop var(--duration-emphasis) var(--ease-spring);
   }
 
   @keyframes iconPop {
@@ -223,8 +229,8 @@ QuizLetterButton - Answer button for quiz
 
     .answer-btn {
       transition:
-        background 0.15s ease,
-        border-color 0.15s ease;
+        background var(--duration-fast) var(--ease-standard),
+        border-color var(--duration-fast) var(--ease-standard);
     }
   }
 </style>

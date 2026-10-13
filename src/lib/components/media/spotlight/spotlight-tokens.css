@@ -187,11 +187,13 @@ dialog.media-spotlight[data-swiping="true"] {
 
 /* Navigation slide animation */
 .spotlight-image-enter {
-  animation: spotlightImageEnter var(--spotlight-duration-nav) var(--spotlight-ease-out);
+  animation: spotlightImageEnter var(--spotlight-duration-nav)
+    var(--spotlight-ease-out);
 }
 
 .spotlight-image-exit {
-  animation: spotlightImageExit var(--spotlight-duration-nav) var(--spotlight-ease-out);
+  animation: spotlightImageExit var(--spotlight-duration-nav)
+    var(--spotlight-ease-out);
 }
 
 /* Direction-aware animations */
@@ -232,9 +234,9 @@ dialog.media-spotlight[data-swiping="true"] {
   align-items: center;
   justify-content: center;
   transition:
-    background var(--spotlight-duration-chrome) ease,
-    transform 150ms var(--spotlight-ease-spring),
-    opacity var(--spotlight-duration-chrome) ease;
+    background var(--spotlight-duration-chrome) var(--ease-standard),
+    transform var(--duration-fast) var(--spotlight-ease-spring),
+    opacity var(--spotlight-duration-chrome) var(--ease-standard);
   z-index: 10;
 }
 
@@ -290,7 +292,9 @@ dialog.media-spotlight[data-swiping="true"] {
   right: 0;
   height: var(--spotlight-filmstrip-height);
   padding: var(--spotlight-chrome-padding);
-  padding-bottom: calc(var(--spotlight-chrome-padding) + var(--spotlight-safe-area-bottom));
+  padding-bottom: calc(
+    var(--spotlight-chrome-padding) + var(--spotlight-safe-area-bottom)
+  );
   background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
   overflow-x: auto;
   overflow-y: hidden;
@@ -315,8 +319,8 @@ dialog.media-spotlight[data-swiping="true"] {
   overflow: hidden;
   cursor: pointer;
   transition:
-    transform 150ms var(--spotlight-ease-spring),
-    border-color 150ms ease;
+    transform var(--duration-fast) var(--spotlight-ease-spring),
+    border-color var(--duration-fast) var(--ease-standard);
 }
 
 .spotlight-filmstrip-thumb img {
@@ -360,7 +364,9 @@ dialog.media-spotlight[data-swiping="true"] {
 .spotlight-close {
   position: absolute;
   top: calc(var(--spotlight-chrome-padding) + var(--spotlight-safe-area-top));
-  right: calc(var(--spotlight-chrome-padding) + var(--spotlight-safe-area-right));
+  right: calc(
+    var(--spotlight-chrome-padding) + var(--spotlight-safe-area-right)
+  );
   width: var(--min-touch-target);
   height: var(--min-touch-target);
   border: none;
@@ -372,8 +378,8 @@ dialog.media-spotlight[data-swiping="true"] {
   align-items: center;
   justify-content: center;
   transition:
-    background 150ms ease,
-    transform 150ms var(--spotlight-ease-spring);
+    background var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--spotlight-ease-spring);
   z-index: 10;
 }
 
@@ -471,7 +477,8 @@ dialog.media-spotlight[data-swiping="true"] {
 /* ===== Fallback for browsers without @starting-style ===== */
 @supports not (selector(@starting-style {})) {
   dialog.media-spotlight[data-entered="true"] {
-    animation: spotlightFallbackIn var(--spotlight-duration-in) var(--spotlight-ease-out);
+    animation: spotlightFallbackIn var(--spotlight-duration-in)
+      var(--spotlight-ease-out);
   }
 
   @keyframes spotlightFallbackIn {

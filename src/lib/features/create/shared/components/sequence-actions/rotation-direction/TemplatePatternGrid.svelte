@@ -42,38 +42,60 @@
 
   function categoryLabel(category: TemplateCategory): string {
     switch (category) {
-      case "uniform": return t("create_rotation_category_uniform");
-      case "alternating": return t("create_rotation_category_alternating");
-      case "split-hand": return t("create_rotation_category_split_hand");
-      case "split-half": return t("create_rotation_category_split_half");
+      case "uniform":
+        return t("create_rotation_category_uniform");
+      case "alternating":
+        return t("create_rotation_category_alternating");
+      case "split-hand":
+        return t("create_rotation_category_split_hand");
+      case "split-half":
+        return t("create_rotation_category_split_half");
     }
   }
 
   function templateName(id: string): string {
     switch (id) {
-      case "all-cw": return t("create_rotation_template_all_cw");
-      case "all-ccw": return t("create_rotation_template_all_ccw");
-      case "alternating-cw-first": return t("create_rotation_template_alternating_cw_first");
-      case "alternating-ccw-first": return t("create_rotation_template_alternating_ccw_first");
-      case "blue-cw-red-ccw": return t("create_rotation_template_left_cw_right_ccw");
-      case "blue-ccw-red-cw": return t("create_rotation_template_left_ccw_right_cw");
-      case "first-half-cw": return t("create_rotation_template_first_half_cw");
-      case "first-half-ccw": return t("create_rotation_template_first_half_ccw");
-      default: return id;
+      case "all-cw":
+        return t("create_rotation_template_all_cw");
+      case "all-ccw":
+        return t("create_rotation_template_all_ccw");
+      case "alternating-cw-first":
+        return t("create_rotation_template_alternating_cw_first");
+      case "alternating-ccw-first":
+        return t("create_rotation_template_alternating_ccw_first");
+      case "blue-cw-red-ccw":
+        return t("create_rotation_template_left_cw_right_ccw");
+      case "blue-ccw-red-cw":
+        return t("create_rotation_template_left_ccw_right_cw");
+      case "first-half-cw":
+        return t("create_rotation_template_first_half_cw");
+      case "first-half-ccw":
+        return t("create_rotation_template_first_half_ccw");
+      default:
+        return id;
     }
   }
 
   function templateDescription(id: string): string {
     switch (id) {
-      case "all-cw": return t("create_rotation_template_all_cw_desc");
-      case "all-ccw": return t("create_rotation_template_all_ccw_desc");
-      case "alternating-cw-first": return t("create_rotation_template_alternating_cw_first_desc");
-      case "alternating-ccw-first": return t("create_rotation_template_alternating_ccw_first_desc");
-      case "blue-cw-red-ccw": return t("create_rotation_template_left_cw_right_ccw_desc");
-      case "blue-ccw-red-cw": return t("create_rotation_template_left_ccw_right_cw_desc");
-      case "first-half-cw": return t("create_rotation_template_first_half_cw_desc");
-      case "first-half-ccw": return t("create_rotation_template_first_half_ccw_desc");
-      default: return id;
+      case "all-cw":
+        return t("create_rotation_template_all_cw_desc");
+      case "all-ccw":
+        return t("create_rotation_template_all_ccw_desc");
+      case "alternating-cw-first":
+        return t("create_rotation_template_alternating_cw_first_desc");
+      case "alternating-ccw-first":
+        return t("create_rotation_template_alternating_ccw_first_desc");
+      case "blue-cw-red-ccw":
+        return t("create_rotation_template_left_cw_right_ccw_desc");
+      case "blue-ccw-red-cw":
+        return t("create_rotation_template_left_ccw_right_cw_desc");
+      case "first-half-cw":
+        return t("create_rotation_template_first_half_cw_desc");
+      case "first-half-ccw":
+        return t("create_rotation_template_first_half_ccw_desc");
+      default:
+        return id;
     }
   }
 </script>
@@ -129,7 +151,9 @@
               >
                 <span class="group-dot" style="background: {categoryInfo.color}"
                 ></span>
-                <span class="group-label">{categoryLabel(category as TemplateCategory)}</span>
+                <span class="group-label"
+                  >{categoryLabel(category as TemplateCategory)}</span
+                >
               </div>
               <div class="patterns-list">
                 {#each groupTemplates as template}
@@ -147,8 +171,12 @@
                     }}
                   >
                     <div class="pattern-info">
-                      <span class="pattern-name">{templateName(template.id)}</span>
-                      <span class="pattern-desc">{templateDescription(template.id)}</span>
+                      <span class="pattern-name"
+                        >{templateName(template.id)}</span
+                      >
+                      <span class="pattern-desc"
+                        >{templateDescription(template.id)}</span
+                      >
                     </div>
                   </div>
                 {/each}
@@ -178,7 +206,9 @@
             <div class="pattern-info">
               <span class="pattern-name">{templateName(template.id)}</span>
               {#if !isMobile}
-                <span class="pattern-desc">{templateDescription(template.id)}</span>
+                <span class="pattern-desc"
+                  >{templateDescription(template.id)}</span
+                >
               {/if}
             </div>
           </div>
@@ -187,9 +217,10 @@
         {#if filteredTemplates.length === 0}
           <p class="empty-filter-message">
             {t("create_rotation_no_category_patterns", {
-              category: categoryFilter === "all"
-                ? t("create_rotation_filter_all")
-                : categoryLabel(categoryFilter),
+              category:
+                categoryFilter === "all"
+                  ? t("create_rotation_filter_all")
+                  : categoryLabel(categoryFilter),
             })}
           </p>
         {/if}
@@ -235,7 +266,10 @@
     border-radius: 16px;
     color: var(--theme-text-muted, var(--theme-text-dim));
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast),
+      border-color var(--duration-fast);
   }
 
   .filter-btn:hover {
@@ -354,7 +388,9 @@
     border-radius: 8px;
     border: 1px solid var(--theme-stroke, var(--theme-stroke));
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
     user-select: none;
   }
 

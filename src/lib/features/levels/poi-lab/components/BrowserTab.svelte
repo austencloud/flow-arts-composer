@@ -1,6 +1,5 @@
 <script lang="ts">
-
-import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-sequence-validator.js";
+  import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-sequence-validator.js";
   /**
    * Browser Tab - Browse community sequences with poi validation
    *
@@ -90,7 +89,11 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
       }
     }
 
-    const fullResult: ExtendedValidationResult = { ...result, stepViolations, isPending: false };
+    const fullResult: ExtendedValidationResult = {
+      ...result,
+      stepViolations,
+      isPending: false,
+    };
     validationCache.set(seq.id, fullResult);
     return fullResult;
   }
@@ -110,7 +113,9 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
   });
 
   const totalPages = $derived(Math.ceil(filtered.length / perPage));
-  const paginated = $derived(filtered.slice(currentPage * perPage, (currentPage + 1) * perPage));
+  const paginated = $derived(
+    filtered.slice(currentPage * perPage, (currentPage + 1) * perPage)
+  );
 
   // Counts - includes pending (sequences without step data yet)
   const counts = $derived.by(() => {
@@ -135,9 +140,13 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
   const filterOptions = $derived<
     { value: "all" | "valid" | "invalid"; label: string; count: number }[]
   >([
-    { value: "all", label: t('poi_lab_filter_all'), count: counts.all },
-    { value: "valid", label: t('poi_lab_filter_valid'), count: counts.valid },
-    { value: "invalid", label: t('poi_lab_filter_invalid'), count: counts.invalid },
+    { value: "all", label: t("poi_lab_filter_all"), count: counts.all },
+    { value: "valid", label: t("poi_lab_filter_valid"), count: counts.valid },
+    {
+      value: "invalid",
+      label: t("poi_lab_filter_invalid"),
+      count: counts.invalid,
+    },
   ]);
 
   // Load sequences on mount - from community (Firestore)
@@ -179,7 +188,7 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
   {#if isLoading}
     <div class="loading">
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-      {t('poi_lab_loading_sequences')}
+      {t("poi_lab_loading_sequences")}
     </div>
   {:else if error}
     <div class="error" role="alert">
@@ -187,14 +196,14 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
       <p>{error}</p>
       <button class="retry-btn" onclick={() => location.reload()}>
         <i class="fas fa-redo" aria-hidden="true"></i>
-        {t('poi_lab_retry')}
+        {t("poi_lab_retry")}
       </button>
     </div>
   {:else}
     <div class="header-section">
-      <h3>{t('poi_lab_browser_title')}</h3>
+      <h3>{t("poi_lab_browser_title")}</h3>
       <p class="description">
-        {t('poi_lab_browser_description')}
+        {t("poi_lab_browser_description")}
       </p>
     </div>
 
@@ -216,19 +225,26 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
           class="page-btn"
           onclick={prevPage}
           disabled={currentPage === 0}
-          aria-label={t('poi_lab_prev_page')}
+          aria-label={t("poi_lab_prev_page")}
         >
           <i class="fas fa-chevron-left" aria-hidden="true"></i>
         </button>
         <span class="page-info">
-          {t('poi_lab_page_info', { current: String(currentPage + 1), total: String(totalPages) })}
-          <span class="showing">({t('poi_lab_sequence_count', { count: String(filtered.length) })})</span>
+          {t("poi_lab_page_info", {
+            current: String(currentPage + 1),
+            total: String(totalPages),
+          })}
+          <span class="showing"
+            >({t("poi_lab_sequence_count", {
+              count: String(filtered.length),
+            })})</span
+          >
         </span>
         <button
           class="page-btn"
           onclick={nextPage}
           disabled={currentPage >= totalPages - 1}
-          aria-label={t('poi_lab_next_page')}
+          aria-label={t("poi_lab_next_page")}
         >
           <i class="fas fa-chevron-right" aria-hidden="true"></i>
         </button>
@@ -239,7 +255,7 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
     {#if paginated.length === 0}
       <div class="empty-state">
         <i class="fas fa-database" aria-hidden="true"></i>
-        <p>{t('poi_lab_no_sequences')}</p>
+        <p>{t("poi_lab_no_sequences")}</p>
       </div>
     {:else}
       <div class="sequence-grid themed-scrollbar">
@@ -259,11 +275,17 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
 
             <!-- Validation badge overlay - only show if not pending -->
             {#if !validation.isPending}
-              <div class="validation-badge" class:valid={validation.isValid} class:invalid={!validation.isValid}>
+              <div
+                class="validation-badge"
+                class:valid={validation.isValid}
+                class:invalid={!validation.isValid}
+              >
                 {#if validation.isValid}
                   <i class="fas fa-check" aria-hidden="true"></i>
                 {:else}
-                  <span class="violation-count">{validation.violations.length}</span>
+                  <span class="violation-count"
+                    >{validation.violations.length}</span
+                  >
                   <i class="fas fa-times" aria-hidden="true"></i>
                 {/if}
               </div>
@@ -280,24 +302,31 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
           {@const stepCount = getStepCount(expandedSeq)}
           <div class="detail-drawer">
             <div class="drawer-header">
-              <span class="sequence-word">{expandedSeq.word || expandedSeq.name || t('poi_lab_untitled')}</span>
-              <span class="step-count">{t('poi_lab_beat_count', { count: String(stepCount) })}</span>
+              <span class="sequence-word"
+                >{expandedSeq.word ||
+                  expandedSeq.name ||
+                  t("poi_lab_untitled")}</span
+              >
+              <span class="step-count"
+                >{t("poi_lab_beat_count", { count: String(stepCount) })}</span
+              >
             </div>
             {#if validation.isPending}
               <div class="pending-message">
                 <i class="fas fa-hourglass-half" aria-hidden="true"></i>
-                {t('poi_lab_pending_validation')}
+                {t("poi_lab_pending_validation")}
               </div>
             {:else if validation.isValid}
               <div class="valid-message">
                 <i class="fas fa-check-circle" aria-hidden="true"></i>
-                {t('poi_lab_poi_legal')}
+                {t("poi_lab_poi_legal")}
               </div>
             {:else}
               <div class="violations-list">
                 {#each validation.violations as violation}
                   <div class="violation-item">
-                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"
+                    ></i>
                     {violation.message}
                   </div>
                 {/each}
@@ -311,13 +340,26 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
     <!-- Bottom pagination -->
     {#if totalPages > 1}
       <div class="pagination bottom">
-        <button class="page-btn" onclick={prevPage} disabled={currentPage === 0}>
+        <button
+          class="page-btn"
+          onclick={prevPage}
+          disabled={currentPage === 0}
+        >
           <i class="fas fa-chevron-left" aria-hidden="true"></i>
-          {t('poi_lab_previous')}
+          {t("poi_lab_previous")}
         </button>
-        <span class="page-info">{t('poi_lab_page_info', { current: String(currentPage + 1), total: String(totalPages) })}</span>
-        <button class="page-btn" onclick={nextPage} disabled={currentPage >= totalPages - 1}>
-          {t('poi_lab_next')}
+        <span class="page-info"
+          >{t("poi_lab_page_info", {
+            current: String(currentPage + 1),
+            total: String(totalPages),
+          })}</span
+        >
+        <button
+          class="page-btn"
+          onclick={nextPage}
+          disabled={currentPage >= totalPages - 1}
+        >
+          {t("poi_lab_next")}
           <i class="fas fa-chevron-right" aria-hidden="true"></i>
         </button>
       </div>
@@ -389,7 +431,11 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
   }
 
   .retry-btn:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
   }
 
   @media (pointer: coarse) {
@@ -452,7 +498,9 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
     color: var(--theme-text, #fff);
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   @media (pointer: coarse) {
@@ -517,11 +565,13 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
   }
 
   .card-wrapper.valid {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
+    box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
   }
 
   .card-wrapper.invalid {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
+    box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
   }
 
   /* Validation badge overlay */
@@ -541,12 +591,20 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
   }
 
   .validation-badge.valid {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 90%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 90%,
+      transparent
+    );
     color: #fff;
   }
 
   .validation-badge.invalid {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 90%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 90%,
+      transparent
+    );
     color: #fff;
   }
 
@@ -593,7 +651,11 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
     border-radius: 6px;
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 10%,
+      transparent
+    );
     color: var(--semantic-success, #22c55e);
     font-size: var(--font-size-min, 14px);
   }
@@ -604,7 +666,11 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
     border-radius: 6px;
-    background: color-mix(in srgb, var(--semantic-warning, #eab308) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #eab308) 10%,
+      transparent
+    );
     color: var(--semantic-warning, #eab308);
     font-size: var(--font-size-min, 14px);
   }
@@ -621,7 +687,11 @@ import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-se
     gap: 0.5rem;
     padding: 0.375rem 0.5rem;
     border-radius: 4px;
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
     font-size: var(--font-size-compact, 12px);
     line-height: 1.4;

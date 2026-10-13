@@ -51,7 +51,10 @@
 
   // Is the best match an exact match with the video title?
   const hasExactMatch = $derived(
-    bestMatch && searchQuery && stripWordNotation(bestMatch.word).toUpperCase() === searchQuery.toUpperCase()
+    bestMatch &&
+      searchQuery &&
+      stripWordNotation(bestMatch.word).toUpperCase() ===
+        searchQuery.toUpperCase()
   );
 
   let showManualSearch = $state(false);
@@ -101,12 +104,10 @@
       <p class="suggestion-hint">Select a category to link this sequence</p>
     </div>
   </div>
-<!-- Don't show the redundant "select category" hint when we already have a suggestion -->
+  <!-- Don't show the redundant "select category" hint when we already have a suggestion -->
 {:else if !hasCategory && !hasSuggestion}
   <div class="field">
-    <p class="field-hint-block">
-      Select a category to link sequences
-    </p>
+    <p class="field-hint-block">Select a category to link sequences</p>
   </div>
 {/if}
 
@@ -157,20 +158,30 @@
                 </div>
               {/if}
               <div class="candidate-info">
-                <span class="candidate-word"><TKAWordGlyph word={seq.word} height={13} /></span>
+                <span class="candidate-word"
+                  ><TKAWordGlyph word={seq.word} height={13} /></span
+                >
                 <span class="candidate-owner">by {seq.ownerName}</span>
               </div>
               <kbd class="candidate-key">{i + 1}</kbd>
             </button>
           {/each}
         </div>
-        <button type="button" class="search-different-btn" onclick={openManualSearch}>
+        <button
+          type="button"
+          class="search-different-btn"
+          onclick={openManualSearch}
+        >
           <i class="fas fa-search" aria-hidden="true"></i>
           Search different
         </button>
       {:else}
         <p class="no-matches-hint">No matching sequence found</p>
-        <button type="button" class="search-different-btn" onclick={openManualSearch}>
+        <button
+          type="button"
+          class="search-different-btn"
+          onclick={openManualSearch}
+        >
           <i class="fas fa-search" aria-hidden="true"></i>
           Search manually
         </button>
@@ -189,10 +200,21 @@
             onkeydown={(e) => e.key === "Enter" && handleManualSearch()}
             {disabled}
           />
-          <button type="button" class="manual-search-go" onclick={handleManualSearch} {disabled} aria-label="Search sequence">
+          <button
+            type="button"
+            class="manual-search-go"
+            onclick={handleManualSearch}
+            {disabled}
+            aria-label="Search sequence"
+          >
             <i class="fas fa-search" aria-hidden="true"></i>
           </button>
-          <button type="button" class="manual-search-cancel" onclick={closeManualSearch} aria-label="Cancel search">
+          <button
+            type="button"
+            class="manual-search-cancel"
+            onclick={closeManualSearch}
+            aria-label="Cancel search"
+          >
             <i class="fas fa-times" aria-hidden="true"></i>
           </button>
         </div>
@@ -201,9 +223,7 @@
   </div>
 {:else if hasCategory}
   <div class="field">
-    <p class="field-hint-block">
-      Linking not available for this category
-    </p>
+    <p class="field-hint-block">Linking not available for this category</p>
   </div>
 {/if}
 
@@ -252,8 +272,13 @@
 
   /* Suggestion preview (before category selection) - neutral/pending style */
   .suggestion-preview {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 10%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
     border-radius: 10px;
     padding: 12px;
   }
@@ -333,24 +358,55 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast);
     text-align: left;
     width: 100%;
   }
 
   .candidate-card:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 12%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 12%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 40%,
+      transparent
+    );
   }
 
   .candidate-card.exact {
-    background: color-mix(in srgb, var(--semantic-success, #10b981) 10%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-success, #10b981) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 10%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 40%,
+      transparent
+    );
   }
 
   .candidate-card.exact:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--semantic-success, #10b981) 18%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-success, #10b981) 60%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 18%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 60%,
+      transparent
+    );
   }
 
   .candidate-card:disabled {
@@ -428,7 +484,14 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
     font-size: 12px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast);
     width: 100%;
   }
 
@@ -479,7 +542,11 @@
 
   .manual-search-input:focus {
     outline: none;
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 50%,
+      transparent
+    );
   }
 
   .manual-search-input::placeholder {
@@ -497,7 +564,15 @@
     align-items: center;
     justify-content: center;
     font-size: 14px;
-    transition: all 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      width var(--duration-fast),
+      height var(--duration-fast);
   }
 
   .manual-search-go {

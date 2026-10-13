@@ -6,7 +6,10 @@
 -->
 <script lang="ts">
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
-  import { acceptInvite, declineInvite } from "#lib/shared/video-collaboration/services/collaborative-video-manager.js";
+  import {
+    acceptInvite,
+    declineInvite,
+  } from "#lib/shared/video-collaboration/services/collaborative-video-manager.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import {
     getCreatorDisplayName,
@@ -94,8 +97,8 @@
     </div>
 
     <p class="invite-message">
-      <strong>{getCreatorDisplayName(video) ?? "Someone"}</strong> invited you to
-      collaborate on a video
+      <strong>{getCreatorDisplayName(video) ?? "Someone"}</strong> invited you
+      to collaborate on a video
       {#if video.sequenceName}
         for <strong>"{video.sequenceName}"</strong>
       {/if}
@@ -142,7 +145,7 @@
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
-    transition: all var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .invite-card:hover {
@@ -237,7 +240,7 @@
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .btn:disabled {

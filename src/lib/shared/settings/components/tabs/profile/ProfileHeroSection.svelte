@@ -153,8 +153,8 @@
   .avatar-wrapper.clickable {
     cursor: pointer;
     transition:
-      transform var(--duration-fast) ease,
-      box-shadow var(--duration-fast) ease;
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .avatar-wrapper.clickable:hover {
@@ -285,10 +285,10 @@
     font-weight: 700;
     cursor: pointer;
     transition:
-      background var(--duration-fast) ease,
-      border-color var(--duration-fast) ease,
-      color var(--duration-fast) ease,
-      transform var(--duration-fast) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .sign-out-btn:hover {

@@ -450,7 +450,8 @@
     if (inboxState.selectedConversation.type === "group") {
       return {
         primary:
-          inboxState.selectedConversation.groupMetadata?.name || t("inbox_ui_group_chat"),
+          inboxState.selectedConversation.groupMetadata?.name ||
+          t("inbox_ui_group_chat"),
         secondary: null,
       };
     }
@@ -534,7 +535,8 @@
         conv.participantInfo[msg.senderId]?.displayName ||
         msg.senderName ||
         t("inbox_ui_unknown");
-      const timestamp = msg.createdAt?.toLocaleString() || t("inbox_ui_unknown");
+      const timestamp =
+        msg.createdAt?.toLocaleString() || t("inbox_ui_unknown");
       const edited = msg.editedAt ? " (edited)" : "";
       const deleted = msg.isDeleted ? " [DELETED]" : "";
 
@@ -638,7 +640,9 @@
           {#if inboxState.activeTab !== "notifications" && inboxState.unreadNotificationCount > 0}
             <span
               class="notification-badge"
-              aria-label={t("inbox_unread_count", { count: inboxState.unreadNotificationCount })}
+              aria-label={t("inbox_unread_count", {
+                count: inboxState.unreadNotificationCount,
+              })}
             >
               {inboxState.unreadNotificationCount > 99
                 ? "99+"
@@ -703,7 +707,9 @@
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
         </button>
         <h2 id="inbox-title">
-          {inboxState.composeGroupMode ? t("inbox_ui_new_group") : t("inbox_ui_new_message")}
+          {inboxState.composeGroupMode
+            ? t("inbox_ui_new_group")
+            : t("inbox_ui_new_message")}
         </h2>
         <div class="spacer"></div>
       {:else if inboxState.currentView === "send-attachment"}
@@ -870,9 +876,9 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     cursor: pointer;
     transition:
-      background 0.2s ease,
-      color 0.2s ease,
-      transform 0.15s ease;
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .inbox-header button i {

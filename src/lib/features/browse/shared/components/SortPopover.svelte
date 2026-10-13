@@ -28,9 +28,21 @@
   let { currentMethod, onSortChange, align = "start" }: Props = $props();
 
   const sortOptions: SortOption[] = [
-    { id: BrowseSortMethod.ALPHABETICAL, label: t('browse_sort_alphabetical'), icon: "fa-font" },
-    { id: BrowseSortMethod.DATE_ADDED, label: t('browse_sort_date_added'), icon: "fa-clock" },
-    { id: BrowseSortMethod.SEQUENCE_LENGTH, label: t('browse_sort_length'), icon: "fa-ruler" },
+    {
+      id: BrowseSortMethod.ALPHABETICAL,
+      label: t("browse_sort_alphabetical"),
+      icon: "fa-font",
+    },
+    {
+      id: BrowseSortMethod.DATE_ADDED,
+      label: t("browse_sort_date_added"),
+      icon: "fa-clock",
+    },
+    {
+      id: BrowseSortMethod.SEQUENCE_LENGTH,
+      label: t("browse_sort_length"),
+      icon: "fa-ruler",
+    },
   ];
 
   // Short labels for the chip display
@@ -97,7 +109,8 @@
   /** Move DOM focus to the option button at the given index */
   function focusOptionAtIndex(index: number) {
     if (!popoverEl) return;
-    const options = popoverEl.querySelectorAll<HTMLButtonElement>('[role="option"]');
+    const options =
+      popoverEl.querySelectorAll<HTMLButtonElement>('[role="option"]');
     options[index]?.focus();
   }
 
@@ -132,7 +145,8 @@
       }
       case "ArrowUp": {
         event.preventDefault();
-        const prev = (focusedIndex - 1 + sortOptions.length) % sortOptions.length;
+        const prev =
+          (focusedIndex - 1 + sortOptions.length) % sortOptions.length;
         focusedIndex = prev;
         focusOptionAtIndex(prev);
         break;
@@ -190,7 +204,7 @@
     type="button"
     aria-haspopup="listbox"
     aria-expanded={isOpen}
-    aria-label={t('browse_sort_by_label', { method: currentLabel })}
+    aria-label={t("browse_sort_by_label", { method: currentLabel })}
   >
     <i class="fas fa-arrow-down-short-wide sort-icon" aria-hidden="true"></i>
     <span class="trigger-label">{currentLabel}</span>
@@ -209,8 +223,10 @@
       class:align-end={align === "end"}
       bind:this={popoverEl}
       role="listbox"
-      aria-label={t('browse_sort_options')}
-      aria-activedescendant={focusedIndex >= 0 ? `sort-option-${focusedIndex}` : undefined}
+      aria-label={t("browse_sort_options")}
+      aria-activedescendant={focusedIndex >= 0
+        ? `sort-option-${focusedIndex}`
+        : undefined}
       onkeydown={handleKeydown}
       tabindex="-1"
     >
@@ -257,10 +273,10 @@
     font-weight: 500;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
     flex-shrink: 0;
   }
@@ -276,7 +292,11 @@
   }
 
   .sort-trigger.open {
-    background: color-mix(in srgb, var(--theme-accent) 12%, var(--theme-card-bg));
+    background: color-mix(
+      in srgb,
+      var(--theme-accent) 12%,
+      var(--theme-card-bg)
+    );
     border-color: var(--theme-accent);
     color: var(--theme-text);
   }
@@ -298,7 +318,7 @@
   .chevron {
     font-size: 10px;
     opacity: 0.5;
-    transition: transform var(--duration-normal, 200ms) cubic-bezier(0.34, 1.2, 0.64, 1);
+    transition: transform var(--duration-normal) var(--ease-spring);
   }
 
   .chevron.rotated {
@@ -330,8 +350,8 @@
     transform: scale(0.92) translateY(-4px);
     transform-origin: top left;
     transition:
-      opacity var(--duration-normal, 200ms) ease,
-      transform var(--duration-emphasis, 280ms) cubic-bezier(0.34, 1.56, 0.64, 1);
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-emphasis) var(--ease-spring);
   }
 
   .sort-popover.align-end {
@@ -361,9 +381,9 @@
     font-weight: 500;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     text-align: left;
 
     /* Stagger entrance */
@@ -375,10 +395,10 @@
     opacity: 1;
     transform: translateY(0);
     transition:
-      background var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      transform var(--duration-fast, 150ms) ease,
-      opacity var(--duration-fast, 150ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .sort-option:hover,
@@ -418,7 +438,7 @@
   .check-icon {
     font-size: var(--font-size-compact, 12px);
     color: var(--theme-accent);
-    animation: checkPop 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: checkPop var(--duration-normal) var(--ease-spring);
   }
 
   @keyframes checkPop {

@@ -534,7 +534,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 11;
-    animation: popupAppear 0.2s ease;
+    animation: popupAppear var(--duration-normal) var(--ease-standard);
   }
 
   @keyframes popupAppear {

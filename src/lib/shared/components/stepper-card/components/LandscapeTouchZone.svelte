@@ -59,8 +59,8 @@ Left side decrements, right side increments
 
     cursor: pointer;
     transition:
-      color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-      background 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      color var(--duration-dramatic) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard);
 
     user-select: none;
     -webkit-user-select: none;
@@ -100,8 +100,7 @@ Left side decrements, right side increments
   .touch-zone:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--text-color) 70%, transparent);
     outline-offset: -2px;
-    transition: outline-color var(--duration-dramatic)
-      cubic-bezier(0.4, 0, 0.2, 1);
+    transition: outline-color var(--duration-dramatic) var(--ease-standard);
   }
 
   .zone-icon {
@@ -118,10 +117,10 @@ Left side decrements, right side increments
     color: var(--text-color);
 
     transition:
-      color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-      background 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-      border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-      transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      color var(--duration-dramatic) var(--ease-standard),
+      background var(--duration-dramatic) var(--ease-standard),
+      border-color var(--duration-dramatic) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     pointer-events: none;
   }
 

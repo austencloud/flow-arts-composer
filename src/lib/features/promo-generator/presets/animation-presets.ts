@@ -7,6 +7,8 @@
 
 import type { AnimationPreset } from "../domain/promo-models";
 
+const TKA_SHOWCASE_DURATION_SECONDS = 21;
+
 /**
  * TKA Showcase
  *
@@ -28,8 +30,9 @@ import type { AnimationPreset } from "../domain/promo-models";
 export const tkaShowcasePreset: AnimationPreset = {
   id: "tka-showcase",
   name: "TKA Showcase",
-  description: "7 cinematic shots with cuts - each perfect for a different screenshot",
-  duration: 21,
+  description:
+    "7 cinematic shots with cuts - each perfect for a different screenshot",
+  duration: TKA_SHOWCASE_DURATION_SECONDS,
   defaultCamera: {
     position: [0, 0, 10],
     lookAt: [0, 0, 0],

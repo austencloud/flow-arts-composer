@@ -114,7 +114,10 @@
   }
 </script>
 
-<section class="publication-section" aria-labelledby="mandala-publication-title">
+<section
+  class="publication-section"
+  aria-labelledby="mandala-publication-title"
+>
   <div class="publication-head">
     <h3 id="mandala-publication-title">Public sharing</h3>
     {#if status}
@@ -328,7 +331,11 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      opacity var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      background var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      transform var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      box-shadow var(--duration-fast) var(--ease-out, var(--ease-standard));
   }
 
   .pub-btn:disabled {

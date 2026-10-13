@@ -14,8 +14,9 @@ Follows Svelte 5 runes + microservices architecture.
 <script lang="ts">
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
-  import { slide } from "svelte/transition";
-    import type {
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import type {
     BrowseNavigationConfig,
     BrowseNavigationItem,
   } from "../domain/models/navigation-models";
@@ -147,22 +148,38 @@ Follows Svelte 5 runes + microservices architecture.
 
           <!-- Section Items -->
           {#if section.isExpanded && section.items.length > 0}
-            <div class="section-items" transition:slide={{ duration: 200 }}>
+            <div
+              class="section-items"
+              transition:growFade={{ duration: DURATION.normal }}
+            >
               {#if section.type === "letter"}
                 <!-- Special grid layout for letters with arrow key navigation -->
-                <div class="letter-grid" role="grid" aria-label={t('browse_filter_by_starting_letter')}>
+                <div
+                  class="letter-grid"
+                  role="grid"
+                  aria-label={t("browse_filter_by_starting_letter")}
+                >
                   {#each section.items as item, index (item.id)}
                     <button
                       class="letter-item"
                       class:active={item.isActive}
                       onclick={() => handleItemClick(section, item)}
-                      onkeydown={(e) => handleLetterGridKeydown(e, section, index)}
-                      title={t('browse_letter_sequences', { letter: item.label, count: String(item.count) })}
-                      aria-label={t('browse_letter_sequences', { letter: item.label, count: String(item.count) })}
+                      onkeydown={(e) =>
+                        handleLetterGridKeydown(e, section, index)}
+                      title={t("browse_letter_sequences", {
+                        letter: item.label,
+                        count: String(item.count),
+                      })}
+                      aria-label={t("browse_letter_sequences", {
+                        letter: item.label,
+                        count: String(item.count),
+                      })}
                       tabindex={index === 0 ? 0 : -1}
                     >
                       <span class="letter-label">{item.label}</span>
-                      <span class="letter-count" aria-hidden="true">{item.count}</span>
+                      <span class="letter-count" aria-hidden="true"
+                        >{item.count}</span
+                      >
                     </button>
                   {/each}
                 </div>
@@ -198,11 +215,11 @@ Follows Svelte 5 runes + microservices architecture.
       <div class="sidebar-footer">
         <div class="footer-stats">
           <div class="stat-item">
-            <span class="stat-label">{t('browse_total_sequences')}:</span>
+            <span class="stat-label">{t("browse_total_sequences")}:</span>
             <span class="stat-value">{totalSequences}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">{t('browse_sections')}:</span>
+            <span class="stat-label">{t("browse_sections")}:</span>
             <span class="stat-value">{expandedCount}/{sections.length}</span>
           </div>
         </div>
@@ -256,7 +273,7 @@ Follows Svelte 5 runes + microservices architecture.
     font-size: var(--font-size-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background-color var(--transition-fast);
     text-align: left;
   }
 
@@ -318,7 +335,10 @@ Follows Svelte 5 runes + microservices architecture.
     color: rgba(255, 255, 255, 0.8);
     font-size: var(--font-size-xs);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition:
+      background-color var(--transition-fast),
+      color var(--transition-fast),
+      border-color var(--transition-fast);
     text-align: left;
   }
 
@@ -373,7 +393,10 @@ Follows Svelte 5 runes + microservices architecture.
     color: rgba(255, 255, 255, 0.8);
     font-size: var(--font-size-xs);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition:
+      background-color var(--transition-fast),
+      border-color var(--transition-fast),
+      color var(--transition-fast);
     min-height: var(--min-touch-target); /* WCAG AA touch target */
     min-width: var(--min-touch-target);
     aspect-ratio: 1;

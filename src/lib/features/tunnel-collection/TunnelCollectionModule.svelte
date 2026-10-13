@@ -166,11 +166,11 @@
     const latest = items.find((item) => item.id === tunnel.id);
     if (latest && selected?.id === tunnel.id) selected = latest;
     posterRefresh =
-      result === "refreshed" || result === "already-current"
-        ? "idle"
-        : result;
+      result === "refreshed" || result === "already-current" ? "idle" : result;
     if (announceFailure && (result === "failed" || result === "unavailable")) {
-      toast.error("Couldn’t refresh the tunnel poster. Your choreography is safe.");
+      toast.error(
+        "Couldn’t refresh the tunnel poster. Your choreography is safe."
+      );
     }
   }
 
@@ -417,7 +417,8 @@
                     <span class="card-label"
                       ><TkaLabel text={item.name} darkMode /></span
                     >
-                    <i class="fas fa-pen card-rename-icon" aria-hidden="true"></i>
+                    <i class="fas fa-pen card-rename-icon" aria-hidden="true"
+                    ></i>
                   </button>
                 {/if}
               </div>
@@ -518,7 +519,8 @@
                     <button
                       type="button"
                       onclick={() => void refreshPoster(selected!, true)}
-                    >Refresh</button>
+                      >Refresh</button
+                    >
                   {/if}
                 {/if}
               </div>
@@ -781,7 +783,10 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
     border-radius: 14px;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
   }
 
   .gallery-card-open {
@@ -821,7 +826,8 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform var(--duration-normal, 250ms) var(--ease-out, ease);
+    transition: transform var(--duration-normal)
+      var(--ease-out, var(--ease-standard));
   }
 
   @media (hover: hover) {
@@ -849,7 +855,7 @@
   .gallery-card-open:active,
   .gallery-card-edit:active {
     transform: scale(0.97);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   .gallery-card-open:focus-visible,
@@ -900,14 +906,18 @@
     color: inherit;
     font: inherit;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out),
+      outline-color var(--duration-fast) var(--ease-out);
   }
 
   .card-rename-icon {
     flex-shrink: 0;
     font-size: 10px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.3));
-    transition: color var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition: color var(--duration-fast) var(--ease-out, var(--ease-standard));
   }
 
   @media (hover: hover) {
@@ -1049,7 +1059,11 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out),
+      outline-color var(--duration-fast) var(--ease-out);
   }
 
   @media (hover: hover) {
@@ -1108,7 +1122,11 @@
     color: inherit;
     font: inherit;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out),
+      outline-color var(--duration-fast) var(--ease-out);
   }
 
   .name-edit-text {
@@ -1122,7 +1140,7 @@
     flex-shrink: 0;
     font-size: 13px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.45));
-    transition: color var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition: color var(--duration-fast) var(--ease-out, var(--ease-standard));
   }
 
   .name-input {
@@ -1321,7 +1339,10 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      transform var(--duration-fast) var(--ease-out),
+      outline-color var(--duration-fast) var(--ease-out),
+      width var(--duration-fast) var(--ease-out);
   }
 
   .action-btn:focus-visible {
@@ -1393,7 +1414,7 @@
 
   .action-btn:active {
     transform: scale(0.98);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   /* ── Responsive (container-relative, so nesting in a narrower host still

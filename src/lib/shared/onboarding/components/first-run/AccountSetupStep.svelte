@@ -187,7 +187,9 @@
     font-size: 1.1rem;
     font-weight: 500;
     text-align: left;
-    transition: all var(--duration-normal) ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      background var(--duration-normal) var(--ease-standard);
   }
 
   .text-input::placeholder {
@@ -216,7 +218,11 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     background: color-mix(
       in srgb,
       var(--theme-accent-strong, #8b5cf6) 40%,

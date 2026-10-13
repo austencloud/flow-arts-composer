@@ -158,7 +158,11 @@ Uses StartPlacementManager to load variations and displays actual pictographs
     font-size: var(--font-size-base);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .any-button:hover {
@@ -204,7 +208,11 @@ Uses StartPlacementManager to load variations and displays actual pictographs
     border-radius: 8px;
     cursor: pointer;
     padding: 4px;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     overflow: hidden;
   }
 

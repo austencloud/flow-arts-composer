@@ -128,8 +128,8 @@
     border: none;
     cursor: pointer;
     transition:
-      background 0.15s,
-      color 0.15s;
+      background var(--duration-fast),
+      color var(--duration-fast);
   }
 
   .copies-option:not(:last-child),
@@ -229,7 +229,7 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.6));
     background: transparent;
     border: none;
-    transition: color 0.15s;
+    transition: color var(--duration-fast);
   }
 
   .copies-custom-wrap.active .copies-custom {

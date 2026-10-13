@@ -50,7 +50,12 @@
     border-radius: 50%;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      outline var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     font-size: var(--font-size-base);
   }

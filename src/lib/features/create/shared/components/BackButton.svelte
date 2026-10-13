@@ -9,7 +9,8 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   const {
     canGoBack,
@@ -35,7 +36,7 @@
     onclick={handleBack}
     aria-label={t("create_ui_go_back_to_previous_panel")}
     title={t("learn_go_back")}
-    transition:fade={{ duration: 200 }}
+    transition:opaqueFade={{ duration: DURATION.normal }}
   >
     <svg
       width="20"
@@ -72,7 +73,11 @@
     padding: 0;
     color: var(--theme-text);
     cursor: pointer;
-    transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--duration-emphasis) var(--ease-standard),
+      border-color var(--duration-emphasis) var(--ease-standard),
+      transform var(--duration-emphasis) var(--ease-standard),
+      outline var(--duration-emphasis) var(--ease-standard);
     z-index: 100;
   }
 
@@ -87,7 +92,7 @@
   }
 
   .back-button svg {
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .back-button:hover svg {

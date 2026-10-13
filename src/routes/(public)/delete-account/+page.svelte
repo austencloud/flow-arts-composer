@@ -76,8 +76,8 @@
   <div class="warning-banner">
     <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
     <span>
-      <strong>This action is permanent</strong> and cannot be undone. You'll be
-      signed out immediately.
+      <strong>This action is permanent</strong> and cannot be undone. You'll be signed
+      out immediately.
     </span>
   </div>
 
@@ -99,7 +99,10 @@
      of these are shared with terms/privacy, so they stay page-local. Scoped
      to the "compact" variant so it can't leak onto the other two pages. */
   :global(.legal-page.compact) {
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family:
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
 
   .header-content {
@@ -130,7 +133,10 @@
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
-    transition: all 0.25s ease;
+    transition:
+      border-color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .card:hover {
@@ -259,7 +265,11 @@
     border-radius: 12px;
     font-weight: 600;
     font-size: 1.125rem;
-    transition: all 0.2s ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
   }
 
   .cta-button:hover {
@@ -270,7 +280,7 @@
   }
 
   .cta-button i {
-    transition: transform 0.2s ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .cta-button:hover i {

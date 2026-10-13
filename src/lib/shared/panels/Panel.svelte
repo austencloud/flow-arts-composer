@@ -133,7 +133,9 @@
     align-items: center;
     justify-content: center;
     font-size: var(--font-size-compact);
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .collapse-toggle:hover {

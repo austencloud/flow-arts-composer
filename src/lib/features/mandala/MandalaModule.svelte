@@ -16,7 +16,11 @@
   import MeditationOverlay from "./tabs/meditate/components/MeditationOverlay.svelte";
   import { createMeditationSession } from "./tabs/meditate/state/meditation-session.svelte";
   import { createMeditationAudioService } from "./tabs/meditate/services/meditation-audio";
-  import { getPatternCycleTime, type BreathingPattern, type AmbientTrack } from "./tabs/meditate/domain/meditation-types";
+  import {
+    getPatternCycleTime,
+    type BreathingPattern,
+    type AmbientTrack,
+  } from "./tabs/meditate/domain/meditation-types";
   import { exportMandalaPNG } from "./tabs/export/services/mandala-export";
   import { shareOrDownloadBlob } from "#lib/shared/foundation/services/file-downloader.js";
   import { saveActionLabel } from "#lib/shared/mobile/share-action.svelte.js";
@@ -28,7 +32,10 @@
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import MandalaPublicationControls from "./tabs/collection/components/MandalaPublicationControls.svelte";
-  import { openLineageSource, hasLineageSource } from "#lib/shared/collections/open-lineage-source.js";
+  import {
+    openLineageSource,
+    hasLineageSource,
+  } from "#lib/shared/collections/open-lineage-source.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { onMount } from "svelte";
   import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
@@ -75,19 +82,21 @@
       createdAt: 0,
       group: "curated",
     }));
-    const collected: MandalaItem[] = mandalaCollectionState.collection.map((m) => ({
-      id: m.id,
-      name: m.name,
-      steps: m.steps as StepLike[],
-      variant: m.variant,
-      leftPropType: m.leftPropType,
-      rightPropType: m.rightPropType,
-      pathShape: m.pathShape,
-      createdAt: m.createdAt,
-      group: "collection",
-      sourceWord: m.sourceWord,
-      sourceSequenceId: m.sourceSequenceId,
-    }));
+    const collected: MandalaItem[] = mandalaCollectionState.collection.map(
+      (m) => ({
+        id: m.id,
+        name: m.name,
+        steps: m.steps as StepLike[],
+        variant: m.variant,
+        leftPropType: m.leftPropType,
+        rightPropType: m.rightPropType,
+        pathShape: m.pathShape,
+        createdAt: m.createdAt,
+        group: "collection",
+        sourceWord: m.sourceWord,
+        sourceSequenceId: m.sourceSequenceId,
+      })
+    );
     return [...curated, ...collected];
   });
 
@@ -98,7 +107,7 @@
           day: "numeric",
           year: "numeric",
         })
-      : "",
+      : ""
   );
 
   // Gallery thumbnail size scales with available width (one observer for the
@@ -145,7 +154,9 @@
       phase = "gallery";
     } else {
       deleteConfirming = true;
-      deleteTimer = setTimeout(() => { deleteConfirming = false; }, 3000);
+      deleteTimer = setTimeout(() => {
+        deleteConfirming = false;
+      }, 3000);
     }
   }
 
@@ -158,13 +169,15 @@
   let reducedMotion = $state(
     typeof window !== "undefined"
       ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      : false,
+      : false
   );
 
   $effect(() => {
     if (typeof window === "undefined") return;
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = (e: MediaQueryListEvent) => { reducedMotion = e.matches; };
+    const onChange = (e: MediaQueryListEvent) => {
+      reducedMotion = e.matches;
+    };
     reducedMotion = mql.matches;
     mql.addEventListener("change", onChange);
     return () => mql.removeEventListener("change", onChange);
@@ -206,9 +219,18 @@
   const mandalaTipDx = $derived(meditationSession.holdPulseDx);
   const meditateSize = $derived(Math.min(meditateContainerSize, 600));
 
-  function handleMeditateStart(pattern: BreathingPattern, durationMinutes: number) {
+  function handleMeditateStart(
+    pattern: BreathingPattern,
+    durationMinutes: number
+  ) {
     phase = "meditate-session";
-    meditationSession.start(pattern, durationMinutes, ANIMATE_MIN, ANIMATE_MAX, handleSessionComplete);
+    meditationSession.start(
+      pattern,
+      durationMinutes,
+      ANIMATE_MIN,
+      ANIMATE_MAX,
+      handleSessionComplete
+    );
   }
 
   function handleSessionComplete() {
@@ -243,8 +265,9 @@
       meditationSession.start(
         meditationSession.pattern,
         meditationSession.durationMinutes,
-        ANIMATE_MIN, ANIMATE_MAX,
-        handleSessionComplete,
+        ANIMATE_MIN,
+        ANIMATE_MAX,
+        handleSessionComplete
       );
     }
   }
@@ -269,14 +292,20 @@
           strokeWidth: 2.5,
           show: selectedMandala.variant,
           pathShape: selectedMandala.pathShape ?? "arc",
-        },
+        }
       );
-      const safeName = selectedMandala.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const safeName = selectedMandala.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-");
       // Device-gated: native share sheet on mobile (send via text/social/cloud),
       // anchor download on desktop — same pattern the video export uses.
-      await shareOrDownloadBlob(blob, `mandala-${safeName}-${PNG_EXPORT_SIZE}px.png`, {
-        title: "Flow Arts Composer Mandala",
-      });
+      await shareOrDownloadBlob(
+        blob,
+        `mandala-${safeName}-${PNG_EXPORT_SIZE}px.png`,
+        {
+          title: "Flow Arts Composer Mandala",
+        }
+      );
     } catch (err) {
       console.error("[MandalaExport] Export failed:", err);
       toast.error("Couldn't export the mandala. Please try again.");
@@ -306,9 +335,13 @@
         pathShape: selectedMandala.pathShape,
       },
       {
-        onPhase: (p) => { videoPhase = p; },
-        onProgress: (f) => { videoProgress = f; },
-      },
+        onPhase: (p) => {
+          videoPhase = p;
+        },
+        onProgress: (f) => {
+          videoProgress = f;
+        },
+      }
     );
     videoHandle = handle;
     handle.done
@@ -383,7 +416,7 @@
       detail={detailView}
     />
 
-  <!-- ═══ MEDITATE CONFIG ═══ -->
+    <!-- ═══ MEDITATE CONFIG ═══ -->
   {:else if phase === "meditate-config" && selectedMandala}
     <div class="meditate-layout">
       <div class="meditate-stage" bind:this={meditateStageEl}>
@@ -414,7 +447,7 @@
       </div>
     </div>
 
-  <!-- ═══ MEDITATE SESSION ═══ -->
+    <!-- ═══ MEDITATE SESSION ═══ -->
   {:else if phase === "meditate-session" && selectedMandala}
     <div class="session-viewport" bind:this={meditateStageEl}>
       <SequenceMandala
@@ -571,7 +604,9 @@
             <button
               type="button"
               class="action-btn meditate-btn"
-              onclick={() => { phase = "meditate-config"; }}
+              onclick={() => {
+                phase = "meditate-config";
+              }}
             >
               <i class="fas fa-spa" aria-hidden="true"></i>
               <span>Meditate</span>
@@ -586,7 +621,9 @@
               {#if videoExporting}
                 <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
                 <span class="export-progress">
-                  {videoPhase === "encoding" ? "Encoding" : `${Math.round(videoProgress * 100)}%`}
+                  {videoPhase === "encoding"
+                    ? "Encoding"
+                    : `${Math.round(videoProgress * 100)}%`}
                 </span>
               {:else}
                 <i class="fas fa-film" aria-hidden="true"></i>
@@ -705,25 +742,33 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
     border-radius: 14px;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      background var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      border-color var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      transform var(--duration-fast) var(--ease-out, var(--ease-standard));
     min-height: var(--min-touch-target, 44px);
   }
 
   @media (hover: hover) {
     .gallery-card:hover {
       background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.07));
-      border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
+      border-color: color-mix(
+        in srgb,
+        var(--theme-accent, #6366f1) 40%,
+        transparent
+      );
       transform: translateY(-2px);
     }
   }
 
   .gallery-card:active {
     transform: scale(0.97);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   .gallery-card:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
+    outline: 2px solid
+      color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
     outline-offset: 2px;
   }
 
@@ -753,9 +798,20 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
   }
 
-  .empty-icon { font-size: 48px; opacity: 0.3; }
-  .empty-title { font-size: 16px; font-weight: 500; margin: 0; }
-  .empty-hint { font-size: 13px; margin: 0; opacity: 0.7; }
+  .empty-icon {
+    font-size: 48px;
+    opacity: 0.3;
+  }
+  .empty-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0;
+  }
+  .empty-hint {
+    font-size: 13px;
+    margin: 0;
+    opacity: 0.7;
+  }
 
   .loading-state {
     display: flex;
@@ -767,7 +823,11 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
   }
 
-  .loading-label { font-size: 13px; margin: 0; opacity: 0.7; }
+  .loading-label {
+    font-size: 13px;
+    margin: 0;
+    opacity: 0.7;
+  }
 
   .detail-layout {
     display: flex;
@@ -807,7 +867,10 @@
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      background var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      border-color var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      color var(--duration-fast) var(--ease-out, var(--ease-standard));
     align-self: flex-start;
   }
 
@@ -820,7 +883,11 @@
     left: 20px;
     z-index: 2;
     padding: 8px 18px;
-    background: color-mix(in srgb, var(--theme-panel-bg, rgba(10, 10, 20, 0.85)) 80%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-panel-bg, rgba(10, 10, 20, 0.85)) 80%,
+      transparent
+    );
     backdrop-filter: blur(8px);
     border-color: var(--theme-stroke, rgba(255, 255, 255, 0.12));
     border-radius: 999px;
@@ -840,7 +907,8 @@
   }
 
   .back-btn:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
+    outline: 2px solid
+      color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
     outline-offset: 2px;
   }
 
@@ -892,11 +960,14 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      opacity var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      transform var(--duration-fast) var(--ease-out, var(--ease-standard));
   }
 
   .action-btn:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
+    outline: 2px solid
+      color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
     outline-offset: 2px;
   }
 
@@ -908,7 +979,8 @@
     );
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: white;
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
+    box-shadow: 0 4px 12px
+      color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
   }
 
   .export-btn {
@@ -940,7 +1012,8 @@
   @media (hover: hover) {
     .meditate-btn:hover {
       transform: translateY(-1px);
-      box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
+      box-shadow: 0 6px 16px
+        color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
     }
     .export-btn:hover {
       background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.1));
@@ -948,7 +1021,11 @@
     }
     .delete-btn:hover {
       color: var(--semantic-error, #ef4444);
-      border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
+      border-color: color-mix(
+        in srgb,
+        var(--semantic-error, #ef4444) 30%,
+        transparent
+      );
     }
     .delete-btn.confirming:hover {
       background: color-mix(in srgb, var(--semantic-error, #ef4444) 80%, black);
@@ -957,7 +1034,7 @@
 
   .action-btn:active {
     transform: scale(0.98);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   .meditate-layout {
@@ -1004,7 +1081,11 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     font-size: 16px;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease);
+    transition:
+      background var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      border-color var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      color var(--duration-fast) var(--ease-out, var(--ease-standard)),
+      transform var(--duration-fast) var(--ease-out, var(--ease-standard));
     z-index: 30;
   }
 
@@ -1017,27 +1098,39 @@
   }
 
   .session-exit-btn:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
+    outline: 2px solid
+      color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
     outline-offset: 2px;
   }
 
   /* ── Responsive (container-relative, matching the Tunnels playground so both
         surfaces respond to real available width when nested) ── */
   @container (min-width: 1200px) {
-    .gallery-view { padding: 40px 48px; }
+    .gallery-view {
+      padding: 40px 48px;
+    }
     .gallery-grid {
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 20px;
     }
-    .detail-panel { width: 380px; padding: 32px; }
+    .detail-panel {
+      width: 380px;
+      padding: 32px;
+    }
   }
 
   /* 4K / ultrawide: grid density, type, thumbnails, panel width all scale up,
      anchored left so a few cards don't float in a centered ribbon. */
   @container (min-width: 1800px) {
-    .gallery-view { padding: 56px 72px; }
-    .gallery-head { margin-bottom: 28px; }
-    .gallery-title { font-size: 24px; }
+    .gallery-view {
+      padding: 56px 72px;
+    }
+    .gallery-head {
+      margin-bottom: 28px;
+    }
+    .gallery-title {
+      font-size: 24px;
+    }
     .gallery-count {
       font-size: var(--font-size-min, 14px);
       padding: 3px 14px;
@@ -1046,10 +1139,24 @@
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 28px;
     }
-    .gallery-card { gap: 14px; padding: 24px 16px 18px; border-radius: 18px; }
-    .detail-panel { width: 440px; padding: 40px 36px; gap: 32px; }
-    .detail-date { font-size: var(--font-size-min, 14px); }
-    .action-btn { min-height: 56px; font-size: 16px; border-radius: 14px; }
+    .gallery-card {
+      gap: 14px;
+      padding: 24px 16px 18px;
+      border-radius: 18px;
+    }
+    .detail-panel {
+      width: 440px;
+      padding: 40px 36px;
+      gap: 32px;
+    }
+    .detail-date {
+      font-size: var(--font-size-min, 14px);
+    }
+    .action-btn {
+      min-height: 56px;
+      font-size: 16px;
+      border-radius: 14px;
+    }
     .detail-preview .back-btn {
       top: 28px;
       left: 28px;
@@ -1060,14 +1167,21 @@
   }
 
   @container (max-width: 768px) {
-    .gallery-view { padding: 20px; }
+    .gallery-view {
+      padding: 20px;
+    }
     .gallery-grid {
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       gap: 12px;
     }
 
-    .detail-layout { flex-direction: column; }
-    .detail-preview { flex: 1; min-height: 40%; }
+    .detail-layout {
+      flex-direction: column;
+    }
+    .detail-preview {
+      flex: 1;
+      min-height: 40%;
+    }
     .detail-panel {
       width: 100%;
       max-height: 55%;
@@ -1075,31 +1189,45 @@
       border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
     }
 
-    .meditate-layout { flex-direction: column; }
-    .meditate-stage { flex: 1; min-height: 0; }
+    .meditate-layout {
+      flex-direction: column;
+    }
+    .meditate-stage {
+      flex: 1;
+      min-height: 0;
+    }
     .controls-rail {
       width: 100%;
       max-height: 50%;
       border-left: none;
       border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
     }
-
   }
 
   @container (max-width: 480px) {
-    .gallery-view { padding: 16px; }
+    .gallery-view {
+      padding: 16px;
+    }
     .gallery-grid {
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       gap: 10px;
     }
-    .gallery-card { padding: 12px 6px 10px; gap: 8px; }
+    .gallery-card {
+      padding: 12px 6px 10px;
+      gap: 8px;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .gallery-card, .action-btn, .session-exit-btn, .back-btn {
+    .gallery-card,
+    .action-btn,
+    .session-exit-btn,
+    .back-btn {
       transition: none !important;
     }
-    .gallery-card:hover, .action-btn:active, .session-exit-btn:active {
+    .gallery-card:hover,
+    .action-btn:active,
+    .session-exit-btn:active {
       transform: none;
     }
   }

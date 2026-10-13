@@ -14,7 +14,10 @@
     type CompositionRecipe,
     type PropTransform,
   } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
-  import { getSettings, updateSetting } from "#lib/shared/application/state/app-state.svelte.js";
+  import {
+    getSettings,
+    updateSetting,
+  } from "#lib/shared/application/state/app-state.svelte.js";
   import {
     HandSide,
     type HandSide as HandSideValue,
@@ -36,80 +39,444 @@
 
   const FAMILY_PRESETS: Partial<Record<PropType, Preset[]>> = {
     [PropType.CLUB]: [
-      { label: "V-Open", recipe: { left: { x: 35, y: 50, rotation: -20, scale: 0.5 }, right: { x: 65, y: 50, rotation: 20, scale: 0.5 }, pairScale: 1 } },
-      { label: "Crossed", recipe: { left: { x: 50, y: 50, rotation: -40, scale: 0.5 }, right: { x: 50, y: 50, rotation: 40, scale: 0.5 }, pairScale: 1 } },
-      { label: "Parallel", recipe: { left: { x: 40, y: 38, rotation: -25, scale: 0.48 }, right: { x: 60, y: 62, rotation: -25, scale: 0.48 }, pairScale: 1 } },
-      { label: "Stacked", recipe: { left: { x: 50, y: 35, rotation: 0, scale: 0.48 }, right: { x: 50, y: 65, rotation: 180, scale: 0.48 }, pairScale: 1 } },
-      { label: "Wide V", recipe: { left: { x: 28, y: 50, rotation: -35, scale: 0.48 }, right: { x: 72, y: 50, rotation: 35, scale: 0.48 }, pairScale: 1 } },
-      { label: "Nested", recipe: { left: { x: 45, y: 45, rotation: -30, scale: 0.55 }, right: { x: 55, y: 55, rotation: -30, scale: 0.4 }, pairScale: 1 } },
+      {
+        label: "V-Open",
+        recipe: {
+          left: { x: 35, y: 50, rotation: -20, scale: 0.5 },
+          right: { x: 65, y: 50, rotation: 20, scale: 0.5 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Crossed",
+        recipe: {
+          left: { x: 50, y: 50, rotation: -40, scale: 0.5 },
+          right: { x: 50, y: 50, rotation: 40, scale: 0.5 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Parallel",
+        recipe: {
+          left: { x: 40, y: 38, rotation: -25, scale: 0.48 },
+          right: { x: 60, y: 62, rotation: -25, scale: 0.48 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Stacked",
+        recipe: {
+          left: { x: 50, y: 35, rotation: 0, scale: 0.48 },
+          right: { x: 50, y: 65, rotation: 180, scale: 0.48 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Wide V",
+        recipe: {
+          left: { x: 28, y: 50, rotation: -35, scale: 0.48 },
+          right: { x: 72, y: 50, rotation: 35, scale: 0.48 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Nested",
+        recipe: {
+          left: { x: 45, y: 45, rotation: -30, scale: 0.55 },
+          right: { x: 55, y: 55, rotation: -30, scale: 0.4 },
+          pairScale: 1,
+        },
+      },
     ],
     [PropType.STAFF]: [
-      { label: "X-Cross", recipe: { left: { x: 50, y: 50, rotation: -45, scale: 0.55 }, right: { x: 50, y: 50, rotation: 45, scale: 0.55 }, pairScale: 1 } },
-      { label: "Parallel", recipe: { left: { x: 38, y: 50, rotation: -30, scale: 0.55 }, right: { x: 62, y: 50, rotation: -30, scale: 0.55 }, pairScale: 1 } },
-      { label: "Wide X", recipe: { left: { x: 50, y: 50, rotation: -60, scale: 0.55 }, right: { x: 50, y: 50, rotation: 60, scale: 0.55 }, pairScale: 1 } },
-      { label: "Tight X", recipe: { left: { x: 50, y: 50, rotation: -25, scale: 0.55 }, right: { x: 50, y: 50, rotation: 25, scale: 0.55 }, pairScale: 1 } },
-      { label: "V-Down", recipe: { left: { x: 35, y: 40, rotation: -50, scale: 0.5 }, right: { x: 65, y: 40, rotation: 50, scale: 0.5 }, pairScale: 1 } },
-      { label: "Horizontal", recipe: { left: { x: 50, y: 40, rotation: 0, scale: 0.5 }, right: { x: 50, y: 60, rotation: 0, scale: 0.5 }, pairScale: 1 } },
+      {
+        label: "X-Cross",
+        recipe: {
+          left: { x: 50, y: 50, rotation: -45, scale: 0.55 },
+          right: { x: 50, y: 50, rotation: 45, scale: 0.55 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Parallel",
+        recipe: {
+          left: { x: 38, y: 50, rotation: -30, scale: 0.55 },
+          right: { x: 62, y: 50, rotation: -30, scale: 0.55 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Wide X",
+        recipe: {
+          left: { x: 50, y: 50, rotation: -60, scale: 0.55 },
+          right: { x: 50, y: 50, rotation: 60, scale: 0.55 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Tight X",
+        recipe: {
+          left: { x: 50, y: 50, rotation: -25, scale: 0.55 },
+          right: { x: 50, y: 50, rotation: 25, scale: 0.55 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "V-Down",
+        recipe: {
+          left: { x: 35, y: 40, rotation: -50, scale: 0.5 },
+          right: { x: 65, y: 40, rotation: 50, scale: 0.5 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Horizontal",
+        recipe: {
+          left: { x: 50, y: 40, rotation: 0, scale: 0.5 },
+          right: { x: 50, y: 60, rotation: 0, scale: 0.5 },
+          pairScale: 1,
+        },
+      },
     ],
     [PropType.FAN]: [
-      { label: "Facing", recipe: { left: { x: 35, y: 50, rotation: 0, scale: 0.45 }, right: { x: 65, y: 50, rotation: 180, scale: 0.45 }, pairScale: 1 } },
-      { label: "Butterfly", recipe: { left: { x: 38, y: 50, rotation: 30, scale: 0.45 }, right: { x: 62, y: 50, rotation: -30, scale: 0.45 }, pairScale: 1 } },
-      { label: "Stacked", recipe: { left: { x: 50, y: 35, rotation: 0, scale: 0.45 }, right: { x: 50, y: 65, rotation: 0, scale: 0.45 }, pairScale: 1 } },
-      { label: "Fanned", recipe: { left: { x: 45, y: 45, rotation: -20, scale: 0.45 }, right: { x: 55, y: 55, rotation: 20, scale: 0.45 }, pairScale: 1 } },
+      {
+        label: "Facing",
+        recipe: {
+          left: { x: 35, y: 50, rotation: 0, scale: 0.45 },
+          right: { x: 65, y: 50, rotation: 180, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Butterfly",
+        recipe: {
+          left: { x: 38, y: 50, rotation: 30, scale: 0.45 },
+          right: { x: 62, y: 50, rotation: -30, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Stacked",
+        recipe: {
+          left: { x: 50, y: 35, rotation: 0, scale: 0.45 },
+          right: { x: 50, y: 65, rotation: 0, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Fanned",
+        recipe: {
+          left: { x: 45, y: 45, rotation: -20, scale: 0.45 },
+          right: { x: 55, y: 55, rotation: 20, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
     ],
     [PropType.BUUGENG]: [
-      { label: "Facing", recipe: { left: { x: 35, y: 50, rotation: 0, scale: 0.45 }, right: { x: 65, y: 50, rotation: 180, scale: 0.45 }, pairScale: 1 } },
-      { label: "Interlocked", recipe: { left: { x: 42, y: 50, rotation: 0, scale: 0.48 }, right: { x: 58, y: 50, rotation: 180, scale: 0.48 }, pairScale: 1 } },
-      { label: "Yin-Yang", recipe: { left: { x: 42, y: 42, rotation: 45, scale: 0.45 }, right: { x: 58, y: 58, rotation: -135, scale: 0.45 }, pairScale: 1 } },
-      { label: "Parallel", recipe: { left: { x: 38, y: 50, rotation: 0, scale: 0.45 }, right: { x: 62, y: 50, rotation: 0, scale: 0.45 }, pairScale: 1 } },
+      {
+        label: "Facing",
+        recipe: {
+          left: { x: 35, y: 50, rotation: 0, scale: 0.45 },
+          right: { x: 65, y: 50, rotation: 180, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Interlocked",
+        recipe: {
+          left: { x: 42, y: 50, rotation: 0, scale: 0.48 },
+          right: { x: 58, y: 50, rotation: 180, scale: 0.48 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Yin-Yang",
+        recipe: {
+          left: { x: 42, y: 42, rotation: 45, scale: 0.45 },
+          right: { x: 58, y: 58, rotation: -135, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Parallel",
+        recipe: {
+          left: { x: 38, y: 50, rotation: 0, scale: 0.45 },
+          right: { x: 62, y: 50, rotation: 0, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
     ],
     [PropType.MINIHOOP]: [
-      { label: "Venn", recipe: { left: { x: 38, y: 50, rotation: 0, scale: 0.5 }, right: { x: 62, y: 50, rotation: 0, scale: 0.5 }, pairScale: 1 } },
-      { label: "Stacked", recipe: { left: { x: 50, y: 38, rotation: 0, scale: 0.48 }, right: { x: 50, y: 62, rotation: 0, scale: 0.48 }, pairScale: 1 } },
-      { label: "Nested", recipe: { left: { x: 50, y: 50, rotation: 0, scale: 0.55 }, right: { x: 50, y: 50, rotation: 0, scale: 0.38 }, pairScale: 1 } },
-      { label: "Olympic", recipe: { left: { x: 35, y: 45, rotation: 0, scale: 0.42 }, right: { x: 58, y: 55, rotation: 0, scale: 0.42 }, pairScale: 1 } },
+      {
+        label: "Venn",
+        recipe: {
+          left: { x: 38, y: 50, rotation: 0, scale: 0.5 },
+          right: { x: 62, y: 50, rotation: 0, scale: 0.5 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Stacked",
+        recipe: {
+          left: { x: 50, y: 38, rotation: 0, scale: 0.48 },
+          right: { x: 50, y: 62, rotation: 0, scale: 0.48 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Nested",
+        recipe: {
+          left: { x: 50, y: 50, rotation: 0, scale: 0.55 },
+          right: { x: 50, y: 50, rotation: 0, scale: 0.38 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Olympic",
+        recipe: {
+          left: { x: 35, y: 45, rotation: 0, scale: 0.42 },
+          right: { x: 58, y: 55, rotation: 0, scale: 0.42 },
+          pairScale: 1,
+        },
+      },
     ],
     [PropType.TRIAD]: [
-      { label: "Offset", recipe: { left: { x: 38, y: 50, rotation: 0, scale: 0.45 }, right: { x: 62, y: 50, rotation: 60, scale: 0.45 }, pairScale: 1 } },
-      { label: "Mirrored", recipe: { left: { x: 38, y: 50, rotation: 0, scale: 0.45 }, right: { x: 62, y: 50, rotation: 0, scale: 0.45 }, pairScale: 1 } },
-      { label: "Nested", recipe: { left: { x: 50, y: 50, rotation: 0, scale: 0.55 }, right: { x: 50, y: 50, rotation: 30, scale: 0.38 }, pairScale: 1 } },
-      { label: "Star", recipe: { left: { x: 50, y: 50, rotation: 0, scale: 0.5 }, right: { x: 50, y: 50, rotation: 180, scale: 0.5 }, pairScale: 1 } },
+      {
+        label: "Offset",
+        recipe: {
+          left: { x: 38, y: 50, rotation: 0, scale: 0.45 },
+          right: { x: 62, y: 50, rotation: 60, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Mirrored",
+        recipe: {
+          left: { x: 38, y: 50, rotation: 0, scale: 0.45 },
+          right: { x: 62, y: 50, rotation: 0, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Nested",
+        recipe: {
+          left: { x: 50, y: 50, rotation: 0, scale: 0.55 },
+          right: { x: 50, y: 50, rotation: 30, scale: 0.38 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Star",
+        recipe: {
+          left: { x: 50, y: 50, rotation: 0, scale: 0.5 },
+          right: { x: 50, y: 50, rotation: 180, scale: 0.5 },
+          pairScale: 1,
+        },
+      },
     ],
     [PropType.TORCH]: [
-      { label: "Crossed", recipe: { left: { x: 50, y: 50, rotation: -30, scale: 0.5 }, right: { x: 50, y: 50, rotation: 30, scale: 0.5 }, pairScale: 1 } },
-      { label: "V-Up", recipe: { left: { x: 35, y: 55, rotation: -25, scale: 0.48 }, right: { x: 65, y: 55, rotation: 25, scale: 0.48 }, pairScale: 1 } },
-      { label: "Parallel", recipe: { left: { x: 38, y: 50, rotation: -15, scale: 0.48 }, right: { x: 62, y: 50, rotation: -15, scale: 0.48 }, pairScale: 1 } },
-      { label: "Wide", recipe: { left: { x: 30, y: 50, rotation: -40, scale: 0.48 }, right: { x: 70, y: 50, rotation: 40, scale: 0.48 }, pairScale: 1 } },
+      {
+        label: "Crossed",
+        recipe: {
+          left: { x: 50, y: 50, rotation: -30, scale: 0.5 },
+          right: { x: 50, y: 50, rotation: 30, scale: 0.5 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "V-Up",
+        recipe: {
+          left: { x: 35, y: 55, rotation: -25, scale: 0.48 },
+          right: { x: 65, y: 55, rotation: 25, scale: 0.48 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Parallel",
+        recipe: {
+          left: { x: 38, y: 50, rotation: -15, scale: 0.48 },
+          right: { x: 62, y: 50, rotation: -15, scale: 0.48 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Wide",
+        recipe: {
+          left: { x: 30, y: 50, rotation: -40, scale: 0.48 },
+          right: { x: 70, y: 50, rotation: 40, scale: 0.48 },
+          pairScale: 1,
+        },
+      },
     ],
     [PropType.SWORD]: [
-      { label: "Crossed", recipe: { left: { x: 50, y: 50, rotation: -40, scale: 0.55 }, right: { x: 50, y: 50, rotation: 40, scale: 0.55 }, pairScale: 1 } },
-      { label: "Parallel", recipe: { left: { x: 38, y: 50, rotation: -20, scale: 0.5 }, right: { x: 62, y: 50, rotation: -20, scale: 0.5 }, pairScale: 1 } },
-      { label: "Tight X", recipe: { left: { x: 50, y: 50, rotation: -25, scale: 0.55 }, right: { x: 50, y: 50, rotation: 25, scale: 0.55 }, pairScale: 1 } },
-      { label: "V-Down", recipe: { left: { x: 35, y: 40, rotation: -50, scale: 0.5 }, right: { x: 65, y: 40, rotation: 50, scale: 0.5 }, pairScale: 1 } },
+      {
+        label: "Crossed",
+        recipe: {
+          left: { x: 50, y: 50, rotation: -40, scale: 0.55 },
+          right: { x: 50, y: 50, rotation: 40, scale: 0.55 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Parallel",
+        recipe: {
+          left: { x: 38, y: 50, rotation: -20, scale: 0.5 },
+          right: { x: 62, y: 50, rotation: -20, scale: 0.5 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Tight X",
+        recipe: {
+          left: { x: 50, y: 50, rotation: -25, scale: 0.55 },
+          right: { x: 50, y: 50, rotation: 25, scale: 0.55 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "V-Down",
+        recipe: {
+          left: { x: 35, y: 40, rotation: -50, scale: 0.5 },
+          right: { x: 65, y: 40, rotation: 50, scale: 0.5 },
+          pairScale: 1,
+        },
+      },
     ],
     [PropType.CHICKEN]: [
-      { label: "Mirrored", recipe: { left: { x: 35, y: 50, rotation: 10, scale: 0.45 }, right: { x: 65, y: 50, rotation: -10, scale: 0.45 }, pairScale: 1 } },
-      { label: "Facing", recipe: { left: { x: 35, y: 50, rotation: 0, scale: 0.45 }, right: { x: 65, y: 50, rotation: 180, scale: 0.45 }, pairScale: 1 } },
-      { label: "Stacked", recipe: { left: { x: 50, y: 35, rotation: 0, scale: 0.45 }, right: { x: 50, y: 65, rotation: 0, scale: 0.45 }, pairScale: 1 } },
-      { label: "Crossed", recipe: { left: { x: 50, y: 50, rotation: -30, scale: 0.48 }, right: { x: 50, y: 50, rotation: 30, scale: 0.48 }, pairScale: 1 } },
+      {
+        label: "Mirrored",
+        recipe: {
+          left: { x: 35, y: 50, rotation: 10, scale: 0.45 },
+          right: { x: 65, y: 50, rotation: -10, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Facing",
+        recipe: {
+          left: { x: 35, y: 50, rotation: 0, scale: 0.45 },
+          right: { x: 65, y: 50, rotation: 180, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Stacked",
+        recipe: {
+          left: { x: 50, y: 35, rotation: 0, scale: 0.45 },
+          right: { x: 50, y: 65, rotation: 0, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Crossed",
+        recipe: {
+          left: { x: 50, y: 50, rotation: -30, scale: 0.48 },
+          right: { x: 50, y: 50, rotation: 30, scale: 0.48 },
+          pairScale: 1,
+        },
+      },
     ],
     [PropType.DOUBLESTAR]: [
-      { label: "Offset", recipe: { left: { x: 38, y: 50, rotation: 0, scale: 0.45 }, right: { x: 62, y: 50, rotation: 30, scale: 0.45 }, pairScale: 1 } },
-      { label: "Mirrored", recipe: { left: { x: 38, y: 50, rotation: 0, scale: 0.45 }, right: { x: 62, y: 50, rotation: 0, scale: 0.45 }, pairScale: 1 } },
-      { label: "Nested", recipe: { left: { x: 50, y: 50, rotation: 0, scale: 0.55 }, right: { x: 50, y: 50, rotation: 45, scale: 0.38 }, pairScale: 1 } },
-      { label: "Crossed", recipe: { left: { x: 50, y: 50, rotation: -20, scale: 0.48 }, right: { x: 50, y: 50, rotation: 20, scale: 0.48 }, pairScale: 1 } },
+      {
+        label: "Offset",
+        recipe: {
+          left: { x: 38, y: 50, rotation: 0, scale: 0.45 },
+          right: { x: 62, y: 50, rotation: 30, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Mirrored",
+        recipe: {
+          left: { x: 38, y: 50, rotation: 0, scale: 0.45 },
+          right: { x: 62, y: 50, rotation: 0, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Nested",
+        recipe: {
+          left: { x: 50, y: 50, rotation: 0, scale: 0.55 },
+          right: { x: 50, y: 50, rotation: 45, scale: 0.38 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Crossed",
+        recipe: {
+          left: { x: 50, y: 50, rotation: -20, scale: 0.48 },
+          right: { x: 50, y: 50, rotation: 20, scale: 0.48 },
+          pairScale: 1,
+        },
+      },
     ],
     [PropType.TRIQUETRA]: [
-      { label: "Offset", recipe: { left: { x: 38, y: 50, rotation: 0, scale: 0.45 }, right: { x: 62, y: 50, rotation: 60, scale: 0.45 }, pairScale: 1 } },
-      { label: "Mirrored", recipe: { left: { x: 38, y: 50, rotation: 0, scale: 0.45 }, right: { x: 62, y: 50, rotation: 0, scale: 0.45 }, pairScale: 1 } },
-      { label: "Star", recipe: { left: { x: 50, y: 50, rotation: 0, scale: 0.5 }, right: { x: 50, y: 50, rotation: 180, scale: 0.5 }, pairScale: 1 } },
-      { label: "Stacked", recipe: { left: { x: 50, y: 35, rotation: 0, scale: 0.42 }, right: { x: 50, y: 65, rotation: 60, scale: 0.42 }, pairScale: 1 } },
+      {
+        label: "Offset",
+        recipe: {
+          left: { x: 38, y: 50, rotation: 0, scale: 0.45 },
+          right: { x: 62, y: 50, rotation: 60, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Mirrored",
+        recipe: {
+          left: { x: 38, y: 50, rotation: 0, scale: 0.45 },
+          right: { x: 62, y: 50, rotation: 0, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Star",
+        recipe: {
+          left: { x: 50, y: 50, rotation: 0, scale: 0.5 },
+          right: { x: 50, y: 50, rotation: 180, scale: 0.5 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Stacked",
+        recipe: {
+          left: { x: 50, y: 35, rotation: 0, scale: 0.42 },
+          right: { x: 50, y: 65, rotation: 60, scale: 0.42 },
+          pairScale: 1,
+        },
+      },
     ],
     [PropType.EIGHTRINGS]: [
-      { label: "Side", recipe: { left: { x: 38, y: 50, rotation: 0, scale: 0.45 }, right: { x: 62, y: 50, rotation: 0, scale: 0.45 }, pairScale: 1 } },
-      { label: "Rotated", recipe: { left: { x: 38, y: 50, rotation: 0, scale: 0.45 }, right: { x: 62, y: 50, rotation: 45, scale: 0.45 }, pairScale: 1 } },
-      { label: "Stacked", recipe: { left: { x: 50, y: 38, rotation: 0, scale: 0.42 }, right: { x: 50, y: 62, rotation: 0, scale: 0.42 }, pairScale: 1 } },
-      { label: "Overlap", recipe: { left: { x: 44, y: 50, rotation: -10, scale: 0.48 }, right: { x: 56, y: 50, rotation: 10, scale: 0.48 }, pairScale: 1 } },
+      {
+        label: "Side",
+        recipe: {
+          left: { x: 38, y: 50, rotation: 0, scale: 0.45 },
+          right: { x: 62, y: 50, rotation: 0, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Rotated",
+        recipe: {
+          left: { x: 38, y: 50, rotation: 0, scale: 0.45 },
+          right: { x: 62, y: 50, rotation: 45, scale: 0.45 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Stacked",
+        recipe: {
+          left: { x: 50, y: 38, rotation: 0, scale: 0.42 },
+          right: { x: 50, y: 62, rotation: 0, scale: 0.42 },
+          pairScale: 1,
+        },
+      },
+      {
+        label: "Overlap",
+        recipe: {
+          left: { x: 44, y: 50, rotation: -10, scale: 0.48 },
+          right: { x: 56, y: 50, rotation: 10, scale: 0.48 },
+          pairScale: 1,
+        },
+      },
     ],
   };
 
@@ -162,7 +529,8 @@
 
   /** Persist overrides to settings (auto-saves to localStorage + Firebase) */
   function persistOverrides() {
-    const toSave = Object.keys(overrides).length > 0 ? { ...overrides } : undefined;
+    const toSave =
+      Object.keys(overrides).length > 0 ? { ...overrides } : undefined;
     updateSetting("compositionRecipeOverrides", toSave);
   }
 
@@ -172,7 +540,9 @@
 
   function ensureOverride(propType: PropType) {
     if (!overrides[propType]) {
-      overrides[propType] = $state.snapshot(getCompositionRecipe(propType, true));
+      overrides[propType] = $state.snapshot(
+        getCompositionRecipe(propType, true)
+      );
     }
   }
 
@@ -212,7 +582,8 @@
     ensureOverride(propType);
     const recipe = overrides[propType]!;
     recipe.left.rotation = ((recipe.left.rotation + degrees + 180) % 360) - 180;
-    recipe.right.rotation = ((recipe.right.rotation + degrees + 180) % 360) - 180;
+    recipe.right.rotation =
+      ((recipe.right.rotation + degrees + 180) % 360) - 180;
     overrides = { ...overrides };
     persistOverrides();
   }
@@ -247,7 +618,9 @@
 <div class="prop-button-lab" data-edit-history-shortcut-scope>
   <header class="lab-header">
     <h1>Prop Button Lab</h1>
-    <p class="subtitle">Tune paired prop compositions for buttons and drawers</p>
+    <p class="subtitle">
+      Tune paired prop compositions for buttons and drawers
+    </p>
     <div class="header-buttons">
       <button
         data-undo-shortcut
@@ -284,7 +657,14 @@
       <div class="family-card" class:expanded={isExpanded}>
         <button class="family-header" onclick={() => toggleFamily(propType)}>
           <div class="preview-container" class:preview-large={isExpanded}>
-            <PropCompositionPreview pairedGlyph colors={getSettings().primaryPropColors} appearanceOverride={{ fanAppearance: getSettings().fanAppearance, propLook: getSettings().propArtwork, triangleGrip: getSettings().triangleGrip }}
+            <PropCompositionPreview
+              pairedGlyph
+              colors={getSettings().primaryPropColors}
+              appearanceOverride={{
+                fanAppearance: getSettings().fanAppearance,
+                propLook: getSettings().propArtwork,
+                triangleGrip: getSettings().triangleGrip,
+              }}
               {propType}
               size={isExpanded ? 280 : 100}
               recipeOverride={overrides[propType]}
@@ -309,7 +689,14 @@
                       title={preset.label}
                     >
                       <div class="preset-preview">
-                        <PropCompositionPreview pairedGlyph colors={getSettings().primaryPropColors} appearanceOverride={{ fanAppearance: getSettings().fanAppearance, propLook: getSettings().propArtwork, triangleGrip: getSettings().triangleGrip }}
+                        <PropCompositionPreview
+                          pairedGlyph
+                          colors={getSettings().primaryPropColors}
+                          appearanceOverride={{
+                            fanAppearance: getSettings().fanAppearance,
+                            propLook: getSettings().propArtwork,
+                            triangleGrip: getSettings().triangleGrip,
+                          }}
                           {propType}
                           size={80}
                           recipeOverride={preset.recipe}
@@ -327,10 +714,18 @@
               <div class="controls-header">
                 <span class="family-name">{info.label}</span>
                 <div class="header-actions">
-                  <button class="action-btn" onclick={() => copyRecipe(propType)} title="Copy recipe">
+                  <button
+                    class="action-btn"
+                    onclick={() => copyRecipe(propType)}
+                    title="Copy recipe"
+                  >
                     <i class="fas fa-copy"></i> Copy
                   </button>
-                  <button class="action-btn danger" onclick={() => resetFamily(propType)} title="Reset to defaults">
+                  <button
+                    class="action-btn danger"
+                    onclick={() => resetFamily(propType)}
+                    title="Reset to defaults"
+                  >
                     <i class="fas fa-undo"></i> Reset
                   </button>
                 </div>
@@ -340,12 +735,30 @@
               <div class="group-rotation">
                 <span class="section-label">Group Rotate</span>
                 <div class="rotation-buttons">
-                  <button class="rot-btn" onclick={() => rotateGroup(propType, -45)}>-45</button>
-                  <button class="rot-btn" onclick={() => rotateGroup(propType, -15)}>-15</button>
-                  <button class="rot-btn" onclick={() => rotateGroup(propType, -5)}>-5</button>
-                  <button class="rot-btn" onclick={() => rotateGroup(propType, 5)}>+5</button>
-                  <button class="rot-btn" onclick={() => rotateGroup(propType, 15)}>+15</button>
-                  <button class="rot-btn" onclick={() => rotateGroup(propType, 45)}>+45</button>
+                  <button
+                    class="rot-btn"
+                    onclick={() => rotateGroup(propType, -45)}>-45</button
+                  >
+                  <button
+                    class="rot-btn"
+                    onclick={() => rotateGroup(propType, -15)}>-15</button
+                  >
+                  <button
+                    class="rot-btn"
+                    onclick={() => rotateGroup(propType, -5)}>-5</button
+                  >
+                  <button
+                    class="rot-btn"
+                    onclick={() => rotateGroup(propType, 5)}>+5</button
+                  >
+                  <button
+                    class="rot-btn"
+                    onclick={() => rotateGroup(propType, 15)}>+15</button
+                  >
+                  <button
+                    class="rot-btn"
+                    onclick={() => rotateGroup(propType, 45)}>+45</button
+                  >
                 </div>
               </div>
 
@@ -360,48 +773,128 @@
                     <div class="field-row">
                       <span class="field-name">X</span>
                       <input
-                        type="range" min="0" max="100" step="1" value={t.x}
-                        oninput={(e) => updateTransform(propType, hand, "x", +e.currentTarget.value)}
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={t.x}
+                        oninput={(e) =>
+                          updateTransform(
+                            propType,
+                            hand,
+                            "x",
+                            +e.currentTarget.value
+                          )}
                       />
                       <input
-                        type="number" min="0" max="100" step="1" value={t.x}
-                        onchange={(e) => updateTransform(propType, hand, "x", clamp(+e.currentTarget.value, 0, 100))}
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={t.x}
+                        onchange={(e) =>
+                          updateTransform(
+                            propType,
+                            hand,
+                            "x",
+                            clamp(+e.currentTarget.value, 0, 100)
+                          )}
                       />
                     </div>
 
                     <div class="field-row">
                       <span class="field-name">Y</span>
                       <input
-                        type="range" min="0" max="100" step="1" value={t.y}
-                        oninput={(e) => updateTransform(propType, hand, "y", +e.currentTarget.value)}
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={t.y}
+                        oninput={(e) =>
+                          updateTransform(
+                            propType,
+                            hand,
+                            "y",
+                            +e.currentTarget.value
+                          )}
                       />
                       <input
-                        type="number" min="0" max="100" step="1" value={t.y}
-                        onchange={(e) => updateTransform(propType, hand, "y", clamp(+e.currentTarget.value, 0, 100))}
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={t.y}
+                        onchange={(e) =>
+                          updateTransform(
+                            propType,
+                            hand,
+                            "y",
+                            clamp(+e.currentTarget.value, 0, 100)
+                          )}
                       />
                     </div>
 
                     <div class="field-row">
                       <span class="field-name">Rot</span>
                       <input
-                        type="range" min="-180" max="180" step="5" value={t.rotation}
-                        oninput={(e) => updateTransform(propType, hand, "rotation", +e.currentTarget.value)}
+                        type="range"
+                        min="-180"
+                        max="180"
+                        step="5"
+                        value={t.rotation}
+                        oninput={(e) =>
+                          updateTransform(
+                            propType,
+                            hand,
+                            "rotation",
+                            +e.currentTarget.value
+                          )}
                       />
                       <input
-                        type="number" min="-180" max="180" step="1" value={t.rotation}
-                        onchange={(e) => updateTransform(propType, hand, "rotation", clamp(+e.currentTarget.value, -180, 180))}
+                        type="number"
+                        min="-180"
+                        max="180"
+                        step="1"
+                        value={t.rotation}
+                        onchange={(e) =>
+                          updateTransform(
+                            propType,
+                            hand,
+                            "rotation",
+                            clamp(+e.currentTarget.value, -180, 180)
+                          )}
                       />
                     </div>
 
                     <div class="field-row">
                       <span class="field-name">Scale</span>
                       <input
-                        type="range" min="0.1" max="1" step="0.05" value={t.scale}
-                        oninput={(e) => updateTransform(propType, hand, "scale", +e.currentTarget.value)}
+                        type="range"
+                        min="0.1"
+                        max="1"
+                        step="0.05"
+                        value={t.scale}
+                        oninput={(e) =>
+                          updateTransform(
+                            propType,
+                            hand,
+                            "scale",
+                            +e.currentTarget.value
+                          )}
                       />
                       <input
-                        type="number" min="0.1" max="1" step="0.01" value={t.scale}
-                        onchange={(e) => updateTransform(propType, hand, "scale", clamp(+e.currentTarget.value, 0.1, 1))}
+                        type="number"
+                        min="0.1"
+                        max="1"
+                        step="0.01"
+                        value={t.scale}
+                        onchange={(e) =>
+                          updateTransform(
+                            propType,
+                            hand,
+                            "scale",
+                            clamp(+e.currentTarget.value, 0.1, 1)
+                          )}
                       />
                     </div>
                   </div>
@@ -412,12 +905,25 @@
               <div class="field-row pair-scale-row">
                 <span class="field-name">Pair Scale</span>
                 <input
-                  type="range" min="0.5" max="1.5" step="0.05" value={recipe.pairScale}
-                  oninput={(e) => updatePairScale(propType, +e.currentTarget.value)}
+                  type="range"
+                  min="0.5"
+                  max="1.5"
+                  step="0.05"
+                  value={recipe.pairScale}
+                  oninput={(e) =>
+                    updatePairScale(propType, +e.currentTarget.value)}
                 />
                 <input
-                  type="number" min="0.5" max="1.5" step="0.01" value={recipe.pairScale}
-                  onchange={(e) => updatePairScale(propType, clamp(+e.currentTarget.value, 0.5, 1.5))}
+                  type="number"
+                  min="0.5"
+                  max="1.5"
+                  step="0.01"
+                  value={recipe.pairScale}
+                  onchange={(e) =>
+                    updatePairScale(
+                      propType,
+                      clamp(+e.currentTarget.value, 0.5, 1.5)
+                    )}
                 />
               </div>
             </div>
@@ -435,7 +941,8 @@
     height: 100%;
     padding: 24px;
     overflow-y: auto;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
   }
 
   .lab-header {
@@ -478,7 +985,15 @@
     color: var(--theme-text, white);
     font-size: 16px;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -515,7 +1030,13 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -547,7 +1068,14 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 16px;
     overflow: hidden;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      grid-template-columns var(--duration-fast) var(--ease-standard);
   }
 
   .family-card:hover {
@@ -559,8 +1087,9 @@
   .family-card.expanded {
     grid-column: 1 / -1;
     border-color: color-mix(in srgb, var(--theme-accent) 45%, transparent);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-accent) 15%, transparent),
-                0 8px 24px color-mix(in srgb, var(--theme-accent) 15%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--theme-accent) 15%, transparent),
+      0 8px 24px color-mix(in srgb, var(--theme-accent) 15%, transparent);
   }
 
   .family-card.expanded:hover {
@@ -657,7 +1186,14 @@
     font-weight: 600;
     color: var(--theme-text, white);
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      height var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -678,12 +1214,24 @@
 
   .action-btn.danger {
     color: var(--semantic-error, #ef4444);
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
   }
 
   .action-btn.danger:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 12%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 35%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 12%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 35%,
+      transparent
+    );
   }
 
   .presets-section {
@@ -710,7 +1258,13 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     min-width: 90px;
     -webkit-tap-highlight-color: transparent;
   }
@@ -724,7 +1278,7 @@
 
   .preset-card:active {
     transform: scale(0.96);
-    transition-duration: 60ms;
+    transition-duration: var(--duration-instant);
   }
 
   .preset-card:focus-visible {
@@ -786,7 +1340,13 @@
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -799,7 +1359,7 @@
 
   .rot-btn:active {
     transform: translateY(0) scale(0.95);
-    transition-duration: 50ms;
+    transition-duration: var(--duration-instant);
   }
 
   .rot-btn:focus-visible {
@@ -875,7 +1435,7 @@
     border-radius: 50%;
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    transition: transform var(--duration-fast, 150ms) ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .field-row input[type="range"]::-webkit-slider-thumb:hover {
@@ -912,7 +1472,14 @@
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     text-align: center;
-    transition: all var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard);
   }
 
   .field-row input[type="number"]:hover {
@@ -922,7 +1489,8 @@
   .field-row input[type="number"]:focus {
     outline: none;
     border-color: var(--theme-accent, #f97316);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-accent) 20%, transparent);
+    box-shadow: 0 0 0 3px
+      color-mix(in srgb, var(--theme-accent) 20%, transparent);
   }
 
   /* Hide spinner arrows */

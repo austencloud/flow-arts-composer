@@ -193,7 +193,7 @@
   <!-- Countdown overlay -->
   {#if mode === TrainMode.COUNTDOWN && countdownValue !== null}
     <div class="countdown-overlay">
-      <span class="countdown-number">{countdownValue || t('train_go')}</span>
+      <span class="countdown-number">{countdownValue || t("train_go")}</span>
     </div>
   {/if}
 
@@ -204,7 +204,7 @@
         {#if currentCombo > 0}
           <div class="combo">
             <span class="combo-value">{currentCombo}x</span>
-            <span class="combo-label">{t('train_combo_label')}</span>
+            <span class="combo-label">{t("train_combo_label")}</span>
           </div>
         {/if}
         <div class="score">
@@ -217,7 +217,7 @@
           class:hit={lastHitResult}
           class:miss={!lastHitResult}
         >
-          {lastHitResult ? `+${lastHitPoints}` : t('train_miss')}
+          {lastHitResult ? `+${lastHitPoints}` : t("train_miss")}
         </div>
       {/if}
     </div>
@@ -279,7 +279,11 @@
     font-size: 1rem;
     cursor: pointer;
     z-index: 20;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      transform var(--duration-normal);
   }
 
   .grid-settings-btn:hover {
@@ -394,7 +398,7 @@
     border-radius: 6px;
     font-weight: bold;
     font-size: 1rem;
-    animation: fadeInOut 0.8s ease-out forwards;
+    animation: fadeInOut var(--duration-scene) var(--ease-standard-out) forwards;
   }
 
   .hit-indicator.hit {

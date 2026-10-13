@@ -37,7 +37,11 @@ QuizPictographButton - Answer button containing a pictograph
   aria-label={ariaLabel ?? "Answer: pictograph option"}
 >
   <div class="pictograph-wrapper">
-    <PictographContainer pictographData={pictograph} {showTKA} {showPlacements} />
+    <PictographContainer
+      pictographData={pictograph}
+      {showTKA}
+      {showPlacements}
+    />
   </div>
   {#if caption}
     <span class="answer-caption">{caption}</span>
@@ -63,13 +67,18 @@ QuizPictographButton - Answer button containing a pictograph
     border-radius: 12px;
     cursor: pointer;
     overflow: hidden;
-    transition: all var(--duration-normal) cubic-bezier(0.16, 1, 0.3, 1);
+    transition:
+      border-color var(--duration-normal) var(--ease-out),
+      transform var(--duration-normal) var(--ease-out),
+      box-shadow var(--duration-normal) var(--ease-out),
+      background var(--duration-normal) var(--ease-out);
   }
 
   .answer-btn:hover:not(:disabled) {
     border-color: color-mix(in srgb, var(--theme-accent) 50%, transparent);
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 24px color-mix(in srgb, var(--theme-accent) 25%, transparent);
+    box-shadow: 0 8px 24px
+      color-mix(in srgb, var(--theme-accent) 25%, transparent);
   }
 
   .answer-btn:active:not(:disabled) {
@@ -109,13 +118,14 @@ QuizPictographButton - Answer button containing a pictograph
   .answer-btn.correct {
     background: color-mix(in srgb, var(--semantic-success) 20%, transparent);
     border-color: color-mix(in srgb, var(--semantic-success) 60%, transparent);
-    animation: correctPulse 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: correctPulse var(--duration-dramatic) var(--ease-spring);
   }
 
   @keyframes correctPulse {
     0% {
       transform: scale(1);
-      box-shadow: 0 0 0 0 color-mix(in srgb, var(--semantic-success) 40%, transparent);
+      box-shadow: 0 0 0 0
+        color-mix(in srgb, var(--semantic-success) 40%, transparent);
     }
     50% {
       transform: scale(1.04);
@@ -130,7 +140,7 @@ QuizPictographButton - Answer button containing a pictograph
   .answer-btn.incorrect {
     background: color-mix(in srgb, var(--semantic-error) 20%, transparent);
     border-color: color-mix(in srgb, var(--semantic-error) 60%, transparent);
-    animation: incorrectShake var(--duration-dramatic) ease-out;
+    animation: incorrectShake var(--duration-dramatic) var(--ease-standard-out);
   }
 
   @keyframes incorrectShake {
@@ -163,7 +173,7 @@ QuizPictographButton - Answer button containing a pictograph
     right: 6px;
     font-size: 0.9rem;
     font-weight: bold;
-    animation: iconPop var(--duration-emphasis) cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: iconPop var(--duration-emphasis) var(--ease-spring);
   }
 
   @keyframes iconPop {
@@ -224,8 +234,8 @@ QuizPictographButton - Answer button containing a pictograph
 
     .answer-btn {
       transition:
-        background 0.15s ease,
-        border-color 0.15s ease;
+        background var(--duration-fast) var(--ease-standard),
+        border-color var(--duration-fast) var(--ease-standard);
     }
   }
 </style>

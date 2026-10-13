@@ -1157,7 +1157,8 @@ Last audit: 2025-12-27
     backdrop-filter: blur(4px);
     color: rgba(255, 255, 255, 0.95);
     font-size: 36px;
-    animation: tapFeedbackPop 600ms cubic-bezier(0.2, 0, 0, 1) forwards;
+    animation: tapFeedbackPop var(--duration-dramatic) var(--ease-standard-out)
+      forwards;
   }
 
   @keyframes tapFeedbackPop {
@@ -1177,7 +1178,7 @@ Last audit: 2025-12-27
 
   @media (prefers-reduced-motion: reduce) {
     .tap-feedback i {
-      animation-duration: 250ms;
+      animation-duration: var(--duration-normal);
     }
   }
 
@@ -1211,7 +1212,7 @@ Last audit: 2025-12-27
       pointer-events: none;
       z-index: 5;
       opacity: 0;
-      transition: opacity 150ms ease-out;
+      transition: opacity var(--duration-fast) var(--ease-standard-out);
     }
 
     .animation-container[data-hover-hint]:hover .hover-hint {
@@ -1234,7 +1235,7 @@ Last audit: 2025-12-27
       align-items: center;
       gap: clamp(5px, 2cqmin, 12px);
       transform: scale(0.92);
-      transition: transform 150ms cubic-bezier(0.2, 0, 0, 1);
+      transition: transform var(--duration-fast) var(--ease-standard-out);
     }
 
     .animation-container[data-hover-hint="badge"]:hover .hint-stack {
@@ -1289,7 +1290,7 @@ Last audit: 2025-12-27
       font-size: 13px;
       font-weight: 600;
       transform: translateY(-4px);
-      transition: transform 150ms cubic-bezier(0.2, 0, 0, 1);
+      transition: transform var(--duration-fast) var(--ease-standard-out);
     }
 
     .animation-container[data-hover-hint="pill"]:hover .hint-pill {
@@ -1343,8 +1344,8 @@ Last audit: 2025-12-27
     transform-origin: top right;
     pointer-events: none; /* non-interactive until revealed */
     transition:
-      opacity 140ms ease,
-      transform 150ms ease; /* exit: quick, no overshoot */
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard); /* exit: quick, no overshoot */
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -1372,8 +1373,8 @@ Last audit: 2025-12-27
     transform: scale(1) translateY(0);
     pointer-events: auto;
     transition:
-      opacity 200ms ease,
-      transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1); /* enter: bouncy pop */
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-emphasis) var(--ease-spring); /* enter: bouncy pop */
   }
 
   .corner-disc {
@@ -1392,9 +1393,9 @@ Last audit: 2025-12-27
     font-size: clamp(18px, 4.6cqmin, 38px);
     opacity: 0.9;
     transition:
-      opacity 140ms ease,
-      transform 140ms ease,
-      box-shadow 140ms ease;
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .corner-toggle:hover .corner-disc,
@@ -1443,8 +1444,8 @@ Last audit: 2025-12-27
       transform: scale(1) translateY(0);
       pointer-events: auto;
       transition:
-        opacity 200ms ease,
-        transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1); /* enter: bouncy pop */
+        opacity var(--duration-normal) var(--ease-standard),
+        transform var(--duration-emphasis) var(--ease-spring); /* enter: bouncy pop */
     }
   }
 
@@ -1458,7 +1459,7 @@ Last audit: 2025-12-27
     .animation-container[data-corner-toggle]
       :global(.canvas-wrapper:hover .corner-toggle) {
       transform: none;
-      transition: opacity 140ms ease;
+      transition: opacity var(--duration-fast) var(--ease-standard);
     }
   }
 
@@ -1533,8 +1534,8 @@ Last audit: 2025-12-27
     width: min(calc(100cqw - 12px), calc((100cqh - 7rem) * 2 / 3));
     max-width: calc((100cqh - 7rem) * 2 / 3);
     transition:
-      width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-      max-width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      width var(--duration-dramatic) var(--ease-out),
+      max-width var(--duration-dramatic) var(--ease-out);
   }
 
   /* Progress slot: in portrait, takes natural height at bottom. The transport
@@ -1548,8 +1549,8 @@ Last audit: 2025-12-27
     max-height: 100px;
     opacity: 1;
     transition:
-      max-height 0.3s cubic-bezier(0.32, 0.72, 0, 1),
-      opacity 0.2s ease-out;
+      max-height var(--duration-emphasis) var(--ease-out),
+      opacity var(--duration-normal) var(--ease-standard-out);
   }
   .shared-transport {
     width: 100%;
@@ -1678,8 +1679,8 @@ Last audit: 2025-12-27
     width: min(calc(100cqw - 12px), calc((100cqh - 8.5rem) * 2 / 3));
     max-width: calc((100cqh - 8.5rem) * 2 / 3);
     transition:
-      width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-      max-width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      width var(--duration-dramatic) var(--ease-out),
+      max-width var(--duration-dramatic) var(--ease-out);
   }
 
   /* ===========================================
@@ -1815,8 +1816,8 @@ Last audit: 2025-12-27
     max-width: calc((100cqh - 7rem) * 3 / 2);
     max-height: none;
     transition:
-      width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-      max-width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      width var(--duration-dramatic) var(--ease-out),
+      max-width var(--duration-dramatic) var(--ease-out),
       grid-template-columns var(--transition-dramatic),
       column-gap var(--transition-dramatic);
   }

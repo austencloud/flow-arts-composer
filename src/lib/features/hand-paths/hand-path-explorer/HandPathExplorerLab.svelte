@@ -86,7 +86,7 @@
     flex: 1;
     min-width: 0;
     overflow: hidden;
-    transition: flex 0.2s ease;
+    transition: flex var(--duration-normal) var(--ease-standard);
   }
 
   /* When the detail panel is open, give the grid slightly less space */

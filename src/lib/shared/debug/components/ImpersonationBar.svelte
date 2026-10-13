@@ -106,7 +106,7 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: background var(--duration-fast, 150ms);
+    transition: background var(--duration-fast);
     flex-shrink: 0;
   }
 

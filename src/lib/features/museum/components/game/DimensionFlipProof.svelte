@@ -27,7 +27,10 @@
   import MuseumCaptionBar from "./MuseumCaptionBar.svelte";
   import { MuseumNarrationPlayer } from "../../services/museum-narration-player.svelte";
   import { roomStamp } from "../../data/museum-narration";
-  import { placeFreeNotes, type PlacedNote } from "../../services/museum-free-notes";
+  import {
+    placeFreeNotes,
+    type PlacedNote,
+  } from "../../services/museum-free-notes";
   import { openInComposer } from "../../services/museum-composer-handoff";
   import { goto } from "$app/navigation";
   import SequenceBrowserOverlay from "#lib/features/museum/scenes/procedural/overlay/SequenceBrowserOverlay.svelte";
@@ -581,10 +584,16 @@
         // says. The decode console handles its own E (see DecodeConsole).
         const kind = focusedExhibit?.interaction?.kind;
         if (kind === "exit" && focusedExhibit?.interaction?.kind === "exit") {
-          void openInComposer(focusedExhibit.interaction.sequenceId, "From the Archive");
+          void openInComposer(
+            focusedExhibit.interaction.sequenceId,
+            "From the Archive"
+          );
           return;
         }
-        if (kind === "terminal" && focusedExhibit?.interaction?.kind === "terminal") {
+        if (
+          kind === "terminal" &&
+          focusedExhibit?.interaction?.kind === "terminal"
+        ) {
           if (document.pointerLockElement) document.exitPointerLock();
           void goto(focusedExhibit.interaction.route);
           return;
@@ -962,8 +971,7 @@
           Stick to move {isInFPS ? "• Drag to look" : "• Pinch to zoom"} • Tap an
           exhibit to examine
         {:else}
-          WASD move {isInFPS ? "• Mouse look" : "• Scroll zoom"} • Q {qHint} •
-          E examine
+          WASD move {isInFPS ? "• Mouse look" : "• Scroll zoom"} • Q {qHint} • E examine
         {/if}
       </span>
     </div>
@@ -1052,7 +1060,11 @@
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
       <div class="note-stage">
-        <StickyNote text={focusedNote.note.text} era={focusedNote.note.era} lean={-2} />
+        <StickyNote
+          text={focusedNote.note.text}
+          era={focusedNote.note.era}
+          lean={-2}
+        />
       </div>
       <p class="note-caption">Posted by K. The building did not remove it.</p>
     </div>
@@ -1071,7 +1083,10 @@
 
       <div class="performer-info">
         <div class="performer-header">
-          <i class="fas {focusedPerformer.handout ? 'fa-user-tie' : 'fa-person'}" aria-hidden="true"></i>
+          <i
+            class="fas {focusedPerformer.handout ? 'fa-user-tie' : 'fa-person'}"
+            aria-hidden="true"
+          ></i>
           <h3>{focusedPerformer.label ?? "Performer Station"}</h3>
         </div>
         {#if focusedPerformer.description}
@@ -1201,8 +1216,8 @@
     justify-content: center;
     z-index: 90;
     transition:
-      background 0.15s,
-      color 0.15s;
+      background var(--duration-fast),
+      color var(--duration-fast);
   }
 
   .museum-back-btn:hover {
@@ -1229,7 +1244,7 @@
     font-size: clamp(0.875rem, 0.625rem + 0.25vw, 1.375rem);
     pointer-events: none;
     z-index: 10;
-    animation: fade-in 0.3s ease;
+    animation: fade-in var(--duration-emphasis) var(--ease-standard);
   }
 
   .wing-label i {
@@ -1255,7 +1270,7 @@
     font-size: clamp(0.875rem, 0.625rem + 0.25vw, 1.375rem);
     pointer-events: none;
     z-index: 10;
-    animation: fade-in 0.2s ease;
+    animation: fade-in var(--duration-normal) var(--ease-standard);
   }
 
   .interaction-prompt kbd {
@@ -1304,7 +1319,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    animation: panel-slide-in 0.25s ease;
+    animation: panel-slide-in var(--duration-normal) var(--ease-standard);
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb, var(--museum-gold-20)) transparent;
   }
@@ -1395,8 +1410,8 @@
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
     transition:
-      background 0.15s,
-      border-color 0.15s;
+      background var(--duration-fast),
+      border-color var(--duration-fast);
   }
 
   .change-sequence-btn:hover {
@@ -1450,8 +1465,8 @@
     letter-spacing: 0.04em;
     cursor: pointer;
     transition:
-      background 0.15s,
-      border-color 0.15s;
+      background var(--duration-fast),
+      border-color var(--duration-fast);
   }
 
   .console-action {

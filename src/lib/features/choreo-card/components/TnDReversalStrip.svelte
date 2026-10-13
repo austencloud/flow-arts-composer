@@ -1,7 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { SIMPLE_PATTERNS } from "../domain/reversal-patterns";
-  import { resolvePattern, type ResolvedReversalPattern } from "../domain/reversal-transform";
+  import {
+    resolvePattern,
+    type ResolvedReversalPattern,
+  } from "../domain/reversal-transform";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
 
   interface Props {
@@ -20,7 +23,12 @@
      */
     startCustomOpen?: boolean;
   }
-  const { activePatternId, onPatternChange, collapsible = false, startCustomOpen = true }: Props = $props();
+  const {
+    activePatternId,
+    onPatternChange,
+    collapsible = false,
+    startCustomOpen = true,
+  }: Props = $props();
 
   let showCustom = $state(startCustomOpen);
   const timelineOpen = $derived(!collapsible || showCustom);
@@ -38,7 +46,8 @@
   }
 
   function tile(sequence: string): { left: boolean[]; right: boolean[] } {
-    const b: boolean[] = [], r: boolean[] = [];
+    const b: boolean[] = [],
+      r: boolean[] = [];
     for (let i = 0; i < STEPS; i++) {
       const sym = sequence[i % sequence.length];
       b.push(sym === "P" || sym === "B");
@@ -79,7 +88,12 @@
 <div class="reversal-strip" class:collapsible>
   <div class="preset-row" role="group" aria-label="Reversal presets">
     {#each SIMPLE_PATTERNS as p (p.id)}
-      <FilterChipBase label={p.label} mode="toggle" active={resolved.id === p.id} onclick={() => applyPreset(p.sequence)} />
+      <FilterChipBase
+        label={p.label}
+        mode="toggle"
+        active={resolved.id === p.id}
+        onclick={() => applyPreset(p.sequence)}
+      />
     {/each}
   </div>
 
@@ -112,7 +126,11 @@
         <span class="pat {charClass(ch)}">{ch === "-" ? "—" : ch}</span>
       {/each}
     </span>
-    <span class="badge" class:clean={resolved.isCleanLoop} class:broken={!resolved.isCleanLoop}>
+    <span
+      class="badge"
+      class:clean={resolved.isCleanLoop}
+      class:broken={!resolved.isCleanLoop}
+    >
       {resolved.isCleanLoop ? "Clean loop" : "Boundary discontinuity"}
     </span>
     <span class="label">{resolved.label}</span>
@@ -159,12 +177,31 @@
     justify-content: center;
   }
 
-  .timeline { display: flex; flex-direction: column; gap: 6px; align-items: center; }
-  .row { display: flex; align-items: center; gap: 6px; }
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
 
-  .row-label { width: 42px; text-align: right; font-size: 12px; font-weight: 600; padding-right: 6px; }
-  .row-label.blue { color: var(--prop-blue, #3498db); }
-  .row-label.red { color: var(--prop-red, #e74c3c); }
+  .row-label {
+    width: 42px;
+    text-align: right;
+    font-size: 12px;
+    font-weight: 600;
+    padding-right: 6px;
+  }
+  .row-label.blue {
+    color: var(--prop-blue, #3498db);
+  }
+  .row-label.red {
+    color: var(--prop-red, #e74c3c);
+  }
 
   .cell {
     width: clamp(40px, 13cqi, 56px);
@@ -180,17 +217,44 @@
     justify-content: center;
     gap: 2px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
-  .cell:hover { border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2)); }
-  .cell.blue.active { background: rgba(52, 152, 219, 0.22); border-color: rgba(52, 152, 219, 0.6); color: #fff; }
-  .cell.red.active { background: rgba(231, 76, 60, 0.22); border-color: rgba(231, 76, 60, 0.6); color: #fff; }
-  .cell:focus-visible { outline: 2px solid var(--theme-accent, #6c8ee8); outline-offset: 2px; }
+  .cell:hover {
+    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
+  }
+  .cell.blue.active {
+    background: rgba(52, 152, 219, 0.22);
+    border-color: rgba(52, 152, 219, 0.6);
+    color: #fff;
+  }
+  .cell.red.active {
+    background: rgba(231, 76, 60, 0.22);
+    border-color: rgba(231, 76, 60, 0.6);
+    color: #fff;
+  }
+  .cell:focus-visible {
+    outline: 2px solid var(--theme-accent, #6c8ee8);
+    outline-offset: 2px;
+  }
 
-  .arrow { font-size: 20px; transition: transform 0.2s ease; display: inline-block; }
-  .arrow.ccw { transform: scaleX(-1); }
+  .arrow {
+    font-size: 20px;
+    transition: transform var(--duration-normal) var(--ease-standard);
+    display: inline-block;
+  }
+  .arrow.ccw {
+    transform: scaleX(-1);
+  }
 
-  .footer { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 
   /* Collapsible (Transform-rail) mode: drop the card chrome so it reads as a
      bare axis matching Registers / Grid, not a boxed leftover. */
@@ -202,20 +266,54 @@
     border: none;
   }
 
-  .pattern-string { font-family: var(--font-mono, monospace); font-size: 16px; letter-spacing: 5px; display: inline-flex; }
-  .pat { min-width: 16px; text-align: center; }
-  .pat.pair { color: #c084fc; }
-  .pat.blue-only { color: var(--prop-blue, #3498db); }
-  .pat.red-only { color: var(--prop-red, #e74c3c); }
-  .pat.none { color: var(--theme-text-dim, rgba(255, 255, 255, 0.3)); }
+  .pattern-string {
+    font-family: var(--font-mono, monospace);
+    font-size: 16px;
+    letter-spacing: 5px;
+    display: inline-flex;
+  }
+  .pat {
+    min-width: 16px;
+    text-align: center;
+  }
+  .pat.pair {
+    color: #c084fc;
+  }
+  .pat.blue-only {
+    color: var(--prop-blue, #3498db);
+  }
+  .pat.red-only {
+    color: var(--prop-red, #e74c3c);
+  }
+  .pat.none {
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.3));
+  }
 
-  .badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px; }
-  .badge.clean { color: #4ade80; background: rgba(74, 222, 128, 0.15); }
-  .badge.broken { color: #facc15; background: rgba(250, 204, 21, 0.15); }
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+  }
+  .badge.clean {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.15);
+  }
+  .badge.broken {
+    color: #facc15;
+    background: rgba(250, 204, 21, 0.15);
+  }
 
-  .label { font-size: 12px; color: var(--theme-text-dim, rgba(255, 255, 255, 0.5)); }
+  .label {
+    font-size: 12px;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
+  }
 
   @media (prefers-reduced-motion: reduce) {
-    .preset-chip, .cell, .arrow { transition: none; }
+    .preset-chip,
+    .cell,
+    .arrow {
+      transition: none;
+    }
   }
 </style>

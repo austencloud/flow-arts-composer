@@ -75,7 +75,13 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast, 100ms) ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
     display: flex;
     flex-direction: column;

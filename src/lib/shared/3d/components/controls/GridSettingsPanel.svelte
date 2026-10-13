@@ -110,7 +110,9 @@
     font-size: var(--font-size-sm, 0.875rem);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      color var(--duration-fast);
   }
 
   .mode-btn:hover {
@@ -145,7 +147,13 @@
     font-size: var(--font-size-sm, 0.8rem);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      opacity var(--duration-fast),
+      width var(--duration-fast),
+      height var(--duration-fast);
   }
 
   .plane-btn:hover {

@@ -50,11 +50,11 @@
       <div class="empty-icon">
         <i class="fas fa-th" aria-hidden="true"></i>
       </div>
-      <p class="empty-text">{t('train_no_sequence_selected')}</p>
+      <p class="empty-text">{t("train_no_sequence_selected")}</p>
       {#if onBrowseSequences}
         <button class="browse-btn" onclick={onBrowseSequences}>
           <i class="fas fa-folder-open" aria-hidden="true"></i>
-          {t('train_browse')}
+          {t("train_browse")}
         </button>
       {/if}
     </div>
@@ -160,7 +160,10 @@
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      transform var(--duration-normal);
   }
 
   .browse-btn:hover {

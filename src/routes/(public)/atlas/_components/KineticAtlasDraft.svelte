@@ -151,7 +151,9 @@
   function insertCodexGroup(groups: GlossaryGroup[]): NavigationGroup[] {
     // "position" is the external @tka/domain GlossaryCategory key (see
     // +page.server.ts) for what this UI displays as "Placements".
-    const placementIndex = groups.findIndex((group) => group.key === "position");
+    const placementIndex = groups.findIndex(
+      (group) => group.key === "position"
+    );
     const insertionIndex = placementIndex >= 0 ? placementIndex + 1 : 0;
     return [
       ...groups.slice(0, insertionIndex),
@@ -1100,8 +1102,8 @@
     border-radius: 999px;
     cursor: pointer;
     transition:
-      border-color 160ms ease,
-      background 160ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
   .back-btn:hover {
     background: oklch(0.28 0.05 273 / 0.6);
@@ -1173,8 +1175,8 @@
     border-radius: 0.9rem;
     cursor: pointer;
     transition:
-      border-color 160ms ease,
-      background 160ms ease;
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
   .codex-search-result:hover {
     background: oklch(0.24 0.05 275 / 0.7);
@@ -1269,8 +1271,8 @@
     border: 1px solid transparent;
     border-radius: 10px;
     transition:
-      background 140ms ease,
-      border-color 140ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
   .term-row:hover {
     background: oklch(0.22 0.025 272 / 0.4);
@@ -1312,8 +1314,8 @@
     font-size: 0.7rem;
     color: oklch(0.55 0.03 270);
     transition:
-      transform 200ms ease,
-      color 160ms ease;
+      transform var(--duration-normal) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
   .term-row[aria-expanded="true"] .row-chev {
     transform: rotate(180deg);
@@ -1325,7 +1327,7 @@
   .row-body {
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows 240ms ease;
+    transition: grid-template-rows var(--duration-normal) var(--ease-standard);
   }
   .row-body.open {
     grid-template-rows: 1fr;
@@ -1479,8 +1481,8 @@
     -webkit-backdrop-filter: blur(10px);
     cursor: pointer;
     transition:
-      background 160ms ease,
-      transform 160ms ease;
+      background var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
   .back-top:hover {
     background: oklch(0.28 0.05 273 / 0.85);
@@ -1495,7 +1497,8 @@
   @media (prefers-reduced-motion: no-preference) {
     .view-head,
     .split {
-      animation: gl-fadeup 260ms cubic-bezier(0.22, 0.7, 0.35, 1) both;
+      animation: gl-fadeup var(--duration-emphasis) var(--ease-standard-out)
+        both;
     }
     @keyframes gl-fadeup {
       from {

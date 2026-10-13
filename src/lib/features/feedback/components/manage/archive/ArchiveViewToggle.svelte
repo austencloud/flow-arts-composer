@@ -55,7 +55,7 @@
     font-size: var(--font-size-compact);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition: background var(--duration-normal), border-color var(--duration-normal), color var(--duration-normal), opacity var(--duration-normal), transform var(--duration-normal), box-shadow var(--duration-normal);
     white-space: nowrap;
   }
 

@@ -68,8 +68,8 @@
     cursor: pointer;
     padding: 0;
     transition:
-      transform 0.15s ease,
-      border-color 0.15s ease;
+      transform var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -80,7 +80,7 @@
 
   .hand-picker-button:active {
     transform: scale(0.95);
-    transition: transform 0.05s ease;
+    transition: transform var(--duration-instant) var(--ease-standard);
   }
 
   .hand-picker-button:focus-visible {

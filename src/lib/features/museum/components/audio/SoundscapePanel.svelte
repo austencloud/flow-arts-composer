@@ -36,12 +36,17 @@
   }
 
   function candidateVolumeFor(cand: AudioCandidate): number {
-    if (pref?.candidateId === cand.id && pref.volume !== undefined) return pref.volume;
+    if (pref?.candidateId === cand.id && pref.volume !== undefined)
+      return pref.volume;
     return cand.volume;
   }
 </script>
 
-<div class="panel museum-gold-scope" role="dialog" aria-label="Museum soundscape">
+<div
+  class="panel museum-gold-scope"
+  role="dialog"
+  aria-label="Museum soundscape"
+>
   <header class="panel-header">
     <div class="header-text">
       <div class="panel-title">Ambient Score</div>
@@ -54,7 +59,10 @@
         onclick={() => player.toggleMute()}
         aria-label={player.muted ? "Unmute" : "Mute"}
       >
-        <i class="fas {player.muted ? 'fa-volume-mute' : 'fa-volume-up'}" aria-hidden="true"></i>
+        <i
+          class="fas {player.muted ? 'fa-volume-mute' : 'fa-volume-up'}"
+          aria-hidden="true"
+        ></i>
       </button>
       <button
         type="button"
@@ -125,16 +133,26 @@
 
     <div class="commit-row">
       {#if activeId && pref?.candidateId !== activeId}
-        <button type="button" class="commit-btn" onclick={() => player.saveAsPreference()}>
+        <button
+          type="button"
+          class="commit-btn"
+          onclick={() => player.saveAsPreference()}
+        >
           <i class="fas fa-check" aria-hidden="true"></i>
           Save as default for this wing
         </button>
       {:else if activeId}
-        <div class="commit-status">This is the default for {wing.wingName}.</div>
+        <div class="commit-status">
+          This is the default for {wing.wingName}.
+        </div>
       {/if}
     </div>
   {:else if wing}
-    <div class="empty">No candidates yet for this wing. Run <code>node scripts/search-soundscapes.cjs --wing {wing.wingId}</code>.</div>
+    <div class="empty">
+      No candidates yet for this wing. Run <code
+        >node scripts/search-soundscapes.cjs --wing {wing.wingId}</code
+      >.
+    </div>
   {:else}
     <div class="empty">Walk into a museum wing to hear its score.</div>
   {/if}
@@ -170,12 +188,18 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: panel-in 0.18s ease-out;
+    animation: panel-in var(--duration-fast) var(--ease-standard-out);
   }
 
   @keyframes panel-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .panel-header {
@@ -213,7 +237,9 @@
     color: var(--museum-gold-60);
     cursor: pointer;
     border-radius: 6px;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .icon-btn:hover {
@@ -246,11 +272,15 @@
     display: flex;
     flex-direction: column;
     border-bottom: 1px solid var(--museum-gold-06);
-    transition: background 0.15s ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
-  .track:hover { background: var(--museum-gold-04); }
-  .track.active { background: var(--museum-gold-09); }
+  .track:hover {
+    background: var(--museum-gold-04);
+  }
+  .track.active {
+    background: var(--museum-gold-09);
+  }
 
   .track-main {
     display: flex;
@@ -277,7 +307,10 @@
     color: rgba(220, 200, 160, 0.5);
     border: 1px solid var(--museum-gold-20);
     border-radius: 50%;
-    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    transition:
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard);
   }
 
   .track.active .track-indicator {
@@ -311,7 +344,9 @@
     flex-wrap: wrap;
   }
 
-  .track-sep { opacity: 0.5; }
+  .track-sep {
+    opacity: 0.5;
+  }
 
   .default-badge {
     color: rgba(180, 220, 180, 0.85);
@@ -353,7 +388,9 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .commit-btn:hover {

@@ -39,7 +39,9 @@
   }: Props = $props();
 
   let internalOpen = $state(true);
-  $effect.pre(() => { internalOpen = defaultOpen; });
+  $effect.pre(() => {
+    internalOpen = defaultOpen;
+  });
 
   const isControlled = $derived(open !== undefined);
   const isOpen = $derived(isControlled ? (open as boolean) : internalOpen);
@@ -54,7 +56,9 @@
   }
 
   // Generate a stable ID from the title for aria-controls
-  const sectionId = $derived(`section-${title.toLowerCase().replace(/\s+/g, "-")}`);
+  const sectionId = $derived(
+    `section-${title.toLowerCase().replace(/\s+/g, "-")}`
+  );
 </script>
 
 <div
@@ -74,7 +78,10 @@
     >
       <div class="header-left">
         {#if icon}
-          <span class="header-icon" style={iconColor ? `color: ${iconColor}` : ""}>
+          <span
+            class="header-icon"
+            style={iconColor ? `color: ${iconColor}` : ""}
+          >
             <i class="fas {icon}" aria-hidden="true"></i>
           </span>
         {/if}
@@ -101,7 +108,12 @@
   </div>
 
   {#if isOpen}
-    <div id={sectionId} class="section-content" role="region" aria-label="{title} content">
+    <div
+      id={sectionId}
+      class="section-content"
+      role="region"
+      aria-label="{title} content"
+    >
       {@render children()}
     </div>
   {/if}
@@ -138,7 +150,7 @@
     background: transparent;
     color: var(--theme-text, #ffffff);
     cursor: pointer;
-    transition: background var(--duration-fast) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .section-header:hover {
@@ -199,7 +211,7 @@
   .chevron {
     font-size: 12px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
-    transition: transform var(--duration-normal) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   .collapsible-section.open .chevron {

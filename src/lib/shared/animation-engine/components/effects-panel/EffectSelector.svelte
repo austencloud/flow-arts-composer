@@ -258,9 +258,9 @@
     font-size: inherit;
     -webkit-tap-highlight-color: transparent;
     transition:
-      background var(--duration-fast, 100ms) ease,
-      border-color var(--duration-fast, 100ms) ease,
-      color var(--duration-fast, 100ms) ease;
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     /* view-transitions.css: the box stretches between arrangements while the
        parts inside it keep their own proportions. */
     view-transition-class: fx-roster-box;

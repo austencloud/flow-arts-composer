@@ -165,7 +165,7 @@ text embedded within the elemental shape. Known non-Type1 letters are rejected.
   .elemental-glyph {
     /* Beautiful fade in/out effect */
     opacity: 0;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .elemental-glyph.visible {
@@ -206,7 +206,7 @@ text embedded within the elemental shape. Known non-Type1 letters are rejected.
   }
 
   .elemental-image.animating {
-    animation: elemental-pulse 180ms ease-in-out;
+    animation: elemental-pulse var(--duration-fast) var(--ease-standard);
   }
 
   /* Respect reduced motion preference */

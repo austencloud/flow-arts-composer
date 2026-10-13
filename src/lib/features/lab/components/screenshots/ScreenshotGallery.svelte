@@ -44,7 +44,6 @@
   let hapticService: HapticFeedback | null = $state(null);
   let tagController: ScreenshotTagController | null = $state(null);
 
-
   const tagFilter = createGalleryTagFilterState({
     getHapticService: () => hapticService,
     getTagController: () => tagController,
@@ -121,7 +120,6 @@
       isLoading = false;
     }
   }
-
 
   type FilterCategory = "all" | DeviceCategory;
 
@@ -619,7 +617,8 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    transition: grid-template-columns 300ms var(--ease-out, ease-out);
+    transition: grid-template-columns var(--duration-emphasis)
+      var(--ease-out, var(--ease-standard-out));
   }
 
   .gallery-layout.sidebar-open {
@@ -685,7 +684,13 @@
     font-size: var(--font-size-compact, 12px);
     font-family: inherit;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out, ease-out),
+      border-color var(--duration-fast) var(--ease-out, ease-out),
+      color var(--duration-fast) var(--ease-out, ease-out),
+      opacity var(--duration-fast) var(--ease-out, ease-out),
+      transform var(--duration-fast) var(--ease-out, ease-out),
+      box-shadow var(--duration-fast) var(--ease-out, ease-out);
   }
 
   .header-btn i {
@@ -805,7 +810,13 @@
     font-size: var(--font-size-compact, 12px);
     font-family: inherit;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-out, ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out, ease-out),
+      border-color var(--duration-fast) var(--ease-out, ease-out),
+      color var(--duration-fast) var(--ease-out, ease-out),
+      opacity var(--duration-fast) var(--ease-out, ease-out),
+      transform var(--duration-fast) var(--ease-out, ease-out),
+      box-shadow var(--duration-fast) var(--ease-out, ease-out);
   }
 
   .clear-filters-btn:hover {

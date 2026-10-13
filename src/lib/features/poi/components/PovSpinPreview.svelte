@@ -136,7 +136,7 @@
       prevTime = now;
 
       if (playing) {
-        staffAngle += (rpm * Math.PI * 2) / 60 * dt;
+        staffAngle += ((rpm * Math.PI * 2) / 60) * dt;
       }
 
       // Sync canvas pixels to display size
@@ -193,7 +193,14 @@
 
       if (showFullDisc) {
         // Static mode: subtle ambient glow behind the disc
-        const ambientGlow = ctx.createRadialGradient(cx, cy, drawRadius * 0.8, cx, cy, drawRadius * 1.15);
+        const ambientGlow = ctx.createRadialGradient(
+          cx,
+          cy,
+          drawRadius * 0.8,
+          cx,
+          cy,
+          drawRadius * 1.15
+        );
         ambientGlow.addColorStop(0, "rgba(100, 180, 255, 0.06)");
         ambientGlow.addColorStop(1, "transparent");
         ctx.fillStyle = ambientGlow;
@@ -201,7 +208,13 @@
 
         ctx.save();
         ctx.translate(cx, cy);
-        ctx.drawImage(discToUse, -drawRadius, -drawRadius, drawRadius * 2, drawRadius * 2);
+        ctx.drawImage(
+          discToUse,
+          -drawRadius,
+          -drawRadius,
+          drawRadius * 2,
+          drawRadius * 2
+        );
         ctx.restore();
       } else {
         // POV mode: persistence window sweeps around the fixed disc.
@@ -230,7 +243,13 @@
           ctx.arc(cx, cy, drawRadius * 1.04, segStart, segEnd);
           ctx.closePath();
           ctx.clip();
-          ctx.drawImage(discToUse, cx - drawRadius, cy - drawRadius, drawRadius * 2, drawRadius * 2);
+          ctx.drawImage(
+            discToUse,
+            cx - drawRadius,
+            cy - drawRadius,
+            drawRadius * 2,
+            drawRadius * 2
+          );
           ctx.restore();
         }
         ctx.restore();
@@ -251,7 +270,13 @@
           ctx.arc(cx, cy, drawRadius + 2, segStart, segEnd);
           ctx.closePath();
           ctx.clip();
-          ctx.drawImage(discToUse, cx - drawRadius, cy - drawRadius, drawRadius * 2, drawRadius * 2);
+          ctx.drawImage(
+            discToUse,
+            cx - drawRadius,
+            cy - drawRadius,
+            drawRadius * 2,
+            drawRadius * 2
+          );
           ctx.restore();
         }
 
@@ -266,8 +291,12 @@
           const stripLength = drawRadius - innerR;
           const { ledCount, frameCount, frames } = primaryPattern;
 
-          const normalizedAngle = ((staffAngle + Math.PI / 2) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-          const frameIdx = Math.floor((normalizedAngle / (Math.PI * 2)) * frameCount) % frameCount;
+          const normalizedAngle =
+            (((staffAngle + Math.PI / 2) % (Math.PI * 2)) + Math.PI * 2) %
+            (Math.PI * 2);
+          const frameIdx =
+            Math.floor((normalizedAngle / (Math.PI * 2)) * frameCount) %
+            frameCount;
           const frame = frames[frameIdx]!;
 
           // Outgoing-clip frame sampled at the same angular phase -
@@ -279,7 +308,9 @@
           const oneMinusT = 1 - blendT;
           if (secondaryPattern && blendT < 1) {
             const s = secondaryPattern;
-            const sFrameIdx = Math.floor((normalizedAngle / (Math.PI * 2)) * s.frameCount) % s.frameCount;
+            const sFrameIdx =
+              Math.floor((normalizedAngle / (Math.PI * 2)) * s.frameCount) %
+              s.frameCount;
             secondaryFrame = s.frames[sFrameIdx]!;
             safeLedCount = Math.min(ledCount, s.ledCount);
           }
@@ -315,10 +346,22 @@
             ctx.fillStyle = `rgb(${r},${g},${b})`;
             const glowW = halfW * 3;
             ctx.beginPath();
-            ctx.moveTo(cx + cosA * rStart - perpX * glowW, cy + sinA * rStart - perpY * glowW);
-            ctx.lineTo(cx + cosA * rEnd - perpX * glowW, cy + sinA * rEnd - perpY * glowW);
-            ctx.lineTo(cx + cosA * rEnd + perpX * glowW, cy + sinA * rEnd + perpY * glowW);
-            ctx.lineTo(cx + cosA * rStart + perpX * glowW, cy + sinA * rStart + perpY * glowW);
+            ctx.moveTo(
+              cx + cosA * rStart - perpX * glowW,
+              cy + sinA * rStart - perpY * glowW
+            );
+            ctx.lineTo(
+              cx + cosA * rEnd - perpX * glowW,
+              cy + sinA * rEnd - perpY * glowW
+            );
+            ctx.lineTo(
+              cx + cosA * rEnd + perpX * glowW,
+              cy + sinA * rEnd + perpY * glowW
+            );
+            ctx.lineTo(
+              cx + cosA * rStart + perpX * glowW,
+              cy + sinA * rStart + perpY * glowW
+            );
             ctx.closePath();
             ctx.fill();
             ctx.restore();
@@ -329,17 +372,36 @@
             const coreB = Math.min(255, b + 50);
             ctx.fillStyle = `rgb(${coreR},${coreG},${coreB})`;
             ctx.beginPath();
-            ctx.moveTo(cx + cosA * rStart - perpX * halfW, cy + sinA * rStart - perpY * halfW);
-            ctx.lineTo(cx + cosA * rEnd - perpX * halfW, cy + sinA * rEnd - perpY * halfW);
-            ctx.lineTo(cx + cosA * rEnd + perpX * halfW, cy + sinA * rEnd + perpY * halfW);
-            ctx.lineTo(cx + cosA * rStart + perpX * halfW, cy + sinA * rStart + perpY * halfW);
+            ctx.moveTo(
+              cx + cosA * rStart - perpX * halfW,
+              cy + sinA * rStart - perpY * halfW
+            );
+            ctx.lineTo(
+              cx + cosA * rEnd - perpX * halfW,
+              cy + sinA * rEnd - perpY * halfW
+            );
+            ctx.lineTo(
+              cx + cosA * rEnd + perpX * halfW,
+              cy + sinA * rEnd + perpY * halfW
+            );
+            ctx.lineTo(
+              cx + cosA * rStart + perpX * halfW,
+              cy + sinA * rStart + perpY * halfW
+            );
             ctx.closePath();
             ctx.fill();
           }
         }
 
         // Outer rim glow - faint ring at the disc edge
-        const rimGlow = ctx.createRadialGradient(cx, cy, drawRadius * 0.92, cx, cy, drawRadius * 1.08);
+        const rimGlow = ctx.createRadialGradient(
+          cx,
+          cy,
+          drawRadius * 0.92,
+          cx,
+          cy,
+          drawRadius * 1.08
+        );
         rimGlow.addColorStop(0, "transparent");
         rimGlow.addColorStop(0.5, "rgba(120, 180, 255, 0.04)");
         rimGlow.addColorStop(1, "transparent");
@@ -381,21 +443,19 @@
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   });
-
 </script>
 
 <div class="spin-preview">
   <div class="canvas-frame">
-    <canvas
-      bind:this={canvasRef}
-      class="spin-canvas"
-    ></canvas>
+    <canvas bind:this={canvasRef} class="spin-canvas"></canvas>
   </div>
 
   <div class="controls-bar">
     <button
       class="icon-btn"
-      onclick={() => { playing = !playing; }}
+      onclick={() => {
+        playing = !playing;
+      }}
       aria-label={playing ? "Pause" : "Play"}
     >
       <i class="fas {playing ? 'fa-pause' : 'fa-play'}" aria-hidden="true"></i>
@@ -404,11 +464,18 @@
     <button
       class="icon-btn"
       class:active={showFullDisc}
-      onclick={() => { poi.setShowFullDisc(!showFullDisc); }}
+      onclick={() => {
+        poi.setShowFullDisc(!showFullDisc);
+      }}
       aria-label={showFullDisc ? "POV mode" : "Full disc"}
-      title={showFullDisc ? "Switch to POV simulation" : "Show full pattern disc"}
+      title={showFullDisc
+        ? "Switch to POV simulation"
+        : "Show full pattern disc"}
     >
-      <i class="fas {showFullDisc ? 'fa-eye' : 'fa-compact-disc'}" aria-hidden="true"></i>
+      <i
+        class="fas {showFullDisc ? 'fa-eye' : 'fa-compact-disc'}"
+        aria-hidden="true"
+      ></i>
     </button>
 
     <ScrubValue
@@ -418,7 +485,9 @@
       max={600}
       step={5}
       unit=" rpm"
-      onchange={(v) => { poi.setRpm(Math.round(v)); }}
+      onchange={(v) => {
+        poi.setRpm(Math.round(v));
+      }}
     />
 
     <ScrubValue
@@ -449,7 +518,9 @@
     overflow: hidden;
     width: 100%;
     padding-bottom: 100%;
-    box-shadow: 0 0 20px rgba(80, 140, 255, 0.06), inset 0 0 30px rgba(0, 0, 0, 0.4);
+    box-shadow:
+      0 0 20px rgba(80, 140, 255, 0.06),
+      inset 0 0 30px rgba(0, 0, 0, 0.4);
   }
 
   .spin-canvas {
@@ -478,7 +549,7 @@
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    transition: border-color 0.15s;
+    transition: border-color var(--duration-fast);
     flex-shrink: 0;
   }
 
@@ -488,7 +559,10 @@
 
   .icon-btn.active {
     border-color: var(--theme-accent, #3b82f6);
-    background: color-mix(in srgb, var(--theme-accent, #3b82f6) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #3b82f6) 20%,
+      transparent
+    );
   }
-
 </style>

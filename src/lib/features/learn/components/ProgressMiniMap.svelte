@@ -170,7 +170,7 @@ Shows:
 
   .segment-fill {
     filter: drop-shadow(0 0 6px currentColor);
-    transition: stroke-dashoffset 0.5s ease;
+    transition: stroke-dashoffset var(--duration-dramatic) var(--ease-standard);
   }
 
   .center-content {
@@ -219,7 +219,7 @@ Shows:
     align-items: center;
     gap: 0.375rem;
     opacity: 0.5;
-    transition: opacity var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) var(--ease-standard);
   }
 
   .legend-item.has-progress {

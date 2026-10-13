@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import MandalaPane from "./MandalaPane.svelte";
   import TunnelArtView from "../tunnel/TunnelArtView.svelte";
   import ArtSettingsPanel from "./ArtSettingsPanel.svelte";
@@ -835,7 +835,7 @@
       <!-- Preview-first: the rendered kaleidoscope plays inline; the user saves
            (download on desktop / share sheet on mobile) or dismisses. Nothing
            hit disk automatically. -->
-      <div class="preview-overlay" transition:fade={{ duration: 180 }}>
+      <div class="preview-overlay" transition:opaqueFade>
         <VideoPreviewPanel
           blobUrl={exportState.previewBlobUrl}
           saveLabel={t("browse_save")}

@@ -94,7 +94,7 @@
   }
 
   .progress-arc {
-    transition: stroke-dashoffset var(--duration-fast, 150ms) ease-out;
+    transition: stroke-dashoffset var(--duration-fast) var(--ease-standard-out);
   }
 
   .indeterminate .progress-arc {

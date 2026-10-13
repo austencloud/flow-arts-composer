@@ -41,9 +41,7 @@ Always opens selector panel when clicked
   });
 
   // Get current selected components using service
-  const selectedComponents = $derived(
-    parseLoopComponents(currentLOOPType)
-  );
+  const selectedComponents = $derived(parseLoopComponents(currentLOOPType));
 
   // Open LOOP panel via coordinator (renders at CreateModule level)
   function openExpanded() {
@@ -74,15 +72,32 @@ Always opens selector panel when clicked
         [LOOPType.ROTATED_SWAPPED]: t("generator_loop_rotated_swapped"),
         [LOOPType.MIRRORED_ROTATED]: t("generator_loop_mirrored_rotated"),
         [LOOPType.MIRRORED_INVERTED_ROTATED]: t("generator_loop_mir_comp_rot"),
-        [LOOPType.MIRRORED_SWAPPED_INVERTED]: t("generator_loop_mirrored_swapped") + " + " + t("generator_loop_inverted"),
-        [LOOPType.ROTATED_SWAPPED_INVERTED]: t("generator_loop_rotated_swapped") + " + " + t("generator_loop_inverted"),
-        [LOOPType.MIRRORED_ROTATED_SWAPPED]: t("generator_loop_mirrored_rotated") + " + " + t("generator_loop_swapped"),
-        [LOOPType.MIRRORED_ROTATED_INVERTED_SWAPPED]: t("generator_loop_all_four"),
+        [LOOPType.MIRRORED_SWAPPED_INVERTED]:
+          t("generator_loop_mirrored_swapped") +
+          " + " +
+          t("generator_loop_inverted"),
+        [LOOPType.ROTATED_SWAPPED_INVERTED]:
+          t("generator_loop_rotated_swapped") +
+          " + " +
+          t("generator_loop_inverted"),
+        [LOOPType.MIRRORED_ROTATED_SWAPPED]:
+          t("generator_loop_mirrored_rotated") +
+          " + " +
+          t("generator_loop_swapped"),
+        [LOOPType.MIRRORED_ROTATED_INVERTED_SWAPPED]: t(
+          "generator_loop_all_four"
+        ),
         [LOOPType.STRICT_REWOUND]: t("generator_loop_rewound"),
       };
       // Fallback: strip "strict_" prefix and title-case for unmapped legacy values
-      return typeMap[currentLOOPType as keyof typeof typeMap] ||
-        currentLOOPType.replace(/^strict_/, "").split("_").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" / ");
+      return (
+        typeMap[currentLOOPType as keyof typeof typeMap] ||
+        currentLOOPType
+          .replace(/^strict_/, "")
+          .split("_")
+          .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" / ")
+      );
     })()
   );
 </script>
@@ -122,9 +137,20 @@ Always opens selector panel when clicked
     /* Theme-aware gradient with accent color */
     background: linear-gradient(
       135deg,
-      color-mix(in srgb, var(--theme-accent-strong, #6366f1) 80%, var(--theme-card-bg)) 0%,
-      color-mix(in srgb, var(--theme-accent, #818cf8) 60%, var(--theme-card-bg)) 50%,
-      color-mix(in srgb, var(--theme-accent-strong, #6366f1) 70%, var(--theme-card-bg)) 100%
+      color-mix(
+          in srgb,
+          var(--theme-accent-strong, #6366f1) 80%,
+          var(--theme-card-bg)
+        )
+        0%,
+      color-mix(in srgb, var(--theme-accent, #818cf8) 60%, var(--theme-card-bg))
+        50%,
+      color-mix(
+          in srgb,
+          var(--theme-accent-strong, #6366f1) 70%,
+          var(--theme-card-bg)
+        )
+        100%
     );
     background-size: 200% 200%;
 
@@ -174,7 +200,9 @@ Always opens selector panel when clicked
     .loop-card-wrapper:hover {
       transform: scale(1.02);
       border-color: color-mix(in srgb, var(--theme-accent) 60%, transparent);
-      transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+      transition:
+        transform var(--duration-emphasis) var(--ease-standard),
+        border-color var(--duration-emphasis) var(--ease-standard);
     }
   }
 

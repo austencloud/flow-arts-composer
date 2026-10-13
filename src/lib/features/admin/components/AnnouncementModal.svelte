@@ -52,10 +52,7 @@
     if (!authState.user) return;
 
     try {
-      await dismissAnnouncement(
-        authState.user.uid,
-        announcement.id
-      );
+      await dismissAnnouncement(authState.user.uid, announcement.id);
       onDismiss();
     } catch (error) {
       console.error("Failed to dismiss announcement:", error);
@@ -113,7 +110,11 @@
           aria-hidden="true"
         ></i>
       </div>
-      <button class="close-button" onclick={handleDismiss} aria-label={t("common_close")}>
+      <button
+        class="close-button"
+        onclick={handleDismiss}
+        aria-label={t("common_close")}
+      >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
     </div>
@@ -172,7 +173,7 @@
     justify-content: center;
     z-index: var(--z-modal);
     padding: 20px;
-    animation: fadeIn var(--duration-normal) ease-out;
+    animation: fadeIn var(--duration-normal) var(--ease-standard-out);
   }
 
   @keyframes fadeIn {
@@ -194,7 +195,7 @@
     border: 1px solid var(--theme-stroke-strong, var(--theme-stroke-strong));
     border-radius: 20px;
     overflow: hidden;
-    animation: slideUp var(--duration-emphasis) ease-out;
+    animation: slideUp var(--duration-emphasis) var(--ease-standard-out);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   }
 
@@ -250,7 +251,15 @@
     border-radius: 8px;
     color: var(--theme-text, var(--theme-text-dim));
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard),
+      width var(--duration-normal) var(--ease-standard),
+      height var(--duration-normal) var(--ease-standard);
   }
 
   .close-button:hover {
@@ -312,7 +321,13 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      opacity var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard),
+      box-shadow var(--duration-normal) var(--ease-standard);
     text-decoration: none;
   }
 

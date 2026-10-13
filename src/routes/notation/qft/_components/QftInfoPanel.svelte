@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
+  import { flyFade, opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { SOURCES, TIMELINE } from "#lib/shared/notation/qft/qft-guide.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
@@ -23,7 +23,7 @@
   class="scrim"
   aria-label="Close information about QfT notation"
   onclick={app.closeInfo}
-  transition:fade={{ duration: DURATION.fast }}
+  transition:opaqueFade={{ duration: DURATION.fast }}
 ></button>
 
 <div
@@ -31,7 +31,7 @@
   role="dialog"
   aria-modal="true"
   aria-labelledby="qft-info-title"
-  transition:fly={{ x: 80, duration: DURATION.normal }}
+  transition:flyFade={{ x: 80, duration: DURATION.normal }}
 >
   <header>
     <h2 id="qft-info-title">QfT Notation</h2>

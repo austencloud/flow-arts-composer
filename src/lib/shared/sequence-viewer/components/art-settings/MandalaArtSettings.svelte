@@ -1,7 +1,8 @@
 <!-- Mandala settings compose the canonical category control in two layouts. -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import ControlDock, {
     type ControlDockAction,
     type ControlDockTab,
@@ -136,7 +137,7 @@
     <div class="sidebar-main">
       <div
         class="panel-scroll mandala-stack"
-        in:fade={{ duration: reduceMotion ? 0 : 180 }}
+        in:opaqueFade={{ duration: reduceMotion ? 0 : DURATION.fast }}
       >
         {#each mandalaStack as cat (cat.id)}
           <div class="section-pad mandala-cat">

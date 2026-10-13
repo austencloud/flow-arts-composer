@@ -1,6 +1,9 @@
 <script lang="ts">
   import type { Festival } from "../../domain/models/festival";
-  import type { UserFestivalTracker, TrackerStatus } from "../../domain/models/festival-tracker";
+  import type {
+    UserFestivalTracker,
+    TrackerStatus,
+  } from "../../domain/models/festival-tracker";
   import { getFestivalContext } from "../../context/festival-context";
   import { auth } from "#lib/shared/auth/firebase.js";
 
@@ -22,7 +25,7 @@
 
   const currentStatusIndex = $derived.by(() => {
     const t = props.tracker;
-    return t ? STATUS_STEPS.findIndex(s => s.value === t.status) : -1;
+    return t ? STATUS_STEPS.findIndex((s) => s.value === t.status) : -1;
   });
 
   // Initialize from tracker prop via $effect to keep in sync - access through props to track reactively
@@ -30,7 +33,10 @@
   let stipend = $state("");
   $effect(() => {
     notes = props.tracker?.notes ?? "";
-    stipend = props.tracker?.stipendRequested != null ? String(props.tracker.stipendRequested) : "";
+    stipend =
+      props.tracker?.stipendRequested != null
+        ? String(props.tracker.stipendRequested)
+        : "";
   });
 
   async function setStatus(status: TrackerStatus) {
@@ -48,9 +54,11 @@
     if (!uid) return;
     const current = props.tracker?.appliedAs ?? [];
     const next = current.includes(role)
-      ? current.filter(r => r !== role)
+      ? current.filter((r) => r !== role)
       : [...current, role];
-    await festivalState.updateTracker(uid, props.festival.id, { appliedAs: next });
+    await festivalState.updateTracker(uid, props.festival.id, {
+      appliedAs: next,
+    });
   }
 
   function isWorkshopSubmitted(title: string): boolean {
@@ -62,9 +70,11 @@
     if (!uid) return;
     const current = props.tracker?.workshopsSubmitted ?? [];
     const next = current.includes(title)
-      ? current.filter(t => t !== title)
+      ? current.filter((t) => t !== title)
       : [...current, title];
-    await festivalState.updateTracker(uid, props.festival.id, { workshopsSubmitted: next });
+    await festivalState.updateTracker(uid, props.festival.id, {
+      workshopsSubmitted: next,
+    });
   }
 
   async function saveNotes() {
@@ -77,7 +87,9 @@
     const uid = auth.currentUser?.uid;
     if (!uid) return;
     const value = stipend !== "" ? Number(stipend) : undefined;
-    await festivalState.updateTracker(uid, props.festival.id, { stipendRequested: value });
+    await festivalState.updateTracker(uid, props.festival.id, {
+      stipendRequested: value,
+    });
   }
 </script>
 
@@ -245,7 +257,10 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .status-btn:hover {
@@ -260,7 +275,11 @@
   }
 
   .status-btn.current {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 20%,
+      transparent
+    );
     border-color: var(--theme-accent, #6366f1);
     color: var(--theme-text, #ffffff);
     font-weight: 600;
@@ -284,18 +303,25 @@
     gap: 6px;
     padding: 5px 12px;
     border-radius: 6px;
-    border: 1px solid color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
     background: transparent;
     color: color-mix(in srgb, var(--semantic-error, #ef4444) 70%, transparent);
     font-size: var(--font-size-compact, 12px);
     cursor: pointer;
     align-self: flex-start;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .decline-btn:hover,
   .decline-btn.active {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 15%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
     border-color: var(--semantic-error, #ef4444);
   }
@@ -332,7 +358,10 @@
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.6));
     font-size: var(--font-size-sm, 14px);
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
   }
 
   .toggle-btn:hover {
@@ -341,7 +370,11 @@
   }
 
   .toggle-btn.active {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 20%,
+      transparent
+    );
     border-color: var(--theme-accent, #6366f1);
     color: var(--theme-text, #ffffff);
   }
@@ -368,7 +401,7 @@
     padding: 10px 12px;
     width: 100%;
     box-sizing: border-box;
-    transition: border-color 0.15s ease;
+    transition: border-color var(--duration-fast) var(--ease-standard);
     font-family: inherit;
     resize: vertical;
   }

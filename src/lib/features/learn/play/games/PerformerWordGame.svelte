@@ -352,7 +352,9 @@ wordLength constraint rides through the question generator as a soft filter.
     cursor: pointer;
     font-size: var(--font-size-compact);
     font-weight: 500;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
   }
 
@@ -394,7 +396,10 @@ wordLength constraint rides through the question generator as a soft filter.
     border: 1px solid var(--theme-stroke);
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
     font-size: 12px;
     padding: 0;
   }

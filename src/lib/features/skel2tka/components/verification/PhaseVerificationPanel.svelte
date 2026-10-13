@@ -12,7 +12,10 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { DetectedBeat } from "../../domain/models";
-  import type { PhaseVerdict, UserCorrection } from "../../domain/verification-models";
+  import type {
+    PhaseVerdict,
+    UserCorrection,
+  } from "../../domain/verification-models";
   import GridPlacementPicker from "./GridPlacementPicker.svelte";
 
   let {
@@ -98,11 +101,11 @@
     <div class="verdict-actions">
       <button class="verdict-btn accept" onclick={handleAccept}>
         <i class="fas fa-check"></i>
-        {t('skel2tka_looks_right')}
+        {t("skel2tka_looks_right")}
       </button>
 
       <div class="beat-correction-list">
-        <span class="section-label">{t('skel2tka_wrong_at_beat')}</span>
+        <span class="section-label">{t("skel2tka_wrong_at_beat")}</span>
         <div class="beat-buttons">
           {#each beats as beat, i}
             <button
@@ -118,34 +121,47 @@
 
       {#if corrections.length > 0}
         <div class="correction-summary">
-          <span>{t('skel2tka_corrections_pending', { count: String(corrections.length) })}</span>
+          <span
+            >{t("skel2tka_corrections_pending", {
+              count: String(corrections.length),
+            })}</span
+          >
           <button class="verdict-btn corrected" onclick={submitCorrections}>
             <i class="fas fa-paper-plane"></i>
-            {t('skel2tka_submit_corrections')}
+            {t("skel2tka_submit_corrections")}
           </button>
         </div>
       {/if}
 
       <button class="verdict-btn reject" onclick={handleReject}>
         <i class="fas fa-redo"></i>
-        {t('skel2tka_try_again')}
+        {t("skel2tka_try_again")}
       </button>
     </div>
-
   {:else if mode === "correcting" && currentStep}
     <div class="correction-ui">
       <div class="correction-header">
-        <h4>{t('skel2tka_correct_beat', { beat: String(correctingBeatIndex + 1) })}</h4>
+        <h4>
+          {t("skel2tka_correct_beat", {
+            beat: String(correctingBeatIndex + 1),
+          })}
+        </h4>
         <span class="beat-time">
-          {currentStep.startTime.toFixed(2)}s - {currentStep.endTime.toFixed(2)}s
+          {currentStep.startTime.toFixed(2)}s - {currentStep.endTime.toFixed(
+            2
+          )}s
         </span>
       </div>
 
       <div class="hand-pickers">
         <div class="picker-group">
-          <span class="picker-label" style="color: var(--semantic-info);">{t('skel2tka_blue_hand')}</span>
+          <span class="picker-label" style="color: var(--semantic-info);"
+            >{t("skel2tka_blue_hand")}</span
+          >
           <span class="detected-value">
-            {t('skel2tka_detected_value', { value: detectedLeft?.toUpperCase() ?? t('skel2tka_none') })}
+            {t("skel2tka_detected_value", {
+              value: detectedLeft?.toUpperCase() ?? t("skel2tka_none"),
+            })}
           </span>
           <GridPlacementPicker
             selected={correctedLeft}
@@ -155,9 +171,13 @@
         </div>
 
         <div class="picker-group">
-          <span class="picker-label" style="color: var(--semantic-error);">{t('skel2tka_red_hand')}</span>
+          <span class="picker-label" style="color: var(--semantic-error);"
+            >{t("skel2tka_red_hand")}</span
+          >
           <span class="detected-value">
-            {t('skel2tka_detected_value', { value: detectedRight?.toUpperCase() ?? t('skel2tka_none') })}
+            {t("skel2tka_detected_value", {
+              value: detectedRight?.toUpperCase() ?? t("skel2tka_none"),
+            })}
           </span>
           <GridPlacementPicker
             selected={correctedRight}
@@ -170,10 +190,10 @@
       <div class="correction-actions">
         <button class="action-btn save" onclick={saveCorrection}>
           <i class="fas fa-save"></i>
-          {t('skel2tka_save_correction')}
+          {t("skel2tka_save_correction")}
         </button>
         <button class="action-btn cancel" onclick={cancelCorrection}>
-          {t('skel2tka_cancel')}
+          {t("skel2tka_cancel")}
         </button>
       </div>
     </div>
@@ -207,37 +227,75 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast);
   }
 
   .verdict-btn.accept {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 10%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-success, #22c55e) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 10%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 30%,
+      transparent
+    );
     color: var(--semantic-success, #22c55e);
   }
 
   .verdict-btn.accept:hover {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 20%,
+      transparent
+    );
   }
 
   .verdict-btn.corrected {
-    background: color-mix(in srgb, var(--semantic-warning, #f59e0b) 10%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-warning, #f59e0b) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 10%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 30%,
+      transparent
+    );
     color: var(--semantic-warning, #f59e0b);
   }
 
   .verdict-btn.corrected:hover {
-    background: color-mix(in srgb, var(--semantic-warning, #f59e0b) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 20%,
+      transparent
+    );
   }
 
   .verdict-btn.reject {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 6%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 6%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
     color: color-mix(in srgb, var(--semantic-error, #ef4444) 70%, transparent);
   }
 
   .verdict-btn.reject:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 12%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 12%,
+      transparent
+    );
   }
 
   .beat-correction-list {
@@ -267,7 +325,7 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background var(--duration-fast);
   }
 
   .beat-btn:hover {
@@ -275,8 +333,16 @@
   }
 
   .beat-btn.has-correction {
-    border-color: color-mix(in srgb, var(--semantic-warning, #f59e0b) 50%, transparent);
-    background: color-mix(in srgb, var(--semantic-warning, #f59e0b) 10%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 50%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 10%,
+      transparent
+    );
     color: var(--semantic-warning, #f59e0b);
   }
 
@@ -348,7 +414,7 @@
     border-radius: 6px;
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background var(--duration-fast);
   }
 
   .action-btn.save {

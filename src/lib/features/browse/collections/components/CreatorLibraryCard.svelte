@@ -289,7 +289,9 @@ Displays:
     border: 1px solid var(--theme-stroke);
     border-radius: 16px;
     overflow: hidden;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
   }
 
   .creator-library-card:hover {
@@ -312,7 +314,7 @@ Displays:
     width: 100%;
     text-align: left;
     cursor: pointer;
-    transition: background var(--duration-normal) ease;
+    transition: background var(--duration-normal) var(--ease-standard);
   }
 
   .card-header:hover {
@@ -399,7 +401,9 @@ Displays:
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: var(--font-size-compact);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
   }
 
   .view-profile-btn:hover {
@@ -436,7 +440,10 @@ Displays:
     font-size: var(--font-size-compact);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
   }
 
   .tab:hover:not(.disabled) {
@@ -481,7 +488,9 @@ Displays:
     border-radius: 8px;
     overflow: hidden;
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
   }
 
   .sequence-thumbnail:hover {
@@ -531,7 +540,9 @@ Displays:
     border-radius: 8px;
     color: var(--theme-accent);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
 
   .see-all-btn:hover {

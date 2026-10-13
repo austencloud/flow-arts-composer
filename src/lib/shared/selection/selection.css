@@ -13,9 +13,9 @@
 .tka-seq-cell {
   position: relative;
   transition:
-    box-shadow 0.16s ease,
-    outline-color 0.16s ease,
-    transform 0.16s ease;
+    box-shadow var(--duration-fast) var(--ease-standard),
+    outline-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
 }
 
 /* Transparent hit target laid over the unit. */

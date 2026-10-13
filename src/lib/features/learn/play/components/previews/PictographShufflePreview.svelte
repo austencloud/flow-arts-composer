@@ -28,7 +28,11 @@
 
 <div class="stage" style="--accent: {accent}" aria-hidden="true">
   {#each pictos as picto, i (String(picto.letter))}
-    <div class="beat" class:first={i === 0} style="--beat: {i}; --beats: {pictos.length}">
+    <div
+      class="beat"
+      class:first={i === 0}
+      style="--beat: {i}; --beats: {pictos.length}"
+    >
       <div class="picto-frame">
         <PictographContainer
           pictographData={picto}
@@ -65,7 +69,7 @@
     gap: 6cqi;
     opacity: 0;
     animation: beat-cycle calc(var(--beats) * 4s) linear infinite;
-    animation-delay: calc(var(--beat) * 4s);
+    animation-delay: calc(var(--beat) * var(--duration-scene) * 5);
   }
 
   .picto-frame {
@@ -81,32 +85,57 @@
      moment — its keyframes sit inside the beat's visible window. */
   .answer {
     font-family: "TKA Letters", var(--font-sans, sans-serif);
-    font-feature-settings: "liga" 1, "dlig" 1;
+    font-feature-settings:
+      "liga" 1,
+      "dlig" 1;
     font-size: 30cqh;
     line-height: 1;
     color: var(--accent);
     text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 55%, transparent);
     opacity: 0;
     animation: answer-stamp calc(var(--beats) * 4s) linear infinite;
-    animation-delay: calc(var(--beat) * 4s);
+    animation-delay: calc(var(--beat) * var(--duration-scene) * 5);
   }
 
   /* Visible for roughly one 4s slice of the loop (fractions tuned for the
      3-beat cycle; hidden outside the window regardless of beat count). */
   @keyframes beat-cycle {
-    0% { opacity: 0; }
-    3% { opacity: 1; }
-    30% { opacity: 1; }
-    33.3% { opacity: 0; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 0;
+    }
+    3% {
+      opacity: 1;
+    }
+    30% {
+      opacity: 1;
+    }
+    33.3% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 
   @keyframes answer-stamp {
-    0%, 12% { opacity: 0; transform: scale(1.3); }
-    17% { opacity: 1; transform: scale(1); }
-    30% { opacity: 1; }
-    33.3% { opacity: 0; }
-    100% { opacity: 0; }
+    0%,
+    12% {
+      opacity: 0;
+      transform: scale(1.3);
+    }
+    17% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    30% {
+      opacity: 1;
+    }
+    33.3% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

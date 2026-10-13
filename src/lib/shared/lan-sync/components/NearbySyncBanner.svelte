@@ -5,7 +5,8 @@
   Tapping "Join" navigates to the sequence and connects.
 -->
 <script lang="ts">
-  import { slide } from "svelte/transition";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { lanSyncState } from "../state/lan-sync-state.svelte";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { goto } from "$app/navigation";
@@ -68,7 +69,10 @@
 </script>
 
 {#if nearbyRoom}
-  <div class="sync-banner" transition:slide={{ duration: 300 }}>
+  <div
+    class="sync-banner"
+    transition:growFade={{ duration: DURATION.emphasis }}
+  >
     <div class="banner-content">
       <i class="fas fa-broadcast-tower banner-icon" aria-hidden="true"></i>
 
@@ -141,7 +145,8 @@
   }
 
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
       transform: scale(1);
     }
@@ -193,7 +198,10 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
     white-space: nowrap;
     min-height: 40px;
   }
@@ -233,7 +241,7 @@
     border-radius: 6px;
     cursor: pointer;
     opacity: 0.7;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
     display: flex;
     align-items: center;
     justify-content: center;

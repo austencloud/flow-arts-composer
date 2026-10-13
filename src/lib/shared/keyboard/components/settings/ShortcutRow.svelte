@@ -71,7 +71,7 @@
     min-height: 3.5rem;
     min-width: 0;
     background: transparent;
-    transition: background var(--duration-fast) ease;
+    transition: background var(--duration-fast) var(--ease-standard);
   }
 
   .shortcut-row:hover {

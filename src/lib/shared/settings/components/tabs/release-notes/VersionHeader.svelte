@@ -29,7 +29,11 @@
   );
 </script>
 
-<header class="panel-header" class:layout-inline={layout === "inline"} class:layout-drawer={layout === "drawer"}>
+<header
+  class="panel-header"
+  class:layout-inline={layout === "inline"}
+  class:layout-drawer={layout === "drawer"}
+>
   {#if layout === "drawer"}
     {#if getCopyData}
       <CopyForAIButton
@@ -119,7 +123,15 @@
     border-radius: 12px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal);
+    transition:
+      background var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal),
+      box-shadow var(--duration-normal),
+      width var(--duration-normal),
+      height var(--duration-normal);
   }
 
   .header-button:hover {

@@ -5,9 +5,8 @@
   adjust persistence duration, and upload to physical poi hardware via BLE.
 -->
 <script lang="ts">
-
-import { getPoiDeviceManager } from "#lib/features/poi/get-poi-device-manager.js";
-import { getStripPatternEngine } from "#lib/features/poi/get-strip-pattern-engine.js";
+  import { getPoiDeviceManager } from "#lib/features/poi/get-poi-device-manager.js";
+  import { getStripPatternEngine } from "#lib/features/poi/get-strip-pattern-engine.js";
   import { onDestroy } from "svelte";
   import { createPoiState } from "#lib/features/poi/state/poi-state.svelte.js";
   import { setPoiContext } from "#lib/features/poi/context/poi-context.js";
@@ -24,10 +23,7 @@ import { getStripPatternEngine } from "#lib/features/poi/get-strip-pattern-engin
   import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
-  const poi = createPoiState(
-    getStripPatternEngine(),
-    getPoiDeviceManager(),
-  );
+  const poi = createPoiState(getStripPatternEngine(), getPoiDeviceManager());
   setPoiContext(poi);
 
   // Tear down the Firestore library subscription when the lab unmounts
@@ -220,7 +216,9 @@ import { getStripPatternEngine } from "#lib/features/poi/get-strip-pattern-engin
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+      border-color var(--duration-fast),
+      background var(--duration-fast);
   }
 
   .text-btn:hover {
@@ -334,5 +332,4 @@ import { getStripPatternEngine } from "#lib/features/poi/get-strip-pattern-engin
   .stat-dim {
     color: var(--theme-text-secondary, #94a3b8);
   }
-
 </style>

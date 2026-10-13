@@ -542,7 +542,7 @@
     inset: 0;
     z-index: var(--z-modal);
     display: flex;
-    animation: fadeIn var(--duration-fast, 0.15s) ease-out;
+    animation: fadeIn var(--duration-fast) var(--ease-standard-out);
   }
 
   .modal-content {
@@ -618,8 +618,8 @@
     /* Click anywhere in the column to select; ring marks the selected one. */
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
     transition:
-      opacity var(--duration-normal, 0.3s) ease,
-      border-color var(--duration-fast, 0.15s) ease;
+      opacity var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
   }
   .motion-rail.selected {
     border-color: color-mix(

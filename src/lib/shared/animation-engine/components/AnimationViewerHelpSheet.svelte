@@ -155,12 +155,17 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-min, 14px);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
   }
 
   .close-btn:hover {
-    background: var(--theme-card-bg-hover, color-mix(in srgb, var(--theme-text) 10%, transparent));
+    background: var(
+      --theme-card-bg-hover,
+      color-mix(in srgb, var(--theme-text) 10%, transparent)
+    );
     color: var(--theme-text);
   }
 

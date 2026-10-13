@@ -54,10 +54,8 @@ describe("Staff Placements topic record", () => {
       const cells = STAFF_CELLS_BY_KIND[kind];
       expect(cells).toHaveLength(THUMB_COLUMNS.length);
       cells.forEach((cell, n) => {
-        const { left, right } = cell.motions as unknown as Record<
-          "left" | "right",
-          { startLocation: never; startOrientation: unknown }
-        >;
+        const { left, right } = cell.motions;
+        if (!left || !right) throw new Error("Staff cell is missing a hand motion");
         expect(
           getGridPlacementFromLocations(left.startLocation, right.startLocation)
         ).toMatch(new RegExp(`^${kind}`));

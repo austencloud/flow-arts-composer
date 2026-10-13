@@ -62,6 +62,7 @@
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { PropRenderData } from "#lib/shared/pictograph/prop/domain/models/prop-render-data.js";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   let {
     builderState,
@@ -172,7 +173,7 @@
     const epoch = builderState.historyTransitionEpoch;
     if (!plan || !interactiveGridRef || epoch === 0) return;
 
-    const duration = motionDuration(280);
+    const duration = motionDuration(DURATION.emphasis);
     if (duration === 0) return;
     const animations: Animation[] = [];
 
@@ -987,7 +988,7 @@
   .motion-preview-path {
     pointer-events: none;
     filter: drop-shadow(0 0 7px currentColor);
-    animation: preview-path-in var(--duration-fast, 150ms) ease-out;
+    animation: preview-path-in var(--duration-fast) var(--ease-standard-out);
   }
 
   .comparison-path {
@@ -1061,7 +1062,7 @@
   .active-prop-group {
     pointer-events: none;
     /* Smooth transition for orientation changes (setOrientation) */
-    transition: transform var(--duration-normal, 200ms) ease;
+    transition: transform var(--duration-normal) var(--ease-standard);
   }
 
   /* Disable CSS transition during SvgPropAnimator-driven motion animation
@@ -1077,7 +1078,7 @@
 
   /* Scale-in animation for first placement */
   .scale-in {
-    animation: prop-scale-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation: prop-scale-in var(--duration-normal) var(--ease-spring) forwards;
   }
 
   @keyframes prop-scale-in {
@@ -1094,7 +1095,7 @@
   /* Orientation ring indicator */
   .ori-indicator {
     pointer-events: none;
-    animation: ori-fade 1.2s ease forwards;
+    animation: ori-fade var(--duration-scene) var(--ease-standard) forwards;
     filter: drop-shadow(0 0 8px var(--color-gold, #ffd700))
       drop-shadow(
         0 0 18px color-mix(in srgb, var(--color-gold, #ffd700) 50%, transparent)

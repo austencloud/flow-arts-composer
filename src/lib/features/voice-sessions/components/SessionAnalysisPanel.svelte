@@ -10,7 +10,10 @@
   import type * as VoiceSessionRepositoryModule from "#lib/shared/voice-sessions/services/voice-session-repository.js";
   import type * as VoiceSessionAnalyzerModule from "#lib/features/voice-sessions/services/voice-session-analyzer.js";
   import type { SessionAnalysis } from "#lib/features/voice-sessions/services/types.js";
-  import type { VoiceSession, ResolutionTier } from "#lib/shared/voice-control/domain/voice-session-types.js";
+  import type {
+    VoiceSession,
+    ResolutionTier,
+  } from "#lib/shared/voice-control/domain/voice-session-types.js";
 
   let {
     repository,
@@ -30,7 +33,10 @@
     error = null;
     try {
       // Fetch previews first to get IDs, then load full sessions
-      const previews = await repository.listSessions({ sortDirection: "desc", limit: 50 });
+      const previews = await repository.listSessions({
+        sortDirection: "desc",
+        limit: 50,
+      });
       const fullSessions: VoiceSession[] = [];
 
       for (const preview of previews) {
@@ -48,32 +54,57 @@
 
   function tierLabel(tier: ResolutionTier): string {
     switch (tier) {
-      case "tier1_regex": return "T1 Regex";
-      case "tier2_llm": return "T2 LLM";
-      case "tier3_chat": return "T3 Chat";
-      case "unresolved": return "Unresolved";
+      case "tier1_regex":
+        return "T1 Regex";
+      case "tier2_llm":
+        return "T2 LLM";
+      case "tier3_chat":
+        return "T3 Chat";
+      case "unresolved":
+        return "Unresolved";
     }
   }
 
   function tierColorClass(tier: ResolutionTier): string {
     switch (tier) {
-      case "tier1_regex": return "tier-1";
-      case "tier2_llm": return "tier-2";
-      case "tier3_chat": return "tier-3";
-      case "unresolved": return "tier-unresolved";
+      case "tier1_regex":
+        return "tier-1";
+      case "tier2_llm":
+        return "tier-2";
+      case "tier3_chat":
+        return "tier-3";
+      case "unresolved":
+        return "tier-unresolved";
     }
   }
 </script>
 
 <section class="analysis-section">
-  <button class="section-header" onclick={() => { collapsed = !collapsed; if (!collapsed && !analysis && !loading) runAnalysis(); }} aria-expanded={!collapsed} aria-label={collapsed ? t('voice_sessions_expand_analysis') : t('voice_sessions_collapse_analysis')}>
+  <button
+    class="section-header"
+    onclick={() => {
+      collapsed = !collapsed;
+      if (!collapsed && !analysis && !loading) runAnalysis();
+    }}
+    aria-expanded={!collapsed}
+    aria-label={collapsed
+      ? t("voice_sessions_expand_analysis")
+      : t("voice_sessions_collapse_analysis")}
+  >
     <h2>
-      {t('voice_sessions_pattern_analysis')}
+      {t("voice_sessions_pattern_analysis")}
       {#if analysis}
-        <span class="count-badge">{t('voice_sessions_session_count', { count: String(analysis.sessionCount) })}</span>
+        <span class="count-badge"
+          >{t("voice_sessions_session_count", {
+            count: String(analysis.sessionCount),
+          })}</span
+        >
       {/if}
     </h2>
-    <i class="fas {collapsed ? 'fa-chevron-right' : 'fa-chevron-down'}" aria-hidden="true"></i>
+    <i
+      class="fas {collapsed ? 'fa-chevron-right' : 'fa-chevron-down'}"
+      aria-hidden="true"
+    ></i>
   </button>
 
   {#if !collapsed}
@@ -81,13 +112,15 @@
       {#if loading}
         <div class="state-message">
           <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-          <span>{t('voice_sessions_analyzing')}</span>
+          <span>{t("voice_sessions_analyzing")}</span>
         </div>
       {:else if error}
         <div class="state-message error-state">
           <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
           <span>{error}</span>
-          <button class="action-btn" onclick={runAnalysis}>{t('voice_sessions_retry')}</button>
+          <button class="action-btn" onclick={runAnalysis}
+            >{t("voice_sessions_retry")}</button
+          >
         </div>
       {:else if analysis}
         <div class="analysis-results">
@@ -95,37 +128,48 @@
           <div class="overview-row">
             <div class="overview-stat">
               <span class="stat-value">{analysis.sessionCount}</span>
-              <span class="stat-label">{t('voice_sessions_sessions')}</span>
+              <span class="stat-label">{t("voice_sessions_sessions")}</span>
             </div>
             <div class="overview-stat">
               <span class="stat-value">{analysis.totalEvents}</span>
-              <span class="stat-label">{t('voice_sessions_events')}</span>
+              <span class="stat-label">{t("voice_sessions_events")}</span>
             </div>
             <div class="overview-stat">
               <span class="stat-value">{analysis.tier2Candidates.length}</span>
-              <span class="stat-label">{t('voice_sessions_t2_candidates')}</span>
+              <span class="stat-label">{t("voice_sessions_t2_candidates")}</span
+              >
             </div>
             <div class="overview-stat">
-              <span class="stat-value">{analysis.unresolvedPatterns.length}</span>
-              <span class="stat-label">{t('voice_sessions_unresolved')}</span>
+              <span class="stat-value"
+                >{analysis.unresolvedPatterns.length}</span
+              >
+              <span class="stat-label">{t("voice_sessions_unresolved")}</span>
             </div>
           </div>
 
           <!-- T2 Promotion Candidates -->
           {#if analysis.tier2Candidates.length > 0}
             <div class="insight-group">
-              <h3>{t('voice_sessions_t2_promotion')}</h3>
-              <p class="insight-desc">{t('voice_sessions_t2_promotion_desc')}</p>
+              <h3>{t("voice_sessions_t2_promotion")}</h3>
+              <p class="insight-desc">
+                {t("voice_sessions_t2_promotion_desc")}
+              </p>
               {#each analysis.tier2Candidates as candidate}
                 <div class="insight-card candidate">
                   <div class="insight-main">
                     <span class="transcript">"{candidate.transcript}"</span>
                     <span class="arrow">-></span>
-                    <span class="command">{candidate.resolvedCategory}:{candidate.resolvedAction}({candidate.resolvedTarget})</span>
+                    <span class="command"
+                      >{candidate.resolvedCategory}:{candidate.resolvedAction}({candidate.resolvedTarget})</span
+                    >
                   </div>
                   <div class="insight-meta">
-                    <span class="hit-count">{candidate.consistentHits} hits</span>
-                    <span class="confidence">avg {Math.round(candidate.avgConfidence * 100)}% conf</span>
+                    <span class="hit-count"
+                      >{candidate.consistentHits} hits</span
+                    >
+                    <span class="confidence"
+                      >avg {Math.round(candidate.avgConfidence * 100)}% conf</span
+                    >
                   </div>
                 </div>
               {/each}
@@ -135,8 +179,10 @@
           <!-- Top Failing Transcripts -->
           {#if analysis.topFailingTranscripts.length > 0}
             <div class="insight-group">
-              <h3>{t('voice_sessions_top_failures')}</h3>
-              <p class="insight-desc">{t('voice_sessions_top_failures_desc')}</p>
+              <h3>{t("voice_sessions_top_failures")}</h3>
+              <p class="insight-desc">
+                {t("voice_sessions_top_failures_desc")}
+              </p>
               {#each analysis.topFailingTranscripts.slice(0, 10) as failure}
                 <div class="insight-card failure">
                   <div class="insight-main">
@@ -145,10 +191,13 @@
                   </div>
                   <div class="insight-meta">
                     {#each failure.tierHistory.slice(0, 5) as tier}
-                      <span class="tier-chip {tierColorClass(tier)}">{tierLabel(tier)}</span>
+                      <span class="tier-chip {tierColorClass(tier)}"
+                        >{tierLabel(tier)}</span
+                      >
                     {/each}
                     {#if failure.tierHistory.length > 5}
-                      <span class="more">+{failure.tierHistory.length - 5}</span>
+                      <span class="more">+{failure.tierHistory.length - 5}</span
+                      >
                     {/if}
                   </div>
                 </div>
@@ -159,15 +208,21 @@
           <!-- Latency by Tier -->
           {#if analysis.latencyByTier.length > 0}
             <div class="insight-group">
-              <h3>{t('voice_sessions_latency_by_tier')}</h3>
+              <h3>{t("voice_sessions_latency_by_tier")}</h3>
               <div class="latency-grid">
                 {#each analysis.latencyByTier as latency}
                   <div class="latency-card">
-                    <span class="tier-chip {tierColorClass(latency.tier)}">{tierLabel(latency.tier)}</span>
+                    <span class="tier-chip {tierColorClass(latency.tier)}"
+                      >{tierLabel(latency.tier)}</span
+                    >
                     <div class="latency-stats">
                       <span class="latency-avg">{latency.avgMs}ms avg</span>
-                      <span class="latency-range">{latency.minMs}-{latency.maxMs}ms</span>
-                      <span class="latency-samples">{latency.sampleCount} samples</span>
+                      <span class="latency-range"
+                        >{latency.minMs}-{latency.maxMs}ms</span
+                      >
+                      <span class="latency-samples"
+                        >{latency.sampleCount} samples</span
+                      >
                     </div>
                   </div>
                 {/each}
@@ -178,15 +233,22 @@
           <!-- Success Rate Trend -->
           {#if analysis.successRateTrend.length > 1}
             <div class="insight-group">
-              <h3>{t('voice_sessions_success_trend')}</h3>
+              <h3>{t("voice_sessions_success_trend")}</h3>
               <div class="trend-list">
                 {#each analysis.successRateTrend as point}
                   <div class="trend-row">
-                    <span class="trend-date">{point.date.toLocaleDateString()}</span>
+                    <span class="trend-date"
+                      >{point.date.toLocaleDateString()}</span
+                    >
                     <div class="trend-bar-container">
-                      <div class="trend-bar" style="width: {point.successRate * 100}%"></div>
+                      <div
+                        class="trend-bar"
+                        style="width: {point.successRate * 100}%"
+                      ></div>
                     </div>
-                    <span class="trend-rate">{Math.round(point.successRate * 100)}%</span>
+                    <span class="trend-rate"
+                      >{Math.round(point.successRate * 100)}%</span
+                    >
                     <span class="trend-events">{point.totalEvents}ev</span>
                   </div>
                 {/each}
@@ -197,8 +259,8 @@
           <!-- Unresolved Patterns -->
           {#if analysis.unresolvedPatterns.length > 0}
             <div class="insight-group">
-              <h3>{t('voice_sessions_unresolved_patterns')}</h3>
-              <p class="insight-desc">{t('voice_sessions_unresolved_desc')}</p>
+              <h3>{t("voice_sessions_unresolved_patterns")}</h3>
+              <p class="insight-desc">{t("voice_sessions_unresolved_desc")}</p>
               {#each analysis.unresolvedPatterns.slice(0, 8) as pattern}
                 <div class="insight-card unresolved">
                   <div class="insight-main">
@@ -206,7 +268,10 @@
                     <span class="occurrence-count">{pattern.occurrences}x</span>
                   </div>
                   <div class="insight-meta">
-                    <span class="context-chip">{pattern.primaryContext.module}/{pattern.primaryContext.tab}</span>
+                    <span class="context-chip"
+                      >{pattern.primaryContext.module}/{pattern.primaryContext
+                        .tab}</span
+                    >
                   </div>
                 </div>
               {/each}
@@ -215,14 +280,16 @@
 
           <button class="action-btn refresh-btn" onclick={runAnalysis}>
             <i class="fas fa-sync-alt" aria-hidden="true"></i>
-            {t('voice_sessions_reanalyze')}
+            {t("voice_sessions_reanalyze")}
           </button>
         </div>
       {:else}
         <div class="state-message">
           <i class="fas fa-chart-bar" aria-hidden="true"></i>
-          <span>{t('voice_sessions_click_to_analyze')}</span>
-          <button class="action-btn" onclick={runAnalysis}>{t('voice_sessions_run_analysis')}</button>
+          <span>{t("voice_sessions_click_to_analyze")}</span>
+          <button class="action-btn" onclick={runAnalysis}
+            >{t("voice_sessions_run_analysis")}</button
+          >
         </div>
       {/if}
     </div>
@@ -263,7 +330,7 @@
 
   .section-header i {
     font-size: 12px;
-    transition: transform 0.15s ease;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .count-badge {
@@ -411,7 +478,8 @@
     align-items: center;
   }
 
-  .hit-count, .confidence {
+  .hit-count,
+  .confidence {
     font-size: var(--font-size-compact, 12px);
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     font-family: monospace;
@@ -426,19 +494,35 @@
   }
 
   .tier-chip.tier-1 {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 20%,
+      transparent
+    );
     color: color-mix(in srgb, var(--semantic-success, #22c55e) 70%, white);
   }
   .tier-chip.tier-2 {
-    background: color-mix(in srgb, var(--semantic-info, #3b82f6) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 20%,
+      transparent
+    );
     color: color-mix(in srgb, var(--semantic-info, #3b82f6) 70%, white);
   }
   .tier-chip.tier-3 {
-    background: color-mix(in srgb, var(--theme-accent, #c084fc) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #c084fc) 20%,
+      transparent
+    );
     color: color-mix(in srgb, var(--theme-accent, #c084fc) 70%, white);
   }
   .tier-chip.tier-unresolved {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
     color: color-mix(in srgb, var(--semantic-error, #ef4444) 70%, white);
   }
 
@@ -482,7 +566,8 @@
     font-weight: 600;
   }
 
-  .latency-range, .latency-samples {
+  .latency-range,
+  .latency-samples {
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
   }
 
@@ -520,7 +605,7 @@
     height: 100%;
     background: var(--semantic-success, #22c55e);
     border-radius: 4px;
-    transition: width 0.3s ease;
+    transition: width var(--duration-emphasis) var(--ease-standard);
   }
 
   .trend-rate {
@@ -549,7 +634,15 @@
     color: var(--theme-text, white);
     font-size: var(--font-size-sm, 14px);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      width var(--duration-fast) var(--ease-standard),
+      grid-template-columns var(--duration-fast) var(--ease-standard);
   }
 
   .action-btn:hover {

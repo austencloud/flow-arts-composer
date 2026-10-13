@@ -7,7 +7,8 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import { fade } from "svelte/transition";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   let {
     isPlaying,
@@ -99,8 +100,8 @@
         <svg
           viewBox="0 0 24 24"
           fill="currentColor"
-          in:fade|local={{ duration: reduceMotion ? 0 : 160 }}
-          out:fade|local={{ duration: reduceMotion ? 0 : 160 }}
+          in:opaqueFade|local={{ duration: reduceMotion ? 0 : DURATION.fast }}
+          out:opaqueFade|local={{ duration: reduceMotion ? 0 : DURATION.fast }}
         >
           {#if isPlaying}
             <path d="M6 4h4v16H6zm8 0h4v16h-4z" />
@@ -162,7 +163,11 @@
     border-radius: 50%;
     color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
     flex-shrink: 0;
   }
 
@@ -213,8 +218,8 @@
     cursor: pointer;
     flex-shrink: 0;
     transition:
-      transform var(--duration-fast) ease,
-      box-shadow var(--duration-fast) ease;
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .play-btn svg {
