@@ -189,11 +189,6 @@
 
 <style>
   .assemble-tool-panel {
-    --assemble-builder-surface: color-mix(
-      in srgb,
-      var(--theme-panel-bg, #10141f) 96%,
-      transparent
-    );
     --assemble-builder-surface-raised: var(--theme-panel-bg, #10141f);
     --assemble-builder-stroke: color-mix(
       in srgb,
@@ -230,11 +225,9 @@
     overflow: hidden;
     border: 0;
     border-radius: 0;
-    background: linear-gradient(
-      180deg,
-      var(--assemble-builder-surface-raised),
-      var(--assemble-builder-surface)
-    );
+    /* The background scene stays visible across the tab. Only the grid gets
+       a backing, from .stage-slot::before below. */
+    background: transparent;
     box-shadow: none;
   }
 
@@ -272,6 +265,35 @@
     place-items: center;
     container-type: size;
     container-name: assemble-stage;
+  }
+
+  /* A soft pool behind the grid so its points and rings read against busy
+     backgrounds. It fades to nothing before the panel edge. */
+  .stage-slot::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: min(100cqw, 100cqh);
+    height: min(100cqw, 100cqh);
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(
+      closest-side,
+      color-mix(
+          in srgb,
+          var(--assemble-builder-surface-raised) 80%,
+          transparent
+        )
+        0%,
+      color-mix(
+          in srgb,
+          var(--assemble-builder-surface-raised) 60%,
+          transparent
+        )
+        55%,
+      transparent 100%
+    );
   }
 
   .restore-error {
