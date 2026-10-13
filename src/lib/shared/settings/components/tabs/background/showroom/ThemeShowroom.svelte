@@ -238,7 +238,8 @@
     filter: blur(100px);
     opacity: 0.16;
     pointer-events: none;
-    transition: background var(--duration-scene) var(--ease-standard);
+    transition: background calc(var(--duration-scene) * 0.75)
+      var(--ease-standard);
   }
 
   .ambient-one {

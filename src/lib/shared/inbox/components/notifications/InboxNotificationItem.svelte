@@ -42,7 +42,7 @@
       // Reset when the shared scene-length acknowledgement finishes.
       const timer = setTimeout(() => {
         justMarkedRead = false;
-      }, DURATION.scene);
+      }, DURATION.scene * 2.25);
       return () => clearTimeout(timer);
     }
     return undefined;
@@ -469,7 +469,8 @@
 
   /* Animation when notification is marked as read */
   .notification-item.just-marked-read {
-    animation: markAsRead var(--duration-scene) var(--ease-standard-out);
+    animation: markAsRead calc(var(--duration-scene) * 2.25)
+      var(--ease-standard-out);
   }
 
   @keyframes markAsRead {

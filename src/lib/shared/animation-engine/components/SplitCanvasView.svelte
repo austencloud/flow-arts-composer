@@ -258,7 +258,8 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
     overflow: hidden;
     /* Collapse: fade out quickly, no delay */
     transition:
-      max-height var(--duration-dramatic) var(--ease-out),
+      max-height calc(var(--duration-dramatic) + var(--duration-fast))
+        var(--ease-out),
       opacity var(--duration-normal) var(--ease-standard-in);
   }
 
@@ -268,7 +269,8 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
     opacity: 1;
     /* Expand: delay opacity so engines have time to render before becoming visible */
     transition:
-      max-height var(--duration-dramatic) var(--ease-out),
+      max-height calc(var(--duration-dramatic) + var(--duration-fast))
+        var(--ease-out),
       opacity var(--duration-emphasis) var(--ease-standard-out)
         var(--duration-normal);
   }

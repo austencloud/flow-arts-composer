@@ -397,7 +397,8 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
     box-shadow:
       inset 0 0 0 2px var(--semantic-success, #22c55e),
       0 0 20px rgba(34, 197, 94, 0.2);
-    animation: flash-green var(--duration-dramatic) var(--ease-standard-out);
+    animation: flash-green calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-standard-out);
   }
 
   .grid-area.flash-incorrect {

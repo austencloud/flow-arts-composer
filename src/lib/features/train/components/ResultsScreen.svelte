@@ -232,7 +232,8 @@
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    animation: slideUp var(--duration-dramatic) var(--ease-standard-out);
+    animation: slideUp calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-standard-out);
   }
 
   /* Scrollable content area */

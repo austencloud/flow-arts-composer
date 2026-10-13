@@ -1278,7 +1278,7 @@
 
   .preset-card:active {
     transform: scale(0.96);
-    transition-duration: var(--duration-instant);
+    transition-duration: calc(var(--duration-instant) / 2);
   }
 
   .preset-card:focus-visible {
@@ -1359,7 +1359,7 @@
 
   .rot-btn:active {
     transform: translateY(0) scale(0.95);
-    transition-duration: var(--duration-instant);
+    transition-duration: calc(var(--duration-instant) / 2);
   }
 
   .rot-btn:focus-visible {

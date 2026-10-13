@@ -989,32 +989,32 @@
   }
   .tray-chips > *:nth-child(3),
   .preset-row > *:nth-child(3) {
-    animation-delay: var(--duration-instant);
+    animation-delay: calc(var(--stagger-normal) * 2);
   }
   .tray-chips > *:nth-child(4),
   .preset-row > *:nth-child(4) {
-    animation-delay: var(--duration-fast);
+    animation-delay: calc(var(--stagger-normal) * 3);
   }
   .preset-row > *:nth-child(5) {
-    animation-delay: var(--duration-fast);
+    animation-delay: calc(var(--stagger-normal) * 4);
   }
   .preset-row > *:nth-child(6) {
-    animation-delay: var(--duration-normal);
+    animation-delay: calc(var(--stagger-normal) * 5);
   }
   .preset-row > *:nth-child(7) {
-    animation-delay: var(--duration-emphasis);
+    animation-delay: calc(var(--stagger-normal) * 6);
   }
   .preset-row > *:nth-child(8) {
-    animation-delay: var(--duration-emphasis);
+    animation-delay: calc(var(--stagger-normal) * 7);
   }
   .preset-row > *:nth-child(9) {
-    animation-delay: var(--duration-dramatic);
+    animation-delay: calc(var(--stagger-normal) * 8);
   }
   .preset-row > *:nth-child(10) {
-    animation-delay: var(--duration-dramatic);
+    animation-delay: calc(var(--stagger-normal) * 9);
   }
   .custom-flow > *:nth-child(2) {
-    animation-delay: var(--stagger-normal);
+    animation-delay: calc(var(--stagger-normal) * 1.2);
   }
   @keyframes popIn {
     from {

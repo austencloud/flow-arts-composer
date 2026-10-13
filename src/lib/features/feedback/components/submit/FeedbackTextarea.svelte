@@ -518,7 +518,7 @@
     font-size: clamp(0.7rem, 1.8cqi, 0.8rem);
     font-weight: 500;
     color: var(--semantic-success);
-    animation: fadeInOut var(--duration-scene) var(--ease-standard);
+    animation: fadeInOut calc(var(--duration-scene) * 2.5) var(--ease-standard);
   }
 
   .draft-saved i {

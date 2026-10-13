@@ -1157,8 +1157,8 @@ Last audit: 2025-12-27
     backdrop-filter: blur(4px);
     color: rgba(255, 255, 255, 0.95);
     font-size: 36px;
-    animation: tapFeedbackPop var(--duration-dramatic) var(--ease-standard-out)
-      forwards;
+    animation: tapFeedbackPop calc(var(--duration-scene) * 0.75)
+      var(--ease-standard-out) forwards;
   }
 
   @keyframes tapFeedbackPop {
@@ -1534,8 +1534,10 @@ Last audit: 2025-12-27
     width: min(calc(100cqw - 12px), calc((100cqh - 7rem) * 2 / 3));
     max-width: calc((100cqh - 7rem) * 2 / 3);
     transition:
-      width var(--duration-dramatic) var(--ease-out),
-      max-width var(--duration-dramatic) var(--ease-out);
+      width calc(var(--duration-dramatic) + var(--duration-fast))
+        var(--ease-out),
+      max-width calc(var(--duration-dramatic) + var(--duration-fast))
+        var(--ease-out);
   }
 
   /* Progress slot: in portrait, takes natural height at bottom. The transport
@@ -1679,8 +1681,10 @@ Last audit: 2025-12-27
     width: min(calc(100cqw - 12px), calc((100cqh - 8.5rem) * 2 / 3));
     max-width: calc((100cqh - 8.5rem) * 2 / 3);
     transition:
-      width var(--duration-dramatic) var(--ease-out),
-      max-width var(--duration-dramatic) var(--ease-out);
+      width calc(var(--duration-dramatic) + var(--duration-fast))
+        var(--ease-out),
+      max-width calc(var(--duration-dramatic) + var(--duration-fast))
+        var(--ease-out);
   }
 
   /* ===========================================
@@ -1816,8 +1820,10 @@ Last audit: 2025-12-27
     max-width: calc((100cqh - 7rem) * 3 / 2);
     max-height: none;
     transition:
-      width var(--duration-dramatic) var(--ease-out),
-      max-width var(--duration-dramatic) var(--ease-out),
+      width calc(var(--duration-dramatic) + var(--duration-fast))
+        var(--ease-out),
+      max-width calc(var(--duration-dramatic) + var(--duration-fast))
+        var(--ease-out),
       grid-template-columns var(--transition-dramatic),
       column-gap var(--transition-dramatic);
   }

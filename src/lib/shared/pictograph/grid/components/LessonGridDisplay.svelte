@@ -181,40 +181,40 @@ Uses the actual GridSvg component for consistency with the rest of the app.
 
   /* Staggered entrance: Center first, then N, E, S, W */
   .animate-entrance :global(#center_point) {
-    animation: pointPopIn var(--duration-dramatic) var(--ease-spring)
-      var(--duration-normal) forwards;
+    animation: pointPopIn calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-spring) var(--duration-normal) forwards;
   }
 
   .animate-entrance :global(#n_diamond_outer_point) {
-    animation: pointPopIn var(--duration-dramatic) var(--ease-spring)
-      var(--duration-dramatic) forwards;
+    animation: pointPopIn calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-spring) calc(var(--duration-normal) * 2.5) forwards;
   }
 
   .animate-entrance :global(#e_diamond_outer_point) {
-    animation: pointPopIn var(--duration-dramatic) var(--ease-spring)
-      var(--duration-scene) forwards;
+    animation: pointPopIn calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-spring) calc(var(--duration-normal) * 3.5) forwards;
   }
 
   .animate-entrance :global(#s_diamond_outer_point) {
-    animation: pointPopIn var(--duration-dramatic) var(--ease-spring)
-      var(--duration-scene) forwards;
+    animation: pointPopIn calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-spring) calc(var(--duration-normal) * 4.5) forwards;
   }
 
   .animate-entrance :global(#w_diamond_outer_point) {
-    animation: pointPopIn var(--duration-dramatic) var(--ease-spring)
-      calc(var(--duration-scene) + var(--duration-emphasis)) forwards;
+    animation: pointPopIn calc(var(--duration-dramatic) + var(--duration-fast))
+      var(--ease-spring) calc(var(--duration-normal) * 5.5) forwards;
   }
 
   /* Hand points appear after outer points */
   .animate-entrance :global(.normal-hand-point) {
     animation: pointPopIn var(--duration-dramatic) var(--ease-spring)
-      calc(var(--duration-scene) + var(--duration-dramatic)) forwards;
+      calc(var(--duration-normal) * 7) forwards;
   }
 
   /* Lines fade in last */
   .animate-entrance :global(line) {
-    animation: linesFadeIn var(--duration-dramatic) var(--ease-standard-out)
-      calc(var(--duration-scene) * 2) forwards;
+    animation: linesFadeIn calc(var(--duration-scene) * 0.75)
+      var(--ease-standard-out) calc(var(--duration-scene) * 2) forwards;
   }
 
   /* Size variants - applied to the container */

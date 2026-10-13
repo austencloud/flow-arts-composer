@@ -863,7 +863,8 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    animation: fade-in-out var(--duration-scene) var(--ease-standard);
+    animation: fade-in-out calc(var(--duration-scene) * 1.5)
+      var(--ease-standard);
   }
 
   .status-action-feedback {
@@ -872,7 +873,7 @@
     align-items: center;
     gap: 4px;
     font-weight: 500;
-    animation: action-pop var(--duration-scene) var(--ease-standard);
+    animation: action-pop calc(var(--duration-scene) * 2.5) var(--ease-standard);
   }
 
   @keyframes fade-in-out {
