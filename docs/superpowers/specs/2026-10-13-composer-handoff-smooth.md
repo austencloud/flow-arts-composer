@@ -101,7 +101,7 @@ background and report it). The fill stays as is.
   tests with `--config tests/config/vitest.config.ts`; `verify:public-firebase`
   (on d2 via `pwsh scripts/d2-run.ps1` after committing); prettier on
   committed content via `git show`; then `npm run wt:finish --
-  codex/handoff-smooth --route /` from `E:/tka-platform` in PowerShell.
+codex/handoff-smooth --route /` from `E:/tka-platform` in PowerShell.
 
 ## Hazards
 
