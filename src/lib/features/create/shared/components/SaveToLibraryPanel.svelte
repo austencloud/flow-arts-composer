@@ -154,6 +154,33 @@
     window.addEventListener("keydown", onKeydown);
     return () => window.removeEventListener("keydown", onKeydown);
   });
+
+  // The card preview letterboxes inside its stage, so the overlay badge
+  // follows the card's own top-left corner instead of the stage corner.
+  let stageEl = $state<HTMLDivElement | null>(null);
+  let cardInset = $state({ top: 0, left: 0 });
+  $effect(() => {
+    const stage = stageEl;
+    if (!stage || typeof ResizeObserver === "undefined") return;
+    const cardEl = () =>
+      stage.querySelector<HTMLElement>(".choreo-card-root > *");
+    const measure = () => {
+      const card = cardEl();
+      if (!card) return;
+      const s = stage.getBoundingClientRect();
+      const c = card.getBoundingClientRect();
+      cardInset = {
+        top: Math.max(0, Math.round(c.top - s.top)),
+        left: Math.max(0, Math.round(c.left - s.left)),
+      };
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    const card = cardEl();
+    if (card) observer.observe(card);
+    measure();
+    return () => observer.disconnect();
+  });
 </script>
 
 <CreatePanelDrawer
@@ -194,7 +221,12 @@
                from the composition manager / app settings (the same sources
                buildCardRenderOptions reads for the saved PNG), so the prop, QR,
                mandala, LOOP glyph and footer match the saved file. -->
-          <div class="card-stage">
+          <div
+            class="card-stage"
+            bind:this={stageEl}
+            style:--card-top="{cardInset.top}px"
+            style:--card-left="{cardInset.left}px"
+          >
             <ChoreoCard
               sequence={{
                 ...s.sequence,
@@ -583,8 +615,8 @@
 
   .card-badge {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: calc(var(--card-top, 0px) + 10px);
+    left: calc(var(--card-left, 0px) + 10px);
     display: inline-flex;
     align-items: center;
     gap: 6px;
