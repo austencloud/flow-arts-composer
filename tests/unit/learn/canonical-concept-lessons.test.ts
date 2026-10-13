@@ -160,7 +160,10 @@ describe("canonical concept lesson composition", () => {
     expect(motions).toContain(
       'viewMode === "scroll" ? BOARD_STAGE : savedStep - 1'
     );
-    expect(motions).toContain("getConceptPlacesByLevel(1)");
+    // e75cd2cb80 dropped the map-place count as a lesson ordinal; the
+    // heading reads the shared level label instead.
+    expect(motions).not.toContain("getConceptPlacesByLevel");
+    expect(motions).toContain('tDynamic("learn_ui_level_one")');
     expect(motions).toContain("LessonStageFrame");
     expect(motions).not.toContain("HandMotionPlayer");
     expect(motions).not.toContain("TimingDirectionBoard");

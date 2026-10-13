@@ -18,7 +18,7 @@
 
 import { browser } from "$app/env";
 import { LEGACY_CONCEPT_ID_ALIASES } from "../services/concept-progress-tracker";
-import { getErrorHandler } from "#lib/shared/application/get-error-handler";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 
 /**
  * State for a single experience

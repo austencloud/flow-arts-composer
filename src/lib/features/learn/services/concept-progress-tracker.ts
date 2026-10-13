@@ -35,7 +35,7 @@ import {
   mergeLearningProgress,
   normalizeLearningProgress,
 } from "./merge-learning-progress";
-import { getErrorHandler } from "#lib/shared/application/get-error-handler";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 
 const STORAGE_KEY = "tka_learning_progress";
 
