@@ -157,6 +157,8 @@
     combination: HandCombination;
     mirror: boolean;
     key: number;
+    /** The learner found the combination they asked a hint for. */
+    fromGoal: boolean;
   } | null>(null);
   let lit = $state<HandCombinationId | null>(null);
   /** The combination the learner asked a hint for, until it is found. */
@@ -186,18 +188,25 @@
   /**
    * The readout: the goal while the learner picks and while the grids fuse,
    * else the last find. Holding the goal through the fusion keeps the last
-   * find from flashing back before the new one is named.
+   * find from flashing back before the new one is named. Finding the goal
+   * keeps its key, so the name stays put and only the lightbulb turns into a
+   * check (Austen, 2026-10-13).
    */
   const readout = $derived(
     goalCombination && (turn !== null || pending !== null)
       ? {
           combination: goalCombination,
           mirror: false,
-          key: `goal-${goalCombination.id}`,
-          goal: true,
+          key: `goal-${goalCombination.id}` as string | number,
+          icon: "hint" as "hint" | "found" | null,
         }
       : shown
-        ? { ...shown, goal: false }
+        ? {
+            combination: shown.combination,
+            mirror: shown.mirror,
+            key: shown.fromGoal ? `goal-${shown.combination.id}` : shown.key,
+            icon: shown.fromGoal ? ("found" as const) : null,
+          }
         : null
   );
 
@@ -242,9 +251,10 @@
     pending = null;
     const first = found[combination.id];
     const mirror = !!first && isMirrorPair(first, pair);
-    shown = { combination, mirror, key: (shown?.key ?? 0) + 1 };
+    const fromGoal = combination.id === goal;
+    shown = { combination, mirror, key: (shown?.key ?? 0) + 1, fromGoal };
     lit = combination.id;
-    if (combination.id === goal) goal = null;
+    if (fromGoal) goal = null;
     if (!first) onFind?.(combination.id, pair);
     const named = t("learn_motion_path_aria", {
       name: plainTopicText(combination.name),
@@ -740,8 +750,19 @@
               style:--tone-b={tones[1]}
             >
               <span class="readout-name">
-                {#if readout.goal}
-                  <i class="fa-solid fa-lightbulb goal-icon"></i>
+                {#if readout.icon}
+                  <span
+                    class="goal-icon"
+                    class:found={readout.icon === "found"}
+                  >
+                    <Crossfade key={readout.icon}>
+                      <i
+                        class="fa-solid"
+                        class:fa-lightbulb={readout.icon === "hint"}
+                        class:fa-check={readout.icon === "found"}
+                      ></i>
+                    </Crossfade>
+                  </span>
                 {/if}
                 {plainTopicText(readout.combination.name)}
               </span>
@@ -1138,6 +1159,8 @@
   }
 
   .readout-name {
+    display: flex;
+    align-items: center;
     grid-area: name;
     color: var(--theme-text);
     font-size: clamp(1.25rem, 1.8vw, 1.6rem);
@@ -1161,6 +1184,10 @@
     margin-inline-end: 0.35rem;
     color: var(--theme-text-dim);
     font-size: 0.8em;
+  }
+
+  .goal-icon.found {
+    color: var(--tone-a);
   }
 
   .readout-description {
