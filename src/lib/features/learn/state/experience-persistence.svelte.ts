@@ -18,6 +18,7 @@
 
 import { browser } from "$app/env";
 import { LEGACY_CONCEPT_ID_ALIASES } from "../services/concept-progress-tracker";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler";
 
 /**
  * State for a single experience
@@ -36,6 +37,7 @@ interface AllExperiencesState {
 }
 
 const STORAGE_KEY = "tka_experience_state";
+let storageWarningShown = false;
 
 // Active Concept Persistence (which concept detail view is open)
 
@@ -134,8 +136,17 @@ function saveAllStates(states: AllExperiencesState): void {
 	if (!browser) return;
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(states));
+		storageWarningShown = false;
 	} catch (error) {
 		console.error("Failed to save experience state:", error);
+		if (storageWarningShown) return;
+		storageWarningShown = true;
+		getErrorHandler().showUserError({
+			message: "Your lesson step could not be saved on this device. Check available storage before leaving Learn.",
+			technicalDetails: error instanceof Error ? error.message : String(error),
+			severity: "warning",
+			context: { module: "learn", tab: "concepts", action: "saveExperienceState" },
+		});
 	}
 }
 
