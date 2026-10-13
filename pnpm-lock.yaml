@@ -874,7 +874,7 @@ packages:
 
   '@austencloud/motion@file:vendor/austencloud-motion-0.2.1.tgz':
     resolution: {integrity: sha512-SEaZSZ8MH89TDd2iYb+MCbKyioEVz9UhxgovYm3e3CV5/nfT00+bPJDYNad/ERIftDJEHpxbUtCfaHDnec2IXA==, tarball: file:vendor/austencloud-motion-0.2.1.tgz}
-    version: 0.2.0
+    version: 0.2.1
     peerDependencies:
       svelte: ^5.0.0
 
