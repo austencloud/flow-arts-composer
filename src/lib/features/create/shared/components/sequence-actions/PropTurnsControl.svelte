@@ -65,6 +65,14 @@
         : t("create_controls_ccw_short")
   );
 
+  // Ghost sizer: the longer of the two labels reserves the button width so
+  // flipping CW <-> CCW never resizes the toggle.
+  const longestDirectionLabel = $derived.by(() => {
+    const cw = t("create_controls_cw_short");
+    const ccw = t("create_controls_ccw_short");
+    return ccw.length >= cw.length ? ccw : cw;
+  });
+
   function handleTurnsChangeClick(e: MouseEvent, delta: number) {
     e.stopPropagation();
     onTurnsChange(delta);
@@ -116,21 +124,29 @@
     </button>
   </div>
 
-  <!-- Rotation direction toggle — hidden for dash/static at 0 turns -->
-  {#if showRotation}
-    <button
-      class="invert-btn"
-      class:compact
-      aria-label={t("create_controls_toggle_rotation", {
-        hand: handLabel(hand),
-        direction: directionLabel,
-      })}
-      onclick={handleInvert}
-    >
-      <i class="fas {directionIcon}" aria-hidden="true"></i>
+  <!-- Rotation direction toggle. The slot is always laid out so the turns
+       stepper never moves when a dash/static motion gains or loses turns;
+       at 0 turns the toggle is reserved (invisible and disabled). -->
+  <button
+    class="invert-btn"
+    class:compact
+    class:reserved={!showRotation}
+    disabled={!showRotation}
+    aria-hidden={!showRotation}
+    aria-label={t("create_controls_toggle_rotation", {
+      hand: handLabel(hand),
+      direction: directionLabel,
+    })}
+    onclick={handleInvert}
+  >
+    <i class="fas {directionIcon}" aria-hidden="true"></i>
+    <span class="invert-label-stack">
+      <span class="invert-label ghost" aria-hidden="true"
+        >{longestDirectionLabel}</span
+      >
       <span class="invert-label">{directionLabel}</span>
-    </button>
-  {/if}
+    </span>
+  </button>
 
   <!-- Path shape override (only for motions that traverse the grid) -->
   {#if onPathShapeChange && onPathShapeClear && isShift}
@@ -218,6 +234,7 @@
     color: rgba(255, 255, 255, 0.95);
     min-width: var(--min-touch-target);
     text-align: center;
+    font-variant-numeric: tabular-nums;
   }
 
   .turns-value.compact {
@@ -299,7 +316,14 @@
       transform var(--duration-fast) var(--ease-standard),
       background var(--duration-fast) var(--ease-standard),
       border-color var(--duration-fast) var(--ease-standard),
-      box-shadow var(--duration-fast) var(--ease-standard);
+      box-shadow var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-fast) var(--ease-standard);
+  }
+
+  /* Reserved slot: keeps its geometry, shows nothing, takes no input. */
+  .invert-btn.reserved {
+    opacity: 0;
+    pointer-events: none;
   }
 
   /* Compact: icon-only square button, positioned before turns row */
@@ -321,9 +345,22 @@
     transform: scale(0.95);
   }
 
+  .invert-label-stack {
+    display: grid;
+  }
+
+  .invert-label-stack > .invert-label {
+    grid-area: 1 / 1;
+    text-align: center;
+  }
+
   .invert-label {
     font-size: inherit;
     font-weight: inherit;
+  }
+
+  .invert-label.ghost {
+    visibility: hidden;
   }
 
   /* Blue invert button */

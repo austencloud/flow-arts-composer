@@ -81,6 +81,29 @@ function cleanPath(pathname: string): string {
   }`;
 }
 
+/**
+ * The address of a public collection that anyone can open, signed in or not.
+ *
+ * Always the production site: a link is for someone else, and a dev or
+ * native-app origin would hand them a page they cannot reach. The path is the
+ * same one Explore > Collections navigates to, so the link lands on the exact
+ * read-only detail view the owner sees there.
+ */
+export const PUBLIC_SITE_URL = "https://tkaflowarts.com";
+
+export function buildPublicCollectionUrl(
+  ownerId: string,
+  collectionId: string
+): string {
+  return `${PUBLIC_SITE_URL}${buildBrowsePath({
+    primary: "explore",
+    section: "collections",
+    view: "detail",
+    ownerId,
+    contextId: collectionId,
+  })}`;
+}
+
 export function buildBrowsePath(location: BrowseLocation): string {
   if (location.primary === "explore") {
     if (location.section === "collections") {

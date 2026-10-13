@@ -16,6 +16,13 @@
   import type { PendingMessageAttachment } from "../../domain/pending-message-attachment";
   import { inboxState } from "../../state/inbox-state.svelte";
   import { getUserIdentityLabels } from "#lib/shared/community/domain/user-identity-labels.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+  import { communityCollectionsState } from "#lib/features/browse/collections/state/community-collections-state.svelte.js";
+  import { buildPublicCollectionUrl } from "#lib/shared/browse/navigation/browse-route-resolver.js";
+  import { shareOrCopyLink } from "#lib/shared/share/services/link-share.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
     attachment: Extract<PendingMessageAttachment, { type: "collection" }>;
@@ -33,15 +40,72 @@
 
   const MESSAGE_MAX = 500;
   const MAX_RECENT_PEOPLE = 8;
+  // Words, not icons: an eye and a pencil on their own read as a mystery
+  // toggle. SegmentedControl shows one or the other, so the icons go.
   const roleOptions = $derived([
-    { value: "viewer" as const, label: t("inbox_ui_can_view"), icon: "fa-solid fa-eye" },
-    { value: "editor" as const, label: t("inbox_ui_can_edit"), icon: "fa-solid fa-pen" },
+    { value: "viewer" as const, label: t("inbox_ui_can_view") },
+    { value: "editor" as const, label: t("inbox_ui_can_edit") },
   ]);
 
   let { attachment, initialNote = "", onSent }: Props = $props();
   const payload = $derived(attachment.payload);
   const collaborationManager = getCollectionCollaborationManager();
   const haptic = getHapticFeedback();
+
+  // The sheet opens for collections you own, so the live copy of the
+  // collection is in your library state. That copy knows whether it is
+  // public, which the attachment payload does not carry.
+  const ownCollection = $derived(
+    collectionsState.collections.find(
+      (collection) => collection.id === payload.collectionId
+    )
+  );
+  const isPublic = $derived(ownCollection?.isPublic ?? false);
+  const canPublish = $derived(
+    !!ownCollection &&
+      !ownCollection.systemType &&
+      ownCollection.kind !== "smart"
+  );
+  const publicUrl = $derived(
+    buildPublicCollectionUrl(payload.ownerId, payload.collectionId)
+  );
+  let linkCopied = $state(false);
+  let copiedTimer: ReturnType<typeof setTimeout> | null = null;
+  let publishing = $state(false);
+
+  /**
+   * Hand the address on, on the press itself: the phone's own share sheet
+   * where there is one, the clipboard everywhere else. Both need the gesture,
+   * so nothing awaits before the call.
+   */
+  async function copyLink(): Promise<void> {
+    const outcome = await shareOrCopyLink({
+      url: publicUrl,
+      title: payload.name,
+    });
+    if (outcome === "copied") {
+      haptic?.trigger("success");
+      toast.success(t("share_link_copied"));
+      linkCopied = true;
+      if (copiedTimer) clearTimeout(copiedTimer);
+      copiedTimer = setTimeout(() => (linkCopied = false), 2000);
+    } else if (outcome === "failed") {
+      toast.error(t("share_copy_link_failed"));
+    }
+  }
+
+  async function makePublic(): Promise<void> {
+    if (publishing || !canPublish) return;
+    publishing = true;
+    try {
+      const ok = await collectionsState.setPublic(payload.collectionId, true);
+      // Same follow-up as the card menu: the Community feed re-normalizes
+      // its public-member counts after a visibility change.
+      if (ok) communityCollectionsState.invalidate();
+    } finally {
+      publishing = false;
+    }
+  }
 
   let selectedPeople = $state<SelectedPerson[]>([]);
   let accessItems = $state<CollectionShareAccessItem[]>([]);
@@ -95,6 +159,14 @@
       ? t("inbox_share_count", { count: selectedPeople.length })
       : t("inbox_ui_share_collection")
   );
+
+  onMount(() => {
+    // No-op when the library is already live; the publish flag comes from it.
+    collectionsState.ensureStarted();
+    return () => {
+      if (copiedTimer) clearTimeout(copiedTimer);
+    };
+  });
 
   onMount(() =>
     collaborationManager.subscribeToAccessList(
@@ -274,7 +346,10 @@
 </script>
 
 <div class="share-sheet">
-  <section class="collection-summary" aria-label={t("inbox_ui_collection_to_share")}>
+  <section
+    class="collection-summary"
+    aria-label={t("inbox_ui_collection_to_share")}
+  >
     <div
       class="collection-icon"
       style:--collection-color={payload.color ?? "var(--theme-accent)"}
@@ -291,11 +366,88 @@
     </div>
   </section>
 
+  <section class="share-link" aria-labelledby="share-link-title">
+    <div class="section-heading">
+      <div>
+        <h3 id="share-link-title">{t("inbox_share_link_title")}</h3>
+        <p>
+          {isPublic
+            ? t("inbox_share_link_public")
+            : canPublish
+              ? t("inbox_share_link_private")
+              : t("inbox_share_link_private_locked")}
+        </p>
+      </div>
+    </div>
+
+    <!-- Public ↔ private is a structural swap the person asked for (Make
+         public), so it crossfades through the shared owner instead of
+         popping; animateHeight carries the row-vs-button height change. -->
+    <Crossfade
+      key={isPublic ? "link" : "locked"}
+      duration={DURATION.normal}
+      animateHeight
+    >
+      {#if isPublic}
+        <div class="link-row">
+          <span class="link-text" title={publicUrl}>{publicUrl}</span>
+          <button
+            type="button"
+            class="share-button link-button"
+            onclick={copyLink}
+            aria-label={linkCopied
+              ? t("share_link_copied")
+              : t("share_copy_link")}
+          >
+            <i
+              class={linkCopied ? "fa-solid fa-check" : "fa-solid fa-link"}
+              aria-hidden="true"
+            ></i>
+            <!-- Both labels sit in one cell so the button keeps its width
+                 when the words swap. -->
+            <span class="link-label">
+              <span class="ghost" aria-hidden="true"
+                >{t("share_copy_link")}</span
+              >
+              <span class="ghost" aria-hidden="true"
+                >{t("share_link_copied")}</span
+              >
+              <span class="live">
+                {linkCopied ? t("share_link_copied") : t("share_copy_link")}
+              </span>
+            </span>
+          </button>
+        </div>
+      {:else if canPublish}
+        <div class="link-row">
+          <button
+            type="button"
+            class="share-button secondary"
+            onclick={makePublic}
+            disabled={publishing}
+          >
+            {#if publishing}
+              <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+              {t("inbox_share_making_public")}
+            {:else}
+              <i class="fa-solid fa-globe" aria-hidden="true"></i>
+              {t("inbox_share_make_public")}
+            {/if}
+          </button>
+        </div>
+      {/if}
+    </Crossfade>
+  </section>
+
   <section class="add-people" aria-labelledby="add-people-title">
     <div class="section-heading">
       <div>
         <h3 id="add-people-title">{t("inbox_ui_add_people")}</h3>
-        <p>{t("inbox_ui_choose_what_they_can_do_then_send_the_collection_in_a_message")}</p>
+        <p>
+          {t(
+            "inbox_ui_choose_what_they_can_do_then_send_the_collection_in_a_message"
+          )}
+        </p>
       </div>
     </div>
 
@@ -410,10 +562,14 @@
     {:else if accessError}
       <div class="access-state warning" role="status">
         <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-        {t("inbox_ui_access_could_not_be_loaded_close_this_sheet_and_try_again")}
+        {t(
+          "inbox_ui_access_could_not_be_loaded_close_this_sheet_and_try_again"
+        )}
       </div>
     {:else if accessItems.length === 0}
-      <div class="access-state">{t("inbox_ui_only_you_can_open_this_collection")}</div>
+      <div class="access-state">
+        {t("inbox_ui_only_you_can_open_this_collection")}
+      </div>
     {:else}
       <div class="access-list">
         {#each accessItems as item (item.grant.recipientId)}
@@ -426,7 +582,9 @@
             />
             <span class="access-name">{item.recipient.displayName}</span>
             <select
-              aria-label={t("inbox_permission_person", { name: item.recipient.displayName })}
+              aria-label={t("inbox_permission_person", {
+                name: item.recipient.displayName,
+              })}
               value={item.grant.role}
               disabled={updatingRecipientId === item.grant.recipientId}
               onchange={(event) => changeRole(item, event.currentTarget.value)}
@@ -439,7 +597,9 @@
               class="remove-button"
               onclick={() => askToRemove(item)}
               disabled={updatingRecipientId === item.grant.recipientId}
-              aria-label={t("inbox_remove_access_person", { name: item.recipient.displayName })}
+              aria-label={t("inbox_remove_access_person", {
+                name: item.recipient.displayName,
+              })}
               title={t("inbox_ui_remove_access")}
             >
               <i class="fa-solid fa-user-minus" aria-hidden="true"></i>
@@ -455,7 +615,9 @@
   bind:isOpen={removeDialogOpen}
   title={t("inbox_ui_remove_access")}
   message={pendingRemoval
-    ? t("inbox_remove_access_explanation", { name: pendingRemoval.recipient.displayName })
+    ? t("inbox_remove_access_explanation", {
+        name: pendingRemoval.recipient.displayName,
+      })
     : t("inbox_ui_this_person_will_no_longer_have_access_to_the_collection")}
   confirmText={t("inbox_ui_remove_access")}
   variant="danger"
@@ -476,11 +638,76 @@
   }
 
   .collection-summary,
+  .share-link,
   .add-people,
   .access-section {
     border: 1px solid var(--theme-stroke);
     border-radius: 16px;
     background: var(--theme-card-bg);
+  }
+
+  .share-link {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  /* The address and its button share a row until the panel is too narrow
+     for both, then the button drops under the address at full width. */
+  .link-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .link-text {
+    flex: 1 1 220px;
+    min-width: 0;
+    /* A block, not a flex box: text-overflow only draws its ellipsis on a
+       block container, and the line-height centres the single line. */
+    display: block;
+    line-height: var(--min-touch-target, 44px);
+    padding: 0 12px;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 12px;
+    background: var(--theme-input-bg, var(--theme-panel-bg));
+    color: var(--theme-text);
+    font-size: var(--font-size-sm, 14px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    /* Reads as a URL field people may select, not a button. */
+    user-select: all;
+  }
+
+  .link-button {
+    flex: 0 0 auto;
+  }
+
+  .link-label {
+    display: grid;
+  }
+
+  .link-label > span {
+    grid-area: 1 / 1;
+    white-space: nowrap;
+  }
+
+  .link-label .ghost {
+    visibility: hidden;
+  }
+
+  .share-button.secondary {
+    border-color: var(--theme-stroke);
+    background: transparent;
+    color: var(--theme-text);
+  }
+
+  .share-button.secondary:hover:not(:disabled) {
+    border-color: var(--theme-accent);
+    background: var(--theme-card-hover-bg);
   }
 
   .collection-summary {

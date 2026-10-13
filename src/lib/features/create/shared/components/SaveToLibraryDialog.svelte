@@ -159,7 +159,7 @@ Allows user to set name, visibility, tags, collections, and notes.
     <!-- Form -->
     <div class="dialog-body">
       <PropPairField bind:value={saveProps} />
-      <p>{t("create_review_used_when_someone_chooses_as_saved")}</p>
+      <p>{t("prop_pair_saved_default_hint")}</p>
       <!-- Sequence Name -->
       <div class="form-group">
         <label for="sequence-name">
