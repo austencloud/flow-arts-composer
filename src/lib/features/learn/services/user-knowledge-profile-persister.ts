@@ -16,7 +16,11 @@ import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.j
 import { getUserLearningProgressPath } from "../data/firestore-paths";
 import type { LearningProgress, ConceptProgress } from "../domain/types";
 import type { SerializedLearningProgress } from "./types";
-import { LEGACY_CONCEPT_ID_ALIASES } from "./concept-progress-tracker";
+import {
+  LEGACY_CONCEPT_ID_ALIASES,
+  mergeLearningProgress,
+  normalizeLearningProgress,
+} from "./merge-learning-progress";
 
 export class UserKnowledgeProfilePersister {
   /** Cancels the subscription this persister currently owns, if any. */
@@ -34,7 +38,8 @@ export class UserKnowledgeProfilePersister {
    */
   private async getDocRef(userId: string) {
     const { doc } = await import("firebase/firestore");
-    const { getFirestoreInstance } = await import("#lib/shared/auth/firebase.js");
+    const { getFirestoreInstance } =
+      await import("#lib/shared/auth/firebase.js");
     const firestore = await getFirestoreInstance();
     return doc(firestore, getUserLearningProgressPath(userId));
   }
@@ -59,6 +64,7 @@ export class UserKnowledgeProfilePersister {
         completedAt: this.dateToISO(value.completedAt),
         lastPracticedAt: this.dateToISO(value.lastPracticedAt),
         nextPracticeAt: this.dateToISO(value.nextPracticeAt),
+        updatedAt: this.dateToISO(value.updatedAt),
       };
     });
 
@@ -66,6 +72,8 @@ export class UserKnowledgeProfilePersister {
       concepts: conceptEntries,
       completedConcepts: Array.from(progress.completedConcepts),
       currentConceptId: progress.currentConceptId,
+      currentConceptVisitedAt: this.dateToISO(progress.currentConceptVisitedAt),
+      resetAt: this.dateToISO(progress.resetAt),
       overallProgress: progress.overallProgress,
       totalCorrect: progress.totalCorrect,
       totalTimeSpent: progress.totalTimeSpent,
@@ -108,6 +116,9 @@ export class UserKnowledgeProfilePersister {
         nextPracticeAt: value.nextPracticeAt
           ? new Date(value.nextPracticeAt as string)
           : undefined,
+        updatedAt: value.updatedAt
+          ? new Date(value.updatedAt as string)
+          : undefined,
       });
     }
 
@@ -115,6 +126,10 @@ export class UserKnowledgeProfilePersister {
       concepts,
       completedConcepts: new Set((data.completedConcepts as string[]) || []),
       currentConceptId: data.currentConceptId as string | undefined,
+      currentConceptVisitedAt: data.currentConceptVisitedAt
+        ? new Date(data.currentConceptVisitedAt as string)
+        : undefined,
+      resetAt: data.resetAt ? new Date(data.resetAt as string) : undefined,
       overallProgress: (data.overallProgress as number) || 0,
       totalCorrect: (data.totalCorrect as number) || 0,
       totalTimeSpent: (data.totalTimeSpent as number) || 0,
@@ -130,35 +145,29 @@ export class UserKnowledgeProfilePersister {
     progress: LearningProgress
   ): Promise<void> {
     try {
-      const { deleteField, serverTimestamp, setDoc } = await import(
-        "firebase/firestore"
-      );
+      const { serverTimestamp, runTransaction } =
+        await import("firebase/firestore");
       const docRef = await this.getDocRef(userId);
-      const serialized = this.serialize(progress);
-
-      // `setDoc(..., { merge: true })` merges the `concepts` map field
-      // recursively rather than replacing it, so a legacy concept id written
-      // before a rename is never overwritten by a save that only carries the
-      // current id: it survives in the document forever, and the tracker's
-      // alias merge runs again on every hydration. Marking every legacy id
-      // for deletion here removes it the next time this concept is saved.
-      const conceptsWithLegacyCleanup: Record<string, unknown> = {
-        ...serialized.concepts,
-      };
-      for (const legacyId of Object.keys(LEGACY_CONCEPT_ID_ALIASES)) {
-        conceptsWithLegacyCleanup[legacyId] = deleteField();
-      }
-
       await trackWrite(() =>
-        setDoc(
-          docRef,
-          {
+        runTransaction(docRef.firestore, async (transaction) => {
+          const snapshot = await transaction.get(docRef);
+          const latest = snapshot.exists()
+            ? this.deserialize(snapshot.data())
+            : null;
+          const merged = normalizeLearningProgress(
+            latest ? mergeLearningProgress(progress, latest) : progress
+          );
+          const serialized = this.serialize(merged);
+          // A transaction retries against the newest document. Replacing the
+          // map also removes pre-reset and renamed lesson records.
+          for (const legacyId of Object.keys(LEGACY_CONCEPT_ID_ALIASES)) {
+            delete serialized.concepts[legacyId];
+          }
+          transaction.set(docRef, {
             ...serialized,
-            concepts: conceptsWithLegacyCleanup,
             updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        )
+          });
+        })
       );
     } catch (error) {
       console.error(

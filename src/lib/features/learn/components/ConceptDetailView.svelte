@@ -60,18 +60,6 @@ Supports two navigation modes:
     progress = conceptProgressService.getConceptProgress(concept.id);
   });
 
-  // Reference to the current experience component for back navigation
-  let experienceComponent: unknown = $state(null);
-
-  function hasBackHandler(value: unknown): value is { handleBack: () => void } {
-    return (
-      typeof value === "object" &&
-      value !== null &&
-      "handleBack" in value &&
-      typeof value.handleBack === "function"
-    );
-  }
-
   function toggleViewMode() {
     hapticService?.trigger("selection");
     viewMode = viewMode === "step" ? "scroll" : "step";
@@ -80,7 +68,7 @@ Supports two navigation modes:
   // Start the concept when detail view opens
   onMount(() => {
     trackLessonStarted(concept.id, progress.status);
-    if (progress.status === "available") {
+    if (progress.status === "available" || progress.status === "in-progress") {
       conceptProgressService.startConcept(concept.id);
     }
 
@@ -98,14 +86,7 @@ Supports two navigation modes:
   }
 
   function handleBackButton() {
-    hapticService?.trigger("selection");
-    // Try to navigate back within the experience first
-    if (hasBackHandler(experienceComponent)) {
-      experienceComponent.handleBack();
-    } else {
-      // No experience or no back handler, just close
-      onClose?.();
-    }
+    handleClose();
   }
 
   function handlePracticeComplete(nextConceptId?: string) {
@@ -150,8 +131,16 @@ Supports two navigation modes:
           href={experience.reference?.href ??
             `/guide/level-1/${experience.guideSlug}`}
           aria-label={experience.reference
-            ? t("learn_ui_read_reference", { name: tDynamic(`learn_reference_${concept.id.replaceAll("-", "_")}`) })
-            : t("learn_ui_read_in_guide", { name: tDynamic(`learn_reference_${concept.id.replaceAll("-", "_")}`) })}
+            ? t("learn_ui_read_reference", {
+                name: tDynamic(
+                  `learn_reference_${concept.id.replaceAll("-", "_")}`
+                ),
+              })
+            : t("learn_ui_read_in_guide", {
+                name: tDynamic(
+                  `learn_reference_${concept.id.replaceAll("-", "_")}`
+                ),
+              })}
         >
           <i class="fa-solid fa-book-open" aria-hidden="true"></i>
           <span>{t("learn_ui_read_topic")}</span>
@@ -193,7 +182,6 @@ Supports two navigation modes:
         {:then loaded}
           {@const Experience = loaded.default}
           <Experience
-            bind:this={experienceComponent}
             {viewMode}
             onComplete={handlePracticeComplete}
             onBack={handleClose}

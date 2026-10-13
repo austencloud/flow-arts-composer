@@ -19,6 +19,15 @@ import { ConceptProgressTracker } from "./concept-progress-tracker";
 import type { UserKnowledgeProfilePersister } from "./user-knowledge-profile-persister";
 import { TKA_CONCEPTS } from "../domain/concepts";
 import type { ConceptProgress, LearningProgress } from "../domain/types";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler";
+import {
+  hasUnsharedProgress,
+  normalizeLearningProgress,
+} from "./merge-learning-progress";
+
+vi.mock("#lib/shared/application/get-error-handler", () => ({
+  getErrorHandler: vi.fn(() => ({ showUserError: vi.fn() })),
+}));
 
 const STORAGE_KEY = "tka_learning_progress";
 
@@ -501,6 +510,10 @@ describe("ConceptProgressTracker sign-in merge", () => {
 
   it("retries after a failed first load instead of latching", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
+    const showUserError = vi.fn();
+    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as ReturnType<
+      typeof getErrorHandler
+    >);
     let attempt = 0;
     const persister = createFakePersister(async () => {
       attempt += 1;
@@ -516,7 +529,8 @@ describe("ConceptProgressTracker sign-in merge", () => {
     await tracker.initializeForUser("user-1");
 
     expect(persister.loadProgress).toHaveBeenCalledTimes(2);
-    expect(persister.events).toEqual(["subscribe:user-1"]);
+    expect(showUserError).toHaveBeenCalledTimes(1);
+    expect(persister.events).toEqual(["save:user-1", "subscribe:user-1"]);
     expect(tracker.getConceptStatus("grid")).toBe("completed");
   });
 
@@ -574,7 +588,10 @@ describe("ConceptProgressTracker sign-in merge", () => {
 
     await tracker.initializeForUser("user-1");
 
-    expect(persister.saveProgress).not.toHaveBeenCalled();
+    expect(persister.saveProgress).toHaveBeenCalledTimes(1);
+    expect(
+      persister.saveProgress.mock.calls[0]![1].overallProgress
+    ).toBeGreaterThan(0);
     expect(tracker.getProgress().totalCorrect).toBe(12);
     // The adopted document is mirrored into localStorage.
     const mirrored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
@@ -604,6 +621,285 @@ describe("ConceptProgressTracker sign-in merge", () => {
 
     expect(persister.saveProgress).toHaveBeenCalledTimes(1);
     expect(persister.lastSaveOwner()).toBe("user-1");
+  });
+
+  it("retains independent local and remote completions during first sign-in", async () => {
+    writeStoredProgress({
+      concepts: {
+        grid: conceptRecord("grid", {
+          status: "completed",
+          percentComplete: 100,
+        }),
+      },
+      completedConcepts: ["grid"],
+    });
+    const persister = createFakePersister(async () =>
+      remoteProgress({
+        concepts: new Map([
+          [
+            "hand-placements",
+            conceptRecord("hand-placements", {
+              status: "completed",
+              percentComplete: 100,
+            }),
+          ],
+        ]),
+        completedConcepts: new Set(["hand-placements"]),
+        lastUpdated: new Date("2027-01-01T00:00:00.000Z"),
+      })
+    );
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+
+    await tracker.initializeForUser("user-1");
+
+    expect([...tracker.getProgress().completedConcepts].sort()).toEqual([
+      "grid",
+      "hand-placements",
+    ]);
+    expect(tracker.getProgress().overallProgress).toBe(expectedOverall(2));
+    expect(persister.saveProgress).toHaveBeenCalledTimes(1);
+  });
+
+  it("merges a different lesson from a live snapshot without losing local completion", async () => {
+    const persister = createFakePersister(async () => null);
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+    await tracker.initializeForUser("user-1");
+    tracker.completeConcept("grid");
+    persister.emit(
+      "user-1",
+      remoteProgress({
+        completedConcepts: new Set(["hand-placements"]),
+        lastUpdated: new Date("2027-01-01T00:00:00.000Z"),
+      })
+    );
+
+    expect([...tracker.getProgress().completedConcepts].sort()).toEqual([
+      "grid",
+      "hand-placements",
+    ]);
+    expect(persister.saveProgress).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps a reset when an older device sends pre-reset progress", async () => {
+    const persister = createFakePersister(async () => null);
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+    await tracker.initializeForUser("user-1");
+    tracker.completeConcept("grid");
+    const stale = tracker.getProgress();
+    tracker.resetProgress();
+    persister.emit("user-1", stale);
+
+    expect(tracker.getProgress().completedConcepts.size).toBe(0);
+    expect(tracker.getConceptStatus("grid")).toBe("available");
+    expect(tracker.getProgress().resetAt).toBeDefined();
+  });
+
+  it("does not resurrect pre-reset local progress during initial sync", async () => {
+    writeStoredProgress({ completedConcepts: ["grid"] });
+    const persister = createFakePersister(async () =>
+      remoteProgress({
+        resetAt: new Date("2027-01-01T00:00:00.000Z"),
+        lastUpdated: new Date("2027-01-01T00:00:00.000Z"),
+      })
+    );
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+
+    await tracker.initializeForUser("user-1");
+
+    expect(tracker.getProgress().completedConcepts.size).toBe(0);
+    expect(persister.saveProgress).not.toHaveBeenCalled();
+  });
+
+  it("retains the remote current lesson when this browser has never opened one", async () => {
+    const persister = createFakePersister(async () =>
+      remoteProgress({
+        currentConceptId: "grid",
+        currentConceptVisitedAt: new Date("2026-09-01T00:00:00.000Z"),
+        concepts: new Map([["grid", conceptRecord("grid")]]),
+      })
+    );
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+
+    await tracker.initializeForUser("user-1");
+
+    expect(tracker.getProgress().currentConceptId).toBe("grid");
+  });
+
+  it("does not repair a snapshot just because record fields arrive in another order", () => {
+    const left = conceptRecord("grid", {
+      status: "completed",
+      percentComplete: 100,
+    });
+    const right = { ...left, status: left.status };
+    const reordered = Object.fromEntries(
+      Object.entries(right).reverse()
+    ) as unknown as ConceptProgress;
+    const a = remoteProgress({
+      concepts: new Map([["grid", left]]),
+      completedConcepts: new Set(["grid"]),
+    });
+    const b = remoteProgress({
+      concepts: new Map([["grid", reordered]]),
+      completedConcepts: new Set(["grid"]),
+    });
+
+    expect(hasUnsharedProgress(a, b)).toBe(false);
+  });
+
+  it("does not write again for an equivalent reordered realtime snapshot", async () => {
+    const record = conceptRecord("grid", {
+      status: "completed",
+      percentComplete: 100,
+    });
+    const initial = normalizeLearningProgress(
+      remoteProgress({
+        concepts: new Map([["grid", record]]),
+        completedConcepts: new Set(["grid"]),
+      })
+    );
+    const persister = createFakePersister(async () => initial);
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+    await tracker.initializeForUser("user-1");
+    const reordered = Object.fromEntries(
+      Object.entries(record).reverse()
+    ) as unknown as ConceptProgress;
+
+    persister.emit("user-1", {
+      ...initial,
+      concepts: new Map([["grid", reordered]]),
+    });
+
+    expect(persister.saveProgress).not.toHaveBeenCalled();
+  });
+
+  it("normalizes a legacy-only completion before persistence removes its old key", () => {
+    const normalized = normalizeLearningProgress(
+      remoteProgress({
+        concepts: new Map([
+          [
+            "hand-positions",
+            conceptRecord("hand-positions", { status: "completed" }),
+          ],
+        ]),
+        completedConcepts: new Set(["hand-positions"]),
+      })
+    );
+
+    expect(normalized.completedConcepts.has("hand-placements")).toBe(true);
+    expect(normalized.concepts.get("hand-placements")?.status).toBe(
+      "completed"
+    );
+    expect(normalized.concepts.has("hand-positions")).toBe(false);
+    expect(normalized.overallProgress).toBe(expectedOverall(1));
+  });
+
+  it("records the latest opened lesson, including a revisit, across reload", () => {
+    const tracker = new ConceptProgressTracker();
+    tracker.startConcept("grid");
+    tracker.startConcept("hand-placements");
+    expect(new ConceptProgressTracker().getProgress().currentConceptId).toBe(
+      "hand-placements"
+    );
+    tracker.startConcept("grid");
+    expect(new ConceptProgressTracker().getProgress().currentConceptId).toBe(
+      "grid"
+    );
+  });
+
+  it("reports a failed remote save while retaining local progress", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const showUserError = vi.fn();
+    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as ReturnType<
+      typeof getErrorHandler
+    >);
+    const persister = createFakePersister(async () => null);
+    persister.saveProgress.mockRejectedValue(new Error("offline"));
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+    await tracker.initializeForUser("user-1");
+
+    tracker.completeConcept("grid");
+    await vi.waitFor(() => expect(showUserError).toHaveBeenCalled());
+
+    expect(tracker.getConceptStatus("grid")).toBe("completed");
+    expect(showUserError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: { module: "learn", tab: "concepts", action: "saveProgress" },
+      })
+    );
+  });
+
+  it("reports a live sync failure to the learner", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const showUserError = vi.fn();
+    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as ReturnType<
+      typeof getErrorHandler
+    >);
+    const persister = createFakePersister(async () => null);
+    let onError: ((error: Error) => void) | undefined;
+    persister.subscribeToProgress.mockImplementation(
+      (
+        _userId: string,
+        _onNext: unknown,
+        onFailure: (error: Error) => void
+      ) => {
+        onError = onFailure;
+        return vi.fn();
+      }
+    );
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+    await tracker.initializeForUser("user-1");
+
+    onError?.(new Error("subscription unavailable"));
+
+    expect(showUserError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: { module: "learn", tab: "concepts", action: "saveProgress" },
+      })
+    );
+  });
+
+  it("does not show an old account's failed-save warning after sign-out", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const showUserError = vi.fn();
+    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as ReturnType<
+      typeof getErrorHandler
+    >);
+    const save = deferred<void>();
+    const persister = createFakePersister(async () => null);
+    persister.saveProgress.mockReturnValue(save.promise);
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+    await tracker.initializeForUser("user-1");
+    tracker.completeConcept("grid");
+    tracker.disconnect();
+
+    save.reject(new Error("offline"));
+    await save.promise.catch(() => {});
+    await Promise.resolve();
+    expect(showUserError).not.toHaveBeenCalled();
+  });
+
+  it("reports when local storage rejects the progress write", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const showUserError = vi.fn();
+    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as ReturnType<
+      typeof getErrorHandler
+    >);
+    const tracker = new ConceptProgressTracker();
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("quota");
+    });
+
+    tracker.completeConcept("grid");
+
+    expect(showUserError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: {
+          module: "learn",
+          tab: "concepts",
+          action: "saveLocalProgress",
+        },
+      })
+    );
   });
 });
 

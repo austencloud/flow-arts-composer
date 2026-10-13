@@ -21,6 +21,12 @@ vi.mock("$app/env", () => ({
   version: "test",
 }));
 
+vi.mock("#lib/shared/application/get-error-handler", () => ({
+  getErrorHandler: vi.fn(() => ({ showUserError: vi.fn() })),
+}));
+
+import { getErrorHandler } from "#lib/shared/application/get-error-handler";
+
 import {
   getActiveConceptId,
   getExperiencePersistence,
@@ -101,14 +107,46 @@ describe("experience-persistence legacy concept id fold", () => {
   });
 
   it("leaves state with no legacy id untouched", () => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ grid: { step: 4 } })
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid: { step: 4 } }));
 
     const state = getExperiencePersistence("grid").load();
 
     expect(state).toEqual({ step: 4 });
     expect(readStored()).toEqual({ grid: { step: 4 } });
+  });
+
+  it("warns once while step storage fails and allows a new warning after recovery", () => {
+    const showUserError = vi.fn();
+    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as ReturnType<
+      typeof getErrorHandler
+    >);
+    const realSetItem = Storage.prototype.setItem;
+    const failure = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new Error("quota exceeded");
+      });
+    try {
+      const persistence = getExperiencePersistence("grid");
+      persistence.saveStep(2);
+      persistence.saveStep(3);
+      expect(showUserError).toHaveBeenCalledTimes(1);
+      expect(showUserError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining("step could not be saved"),
+          severity: "warning",
+        })
+      );
+      failure.mockImplementation(realSetItem);
+      persistence.saveStep(4);
+      expect(persistence.load().step).toBe(4);
+      failure.mockImplementation(() => {
+        throw new Error("quota exceeded");
+      });
+      persistence.saveStep(5);
+      expect(showUserError).toHaveBeenCalledTimes(2);
+    } finally {
+      failure.mockRestore();
+    }
   });
 });
