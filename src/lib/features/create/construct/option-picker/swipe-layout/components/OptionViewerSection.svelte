@@ -21,6 +21,7 @@ Renders a section with:
     calculateOptimalColumnLayout,
   } from "../../services/option-grid-fit-calculator";
   import { onMount, untrack } from "svelte";
+  import { observeSettledResize } from "#lib/shared/panels/panel-motion.js";
   import { getLetterBorderColors } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
   import OptionPictographCell from "./OptionPictographCell.svelte";
   import SectionHeader from "./SectionHeader.svelte";
@@ -137,20 +138,13 @@ Renders a section with:
     // Capture reference for closure (TypeScript flow analysis)
     const container = sectionContainer;
 
-    const resizeObserver = new ResizeObserver(() => {
-      const rect = container.getBoundingClientRect();
-      availableWidth = rect.width;
-    });
-
-    resizeObserver.observe(container);
-
-    // Initial measurement
-    const rect = container.getBoundingClientRect();
-    availableWidth = rect.width;
-
-    return () => {
-      resizeObserver.disconnect();
+    const measureWidth = () => {
+      availableWidth = container.getBoundingClientRect().width;
     };
+
+    // Initial measurement; later ones wait out any tool panel slide.
+    measureWidth();
+    return observeSettledResize(container, measureWidth);
   });
 
   // Effect 2: Height measurement from viewport
@@ -173,18 +167,9 @@ Renders a section with:
       availableHeight = viewportRect.height - paddingTop - paddingBottom;
     };
 
-    const resizeObserver = new ResizeObserver(() => {
-      measureViewportHeight();
-    });
-
-    resizeObserver.observe(viewport);
-
-    // Initial measurement
+    // Initial measurement; later ones wait out any tool panel slide.
     measureViewportHeight();
-
-    return () => {
-      resizeObserver.disconnect();
-    };
+    return observeSettledResize(viewport, measureViewportHeight);
   });
 
   // Effect 3: Header height measurement
@@ -206,18 +191,9 @@ Renders a section with:
       actualHeaderHeight = headerRect.height;
     };
 
-    const resizeObserver = new ResizeObserver(() => {
-      measureHeaderHeight();
-    });
-
-    resizeObserver.observe(header);
-
-    // Initial measurement
+    // Initial measurement; later ones wait out any tool panel slide.
     measureHeaderHeight();
-
-    return () => {
-      resizeObserver.disconnect();
-    };
+    return observeSettledResize(header, measureHeaderHeight);
   });
 
   // Calculate optimal pictograph size and grid columns based on available space

@@ -30,6 +30,7 @@
     type PictographStageRequest,
   } from "#lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte.js";
   import { createScrollState } from "#lib/features/create/shared/workspace-panel/sequence-display/state/scroll-state.svelte.js";
+  import { observeSettledResize } from "#lib/shared/panels/panel-motion.js";
   import {
     calculateGridVerticalCenterOffset,
     calculateGridLayout,
@@ -730,14 +731,14 @@
     // guard when the first grid mounts.
     untrack(() => scrollState.setScrollContainer(scrollContainerRef));
 
-    const scrollResizeObserver = new ResizeObserver(() => {
-      untrack(() => scrollState.scheduleScrollbarCheck());
-    });
-
-    scrollResizeObserver.observe(scrollContainerRef);
+    // The overflow read forces layout; while the tool panel slides it waits
+    // for the settle instead of landing in every frame.
+    const stopObserving = observeSettledResize(scrollContainerRef, () =>
+      untrack(() => scrollState.scheduleScrollbarCheck())
+    );
 
     return () => {
-      scrollResizeObserver.disconnect();
+      stopObserving();
       untrack(() => scrollState.setScrollContainer(null));
     };
   });

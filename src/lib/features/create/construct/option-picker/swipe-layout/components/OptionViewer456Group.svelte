@@ -12,6 +12,7 @@ Matches the desktop version exactly:
   import { calculateOptimalLayout as calculateAspectLayout } from "#lib/features/create/construct/option-picker/services/aspect-layout-planner.js";
   import { getAnimator } from "#lib/shared/application/get-animator.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { observeSettledResize } from "#lib/shared/panels/panel-motion.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     Letter,
@@ -82,53 +83,34 @@ Matches the desktop version exactly:
     actualContainerWidth = containerWidth;
   });
   let containerElement: HTMLDivElement;
-  let resizeObserver: ResizeObserver | null = null;
 
   // Update actual container dimensions when the DOM element changes
   $effect(() => {
     if (containerElement && typeof ResizeObserver !== "undefined") {
-      // Clean up existing observer
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
-
-      // Observe the group-widget itself to get the actual available width after padding
+      // Measure the group-widget's content box: the space left after padding.
       const observeTarget = containerElement;
+      const measure = () => {
+        const styles = getComputedStyle(observeTarget);
+        const newWidth =
+          observeTarget.clientWidth -
+          (parseFloat(styles.paddingLeft) || 0) -
+          (parseFloat(styles.paddingRight) || 0);
+        const newHeight =
+          observeTarget.clientHeight -
+          (parseFloat(styles.paddingTop) || 0) -
+          (parseFloat(styles.paddingBottom) || 0);
 
-      // Create new observer - update immediately for snappy resize
-      resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const newWidth = entry.contentRect.width;
-          const newHeight = entry.contentRect.height;
-
-          if (newWidth > 0 && newWidth !== actualContainerWidth) {
-            actualContainerWidth = newWidth;
-          }
-          if (newHeight > 0 && newHeight !== actualContainerHeight) {
-            actualContainerHeight = newHeight;
-          }
+        if (newWidth > 0 && newWidth !== actualContainerWidth) {
+          actualContainerWidth = newWidth;
         }
-      });
-
-      // Start observing the group-widget container
-      resizeObserver.observe(observeTarget);
-
-      // Get initial measurement from group-widget container
-      const rect = observeTarget.getBoundingClientRect();
-      if (rect.width > 0) {
-        actualContainerWidth = rect.width;
-      }
-      if (rect.height > 0) {
-        actualContainerHeight = rect.height;
-      }
-
-      // Cleanup function
-      return () => {
-        if (resizeObserver) {
-          resizeObserver.disconnect();
-          resizeObserver = null;
+        if (newHeight > 0 && newHeight !== actualContainerHeight) {
+          actualContainerHeight = newHeight;
         }
       };
+
+      // Initial measurement; later ones wait out any tool panel slide.
+      measure();
+      return observeSettledResize(observeTarget, measure);
     }
 
     return undefined;
