@@ -42,6 +42,7 @@
   import HandMotionsIntroStage from "./HandMotionsIntroStage.svelte";
   import HandMotionsMapStage from "./HandMotionsMapStage.svelte";
   import HandPairsStage from "./HandPairsStage.svelte";
+  import { runHandGridSplit } from "./hand-grid-split";
 
   let {
     onComplete,
@@ -160,16 +161,31 @@
             ""
   );
 
+  /** The map and the two hands share one stage: the map splits into them. */
+  function isHandsStage(step: number): boolean {
+    return step === MAP_STAGE || step === PAIRS_STAGE;
+  }
+  const stageKey = $derived(isHandsStage(stepIndex) ? MAP_STAGE : stepIndex);
+
   function goToStep(next: number): void {
     const clamped = Math.min(BOARD_STAGE, Math.max(INTRO_STAGE, next));
     if (clamped === stepIndex) return;
     const revision = ++layoutRevision;
-    const captured = stageMotion.capture();
-    stepIndex = clamped;
-    if (captured) {
-      void tick().then(() => {
-        if (revision === layoutRevision) stageMotion.play();
-      });
+    if (isHandsStage(stepIndex) && isHandsStage(clamped)) {
+      stageMotion.cancel();
+      runHandGridSplit(
+        experienceElement,
+        clamped === PAIRS_STAGE ? "split" : "merge",
+        () => (stepIndex = clamped)
+      );
+    } else {
+      const captured = stageMotion.capture();
+      stepIndex = clamped;
+      if (captured) {
+        void tick().then(() => {
+          if (revision === layoutRevision) stageMotion.play();
+        });
+      }
     }
     if (viewMode !== "scroll") {
       persistence.saveStep(stepIndex + 1);
@@ -269,7 +285,7 @@
     {/snippet}
 
     {#snippet artifact()}
-      <Crossfade key={stepIndex} duration={DURATION.emphasis}>
+      <Crossfade key={stageKey} duration={DURATION.emphasis}>
         {#if stepIndex === INTRO_STAGE}
           <HandMotionsIntroStage />
         {:else if stepIndex === MAP_STAGE}
