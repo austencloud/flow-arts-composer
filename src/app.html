@@ -158,18 +158,24 @@
     <!-- Composer handoff. Public pages open the app with a full reload (they
          boot without Firebase), so the two documents meet in a cross-document
          view transition (opted in by the critical <style> below). When a
-         public page leaves for /create with its hero sequence on screen, that
-         stage morphs into the boot screen's mark. The shared name is set only
-         inside these two listeners, and cleared after, so no other navigation
-         inherits it. Outside the app-only blocks: "/" needs pageswap too. -->
+         public page leaves for /create through a Composer link, the link the
+         visitor pressed travels to the centre and becomes the boot capsule
+         while the page recedes behind it. The shared name is set only inside
+         these two listeners, and cleared after, so no other navigation
+         inherits it. Outside the app-only blocks: "/" needs pageswap too.
+         The arrival leaves window.__tkaHandoff and tka:handoff performance
+         marks for verification; localStorage "tka-handoff-slow" (a number)
+         stretches the timing for frame-by-frame review. Nothing is logged. -->
     <script>
       (function () {
         var KEY = "tka-composer-handoff";
-        var NAME = "composer-stage";
+        var NAME = "composer-cta";
+        var TYPE = "tka-handoff";
         var named = null;
-        // Safari's pageswap may arrive without event.activation; fall back to
-        // the link the visitor just activated.
-        var lastHref = "";
+        // The link the visitor just activated (keyboard Enter fires click
+        // too). Safari's pageswap may arrive without event.activation, so its
+        // href is also the fallback destination.
+        var lastLink = null;
 
         function reducedMotion() {
           return Boolean(
@@ -181,23 +187,68 @@
           if (named) named.style.viewTransitionName = "";
           named = null;
         }
-        function onScreen(element) {
+        function viewportRect(element) {
           var box = element.getBoundingClientRect();
+          return {
+            x: box.left,
+            y: box.top,
+            w: box.width,
+            h: box.height,
+            vw: window.innerWidth,
+            vh: window.innerHeight,
+          };
+        }
+        function onScreen(rect) {
           return (
-            box.width > 0 &&
-            box.height > 0 &&
-            box.bottom > 0 &&
-            box.right > 0 &&
-            box.top < window.innerHeight &&
-            box.left < window.innerWidth
+            rect.w > 0 &&
+            rect.h > 0 &&
+            rect.y + rect.h > 0 &&
+            rect.x + rect.w > 0 &&
+            rect.y < rect.vh &&
+            rect.x < rect.vw
           );
+        }
+        function opensComposer(href) {
+          try {
+            var url = new URL(href, window.location.href);
+            return (
+              url.origin === window.location.origin &&
+              url.pathname === "/create"
+            );
+          } catch (e) {
+            return false;
+          }
+        }
+        function addType(transition) {
+          try {
+            transition.types.add(TYPE);
+          } catch (e) {}
+        }
+        // Verification only: stretch the handoff timing by this factor.
+        function applySlowMotion() {
+          var factor = NaN;
+          try {
+            factor = parseFloat(localStorage.getItem("tka-handoff-slow"));
+          } catch (e) {}
+          if (factor > 0 && isFinite(factor)) {
+            document.documentElement.style.setProperty(
+              "--tka-handoff-slow",
+              String(factor)
+            );
+          }
+        }
+        function stamp(name) {
+          try {
+            performance.mark(name);
+          } catch (e) {}
+          return performance.now();
         }
 
         document.addEventListener(
           "click",
           function (event) {
-            var link = event.target.closest && event.target.closest("a[href]");
-            lastHref = link ? link.href : "";
+            lastLink =
+              (event.target.closest && event.target.closest("a[href]")) || null;
           },
           true
         );
@@ -213,52 +264,97 @@
             return;
           }
           var entry = event.activation && event.activation.entry;
-          var destination;
-          try {
-            destination = new URL((entry && entry.url) || lastHref);
-          } catch (e) {
-            return;
-          }
+          var href = (entry && entry.url) || (lastLink && lastLink.href) || "";
+          if (!opensComposer(href)) return;
+          applySlowMotion();
+          var source = null;
           if (
-            destination.origin !== window.location.origin ||
-            destination.pathname !== "/create"
+            lastLink &&
+            lastLink.isConnected &&
+            opensComposer(lastLink.href)
           ) {
-            return;
+            var rect = viewportRect(lastLink);
+            if (onScreen(rect)) source = rect;
           }
-          var stage = null;
-          var demos = document.querySelectorAll(".hero-demo");
-          for (var i = 0; i < demos.length && !stage; i++) {
-            if (onScreen(demos[i])) stage = demos[i];
-          }
-          if (stage) {
-            stage.style.viewTransitionName = NAME;
-            named = stage;
+          if (source) {
+            lastLink.style.viewTransitionName = NAME;
+            named = lastLink;
+            addType(event.viewTransition);
           }
           try {
-            sessionStorage.setItem(KEY, stage ? "morph" : "fade");
+            sessionStorage.setItem(
+              KEY,
+              JSON.stringify({
+                mode: source ? "morph" : "fade",
+                at: Date.now(),
+                source: source,
+              })
+            );
           } catch (e) {}
         });
 
         window.addEventListener("pagereveal", function (event) {
           // Also runs when a page returns from the back/forward cache.
           clearName();
-          var mode = null;
+          var record = null;
           try {
-            mode = sessionStorage.getItem(KEY);
+            var saved = sessionStorage.getItem(KEY);
             sessionStorage.removeItem(KEY);
+            record = saved ? JSON.parse(saved) : null;
           } catch (e) {}
-          if (!event.viewTransition) return;
-          if (reducedMotion()) {
-            event.viewTransition.skipTransition();
+          var transition = event.viewTransition || null;
+          if (transition && reducedMotion()) {
+            transition.skipTransition();
             return;
           }
-          if (mode !== "morph") return;
+          if (!record || (record.mode !== "morph" && record.mode !== "fade")) {
+            return;
+          }
+          applySlowMotion();
           var screen = document.getElementById("app-loading");
-          var mark = document.getElementById("boot-mark");
-          if (!screen || !mark || screen.style.display === "none") return;
-          mark.style.viewTransitionName = NAME;
-          named = mark;
-          event.viewTransition.finished.then(clearName, clearName);
+          var capsule = document.getElementById("boot-capsule");
+          var shown = Boolean(
+            screen && capsule && screen.style.display !== "none"
+          );
+
+          // Instrumentation: readyMs and finishedMs count from the reveal.
+          var revealedAt = stamp("tka:handoff:reveal");
+          var handoff = {
+            mode: record.mode,
+            swapToRevealMs: Date.now() - record.at,
+            source: record.source || null,
+            target: shown ? viewportRect(capsule) : null,
+            readyMs: null,
+            finishedMs: null,
+          };
+          window.__tkaHandoff = handoff;
+          if (transition) {
+            transition.ready.then(
+              function () {
+                handoff.readyMs = stamp("tka:handoff:ready") - revealedAt;
+              },
+              function () {}
+            );
+            transition.finished.then(
+              function () {
+                handoff.finishedMs = stamp("tka:handoff:finished") - revealedAt;
+                try {
+                  performance.measure(
+                    "tka:handoff",
+                    "tka:handoff:reveal",
+                    "tka:handoff:finished"
+                  );
+                } catch (e) {}
+              },
+              function () {}
+            );
+          }
+
+          if (!transition || record.mode !== "morph" || !shown) return;
+          capsule.style.viewTransitionName = NAME;
+          named = capsule;
+          addType(transition);
+          transition.finished.then(clearName, clearName);
         });
       })();
     </script>
@@ -1222,8 +1318,11 @@
          full-reload handoff into Composer always load. The platform skips
          reloads; soft SvelteKit navigations never use this rule. The type
          scopes the timing below to full-document navigations, so same-page
-         transitions keep their own root animations. The composer-stage name
-         exists only inside the pageswap/pagereveal listeners in <head>. */
+         transitions keep their own root animations. The composer-cta name
+         and the tka-handoff type exist only inside the pageswap/pagereveal
+         listeners in <head>: the pressed Composer link travels to the boot
+         capsule while the page it came from recedes. --tka-handoff-slow is a
+         verification-only multiplier those listeners set from localStorage. */
       @view-transition {
         navigation: auto;
         types: tka-page;
@@ -1233,14 +1332,41 @@
         animation-duration: 350ms;
       }
 
-      ::view-transition-group(composer-stage) {
-        animation-duration: 450ms;
+      html:active-view-transition-type(tka-handoff)::view-transition-old(root) {
+        animation: tka-recede calc(350ms * var(--tka-handoff-slow, 1))
+          cubic-bezier(0.4, 0, 0.2, 1) both;
+      }
+
+      html:active-view-transition-type(tka-handoff)::view-transition-new(root) {
+        animation: tka-arrive calc(350ms * var(--tka-handoff-slow, 1))
+          cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
+      @keyframes tka-recede {
+        to {
+          opacity: 0;
+          transform: scale(0.98);
+        }
+      }
+
+      @keyframes tka-arrive {
+        from {
+          opacity: 0;
+        }
+      }
+
+      /* Keep the group's generated geometry animation: it carries the pill
+         from the button's box to the capsule's box. */
+      ::view-transition-group(composer-cta) {
+        animation-duration: calc(420ms * var(--tka-handoff-slow, 1));
         animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
       }
 
-      ::view-transition-old(composer-stage),
-      ::view-transition-new(composer-stage) {
-        animation-duration: 350ms;
+      ::view-transition-old(composer-cta),
+      ::view-transition-new(composer-cta) {
+        animation-duration: calc(260ms * var(--tka-handoff-slow, 1));
+        /* Both pills are opaque: a normal crossfade avoids plus-lighter bloom. */
+        mix-blend-mode: normal;
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -1272,9 +1398,9 @@
     </style>
 
     <!-- tka-root-app-only:start -->
-    <!-- Hold the first render until the boot mark is parsed, so a
+    <!-- Hold the first render until the boot capsule is parsed, so a
          cross-document view transition always finds its morph target. -->
-    <link rel="expect" href="#boot-mark" blocking="render" />
+    <link rel="expect" href="#boot-capsule" blocking="render" />
     <style>
       /* The boot screen continues the public site: the same CSS sky the
          marketing chrome paints first (MarketingChrome .mkt-fallback), so the
@@ -1408,104 +1534,63 @@
         pointer-events: none;
       }
 
-      /* The centrepiece: the TKA wordmark (Fraunces 700 italic glyph outlines,
-         as SiteHeader sets it) over the diamond grid. It carries the
-         composer-stage view-transition name on arrival from a public page. */
-      #boot-mark {
-        display: block;
-        width: 90px;
-        height: 96px;
-        overflow: visible;
-        animation: logo-breathe 3s ease-in-out infinite;
-      }
-
-      #boot-mark .boot-grid {
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1px;
-      }
-
-      #boot-mark .boot-grid-outline {
-        opacity: 0.28;
-      }
-
-      #boot-mark .boot-grid-axes {
-        opacity: 0.4;
-      }
-
-      #boot-mark .boot-grid-points {
-        fill: #c0a3ff;
-        stroke: none;
-      }
-
-      #app-loading[data-surface="light"] .boot-wordmark {
-        fill: url(#boot-mark-ink-light);
-      }
-
-      #app-loading[data-surface="light"] .boot-grid-points {
-        fill: #5b4fd6;
-      }
-
-      @media (min-width: 768px) {
-        #boot-mark {
-          width: 120px;
-          height: 128px;
-        }
-      }
-
-      @keyframes logo-breathe {
-        0%,
-        100% {
-          opacity: 0.85;
-          transform: scale(1);
-        }
-        50% {
-          opacity: 1;
-          transform: scale(1.03);
-        }
-      }
-
-      .loading-bar-track {
-        width: clamp(200px, 40vw, 360px);
-        height: 3px;
-        background: rgba(255, 255, 255, 0.08);
-        border-radius: 3px;
+      /* The only thing on the screen: the capsule the pressed Composer button
+         lands as. Its brand-gradient fill is the byte-calibrated progress, so
+         the fill moving is the screen's only motion. It carries the
+         composer-cta view-transition name on arrival from a public page. */
+      .boot-capsule {
+        position: relative;
         overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        width: max-content;
+        min-width: 240px;
+        max-width: min(360px, 88vw);
+        height: 48px;
+        padding: 0 24px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.16),
+          0 18px 40px rgba(0, 0, 0, 0.35);
+        white-space: nowrap;
       }
 
-      #app-loading[data-surface="light"] .loading-bar-track {
-        background: rgba(15, 23, 42, 0.1);
+      #app-loading[data-surface="light"] .boot-capsule {
+        background: rgba(79, 107, 239, 0.45);
       }
 
-      .loading-bar-fill {
+      .boot-capsule-fill {
+        position: absolute;
+        inset: 0;
+        right: auto;
         width: 5%;
-        height: 100%;
         background: linear-gradient(90deg, #6f8cff, #8b6cff);
-        border-radius: 3px;
         transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1);
       }
 
-      #app-loading p {
-        margin: 0;
+      /* The header .cta pill's type: white, 600, about 14px. */
+      .boot-capsule-label {
+        position: relative;
+        z-index: 1;
+        color: #fff;
         font-family:
           system-ui,
           -apple-system,
           sans-serif;
-        font-size: 13px;
-        color: inherit;
-        letter-spacing: 0.02em;
-        transition: opacity 200ms ease;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        transition: opacity 200ms;
       }
 
       @media (prefers-reduced-motion: reduce) {
         #app-loading,
-        #app-loading p,
-        .loading-bar-fill {
+        .boot-capsule-label,
+        .boot-capsule-fill {
           transition: none;
-        }
-        #boot-mark {
-          animation: none;
-          opacity: 1;
         }
       }
 
@@ -1533,47 +1618,16 @@
       aria-valuemin="0"
       aria-valuemax="100"
     >
-      <!-- TKA wordmark: Fraunces 700 italic outlines (SiteHeader's .logo-text,
-           letter-spacing 0.04em), inlined so it paints before any font loads.
-           Below it, the diamond grid: four points and hairline axes. -->
-      <svg
-        id="boot-mark"
-        viewBox="0 0 120 128"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <defs>
-          <linearGradient id="boot-mark-ink" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#6f8cff" />
-            <stop offset="1" stop-color="#c0a3ff" />
-          </linearGradient>
-          <linearGradient id="boot-mark-ink-light" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#4f6bef" />
-            <stop offset="1" stop-color="#7a55f0" />
-          </linearGradient>
-        </defs>
-        <path
-          class="boot-wordmark"
-          fill="url(#boot-mark-ink)"
-          transform="translate(25.14 28.47) scale(0.015633)"
-          d="M546 -1427Q612 -1427 686 -1415Q759 -1404 834 -1387Q908 -1370 976 -1352Q1043 -1335 1098 -1323Q1153 -1312 1188 -1312Q1217 -1312 1235 -1324Q1252 -1336 1258 -1361Q1262 -1378 1262 -1398Q1261 -1419 1263 -1445Q1270 -1496 1303 -1530Q1336 -1565 1401 -1565Q1455 -1565 1491 -1526Q1526 -1487 1525 -1412Q1524 -1303 1455 -1239Q1385 -1175 1269 -1175Q1221 -1175 1150 -1189Q1079 -1203 998 -1224Q916 -1245 835 -1265Q754 -1286 685 -1300Q615 -1315 568 -1315Q507 -1315 478 -1286Q448 -1258 447 -1205Q446 -1180 451 -1159Q456 -1139 462 -1118Q467 -1098 467 -1071Q466 -1020 430 -984Q394 -949 335 -949Q266 -949 225 -996Q183 -1044 186 -1128Q188 -1211 231 -1279Q273 -1347 353 -1387Q432 -1427 546 -1427ZM774 -197Q765 -166 771 -151Q777 -136 794 -130L851 -113Q893 -94 892 -61Q891 -30 869 -15Q847 0 811 0L310 0Q273 0 258 -14Q242 -29 242 -52Q243 -77 258 -92Q272 -108 295 -118L352 -133Q369 -138 383 -158Q397 -179 411 -219Q422 -253 443 -323Q463 -393 489 -485Q515 -577 544 -681Q573 -785 602 -889Q630 -993 656 -1085Q681 -1177 701 -1247Q720 -1317 730 -1351L1075 -1285Q1062 -1248 1042 -1178Q1022 -1108 997 -1017Q972 -927 945 -826Q917 -725 890 -626Q863 -527 840 -440Q817 -353 800 -289Q782 -225 774 -197ZM1877 -183Q1873 -164 1882 -152Q1891 -140 1909 -133L1953 -119Q1972 -109 1985 -96Q1998 -84 1998 -61Q1998 -33 1978 -16Q1957 0 1919 0L1432 0Q1392 0 1379 -15Q1365 -30 1365 -54Q1364 -78 1380 -94Q1395 -110 1416 -117L1467 -130Q1491 -138 1504 -153Q1516 -169 1526 -200Q1536 -234 1554 -297Q1571 -360 1594 -442Q1616 -525 1640 -616Q1664 -708 1688 -799Q1712 -891 1733 -973Q1754 -1055 1770 -1118Q1785 -1182 1793 -1215Q1798 -1240 1791 -1253Q1783 -1266 1762 -1273L1716 -1285Q1694 -1295 1684 -1307Q1673 -1319 1673 -1338Q1673 -1366 1695 -1383Q1717 -1400 1755 -1400L2248 -1400Q2280 -1400 2295 -1385Q2309 -1371 2309 -1347Q2309 -1322 2294 -1308Q2278 -1295 2252 -1284L2202 -1270Q2183 -1264 2170 -1250Q2156 -1236 2146 -1206Q2135 -1170 2116 -1101Q2097 -1033 2073 -944Q2049 -855 2023 -757Q1997 -660 1973 -565Q1948 -471 1928 -390Q1907 -310 1894 -255Q1880 -200 1877 -183ZM2088 -686L2361 -934L2593 -319Q2612 -268 2632 -241Q2652 -214 2686 -214Q2706 -214 2722 -224Q2738 -235 2756 -256Q2785 -277 2809 -271Q2826 -266 2836 -247Q2845 -229 2830 -195Q2803 -126 2754 -76Q2705 -26 2642 1Q2579 28 2508 28Q2417 28 2372 -12Q2326 -52 2293 -140ZM1883 -390L1845 -495L2580 -1265Q2638 -1325 2685 -1361Q2731 -1398 2776 -1414Q2820 -1431 2869 -1431Q2951 -1431 2994 -1383Q3037 -1336 3030 -1264Q3022 -1184 2973 -1146Q2923 -1108 2851 -1108Q2806 -1108 2770 -1119Q2734 -1131 2691 -1131Q2646 -1131 2600 -1108Q2554 -1086 2508 -1037ZM3299 -322Q3252 -245 3261 -196Q3269 -147 3316 -128L3355 -114Q3376 -104 3385 -90Q3393 -77 3393 -63Q3393 -34 3372 -17Q3351 0 3316 0L2992 0Q2957 0 2939 -14Q2921 -29 2921 -54Q2921 -78 2935 -97Q2949 -116 2992 -139Q3029 -158 3072 -213Q3115 -269 3158 -344L3577 -1036Q3706 -1235 3854 -1330Q4001 -1426 4162 -1426Q4225 -1426 4251 -1408Q4277 -1390 4277 -1362Q4277 -1343 4269 -1329Q4260 -1315 4239 -1303Q4195 -1286 4170 -1251Q4145 -1216 4144 -1147Q4144 -1112 4143 -1053Q4142 -995 4141 -921Q4139 -848 4138 -767Q4137 -687 4136 -608Q4134 -529 4134 -459Q4133 -390 4133 -338Q4133 -287 4133 -261Q4133 -222 4138 -196Q4142 -170 4158 -152Q4173 -135 4206 -117Q4238 -95 4238 -61Q4238 -35 4218 -17Q4197 0 4160 0L3677 0Q3642 0 3628 -16Q3614 -32 3614 -55Q3614 -79 3629 -94Q3644 -109 3673 -121L3718 -132Q3750 -143 3764 -175Q3778 -207 3779 -255Q3780 -291 3782 -348Q3783 -405 3785 -477Q3787 -549 3789 -628Q3791 -708 3793 -789Q3795 -871 3796 -947Q3797 -1023 3799 -1087Q3800 -1152 3800 -1197L3876 -1176Q3854 -1165 3827 -1143Q3800 -1122 3766 -1081Q3732 -1041 3686 -971ZM3294 -442L3316 -548L3884 -548L3875 -442Z"
-        />
-        <g class="boot-grid">
-          <path class="boot-grid-outline" d="M60 50L97 87L60 124L23 87Z" />
-          <path class="boot-grid-axes" d="M60 50V124M23 87H97" />
-          <g class="boot-grid-points">
-            <circle cx="60" cy="50" r="2.6" />
-            <circle cx="97" cy="87" r="2.6" />
-            <circle cx="60" cy="124" r="2.6" />
-            <circle cx="23" cy="87" r="2.6" />
-            <circle cx="60" cy="87" r="1.6" />
-          </g>
-        </g>
-      </svg>
-      <div class="loading-bar-track">
-        <div class="loading-bar-fill" id="loading-bar-fill"></div>
+      <!-- The pressed Composer button lands here (see the handoff script in
+           <head>). The fill is the progress bar; the label is the status. -->
+      <div id="boot-capsule" class="boot-capsule">
+        <div class="boot-capsule-fill" id="loading-bar-fill"></div>
+        <span
+          class="boot-capsule-label"
+          id="loading-text"
+          aria-live="polite"
+        ></span>
       </div>
-      <p id="loading-text" aria-live="polite"></p>
     </div>
     <script>
       // Landing visitors: hide loading bar immediately and skip all loading bar logic
