@@ -56,8 +56,8 @@
     targetScale?: number;
     /**
      * The targets sit straight on the background scene rather than on a
-     * pictograph. Each ring then carries its own contrast: a tinted disc,
-     * the full hand colour and a thin light edge, so it reads on any image.
+     * pictograph. Each ring then takes its hand's hue at a lightness the
+     * background calls for, with a halo in the opposite tone.
      */
     onScene?: boolean;
   }
@@ -398,32 +398,53 @@
     stroke: var(--prop-red, #ed1c24);
   }
 
+  /* On the scene, each ring takes its hand's hue at a lightness the
+     background calls for (--theme-scene-mark-*, set by the theme calculator),
+     with a halo in the opposite tone. The fill stays faint so the prop
+     beneath the ring shows through. */
   .on-scene .hit-target.phase-blue:not(.disabled) {
-    --ring: var(--prop-blue, #2e8bf0);
+    --ring-hand: var(--prop-blue, #2e8bf0);
   }
 
   .on-scene .hit-target.phase-red:not(.disabled) {
-    --ring: var(--prop-red, #ed1c24);
+    --ring-hand: var(--prop-red, #ed1c24);
+  }
+
+  .on-scene .hit-target:not(.disabled) {
+    --ring: var(--ring-hand);
   }
 
   .on-scene .hit-target.phase-blue:not(.disabled):not(:focus-visible),
   .on-scene .hit-target.phase-red:not(.disabled):not(:focus-visible) {
-    fill: color-mix(in srgb, var(--ring) 24%, rgb(10 12 20 / 0.14));
+    fill: color-mix(in srgb, var(--ring) 10%, transparent);
     stroke: var(--ring);
-    stroke-width: 3.5;
-    filter: drop-shadow(0 0 1.2px rgb(255 255 255 / 0.95))
-      drop-shadow(0 0 5px rgb(0 0 0 / 0.45));
+    stroke-width: 3;
+    filter: drop-shadow(0 0 3px var(--theme-scene-mark-halo, rgb(0 0 0 / 0.6)));
+  }
+
+  @supports (color: oklch(from red l c h)) {
+    .on-scene .hit-target:not(.disabled) {
+      --ring: oklch(
+        from var(--ring-hand)
+          clamp(
+            var(--theme-scene-mark-l-min, 0.55),
+            l,
+            var(--theme-scene-mark-l-max, 1)
+          )
+          c h
+      );
+    }
   }
 
   .on-scene .hit-target.phase-blue:hover:not(.disabled),
   .on-scene .hit-target.phase-red:hover:not(.disabled) {
-    fill: color-mix(in srgb, var(--ring) 36%, rgb(10 12 20 / 0.14));
-    stroke-width: 4.5;
+    fill: color-mix(in srgb, var(--ring) 22%, transparent);
+    stroke-width: 4;
   }
 
   .on-scene .hit-target.is-selected.phase-blue:not(.disabled),
   .on-scene .hit-target.is-selected.phase-red:not(.disabled) {
-    fill: color-mix(in srgb, var(--ring) 42%, rgb(10 12 20 / 0.14));
+    fill: color-mix(in srgb, var(--ring) 28%, transparent);
     stroke-width: 4;
   }
 

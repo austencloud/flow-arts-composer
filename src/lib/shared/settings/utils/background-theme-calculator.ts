@@ -314,6 +314,50 @@ export function ensureAccentContrast(
   return best;
 }
 
+/** WCAG minimum for non-text UI marks such as a touch ring against its backdrop. */
+const SCENE_MARK_CONTRAST = 3;
+/** Keeps a lifted or deepened hand colour from washing out to white or black. */
+const SCENE_MARK_LIGHTNESS_LIMIT = { min: 0.3, max: 0.85 };
+
+export interface SceneMarkTone {
+  /** OKLCH lightness floor for marks drawn straight on the scene. */
+  minLightness: number;
+  /** OKLCH lightness ceiling for marks drawn straight on the scene. */
+  maxLightness: number;
+  /** Soft halo in the tone opposite the mark, for busy patches of an image. */
+  halo: string;
+}
+
+/**
+ * How light or dark a coloured mark must be to read straight on this
+ * background, such as Assemble's touch rings in a hand's colour. The mark
+ * keeps its own hue and chroma; CSS clamps its OKLCH lightness into this band.
+ * Dark scenes get a floor high enough for 3:1 against the scene's average
+ * luminance, light scenes a ceiling low enough for the same. A neutral grey's
+ * OKLCH lightness is the cube root of its relative luminance, which turns the
+ * WCAG luminance bound into a lightness bound.
+ */
+export function sceneMarkTone(luminance: number): SceneMarkTone {
+  const { min, max } = SCENE_MARK_LIGHTNESS_LIMIT;
+  const round = (value: number) => Math.round(value * 1000) / 1000;
+  if (getThemeMode(luminance) === "dark") {
+    const needed = SCENE_MARK_CONTRAST * (luminance + 0.05) - 0.05;
+    return {
+      minLightness: round(Math.min(max, Math.max(min, Math.cbrt(needed)))),
+      maxLightness: 1,
+      halo: "rgb(0 0 0 / 0.6)",
+    };
+  }
+  const needed = (luminance + 0.05) / SCENE_MARK_CONTRAST - 0.05;
+  return {
+    minLightness: 0,
+    maxLightness: round(
+      Math.max(min, Math.min(max, Math.cbrt(Math.max(0, needed))))
+    ),
+    halo: "rgb(255 255 255 / 0.7)",
+  };
+}
+
 function isValidHex(color?: string): color is string {
   return !!color && /^#[0-9a-fA-F]{6}$/.test(color);
 }
@@ -566,6 +610,17 @@ export function applyThemeFromColors(
   );
   root.style.setProperty("--theme-transition", "150ms ease-out");
 
+  const markTone = sceneMarkTone(luminance);
+  root.style.setProperty(
+    "--theme-scene-mark-l-min",
+    String(markTone.minLightness)
+  );
+  root.style.setProperty(
+    "--theme-scene-mark-l-max",
+    String(markTone.maxLightness)
+  );
+  root.style.setProperty("--theme-scene-mark-halo", markTone.halo);
+
   // Danger zone theme variables (for destructive actions)
   root.style.setProperty("--theme-danger-bg", dangerTheme.bg);
   root.style.setProperty("--theme-danger-hover-bg", dangerTheme.hoverBg);
@@ -607,12 +662,24 @@ export function applyThemeFromColors(
 
   // Domain-specific prop colors (constant)
   root.style.setProperty("--prop-blue", "var(--user-left-color, #2e3192)");
-  root.style.setProperty("--prop-blue-bg", "rgba(var(--user-left-rgb, 46, 49, 146), 0.15)");
-  root.style.setProperty("--prop-blue-border", "rgba(var(--user-left-rgb, 46, 49, 146), 0.4)");
+  root.style.setProperty(
+    "--prop-blue-bg",
+    "rgba(var(--user-left-rgb, 46, 49, 146), 0.15)"
+  );
+  root.style.setProperty(
+    "--prop-blue-border",
+    "rgba(var(--user-left-rgb, 46, 49, 146), 0.4)"
+  );
   root.style.setProperty("--prop-blue-text", "var(--user-left-color, #818cf8)");
   root.style.setProperty("--prop-red", "var(--user-right-color, #ed1c24)");
-  root.style.setProperty("--prop-red-bg", "rgba(var(--user-right-rgb, 237, 28, 36), 0.15)");
-  root.style.setProperty("--prop-red-border", "rgba(var(--user-right-rgb, 237, 28, 36), 0.4)");
+  root.style.setProperty(
+    "--prop-red-bg",
+    "rgba(var(--user-right-rgb, 237, 28, 36), 0.15)"
+  );
+  root.style.setProperty(
+    "--prop-red-border",
+    "rgba(var(--user-right-rgb, 237, 28, 36), 0.4)"
+  );
   root.style.setProperty("--prop-red-text", "var(--user-right-color, #f87171)");
 
   // Feature accent colors (constant) - for branding different app areas
