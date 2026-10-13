@@ -33,6 +33,7 @@
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
   import { logConstructImmediateUndo } from "../../construct/services/construct-analytics";
+  import { isStartPlacementMorphCapturing } from "../../construct/start-placement-picker/services/start-placement-morph";
 
   type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
 
@@ -350,7 +351,15 @@
     // Take the height from the observer entry. Reading offsetHeight here
     // forced a layout whenever an earlier observer callback had dirtied the
     // page, as a remounting Generate panel does. The first entry arrives
-    // before the first paint, so no synchronous read is needed on mount.
+    // before the first paint, so no synchronous read is needed on mount —
+    // except under the start placement morph, which captures its landing
+    // frame before any observer runs: without the bar's padding the start
+    // cell would be captured lower than where it settles.
+    if (isStartPlacementMorphCapturing()) {
+      buttonPanelHeight = Math.round(
+        buttonPanelElement.getBoundingClientRect().height
+      );
+    }
     const resizeObserver = new ResizeObserver((entries) => {
       const box = entries.at(-1)?.borderBoxSize?.[0];
       if (box) buttonPanelHeight = Math.round(box.blockSize);
@@ -559,6 +568,12 @@
 
     /* View Transitions API - use unique name to avoid duplicates */
     view-transition-name: create-workspace-layout;
+  }
+
+  /* The start placement morph flies one card over a live workspace slide.
+     Captured, this layout would freeze into a crossfading picture instead. */
+  :global(html.construct-start-morph-active) .layout-wrapper {
+    view-transition-name: none;
   }
 
   /* Shared container styles */

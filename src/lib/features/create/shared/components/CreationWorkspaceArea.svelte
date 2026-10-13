@@ -23,6 +23,7 @@
   import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import { onDestroy, untrack } from "svelte";
+  import { isStartPlacementMorphCapturing } from "../../construct/start-placement-picker/services/start-placement-morph";
 
   const ctx = getCreateModuleContext();
   const { CreateModuleState, panelState, layout } = ctx;
@@ -233,7 +234,13 @@
 <div
   class="workspace-panel-wrapper"
   style:padding-bottom="{buttonPanelHeight}px"
-  in:opaqueFade={{ duration: DURATION.dramatic, delay: DURATION.normal }}
+  in:opaqueFade={{
+    // The chosen start card flies into this panel's start cell, and its
+    // landing image carries this wrapper's opacity: fading in here would fade
+    // the card out mid-flight. The panel's slide carries the entrance instead.
+    duration: isStartPlacementMorphCapturing() ? 0 : DURATION.dramatic,
+    delay: DURATION.normal,
+  }}
   out:opaqueFade={{ duration: DURATION.emphasis }}
 >
   <!-- Duration pattern preview renders inside the editable workspace timeline
