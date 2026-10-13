@@ -1,9 +1,16 @@
 #!/usr/bin/env sh
-# NOT ACTIVE — see the header of .husky/pre-commit. `core.hooksPath` is unset, so
-# git runs `.git/hooks/pre-push` instead. That copy carries the LFS hook and the
-# Codex-mirror check; the unit-test gate below is NOT in it and has never run on
-# a push. Verified 2026-08-16.
+# Mostly inactive: `core.hooksPath` is unset in the primary checkout, so git runs
+# `.git/hooks/pre-push` there (LFS hook and Codex-mirror check, no unit-test gate).
+# Worktrees where `pnpm install` ran husky get `core.hooksPath=.husky` in their
+# config.worktree and DO run this file (seen 2026-10-13).
 . "$(dirname -- "$0")/_/husky.sh"
+
+# Pushes to the d2 remote carry scratch refs for jobs that run on d2
+# (scripts/d2-run.ps1, d2-gate). Running the full suite here first defeats
+# the point of sending the work to d2, so only origin gets the gate.
+if [ "$1" = "d2" ]; then
+  exit 0
+fi
 
 # Block non-admin pushes to main
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
