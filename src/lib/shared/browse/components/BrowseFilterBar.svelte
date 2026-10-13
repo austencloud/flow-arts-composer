@@ -362,18 +362,20 @@ Reads from / writes to a headless BrowseEngine instance.
 
   /* --- Active filter chips (inline with the selector row) --- */
 
+  /* A solid tint and a strong border: at 12% the chips vanished into the
+     scene behind the panel. Keep in step with BrowseToolbar's copy. */
   .active-chip {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-sm, 8px);
     padding: 4px 8px 4px 12px;
     min-height: 28px;
-    background: color-mix(in srgb, var(--chip-color) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--chip-color) 30%, transparent);
+    background: color-mix(in srgb, var(--chip-color) 30%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chip-color) 70%, transparent);
     border-radius: 100px;
     color: var(--theme-text);
     font-size: var(--font-size-compact, 12px);
-    font-weight: 500;
+    font-weight: 600;
     white-space: nowrap;
     flex-shrink: 0;
     animation: chipIn var(--duration-fast) var(--ease-standard);

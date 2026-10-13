@@ -15,6 +15,9 @@
   import BrowseSidebar from "./BrowseSidebar.svelte";
   import BrowseGrid from "./BrowseGrid.svelte";
   import type { SectionedGridApi } from "./SectionedVirtualGrid.svelte";
+  import type { VirtualGridApi } from "./VirtualizedSequenceGrid.svelte";
+  import { untrack } from "svelte";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SelectionToolbar from "#lib/shared/components/selection/SelectionToolbar.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -99,6 +102,12 @@
       name: string;
       onRemove: (sequenceId: string) => void;
     };
+    /** Scroll this sequence's card into view and mark it for a moment once
+     * it is in the grid — the just-saved sequence a toast jumped here for.
+     * `onRevealDone` fires once the reveal has started so the host can drop
+     * the request. */
+    revealSequenceId?: string | null;
+    onRevealDone?: (sequenceId: string) => void;
   }
 
   let {
@@ -129,6 +138,8 @@
     resultTotal,
     collectionContext,
     collectionPropType,
+    revealSequenceId = null,
+    onRevealDone,
   }: Props = $props();
 
   const showToolbar = $derived(toolbarOverride ?? layout !== "minimal");
@@ -164,6 +175,85 @@
   // section-jump + active-section (the DOM-offset scan can't see off-screen,
   // virtualized headers).
   let sectionApi = $state<SectionedGridApi | null>(null);
+  // Set once the flat virtualized grid mounts; the reveal below uses it to
+  // reach a card the virtualizer has not rendered yet.
+  let gridApi = $state<VirtualGridApi | null>(null);
+
+  // ---- One-row chrome ----
+  // At 760px and up the panel folds its three stacked bands (toolbar, prop
+  // viewing, applied chips) into one row: applied chips sit beside the
+  // Filters pill, and the viewing control joins Select and zoom on the right.
+  // Below that the bands stack as before. 760 is the row's own floor: sort,
+  // Filters, viewing, Select, zoom and search fit with room for a few chips,
+  // which scroll sideways in their slot rather than wrapping. Measured by
+  // the same observer that feeds the engine's column math.
+  const INLINE_CHROME_MIN_WIDTH = 760;
+  let containerWidth = $state(0);
+  const inlineChrome = $derived(containerWidth >= INLINE_CHROME_MIN_WIDTH);
+  const showViewingControl = $derived(engine.viewMode.subject !== "hands");
+
+  // ---- Reveal ----
+  // How long the revealed card keeps its mark. A dwell, not a transition:
+  // long enough to find the card after the scroll settles, short enough that
+  // the mark never reads as a selection. Mirrors TOAST_DURATION_MS upstream.
+  const REVEAL_HOLD_MS = 2_400;
+  let revealHeldId = $state<string | null>(null);
+  let revealHoldTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const gridSelectedIds = $derived.by(() => {
+    const base = selection?.selectedIds ?? selectedIds;
+    if (!revealHeldId) return base;
+    const merged = new Set(base ?? []);
+    merged.add(revealHeldId);
+    return merged as ReadonlySet<string>;
+  });
+
+  function scrollRevealedCardIntoView(id: string, index: number) {
+    const card = containerEl?.querySelector<HTMLElement>(
+      `[data-sequence-id="${CSS.escape(id)}"]`
+    );
+    if (card) {
+      card.scrollIntoView({
+        block: "center",
+        behavior: reducedMotion() ? "auto" : "smooth",
+      });
+      return;
+    }
+    // Virtualized and not yet rendered: ask the grid to bring its row in.
+    if (gridApi) {
+      gridApi.scrollToSequenceIndex(index);
+      return;
+    }
+    if (contentEl) contentEl.scrollTop = 0;
+  }
+
+  // Waits for the sequence to be in the visible pool (a just-saved sequence
+  // can still be on its way into the library), then scrolls to it and holds
+  // the mark. The host drops the request on `onRevealDone`, which ends the
+  // wait; a request that never resolves simply never reveals.
+  $effect(() => {
+    const id = revealSequenceId;
+    if (!id || warming || isInitializing) return;
+    const index = engine.sequences.findIndex((s) => s.id === id);
+    if (index < 0) return;
+    untrack(() => {
+      onRevealDone?.(id);
+      revealHeldId = id;
+      if (revealHoldTimer) clearTimeout(revealHoldTimer);
+      revealHoldTimer = setTimeout(() => {
+        revealHeldId = null;
+        revealHoldTimer = null;
+      }, REVEAL_HOLD_MS);
+      // Two frames: one for the grid to render the row, one for layout.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => scrollRevealedCardIntoView(id, index))
+      );
+    });
+  });
+
+  onDestroy(() => {
+    if (revealHoldTimer) clearTimeout(revealHoldTimer);
+  });
 
   let showSkeleton = $state(true);
   let skeletonFading = $state(false);
@@ -210,10 +300,17 @@
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const w = entry.contentRect.width;
-        if (w > 0) engine.updateContainerWidth(w);
+        if (w > 0) {
+          engine.updateContainerWidth(w);
+          containerWidth = w;
+        }
       }
     });
     ro.observe(el);
+    // Measured now, before first paint, so the chrome does not paint stacked
+    // and then fold into one row a frame later.
+    const initial = el.getBoundingClientRect().width;
+    if (initial > 0) containerWidth = initial;
     requestAnimationFrame(() => {
       const w = el.getBoundingClientRect().width;
       if (w > 0) engine.updateContainerWidth(w);
@@ -331,6 +428,14 @@
   });
 </script>
 
+{#snippet appliedChips()}
+  <BrowseFilterBar {engine} chipsOnly {onSaveSmart} />
+{/snippet}
+
+{#snippet viewingControl()}
+  <PropViewingControl {collectionPropType} presentation="toolbar" />
+{/snippet}
+
 <div
   class="browse-panel"
   class:fullpage={layout === "fullpage"}
@@ -377,15 +482,23 @@
         {curatedSortLabel}
         variant={toolbarVariant}
         {resultTotal}
+        inlineChips={inlineChrome && showFilterBar && onOpenFilters
+          ? appliedChips
+          : undefined}
+        trailing={inlineChrome && showViewingControl
+          ? viewingControl
+          : undefined}
       />
     {/if}
   {/if}
 
-  {#if engine.viewMode.subject !== "hands"}
+  <!-- Stacked bands: only below the one-row width, or when the toolbar that
+       would host them is not shown. -->
+  {#if showViewingControl && !(inlineChrome && showToolbar)}
     <PropViewingControl {collectionPropType} />
   {/if}
 
-  {#if showFilterBar}
+  {#if showFilterBar && !(inlineChrome && showToolbar && onOpenFilters)}
     <BrowseFilterBar {engine} chipsOnly={!!onOpenFilters} {onSaveSmart} />
   {/if}
 
@@ -479,7 +592,7 @@
               onAction={onSelect ? handleAction : undefined}
               {disableVirtualization}
               eager={isEager}
-              selectedIds={selection?.selectedIds ?? selectedIds}
+              selectedIds={gridSelectedIds}
               selectionMode={selection?.active ?? false}
               onSelectionStart={selection
                 ? (sequence) => selection.enter(sequence)
@@ -490,6 +603,7 @@
               scrollElement={contentEl}
               {collectionContext}
               {collectionPropType}
+              onGridReady={(api) => (gridApi = api)}
               onSectionGridReady={(api) => (sectionApi = api)}
               onActiveSectionChange={(title) => (activeSection = title)}
             />

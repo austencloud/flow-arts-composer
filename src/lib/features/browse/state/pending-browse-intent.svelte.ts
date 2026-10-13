@@ -26,7 +26,12 @@ export type CreatorGalleryIntent = {
 
 /** Your own library: Browse > Library > the All shelf, whose pool is
  *  `getSequences()` — the same call the profile Archive counts. */
-export type OwnLibraryIntent = { kind: "own-library" };
+export type OwnLibraryIntent = {
+  kind: "own-library";
+  /** A sequence the destination should scroll to and mark once it is in the
+   *  grid — the one the user just saved. */
+  revealSequenceId?: string;
+};
 
 /** One of the Library's three Art shelves (tunnels / 3D scenes / mandalas),
  *  which mount inside the Library detail pane rather than at a route. */
@@ -45,6 +50,9 @@ export type CollectionDetailIntent = {
   collectionName: string;
   /** Present only when the collection belongs to someone else. */
   foreignOwnerId?: string;
+  /** A sequence the destination should scroll to and mark once it is in the
+   *  grid — the one the user just filed here. */
+  revealSequenceId?: string;
 };
 
 /** One published visual in Explore > Visuals — e.g. a creator-profile tile
@@ -94,4 +102,31 @@ export function peekPendingBrowseIntent(): BrowseIntent | null {
 
 export function clearPendingBrowseIntent(): void {
   pending = null;
+}
+
+// A reveal outlives the intent. Browse clears the intent the moment it
+// routes, but the destination view mounts (or its pool fills) a frame or more
+// later, so the sequence to reveal waits here until that view consumes it.
+// Views do NOT clear it on destroy: the library view that is already mounted
+// (Browse is keep-alive) can pick the reveal up and then be remounted by the
+// routing, and the remounted view must still find it. The age guard retires
+// a reveal no view ever acted on instead.
+const REVEAL_MAX_AGE_MS = 15_000;
+let pendingReveal = $state<{ id: string; at: number } | null>(null);
+
+export function setPendingLibraryReveal(sequenceId: string): void {
+  pendingReveal = { id: sequenceId, at: Date.now() };
+}
+
+/** Reactive read that does NOT clear — the view clears once it has acted. */
+export function peekPendingLibraryReveal(): string | null {
+  if (!pendingReveal) return null;
+  if (Date.now() - pendingReveal.at > REVEAL_MAX_AGE_MS) return null;
+  return pendingReveal.id;
+}
+
+export function clearPendingLibraryReveal(sequenceId?: string): void {
+  if (sequenceId === undefined || pendingReveal?.id === sequenceId) {
+    pendingReveal = null;
+  }
 }

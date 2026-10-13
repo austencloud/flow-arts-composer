@@ -12,7 +12,11 @@ is a separate localStorage record, so your library's sort/filters don't fight
 the gallery's, and the source is pinned to my-library with no toggle.
 -->
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
+  import {
+    peekPendingLibraryReveal,
+    clearPendingLibraryReveal,
+  } from "#lib/features/browse/state/pending-browse-intent.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
   import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
@@ -167,6 +171,28 @@ the gallery's, and the source is pinned to my-library with no toggle.
   // All opens on the collection itself. The filter workspace is a focused
   // supporting task entered from the grid's Filters control.
   let libraryView = $state<"workspace" | "grid">("grid");
+
+  // "Show me what I just saved." A reveal handed in by the save toast means
+  // the persisted filters, search and sort from the last visit would hide
+  // the point of the jump, so they are cleared and the grid goes back to
+  // newest-first before the panel scrolls to the card.
+  let revealSequenceId = $state<string | null>(null);
+  $effect(() => {
+    const id = peekPendingLibraryReveal();
+    if (!id) return;
+    untrack(() => {
+      selectionState.exit();
+      libraryView = "grid";
+      engine.clearUserFilters();
+      engine.setSearch("");
+      engine.setSort(BrowseSortMethod.DATE_ADDED, "asc");
+      revealSequenceId = id;
+    });
+  });
+  function finishReveal(id: string) {
+    clearPendingLibraryReveal(id);
+    revealSequenceId = null;
+  }
   let gridWarming = $state(false);
   let smartSaveOpen = $state(false);
 
@@ -286,6 +312,8 @@ the gallery's, and the source is pinned to my-library with no toggle.
       {emptyAction}
       emptyState={previewReadOnly ? undefined : emptyState}
       {selection}
+      {revealSequenceId}
+      onRevealDone={finishReveal}
     />
   {/if}
 </div>

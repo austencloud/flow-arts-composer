@@ -21,6 +21,12 @@ import type { CreateModuleContext } from "../context/create-module-context";
 import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+import { setPendingBrowseIntent } from "#lib/features/browse/state/pending-browse-intent.svelte.js";
+import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+import {
+  resolveSaveLanding,
+  type FiledCollection,
+} from "../services/save-landing.js";
 import { postSaveActivation } from "#lib/shared/onboarding/state/post-save-activation-state.svelte.js";
 import type { SoloPropSaveOrchestrator } from "#lib/features/library/services/solo-prop-save-orchestrator.js";
 import {
@@ -436,12 +442,22 @@ export function createSavePanelState(deps: SavePanelDeps) {
       // File the freshly-saved sequence into any collections chosen in the
       // picker. The sequence id only exists now, so this can't happen at pick
       // time. Lazy import keeps the firestore-heavy manager off panel init.
+      // Only collections the sequence actually reached count toward where the
+      // toast offers to go: a failed add must not send someone to a
+      // collection the sequence is not in.
+      const filedCollections: FiledCollection[] = [];
       if (selectedCollectionIds.length > 0) {
         try {
           const { addSequenceToCollection } =
             await import("#lib/shared/library/services/collection-manager.js");
           for (const collectionId of selectedCollectionIds) {
             await addSequenceToCollection(collectionId, result.sequenceId);
+            filedCollections.push({
+              id: collectionId,
+              name:
+                collectionsState.collections.find((c) => c.id === collectionId)
+                  ?.name ?? t("browse_audit_collection"),
+            });
           }
         } catch (error) {
           logger.warn("Could not add sequence to selected collections:", error);
@@ -469,21 +485,31 @@ export function createSavePanelState(deps: SavePanelDeps) {
 
       props.onSaveComplete?.(result.sequenceId);
 
-      // Confirm the save and offer a one-tap jump to where it now lives, so the
-      // user can see it in context (its collection / the library grid) instead of
-      // wondering whether it saved. Navigates to Browse > Library.
+      // Confirm the save and offer a one-tap jump to where it now lives — the
+      // collection it was filed into, or the All shelf — with the sequence
+      // itself scrolled into view and marked, so the jump shows the thing that
+      // was just saved rather than a grid in whatever order was last used.
+      const landing = resolveSaveLanding({
+        sequenceId: result.sequenceId,
+        filedCollections,
+      });
       showToast({
-        message: t("create_save_saved_to_your_library"),
+        message: t(landing.messageKey, landing.messageParams),
         type: "success",
         duration: TOAST_DURATION_MS,
         action: {
-          label: t("create_save_go_to_library"),
-          // Route through the coordinator, not navigationState.setCurrentModule
-          // directly: setCurrentModule only moves the nav-bar highlight, while
-          // the rendered module comes from ui-state's activeModule (set by
-          // switchModule). handleModuleChange syncs both (+ history + transition),
-          // so the content actually swaps to Browse > Library instead of stalling.
-          onClick: () => void handleModuleChange("browse", "library"),
+          label: t(landing.actionKey, landing.actionParams),
+          onClick: () => {
+            // Browse consumes the intent reactively once it is the active
+            // module; set it first so the handoff is waiting when it lands.
+            setPendingBrowseIntent(landing.intent);
+            // Route through the coordinator, not navigationState.setCurrentModule
+            // directly: setCurrentModule only moves the nav-bar highlight, while
+            // the rendered module comes from ui-state's activeModule (set by
+            // switchModule). handleModuleChange syncs both (+ history + transition),
+            // so the content actually swaps to Browse > Library instead of stalling.
+            void handleModuleChange("browse", "library");
+          },
         },
       });
 
