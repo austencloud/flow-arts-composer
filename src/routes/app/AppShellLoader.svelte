@@ -40,7 +40,7 @@
   }
 
   onMount(() => {
-    (window as any).__tkaLoadProgress?.(84, t("app_loading_services"));
+    (window as any).__tkaLoadProgress?.(84, "Resolving services...");
     void import("#lib/shared/analytics/boot-profiler.js")
       .then(({ bootProfiler }) => bootProfiler.mark("shell:main-app-chunk"))
       .catch(() => {});

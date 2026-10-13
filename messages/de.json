@@ -2912,7 +2912,6 @@
   "notifications_close_selector": "Auswahl der Benachrichtigungsart schließen",
   "notifications_type": "Art der Benachrichtigung",
   "notifications_close": "Schließen",
-  "app_loading_services": "Dienste werden geladen …",
   "app_load_failed": "Flow Arts Composer konnte nicht vollständig geladen werden.",
   "app_retry": "Erneut versuchen",
   "inbox_ui_inbox": "Posteingang",

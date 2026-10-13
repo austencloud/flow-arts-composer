@@ -3620,7 +3620,6 @@
   "notifications_close_selector": "Close notification type selector",
   "notifications_type": "Notification Type",
   "notifications_close": "Close",
-  "app_loading_services": "Resolving services...",
   "app_load_failed": "Flow Arts Composer couldn’t finish loading.",
   "app_retry": "Try Again",
   "inbox_ui_inbox": "Inbox",

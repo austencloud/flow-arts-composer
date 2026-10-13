@@ -155,6 +155,114 @@
       })();
     </script>
 
+    <!-- Composer handoff. Public pages open the app with a full reload (they
+         boot without Firebase), so the two documents meet in a cross-document
+         view transition (opted in by the critical <style> below). When a
+         public page leaves for /create with its hero sequence on screen, that
+         stage morphs into the boot screen's mark. The shared name is set only
+         inside these two listeners, and cleared after, so no other navigation
+         inherits it. Outside the app-only blocks: "/" needs pageswap too. -->
+    <script>
+      (function () {
+        var KEY = "tka-composer-handoff";
+        var NAME = "composer-stage";
+        var named = null;
+        // Safari's pageswap may arrive without event.activation; fall back to
+        // the link the visitor just activated.
+        var lastHref = "";
+
+        function reducedMotion() {
+          return Boolean(
+            window.matchMedia &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          );
+        }
+        function clearName() {
+          if (named) named.style.viewTransitionName = "";
+          named = null;
+        }
+        function onScreen(element) {
+          var box = element.getBoundingClientRect();
+          return (
+            box.width > 0 &&
+            box.height > 0 &&
+            box.bottom > 0 &&
+            box.right > 0 &&
+            box.top < window.innerHeight &&
+            box.left < window.innerWidth
+          );
+        }
+
+        document.addEventListener(
+          "click",
+          function (event) {
+            var link = event.target.closest && event.target.closest("a[href]");
+            lastHref = link ? link.href : "";
+          },
+          true
+        );
+
+        window.addEventListener("pageswap", function (event) {
+          clearName();
+          try {
+            sessionStorage.removeItem(KEY);
+          } catch (e) {}
+          if (!event.viewTransition || !window.__tkaIsLanding) return;
+          if (reducedMotion()) {
+            event.viewTransition.skipTransition();
+            return;
+          }
+          var entry = event.activation && event.activation.entry;
+          var destination;
+          try {
+            destination = new URL((entry && entry.url) || lastHref);
+          } catch (e) {
+            return;
+          }
+          if (
+            destination.origin !== window.location.origin ||
+            destination.pathname !== "/create"
+          ) {
+            return;
+          }
+          var stage = null;
+          var demos = document.querySelectorAll(".hero-demo");
+          for (var i = 0; i < demos.length && !stage; i++) {
+            if (onScreen(demos[i])) stage = demos[i];
+          }
+          if (stage) {
+            stage.style.viewTransitionName = NAME;
+            named = stage;
+          }
+          try {
+            sessionStorage.setItem(KEY, stage ? "morph" : "fade");
+          } catch (e) {}
+        });
+
+        window.addEventListener("pagereveal", function (event) {
+          // Also runs when a page returns from the back/forward cache.
+          clearName();
+          var mode = null;
+          try {
+            mode = sessionStorage.getItem(KEY);
+            sessionStorage.removeItem(KEY);
+          } catch (e) {}
+          if (!event.viewTransition) return;
+          if (reducedMotion()) {
+            event.viewTransition.skipTransition();
+            return;
+          }
+          if (mode !== "morph") return;
+          var screen = document.getElementById("app-loading");
+          var mark = document.getElementById("boot-mark");
+          if (!screen || !mark || screen.style.display === "none") return;
+          mark.style.viewTransitionName = NAME;
+          named = mark;
+          event.viewTransition.finished.then(clearName, clearName);
+        });
+      })();
+    </script>
+
     <!-- tka-root-app-only:start -->
     <!-- 🚀 Preconnect to external origins for faster requests (app mode only) -->
     <!-- Landing visitors don't need Firebase/Google APIs - skip these to save ~500ms -->
@@ -1109,6 +1217,38 @@
         font: inherit;
       }
 
+      /* Cross-document view transitions. Public pages and the app share this
+         template, and this block is the one stylesheet both sides of the
+         full-reload handoff into Composer always load. The platform skips
+         reloads; soft SvelteKit navigations never use this rule. The type
+         scopes the timing below to full-document navigations, so same-page
+         transitions keep their own root animations. The composer-stage name
+         exists only inside the pageswap/pagereveal listeners in <head>. */
+      @view-transition {
+        navigation: auto;
+        types: tka-page;
+      }
+
+      html:active-view-transition-type(tka-page)::view-transition-group(root) {
+        animation-duration: 350ms;
+      }
+
+      ::view-transition-group(composer-stage) {
+        animation-duration: 450ms;
+        animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      ::view-transition-old(composer-stage),
+      ::view-transition-new(composer-stage) {
+        animation-duration: 350ms;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        @view-transition {
+          navigation: none;
+        }
+      }
+
       /* Font Awesome's stylesheet arrives after first paint on public routes
          (see its loader above). Until then each icon takes the box Font
          Awesome will give it, so arrows and chevrons fill space already held
@@ -1132,7 +1272,15 @@
     </style>
 
     <!-- tka-root-app-only:start -->
+    <!-- Hold the first render until the boot mark is parsed, so a
+         cross-document view transition always finds its morph target. -->
+    <link rel="expect" href="#boot-mark" blocking="render" />
     <style>
+      /* The boot screen continues the public site: the same CSS sky the
+         marketing chrome paints first (MarketingChrome .mkt-fallback), so the
+         cross-document crossfade from a public page is surface to surface. The
+         inline script below switches it to the light surface when the app will
+         open light. */
       #app-loading {
         position: fixed;
         inset: 0;
@@ -1141,10 +1289,118 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 24px;
-        background: var(--gradient-cosmic, #0a0a0a);
+        gap: 28px;
+        overflow: hidden;
+        color: rgba(255, 255, 255, 0.62);
+        background-color: #06070f;
+        background:
+          radial-gradient(
+            ellipse at 72% 24%,
+            rgba(92, 72, 170, 0.3),
+            transparent 36%
+          ),
+          radial-gradient(
+            ellipse at 20% 78%,
+            rgba(32, 85, 144, 0.18),
+            transparent 42%
+          ),
+          radial-gradient(
+            130% 100% at 50% -10%,
+            #181b3d 0%,
+            #0c0e20 48%,
+            #06070f 100%
+          );
         opacity: 1;
         transition: opacity 400ms ease-out;
+      }
+
+      #app-loading::before,
+      #app-loading::after {
+        content: "";
+        position: absolute;
+        inset: -15%;
+        pointer-events: none;
+      }
+
+      #app-loading::before {
+        opacity: 0.72;
+        background-image:
+          radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.82) 0 0.7px,
+            transparent 1px
+          ),
+          radial-gradient(
+            circle,
+            rgba(185, 205, 255, 0.7) 0 0.8px,
+            transparent 1.15px
+          ),
+          radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.5) 0 0.55px,
+            transparent 0.9px
+          );
+        background-position:
+          7px 13px,
+          43px 71px,
+          103px 29px;
+        background-size:
+          83px 89px,
+          137px 149px,
+          211px 197px;
+      }
+
+      #app-loading::after {
+        opacity: 0.48;
+        background-image:
+          radial-gradient(
+            circle,
+            #ffffff 0 1px,
+            rgba(180, 200, 255, 0.45) 1.4px,
+            transparent 2px
+          ),
+          radial-gradient(
+            circle,
+            rgba(220, 210, 255, 0.9) 0 0.9px,
+            transparent 1.5px
+          );
+        background-position:
+          31px 47px,
+          149px 91px;
+        background-size:
+          263px 241px,
+          347px 311px;
+      }
+
+      #app-loading > * {
+        position: relative;
+      }
+
+      #app-loading[data-surface="light"] {
+        color: rgba(15, 23, 42, 0.62);
+        background-color: #e4e6f0;
+        background:
+          radial-gradient(
+            ellipse at 72% 24%,
+            rgba(139, 108, 255, 0.14),
+            transparent 40%
+          ),
+          radial-gradient(
+            ellipse at 20% 78%,
+            rgba(111, 140, 255, 0.12),
+            transparent 44%
+          ),
+          radial-gradient(
+            130% 100% at 50% -10%,
+            #f6f7fc 0%,
+            #eceef6 48%,
+            #dfe2ee 100%
+          );
+      }
+
+      #app-loading[data-surface="light"]::before,
+      #app-loading[data-surface="light"]::after {
+        content: none;
       }
 
       #app-loading.loaded {
@@ -1152,10 +1408,49 @@
         pointer-events: none;
       }
 
-      #app-loading img {
-        width: 96px;
+      /* The centrepiece: the TKA wordmark (Fraunces 700 italic glyph outlines,
+         as SiteHeader sets it) over the diamond grid. It carries the
+         composer-stage view-transition name on arrival from a public page. */
+      #boot-mark {
+        display: block;
+        width: 90px;
         height: 96px;
+        overflow: visible;
         animation: logo-breathe 3s ease-in-out infinite;
+      }
+
+      #boot-mark .boot-grid {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1px;
+      }
+
+      #boot-mark .boot-grid-outline {
+        opacity: 0.28;
+      }
+
+      #boot-mark .boot-grid-axes {
+        opacity: 0.4;
+      }
+
+      #boot-mark .boot-grid-points {
+        fill: #c0a3ff;
+        stroke: none;
+      }
+
+      #app-loading[data-surface="light"] .boot-wordmark {
+        fill: url(#boot-mark-ink-light);
+      }
+
+      #app-loading[data-surface="light"] .boot-grid-points {
+        fill: #5b4fd6;
+      }
+
+      @media (min-width: 768px) {
+        #boot-mark {
+          width: 120px;
+          height: 128px;
+        }
       }
 
       @keyframes logo-breathe {
@@ -1171,31 +1466,23 @@
       }
 
       .loading-bar-track {
-        width: 240px;
-        height: 6px;
+        width: clamp(200px, 40vw, 360px);
+        height: 3px;
         background: rgba(255, 255, 255, 0.08);
         border-radius: 3px;
         overflow: hidden;
       }
 
+      #app-loading[data-surface="light"] .loading-bar-track {
+        background: rgba(15, 23, 42, 0.1);
+      }
+
       .loading-bar-fill {
         width: 5%;
         height: 100%;
-        background: linear-gradient(90deg, #38bdf8, #818cf8);
+        background: linear-gradient(90deg, #6f8cff, #8b6cff);
         border-radius: 3px;
         transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
-        animation: bar-pulse 2s ease-in-out infinite;
-      }
-
-      @keyframes bar-pulse {
-        0%,
-        100% {
-          box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
-        }
-        50% {
-          box-shadow: 0 0 14px rgba(56, 189, 248, 0.7);
-        }
       }
 
       #app-loading p {
@@ -1205,22 +1492,20 @@
           -apple-system,
           sans-serif;
         font-size: 13px;
-        color: rgba(255, 255, 255, 0.5);
+        color: inherit;
         letter-spacing: 0.02em;
         transition: opacity 200ms ease;
       }
 
       @media (prefers-reduced-motion: reduce) {
+        #app-loading,
+        #app-loading p,
         .loading-bar-fill {
           transition: none;
-          animation: none;
         }
-        #app-loading img {
+        #boot-mark {
           animation: none;
           opacity: 1;
-        }
-        #app-loading p {
-          transition: none;
         }
       }
 
@@ -1248,16 +1533,47 @@
       aria-valuemin="0"
       aria-valuemax="100"
     >
-      <img
-        src="%sveltekit.assets%/pwa/icons/icon-192x192.png"
-        alt=""
-        width="96"
-        height="96"
-      />
+      <!-- TKA wordmark: Fraunces 700 italic outlines (SiteHeader's .logo-text,
+           letter-spacing 0.04em), inlined so it paints before any font loads.
+           Below it, the diamond grid: four points and hairline axes. -->
+      <svg
+        id="boot-mark"
+        viewBox="0 0 120 128"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <defs>
+          <linearGradient id="boot-mark-ink" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#6f8cff" />
+            <stop offset="1" stop-color="#c0a3ff" />
+          </linearGradient>
+          <linearGradient id="boot-mark-ink-light" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#4f6bef" />
+            <stop offset="1" stop-color="#7a55f0" />
+          </linearGradient>
+        </defs>
+        <path
+          class="boot-wordmark"
+          fill="url(#boot-mark-ink)"
+          transform="translate(25.14 28.47) scale(0.015633)"
+          d="M546 -1427Q612 -1427 686 -1415Q759 -1404 834 -1387Q908 -1370 976 -1352Q1043 -1335 1098 -1323Q1153 -1312 1188 -1312Q1217 -1312 1235 -1324Q1252 -1336 1258 -1361Q1262 -1378 1262 -1398Q1261 -1419 1263 -1445Q1270 -1496 1303 -1530Q1336 -1565 1401 -1565Q1455 -1565 1491 -1526Q1526 -1487 1525 -1412Q1524 -1303 1455 -1239Q1385 -1175 1269 -1175Q1221 -1175 1150 -1189Q1079 -1203 998 -1224Q916 -1245 835 -1265Q754 -1286 685 -1300Q615 -1315 568 -1315Q507 -1315 478 -1286Q448 -1258 447 -1205Q446 -1180 451 -1159Q456 -1139 462 -1118Q467 -1098 467 -1071Q466 -1020 430 -984Q394 -949 335 -949Q266 -949 225 -996Q183 -1044 186 -1128Q188 -1211 231 -1279Q273 -1347 353 -1387Q432 -1427 546 -1427ZM774 -197Q765 -166 771 -151Q777 -136 794 -130L851 -113Q893 -94 892 -61Q891 -30 869 -15Q847 0 811 0L310 0Q273 0 258 -14Q242 -29 242 -52Q243 -77 258 -92Q272 -108 295 -118L352 -133Q369 -138 383 -158Q397 -179 411 -219Q422 -253 443 -323Q463 -393 489 -485Q515 -577 544 -681Q573 -785 602 -889Q630 -993 656 -1085Q681 -1177 701 -1247Q720 -1317 730 -1351L1075 -1285Q1062 -1248 1042 -1178Q1022 -1108 997 -1017Q972 -927 945 -826Q917 -725 890 -626Q863 -527 840 -440Q817 -353 800 -289Q782 -225 774 -197ZM1877 -183Q1873 -164 1882 -152Q1891 -140 1909 -133L1953 -119Q1972 -109 1985 -96Q1998 -84 1998 -61Q1998 -33 1978 -16Q1957 0 1919 0L1432 0Q1392 0 1379 -15Q1365 -30 1365 -54Q1364 -78 1380 -94Q1395 -110 1416 -117L1467 -130Q1491 -138 1504 -153Q1516 -169 1526 -200Q1536 -234 1554 -297Q1571 -360 1594 -442Q1616 -525 1640 -616Q1664 -708 1688 -799Q1712 -891 1733 -973Q1754 -1055 1770 -1118Q1785 -1182 1793 -1215Q1798 -1240 1791 -1253Q1783 -1266 1762 -1273L1716 -1285Q1694 -1295 1684 -1307Q1673 -1319 1673 -1338Q1673 -1366 1695 -1383Q1717 -1400 1755 -1400L2248 -1400Q2280 -1400 2295 -1385Q2309 -1371 2309 -1347Q2309 -1322 2294 -1308Q2278 -1295 2252 -1284L2202 -1270Q2183 -1264 2170 -1250Q2156 -1236 2146 -1206Q2135 -1170 2116 -1101Q2097 -1033 2073 -944Q2049 -855 2023 -757Q1997 -660 1973 -565Q1948 -471 1928 -390Q1907 -310 1894 -255Q1880 -200 1877 -183ZM2088 -686L2361 -934L2593 -319Q2612 -268 2632 -241Q2652 -214 2686 -214Q2706 -214 2722 -224Q2738 -235 2756 -256Q2785 -277 2809 -271Q2826 -266 2836 -247Q2845 -229 2830 -195Q2803 -126 2754 -76Q2705 -26 2642 1Q2579 28 2508 28Q2417 28 2372 -12Q2326 -52 2293 -140ZM1883 -390L1845 -495L2580 -1265Q2638 -1325 2685 -1361Q2731 -1398 2776 -1414Q2820 -1431 2869 -1431Q2951 -1431 2994 -1383Q3037 -1336 3030 -1264Q3022 -1184 2973 -1146Q2923 -1108 2851 -1108Q2806 -1108 2770 -1119Q2734 -1131 2691 -1131Q2646 -1131 2600 -1108Q2554 -1086 2508 -1037ZM3299 -322Q3252 -245 3261 -196Q3269 -147 3316 -128L3355 -114Q3376 -104 3385 -90Q3393 -77 3393 -63Q3393 -34 3372 -17Q3351 0 3316 0L2992 0Q2957 0 2939 -14Q2921 -29 2921 -54Q2921 -78 2935 -97Q2949 -116 2992 -139Q3029 -158 3072 -213Q3115 -269 3158 -344L3577 -1036Q3706 -1235 3854 -1330Q4001 -1426 4162 -1426Q4225 -1426 4251 -1408Q4277 -1390 4277 -1362Q4277 -1343 4269 -1329Q4260 -1315 4239 -1303Q4195 -1286 4170 -1251Q4145 -1216 4144 -1147Q4144 -1112 4143 -1053Q4142 -995 4141 -921Q4139 -848 4138 -767Q4137 -687 4136 -608Q4134 -529 4134 -459Q4133 -390 4133 -338Q4133 -287 4133 -261Q4133 -222 4138 -196Q4142 -170 4158 -152Q4173 -135 4206 -117Q4238 -95 4238 -61Q4238 -35 4218 -17Q4197 0 4160 0L3677 0Q3642 0 3628 -16Q3614 -32 3614 -55Q3614 -79 3629 -94Q3644 -109 3673 -121L3718 -132Q3750 -143 3764 -175Q3778 -207 3779 -255Q3780 -291 3782 -348Q3783 -405 3785 -477Q3787 -549 3789 -628Q3791 -708 3793 -789Q3795 -871 3796 -947Q3797 -1023 3799 -1087Q3800 -1152 3800 -1197L3876 -1176Q3854 -1165 3827 -1143Q3800 -1122 3766 -1081Q3732 -1041 3686 -971ZM3294 -442L3316 -548L3884 -548L3875 -442Z"
+        />
+        <g class="boot-grid">
+          <path class="boot-grid-outline" d="M60 50L97 87L60 124L23 87Z" />
+          <path class="boot-grid-axes" d="M60 50V124M23 87H97" />
+          <g class="boot-grid-points">
+            <circle cx="60" cy="50" r="2.6" />
+            <circle cx="97" cy="87" r="2.6" />
+            <circle cx="60" cy="124" r="2.6" />
+            <circle cx="23" cy="87" r="2.6" />
+            <circle cx="60" cy="87" r="1.6" />
+          </g>
+        </g>
+      </svg>
       <div class="loading-bar-track">
         <div class="loading-bar-fill" id="loading-bar-fill"></div>
       </div>
-      <p id="loading-text"></p>
+      <p id="loading-text" aria-live="polite"></p>
     </div>
     <script>
       // Landing visitors: hide loading bar immediately and skip all loading bar logic
@@ -1271,12 +1587,31 @@
         document.getElementById("app-loading").style.display = "none";
         window.__tkaLoadProgress = function () {};
       }
+      // Light or dark surface: the background preloader in <head> has already
+      // worked out from the saved background whether the app opens light
+      // ("bright"). Only when it could not run, follow the system setting.
+      (function () {
+        var luminance = document.documentElement.dataset.themeLuminance;
+        var light = luminance
+          ? luminance === "bright"
+          : Boolean(
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: light)").matches
+            );
+        if (light) {
+          document
+            .getElementById("app-loading")
+            .setAttribute("data-surface", "light");
+        }
+      })();
     </script>
     <script>
-      // Single calm status line. No rotating jokes — the real bar below tracks
-      // actual resource load. (Replaced the old Sims-style flavor reel.)
-      // This runs before the app's lazy locale bundle. Match its cookie-first
-      // selection so German visitors also get a translated startup screen.
+      // Two plain status strings: "Opening Flow Arts Composer" from first
+      // paint, then "Almost there" if the app is still starting after 4s. The
+      // __tkaLoadProgress messages are kept for the boot profiler only; the
+      // screen never shows them. This runs before the app's lazy locale bundle.
+      // Match its cookie-first selection so German visitors also get a
+      // translated startup screen.
       var __tkaBootLocales = [
         "en",
         "es",
@@ -1307,15 +1642,8 @@
             }) || "en";
       }
       var __tkaBootGerman = {
-        "Loading the alphabet…": "Das Alphabet wird geladen…",
-        "Starting up...": "Die App wird gestartet…",
-        "Resolving services...": "Dienste werden geladen …",
-        "Connecting to cloud...": "Verbindung zur Cloud wird hergestellt…",
-        "Checking session...": "Anmeldung wird geprüft…",
-        "Loading settings...": "Einstellungen werden geladen…",
-        "Restoring workspace...": "Arbeitsbereich wird wiederhergestellt…",
-        "Applying your theme...": "Dein Erscheinungsbild wird angewendet…",
-        "Opening workspace...": "Arbeitsbereich wird geöffnet…",
+        "Opening Flow Arts Composer": "Flow Arts Composer wird geöffnet",
+        "Almost there": "Gleich geschafft",
       };
       function __tkaBootMessage(message) {
         return __tkaBootLocale === "de"
@@ -1327,21 +1655,26 @@
           .getElementById("app-loading")
           .setAttribute("aria-label", "Flow Arts Composer wird geladen");
       }
-      var __tkaFlavorMessages = [__tkaBootMessage("Loading the alphabet…")];
+      var __tkaReduceMotion = Boolean(
+        window.matchMedia &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      );
 
       // --- Phase A: Resource-tracking loading bar (5% → 70%) ---
       // Uses PerformanceObserver to track real /_app/ resource loads.
       // Self-calibrating: saves observed bytes to localStorage for next visit.
 
-      var __tkaFlavorIndex = 0;
       var __tkaObserver = null;
       var __tkaTrickleFallback = null;
       var __tkaPhaseAPercent = 5;
-      var __tkaLastMilestone = 0; // tracks which 10% threshold we last crossed
 
       // Crossfade: fade out → swap text → fade in (200ms each via CSS transition)
       var __tkaFadeTimer = null;
       function __tkaCrossfade(el, msg) {
+        if (__tkaReduceMotion) {
+          el.textContent = msg;
+          return;
+        }
         if (__tkaFadeTimer) {
           clearTimeout(__tkaFadeTimer);
           __tkaFadeTimer = null;
@@ -1354,11 +1687,10 @@
         }, 200);
       }
 
-      // Show first flavor message immediately (no fade - nothing to fade from)
+      // The first status shows immediately (no fade - nothing to fade from)
       var _initText = document.getElementById("loading-text");
-      if (_initText && __tkaFlavorMessages.length > 0) {
-        _initText.textContent = __tkaFlavorMessages[__tkaFlavorIndex];
-        __tkaFlavorIndex++;
+      if (_initText) {
+        _initText.textContent = __tkaBootMessage("Opening Flow Arts Composer");
       }
 
       // Self-calibrating expected bytes: use saved value or conservative seed
@@ -1390,18 +1722,6 @@
             "aria-valuenow",
             String(Math.round(__tkaPhaseAPercent))
           );
-
-        // Rotate flavor message at 10% threshold crossings
-        var milestone = Math.floor(__tkaPhaseAPercent / 10);
-        if (milestone > __tkaLastMilestone) {
-          __tkaLastMilestone = milestone;
-          var text = document.getElementById("loading-text");
-          if (text) {
-            var msgIndex = __tkaFlavorIndex % __tkaFlavorMessages.length;
-            __tkaCrossfade(text, __tkaFlavorMessages[msgIndex]);
-            __tkaFlavorIndex++;
-          }
-        }
       }
 
       function __tkaProcessResources(entries) {
@@ -1471,22 +1791,28 @@
       // Called by SvelteKit components as initialization proceeds.
 
       var __tkaCurrentPercent = 5;
-      function __tkaMarkSplash(label) {
+      function __tkaMarkSplash(label, detail) {
         try {
-          performance.mark("boot:splash:" + label);
+          performance.mark("boot:splash:" + label, { detail: detail });
         } catch (e) {}
       }
       __tkaMarkSplash("script-start");
       var __tkaFinished = false;
       var __tkaPhaseBStarted = false; // Phase B owns the bar once it starts
-      var __tkaLastTextTime = 0;
-      var __tkaMinTextGap = 500; // minimum ms between text changes
+
+      // Still starting after 4s: say so once, plainly.
+      var __tkaSlowTimer = setTimeout(function () {
+        if (__tkaFinished) return;
+        var text = document.getElementById("loading-text");
+        if (text) __tkaCrossfade(text, __tkaBootMessage("Almost there"));
+      }, 4000);
 
       window.__tkaLoadProgress = function (percent, message) {
         // Monotonic: ignore out-of-order or duplicate calls
         if (percent <= __tkaCurrentPercent || __tkaFinished) return;
         __tkaCurrentPercent = percent;
-        __tkaMarkSplash("checkpoint:" + percent);
+        // The message names the boot phase for the profiler; not shown.
+        __tkaMarkSplash("checkpoint:" + percent, message);
 
         // Phase B now owns the bar - prevent late Phase A callbacks from regressing it
         __tkaPhaseBStarted = true;
@@ -1513,34 +1839,35 @@
         }
 
         var bar = document.getElementById("loading-bar-fill");
-        var text = document.getElementById("loading-text");
         var screen = document.getElementById("app-loading");
 
         // Bar ALWAYS updates - CSS transition makes it smooth
         if (bar) bar.style.width = percent + "%";
         if (screen) screen.setAttribute("aria-valuenow", String(percent));
 
-        var now = Date.now();
-
         if (percent >= 100) {
           __tkaMarkSplash("shell-handoff");
           __tkaFinished = true;
           clearTimeout(window.__tkaLoadTimeout);
+          clearTimeout(__tkaSlowTimer);
           // Hand control to the shell immediately. Feature readiness is separate,
           // so don't announce completion or hold the user behind a success message.
           if (screen) {
             __tkaMarkSplash("dismiss-start");
             // src/lib/features/create/shared/components/method-previews/after-boot-screen.ts waits on `loaded`, display none, or removal.
             screen.classList.add("loaded");
+            // Reduced motion: no fade, so no transitionend; leave at once.
+            if (__tkaReduceMotion) {
+              __tkaMarkSplash("removed");
+              screen.remove();
+              return;
+            }
             screen.addEventListener("transitionend", function (event) {
               if (event.target !== screen) return;
               __tkaMarkSplash("removed");
               screen.remove();
             });
           }
-        } else if (now - __tkaLastTextTime >= __tkaMinTextGap) {
-          if (text) __tkaCrossfade(text, __tkaBootMessage(message));
-          __tkaLastTextTime = now;
         }
       };
 
@@ -1550,6 +1877,10 @@
         if (screen && !screen.classList.contains("loaded")) {
           __tkaMarkSplash("timeout-dismiss");
           screen.classList.add("loaded");
+          if (__tkaReduceMotion) {
+            screen.remove();
+            return;
+          }
           screen.addEventListener("transitionend", function () {
             __tkaMarkSplash("removed");
             screen.remove();

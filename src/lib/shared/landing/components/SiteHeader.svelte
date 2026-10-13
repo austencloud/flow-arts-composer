@@ -27,6 +27,7 @@
     type AuthStateApi,
   } from "../../auth/services/deferred-sign-in";
   import { trackCtaClick } from "#lib/shared/analytics/landing-events.js";
+  import { composerIntent } from "../services/composer-prefetch";
   import { analyticsRoute } from "#lib/shared/analytics/analytics-context.js";
   import type { AuthCta } from "#lib/shared/analytics/auth-events.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
@@ -494,6 +495,7 @@
         class="cta"
         href="/create"
         data-sveltekit-reload
+        use:composerIntent
         onclick={() =>
           trackCtaClick("header_desktop", {
             cta_type: "open_composer",
@@ -511,6 +513,7 @@
         class="compact-cta"
         href="/create"
         data-sveltekit-reload
+        use:composerIntent
         onclick={() =>
           trackCtaClick("header_mobile", {
             cta_type: "open_composer",
