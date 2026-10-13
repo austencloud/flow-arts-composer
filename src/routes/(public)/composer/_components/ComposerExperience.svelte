@@ -36,6 +36,7 @@
   import { isWebGL2Available } from "#lib/shared/3d/capabilities/webgl-capabilities.js";
   import { viewportFits3D } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js";
   import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
+  import { composerIntent } from "#lib/shared/landing/services/composer-prefetch.js";
   import { createHeroAct } from "#lib/shared/landing/data/hero-act.svelte.js";
   import { FALLBACK_DEMO } from "#lib/shared/landing/data/per-visit-demo.js";
   import {
@@ -611,6 +612,7 @@
           href="/create"
           class="primary-action open-app"
           data-sveltekit-reload
+          use:composerIntent
           onclick={() => trackOpenComposer()}
         >
           Open the app
