@@ -19,13 +19,13 @@ import { ConceptProgressTracker } from "./concept-progress-tracker";
 import type { UserKnowledgeProfilePersister } from "./user-knowledge-profile-persister";
 import { TKA_CONCEPTS } from "../domain/concepts";
 import type { ConceptProgress, LearningProgress } from "../domain/types";
-import { getErrorHandler } from "#lib/shared/application/get-error-handler";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 import {
   hasUnsharedProgress,
   normalizeLearningProgress,
 } from "./merge-learning-progress";
 
-vi.mock("#lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: vi.fn(() => ({ showUserError: vi.fn() })),
 }));
 
@@ -511,7 +511,7 @@ describe("ConceptProgressTracker sign-in merge", () => {
   it("retries after a failed first load instead of latching", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const showUserError = vi.fn();
-    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as ReturnType<
+    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as unknown as ReturnType<
       typeof getErrorHandler
     >);
     let attempt = 0;
@@ -809,7 +809,7 @@ describe("ConceptProgressTracker sign-in merge", () => {
   it("reports a failed remote save while retaining local progress", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const showUserError = vi.fn();
-    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as ReturnType<
+    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as unknown as ReturnType<
       typeof getErrorHandler
     >);
     const persister = createFakePersister(async () => null);
@@ -831,7 +831,7 @@ describe("ConceptProgressTracker sign-in merge", () => {
   it("reports a live sync failure to the learner", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const showUserError = vi.fn();
-    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as ReturnType<
+    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as unknown as ReturnType<
       typeof getErrorHandler
     >);
     const persister = createFakePersister(async () => null);
@@ -861,7 +861,7 @@ describe("ConceptProgressTracker sign-in merge", () => {
   it("does not show an old account's failed-save warning after sign-out", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const showUserError = vi.fn();
-    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as ReturnType<
+    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as unknown as ReturnType<
       typeof getErrorHandler
     >);
     const save = deferred<void>();
@@ -881,7 +881,7 @@ describe("ConceptProgressTracker sign-in merge", () => {
   it("reports when local storage rejects the progress write", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const showUserError = vi.fn();
-    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as ReturnType<
+    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as unknown as ReturnType<
       typeof getErrorHandler
     >);
     const tracker = new ConceptProgressTracker();

@@ -21,11 +21,11 @@ vi.mock("$app/env", () => ({
   version: "test",
 }));
 
-vi.mock("#lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: vi.fn(() => ({ showUserError: vi.fn() })),
 }));
 
-import { getErrorHandler } from "#lib/shared/application/get-error-handler";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 
 import {
   getActiveConceptId,
@@ -117,7 +117,7 @@ describe("experience-persistence legacy concept id fold", () => {
 
   it("warns once while step storage fails and allows a new warning after recovery", () => {
     const showUserError = vi.fn();
-    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as ReturnType<
+    vi.mocked(getErrorHandler).mockReturnValue({ showUserError } as unknown as ReturnType<
       typeof getErrorHandler
     >);
     const realSetItem = Storage.prototype.setItem;

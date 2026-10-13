@@ -270,8 +270,8 @@ describe("UserKnowledgeProfilePersister.saveProgress legacy id cleanup", () => {
       completedConcepts: string[];
       overallProgress: number;
     };
-    expect(written.concepts["hand-placements"].status).toBe("completed");
-    expect(written.concepts.grid.status).toBe("completed");
+    expect(written.concepts["hand-placements"]?.status).toBe("completed");
+    expect(written.concepts.grid?.status).toBe("completed");
     expect(written.concepts["hand-positions"]).toBeUndefined();
     expect(written.completedConcepts).toEqual(
       expect.arrayContaining(["grid", "hand-placements"])

@@ -104,7 +104,7 @@ export function normalizeLearningProgress(
     ["letters", "letter-master"],
     ["combinations", "combination-master"],
     ["advanced", "advanced-master"],
-  ]) {
+  ] as const) {
     if (
       TKA_CONCEPTS.filter((concept) => concept.category === category).every(
         (concept) => completedConcepts.has(concept.id)
