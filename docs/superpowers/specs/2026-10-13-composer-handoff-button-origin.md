@@ -37,11 +37,11 @@ words "that sounds nice, go for it":
   on-screen `.hero-demo`, `pagereveal` names `#boot-mark`). ~1220-1250: the
   `@view-transition { navigation: auto; types: tka-page }` block and the
   `composer-stage` timing rules. ~1277: `<link rel="expect" href="#boot-mark"
-  blocking="render">`. ~1284-1510: boot screen styles (`#app-loading`, light
+blocking="render">`. ~1284-1510: boot screen styles (`#app-loading`, light
   surface, `#boot-mark`, `.loading-bar-track`, `.loading-bar-fill`,
   `#app-loading p`, reduced motion). ~1529-1575: boot markup (`#app-loading`
   role=progressbar, the `#boot-mark` SVG, `.loading-bar-track >
-  #loading-bar-fill`, `p#loading-text[aria-live]`). ~1580 onward: the boot
+#loading-bar-fill`, `p#loading-text[aria-live]`). ~1580 onward: the boot
   script (`__tkaFinished`, byte observer, `__tkaLoadProgress`, the two
   strings and the German table, 4 s "Almost there", 15 s safety net, `loaded`
   class then `remove()`).
@@ -49,7 +49,7 @@ words "that sounds nice, go for it":
   and ~512 (`.compact-cta` with three label spans), `SiteFooter.svelte` ~119
   (`.composer-cta`) and ~166 (sign-in), `src/routes/(public)/composer/_components/ComposerExperience.svelte`
   ~611 (`.primary-action.open-app`). All are `<a href="/create"
-  data-sveltekit-reload use:composerIntent>`. Keep them full reloads; the
+data-sveltekit-reload use:composerIntent>`. Keep them full reloads; the
   Firebase-free public guard depends on it.
 - Tests: `tests/unit/landing-composer-handoff.test.ts` (JSDOM runs the
   handoff script and the loading script; rewrite its morph cases for the new
@@ -73,7 +73,7 @@ words "that sounds nice, go for it":
   `event.viewTransition.types` so CSS can scope the recede to this one case.
 - Write to sessionStorage (same `KEY`) a small JSON instead of a bare string:
   `{ mode: "morph" | "fade", at: Date.now(), source: { x, y, w, h,
-  vw, vh } }` with the link's viewport rect. Keep `clearName()` on both
+vw, vh } }` with the link's viewport rect. Keep `clearName()` on both
   listeners and on back/forward-cache reveal exactly as today.
 
 ## 3. The new document
@@ -97,9 +97,9 @@ changes from `<p>` to `<span>` and the selector `#app-loading p` moves to
 ### Style
 
 - `.boot-capsule`: `position: relative; overflow: hidden; display: inline-flex;
-  align-items: center; justify-content: center; width: max-content;
-  min-width: 240px; max-width: min(360px, 88vw); height: 48px; padding: 0
-  24px; border-radius: 999px;` track background `rgba(255,255,255,0.10)`,
+align-items: center; justify-content: center; width: max-content;
+min-width: 240px; max-width: min(360px, 88vw); height: 48px; padding: 0
+24px; border-radius: 999px;` track background `rgba(255,255,255,0.10)`,
   `box-shadow: 0 0 0 1px rgba(255,255,255,0.16), 0 18px 40px rgba(0,0,0,0.35)`
   (the "lifted" sense), `white-space: nowrap`. Mirror the header `.cta`
   pill's font treatment (read it in SiteHeader; system font stack is fine,
@@ -107,11 +107,11 @@ changes from `<p>` to `<span>` and the selector `#app-loading p` moves to
   with nothing: the fill moving is the life of the screen. Reduced motion:
   no transitions, as now.
 - `.boot-capsule-fill`: `position: absolute; inset: 0; right: auto; width: 5%;
-  background: linear-gradient(90deg, #6f8cff, #8b6cff); transition: width 500ms
-  cubic-bezier(0.4,0,0.2,1)`. The script already drives its `width`.
+background: linear-gradient(90deg, #6f8cff, #8b6cff); transition: width 500ms
+cubic-bezier(0.4,0,0.2,1)`. The script already drives its `width`.
 - `.boot-capsule-label`: `position: relative; z-index: 1; color: #fff;
-  font-size: 14px; font-weight: 600; letter-spacing: 0.01em; transition:
-  opacity 200ms` (the script's crossfade to "Almost there" uses this).
+font-size: 14px; font-weight: 600; letter-spacing: 0.01em; transition:
+opacity 200ms` (the script's crossfade to "Almost there" uses this).
 - Light surface (`#app-loading[data-surface="light"]`): keep the label white
   and tint the track `rgba(79,107,239,0.45)` so white stays legible over the
   unfilled part. Check contrast of white on both track and fill at 14 px 600
@@ -133,8 +133,17 @@ html:active-view-transition-type(tka-handoff)::view-transition-old(root) {
 html:active-view-transition-type(tka-handoff)::view-transition-new(root) {
   animation: tka-arrive 350ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-@keyframes tka-recede { to { opacity: 0; transform: scale(0.98); } }
-@keyframes tka-arrive { from { opacity: 0; } }
+@keyframes tka-recede {
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+@keyframes tka-arrive {
+  from {
+    opacity: 0;
+  }
+}
 ::view-transition-group(composer-cta) {
   animation-duration: 420ms;
   animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -169,7 +178,7 @@ In `pagereveal`, for every arrival with a handoff record:
   `performance.mark("tka:handoff:finished")` and
   `performance.measure("tka:handoff", "tka:handoff:reveal", "tka:handoff:finished")`.
 - Expose `window.__tkaHandoff = { mode, swapToRevealMs: Date.now() - at,
-  source, target }` where `target` is `#boot-capsule`'s rect at reveal
+source, target }` where `target` is `#boot-capsule`'s rect at reveal
   (`vw`/`vh` included so the probe can compare across viewports). Fill
   `readyMs`/`finishedMs` from the marks when they land. Nothing is logged.
 
@@ -217,7 +226,7 @@ Remove nothing from the instrumentation after verifying; it is the contract.
   public Firebase-free guard (`verify:public-firebase` in package.json).
 - `npm run check:fast` in the worktree.
 - Prettier on committed content via `git show <sha>:path | npx prettier
-  --stdin-filepath path --check` from the primary (worktree CRLF false
+--stdin-filepath path --check` from the primary (worktree CRLF false
   positives).
 - Then from `E:/tka-platform` in PowerShell (Git Bash mangles `--route /`):
   `npm run wt:finish -- codex/handoff-button-origin --route /`, following
@@ -226,11 +235,11 @@ Remove nothing from the instrumentation after verifying; it is the contract.
 ## 6. Hazards (unchanged from round 1)
 
 - Worktree: `git worktree add E:/worktrees/tka-platform/handoff-button -b
-  codex/handoff-button-origin main` from `E:/tka-platform`; make the
+codex/handoff-button-origin main` from `E:/tka-platform`; make the
   `node_modules` junction with PowerShell `New-Item -ItemType Junction` (cmd
   `mklink` misparses under Git Bash); NEVER `pnpm install` inside it. Never
   touch port 5173. Explicit-pathspec commits only (`git commit -m ... --
-  paths`). Stop task servers before finishing. No push, no deploy.
+paths`). Stop task servers before finishing. No push, no deploy.
 - `app.html` is shared by every route: landing mode and the retro routes must
   behave exactly as before.
 - Do not reintroduce any centrepiece, logo, or grid. The screen is the
