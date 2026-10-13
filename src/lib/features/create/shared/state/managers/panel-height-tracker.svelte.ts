@@ -131,9 +131,14 @@ export function createPanelHeightTracker(
   // While the workspace slides, every frame resizes the tool panel; measuring
   // then forced an extra layout and rewrote root variables that restyle the
   // whole page each frame. The panel group's settle event measures once.
-  const scheduleToolPanelMetrics = () => {
+  // PanelGroup dispatches that event before Svelte drops its motion attribute
+  // from the DOM, so the settle path must not ask the attribute. It did, and
+  // the empty-workspace width stuck after Construct's first start position:
+  // the step editor then opened across the whole screen.
+  const scheduleToolPanelMetrics = ({ settled = false } = {}) => {
     if (scheduledFrame !== null) return;
-    if (toolPanelElement && isInMovingPanelGroup(toolPanelElement)) return;
+    if (!settled && toolPanelElement && isInMovingPanelGroup(toolPanelElement))
+      return;
     scheduledFrame = requestAnimationFrame(() => {
       scheduledFrame = null;
       updateToolPanelMetrics();
@@ -163,7 +168,7 @@ export function createPanelHeightTracker(
           event.target instanceof Node &&
           event.target.contains(toolPanelElement)
         ) {
-          scheduleToolPanelMetrics();
+          scheduleToolPanelMetrics({ settled: true });
         }
       };
       window.addEventListener("resize", handleViewportChange);
