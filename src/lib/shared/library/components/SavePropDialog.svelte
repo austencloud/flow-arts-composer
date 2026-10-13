@@ -43,8 +43,7 @@
       {t("library_ui_save_to_library")}
     </h2>{/snippet}
   <div class="body">
-    <PropPairField bind:value />
-    <p>Used when someone chooses As saved.</p>
+    <PropPairField bind:value hint={t("prop_pair_saved_default_hint")} />
     {#if presentationSummary}
       <div class="look" class:muted={useDefaultLook}>
         <span class="look-label">Saved look</span>
@@ -95,10 +94,6 @@
     padding: 20px;
     margin: 0;
     font-size: var(--font-size-lg, 18px);
-  }
-  p {
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-sm, 14px);
   }
   .look {
     display: grid;
