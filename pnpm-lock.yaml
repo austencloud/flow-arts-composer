@@ -62,8 +62,8 @@ importers:
         specifier: ^0.1.0
         version: 0.1.0(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/motion':
-        specifier: file:vendor/austencloud-motion-0.2.0.tgz
-        version: file:vendor/austencloud-motion-0.2.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
+        specifier: file:vendor/austencloud-motion-0.2.1.tgz
+        version: file:vendor/austencloud-motion-0.2.1.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/phone-sign-in':
         specifier: file:vendor/austencloud-phone-sign-in-0.1.0.tgz
         version: file:vendor/austencloud-phone-sign-in-0.1.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
@@ -872,8 +872,8 @@ packages:
     peerDependencies:
       svelte: ^5.0.0
 
-  '@austencloud/motion@file:vendor/austencloud-motion-0.2.0.tgz':
-    resolution: {integrity: sha512-4bObub3wRxOlbmS5Gs+azngk+oopiAwX3zx/muPpU8zH8XxQuLNkZ5rv7peFl1leiBLP6zDnAoCDG9PVUZReew==, tarball: file:vendor/austencloud-motion-0.2.0.tgz}
+  '@austencloud/motion@file:vendor/austencloud-motion-0.2.1.tgz':
+    resolution: {integrity: sha512-SEaZSZ8MH89TDd2iYb+MCbKyioEVz9UhxgovYm3e3CV5/nfT00+bPJDYNad/ERIftDJEHpxbUtCfaHDnec2IXA==, tarball: file:vendor/austencloud-motion-0.2.1.tgz}
     version: 0.2.0
     peerDependencies:
       svelte: ^5.0.0
@@ -9680,7 +9680,7 @@ snapshots:
       '@austencloud/media-tagging-types': 0.1.0
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 
-  '@austencloud/motion@file:vendor/austencloud-motion-0.2.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
+  '@austencloud/motion@file:vendor/austencloud-motion-0.2.1.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
     dependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 
