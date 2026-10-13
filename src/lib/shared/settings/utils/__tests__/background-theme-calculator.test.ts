@@ -5,6 +5,7 @@ import {
   ensureAccentContrast,
   generateMatteTheme,
   getThemeMode,
+  sceneMarkTone,
 } from "../background-theme-calculator";
 import { BACKGROUND_THEME_COLORS } from "#lib/shared/theme/config/tka-theme-config.js";
 
@@ -45,10 +46,14 @@ describe("accent contrast floor — real background palettes", () => {
       const theme = generateMatteTheme(mode, colors![1]);
       if (mode === "light") {
         for (const surface of LIGHT_SURFACES) {
-          expect(contrastRatio(theme.accent, surface)).toBeGreaterThanOrEqual(7);
+          expect(contrastRatio(theme.accent, surface)).toBeGreaterThanOrEqual(
+            7
+          );
         }
       } else {
-        expect(contrastRatio(theme.accent, DARK_ANCHOR)).toBeGreaterThanOrEqual(4.5);
+        expect(contrastRatio(theme.accent, DARK_ANCHOR)).toBeGreaterThanOrEqual(
+          4.5
+        );
       }
     });
   }
@@ -104,8 +109,12 @@ describe("ensureAccentContrast behavior", () => {
   });
 
   it("solves even achromatic extremes", () => {
-    expect(contrastRatio(ensureAccentContrast("#ffffff", "light"), "#c8c8c2")).toBeGreaterThanOrEqual(7);
-    expect(contrastRatio(ensureAccentContrast("#000000", "dark"), DARK_ANCHOR)).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrastRatio(ensureAccentContrast("#ffffff", "light"), "#c8c8c2")
+    ).toBeGreaterThanOrEqual(7);
+    expect(
+      contrastRatio(ensureAccentContrast("#000000", "dark"), DARK_ANCHOR)
+    ).toBeGreaterThanOrEqual(4.5);
   });
 
   it("white-on-accent stays readable after the light-mode floor (fill role)", () => {
@@ -121,5 +130,37 @@ describe("ensureAccentContrast behavior", () => {
     }
     const dark = generateMatteTheme("dark", undefined);
     expect(contrastRatio(dark.accent, DARK_ANCHOR)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+// A neutral grey with OKLCH lightness L has relative luminance L³.
+function luminanceOfLightness(l: number): number {
+  return l ** 3;
+}
+
+function wcag(a: number, b: number): number {
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+describe("sceneMarkTone — touch rings drawn on the scene", () => {
+  for (const [type, colors] of Object.entries(BACKGROUND_THEME_COLORS)) {
+    it(`${type}: the lightness bound clears 3:1 or sits at the wash-out limit`, () => {
+      const luminance = calculateGradientLuminance(colors);
+      const tone = sceneMarkTone(luminance);
+      const dark = getThemeMode(luminance) === "dark";
+      const bound = dark ? tone.minLightness : tone.maxLightness;
+      const atLimit = dark ? bound === 0.85 : bound === 0.3;
+      const ratio = wcag(luminanceOfLightness(bound), luminance);
+      if (!atLimit) expect(ratio).toBeGreaterThanOrEqual(2.95);
+      // Dark scenes lift the mark and shade it; light scenes deepen and light it.
+      expect(tone.halo).toContain(dark ? "0 0 0" : "255 255 255");
+      expect(dark ? tone.maxLightness : tone.minLightness).toBe(dark ? 1 : 0);
+    });
+  }
+
+  it("lifts marks further on a brighter dark scene", () => {
+    expect(sceneMarkTone(0.12).minLightness).toBeGreaterThan(
+      sceneMarkTone(0.01).minLightness
+    );
   });
 });
