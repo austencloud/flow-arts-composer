@@ -193,3 +193,114 @@ describe("publishing a sequence on one grid", () => {
     expect(cached.steps.some((step) => "conjoined" in step)).toBe(false);
   });
 });
+
+describe("publish permission diagnostics", () => {
+  it("reports denied appeal reads before projection preparation", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const syncer = new PublicIndexSyncer(
+      { checkWord: () => ({ isAllowed: false, flaggedTerms: [] }) },
+      {
+        isWhitelisted: async () => {
+          throw Object.assign(new Error("denied"), {
+            code: "permission-denied",
+          });
+        },
+      }
+    );
+    await expect(
+      syncer.syncToPublicIndex(communityFlow({}), "owner-1")
+    ).rejects.toThrow("read-moderation-appeal: list contentAppeals");
+    expect(
+      mocks.showUserError.mock.calls.at(-1)![0].technicalDetails
+    ).toContain("read-moderation-appeal");
+    expect(mocks.setDoc).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["users/owner-1", "read-publisher-profile", "get users/{uid}"],
+    [
+      "publicSequences/",
+      "read-public-projection",
+      "get publicSequences/{sequenceId}",
+    ],
+    [
+      "publicSequenceHashes/",
+      "read-hash-claim",
+      "get publicSequenceHashes/{claimId}",
+    ],
+    [
+      "users/owner-1/sequences/",
+      "read-owner-in-transaction",
+      "get users/{uid}/sequences/{sequenceId}",
+    ],
+    [
+      "sequenceRevisions/",
+      "read-retained-revision",
+      "get sequenceRevisions/{revisionId}",
+    ],
+  ])(
+    "labels denied read %s in the report's technical details",
+    async (path, step, operation) => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const original = mocks.getDoc.getMockImplementation()!;
+      mocks.getDoc.mockImplementation(async (ref: { path: string }) => {
+        if (
+          path.endsWith("/") ? ref.path.startsWith(path) : ref.path === path
+        ) {
+          throw Object.assign(new Error("server detail must not leak"), {
+            code: "permission-denied",
+          });
+        }
+        return original(ref);
+      });
+      await expect(publish(communityFlow({}))).rejects.toMatchObject({
+        code: "permission-denied",
+      });
+      const report = mocks.showUserError.mock.calls.at(-1)![0];
+      expect(report.technicalDetails).toContain(step);
+      expect(report.technicalDetails).toContain(operation);
+      expect(report.technicalDetails).not.toContain("server detail");
+      expect(report.technicalDetails).not.toContain("owner-1");
+      expect(report.technicalDetails).not.toContain("transaction-commit");
+    }
+  );
+
+  it("keeps tag permission context instead of replacing it with the sequence word", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.getDocs.mockRejectedValueOnce(
+      Object.assign(new Error("denied"), { code: "permission-denied" })
+    );
+    const sequence = { ...communityFlow({}), tagIds: ["tag-1"] };
+    await expect(publish(sequence)).rejects.toThrow(
+      "resolve-publish-tags: list users/{uid}/tags"
+    );
+    expect(
+      mocks.showUserError.mock.calls.at(-1)![0].technicalDetails
+    ).toContain("resolve-publish-tags");
+  });
+
+  it("reports attempted writes when Firestore rejects the commit after successful reads", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { runTransaction } = await import("firebase/firestore");
+    const original = vi.mocked(runTransaction).getMockImplementation()!;
+    vi.mocked(runTransaction).mockImplementationOnce(async (...args) => {
+      await original(...args);
+      throw Object.assign(new Error("denied"), { code: "permission-denied" });
+    });
+    await expect(publish(communityFlow({}))).rejects.toThrow(
+      "transaction-commit"
+    );
+    const details = mocks.showUserError.mock.calls.at(-1)![0].technicalDetails;
+    for (const operation of [
+      "write-public-projection: set publicSequences/{sequenceId}",
+      "retain-sequence-revision: set sequenceRevisions/{revisionId}",
+      "create-hash-claim: set publicSequenceHashes/{claimId}",
+      "stamp-owner-projection: update users/{uid}/sequences/{sequenceId}",
+    ])
+      expect(details).toContain(operation);
+    expect(details).toContain(
+      "did not identify which attempted write was denied"
+    );
+    expect(details).not.toContain("owner-1");
+  });
+});

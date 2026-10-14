@@ -1,3 +1,8 @@
+import {
+  annotatePublishPermissionError,
+  publishOperation,
+  type PublishOperation,
+} from "./publish-permission-error";
 /**
  * public-sequence-persister — atomic persistence for the public-sequence
  * aggregate: public projection, hash claim, and owner projection stamps.
@@ -216,12 +221,35 @@ export async function publishPublicSequence(
   );
   const claimRef = doc(firestore, PUBLIC_SEQUENCE_HASH_COLLECTION, claimId);
 
+  let attemptedWrites: PublishOperation[] = [];
   return runTransaction(firestore, async (tx) => {
+    attemptedWrites = [];
     // Everything below derives from this run's reads — nothing survives a
     // contention re-run (short-code-manager.ts:658 discipline).
-    const publicSnap = await tx.get(publicRef);
-    const claimSnap = await tx.get(claimRef);
-    const ownerSnap = await tx.get(ownerRef);
+    const publicSnap = await publishOperation(
+      {
+        step: "read-public-projection",
+        path: "publicSequences/{sequenceId}",
+        operation: "get",
+      },
+      () => tx.get(publicRef)
+    );
+    const claimSnap = await publishOperation(
+      {
+        step: "read-hash-claim",
+        path: "publicSequenceHashes/{claimId}",
+        operation: "get",
+      },
+      () => tx.get(claimRef)
+    );
+    const ownerSnap = await publishOperation(
+      {
+        step: "read-owner-in-transaction",
+        path: "users/{uid}/sequences/{sequenceId}",
+        operation: "get",
+      },
+      () => tx.get(ownerRef)
+    );
 
     if (claimSnap.exists()) {
       const claim = claimSnap.data() as PublicSequenceHashClaim;
@@ -229,8 +257,13 @@ export async function publishPublicSequence(
         // A publisher cannot adopt another owner's sequence id, so unlike the
         // shortcode race there is no adoption path. Read the winner's word for
         // the user-facing message (still a read — no writes have happened).
-        const winnerSnap = await tx.get(
-          doc(firestore, getPublicSequencePath(claim.sequenceId))
+        const winnerSnap = await publishOperation(
+          {
+            step: "read-duplicate-public-sequence",
+            path: "publicSequences/{sequenceId}",
+            operation: "get",
+          },
+          () => tx.get(doc(firestore, getPublicSequencePath(claim.sequenceId)))
         );
         const winnerWord = winnerSnap.exists()
           ? (winnerSnap.data() as { word?: string }).word
@@ -267,7 +300,14 @@ export async function publishPublicSequence(
         PUBLIC_SEQUENCE_HASH_COLLECTION,
         publicSequenceClaimId(oldVersion, oldHash)
       );
-      const staleSnap = await tx.get(candidateRef);
+      const staleSnap = await publishOperation(
+        {
+          step: "read-stale-hash-claim",
+          path: "publicSequenceHashes/{claimId}",
+          operation: "get",
+        },
+        () => tx.get(candidateRef)
+      );
       if (
         staleSnap.exists() &&
         (staleSnap.data() as PublicSequenceHashClaim).sequenceId === sequenceId
@@ -295,7 +335,14 @@ export async function publishPublicSequence(
       firestore,
       getSequenceRevisionPath(retainedRevision.revisionId)
     );
-    const retainedRevisionSnap = await tx.get(retainedRevisionRef);
+    const retainedRevisionSnap = await publishOperation(
+      {
+        step: "read-retained-revision",
+        path: "sequenceRevisions/{revisionId}",
+        operation: "get",
+      },
+      () => tx.get(retainedRevisionRef)
+    );
     if (retainedRevisionSnap.exists()) {
       const existingRevision = retainedRevisionSnap.data() as Record<
         string,
@@ -312,9 +359,19 @@ export async function publishPublicSequence(
     }
 
     // --- writes (no reads past this point) ---------------------------------
+    attemptedWrites.push({
+      step: "write-public-projection",
+      path: "publicSequences/{sequenceId}",
+      operation: "set",
+    });
     tx.set(publicRef, projection as unknown as Record<string, unknown>);
 
     if (!retainedRevisionSnap.exists()) {
+      attemptedWrites.push({
+        step: "retain-sequence-revision",
+        path: "sequenceRevisions/{revisionId}",
+        operation: "set",
+      });
       tx.set(
         retainedRevisionRef,
         retainedRevision as unknown as Record<string, unknown>
@@ -329,14 +386,29 @@ export async function publishPublicSequence(
         contentHashVersion: normalized.contentHashVersion,
         createdAt: serverTimestamp(),
       };
+      attemptedWrites.push({
+        step: "create-hash-claim",
+        path: "publicSequenceHashes/{claimId}",
+        operation: "set",
+      });
       tx.set(claimRef, claim as unknown as Record<string, unknown>);
     }
 
     if (staleClaimRef) {
+      attemptedWrites.push({
+        step: "release-stale-hash-claim",
+        path: "publicSequenceHashes/{claimId}",
+        operation: "delete",
+      });
       tx.delete(staleClaimRef);
     }
 
     if (ownerSnap.exists()) {
+      attemptedWrites.push({
+        step: "stamp-owner-projection",
+        path: "users/{uid}/sequences/{sequenceId}",
+        operation: "update",
+      });
       tx.update(ownerRef, {
         publicProjectionRevision: projection.publicProjectionRevision,
         publicProjectionSchemaVersion: projection.publicProjectionSchemaVersion,
@@ -360,6 +432,12 @@ export async function publishPublicSequence(
         digestVersion: retainedRevision.digestVersion,
       },
     };
+  }).catch((error: unknown) => {
+    throw annotatePublishPermissionError(
+      error,
+      attemptedWrites,
+      "transaction-commit"
+    );
   });
 }
 
