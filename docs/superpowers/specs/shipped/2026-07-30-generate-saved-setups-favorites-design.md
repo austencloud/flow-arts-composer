@@ -4,7 +4,7 @@ value: 4
 effort: L
 remaining: ""
 depends_on: ""
-plan_path: "docs/superpowers/plans/2026-07-30-generate-saved-setups-favorites.md"
+plan_path: "docs/superpowers/plans/shipped/2026-07-30-generate-saved-setups-favorites.md"
 tags:
   ["create", "generate", "favorites", "presets", "firestore", "privacy", "ux"]
 last_triaged: 2026-08-01
