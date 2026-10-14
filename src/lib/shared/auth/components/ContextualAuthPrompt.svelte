@@ -502,7 +502,7 @@
     z-index: 1;
     display: grid;
     min-width: 0;
-    height: clamp(11rem, 30svh, 15rem);
+    height: clamp(9rem, 24svh, 14rem);
     padding: 0.75rem;
     box-sizing: border-box;
     transition: height var(--duration-normal) var(--ease-standard);
@@ -540,7 +540,7 @@
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr);
       width: min(calc(100vw - 2rem), clamp(52rem, 46vw, 72rem));
-      min-height: min(clamp(34rem, 60vh, 46rem), calc(100dvh - 2rem));
+      min-height: min(clamp(34rem, 55vh, 40rem), calc(100dvh - 3rem));
     }
 
     .art-stage,
@@ -554,6 +554,17 @@
       flex-direction: column;
       justify-content: center;
       padding: clamp(1.5rem, 3vw, 3rem);
+    }
+  }
+
+  /* Short landscape screens: the column gives up padding before it scrolls. */
+  @media (max-height: 35rem) and (min-width: 45rem) {
+    .split .sign-in-column {
+      padding-block: 0.5rem;
+    }
+
+    .split .mode-toggle {
+      margin-top: 0.5rem;
     }
   }
 
