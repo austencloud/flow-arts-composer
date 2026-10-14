@@ -11,10 +11,20 @@
   Column count is computed, never `repeat(auto-fill, minmax(Npx, 1fr))`:
   auto-fill against a floor yields more, thinner tiles as the screen grows and
   strands the last one (4k-native-layout.md).
+
+  Only a few tiles animate at once. Every live tile owns a full animation
+  stack (playback clock, 2D canvas, WebGL2 trail overlay, step strip), and a
+  wide wall mounts one per column: fourteen of them at 3840px pinned the main
+  thread at 1.3 fps, because once a frame outlasts a beat every tile changes
+  step on every frame and remounts its strip pictographs. The profile stage's
+  LiveSlots already budgets this; the wall reuses it and the rest of the tiles
+  show their still card, which is the same square so nothing moves.
 -->
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import WorkTile from "./WorkTile.svelte";
+  import { LiveSlots } from "./profile/stage/live-slots.svelte";
   import { fitColumns } from "../domain/fit-columns";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
@@ -33,12 +43,23 @@
   const columns = $derived(
     fitColumns(items.length, Math.min(cap, Math.max(1, items.length)))
   );
+
+  /** How many wall tiles may animate at once. One live tile costs about
+   *  5 ms of main-thread time per frame at 4K; two keeps the row moving
+   *  without starting the step-change cascade described above. */
+  const WALL_LIVE_BUDGET = 2;
+
+  const slots = new LiveSlots();
+  slots.budgets.sequence = WALL_LIVE_BUDGET;
+  onDestroy(() => slots.destroy());
 </script>
 
 {#if items.length > 0}
   <section class="wall" aria-labelledby="creators-wall-heading">
     <header class="wall-header">
-      <h3 class="wall-name" id="creators-wall-heading">{t("browse_verified_recent_work")}</h3>
+      <h3 class="wall-name" id="creators-wall-heading">
+        {t("browse_verified_recent_work")}
+      </h3>
       <span class="rule" aria-hidden="true"></span>
       <span class="count">{items.length}</span>
     </header>
@@ -49,6 +70,7 @@
           sequence={item.sequence}
           creator={item.creator}
           {unitPx}
+          {slots}
           {onselect}
           {oncreator}
         />
