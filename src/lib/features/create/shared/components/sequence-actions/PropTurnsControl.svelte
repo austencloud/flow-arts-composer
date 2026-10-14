@@ -5,8 +5,15 @@
   Designed to be used inside PropControlPair which provides the card styling.
   Uses CSS custom properties from parent card for color theming.
 
-  Full mode stacks turns, rotation, path, and prop controls. Compact mode keeps
-  the primary actions together and gives path choices a full-width second row.
+  Full mode stacks the turns row over a row holding the rotation toggle and
+  the Path toggle. Compact mode puts turns, rotation and the Path toggle on one
+  row. Either way the path choices open as a full-width row underneath.
+
+  Path choices are fine-tuning most people never need, so they stay closed
+  behind the Path toggle. While closed, the toggle still names a step's own
+  path ("Path · Arc") and shows a dot in compact mode, so an override is never
+  hidden. The toggle keeps its slot on steps that do not travel, so the row
+  does not jump sideways when moving between steps.
 
   With wholeSteps, a −1 / +1 pair flanks the half-turn pair (same grammar as
   the duration row: coarse outside, fine inside). The pair appears only when
@@ -21,6 +28,8 @@
   import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { PathShapeValue } from "../../services/step-operations/path-shape-handler";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   type PathChoice = PathShapeValue | "auto";
 
@@ -129,10 +138,51 @@
     ]);
   const pathChoice = $derived<PathChoice>(pathShape ?? "auto");
 
+  const uid = $props.id();
+  const pathRowId = `${uid}-path`;
+  const pathAvailable = $derived(!!onPathShapeChange && !!onPathShapeClear);
+  const pathOverridden = $derived(pathShape !== undefined);
+  const pathChoiceLabel = $derived(
+    pathShape ? pathShapeLabel(pathShape) : t("viewer_ui_auto")
+  );
+  // Closed, the button reads "Path" on Auto and names the step's own shape
+  // otherwise ("Concave"), so an override is visible without opening the row.
+  const pathButtonLabel = $derived(
+    pathShape ? pathShapeLabel(pathShape) : t("create_controls_path_short")
+  );
+  const pathLabelSizers = $derived([
+    t("create_controls_path_short"),
+    ...shapes.map((shape) => pathShapeLabel(shape)),
+  ]);
+  // Closed until asked for. The choice is remembered while the editor stays
+  // open, so someone tuning paths across several steps keeps the row open.
+  let pathOpenChoice = $state(false);
+  const pathOpen = $derived(pathAvailable && isShift && pathOpenChoice);
+
+  function togglePath(e: MouseEvent) {
+    e.stopPropagation();
+    pathOpenChoice = !pathOpenChoice;
+  }
+
   function handlePathChoice(choice: PathChoice) {
     if (choice === "auto") onPathShapeClear?.();
     else onPathShapeChange?.(choice);
   }
+
+  // Compact first row: only the slots this card actually has, so an absent
+  // control never leaves an empty gap.
+  const compactSlots = $derived([
+    "turns",
+    "rotation",
+    ...(pathAvailable ? ["pathtoggle"] : []),
+    ...(trailingControl ? ["trailing"] : []),
+  ]);
+  const compactColumns = $derived(
+    ["minmax(0, 1fr)", ...compactSlots.slice(1).map(() => "auto")].join(" ")
+  );
+  const compactAreas = $derived(
+    `"${compactSlots.join(" ")}" "${compactSlots.map(() => "path").join(" ")}"`
+  );
 
   function handleInvert(e: MouseEvent) {
     e.stopPropagation();
@@ -150,6 +200,8 @@
   class:red={hand === "right"}
   class:compact
   class:whole-steps={wholeSteps}
+  style:grid-template-columns={compact ? compactColumns : undefined}
+  style:grid-template-areas={compact ? compactAreas : undefined}
 >
   <!-- Turns row. The whole-turn buttons are always in the markup when
        offered; the card's own width decides whether they show, so resizing
@@ -208,35 +260,80 @@
     {/if}
   </div>
 
-  <!-- Rotation direction toggle. The slot is always laid out so the turns
-       stepper never moves when a dash/static motion gains or loses turns;
-       at 0 turns the toggle is reserved (invisible and disabled). -->
-  <button
-    class="invert-btn"
-    class:compact
-    class:reserved={!showRotation}
-    disabled={!showRotation}
-    aria-hidden={!showRotation}
-    aria-label={t("create_controls_toggle_rotation", {
-      hand: handLabel(hand),
-      direction: directionLabel,
-    })}
-    onclick={handleInvert}
-  >
-    <i class="fas {directionIcon}" aria-hidden="true"></i>
-    <span class="invert-label-stack">
-      <span class="invert-label ghost" aria-hidden="true"
-        >{longestDirectionLabel}</span
+  <!-- Rotation toggle and Path toggle. In full mode they share a row; in
+       compact mode the row is display: contents and each takes its grid slot. -->
+  <div class="action-row" class:compact>
+    <!-- The rotation slot is always laid out so the turns stepper never moves
+         when a dash/static motion gains or loses turns; at 0 turns the toggle
+         is reserved (invisible and disabled). -->
+    <button
+      class="invert-btn"
+      class:compact
+      class:reserved={!showRotation}
+      disabled={!showRotation}
+      aria-hidden={!showRotation}
+      aria-label={t("create_controls_toggle_rotation", {
+        hand: handLabel(hand),
+        direction: directionLabel,
+      })}
+      onclick={handleInvert}
+    >
+      <i class="fas {directionIcon}" aria-hidden="true"></i>
+      <span class="invert-label-stack">
+        <span class="invert-label ghost" aria-hidden="true"
+          >{longestDirectionLabel}</span
+        >
+        <span class="invert-label">{directionLabel}</span>
+      </span>
+    </button>
+
+    {#if pathAvailable}
+      <button
+        class="path-toggle"
+        class:compact
+        class:open={pathOpen}
+        class:overridden={pathOverridden}
+        class:reserved={!isShift}
+        disabled={!isShift}
+        aria-hidden={!isShift}
+        aria-expanded={pathOpen}
+        aria-controls={pathRowId}
+        aria-label={t("create_controls_path_options", {
+          hand: handLabel(hand),
+          shape: pathChoiceLabel,
+        })}
+        onclick={togglePath}
       >
-      <span class="invert-label">{directionLabel}</span>
-    </span>
-  </button>
+        <i class="fas fa-route" aria-hidden="true"></i>
+        {#if !compact}
+          <!-- Every possible label is stacked invisibly underneath, so the
+               button keeps one width whichever choice it names. -->
+          <span class="path-label-stack">
+            {#each pathLabelSizers as sizer (sizer)}
+              <span class="path-label ghost" aria-hidden="true">{sizer}</span>
+            {/each}
+            <span class="path-label">{pathButtonLabel}</span>
+          </span>
+          <i class="fas fa-chevron-down path-toggle-chevron" aria-hidden="true"
+          ></i>
+        {/if}
+        {#if pathOverridden}
+          <span class="path-dot" aria-hidden="true"></span>
+        {/if}
+      </button>
+    {/if}
+  </div>
 
   <!-- Path shape override (only for motions that traverse the grid). Exactly
        one choice is active, so this is the shared SegmentedControl; "Auto"
        is the cleared state that follows the global path setting. -->
-  {#if onPathShapeChange && onPathShapeClear && isShift}
-    <div class="path-row" class:compact>
+  {#if pathOpen}
+    <div
+      class="path-row"
+      class:compact
+      id={pathRowId}
+      transition:growFade={{ duration: DURATION.fast }}
+    >
       <SegmentedControl
         options={pathOptions}
         value={pathChoice}
@@ -269,15 +366,23 @@
 
   /* Compact: primary actions share the first row; path choices get the full
      second row so labels and touch targets do not collapse. */
+  /* Compact columns and areas are set inline from the slots this card has. */
   .turns-controls.compact {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas:
-      "turns rotation trailing"
-      "path path path";
     align-items: center;
     gap: 6px;
     width: 100%;
+  }
+
+  .action-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .action-row.compact {
+    display: contents;
   }
 
   .turns-row {
@@ -331,8 +436,11 @@
   }
 
   /* Compact card: the stepper (four buttons, a 36px value, 4px gaps = 228px)
-     shares its row with the rotation and prop buttons (6 + 44 + 6 + 44). */
-  @container hand-card (min-width: 328px) {
+     shares its row with the rotation and Path buttons (4 + 44 + 4 + 44). */
+  @container hand-card (min-width: 324px) {
+    .turns-controls.compact {
+      column-gap: 4px;
+    }
     .turns-controls.compact .turns-row {
       gap: 4px;
     }
@@ -528,6 +636,94 @@
     box-shadow: 0 2px 12px rgba(var(--prop-color-rgb, 239, 68, 68), 0.3);
   }
 
+  /* ============================================================================
+     PATH TOGGLE
+     Quieter than the rotation toggle: an outlined button in the hand's tone
+     that fills while its row is open.
+     ============================================================================ */
+
+  .path-toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: var(--min-touch-target);
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(var(--prop-color-rgb, 255, 255, 255), 0.3);
+    background: transparent;
+    color: var(--prop-color, var(--theme-text, #fff));
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
+  }
+
+  .path-toggle:hover:not(:disabled),
+  .path-toggle.open {
+    background: rgba(var(--prop-color-rgb, 255, 255, 255), 0.15);
+    border-color: rgba(var(--prop-color-rgb, 255, 255, 255), 0.5);
+  }
+
+  .path-toggle:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+
+  .path-toggle:focus-visible {
+    outline: 2px solid var(--theme-text, #fff);
+    outline-offset: 2px;
+  }
+
+  .path-toggle.reserved {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .path-toggle.compact {
+    grid-area: pathtoggle;
+    width: var(--min-touch-target);
+    padding: 0;
+    border-radius: 8px;
+  }
+
+  .path-label-stack {
+    display: grid;
+  }
+
+  .path-label-stack > .path-label {
+    grid-area: 1 / 1;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .path-label.ghost {
+    visibility: hidden;
+  }
+
+  .path-toggle-chevron {
+    font-size: 0.7rem;
+    transition: transform var(--duration-fast) var(--ease-standard);
+  }
+
+  .path-toggle.open .path-toggle-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* The step has its own path (shown in both modes, the only cue in compact). */
+  .path-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
   .path-row {
     padding-top: 8px;
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
@@ -552,11 +748,14 @@
 
   @media (prefers-reduced-motion: reduce) {
     .ctrl-btn,
-    .invert-btn {
+    .invert-btn,
+    .path-toggle,
+    .path-toggle-chevron {
       transition: none;
     }
     .ctrl-btn:active:not(:disabled),
-    .invert-btn:active:not(:disabled) {
+    .invert-btn:active:not(:disabled),
+    .path-toggle:active:not(:disabled) {
       transform: none;
     }
   }

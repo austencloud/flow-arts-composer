@@ -255,7 +255,7 @@
   <!-- The tools and the save view trade places like the start placement
        picker and the option picker do: the leaving one fades out, then the
        arriving one fades in, both pinned to the same box. -->
-  <div class="tool-stage">
+  <div class="tool-stage" class:is-idle={showGeneratePanel}>
     <Crossfade
       key={isSaveView ? "save" : "tools"}
       duration={DURATION.normal}
@@ -384,6 +384,13 @@
   .tool-stage {
     position: relative;
     overflow: hidden;
+  }
+
+  /* While the generator is the active tool, the stage holds only an empty
+     crossfade layer stacked above it. That layer must not take the clicks
+     meant for the generator's cards. */
+  .tool-stage.is-idle {
+    pointer-events: none;
   }
 
   .creation-tool-content {
