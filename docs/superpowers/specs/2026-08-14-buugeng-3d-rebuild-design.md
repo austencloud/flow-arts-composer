@@ -8,10 +8,17 @@ hand pivot at the exact center of the prop.
 
 ## Reference contract
 
-- Canonical silhouette: `static/images/props/buugeng.svg`
-- Overall length: 0.83 m
+- Reference silhouette: `scripts/assets/buugeng-reference.svg`, a trace of a
+  Flow DNA flowgeng (the ten-slot, narrow-waisted body sold at
+  https://flowtoys.com/flowgeng). Flow DNA is credited as the design source in
+  the GLB metadata and on the Version 2 buugeng picker tile.
+- Notation silhouette, for the 2D tip table: `static/images/props/buugeng.svg`
+- Overall length: 0.83 m, measured tip to tip
 - Blade depth: 0.010 m
-- Runtime long axis: local `+Y`
+- Runtime long axis: local `+Y`, authored as the tip-to-tip chord. The trace
+  stands upright by its bounding box, but the flowgeng's pointed tips sit on a
+  chord about 21 degrees off that box, so the build turns the body onto the
+  chord before extruding; effects then emit from the tips in 2D and 3D.
 - Runtime grip point: local origin `(0, 0, 0)`
 - Construction: one continuous S-shaped body with rounded edges and no added
   grip geometry. The center of the blue body is the hand pivot.

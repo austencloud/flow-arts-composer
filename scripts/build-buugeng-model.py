@@ -1,4 +1,16 @@
-"""Extrude the reference-derived, narrow-waisted practice Buugeng."""
+"""Extrude the reference-derived, narrow-waisted practice Buugeng.
+
+The trace in scripts/assets/buugeng-reference.svg follows a photo of a Flow DNA
+flowgeng (sold at https://flowtoys.com/flowgeng), credited as the design source
+in the GLB metadata and the Version 2 picker tile.
+
+Run headless from the repository root:
+
+    blender -b --python scripts/build-buugeng-model.py -- --output static/models/props/buugeng.glb
+
+then node scripts/verify-buugeng-glb.cjs, and re-capture the Version 2 sprite
+at /test/prop-3d-studio/sprites?prop=buugeng (and ?prop=bigbuugeng).
+"""
 
 from __future__ import annotations
 
@@ -17,9 +29,12 @@ DEFAULT_SVG = ROOT / "scripts" / "assets" / "buugeng-reference.svg"
 REFERENCE_DATA = ROOT / "scripts" / "assets" / "buugeng-reference.json"
 DEFAULT_OUTPUT = ROOT / "static" / "models" / "props" / "buugeng.glb"
 
+# Measured tip to tip, along the chord the two pointed ends share.
 MODEL_LENGTH_M = 0.83
 BODY_DEPTH_M = 0.0095
 GRIP_LENGTH_M = 0.15
+DESIGN_CREDIT = "Flow DNA"
+DESIGN_SOURCE_URL = "https://flowtoys.com/flowgeng"
 
 
 def parse_args() -> argparse.Namespace:
@@ -103,7 +118,7 @@ def finish_mesh(obj: bpy.types.Object, material: bpy.types.Material) -> None:
 
 def import_body(
     svg_path: Path, body_material: bpy.types.Material
-) -> tuple[bpy.types.Object, int, float]:
+) -> tuple[bpy.types.Object, int, float, float]:
     before = set(bpy.data.objects)
     bpy.ops.import_curve.svg(filepath=str(svg_path))
     imported = [obj for obj in bpy.data.objects if obj not in before]
@@ -134,16 +149,33 @@ def import_body(
         maximum.z = max(maximum.z, vertex.co.z)
 
     center = (minimum + maximum) * 0.5
-    svg_length = max(maximum.x - minimum.x, maximum.y - minimum.y)
-    if svg_length <= 0:
-        raise RuntimeError("Buugeng SVG has no measurable length")
-    scale = MODEL_LENGTH_M / svg_length
 
-    # The traced reference is vertical. Author its width on Blender X and its
-    # length on Blender Z; glTF's Y-up conversion preserves the prop contract.
+    # The trace stands upright by its bounding box, but a flowgeng's two
+    # pointed tips are not on that axis: they share a chord about 21 degrees
+    # off it. Effects emit along the model's local long axis, so author that
+    # axis as the tip-to-tip chord. The body is point-symmetric about its
+    # centre, so the perimeter point farthest from the centre is one tip and
+    # the same point turned a half turn is the other.
+    tip = max(
+        ((vertex.co - center).xy for vertex in body.data.vertices),
+        key=lambda offset: offset.length_squared,
+    )
+    if tip.length <= 0:
+        raise RuntimeError("Buugeng SVG has no measurable length")
+    scale = MODEL_LENGTH_M / (tip.length * 2)
+    # Turn the trace so the chord lies on +Y (long axis up before the glTF
+    # Y-up conversion maps Blender Z to runtime +Y).
+    turn = math.pi / 2 - math.atan2(tip.y, tip.x)
+    cos_turn, sin_turn = math.cos(turn), math.sin(turn)
+    chord_turn_degrees = math.degrees(turn)
+
+    # Author its width on Blender X and its length on Blender Z; glTF's Y-up
+    # conversion preserves the prop contract.
     for vertex in body.data.vertices:
         source = vertex.co - center
-        vertex.co = Vector((source.x * scale, 0.0, source.y * scale))
+        along_width = source.x * cos_turn - source.y * sin_turn
+        along_length = source.x * sin_turn + source.y * cos_turn
+        vertex.co = Vector((along_width * scale, 0.0, along_length * scale))
 
     body.data.materials.append(body_material)
     solidify = body.modifiers.new("9.5mm body stock", "SOLIDIFY")
@@ -161,7 +193,7 @@ def import_body(
     waist_width_m = reference["waistWidthPx"] / reference["spanPx"] * MODEL_LENGTH_M
     body["reference_trace"] = "scripts/assets/buugeng-reference.svg"
     body["tka_runtime_recolor"] = True
-    return body, slot_count, waist_width_m
+    return body, slot_count, waist_width_m, chord_turn_degrees
 
 
 def build_prop(svg_path: Path) -> tuple[bpy.types.Object, list[bpy.types.Object]]:
@@ -171,7 +203,9 @@ def build_prop(svg_path: Path) -> tuple[bpy.types.Object, list[bpy.types.Object]
         roughness=0.48,
         coat=0.08,
     )
-    body, slot_count, waist_width_m = import_body(svg_path, body_material)
+    body, slot_count, waist_width_m, chord_turn_degrees = import_body(
+        svg_path, body_material
+    )
 
     root = bpy.data.objects.new("TKA_Buugeng", None)
     bpy.context.collection.objects.link(root)
@@ -183,8 +217,12 @@ def build_prop(svg_path: Path) -> tuple[bpy.types.Object, list[bpy.types.Object]
     root["waist_width_m"] = waist_width_m
     root["grip_origin"] = "0,0,0"
     root["local_long_axis"] = "+Y"
+    root["long_axis_source"] = "tip-to-tip chord"
+    root["trace_to_chord_turn_deg"] = chord_turn_degrees
     root["recolor_material"] = "TKA_Buugeng_Recolor"
-    root["reference_form"] = "narrow-waisted ten-slot flowgeng silhouette"
+    root["reference_form"] = "Flow DNA flowgeng: narrow-waisted ten-slot silhouette"
+    root["design_credit"] = DESIGN_CREDIT
+    root["design_source_url"] = DESIGN_SOURCE_URL
     root["canonical_source"] = "scripts/assets/buugeng-reference.svg"
     root["symmetry_method"] = "lower reference half rotated 180 degrees"
 
@@ -273,7 +311,11 @@ def render_proof(render_path: Path) -> None:
     bpy.ops.render.render(write_still=True)
 
 
-def print_summary(output_path: Path, model_objects: list[bpy.types.Object]) -> None:
+def print_summary(
+    output_path: Path,
+    root: bpy.types.Object,
+    model_objects: list[bpy.types.Object],
+) -> None:
     meshes = [obj for obj in model_objects if obj.type == "MESH"]
     print(f"BUUGENG_OUTPUT={output_path}")
     print(f"BUUGENG_BYTES={output_path.stat().st_size}")
@@ -281,6 +323,7 @@ def print_summary(output_path: Path, model_objects: list[bpy.types.Object]) -> N
     print(f"BUUGENG_VERTICES={sum(len(obj.data.vertices) for obj in meshes)}")
     print(f"BUUGENG_POLYGONS={sum(len(obj.data.polygons) for obj in meshes)}")
     print(f"BUUGENG_LENGTH_M={MODEL_LENGTH_M}")
+    print(f"BUUGENG_TIP_CHORD_TURN_DEG={root['trace_to_chord_turn_deg']:.3f}")
     print(f"BUUGENG_BODY_DEPTH_M={BODY_DEPTH_M}")
     print(f"BUUGENG_GRIP_LENGTH_M={GRIP_LENGTH_M}")
     print("BUUGENG_HAND_PIVOT=0,0,0")
@@ -301,7 +344,7 @@ def main() -> None:
         bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
     if args.render:
         render_proof(args.render.resolve())
-    print_summary(output_path, model_objects)
+    print_summary(output_path, root, model_objects)
 
 
 if __name__ == "__main__":

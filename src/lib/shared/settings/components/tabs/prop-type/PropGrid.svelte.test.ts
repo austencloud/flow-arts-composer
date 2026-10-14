@@ -82,6 +82,50 @@ describe("PropGrid fan look credit", () => {
     expect(document.querySelector(".rail-credit")).toBeNull();
   });
 
+  // Version 2 buugeng is a capture of a Flow DNA flowgeng; its details page
+  // links back to the maker the way a traced fan build does.
+  it.each(["model", "pictograph"] as const)(
+    "credits Flow DNA in the Buugeng rail only at Version 2 (%s)",
+    async (propLook) => {
+      render(PropGrid, {
+        selectedPropType: PropType.BUUGENG,
+        onSelect: vi.fn(),
+        allowedProps: [PropType.BUUGENG, PropType.BIGBUUGENG],
+        layout: "rail",
+        fanAppearance: FIRE_FAN,
+        onFanAppearanceChange: vi.fn(),
+        propLook,
+        onPropLookChange: vi.fn(),
+      });
+
+      await page.getByRole("button", { name: "Select Buugeng prop type" }).click();
+      const model = page.getByRole("radio", { name: "Version 2", exact: false });
+      await expect.element(model).toBeVisible();
+      await expect
+        .element(model)
+        .toHaveAttribute("aria-label", "Version 2, design by Flow DNA");
+      expect(model.element().querySelector(".option-credit")?.textContent).toBe(
+        "Flow DNA"
+      );
+      await expect
+        .element(page.getByRole("radio", { name: "Version 1", exact: true }))
+        .toHaveAttribute("aria-label", "Version 1");
+
+      if (propLook === "model") {
+        const credit = page.getByRole("link", { name: "Flow DNA source" });
+        await expect.element(credit).toBeVisible();
+        await expect
+          .element(credit)
+          .toHaveAttribute("href", "https://flowtoys.com/flowgeng");
+        expect(credit.element().querySelector(".credit-long")?.textContent).toBe(
+          "Flow DNA"
+        );
+      } else {
+        expect(document.querySelector(".rail-credit")).toBeNull();
+      }
+    }
+  );
+
   it("offers the Version 1 and 2 choice in a captured prop's rail", async () => {
     const onPropLookChange = vi.fn();
     render(PropGrid, {

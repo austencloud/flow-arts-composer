@@ -30,7 +30,7 @@ export interface PropModelSpriteEntry {
 export const PROP_MODEL_SPRITES: Readonly<
   Record<string, PropModelSpriteEntry>
 > = {
-  "bigbuugeng": { width: 600, height: 293.1, fit: 516.351, capturedAt: "2026-09-06T06:26:06.971Z", bounds: { x: 0, y: 35.7, width: 600, height: 221.5 } },
+  "bigbuugeng": { width: 600, height: 293.1, fit: 516.362, capturedAt: "2026-10-14T19:31:05.786Z", bounds: { x: 0, y: 4.7, width: 600, height: 283 } },
   "bigchicken": { width: 252.8, height: 44.4, fit: 251.44, capturedAt: "2026-09-06T06:26:14.374Z", bounds: { x: 20, y: 0, width: 217.3, height: 43.2 } },
   "bigclub": { width: 252, height: 65, fit: 178.774, capturedAt: "2026-09-06T06:26:00.822Z", bounds: { x: 0, y: 22.4, width: 130.2, height: 20.2 } },
   "bigcontactball": { width: 600, height: 300, fit: 2142.857, capturedAt: "2026-09-06T06:25:46.203Z", bounds: { x: 150, y: 0, width: 300, height: 300 } },
@@ -41,7 +41,7 @@ export const PROP_MODEL_SPRITES: Readonly<
   "bigstaff": { width: 600, height: 54.5, fit: 245.605, capturedAt: "2026-09-06T06:25:55.898Z", bounds: { x: 190.4, y: 0, width: 219.1, height: 54.5 } },
   "bigtorch": { width: 402, height: 57.3, fit: 280.185, capturedAt: "2026-09-06T06:25:51.572Z", bounds: { x: 0, y: 18.5, width: 206.1, height: 20.4 } },
   "bigtriad": { width: 600, height: 523.5, fit: 494.087, capturedAt: "2026-09-06T06:26:02.950Z", bounds: { x: 4.7, y: 1.2, width: 452.9, height: 520.9 } },
-  "buugeng": { width: 262.6, height: 135.9, fit: 316.386, capturedAt: "2026-09-06T06:26:05.972Z", bounds: { x: 0, y: 19, width: 262.6, height: 98 } },
+  "buugeng": { width: 262.6, height: 135.9, fit: 316.392, capturedAt: "2026-10-14T19:38:27.618Z", bounds: { x: 0, y: 5.9, width: 262.6, height: 123.9 } },
   "capsule_baton": { width: 252.8, height: 40, fit: 292.728, capturedAt: "2026-09-06T06:25:57.804Z", bounds: { x: 0, y: 14.8, width: 252.8, height: 10.4 } },
   "chicken": { width: 325, height: 30.3, fit: 284.973, capturedAt: "2026-09-06T06:26:13.250Z", bounds: { x: 22.9, y: 0, width: 148.5, height: 29.5 } },
   "club": { width: 258.67, height: 34.17, fit: 256.908, capturedAt: "2026-09-06T06:25:59.820Z", bounds: { x: 0, y: 6.8, width: 133.6, height: 20.5 } },

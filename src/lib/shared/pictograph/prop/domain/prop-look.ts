@@ -443,12 +443,44 @@ export function modelSpriteCrop(
   };
 }
 
+/** The maker whose product a look was traced from, and where to find it. */
+export interface PropDesignCredit {
+  originator: string;
+  sourceUrl: string;
+}
+
+/**
+ * Model looks captured from another maker's product. Version 2 buugeng is a
+ * capture of static/models/props/buugeng.glb, which build-buugeng-model.py
+ * extrudes from a trace of a Flow DNA flowgeng; Big Buugeng is the same model
+ * at 1.4x. Fan builds carry their own credits in fan-appearance.ts.
+ */
+const FLOW_DNA_CREDIT: PropDesignCredit = {
+  originator: "Flow DNA",
+  sourceUrl: "https://flowtoys.com/flowgeng",
+};
+const MODEL_LOOK_CREDITS: Readonly<Record<string, PropDesignCredit>> = {
+  buugeng: FLOW_DNA_CREDIT,
+  bigbuugeng: FLOW_DNA_CREDIT,
+};
+
+/** The credit a prop's version carries, if the look was traced from a maker. */
+export function propLookCredit(
+  propType: string,
+  look: PropLook | null | undefined
+): PropDesignCredit | undefined {
+  if (normalizePropLook(look) !== "model") return undefined;
+  return MODEL_LOOK_CREDITS[propType.toLowerCase()];
+}
+
 export interface PropLookOption {
   id: PropLook;
   label: string;
   image: string;
   /** Grip-centred art paints half its box; the card frames the painted part. */
   crop?: PropTileCrop;
+  /** Set when the look was traced from another maker's product. */
+  designCredit?: PropDesignCredit;
 }
 
 /**
@@ -470,6 +502,7 @@ export function propLookOptions(propType: string): readonly PropLookOption[] {
       label: "Version 2",
       image: modelSpriteArtwork(normalized, "left"),
       crop: sprite ? modelSpriteCrop(sprite) : undefined,
+      designCredit: propLookCredit(normalized, "model"),
     },
   ];
 }
