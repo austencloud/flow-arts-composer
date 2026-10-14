@@ -1,3 +1,21 @@
+<!--
+ShareCollectionSheet.svelte — share a collection you own.
+
+One screen at a time, like the sequence share sheet and the settings drill:
+a landing with the collection and three choices (a public link, sending it to
+people on Flow Arts Composer, who already has access), and each choice opens
+as a full-height screen with a Back arrow. The drawer gives this sheet a
+bounded box on every device (a full-height rail on desktop, a full-screen
+sheet on phones), so every screen is sized to that box instead of stacking
+three cards into one long scroll. On the landing the collection cover grows
+to fill whatever is left above the choices; on the detail screens the list or
+the QR code takes the room.
+
+Motion: `Crossfade mode="swap" motion="step"` with `fill`, the canonical
+sequential-screen transition (crossfade-primitive.md), direction +1 going in
+and -1 coming back. Escape on a detail screen goes back before the drawer's
+own Escape (which closes the sheet) gets a turn.
+-->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
@@ -8,9 +26,9 @@
   import type { CollectionAccessRole } from "#lib/shared/library/domain/models/collection.js";
   import { getCollectionCollaborationManager } from "#lib/shared/library/get-collection-collaboration-manager.js";
   import type { CollectionShareAccessItem } from "#lib/shared/library/services/contracts/ICollectionCollaborationManager.js";
-  import type { ConversationPreview } from "#lib/shared/messaging/domain/models/conversation-models.js";
   import { conversationService } from "#lib/shared/messaging/services/conversation-manager.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import SettingsDrillRow from "#lib/shared/ui/components/settings-drill/SettingsDrillRow.svelte";
   import UserSearchInput from "#lib/shared/user-search/UserSearchInput.svelte";
   import { onMount } from "svelte";
   import type { PendingMessageAttachment } from "../../domain/pending-message-attachment";
@@ -19,6 +37,7 @@
   import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
   import { communityCollectionsState } from "#lib/features/browse/collections/state/community-collections-state.svelte.js";
   import { buildPublicCollectionUrl } from "#lib/shared/browse/navigation/browse-route-resolver.js";
+  import { getUrlQRCodeGenerator } from "#lib/shared/qr/get-qr-code-generator.js";
   import { shareOrCopyLink } from "#lib/shared/share/services/link-share.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
@@ -38,6 +57,8 @@
     conversationId?: string;
   }
 
+  type ShareRoute = "home" | "link" | "people" | "access";
+
   const MESSAGE_MAX = 500;
   const MAX_RECENT_PEOPLE = 8;
   // Words, not icons: an eye and a pencil on their own read as a mystery
@@ -51,6 +72,25 @@
   const payload = $derived(attachment.payload);
   const collaborationManager = getCollectionCollaborationManager();
   const haptic = getHapticFeedback();
+
+  // Which screen is up, and which way the next one slides in: +1 drilling
+  // into a choice, -1 coming back to the landing.
+  let route = $state<ShareRoute>("home");
+  let direction = $state<1 | -1>(1);
+
+  function go(next: ShareRoute): void {
+    direction = next === "home" ? -1 : 1;
+    route = next;
+  }
+
+  function handleKeydown(event: KeyboardEvent): void {
+    if (event.key !== "Escape" || route === "home") return;
+    // Back, not close: the drawer's window listener would close the whole
+    // sheet, so the event stops here while a detail screen is up.
+    event.preventDefault();
+    event.stopPropagation();
+    go("home");
+  }
 
   // The sheet opens for collections you own, so the live copy of the
   // collection is in your library state. That copy knows whether it is
@@ -72,6 +112,26 @@
   let linkCopied = $state(false);
   let copiedTimer: ReturnType<typeof setTimeout> | null = null;
   let publishing = $state(false);
+
+  // The link screen also shows the address as a QR code, so a person standing
+  // next to you can open it on their phone. Made once, the first time the
+  // screen is up for a public collection; the box it lands in is reserved.
+  let qrSrc = $state<string | null>(null);
+  let qrFailed = $state(false);
+  let qrRequested = false;
+  $effect(() => {
+    if (route !== "link" || !isPublic || qrRequested) return;
+    qrRequested = true;
+    const url = publicUrl;
+    getUrlQRCodeGenerator()
+      .generateUrlAsImage(url, 512)
+      .then((image) => {
+        qrSrc = image.src;
+      })
+      .catch(() => {
+        qrFailed = true;
+      });
+  });
 
   /**
    * Hand the address on, on the press itself: the phone's own share sheet
@@ -158,6 +218,29 @@
     selectedPeople.length > 1
       ? t("inbox_share_count", { count: selectedPeople.length })
       : t("inbox_ui_share_collection")
+  );
+
+  // One line under each landing row: the current state of that choice.
+  const linkRowValue = $derived(
+    isPublic
+      ? t("inbox_share_link_row_public")
+      : t("inbox_share_link_row_private")
+  );
+  const accessRowValue = $derived(
+    accessLoading
+      ? t("inbox_ui_loading_access")
+      : accessError
+        ? t("inbox_ui_people_with_access_could_not_be_loaded")
+        : accessItems.length === 0
+          ? t("inbox_share_access_only_you")
+          : accessItems.length === 1
+            ? t("inbox_share_access_one_person")
+            : t("inbox_share_access_people", { count: accessItems.length })
+  );
+  const sequenceCountLabel = $derived(
+    payload.sequenceCount === 1
+      ? t("inbox_share_one_sequence")
+      : t("inbox_share_sequences", { count: payload.sequenceCount })
   );
 
   onMount(() => {
@@ -345,270 +428,351 @@
   }
 </script>
 
-<div class="share-sheet">
-  <section
-    class="collection-summary"
-    aria-label={t("inbox_ui_collection_to_share")}
+{#snippet screenHeader(title: string)}
+  <div class="screen-header">
+    <button
+      type="button"
+      class="back-button"
+      onclick={() => go("home")}
+      aria-label={t("inbox_share_back")}
+    >
+      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+    </button>
+    <h3>{title}</h3>
+  </div>
+{/snippet}
+
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="share-sheet" onkeydown={handleKeydown}>
+  <Crossfade
+    key={route}
+    duration={DURATION.normal}
+    mode="swap"
+    motion="step"
+    {direction}
+    fill
   >
-    <div
-      class="collection-icon"
-      style:--collection-color={payload.color ?? "var(--theme-accent)"}
-    >
-      <i class={payload.icon || "fa-solid fa-folder"} aria-hidden="true"></i>
-    </div>
-    <div class="collection-copy">
-      <span class="eyebrow">{t("inbox_ui_collection")}</span>
-      <h3>{payload.name}</h3>
-      <p>
-        {payload.sequenceCount}
-        {payload.sequenceCount === 1 ? "sequence" : "sequences"}
-      </p>
-    </div>
-  </section>
-
-  <section class="share-link" aria-labelledby="share-link-title">
-    <div class="section-heading">
-      <div>
-        <h3 id="share-link-title">{t("inbox_share_link_title")}</h3>
-        <p>
-          {isPublic
-            ? t("inbox_share_link_public")
-            : canPublish
-              ? t("inbox_share_link_private")
-              : t("inbox_share_link_private_locked")}
-        </p>
-      </div>
-    </div>
-
-    <!-- Public ↔ private is a structural swap the person asked for (Make
-         public), so it crossfades through the shared owner instead of
-         popping; animateHeight carries the row-vs-button height change. -->
-    <Crossfade
-      key={isPublic ? "link" : "locked"}
-      duration={DURATION.normal}
-      animateHeight
-    >
-      {#if isPublic}
-        <div class="link-row">
-          <span class="link-text" title={publicUrl}>{publicUrl}</span>
-          <button
-            type="button"
-            class="share-button link-button"
-            onclick={copyLink}
-            aria-label={linkCopied
-              ? t("share_link_copied")
-              : t("share_copy_link")}
-          >
-            <i
-              class={linkCopied ? "fa-solid fa-check" : "fa-solid fa-link"}
-              aria-hidden="true"
-            ></i>
-            <!-- Both labels sit in one cell so the button keeps its width
-                 when the words swap. -->
-            <span class="link-label">
-              <span class="ghost" aria-hidden="true"
-                >{t("share_copy_link")}</span
-              >
-              <span class="ghost" aria-hidden="true"
-                >{t("share_link_copied")}</span
-              >
-              <span class="live">
-                {linkCopied ? t("share_link_copied") : t("share_copy_link")}
+    {#if route === "home"}
+      <div class="screen home">
+        <!-- The cover takes whatever height the choices leave over, so the
+             landing fills its box on a tall rail and stays one screen on a
+             phone. -->
+        <section
+          class="hero"
+          class:has-cover={!!payload.coverImageUrl}
+          style:--collection-color={payload.color ?? "var(--theme-accent)"}
+          aria-label={t("inbox_ui_collection_to_share")}
+        >
+          {#if payload.coverImageUrl}
+            <img class="hero-cover" src={payload.coverImageUrl} alt="" />
+          {/if}
+          <div class="hero-copy">
+            {#if !payload.coverImageUrl}
+              <span class="hero-icon">
+                <!-- Same convention as the collection card: the stored icon
+                     is the bare glyph name, the style prefix is ours. -->
+                <i
+                  class={`fa-solid ${payload.icon || "fa-folder"}`}
+                  aria-hidden="true"
+                ></i>
               </span>
+            {/if}
+            <span class="hero-text">
+              <span class="eyebrow">{t("inbox_ui_collection")}</span>
+              <h3>{payload.name}</h3>
+              <p>{sequenceCountLabel}</p>
             </span>
-          </button>
+          </div>
+        </section>
+
+        <div class="drill-list">
+          <SettingsDrillRow
+            label={t("inbox_share_link_title")}
+            value={linkRowValue}
+            disabled={!isPublic && !canPublish}
+            disabledReason={t("inbox_share_link_row_locked")}
+            onclick={() => go("link")}
+          />
+          <SettingsDrillRow
+            label={t("inbox_share_people_title")}
+            value={t("inbox_share_people_row")}
+            onclick={() => go("people")}
+          />
+          <SettingsDrillRow
+            label={t("inbox_ui_people_with_access")}
+            value={accessRowValue}
+            onclick={() => go("access")}
+          />
         </div>
-      {:else if canPublish}
-        <div class="link-row">
+      </div>
+    {:else if route === "link"}
+      <div class="screen">
+        {@render screenHeader(t("inbox_share_link_title"))}
+        <div class="screen-body">
+          <!-- Public ↔ private is a structural swap the person asked for
+               (Make public), so it crossfades through the shared owner. -->
+          <Crossfade
+            key={isPublic ? "link" : "locked"}
+            duration={DURATION.normal}
+            fill
+          >
+            {#if isPublic}
+              <div class="link-screen">
+                <p class="lede">{t("inbox_share_link_public")}</p>
+                <span class="link-text" title={publicUrl}>{publicUrl}</span>
+                <button
+                  type="button"
+                  class="share-button"
+                  onclick={copyLink}
+                  aria-label={linkCopied
+                    ? t("share_link_copied")
+                    : t("share_copy_link")}
+                >
+                  <i
+                    class={linkCopied
+                      ? "fa-solid fa-check"
+                      : "fa-solid fa-link"}
+                    aria-hidden="true"
+                  ></i>
+                  <!-- Both labels sit in one cell so the button keeps its
+                       width when the words swap. -->
+                  <span class="link-label">
+                    <span class="ghost" aria-hidden="true"
+                      >{t("share_copy_link")}</span
+                    >
+                    <span class="ghost" aria-hidden="true"
+                      >{t("share_link_copied")}</span
+                    >
+                    <span class="live">
+                      {linkCopied
+                        ? t("share_link_copied")
+                        : t("share_copy_link")}
+                    </span>
+                  </span>
+                </button>
+                <div class="qr-panel">
+                  <!-- A square is reserved before the code arrives, so the
+                       caption never moves. -->
+                  <div class="qr-tile">
+                    {#if qrSrc}
+                      <img src={qrSrc} alt={t("inbox_share_qr_alt")} />
+                    {:else if !qrFailed}
+                      <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"
+                      ></i>
+                    {/if}
+                  </div>
+                  <p class="qr-caption">
+                    {qrFailed
+                      ? t("inbox_share_qr_failed")
+                      : t("inbox_share_qr_hint")}
+                  </p>
+                </div>
+              </div>
+            {:else}
+              <div class="link-screen">
+                <p class="lede">{t("inbox_share_link_private")}</p>
+                <button
+                  type="button"
+                  class="share-button"
+                  onclick={makePublic}
+                  disabled={publishing || !canPublish}
+                >
+                  {#if publishing}
+                    <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"
+                    ></i>
+                    {t("inbox_share_making_public")}
+                  {:else}
+                    <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                    {t("inbox_share_make_public")}
+                  {/if}
+                </button>
+              </div>
+            {/if}
+          </Crossfade>
+        </div>
+      </div>
+    {:else if route === "people"}
+      <div class="screen">
+        {@render screenHeader(t("inbox_share_people_title"))}
+        <div class="screen-body">
+          <p class="lede">
+            {t(
+              "inbox_ui_choose_what_they_can_do_then_send_the_collection_in_a_message"
+            )}
+          </p>
+
+          <SegmentedControl
+            options={roleOptions}
+            value={role}
+            onchange={(value) => (role = value)}
+            ariaLabel={t("inbox_ui_permission_for_new_people")}
+            semantics="radiogroup"
+          />
+
+          {#key searchResetKey}
+            <UserSearchInput
+              onSelect={selectSearchResult}
+              placeholder={t("inbox_ui_search_by_username_or_name")}
+              inlineResults
+              {excludeUserIds}
+              disabled={phase === "sending"}
+            />
+          {/key}
+
+          {#if selectedPeople.length > 0}
+            <div
+              class="selected-people"
+              aria-label={t("inbox_ui_selected_people")}
+            >
+              {#each selectedPeople as person (person.id)}
+                {@const identity = getUserIdentityLabels(person)}
+                <button
+                  class="person-chip"
+                  type="button"
+                  onclick={() => togglePerson(person)}
+                  disabled={phase === "sending"}
+                  aria-label={t("inbox_remove_person", {
+                    name: identity.primary,
+                  })}
+                >
+                  <RobustAvatar
+                    src={person.avatar}
+                    name={identity.primary}
+                    alt=""
+                    customSize={28}
+                  />
+                  <span>{identity.primary}</span>
+                  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+              {/each}
+            </div>
+          {/if}
+
+          {#if recentPeople.length > 0}
+            <div class="recent-people">
+              <span class="field-label">{t("inbox_ui_recent")}</span>
+              <div class="recent-list">
+                {#each recentPeople as person (person.id)}
+                  {@const identity = getUserIdentityLabels(person)}
+                  <button
+                    type="button"
+                    class="recent-person"
+                    onclick={() => togglePerson(person)}
+                  >
+                    <RobustAvatar
+                      src={person.avatar}
+                      name={identity.primary}
+                      alt=""
+                      customSize={36}
+                    />
+                    <span>{identity.primary}</span>
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                  </button>
+                {/each}
+              </div>
+            </div>
+          {/if}
+        </div>
+
+        <!-- The note and Send stay put at the bottom while the people list
+             above scrolls, the way a message composer does. -->
+        <div class="screen-footer">
+          <label class="message-field">
+            <span>{t("inbox_ui_optional_message")}</span>
+            <textarea
+              bind:value={note}
+              maxlength={MESSAGE_MAX}
+              rows="2"
+              placeholder={t("inbox_ui_add_a_note")}
+              disabled={phase === "sending"}
+            ></textarea>
+            <small>{note.length}/{MESSAGE_MAX}</small>
+          </label>
+
           <button
             type="button"
-            class="share-button secondary"
-            onclick={makePublic}
-            disabled={publishing}
+            class="share-button"
+            onclick={share}
+            disabled={selectedPeople.length === 0 || phase === "sending"}
           >
-            {#if publishing}
+            {#if phase === "sending"}
               <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
-              {t("inbox_share_making_public")}
+              {t("inbox_ui_sharing")}
             {:else}
-              <i class="fa-solid fa-globe" aria-hidden="true"></i>
-              {t("inbox_share_make_public")}
+              <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+              {shareLabel}
             {/if}
           </button>
         </div>
-      {/if}
-    </Crossfade>
-  </section>
-
-  <section class="add-people" aria-labelledby="add-people-title">
-    <div class="section-heading">
-      <div>
-        <h3 id="add-people-title">{t("inbox_ui_add_people")}</h3>
-        <p>
-          {t(
-            "inbox_ui_choose_what_they_can_do_then_send_the_collection_in_a_message"
-          )}
-        </p>
       </div>
-    </div>
+    {:else}
+      <div class="screen">
+        {@render screenHeader(t("inbox_ui_people_with_access"))}
+        <div class="screen-body">
+          <p class="lede">
+            {t("inbox_ui_you_control_access_to_this_collection")}
+          </p>
 
-    <SegmentedControl
-      options={roleOptions}
-      value={role}
-      onchange={(value) => (role = value)}
-      ariaLabel={t("inbox_ui_permission_for_new_people")}
-      semantics="radiogroup"
-    />
-
-    {#key searchResetKey}
-      <UserSearchInput
-        onSelect={selectSearchResult}
-        placeholder={t("inbox_ui_search_by_username_or_name")}
-        inlineResults
-        {excludeUserIds}
-        disabled={phase === "sending"}
-      />
-    {/key}
-
-    {#if selectedPeople.length > 0}
-      <div class="selected-people" aria-label={t("inbox_ui_selected_people")}>
-        {#each selectedPeople as person (person.id)}
-          {@const identity = getUserIdentityLabels(person)}
-          <button
-            class="person-chip"
-            type="button"
-            onclick={() => togglePerson(person)}
-            disabled={phase === "sending"}
-            aria-label={t("inbox_remove_person", { name: identity.primary })}
-          >
-            <RobustAvatar
-              src={person.avatar}
-              name={identity.primary}
-              alt=""
-              customSize={28}
-            />
-            <span>{identity.primary}</span>
-            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-          </button>
-        {/each}
-      </div>
-    {/if}
-
-    {#if recentPeople.length > 0}
-      <div class="recent-people">
-        <span class="field-label">{t("inbox_ui_recent")}</span>
-        <div class="recent-list">
-          {#each recentPeople as person (person.id)}
-            {@const identity = getUserIdentityLabels(person)}
-            <button
-              type="button"
-              class="recent-person"
-              onclick={() => togglePerson(person)}
-            >
-              <RobustAvatar
-                src={person.avatar}
-                name={identity.primary}
-                alt=""
-                customSize={36}
-              />
-              <span>{identity.primary}</span>
-              <i class="fa-solid fa-plus" aria-hidden="true"></i>
-            </button>
-          {/each}
+          {#if accessLoading}
+            <div class="access-state" role="status">
+              <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+              {t("inbox_ui_loading_access")}
+            </div>
+          {:else if accessError}
+            <div class="access-state warning" role="status">
+              <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"
+              ></i>
+              {t(
+                "inbox_ui_access_could_not_be_loaded_close_this_sheet_and_try_again"
+              )}
+            </div>
+          {:else if accessItems.length === 0}
+            <div class="access-state">
+              {t("inbox_ui_only_you_can_open_this_collection")}
+            </div>
+          {:else}
+            <div class="access-list">
+              {#each accessItems as item (item.grant.recipientId)}
+                <div class="access-row">
+                  <RobustAvatar
+                    src={item.recipient.avatar}
+                    name={item.recipient.displayName}
+                    alt=""
+                    customSize={40}
+                  />
+                  <span class="access-name">{item.recipient.displayName}</span>
+                  <select
+                    aria-label={t("inbox_permission_person", {
+                      name: item.recipient.displayName,
+                    })}
+                    value={item.grant.role}
+                    disabled={updatingRecipientId === item.grant.recipientId}
+                    onchange={(event) =>
+                      changeRole(item, event.currentTarget.value)}
+                  >
+                    <option value="viewer">{t("inbox_ui_can_view")}</option>
+                    <option value="editor">{t("inbox_ui_can_edit")}</option>
+                  </select>
+                  <button
+                    type="button"
+                    class="remove-button"
+                    onclick={() => askToRemove(item)}
+                    disabled={updatingRecipientId === item.grant.recipientId}
+                    aria-label={t("inbox_remove_access_person", {
+                      name: item.recipient.displayName,
+                    })}
+                    title={t("inbox_ui_remove_access")}
+                  >
+                    <i class="fa-solid fa-user-minus" aria-hidden="true"></i>
+                  </button>
+                </div>
+              {/each}
+            </div>
+          {/if}
         </div>
       </div>
     {/if}
-
-    <label class="message-field">
-      <span>{t("inbox_ui_optional_message")}</span>
-      <textarea
-        bind:value={note}
-        maxlength={MESSAGE_MAX}
-        rows="3"
-        placeholder={t("inbox_ui_add_a_note")}
-        disabled={phase === "sending"}
-      ></textarea>
-      <small>{note.length}/{MESSAGE_MAX}</small>
-    </label>
-
-    <button
-      type="button"
-      class="share-button"
-      onclick={share}
-      disabled={selectedPeople.length === 0 || phase === "sending"}
-    >
-      {#if phase === "sending"}
-        <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
-        {t("inbox_ui_sharing")}
-      {:else}
-        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-        {shareLabel}
-      {/if}
-    </button>
-  </section>
-
-  <section class="access-section" aria-labelledby="access-title">
-    <div class="section-heading">
-      <div>
-        <h3 id="access-title">{t("inbox_ui_people_with_access")}</h3>
-        <p>{t("inbox_ui_you_control_access_to_this_collection")}</p>
-      </div>
-    </div>
-
-    {#if accessLoading}
-      <div class="access-state" role="status">
-        <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
-        {t("inbox_ui_loading_access")}
-      </div>
-    {:else if accessError}
-      <div class="access-state warning" role="status">
-        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-        {t(
-          "inbox_ui_access_could_not_be_loaded_close_this_sheet_and_try_again"
-        )}
-      </div>
-    {:else if accessItems.length === 0}
-      <div class="access-state">
-        {t("inbox_ui_only_you_can_open_this_collection")}
-      </div>
-    {:else}
-      <div class="access-list">
-        {#each accessItems as item (item.grant.recipientId)}
-          <div class="access-row">
-            <RobustAvatar
-              src={item.recipient.avatar}
-              name={item.recipient.displayName}
-              alt=""
-              customSize={40}
-            />
-            <span class="access-name">{item.recipient.displayName}</span>
-            <select
-              aria-label={t("inbox_permission_person", {
-                name: item.recipient.displayName,
-              })}
-              value={item.grant.role}
-              disabled={updatingRecipientId === item.grant.recipientId}
-              onchange={(event) => changeRole(item, event.currentTarget.value)}
-            >
-              <option value="viewer">{t("inbox_ui_can_view")}</option>
-              <option value="editor">{t("inbox_ui_can_edit")}</option>
-            </select>
-            <button
-              type="button"
-              class="remove-button"
-              onclick={() => askToRemove(item)}
-              disabled={updatingRecipientId === item.grant.recipientId}
-              aria-label={t("inbox_remove_access_person", {
-                name: item.recipient.displayName,
-              })}
-              title={t("inbox_ui_remove_access")}
-            >
-              <i class="fa-solid fa-user-minus" aria-hidden="true"></i>
-            </button>
-          </div>
-        {/each}
-      </div>
-    {/if}
-  </section>
+  </Crossfade>
 </div>
 
 <ConfirmDialog
@@ -626,48 +790,250 @@
 />
 
 <style>
+  /* The drawer gives this box a definite height on every device; the sheet
+     names it as a size container so the landing can recompose when short. */
   .share-sheet {
-    container-type: inline-size;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    container: share-sheet / size;
     height: 100%;
     min-height: 0;
     padding: 16px;
+    /* Clips the step drift while one screen slides out and the next in. */
+    overflow: hidden;
+  }
+
+  .screen {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    height: 100%;
+    min-height: 0;
+  }
+
+  /* ----- Landing ----- */
+
+  .home {
+    gap: 16px;
+    /* The landing never scrolls on an ordinary box, but a very short one
+       (a landscape phone) may still need to reach the last row. */
     overflow-y: auto;
   }
 
-  .collection-summary,
-  .share-link,
-  .add-people,
-  .access-section {
+  .hero {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 7.5rem;
+    display: grid;
+    place-items: center;
+    padding: 16px;
     border: 1px solid var(--theme-stroke);
     border-radius: 16px;
-    background: var(--theme-card-bg);
+    background:
+      radial-gradient(
+        circle at 50% 42%,
+        color-mix(in srgb, var(--collection-color) 30%, transparent),
+        transparent 60%
+      ),
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--collection-color) 22%, var(--theme-card-bg)),
+        color-mix(in srgb, var(--collection-color) 5%, var(--theme-card-bg))
+      );
+    overflow: hidden;
+    text-align: center;
   }
 
-  .share-link {
+  .hero-cover {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .hero-copy {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Over a cover the words sit at the bottom edge on a scrim that fades up
+     into the picture, so the picture stays the point. */
+  .hero.has-cover {
+    place-items: end start;
+    padding: 0;
+    text-align: left;
+  }
+
+  .hero.has-cover .hero-copy {
+    width: 100%;
+    align-items: flex-start;
+    padding: 40px 16px 16px;
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.72),
+      rgba(0, 0, 0, 0.35) 55%,
+      transparent
+    );
+  }
+
+  /* The glyph grows with the box (a quarter of the sheet's height, within
+     bounds) so a tall rail reads as a cover, not a small badge in a void. */
+  .hero-icon {
+    --hero-icon: clamp(4.5rem, 24cqh, 9rem);
+    display: grid;
+    place-items: center;
+    width: var(--hero-icon);
+    height: var(--hero-icon);
+    border-radius: calc(var(--hero-icon) * 0.28);
+    background: color-mix(in srgb, var(--collection-color) 22%, transparent);
+    box-shadow: 0 0 calc(var(--hero-icon) * 0.9)
+      color-mix(in srgb, var(--collection-color) 35%, transparent);
+    color: var(--collection-color);
+    font-size: calc(var(--hero-icon) * 0.45);
+  }
+
+  .hero-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .hero-text h3 {
+    font-size: var(--font-size-lg, 20px);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .hero.has-cover .hero-text h3,
+  .hero.has-cover .hero-text p,
+  .hero.has-cover .eyebrow {
+    color: white;
+  }
+
+  .hero.has-cover .hero-text p,
+  .hero.has-cover .eyebrow {
+    opacity: 0.85;
+  }
+
+  /* A short box (a landscape phone, a small laptop window) has no room for
+     a tall centred cover: icon and words go side by side instead. */
+  @container share-sheet (max-height: 480px) {
+    .hero {
+      min-height: 4.5rem;
+      text-align: left;
+    }
+
+    .screen-footer textarea {
+      min-height: var(--min-touch-target, 44px);
+    }
+
+    .hero-copy {
+      flex-direction: row;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .hero-icon {
+      --hero-icon: 3.25rem;
+    }
+
+    .hero-text h3 {
+      font-size: var(--font-size-base, 16px);
+    }
+  }
+
+  .drill-list {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* ----- Detail screens ----- */
+
+  .screen-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .screen-header h3 {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--font-size-base, 16px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .back-button {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: var(--min-touch-target, 44px);
+    height: var(--min-touch-target, 44px);
+    border: 1px solid var(--theme-stroke);
+    border-radius: 12px;
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    font-size: var(--font-size-base, 16px);
+    cursor: pointer;
+  }
+
+  .back-button:hover {
+    border-color: var(--theme-stroke-strong, var(--theme-stroke));
+    background: var(--theme-card-hover-bg);
+  }
+
+  .screen-body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 0;
+    overflow-y: auto;
+    /* Focus rings on the outermost controls would otherwise be clipped. */
+    padding: 2px;
+    margin: -2px;
+  }
+
+  .screen-footer {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px solid var(--theme-stroke);
+  }
+
+  .lede {
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-sm, 14px);
+    line-height: 1.45;
+  }
+
+  /* ----- Link ----- */
+
+  .link-screen {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 16px;
-  }
-
-  /* The address and its button share a row until the panel is too narrow
-     for both, then the button drops under the address at full width. */
-  .link-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
+    height: 100%;
+    min-height: 0;
   }
 
   .link-text {
-    flex: 1 1 220px;
-    min-width: 0;
     /* A block, not a flex box: text-overflow only draws its ellipsis on a
        block container, and the line-height centres the single line. */
     display: block;
+    min-width: 0;
     line-height: var(--min-touch-target, 44px);
     padding: 0 12px;
     border: 1px solid var(--theme-stroke);
@@ -680,10 +1046,6 @@
     white-space: nowrap;
     /* Reads as a URL field people may select, not a button. */
     user-select: all;
-  }
-
-  .link-button {
-    flex: 0 0 auto;
   }
 
   .link-label {
@@ -699,40 +1061,47 @@
     visibility: hidden;
   }
 
-  .share-button.secondary {
-    border-color: var(--theme-stroke);
-    background: transparent;
-    color: var(--theme-text);
-  }
-
-  .share-button.secondary:hover:not(:disabled) {
-    border-color: var(--theme-accent);
-    background: var(--theme-card-hover-bg);
-  }
-
-  .collection-summary {
+  /* The code takes the room left under the button: a square no wider than
+     the panel and no taller than what remains above its caption. */
+  .qr-panel {
+    container: qr-panel / size;
+    flex: 1 1 auto;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 14px;
-    padding: 16px;
+    justify-content: center;
+    gap: 10px;
+    min-height: 9rem;
   }
 
-  .collection-icon {
+  .qr-tile {
     display: grid;
     place-items: center;
-    width: 52px;
-    height: 52px;
-    flex: 0 0 52px;
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--collection-color) 18%, transparent);
-    color: var(--collection-color);
-    font-size: 24px;
+    width: min(100cqw, calc(100cqh - 2.5rem), 22rem);
+    aspect-ratio: 1;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 16px;
+    background: var(--theme-card-bg);
+    color: var(--theme-text-dim);
+    font-size: 1.25rem;
+    overflow: hidden;
   }
 
-  .collection-copy,
-  .section-heading > div {
-    min-width: 0;
+  .qr-tile img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 8%;
   }
+
+  .qr-caption {
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact, 12px);
+    text-align: center;
+  }
+
+  /* ----- Shared bits ----- */
 
   .eyebrow,
   .field-label,
@@ -747,27 +1116,16 @@
     margin: 0;
   }
 
-  .collection-copy h3,
-  .section-heading h3 {
+  .hero-text h3,
+  .screen-header h3 {
     color: var(--theme-text);
-    font-size: var(--font-size-base, 16px);
-    line-height: 1.3;
+    font-weight: 700;
   }
 
-  .collection-copy p,
-  .section-heading p {
-    margin-top: 3px;
+  .hero-text p {
     color: var(--theme-text-dim);
     font-size: var(--font-size-compact, 12px);
     line-height: 1.4;
-  }
-
-  .add-people,
-  .access-section {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 16px;
   }
 
   .selected-people {
@@ -848,7 +1206,7 @@
 
   textarea {
     width: 100%;
-    min-height: 84px;
+    min-height: 64px;
     resize: vertical;
     padding: 12px;
     border: 1px solid var(--theme-stroke);
@@ -897,6 +1255,7 @@
   }
 
   .access-state {
+    flex: 1 1 auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -952,7 +1311,7 @@
     color: var(--semantic-error);
   }
 
-  @container (max-width: 360px) {
+  @container share-sheet (max-width: 360px) {
     .recent-list {
       grid-template-columns: 1fr;
     }

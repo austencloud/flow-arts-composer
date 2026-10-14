@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { getConceptProgressTracker } from "#lib/features/learn/get-concept-progress-tracker.js";
@@ -37,6 +37,8 @@
   // Progress state
   let progress = $state(conceptProgressService.getProgress());
   let showCourseMap = $state(false);
+  let mapElement = $state<HTMLDivElement | undefined>(undefined);
+  let pendingMapScroll = false;
   let selectedPlaceId = $state("1.1");
   const availableConcepts = getAvailableConcepts();
   const availableConceptIds = new Set(
@@ -62,8 +64,11 @@
       );
       const place = placeId ? getConceptPlace(placeId) : undefined;
       if (place?.tkaLevel === 1) {
+        const mapWasVisible = showCourseMap;
         selectedPlaceId = place.id;
+        pendingMapScroll = true;
         showCourseMap = true;
+        if (mapWasVisible) void tick().then(scrollToLinkedMap);
       }
     };
     syncPlaceFromUrl();
@@ -74,6 +79,16 @@
       window.removeEventListener("popstate", syncPlaceFromUrl);
     };
   });
+
+  function scrollToLinkedMap() {
+    if (!pendingMapScroll || !mapElement) return;
+    pendingMapScroll = false;
+    mapElement.scrollIntoView({ block: "start" });
+    mapElement.querySelector('[aria-pressed="true"]')?.scrollIntoView({
+      block: "nearest",
+      inline: "center",
+    });
+  }
 
   // Find the current concept (first non-completed, non-locked)
   // The experience registry only contains lessons with a real component.
@@ -201,10 +216,6 @@
         <h1 id="course-title">{t("learn_ui_interactive_lessons")}</h1>
         <p>{t("learn_ui_course_intro")}</p>
       </div>
-      <a class="read-guide-link" href="/guide">
-        <i class="fa-solid fa-book-open" aria-hidden="true"></i>
-        <span>{t("learn_ui_read_guide")}</span>
-      </a>
     </header>
 
     <div class="main-content">
@@ -237,13 +248,50 @@
     </div>
   </section>
 
-  <section class="lesson-library" aria-labelledby="lesson-library-title">
+  <section
+    id="lesson-library"
+    class="lesson-library"
+    aria-labelledby="lesson-library-title"
+  >
     <header class="library-heading">
       <h2 id="lesson-library-title">{t("learn_ui_available_lessons")}</h2>
       <span
-        >{t("learn_ui_lesson_count", { count: availableConcepts.length })}</span
+        >{t("learn_ui_lesson_count", {
+          count: availableConcepts.length,
+        })}</span
       >
     </header>
+    <div class="map-heading">
+      <PanelButton
+        variant="quiet"
+        onclick={() => (showCourseMap = !showCourseMap)}
+        ariaExpanded={showCourseMap}
+        ariaControls="course-map"
+      >
+        {showCourseMap
+          ? tDynamic("learn_map_hide")
+          : tDynamic("learn_map_explore")}
+        <i
+          class="fa-solid {showCourseMap ? 'fa-chevron-up' : 'fa-chevron-down'}"
+          aria-hidden="true"
+        ></i>
+      </PanelButton>
+    </div>
+    {#if showCourseMap}
+      <div
+        id="course-map"
+        class="level-map-slot"
+        bind:this={mapElement}
+        transition:growFade
+        onintroend={scrollToLinkedMap}
+      >
+        <ConceptLevelMap
+          selectedId={selectedPlaceId}
+          onSelect={handlePlaceSelect}
+          onLessonStart={handleConceptStart}
+        />
+      </div>
+    {/if}
     <div class="all-concepts">
       {#each availableCategories as category}
         {@const categoryProgress = getCategoryProgress(category)}
@@ -276,30 +324,6 @@
     </div>
   </section>
 
-  <div class="map-heading">
-    <PanelButton
-      onclick={() => (showCourseMap = !showCourseMap)}
-      ariaExpanded={showCourseMap}
-    >
-      {showCourseMap
-        ? tDynamic("learn_map_hide")
-        : tDynamic("learn_map_explore")}
-      <i
-        class="fa-solid {showCourseMap ? 'fa-chevron-up' : 'fa-chevron-down'}"
-        aria-hidden="true"
-      ></i>
-    </PanelButton>
-  </div>
-  {#if showCourseMap}
-    <div class="level-map-slot" transition:growFade>
-      <ConceptLevelMap
-        selectedId={selectedPlaceId}
-        onSelect={handlePlaceSelect}
-        onLessonStart={handleConceptStart}
-      />
-    </div>
-  {/if}
-
   {#if premiumNudgeVisible}
     <div class="premium-nudge-overlay">
       <PremiumNudge
@@ -330,11 +354,7 @@
 
   .launch-zone {
     display: grid;
-    gap: clamp(1rem, 2cqw, 1.75rem);
-    padding: clamp(1rem, 2cqw, 1.5rem);
-    background: var(--theme-panel-bg);
-    border: 1px solid var(--theme-stroke);
-    border-radius: 16px;
+    gap: 1rem;
   }
 
   .course-intro {
@@ -365,28 +385,6 @@
     text-wrap: pretty;
   }
 
-  .read-guide-link {
-    display: inline-flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-height: var(--min-touch-target, 44px);
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--theme-stroke-strong, var(--theme-stroke));
-    border-radius: 10px;
-    color: var(--theme-text);
-    font-size: 0.875rem;
-    font-weight: 650;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .read-guide-link:hover {
-    background: var(--theme-card-hover-bg);
-    border-color: var(--prop-blue, #60a5fa);
-  }
-
   /* Webkit scrollbar styling */
   .concept-path::-webkit-scrollbar {
     width: 6px;
@@ -411,7 +409,6 @@
     flex-direction: column;
     gap: 0.75rem;
     max-width: 52rem;
-    margin: 0 auto;
     width: 100%;
   }
 
@@ -450,7 +447,11 @@
     font-size: 0.875rem;
   }
   .map-heading {
-    padding-top: 0.5rem;
+    margin-top: -1rem;
+  }
+
+  .level-map-slot {
+    scroll-margin-top: 5rem;
   }
 
   /* Completion celebration */
@@ -541,31 +542,6 @@
       flex-direction: column;
       gap: 1rem;
       padding: 0;
-    }
-
-    .read-guide-link {
-      align-self: flex-start;
-    }
-  }
-
-  @container learn-tab (min-width: 70rem) {
-    .launch-zone {
-      grid-template-columns: minmax(20rem, 0.78fr) minmax(34rem, 1.22fr);
-      align-items: center;
-    }
-
-    .course-intro {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    .read-guide-link {
-      align-self: flex-start;
-    }
-
-    .main-content {
-      max-width: none;
-      margin: 0;
     }
   }
 

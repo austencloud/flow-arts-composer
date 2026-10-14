@@ -17,7 +17,7 @@
   import { isNamedRouteMorphActive } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
-  import { isConstrainedConnection } from "#lib/shared/platform/network-conditions.js";
+  import { prefersReducedData } from "#lib/shared/platform/network-conditions.js";
   import { marketingBackground } from "../state/marketing-background-state.svelte";
   import { pageSurface } from "../domain/page-surface";
   import ToastContainer from "#lib/shared/toast/components/ToastContainer.svelte";
@@ -50,8 +50,6 @@
   let liveBackgroundRequested = false;
 
   onMount(() => {
-    if (isConstrainedConnection()) return;
-
     let mounted = true;
     let secondFrame = 0;
 
@@ -60,8 +58,11 @@
     // after that first useful frame instead of blocking it.
     const firstFrame = requestAnimationFrame(() => {
       secondFrame = requestAnimationFrame(() => {
-        if (mounted) firstFramesPresented = true;
+        // A bandwidth estimate cannot tell us whether the GPU can draw stars.
+        // Only an explicit data-saver preference keeps the static background.
+        if (mounted) firstFramesPresented = !prefersReducedData();
 
+        // Surface colors must match the sky even when data-saver is enabled.
         void import("#lib/shared/settings/utils/background-theme-calculator.js").then(
           ({ applyThemeForBackground }) => {
             if (mounted) applyTheme = applyThemeForBackground;
