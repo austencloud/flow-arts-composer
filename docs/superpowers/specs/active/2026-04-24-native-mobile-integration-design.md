@@ -2,14 +2,16 @@
 status: active
 value: 5
 effort: XL
-remaining: "Verify TKA Composer — Native Mobile Integration Design Spec against the current TKA Composer — Native Mobile Integration Design Spec runtime and acceptance criteria before resuming implementation. Prior recorded remainder: 'Android + deep links + Capgo OTA + native Google sign-in shipped; no ios/ dir at all, no store listings, no SQLite/share/BLE/NFC'"
+remaining: "Finish iOS project/signing/link configuration, durable native SQLite/filesystem cache and outgoing share, then validate device/store/OTA and premium hardware acceptance. Android, native Google auth, Capgo updates and incoming share intake exist (d25b918eaa), but ios/ is absent, apple-app-site-association retains TEAMID, and the smart banner is commented out; incoming share-target support does not implement @capacitor/share delivery."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: in-progress
 ---
 # TKA Composer — Native Mobile Integration Design Spec
+
+> 2026-10-14 triage: Finish iOS project/signing/link configuration, durable native SQLite/filesystem cache and outgoing share, then validate device/store/OTA and premium hardware acceptance. Android, native Google auth, Capgo updates and incoming share intake exist (d25b918eaa), but ios/ is absent, apple-app-site-association retains TEAMID, and the smart banner is commented out; incoming share-target support does not implement @capacitor/share delivery. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 > **DRIFT WARNING — 2026-08-02.** Android + deep links + Capgo OTA + native Google sign-in shipped; **no `ios/` dir at all**, no store listings, no SQLite/share/BLE/NFC
 >

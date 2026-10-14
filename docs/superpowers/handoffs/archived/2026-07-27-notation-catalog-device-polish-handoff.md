@@ -1,3 +1,5 @@
+> Archived 2026-10-14: Superseded scope is retained in `docs/superpowers/specs/archived/2026-07-26-notation-catalog-design.md`; later playable-archive handoff remains open with notation extensions and acceptance work.
+
 # /notation catalog — device polish handoff (2026-07-27)
 
 > [!IMPORTANT]

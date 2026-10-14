@@ -1,7 +1,6 @@
 <script lang="ts">
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import Seo from "#lib/shared/components/Seo.svelte";
-  import OpenChapter from "#lib/shared/landing/components/OpenChapter.svelte";
   import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
   import demoJson from "#lib/shared/landing/data/demo-sequence.json";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -34,16 +33,13 @@
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://tkaflowarts.com/" },
-      { "@type": "ListItem", "position": 2, "name": "Flow Arts History", "item": "https://tkaflowarts.com/history" },
-      { "@type": "ListItem", "position": 3, "name": "Fans", "item": "${URL}" }
+      { "@type": "ListItem", "position": 2, "name": "Fans", "item": "${URL}" }
     ]
   }
   </script>`}
 </Seo>
 
 <div class="editorial">
-  <a class="back-link" href="/history">← Flow Arts History</a>
-
   <header class="editorial-header">
     <h1 class="page-title">Fan Spinning Notation</h1>
     <p class="page-subtitle">The Kinetic Alphabet, applied to fans</p>
@@ -82,18 +78,10 @@
         assumes the prop's plane matches the plane of the movement. During a
         fold, the fan leaves that plane, moves through 3D space, and returns
         with the hand turned from front to back. The Kinetic Alphabet does not
-        yet encode hand orientation, so it cannot fully describe folds. A
-        hand-orientation matrix for pictographs is planned.
+        yet encode hand orientation, so it cannot fully describe folds.
       </p>
     </div>
   </section>
-
-  <OpenChapter prop="Fans" heading="Fan folds and grips need documentation">
-    <p>
-      Fan spinners can help document the grips and hand turns used in folds,
-      with examples of movements the current pictographs cannot record.
-    </p>
-  </OpenChapter>
 
   <div class="cta-card">
     <h3>Spin it yourself</h3>

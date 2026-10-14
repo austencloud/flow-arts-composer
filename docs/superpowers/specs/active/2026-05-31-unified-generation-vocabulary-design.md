@@ -2,14 +2,16 @@
 status: active
 value: 2
 effort: M
-remaining: "Verify Unified Generation Vocabulary — Generate Panel · Deck Composer · Sequence Actions against the current Unified Generation Vocabulary — Generate Panel · Deck Composer · Sequence Actions runtime and acceptance criteria before resuming implementation. Prior recorded remainder: 'Phases 1-2 shipped past spec; Phase 0''s actual goal (collapse 3 reversal + 2 turn representations) and Phases 3-4 unstarted'"
+remaining: "Finish or explicitly revise the single reversal/turn model and shared write-path contract across Generate, deck and sequence-actions; RotationDirectionPattern and ResolvedReversalPattern still coexist. Reuse recipe hashing/seeding and seeded composer tests (4848592d56, e45ce2268f), then establish full pool rebuild, version-migration and cross-surface acceptance instead of treating prior Phase 1/2 labels as proof."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: in-progress
 ---
 # Unified Generation Vocabulary — Generate Panel · Deck Composer · Sequence Actions
+
+> 2026-10-14 triage: Finish or explicitly revise the single reversal/turn model and shared write-path contract across Generate, deck and sequence-actions; RotationDirectionPattern and ResolvedReversalPattern still coexist. Reuse recipe hashing/seeding and seeded composer tests (4848592d56, e45ce2268f), then establish full pool rebuild, version-migration and cross-surface acceptance instead of treating prior Phase 1/2 labels as proof. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 > **DRIFT WARNING — 2026-08-02.** Phases 1-2 shipped past spec; Phase 0's actual goal (collapse 3 reversal + 2 turn representations) and Phases 3-4 unstarted
 >

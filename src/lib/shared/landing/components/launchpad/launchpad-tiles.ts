@@ -101,16 +101,19 @@ export const LAUNCHPAD_TILES: LaunchpadTileDef[] = [
   // ask (FAQ), and look up (Kinetic Atlas).
   // Deeper theory stays in the Notation dropdown instead of competing with
   // the front doors. Secondary destinations live in the strip.
+  // This tile led to /history until 2026-10-14, when the archive was
+  // withdrawn until its authors have been asked. It now fronts the live
+  // notation: Shape Engine as the main link, one chip per prop page. No
+  // morph: Shape Engine has no landing hero to morph into.
   {
     id: "notation",
-    href: "/history",
-    heading: "History",
-    descriptor: "How flow arts notation developed, 2009 to 2022.",
+    href: "/shape-engine",
+    heading: "Notation",
+    descriptor: "Shape Engine, plus one page per prop.",
     span: "2x1",
     color: "#22d3ee",
     icon: "fa-bezier-curve",
     media: "pictograph",
-    morphName: "launchpad-history",
     chips: [
       { label: "Staves", href: "/notation/staves" },
       { label: "Fans", href: "/notation/fans" },

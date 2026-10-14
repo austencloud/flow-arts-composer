@@ -61,7 +61,8 @@
    *   /notation, reachable from it, not destinations in their own right.
    * - Endless LOOPs, Poi and TKA, Double Staff Codex — the other three links
    *   that existed only here. Same reason: leaf pages under /endless-spinner,
-   *   /history, and /guide.
+   *   /history, and /guide. (History itself left on 2026-10-14: /history is
+   *   withdrawn until the archive's authors have been asked.)
    * - The Shop column was a verbatim copy of the header's Shop dropdown, and
    *   `SALES_LIVE` is false, so all four pointed into a storefront that says it
    *   is not open. The storefront stays browsable, so one "Shop" link remains
@@ -74,7 +75,6 @@
     {
       title: "Explore",
       links: [
-        { label: "History", href: "/history" },
         { label: "Composer", href: "/composer" },
         { label: "Shop", href: "/shop" },
         { label: "About", href: "/about" },

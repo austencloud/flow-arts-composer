@@ -1,7 +1,6 @@
 <script lang="ts">
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import Seo from "#lib/shared/components/Seo.svelte";
-  import OpenChapter from "#lib/shared/landing/components/OpenChapter.svelte";
   import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
   import MandalaContrast from "#lib/shared/landing/components/MandalaContrast.svelte";
   import demoJson from "#lib/shared/landing/data/demo-sequence.json";
@@ -35,16 +34,13 @@
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://tkaflowarts.com/" },
-      { "@type": "ListItem", "position": 2, "name": "Flow Arts History", "item": "https://tkaflowarts.com/history" },
-      { "@type": "ListItem", "position": 3, "name": "Clubs", "item": "${URL}" }
+      { "@type": "ListItem", "position": 2, "name": "Clubs", "item": "${URL}" }
     ]
   }
   </script>`}
 </Seo>
 
 <div class="editorial">
-  <a class="back-link" href="/history">← Flow Arts History</a>
-
   <header class="editorial-header">
     <h1 class="page-title">Club Spinning Notation</h1>
     <p class="page-subtitle">The base single-ended prop</p>
@@ -57,10 +53,7 @@
           <p>
             This is dual-wielded club spinning: one club in each hand, held
             throughout the move. Clubs are the base prop of the single-ended
-            family and central to Vulcan Tech Gospel, the framework The Kinetic
-            Alphabet builds on. The <LinkChip size="inline" href="/history"
-              >history page</LinkChip
-            > traces that lineage.
+            family.
           </p>
           <p>
             To read a club pictograph, imagine the pinky end of a staff is
@@ -108,16 +101,6 @@
       </div>
     </div>
   </section>
-
-  <OpenChapter
-    prop="Clubs"
-    heading="Club grip technique needs a spinner's account"
-  >
-    <p>
-      The notation shows the path of each club, but the grip section still needs
-      examples of finger spinning and grip changes from club spinners.
-    </p>
-  </OpenChapter>
 
   <div class="cta-card">
     <h3>Try it with clubs</h3>
