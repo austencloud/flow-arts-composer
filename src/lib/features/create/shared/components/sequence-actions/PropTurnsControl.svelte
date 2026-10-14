@@ -7,6 +7,11 @@
 
   Full mode stacks turns, rotation, path, and prop controls. Compact mode keeps
   the primary actions together and gives path choices a full-width second row.
+
+  With wholeSteps, a −1 / +1 pair flanks the half-turn pair (same grammar as
+  the duration row: coarse outside, fine inside). The pair appears only when
+  the card itself is wide enough to hold it at full touch size, and the inner
+  pair then reads −½ / +½ so the two sizes are told apart at a glance.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -32,6 +37,12 @@
     canDecrease?: boolean;
     /** False at the upper turn limit: the "+" button shows pressed flat. */
     canIncrease?: boolean;
+    /** Offer the −1 / +1 pair when the card has room for it. */
+    wholeSteps?: boolean;
+    /** False when −1 would change nothing (at 0, or at a float). */
+    canDecreaseWhole?: boolean;
+    /** False at the upper turn limit. */
+    canIncreaseWhole?: boolean;
     onTurnsChange: (delta: number) => void;
     onRotationChange: (direction: RotationDirection) => void;
     onPathShapeChange?: (shape: PathShapeValue) => void;
@@ -49,6 +60,9 @@
     isShift = true,
     canDecrease = true,
     canIncrease = true,
+    wholeSteps = false,
+    canDecreaseWhole = true,
+    canIncreaseWhole = true,
     onTurnsChange,
     onRotationChange,
     onPathShapeChange,
@@ -135,28 +149,63 @@
   class:blue={hand === "left"}
   class:red={hand === "right"}
   class:compact
+  class:whole-steps={wholeSteps}
 >
-  <!-- Turns row -->
+  <!-- Turns row. The whole-turn buttons are always in the markup when
+       offered; the card's own width decides whether they show, so resizing
+       never re-renders the row. -->
   <div class="turns-row" class:compact>
+    {#if wholeSteps}
+      <button
+        class="ctrl-btn whole"
+        class:compact
+        disabled={!canDecreaseWhole}
+        aria-label={t("create_controls_less_turn_whole", {
+          hand: handLabel(hand),
+        })}
+        onclick={(e) => handleTurnsChangeClick(e, -1)}
+      >
+        <span class="step-num" aria-hidden="true">−1</span>
+      </button>
+    {/if}
     <button
-      class="ctrl-btn"
+      class="ctrl-btn half"
       class:compact
       disabled={!canDecrease}
       aria-label={t("create_controls_less_turns", { hand: handLabel(hand) })}
       onclick={(e) => handleTurnsChangeClick(e, -0.5)}
     >
-      <i class="fas fa-minus" aria-hidden="true"></i>
+      <i class="fas fa-minus half-icon" aria-hidden="true"></i>
+      {#if wholeSteps}
+        <span class="step-num half-num" aria-hidden="true">−½</span>
+      {/if}
     </button>
     <span class="turns-value" class:compact>{displayTurns}</span>
     <button
-      class="ctrl-btn"
+      class="ctrl-btn half"
       class:compact
       disabled={!canIncrease}
       aria-label={t("create_controls_more_turns", { hand: handLabel(hand) })}
       onclick={(e) => handleTurnsChangeClick(e, 0.5)}
     >
-      <i class="fas fa-plus" aria-hidden="true"></i>
+      <i class="fas fa-plus half-icon" aria-hidden="true"></i>
+      {#if wholeSteps}
+        <span class="step-num half-num" aria-hidden="true">+½</span>
+      {/if}
     </button>
+    {#if wholeSteps}
+      <button
+        class="ctrl-btn whole"
+        class:compact
+        disabled={!canIncreaseWhole}
+        aria-label={t("create_controls_more_turn_whole", {
+          hand: handLabel(hand),
+        })}
+        onclick={(e) => handleTurnsChangeClick(e, 1)}
+      >
+        <span class="step-num" aria-hidden="true">+1</span>
+      </button>
+    {/if}
   </div>
 
   <!-- Rotation direction toggle. The slot is always laid out so the turns
@@ -241,6 +290,61 @@
     grid-area: turns;
     justify-self: center;
     gap: 6px;
+  }
+
+  /* ============================================================================
+     WHOLE-TURN PAIR
+     The host card (PropControlPair with sizedCards) is the size container,
+     so the pair follows the room the card actually has (phone, split drawer,
+     4K) rather than the screen class. The widths below are the card's content
+     box, which is what a size query measures. Below the fit width the row is
+     the plain − value + stepper.
+     ============================================================================ */
+
+  .ctrl-btn.whole,
+  .half-num {
+    display: none;
+  }
+
+  .step-num {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Full card: four 44px buttons, the value, and four 10px gaps = 260px. */
+  @container hand-card (min-width: 260px) {
+    .turns-controls:not(.compact) .turns-row {
+      gap: 10px;
+    }
+    .turns-controls:not(.compact) .ctrl-btn.whole {
+      display: flex;
+    }
+    .turns-controls:not(.compact) .half-num {
+      display: inline;
+    }
+    .turns-controls:not(.compact) .half-icon {
+      display: none;
+    }
+  }
+
+  /* Compact card: the stepper (four buttons, a 36px value, 4px gaps = 228px)
+     shares its row with the rotation and prop buttons (6 + 44 + 6 + 44). */
+  @container hand-card (min-width: 328px) {
+    .turns-controls.compact .turns-row {
+      gap: 4px;
+    }
+    .turns-controls.compact .ctrl-btn.whole {
+      display: flex;
+    }
+    .turns-controls.compact .half-num {
+      display: inline;
+    }
+    .turns-controls.compact .half-icon {
+      display: none;
+    }
   }
 
   .turns-value {

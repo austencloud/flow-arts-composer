@@ -45,6 +45,10 @@
     updateSettings,
   } from "#lib/shared/application/state/app-state.svelte.js";
   import { UndoOperationType } from "../../services/undo-manager";
+  import {
+    FLOAT_TURNS,
+    stepTurns,
+  } from "../../services/step-operations/turns-stepping";
 
   const logger = createComponentLogger("StepEditorCoordinator");
 
@@ -248,26 +252,28 @@
 
   function handleTurnsChange(color: HandSide, delta: number) {
     if (selectedStepNumber === null || !StepOperator) return;
+
+    const motion = color === HandSide.LEFT ? leftMotion : rightMotion;
+    const currentTurns =
+      color === HandSide.LEFT ? currentLeftTurns : currentRightTurns;
+    // Shifts may float; a motion already floating keeps that floor.
+    const canFloat =
+      motion?.motionType === MotionType.PRO ||
+      motion?.motionType === MotionType.ANTI ||
+      motion?.motionType === MotionType.FLOAT;
+    const minTurns = canFloat ? FLOAT_TURNS : 0;
+    const newNumericTurns = stepTurns(currentTurns, delta, minTurns);
+    // A step that changes nothing leaves no undo entry and no haptic tick.
+    if (newNumericTurns === currentTurns) return;
+    const newTurns: number | "fl" =
+      newNumericTurns === FLOAT_TURNS ? "fl" : newNumericTurns;
+
     hapticService?.trigger("selection");
 
     // Push undo snapshot BEFORE modifying
     CreateModuleState.pushUndoSnapshot(
       UndoOperationType.MODIFY_BEAT_PROPERTIES
     );
-
-    const motion = color === HandSide.LEFT ? leftMotion : rightMotion;
-    const currentTurns =
-      color === HandSide.LEFT ? currentLeftTurns : currentRightTurns;
-    const isShift =
-      motion?.motionType === MotionType.PRO ||
-      motion?.motionType === MotionType.ANTI;
-    const minTurns = isShift ? -0.5 : 0;
-    const newNumericTurns = Math.min(
-      3,
-      Math.max(minTurns, currentTurns + delta)
-    );
-    const newTurns: number | "fl" =
-      newNumericTurns === -0.5 ? "fl" : newNumericTurns;
 
     StepOperator.updateStepTurns(
       selectedStepNumber,
