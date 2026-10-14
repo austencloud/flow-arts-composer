@@ -1,0 +1,146 @@
+[
+  {
+    "id": "original",
+    "word": "IΨ-IΨ-IΨ-IΨ-",
+    "startPlacement": "beta5",
+    "letters": ["I", "Ψ-", "I", "Ψ-", "I", "Ψ-", "I", "Ψ-"]
+  },
+  {
+    "id": "right+1",
+    "word": "W-Θ-X-Θ-X-Ω-W-Ω-",
+    "startPlacement": "gamma11",
+    "letters": ["W-", "Θ-", "X-", "Θ-", "X-", "Ω-", "W-", "Ω-"]
+  },
+  {
+    "id": "right+2",
+    "word": "MΛ-VΛ-NΛ-UΛ-",
+    "startPlacement": "gamma7",
+    "letters": ["M", "Λ-", "V", "Λ-", "N", "Λ-", "U", "Λ-"]
+  },
+  {
+    "id": "right+3",
+    "word": "Θ-Y-Δ-X-Ω-Z-Σ-W-",
+    "startPlacement": "alpha1",
+    "letters": ["Θ-", "Y-", "Δ-", "X-", "Ω-", "Z-", "Σ-", "W-"]
+  },
+  {
+    "id": "right+4",
+    "word": "DΦ-KΨ-EΦ-JΨ-",
+    "startPlacement": "beta5",
+    "letters": ["D", "Φ-", "K", "Ψ-", "E", "Φ-", "J", "Ψ-"]
+  },
+  {
+    "id": "right+5",
+    "word": "Y-Δ-X-Ω-Z-Σ-W-Θ-",
+    "startPlacement": "gamma7",
+    "letters": ["Y-", "Δ-", "X-", "Ω-", "Z-", "Σ-", "W-", "Θ-"]
+  },
+  {
+    "id": "right+6",
+    "word": "VΛ-NΛ-UΛ-MΛ-",
+    "startPlacement": "gamma11",
+    "letters": ["V", "Λ-", "N", "Λ-", "U", "Λ-", "M", "Λ-"]
+  },
+  {
+    "id": "right+7",
+    "word": "Θ-X-Ω-W-Ω-W-Θ-X-",
+    "startPlacement": "alpha1",
+    "letters": ["Θ-", "X-", "Ω-", "W-", "Ω-", "W-", "Θ-", "X-"]
+  },
+  {
+    "id": "right-rev+0",
+    "word": "Σ-W-Ω-Z-Δ-X-Θ-Y-",
+    "startPlacement": "beta5",
+    "letters": ["Σ-", "W-", "Ω-", "Z-", "Δ-", "X-", "Θ-", "Y-"]
+  },
+  {
+    "id": "right-rev+1",
+    "word": "JΨ-EΦ-KΨ-DΦ-",
+    "startPlacement": "alpha1",
+    "letters": ["J", "Ψ-", "E", "Φ-", "K", "Ψ-", "D", "Φ-"]
+  },
+  {
+    "id": "right-rev+2",
+    "word": "W-Ω-Z-Δ-X-Θ-Y-Σ-",
+    "startPlacement": "gamma11",
+    "letters": ["W-", "Ω-", "Z-", "Δ-", "X-", "Θ-", "Y-", "Σ-"]
+  },
+  {
+    "id": "right-rev+3",
+    "word": "UΛ-QΛ-VΛ-PΛ-",
+    "startPlacement": "gamma7",
+    "letters": ["U", "Λ-", "Q", "Λ-", "V", "Λ-", "P", "Λ-"]
+  },
+  {
+    "id": "right-rev+4",
+    "word": "Σ-Z-Δ-Y-Δ-Y-Σ-Z-",
+    "startPlacement": "beta5",
+    "letters": ["Σ-", "Z-", "Δ-", "Y-", "Δ-", "Y-", "Σ-", "Z-"]
+  },
+  {
+    "id": "right-rev+5",
+    "word": "CΦ-CΦ-CΦ-CΦ-",
+    "startPlacement": "alpha1",
+    "letters": ["C", "Φ-", "C", "Φ-", "C", "Φ-", "C", "Φ-"]
+  },
+  {
+    "id": "right-rev+6",
+    "word": "Y-Σ-Z-Σ-Z-Δ-Y-Δ-",
+    "startPlacement": "gamma7",
+    "letters": ["Y-", "Σ-", "Z-", "Σ-", "Z-", "Δ-", "Y-", "Δ-"]
+  },
+  {
+    "id": "right-rev+7",
+    "word": "PΛ-UΛ-QΛ-VΛ-",
+    "startPlacement": "gamma11",
+    "letters": ["P", "Λ-", "U", "Λ-", "Q", "Λ-", "V", "Λ-"]
+  },
+  {
+    "id": "left-rev+0",
+    "word": "Δ-X-Θ-Y-Σ-W-Ω-Z-",
+    "startPlacement": "beta5",
+    "letters": ["Δ-", "X-", "Θ-", "Y-", "Σ-", "W-", "Ω-", "Z-"]
+  },
+  {
+    "id": "left-rev+1",
+    "word": "KΨ-DΦ-JΨ-EΦ-",
+    "startPlacement": "alpha5",
+    "letters": ["K", "Ψ-", "D", "Φ-", "J", "Ψ-", "E", "Φ-"]
+  },
+  {
+    "id": "left-rev+2",
+    "word": "X-Θ-Y-Σ-W-Ω-Z-Δ-",
+    "startPlacement": "gamma5",
+    "letters": ["X-", "Θ-", "Y-", "Σ-", "W-", "Ω-", "Z-", "Δ-"]
+  },
+  {
+    "id": "left-rev+3",
+    "word": "VΛ-PΛ-UΛ-QΛ-",
+    "startPlacement": "gamma13",
+    "letters": ["V", "Λ-", "P", "Λ-", "U", "Λ-", "Q", "Λ-"]
+  },
+  {
+    "id": "left-rev+4",
+    "word": "Δ-Y-Σ-Z-Σ-Z-Δ-Y-",
+    "startPlacement": "beta5",
+    "letters": ["Δ-", "Y-", "Σ-", "Z-", "Σ-", "Z-", "Δ-", "Y-"]
+  },
+  {
+    "id": "left-rev+5",
+    "word": "CΦ-CΦ-CΦ-CΦ-",
+    "startPlacement": "alpha5",
+    "letters": ["C", "Φ-", "C", "Φ-", "C", "Φ-", "C", "Φ-"]
+  },
+  {
+    "id": "left-rev+6",
+    "word": "Z-Δ-Y-Δ-Y-Σ-Z-Σ-",
+    "startPlacement": "gamma13",
+    "letters": ["Z-", "Δ-", "Y-", "Δ-", "Y-", "Σ-", "Z-", "Σ-"]
+  },
+  {
+    "id": "left-rev+7",
+    "word": "QΛ-VΛ-PΛ-UΛ-",
+    "startPlacement": "gamma5",
+    "letters": ["Q", "Λ-", "V", "Λ-", "P", "Λ-", "U", "Λ-"]
+  }
+]
