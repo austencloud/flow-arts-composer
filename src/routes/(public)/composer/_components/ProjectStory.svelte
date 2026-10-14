@@ -23,7 +23,6 @@
     </p>
     <div class="creator-links">
       <PanelButton href="/guide">Read the Guide</PanelButton>
-      <PanelButton href="/history">Notation history</PanelButton>
       <PanelButton href="/faq">Common questions</PanelButton>
       <PanelButton href="mailto:support@tkaflowarts.com"
         >Email Austen</PanelButton
