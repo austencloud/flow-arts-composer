@@ -49,6 +49,14 @@ Supports letter highlighting during animation playback.
     return cache.getGlyphDataUrl(base);
   }
 
+  /** Width of the glyph image in em (it renders at 1em tall), once cached. */
+  function getGlyphAspect(letter: string): number | null {
+    void glyphLoadVersion;
+    if (!cache) return null;
+    const base = isDashLetter(letter) ? getBaseLetter(letter) : letter;
+    return cache.getGlyphAspect(base);
+  }
+
   function isAlphaGlyph(letter: string): boolean {
     const base = isDashLetter(letter) ? getBaseLetter(letter) : letter;
     return base === "α";
@@ -295,19 +303,20 @@ Supports letter highlighting during animation playback.
   });
 
   /**
-   * Roughly how many `em` of width this word needs, so CSS can pick a font size
-   * that fits instead of letting flex crush the glyphs.
+   * How many `em` of width this word needs, so CSS can pick a font size that
+   * fits instead of letting flex crush the glyphs.
    *
-   * A flat per-unit average cannot work here, because a dash-letter is nearly
-   * twice as wide as a plain one: the glyph itself averages ~0.8em (they run 0.6
-   * for F to 1.2 for W-), and a dash adds `.dash-bar`'s 0.70em plus the 0.08em
-   * gap on top. Counting the two kinds separately is what makes the estimate
-   * tight rather than a compromise that overflows wide words and shrinks narrow
-   * ones for nothing.
+   * Each glyph image renders 1em tall at its own aspect ratio, and the cache
+   * knows that ratio from the SVG, so the sum is exact once the glyphs are in:
+   * the letters run from about 0.6em (F) to 1.2em (W), and an average
+   * under-counted a long eight-count title enough to clip its first letter. A
+   * dash adds `.dash-bar`'s 0.70em and the 0.08em gap inside the letter; every
+   * unit adds the 0.08em gap between units. Glyphs not cached yet fall back to
+   * the alphabet average and the sum re-derives when they arrive.
    *
-   * Deliberately an estimate and not a measurement: measuring means rendering,
-   * reading `scrollWidth`, then restyling, and this component sits in an
-   * animation loop.
+   * Computed from metadata, not measured: measuring means rendering, reading
+   * `scrollWidth`, then restyling, and this component sits in an animation
+   * loop.
    */
   const wordEmWidth = $derived.by(() => {
     let em = 0;
@@ -316,18 +325,33 @@ Supports letter highlighting during animation playback.
         em += 0.43; // 0.15em dot + 0.2em margins + gap
       } else if (unit.kind === "brace") {
         em += 0.55; // a brace at 1.15em is ~0.45em wide, plus the gap
-      } else if (isDashLetter(unit.letter)) {
-        // 0.96em glyph + 0.70em bar + two 0.08em gaps. The glyph term is higher
-        // than the alphabet-wide 0.8 average on purpose: dash-letters skew to the
-        // wide Greek forms (W- is 1.2, Ω- is 1.1), and using the average left
-        // real titles 6% short and still overflowing.
-        em += 1.82;
       } else {
-        em += 0.9; // ~0.82em glyph + gap
+        const glyph = getGlyphAspect(unit.letter) ?? 0.82;
+        em += glyph + 0.08;
+        if (isDashLetter(unit.letter)) em += 0.7 + 0.08;
       }
     }
     return Math.max(em, 0.88);
   });
+
+  // The badges sit on top of the header, outside the flow, so the word has to
+  // be told how much of each edge they take. Each side reserves its own badge:
+  // on a card-sized header the LOOP strip is twice the level badge, and
+  // insetting both sides by the wider one cost a long eight-count title a
+  // third of its size. Measured because the strip's width depends on how many
+  // icons it shows.
+  let difficultyBadgeWidth = $state(0);
+  let loopBadgeWidth = $state(0);
+
+  // The LOOP icons shrink with the header on the canvas band, the way the
+  // baked card header's do, so a card-sized preview keeps room for its word.
+  // The viewer chrome keeps the fixed 20px icons: it has the width to spare.
+  let headerWidth = $state(0);
+  const loopIconSize = $derived(
+    presentation === "chrome"
+      ? 20
+      : Math.round(Math.min(20, Math.max(13, headerWidth * 0.062)))
+  );
 
   const neededBaseLetters = $derived.by(() => [
     ...new Set(
@@ -395,14 +419,15 @@ Supports letter highlighting during animation playback.
     class:dark-mode={darkMode}
     class:chrome={presentation === "chrome"}
     data-controlled="true"
+    bind:clientWidth={headerWidth}
     out:opaqueFade={{ duration: DURATION.normal, easing: cubicOut }}
   >
     {#if difficultyLevel != null}
-      <div class="badge-wrapper">
+      <div class="badge-wrapper" bind:clientWidth={difficultyBadgeWidth}>
         <DifficultyBadge
           level={difficultyLevel}
-          size="clamp(24px, 7cqw, 34px)"
-          fontSize="clamp(12px, 4cqw, 18px)"
+          size="var(--badge-size)"
+          fontSize="var(--badge-font)"
         />
       </div>
     {/if}
@@ -413,7 +438,12 @@ Supports letter highlighting during animation playback.
       class="word-text"
       style="--word-em: {wordEmWidth.toFixed(
         2
-      )}; --brace-scale: {SKEW_BRACE_FONT_SCALE}; --brace-drop: {BRACE_DROP}"
+      )}; --badge-left: {difficultyBadgeWidth}px; --badge-right: {loopBadgeWidth}px; --badge-left-on: {difficultyLevel !=
+      null
+        ? 1
+        : 0}; --badge-right-on: {loopComponents
+        ? 1
+        : 0}; --brace-scale: {SKEW_BRACE_FONT_SCALE}; --brace-drop: {BRACE_DROP}"
     >
       {#if hasActiveHighlighting && displayUnits.length > 0 && animationPhase === "idle"}
         {#each displayUnits as unit, index (index)}
@@ -495,14 +525,14 @@ Supports letter highlighting during animation playback.
     </span>
 
     {#if loopComponents}
-      <div class="loop-icon-badge">
+      <div class="loop-icon-badge" bind:clientWidth={loopBadgeWidth}>
         <LOOPIconStrip
           activeComponents={loopComponents}
           {rotationPeriod}
           {inversionPeriod}
           {reflectionAxis}
           overlayComponents={overlayComponents ?? undefined}
-          size={20}
+          size={loopIconSize}
           {darkMode}
           showFreeformWhenEmpty={false}
         />
@@ -526,6 +556,11 @@ Supports letter highlighting during animation playback.
       header was never sized to itself anywhere.
     */
     container-type: inline-size;
+
+    /* The level badge and the LOOP strip scale with the header, like the baked
+       card header's, down to a floor that still reads. */
+    --badge-size: clamp(16px, 7cqw, 34px);
+    --badge-font: clamp(9px, 4cqw, 18px);
 
     width: 100%;
     position: relative;
@@ -561,7 +596,7 @@ Supports letter highlighting during animation playback.
     padding: 2px 4px;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 4px;
-    height: clamp(24px, 7cqw, 34px);
+    height: var(--badge-size);
   }
 
   .word-header.dark-mode .loop-icon-badge {
@@ -571,18 +606,51 @@ Supports letter highlighting during animation playback.
   .word-text {
     display: flex;
     align-items: center;
-    justify-content: center;
+    /* `safe` so that if a word ever does outgrow its box it clips at the end
+       rather than losing its first letter on the left. */
+    justify-content: safe center;
     gap: 0.08em;
+
+    /* Clear space the word keeps from each badge: its edge offset, its
+       measured width, and a breathing gap. Zero on a side with no badge, so a
+       header without badges (the viewer chrome) gives the word its full width. */
+    --badge-gap: calc(clamp(6px, 3cqw, 12px) + clamp(4px, 2.5cqw, 10px));
+    --inset-left: calc(
+      var(--badge-left, 0px) + var(--badge-gap) * var(--badge-left-on, 0)
+    );
+    --inset-right: calc(
+      var(--badge-right, 0px) + var(--badge-gap) * var(--badge-right-on, 0)
+    );
+    /* The width the word may use, between the two badge zones. The box sits
+       exactly there, so the word centers in the free room rather than under
+       the header's midpoint, where the wider badge would overlap it. */
+    --word-room: calc(100cqw - var(--inset-left) - var(--inset-right));
+    width: max(var(--word-room), 0px);
+    margin-left: var(--inset-left);
+    margin-right: var(--inset-right);
+
+    /* A word with room to spare still centers under the header's midpoint,
+       like the baked card header; it only slides toward the narrower badge by
+       as much as it needs. `1em` here is this word's fitted size, so the slack
+       is the free width either side of the word inside the room. */
+    --word-width: calc(var(--word-em, 1) * 1em);
+    --word-slack: max(calc((var(--word-room) - var(--word-width)) / 2), 0px);
+    --center-shift: calc((var(--inset-right) - var(--inset-left)) / 2);
+    translate: clamp(
+        calc(-1 * var(--word-slack)),
+        var(--center-shift),
+        var(--word-slack)
+      )
+      0;
 
     /*
       Two bounds, and the smaller wins.
 
       The first is the design size. The second is what actually FITS: `--word-em`
-      is this word's width in `em`, summed per unit in the script above (a
-      dash-letter is nearly twice a plain one), and the padding either side eats
-      ~8cqw — so the largest em that fits is `92cqw / --word-em`. The floor sits
-      at 10px rather than 12 because a 15-unit title in a 160px archive tile
-      cannot fit above that.
+      is this word's width in `em`, summed per unit in the script above, and the
+      room is the header less the badge zones on both sides — so the largest em
+      that fits is `--word-room / --word-em`. The floor sits at 10px rather than
+      12 because a 15-unit title in a 160px archive tile cannot fit above that.
 
       Without that second bound a long word overflowed, and because these letters
       are flex items they absorbed it by SHRINKING — every glyph kept its 28px
@@ -594,13 +662,13 @@ Supports letter highlighting during animation playback.
     */
     font-size: min(
       clamp(10px, 6cqw, 28px),
-      calc(92cqw / max(var(--word-em, 1), 1))
+      calc(var(--word-room) / max(var(--word-em, 1), 1))
     );
 
     /* Belt to the braces above: with the fit-to-width font size the word should
-       never exceed its box, but a wildly narrow container (or a glyph far wider
-       than the 0.8em estimate) must clip rather than crush. */
-    max-width: 100%;
+       never exceed its box, but a wildly narrow container must clip rather than
+       crush. */
+    box-sizing: content-box;
     overflow: hidden;
     white-space: nowrap;
 
@@ -610,7 +678,8 @@ Supports letter highlighting during animation playback.
        neighbours in a row of tiles. */
     line-height: 1;
 
-    padding: clamp(6px, 3cqw, 12px) clamp(8px, 4cqw, 16px);
+    /* Vertical only: the horizontal room is governed by the insets above. */
+    padding: clamp(6px, 3cqw, 12px) 0;
   }
 
   .word-header.dark-mode {
@@ -622,17 +691,18 @@ Supports letter highlighting during animation playback.
      and active-letter treatment without bringing the canvas band along. */
   .word-header.chrome,
   .word-header.chrome.dark-mode {
+    --badge-size: clamp(24px, 7cqw, 34px);
+    --badge-font: clamp(12px, 4cqw, 18px);
     min-height: 28px;
     background: transparent;
     border-bottom: 0;
   }
 
   .word-header.chrome .word-text {
-    width: 100%;
     padding: 0;
     font-size: min(
       clamp(18px, 40cqw, 28px),
-      calc(98cqw / max(var(--word-em, 1), 1))
+      calc(var(--word-room) / max(var(--word-em, 1), 1))
     );
   }
 
