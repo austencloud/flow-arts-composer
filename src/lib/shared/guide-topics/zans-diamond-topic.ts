@@ -37,12 +37,13 @@ import {
 import variationTable from "./zans-diamond-variations.json";
 
 /**
- * Who the pattern is credited to. Austen asked for the full name and a link
- * (2026-10-14); until he supplies them the page credits "Zan" with no link.
+ * Who the pattern is credited to: Zan Moore, whose YouTube channel carries his
+ * own "Poi Tutorial: Zan's Diamond" (youtube.com/watch?v=QhWo4cLj184). The
+ * credit links to the channel so the chip keeps working if a video moves.
  */
 export const ZANS_DIAMOND_CREDIT: { name: string; href: string | null } = {
-  name: "Zan",
-  href: null,
+  name: "Zan Moore",
+  href: "https://www.youtube.com/@Zan00",
 };
 
 /** The author-verified record the variations were derived from. */
