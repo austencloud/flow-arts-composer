@@ -42,6 +42,7 @@
   import {
     hasModelSprite,
     normalizePropLook,
+    propLookCredit,
     propLookOptions,
   } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import type { CompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
@@ -781,15 +782,29 @@
       (option) => option.id === normalizedFanAppearance.build
     )
   );
-  // Builds traced from another maker's product link back to that maker from
-  // the rail heading; the narrow rail shows the short name.
+  // Looks traced from another maker's product link back to that maker from
+  // the rail heading; the narrow rail shows the short name. The fan look page
+  // credits the build in use; a details or version page credits the version
+  // in use (Version 2 buugeng is a Flow DNA flowgeng).
   const RAIL_CREDIT_SHORT_NAMES: Partial<Record<FanBuild, string>> = {
     "flat-grip": "Forged",
     star: "Renegade",
   };
-  const railCreditShortName = $derived(
-    fanLook ? RAIL_CREDIT_SHORT_NAMES[fanLook.id] : undefined
-  );
+  type RailCredit = { originator: string; sourceUrl: string; short: string };
+  const railCredit = $derived.by((): RailCredit | undefined => {
+    if (drill?.kind === "fan-look") {
+      const credit = fanLook?.designCredit;
+      const short = fanLook ? RAIL_CREDIT_SHORT_NAMES[fanLook.id] : undefined;
+      return credit && short ? { ...credit, short } : undefined;
+    }
+    if (drill?.kind === "details" || drill?.kind === "prop-look") {
+      const prop = drill.kind === "details" ? drill.prop : selectedPropType;
+      if (prop === null || !showPropLook) return undefined;
+      const credit = propLookCredit(prop, currentPropLook);
+      return credit ? { ...credit, short: credit.originator } : undefined;
+    }
+    return undefined;
+  });
 
   // Track which locked prop (if any) is showing its inline earn tip.
   let lockedTipFor = $state<PropType | null>(null);
@@ -973,16 +988,16 @@
           {#if showSize}{@render sizeControl()}{/if}
           {#if showGrip}{@render gripControl()}{/if}
         {/if}
-        {#if drill.kind === "fan-look" && fanLook?.designCredit && railCreditShortName}
+        {#if railCredit}
           <LinkChip
             class="rail-credit"
-            href={fanLook.designCredit.sourceUrl}
+            href={railCredit.sourceUrl}
             aria-label={t("settings_design_source", {
-              name: fanLook.designCredit.originator,
+              name: railCredit.originator,
             })}
-            ><span class="credit-long">{fanLook.designCredit.originator}</span
+            ><span class="credit-long">{railCredit.originator}</span
             ><span class="credit-short" aria-hidden="true"
-              >{railCreditShortName}</span
+              >{railCredit.short}</span
             ></LinkChip
           >
         {/if}

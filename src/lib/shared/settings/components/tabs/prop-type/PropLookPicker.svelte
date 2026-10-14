@@ -33,6 +33,11 @@
       }),
     }))
   );
+  // A version traced from another maker's product names the maker under its
+  // tile, the way the compact fan picker does.
+  const showCredit = $derived(
+    options.some((option) => option.designCredit !== undefined)
+  );
 </script>
 
 {#if available}
@@ -47,6 +52,7 @@
       value={look}
       {options}
       {onchange}
+      {showCredit}
       {fill}
     />
   </div>
