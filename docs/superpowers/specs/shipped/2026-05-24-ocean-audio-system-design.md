@@ -4,7 +4,7 @@ value: 4
 effort: M
 remaining: "Verify in browser — audio playback, jukebox UI, track switching, volume/mute."
 depends_on: ""
-plan_path: "docs/superpowers/plans/2026-05-24-ocean-audio-system.md"
+plan_path: "docs/superpowers/plans/shipped/2026-05-24-ocean-audio-system.md"
 tags: ["3d", "ocean", "audio", "ui"]
 last_triaged: 2026-05-24
 ---

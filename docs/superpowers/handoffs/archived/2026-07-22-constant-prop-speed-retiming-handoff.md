@@ -1,3 +1,5 @@
+> Archived 2026-10-14: Superseded scope is retained in `docs/superpowers/specs/archived/2026-07-22-constant-prop-speed-retiming-design.md`.
+
 # Constant Prop Speed Retiming Handoff
 
 ## Mission
