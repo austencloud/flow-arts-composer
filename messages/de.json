@@ -7294,6 +7294,8 @@
   "create_controls_less_turn_whole": "Eine Drehung weniger: {hand}",
   "create_controls_more_turn_whole": "Eine Drehung mehr: {hand}",
   "create_controls_path": "Bahnform {hand}: {shape}",
+  "create_controls_path_short": "Pfad",
+  "create_controls_path_options": "Pfadoptionen: {hand} ({shape})",
   "create_controls_reset_path": "Bahnform {hand} auf die allgemeine Einstellung zurücksetzen",
   "create_controls_toggle_rotation": "Drehrichtung {hand} wechseln (aktuell {direction})",
   "create_controls_cw_short": "Uhrz.",
