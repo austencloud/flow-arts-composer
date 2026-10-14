@@ -3,6 +3,9 @@
   import { browser } from "$app/env";
   import { page } from "$app/state";
   import Seo from "#lib/shared/components/Seo.svelte";
+  import LoadingGate from "#lib/shared/components/loading/LoadingGate.svelte";
+  import { markScan } from "#lib/shared/analytics/scan-perf.js";
+  import { loadSequenceViewerPage } from "./load-sequence-viewer-page.js";
   import {
     hasSavedFirebaseUser,
     signInWhenIdle,
@@ -40,12 +43,14 @@
   // saved user record starts sign-in, so signed-out visitors load nothing new.
   // It lives on the route, not in SequenceViewerPage, because the sequence
   // embed reuses that component inside other websites, which never sign in.
-  onMount(() =>
-    signInWhenIdle({
+  onMount(() => {
+    // No-op unless /q marked scan:start earlier in this document.
+    markScan("sequence-route-mounted");
+    return signInWhenIdle({
       hasSession: hasSavedFirebaseUser,
       label: "SequenceViewer",
-    })
-  );
+    });
+  });
 </script>
 
 <Seo
@@ -68,7 +73,17 @@
 </Seo>
 
 {#if browser}
-  {#await import("./SequenceViewerPage.svelte") then { default: SequenceViewerPage }}
+  <!--
+    The pending branch is the same card the viewer shows while it resolves the
+    sequence, so the swap is invisible. Without it the layout's animated
+    background was the only thing on screen for the whole chunk download —
+    about five seconds on a cold phone visit.
+  -->
+  {#await loadSequenceViewerPage()}
+    <div class="sequence-route-loading">
+      <LoadingGate variant="card" message="Loading sequence..." />
+    </div>
+  {:then { default: SequenceViewerPage }}
     {#key routeId}
       <SequenceViewerPage {data} />
     {/key}
@@ -129,6 +144,14 @@
 {/if}
 
 <style>
+  /* Same box as SequenceViewerPage's own loading state. */
+  .sequence-route-loading {
+    position: relative;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
   .sequence-card-details {
     display: flex;
     flex-direction: column;
