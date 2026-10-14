@@ -94,7 +94,9 @@
   // when display:none — so this is accepted for prop hygiene / future use.
   const { visible = true }: { visible?: boolean } = $props();
 
-  const initialGalleryLetter = parseGalleryLetterQuery(page.url.searchParams);
+  const initialGalleryLetter = parseGalleryLetterQuery(
+    new URLSearchParams(page.url.searchParams)
+  );
 
   const engine = createBrowseEngine({
     persistKey: "tka-browse-gallery",
@@ -208,7 +210,9 @@
   // Browse is keep-alive, so this also handles a later letter link without
   // requiring a remount.
   $effect(() => {
-    const requested = parseGalleryLetterQuery(page.url.searchParams);
+    const requested = parseGalleryLetterQuery(
+      new URLSearchParams(page.url.searchParams)
+    );
     if (requested === appliedGalleryLetter) return;
 
     engine.removeFilter(String(BrowseFilterType.LETTER_OCCURRENCE));
@@ -229,7 +233,9 @@
   // If someone dismisses the query chip, the address bar must stop claiming
   // the view is still filtered. The next reload therefore tells the same truth.
   $effect(() => {
-    const requested = parseGalleryLetterQuery(page.url.searchParams);
+    const requested = parseGalleryLetterQuery(
+      new URLSearchParams(page.url.searchParams)
+    );
     if (!requested) return;
     const active = engine.activeFilters.get(
       String(BrowseFilterType.LETTER_OCCURRENCE)

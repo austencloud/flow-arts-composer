@@ -1254,6 +1254,7 @@
         />
       {/if}
       {#if ctx.hasSequence && ctx.effectiveSequence}
+        {@const effectiveSequence = ctx.effectiveSequence}
         <div
           bind:this={viewerWorkspaceElement}
           class="viewer-and-export"
@@ -1342,7 +1343,7 @@
                   {#if studio.mounted}
                     <PostStudioPane
                       active={layout.showPostStudio}
-                      sequence={ctx.effectiveSequence}
+                      sequence={effectiveSequence}
                       resolvedCardAutoLayout={ctx.resolvedCardAutoLayout}
                       onExported={adoptPostStudioRender}
                       onSharePost={share.openPanel}
@@ -1362,7 +1363,7 @@
                     >
                       <ViewerSplitPane
                         showcasePlayback={introPreview}
-                        sequence={ctx.effectiveSequence}
+                        sequence={effectiveSequence}
                         activeHandLabeling={ctx.activeHandLabeling}
                         {tunnelComposition}
                         {tunnelSaveTarget}

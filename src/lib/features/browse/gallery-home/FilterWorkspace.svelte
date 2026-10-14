@@ -29,10 +29,7 @@ the below-seam actions mutate the engine in place.
   import { startMorph } from "#lib/shared/transitions/results-morph.js";
   import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
   import type { BrowseEngine } from "#lib/shared/browse/engine/types.js";
-  import {
-    SECTION_FOR_FILTER_TYPE,
-    type WorkspaceSection,
-  } from "#lib/shared/browse/domain/workspace-sections.js";
+  import { SECTION_FOR_FILTER_TYPE } from "#lib/shared/browse/domain/workspace-sections.js";
 
   let {
     engine,
@@ -71,9 +68,9 @@ the below-seam actions mutate the engine in place.
 
   // Remount seed: editing a strip chip reopens the drill ON that filter's
   // editor instead of the chooser.
-  let drillSeed = $state<{ section?: WorkspaceSection }>({});
+  let drillSeed = $state<{ section?: Section }>({});
 
-  function editFilter(type: BrowseFilterType): void {
+  function editFilter(type: string): void {
     // The drill remounts on edit, so clear the persisted collapse first. The
     // requested editor then arrives visible instead of opening off-screen.
     try {
@@ -82,7 +79,8 @@ the below-seam actions mutate the engine in place.
       // Locked-down embeds can deny storage; the remounted drill uses its
       // expanded fallback in that environment.
     }
-    drillSeed = { section: SECTION_FOR_FILTER_TYPE[type] };
+    const section = SECTION_FOR_FILTER_TYPE[type];
+    drillSeed = { section: section === "collections" ? "collection" : section };
   }
 
   const loopKeyByValue = $derived(

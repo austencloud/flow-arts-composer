@@ -472,7 +472,10 @@
     );
   }
 
-  async function handlePlacementComplete(leftLocation, rightLocation) {
+  async function handlePlacementComplete(
+    leftLocation: GridLocation,
+    rightLocation: GridLocation
+  ) {
     if (
       !isStartPlacementSelected ||
       isRepositioning ||

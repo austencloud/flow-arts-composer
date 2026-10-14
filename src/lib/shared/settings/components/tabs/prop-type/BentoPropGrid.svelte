@@ -6,6 +6,7 @@
   } from "#lib/shared/application/state/app-state.svelte.js";
   import { isPropUnlocked } from "#lib/shared/gamification/state/prop-collection-state.svelte.js";
   import type { ComponentProps } from "svelte";
+  import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
@@ -141,7 +142,9 @@
     drilled = next;
     onDrillChange?.(next);
   }}
-  fanAppearance={fanAppearance ?? settings.fanAppearance}
+  fanAppearance={normalizeFanAppearance(
+    fanAppearance ?? settings.fanAppearance
+  )}
   onFanAppearanceChange={onFanAppearanceChange ??
     ((next) => void updateSettings({ fanAppearance: next }))}
   isUnlocked={isPropUnlocked}

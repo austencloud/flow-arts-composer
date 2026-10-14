@@ -3,7 +3,6 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
@@ -83,15 +82,17 @@
       value: "custom" as TunnelWorkflowMode,
       label: t("tunnel_separate"),
       shortLabel: t("tunnel_separate"),
-      ariaLabel:
-        t("tunnel_separate_sequences_every_performer_has_their_own_choreography_"),
+      ariaLabel: t(
+        "tunnel_separate_sequences_every_performer_has_their_own_choreography_"
+      ),
     },
     {
       value: "seeded" as TunnelWorkflowMode,
       label: t("tunnel_linked"),
       shortLabel: t("tunnel_linked"),
-      ariaLabel:
-        t("tunnel_linked_sequences_performer_creates_choreography_for_the_remaining_cast"),
+      ariaLabel: t(
+        "tunnel_linked_sequences_performer_creates_choreography_for_the_remaining_cast"
+      ),
     },
   ]);
   const canGrowCast = $derived(
@@ -142,7 +143,7 @@
     const pictographs = [
       sequence.startPlacement ?? sequence.startingPlacement ?? null,
       ...sequence.steps,
-    ].filter((pictograph): pictograph is PictographData => pictograph !== null);
+    ].filter((pictograph) => pictograph !== null);
     const settings = getSettings();
     await pictographPreparer.prepareBatch(pictographs, {
       themeMode: animationVisibility.isDarkMode() ? "dark" : "light",
@@ -214,7 +215,9 @@
     }
     const dependants = creator.dependantLabels(performerId);
     if (dependants.length > 0) {
-      return t("tunnel_reassign_before_remove", { names: dependants.join(", ") });
+      return t("tunnel_reassign_before_remove", {
+        names: dependants.join(", "),
+      });
     }
     return null;
   }
@@ -271,7 +274,10 @@
       <span>{t("create_review_cast")}</span>
       <h3 id="performer-roster-title">{t("create_review_choreography")}</h3>
       <p class="roster-summary">
-        {t("tunnel_cast_ready", { count: creator.performerSlots.length, ready: creator.authoredPerformerCount })} · {workflowDescription}
+        {t("tunnel_cast_ready", {
+          count: creator.performerSlots.length,
+          ready: creator.authoredPerformerCount,
+        })} · {workflowDescription}
       </p>
     </div>
     <div class="roster-heading-actions">

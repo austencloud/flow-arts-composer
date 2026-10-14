@@ -430,7 +430,7 @@
            It still unmounts whenever the workspace empties. -->
       <LazyMount
         loader={() => import("./CreationWorkspaceArea.svelte")}
-        active={hasWorkspaceContent}
+        active={Boolean(hasWorkspaceContent)}
         keepAlive={false}
         prefetch
         debugName="CreationWorkspaceArea"

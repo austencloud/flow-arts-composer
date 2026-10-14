@@ -73,6 +73,7 @@
    * you meant is luck, so past the spacing above only the selected mark keeps
    * its handle - the rest are ticks, and pressing the bar picks the nearest.
    */
+  let timelineWidth = $state(0);
   const denseMarks = $derived(
     !readOnlyMarks &&
       beatTimestamps.length > 1 &&
@@ -104,7 +105,6 @@
   let timelineEl: HTMLDivElement | undefined = $state();
   let draggingIndex = $state(-1);
   let isScrubbing = $state(false);
-  let timelineWidth = $state(0);
 
   /**
    * Which markers get a number. Thinned by where the marks actually SIT rather

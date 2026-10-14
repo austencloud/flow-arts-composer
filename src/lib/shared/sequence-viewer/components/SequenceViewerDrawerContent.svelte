@@ -99,7 +99,7 @@
           {saveOnOpen}
           {tunnelComposition}
           {tunnelSaveTarget}
-          {onTunnelSaved}
+          onTunnelSaved={onTunnelSaved ?? undefined}
         />
       {/snippet}
     </SequenceViewerOrchestrator>
