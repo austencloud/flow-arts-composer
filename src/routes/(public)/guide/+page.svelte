@@ -63,6 +63,10 @@
       key: "motion_paths",
       href: "/guide/motion-paths",
     },
+    {
+      key: "zans_diamond",
+      href: "/guide/zans-diamond",
+    },
   ] as const;
 </script>
 

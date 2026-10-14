@@ -35,16 +35,13 @@
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://tkaflowarts.com/" },
-      { "@type": "ListItem", "position": 2, "name": "Flow Arts History", "item": "https://tkaflowarts.com/history" },
-      { "@type": "ListItem", "position": 3, "name": "Clubs", "item": "${URL}" }
+      { "@type": "ListItem", "position": 2, "name": "Clubs", "item": "${URL}" }
     ]
   }
   </script>`}
 </Seo>
 
 <div class="editorial">
-  <a class="back-link" href="/history">← Flow Arts History</a>
-
   <header class="editorial-header">
     <h1 class="page-title">Club Spinning Notation</h1>
     <p class="page-subtitle">The base single-ended prop</p>
@@ -58,9 +55,7 @@
             This is dual-wielded club spinning: one club in each hand, held
             throughout the move. Clubs are the base prop of the single-ended
             family and central to Vulcan Tech Gospel, the framework The Kinetic
-            Alphabet builds on. The <LinkChip size="inline" href="/history"
-              >history page</LinkChip
-            > traces that lineage.
+            Alphabet builds on.
           </p>
           <p>
             To read a club pictograph, imagine the pinky end of a staff is

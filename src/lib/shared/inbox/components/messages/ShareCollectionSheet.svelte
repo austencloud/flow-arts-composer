@@ -569,7 +569,12 @@ own Escape (which closes the sheet) gets a turn.
                 </div>
               </div>
             {:else}
-              <div class="link-screen">
+              <!-- One decision, so it sits in the middle of the box instead
+                   of hanging off the top with dead space below. -->
+              <div class="link-screen locked">
+                <span class="locked-icon" aria-hidden="true">
+                  <i class="fa-solid fa-lock"></i>
+                </span>
                 <p class="lede">{t("inbox_share_link_private")}</p>
                 <button
                   type="button"
@@ -965,7 +970,8 @@ own Escape (which closes the sheet) gets a turn.
 
     /* The message composer sits beside Send on one 44px row; the placeholder
        names the box and the limit is still enforced by the field itself. */
-    .screen-footer {
+    /* Outranks the base .screen-footer rule declared further down. */
+    .screen .screen-footer {
       flex-direction: row;
       align-items: stretch;
     }
@@ -1073,6 +1079,33 @@ own Escape (which closes the sheet) gets a turn.
     gap: 12px;
     height: 100%;
     min-height: 0;
+  }
+
+  .link-screen.locked {
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .link-screen.locked .lede {
+    max-width: 24rem;
+  }
+
+  .link-screen.locked .share-button {
+    width: 100%;
+    max-width: 20rem;
+  }
+
+  .locked-icon {
+    display: grid;
+    place-items: center;
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 1.25rem;
+    background: color-mix(in srgb, var(--theme-text) 8%, transparent);
+    color: var(--theme-text-dim);
+    font-size: 1.75rem;
   }
 
   .link-text {
