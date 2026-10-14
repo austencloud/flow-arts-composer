@@ -296,7 +296,7 @@ This replaces the current `LiftedTurnFrame` (baked staff+arrow on a bare grid �
 - Gate: 212/212 Phase-1 tests pass (2 pre-existing `.svelte.test.ts` browser-mode suite-load failures, unrelated); 0 tsc type errors in the 4 Phase-1 files.
 - Follow-up surfaced: same lowercasing bug lives in 4+ drifted module copies incl. the MCP render path — see `reference_orientation_lowercase_bug_copies` memory.
 
-**Phase 2a — half-motion arrow pipeline plumbing** ✅ COMPLETE (2026-07-14). Plan: `docs/superpowers/plans/2026-07-14-halved-pictograph-phase-2-arrow-identity.md`.
+**Phase 2a — half-motion arrow pipeline plumbing** ✅ COMPLETE (2026-07-14). Plan: `docs/superpowers/plans/backlog/2026-07-14-halved-pictograph-phase-2-arrow-identity.md`.
 - [x] `MotionData.segment` field + factory support — `60d038d6a3`
 - [x] `arrow-location-calculator` half branch — `e69351e92a`. Returns `motion.endLocation` (the halfway grid location); **`shiftHalfDirectionPairs` proved unnecessary** — halving always lands on the 45° grid, so `endLocation` is exact (refinement).
 - [x] `arrow-rotation-calculator` half branch — `30d5a28955` + dedup/guard `d0a66ce3a1` + dash-center fix in `1a6dc27e2c`. **Derived from Phase 1's pure `orientationToStaffAngle` bijection, NOT hand-authored rotation maps** (refinement #2 — authored maps would duplicate the keystone). Pure `segment-rotation.ts` — no animation-engine import in the arrow pipeline (no dependency cycle).

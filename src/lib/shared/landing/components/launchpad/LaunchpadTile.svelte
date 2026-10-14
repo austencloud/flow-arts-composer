@@ -177,6 +177,10 @@
                 </span>
               {:else if tile.id === "faq"}
                 <span class="poster-question">?</span>
+              {:else if tile.media === "pictograph"}
+                <!-- No poster. The generic monogram would spell "NO" for the
+                     Notation tile; the box background stands in until the
+                     live pictograph mounts. -->
               {:else}
                 <span class="poster-monogram"
                   >{tile.heading.slice(0, 2).toUpperCase()}</span

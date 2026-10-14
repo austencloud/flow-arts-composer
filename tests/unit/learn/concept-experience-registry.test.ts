@@ -20,10 +20,8 @@ const expectedPublishedIds = [
   "rotation-direction",
   "dual-shifts-alpha-beta",
   "gamma-motion",
-  "staff-placements",
   "letter-codex-intro",
   "type1-abc-ghi",
-  "words-alpha-beta",
 ];
 
 const learnDomainDir = resolve(process.cwd(), "src/lib/features/learn/domain");
@@ -80,6 +78,7 @@ describe("concept experience registry", () => {
   );
 
   it("lists only lessons that have a real published experience", () => {
+    expect(expectedPublishedIds).toHaveLength(10);
     expect(getAvailableConcepts().map((concept) => concept.id)).toEqual(
       expectedPublishedIds
     );
@@ -87,6 +86,26 @@ describe("concept experience registry", () => {
       expectedPublishedIds
     );
   });
+
+  it.each([
+    ["staff-placements", "staff-placements"],
+    ["words-alpha-beta", "words"],
+  ])(
+    "withdraws %s while retaining its curriculum and Guide reference",
+    (conceptId, guideSlug) => {
+      expect(TKA_CONCEPTS.some((concept) => concept.id === conceptId)).toBe(
+        true
+      );
+      expect(GUIDE_BODY_PAGES.some((page) => page.id === guideSlug)).toBe(true);
+      expect(getConceptExperience(conceptId)).toBeUndefined();
+      expect(getConceptExperienceForGuideSlug(guideSlug)).toBeUndefined();
+      expect(isConceptExperienceAvailable(conceptId)).toBe(false);
+      expect(
+        getAvailableConcepts().some((concept) => concept.id === conceptId)
+      ).toBe(false);
+      expect(isConceptExperienceAvailable("letter-codex-intro")).toBe(true);
+    }
+  );
 
   it("maps every experience to one curriculum concept and one Guide topic", () => {
     const curriculumIds = new Set(TKA_CONCEPTS.map((concept) => concept.id));

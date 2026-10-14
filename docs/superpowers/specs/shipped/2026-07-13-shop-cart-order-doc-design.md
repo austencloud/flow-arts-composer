@@ -4,7 +4,7 @@ value: 5
 effort: S
 remaining: "Re-verified 2026-08-02. THREE of the four gates are now closed: credentials rotated (Stripe restricted key + rolled signing secret + Brevo), the remediation is committed (afb0f2985a), and createCartCheckout is DEPLOYED and listed in production alongside createMerchCheckout/handleMerchWebhook — the every-buy-surface-calls-an-absent-function defect is fixed. Two items left: (1) configure the orders.expiresAt TTL policy (one Firebase console / gcloud action, no gcloud on this machine); (2) run a live checkout + refund and verify the pending-to-paid transition with tax, which needs the Stripe payout requirement and Tax registration cleared first."
 depends_on: "external: clear Stripe payout requirement and complete Stripe Tax registration"
-plan_path: "plans/2026-07-13-shop-cart-order-doc.md"
+plan_path: "docs/superpowers/plans/shipped/2026-07-13-shop-cart-order-doc.md"
 tags: [revenue, shop, cart, stripe, orders]
 last_triaged: 2026-07-27
 ---

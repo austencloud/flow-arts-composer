@@ -1,3 +1,5 @@
+> Archived 2026-10-14: Matching scope is recorded in `docs/superpowers/specs/shipped/2026-07-26-profile-as-stage-design.md`.
+
 # Profile as a Stage — Handoff (2026-07-26)
 
 ## Mission

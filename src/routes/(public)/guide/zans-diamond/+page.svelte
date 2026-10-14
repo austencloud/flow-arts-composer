@@ -59,7 +59,10 @@
         {t("guide_zans_credit", { name: ZANS_DIAMOND_CREDIT.name })}
         {#if ZANS_DIAMOND_CREDIT.href}
           <LinkChip size="inline" href={ZANS_DIAMOND_CREDIT.href}
-            >{ZANS_DIAMOND_CREDIT.name}</LinkChip
+            ><i class="fa-solid fa-video" aria-hidden="true"></i>
+            {t("guide_zans_credit_link", {
+              name: ZANS_DIAMOND_CREDIT.name,
+            })}</LinkChip
           >
         {/if}
       </p>

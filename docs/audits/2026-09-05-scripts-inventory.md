@@ -387,7 +387,7 @@ Grouped by reason. None of these were deleted.
 | `scripts/audit-static-rotation.js` | 2026-08-31 | 1 | `docs/architecture/firestore-cost-anatomy.md` |
 | `scripts/audit-tracker.cjs` | 2026-08-15 | 4 | `.agents/skills/audit/SKILL.md`, `.claude/skills/audit/SKILL.md`, `docs/reference/audit-rubric.md` |
 | `scripts/audit-transitions.cjs` | 2026-08-15 | 2 | `docs/reference/audit-rubric.md`, `scripts/collect-evidence.cjs` |
-| `scripts/auto-label-loops.cjs` | 2026-08-31 | 7 | `docs/superpowers/handoffs/2026-07-03-loop-detection-audit-handoff.md`, `docs/superpowers/plans/shipped/2026-04-21-sticker-lab-primitive-first.md`, `docs/superpowers/plans/shipped/2026-04-30-loop-detection-foundation-refactor.md` |
+| `scripts/auto-label-loops.cjs` | 2026-08-31 | 7 | `docs/superpowers/handoffs/archived/2026-07-03-loop-detection-audit-handoff.md`, `docs/superpowers/plans/shipped/2026-04-21-sticker-lab-primitive-first.md`, `docs/superpowers/plans/shipped/2026-04-30-loop-detection-foundation-refactor.md` |
 | `scripts/autumn-depth-material-grades.mjs` | 2026-08-10 | 4 | `scripts/optimize-autumn-environment.mjs`, `scripts/verify-autumn-environment-performance.mjs`, `tests/unit/3d-autumn/autumn-depth-material-grades.test.ts` |
 | `scripts/autumn-ground-layout.json` | 2026-08-10 | 6 | `docs/superpowers/specs/2026-08-10-autumn-ground-treatment-plan.md`, `docs/superpowers/specs/autumn-world-coherence-r1/scene-gates.json`, `scripts/build-autumn-environment.py` |
 | `scripts/autumn-hero-material-grades.mjs` | 2026-08-10 | 4 | `scripts/optimize-autumn-environment.mjs`, `scripts/verify-autumn-environment-performance.mjs`, `tests/unit/3d-autumn/autumn-hero-material-grades.test.ts` |
@@ -399,7 +399,7 @@ Grouped by reason. None of these were deleted.
 | `scripts/backfill-active-prop.cjs` | 2026-08-31 | 1 | `docs/superpowers/specs/active/2026-06-12-canon-prop-creators-redesign.md` |
 | `scripts/backfill-missing-user-profiles.cjs` | 2026-08-05 | 1 | `~/.claude/projects/E--tka-platform/memory/reference_signup_profile_provisioning.md` |
 | `scripts/backfill-sequence-loop-type.cjs` | 2026-08-22 | 1 | `tests/unit/parity/legacy-script-parity-boundaries.test.ts` |
-| `scripts/backfill-shortcode-hash-index.mjs` | 2026-07-05 | 2 | `docs/superpowers/plans/2026-07-05-shortcode-dup-mint-fix.md`, `docs/superpowers/specs/shipped/2026-07-05-shortcode-dup-mint-fix-design.md` |
+| `scripts/backfill-shortcode-hash-index.mjs` | 2026-07-05 | 2 | `docs/superpowers/plans/shipped/2026-07-05-shortcode-dup-mint-fix.md`, `docs/superpowers/specs/shipped/2026-07-05-shortcode-dup-mint-fix-design.md` |
 | `scripts/batch-upload-instagram-videos.js` | 2026-07-19 | 1 | `docs/superpowers/handoffs/2026-07-18-android-native-fixes-handoff.md` |
 | `scripts/beat-pair-detection.cjs` | 2026-08-31 | 1 | `docs/superpowers/specs/shipped/2026-04-30-loop-detection-foundation-refactor.md` |
 | `scripts/beat-rename-audit.mjs` | 2026-08-27 | 3 | `docs/superpowers/plans/shipped/2026-04-20-beat-to-step-rename-plan.md`, `docs/superpowers/plans/shipped/2026-04-20-session-handoff.md`, `docs/superpowers/specs/backlog/2026-07-16-beat-to-step-nomenclature-design.md` |
@@ -475,7 +475,7 @@ Grouped by reason. None of these were deleted.
 | `scripts/build-guide-pdf.mjs` | 2026-06-21 | 2 | `docs/superpowers/specs/shipped/2026-06-21-guide-proof-reprint-loop-design.md`, `package.json` |
 | `scripts/build-half-arrow-templates.mjs` | 2026-08-27 | 4 | `assets/half-arrow-templates/README.md`, `package.json`, `scripts/half-arrow-seeds.mjs` |
 | `scripts/build-mandala-glyphs.cjs` | 2026-08-31 | 2 | `src/routes/test/mandala-decoder/+page.svelte`, `src/routes/test/mandala-palettes/+page.svelte` |
-| `scripts/build-mandala-index.ts` | 2026-08-31 | 4 | `docs/superpowers/plans/2026-06-22-mandala-decoder.md`, `docs/superpowers/specs/shipped/2026-06-22-mandala-decoder-design.md`, `docs/superpowers/specs/shipped/2026-07-21-shape-matrix-hero-pool-design.md` |
+| `scripts/build-mandala-index.ts` | 2026-08-31 | 4 | `docs/superpowers/plans/shipped/2026-06-22-mandala-decoder.md`, `docs/superpowers/specs/shipped/2026-06-22-mandala-decoder-design.md`, `docs/superpowers/specs/shipped/2026-07-21-shape-matrix-hero-pool-design.md` |
 | `scripts/build-ocean-composition.py` | 2026-08-10 | 6 | `.gitignore`, `docs/superpowers/specs/active/2026-08-09-ocean-composition-matrix-design.md`, `scripts/audit-ocean-composition.py` |
 | `scripts/build-ocean-terrain.py` | 2026-08-09 | 3 | `docs/superpowers/plans/active/2026-08-09-fathom-ocean-world-boundary.md`, `docs/superpowers/specs/active/2026-08-09-fathom-ocean-world-boundary-design.md`, `scripts/ocean_terrain_profile.py` |
 | `scripts/build-og-image.mjs` | 2026-07-20 | 1 | `tests/unit/seo-head-contract.test.ts` |
@@ -527,8 +527,8 @@ Grouped by reason. None of these were deleted.
 | `scripts/combinator-research/letter-orbits.mjs` | 2026-08-31 | 2 | `docs/reference/letter-gap-families.md`, `scripts/combinator-research/README.md` |
 | `scripts/combinator-research/pair-classes.mjs` | 2026-08-27 | 4 | `docs/reference/letter-gap-families.md`, `docs/superpowers/specs/2026-08-05-combinator-stage3-ui-handoff.md`, `scripts/combinator-research/README.md` |
 | `scripts/combinator-research/theory-512.mjs` | 2026-08-05 | 6 | `docs/reference/letter-gap-families.md`, `docs/superpowers/specs/2026-08-05-sequence-combinator-algebra-handoff.md`, `scripts/combinator-research/README.md` |
-| `scripts/component-inventory.mjs` | 2026-08-27 | 3 | `docs/specs/god-component-decomposition.md`, `docs/superpowers/handoffs/2026-07-18-notation-recompose-handoff.md`, `docs/superpowers/handoffs/2026-07-27-notation-catalog-device-polish-handoff.md` |
-| `scripts/component-manifest.json` | 2026-09-03 | 9 | `docs/specs/god-component-decomposition.md`, `docs/superpowers/handoffs/2026-07-18-notation-recompose-handoff.md`, `docs/superpowers/handoffs/2026-07-27-notation-catalog-device-polish-handoff.md` |
+| `scripts/component-inventory.mjs` | 2026-08-27 | 3 | `docs/specs/god-component-decomposition.md`, `docs/superpowers/handoffs/2026-07-18-notation-recompose-handoff.md`, `docs/superpowers/handoffs/archived/2026-07-27-notation-catalog-device-polish-handoff.md` |
+| `scripts/component-manifest.json` | 2026-09-03 | 9 | `docs/specs/god-component-decomposition.md`, `docs/superpowers/handoffs/2026-07-18-notation-recompose-handoff.md`, `docs/superpowers/handoffs/archived/2026-07-27-notation-catalog-device-polish-handoff.md` |
 | `scripts/condition-forest-plantcatalog-bridge.py` | 2026-08-27 | 1 | `scripts/run-forest-plantcatalog-postexport.ps1` |
 | `scripts/contact-sheet-forest-plantcatalog-bridge.mjs` | 2026-08-23 | 1 | `scripts/run-forest-plantcatalog-postexport.ps1` |
 | `scripts/cosmic-meshy-assets.json` | 2026-07-19 | 2 | `docs/superpowers/handoffs/2026-07-19-cosmic-astral-reliquary-handoff.md`, `scripts/generate-cosmic-meshy.mjs` |
@@ -621,8 +621,8 @@ Grouped by reason. None of these were deleted.
 | `scripts/generate-guide-data.cjs` | 2026-08-31 | 2 | `docs/superpowers/plans/backlog/2026-04-25-level-1-guide-redesign.md`, `docs/superpowers/specs/shipped/2026-04-24-level-1-guide-redesign.md` |
 | `scripts/generate-i18n-types.cjs` | 2026-02-06 | 3 | `docs/adr/001-json-based-i18n.md`, `docs/superpowers/specs/shipped/2026-05-23-i18n-adoption-plan-design.md`, `package.json` |
 | `scripts/generate-letter-types-json.ts` | 2026-06-17 | 4 | `docs/superpowers/plans/backlog/2026-06-17-tka-explanation-single-source.md`, `tests/unit/domain/letter-types-json-parity.test.ts`, `~/.claude/projects/E--tka-platform/memory/reference_flow_arts_mcp_deploy.md` |
-| `scripts/generate-loop-audit-fixtures.mjs` | 2026-08-31 | 6 | `docs/superpowers/plans/2026-07-12-compositional-loop-p1-p2.md`, `docs/superpowers/specs/shipped/2026-07-03-fable-loop-detection-audit-fixes-design.md`, `packages/sequence-engine/tests/generation/loop-spec-build.test.ts` |
-| `scripts/generate-native-env.mjs` | 2026-07-18 | 6 | `.github/workflows/android-build.yml`, `docs/superpowers/handoffs/2026-07-18-android-native-fixes-handoff.md`, `docs/superpowers/plans/2026-07-29-direct-share-shortcuts.md` |
+| `scripts/generate-loop-audit-fixtures.mjs` | 2026-08-31 | 6 | `docs/superpowers/plans/shipped/2026-07-12-compositional-loop-p1-p2.md`, `docs/superpowers/specs/shipped/2026-07-03-fable-loop-detection-audit-fixes-design.md`, `packages/sequence-engine/tests/generation/loop-spec-build.test.ts` |
+| `scripts/generate-native-env.mjs` | 2026-07-18 | 6 | `.github/workflows/android-build.yml`, `docs/superpowers/handoffs/2026-07-18-android-native-fixes-handoff.md`, `docs/superpowers/plans/shipped/2026-07-29-direct-share-shortcuts.md` |
 | `scripts/generate-ocean-composition.py` | 2026-08-10 | 6 | `.gitignore`, `docs/superpowers/specs/active/2026-08-09-ocean-composition-matrix-design.md`, `docs/superpowers/specs/active/2026-08-09-trench-gallery-composition-design.md` |
 | `scripts/generate-ocean-placements.cjs` | 2026-08-27 | 2 | `docs/superpowers/specs/active/2026-08-09-ocean-composition-matrix-design.md`, `scripts/generate-ocean-composition.py` |
 | `scripts/generate-pictographs.js` | 2026-01-12 | 1 | `src/routes/render-pictographs/+page.svelte` |
@@ -732,8 +732,8 @@ Grouped by reason. None of these were deleted.
 | `scripts/migrations/step-constructability-check.ts` | 2026-07-01 | 3 | `docs/superpowers/specs/shipped/2026-07-03-fable-stepdata-motion-migration-remainder-design.md`, `docs/superpowers/specs/shipped/2026-07-05-stepdata-migration-checkpoint-package.md`, `~/.claude/projects/E--tka-platform/memory/project_stepdata_step_migration.md` |
 | `scripts/migrations/step-lossy-mutation-test.ts` | 2026-08-31 | 4 | `docs/superpowers/specs/shipped/2026-07-03-fable-stepdata-motion-migration-remainder-design.md`, `docs/superpowers/specs/shipped/2026-07-05-stepdata-migration-checkpoint-package.md`, `src/lib/shared/foundation/domain/adapters/step-bridge.ts` |
 | `scripts/migrations/step-roundtrip-parity.ts` | 2026-08-31 | 3 | `docs/superpowers/specs/shipped/2026-07-03-fable-stepdata-motion-migration-remainder-design.md`, `src/lib/shared/foundation/domain/adapters/step-view-bridge.ts`, `~/.claude/projects/E--tka-platform/memory/project_stepdata_step_migration.md` |
-| `scripts/mocks/$app/environment.ts` | 2026-01-13 | 13 | `docs/reference/film-director-capability-matrix.md`, `docs/superpowers/plans/2026-06-29-component-test-layer.md`, `docs/superpowers/plans/2026-07-28-share-target-intake-native.md` |
-| `scripts/mocks/$app/navigation.ts` | 2026-01-13 | 7 | `docs/superpowers/plans/2026-06-29-component-test-layer.md`, `docs/superpowers/specs/shipped/2026-06-29-component-test-layer-design.md`, `tests/config/vitest.components.config.ts` |
+| `scripts/mocks/$app/environment.ts` | 2026-01-13 | 13 | `docs/reference/film-director-capability-matrix.md`, `docs/superpowers/plans/shipped/2026-06-29-component-test-layer.md`, `docs/superpowers/plans/shipped/2026-07-28-share-target-intake-native.md` |
+| `scripts/mocks/$app/navigation.ts` | 2026-01-13 | 7 | `docs/superpowers/plans/shipped/2026-06-29-component-test-layer.md`, `docs/superpowers/specs/shipped/2026-06-29-component-test-layer-design.md`, `tests/config/vitest.components.config.ts` |
 | `scripts/moon-source-assets.json` | 2026-08-12 | 2 | `docs/superpowers/specs/moon-observatory/source-asset-package.md`, `scripts/fetch-moon-source-assets.mjs` |
 | `scripts/moon-source-assets.lock.json` | 2026-08-12 | 2 | `docs/superpowers/specs/moon-observatory/source-asset-package.md`, `scripts/fetch-moon-source-assets.mjs` |
 | `scripts/museum-dev.js` | 2026-08-27 | 12 | `.agents/skills/museum-lore/SKILL.md`, `.agents/skills/museum-scene-production/references/reviews/2026-08-08-opus.md`, `.agents/skills/museum/SKILL.md` |
@@ -775,7 +775,7 @@ Grouped by reason. None of these were deleted.
 | `scripts/optimize-traverse-floor.mjs` | 2026-08-09 | 1 | `scripts/build-traverse-seabed.py` |
 | `scripts/optimize-winter-environment.mjs` | 2026-08-12 | 2 | `docs/superpowers/plans/active/2026-08-08-winter-environment-pass-three.md`, `docs/superpowers/specs/active/2026-08-08-moonlit-winter-hollow-design.md` |
 | `scripts/pictograph-cli.ts` | 2026-08-31 | 1 | `package.json` |
-| `scripts/pictograph.ts` | 2026-08-31 | 4 | `docs/superpowers/plans/2026-06-21-personal-museum.md`, `docs/superpowers/specs/active/2026-07-03-fable-real-flow-notation-validation-design.md`, `scripts/audit-generator-conformance.ts` |
+| `scripts/pictograph.ts` | 2026-08-31 | 4 | `docs/superpowers/plans/active/2026-06-21-personal-museum.md`, `docs/superpowers/specs/active/2026-07-03-fable-real-flow-notation-validation-design.md`, `scripts/audit-generator-conformance.ts` |
 | `scripts/plantfactory/blossom_cherry_family_r1.py` | 2026-08-23 | 1 | `docs/superpowers/specs/blossom-plantfactory-family-r1/blossom-plantfactory-family-r1.md` |
 | `scripts/plantfactory/forest_plantcatalog_bridge_r1.py` | 2026-08-17 | 2 | `docs/superpowers/specs/2026-08-16-forest-plantcatalog-install-and-proof-handoff.md`, `docs/superpowers/specs/moonlit-firefly-forest/evidence/plantcatalog-bridge-r1/plantcatalog-bridge-r1-runbook.md` |
 | `scripts/plot-ocean-composition.py` | 2026-08-09 | 1 | `docs/superpowers/specs/active/2026-08-09-ocean-composition-matrix-design.md` |
@@ -809,7 +809,7 @@ Grouped by reason. None of these were deleted.
 | `scripts/reseed-tnd-trilogy-covers.ts` | 2026-07-10 | 1 | `docs/superpowers/specs/backlog/2026-07-17-merchant-product-image-pipeline-design.md` |
 | `scripts/review-firestore-permission-fix.ts` | 2026-08-05 | 1 | `package.json` |
 | `scripts/run-forest-plantcatalog-postexport.ps1` | 2026-08-23 | 2 | `docs/superpowers/specs/2026-08-16-forest-plantcatalog-install-and-proof-handoff.md`, `docs/superpowers/specs/moonlit-firefly-forest/evidence/plantcatalog-bridge-r1/plantcatalog-bridge-r1-runbook.md` |
-| `scripts/scan-collision-lab.ts` | 2026-08-31 | 5 | `docs/superpowers/plans/2026-07-13-wall-plane-depth-solver.md`, `docs/superpowers/plans/2026-07-13-wall-plane-feasibility.md`, `docs/superpowers/specs/shipped/2026-07-13-wall-plane-feasibility-design.md` |
+| `scripts/scan-collision-lab.ts` | 2026-08-31 | 5 | `docs/superpowers/plans/backlog/2026-07-13-wall-plane-depth-solver.md`, `docs/superpowers/plans/shipped/2026-07-13-wall-plane-feasibility.md`, `docs/superpowers/specs/shipped/2026-07-13-wall-plane-feasibility-design.md` |
 | `scripts/scope-98css.cjs` | 2026-02-26 | 1 | `src/lib/features/retro/win95/styles/98-scoped.css` |
 | `scripts/search-soundscapes.cjs` | 2026-04-14 | 4 | `scripts/fetch-soundscapes.cjs`, `src/lib/features/museum/audio/soundscape-candidates.generated.ts`, `src/lib/features/museum/audio/soundscape-manifest.ts` |
 | `scripts/seed-default-arrow-placements.ts` | 2026-08-14 | 2 | `docs/superpowers/plans/shipped/2026-05-30-editable-default-arrow-positions.md`, `package.json` |
@@ -836,7 +836,7 @@ Grouped by reason. None of these were deleted.
 | `scripts/service-rename-plan.md` | 2026-01-25 | 1 | `docs/superpowers/plans/shipped/2026-04-14-procedural-world-engine-extraction.md` |
 | `scripts/set-admin-claims.js` | 2026-08-27 | 1 | `docs/superpowers/specs/backlog/2026-05-23-firebase-cost-optimization-design.md` |
 | `scripts/setup-release-workflow.js` | 2026-07-12 | 2 | `docs/superpowers/plans/shipped/2026-03-22-tka-composer-rename.md`, `package.json` |
-| `scripts/shape-fingerprint-test.ts` | 2026-08-31 | 2 | `docs/superpowers/plans/2026-06-22-mandala-decoder.md`, `docs/superpowers/specs/shipped/2026-06-22-mandala-decoder-design.md` |
+| `scripts/shape-fingerprint-test.ts` | 2026-08-31 | 2 | `docs/superpowers/plans/shipped/2026-06-22-mandala-decoder.md`, `docs/superpowers/specs/shipped/2026-06-22-mandala-decoder-design.md` |
 | `scripts/show-sequence.mjs` | 2026-08-31 | 5 | `.claude/agents/prop-positioning-expert.md`, `.codex/agents/prop-positioning-expert.toml`, `docs/superpowers/specs/active/2026-07-25-sequence-public-parity-repair-design.md` |
 | `scripts/spec-drift-detector.cjs` | 2026-08-27 | 5 | `.agents/skills/queue/SKILL.md`, `.claude/skills/queue/SKILL.md`, `docs/superpowers/handoffs/2026-07-25-spec-triage-handoff.md` |
 | `scripts/start-dev-pm2.cjs` | 2026-07-19 | 5 | `docs/superpowers/specs/shipped/2026-08-01-agent-hub-dev-server-control-design.md`, `ecosystem.config.cjs`, `scripts/start-dev.ps1` |
@@ -869,7 +869,7 @@ Grouped by reason. None of these were deleted.
 | `scripts/tika/test-run.mjs` | 2026-01-16 | 1 | `docs/reference/tika-testing.md` |
 | `scripts/tika/verify-chat-live.ts` | 2026-09-04 | 2 | `docs/superpowers/specs/2026-09-04-tika-fable-handoff.md`, `~/.claude/projects/E--tka-platform/memory/reference_live_scripts_anthropic_base_url.md` |
 | `scripts/tika/verify-director-live.ts` | 2026-09-05 | 4 | `docs/superpowers/plans/2026-09-05-tika-arrange-verb.md`, `docs/superpowers/specs/2026-09-04-tika-fable-handoff.md`, `~/.claude/projects/E--tka-platform/memory/reference_anthropic_api_credits_exhausted.md` |
-| `scripts/tmp-dup-shortcode-audit.mjs` | 2026-07-13 | 3 | `docs/superpowers/plans/2026-07-05-shortcode-dup-mint-fix.md`, `docs/superpowers/specs/shipped/2026-07-05-shortcode-dup-mint-fix-design.md`, `~/.claude/projects/E--tka-platform/memory/reference_shortcode_dedup_invariant.md` |
+| `scripts/tmp-dup-shortcode-audit.mjs` | 2026-07-13 | 3 | `docs/superpowers/plans/shipped/2026-07-05-shortcode-dup-mint-fix.md`, `docs/superpowers/specs/shipped/2026-07-05-shortcode-dup-mint-fix-design.md`, `~/.claude/projects/E--tka-platform/memory/reference_shortcode_dedup_invariant.md` |
 | `scripts/trace-create-three.cjs` | 2026-05-30 | 5 | `docs/superpowers/plans/backlog/2026-05-31-sequence-drawer-host-deferral.md`, `docs/superpowers/specs/shipped/2026-05-31-create-module-eager-graph-deferral-design.md`, `src/lib/features/create/shared/components/CreateModule.svelte` |
 | `scripts/transcribe-spiroanim-qst.ts` | 2026-09-04 | 1 | `docs/research/spiroanim/README.md` |
 | `scripts/transfer-sequence.ts` | 2026-08-31 | 2 | `package.json`, `tests/unit/parity/sequence-transfer.test.ts` |
@@ -884,7 +884,7 @@ Grouped by reason. None of these were deleted.
 | `scripts/upload-sourcemaps.js` | 2026-07-21 | 2 | `package.json`, `vite.config.ts` |
 | `scripts/validate-i18n-structure.cjs` | 2026-08-27 | 3 | `.husky/pre-commit`, `docs/superpowers/specs/shipped/2026-05-25-i18n-compile-time-keys-design.md`, `package.json` |
 | `scripts/validate-i18n.cjs` | 2026-08-27 | 7 | `docs/adr/001-json-based-i18n.md`, `docs/superpowers/specs/shipped/2026-05-23-dependency-asset-cleanup-design.md`, `docs/superpowers/specs/shipped/2026-05-23-i18n-adoption-plan-design.md` |
-| `scripts/validate-loop-detection.cjs` | 2026-08-31 | 5 | `docs/superpowers/handoffs/2026-07-03-loop-detection-audit-handoff.md`, `docs/superpowers/plans/shipped/2026-04-30-loop-detection-foundation-refactor.md`, `docs/superpowers/specs/shipped/2026-07-03-fable-loop-detection-audit-fixes-design.md` |
+| `scripts/validate-loop-detection.cjs` | 2026-08-31 | 5 | `docs/superpowers/handoffs/archived/2026-07-03-loop-detection-audit-handoff.md`, `docs/superpowers/plans/shipped/2026-04-30-loop-detection-foundation-refactor.md`, `docs/superpowers/specs/shipped/2026-07-03-fable-loop-detection-audit-fixes-design.md` |
 | `scripts/verify-autumn-environment-performance.mjs` | 2026-09-01 | 4 | `docs/superpowers/specs/2026-08-06-autumn-living-forest-floor-handoff.md`, `docs/superpowers/specs/active/2026-08-31-autumn-scene-hardening.md`, `docs/superpowers/specs/autumn-world-coherence-r1/scene-development.md` |
 | `scripts/verify-blossom-composition.mjs` | 2026-08-23 | 2 | `docs/superpowers/specs/2026-08-23-blossom-scene-rebuild-handoff.md`, `scripts/build-blossom-environment.py` |
 | `scripts/verify-buugeng-glb.cjs` | 2026-08-23 | 1 | `docs/superpowers/specs/2026-08-14-buugeng-3d-rebuild-design.md` |
@@ -907,7 +907,7 @@ Grouped by reason. None of these were deleted.
 | `scripts/verify-forest-prop-lineup.mjs` | 2026-08-09 | 1 | `docs/superpowers/plans/active/2026-08-08-forest-environment-pass-one.md` |
 | `scripts/verify-forest-semantic-tree-wave-r2.mjs` | 2026-08-14 | 1 | `docs/superpowers/specs/moonlit-firefly-forest/evidence/semantic-tree-wave-r2/semantic-wave-r2-verdict.md` |
 | `scripts/verify-forest-tree-lineup.mjs` | 2026-08-12 | 1 | `docs/superpowers/plans/active/2026-08-08-forest-environment-pass-one.md` |
-| `scripts/verify-loop-explorer.mjs` | 2026-08-31 | 2 | `docs/superpowers/plans/2026-07-19-notation-loops-implementation-plan.md`, `~/.claude/projects/E--tka-platform/memory/project_notation_loops_caps.md` |
+| `scripts/verify-loop-explorer.mjs` | 2026-08-31 | 2 | `docs/superpowers/plans/shipped/2026-07-19-notation-loops-implementation-plan.md`, `~/.claude/projects/E--tka-platform/memory/project_notation_loops_caps.md` |
 | `scripts/verify-native-release-surface.mjs` | 2026-08-01 | 6 | `.github/workflows/android-build.yml`, `docs/superpowers/specs/active/2026-08-01-native-release-surface-hardening.md`, `package.json` |
 | `scripts/verify-offline-deploy.mjs` | 2026-07-01 | 2 | `.github/workflows/offline-kit-prod-check.yml`, `package.json` |
 | `scripts/verify-orientation-domain-loops.mjs` | 2026-08-31 | 1 | `~/.claude/projects/E--tka-platform/memory/project_orientation_domain_loops.md` |

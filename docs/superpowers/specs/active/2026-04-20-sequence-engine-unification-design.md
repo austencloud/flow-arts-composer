@@ -2,14 +2,16 @@
 status: active
 value: 5
 effort: L
-remaining: "Verify Sequence Engine Unification — Design Spec against packages/tka-types/src/step.ts before resuming implementation. Prior recorded remainder: 'Phases 0-2 shipped via a different subtype architecture; Phase 3 (delete 5 app-side LOOP executors) still open — the bug that motivated the spec'"
+remaining: "Retire the stale Phase 3 rebuild instruction: 8e2070ea59 removed app LOOP executors and routes extension through completeLOOPExtension, documented in docs/architecture/loop-execution.md. Reconcile the retained StepData subtype contract and remaining broadcast, production reversal/backfill and package-publication acceptance; current source and local package version 0.1.0 do not establish the required production monitoring or npm release."
 depends_on: ""
 plan_path: "docs/superpowers/plans/active/2026-04-20-sequence-engine-unification-plan.md"
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: in-progress
 ---
 # Sequence Engine Unification — Design Spec
+
+> 2026-10-14 triage: Retire the stale Phase 3 rebuild instruction: 8e2070ea59 removed app LOOP executors and routes extension through completeLOOPExtension, documented in docs/architecture/loop-execution.md. Reconcile the retained StepData subtype contract and remaining broadcast, production reversal/backfill and package-publication acceptance; current source and local package version 0.1.0 do not establish the required production monitoring or npm release. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Queue evidence (2026-10-07):** Phases 0-2 landed through a different subtype architecture; Phase 3 LOOP executor consolidation remains open. See frontmatter for the remaining work.
 

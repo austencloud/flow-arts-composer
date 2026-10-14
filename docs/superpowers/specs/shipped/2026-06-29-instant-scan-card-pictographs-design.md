@@ -4,7 +4,7 @@ value: 4
 effort: M
 remaining: "The canonical cloud-cell path remains active inside the complete Sequence Viewer. The separate pre-viewer Choreo Card was retired by product decision on 2026-08-01 because showing the same card twice felt abrasive and repetitive. Remaining performance work is to establish cold and warm complete-viewer readiness baselines, trim that graph, and set replacement budgets without restoring a choreography preview."
 depends_on: "internal: complete-viewer readiness budgets are not yet baselined"
-plan_path: "docs/superpowers/plans/2026-06-29-instant-scan-card-pictographs.md"
+plan_path: "docs/superpowers/plans/shipped/2026-06-29-instant-scan-card-pictographs.md"
 tags: []
 last_triaged: 2026-08-01
 ---

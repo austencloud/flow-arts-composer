@@ -10,7 +10,7 @@ following the 2026-08-01 Fable design review. Ready for Codex implementation pla
 of that spec's page structure). Preserves that spec's research gates and attribution
 discipline. Preserves the shipped hero decisions of
 `docs/superpowers/specs/2026-07-20-notation-caps-redesign-design.md` and
-`docs/superpowers/plans/2026-07-20-notation-caps-redesign.md` (CapsHub bento hero,
+`docs/superpowers/plans/shipped/2026-07-20-notation-caps-redesign.md` (CapsHub bento hero,
 YutaCapLiveDemo, thumbnail video cards) except where section 5.1 explicitly changes one
 tile behavior.
 

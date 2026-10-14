@@ -1,3 +1,5 @@
+> Archived 2026-10-14: Matching scope is recorded in `docs/superpowers/specs/shipped/2026-07-17-poi-legal-composer-filtering-design.md`.
+
 # Poi Picker Activation + Session State — Handoff (2026-07-18)
 
 ## Mission
