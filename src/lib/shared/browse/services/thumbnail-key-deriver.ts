@@ -15,7 +15,9 @@ export type ThumbnailVariant = "gallery" | "wordcard";
  * This token belongs in every cache identity, including the cloud filename.
  * Otherwise a corrected renderer can keep receiving an older image forever.
  */
-export const THUMBNAIL_RENDERER_VERSION = 6;
+// r7: wider breathing gap between the header word and the level badge / LOOP
+// strip (HEADER_WORD_BREATHING_GAP_SCALE 0.08 -> 0.25).
+export const THUMBNAIL_RENDERER_VERSION = 7;
 
 /**
  * Joined-grid dots lean toward each hand's color (see render-core's tint), a
