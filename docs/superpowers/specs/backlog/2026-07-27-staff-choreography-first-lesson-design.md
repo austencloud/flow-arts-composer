@@ -2,7 +2,7 @@
 status: backlog
 value: 3
 effort: L
-remaining: 'Stage 1 only, and Stage 1 is confirmed done as designed: +page.server.ts errors 404 outside dev and +page.svelte emits robots noindex,follow in production (re-verified 2026-09-13). Media production, integration, review and release stages are not started; no LessonMediaRequest or ApprovedLessonMediaPackage type exists in src/ yet. Gated on VIDEO-001 - the app requests and presents approved media, it does not produce it. Fixture-complete is not publish-ready.'
+remaining: "Build the contract-valid fixture lesson and shared synchronized playback integration, then obtain the VIDEO-001 approved media package and Austen release review. Current route only preserves the production 404/noindex gate (f59e0af77c); no LessonMediaRequest or ApprovedLessonMediaPackage appears in src, so the gate must not be mistaken for completed Stage 1."
 depends_on: 2026-07-27-video-001-production-system-program.md
 plan_path: ''
 tags:
@@ -10,7 +10,7 @@ tags:
 - lesson
 - video
 - blocked-media-gate
-last_triaged: '2026-10-07'
+last_triaged: 2026-10-14
 work_state: blocked
 ---
 
@@ -30,6 +30,8 @@ Reconciliation note, 2026-09-13. Two corrections, no scope change.
    below is real and stays.
 -->
 # Staff Choreography First Lesson: Product Spec
+
+> 2026-10-14 triage: Build the contract-valid fixture lesson and shared synchronized playback integration, then obtain the VIDEO-001 approved media package and Austen release review. Current route only preserves the production 404/noindex gate (f59e0af77c); no LessonMediaRequest or ApprovedLessonMediaPackage appears in src, so the gate must not be mistaken for completed Stage 1. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Date:** 2026-07-27  
 **Status:** Scope approved; implementation not started; production gate active  

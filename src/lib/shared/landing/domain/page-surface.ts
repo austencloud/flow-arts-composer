@@ -32,7 +32,9 @@ export const GUIDE_CANVAS = "oklch(0.13 0.015 270)";
  * transparent over it.
  */
 export function pageSurface(path: string): string | undefined {
-  if (path === "/history") return ARCHIVE_INK;
+  // The withdrawn /history note floats on the cosmic background; only the
+  // unlisted draft archive paints the ink edge to edge.
+  if (path === "/history/draft") return ARCHIVE_INK;
   if (path === "/guide" || path.startsWith("/guide/")) return GUIDE_CANVAS;
   return undefined;
 }

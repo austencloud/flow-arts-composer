@@ -2,14 +2,16 @@
 status: active
 value: 2
 effort: M
-remaining: "Verify Ceremony Phase 5 + 3 + C — Stateless Conversion, Isolated-Clone Execution against scripts/ceremony-inventory.mjs before resuming implementation. Prior recorded remainder: 'Phase C rename ~complete (173→13 files); Phase 5 + Phase 3 show no measurable progress'"
+remaining: "Reinventory the live conversion candidates and residual type/filename tail before further batches; do not reuse the May counts. The committed merge handoff and current function exports establish five Phase-5 conversions, contradicting the no-progress banner (docs/superpowers/handoffs/2026-05-31-ceremony-phase5-merge-handoff.md); scripts/ceremony-inventory.mjs still writes outside this worker's scope, so its manifest was not regenerated here."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: in-progress
 ---
 # Ceremony Phase 5 + 3 + C — Stateless Conversion, Isolated-Clone Execution
+
+> 2026-10-14 triage: Reinventory the live conversion candidates and residual type/filename tail before further batches; do not reuse the May counts. The committed merge handoff and current function exports establish five Phase-5 conversions, contradicting the no-progress banner (docs/superpowers/handoffs/2026-05-31-ceremony-phase5-merge-handoff.md); scripts/ceremony-inventory.mjs still writes outside this worker's scope, so its manifest was not regenerated here. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 > **DRIFT WARNING — 2026-08-02.** Phase C rename ~complete (173→13 files); Phase 5 + Phase 3 show no measurable progress
 >

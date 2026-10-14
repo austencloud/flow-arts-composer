@@ -31,9 +31,9 @@
     >
   </div>
 
-  <a class="exit" href="/history">
+  <a class="exit" href="/notation/poi">
     <i class="fas fa-chevron-left" aria-hidden="true"></i>
-    <span>All notation</span>
+    <span>Poi notation</span>
   </a>
 </div>
 

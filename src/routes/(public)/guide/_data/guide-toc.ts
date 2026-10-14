@@ -34,6 +34,7 @@ export const GUIDE_TOC_MODULE = {
   level2: "guide-level-2",
   ratios: "guide-ratios",
   motionPaths: "guide-motion-paths",
+  zansDiamond: "guide-zans-diamond",
   codex: "guide-codex",
   downloads: "guide-downloads",
 } as const;
@@ -123,6 +124,14 @@ export function buildGuideToc(): ModuleDefinition[] {
       sections: [],
     },
     {
+      id: GUIDE_TOC_MODULE.zansDiamond,
+      label: tDynamic("guide_hub_zans_diamond_title"),
+      icon: icon("gem"),
+      color: GUIDE_ACCENT,
+      href: "/guide/zans-diamond",
+      sections: [],
+    },
+    {
       id: GUIDE_TOC_MODULE.codex,
       label: tDynamic("guide_nav_codex"),
       icon: icon("table-cells"),
@@ -155,6 +164,7 @@ export function guideTocModuleFor(pathname: string): string {
   if (pathname.startsWith("/guide/level-2")) return GUIDE_TOC_MODULE.level2;
   if (pathname === "/guide/ratios") return GUIDE_TOC_MODULE.ratios;
   if (pathname === "/guide/motion-paths") return GUIDE_TOC_MODULE.motionPaths;
+  if (pathname === "/guide/zans-diamond") return GUIDE_TOC_MODULE.zansDiamond;
   if (pathname.startsWith("/guide/codex")) return GUIDE_TOC_MODULE.codex;
   return "";
 }
