@@ -9,6 +9,11 @@
   The media stage is the same animation + pictograph-strip showcase used by
   sequence attachments in Messages. This tile only adds creator attribution
   and navigation; it does not own another preview player.
+
+  Whether the stage animates is the wall's LiveSlots' call, not this tile's:
+  the tile registers with the coordinator and mounts its player only while it
+  holds a token. Without one it shows the showcase's still card at the same
+  square size, so a token coming or going never moves a neighbour.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -18,18 +23,25 @@
   import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
   import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { LiveSlots } from "./profile/stage/live-slots.svelte";
 
   interface Props {
     sequence: SequenceData;
     creator: EnhancedUserProfile;
     /** px-per-em from the panel ramp; RobustAvatar sizes in px. */
     unitPx: number;
+    /** The wall's liveness budget; this tile animates only while it holds a token. */
+    slots: LiveSlots;
     onselect: (sequence: SequenceData) => void;
     /** Jump to the maker's profile rather than opening the work. */
     oncreator: (creator: EnhancedUserProfile) => void;
   }
 
-  let { sequence, creator, unitPx, onselect, oncreator }: Props = $props();
+  let { sequence, creator, unitPx, slots, onselect, oncreator }: Props =
+    $props();
+
+  /** Ambient token from the wall's coordinator. */
+  let live = $state(false);
 
   const avatarSize = $derived(Math.round(1.5 * unitPx));
   const sequenceWord = $derived(simplifyRepeatedWord(deriveWord(sequence)));
@@ -39,12 +51,26 @@
   }
 </script>
 
-<div class="tile">
+<!--
+  hover: false — on this wall a hover reveals the still card (the showcase's
+  own ambient behavior), so a hover token would mount an engine only to hide
+  it; the budget alone decides who plays.
+-->
+<div
+  class="tile"
+  use:slots.tile={{
+    medium: "sequence",
+    hover: false,
+    onChange: (next) => (live = next),
+  }}
+>
   <div class="art">
     <SequenceShowcasePreview
       word={sequenceWord}
       {loadSequence}
       activation="ambient"
+      playbackActive={live}
+      playbackMounted={live}
       allowQR={false}
       onopen={() => onselect(sequence)}
       openLabel={t("browse_verified_open_creators_sequence", {
