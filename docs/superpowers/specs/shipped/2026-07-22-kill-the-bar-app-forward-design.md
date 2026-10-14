@@ -13,7 +13,7 @@ stale reading of `x-safari-https://`; see §5)
 > correctness bugs and two overclaims (§5's "records the real hand-off rate",
 > §2/§3's iOS launch flip). **§R below is authoritative where it conflicts with
 > the sections above.** The remediation plan is
-> `docs/superpowers/plans/2026-07-22-kill-the-bar-hardening.md`.
+> `docs/superpowers/plans/shipped/2026-07-22-kill-the-bar-hardening.md`.
 
 ---
 
@@ -334,7 +334,7 @@ registration needed).
 
 Codex 5.6 reviewed §1–§10 against the shipped code. Accepted findings below.
 Authoritative where they conflict with the sections above. Remediation plan:
-`docs/superpowers/plans/2026-07-22-kill-the-bar-hardening.md`.
+`docs/superpowers/plans/shipped/2026-07-22-kill-the-bar-hardening.md`.
 
 ### R.1 Correctness bugs in the shipped Phase A (fix now)
 

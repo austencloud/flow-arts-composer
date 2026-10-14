@@ -1,3 +1,5 @@
+> Archived 2026-10-14: Matching scope is recorded in `docs/superpowers/specs/shipped/2026-07-25-creators-discovery-design.md`.
+
 # Creators Discovery Redesign — Handoff
 
 **Date:** 2026-07-25  

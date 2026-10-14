@@ -16,7 +16,7 @@ work_state: ready
 
 **Date:** 2026-07-13
 **Status:** Approved (brainstormed with Austen 2026-07-13). **Targeted for Fable 5 execution at xhigh effort** — see Fable Handoff.
-**Builds on:** `docs/superpowers/specs/2026-07-13-wall-plane-feasibility-design.md` (Phases 0–2) and its plan `docs/superpowers/plans/2026-07-13-wall-plane-feasibility.md`. This spec supersedes that plan's Tasks 8/9/11 (the concavity-only detection wiring), which were paused.
+**Builds on:** `docs/superpowers/specs/2026-07-13-wall-plane-feasibility-design.md` (Phases 0–2) and its plan `docs/superpowers/plans/shipped/2026-07-13-wall-plane-feasibility.md`. This spec supersedes that plan's Tasks 8/9/11 (the concavity-only detection wiring), which were paused.
 
 ## Why This Exists (the finding that reshaped Phase 3)
 
