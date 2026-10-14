@@ -965,7 +965,8 @@ own Escape (which closes the sheet) gets a turn.
 
     /* The message composer sits beside Send on one 44px row; the placeholder
        names the box and the limit is still enforced by the field itself. */
-    .screen-footer {
+    /* Outranks the base .screen-footer rule declared further down. */
+    .screen .screen-footer {
       flex-direction: row;
       align-items: stretch;
     }
