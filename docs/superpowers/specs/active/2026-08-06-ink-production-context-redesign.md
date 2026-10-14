@@ -2,14 +2,16 @@
 status: active
 value: null
 effort: null
-remaining: "Verify Ink width range, Watercolor zero stroke gravity, and dense-ink stroke against current translator and renderer tests before editing."
+remaining: "Run the existing Ink renderer/translator tests and capture production playback, seven-viewport review, and deterministic export parity; stroke gravity, path-length limits, Watercolor branches, and isolated AnimatorCanvas preview already exist (3dae20082a; tests/unit/effects/ink-2d-renderer.test.ts). Review current dense-palette behavior after e7a90da6dc rather than restoring the original material."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: verification
 ---
 # 2D Ink Production-Context Redesign
+
+> 2026-10-14 triage: Run the existing Ink renderer/translator tests and capture production playback, seven-viewport review, and deterministic export parity; stroke gravity, path-length limits, Watercolor branches, and isolated AnimatorCanvas preview already exist (3dae20082a; tests/unit/effects/ink-2d-renderer.test.ts). Review current dense-palette behavior after e7a90da6dc rather than restoring the original material. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Status:** Approved 2026-08-06
 

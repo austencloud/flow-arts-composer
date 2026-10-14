@@ -182,9 +182,11 @@
     "/faq",
     "/tricks",
     "/learn/staff-spinning-choreography",
-    // The archive, moved off /notation on 2026-09-03. A single page, not a
-    // subtree: nothing renders under /history.
+    // The archive, moved off /notation on 2026-09-03 and withdrawn on
+    // 2026-10-14: /history shows the "being rebuilt" note and the full
+    // archive sits unlisted at /history/draft. Two exact pages, not a subtree.
     "/history",
+    "/history/draft",
   ]);
   // /notation is a subtree: the per-prop and per-system pages
   // (/notation/staves, /notation/fans, ...) all render the same persistent
@@ -198,7 +200,7 @@
   ];
   // Carve-outs inside those subtrees. The QfT app is an instrument, not a page
   // about one: it wants the whole viewport, owns its own bottom chrome, and
-  // carries its own way back out to /history. The persistent site header on
+  // carries its own way back out to /notation/poi. The persistent site header on
   // top of that reads as a page wrapped around an app. Shape Engine used to
   // sit here as /notation/shape-matrix; it now owns /shape-engine, outside
   // every marketing subtree, so it needs no carve-out.

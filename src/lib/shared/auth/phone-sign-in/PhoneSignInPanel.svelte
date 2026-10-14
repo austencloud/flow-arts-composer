@@ -136,7 +136,7 @@
   </div>
 {/snippet}
 
-<div class="phone-panel">
+<div class="phone-panel" class:code-only={part === "code"}>
   {#if part !== "code"}
     <p class="sr-only" aria-live="polite">{session.announcement}</p>
   {/if}
@@ -156,6 +156,12 @@
   /* The panel measures itself, so it lays out the same in the sheet and on its own page. */
   .phone-panel {
     container-type: inline-size;
+  }
+
+  /* The code alone has a fixed size, so it takes its width from its content
+     instead of from a host that may be sizing itself to it. */
+  .phone-panel.code-only {
+    container-type: normal;
   }
 
   /* Stacked when narrow; the code beside the words once there is room. */

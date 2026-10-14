@@ -1,6 +1,8 @@
 import { error } from "@sveltejs/kit";
-import { getAvailableConcepts } from "#lib/features/learn/domain/concept-experience-registry.js";
-import { getConceptById } from "#lib/features/learn/domain/concepts.js";
+import {
+  getAvailableConcepts,
+  isConceptExperienceAvailable,
+} from "#lib/features/learn/domain/concept-experience-registry.js";
 import type { EntryGenerator, PageLoad } from "./$types";
 
 // Prerender every published lesson, not only the ones the crawler happens to
@@ -8,11 +10,11 @@ import type { EntryGenerator, PageLoad } from "./$types";
 export const entries: EntryGenerator = () =>
   getAvailableConcepts().map((concept) => ({ conceptId: concept.id }));
 
-// A concept id that exists nowhere in the course is a missing page, not the
-// lesson index under a stray URL. A planned concept without an experience
-// still resolves: the course falls back to its index for it.
+// A lesson URL is public only while its experience is in the published registry.
+// Saved links to removed or still-planned lessons must not render course content
+// under a lesson-specific URL.
 export const load: PageLoad = ({ params }) => {
-  if (!getConceptById(params.conceptId)) {
+  if (!isConceptExperienceAvailable(params.conceptId)) {
     error(404, "Lesson not found");
   }
   return {};

@@ -71,8 +71,9 @@ const PUBLIC_PATH_PREFIXES = [
   "/timing-and-direction",
   "/tricks",
   "/notation",
-  // The archive lives at /history; /notation 301s to it and still serves
-  // the per-prop and per-system notation pages.
+  // /history shows the "being rebuilt" note while the archive is withdrawn;
+  // the full archive sits unlisted at /history/draft (prefix match covers
+  // it). /notation 301s to /history and still serves the per-prop pages.
   "/history",
   // Shape Engine graduated out of /notation/shape-matrix (which 301s here)
   // into its own standalone public destination.
