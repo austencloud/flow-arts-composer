@@ -220,7 +220,7 @@
   // step agrees; a mixed selection highlights nothing until a tap sets them.
   function setOptionsFor(color: HandSide) {
     return SET_OPTIONS.map((opt) => ({
-      value: opt,
+      value: String(opt),
       label: fmt(opt),
       ariaLabel: t("create_controls_set_turns", {
         hand: handLabel(color),
@@ -228,10 +228,13 @@
       }),
     }));
   }
-  function activeSetOption(agg: TurnsAggregate): SetOption {
-    // null never matches an option, which hides the indicator.
-    return (SET_OPTIONS.find((opt) => isActiveOption(agg, opt)) ??
-      null) as SetOption;
+  function activeSetOption(agg: TurnsAggregate): string {
+    const active = SET_OPTIONS.find((opt) => isActiveOption(agg, opt));
+    return active === undefined ? "" : String(active);
+  }
+  function applySetOption(color: HandSide, value: string): void {
+    const option = SET_OPTIONS.find((opt) => String(opt) === value);
+    if (option !== undefined) onBatchTurnsChange(color, "set", option);
   }
   function adjustDisplay(agg: TurnsAggregate): string {
     if (!agg.mixed) return agg.value === null ? "0" : fmt(agg.value);
@@ -381,7 +384,7 @@
         color={colorName}
         columns={4}
         ariaLabel={t("create_controls_set_all")}
-        onchange={(opt) => onBatchTurnsChange(color, "set", opt)}
+        onchange={(opt) => applySetOption(color, opt)}
       />
     {:else}
       <!-- Relative nudge — ±0.5 to each step, preserving offsets. -->

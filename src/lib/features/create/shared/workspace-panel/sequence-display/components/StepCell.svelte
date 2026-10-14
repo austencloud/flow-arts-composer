@@ -226,6 +226,14 @@
     animationState = animationManager.getState();
   }
 
+  function observeAnimationCancel(node: HTMLDivElement) {
+    node.addEventListener("animationcancel", handleAnimationEnd);
+    return {
+      destroy: () =>
+        node.removeEventListener("animationcancel", handleAnimationEnd),
+    };
+  }
+
   // The grid this cell belongs to. WorkspaceGrid marks it, so a delete in one
   // grid never hands focus to a cell in another.
   function focusScope(): Element {
@@ -414,7 +422,7 @@
   onpointercancel={handlePointerCancel}
   oncontextmenu={handleContextMenu}
   onanimationend={handleAnimationEnd}
-  onanimationcancel={handleAnimationEnd}
+  use:observeAnimationCancel
   role="button"
   tabindex="0"
   aria-label={ariaLabel}
