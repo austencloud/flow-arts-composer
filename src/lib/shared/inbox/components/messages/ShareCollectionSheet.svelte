@@ -469,8 +469,10 @@ own Escape (which closes the sheet) gets a turn.
           <div class="hero-copy">
             {#if !payload.coverImageUrl}
               <span class="hero-icon">
+                <!-- Same convention as the collection card: the stored icon
+                     is the bare glyph name, the style prefix is ours. -->
                 <i
-                  class={payload.icon || "fa-solid fa-folder"}
+                  class={`fa-solid ${payload.icon || "fa-folder"}`}
                   aria-hidden="true"
                 ></i>
               </span>
@@ -492,7 +494,7 @@ own Escape (which closes the sheet) gets a turn.
             onclick={() => go("link")}
           />
           <SettingsDrillRow
-            label={t("inbox_ui_add_people")}
+            label={t("inbox_share_people_title")}
             value={t("inbox_share_people_row")}
             onclick={() => go("people")}
           />
@@ -591,7 +593,7 @@ own Escape (which closes the sheet) gets a turn.
       </div>
     {:else if route === "people"}
       <div class="screen">
-        {@render screenHeader(t("inbox_ui_add_people"))}
+        {@render screenHeader(t("inbox_share_people_title"))}
         <div class="screen-body">
           <p class="lede">
             {t(
@@ -822,11 +824,17 @@ own Escape (which closes the sheet) gets a turn.
     padding: 16px;
     border: 1px solid var(--theme-stroke);
     border-radius: 16px;
-    background: linear-gradient(
-      160deg,
-      color-mix(in srgb, var(--collection-color) 26%, var(--theme-card-bg)),
-      color-mix(in srgb, var(--collection-color) 6%, var(--theme-card-bg))
-    );
+    background:
+      radial-gradient(
+        circle at 50% 42%,
+        color-mix(in srgb, var(--collection-color) 30%, transparent),
+        transparent 60%
+      ),
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--collection-color) 22%, var(--theme-card-bg)),
+        color-mix(in srgb, var(--collection-color) 5%, var(--theme-card-bg))
+      );
     overflow: hidden;
     text-align: center;
   }
@@ -869,15 +877,20 @@ own Escape (which closes the sheet) gets a turn.
     );
   }
 
+  /* The glyph grows with the box (a quarter of the sheet's height, within
+     bounds) so a tall rail reads as a cover, not a small badge in a void. */
   .hero-icon {
+    --hero-icon: clamp(4.5rem, 24cqh, 9rem);
     display: grid;
     place-items: center;
-    width: 4.5rem;
-    height: 4.5rem;
-    border-radius: 20px;
+    width: var(--hero-icon);
+    height: var(--hero-icon);
+    border-radius: calc(var(--hero-icon) * 0.28);
     background: color-mix(in srgb, var(--collection-color) 22%, transparent);
+    box-shadow: 0 0 calc(var(--hero-icon) * 0.9)
+      color-mix(in srgb, var(--collection-color) 35%, transparent);
     color: var(--collection-color);
-    font-size: 2rem;
+    font-size: calc(var(--hero-icon) * 0.45);
   }
 
   .hero-text {
@@ -919,10 +932,7 @@ own Escape (which closes the sheet) gets a turn.
     }
 
     .hero-icon {
-      width: 3.25rem;
-      height: 3.25rem;
-      border-radius: 14px;
-      font-size: 1.5rem;
+      --hero-icon: 3.25rem;
     }
 
     .hero-text h3 {
@@ -1238,6 +1248,7 @@ own Escape (which closes the sheet) gets a turn.
   }
 
   .access-state {
+    flex: 1 1 auto;
     display: flex;
     align-items: center;
     justify-content: center;
