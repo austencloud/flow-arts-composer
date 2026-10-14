@@ -813,6 +813,9 @@ own Escape (which closes the sheet) gets a turn.
 
   .home {
     gap: 16px;
+    /* The landing never scrolls on an ordinary box, but a very short one
+       (a landscape phone) may still need to reach the last row. */
+    overflow-y: auto;
   }
 
   .hero {
@@ -921,8 +924,12 @@ own Escape (which closes the sheet) gets a turn.
      a tall centred cover: icon and words go side by side instead. */
   @container share-sheet (max-height: 480px) {
     .hero {
-      min-height: 5.5rem;
+      min-height: 4.5rem;
       text-align: left;
+    }
+
+    .screen-footer textarea {
+      min-height: var(--min-touch-target, 44px);
     }
 
     .hero-copy {
