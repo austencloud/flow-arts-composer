@@ -1,5 +1,5 @@
 ---
-status: active
+status: archived
 value: 2
 effort: S
 remaining: "Archive this original SVG architecture record after coordinator review: f4d3d52089 explicitly replaces SpatialCanvas and its six SVG children with SpatialScene/Scene3D/Avatar3D, preserving analysis through projection. Current implementation and eight focused spatial-lab test files live under src/lib/features/lab/tabs/spatial-lab and tests/unit/spatial-lab; any new runtime acceptance should target that replacement, not rebuild the SVG design."
