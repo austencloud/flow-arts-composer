@@ -59,6 +59,7 @@
   } from "#lib/shared/auth/state/iab-banner-state.svelte.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import LoadingGate from "#lib/shared/components/loading/LoadingGate.svelte";
+  import { markScan } from "#lib/shared/analytics/scan-perf.js";
   import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { registerLibraryRepository } from "#lib/shared/composition-root/register-library-repository.js";
   import {
@@ -250,6 +251,7 @@
   const routeLoad = createRouteLoadFence();
 
   onMount(async () => {
+    markScan("viewer-page-mounted");
     // The root layout only imports composition-root in app mode, so this
     // standalone route never got the short-code registration and
     // getShortCodeManager() threw on EVERY id that is not an inline blob —

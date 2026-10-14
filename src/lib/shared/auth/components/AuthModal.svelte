@@ -162,6 +162,7 @@
     showClose={!inline}
     embedded={inline}
     {inAppBrowser}
+    artifact={authDrawerState.artifact}
     {facebookError}
     onClose={handleCloseButtonClick}
     onFacebookAuth={handleFacebookAuth}

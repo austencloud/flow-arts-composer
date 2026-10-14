@@ -346,7 +346,8 @@ describe("composer handoff", () => {
     Object.defineProperty(page.window.navigator, "languages", {
       value: ["en"],
     });
-    // Capture timers so the 4 s "Almost there" step runs on demand.
+    // Capture timers so the "Almost there" step (4 s from navigation start
+    // at the earliest) runs on demand.
     const timers: Array<{ run: () => void; ms: number }> = [];
     page.window.setTimeout = ((run: () => void, ms: number) =>
       timers.push({ run, ms })) as unknown as typeof page.window.setTimeout;
@@ -355,11 +356,14 @@ describe("composer handoff", () => {
     const fill = page.window.document.getElementById("loading-bar-fill")!;
     expect(text.textContent).toBe("Opening Flow Arts Composer");
 
+    // Boot phases (and the old percent shim below 100) never reach the
+    // label, and a percent no longer drives the fill.
     page.window.eval('window.__tkaLoadProgress(88, "Loading settings...")');
+    page.window.eval('window.__tkaBootMilestone("services")');
     expect(text.textContent).toBe("Opening Flow Arts Composer");
-    expect(fill.style.width).toBe("88%");
+    expect(fill.style.width).not.toBe("88%");
 
-    timers.find((timer) => timer.ms === 4000)!.run();
+    timers.find((timer) => timer.ms > 1000 && timer.ms < 15000)!.run();
     timers.find((timer) => timer.ms === 200)!.run();
     expect(text.textContent).toBe("Almost there");
   });

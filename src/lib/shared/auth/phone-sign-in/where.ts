@@ -20,9 +20,9 @@ const PRIVATE_IPV4 =
   /^(?:127\.|10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)\d{1,3}\.\d{1,3}(?:\.\d{1,3})?$/;
 
 /**
- * True where the sign-in sheet offers "Sign in with your phone": a copy of the
- * app on Austen's own machines, a worktree preview, or dev.tkaflowarts.com.
- * The live site never shows it (he opens the page from a bookmark there), nor
+ * True where the sign-in sheet offers "Use your phone": a copy of the app on
+ * Austen's own machines, a worktree preview, or dev.tkaflowarts.com. The live
+ * site never shows it (he opens the page from a bookmark there), nor
  * does the native app, and neither do the two phone sign-in pages themselves.
  */
 export function offersPhoneSignIn(
@@ -42,14 +42,6 @@ export function offersPhoneSignIn(
     host.endsWith(".localhost") ||
     PRIVATE_IPV4.test(host)
   );
-}
-
-/** The phone sign-in page, set to come back to `here` afterwards. */
-export function phoneSignInHref(here: { pathname: string; search: string }) {
-  const next = here.pathname + here.search;
-  return next === "/"
-    ? PHONE_SIGN_IN_PATH
-    : `${PHONE_SIGN_IN_PATH}?next=${encodeURIComponent(next)}`;
 }
 
 /**

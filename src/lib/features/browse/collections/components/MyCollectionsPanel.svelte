@@ -57,6 +57,16 @@ instead of showing an empty shell.
   import { getSharedCollectionsContext } from "../context/shared-collections-context";
   import UserVideoLibraryView from "#lib/shared/video-collaboration/components/UserVideoLibraryView.svelte";
   import WorkShelfRail, { type WorkShelfId } from "./WorkShelfRail.svelte";
+  import SortPopover, {
+    type SortPopoverOption,
+  } from "#lib/features/browse/shared/components/SortPopover.svelte";
+  import {
+    DEFAULT_COLLECTION_SORT,
+    readCollectionSortPreference,
+    sortCollections,
+    writeCollectionSortPreference,
+    type CollectionSortMethod,
+  } from "#lib/features/browse/collections/services/collection-sort.js";
   import {
     trackBrowseCollectionOpened,
     trackBrowseVisualTypeOpened,
@@ -138,17 +148,42 @@ instead of showing an empty shell.
     return unsubscribe;
   });
 
-  // Favorites stays pinned (sortOrder -1000); after that, most recently
-  // touched first — adding or removing a sequence bumps updatedAt, so the
-  // collection you're actively building floats to the front. All user
-  // collections share sortOrder 0, so without this the tie-break is
-  // whatever order Firestore returns.
+  // Favorites stays pinned; the rest follow the order chosen on the sort
+  // chip, remembered per device. The default floats the most recently
+  // touched collection to the front — adding or removing a sequence bumps
+  // updatedAt — so the one you're building is never a scroll away.
+  let sortMethod = $state<CollectionSortMethod>(DEFAULT_COLLECTION_SORT);
+  onMount(() => {
+    sortMethod = readCollectionSortPreference();
+  });
+  function changeSort(method: CollectionSortMethod) {
+    sortMethod = method;
+    writeCollectionSortPreference(method);
+  }
+  const collectionSortOptions = $derived<
+    SortPopoverOption<CollectionSortMethod>[]
+  >([
+    {
+      id: "recent",
+      label: t("browse_ui_collections_sort_recent"),
+      chipLabel: t("browse_ui_collections_sort_recent_short"),
+      icon: "fa-clock-rotate-left",
+    },
+    {
+      id: "newest",
+      label: t("browse_ui_collections_sort_newest"),
+      chipLabel: t("browse_ui_collections_sort_newest_short"),
+      icon: "fa-calendar-plus",
+    },
+    {
+      id: "alphabetical",
+      label: t("browse_ui_collections_sort_alphabetical"),
+      chipLabel: t("browse_ui_collections_sort_alphabetical_short"),
+      icon: "fa-font",
+    },
+  ]);
   const collections = $derived(
-    [...collectionsState.collections].sort(
-      (a, b) =>
-        a.sortOrder - b.sortOrder ||
-        b.updatedAt.getTime() - a.updatedAt.getTime()
-    )
+    sortCollections(collectionsState.collections, sortMethod)
   );
   const loading = $derived(collectionsState.loading);
 
@@ -616,6 +651,19 @@ instead of showing an empty shell.
 <!-- My Collections: the All shelf (everything you saved) + your own manual/smart
      collections + the create tiles. -->
 {#snippet ownShelves(sel: { id: string; ownerId: string | null } | null)}
+  {#if collections.length > 1}
+    <!-- align="end": the chip sits at the shelf's right edge, so the list
+         opens leftward over the cards instead of off the rail. -->
+    <div class="collections-sort-row">
+      <SortPopover
+        options={collectionSortOptions}
+        currentMethod={sortMethod}
+        onSortChange={changeSort}
+        align="end"
+      />
+    </div>
+  {/if}
+
   <CollectionCard
     collection={allShelf}
     countLabel={libraryCountComplete
@@ -1142,6 +1190,17 @@ instead of showing an empty shell.
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 10px;
     align-content: start;
+  }
+
+  /* The sort chip hugs the right edge of the shelf, above the All card, in
+     both the phone grid (spanning every column) and the desktop rail. */
+  .collections-sort-row {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .card-grid > .collections-sort-row {
+    grid-column: 1 / -1;
   }
 
   /* Section headers: My Collections / TKA Core / Following each read as

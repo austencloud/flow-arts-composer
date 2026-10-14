@@ -117,6 +117,37 @@ describe("hand placement automatic progression", () => {
     expect(advance).toHaveBeenCalledTimes(1);
     expect(workshop.round).toBe(1);
   });
+
+  it("keeps a later practice round and its checkpoint while reading interrupts the success hold", () => {
+    vi.useFakeTimers();
+    const persistence = memory({
+      version: 1,
+      phase: "practice",
+      round: 2,
+      explored: ["alpha", "beta"],
+    });
+    const workshop = createPlacementWorkshopState(persistence);
+    workshop.check(workshop.challenge!.kind);
+    const advance = vi.fn(() => workshop.next());
+    const stopForReading = workshop.scheduleAutoAdvance(advance);
+    vi.advanceTimersByTime(PLACEMENT_SUCCESS_HOLD_MS / 2);
+    stopForReading();
+    vi.advanceTimersByTime(PLACEMENT_SUCCESS_HOLD_MS * 3);
+
+    expect(advance).not.toHaveBeenCalled();
+    expect(workshop.phase).toBe("practice");
+    expect(workshop.round).toBe(2);
+    expect(workshop.feedback).toBe("correct");
+    expect(persistence.load().phaseData.workshop).toMatchObject({
+      phase: "practice",
+      round: 2,
+    });
+
+    workshop.scheduleAutoAdvance(advance);
+    vi.advanceTimersByTime(PLACEMENT_SUCCESS_HOLD_MS);
+    expect(advance).toHaveBeenCalledOnce();
+    expect(workshop.round).toBe(3);
+  });
 });
 
 describe("hand placement workshop domain", () => {
@@ -146,7 +177,9 @@ describe("hand placement workshop domain", () => {
               "mirror",
               { reflectionAxis }
             );
-            expect(placementKindFor(reflected.left, reflected.right)).toBe(kind);
+            expect(placementKindFor(reflected.left, reflected.right)).toBe(
+              kind
+            );
             expect(
               transformPlacement(reflected.left, reflected.right, "mirror", {
                 reflectionAxis,
@@ -319,7 +352,9 @@ describe("hand placement workshop domain", () => {
 
   it("never mislabels incomplete, center, or mixed-grid placements as Gamma", () => {
     expect(placementKindFor(null, GridLocation.NORTH)).toBeNull();
-    expect(placementKindFor(GridLocation.CENTER, GridLocation.NORTH)).toBeNull();
+    expect(
+      placementKindFor(GridLocation.CENTER, GridLocation.NORTH)
+    ).toBeNull();
     expect(
       placementKindFor(GridLocation.NORTH, GridLocation.NORTHEAST)
     ).toBeNull();
@@ -339,7 +374,8 @@ describe("hand placement workshop domain", () => {
       });
     }
     expect(
-      restorePlacementWorkshop({ version: 1, phase: "complete", round: 2 }).phase
+      restorePlacementWorkshop({ version: 1, phase: "complete", round: 2 })
+        .phase
     ).not.toBe("complete");
   });
 });

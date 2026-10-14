@@ -15,6 +15,9 @@ export type ScanStage =
   | "shortcode-resolved"
   | "viewer-modules-ready"
   | "hydrated"
+  | "handoff-navigate"
+  | "sequence-route-mounted"
+  | "viewer-page-mounted"
   | "card-mount"
   | "card-component-mounted"
   | "cell-cache-read-start"
@@ -180,6 +183,9 @@ function logStageTable(total: number): void {
     "shortcode-resolved",
     "viewer-modules-ready",
     "hydrated",
+    "handoff-navigate",
+    "sequence-route-mounted",
+    "viewer-page-mounted",
     "card-mount",
     "card-component-mounted",
     "cell-cache-read-start",

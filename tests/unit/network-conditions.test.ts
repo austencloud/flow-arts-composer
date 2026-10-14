@@ -16,6 +16,7 @@ vi.mock("$app/env", () => ({ browser: true }));
 import {
 	getNetworkConditions,
 	isConstrainedConnection,
+	prefersReducedData,
 	shouldReduceBackgroundResolution,
 } from "#lib/shared/platform/network-conditions.js";
 
@@ -102,6 +103,26 @@ describe("isConstrainedConnection", () => {
 	it("ignores a downlink of 0 (unknown) rather than treating it as slow", () => {
 		setConnection({ effectiveType: "4g", downlink: 0, rtt: 50 });
 		expect(isConstrainedConnection()).toBe(false);
+	});
+});
+
+describe("prefersReducedData", () => {
+	it("does not disable local rendering when the API is unavailable", () => {
+		setConnection(undefined);
+		expect(prefersReducedData()).toBe(false);
+	});
+
+	it.each([
+		{ effectiveType: "4g", downlink: 1.35, rtt: 100 },
+		{ effectiveType: "3g", downlink: 0.5, rtt: 500 },
+	])("ignores network estimates for local rendering: %o", (connection) => {
+		setConnection({ ...connection, saveData: false });
+		expect(prefersReducedData()).toBe(false);
+	});
+
+	it("respects the user's explicit data-saver preference", () => {
+		setConnection({ effectiveType: "4g", downlink: 10, rtt: 50, saveData: true });
+		expect(prefersReducedData()).toBe(true);
 	});
 });
 

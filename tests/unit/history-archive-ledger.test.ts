@@ -128,6 +128,18 @@ describe("four-lane history archive ledger", () => {
     }
   });
 
+  it("credits Gage DeMello's Eight Step and dates it by SpiroAnim's public trace", () => {
+    const eightStep = archiveEntry("eight-step")!;
+    expect(eightStep.people).toMatch(/^Gage DeMello/);
+    expect(eightStep.people).toMatch(/Mentive/);
+    expect(eightStep.summary).toContain("72 twelve-step patterns");
+    expect(eightStep.firstDocumentedYear).toBe(2026);
+    expect(eightStep.evidenceNote).toMatch(/first drew the system is unknown/);
+    expect(eightStep.citations.map((citation) => citation.href)).toContain(
+      "https://github.com/rbgirard/spiroanim/blob/main/docs/EIGHT_STEP.md"
+    );
+  });
+
   it("keeps every entry in exactly one named lane", () => {
     const laneIds = new Set(ARCHIVE_LANES.map((lane) => lane.id));
     expect(laneIds.size).toBe(4);

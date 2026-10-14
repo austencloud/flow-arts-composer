@@ -54,6 +54,7 @@
     type ShortCodeSequenceLoader,
   } from "#lib/shared/qr/services/short-code-manager.js";
   import { isFirstScanRouteVisit } from "#lib/shared/qr/utils/scan-detection.js";
+  import { loadSequenceViewerPage } from "../../sequence/[id]/load-sequence-viewer-page.js";
 
   interface Props {
     data: {
@@ -150,6 +151,15 @@
       reportFailure("No short code provided", "missing_code", "bootstrap");
       return;
     }
+
+    // The viewer's chunk graph is the long pole on a phone. Start it now so it
+    // downloads while the code resolves, behind this route's loader.
+    markScan("viewer-load-start");
+    const viewerModule = loadSequenceViewerPage();
+    void viewerModule.then(
+      () => markScan("viewer-modules-ready"),
+      () => {}
+    );
 
     if (!isDemo) {
       void initPostHog().catch(() => {});
@@ -262,8 +272,13 @@
         page.url.searchParams,
         propConfig
       );
+      // Hand off only once the viewer can mount at once. This route's loader
+      // is opaque; /sequence would otherwise show its loader over a bare
+      // animated background while the same import finishes.
+      await viewerModule;
       clearModuleChunkRecoveryGuard();
       handoffInProgress = true;
+      markScan("handoff-navigate");
       await goto(destination, { replace: true });
     } catch (error) {
       handoffInProgress = false;

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   offersPhoneSignIn,
   pathAfterPhoneSignIn,
-  phoneSignInHref,
 } from "#lib/shared/auth/phone-sign-in/where.js";
 
 const at = (hostname: string, pathname = "/create") => ({ hostname, pathname });
@@ -44,20 +43,6 @@ describe("offersPhoneSignIn", () => {
     expect(
       offersPhoneSignIn(at("localhost", "/sign-in/AbCdEfGhIjKlMnOpQr12"), false)
     ).toBe(false);
-  });
-});
-
-describe("phoneSignInHref", () => {
-  it("comes back to the page it was opened from", () => {
-    expect(phoneSignInHref({ pathname: "/create", search: "?tab=gen" })).toBe(
-      "/phone-sign-in?next=%2Fcreate%3Ftab%3Dgen"
-    );
-  });
-
-  it("needs no next for the home page", () => {
-    expect(phoneSignInHref({ pathname: "/", search: "" })).toBe(
-      "/phone-sign-in"
-    );
   });
 });
 

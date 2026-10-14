@@ -4,53 +4,72 @@
   Shows current sort method as a single chip. Tap opens a popover
   with all sort options, check mark on selected. Dismisses on
   click-outside, Escape, or selection. Spring animation with overshoot.
+
+  The option set is injectable: without one it offers the gallery's
+  sequence orders (A-Z / date added / length); the Library rail passes its
+  own collection orders. The id type follows whatever the caller passes.
 -->
-<script lang="ts">
+<script module lang="ts">
+  export interface SortPopoverOption<T extends string = string> {
+    id: T;
+    /** Full name in the open list. */
+    label: string;
+    /** Short name on the closed chip. */
+    chipLabel: string;
+    icon: string;
+  }
+</script>
+
+<script lang="ts" generics="T extends string">
   import { onMount, onDestroy } from "svelte";
   import { BrowseSortMethod } from "../domain/enums/browse-enums";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-  interface SortOption {
-    id: BrowseSortMethod;
-    label: string;
-    icon: string;
-  }
-
   interface Props {
-    currentMethod: BrowseSortMethod;
-    onSortChange: (method: BrowseSortMethod) => void;
+    currentMethod: T;
+    onSortChange: (method: T) => void;
+    /** The orders to offer. Omit for the gallery's sequence orders. */
+    options?: readonly SortPopoverOption<T>[];
     /** Which trigger edge the popover hangs from. Use "end" when the trigger
      *  sits at the right edge of a clipped container (overflow hidden), so the
      *  panel opens leftward over the content instead of off the edge. */
     align?: "start" | "end";
   }
 
-  let { currentMethod, onSortChange, align = "start" }: Props = $props();
+  let {
+    currentMethod,
+    onSortChange,
+    options,
+    align = "start",
+  }: Props = $props();
 
-  const sortOptions: SortOption[] = [
-    {
-      id: BrowseSortMethod.ALPHABETICAL,
-      label: t("browse_sort_alphabetical"),
-      icon: "fa-font",
-    },
-    {
-      id: BrowseSortMethod.DATE_ADDED,
-      label: t("browse_sort_date_added"),
-      icon: "fa-clock",
-    },
-    {
-      id: BrowseSortMethod.SEQUENCE_LENGTH,
-      label: t("browse_sort_length"),
-      icon: "fa-ruler",
-    },
-  ];
+  // The gallery's sequence orders. A caller that omits `options` is sorting
+  // sequences, so its T is BrowseSortMethod; the cast records that contract.
+  function gallerySortOptions(): SortPopoverOption<T>[] {
+    const gallery: SortPopoverOption<BrowseSortMethod>[] = [
+      {
+        id: BrowseSortMethod.ALPHABETICAL,
+        label: t("browse_sort_alphabetical"),
+        chipLabel: "A-Z",
+        icon: "fa-font",
+      },
+      {
+        id: BrowseSortMethod.DATE_ADDED,
+        label: t("browse_sort_date_added"),
+        chipLabel: "Date",
+        icon: "fa-clock",
+      },
+      {
+        id: BrowseSortMethod.SEQUENCE_LENGTH,
+        label: t("browse_sort_length"),
+        chipLabel: "Length",
+        icon: "fa-ruler",
+      },
+    ];
+    return gallery as unknown as SortPopoverOption<T>[];
+  }
 
-  // Short labels for the chip display
-  const chipLabels: Record<string, string> = {
-    [BrowseSortMethod.ALPHABETICAL]: "A-Z",
-    [BrowseSortMethod.DATE_ADDED]: "Date",
-    [BrowseSortMethod.SEQUENCE_LENGTH]: "Length",
-  };
+  const sortOptions = $derived(options ?? gallerySortOptions());
 
   let isOpen = $state(false);
   let triggerEl: HTMLButtonElement | null = $state(null);
@@ -66,7 +85,9 @@
   const currentIcon = $derived(
     sortOptions.find((o) => o.id === currentMethod)?.icon ?? "fa-sort"
   );
-  const currentLabel = $derived(chipLabels[currentMethod] ?? "Sort");
+  const currentLabel = $derived(
+    sortOptions.find((o) => o.id === currentMethod)?.chipLabel ?? "Sort"
+  );
 
   /** Duration (ms) for the popover exit animation - matches the CSS opacity transition (--duration-normal) */
   const EXIT_ANIMATION_MS = 200;
@@ -122,7 +143,7 @@
     }
   }
 
-  function handleSelect(method: BrowseSortMethod) {
+  function handleSelect(method: T) {
     onSortChange(method);
     closePopover();
   }
@@ -331,6 +352,7 @@
     top: calc(100% + 6px);
     left: 0;
     min-width: 180px;
+    width: max-content;
     padding: 4px;
     /* --theme-panel-bg is a translucent wash (rgba(0,0,0,0.75) on dark
        desktop) — fine for big panels, see-through for a floating menu over

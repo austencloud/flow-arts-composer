@@ -61,6 +61,23 @@ describe("QR scan cloud-render contract", () => {
     expect(ingress).not.toContain("SequenceViewerShell.svelte");
   });
 
+  // A scan once showed only the animated background for ~5s on a phone: /q's
+  // loader unmounted at the handoff and /sequence awaited the viewer chunk
+  // with no pending branch.
+  it("never leaves the background alone while the viewer chunk loads", () => {
+    const ingress = source("src/routes/q/[code]/QScanPage.svelte");
+    const route = source("src/routes/sequence/[id]/+page.svelte");
+
+    expect(ingress).toContain("const viewerModule = loadSequenceViewerPage();");
+    expect(ingress.indexOf("await viewerModule;")).toBeGreaterThan(-1);
+    expect(ingress.indexOf("await viewerModule;")).toBeLessThan(
+      ingress.indexOf("await goto(destination")
+    );
+    expect(route).toMatch(
+      /\{#await loadSequenceViewerPage\(\)\}\s*<div class="sequence-route-loading">\s*<LoadingGate/
+    );
+  });
+
   it("reveals terminal resolution errors instead of leaving the loader stuck", () => {
     const page = source("src/routes/q/[code]/QScanPage.svelte");
 

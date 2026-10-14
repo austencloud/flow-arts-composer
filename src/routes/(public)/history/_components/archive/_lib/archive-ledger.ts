@@ -603,6 +603,44 @@ const researchEntries: ArchiveEntry[] = [
 		],
 	},
 	{
+		id: "eight-step",
+		lane: "languages",
+		dateLabel: "SpiroAnim · 2026",
+		firstDocumentedYear: 2026,
+		title: "Eight Step",
+		shortTitle: "Eight Step",
+		people: "Gage DeMello, built into Mentive’s SpiroAnim",
+		summary:
+			"Gage DeMello’s chart of 72 twelve-step patterns for two props. Its eight columns are Gage’s handpaths, paired under four relationships between the hands: Opposite, Same, Quarter Aligned, and Quarter Opposed. Its nine rows pair a spin family for each prop, drawn from antispin, extension, and inspin. A code such as 1-AA names the column, then the row.",
+		evidenceBasis: "creators-account",
+		evidenceLabel: "Implementer’s documentation and source sheets",
+		evidenceShortLabel: "Creator source",
+		evidenceNote:
+			"Mentive’s SpiroAnim documentation names Gage’s corrected handpath pages as the authoritative source and records its correction of their page order. The archive dates the record to August 2026, when the feature and Gage’s teaching sheets appeared in SpiroAnim’s public repository. When Gage first drew the system is unknown.",
+		citations: [
+			{
+				label: "SpiroAnim Eight Step documentation",
+				href: "https://github.com/rbgirard/spiroanim/blob/main/docs/EIGHT_STEP.md",
+				supports:
+					"The 8-column by 9-row matrix, its row codes and column groups, the capping and continual spin families, and the credit to Gage’s handpaths.",
+				basis: "creators-account",
+			},
+			{
+				label: "Eight Step teaching sheets and handpaths",
+				href: "https://github.com/rbgirard/spiroanim/tree/main/public/docs/8-step",
+				supports:
+					"The teaching-sheet and handpath PDFs, added to SpiroAnim’s repository on August 4, 2026.",
+				basis: "directly-observed",
+			},
+			{
+				label: "First Eight Step commit in SpiroAnim",
+				href: "https://github.com/rbgirard/spiroanim/commit/226140ae69",
+				supports: "The feature’s first commit, dated August 2, 2026.",
+				basis: "directly-observed",
+			},
+		],
+	},
+	{
 		id: "playpoi",
 		lane: "teaching",
 		dateLabel: "2004",
