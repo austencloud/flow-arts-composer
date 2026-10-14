@@ -7,6 +7,7 @@ import {
   normalizePropLook,
   parseModelRenderKey,
   propArtworkStem,
+  propLookCredit,
   propLookOptions,
   resolvePropRenderKey,
   versionAfterPick,
@@ -146,6 +147,26 @@ describe("version after a pick", () => {
     expect(versionAfterPick("triad", "pictograph", "bigtriad")).toBe(
       "pictograph"
     );
+  });
+
+  it("credits Flow DNA on the buugeng family's Version 2 only", () => {
+    const flowDna = {
+      originator: "Flow DNA",
+      sourceUrl: "https://flowtoys.com/flowgeng",
+    };
+    for (const prop of ["buugeng", "bigbuugeng", "BUUGENG"]) {
+      const [pictograph, model] = propLookOptions(prop);
+      expect(pictograph?.designCredit, prop).toBeUndefined();
+      expect(model?.designCredit, prop).toEqual(flowDna);
+      expect(propLookCredit(prop, "model")).toEqual(flowDna);
+      expect(propLookCredit(prop, "pictograph")).toBeUndefined();
+      expect(propLookCredit(prop, undefined)).toBeUndefined();
+    }
+    // House-built models carry no credit.
+    for (const prop of ["staff", "trigeng", "club"]) {
+      expect(propLookOptions(prop)[1]?.designCredit, prop).toBeUndefined();
+      expect(propLookCredit(prop, "model"), prop).toBeUndefined();
+    }
   });
 
   it("keeps the held version when the picked prop has no Version 2", () => {
