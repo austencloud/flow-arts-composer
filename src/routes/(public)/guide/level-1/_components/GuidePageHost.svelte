@@ -31,6 +31,8 @@
   import { loadOverrides } from "../_data/guide-overrides.svelte";
   import "../_styles/guide.css";
   import { TOPIC_PAGES } from "../_topics/topic-pages";
+  import { guideRelatedLinks } from "../_data/guide-related-links";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let { slug }: { slug: string } = $props();
 
@@ -50,6 +52,7 @@
   );
   const useFlow = $derived(canFlow);
   const interactiveLesson = $derived(getConceptExperienceForGuideSlug(slug));
+  const relatedLinks = $derived(guideRelatedLinks(slug));
   // Topics migrated to the shared-record template render their own page in
   // place of the title band and FlowFrame (guide rethink pilot, 2026-10-10).
   const TopicPage = $derived(TOPIC_PAGES[slug] ?? null);
@@ -220,12 +223,21 @@
               {heroTagline}
             </p>{/if}
         </div>
-        {#if interactiveLesson}
+        {#if interactiveLesson || relatedLinks.length > 0}
           <span class="interactive-lesson">
-            <LinkChip href={buildConceptStartPath(interactiveLesson.conceptId)}
-              ><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-              Learn this interactively</LinkChip
-            >
+            {#if interactiveLesson}
+              <LinkChip
+                href={buildConceptStartPath(interactiveLesson.conceptId)}
+                ><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+                Learn this interactively</LinkChip
+              >
+            {/if}
+            {#each relatedLinks as link (link.href)}
+              <LinkChip href={link.href}
+                ><i class="fa-solid fa-{link.icon}" aria-hidden="true"></i>
+                {t(link.labelKey)}</LinkChip
+              >
+            {/each}
           </span>
         {/if}
       </header>
@@ -358,6 +370,10 @@
   .interactive-lesson {
     --theme-text: var(--ink, #1a1a1a);
     --theme-accent: #647ff1;
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
   }
   /* Print-friendly sheet: fit-to-width scale (up to 1.9x - see sheetShiftPx),
      its own footprint box so the scaled 816×1056 sheet doesn't leave a gap OR

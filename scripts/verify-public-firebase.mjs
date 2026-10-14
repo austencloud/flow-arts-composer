@@ -68,6 +68,7 @@ export const PROTECTED_ROUTES = [
   "/(public)/guide/level-2/turns",
   "/(public)/guide/motion-paths",
   "/(public)/guide/ratios",
+  "/(public)/guide/zans-diamond",
   "/(public)/history",
   "/(public)/learn/concepts",
   "/(public)/learn/concepts/[conceptId]",
