@@ -5,10 +5,8 @@ import { describe, expect, it } from "vitest";
 import ts from "typescript";
 import { parse } from "svelte/compiler";
 import en from "../../messages/en.json";
-import de from "../../messages/de.json";
 
 const english = en as Record<string, string>;
-const german = de as Record<string, string>;
 
 function importedNames(program: ts.SourceFile): Set<string> {
   const names = new Set<string>();
@@ -190,7 +188,70 @@ async function auditedSources(): Promise<[string, string][]> {
 // loaded machine.
 const SCAN_TIMEOUT_MS = 120_000;
 
-describe("German translation contracts", () => {
+/**
+ * Every locale catalog, keyed by locale code. The files are read at test time
+ * rather than imported so adding a locale needs no edit here.
+ */
+const catalogs: Record<string, Record<string, string>> = Object.fromEntries(
+  readdirSync("messages")
+    .filter((file) => file.endsWith(".json") && file !== "en.json")
+    .map((file) => [file.replace(/\.json$/, ""), JSON.parse(readFileSync(path.join("messages", file), "utf8"))]),
+);
+const locales = Object.keys(catalogs).sort();
+const entries = (locale: string) => Object.entries(catalogs[locale]!).filter(([key]) => key !== "$schema");
+
+/**
+ * Locales whose released surfaces are complete enough that an audited
+ * component falling back to English is a defect. A locale joins this list
+ * when its translation program batches finish; until then its gaps are
+ * measured by the coverage floor below, not by the per-call scan.
+ */
+const COMPLETE_LOCALES = ["de"];
+
+const prefixes = JSON.parse(readFileSync("scripts/i18n-released-prefixes.json", "utf8")) as {
+  released: string[];
+  unreleased: string[];
+  pending: string[];
+};
+const released = new Set(prefixes.released);
+const releasedKeys = Object.keys(english).filter((key) => key !== "$schema" && released.has(key.split("_")[0]!));
+
+/**
+ * Ratchet: the share of released keys each locale carries may only rise.
+ * Measured 2026-10-14 and floored a little below; a translation batch raises
+ * its locale's floor in the same commit that lands the keys.
+ */
+const RELEASED_COVERAGE_FLOOR: Record<string, number> = {
+  ar: 0.08, de: 0.96, es: 0.12, fr: 0.12, it: 0.12, ja: 0.12, ko: 0.08, pt: 0.12, ru: 0.12, zh: 0.08,
+};
+
+/**
+ * Words that stay English in every locale (docs/reference/i18n-glossary.md,
+ * section 1), so a value made of them is not untranslated prose.
+ */
+const GLOSSARY_VERBATIM = new Set([
+  "tka", "loop", "cap", "vtg", "codex", "tika", "scribe", "composer", "flow", "arts", "choreo",
+  "shift", "dash", "hash", "float", "pro", "anti", "static", "prospin", "antispin", "inspin",
+  "isolation", "extension", "alpha", "beta", "gamma", "zeta", "eta", "tau", "terra",
+  "split", "tog", "opp", "same", "quarter", "poi", "buugeng", "triad", "bpm", "fps", "qr", "pdf", "png",
+]);
+
+/**
+ * Keys whose English value is legitimately identical in every locale even
+ * though it has more than three prose words: proper names and titles.
+ */
+const IDENTICAL_ALLOWED = new Set(["shape_engine_source_heading"]);
+
+/** Prose words in a message: Latin words of two or more letters that are not glossary terms. */
+function proseWords(message: string): string[] {
+  return message
+    .replace(/\{\w+\}/g, " ")
+    .replace(/<\/?(strong|em|br)\s*\/?>/g, " ")
+    .split(/[^A-Za-z]+/)
+    .filter((word) => word.length > 1 && !GLOSSARY_VERBATIM.has(word.toLowerCase()));
+}
+
+describe("translation catalog contracts", () => {
   it("ignores documentation examples and recognizes imported translation aliases", () => {
     const script = `
       import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
@@ -218,29 +279,94 @@ describe("German translation contracts", () => {
       .toEqual([...expected, "markup_one", "markup_many"].sort());
   });
 
+  it("counts prose words the way the identical-value check needs", () => {
+    expect(proseWords("Prospin = 90° Isolation")).toEqual([]);
+    expect(proseWords("D · E · F: β→α (Tog-Opp)")).toEqual([]);
+    expect(proseWords("Now playing: {word}")).toEqual(["Now", "playing"]);
+    expect(proseWords("<strong>Diamond</strong> grid, four <br> points")).toEqual(["Diamond", "grid", "four", "points"]);
+  });
+
+  it("lists every catalog locale and classifies every prefix exactly once", () => {
+    expect(locales).toEqual(["ar", "de", "es", "fr", "it", "ja", "ko", "pt", "ru", "zh"]);
+    expect(Object.keys(RELEASED_COVERAGE_FLOOR).sort()).toEqual(locales);
+    const all = [...prefixes.released, ...prefixes.unreleased, ...prefixes.pending];
+    expect(new Set(all).size).toBe(all.length);
+    const unclassified = new Set(
+      Object.keys(english).filter((key) => key !== "$schema").map((key) => key.split("_")[0]!).filter((p) => !all.includes(p)),
+    );
+    expect([...unclassified]).toEqual([]);
+  });
+
   it("does not silently fall back to English for literal translation calls in audited surfaces", async () => {
     const missing = new Set<string>();
-    for (const [fullPath, source] of await auditedSources()) {
-      // Literal calls are syntax nodes, so examples in comments and strings
-      // cannot masquerade as UI lookups. Dynamic registries have their own test.
-      const keys = fullPath.endsWith(".svelte")
-        ? svelteCalls(source, fullPath)
-        : typescriptCalls(source, fullPath).keys;
-      for (const key of keys) {
-        if (!english[key] || !german[key] || german[key] === key) {
-          missing.add(`${fullPath}: ${key}`);
+    const sources = await auditedSources();
+    for (const locale of COMPLETE_LOCALES) {
+      const catalog = catalogs[locale]!;
+      for (const [fullPath, source] of sources) {
+        // Literal calls are syntax nodes, so examples in comments and strings
+        // cannot masquerade as UI lookups. Dynamic registries have their own test.
+        const keys = fullPath.endsWith(".svelte")
+          ? svelteCalls(source, fullPath)
+          : typescriptCalls(source, fullPath).keys;
+        for (const key of keys) {
+          if (!english[key] || !catalog[key] || catalog[key] === key) {
+            missing.add(`${locale} ${fullPath}: ${key}`);
+          }
         }
       }
     }
     expect([...missing]).toEqual([]);
   }, SCAN_TIMEOUT_MS);
 
-  it("preserves interpolation parameters throughout the German catalog", () => {
-    const parameters = (text: string) => [...new Set([...text.matchAll(/\{(\w+)\}/g)].map(m => m[1]))].sort();
-    const mismatches = Object.entries(german)
-      .filter(([key, value]) => english[key] && JSON.stringify(parameters(value)) !== JSON.stringify(parameters(english[key]!)))
-      .map(([key]) => key);
-    expect(mismatches).toEqual([]);
+  describe.each(locales)("%s catalog", (locale) => {
+    const catalog = catalogs[locale]!;
+
+    it("carries no key that English lacks", () => {
+      const extra = entries(locale).filter(([key]) => !(key in english)).map(([key]) => key);
+      expect(extra).toEqual([]);
+    });
+
+    it("has no empty value", () => {
+      const empty = entries(locale).filter(([, value]) => typeof value !== "string" || !value.trim()).map(([key]) => key);
+      expect(empty).toEqual([]);
+    });
+
+    it("preserves interpolation parameters", () => {
+      const parameters = (text: string) => [...new Set([...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]))].sort();
+      const mismatches = entries(locale)
+        .filter(([key, value]) => english[key] && JSON.stringify(parameters(value)) !== JSON.stringify(parameters(english[key]!)))
+        .map(([key]) => key);
+      expect(mismatches).toEqual([]);
+    });
+
+    it("uses no markup tag its English source does not use", () => {
+      // Guide pages render through {@html} and carry spans and superscripts;
+      // everything else goes through MessageMarkup, which renders only
+      // <strong>, <em> and <br> and shows any other tag as text.
+      const tagNames = (text: string) =>
+        new Set([...text.matchAll(/<\/?([a-zA-Z][\w-]*)/g)].map((m) => m[1]!.toLowerCase()));
+      const stray = entries(locale)
+        .filter(([key, value]) => {
+          if (!english[key]) return false;
+          const allowed = new Set(["strong", "em", "br", ...tagNames(english[key]!)]);
+          return [...tagNames(value)].some((tag) => !allowed.has(tag));
+        })
+        .map(([key]) => key);
+      expect(stray).toEqual([]);
+    });
+
+    it("does not leave English prose untranslated", () => {
+      const identical = entries(locale)
+        .filter(([key, value]) => english[key] === value && !IDENTICAL_ALLOWED.has(key) && proseWords(value).length > 3)
+        .map(([key, value]) => `${key}: ${value}`);
+      expect(identical).toEqual([]);
+    });
+
+    it("keeps its released-prefix coverage above the ratchet floor", () => {
+      const covered = releasedKeys.filter((key) => key in catalog).length;
+      const share = covered / releasedKeys.length;
+      expect(share, `${covered} of ${releasedKeys.length} released keys`).toBeGreaterThanOrEqual(RELEASED_COVERAGE_FLOOR[locale]!);
+    });
   });
 
   it("translates the boot screen's status before the main locale bundle loads", () => {

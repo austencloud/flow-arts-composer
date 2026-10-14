@@ -1,0 +1,21 @@
+{
+  "$comment": "Key prefixes (the part before the first underscore) grouped by release status. The translation program translates `released` only. `unreleased` stays English until the feature ships. `pending` awaits Austen's call (asked 2026-10-14); until then those prefixes are neither gated nor translated. Keep this file in sync with ~/.claude/skills/translate/SKILL.md; tests/unit/i18n-catalog-contract.test.ts reads it.",
+  "released": [
+    "accessibility", "action", "app", "auth", "badge", "browse", "calendar", "common", "compose", "confirm",
+    "create", "dashboard", "difficulty", "direction", "empty", "error", "export", "favorites", "filter", "form",
+    "generator", "keyboard", "landing", "learn", "level", "library", "loading", "module", "nav", "notification",
+    "pagination", "position", "profile", "pronoun", "search", "sequence", "settings", "severity", "share", "sort",
+    "tab", "time", "tooltip", "unit", "viewer", "visibility"
+  ],
+  "unreleased": [
+    "admin", "arena", "attribution", "audience", "avatar", "background", "beta", "clip", "community", "connect",
+    "duet", "events", "gamification", "hall", "mandala", "moderation", "poi", "premium", "scheduler", "sessions",
+    "skel2tka", "viewer3d", "voice", "warning", "watch"
+  ],
+  "pending": [
+    "animation", "assembly", "bridge", "character", "color", "composer", "connection", "effect", "feedback",
+    "fullscreen", "gallery", "guest", "guide", "inbox", "letter", "loop", "notifications", "onboarding", "pattern",
+    "pictograph", "playback", "post", "preview", "prop", "shape", "shared", "site", "slide", "toast", "train",
+    "tunnel", "tutorial", "verified"
+  ]
+}
