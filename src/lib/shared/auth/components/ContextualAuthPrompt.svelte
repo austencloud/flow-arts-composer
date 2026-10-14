@@ -8,11 +8,18 @@
   import LastUsedBadge from "#lib/shared/components/LastUsedBadge.svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import SocialAuthCompact from "./SocialAuthCompact.svelte";
-  import PhoneSignInLink from "../phone-sign-in/PhoneSignInLink.svelte";
+  import { browser } from "$app/env";
+  import { page } from "$app/state";
+  import { isNative } from "#lib/shared/platform/services/platform-detector.js";
+  import { offersPhoneSignIn } from "../phone-sign-in/where.js";
+  import {
+    createPhoneSignInSession,
+    type PhoneSignInSession,
+  } from "../phone-sign-in/phone-sign-in-session.svelte.js";
   import { growFade, popIn } from "#lib/shared/transitions/motion.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { authPromptCopy } from "../domain/auth-prompt-copy";
-  import { tick, untrack } from "svelte";
+  import { onDestroy, tick, untrack } from "svelte";
 
   interface Props {
     content: AuthPromptContent;
@@ -46,6 +53,7 @@
 
   let showEmailAuth = $state(false);
   let showOtherProviders = $state(false);
+  let showPhoneSignIn = $state(false);
   let emailFlow = $state<HTMLElement>();
   const lastMethod = $derived(getLastAuthMethod());
   // The copy object is rebuilt on every mode switch; only opening or a new key
@@ -63,11 +71,53 @@
   // Someone who signed in by email on this device last time skips the choice
   // and lands on the form; "Other sign-in options" is one press away.
   $effect(() => {
-    if (!isOpen) return;
+    // A closed sheet stops asking the server about its code.
+    if (!isOpen) {
+      untrack(dropPhoneSession);
+      return;
+    }
     contentKey;
     showEmailAuth = untrack(() => lastUsedEmail);
     showOtherProviders = false;
+    showPhoneSignIn = false;
+    untrack(dropPhoneSession);
   });
+
+  // "Use your phone" is offered only on Austen's own copies of the app.
+  const phoneOffered = $derived(
+    browser && offersPhoneSignIn(page.url, isNative())
+  );
+  // One phone sign-in per opening of the sheet. Pointing at the choice already
+  // asks for a code, so it is usually on screen by the time the panel arrives.
+  // The server allows a few codes per address in ten minutes, which is why
+  // merely opening the sheet does not ask, and why going back keeps the code.
+  let phoneSession = $state.raw<PhoneSignInSession | null>(null);
+  let phonePanel = $state.raw<Promise<
+    typeof import("../phone-sign-in/PhoneSignInPanel.svelte")
+  > | null>(null);
+
+  function warmPhoneSignIn() {
+    phonePanel ??= import("../phone-sign-in/PhoneSignInPanel.svelte");
+    if (!phoneSession) {
+      phoneSession = createPhoneSignInSession();
+      void phoneSession.start();
+    }
+  }
+
+  function openPhoneSignIn() {
+    warmPhoneSignIn();
+    // A code warmed long ago may have run out; this asks for a new one then,
+    // and does nothing while one is on its way or showing.
+    void phoneSession?.start();
+    showPhoneSignIn = true;
+  }
+
+  function dropPhoneSession() {
+    phoneSession?.dispose();
+    phoneSession = null;
+  }
+
+  onDestroy(dropPhoneSession);
 
   const titleId = $derived(`${idPrefix}-title`);
   const descriptionId = $derived(`${idPrefix}-description`);
@@ -158,9 +208,11 @@
           ? "compact"
           : inAppBrowser
             ? "browser"
-            : showEmailAuth
-              ? "email"
-              : "providers"}
+            : showPhoneSignIn
+              ? "phone"
+              : showEmailAuth
+                ? "email"
+                : "providers"}
       animateHeight
     >
       {#if compact && encoreOffer}
@@ -205,6 +257,22 @@
           {t("auth_social_blocked_browser")}
         </p>
         <SocialAuthCompact {mode} {onFacebookAuth} />
+      {:else if showPhoneSignIn}
+        <div class="email-flow phone-flow">
+          <button
+            class="email-back"
+            type="button"
+            onclick={() => (showPhoneSignIn = false)}
+          >
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            {t("auth_other_sign_in_options")}
+          </button>
+          {#if phonePanel && phoneSession}
+            {#await phonePanel then mod}
+              <mod.default session={phoneSession} />
+            {/await}
+          {/if}
+        </div>
       {:else if showEmailAuth}
         <div class="email-flow" bind:this={emailFlow}>
           <button
@@ -239,13 +307,23 @@
               <span>{t("auth_continue_email")}</span>
             </button>
           </div>
+
+          {#if phoneOffered}
+            <button
+              class="phone-method"
+              type="button"
+              onpointerenter={warmPhoneSignIn}
+              onpointerdown={warmPhoneSignIn}
+              onfocus={warmPhoneSignIn}
+              onclick={openPhoneSignIn}
+            >
+              <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+              <span>Use your phone</span>
+            </button>
+          {/if}
         </div>
       {/if}
     </Crossfade>
-
-    {#if !encoreOffer}
-      <PhoneSignInLink />
-    {/if}
 
     {#if facebookError}
       <p class="provider-error" role="alert" transition:growFade>
@@ -495,6 +573,33 @@
     font-size: 1rem;
   }
 
+  /* A quieter third choice under the two main ones, across both columns. */
+  .phone-method {
+    grid-column: 1 / -1;
+    justify-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: var(--min-touch-target);
+    padding: 0.5rem 1rem;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
+    font-size: var(--font-size-min);
+    background: transparent;
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    border-radius: 999px;
+    cursor: pointer;
+    transition:
+      color var(--duration-fast) var(--ease-standard),
+      background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
+  }
+
+  .phone-method:hover {
+    color: var(--theme-text, #f8fafc);
+    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
+    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.18));
+  }
+
   .email-flow {
     display: flex;
     flex-direction: column;
@@ -608,6 +713,7 @@
 
   .close-button:focus-visible,
   .email-method:focus-visible,
+  .phone-method:focus-visible,
   .email-back:focus-visible,
   .mode-toggle:focus-visible {
     outline: 3px solid color-mix(in srgb, var(--prompt-blue) 72%, white);
