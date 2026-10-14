@@ -1501,6 +1501,30 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Collection share links: collectionLinks/{code} → { ownerId, collectionId }.
+    // The `/c/{code}` route resolves a code to its Explore detail path. Minted
+    // client-side by the collection owner inside one transaction that also
+    // writes the same code to the collection's `shareCode`, so a link can only
+    // ever name a public collection that claims it. Immutable after create:
+    // a handed-out link stays good for the life of the collection.
+    match /collectionLinks/{code} {
+      // Public read: the resolver runs unauthenticated and the mapping holds
+      // only ids, no PII.
+      allow read: if true;
+
+      allow create: if request.resource.data.keys().hasOnly(['ownerId', 'collectionId', 'createdAt'])
+        && request.resource.data.ownerId is string
+        && request.resource.data.collectionId is string
+        && isOwner(request.resource.data.ownerId)
+        && code.size() >= 4
+        && code.size() <= 6
+        && code.matches('^[0-9A-Z]+$')
+        && get(/databases/$(database)/documents/users/$(request.resource.data.ownerId)/collections/$(request.resource.data.collectionId)).data.isPublic == true
+        && getAfter(/databases/$(database)/documents/users/$(request.resource.data.ownerId)/collections/$(request.resource.data.collectionId)).data.get('shareCode', '') == code;
+
+      allow update, delete: if isAdmin();
+    }
+
     // Scan event log — collectionGroup read-only for admin live feed.
     // Creation is only allowed under shortcodes/{code}/scanEvents (see below).
     match /{path=**}/scanEvents/{eventId} {

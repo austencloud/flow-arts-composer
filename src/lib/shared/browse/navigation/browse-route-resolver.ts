@@ -104,6 +104,15 @@ export function buildPublicCollectionUrl(
   })}`;
 }
 
+/**
+ * The short form of a public collection link: `https://tkaflowarts.com/c/A1F8`.
+ * `/c/{code}` resolves the code and redirects to the Explore detail path
+ * above, so the two addresses open the same page.
+ */
+export function buildShortCollectionUrl(shareCode: string): string {
+  return `${PUBLIC_SITE_URL}/c/${encodeURIComponent(shareCode.toUpperCase())}`;
+}
+
 export function buildBrowsePath(location: BrowseLocation): string {
   if (location.primary === "explore") {
     if (location.section === "collections") {
