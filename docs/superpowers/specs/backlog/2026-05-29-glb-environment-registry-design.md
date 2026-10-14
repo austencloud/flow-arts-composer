@@ -2,7 +2,7 @@
 status: backlog
 value: 3
 effort: M
-remaining: Current Environment3D.svelte still switches on BackgroundType and no environment manifest/registry exists; start with a self-describing GLB scene manifest.
+remaining: "Implement the self-describing scene manifest, typed registry, shared GlbEnvironment loader and license assertion, then prove a second GLB entry and Ocean parity. Current Environment3D.svelte still dispatches BackgroundType at lines 100–119 and no environment-registry.ts, GlbEnvironment.svelte or scene.json was found under src/static/scripts; 24fab771cc changes transitions, not this registry."
 depends_on: ''
 plan_path: ''
 tags:
@@ -10,7 +10,7 @@ tags:
 - environments
 - registry
 - pipeline
-last_triaged: '2026-10-07'
+last_triaged: 2026-10-14
 work_state: ready
 ---
 
@@ -27,6 +27,8 @@ documented "broad paths" failure mode; the spec is not a rebuild hazard.
 -->
 
 # Data-Driven GLB Environment Registry — Design
+
+> 2026-10-14 triage: Implement the self-describing scene manifest, typed registry, shared GlbEnvironment loader and license assertion, then prove a second GLB entry and Ocean parity. Current Environment3D.svelte still dispatches BackgroundType at lines 100–119 and no environment-registry.ts, GlbEnvironment.svelte or scene.json was found under src/static/scripts; 24fab771cc changes transitions, not this registry. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Date:** 2026-05-29
 **Status:** Ready for implementation; the registry-specific path is absent as of 2026-10-07.
