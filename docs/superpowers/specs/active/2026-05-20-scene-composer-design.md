@@ -2,15 +2,17 @@
 status: active
 value: 3
 effort: M
-remaining: "Verify Scene Composer — Design Spec against scripts/generate-winter-composer-instance-map.mjs before resuming implementation. Prior recorded remainder: User-facing Firebase persistence and optional per-scene catalog expansion"
+remaining: "Verify current ten-scene Compose and museum edit/save/reload behavior, locked objects, instance identity, and Winter asset hashes against the recorded baseline; shared adapters, registry, persistence, and coverage tests already exist (4b80394d85, 0823c21071). Firebase persistence is explicitly future scope, not a reason to rebuild the dev editor."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: verification
 ---
 
 # Scene Composer — Design Spec
+
+> 2026-10-14 triage: Verify current ten-scene Compose and museum edit/save/reload behavior, locked objects, instance identity, and Winter asset hashes against the recorded baseline; shared adapters, registry, persistence, and coverage tests already exist (4b80394d85, 0823c21071). Firebase persistence is explicitly future scope, not a reason to rebuild the dev editor. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 > **DRIFT WARNING — 2026-08-02.** Phases 1-3 live in Scene Lab Compose mode; museum editor migration (the dedup point) never happened
 >

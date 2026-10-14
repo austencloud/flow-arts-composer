@@ -2,14 +2,16 @@
 status: active
 value: 2
 effort: S
-remaining: "Verify Inspect Panel Redesign — Live Pictograph + Tier-Aware Adjustment Editing against the current Inspect Panel Redesign — Live Pictograph + Tier-Aware Adjustment Editing runtime and acceptance criteria before resuming implementation. Prior recorded remainder: 'Shipped, relocated to a footer dock; 4-tier picker narrowed to 2 and Default became editable, both undocumented'"
+remaining: "Verify live arrow selection/WASD, save/revert, readable responsive layout and theme behavior on the current PictographInspectModal/PipelineEditorDock. 208399cd2b deliberately narrows editing to Special + Default, and the prop-geometry repository already has local/save/delete methods; reconcile acceptance against that recorded tier change instead of restoring the original four-tier picker."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: verification
 ---
 # Inspect Panel Redesign — Live Pictograph + Tier-Aware Adjustment Editing
+
+> 2026-10-14 triage: Verify live arrow selection/WASD, save/revert, readable responsive layout and theme behavior on the current PictographInspectModal/PipelineEditorDock. 208399cd2b deliberately narrows editing to Special + Default, and the prop-geometry repository already has local/save/delete methods; reconcile acceptance against that recorded tier change instead of restoring the original four-tier picker. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Queue evidence (2026-10-07):** An inspect surface shipped in a footer dock; picker and Default editing differ from this design. See frontmatter for the remaining work.
 

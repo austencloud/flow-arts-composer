@@ -30,6 +30,7 @@ type AdditionalImageType = "arrow" | "blank" | "dash" | "same_opp_dot";
 
 export class GlyphCache {
   private cache = hmrGlyphCache;
+  private aspects = new Map<string, number | null>();
   private ready = false;
   private loadedCount = 0;
   private failedCount = 0;
@@ -321,6 +322,23 @@ export class GlyphCache {
     }
   }
 
+  /**
+   * The glyph's width as a fraction of its height, read from the cached SVG's
+   * own `width`/`height` (or `viewBox`). A header that scales a word to fit
+   * needs the real widths: the letters run from about 0.6em (F) to 1.2em (W),
+   * and an average under-counts a wide word enough to clip it. Null until the
+   * glyph is cached or when the SVG carries no size.
+   */
+  getGlyphAspect(letter: string): number | null {
+    const dataUrl = this.getGlyphDataUrl(letter);
+    if (!dataUrl) return null;
+    const known = this.aspects.get(dataUrl);
+    if (known !== undefined) return known;
+    const aspect = parseSvgAspect(dataUrl);
+    this.aspects.set(dataUrl, aspect);
+    return aspect;
+  }
+
   getGlyphDataUrl(letter: string): string | null {
     let result = this.cache.get(letter);
     if (result) return result;
@@ -418,4 +436,31 @@ export class GlyphCache {
       failed: this.failedCount,
     };
   }
+}
+
+function parseSvgAspect(dataUrl: string): number | null {
+  const comma = dataUrl.indexOf(",");
+  if (comma < 0) return null;
+  let svg: string;
+  try {
+    // Only the opening tag is needed; the first 400 bytes cover it.
+    svg = atob(dataUrl.slice(comma + 1, comma + 1 + 400));
+  } catch {
+    return null;
+  }
+  const tag = /<svg\b[^>]*>/i.exec(svg)?.[0];
+  if (!tag) return null;
+  const width = parseFloat(/\bwidth="([\d.]+)/.exec(tag)?.[1] ?? "");
+  const height = parseFloat(/\bheight="([\d.]+)/.exec(tag)?.[1] ?? "");
+  if (width > 0 && height > 0) return width / height;
+  const viewBox = /\bviewBox="([^"]+)"/
+    .exec(tag)?.[1]
+    ?.trim()
+    .split(/[\s,]+/);
+  if (viewBox?.length === 4) {
+    const w = parseFloat(viewBox[2] ?? "");
+    const h = parseFloat(viewBox[3] ?? "");
+    if (w > 0 && h > 0) return w / h;
+  }
+  return null;
 }

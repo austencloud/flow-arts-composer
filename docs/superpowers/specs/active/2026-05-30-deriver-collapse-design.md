@@ -2,14 +2,16 @@
 status: active
 value: 3
 effort: L
-remaining: "Compare app, create-module, MCP, and sequence-engine derivers with the proposed collapse before implementation; no present completion evidence is recorded."
+remaining: "Finish lifting the app derivers into render-core and replacing both create-module classifiers with one fallback-preserving adapter; these copies remain in orientation.ts, rotation-direction-pattern-manager.ts and rotation-direction-handler.ts. MCP already delegates after 9c064a8255, while the golden-corpus fixture and proposed motion-type-from-rotation.ts are absent; reconcile the current assemble-lab geometry owner before implementing the hash/center collapse."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: in-progress
 ---
 # Deriver Collapse — Design
+
+> 2026-10-14 triage: Finish lifting the app derivers into render-core and replacing both create-module classifiers with one fallback-preserving adapter; these copies remain in orientation.ts, rotation-direction-pattern-manager.ts and rotation-direction-handler.ts. MCP already delegates after 9c064a8255, while the golden-corpus fixture and proposed motion-type-from-rotation.ts are absent; reconcile the current assemble-lab geometry owner before implementing the hash/center collapse. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 > Collapse every orientation / motion-type deriver to ONE canonical copy in
 > `packages/render-core`, the intended shared home that the app and both MCP

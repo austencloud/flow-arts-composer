@@ -5,7 +5,7 @@
 
   const TITLE = "Poi Notation | Can The Kinetic Alphabet Write Poi?";
   const DESCRIPTION =
-    "Poi can perform Kinetic Alphabet patterns with steady rotation. Learn where momentum limits the notation and how it relates to Vulcan Tech Gospel.";
+    "Poi can perform Kinetic Alphabet patterns with steady rotation. Learn where momentum limits the notation and how it compares with Vulcan Tech Gospel.";
   const URL = "https://tkaflowarts.com/notation/poi";
 </script>
 
@@ -28,16 +28,13 @@
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://tkaflowarts.com/" },
-      { "@type": "ListItem", "position": 2, "name": "Flow Arts History", "item": "https://tkaflowarts.com/history" },
-      { "@type": "ListItem", "position": 3, "name": "Poi", "item": "${URL}" }
+      { "@type": "ListItem", "position": 2, "name": "Poi", "item": "${URL}" }
     ]
   }
   </script>`}
 </Seo>
 
 <div class="editorial">
-  <a class="back-link" href="/history">← Flow Arts History</a>
-
   <header class="editorial-header">
     <h1 class="page-title">Poi Notation</h1>
     <p class="page-subtitle">Can The Kinetic Alphabet write poi?</p>
@@ -60,23 +57,16 @@
         reference follows a prop that swings under gravity.
       </p>
       <p>
-        The Kinetic Alphabet builds on VTG, created by Noel Yee and spinners at
-        the Vulcan Lofts in Oakland. VTG's four timing and direction categories
-        are encoded in TKA's Type 1 letters. Poi spinners who know split-same
-        and tog-opposite can already read that part of the alphabet. The sources
-        and full lineage are on the <LinkChip size="inline" href="/history"
-          >history page</LinkChip
-        >.
+        The Kinetic Alphabet is its own system, but the two share some ground.
+        VTG's four timing and direction categories line up with the timing and
+        direction of TKA's Type 1 letters, so poi spinners who know split-same
+        and tog-opposite can already read that part of the alphabet.
       </p>
       <p>
-        A Poi Lab module is planned for Flow Arts Composer to identify sequences
-        a momentum-based prop can perform. It has not been built yet. The <LinkChip
+        When you're ready to read the notation, the <LinkChip
           size="inline"
           href="/guide">guide</LinkChip
-        >
-        explains the notation, and the <LinkChip size="inline" href="/atlas"
-          >Kinetic Atlas</LinkChip
-        > defines its terms.
+        > introduces every concept in order.
       </p>
     </div>
   </section>

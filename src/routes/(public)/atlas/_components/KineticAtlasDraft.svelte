@@ -811,10 +811,9 @@
     {/if}
 
     <p class="creator-credit">
-      A reference for <LinkChip size="inline" href="/history"
-        >Flow Arts History</LinkChip
+      A reference beside the <LinkChip size="inline" href="/guide"
+        >Guide</LinkChip
       >
-      · <LinkChip size="inline" href="/guide">Guide</LinkChip>
     </p>
   </div>
 </div>

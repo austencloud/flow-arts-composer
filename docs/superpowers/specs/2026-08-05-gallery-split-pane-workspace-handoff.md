@@ -12,7 +12,7 @@ to the Library tab) into a stackable filter.
 Design spec:
 [2026-08-04-gallery-split-pane-workspace-design.md](2026-08-04-gallery-split-pane-workspace-design.md)
 Plan + all task ledgers and closeouts (Tasks 0–10):
-[2026-08-04-gallery-split-pane-workspace.md](../plans/2026-08-04-gallery-split-pane-workspace.md)
+[2026-08-04-gallery-split-pane-workspace.md](../plans/shipped/2026-08-04-gallery-split-pane-workspace.md)
 
 Origin: the 2026-08-04 unified-filter-workspace work left results behind a
 top-right button. Austen, looking at a value screen at 1920: a newcomer picking

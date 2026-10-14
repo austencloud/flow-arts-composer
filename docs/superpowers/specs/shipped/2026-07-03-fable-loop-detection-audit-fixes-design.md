@@ -20,7 +20,7 @@ TKA has **five near-duplicate loop detectors**. One confirmed bug was fixed 2026
 
 ## Evidence (read these first)
 
-- **Handoff (authoritative):** `docs/superpowers/handoffs/2026-07-03-loop-detection-audit-handoff.md` — ground-truth signature matrix (§2), detector inventory (§4), full findings table (§5), open decisions (§7).
+- **Handoff (authoritative):** `docs/superpowers/handoffs/archived/2026-07-03-loop-detection-audit-handoff.md` — ground-truth signature matrix (§2), detector inventory (§4), full findings table (§5), open decisions (§7).
 - **Audit harness:** `packages/sequence-engine/tests/loop/detection/round-trip-audit.test.ts` — drives real executors → runs both engine detectors → checks recovery. Run: `npx vitest run --root packages/sequence-engine tests/loop/detection/round-trip-audit.test.ts`.
 - **Regression test (the fixed bug):** `packages/sequence-engine/tests/loop/detection/mirrored-inverted-detection.test.ts`.
 - **The fix:** `packages/sequence-engine/src/loop/detection/LOOPDetector.ts` → `checkInvertedPattern`.

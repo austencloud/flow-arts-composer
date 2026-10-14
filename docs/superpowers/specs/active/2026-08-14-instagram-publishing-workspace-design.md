@@ -2,14 +2,16 @@
 status: active
 value: null
 effort: null
-remaining: "Verify current publishing workspace gates and Meta app capabilities; obtain account review before any live publish path."
+remaining: "Continue from the implemented schemas, delivery state, InstagramPostReview and server capabilities (717ba711a2); do not restart Gate 0/1. Establish owned-account proof and Austen review before live publishing, then complete gated carousel/Story/Trial, Facebook audio, scheduling/reconciliation and published-post management; the proposed queue/audio/reader owners are absent under firebase-functions/src/share."
 depends_on: "external: Meta app permissions and Austen account review for publishing"
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
+last_triaged: 2026-10-14
 work_state: blocked
 ---
 # Instagram Publishing Workspace and Delivery Contract
+
+> 2026-10-14 triage: Continue from the implemented schemas, delivery state, InstagramPostReview and server capabilities (717ba711a2); do not restart Gate 0/1. Establish owned-account proof and Austen review before live publishing, then complete gated carousel/Story/Trial, Facebook audio, scheduling/reconciliation and published-post management; the proposed queue/audio/reader owners are absent under firebase-functions/src/share. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Date:** 2026-08-14
 

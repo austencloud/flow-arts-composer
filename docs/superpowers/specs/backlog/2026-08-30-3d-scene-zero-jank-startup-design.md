@@ -2,15 +2,17 @@
 status: backlog
 value: null
 effort: null
-work_state: unverified
-remaining: Audit current scene startup path, then implement the demand-loaded effects and cooperative warming acceptance if absent.
+work_state: ready
+remaining: "Implement demand-loaded pooled effects and conditional control imports, then measure the specified 1080p/4K startup and reveal acceptance. scene-effects-manager-3d.ts still statically imports renderers and initializes every pool at lines 154–166, SceneControlWorkspace imports closed controls eagerly, and scene-effect-task-scheduler-3d.ts is absent despite later startup work (7d1dfff785)."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-10-14
 ---
 
 # 3D Scene Zero-Jank Startup
+
+> 2026-10-14 triage: Implement demand-loaded pooled effects and conditional control imports, then measure the specified 1080p/4K startup and reveal acceptance. scene-effects-manager-3d.ts still statically imports renderers and initializes every pool at lines 154–166, SceneControlWorkspace imports closed controls eagerly, and scene-effect-task-scheduler-3d.ts is absent despite later startup work (7d1dfff785). Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Status:** Backlog
 **Date:** 2026-08-30

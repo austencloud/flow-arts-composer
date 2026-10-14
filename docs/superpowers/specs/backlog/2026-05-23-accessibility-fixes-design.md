@@ -2,15 +2,17 @@
 status: backlog
 value: 3
 effort: M
-remaining: Audit accessibility acceptance; first fix the view-toggle radio buttons lacking aria-label, then verify the remaining keyboard and screen-reader paths.
+remaining: "Complete focus containment/restoration in CardInspectModal, MotionVisibilityToggle and LegalSheet, label BottomNavigation, and fix SidebarFooter/AccountPopover contrast before keyboard, screen-reader and reduced-motion acceptance. ChoreoCardThumbnail now has labels and Environment3D has reduced-motion handling, but LegalSheet still lacks focus trapping and SidebarFooter retains 0.25/0.15 icon alpha; the scan-radio item is explicitly a false positive in this spec."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: in-progress
 ---
 
 # Accessibility Fixes Design Spec
+
+> 2026-10-14 triage: Complete focus containment/restoration in CardInspectModal, MotionVisibilityToggle and LegalSheet, label BottomNavigation, and fix SidebarFooter/AccountPopover contrast before keyboard, screen-reader and reduced-motion acceptance. ChoreoCardThumbnail now has labels and Environment3D has reduced-motion handling, but LegalSheet still lacks focus trapping and SidebarFooter retains 0.25/0.15 icon alpha; the scan-radio item is explicitly a false positive in this spec. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 Date: 2026-05-23
 Status: Backlog

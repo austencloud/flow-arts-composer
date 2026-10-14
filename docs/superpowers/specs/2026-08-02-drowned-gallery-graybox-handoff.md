@@ -25,7 +25,7 @@ so Austen can judge layout, flow, and scale at eye level before any art spend
 `docs/superpowers/specs/2026-08-02-vulcan-cave-water-room-drowned-gallery-design.md`
 (approved by Austen 2026-08-02, includes the full 19-performer roster and the
 Phase 2–4 plan). Implementation plan (executed in full):
-`docs/superpowers/plans/2026-08-02-drowned-gallery-graybox.md`. Floor-plan
+`docs/superpowers/plans/backlog/2026-08-02-drowned-gallery-graybox.md`. Floor-plan
 sheet: `static/sketches/2026-08-02-drowned-gallery-plan.html` (served at
 `/sketches/2026-08-02-drowned-gallery-plan.html` — Austen loved it).
 
