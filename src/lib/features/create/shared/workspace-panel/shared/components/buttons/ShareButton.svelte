@@ -266,7 +266,7 @@
   function requireFullAccount(): boolean {
     if (authState.isFullAccount) return true;
     menuOpen = false;
-    authDrawerState.show("signup", "share-sequence");
+    authDrawerState.show("signup", "share-sequence", undefined, sequence);
     return false;
   }
 
