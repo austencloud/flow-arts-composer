@@ -328,7 +328,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
     if (!saveName || !sequence || isMixed) return;
 
     if (isSolo && !authState.isFullAccount) {
-      authDrawerState.show("signup", "save");
+      authDrawerState.show("signup", "save", undefined, sequence);
       return;
     }
 
