@@ -117,12 +117,21 @@ touched surface at the verification-protocol viewport tiers. Replace
 template-built keys with typed mappings and an enumerating test, as the
 guest-nudge fix did.
 
-## Open questions for Austen (asked 2026-10-14)
+## Decisions (2026-10-14)
 
-1. Which of the 33 pending prefixes are released.
-2. Box grid in es/fr/it/pt: the literal box words now in the files
-   (Caja, Boîte, Box, Caixa) or the square sense the German uses (Cuadrado,
-   Carré, Quadrato, Quadrado).
-3. Address form: tu/tú/você across the Romance locales with вы in Russian,
-   or vous in French as well.
-4. Go for wave 1.
+1. Prefix scope: Austen released all 33 formerly unlisted prefixes except
+   post (Post Studio, early access), gallery (render tool) and character
+   (3D avatar lab). Released keys per locale: 8,680. The P batches above
+   follow R5 for every locale.
+2. Box grid, address forms and every other wording choice: Austen delegated
+   language decisions to the coordinator (he does not read these languages).
+   The coordinator chose the square sense (Cuadrado, Carré, Quadrato,
+   Quadrado) and casual address (tú, tu, tu, você; Russian вы), recorded in
+   the glossary review log.
+3. Wave 1: go, all five workers.
+
+Worker worktrees branch from `codex/translation-program` rather than
+`main` so each carries the contract test and the prefix list; the
+coordinator branch integrates first, then the locale branches. Coverage
+floors in the contract test are raised by the coordinator at integration,
+not by the workers, since the test is outside their owned paths.

@@ -208,7 +208,8 @@ synonym over an abbreviation.
 
 Native review is Austen's or the community's. Record who reviewed what.
 
-| Date       | Locale | Scope                                          | Reviewer             | Outcome                                                    |
-| ---------- | ------ | ---------------------------------------------- | -------------------- | ---------------------------------------------------------- |
-| 2026-09-25 | de     | Create, Browse, Viewer, Share, Settings, Learn | Austen (in-app use)  | Accepted; terminology choices above                        |
-| 2026-10-14 | all    | This glossary, first draft                     | Claude (coordinator) | Proposals; `de` column from the catalog, others unreviewed |
+| Date       | Locale             | Scope                                                                                                   | Reviewer                                                 | Outcome                                                                    |
+| ---------- | ------------------ | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------- |
+| 2026-09-25 | de                 | Create, Browse, Viewer, Share, Settings, Learn                                                          | Austen (in-app use)                                      | Accepted; terminology choices above                                        |
+| 2026-10-14 | all                | This glossary, first draft                                                                              | Claude (coordinator)                                     | Proposals; `de` column from the catalog, others unreviewed                 |
+| 2026-10-14 | es, fr, it, pt, ru | Box grid as square (Cuadrado, Carré, Quadrato, Quadrado); casual address (tú, tu, tu, você), Russian вы | Claude (coordinator); Austen delegated wording decisions | Decided; the existing Caja/Boîte/Box/Caixa values get replaced in batch R1 |
