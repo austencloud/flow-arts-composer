@@ -921,29 +921,75 @@ own Escape (which closes the sheet) gets a turn.
   }
 
   /* A short box (a landscape phone, a small laptop window) has no room for
-     a tall centred cover: icon and words go side by side instead. */
+     a tall centred cover. The hero becomes a one-line strip (small icon,
+     name and count side by side, no eyebrow: the sheet header already says
+     what this is), so the three rows still land on one screen. */
   @container share-sheet (max-height: 480px) {
-    .hero {
-      min-height: 4.5rem;
-      text-align: left;
+    .home {
+      gap: 12px;
     }
 
-    .screen-footer textarea {
-      min-height: var(--min-touch-target, 44px);
+    .hero {
+      min-height: 0;
+      padding: 8px 12px;
+      place-items: center start;
+      text-align: left;
     }
 
     .hero-copy {
       flex-direction: row;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
     .hero-icon {
-      --hero-icon: 3.25rem;
+      --hero-icon: 2rem;
+      box-shadow: none;
+    }
+
+    .hero-text {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: baseline;
+      column-gap: 8px;
+      row-gap: 0;
+    }
+
+    .hero-text .eyebrow {
+      display: none;
     }
 
     .hero-text h3 {
       font-size: var(--font-size-base, 16px);
+    }
+
+    /* The message composer sits beside Send on one 44px row; the placeholder
+       names the box and the limit is still enforced by the field itself. */
+    .screen-footer {
+      flex-direction: row;
+      align-items: stretch;
+    }
+
+    .screen-footer .message-field {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .screen-footer .message-field > span,
+    .screen-footer .message-field small {
+      display: none;
+    }
+
+    .screen-footer textarea {
+      height: var(--min-touch-target, 44px);
+      min-height: var(--min-touch-target, 44px);
+      padding: 10px 12px;
+      resize: none;
+    }
+
+    .screen-footer .share-button {
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
   }
 
