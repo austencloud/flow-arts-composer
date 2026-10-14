@@ -74,6 +74,7 @@ const SHORTCODES_COLLECTION = "shortcodes";
  *  transactional invariant instead of a best-effort pre-check query. */
 const HASH_INDEX_COLLECTION = "shortcodeHashes";
 const MIN_CODE_LENGTH = 4;
+export const MIN_SHORT_CODE_LENGTH = MIN_CODE_LENGTH;
 /** Minting grows a code by up to two characters when shorter ones collide. */
 export const MAX_SHORT_CODE_LENGTH = MIN_CODE_LENGTH + 2;
 
@@ -106,6 +107,16 @@ function oldestFirst(a: CodeCandidate, b: CodeCandidate): number {
 }
 
 const ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+/** A fresh random code of `codeLength` characters from the shared uppercase
+ *  base36 alphabet; collection share links draw from the same pool. */
+export function randomShortCode(codeLength: number): string {
+  let code = "";
+  for (let i = 0; i < codeLength; i++) {
+    code += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+  }
+  return code;
+}
 const CODE_COLLISION = "__CODE_COLLISION__";
 const HASH_CLAIM_MISMATCH = "__HASH_CLAIM_MISMATCH__";
 
@@ -378,9 +389,8 @@ export class ShortCodeManager {
    */
   private async ensureFirestore(): Promise<Firestore> {
     if (!this.firestore) {
-      const { getFirestoreInstance } = await import(
-        "#lib/shared/auth/firebase.js"
-      );
+      const { getFirestoreInstance } =
+        await import("#lib/shared/auth/firebase.js");
       this.firestore = await getFirestoreInstance();
     }
     return this.firestore;
@@ -395,11 +405,7 @@ export class ShortCodeManager {
    * local length independently.
    */
   private generateCode(codeLength: number): string {
-    let code = "";
-    for (let i = 0; i < codeLength; i++) {
-      code += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
-    }
-    return code;
+    return randomShortCode(codeLength);
   }
 
   /**
@@ -716,9 +722,8 @@ export class ShortCodeManager {
     maxResults?: number
   ): Promise<CodeCandidate[]> {
     const firestore = await this.ensureFirestore();
-    const { collection, getDocs, limit, query, where } = await import(
-      "firebase/firestore"
-    );
+    const { collection, getDocs, limit, query, where } =
+      await import("firebase/firestore");
     const constraints: QueryConstraint[] = [where(field, "==", value)];
     if (maxResults !== undefined) constraints.push(limit(maxResults));
     const snapshot = await getDocs(
@@ -951,9 +956,8 @@ export class ShortCodeManager {
 
       onProgress?.(0, missHashes.length);
       const firestore = await this.ensureFirestore();
-      const { collection, getDocs, query, where } = await import(
-        "firebase/firestore"
-      );
+      const { collection, getDocs, query, where } =
+        await import("firebase/firestore");
       const candidatesByHash = new Map<string, CodeCandidate[]>();
 
       // 4. Chunked `in` queries (Firestore caps the `in` list at 30).
