@@ -6,7 +6,33 @@ import { pathToFileURL } from "node:url";
 import { compile } from "svelte/compiler";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-const SCRIPT = join(process.cwd(), "scripts", "svelte-compile-gate.mjs");
+const CHECKOUT = process.cwd();
+const SCRIPT = join(CHECKOUT, "scripts", "svelte-compile-gate.mjs");
+
+// Git hands its hooks a GIT_DIR, and from a linked worktree that path is
+// absolute. The pre-push gate runs this suite, so inside a hook every git
+// process below would address the real repository instead of the fixture: on
+// 2026-10-13 the `git config user.name` call rewrote the shared .git/config
+// that way. Every fixture git process therefore starts from an environment
+// without GIT_* variables, so discovery begins at the fixture directory.
+function gitFreeEnv(): NodeJS.ProcessEnv {
+  return Object.fromEntries(
+    Object.entries(process.env).filter(([key]) => !/^git_/i.test(key))
+  );
+}
+
+// The identity the checkout running this suite has in its own .git/config.
+// Status 1 means the key is unset, which is a valid state to preserve.
+function checkoutIdentity(key: string) {
+  const result = spawnSync(
+    "git",
+    ["-C", CHECKOUT, "config", "--local", "--get", key],
+    { encoding: "utf8", env: gitFreeEnv() }
+  );
+  if (result.status !== 0 && result.status !== 1)
+    throw new Error(`git config --get ${key} failed: ${result.stderr}`);
+  return result.status === 0 ? result.stdout.trim() : null;
+}
 
 // The TypeScript-only lines above the comment disappear in preprocessing, so
 // an unmapped report would land about seven lines too high.
@@ -89,7 +115,7 @@ function compileWithProjectConfig(files: string[], output: string) {
     `writeFileSync(${JSON.stringify(output)}, JSON.stringify(results));`,
   ].join("\n");
   execFileSync(process.execPath, ["--input-type=module", "--eval", program], {
-    cwd: process.cwd(),
+    cwd: CHECKOUT,
     stdio: "pipe",
   });
   return JSON.parse(readFileSync(output, "utf8")) as Result[];
@@ -177,46 +203,76 @@ describe("svelte compile gate", () => {
   });
 
   it("compiles only the components the branch added or changed", () => {
+    const nameBefore = checkoutIdentity("user.name");
+    const emailBefore = checkoutIdentity("user.email");
+
     const repo = join(root, "repo");
+    // A second repository stands in for the real checkout: GIT_DIR points at
+    // it for the whole flow, the way a hook points at a worktree's gitdir,
+    // and it must come out untouched.
+    const decoy = join(root, "decoy");
     const git = (...args: string[]) =>
-      execFileSync("git", args, { cwd: repo, encoding: "utf8" }).trim();
+      execFileSync("git", ["-C", repo, ...args], {
+        encoding: "utf8",
+        env: gitFreeEnv(),
+      }).trim();
     const gate = (base: string) =>
       spawnSync(process.execPath, [SCRIPT, base], {
         cwd: repo,
         encoding: "utf8",
+        env: gitFreeEnv(),
       });
 
-    execFileSync("git", ["init", "--quiet", "-b", "main", repo]);
-    git("config", "user.email", "compile-gate-test@example.com");
-    git("config", "user.name", "Compile Gate Test");
-    git("config", "core.autocrlf", "false");
-    writeFileSync(join(repo, "Kept.svelte"), "<p>kept</p>\n");
-    writeFileSync(join(repo, "Removed.svelte"), "<p>removed</p>\n");
-    git("add", "Kept.svelte", "Removed.svelte");
-    git("commit", "--quiet", "-m", "base");
-    const base = git("rev-parse", "HEAD");
+    execFileSync("git", ["init", "--quiet", "-b", "main", decoy], {
+      env: gitFreeEnv(),
+    });
+    const inheritedGitDir = process.env.GIT_DIR;
+    process.env.GIT_DIR = join(decoy, ".git");
+    try {
+      execFileSync("git", ["init", "--quiet", "-b", "main", repo], {
+        env: gitFreeEnv(),
+      });
+      git("config", "--local", "user.email", "compile-gate-test@example.com");
+      git("config", "--local", "user.name", "Compile Gate Test");
+      git("config", "--local", "core.autocrlf", "false");
+      writeFileSync(join(repo, "Kept.svelte"), "<p>kept</p>\n");
+      writeFileSync(join(repo, "Removed.svelte"), "<p>removed</p>\n");
+      git("add", "Kept.svelte", "Removed.svelte");
+      git("commit", "--quiet", "-m", "base");
+      const base = git("rev-parse", "HEAD");
 
-    writeFileSync(join(repo, "Kept.svelte"), "<p>kept, edited</p>\n");
-    writeFileSync(
-      join(repo, "Broken.svelte"),
-      "<p>navigator</p>\n<!-- <-- <> --> steps; <- seeks -->\n"
-    );
-    writeFileSync(join(repo, "notes.ts"), "export const notes = 1;\n");
-    git("rm", "--quiet", "Removed.svelte");
-    git("add", "Kept.svelte", "Broken.svelte", "notes.ts");
-    git("commit", "--quiet", "-m", "branch work");
+      writeFileSync(join(repo, "Kept.svelte"), "<p>kept, edited</p>\n");
+      writeFileSync(
+        join(repo, "Broken.svelte"),
+        "<p>navigator</p>\n<!-- <-- <> --> steps; <- seeks -->\n"
+      );
+      writeFileSync(join(repo, "notes.ts"), "export const notes = 1;\n");
+      git("rm", "--quiet", "Removed.svelte");
+      git("add", "Kept.svelte", "Broken.svelte", "notes.ts");
+      git("commit", "--quiet", "-m", "branch work");
 
-    const failed = gate(base);
-    expect(failed.status).toBe(1);
-    expect(failed.stdout).toContain("compiling 2 changed .svelte file(s)");
-    expect(failed.stderr).toMatch(/Broken\.svelte:2:\d+ {2}tag_invalid_name/);
+      const failed = gate(base);
+      expect(failed.status).toBe(1);
+      expect(failed.stdout).toContain("compiling 2 changed .svelte file(s)");
+      expect(failed.stderr).toMatch(/Broken\.svelte:2:\d+ {2}tag_invalid_name/);
 
-    writeFileSync(join(repo, "Broken.svelte"), "<p>fixed</p>\n");
-    git("commit", "--quiet", "-m", "fix", "--", "Broken.svelte");
+      writeFileSync(join(repo, "Broken.svelte"), "<p>fixed</p>\n");
+      git("commit", "--quiet", "-m", "fix", "--", "Broken.svelte");
 
-    const passed = gate(base);
-    expect(passed.stderr).toBe("");
-    expect(passed.status).toBe(0);
-    expect(passed.stdout).toContain("0 error(s), 0 warning(s) in 2 file(s)");
+      const passed = gate(base);
+      expect(passed.stderr).toBe("");
+      expect(passed.status).toBe(0);
+      expect(passed.stdout).toContain("0 error(s), 0 warning(s) in 2 file(s)");
+    } finally {
+      if (inheritedGitDir === undefined) delete process.env.GIT_DIR;
+      else process.env.GIT_DIR = inheritedGitDir;
+    }
+
+    const configOf = (dir: string) =>
+      readFileSync(join(dir, ".git", "config"), "utf8");
+    expect(configOf(repo)).toContain("Compile Gate Test");
+    expect(configOf(decoy)).not.toContain("Compile Gate Test");
+    expect(checkoutIdentity("user.name")).toBe(nameBefore);
+    expect(checkoutIdentity("user.email")).toBe(emailBefore);
   });
 });
