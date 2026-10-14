@@ -32,20 +32,16 @@ async function click(trigger: HTMLButtonElement) {
 beforeEach(() => setPath("/"));
 
 describe("SiteHeader desktop disclosures", () => {
-  it("keeps History as a direct destination outside the Notation disclosure", async () => {
+  it("carries no History link while the archive is withdrawn, and keeps the Notation disclosure", async () => {
     setPath("/history");
     render(SiteHeader);
     const desktopNav = document.querySelector<HTMLElement>(".desktop-nav");
     expect(desktopNav).not.toBeNull();
     desktopNav!.style.display = "flex";
 
-    const history = document.querySelector<HTMLAnchorElement>(
-      '.desktop-nav > a[href="/history"]'
-    );
-    expect(history).not.toBeNull();
-    expect(history).toHaveClass("active");
-    expect(history).toHaveAttribute("aria-current", "page");
-    expect(history!.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+    // /history is withdrawn (2026-10-14) until the archive's authors have
+    // been asked. No bar link, no dropdown item, anywhere in the header.
+    expect(document.querySelector('a[href^="/history"]')).toBeNull();
 
     const notation = desktopTrigger("Notation");
     expect(notation).toHaveAttribute("aria-expanded", "false");

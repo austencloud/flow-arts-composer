@@ -964,12 +964,6 @@
             >{tDynamic("guide_ratios_source_label", { author: "Lorq Nichols", name: ORIGINAL_SHAPE_MATRIX_NAME })}</LinkChip
           >
         </li>
-        <li>
-          <LinkChip href="/history#archive-record-vtg">{tDynamic("guide_ratios_vtg_record")}</LinkChip>
-        </li>
-        <li>
-          <LinkChip href="/history#archive-record-lorq">{tDynamic("guide_ratios_lorq_record")}</LinkChip>
-        </li>
         <li><LinkChip href="/shape-engine">{SHAPE_ENGINE_SHORT_NAME}</LinkChip></li>
       </ul>
       <p class="attribution">

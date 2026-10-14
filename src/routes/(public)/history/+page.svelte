@@ -1,67 +1,49 @@
+<!--
+  /history — WITHDRAWN 2026-10-14.
+
+  The archive names the practitioners whose work it records, and none of them
+  have been asked yet. Until each record carries its author's say-so, the
+  public address shows the shared "being rebuilt" note and the full archive
+  lives unlisted at /history/draft, so a record can be shown to its author
+  during outreach without being advertised.
+
+  To restore: move draft/+page.svelte back here, re-list /history in the
+  sitemap, header, footer, launchpad tile, and FAQ, and drop the draft route.
+-->
 <script lang="ts">
-  import Seo from "#lib/shared/components/Seo.svelte";
-  import PlayableArchive from "./_components/archive/PlayableArchive.svelte";
-  import {
-    ARCHIVE_ENTRIES,
-    ARCHIVE_START_YEAR,
-    ARCHIVE_END_YEAR,
-  } from "./_components/archive/_lib/archive-ledger";
-  import { archiveStructuredWorks } from "./_components/archive/_lib/archive-presentation";
-  import { ARCHIVE_INK } from "#lib/shared/landing/domain/page-surface.js";
-
-  const TITLE = "Flow Arts History Archive: Who Wrote It Down";
-  const DESCRIPTION = `${ARCHIVE_ENTRIES.length} sourced records of flow-arts notation systems, movement languages, teaching archives, and research from ${ARCHIVE_START_YEAR} to ${ARCHIVE_END_YEAR}.`;
-  const URL = "https://tkaflowarts.com/history";
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        headline: "Flow arts history",
-        description: DESCRIPTION,
-        mainEntityOfPage: URL,
-        author: { "@type": "Person", name: "Austen Cloud" },
-        about: archiveStructuredWorks(ARCHIVE_ENTRIES),
-      },
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          {
-            "@type": "ListItem",
-            position: 1,
-            name: "Home",
-            item: "https://tkaflowarts.com/",
-          },
-          {
-            "@type": "ListItem",
-            position: 2,
-            name: "Flow Arts History",
-            item: URL,
-          },
-        ],
-      },
-    ],
-  };
+  import "#lib/shared/landing/styles/public-editorial.css";
+  import UnderConstruction from "#lib/shared/landing/components/UnderConstruction.svelte";
 </script>
 
-<Seo title={TITLE} description={DESCRIPTION} canonical={URL} ogType="article">
-  {@html `<script type="application/ld+json">${JSON.stringify(jsonLd)}<\/script>`}
-</Seo>
+<svelte:head>
+  <title>Flow Arts History | Being rebuilt</title>
+  <meta
+    name="description"
+    content="The flow arts history archive is being rebuilt. The notation pages for each prop are still here."
+  />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="https://tkaflowarts.com/history" />
+</svelte:head>
 
-<div
-  class="playable-viewport"
-  style:view-transition-name="launchpad-history"
-  style:background={ARCHIVE_INK}
->
-  <PlayableArchive />
-</div>
-
-<style>
-  .playable-viewport {
-    min-height: 100dvh;
-    padding-top: var(--marketing-header-h, 64px);
-    box-sizing: border-box;
-    color: var(--theme-text);
-  }
-</style>
+<UnderConstruction
+  title="Flow Arts History"
+  eyebrow="Being rebuilt"
+  icon="fa-clock-rotate-left"
+  note="The history archive is offline while it is rebuilt with the people whose work it records. The notation pages for each prop are still here."
+  destinations={[
+    {
+      label: "Shape Engine",
+      href: "/shape-engine",
+      icon: "fa-diagram-project",
+    },
+    {
+      label: "Staves",
+      href: "/notation/staves",
+      icon: "fa-grip-lines-vertical",
+    },
+    { label: "Poi", href: "/notation/poi", icon: "fa-circle-dot" },
+    { label: "Fans", href: "/notation/fans", icon: "fa-fan" },
+    { label: "Clubs", href: "/notation/clubs", icon: "fa-wine-bottle" },
+    { label: "Buugeng", href: "/notation/buugeng", icon: "fa-yin-yang" },
+  ]}
+/>
