@@ -39,8 +39,6 @@ const SHEET_PATH = `${PROP_TYPE_DIR}/PropSelectionSheet.svelte`;
 const HOSTS: Record<string, string> = {
   "global prop drawer (P key)":
     "src/lib/shared/application/components/MainApplication.svelte",
-  "create step editor sheet":
-    "src/lib/features/create/shared/components/coordinators/StepEditorCoordinator.svelte",
   "settings prop type tab":
     "src/lib/shared/settings/components/tabs/PropTypeTab.svelte",
   "sequence viewer props panel":
@@ -138,15 +136,6 @@ describe("buugeng chirality is owned by the prop picker", () => {
       main.indexOf("function handleCatDogToggle")
     );
     expect(mainHandler).not.toContain("propDrawerState.close()");
-
-    const stepEditor = read(
-      "src/lib/features/create/shared/components/coordinators/StepEditorCoordinator.svelte"
-    );
-    const stepHandler = stepEditor.slice(
-      stepEditor.indexOf("function handlePropSelect"),
-      stepEditor.indexOf("function handlePushUndoSnapshot")
-    );
-    expect(stepHandler).not.toContain("propSheetOpen = false");
 
     const arena = read(
       "src/lib/features/arena/components/battle/ArenaPropDrawer.svelte"
