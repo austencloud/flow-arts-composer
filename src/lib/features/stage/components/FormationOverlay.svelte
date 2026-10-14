@@ -41,13 +41,13 @@
     )
   );
 
-  // Enough rail to hold the caption without squeezing it into two words a line.
-  const captionInGutter = $derived(originX >= 190);
-
   const chartWidth = $derived(pxPerMetre * choreography.stageWidth);
   const chartHeight = $derived(pxPerMetre * choreography.stageDepth);
   const originX = $derived((svgWidth - chartWidth) / 2);
   const originY = $derived((svgHeight - chartHeight) / 2);
+
+  // Enough rail to hold the caption without squeezing it into two words a line.
+  const captionInGutter = $derived(originX >= 190);
 
   $effect(() => {
     if (!containerEl) return;
