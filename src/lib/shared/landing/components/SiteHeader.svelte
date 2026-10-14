@@ -171,9 +171,9 @@
   type NavEntry = NavLink | NavGroup;
 
   const NAV: NavEntry[] = [
-    // History is a site-level destination, not a child of notation. The
-    // Notation group holds the live reference system and one page per prop.
-    { label: "History", href: "/history", icon: "fa-clock-rotate-left" },
+    // History left the bar on 2026-10-14: /history is withdrawn until the
+    // archive's authors have been asked (routes/(public)/history/+page.svelte).
+    // The Notation group holds the live reference system and one page per prop.
     {
       label: "Notation",
       icon: "fa-language",

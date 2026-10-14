@@ -30,7 +30,7 @@
         description:
           "A pictographic notation system for flow arts choreography. Each picture records a movement step; together they record a sequence.",
         disambiguatingDescription:
-          "Created by Austen Cloud in 2022. The Kinetic Alphabet is its own system and is not built on, derived from, or an extension of the other flow arts notations documented on this site. The Shape Matrix, CAPs, the Vulcan Tech Gospel, QFT Notation and the rest are separate works by other authors, archived and credited at /history.",
+          "Created by Austen Cloud in 2022. The Kinetic Alphabet is its own system and is not built on, derived from, or an extension of the other flow arts notations documented on this site. The Shape Matrix, CAPs, the Vulcan Tech Gospel, QFT Notation and the rest are separate works by other authors.",
         dateCreated: "2022",
         creator: { "@id": PERSON_ID },
       },
