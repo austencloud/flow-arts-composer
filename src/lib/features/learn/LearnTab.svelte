@@ -48,7 +48,6 @@ Navigation via bottom tabs (mobile-first UX pattern)
     mutateCurrentUrl,
   } from "#lib/shared/navigation/services/url-state.js";
   import { withViewTransition } from "./play/state/view-transition";
-  import { getExperiencePersistence } from "./state/experience-persistence.svelte";
 
   type LearnMode = "concepts" | "play" | "tika" | "guide";
 
@@ -273,14 +272,10 @@ Navigation via bottom tabs (mobile-first UX pattern)
     openConcept(concept, "push", conceptPlaceId ?? null);
   }
 
-  // Continuing from the lesson just finished starts the next one at its
-  // first step. A saved place from an earlier visit, often that lesson's
-  // finished screen, would otherwise skip the reader past it.
   function handleConceptContinue(
     concept: LearnConcept,
     conceptPlaceId: string | null
   ) {
-    getExperiencePersistence(concept.id).reset();
     withViewTransition(() => openConcept(concept, "replace", conceptPlaceId));
   }
 
