@@ -30,6 +30,12 @@
     visibleHand?: TargetHand;
     /** Drop the Left/Right heading when a hand picker above already names it. */
     labelsHidden?: boolean;
+    /**
+     * Make each card a size container named "hand-card" so controls inside
+     * can respond to the card's own width. Only for hosts that give the cards
+     * a definite width; a shrink-wrapped card would collapse.
+     */
+    sizedCards?: boolean;
     /** Content for the left prop card */
     leftContent?: Snippet;
     /** Content for the right prop card */
@@ -42,6 +48,7 @@
     prominentLabels = false,
     visibleHand = "both",
     labelsHidden = false,
+    sizedCards = false,
     leftContent,
     rightContent,
   }: Props = $props();
@@ -54,6 +61,7 @@
   class:prominent-labels={prominentLabels}
   class:focused={visibleHand !== "both"}
   class:labels-hidden={labelsHidden}
+  class:sized-cards={sizedCards}
 >
   <div
     class="prop-card blue"
@@ -114,6 +122,10 @@
      same word twice; the tone of the card already carries the hand. */
   .prop-pair.labels-hidden .prop-label {
     display: none;
+  }
+
+  .prop-pair.sized-cards .prop-card {
+    container: hand-card / inline-size;
   }
 
   .prop-pair.stacked .prop-card {

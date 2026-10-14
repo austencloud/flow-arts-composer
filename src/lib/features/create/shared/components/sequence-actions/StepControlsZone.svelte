@@ -35,6 +35,12 @@
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { PathShapeValue } from "../../services/step-operations/path-shape-handler";
   import {
+    canStepTurns,
+    FLOAT_TURNS,
+    TURN_STEP_HALF,
+    TURN_STEP_WHOLE,
+  } from "../../services/step-operations/turns-stepping";
+  import {
     aggregateTurns,
     formatTurn,
     type TurnsAggregate,
@@ -143,19 +149,32 @@
     return true;
   });
 
-  // Turn limits, mirroring the coordinator's clamp: shifts (pro/anti) may go
-  // down to a float ("fl", −0.5); everything else stops at 0; all stop at 3.
-  const MAX_TURNS = 3;
+  // Turn limits come from the same stepping rule the coordinator applies, so
+  // a button is disabled exactly when pressing it would change nothing.
+  // Shifts may float; a motion already floating keeps that floor.
   const minTurnsFor = (motionType: MotionType | undefined): number =>
-    motionType === MotionType.PRO || motionType === MotionType.ANTI ? -0.5 : 0;
-  const canDecreaseLeft = $derived(
-    currentLeftTurns > minTurnsFor(leftMotion?.motionType)
+    motionType === MotionType.PRO ||
+    motionType === MotionType.ANTI ||
+    motionType === MotionType.FLOAT
+      ? FLOAT_TURNS
+      : 0;
+  type TurnLimits = Record<"half" | "whole", { down: boolean; up: boolean }>;
+  const limitsFor = (turns: number, min: number): TurnLimits => ({
+    half: {
+      down: canStepTurns(turns, -TURN_STEP_HALF, min),
+      up: canStepTurns(turns, TURN_STEP_HALF, min),
+    },
+    whole: {
+      down: canStepTurns(turns, -TURN_STEP_WHOLE, min),
+      up: canStepTurns(turns, TURN_STEP_WHOLE, min),
+    },
+  });
+  const leftLimits = $derived(
+    limitsFor(currentLeftTurns, minTurnsFor(leftMotion?.motionType))
   );
-  const canIncreaseLeft = $derived(currentLeftTurns < MAX_TURNS);
-  const canDecreaseRight = $derived(
-    currentRightTurns > minTurnsFor(rightMotion?.motionType)
+  const rightLimits = $derived(
+    limitsFor(currentRightTurns, minTurnsFor(rightMotion?.motionType))
   );
-  const canIncreaseRight = $derived(currentRightTurns < MAX_TURNS);
 
   const leftRotation = $derived(
     leftMotion?.rotationDirection ?? RotationDirection.NO_ROTATION
@@ -251,6 +270,7 @@
       stacked={narrow}
       compact={narrow}
       labelsHidden={narrow}
+      sizedCards
       visibleHand={narrow ? mobileHand : "both"}
     >
       {#snippet leftContent()}
@@ -272,8 +292,7 @@
               showLeftRotation,
               leftPathShape,
               leftIsShift,
-              canDecreaseLeft,
-              canIncreaseLeft
+              leftLimits
             )}
           {/if}
         </Crossfade>
@@ -297,8 +316,7 @@
               showRightRotation,
               rightPathShape,
               rightIsShift,
-              canDecreaseRight,
-              canIncreaseRight
+              rightLimits
             )}
           {/if}
         </Crossfade>
@@ -315,8 +333,7 @@
   showRotation: boolean,
   pathShape: PathShapeValue | undefined,
   isShift: boolean,
-  canDecrease: boolean,
-  canIncrease: boolean
+  limits: TurnLimits
 )}
   <div class="hand-inner">
     <PropTurnsControl
@@ -327,8 +344,11 @@
       compact={narrow}
       {pathShape}
       {isShift}
-      {canDecrease}
-      {canIncrease}
+      canDecrease={limits.half.down}
+      canIncrease={limits.half.up}
+      wholeSteps
+      canDecreaseWhole={limits.whole.down}
+      canIncreaseWhole={limits.whole.up}
       onTurnsChange={(delta) => onTurnsChange(color, delta)}
       onRotationChange={(dir) => onRotationChange(color, dir)}
       onPathShapeChange={onPathShapeChange
