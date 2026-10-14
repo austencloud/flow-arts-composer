@@ -2,14 +2,16 @@
 status: active
 value: 3
 effort: S
-remaining: "Verify Animation Engine Re-Architecture — Fused Design & Handoff Spec against the current Animation Engine Re-Architecture — Fused Design & Handoff Spec runtime and acceptance criteria before resuming implementation. Prior recorded remainder: '5 managers + plugin registry + HMR fix shipped; StateSynchronizer was relocated, not dissolved as specced'"
+remaining: "Remove or explicitly retire the remaining service-state mirroring in managers/playback-sync.ts, which still owns StateSynchronizer; per-instance animator state and manager extraction already exist (7b996f97fc). Verify current offscreen export and split/disassemble HMR, and reconcile the intentionally absent createLiveContext API (asserted absent in render-context-factory.test.ts) rather than recreating the old stub."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: in-progress
 ---
 # Animation Engine Re-Architecture — Fused Design & Handoff Spec
+
+> 2026-10-14 triage: Remove or explicitly retire the remaining service-state mirroring in managers/playback-sync.ts, which still owns StateSynchronizer; per-instance animator state and manager extraction already exist (7b996f97fc). Verify current offscreen export and split/disassemble HMR, and reconcile the intentionally absent createLiveContext API (asserted absent in render-context-factory.test.ts) rather than recreating the old stub. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Queue evidence (2026-10-07):** Managers, plugin registry, and HMR fix landed; StateSynchronizer dissolution remains unresolved. See frontmatter for the remaining work.
 

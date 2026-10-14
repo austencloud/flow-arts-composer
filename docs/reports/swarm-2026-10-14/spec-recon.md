@@ -26,6 +26,11 @@ Method: read each reviewed spec completely; inspect named source paths/symbols a
 | `active/2026-05-04-god-file-decomposition-design.md` | unverified | in-progress | 8bc4149650, 3f0e5016b9, a97b743f05; inventory below | high |
 | `active/2026-05-12-spatial-lab-design.md` | unverified | superseded | f4d3d52089, 6b040a60a1, 4e4cae6c51; inventory below | high |
 | `active/2026-05-25-mandala-roadmap.md` | unverified | in-progress | 443c7b6fec, 7e6d7ed3bf; inventory below | medium |
+| `active/2026-05-28-animation-engine-rearchitecture-design.md` | unverified | in-progress | 7b996f97fc, 3f0e5016b9, a97b743f05; inventory below | high |
+| `active/2026-05-28-inspect-panel-redesign-design.md` | unverified | verification | 208399cd2b; inventory below | medium |
+| `active/2026-05-30-deriver-collapse-design.md` | unverified | in-progress | 9c064a8255; inventory below | high |
+| `active/2026-05-31-ceremony-phase5-stateless-isolated-design.md` | unverified | in-progress | 6e56d6d30e, 51c6225f15, a97b743f05, ccc58d970e; inventory below | high |
+| `active/2026-05-31-unified-generation-vocabulary-design.md` | unverified | in-progress | 4848592d56, e45ce2268f; inventory below | high |
 
 ## Evidence inventories and verdict rationale
 
@@ -149,6 +154,36 @@ Observed: Phase 1 MandalaPane/SequenceMandala/render/export owners exist. Phase 
 
 Remaining: Continue from the existing viewer/export, meditation and collection/publication owners; meditation is implemented in src/lib/features/mandala/tabs/meditate (443c7b6fec), and shape morphing exists in mandala-path-interpolator.ts. Trails remain absent, while exact-settings short links, formations/chains, FFT reactivity, fractal nesting, tessellation and 3D extrusion still need their own acceptance review; reuse the existing phase specs instead of creating duplicates.
 
+### active/2026-05-28-animation-engine-rearchitecture-design.md
+
+Observed: animator-state.svelte.ts supplies per-instance state; animation-engine constructs CanvasLifecycleManager, EffectSystem, PropSystem, FrameSystem and playback coordination. Effects registry and renderer map/generic lifecycle exist. `managers/playback-sync.ts:82` creates StateSynchronizer and lines 761 onward pull service state. Actual AnimatorCanvas has no self-import; CanvasSurface/SplitCanvasView only mention it historically in comments. DisassembleCanvasView/DisassembleTransition exist. OffscreenExportRenderer calls RenderContextFactory.createOffscreenContext (130); factory tests explicitly assert createLiveContext absent (71–73). Searches find no old resize/restore callbacks or AnimatorCanvas full-reload plugin in current owners. History: `7b996f97fc refactor(animation-engine): lift manager systems out of implementations/`; subsequent `3f0e5016b9` layers and `a97b743f05` migration. Inference: mirroring remains a concrete architectural gap, while obsolete factory/HMR instructions must not be replayed. Runtime HMR/export acceptance not run.
+
+Remaining: Remove or explicitly retire the remaining service-state mirroring in managers/playback-sync.ts, which still owns StateSynchronizer; per-instance animator state and manager extraction already exist (7b996f97fc). Verify current offscreen export and split/disassemble HMR, and reconcile the intentionally absent createLiveContext API (asserted absent in render-context-factory.test.ts) rather than recreating the old stub.
+
+### active/2026-05-28-inspect-panel-redesign-design.md
+
+Observed: PictographInspectModal uses PictographContainer (475) and current dock; MotionColumn/PipelineTraceSection/CollapsibleSection exist, old BasicInfoColumn is absent. PipelineEditorDock line 78 types editTarget as special-json/default and options at 150–151 match it; it imports DefaultOverrideRepository and invalidates adjustment versions. PropGeometryAdjustmentRepository already implements saveAdjustmentLocal (147), deleteAdjustmentLocal (178), deleteAdjustment (186). History: `208399cd2b feat(arrows): inspect dock shows only Special + Default tiers` documents intentional divergence, invalidating the prior 'undocumented' claim. Current layout and tier correctness still need browser/persistence proof. Inference: implementation/replacement behavior exists; no reason to rebuild original tier UI solely from this spec. Not marking the entire design superseded because only the tier replacement decision was established.
+
+Remaining: Verify live arrow selection/WASD, save/revert, readable responsive layout and theme behavior on the current PictographInspectModal/PipelineEditorDock. 208399cd2b deliberately narrows editing to Special + Default, and the prop-geometry repository already has local/save/delete methods; reconcile acceptance against that recorded tier change instead of restoring the original four-tier picker.
+
+### active/2026-05-30-deriver-collapse-design.md
+
+Observed: app `shared/render/core/calculations/orientation.ts` still defines deriveHandOrbitalDirection (93) and deriveMotionType (109) rather than re-exporting; package orientation has no matching exports. Create pattern-manager (358/373) and rotation-direction-handler (390/415) each define the partial helpers. Proposed motion-type-from-rotation.ts and orientation-golden-corpus.json were not found. MCP orientation-calculator is now a delegating shim to @tka/render-core, backed by `9c064a8255 fix(orientation): canonicalize orientation casing in render-core, delete mcp-server's copy`. Existing deriver-parity.test.ts compares package/app and an app sequence-engine wrapper, not the complete proposed snapshot guard. Assemble state no longer carries the old named calculator; `services/builder-motion-geometry.ts` uses angle helpers/trigonometry, so old line references are obsolete. Package OrientationCalculator remains the intended independent copy. Inference: B1 progressed; A and full C/guard acceptance remain. No TKA math was changed or independently certified in this review.
+
+Remaining: Finish lifting the app derivers into render-core and replacing both create-module classifiers with one fallback-preserving adapter; these copies remain in orientation.ts, rotation-direction-pattern-manager.ts and rotation-direction-handler.ts. MCP already delegates after 9c064a8255, while the golden-corpus fixture and proposed motion-type-from-rotation.ts are absent; reconcile the current assemble-lab geometry owner before implementing the hash/center collapse.
+
+### active/2026-05-31-ceremony-phase5-stateless-isolated-design.md
+
+Observed: inventory script, manifest, flatten codemod and merge handoff exist. Manifest generatedAt is 2026-05-31T07:56:44.524Z, so its counts are not current. Inventory script writes scripts/ceremony-manifest.json (397) and ceremony-dry-run.md (493); it was read but not run. Handoff records MuseumGridBuilder, ArchiveLoaderImpl, CellCacheKeyDeriver, MultiFilter and BrowseSectionManager conversions and narrows viable candidates to consumption-safe cases. Current museum-grid-builder, archive-loader, cell-cache-key-deriver, multi-filter and browse-section-manager modules exist; deriveCacheKey, applyFilters/getFilteredCount, buildMuseumGrid and browse functions are exported. Scoped history includes `6e56d6d30e Add a Joined grids filter to Browse`, `51c6225f15` triangle grips and `a97b743f05` migration; handoff moved in `ccc58d970e`. Inference: 'no measurable progress' is false; no claim that historical aggregate targets are met. Proposal: future inventory must preserve guards/multi-instance owners and use the current authorized worktree policy, not the historical clone/rebase recipe.
+
+Remaining: Reinventory the live conversion candidates and residual type/filename tail before further batches; do not reuse the May counts. The committed merge handoff and current function exports establish five Phase-5 conversions, contradicting the no-progress banner (docs/superpowers/handoffs/2026-05-31-ceremony-phase5-merge-handoff.md); scripts/ceremony-inventory.mjs still writes outside this worker's scope, so its manifest was not regenerated here.
+
+### active/2026-05-31-unified-generation-vocabulary-design.md
+
+Observed: deck-recipe.ts uses canonicalJSON/cyrb128 and mints seeds; DeckRelease has schemaVersion/generatorVersion fields. Canonical JSON/seeded RNG utilities and their tests, deck-recipe/seeded-composer/deck-releaser recipe tests exist. `4848592d56 feat(deck-gen): seeded RNG + canonical JSON + recipe hashing utils` and `e45ce2268f feat(deck-gen): seeded composeDeck + loop/level/start-pos pool filters` establish implementation. ConfigureStep and generated archive UI exist. Current create RotationDirectionPattern and deck ResolvedReversalPattern remain separate; deck composer still processes enumerated seed entries and variant transforms. The named single normalized parameter owner/write path, complete cache wipe/rebuild benchmark and all three surface adoption criteria were not established. Inference: foundation and deck work are partial scope, not evidence of whole-vocabulary collapse. Preserve design decisions about deliberate lossy macro changes and seed/version pinning.
+
+Remaining: Finish or explicitly revise the single reversal/turn model and shared write-path contract across Generate, deck and sequence-actions; RotationDirectionPattern and ResolvedReversalPattern still coexist. Reuse recipe hashing/seeding and seeded composer tests (4848592d56, e45ce2268f), then establish full pool rebuild, version-migration and cross-surface acceptance instead of treating prior Phase 1/2 labels as proof.
+
 ## MOVE CANDIDATES
 
 Shipped: none. Archived: active/2026-05-12-spatial-lab-design.md. Replacement decision f4d3d52089 explicitly deletes SVG canvas components and adopts SpatialScene/Scene3D/Avatar3D; see inventory. Coordinator must move the file; no move performed here.
@@ -183,21 +218,50 @@ npm run specs:check: 194 specs checked; 0 invalid (exit 0).
 
 npm run specs:test: tests 6; pass 6; fail 0; cancelled/skipped/todo 0 (exit 0).
 
-git diff --check: no output (exit 0) at batch 1; final check pending.
+git diff --check: no output (exit 0), including final metadata batch.
 
 Commit batch 1: 86e67ae4e7 docs(specs): reconcile first ten rebuild-hazard candidates.
 
 Additional eventual decisions: native mobile needs iOS signing/store identity, device proof and unresolved monetization/hardware choices; sequence-engine production backfill/publication require evidence and separate external authorization. No such action was taken.
 
+## Coverage and limits
+
+Reviewed all 15 flagged specs and the first 10 additional unverified active specs in filename order (25 total). No moves or score changes. Stopped at a scoped commit boundary; unvisited records are listed below.
+
+Batch 2 commit: 3715b80351 docs(specs): reconcile remaining flags and oldest active records.
+
+Feature tests and browser/device/production checks were not run. The ceremony inventory command was not run because it writes unowned scripts/ artifacts; its manifest and actual source were inspected. Negative searches are limited to the stated paths/symbols. Historical test claims are not current verification.
+
+Scope check result: `PASS: 25 spec bodies preserved; only owned paths changed; metadata scores/dependencies preserved.` Unvisited queue: 95 unverified specs.
+
+Reproducible scope check (PowerShell):
+
+```powershell
+python -c @'
+import pathlib,subprocess,re
+base='35592b1077b2a2f5003e315887aabaaebcb24d8a'
+paths=subprocess.check_output(['git','diff','--name-only',base],text=True).splitlines()
+specs=[p for p in paths if p.startswith('docs/superpowers/specs/')]
+for p in specs:
+ old=subprocess.check_output(['git','show',base+':'+p]).decode('utf-8').replace('\r\n','\n')
+ new=pathlib.Path(p).read_text(encoding='utf-8')
+ a=old.split('---',2);b=new.split('---',2)
+ stripped=re.sub(r'\n\n> 2026-10-14 triage: [^\n]*','',b[2],count=1)
+ assert stripped==a[2],p+' design body changed'
+ for key in ['status','value','effort','depends_on','plan_path','tags']:
+  assert re.search('^'+key+':.*$',a[1],re.M).group()==re.search('^'+key+':.*$',b[1],re.M).group(),p+' changed '+key
+ assert b[1].count('last_triaged: 2026-10-14')==1,p
+assert all(p in specs or p=='docs/reports/swarm-2026-10-14/spec-recon.md' for p in paths)
+print('PASS:',len(specs),'spec bodies preserved; only owned paths changed; metadata scores/dependencies preserved.')
+ledger=pathlib.Path('docs/reports/swarm-2026-10-14/spec-recon.md').read_text(encoding='utf-8')
+print('NOT REACHED:',len(re.findall(r'^- ',ledger.split('## NOT REACHED')[1],re.M)),'unverified specs.')
+'@
+```
+
 ## NOT REACHED
 
 Unverified queue, active first then backlog, filename order (excluding reviewed specs):
 
-- `active/2026-05-28-animation-engine-rearchitecture-design.md`
-- `active/2026-05-28-inspect-panel-redesign-design.md`
-- `active/2026-05-30-deriver-collapse-design.md`
-- `active/2026-05-31-ceremony-phase5-stateless-isolated-design.md`
-- `active/2026-05-31-unified-generation-vocabulary-design.md`
 - `active/2026-06-12-canon-prop-creators-redesign.md`
 - `active/2026-06-16-effect-leg-bolstering-design.md`
 - `active/2026-06-16-modular-kit-museum-design.md`
