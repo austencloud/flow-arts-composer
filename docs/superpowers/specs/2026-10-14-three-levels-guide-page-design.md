@@ -48,7 +48,12 @@ Yee's Vulcan Tech Gospel.
    starting with `1-AA` (`KEC` ×4) and one 6-letter cell (e.g. `3-AI`,
    `IIDCCJ` ×2).
 3. **Three stacked bands** for the selected pattern:
-   - **Name:** Gage's reference code, with one line noting it is a label.
+   - **Name:** Gage's reference code, with one line decoding it: column
+     (the hands' relationship: Opposite, Same, Quarter Aligned, Quarter
+     Opposed), then row (capping prop's spin family against the continual
+     prop's). The point it makes: the code is compact but only works inside
+     Gage's 72-cell chart, while the word spells any sequence. Links to the
+     Eight Step record in the History archive.
    - **Word:** letters grouped into their repeating cells.
    - **VTG:** all 12 beats, one row each.
      Selecting a letter highlights its VTG row; selecting a row highlights its
