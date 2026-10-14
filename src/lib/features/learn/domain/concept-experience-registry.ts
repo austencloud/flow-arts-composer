@@ -102,14 +102,6 @@ export const CONCEPT_EXPERIENCES = [
       import("../components/interactive/foundations/GammaMotionConceptExperience.svelte"),
   }),
   experience({
-    conceptId: "staff-placements",
-    guideSlug: "staff-placements",
-    guideLabel: "Staff Placements and Rotations",
-    reviewStatus: "built",
-    load: () =>
-      import("../components/interactive/staff/StaffConceptExperience.svelte"),
-  }),
-  experience({
     conceptId: "letter-codex-intro",
     guideSlug: "codex",
     guideLabel: "Codex",
@@ -124,14 +116,6 @@ export const CONCEPT_EXPERIENCES = [
     reviewStatus: "built",
     load: () =>
       import("../components/interactive/letters/type1/Type1ConceptExperience.svelte"),
-  }),
-  experience({
-    conceptId: "words-alpha-beta",
-    guideSlug: "words",
-    guideLabel: "Words",
-    reviewStatus: "built",
-    load: () =>
-      import("../components/interactive/words/WordsConceptExperience.svelte"),
   }),
 ] as const satisfies readonly ConceptExperienceDefinition[];
 
