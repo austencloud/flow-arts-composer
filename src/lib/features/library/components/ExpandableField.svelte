@@ -18,10 +18,21 @@
     onCollapse?: () => void;
     /** Content to render when expanded */
     children: Snippet;
+    /**
+     * Span the row as a dashed add-row, like the card rows around it,
+     * instead of sizing the chip to its label.
+     */
+    fill?: boolean;
   }
 
-  let { label, expanded, onExpandedChange, onCollapse, children }: Props =
-    $props();
+  let {
+    label,
+    expanded,
+    onExpandedChange,
+    onCollapse,
+    children,
+    fill = false,
+  }: Props = $props();
 
   function handleExpand() {
     onExpandedChange(true);
@@ -34,7 +45,7 @@
 </script>
 
 {#if !expanded}
-  <button type="button" class="expand-chip" onclick={handleExpand}>
+  <button type="button" class="expand-chip" class:fill onclick={handleExpand}>
     <i class="fas fa-plus" aria-hidden="true"></i>
     Add {label}
   </button>
@@ -72,6 +83,13 @@
       background-color var(--duration-normal) var(--ease-standard),
       border-color var(--duration-normal) var(--ease-standard),
       color var(--duration-normal) var(--ease-standard);
+  }
+
+  .expand-chip.fill {
+    display: flex;
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
   }
 
   .expand-chip:hover {
