@@ -1,3 +1,16 @@
+<script module lang="ts">
+  import { browser } from "$app/env";
+
+  // Boot milestone for the app.html fill: this layout's module, and with it
+  // the app's entry scripts, has loaded. Runs once at module evaluation,
+  // before anything mounts.
+  if (browser) {
+    (
+      window as unknown as { __tkaBootMilestone?: (name: string) => void }
+    ).__tkaBootMilestone?.("scripts");
+  }
+</script>
+
 <script lang="ts">
   import type { Snippet, Component } from "svelte";
   import { onMount } from "svelte";
@@ -500,9 +513,9 @@
     const { bootProfiler } = await imports.bootProfiler;
     bootProfiler.mark("total-init");
 
-    // Progress: SvelteKit has hydrated and onMount is running
-    if (typeof (window as any).__tkaLoadProgress === "function") {
-      (window as any).__tkaLoadProgress(72, "Starting up...");
+    // Boot milestone: SvelteKit has hydrated and onMount is running
+    if (typeof (window as any).__tkaBootMilestone === "function") {
+      (window as any).__tkaBootMilestone("hydrated");
     } else {
       const loadingScreen = document.getElementById("app-loading");
       if (loadingScreen) {
@@ -680,7 +693,7 @@
     try {
       const { getFirestoreInstance } = await imports.firebase;
       await getFirestoreInstance();
-      (window as any).__tkaLoadProgress?.(76, "Connecting to cloud...");
+      (window as any).__tkaBootMilestone?.("cloud");
     } catch (error) {
       console.error("[App Init] Firestore initialization failed:", error);
     }
@@ -700,7 +713,7 @@
     const { authState } = await imports.authState;
     await authState.initialize();
     bootProfiler.end("auth-init");
-    (window as any).__tkaLoadProgress?.(80, "Checking session...");
+    (window as any).__tkaBootMilestone?.("session");
 
     bootProfiler.end("total-init");
     // Don't print summary yet - wait for the active feature module to signalReady.

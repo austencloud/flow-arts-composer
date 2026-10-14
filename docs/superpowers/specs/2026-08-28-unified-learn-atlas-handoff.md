@@ -1,19 +1,44 @@
 # Unified Learn and Atlas - Handoff (2026-08-28)
 
+## First journey implemented, October 14, 2026
+
+The course entry now offers one current lesson and its next topic. **Browse topics** reveals the existing catalog; the optional map precedes the catalog, and a place link opens and scrolls to its selected place.
+
+Grid and Hand Placements now open their existing Guide topic inside the lesson. **Back to lesson** and Escape return to the mounted interaction. Placement practice pauses its success timer during reading. Continuing from Grid preserves both its final step and any saved Hand Placements round. Hand Placements ends with one continuation to Hand Motions.
+
+### Composition and ownership
+
+The selected composition keeps the lesson artifact central and opens reading on demand. An always-visible reading column would crowd the phone grid. The entry similarly prioritizes the current lesson, with the catalog available through a disclosure.
+
+- Course entry: existing `ConceptPathView`, `HeroConceptCard`, `PanelButton`, and `ConceptLevelMap`.
+- Lesson and practice: existing `LessonStageFrame`, `LessonStageControls`, `PropPlacementGrid`, and `PictographContainer`.
+- Reading: `ConceptTopicReading` composes `BaseModal` and the existing `GridTopicPage` / `PlacementsTopicPage`; those pages remain the source of instructional copy and diagrams.
+- Continuity: existing experience persistence and placement workshop state. Opening reading keeps the interaction mounted; no parallel progress model was added.
+
+### Verification and bounds
+
+Browser checks exercised Grid steps, reading and Escape return, reload at the saved step, direct continuation to Hand Placements, preservation of a later practice round, reading during the success hold, all six placements, and continuation to Hand Motions. Entry and reading layouts were inspected at 375×667, 960×412, 820×1180, 1440×900, 1920×1080, 2560×1440, and 3840×2160. Topic disclosure and the selected-place link were also checked on a phone viewport.
+
+An independent VR-1 review found the hierarchy and product continuity supported. Its phone practice concern prompted a correction: only the current target appears beside the instruction above the board during practice; free play retains the three examples. A second phone/desktop inspection found that concern resolved with no new material visual issue. The research ledger was current (September 21). Reviewer calibration remains **NOT CALIBRATED**; this is agent inspection, not learner testing or human acceptance of the teaching experience.
+
+The focused workshop, Grid state, and experience registry suites passed all 53 tests. Changed styles passed stylelint. Browser consoles reported no warnings or errors on the checked entry/map and practice routes.
+
+This delivery covers the first two lessons. Printing, remaining lesson-to-reference mappings, and exact-step sync across devices remain separate work. Grid and Hand Placements retain their existing human-review status.
+
 ## Recovery pass, October 13, 2026
 
 Austen requested reliable lesson exit, truthful resume, and progress that survives device sync. He also requested a cohesive approach across lessons, the Guide, quiz/practice, and printable material, with fewer competing numbers and choices. The implementation in this pass covers the three reliability problems and removes the misleading lesson ordinal and whole-level completion claims. The product changes below are the proposed next slice.
 
 ### What exists now
 
-| Surface | Current owner and role | Connection to repair |
-| --- | --- | --- |
-| Interactive lessons | [Course](../../../src/lib/features/learn/components/ConceptPathView.svelte), 12 published experiences | Resume and next action should lead; the full catalog is optional browsing. |
-| Written Guide | [Guide hub](<../../../src/routes/(public)/guide/+page.svelte>), published topic pages | Open the relevant explanation from the current lesson, preserving the return destination. |
-| Printable pages / PDFs | Existing Guide manifests and reader | Offer printing from the same topic so a learner need not discover a separate curriculum. |
-| Quiz / Play | [PlayHub](../../../src/lib/features/learn/play/components/PlayHub.svelte) and game registry | Recommend a relevant practice activity only when its concept mapping is supported. Current quiz attribution still uses a coarse fallback. |
-| Course map | [Concept-place registry](../../../src/lib/features/learn/domain/concept-place-registry.ts) | The collapsible map sits below all 12 lesson cards. Seven lessons are attached to places; five published lessons have no binding. |
-| Public Atlas | [Atlas route](<../../../src/routes/(public)/atlas/+page.svelte>) | Development shows the map; production currently shows Coming Soon. Do not promise it as a finished destination. |
+| Surface                | Current owner and role                                                                                | Connection to repair                                                                                                                      |
+| ---------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Interactive lessons    | [Course](../../../src/lib/features/learn/components/ConceptPathView.svelte), 12 published experiences | Resume and next action should lead; the full catalog is optional browsing.                                                                |
+| Written Guide          | [Guide hub](<../../../src/routes/(public)/guide/+page.svelte>), published topic pages                 | Open the relevant explanation from the current lesson, preserving the return destination.                                                 |
+| Printable pages / PDFs | Existing Guide manifests and reader                                                                   | Offer printing from the same topic so a learner need not discover a separate curriculum.                                                  |
+| Quiz / Play            | [PlayHub](../../../src/lib/features/learn/play/components/PlayHub.svelte) and game registry           | Recommend a relevant practice activity only when its concept mapping is supported. Current quiz attribution still uses a coarse fallback. |
+| Course map             | [Concept-place registry](../../../src/lib/features/learn/domain/concept-place-registry.ts)            | The collapsible map sits below all 12 lesson cards. Seven lessons are attached to places; five published lessons have no binding.         |
+| Public Atlas           | [Atlas route](<../../../src/routes/(public)/atlas/+page.svelte>)                                      | Development shows the map; production currently shows Coming Soon. Do not promise it as a finished destination.                           |
 
 These are observations of the October 13 source. Earlier verification entries below are historical snapshots.
 

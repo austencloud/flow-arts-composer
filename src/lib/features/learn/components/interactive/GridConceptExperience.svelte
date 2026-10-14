@@ -55,7 +55,6 @@
     hapticService?.trigger("selection");
     if (isFinalAction) {
       hapticService?.trigger("success");
-      experienceState.reset();
       onComplete?.("hand-placements");
       return;
     }

@@ -50,8 +50,15 @@ export const HEADER_WORD_FONT_MIN_SCALE = 0.35;
  * Clear space between the centered word and whichever header indicator reaches
  * farther inward. The same inset is reserved on both sides so a wide LOOP
  * strip can shrink the word without pulling it off center.
+ *
+ * A quarter of the header height: 20px on the 80px header of a four-column
+ * card, which is about half a LOOP icon of clear space. At 0.08 the gap was
+ * 6px, so a long eight-count word shrank just enough to clear the level badge
+ * and the LOOP strip and sat pressed against both, which made dense words feel
+ * louder than they are. Short words never reach the inset, so they are
+ * unchanged; the longest words shrink about 4% more than before.
  */
-export const HEADER_WORD_BREATHING_GAP_SCALE = 0.08;
+export const HEADER_WORD_BREATHING_GAP_SCALE = 0.25;
 
 
 /** LOOP icon size as fraction of badge size */

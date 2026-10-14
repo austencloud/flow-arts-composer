@@ -47,10 +47,12 @@
     onComplete,
     onBack,
     viewMode = "step",
+    readingOpen = false,
   } = $props<{
     onComplete?: (nextConceptId?: string) => void;
     onBack?: () => void;
     viewMode?: ExperienceViewMode;
+    readingOpen?: boolean;
   }>();
 
   const workshop = createPlacementWorkshopState(
@@ -115,7 +117,7 @@
     // Keep the successful pictograph readable before reusing the existing Next
     // transition. Editing, leaving, or hiding the page cancels this round's wait.
     [workshop.round, workshop.phase];
-    if (!correct || !pageVisible) return;
+    if (!correct || !pageVisible || readingOpen) return;
     return workshop.scheduleAutoAdvance(() => void next());
   });
   const incorrect = $derived(workshop.feedback === "incorrect");
@@ -357,13 +359,6 @@
       bind:actionRef={forwardButton}
       onAction={workshop.canFinish ? finish : practice}
     />
-    {#if workshop.canFinish}
-      <PanelButton onclick={practice}
-        ><i class="fa-solid fa-rotate-right" aria-hidden="true"></i>{t(
-          "learn_ui_practice_again"
-        )}</PanelButton
-      >
-    {/if}
   </nav>
 {/snippet}
 
@@ -495,6 +490,7 @@
                     incorrect && workshop.challenge?.kind === example.kind}
                   <div
                     class="example tka-seq-cell"
+                    class:is-target={workshop.challenge?.kind === example.kind}
                     class:is-selected={matches}
                     class:is-hovered={hoveredExample === example.kind}
                     class:correction={isCorrection}
@@ -663,6 +659,38 @@
   }
   .reference-area {
     order: 7;
+  }
+  @container (max-width: 41.999rem) {
+    .workshop.has-reference:not(.free-play) {
+      grid-template-columns: minmax(0, 1fr) 3.75rem;
+      align-items: center;
+      column-gap: 0.5rem;
+    }
+    .has-reference:not(.free-play) .placement-instructions {
+      grid-column: 1;
+      grid-row: 1;
+      margin-bottom: 0;
+    }
+    .has-reference:not(.free-play) .reference-area {
+      grid-column: 2;
+      grid-row: 1;
+      margin-top: 0;
+    }
+    .has-reference:not(.free-play) .examples {
+      grid-template-columns: 1fr;
+    }
+    .has-reference:not(.free-play) .example:not(.is-target) {
+      display: none;
+    }
+    .has-reference:not(.free-play) .board {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+    .has-reference:not(.free-play) .advance,
+    .has-reference:not(.free-play) .hand-controls,
+    .has-reference:not(.free-play) .support-actions {
+      grid-column: 1 / -1;
+    }
   }
   @container (min-width: 42rem) {
     .workshop.has-reference {

@@ -11,10 +11,12 @@
   // the spinner.
   let _mainInterfaceShown = readBootSnapshot() !== null;
 
-  // Teach TypeScript about the boot-script progress hook injected in app.html.
-  // Signature: __tkaLoadProgress(percent: number, message: string) => void
+  // Teach TypeScript about the boot-script hooks injected in app.html.
+  // __tkaBootMilestone(name) reports a named boot milestone to the fill;
+  // __tkaLoadProgress(percent, message) is the older shim (100 means ready).
   declare global {
     interface Window {
+      __tkaBootMilestone?: (name: string) => void;
       __tkaLoadProgress?: (percent: number, message: string) => void;
     }
   }
@@ -399,10 +401,10 @@
 
     // Optimistic warm-reload: settings/theme are primed and MainInterface is
     // already rendering, so retire the boot splash now instead of waiting for
-    // the full async boot chain. Idempotent with the final __tkaLoadProgress(100).
+    // the full async boot chain. Idempotent with the final "ready" milestone.
     if (readBootSnapshot() !== null) {
       bootProfiler.milestone("shell:ready-announced", { source: "snapshot" });
-      window.__tkaLoadProgress?.(100, "Opening workspace...");
+      window.__tkaBootMilestone?.("ready");
     }
 
     // Run async initialization without blocking cleanup function return
@@ -445,8 +447,8 @@
           return;
         }
 
-        // Progress: Services are resolved from DI container
-        window.__tkaLoadProgress?.(88, "Loading settings...");
+        // Boot milestone: services are resolved from the DI container
+        window.__tkaBootMilestone?.("services");
 
         // Initialize sheet router state (now that service is resolved)
         currentSheetType = getCurrentSheet();
@@ -472,7 +474,7 @@
         await restoreApplicationState();
         await initService.initialize();
         bootProfiler.end("app:restore-workspace");
-        window.__tkaLoadProgress?.(92, "Restoring workspace...");
+        window.__tkaBootMilestone?.("workspace");
 
         bootProfiler.mark("app:load-settings+theme");
         // Stored settings are read here, never saved back. Passing them
@@ -482,8 +484,8 @@
         await settingsService.loadSettings();
         initializeTheme();
 
-        // Progress: Settings loaded, applying theme
-        window.__tkaLoadProgress?.(95, "Applying your theme...");
+        // Boot milestone: settings loaded, theme applied
+        window.__tkaBootMilestone?.("settings");
 
         // Apply background-based theme colors on startup
         const { applyThemeForBackground } =
@@ -501,7 +503,7 @@
         bootProfiler.milestone("shell:ready-announced", {
           source: "initialization",
         });
-        window.__tkaLoadProgress?.(100, "Opening workspace...");
+        window.__tkaBootMilestone?.("ready");
         // Persist a boot snapshot so the NEXT load can skip the auth spinner and
         // render optimistically. role/uid seed the optimistic tier (W1b); the
         // active module picks the right skeleton.

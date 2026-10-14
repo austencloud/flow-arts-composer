@@ -25,6 +25,7 @@ Supports two navigation modes:
     trackLessonCompleted,
     trackLessonStarted,
   } from "../services/learn-events";
+  import ConceptTopicReading from "./ConceptTopicReading.svelte";
 
   let { concept, onClose, onContinue } = $props<{
     concept: LearnConcept;
@@ -50,6 +51,10 @@ Supports two navigation modes:
 
   // Navigation mode: step-by-step or scroll-through
   let viewMode = $state<ExperienceViewMode>("step");
+  let readingOpen = $state(false);
+  const hasInlineReading = $derived(
+    concept.id === "grid" || concept.id === "hand-placements"
+  );
 
   // Check if concept is completed (enables scroll mode)
   let isCompleted = $derived(progress.status === "completed");
@@ -126,25 +131,36 @@ Supports two navigation modes:
 
     <div class="header-actions">
       {#if experience}
-        <a
-          class="reference-link"
-          href={experience.reference?.href ??
-            `/guide/level-1/${experience.guideSlug}`}
-          aria-label={experience.reference
-            ? t("learn_ui_read_reference", {
-                name: tDynamic(
-                  `learn_reference_${concept.id.replaceAll("-", "_")}`
-                ),
-              })
-            : t("learn_ui_read_in_guide", {
-                name: tDynamic(
-                  `learn_reference_${concept.id.replaceAll("-", "_")}`
-                ),
-              })}
-        >
-          <i class="fa-solid fa-book-open" aria-hidden="true"></i>
-          <span>{t("learn_ui_read_topic")}</span>
-        </a>
+        {#if hasInlineReading}
+          <button
+            class="reference-link"
+            onclick={() => (readingOpen = true)}
+            aria-label={t("learn_ui_read_topic")}
+          >
+            <i class="fa-solid fa-book-open" aria-hidden="true"></i>
+            <span>{t("learn_ui_read_topic")}</span>
+          </button>
+        {:else}
+          <a
+            class="reference-link"
+            href={experience.reference?.href ??
+              `/guide/level-1/${experience.guideSlug}`}
+            aria-label={experience.reference
+              ? t("learn_ui_read_reference", {
+                  name: tDynamic(
+                    `learn_reference_${concept.id.replaceAll("-", "_")}`
+                  ),
+                })
+              : t("learn_ui_read_in_guide", {
+                  name: tDynamic(
+                    `learn_reference_${concept.id.replaceAll("-", "_")}`
+                  ),
+                })}
+          >
+            <i class="fa-solid fa-book-open" aria-hidden="true"></i>
+            <span>{t("learn_ui_read_topic")}</span>
+          </a>
+        {/if}
       {/if}
 
       <!-- Review mode is earned after completing an interactive lesson. -->
@@ -183,6 +199,7 @@ Supports two navigation modes:
           {@const Experience = loaded.default}
           <Experience
             {viewMode}
+            {readingOpen}
             onComplete={handlePracticeComplete}
             onBack={handleClose}
           />
@@ -199,6 +216,9 @@ Supports two navigation modes:
       {/if}
     {/key}
   </div>
+  {#if hasInlineReading}
+    <ConceptTopicReading conceptId={concept.id} bind:open={readingOpen} />
+  {/if}
 </div>
 
 <style>
@@ -370,7 +390,6 @@ Supports two navigation modes:
       padding: 0.375rem 0.75rem;
     }
 
-    .reference-link span,
     .mode-label {
       display: none;
     }

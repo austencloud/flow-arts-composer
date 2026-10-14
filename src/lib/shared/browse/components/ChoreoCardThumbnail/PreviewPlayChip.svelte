@@ -3,10 +3,9 @@ PreviewPlayChip.svelte
 
 Toggles the animated preview for a browse card.
 
-A tap rather than a hover, deliberately: the animation covers the card's
-pictograph sheet, so starting it is a decision the reader makes, not something
-that happens to them while the pointer passes through. It also gives touch and
-desktop the same gesture instead of long-press-versus-hover.
+On a mouse the card already plays while the pointer rests on it, so here the
+chip mostly reads as "stop". On touch it is the only way to start a preview: a
+finger hovers nothing, and a long-press already means "select".
 -->
 <script lang="ts">
   import CardChip from "./CardChip.svelte";

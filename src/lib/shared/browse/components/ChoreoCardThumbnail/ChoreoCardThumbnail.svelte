@@ -47,6 +47,11 @@ Variation support:
   import { notifyLibraryMutated } from "#lib/shared/library/library-events.js";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import { cardHoverPreview } from "#lib/shared/browse/state/card-hover-preview-state.svelte.js";
+  import {
+    HOVER_PLAY_DWELL_MS,
+    hoverPlayAction,
+    shouldArmHoverPlay,
+  } from "#lib/shared/browse/services/hover-play-intent.js";
   import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
@@ -263,14 +268,47 @@ Variation support:
   // Debounced hover handler - avoids pre-warming during fast scroll-past
   let hoverTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // The animated preview is chip-driven, not hover-driven: it covers the
-  // card's pictograph sheet, so starting it is the reader's decision rather
-  // than something that happens while the pointer passes through. Hover still
-  // does its original job — warming the sequence cache, invisibly — which
-  // means the data is already hydrated by the time the chip is tapped.
+  // Two ways to start the animated preview. A mouse resting on the card for a
+  // moment plays it and leaving stops it, so a desktop reader can sweep a row
+  // and watch each one move. The ▶ chip is the deliberate control: it is how
+  // touch starts a preview (a finger hovers nothing) and how anyone stops one
+  // without moving away. Only one card animates at a time either way; see
+  // card-hover-preview-state. Hover also keeps its older job of warming the
+  // sequence cache, so the data is hydrated by the time the dwell fires.
   const previewActive = $derived(
     cardHoverPreview.isActive(displayedSequence.id)
   );
+
+  // What the mouse wants right now: true after the dwell, false after the
+  // pointer leaves, null once the reader pressed the chip and took over.
+  let hoverWants = $state<boolean | null>(null);
+  let hoverDwellTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Hover previews skip the chip's view-transition morph. A morph snapshots
+  // the whole page, which is too much to pay every time a pointer settles on
+  // a card; the layer's own dissolve is enough for something that happens in
+  // passing. Runs again after any chip morph settles, so a pointer that left
+  // mid-morph still stops the player.
+  function reconcileHoverPlay(): void {
+    const action = hoverPlayAction({
+      wants: hoverWants,
+      active: previewActive,
+      inFlight: toggleInFlight,
+    });
+    if (action === "play") {
+      morphDriven = false;
+      cardHoverPreview.request(displayedSequence);
+    } else if (action === "stop") {
+      cardHoverPreview.dismiss(displayedSequence.id);
+    }
+  }
+
+  function cancelHoverDwell(): void {
+    if (hoverDwellTimer !== null) {
+      clearTimeout(hoverDwellTimer);
+      hoverDwellTimer = null;
+    }
+  }
 
   // The static thumbnail is one baked <img>, so its header/grid/cells can't
   // carry view-transition-names directly. SheetMorphOverlay sprite-crops the
@@ -352,6 +390,13 @@ Variation support:
    * each other's staging state (browser would skip one anyway). */
   let toggleInFlight = false;
 
+  /** The chip: the reader took over, so hover stops steering until the
+   * pointer next leaves or re-enters the card. */
+  function handleChipToggle(): void {
+    hoverWants = null;
+    void togglePreview();
+  }
+
   async function togglePreview(): Promise<void> {
     if (toggleInFlight) return;
     const seq = displayedSequence;
@@ -368,6 +413,7 @@ Variation support:
       toggleInFlight = false;
       morphStaging = false;
       previewReadyResolve = null;
+      reconcileHoverPlay();
     }
   }
 
@@ -413,20 +459,48 @@ Variation support:
     }
   }
 
-  function handlePointerEnter() {
-    if (!onHover) return;
-    hoverTimer = setTimeout(() => {
-      onHover(displayedSequence);
-      hoverTimer = null;
-    }, 150);
+  function handlePointerEnter(event: PointerEvent) {
+    if (onHover) {
+      hoverTimer = setTimeout(() => {
+        onHover(displayedSequence);
+        hoverTimer = null;
+      }, 150);
+    }
+
+    const reducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (
+      !isInteractive ||
+      !shouldArmHoverPlay({
+        pointerType: event.pointerType,
+        reducedMotion,
+        selectionMode,
+      })
+    ) {
+      return;
+    }
+    cancelHoverDwell();
+    hoverDwellTimer = setTimeout(() => {
+      hoverDwellTimer = null;
+      hoverWants = true;
+      reconcileHoverPlay();
+    }, HOVER_PLAY_DWELL_MS);
   }
 
-  function handlePointerLeave() {
+  function handlePointerLeave(event: PointerEvent) {
     if (hoverTimer !== null) {
       clearTimeout(hoverTimer);
       hoverTimer = null;
     }
     cancelSelectionLongPress();
+    cancelHoverDwell();
+    // A mouse leaving always stops the card, even one the chip started: the
+    // reader walked away from it. Touch leaves are synthetic and ignored.
+    if (event.pointerType === "mouse") {
+      hoverWants = false;
+      reconcileHoverPlay();
+    }
   }
 
   // Reset to this card's own position ONLY when the base sequence identity changes
@@ -647,6 +721,7 @@ Variation support:
     if (hoverTimer !== null) {
       clearTimeout(hoverTimer);
     }
+    cancelHoverDwell();
     // The virtualized grid recycles cards out from under an open preview.
     cardHoverPreview.dismiss(displayedSequence.id);
   });
@@ -751,7 +826,7 @@ Variation support:
        of the card's name. -->
   <div class="card-chips">
     {#if !selectionMode}
-      <PreviewPlayChip playing={previewActive} onToggle={togglePreview} />
+      <PreviewPlayChip playing={previewActive} onToggle={handleChipToggle} />
     {/if}
     <VariationPill
       currentIndex={currentVariationIndex}
