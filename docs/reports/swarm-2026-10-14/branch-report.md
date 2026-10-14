@@ -2092,3 +2092,13 @@ Observation: revalidation saw 64 live local branches; scoped set remained exactl
 Observation: an initial verifier failed its fixed live-total assertion (61) after concurrent branch creation/removal. Revalidation compares scoped sets and records excluded-ref drift instead; all scoped coverage and remote-only checks passed.
 
 Observation: `git diff --cached --check -- docs/reports/swarm-2026-10-14/branch-report.md` exited 0 with no whitespace errors after explicit staging. The initial no-index whitespace probe exited 1 for an added file and emitted only Git's CRLF-to-LF normalization warning.
+
+Observation: commit `4d793c6368` (`docs: report local branch dispositions for swarm review`) contains only this report. Post-commit `git status --short` was empty; `git show --format= --name-only HEAD` printed only `docs/reports/swarm-2026-10-14/branch-report.md`.
+
+Observation: a supplemental double-quoted PowerShell one-line verifier failed because PowerShell consumed regex backticks. It was rerun with literal quoting and a delimiter-based row parser; result: `PASS: 44 table branches, 0 duplicates`. The comprehensive scope/remote verifier had already passed before the report commit.
+
+Exact supplemental verification command (PowerShell):
+
+```powershell
+python -c 'from pathlib import Path; t=Path("docs/reports/swarm-2026-10-14/branch-report.md").read_text(); s=t.split("## Disposition table")[1].split("## SALVAGE")[0]; b=[x.split("|")[1].strip() for x in s.splitlines() if x.startswith("| ")][2:]; assert len(b)==len(set(b))==44; print("PASS: 44 table branches, 0 duplicates")'
+```
