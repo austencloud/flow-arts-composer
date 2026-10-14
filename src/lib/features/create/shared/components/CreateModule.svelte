@@ -1012,10 +1012,12 @@
     });
   });
 
+  // The save view only makes sense over a saveable sequence; leave it when
+  // the sequence goes (Clear, undo past the first step, a tab with nothing).
   $effect(() => {
     if (
       CreateModuleState?.isPersistenceInitialized === true &&
-      !CreateModuleState.canShowActionButtons() &&
+      !canShowSaveToLibraryPanel &&
       panelState.isSaveToLibraryPanelOpen
     ) {
       panelState.closeSaveToLibraryPanel();
@@ -1110,19 +1112,8 @@
         <!-- Start/End Options Coordinator -->
         <StartEndCoordinator />
 
-        <!-- Save to Library Panel - Rendered at root level to avoid stacking context
-       issues. Deferred until first opened; keep-alive preserves close animation. -->
-        <LazyMount
-          loader={() => import("./SaveToLibraryPanel.svelte")}
-          active={panelState.isSaveToLibraryPanelOpen &&
-            canShowSaveToLibraryPanel}
-          props={{
-            show:
-              panelState.isSaveToLibraryPanelOpen && canShowSaveToLibraryPanel,
-            word: currentDisplayWord,
-            onClose: () => panelState.closeSaveToLibraryPanel(),
-          }}
-        />
+        <!-- Save to Library is a mode of the workspace layout (the tool panel
+             becomes SaveToLibraryView), not a drawer mounted here. -->
 
         <!-- Sequence Transfer Confirmation Dialog -->
         <TransferConfirmDialog

@@ -67,7 +67,7 @@ const SUCCESS_STATE_LINGER_MS = 800;
 // NOTE: The 'Service' suffix violates the service-naming rule (should be e.g.
 // LibrarySaveCoordinator). Rename deferred: this class is imported as a type by
 // out-of-scope files (features/create/shared/state/save-panel-state.svelte.ts,
-// SaveToLibraryPanel.svelte) and referenced in the shared library contract.
+// SaveToLibraryView.svelte) and referenced in the shared library contract.
 // Renaming would force cross-scope churn into parallel-session areas.
 export class LibrarySaveService {
   private readonly shareService: Sharer | null;

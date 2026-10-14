@@ -1,8 +1,7 @@
 <script lang="ts">
-
-import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get-animation-playback-controller.js";
-import { ensureVideoExportOrchestrator } from "#lib/shared/animation-engine/get-video-export-orchestrator.js";
-import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orchestrator.js";
+  import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get-animation-playback-controller.js";
+  import { ensureVideoExportOrchestrator } from "#lib/shared/animation-engine/get-video-export-orchestrator.js";
+  import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orchestrator.js";
   /**
    * SequenceDrawerHost
    *
@@ -14,7 +13,7 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
    * 2. Selects format (Animation | Static | Performance)
    * 3. If Animation: initializes playback services, shows live preview
    * 4. Clicks Export button
-   * 5. If sequence not saved, show SaveToLibraryPanel
+   * 5. If sequence not saved, open the save view (SaveToLibraryView)
    * 6. After save (or if already saved), proceed with export
    *
    * Architecture:
@@ -41,7 +40,10 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
 
   // Animation imports
   import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
-  import type { IVideoExportOrchestrator, VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
+  import type {
+    IVideoExportOrchestrator,
+    VideoExportProgress,
+  } from "#lib/shared/compose/domain/video-export-types.js";
   import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
   import { ExportUrlManager } from "#lib/shared/export-panel/services/export-url-manager.js";
   import type { ResponsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
@@ -149,14 +151,9 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
       !!exportOrchestrator;
     if (!shouldPrepare || !sequence || !exportOrchestrator) return;
 
-    void exportOrchestrator
-      .prepareStaticShare(sequence)
-      .catch((error) => {
-        console.warn(
-          "[SequenceDrawerHost] Static share prewarm failed:",
-          error
-        );
-      });
+    void exportOrchestrator.prepareStaticShare(sequence).catch((error) => {
+      console.warn("[SequenceDrawerHost] Static share prewarm failed:", error);
+    });
   });
 
   // Animation-specific derived values
@@ -266,7 +263,9 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
 
       // Pass video orchestrator to export orchestrator for animation exports
       if (exportOrchestrator && videoExportOrchestrator) {
-        (exportOrchestrator as any).setVideoOrchestrator(videoExportOrchestrator);
+        (exportOrchestrator as any).setVideoOrchestrator(
+          videoExportOrchestrator
+        );
       }
 
       // Update layout detection
@@ -314,14 +313,24 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
   // This triggers when currentSequence content changes but ID stays the same
   let lastSequenceHash = $state<string | null>(null);
 
-  function motionPrint(m: { startLocation?: string; endLocation?: string; startOrientation?: string; endOrientation?: string } | undefined | null): string {
+  function motionPrint(
+    m:
+      | {
+          startLocation?: string;
+          endLocation?: string;
+          startOrientation?: string;
+          endOrientation?: string;
+        }
+      | undefined
+      | null
+  ): string {
     if (!m) return "x";
     return `${m.startLocation}.${m.endLocation}.${m.startOrientation}.${m.endOrientation}`;
   }
 
   function getSequenceHash(seq: SequenceData | null): string | null {
     if (!seq) return null;
-    const durations = seq.steps?.map(b => b.duration ?? 1).join(',') || '';
+    const durations = seq.steps?.map((b) => b.duration ?? 1).join(",") || "";
     const sp = seq.startPlacement;
     const spPrint = `${motionPrint(sp?.motions?.left)}-${motionPrint(sp?.motions?.right)}`;
     const last = seq.steps?.[seq.steps.length - 1];
@@ -381,8 +390,12 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
     } catch (err) {
       // Use warn instead of error - animation init failures are expected for sequences
       // without full motion data (user-generated sequences, test sequences, etc.)
-      console.warn("[SequenceDrawerHost] Animation not available for this sequence");
-      animationPanelState.setError("Animation data not available for this sequence");
+      console.warn(
+        "[SequenceDrawerHost] Animation not available for this sequence"
+      );
+      animationPanelState.setError(
+        "Animation data not available for this sequence"
+      );
     } finally {
       animationLoading = false;
       animationPanelState.setLoading(false);
@@ -405,7 +418,8 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
     const galleryId = sequence.word || sequence.id;
     if (galleryId) {
       const hydrated = await sequenceService.getSequence(galleryId);
-      if (hydrated && hasMotionData(hydrated)) return ensureWordPopulated(hydrated);
+      if (hydrated && hasMotionData(hydrated))
+        return ensureWordPopulated(hydrated);
     }
 
     return ensureWordPopulated(sequence);
@@ -445,12 +459,18 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
         if (!playbackController || !animationServicesReady) return;
 
         // Restore speed if specified (safe to do while playing)
-        if (urlState.speed !== undefined && urlState.speed !== animationPanelState.speed) {
+        if (
+          urlState.speed !== undefined &&
+          urlState.speed !== animationPanelState.speed
+        ) {
           playbackController.setSpeed(urlState.speed);
         }
 
         // Only restore current beat on initial load (when not playing)
-        if (!animationPanelState.isPlaying && urlState.currentStep !== undefined) {
+        if (
+          !animationPanelState.isPlaying &&
+          urlState.currentStep !== undefined
+        ) {
           animationPanelState.setCurrentStep(urlState.currentStep);
         }
       },
@@ -481,7 +501,12 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
     // CRITICAL: Skip reset if we're in the middle of a reopen operation (guard flag set)
     // This prevents the transient close from closeAllPanels() within openExportPanel() from
     // corrupting state before the panel actually opens
-    if (!isOpen && previousIsOpen && hasMounted && !panelState.isExportPanelReopening) {
+    if (
+      !isOpen &&
+      previousIsOpen &&
+      hasMounted &&
+      !panelState.isExportPanelReopening
+    ) {
       urlManager.clearUrlState();
       // Reset loaded sequence tracking so reopening triggers full reinitialization
       lastLoadedSequenceId = null;
@@ -505,7 +530,10 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
       const currentSpeed = animationPanelState.speed;
       const currentPlaying = animationPanelState.isPlaying;
 
-      if (currentSpeed !== previousSpeed || currentPlaying !== previousPlaying) {
+      if (
+        currentSpeed !== previousSpeed ||
+        currentPlaying !== previousPlaying
+      ) {
         urlManager.updateAnimationState({
           speed: currentSpeed,
           isPlaying: currentPlaying,
@@ -613,13 +641,17 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
   }
 
   // Adapter function to convert between ExportSettings types
-  function adaptExportSettings(settings: SequenceViewerExportSettings): ExportSettings {
+  function adaptExportSettings(
+    settings: SequenceViewerExportSettings
+  ): ExportSettings {
     return {
       format: settings.format as "animation" | "static" | "performance",
-      animationSettings: settings.animationSettings ? {
-        ...settings.animationSettings,
-        preset: null, // sequence-viewer doesn't have preset, default to null
-      } : undefined,
+      animationSettings: settings.animationSettings
+        ? {
+            ...settings.animationSettings,
+            preset: null, // sequence-viewer doesn't have preset, default to null
+          }
+        : undefined,
       staticSettings: settings.staticSettings,
       performanceSettings: undefined,
     };
@@ -630,7 +662,9 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
     settings?: SequenceViewerExportSettings
   ) {
     if (isExporting) return;
-    const adaptedSettings = settings ? adaptExportSettings(settings) : undefined;
+    const adaptedSettings = settings
+      ? adaptExportSettings(settings)
+      : undefined;
     await performExport(mode, adaptedSettings);
   }
 
@@ -673,16 +707,20 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
             }
           : undefined;
 
-      const result = await exportOrchestrator.export(currentSequence, settings, {
-        animationDependencies,
-        isMobile,
-        onProgress: (progress) => {
-          exportProgress = progress;
-          if (progress.stage === "error") {
-            showToast(progress.error || "Export failed", "error");
-          }
-        },
-      });
+      const result = await exportOrchestrator.export(
+        currentSequence,
+        settings,
+        {
+          animationDependencies,
+          isMobile,
+          onProgress: (progress) => {
+            exportProgress = progress;
+            if (progress.stage === "error") {
+              showToast(progress.error || "Export failed", "error");
+            }
+          },
+        }
+      );
 
       if (result.canceled) {
         return;
@@ -718,56 +756,55 @@ import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orche
     if (isExporting) return;
     await performExport("single", { format: "animation" });
   }
-
 </script>
 
 {#if currentSequence}
   <!-- Key forces remount when viewId changes, ensuring fresh animation state on reopen -->
   {#key panelState.exportPanelViewId}
     <SequenceDrawer
-    isOpen={panelState.isExportPanelOpen}
-    sequence={currentSequence}
-    mode="edit"
-    {isMobile}
-    respectLayoutMode={true}
-    {selectedFormat}
-    isExporting={isExporting}
-    exportProgress={exportProgress}
-    showVisibilitySettings={true}
-    onClose={handleClose}
-    onExport={(format, settings) => handleExport("single", settings)}
-    onSaveToLibrary={() => panelState.openSaveToLibraryPanel()}
-    onFormatChange={handleFormatChange}
-    onCancelExport={handleCancelExport}
-    animationSequenceData={animationPanelState.sequenceData}
-    isAnimationPlaying={isPlayingLocal}
-    animationCurrentBeat={animationPanelState.currentStep}
-    animationSpeed={animationPanelState.speed}
-    animationLeftPropState={animationPanelState.leftPropState}
-    animationRightPropState={animationPanelState.rightPropState}
-    {isCircular}
-    {exportLoopCount}
-    isAnimationExporting={isExporting && selectedFormat === "animation"}
-    animationExportProgress={exportProgress}
-    {animationServicesReady}
-    {animationLoading}
-    playbackMode={playbackModeLocal}
-    stepPlaybackPauseMs={stepPlaybackPauseMsLocal}
-    stepPlaybackStepSize={stepPlaybackStepSizeLocal}
-    {isSideBySideLayout}
-    onPlaybackToggle={handlePlaybackToggle}
-    onSpeedChange={handleSpeedChange}
-    onStepHalfBeatForward={handleStepHalfBeatForward}
-    onStepHalfBeatBackward={handleStepHalfBeatBackward}
-    onStepFullBeatForward={handleStepFullBeatForward}
-    onStepFullBeatBackward={handleStepFullBeatBackward}
-    onLoopCountChange={handleLoopCountChange}
-    onCanvasReady={handleCanvasReady}
-    onExportVideo={handleExportVideo}
-    onPlaybackModeChange={handlePlaybackModeChange}
-    onStepPlaybackPauseMsChange={handleStepPlaybackPauseMsChange}
-    onStepPlaybackStepSizeChange={handleStepPlaybackStepSizeChange}
-  />
+      isOpen={panelState.isExportPanelOpen}
+      sequence={currentSequence}
+      mode="edit"
+      {isMobile}
+      respectLayoutMode={true}
+      {selectedFormat}
+      {isExporting}
+      {exportProgress}
+      showVisibilitySettings={true}
+      onClose={handleClose}
+      onExport={(format, settings) => handleExport("single", settings)}
+      onSaveToLibrary={() => panelState.openSaveToLibraryPanel()}
+      onFormatChange={handleFormatChange}
+      onCancelExport={handleCancelExport}
+      animationSequenceData={animationPanelState.sequenceData}
+      isAnimationPlaying={isPlayingLocal}
+      animationCurrentBeat={animationPanelState.currentStep}
+      animationSpeed={animationPanelState.speed}
+      animationLeftPropState={animationPanelState.leftPropState}
+      animationRightPropState={animationPanelState.rightPropState}
+      {isCircular}
+      {exportLoopCount}
+      isAnimationExporting={isExporting && selectedFormat === "animation"}
+      animationExportProgress={exportProgress}
+      {animationServicesReady}
+      {animationLoading}
+      playbackMode={playbackModeLocal}
+      stepPlaybackPauseMs={stepPlaybackPauseMsLocal}
+      stepPlaybackStepSize={stepPlaybackStepSizeLocal}
+      {isSideBySideLayout}
+      onPlaybackToggle={handlePlaybackToggle}
+      onSpeedChange={handleSpeedChange}
+      onStepHalfBeatForward={handleStepHalfBeatForward}
+      onStepHalfBeatBackward={handleStepHalfBeatBackward}
+      onStepFullBeatForward={handleStepFullBeatForward}
+      onStepFullBeatBackward={handleStepFullBeatBackward}
+      onLoopCountChange={handleLoopCountChange}
+      onCanvasReady={handleCanvasReady}
+      onExportVideo={handleExportVideo}
+      onPlaybackModeChange={handlePlaybackModeChange}
+      onStepPlaybackPauseMsChange={handleStepPlaybackPauseMsChange}
+      onStepPlaybackStepSizeChange={handleStepPlaybackStepSizeChange}
+    />
   {/key}
 {/if}
 

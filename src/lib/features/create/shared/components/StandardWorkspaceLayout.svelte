@@ -148,6 +148,11 @@
         "complete"
   );
   const isWorkspacePlayback = $derived(!!panelState.workspacePlayback);
+  // Save mode: the tool panel becomes the save view and the step grid stays
+  // where it is as the preview, sliding wider to be the subject. The
+  // workspace's own controls fade and stop taking input until the save view
+  // is left again.
+  const isSaveView = $derived(panelState.isSaveToLibraryPanelOpen);
 
   // A stacked phone-width Assemble workspace spends two control rows around
   // its step pictures. Folding Save into the bottom rail, Undo/Redo into the
@@ -196,18 +201,38 @@
 
   // The compact phone workspace spends a thin strip on the word, so it takes
   // a larger share to keep two rows of step pictures unclipped and readable.
+  // Save mode splits: side by side the save view needs a form's width, not
+  // half the screen, so the grid takes the rest once the layout is wide
+  // enough for that (below it, 30% is too narrow for the toggles and the
+  // two actions). Stacked on a short phone screen the choices need the taller
+  // share; a tablet keeps the usual split. PanelGroup's flex transition
+  // carries both panels between the splits.
+  const SAVE_SPLIT_MIN_WIDTH = 1280;
+  const SAVE_STACKED_SHORT_HEIGHT = 800;
+  const wideSaveSplit = $derived(
+    isSaveView && useSideBySidePanels && layoutWidth >= SAVE_SPLIT_MIN_WIDTH
+  );
+  const shortSaveStack = $derived(
+    isSaveView &&
+      !useSideBySidePanels &&
+      layoutHeight < SAVE_STACKED_SHORT_HEIGHT
+  );
   const defaultPanelSizes = $derived(
     useSideBySidePanels
-      ? [1, 1]
-      : useCompactToolbar
+      ? wideSaveSplit
+        ? [7, 3]
+        : [1, 1]
+      : shortSaveStack
         ? [2, 3]
-        : isAssembleTab
-          ? [3, 7]
-          : [5, 4]
+        : useCompactToolbar
+          ? [2, 3]
+          : isAssembleTab
+            ? [3, 7]
+            : [5, 4]
   );
 
   $effect(() => {
-    const layoutKey = `${useSideBySidePanels}:${isAssembleTab}:${useCompactToolbar}`;
+    const layoutKey = `${useSideBySidePanels}:${isAssembleTab}:${useCompactToolbar}:${wideSaveSplit}:${shortSaveStack}`;
     if (layoutKey === appliedPanelLayout) return;
 
     appliedPanelLayout = layoutKey;
@@ -223,7 +248,9 @@
 
   // Workspace visible only when there's actual content to show
   const shouldShowWorkspace = $derived(
-    !isInputMode && !ownsFullWorkspace && (hasWorkspaceContent || isAssembleTab)
+    !isInputMode &&
+      (!ownsFullWorkspace || isSaveView) &&
+      (hasWorkspaceContent || isAssembleTab)
   );
   const showCompactHistory = $derived(shouldShowWorkspace && useCompactToolbar);
 
@@ -430,7 +457,8 @@
     {#if shouldShowWorkspace && !useCompactToolbar}
       <div
         class="workspace-history-actions"
-        inert={!!panelState.workspacePlayback}
+        class:save-mode={isSaveView}
+        inert={!!panelState.workspacePlayback || isSaveView}
       >
         <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} />
         <UndoButton {CreateModuleState} direction="redo" />
@@ -438,7 +466,11 @@
     {/if}
 
     {#if shouldShowWorkspace && canSaveToLibrary && !useCompactToolbar}
-      <div class="workspace-save-action">
+      <div
+        class="workspace-save-action"
+        class:save-mode={isSaveView}
+        inert={isSaveView}
+      >
         <SaveToLibraryButton
           sequence={currentSequence}
           onclick={() => panelState.openSaveToLibraryPanel()}
@@ -448,7 +480,12 @@
 
     <!-- Button Panel - Shows when workspace is visible -->
     {#if shouldShowWorkspace}
-      <div class="button-panel-wrapper" bind:this={buttonPanelElement}>
+      <div
+        class="button-panel-wrapper"
+        class:save-mode={isSaveView}
+        inert={isSaveView}
+        bind:this={buttonPanelElement}
+      >
         <ButtonPanel
           {onClearSequence}
           {onViewSequence}
@@ -486,7 +523,11 @@
     <!-- On phones Undo/Redo sit in the grid panel's empty top-left corner,
          clear of every grid point; that pair also undoes a Clear. -->
     {#if showCompactHistory}
-      <div class="compact-history-actions" inert={isWorkspacePlayback}>
+      <div
+        class="compact-history-actions"
+        class:save-mode={isSaveView}
+        inert={isWorkspacePlayback || isSaveView}
+      >
         <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} quiet />
         <UndoButton {CreateModuleState} direction="redo" quiet />
       </div>
@@ -513,6 +554,7 @@
       {/if}
       <CreationToolPanelSlot
         bind:toolPanelRef
+        {currentDisplayWord}
         {onOptionSelected}
         onPracticeStepIndexChange={(index) => {
           panelState.setPracticeStepIndex(index);
@@ -635,6 +677,31 @@
   .workspace-history-actions[inert],
   .compact-history-actions[inert] {
     opacity: 0.45;
+  }
+
+  /* Save mode: the workspace's controls fade out where they stand (their
+     boxes stay, so the grid keeps its place) and come back the same way. */
+  .workspace-history-actions,
+  .workspace-save-action,
+  .compact-history-actions,
+  .button-panel-wrapper {
+    transition: opacity var(--duration-normal) var(--ease-standard);
+  }
+
+  .workspace-history-actions.save-mode,
+  .workspace-save-action.save-mode,
+  .compact-history-actions.save-mode,
+  .button-panel-wrapper.save-mode {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .workspace-history-actions,
+    .workspace-save-action,
+    .compact-history-actions,
+    .button-panel-wrapper {
+      transition: none;
+    }
   }
 
   /* The rail's zones let taps through to the grid; this wrapper is authored
