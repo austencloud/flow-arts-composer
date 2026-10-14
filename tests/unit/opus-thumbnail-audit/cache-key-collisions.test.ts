@@ -199,7 +199,7 @@ describe("cache-key hash strength", () => {
   it("pins the renderer version that every tier keys on", () => {
     // A silent bump without a manifest regeneration is a whole-population cold
     // cache, so the number is worth a tripwire.
-    expect(THUMBNAIL_RENDERER_VERSION).toBe(6);
+    expect(THUMBNAIL_RENDERER_VERSION).toBe(7);
     expect(deriveKey(galleryInput).cloudPath).toContain(
       `_r${THUMBNAIL_RENDERER_VERSION}_dark.webp`
     );

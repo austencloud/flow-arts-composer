@@ -210,7 +210,9 @@ describe("homepage constrained enhancement boundaries", () => {
     expect(landingEvents).not.toContain(
       "if (isConstrainedConnection()) return;"
     );
-    expect(marketingChrome).toContain("if (isConstrainedConnection()) return;");
+    // Live stars skip only on an explicit data-saver preference, like the hero.
+    expect(marketingChrome).toContain("!prefersReducedData()");
+    expect(marketingChrome).not.toContain("isConstrainedConnection");
     expect(homeHero).toContain("if (isConstrainedConnection()) return;");
     expect(homeHero).toContain("connectionAware={true}");
     // The hero is the most above-the-fold element on the site. The default

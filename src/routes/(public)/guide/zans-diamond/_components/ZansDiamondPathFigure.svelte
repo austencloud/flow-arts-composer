@@ -203,7 +203,7 @@
     stroke-width: 10;
     stroke-linecap: round;
     opacity: 0;
-    transition: opacity var(--transition-normal, 240ms);
+    transition: opacity var(--transition-normal);
   }
   .segment.traced {
     opacity: 0.32;

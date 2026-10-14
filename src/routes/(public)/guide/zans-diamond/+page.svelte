@@ -248,9 +248,9 @@
     font-variant-numeric: tabular-nums;
     color: var(--theme-text-muted);
     transition:
-      background-color var(--transition-fast, 160ms),
-      border-color var(--transition-fast, 160ms),
-      color var(--transition-fast, 160ms);
+      background-color var(--transition-fast),
+      border-color var(--transition-fast),
+      color var(--transition-fast);
   }
   .move .points {
     font-weight: 650;

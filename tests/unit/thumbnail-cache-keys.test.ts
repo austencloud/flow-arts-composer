@@ -113,7 +113,7 @@ describe("QR variant — distinct shareable cache paths", () => {
       galleryInput({ visibility: { showQRCode: true, showMandala: true } })
     );
     expect(orchestrator.buildStaticKey(key)).toBe(
-      "gallery/staff/AKE_seq-1_qr_r6_dark"
+      "gallery/staff/AKE_seq-1_qr_r7_dark"
     );
   });
 
@@ -122,7 +122,7 @@ describe("QR variant — distinct shareable cache paths", () => {
       galleryInput({ visibility: { showQRCode: false, showMandala: true } })
     );
     expect(orchestrator.buildStaticKey(key)).toBe(
-      "gallery/staff/AKE_seq-1_r6_dark"
+      "gallery/staff/AKE_seq-1_r7_dark"
     );
   });
 
@@ -145,7 +145,7 @@ describe("QR variant — distinct shareable cache paths", () => {
       galleryInput({ visibility: { showQRCode: true, showMandala: true } })
     );
     expect(orchestrator.buildLegacyStaticKey(qrKey)).toBe(
-      "staff/AKE_qr_r6_dark"
+      "staff/AKE_qr_r7_dark"
     );
   });
 });
@@ -154,7 +154,7 @@ describe("buildStaticKey — mirrors the cloud storage path", () => {
   it("includes variant, prop, sequence id, and mode", () => {
     const key = deriveKey(galleryInput());
     expect(orchestrator.buildStaticKey(key)).toBe(
-      "gallery/staff/AKE_seq-1_r6_dark"
+      "gallery/staff/AKE_seq-1_r7_dark"
     );
   });
 
@@ -163,7 +163,7 @@ describe("buildStaticKey — mirrors the cloud storage path", () => {
       galleryInput({ sequenceId: undefined, lightMode: true })
     );
     expect(orchestrator.buildStaticKey(key)).toBe(
-      "gallery/staff/AKE_r6_light"
+      "gallery/staff/AKE_r7_light"
     );
   });
 
@@ -172,7 +172,7 @@ describe("buildStaticKey — mirrors the cloud storage path", () => {
       galleryInput({ sequenceName: "Sequence 11:46:02 PM", sequenceId: undefined })
     );
     expect(orchestrator.buildStaticKey(key)).toBe(
-      "gallery/staff/Sequence 11-46-02 PM_r6_dark"
+      "gallery/staff/Sequence 11-46-02 PM_r7_dark"
     );
   });
 
@@ -188,7 +188,7 @@ describe("buildStaticKey — mirrors the cloud storage path", () => {
 describe("buildLegacyStaticKey — pre-variant bundle fallback", () => {
   it("keeps the old prop/name format but requires the current renderer version", () => {
     const key = deriveKey(galleryInput());
-    expect(orchestrator.buildLegacyStaticKey(key)).toBe("staff/AKE_r6_dark");
+    expect(orchestrator.buildLegacyStaticKey(key)).toBe("staff/AKE_r7_dark");
   });
 });
 
@@ -197,9 +197,9 @@ describe("renderer cache invalidation", () => {
     const key = deriveKey(galleryInput());
 
     expect(key.rendererVersion).toBe(THUMBNAIL_RENDERER_VERSION);
-    expect(key.hash).toBe("-z2fi9k");
+    expect(key.hash).toBe("ge5b3b");
     expect(key.cloudPath).toBe(
-      "thumbnails/gallery/staff/AKE_seq-1_r6_dark.webp"
+      "thumbnails/gallery/staff/AKE_seq-1_r7_dark.webp"
     );
   });
 });
