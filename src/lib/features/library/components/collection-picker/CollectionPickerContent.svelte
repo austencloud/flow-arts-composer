@@ -8,6 +8,12 @@ fills its container — a few tiles read as an intentional row on a wide desktop
 panel, and stack to a list on a narrow sheet. Tiles are aria-pressed buttons,
 never checkboxes. An "＋ New collection" tile creates and selects in one step.
 
+A long library does not fill the screen with tiles. The grid opens on a
+shelf (collection-picker-shelf.ts): what the sequence is already in,
+Favorites, and the collections filed into most recently. "Show N more"
+opens the rest, and past a handful a find field narrows them. Survivors
+glide between layouts through the shared layout-motion owner.
+
 This is a membership editor, not a one-way add: a ticked tile means the
 sequence is in that collection, and unticking takes it out. Moving a sequence
 between collections is that pair of taps in one visit — there's no separate
@@ -25,6 +31,24 @@ Two modes:
   import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+  import { tick } from "svelte";
+  import { flip } from "svelte/animate";
+  import {
+    arrive,
+    flipDuration,
+    growFade,
+    leave,
+    motionDuration,
+  } from "#lib/shared/transitions/motion.js";
+  import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
+  import PanelSearch from "#lib/shared/components/panel/PanelSearch.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import {
+    FIND_THRESHOLD,
+    SHELF_CAP,
+    filterByName,
+    pickShelf,
+  } from "./collection-picker-shelf.js";
 
   let {
     mode = "live",
@@ -84,6 +108,91 @@ Two modes:
     return mode === "live"
       ? !!sequenceId && collectionsState.isIn(sequenceId, c.id)
       : selectedIds.includes(c.id);
+  }
+
+  // A collection the sequence is in (or is being filed from) always shows.
+  function isFeatured(c: LibraryCollection): boolean {
+    return (
+      isMember(c) || bulkMemberCount(c) > 0 || c.id === currentCollectionId
+    );
+  }
+
+  // The shelf is chosen once per visit, when the collections arrive, so
+  // ticking a tile never reshuffles the grid under the hand. Anything ticked
+  // or created later joins it through isFeatured.
+  let shelfIds = $state<ReadonlySet<string> | null>(null);
+  $effect(() => {
+    if (shelfIds !== null || loading || collections.length === 0) return;
+    shelfIds = new Set(
+      pickShelf(collections, isFeatured, SHELF_CAP).map((c) => c.id)
+    );
+  });
+
+  let expanded = $state(false);
+  let query = $state("");
+  const hasQuery = $derived(query.trim().length > 0);
+  const shelf = $derived(
+    shelfIds === null
+      ? collections
+      : collections.filter((c) => shelfIds!.has(c.id) || isFeatured(c))
+  );
+  const hiddenCount = $derived(collections.length - shelf.length);
+  const visible = $derived(
+    hasQuery
+      ? filterByName(collections, query)
+      : expanded || hiddenCount === 0
+        ? collections
+        : shelf
+  );
+  const showFind = $derived(
+    collections.length > FIND_THRESHOLD && (expanded || hasQuery)
+  );
+
+  // Opening, closing and filtering recompose the grid. The collection tiles
+  // are a keyed list, so Svelte's flip carries them (and lifts a leaver out
+  // of flow so the survivors glide at once). The "Show more" and "＋ New
+  // collection" tiles sit after the list, outside its flip, so the shared
+  // layout-motion owner moves them on the same clock. An element on its way
+  // out is Svelte's (it marks outroing elements inert): capturing it would
+  // cancel its outro and strand it in the grid.
+  let gridEl = $state<HTMLDivElement | null>(null);
+  const gridMotion = createLayoutMotion({
+    getRoot: () => gridEl,
+    groups: [
+      { selector: "[data-picker-tile]:not([inert])", datasetKey: "pickerTile" },
+    ],
+    getDuration: () => motionDuration(DURATION.normal),
+    resize: "layout",
+  });
+
+  async function recompose(change: () => void): Promise<void> {
+    gridMotion.capture();
+    change();
+    await tick();
+    gridMotion.play();
+  }
+
+  function setExpanded(next: boolean): void {
+    void recompose(() => {
+      expanded = next;
+      if (!next) query = "";
+    });
+  }
+
+  function handleFindInput(value: string): void {
+    void recompose(() => {
+      query = value;
+    });
+  }
+
+  function handleFindKeydown(e: KeyboardEvent): void {
+    if (e.key === "Escape" && query) {
+      e.preventDefault();
+      e.stopPropagation();
+      void recompose(() => {
+        query = "";
+      });
+    }
   }
 
   function handleToggle(c: LibraryCollection): void {
@@ -196,12 +305,30 @@ Two modes:
       {/each}
     </div>
   {:else}
+    {#if showFind}
+      <div class="find-row" transition:growFade>
+        <PanelSearch
+          value={query}
+          placeholder={t("library_ui_find_collection")}
+          ariaLabel={t("library_ui_find_collection")}
+          maxWidth="none"
+          oninput={handleFindInput}
+          onkeydown={handleFindKeydown}
+        />
+      </div>
+    {/if}
+    {#if hasQuery && visible.length === 0}
+      <p class="picker-empty" transition:growFade>
+        {t("library_ui_no_collections_match")}
+      </p>
+    {/if}
     <div
       class="tile-grid"
       role="group"
       aria-label={t("tab_library_collections")}
+      bind:this={gridEl}
     >
-      {#each collections as c (c.id)}
+      {#each visible as c, index (c.id)}
         {@const selected = isMember(c)}
         {@const bulkMembers = bulkMemberCount(c)}
         {@const allBulkMembers =
@@ -230,6 +357,9 @@ Two modes:
           disabled={addingCollectionId !== null || allBulkMembers}
           title={allBulkMembers ? "Already in this collection" : undefined}
           onclick={() => handleCollectionPress(c)}
+          animate:flip={{ duration: flipDuration() }}
+          in:arrive={{ index }}
+          out:leave
         >
           <span class="tile-icon">
             <!-- Icons are stored bare ("fa-heart"); FontAwesome only paints them
@@ -262,8 +392,34 @@ Two modes:
         </button>
       {/each}
 
+      {#if !hasQuery && hiddenCount > 0}
+        <!-- One element, so it glides to its new slot when the list opens
+             or closes instead of a fresh one popping in. -->
+        <button
+          type="button"
+          class="collection-tile more-tile"
+          data-picker-tile="more"
+          aria-expanded={expanded}
+          onclick={() => setExpanded(!expanded)}
+        >
+          <span class="tile-icon">
+            <i
+              class="fas {expanded ? 'fa-chevron-up' : 'fa-chevron-down'}"
+              aria-hidden="true"
+            ></i>
+          </span>
+          <span class="tile-text">
+            <span class="tile-name">
+              {expanded
+                ? t("library_ui_show_fewer_collections")
+                : t("library_ui_show_more_collections", { count: hiddenCount })}
+            </span>
+          </span>
+        </button>
+      {/if}
+
       {#if showInput}
-        <div class="new-tile-input">
+        <div class="new-tile-input" data-picker-tile="new-input">
           <!-- svelte-ignore a11y_autofocus -->
           <input
             type="text"
@@ -291,6 +447,7 @@ Two modes:
         <button
           type="button"
           class="collection-tile add-tile"
+          data-picker-tile="new"
           disabled={addingCollectionId !== null}
           onclick={() => (showInput = true)}
         >
@@ -327,9 +484,26 @@ Two modes:
   /* Auto-fill grid: fills a wide panel (several across) and collapses to a
 	   single stacked column on a narrow sheet. */
   .tile-grid {
+    position: relative; /* leavers lift out of flow while survivors glide */
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 10px;
+  }
+
+  /* The shared search field, flush with the tiles rather than inset for a
+     panel header. */
+  .find-row :global(.panel-search) {
+    padding: 0;
+  }
+
+  .find-row :global(.panel-search__icon) {
+    left: 14px;
+  }
+
+  .picker-empty {
+    margin: 0;
+    font-size: var(--font-size-sm, 14px);
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
   }
 
   .collection-tile {
@@ -468,7 +642,14 @@ Two modes:
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
   }
 
-  .add-tile .tile-icon {
+  /* Show more / fewer: quiet like the add tile, solid so it reads as a
+     control over the list rather than a slot for a new entry. */
+  .more-tile {
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
+  }
+
+  .add-tile .tile-icon,
+  .more-tile .tile-icon {
     background: color-mix(
       in srgb,
       var(--theme-text-dim, #888) 14%,

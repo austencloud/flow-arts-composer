@@ -36,9 +36,8 @@
 
   // Progress state
   let progress = $state(conceptProgressService.getProgress());
-  let showTopics = $state(false);
   let showCourseMap = $state(false);
-  let mapElement: HTMLDivElement | undefined;
+  let mapElement = $state<HTMLDivElement | undefined>(undefined);
   let pendingMapScroll = false;
   let selectedPlaceId = $state("1.1");
   const availableConcepts = getAvailableConcepts();
@@ -65,10 +64,9 @@
       );
       const place = placeId ? getConceptPlace(placeId) : undefined;
       if (place?.tkaLevel === 1) {
-        const mapWasVisible = showTopics && showCourseMap;
+        const mapWasVisible = showCourseMap;
         selectedPlaceId = place.id;
         pendingMapScroll = true;
-        showTopics = true;
         showCourseMap = true;
         if (mapWasVisible) void tick().then(scrollToLinkedMap);
       }
@@ -250,103 +248,84 @@
     </div>
   </section>
 
-  <div class="browse-heading">
-    <PanelButton
-      variant="quiet"
-      onclick={() => (showTopics = !showTopics)}
-      ariaExpanded={showTopics}
-      ariaControls="lesson-library"
-    >
-      {showTopics
-        ? tDynamic("learn_ui_hide_topics")
-        : tDynamic("learn_ui_browse_topics")}
-      <i
-        class="fa-solid {showTopics ? 'fa-chevron-up' : 'fa-chevron-down'}"
-        aria-hidden="true"
-      ></i>
-    </PanelButton>
-  </div>
-
-  {#if showTopics}
-    <section
-      id="lesson-library"
-      class="lesson-library"
-      aria-labelledby="lesson-library-title"
-      transition:growFade
-      onintroend={scrollToLinkedMap}
-    >
-      <header class="library-heading">
+  <section
+    id="lesson-library"
+    class="lesson-library"
+    aria-labelledby="lesson-library-title"
+  >
+    <header class="library-heading">
+      <div class="library-title">
         <h2 id="lesson-library-title">{t("learn_ui_available_lessons")}</h2>
         <span
           >{t("learn_ui_lesson_count", {
             count: availableConcepts.length,
           })}</span
         >
-      </header>
-      <div class="map-heading">
-        <PanelButton
-          variant="quiet"
-          onclick={() => (showCourseMap = !showCourseMap)}
-          ariaExpanded={showCourseMap}
-          ariaControls="course-map"
-        >
-          {showCourseMap
-            ? tDynamic("learn_map_hide")
-            : tDynamic("learn_map_explore")}
-          <i
-            class="fa-solid {showCourseMap
-              ? 'fa-chevron-up'
-              : 'fa-chevron-down'}"
-            aria-hidden="true"
-          ></i>
-        </PanelButton>
       </div>
-      {#if showCourseMap}
-        <div
-          id="course-map"
-          class="level-map-slot"
-          bind:this={mapElement}
-          transition:growFade
-        >
-          <ConceptLevelMap
-            selectedId={selectedPlaceId}
-            onSelect={handlePlaceSelect}
-            onLessonStart={handleConceptStart}
-          />
-        </div>
-      {/if}
-      <div class="all-concepts">
-        {#each availableCategories as category}
-          {@const categoryProgress = getCategoryProgress(category)}
-          {@const concepts = getConceptsByCategory(category).filter((concept) =>
-            availableConceptIds.has(concept.id)
-          )}
+      <PanelButton
+        variant="quiet"
+        onclick={() => (showCourseMap = !showCourseMap)}
+        ariaExpanded={showCourseMap}
+        ariaControls="course-map"
+      >
+        {showCourseMap
+          ? tDynamic("learn_map_hide")
+          : tDynamic("learn_map_explore")}
+        <i
+          class="fa-solid {showCourseMap ? 'fa-chevron-up' : 'fa-chevron-down'}"
+          aria-hidden="true"
+        ></i>
+      </PanelButton>
+    </header>
+    {#if showCourseMap}
+      <div
+        id="course-map"
+        class="level-map-slot"
+        bind:this={mapElement}
+        transition:growFade
+        onintroend={scrollToLinkedMap}
+      >
+        <ConceptLevelMap
+          selectedId={selectedPlaceId}
+          onSelect={handlePlaceSelect}
+          onLessonStart={handleConceptStart}
+        />
+      </div>
+    {/if}
+    <div class="all-concepts">
+      {#each availableCategories as category}
+        {@const categoryProgress = getCategoryProgress(category)}
+        {@const concepts = getConceptsByCategory(category).filter((concept) =>
+          availableConceptIds.has(concept.id)
+        )}
 
-          <section class="category-section">
-            <CategoryHeader
-              {category}
-              completedCount={categoryProgress.completed}
-              totalCount={categoryProgress.total}
-              premiumGated={isPremiumGatedCategory(category)}
-            />
-            <div class="concept-list">
-              {#each concepts as concept (concept.id)}
-                {@const status = conceptProgressService.getConceptStatus(
-                  concept.id
-                )}
-                <ConceptCard
-                  {concept}
-                  {status}
-                  premiumGated={isPremiumGatedCategory(concept.category)}
-                  onClick={handleConceptStart}
-                />
-              {/each}
-            </div>
-          </section>
-        {/each}
-      </div>
-    </section>
-  {/if}
+        <section
+          class="category-section"
+          style:--category-columns={Math.min(concepts.length, 3)}
+        >
+          <CategoryHeader
+            {category}
+            completedCount={categoryProgress.completed}
+            totalCount={categoryProgress.total}
+            premiumGated={isPremiumGatedCategory(category)}
+          />
+          <div class="concept-list">
+            {#each concepts as concept (concept.id)}
+              {@const status = conceptProgressService.getConceptStatus(
+                concept.id
+              )}
+              <ConceptCard
+                {concept}
+                {status}
+                premiumGated={isPremiumGatedCategory(concept.category)}
+                onClick={handleConceptStart}
+              />
+            {/each}
+          </div>
+        </section>
+      {/each}
+    </div>
+  </section>
 
   {#if premiumNudgeVisible}
     <div class="premium-nudge-overlay">
@@ -378,11 +357,8 @@
 
   .launch-zone {
     display: grid;
-    gap: clamp(1rem, 2cqw, 1.75rem);
-    padding: clamp(1rem, 2cqw, 1.5rem);
-    background: var(--theme-panel-bg);
-    border: 1px solid var(--theme-stroke);
-    border-radius: 16px;
+    gap: 1rem;
+    align-items: center;
   }
 
   .course-intro {
@@ -436,8 +412,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    max-width: 52rem;
-    margin: 0 auto;
+    min-width: 0;
     width: 100%;
   }
 
@@ -455,11 +430,18 @@
 
   .lesson-library {
     display: grid;
-    gap: 1.75rem;
+    gap: 1.25rem;
     padding-top: 0.75rem;
   }
 
   .library-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+  }
+  .library-title {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -471,12 +453,9 @@
     font-size: 1.5rem;
     letter-spacing: -0.02em;
   }
-  .library-heading > span {
+  .library-title > span {
     color: var(--theme-text-dim);
     font-size: 0.875rem;
-  }
-  .map-heading {
-    margin-top: -1rem;
   }
 
   .level-map-slot {
@@ -544,6 +523,7 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    min-width: 0;
   }
 
   .concept-list {
@@ -574,32 +554,31 @@
     }
   }
 
-  @container learn-tab (min-width: 70rem) {
+  @container learn-tab (min-width: 850px) {
     .launch-zone {
-      grid-template-columns: minmax(20rem, 0.78fr) minmax(34rem, 1.22fr);
-      align-items: center;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: clamp(1.5rem, 3cqw, 3rem);
     }
 
-    .course-intro {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    .main-content {
-      max-width: none;
-      margin: 0;
+    .course-intro p {
+      max-width: 36rem;
     }
   }
 
   @container learn-tab (min-width: 1100px) {
-    .concept-list {
+    .all-concepts {
+      display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 2rem 0.875rem;
+      align-items: start;
     }
-  }
 
-  @container learn-tab (min-width: 1600px) {
+    .category-section {
+      grid-column: span var(--category-columns);
+    }
+
     .concept-list {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(var(--category-columns), minmax(0, 1fr));
     }
   }
 

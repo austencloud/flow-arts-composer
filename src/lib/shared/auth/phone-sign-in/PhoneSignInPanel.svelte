@@ -46,97 +46,103 @@
 <div class="phone-panel">
   <p class="sr-only" aria-live="polite">{session.announcement}</p>
 
-  <div class="stage">
-    <div class="tile">
-      <Crossfade key={tileKey} fill>
+  <div class="layout">
+    <div class="stage">
+      <div class="tile">
+        <Crossfade key={tileKey} fill>
+          {#if view.kind === "waiting"}
+            <QrCode
+              value={view.request.approveUrl}
+              label="QR code to approve this sign-in on your phone"
+              size={QR_SIZE}
+            />
+          {:else if view.kind === "idle" || view.kind === "starting" || view.kind === "signing-in"}
+            <div class="mark"><PanelSpinner /></div>
+          {:else}
+            <div class="mark" aria-hidden="true">
+              <i
+                class="fa-solid {view.kind === 'signed-in'
+                  ? 'fa-check'
+                  : view.kind === 'denied'
+                    ? 'fa-xmark'
+                    : view.kind === 'expired'
+                      ? 'fa-clock'
+                      : 'fa-circle-exclamation'}"
+              ></i>
+            </div>
+          {/if}
+        </Crossfade>
+      </div>
+      <!-- The number's line is always there, so nothing moves when a code arrives. -->
+      <Crossfade key={view.kind === "waiting" ? view.request.code : ""}>
         {#if view.kind === "waiting"}
-          <QrCode
-            value={view.request.approveUrl}
-            label="QR code to approve this sign-in on your phone"
-            size={QR_SIZE}
-          />
-        {:else if view.kind === "idle" || view.kind === "starting" || view.kind === "signing-in"}
-          <div class="mark"><PanelSpinner /></div>
+          <p class="code" role="img" aria-label={spokenCode(view.request.code)}>
+            {formatCode(view.request.code)}
+          </p>
         {:else}
-          <div class="mark" aria-hidden="true">
-            <i
-              class="fa-solid {view.kind === 'signed-in'
-                ? 'fa-check'
-                : view.kind === 'denied'
-                  ? 'fa-xmark'
-                  : view.kind === 'expired'
-                    ? 'fa-clock'
-                    : 'fa-circle-exclamation'}"
-            ></i>
+          <p class="code" aria-hidden="true">&nbsp;</p>
+        {/if}
+      </Crossfade>
+    </div>
+
+    <div class="words">
+      <p class="lead">
+        Scan it with your phone while it's signed in, then tap Approve. Your
+        phone shows the same number.
+      </p>
+
+      <Crossfade
+        key={view.kind === "idle" || view.kind === "starting"
+          ? "starting"
+          : view.kind}
+        animateHeight
+      >
+        {#if view.kind === "waiting"}
+          <p class="quiet" role="timer">
+            Expires in <span class="time">{session.countdown}</span>
+          </p>
+        {:else if view.kind === "idle" || view.kind === "starting"}
+          <p class="quiet">Getting a code...</p>
+        {:else if view.kind === "signing-in" || view.kind === "signed-in"}
+          <p class="quiet">Signing in...</p>
+        {:else}
+          <div class="stack">
+            <PhoneNotice
+              tone={view.kind === "expired" ? "plain" : "error"}
+              icon={view.kind === "denied"
+                ? "fa-xmark"
+                : view.kind === "expired"
+                  ? "fa-clock"
+                  : "fa-circle-exclamation"}
+            >
+              <p>
+                {view.kind === "denied"
+                  ? DENIED_MESSAGE
+                  : view.kind === "expired"
+                    ? EXPIRED_MESSAGE
+                    : view.message}
+              </p>
+            </PhoneNotice>
+            <div class="actions">
+              <PanelButton variant="primary" onclick={session.start}>
+                {view.kind === "error" ? "Try again" : "New code"}
+              </PanelButton>
+            </div>
           </div>
         {/if}
       </Crossfade>
     </div>
-    <!-- The number's line is always there, so nothing moves when a code arrives. -->
-    <Crossfade key={view.kind === "waiting" ? view.request.code : ""}>
-      {#if view.kind === "waiting"}
-        <p class="code" role="img" aria-label={spokenCode(view.request.code)}>
-          {formatCode(view.request.code)}
-        </p>
-      {:else}
-        <p class="code" aria-hidden="true">&nbsp;</p>
-      {/if}
-    </Crossfade>
-  </div>
-
-  <div class="words">
-    <p class="lead">
-      Scan it with your phone while it's signed in, then tap Approve. Your phone
-      shows the same number.
-    </p>
-
-    <Crossfade
-      key={view.kind === "idle" || view.kind === "starting"
-        ? "starting"
-        : view.kind}
-      animateHeight
-    >
-      {#if view.kind === "waiting"}
-        <p class="quiet" role="timer">
-          Expires in <span class="time">{session.countdown}</span>
-        </p>
-      {:else if view.kind === "idle" || view.kind === "starting"}
-        <p class="quiet">Getting a code...</p>
-      {:else if view.kind === "signing-in" || view.kind === "signed-in"}
-        <p class="quiet">Signing in...</p>
-      {:else}
-        <div class="stack">
-          <PhoneNotice
-            tone={view.kind === "expired" ? "plain" : "error"}
-            icon={view.kind === "denied"
-              ? "fa-xmark"
-              : view.kind === "expired"
-                ? "fa-clock"
-                : "fa-circle-exclamation"}
-          >
-            <p>
-              {view.kind === "denied"
-                ? DENIED_MESSAGE
-                : view.kind === "expired"
-                  ? EXPIRED_MESSAGE
-                  : view.message}
-            </p>
-          </PhoneNotice>
-          <div class="actions">
-            <PanelButton variant="primary" onclick={session.start}>
-              {view.kind === "error" ? "Try again" : "New code"}
-            </PanelButton>
-          </div>
-        </div>
-      {/if}
-    </Crossfade>
   </div>
 </div>
 
 <style>
-  /* Stacked in a narrow sheet; the code beside the words once there is room. */
+  /* The panel measures itself, so it lays out the same in the sheet and on its own page. */
   .phone-panel {
     container-type: inline-size;
+  }
+
+  /* Stacked when narrow; the code beside the words once there is room. */
+  .layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     justify-items: center;
@@ -144,7 +150,7 @@
   }
 
   @container (min-width: 30rem) {
-    .phone-panel {
+    .layout {
       grid-template-columns: auto minmax(0, 1fr);
       justify-items: start;
       align-items: start;
