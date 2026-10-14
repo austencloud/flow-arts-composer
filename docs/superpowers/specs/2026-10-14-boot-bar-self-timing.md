@@ -17,14 +17,14 @@ replay.
 
 ## What the audit found (measured, warm dev boot, ms from navigation start)
 
-| t | event | bar |
-|---|---|---|
-| 244 | DOMContentLoaded | 5% |
-| 1086 | `AppShellLoader` onMount calls 84 "Resolving services" | 84% |
-| 1108 | `+layout.svelte` onMount calls 72 "Starting up" | ignored (below 84) |
-| 3680 / 3695 | layout calls 76 "Connecting to cloud" / 80 "Checking session" | ignored |
-| 4370 | `MainApplication` onMount, boot-snapshot path, calls 100 | dismiss |
-| 4679 / 4771 / 4773 / 4791 | 88 / 92 / 95 / 100 from the async init | after dismiss |
+| t                         | event                                                         | bar                |
+| ------------------------- | ------------------------------------------------------------- | ------------------ |
+| 244                       | DOMContentLoaded                                              | 5%                 |
+| 1086                      | `AppShellLoader` onMount calls 84 "Resolving services"        | 84%                |
+| 1108                      | `+layout.svelte` onMount calls 72 "Starting up"               | ignored (below 84) |
+| 3680 / 3695               | layout calls 76 "Connecting to cloud" / 80 "Checking session" | ignored            |
+| 4370                      | `MainApplication` onMount, boot-snapshot path, calls 100      | dismiss            |
+| 4679 / 4771 / 4773 / 4791 | 88 / 92 / 95 / 100 from the async init                        | after dismiss      |
 
 Defects: (1) Svelte mounts children before parents, so the shell's 84 lands
 before the layout's 72 and the percent-only monotonic guard discards 72, 76,
@@ -38,15 +38,15 @@ bear no relation to where the time goes (cloud + session was 2.6 s of the
 
 ## 1. What exists (read before editing)
 
-- `src/app.html`: the boot script starts near `// Self-calibrating expected
-  bytes` (~1837) and ends after the 15 s safety net (~2030). Phase A
+- `src/app.html`: the boot script starts near
+  `// Self-calibrating expected bytes` (~1837) and ends after the 15 s safety net (~2030). Phase A
   (`__tkaExpectedBytes`, `tka-load-bytes`, `__tkaObserver`,
   `__tkaProcessResources`, `__tkaUpdateBar`, `__tkaCap`, trickle fallback),
   Phase B (`__tkaLoadProgress`, `__tkaCurrentPercent`, `__tkaPhaseBStarted`),
   `__tkaMarkSplash` (performance marks `boot:splash:*`, used by the boot
   profiler), `__tkaSlowTimer` (4 s "Almost there"), `__tkaCrossfade`,
-  `__tkaBootMessage` (German table), `__tkaReduceMotion`, the `loaded` class
-  + `transitionend` + `remove()` dismissal, the 15 s net. Earlier in the same
+  `__tkaBootMessage` (German table), `__tkaReduceMotion`, the `loaded` class +
+  `transitionend` + `remove()` dismissal, the 15 s net. Earlier in the same
   script: landing-mode early exit and the retro-route skip; leave those.
 - Fill element `#loading-bar-fill` (CSS `width` transition 500 ms,
   `.boot-capsule-fill`), `#app-loading[role=progressbar][aria-valuenow]`,
@@ -69,18 +69,18 @@ bear no relation to where the time goes (cloud + session was 2.6 s of the
 
 ### Milestones (fixed rank order, reported by name)
 
-| rank | name | reporter |
-|---|---|---|
-| 0 | `start` | the boot script itself, at script start |
-| 1 | `scripts` | the earliest point in app code we control: a `<script module>` block in `+layout.svelte` (runs at module evaluation, before any mount; guard with `browser`), or the top of its instance script if a module block is not viable. Say which in the report. |
-| 2 | `shell` | `AppShellLoader` onMount (today's 84) |
-| 3 | `hydrated` | `+layout.svelte` onMount start (today's 72) |
-| 4 | `cloud` | after `getFirestoreInstance()` (76) |
-| 5 | `session` | after `authState.initialize()` (80) |
-| 6 | `services` | `MainApplication` DI resolved (88) |
-| 7 | `workspace` | after `restoreApplicationState` + `initService.initialize` (92) |
-| 8 | `settings` | after settings + theme (95) |
-| 9 | `ready` | both 100 sites in `MainApplication`; the snapshot path stays optimistic (it dismisses early on purpose) |
+| rank | name        | reporter                                                                                                                                                                                                                                                  |
+| ---- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | `start`     | the boot script itself, at script start                                                                                                                                                                                                                   |
+| 1    | `scripts`   | the earliest point in app code we control: a `<script module>` block in `+layout.svelte` (runs at module evaluation, before any mount; guard with `browser`), or the top of its instance script if a module block is not viable. Say which in the report. |
+| 2    | `shell`     | `AppShellLoader` onMount (today's 84)                                                                                                                                                                                                                     |
+| 3    | `hydrated`  | `+layout.svelte` onMount start (today's 72)                                                                                                                                                                                                               |
+| 4    | `cloud`     | after `getFirestoreInstance()` (76)                                                                                                                                                                                                                       |
+| 5    | `session`   | after `authState.initialize()` (80)                                                                                                                                                                                                                       |
+| 6    | `services`  | `MainApplication` DI resolved (88)                                                                                                                                                                                                                        |
+| 7    | `workspace` | after `restoreApplicationState` + `initService.initialize` (92)                                                                                                                                                                                           |
+| 8    | `settings`  | after settings + theme (95)                                                                                                                                                                                                                               |
+| 9    | `ready`     | both 100 sites in `MainApplication`; the snapshot path stays optimistic (it dismisses early on purpose)                                                                                                                                                   |
 
 API: `window.__tkaBootMilestone(name)`. Keep `window.__tkaLoadProgress(percent,
 message)` as a shim: `percent >= 100` means `ready`; anything else is a no-op
@@ -176,6 +176,7 @@ Timeline capture: navigate with an init script that records every
 `__tkaBootMilestone` call, then read `window.__tkaBootBar` after boot.
 
 Cases (each as a table of t → width, plus the milestone arrivals):
+
 - Dev server `https://localhost:5173/create` (read-only use of his server):
   warm, twice (second run uses the profile the first wrote).
 - Production build (`npm run build:fast` on d1 because the browser needs
@@ -198,9 +199,9 @@ Cases (each as a table of t → width, plus the milestone arrivals):
 ## 5. Worktree, lifecycle, hazards
 
 - `git worktree add E:/worktrees/tka-platform/boot-bar -b codex/boot-bar-self-timing main`
-  from `E:/tka-platform`; node_modules by PowerShell junction; never `pnpm
-  install` inside; explicit-pathspec commits; `npm run wt:finish --
-  codex/boot-bar-self-timing --route /create` from `E:/tka-platform` in
+  from `E:/tka-platform`; node_modules by PowerShell junction; never
+  `pnpm install` inside; explicit-pathspec commits;
+  `npm run wt:finish -- codex/boot-bar-self-timing --route /create` from `E:/tka-platform` in
   PowerShell; kill your own Vite/wrangler/node processes before it (check
   with `Get-CimInstance Win32_Process` filtered on the worktree path); no
   push, no deploy, no CI changes.
