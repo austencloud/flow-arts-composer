@@ -1,13 +1,16 @@
 <!--
   DurationControl.svelte
 
-  Full-width integrated banner for adjusting beat duration.
-  Dual controls: fine (±0.1) and coarse (±0.5) stepping.
-  Tap the value to type any exact number (e.g. 1.67).
-  Minimum duration is 1.0 (square pictograph). Durations only extend wider.
+  Beat duration stepper. Same grammar as the turns stepper (− value +), with a
+  coarse ≪ ≫ pair (±0.5) beside the fine ± pair (±0.1). Tap the value to type
+  an exact number (e.g. 1.67). Minimum duration is 1.0 (square pictograph).
 
-  Visually integrates with prop control cards via matching padding and border-bottom divider.
-  Compact mode: Smaller buttons and tighter spacing for mobile.
+  Layouts:
+    row     — one line: ≪ − value + ≫ (default)
+    stacked — fine pair over coarse pair, for a short landscape drawer where
+              the control sits beside the preview instead of under it
+  Compact mode tightens spacing and, in a drawer at least 300px wide, keeps the
+  label beside the row so the pictograph gets the height back.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -21,12 +24,19 @@
 
   interface Props {
     duration: number;
-    /** Compact mode: smaller buttons and tighter layout */
+    /** Compact mode: tighter layout for a narrow drawer */
     compact?: boolean;
+    /** Stacked puts the coarse pair under the fine pair (short landscape). */
+    layout?: "row" | "stacked";
     onDurationChange: (newDuration: number) => void;
   }
 
-  let { duration, compact = false, onDurationChange }: Props = $props();
+  let {
+    duration,
+    compact = false,
+    layout = "row",
+    onDurationChange,
+  }: Props = $props();
 
   const displayDuration = $derived(formatDurationDisplay(duration));
   const canDecrease = $derived(duration > MIN_DURATION);
@@ -74,13 +84,17 @@
   }
 </script>
 
-<div class="duration-control" class:compact>
+<div
+  class="duration-control"
+  class:compact
+  class:stacked={layout === "stacked"}
+>
   <span class="duration-label">{t("clip_duration")}</span>
 
   <div class="duration-row">
     <!-- Coarse decrease (−0.5) -->
     <button
-      class="ctrl-btn coarse"
+      class="ctrl-btn coarse-down"
       aria-label={t("create_ui_decrease_duration_by_half_beat")}
       onclick={() => handleChange(-DURATION_STEP_COARSE)}
       disabled={!canDecrease}
@@ -90,7 +104,7 @@
 
     <!-- Fine decrease (−0.1) -->
     <button
-      class="ctrl-btn fine"
+      class="ctrl-btn fine-down"
       aria-label={t("create_ui_decrease_duration_by_tenth")}
       onclick={() => handleChange(-DURATION_STEP_FINE)}
       disabled={!canDecrease}
@@ -98,34 +112,35 @@
       <i class="fas fa-minus" aria-hidden="true"></i>
     </button>
 
-    <!-- Current value display / direct input -->
-    {#if editing}
-      <input
-        bind:this={inputEl}
-        class="duration-input"
-        class:compact
-        type="number"
-        min={MIN_DURATION}
-        max={MAX_DURATION}
-        step="0.01"
-        bind:value={editValue}
-        onblur={commitEdit}
-        onkeydown={handleEditKeydown}
-      />
-    {:else}
-      <button
-        class="duration-value"
-        class:compact
-        onclick={startEditing}
-        aria-label={t("create_ui_edit_duration_value")}
-      >
-        {displayDuration}
-      </button>
-    {/if}
+    <!-- Current value display / direct input. The two share one slot so the
+         row never moves when editing starts. -->
+    <div class="value-slot">
+      {#if editing}
+        <input
+          bind:this={inputEl}
+          class="duration-input"
+          type="number"
+          min={MIN_DURATION}
+          max={MAX_DURATION}
+          step="0.01"
+          bind:value={editValue}
+          onblur={commitEdit}
+          onkeydown={handleEditKeydown}
+        />
+      {:else}
+        <button
+          class="duration-value"
+          onclick={startEditing}
+          aria-label={t("create_ui_edit_duration_value")}
+        >
+          {displayDuration}
+        </button>
+      {/if}
+    </div>
 
     <!-- Fine increase (+0.1) -->
     <button
-      class="ctrl-btn fine"
+      class="ctrl-btn fine-up"
       aria-label={t("create_ui_increase_duration_by_tenth")}
       onclick={() => handleChange(DURATION_STEP_FINE)}
       disabled={!canIncrease}
@@ -135,7 +150,7 @@
 
     <!-- Coarse increase (+0.5) -->
     <button
-      class="ctrl-btn coarse"
+      class="ctrl-btn coarse-up"
       aria-label={t("create_ui_increase_duration_by_half_beat")}
       onclick={() => handleChange(DURATION_STEP_COARSE)}
       disabled={!canIncrease}
@@ -165,7 +180,7 @@
     margin-bottom: 6px;
   }
 
-  /* Duration label - matches BLUE/RED label styling */
+  /* Duration label - matches LEFT/RIGHT label styling */
   .duration-label {
     font-size: 0.75rem;
     font-weight: 700;
@@ -179,9 +194,14 @@
     letter-spacing: 0.5px;
   }
 
+  /* One grid for both layouts: the coarse pair flanks the fine pair in a row,
+     or drops under it when stacked, so every button keeps its column. */
   .duration-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(5, auto);
+    grid-template-areas: "cdown fdown value fup cup";
     align-items: center;
+    justify-content: center;
     gap: 8px;
   }
 
@@ -189,44 +209,70 @@
     gap: 4px;
   }
 
-  .duration-value {
+  .duration-control.stacked .duration-row {
+    grid-template-columns: repeat(3, auto);
+    grid-template-areas:
+      "fdown value fup"
+      "cdown . cup";
+  }
+
+  .coarse-down {
+    grid-area: cdown;
+  }
+  .fine-down {
+    grid-area: fdown;
+  }
+  .value-slot {
+    grid-area: value;
+  }
+  .fine-up {
+    grid-area: fup;
+  }
+  .coarse-up {
+    grid-area: cup;
+  }
+
+  .value-slot {
+    display: flex;
+    justify-content: center;
+    min-width: 64px;
+  }
+
+  .duration-value,
+  .duration-input {
+    box-sizing: border-box;
+    width: 100%;
     min-height: var(--min-touch-target, 44px);
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: var(--theme-text, #ffffff);
-    min-width: 64px;
     text-align: center;
-    font-feature-settings: "tnum";
-    background: none;
-    border: 1px solid transparent;
-    border-radius: 6px;
+    font-variant-numeric: tabular-nums;
+    border-radius: 10px;
     padding: 2px 4px;
-    cursor: pointer;
+  }
+
+  /* The value is an editable field, so it reads as one before hover: a faint
+     ring at rest, a stronger one on hover, and a focus ring for the keyboard. */
+  .duration-value {
+    background: transparent;
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    cursor: text;
     transition: border-color var(--duration-fast) var(--ease-standard);
   }
 
   .duration-value:hover {
-    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
+    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.25));
   }
 
-  .duration-value.compact {
-    font-size: 1.1rem;
-    min-width: 48px;
+  .duration-value:focus-visible {
+    outline: 2px solid var(--theme-text, #fff);
+    outline-offset: 2px;
   }
 
   .duration-input {
-    box-sizing: border-box;
-    min-height: var(--min-touch-target, 44px);
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--theme-text, #ffffff);
-    width: 72px;
-    text-align: center;
-    font-feature-settings: "tnum";
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.08));
     border: 1px solid var(--theme-accent, rgba(255, 255, 255, 0.3));
-    border-radius: 6px;
-    padding: 2px 4px;
     outline: none;
     -moz-appearance: textfield;
     appearance: textfield;
@@ -238,11 +284,17 @@
     margin: 0;
   }
 
-  .duration-input.compact {
-    font-size: 1.1rem;
-    width: 56px;
+  .duration-control.compact .value-slot {
+    min-width: 56px;
   }
 
+  .duration-control.compact .duration-value,
+  .duration-control.compact .duration-input {
+    font-size: 1.35rem;
+  }
+
+  /* Same geometry as the turns stepper buttons, in the neutral tint: the
+     duration belongs to the step, not to a hand. */
   .ctrl-btn {
     display: flex;
     align-items: center;
@@ -250,73 +302,52 @@
     width: var(--min-touch-target, 44px);
     height: var(--min-touch-target, 44px);
     border-radius: 10px;
-    border: 1px solid;
+    border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.08));
+    color: var(--theme-text, rgba(255, 255, 255, 0.9));
+    font-size: 1.1rem;
     cursor: pointer;
-    font-size: 1rem;
     transition:
       background var(--duration-fast) var(--ease-standard),
       border-color var(--duration-fast) var(--ease-standard),
       color var(--duration-fast) var(--ease-standard),
       transform var(--duration-fast) var(--ease-standard),
-      opacity var(--duration-fast) var(--ease-standard),
       box-shadow var(--duration-fast) var(--ease-standard);
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.08));
-    border-color: var(--theme-stroke, rgba(255, 255, 255, 0.15));
-    color: rgba(255, 255, 255, 0.7);
   }
 
   .ctrl-btn:hover:not(:disabled) {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.12));
-    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.25));
-    color: rgba(255, 255, 255, 0.9);
+    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.3));
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
   }
 
   .ctrl-btn:active:not(:disabled) {
     transform: scale(0.95);
   }
 
+  .ctrl-btn:focus-visible {
+    outline: 2px solid var(--theme-text, #fff);
+    outline-offset: 2px;
+  }
+
+  /* At a limit the button sits pressed flat and keeps its slot. */
   .ctrl-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  /* Coarse buttons (±0.5) - neutral styling, no orange accent */
-  .ctrl-btn.coarse {
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.1));
-    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
-    color: rgba(255, 255, 255, 0.8);
-  }
-
-  .ctrl-btn.coarse:hover:not(:disabled) {
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.15));
-    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.3));
-    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
-  }
-
-  /* Fine buttons (±0.1) - subtle */
-  .ctrl-btn.fine {
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
-    font-size: 0.9rem;
+    background: transparent;
+    border-color: var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
+    box-shadow: none;
+    cursor: default;
   }
 
   .duration-control.compact .ctrl-btn {
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
-    font-size: 0.85rem;
     border-radius: 8px;
-  }
-
-  .duration-control.compact .ctrl-btn.fine {
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
-    font-size: 0.75rem;
+    font-size: 0.95rem;
   }
 
   /* The iPhone-width editor has room for one clear toolbar. Keeping the label
      beside the controls returns an entire row to the pictograph stage. */
   @container step-editor (min-width: 300px) {
-    .duration-control.compact {
+    .duration-control.compact:not(.stacked) {
       flex-direction: row;
       justify-content: center;
       gap: 4px;
@@ -328,7 +359,7 @@
 
   @supports not (container-type: size) {
     @media (min-width: 300px) and (max-width: 1023px) {
-      .duration-control.compact {
+      .duration-control.compact:not(.stacked) {
         flex-direction: row;
         justify-content: center;
         gap: 4px;
@@ -339,29 +370,30 @@
     }
   }
 
+  /* Beside the preview there is no row under it to separate from. */
+  .duration-control.stacked {
+    border-bottom: 0;
+    margin-bottom: 0;
+  }
+
   @media (max-width: 360px) {
     .duration-row {
       gap: 4px;
     }
 
-    .ctrl-btn {
-      width: var(--min-touch-target, 44px);
-      height: var(--min-touch-target, 44px);
-    }
-
-    .ctrl-btn.fine {
-      width: var(--min-touch-target, 44px);
-      height: var(--min-touch-target, 44px);
-    }
-
-    .duration-value {
+    .value-slot {
       min-width: 56px;
+    }
+
+    .duration-value,
+    .duration-input {
       font-size: 1.25rem;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ctrl-btn {
+    .ctrl-btn,
+    .duration-value {
       transition: none;
     }
 

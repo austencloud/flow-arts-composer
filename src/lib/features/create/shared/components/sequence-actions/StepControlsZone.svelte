@@ -15,7 +15,12 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { handLabel } from "./control-labels";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
-  import MobileHandSelector from "./MobileHandSelector.svelte";
+  import {
+    MAX_HAND_CARD_WIDTH,
+    NARROW_EDITOR_WIDTH,
+    SHORT_EDITOR_HEIGHT,
+  } from "./editor-layout";
+  import { getViewportManager } from "#lib/shared/device/get-viewport-manager.js";
   import PropControlPair from "./PropControlPair.svelte";
   import PropTurnsControl from "./PropTurnsControl.svelte";
   import PropTypeRow from "./PropTypeRow.svelte";
@@ -36,22 +41,22 @@
   } from "../../services/step-operations/turns-aggregation";
 
   type BatchMode = "set" | "adjust";
+  type SetOption = number | "fl";
 
-  const MOBILE_HAND_OPTIONS: {
-    hand: TargetHand;
+  // The hand picker is the shared SegmentedControl: exactly one hand is
+  // active, and each option carries its prop tone plus a non-color label.
+  const HAND_OPTIONS: {
+    value: TargetHand;
     label: string;
-    shortLabel: string;
+    tone: "blue" | "red";
   }[] = $derived([
-    { hand: "left", label: handLabel("left"), shortLabel: handLabel("left") },
-    {
-      hand: "right",
-      label: handLabel("right"),
-      shortLabel: handLabel("right"),
-    },
+    { value: "left", label: handLabel("left"), tone: "blue" },
+    { value: "right", label: handLabel("right"), tone: "red" },
   ]);
 
   interface Props {
     selectionMode: "single" | "multi";
+    /** Fallback layout until the zone has measured its own width. */
     stacked?: boolean;
     compact?: boolean;
     // Single-select: the displayed regular step (null when none / start placement)
@@ -83,6 +88,20 @@
     batchSteps,
     onBatchTurnsChange,
   }: Props = $props();
+
+  // The zone composes by its own width (the drawer's), not the viewport: a
+  // tablet sheet fits two cards, a landscape phone's side panel does not. The
+  // viewport-derived props only cover the first paint before measurement.
+  let zoneWidth = $state(0);
+  // A short screen (phone landscape, a half-height window) also takes the
+  // one-card composition: two full cards would leave the preview no height.
+  const viewport = getViewportManager();
+  const narrow = $derived(
+    zoneWidth > 0
+      ? zoneWidth < NARROW_EDITOR_WIDTH ||
+          viewport.height <= SHORT_EDITOR_HEIGHT
+      : stacked || compact
+  );
 
   // ---- Single-select display turns (mirrors StepEditorPanel's derivations) ----
   const leftMotion = $derived(stepData?.motions?.[HandSide.LEFT]);
@@ -124,6 +143,20 @@
     return true;
   });
 
+  // Turn limits, mirroring the coordinator's clamp: shifts (pro/anti) may go
+  // down to a float ("fl", −0.5); everything else stops at 0; all stop at 3.
+  const MAX_TURNS = 3;
+  const minTurnsFor = (motionType: MotionType | undefined): number =>
+    motionType === MotionType.PRO || motionType === MotionType.ANTI ? -0.5 : 0;
+  const canDecreaseLeft = $derived(
+    currentLeftTurns > minTurnsFor(leftMotion?.motionType)
+  );
+  const canIncreaseLeft = $derived(currentLeftTurns < MAX_TURNS);
+  const canDecreaseRight = $derived(
+    currentRightTurns > minTurnsFor(rightMotion?.motionType)
+  );
+  const canIncreaseRight = $derived(currentRightTurns < MAX_TURNS);
+
   const leftRotation = $derived(
     leftMotion?.rotationDirection ?? RotationDirection.NO_ROTATION
   );
@@ -157,15 +190,32 @@
     { value: "set", label: t("create_controls_set_all") },
     { value: "adjust", label: t("create_controls_adjust") },
   ]);
-  const SET_OPTIONS: (number | "fl")[] = ["fl", 0, 0.5, 1, 1.5, 2, 2.5, 3];
+  const SET_OPTIONS: SetOption[] = ["fl", 0, 0.5, 1, 1.5, 2, 2.5, 3];
 
-  function fmt(v: number | "fl"): string {
+  function fmt(v: SetOption): string {
     return v === "fl" ? "fl" : `${v}`;
   }
-  const norm = (v: number | "fl"): number => (v === "fl" ? -0.5 : v);
+  const norm = (v: SetOption): number => (v === "fl" ? -0.5 : v);
 
-  function isActiveOption(agg: TurnsAggregate, opt: number | "fl"): boolean {
+  function isActiveOption(agg: TurnsAggregate, opt: SetOption): boolean {
     return !agg.mixed && agg.value !== null && norm(agg.value) === norm(opt);
+  }
+  // The shared value palette: one absolute value is active when every selected
+  // step agrees; a mixed selection highlights nothing until a tap sets them.
+  function setOptionsFor(color: HandSide) {
+    return SET_OPTIONS.map((opt) => ({
+      value: opt,
+      label: fmt(opt),
+      ariaLabel: t("create_controls_set_turns", {
+        hand: handLabel(color),
+        turns: fmt(opt),
+      }),
+    }));
+  }
+  function activeSetOption(agg: TurnsAggregate): SetOption {
+    // null never matches an option, which hides the indicator.
+    return (SET_OPTIONS.find((opt) => isActiveOption(agg, opt)) ??
+      null) as SetOption;
   }
   function adjustDisplay(agg: TurnsAggregate): string {
     if (!agg.mixed) return agg.value === null ? "0" : fmt(agg.value);
@@ -180,23 +230,28 @@
 </script>
 
 {#if showPair}
-  <div class="controls-zone" class:stacked>
-    {#if stacked}
+  <div
+    class="controls-zone"
+    class:stacked={narrow}
+    style:--max-hand-card-width="{MAX_HAND_CARD_WIDTH}px"
+    bind:clientWidth={zoneWidth}
+  >
+    {#if narrow}
       <div class="mobile-hand-picker">
-        <MobileHandSelector
+        <SegmentedControl
+          options={HAND_OPTIONS}
           value={mobileHand}
-          onChange={(hand) => (mobileHand = hand)}
-          options={MOBILE_HAND_OPTIONS}
+          onchange={(hand) => (mobileHand = hand)}
           ariaLabel={t("create_controls_choose_prop")}
-          fullWidth={true}
         />
       </div>
     {/if}
 
     <PropControlPair
-      {stacked}
-      {compact}
-      visibleHand={stacked ? mobileHand : "both"}
+      stacked={narrow}
+      compact={narrow}
+      labelsHidden={narrow}
+      visibleHand={narrow ? mobileHand : "both"}
     >
       {#snippet leftContent()}
         <Crossfade key={selectionMode} duration={DURATION.fast}>
@@ -216,7 +271,9 @@
               leftRotation,
               showLeftRotation,
               leftPathShape,
-              leftIsShift
+              leftIsShift,
+              canDecreaseLeft,
+              canIncreaseLeft
             )}
           {/if}
         </Crossfade>
@@ -239,7 +296,9 @@
               rightRotation,
               showRightRotation,
               rightPathShape,
-              rightIsShift
+              rightIsShift,
+              canDecreaseRight,
+              canIncreaseRight
             )}
           {/if}
         </Crossfade>
@@ -255,7 +314,9 @@
   rotation: RotationDirection,
   showRotation: boolean,
   pathShape: PathShapeValue | undefined,
-  isShift: boolean
+  isShift: boolean,
+  canDecrease: boolean,
+  canIncrease: boolean
 )}
   <div class="hand-inner">
     <PropTurnsControl
@@ -263,9 +324,11 @@
       {turns}
       rotationDirection={rotation}
       {showRotation}
-      {compact}
+      compact={narrow}
       {pathShape}
       {isShift}
+      {canDecrease}
+      {canIncrease}
       onTurnsChange={(delta) => onTurnsChange(color, delta)}
       onRotationChange={(dir) => onRotationChange(color, dir)}
       onPathShapeChange={onPathShapeChange
@@ -278,7 +341,7 @@
       {#snippet trailingControl()}
         <PropTypeRow
           hand={color === HandSide.LEFT ? "left" : "right"}
-          {compact}
+          compact={narrow}
           {onOpenPropSheet}
         />
       {/snippet}
@@ -303,22 +366,14 @@
     />
     {#if mode === "set"}
       <!-- Absolute value palette — tap sets every selected step to that value. -->
-      <div class="value-grid">
-        {#each SET_OPTIONS as opt (opt)}
-          <button
-            class="value-chip"
-            class:active={isActiveOption(agg, opt)}
-            type="button"
-            aria-label={t("create_controls_set_turns", {
-              hand: handLabel(color),
-              turns: fmt(opt),
-            })}
-            onclick={() => onBatchTurnsChange(color, "set", opt)}
-          >
-            {fmt(opt)}
-          </button>
-        {/each}
-      </div>
+      <SegmentedControl
+        options={setOptionsFor(color)}
+        value={activeSetOption(agg)}
+        color={colorName}
+        columns={4}
+        ariaLabel={t("create_controls_set_all")}
+        onchange={(opt) => onBatchTurnsChange(color, "set", opt)}
+      />
     {:else}
       <!-- Relative nudge — ±0.5 to each step, preserving offsets. -->
       <div class="stepper">
@@ -367,7 +422,7 @@
   }
 
   .mobile-hand-picker {
-    padding: 8px 0 10px;
+    padding: 0 0 6px;
   }
 
   /* Inner column so single (stepper + prop row) and batch (segmented + palette)
@@ -380,49 +435,8 @@
     width: 100%;
   }
 
-  /* ===== Batch: Set-all value palette ===== */
-  .value-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-  }
-
-  .value-chip {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: var(--min-touch-target, 44px);
-    border-radius: 10px;
-    border: 1px solid rgba(var(--prop-color-rgb, 59, 130, 246), 0.35);
-    background: rgba(var(--prop-color-rgb, 59, 130, 246), 0.12);
-    color: rgba(255, 255, 255, 0.92);
-    font-size: 1rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    cursor: pointer;
-    transition:
-      background var(--duration-fast) var(--ease-standard),
-      border-color var(--duration-fast) var(--ease-standard),
-      transform var(--duration-fast) var(--ease-standard),
-      color var(--duration-fast) var(--ease-standard);
-  }
-
-  .value-chip:hover {
-    background: rgba(var(--prop-color-rgb, 59, 130, 246), 0.24);
-    border-color: rgba(var(--prop-color-rgb, 59, 130, 246), 0.6);
-  }
-
-  .value-chip:active {
-    transform: scale(0.96);
-  }
-
-  .value-chip.active {
-    background: rgba(var(--prop-color-rgb, 59, 130, 246), 0.85);
-    border-color: rgba(var(--prop-color-rgb, 59, 130, 246), 1);
-    color: #fff;
-  }
-
-  /* ===== Batch: Adjust stepper ===== */
+  /* ===== Batch: Adjust stepper — the same ±/value grammar as the single
+     stepper in PropTurnsControl, so single ↔ multi only swaps the content. ===== */
   .stepper {
     display: flex;
     align-items: center;
@@ -439,7 +453,7 @@
     border-radius: 10px;
     border: 1px solid rgba(var(--prop-color-rgb, 59, 130, 246), 0.4);
     background: rgba(var(--prop-color-rgb, 59, 130, 246), 0.2);
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--prop-color, var(--semantic-info));
     font-size: 1.1rem;
     cursor: pointer;
     transition:
@@ -457,11 +471,16 @@
     transform: scale(0.95);
   }
 
+  .ctrl-btn:focus-visible {
+    outline: 2px solid var(--theme-text, #fff);
+    outline-offset: 2px;
+  }
+
   .turns-value {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.95);
-    min-width: 4ch;
+    min-width: var(--min-touch-target, 44px);
     text-align: center;
     font-variant-numeric: tabular-nums;
   }
@@ -474,11 +493,9 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .value-chip,
     .ctrl-btn {
       transition: none;
     }
-    .value-chip:active,
     .ctrl-btn:active {
       transform: none;
     }

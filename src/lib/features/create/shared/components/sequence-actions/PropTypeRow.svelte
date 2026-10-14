@@ -270,9 +270,9 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    min-width: 36px;
-    padding: 0 8px;
-    height: 36px;
+    min-width: var(--min-touch-target, 44px);
+    padding: 0 10px;
+    height: var(--min-touch-target, 44px);
     border-radius: 8px;
     border: 1px solid;
     cursor: pointer;

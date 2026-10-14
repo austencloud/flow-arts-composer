@@ -11,7 +11,7 @@
   import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import PropControlPair from "./PropControlPair.svelte";
-  import MobileHandSelector from "./MobileHandSelector.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import PropLocationControl from "./PropLocationControl.svelte";
   import PropOrientationControl from "./PropOrientationControl.svelte";
 
@@ -56,21 +56,15 @@
   const rightOrientation = $derived(rightMotion?.startOrientation ?? "in");
   let visibleHand = $state<TargetHand>("left");
 
+  // The hand picker is the shared SegmentedControl: exactly one hand is
+  // active, and each option carries its prop tone plus a non-color label.
   const HAND_OPTIONS: {
-    hand: TargetHand;
+    value: TargetHand;
     label: string;
-    shortLabel: string;
+    tone: "blue" | "red";
   }[] = $derived([
-    {
-      hand: "left",
-      label: t("shared_controls_left"),
-      shortLabel: t("shared_controls_left"),
-    },
-    {
-      hand: "right",
-      label: t("shared_controls_right"),
-      shortLabel: t("shared_controls_right"),
-    },
+    { value: "left", label: t("shared_controls_left"), tone: "blue" },
+    { value: "right", label: t("shared_controls_right"), tone: "red" },
   ]);
 
   // Stacked and focused layouts are both too narrow for two cards side by side,
@@ -140,18 +134,18 @@
     </span>
 
     {#if usesHandPicker}
-      <MobileHandSelector
-        value={visibleHand}
-        onChange={(hand) => (visibleHand = hand)}
+      <SegmentedControl
         options={HAND_OPTIONS}
+        value={visibleHand}
+        onchange={(hand) => (visibleHand = hand)}
         ariaLabel={tDynamic("create_action_choose_start_placement_prop")}
-        fullWidth
       />
     {/if}
 
     <PropControlPair
       {stacked}
       {compact}
+      labelsHidden={usesHandPicker}
       prominentLabels
       visibleHand={usesHandPicker ? visibleHand : "both"}
     >

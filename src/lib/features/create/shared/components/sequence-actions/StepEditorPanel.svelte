@@ -20,6 +20,11 @@
   import ArrowAdjustmentPanel from "./ArrowAdjustmentPanel.svelte";
   import ArrowAdjustmentHistory from "./ArrowAdjustmentHistory.svelte";
   import StepEditorTour from "#lib/shared/onboarding/components/step-editor-tour/StepEditorTour.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { NARROW_EDITOR_WIDTH, SHORT_EDITOR_HEIGHT } from "./editor-layout";
+  import { getViewportManager } from "#lib/shared/device/get-viewport-manager.js";
   import { stepEditorTourState } from "#lib/shared/onboarding/state/step-editor-tour-state.svelte.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -105,7 +110,21 @@
   // controls keep one prop usable at a time without shrinking the placement
   // board into a decorative strip.
   const isShortWideEditor = $derived(
-    editorWidth > 0 && editorHeight > 0 && editorHeight <= 520
+    editorWidth > 0 && editorHeight > 0 && editorHeight <= SHORT_EDITOR_HEIGHT
+  );
+  // A short panel that is also wider than it is tall (a landscape phone's
+  // side drawer) composes the preview beside its controls instead of above.
+  // Short landscape is a property of the screen, not of the top zone: a phone
+  // held upright also has a short top zone once the drawer splits it, but its
+  // preview still belongs above the duration row, not beside it.
+  const viewport = getViewportManager();
+  const isShortLandscape = $derived(
+    isShortWideEditor && viewport.width > viewport.height
+  );
+  // Narrow vs. wide is the drawer's own width, shared with the controls zone
+  // through editor-layout.ts; the viewport only decides the first paint.
+  const narrowEditor = $derived(
+    editorWidth > 0 ? editorWidth < NARROW_EDITOR_WIDTH : !isSideBySideLayout
   );
   const startPlacementHitTargetRadius = $derived(
     isShortWideEditor ? 160 : isSideBySideLayout ? 75 : 85
@@ -264,7 +283,7 @@
       showCascadePulse = true;
       const timeout = setTimeout(() => {
         showCascadePulse = false;
-      }, 300);
+      }, motionDuration(DURATION.emphasis));
       lastSequenceVersion = sequenceVersion;
       return () => clearTimeout(timeout);
     }
@@ -502,6 +521,7 @@
 <div
   class="editor-panel"
   class:desktop={isSideBySideLayout}
+  class:short-landscape={isShortLandscape}
   class:tour-active={stepEditorTourState.isActive}
   bind:clientWidth={editorWidth}
   bind:clientHeight={editorHeight}
@@ -510,7 +530,11 @@
   <StepEditorTour />
 
   <!-- Header -->
-  <header class="panel-header" class:tour-dim={tourHighlight !== "none"}>
+  <header
+    class="panel-header"
+    class:short-landscape={isShortLandscape}
+    class:tour-dim={tourHighlight !== "none"}
+  >
     <div class="header-info">
       <h2>{t("create_ui_step_editor")}</h2>
       <span class="subtitle">
@@ -525,33 +549,31 @@
             )}
           </span>
         {/if}
-        {#if isBetaPlacement && isBetaSwapped}
-          <button
-            class="beta-swap-badge active"
-            onclick={() => onBetaSwapToggle?.()}
-            data-ghost={onBetaSwapToggle ? "safe" : undefined}
-            data-ghost-kind={onBetaSwapToggle ? "step-edit" : undefined}
-            data-ghost-label="Beta swap"
-            title={t("create_review_beta_offset_swapped_b_to_toggle")}
-            aria-label={t(
-              "create_review_beta_offset_swapped_press_b_to_toggle"
-            )}
-            aria-pressed="true">β⇄</button
-          >
-        {:else if isBetaPlacement}
-          <button
-            class="beta-swap-badge"
-            onclick={() => onBetaSwapToggle?.()}
-            data-ghost={onBetaSwapToggle ? "safe" : undefined}
-            data-ghost-kind={onBetaSwapToggle ? "step-edit" : undefined}
-            data-ghost-label="Beta swap"
-            title={t("create_review_swap_beta_offset_b")}
-            aria-label={t("create_review_swap_beta_offset_press_b_to_toggle")}
-            aria-pressed="false">β⇄</button
-          >
-        {/if}
       </span>
     </div>
+
+    <!-- Beta swap is an on/off toggle, so it is the shared filter chip. The
+         keyboard hint is in the chip itself (pointer devices only), which is
+         what makes the window-level "b" shortcut discoverable. -->
+    {#if isBetaPlacement}
+      <div class="beta-swap">
+        <FilterChipBase
+          label="β⇄"
+          mode="toggle"
+          size="sm"
+          active={isBetaSwapped}
+          chipColor="var(--feature-edit, #8b5cf6)"
+          ariaLabel={isBetaSwapped
+            ? t("create_review_beta_offset_swapped_press_b_to_toggle")
+            : t("create_review_swap_beta_offset_press_b_to_toggle")}
+          onclick={() => onBetaSwapToggle?.()}
+        >
+          {#snippet iconSnippet()}
+            <kbd class="key-hint" aria-hidden="true">B</kbd>
+          {/snippet}
+        </FilterChipBase>
+      </div>
+    {/if}
 
     <!-- Arrow adjustment panel in header when arrow is selected -->
     {#if isAdmin() && hasArrowSelected && displayedStepData}
@@ -598,7 +620,7 @@
     </div>
   </header>
 
-  <div class="editor-content">
+  <div class="editor-content" class:short-landscape={isShortLandscape}>
     <!-- Pictograph Preview - shown on both mobile and desktop when beat selected -->
     <!-- Duration is now rendered INSIDE the pictograph via DurationGlyph -->
     {#if hasSelection && displayedStepData}
@@ -607,6 +629,7 @@
       <div
         class="preview-section"
         class:mobile={!isSideBySideLayout}
+        class:short-landscape={isShortLandscape}
         class:tour-highlight={tourHighlight === "preview"}
         class:tour-dim={tourHighlight !== "none" && tourHighlight !== "preview"}
         onclick={(e) => {
@@ -663,6 +686,7 @@
     <div
       class="controls-section"
       class:mobile={!isSideBySideLayout}
+      class:short-landscape={isShortLandscape}
       class:duration-only={hasSelection && !isStartPlacementSelected}
     >
       {#if !hasSelection}
@@ -673,8 +697,8 @@
       {:else if isStartPlacementSelected}
         <StartPlacementEditMode
           startPlacementData={displayedStepData}
-          stacked={!isSideBySideLayout}
-          compact={!isSideBySideLayout || isShortWideEditor}
+          stacked={narrowEditor}
+          compact={narrowEditor || isShortWideEditor}
           focused={isShortWideEditor}
           {activeMoveHand}
           repositionDisabled={startPlacementUsesCenter}
@@ -693,7 +717,8 @@
           >
             <DurationControl
               duration={displayedStepData?.duration ?? 1}
-              compact={!isSideBySideLayout}
+              compact={narrowEditor || isShortLandscape}
+              layout={isShortLandscape ? "stacked" : "row"}
               {onDurationChange}
             />
           </div>
@@ -729,8 +754,6 @@
     position: relative;
     container-type: size;
     container-name: step-editor;
-    /* Whole panel is swipe-draggable — show the grab affordance everywhere */
-    cursor: grab;
   }
 
   .editor-content {
@@ -739,15 +762,6 @@
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
-  }
-
-  /* Restore natural cursors on elements that need their own (cursor inherits) */
-  .editor-panel :global(input),
-  .editor-panel :global(textarea),
-  .editor-panel :global(select),
-  .editor-panel :global([role="slider"]),
-  .editor-panel :global([contenteditable]) {
-    cursor: auto;
   }
 
   /* While actively dragging, force the closed-fist cursor across the panel */
@@ -772,6 +786,49 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
+  }
+
+  /* Short landscape: title and step share one line so the preview keeps the
+     height; the actions stay at the trailing edge. */
+  .panel-header.short-landscape {
+    min-height: var(--min-touch-target);
+    padding: 2px 12px;
+  }
+
+  .panel-header.short-landscape .header-info {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .beta-swap {
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .key-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.1rem;
+    padding: 0 0.25rem;
+    border-radius: 4px;
+    border: 1px solid currentColor;
+    font-family: inherit;
+    font-size: var(--font-size-compact, 0.7rem);
+    font-weight: 600;
+    line-height: 1.3;
+    opacity: 0.8;
+  }
+
+  /* A key hint only helps where there is a keyboard. */
+  @media (hover: none) {
+    .key-hint {
+      display: none;
+    }
   }
 
   .panel-header h2 {
@@ -798,38 +855,6 @@
 
   .cascade-indicator.pulse {
     animation: cascade-pulse var(--duration-emphasis) var(--ease-standard-out);
-  }
-
-  .beta-swap-badge {
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 1px 5px;
-    border-radius: 4px;
-    border: 1px solid rgba(168, 85, 247, 0.3);
-    background: rgba(168, 85, 247, 0.1);
-    color: rgba(168, 85, 247, 0.6);
-    cursor: pointer;
-    transition:
-      background var(--duration-fast) var(--ease-standard),
-      color var(--duration-fast) var(--ease-standard),
-      border-color var(--duration-fast) var(--ease-standard);
-    line-height: 1.2;
-  }
-
-  .beta-swap-badge:hover {
-    background: rgba(168, 85, 247, 0.2);
-    color: rgba(168, 85, 247, 0.9);
-  }
-
-  .beta-swap-badge.active {
-    background: rgba(168, 85, 247, 0.3);
-    border-color: rgba(168, 85, 247, 0.5);
-    color: #d8b4fe;
-  }
-
-  .beta-swap-badge.active:hover {
-    background: rgba(168, 85, 247, 0.4);
-    color: #ede9fe;
   }
 
   @keyframes cascade-pulse {
@@ -884,6 +909,9 @@
     }
   }
 
+  /* The drawer's own close-button treatment (DrawerHeader.svelte): a flat
+     round with the card tint and stroke, the glyph carrying the meaning. The
+     destructive action is told apart by its glyph color, not a filled badge. */
   .icon-btn {
     display: flex;
     align-items: center;
@@ -893,57 +921,43 @@
     border-radius: 50%;
     cursor: pointer;
     font-size: var(--font-size-base);
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.15));
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     transition:
       background var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
       transform var(--duration-fast) var(--ease-standard);
-    border: 1px solid var(--theme-stroke-strong);
+  }
+
+  .icon-btn:hover {
+    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
+    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
+    color: var(--theme-text, #fff);
+  }
+
+  .icon-btn:active {
+    transform: scale(0.95);
+  }
+
+  .icon-btn:focus-visible {
+    outline: 2px solid var(--theme-accent, #3b82f6);
+    outline-offset: 2px;
   }
 
   .icon-btn.inspect {
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
-    border-color: rgba(6, 182, 212, 0.3);
-    color: white;
-  }
-
-  .icon-btn.inspect:hover {
-    background: linear-gradient(135deg, #22d3ee, #06b6d4);
-    transform: scale(1.05);
+    color: var(--theme-accent, #60a5fa);
   }
 
   .icon-btn.delete {
-    background: linear-gradient(
-      135deg,
-      var(--semantic-warning) 0%,
-      color-mix(in srgb, var(--semantic-warning) 80%, #ff0000) 100%
-    );
-    border-color: color-mix(in srgb, var(--semantic-warning) 30%, transparent);
-    color: white;
+    color: var(--semantic-warning);
   }
 
   .icon-btn.delete:hover {
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--semantic-warning) 80%, #ff0000) 0%,
-      color-mix(in srgb, var(--semantic-warning) 60%, #ff0000) 100%
-    );
-    transform: scale(1.05);
-  }
-
-  .icon-btn.close {
-    background: linear-gradient(
-      135deg,
-      rgba(100, 100, 120, 0.85),
-      rgba(70, 70, 90, 0.85)
-    );
-    color: white;
-  }
-
-  .icon-btn.close:hover {
-    background: linear-gradient(
-      135deg,
-      rgba(120, 120, 140, 0.95),
-      rgba(90, 90, 110, 0.95)
-    );
+    background: color-mix(in srgb, var(--semantic-warning) 18%, transparent);
+    border-color: color-mix(in srgb, var(--semantic-warning) 50%, transparent);
+    color: var(--semantic-warning);
   }
 
   /* ============================================================================
@@ -967,6 +981,33 @@
   .preview-section.mobile {
     padding: 12px;
     flex: 1 1 auto;
+  }
+
+  /* Short landscape: the preview sits beside the controls and keeps at least
+     a readable square; the controls column takes what is left. */
+  .editor-content.short-landscape {
+    flex-direction: row;
+  }
+
+  .preview-section.short-landscape {
+    flex: 1 1 auto;
+    min-width: 180px;
+    padding: 8px;
+  }
+
+  .controls-section.short-landscape {
+    flex: 0 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    border-top: none;
+    border-left: 1px solid var(--theme-stroke);
+    overflow-y: auto;
+  }
+
+  .controls-section.short-landscape.duration-only {
+    padding: 4px;
   }
 
   .pictograph-container {
