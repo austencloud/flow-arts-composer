@@ -1620,7 +1620,7 @@
       }
 
       /* The only thing on the screen: the capsule the pressed Composer button
-         lands as. Its brand-gradient fill is the byte-calibrated progress, so
+         lands as. Its brand-gradient fill is the self-timed progress, so
          the fill moving is the screen's only motion. It carries the
          composer-cta view-transition name on arrival from a public page. */
       .boot-capsule {
@@ -1748,9 +1748,9 @@
     </script>
     <script>
       // Two plain status strings: "Opening Flow Arts Composer" from first
-      // paint, then "Almost there" if the app is still starting after 4s. The
-      // __tkaLoadProgress messages are kept for the boot profiler only; the
-      // screen never shows them. This runs before the app's lazy locale bundle.
+      // paint, then "Almost there" if the app is still starting well past its
+      // expected finish (4s at the earliest). Boot milestones name phases for
+      // the fill and the boot profiler only; the screen never shows them. This runs before the app's lazy locale bundle.
       // Match its cookie-first selection so German visitors also get a
       // translated startup screen.
       var __tkaBootLocales = [
@@ -1796,18 +1796,13 @@
           .getElementById("app-loading")
           .setAttribute("aria-label", "Flow Arts Composer wird geladen");
       }
-      var __tkaReduceMotion = Boolean(
-        window.matchMedia &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      );
-
-      // --- Phase A: Resource-tracking loading bar (5% → 70%) ---
-      // Uses PerformanceObserver to track real /_app/ resource loads.
-      // Self-calibrating: saves observed bytes to localStorage for next visit.
-
-      var __tkaObserver = null;
-      var __tkaTrickleFallback = null;
-      var __tkaPhaseAPercent = 5;
+      var __tkaReduceMotion = false;
+      try {
+        __tkaReduceMotion = Boolean(
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        );
+      } catch (e) {}
 
       // Crossfade: fade out → swap text → fade in (200ms each via CSS transition)
       var __tkaFadeTimer = null;
@@ -1834,186 +1829,316 @@
         _initText.textContent = __tkaBootMessage("Opening Flow Arts Composer");
       }
 
-      // Self-calibrating expected bytes: use saved value or conservative seed
-      var __tkaExpectedBytes = 3000000; // 3MB seed for first visit
-      try {
-        var savedBytes = localStorage.getItem("tka-load-bytes");
-        if (savedBytes) {
-          var parsed = parseInt(savedBytes, 10);
-          if (parsed > 0) __tkaExpectedBytes = parsed;
-        }
-      } catch (e) {}
+      // --- The fill: a boot that times itself ---
+      // The app reports named milestones, in a fixed order, through
+      // __tkaBootMilestone(name). Each boot stores when they arrived
+      // (localStorage "tka-boot-profile", last boot wins) and the next boot
+      // replays that profile: between two milestones the fill moves at the
+      // pace the last boot took, and a step that runs late keeps creeping but
+      // never claims the next milestone before it arrives. Design and the
+      // measurements behind it:
+      // docs/superpowers/specs/2026-10-14-boot-bar-self-timing.md
+      var __tkaFinished = false;
+      var __tkaBootRanks = [
+        "start",
+        "scripts",
+        "shell",
+        "hydrated",
+        "cloud",
+        "session",
+        "services",
+        "workspace",
+        "settings",
+        "ready",
+      ];
+      var __tkaBootLast = __tkaBootRanks.length - 1;
+      // A first visit has no profile of its own. This is the measured
+      // production cold boot of /create (ms from navigation start, rounded to
+      // 10 ms): 2026-10-14, build:fast of codex/boot-bar-self-timing served by
+      // wrangler pages dev, fresh browser context, 242 /_app/ chunks and
+      // 1.87 MB encoded before ready; the median of three cold boots. Cloud and
+      // session arrive after ready on a cold boot, so they are not in it.
+      var __tkaDefaultBootProfile = {
+        v: 1,
+        t: {
+          start: 310,
+          scripts: 830,
+          shell: 980,
+          hydrated: 2400,
+          services: 3740,
+          workspace: 3870,
+          settings: 3870,
+          ready: 3870,
+        },
+      };
+      // Silent probe for timeline captures; nothing is logged.
+      var __tkaBootBar = {
+        profile: null,
+        defaultProfile: false,
+        milestones: [],
+        samples: [],
+      };
+      window.__tkaBootBar = __tkaBootBar;
+      var __tkaBootTimes = []; // expected arrival per rank, from the profile
+      var __tkaBootProfiled = []; // per rank: did the profile record it
+      var __tkaBootArrived = {}; // name -> ms, every first arrival
+      var __tkaBootTop = -1; // highest rank that has arrived in order
+      var __tkaBootTopAt = 0;
+      var __tkaBarWidth = 5; // the fill's CSS starting width
+      var __tkaBarTicker = null;
+      var __tkaBarFill = document.getElementById("loading-bar-fill");
+      var __tkaBarScreen = document.getElementById("app-loading");
+      // Landing and retro routes hide the screen above: no ticker, no profile.
+      var __tkaBarActive = Boolean(
+        __tkaBarFill &&
+        __tkaBarScreen &&
+        __tkaBarScreen.style.display !== "none"
+      );
+      var __tkaAlmostAt = 4000;
 
-      var __tkaLoadedBytes = 0;
-      var __tkaResourceCount = 0;
-      var __tkaCap = 70;
-
-      function __tkaUpdateBar(percent) {
-        // Phase B owns the bar - late Phase A callbacks must not regress it
-        if (__tkaPhaseBStarted) return;
-        // Monotonic within Phase A - never go backwards
-        if (percent <= __tkaPhaseAPercent) return;
-        __tkaPhaseAPercent = Math.min(percent, __tkaCap);
-
-        var bar = document.getElementById("loading-bar-fill");
-        var screen = document.getElementById("app-loading");
-        if (bar) bar.style.width = __tkaPhaseAPercent + "%";
-        if (screen)
-          screen.setAttribute(
-            "aria-valuenow",
-            String(Math.round(__tkaPhaseAPercent))
-          );
-      }
-
-      function __tkaProcessResources(entries) {
-        for (var i = 0; i < entries.length; i++) {
-          var entry = entries[i];
-          // Only count /_app/ resources (SvelteKit chunks)
-          if (entry.name && entry.name.indexOf("/_app/") !== -1) {
-            // encodedBodySize = compressed body size (same-origin, works even from cache)
-            var size = entry.encodedBodySize || entry.transferSize || 0;
-            if (size > 0) {
-              __tkaLoadedBytes += size;
-              __tkaResourceCount++;
-            }
-          }
-        }
-
-        if (__tkaResourceCount > 0) {
-          // Cancel trickle fallback - real resources are arriving
-          if (__tkaTrickleFallback) {
-            clearTimeout(__tkaTrickleFallback);
-            __tkaTrickleFallback = null;
-          }
-
-          var rawPercent = (__tkaLoadedBytes / __tkaExpectedBytes) * __tkaCap;
-          __tkaUpdateBar(Math.min(rawPercent, __tkaCap));
-        }
-      }
-
-      // Set up PerformanceObserver for resource tracking
-      var __tkaObserverSupported = typeof PerformanceObserver !== "undefined";
-      if (__tkaObserverSupported) {
-        try {
-          __tkaObserver = new PerformanceObserver(function (list) {
-            __tkaProcessResources(list.getEntries());
-          });
-          __tkaObserver.observe({ type: "resource", buffered: true });
-        } catch (e) {
-          __tkaObserverSupported = false;
-        }
-      }
-
-      // Fallback: if no resources detected after 2s (old browser), use decelerating trickle
-      __tkaTrickleFallback = setTimeout(function () {
-        __tkaTrickleFallback = null;
-        // Only activate if no real resources arrived
-        if (__tkaResourceCount > 0) return;
-
-        // Disconnect observer if it exists but isn't producing results
-        if (__tkaObserver) {
-          try {
-            __tkaObserver.disconnect();
-          } catch (e) {}
-          __tkaObserver = null;
-        }
-
-        var trickleInterval = setInterval(function () {
-          var increment = Math.max(0.5, (__tkaCap - __tkaPhaseAPercent) * 0.08);
-          __tkaUpdateBar(__tkaPhaseAPercent + increment);
-
-          if (__tkaPhaseAPercent >= __tkaCap - 0.5) {
-            clearInterval(trickleInterval);
-          }
-        }, 600);
-      }, 2000);
-
-      // --- Phase B: App init checkpoints (72% → 100%) ---
-      // Called by SvelteKit components as initialization proceeds.
-
-      var __tkaCurrentPercent = 5;
       function __tkaMarkSplash(label, detail) {
         try {
           performance.mark("boot:splash:" + label, { detail: detail });
         } catch (e) {}
       }
-      __tkaMarkSplash("script-start");
-      var __tkaFinished = false;
-      var __tkaPhaseBStarted = false; // Phase B owns the bar once it starts
 
-      // Still starting after 4s: say so once, plainly.
-      var __tkaSlowTimer = setTimeout(function () {
-        if (__tkaFinished) return;
-        var text = document.getElementById("loading-text");
-        if (text) __tkaCrossfade(text, __tkaBootMessage("Almost there"));
-      }, 4000);
+      // Expected arrival per rank. Milestones the profile lacks sit between
+      // their neighbours by rank; times never run backwards or past ready.
+      function __tkaProfileTimes(profile) {
+        var times = [];
+        var ready = profile.t.ready;
+        __tkaBootProfiled = [];
+        for (var i = 0; i <= __tkaBootLast; i++) {
+          var value = profile.t[__tkaBootRanks[i]];
+          var known =
+            typeof value === "number" && isFinite(value) && value >= 0;
+          __tkaBootProfiled.push(known);
+          times.push(known ? Math.min(value, ready) : null);
+        }
+        if (times[0] === null) times[0] = 0;
+        __tkaBootProfiled[0] = true;
+        __tkaBootProfiled[__tkaBootLast] = true;
+        for (i = 1; i < __tkaBootLast; i++) {
+          if (times[i] !== null) continue;
+          var next = i + 1;
+          while (times[next] === null) next++;
+          times[i] =
+            times[i - 1] + (times[next] - times[i - 1]) / (next - i + 1);
+        }
+        for (i = 1; i <= __tkaBootLast; i++) {
+          if (times[i] < times[i - 1]) times[i] = times[i - 1];
+        }
+        return times;
+      }
 
-      window.__tkaLoadProgress = function (percent, message) {
-        // Monotonic: ignore out-of-order or duplicate calls
-        if (percent <= __tkaCurrentPercent || __tkaFinished) return;
-        __tkaCurrentPercent = percent;
-        // The message names the boot phase for the profiler; not shown.
-        __tkaMarkSplash("checkpoint:" + percent, message);
+      function __tkaShare(rank) {
+        return __tkaBootTimes[rank] / __tkaBootTimes[__tkaBootLast];
+      }
 
-        // Phase B now owns the bar - prevent late Phase A callbacks from regressing it
-        __tkaPhaseBStarted = true;
+      // Linear to 85% of a segment, then an asymptote short of the next one.
+      function __tkaSegmentEase(x) {
+        if (x <= 0.85) return x < 0 ? 0 : x;
+        return 0.85 + 0.13 * (1 - Math.exp(-(x - 0.85) * 1.5));
+      }
 
-        // First checkpoint call: disconnect observer, save calibration
-        if (__tkaObserver) {
-          try {
-            __tkaObserver.disconnect();
-          } catch (e) {}
-          __tkaObserver = null;
+      // The fill heads for the next milestone the profile recorded. One it
+      // only interpolated (the last boot never saw it before ready) still
+      // anchors the fill if it arrives, but is never waited for.
+      function __tkaExpectedFraction(now) {
+        var rank = __tkaBootTop;
+        if (rank >= __tkaBootLast) return 1;
+        var next = rank + 1;
+        while (next < __tkaBootLast && !__tkaBootProfiled[next]) next++;
+        var from = __tkaShare(rank);
+        var to = __tkaShare(next);
+        var span = Math.max(__tkaBootTimes[next] - __tkaBootTimes[rank], 50);
+        return (
+          from + (to - from) * __tkaSegmentEase((now - __tkaBootTopAt) / span)
+        );
+      }
 
-          // Save observed bytes for next visit's calibration
-          if (__tkaLoadedBytes > 0) {
-            try {
-              localStorage.setItem("tka-load-bytes", String(__tkaLoadedBytes));
-            } catch (e) {}
+      // Width moves forward only, in half-percent steps rounded down, so it
+      // never shows the next milestone's share early.
+      function __tkaWriteBar(fraction, now) {
+        var width = Math.floor((4 + 96 * fraction) * 2) / 2;
+        if (width > 100) width = 100;
+        if (width <= __tkaBarWidth) return;
+        __tkaBarWidth = width;
+        if (__tkaBarFill) __tkaBarFill.style.width = width + "%";
+        if (__tkaBarScreen) {
+          __tkaBarScreen.setAttribute(
+            "aria-valuenow",
+            String(Math.round(100 * fraction))
+          );
+        }
+        if (__tkaBootBar.samples.length < 400) {
+          __tkaBootBar.samples.push({ t: Math.round(now), pct: width });
+        }
+      }
+
+      function __tkaBarTick() {
+        try {
+          if (__tkaFinished || !__tkaBarActive) return;
+          var now = performance.now();
+          __tkaWriteBar(__tkaExpectedFraction(now), now);
+        } catch (e) {}
+      }
+
+      function __tkaStopTicker() {
+        if (__tkaBarTicker === null) return;
+        clearInterval(__tkaBarTicker);
+        __tkaBarTicker = null;
+      }
+
+      function __tkaStartTicker() {
+        if (__tkaBarTicker !== null || __tkaFinished || !__tkaBarActive) return;
+        if (document.hidden) return;
+        __tkaBarTicker = setInterval(__tkaBarTick, 80);
+        __tkaBarTick();
+      }
+
+      // Stored at ready, when the boot went through the app shell. Only the
+      // milestones that arrived in order before ready go in.
+      function __tkaSaveProfile(readyAt) {
+        if (!__tkaBarActive) return;
+        var times = {};
+        var log = __tkaBootBar.milestones;
+        for (var i = 0; i < log.length; i++) {
+          if (!log[i].ignored && log[i].name !== "ready") {
+            times[log[i].name] = log[i].t;
           }
         }
+        if (times.scripts === undefined || times.shell === undefined) return;
+        times.ready = Math.round(readyAt);
+        localStorage.setItem(
+          "tka-boot-profile",
+          JSON.stringify({ v: 1, at: Date.now(), t: times })
+        );
+      }
 
-        // Cancel trickle fallback if still pending
-        if (__tkaTrickleFallback) {
-          clearTimeout(__tkaTrickleFallback);
-          __tkaTrickleFallback = null;
+      function __tkaRecordMilestone(name) {
+        var rank = __tkaBootRanks.indexOf(name);
+        if (rank === -1 || __tkaBootArrived.hasOwnProperty(name)) return;
+        var now = performance.now();
+        __tkaBootArrived[name] = now;
+        __tkaMarkSplash(name);
+        var entry = { name: name, t: Math.round(now) };
+        __tkaBootBar.milestones.push(entry);
+        // Late lower ranks keep their mark and log line but not the bar.
+        if (rank < __tkaBootTop) {
+          entry.ignored = true;
+          return;
         }
+        __tkaBootTop = rank;
+        __tkaBootTopAt = now;
+        if (rank === __tkaBootLast) {
+          __tkaSaveProfile(now);
+          return;
+        }
+        __tkaBarTick();
+      }
 
+      // Hand control to the shell immediately. Feature readiness is separate,
+      // so don't announce completion or hold the user behind a success message.
+      function __tkaFinishBoot() {
+        if (__tkaFinished) return;
+        __tkaFinished = true;
+        try {
+          __tkaStopTicker();
+        } catch (e) {}
         var bar = document.getElementById("loading-bar-fill");
         var screen = document.getElementById("app-loading");
-
-        // Bar ALWAYS updates - CSS transition makes it smooth
-        if (bar) bar.style.width = percent + "%";
-        if (screen) screen.setAttribute("aria-valuenow", String(percent));
-
-        if (percent >= 100) {
-          __tkaMarkSplash("shell-handoff");
-          __tkaFinished = true;
-          clearTimeout(window.__tkaLoadTimeout);
-          clearTimeout(__tkaSlowTimer);
-          // Hand control to the shell immediately. Feature readiness is separate,
-          // so don't announce completion or hold the user behind a success message.
-          if (screen) {
-            __tkaMarkSplash("dismiss-start");
-            // src/lib/features/create/shared/components/method-previews/after-boot-screen.ts waits on `loaded`, display none, or removal.
-            screen.classList.add("loaded");
-            // Reduced motion: no fade, so no transitionend; leave at once.
-            if (__tkaReduceMotion) {
-              __tkaMarkSplash("removed");
-              screen.remove();
-              return;
-            }
-            screen.addEventListener("transitionend", function (event) {
-              if (event.target !== screen) return;
-              __tkaMarkSplash("removed");
-              screen.remove();
-            });
+        if (bar) bar.style.width = "100%";
+        if (screen) screen.setAttribute("aria-valuenow", "100");
+        __tkaMarkSplash("shell-handoff");
+        clearTimeout(window.__tkaLoadTimeout);
+        clearTimeout(__tkaSlowTimer);
+        if (screen) {
+          __tkaMarkSplash("dismiss-start");
+          // src/lib/features/create/shared/components/method-previews/after-boot-screen.ts waits on `loaded`, display none, or removal.
+          screen.classList.add("loaded");
+          // Reduced motion: no fade, so no transitionend; leave at once.
+          if (__tkaReduceMotion) {
+            __tkaMarkSplash("removed");
+            screen.remove();
+            return;
           }
+          screen.addEventListener("transitionend", function (event) {
+            if (event.target !== screen) return;
+            __tkaMarkSplash("removed");
+            screen.remove();
+          });
         }
+      }
+
+      // The app's one entry point. A broken profile, storage or timer can
+      // only cost the fill its motion: ready always lets the screen go.
+      function __tkaBootMilestone(name) {
+        try {
+          __tkaRecordMilestone(name);
+        } catch (e) {}
+        if (name === "ready") __tkaFinishBoot();
+      }
+      window.__tkaBootMilestone = __tkaBootMilestone;
+
+      // Older callers (test routes, warm-thumbnails, phone sign-in) send 100
+      // when they are ready. Anything lower only leaves a profiler mark.
+      window.__tkaLoadProgress = function (percent, message) {
+        if (percent >= 100) {
+          __tkaBootMilestone("ready");
+          return;
+        }
+        __tkaMarkSplash("legacy:" + percent, message);
       };
 
-      // Safety net: if progress never reaches 100%, force-dismiss after 15s
+      try {
+        var __tkaSavedProfile = null;
+        try {
+          localStorage.removeItem("tka-load-bytes");
+          var __tkaRawProfile = localStorage.getItem("tka-boot-profile");
+          if (__tkaRawProfile) {
+            var __tkaParsedProfile = JSON.parse(__tkaRawProfile);
+            if (
+              __tkaParsedProfile &&
+              __tkaParsedProfile.v === 1 &&
+              __tkaParsedProfile.t &&
+              typeof __tkaParsedProfile.t.ready === "number" &&
+              __tkaParsedProfile.t.ready > 0
+            ) {
+              __tkaSavedProfile = __tkaParsedProfile;
+            }
+          }
+        } catch (e) {}
+        __tkaBootBar.defaultProfile = !__tkaSavedProfile;
+        __tkaBootBar.profile = __tkaSavedProfile || __tkaDefaultBootProfile;
+        __tkaBootTimes = __tkaProfileTimes(__tkaBootBar.profile);
+        __tkaAlmostAt = Math.max(4000, __tkaBootTimes[__tkaBootLast] + 1000);
+      } catch (e) {}
+
+      // Still starting well past the expected finish: say so once, plainly.
+      var __tkaSlowTimer = setTimeout(
+        function () {
+          if (__tkaFinished) return;
+          var text = document.getElementById("loading-text");
+          if (text) __tkaCrossfade(text, __tkaBootMessage("Almost there"));
+        },
+        Math.max(0, __tkaAlmostAt - performance.now())
+      );
+
+      __tkaBootMilestone("start");
+      try {
+        __tkaStartTicker();
+        document.addEventListener("visibilitychange", function () {
+          if (document.hidden) __tkaStopTicker();
+          else __tkaStartTicker();
+        });
+      } catch (e) {}
+
+      // Safety net: if ready never arrives, force-dismiss after 15s
       window.__tkaLoadTimeout = setTimeout(function () {
+        try {
+          __tkaStopTicker();
+        } catch (e) {}
         var screen = document.getElementById("app-loading");
         if (screen && !screen.classList.contains("loaded")) {
           __tkaMarkSplash("timeout-dismiss");
