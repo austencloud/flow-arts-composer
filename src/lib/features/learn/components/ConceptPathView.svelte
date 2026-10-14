@@ -254,14 +254,14 @@
     aria-labelledby="lesson-library-title"
   >
     <header class="library-heading">
-      <h2 id="lesson-library-title">{t("learn_ui_available_lessons")}</h2>
-      <span
-        >{t("learn_ui_lesson_count", {
-          count: availableConcepts.length,
-        })}</span
-      >
-    </header>
-    <div class="map-heading">
+      <div class="library-title">
+        <h2 id="lesson-library-title">{t("learn_ui_available_lessons")}</h2>
+        <span
+          >{t("learn_ui_lesson_count", {
+            count: availableConcepts.length,
+          })}</span
+        >
+      </div>
       <PanelButton
         variant="quiet"
         onclick={() => (showCourseMap = !showCourseMap)}
@@ -276,7 +276,7 @@
           aria-hidden="true"
         ></i>
       </PanelButton>
-    </div>
+    </header>
     {#if showCourseMap}
       <div
         id="course-map"
@@ -299,7 +299,10 @@
           availableConceptIds.has(concept.id)
         )}
 
-        <section class="category-section">
+        <section
+          class="category-section"
+          style:--category-columns={Math.min(concepts.length, 3)}
+        >
           <CategoryHeader
             {category}
             completedCount={categoryProgress.completed}
@@ -355,6 +358,7 @@
   .launch-zone {
     display: grid;
     gap: 1rem;
+    align-items: center;
   }
 
   .course-intro {
@@ -408,7 +412,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    max-width: 52rem;
+    min-width: 0;
     width: 100%;
   }
 
@@ -426,11 +430,18 @@
 
   .lesson-library {
     display: grid;
-    gap: 1.75rem;
+    gap: 1.25rem;
     padding-top: 0.75rem;
   }
 
   .library-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+  }
+  .library-title {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -442,12 +453,9 @@
     font-size: 1.5rem;
     letter-spacing: -0.02em;
   }
-  .library-heading > span {
+  .library-title > span {
     color: var(--theme-text-dim);
     font-size: 0.875rem;
-  }
-  .map-heading {
-    margin-top: -1rem;
   }
 
   .level-map-slot {
@@ -515,6 +523,7 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    min-width: 0;
   }
 
   .concept-list {
@@ -545,15 +554,31 @@
     }
   }
 
-  @container learn-tab (min-width: 1100px) {
-    .concept-list {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+  @container learn-tab (min-width: 850px) {
+    .launch-zone {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: clamp(1.5rem, 3cqw, 3rem);
+    }
+
+    .course-intro p {
+      max-width: 36rem;
     }
   }
 
-  @container learn-tab (min-width: 1600px) {
+  @container learn-tab (min-width: 1100px) {
+    .all-concepts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 2rem 0.875rem;
+      align-items: start;
+    }
+
+    .category-section {
+      grid-column: span var(--category-columns);
+    }
+
     .concept-list {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(var(--category-columns), minmax(0, 1fr));
     }
   }
 

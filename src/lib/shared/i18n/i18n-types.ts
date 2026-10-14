@@ -1,6 +1,6 @@
 // AUTO-GENERATED - DO NOT EDIT
 // Run: npm run i18n:types
-// Generated: 2026-10-14T21:10:01.170Z
+// Generated: 2026-10-14T21:19:18.727Z
 // Keys: 9545
 
 import enMessages from "../../../../messages/en.json";
