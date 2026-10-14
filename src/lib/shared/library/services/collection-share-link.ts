@@ -10,12 +10,7 @@
  * good for the life of the collection.
  */
 
-import {
-  doc,
-  runTransaction,
-  serverTimestamp,
-  type Firestore,
-} from "firebase/firestore";
+import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import { getUserCollectionPath } from "#lib/shared/library/data/firestore-paths.js";
 import { getAuthenticatedUserId } from "#lib/shared/library/services/collection-firestore-mapper.js";
@@ -56,10 +51,10 @@ async function claim(collectionId: string): Promise<string | null> {
   } catch {
     return null;
   }
-  const db: Firestore = getFirestoreInstance();
-  const collectionRef = doc(db, getUserCollectionPath(userId, collectionId));
 
   try {
+    const db = await getFirestoreInstance();
+    const collectionRef = doc(db, getUserCollectionPath(userId, collectionId));
     return await runTransaction(db, async (tx) => {
       const snapshot = await tx.get(collectionRef);
       if (!snapshot.exists()) return null;
