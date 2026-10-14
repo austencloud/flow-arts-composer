@@ -2,15 +2,17 @@
 status: backlog
 value: 3
 effort: M
-remaining: Recheck LOD, ObsidianPillars instancing, shadow limits, warmup, and material sharing in current 3D code.
+remaining: "Finish or explicitly retire the remaining per-object LOD, ObsidianPillars instancing, vegetation culling and WorldSceneContent shadow-caster limits. b14aedf1ea implemented portions, but ObsidianPillars still uses per-pillar uSeed materials, instanced-vegetation.ts keeps frustumCulled=false, and WorldSceneContent still enables model/child castShadow despite its 1024 map and 50m frustum; remeasure current shared warmup instead of adding old per-scene compile calls."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: in-progress
 ---
 
 # 3D Scene Performance Wins
+
+> 2026-10-14 triage: Finish or explicitly retire the remaining per-object LOD, ObsidianPillars instancing, vegetation culling and WorldSceneContent shadow-caster limits. b14aedf1ea implemented portions, but ObsidianPillars still uses per-pillar uSeed materials, instanced-vegetation.ts keeps frustumCulled=false, and WorldSceneContent still enables model/child castShadow despite its 1024 map and 50m frustum; remeasure current shared warmup instead of adding old per-scene compile calls. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 > **DRIFT WARNING — 2026-08-02.** Shader warm-up + most material sharing shipped; LOD, ObsidianPillars instancing, shadow-caster limiting did not
 >

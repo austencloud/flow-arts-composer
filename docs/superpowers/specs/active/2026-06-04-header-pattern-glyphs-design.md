@@ -2,14 +2,16 @@
 status: active
 value: 3
 effort: M
-remaining: "Verify shared turn/reversal glyph primitives, WordHeader data projection, and video-export parity against current AnimatorCanvas before implementing gaps."
+remaining: "Promote turn/reversal domain and glyph primitives, wire capped raw signatures into WordHeader/AnimatorCanvas, and add video-export parity. Glyphs and reversal modules remain under features/choreo-card, no turnGlyph/reversalGlyph wiring was found in animation-engine or video-export, and 7de49088a8 changed header motion rather than implementing this scope."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: ready
 ---
 # Turn + Reversal Pattern Glyphs in the Animation Header — Design
+
+> 2026-10-14 triage: Promote turn/reversal domain and glyph primitives, wire capped raw signatures into WordHeader/AnimatorCanvas, and add video-export parity. Glyphs and reversal modules remain under features/choreo-card, no turnGlyph/reversalGlyph wiring was found in animation-engine or video-export, and 7de49088a8 changed header motion rather than implementing this scope. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Date:** 2026-06-04
 **Status:** Specced, not started
