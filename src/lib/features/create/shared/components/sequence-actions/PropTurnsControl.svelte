@@ -12,9 +12,12 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { handLabel, pathShapeLabel } from "./control-labels";
   import type { Snippet } from "svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { PathShapeValue } from "../../services/step-operations/path-shape-handler";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+
+  type PathChoice = PathShapeValue | "auto";
 
   interface Props {
     hand: "left" | "right";
@@ -25,6 +28,10 @@
     compact?: boolean;
     pathShape?: PathShapeValue | undefined;
     isShift?: boolean;
+    /** False at the lower turn limit: the "−" button shows pressed flat. */
+    canDecrease?: boolean;
+    /** False at the upper turn limit: the "+" button shows pressed flat. */
+    canIncrease?: boolean;
     onTurnsChange: (delta: number) => void;
     onRotationChange: (direction: RotationDirection) => void;
     onPathShapeChange?: (shape: PathShapeValue) => void;
@@ -40,6 +47,8 @@
     compact = false,
     pathShape,
     isShift = true,
+    canDecrease = true,
+    canIncrease = true,
     onTurnsChange,
     onRotationChange,
     onPathShapeChange,
@@ -80,12 +89,36 @@
 
   const shapes: PathShapeValue[] = ["arc", "linear", "concave"];
 
+  // "Auto" follows the global path setting; its accessible name says which.
   const globalHint = $derived.by(() => {
     const vm = getAnimationVisibilityManager();
     if (vm.getMotionAwarePaths()) return t("viewer_ui_hybrid");
     const s = vm.getPathShape();
     return pathShapeLabel(s);
   });
+
+  const pathOptions: { value: PathChoice; label: string; ariaLabel: string }[] =
+    $derived([
+      {
+        value: "auto",
+        label: t("viewer_ui_auto"),
+        ariaLabel: `${t("create_controls_reset_path", { hand: handLabel(hand) })} (${globalHint})`,
+      },
+      ...shapes.map((shape) => ({
+        value: shape,
+        label: pathShapeLabel(shape),
+        ariaLabel: t("create_controls_path", {
+          hand: handLabel(hand),
+          shape: pathShapeLabel(shape),
+        }),
+      })),
+    ]);
+  const pathChoice = $derived<PathChoice>(pathShape ?? "auto");
+
+  function handlePathChoice(choice: PathChoice) {
+    if (choice === "auto") onPathShapeClear?.();
+    else onPathShapeChange?.(choice);
+  }
 
   function handleInvert(e: MouseEvent) {
     e.stopPropagation();
@@ -108,6 +141,7 @@
     <button
       class="ctrl-btn"
       class:compact
+      disabled={!canDecrease}
       aria-label={t("create_controls_less_turns", { hand: handLabel(hand) })}
       onclick={(e) => handleTurnsChangeClick(e, -0.5)}
     >
@@ -117,6 +151,7 @@
     <button
       class="ctrl-btn"
       class:compact
+      disabled={!canIncrease}
       aria-label={t("create_controls_more_turns", { hand: handLabel(hand) })}
       onclick={(e) => handleTurnsChangeClick(e, 0.5)}
     >
@@ -148,42 +183,22 @@
     </span>
   </button>
 
-  <!-- Path shape override (only for motions that traverse the grid) -->
+  <!-- Path shape override (only for motions that traverse the grid). Exactly
+       one choice is active, so this is the shared SegmentedControl; "Auto"
+       is the cleared state that follows the global path setting. -->
   {#if onPathShapeChange && onPathShapeClear && isShift}
     <div class="path-row" class:compact>
-      {#each shapes as shape}
-        <button
-          class="shape-pill"
-          class:active={pathShape === shape}
-          class:compact
-          aria-pressed={pathShape === shape}
-          aria-label={t("create_controls_path", {
-            hand: handLabel(hand),
-            shape: pathShapeLabel(shape),
-          })}
-          onclick={(e) => {
-            e.stopPropagation();
-            onPathShapeChange(shape);
-          }}
-        >
-          {pathShapeLabel(shape)}
-        </button>
-      {/each}
-      <button
-        class="shape-pill reset"
-        class:compact
-        disabled={pathShape === undefined}
-        aria-label={t("create_controls_reset_path", { hand: handLabel(hand) })}
-        onclick={(e) => {
-          e.stopPropagation();
-          onPathShapeClear();
-        }}
-      >
-        <i class="fas fa-rotate-left" aria-hidden="true"></i>
-      </button>
-      {#if pathShape === undefined}
-        <span class="path-hint">{globalHint}</span>
-      {/if}
+      <SegmentedControl
+        options={pathOptions}
+        value={pathChoice}
+        color={hand === "left" ? "blue" : "red"}
+        size="sm"
+        ariaLabel={t("create_controls_path", {
+          hand: handLabel(hand),
+          shape: globalHint,
+        })}
+        onchange={handlePathChoice}
+      />
     </div>
   {/if}
 
@@ -274,6 +289,24 @@
     transform: scale(0.95);
   }
 
+  .ctrl-btn:focus-visible,
+  .invert-btn:focus-visible {
+    outline: 2px solid var(--theme-text, #fff);
+    outline-offset: 2px;
+  }
+
+  /* At a turn limit the button sits pressed flat: no fill, no raise, the
+     glyph dimmed. It keeps its slot so the stepper never moves. */
+  .turns-controls .ctrl-btn:disabled,
+  .turns-controls.blue .ctrl-btn:disabled,
+  .turns-controls.red .ctrl-btn:disabled {
+    background: transparent;
+    border-color: var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
+    box-shadow: none;
+    cursor: default;
+  }
+
   /* Blue ctrl buttons */
   .turns-controls.blue .ctrl-btn {
     background: rgba(var(--prop-color-rgb, 59, 130, 246), 0.2);
@@ -281,7 +314,7 @@
     color: var(--prop-color, var(--semantic-info));
   }
 
-  .turns-controls.blue .ctrl-btn:hover {
+  .turns-controls.blue .ctrl-btn:hover:not(:disabled) {
     background: rgba(var(--prop-color-rgb, 59, 130, 246), 0.3);
     border-color: rgba(var(--prop-color-rgb, 59, 130, 246), 0.6);
     box-shadow: 0 2px 8px rgba(var(--prop-color-rgb, 59, 130, 246), 0.25);
@@ -294,7 +327,7 @@
     color: var(--prop-color, var(--semantic-error));
   }
 
-  .turns-controls.red .ctrl-btn:hover {
+  .turns-controls.red .ctrl-btn:hover:not(:disabled) {
     background: rgba(var(--prop-color-rgb, 239, 68, 68), 0.3);
     border-color: rgba(var(--prop-color-rgb, 239, 68, 68), 0.6);
     box-shadow: 0 2px 8px rgba(var(--prop-color-rgb, 239, 68, 68), 0.25);
@@ -392,81 +425,16 @@
   }
 
   .path-row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding-top: 6px;
+    padding-top: 8px;
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
-    margin-top: 4px;
+    margin-top: 2px;
     width: 100%;
   }
 
   .path-row.compact {
     grid-area: path;
-    padding-top: 4px;
-    margin-top: 2px;
-    gap: 3px;
-  }
-
-  .shape-pill {
-    padding: 4px 8px;
-    border-radius: 6px;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 0.65rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition:
-      background var(--duration-fast) var(--ease-standard),
-      color var(--duration-fast) var(--ease-standard),
-      border-color var(--duration-fast) var(--ease-standard),
-      opacity var(--duration-fast) var(--ease-standard);
-    min-height: 28px;
-  }
-
-  .shape-pill.compact {
-    padding: 0 8px;
-    font-size: var(--font-size-compact, 12px);
-    min-height: var(--min-touch-target, 44px);
-  }
-
-  .shape-pill:hover:not(:disabled) {
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
-    color: rgba(255, 255, 255, 0.7);
-  }
-
-  .shape-pill.active {
-    color: white;
-  }
-
-  .turns-controls.blue .shape-pill.active {
-    background: rgba(var(--prop-color-rgb, 59, 130, 246), 0.25);
-    border-color: rgba(var(--prop-color-rgb, 59, 130, 246), 0.5);
-  }
-
-  .turns-controls.red .shape-pill.active {
-    background: rgba(var(--prop-color-rgb, 239, 68, 68), 0.25);
-    border-color: rgba(var(--prop-color-rgb, 239, 68, 68), 0.5);
-  }
-
-  .shape-pill.reset {
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
-    border-color: var(--theme-stroke, rgba(255, 255, 255, 0.08));
-    font-size: var(--font-size-compact, 12px);
-  }
-
-  .shape-pill:disabled {
-    opacity: 0.25;
-    cursor: not-allowed;
-  }
-
-  .path-hint {
-    font-size: var(--font-size-compact, 12px);
-    color: rgba(255, 255, 255, 0.3);
-    font-style: italic;
+    padding-top: 6px;
+    margin-top: 0;
   }
 
   .trailing-control {
@@ -480,8 +448,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .ctrl-btn,
-    .invert-btn,
-    .shape-pill {
+    .invert-btn {
       transition: none;
     }
     .ctrl-btn:active:not(:disabled),

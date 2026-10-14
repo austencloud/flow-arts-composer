@@ -28,6 +28,8 @@
     prominentLabels?: boolean;
     /** Show one mounted card at a time in narrow layouts */
     visibleHand?: TargetHand;
+    /** Drop the Left/Right heading when a hand picker above already names it. */
+    labelsHidden?: boolean;
     /** Content for the left prop card */
     leftContent?: Snippet;
     /** Content for the right prop card */
@@ -39,6 +41,7 @@
     compact = false,
     prominentLabels = false,
     visibleHand = "both",
+    labelsHidden = false,
     leftContent,
     rightContent,
   }: Props = $props();
@@ -50,6 +53,7 @@
   class:compact
   class:prominent-labels={prominentLabels}
   class:focused={visibleHand !== "both"}
+  class:labels-hidden={labelsHidden}
 >
   <div
     class="prop-card blue"
@@ -81,6 +85,9 @@
   .prop-pair {
     display: flex;
     gap: 12px;
+    /* Wide drawers show two compact cards centered rather than two cards
+       stretched across the width; the cap lives in editor-layout.ts. */
+    justify-content: center;
   }
 
   .prop-pair.stacked {
@@ -91,11 +98,26 @@
      dock height, so switching hands never moves the preview above it. */
   .prop-pair.focused {
     display: grid;
+    /* One column that fills the zone, so the lone card spans it like the
+       hand picker above instead of shrinking to its stepper. */
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .prop-pair.focused .prop-card {
     grid-area: 1 / 1;
+    width: 100%;
     min-width: 0;
+    max-width: none;
+  }
+
+  /* With a Left | Right picker directly above, the card heading would say the
+     same word twice; the tone of the card already carries the hand. */
+  .prop-pair.labels-hidden .prop-label {
+    display: none;
+  }
+
+  .prop-pair.stacked .prop-card {
+    max-width: none;
   }
 
   .prop-pair.focused .prop-card.inactive {
@@ -109,7 +131,9 @@
   }
 
   .prop-card {
-    flex: 1;
+    flex: 1 1 0;
+    max-width: var(--max-hand-card-width, 320px);
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;

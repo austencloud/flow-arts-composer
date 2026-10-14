@@ -12,8 +12,7 @@
   Domain: Create module - Beat Editing Coordination
 -->
 <script lang="ts">
-
-import { getStepOperator } from "#lib/features/create/shared/get-step-operator.js";
+  import { getStepOperator } from "#lib/features/create/shared/get-step-operator.js";
   import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
@@ -51,7 +50,12 @@ import { getStepOperator } from "#lib/features/create/shared/get-step-operator.j
 
   // Tabs that support the Beat Editor Panel
   // Only tabs with beat sequences support individual beat editing
-  const SUPPORTED_TABS = new Set(["construct", "assemble", "generate", "spell"]);
+  const SUPPORTED_TABS = new Set([
+    "construct",
+    "assemble",
+    "generate",
+    "spell",
+  ]);
 
   const ctx = getCreateModuleContext();
   const { CreateModuleState, panelState, layout } = ctx;
@@ -251,15 +255,17 @@ import { getStepOperator } from "#lib/features/create/shared/get-step-operator.j
       UndoOperationType.MODIFY_BEAT_PROPERTIES
     );
 
-    const motion =
-      color === HandSide.LEFT ? leftMotion : rightMotion;
+    const motion = color === HandSide.LEFT ? leftMotion : rightMotion;
     const currentTurns =
       color === HandSide.LEFT ? currentLeftTurns : currentRightTurns;
     const isShift =
       motion?.motionType === MotionType.PRO ||
       motion?.motionType === MotionType.ANTI;
     const minTurns = isShift ? -0.5 : 0;
-    const newNumericTurns = Math.min(3, Math.max(minTurns, currentTurns + delta));
+    const newNumericTurns = Math.min(
+      3,
+      Math.max(minTurns, currentTurns + delta)
+    );
     const newTurns: number | "fl" =
       newNumericTurns === -0.5 ? "fl" : newNumericTurns;
 
@@ -284,7 +290,9 @@ import { getStepOperator } from "#lib/features/create/shared/get-step-operator.j
     if (batchStepNumbers.length === 0 || !StepOperator) return;
     hapticService?.trigger("selection");
 
-    CreateModuleState.pushUndoSnapshot(UndoOperationType.MODIFY_BEAT_PROPERTIES);
+    CreateModuleState.pushUndoSnapshot(
+      UndoOperationType.MODIFY_BEAT_PROPERTIES
+    );
 
     const seq = sequence;
     const delta = amount === "fl" ? -0.5 : amount;
@@ -326,10 +334,7 @@ import { getStepOperator } from "#lib/features/create/shared/get-step-operator.j
     activeSequenceState.selectAllSteps(all);
   }
 
-  function handleRotationChange(
-    color: HandSide,
-    direction: RotationDirection
-  ) {
+  function handleRotationChange(color: HandSide, direction: RotationDirection) {
     if (selectedStepNumber === null || !StepOperator) return;
     hapticService?.trigger("selection");
 
@@ -421,7 +426,12 @@ import { getStepOperator } from "#lib/features/create/shared/get-step-operator.j
   }
 
   function handleDurationChange(newDuration: number) {
-    if (selectedStepNumber === null || selectedStepNumber === 0 || !StepOperator) return;
+    if (
+      selectedStepNumber === null ||
+      selectedStepNumber === 0 ||
+      !StepOperator
+    )
+      return;
     hapticService?.trigger("selection");
 
     // Push undo snapshot BEFORE modifying
@@ -439,21 +449,41 @@ import { getStepOperator } from "#lib/features/create/shared/get-step-operator.j
   function handlePathShapeChange(color: HandSide, shape: PathShapeValue) {
     if (selectedStepNumber === null || !StepOperator) return;
     hapticService?.trigger("selection");
-    CreateModuleState.pushUndoSnapshot(UndoOperationType.MODIFY_BEAT_PROPERTIES);
-    StepOperator.setStepPathShape(selectedStepNumber, color, shape, CreateModuleState);
+    CreateModuleState.pushUndoSnapshot(
+      UndoOperationType.MODIFY_BEAT_PROPERTIES
+    );
+    StepOperator.setStepPathShape(
+      selectedStepNumber,
+      color,
+      shape,
+      CreateModuleState
+    );
   }
 
   function handlePathShapeClear(color: HandSide) {
     if (selectedStepNumber === null || !StepOperator) return;
     hapticService?.trigger("selection");
-    CreateModuleState.pushUndoSnapshot(UndoOperationType.MODIFY_BEAT_PROPERTIES);
-    StepOperator.clearStepPathShape(selectedStepNumber, color, CreateModuleState);
+    CreateModuleState.pushUndoSnapshot(
+      UndoOperationType.MODIFY_BEAT_PROPERTIES
+    );
+    StepOperator.clearStepPathShape(
+      selectedStepNumber,
+      color,
+      CreateModuleState
+    );
   }
 
   function handleBetaSwapToggle() {
-    if (selectedStepNumber === null || selectedStepNumber === 0 || !StepOperator) return;
+    if (
+      selectedStepNumber === null ||
+      selectedStepNumber === 0 ||
+      !StepOperator
+    )
+      return;
     hapticService?.trigger("selection");
-    CreateModuleState.pushUndoSnapshot(UndoOperationType.MODIFY_BEAT_PROPERTIES);
+    CreateModuleState.pushUndoSnapshot(
+      UndoOperationType.MODIFY_BEAT_PROPERTIES
+    );
     StepOperator.toggleBetaSwap(selectedStepNumber, CreateModuleState);
   }
 
@@ -484,14 +514,6 @@ import { getStepOperator } from "#lib/features/create/shared/get-step-operator.j
 
     logger.log(`Updated beat ${selectedStepNumber} arrow adjustments`);
   }
-
-  // Debug effect to track panel visibility
-  $effect(() => {
-    logger.log(
-      "StepEditorCoordinator panel state changed:",
-      panelState.isStepEditorPanelOpen
-    );
-  });
 </script>
 
 <!--
@@ -576,7 +598,7 @@ import { getStepOperator } from "#lib/features/create/shared/get-step-operator.j
             onOpenPropSheet={handleOpenPropSheet}
             onPathShapeChange={handlePathShapeChange}
             onPathShapeClear={handlePathShapeClear}
-            batchSteps={batchSteps}
+            {batchSteps}
             onBatchTurnsChange={handleBatchTurnsChange}
           />
         </div>

@@ -20,7 +20,11 @@
   import { calculateGridLayout } from "#lib/shared/create/utils/grid-calculations.js";
   import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
   import { flip } from "svelte/animate";
-  import { popIn } from "#lib/shared/transitions/motion.js";
+  import {
+    flipDuration,
+    motionDuration,
+    popIn,
+  } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
@@ -81,19 +85,10 @@
 
   // Animate add/remove/reflow of grid cells instead of instant layout shift.
   // flip repositions the survivors; scale in/out grows/shrinks the entering /
-  // leaving pictograph. Collapse durations to 0 under reduced motion.
-  let reducedMotion = $state(
-    typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-  $effect(() => {
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handler = (e: MediaQueryListEvent) => (reducedMotion = e.matches);
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  });
-  const flipDuration = $derived(reducedMotion ? 0 : DURATION.normal);
-  const outDuration = $derived(reducedMotion ? 0 : DURATION.fast);
+  // leaving pictograph. The shared motion owner collapses both to 0 under
+  // reduced motion.
+  const gridFlipDuration = $derived(flipDuration());
+  const outDuration = $derived(motionDuration(DURATION.fast));
 </script>
 
 <div class="batch-editor">
@@ -129,9 +124,9 @@
         <div
           class="pictograph-box"
           style:width={`${layout.cellSize}px`}
-          in:popIn={{ duration: flipDuration, start: 0.7 }}
+          in:popIn={{ duration: gridFlipDuration, start: 0.7 }}
           out:popIn={{ duration: outDuration, start: 0.7 }}
-          animate:flip={{ duration: flipDuration }}
+          animate:flip={{ duration: gridFlipDuration }}
         >
           <PictographContainer
             pictographData={gridJoin ? withGridJoin(step) : step}
