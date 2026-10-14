@@ -1,3 +1,5 @@
+> Archived 2026-10-14: Matching scope is recorded in `docs/superpowers/specs/shipped/2026-07-27-notation-playable-archive-design.md`; later implementation/remaining-work handoff `docs/superpowers/handoffs/2026-07-28-notation-playable-archive-handoff.md` remains open.
+
 # /notation Playable Archive - Handoff (2026-07-27)
 
 ## Mission
