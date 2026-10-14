@@ -209,6 +209,7 @@
           bind:value={s.saveProps}
           disabled={s.isSaving}
           hint={t("prop_pair_saved_default_hint")}
+          fill
         />
       </div>
     {/if}
@@ -367,6 +368,7 @@
         expanded={s.showNotes}
         onExpandedChange={(v) => (s.showNotes = v)}
         onCollapse={() => (s.notes = "")}
+        fill
       >
         <textarea
           id="notes"
@@ -437,11 +439,18 @@
 <style>
   /* The view is the size container for its own composition: its width picks
      the gutters and footer layout, so one view serves the stacked phone column,
-     a laptop side panel and the wider 4K band. */
+     a laptop side panel and the wider 4K band.
+
+     The stack sits on the panel's vertical centre, the same axis the step
+     grid sits on in the workspace beside it, so a short form (few
+     collections, no notes) is a block placed next to the grid rather than a
+     strip pinned to the top of a tall empty column. A tall form still
+     scrolls inside the body between the pinned header and footer. */
   .save-view {
     position: relative;
     display: flex;
     flex-direction: column;
+    justify-content: center;
     width: 100%;
     height: 100%;
     overflow: hidden;
@@ -548,7 +557,7 @@
   /* One scroll region of choices. On a wide 4K panel the choices keep a
      reading width instead of stretching every toggle across the column. */
   .view-body {
-    flex: 1;
+    flex: 0 1 auto;
     min-height: 0;
     display: flex;
     flex-direction: column;
