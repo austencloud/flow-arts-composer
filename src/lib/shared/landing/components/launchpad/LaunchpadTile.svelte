@@ -170,12 +170,6 @@
                     decoding="async"
                   />
                 </span>
-              {:else if tile.media === "pictograph"}
-                <span class="poster-timeline">
-                  <strong>2009</strong>
-                  <span></span>
-                  <strong>2022</strong>
-                </span>
               {:else if tile.media === "dictionary"}
                 <span class="poster-dictionary">
                   <strong>TKA</strong>
@@ -183,6 +177,10 @@
                 </span>
               {:else if tile.id === "faq"}
                 <span class="poster-question">?</span>
+              {:else if tile.media === "pictograph"}
+                <!-- No poster. The generic monogram would spell "NO" for the
+                     Notation tile; the box background stands in until the
+                     live pictograph mounts. -->
               {:else}
                 <span class="poster-monogram"
                   >{tile.heading.slice(0, 2).toUpperCase()}</span
@@ -478,7 +476,8 @@
      never by setting `opacity` directly: a tier selector such as
      `.tile.variant-home .static-media` outranks `.media-loaded .static-media`
      and would keep the poster painted over the live media forever (the
-     2009-2022 timeline over the pictograph, "TKA" over the dictionary entry). */
+     "TKA" over the dictionary entry). The pictograph tile has no poster: its
+     box background stands in until the live pictograph mounts. */
   .static-media {
     position: absolute;
     inset: 0;
@@ -583,41 +582,6 @@
     font-size: var(--font-size-compact, 0.75rem);
     font-weight: 700;
     letter-spacing: 0.16em;
-  }
-
-  .poster-timeline {
-    display: grid;
-    grid-template-columns: auto minmax(4rem, 9rem) auto;
-    align-items: center;
-    gap: 0.75rem;
-    color: var(--theme-text, #f2f1fb);
-  }
-  .poster-timeline strong {
-    font-size: clamp(0.85rem, 2.6cqi, 1.2rem);
-    font-variant-numeric: tabular-nums;
-  }
-  .poster-timeline span {
-    position: relative;
-    height: 1px;
-    background: color-mix(in oklch, var(--c) 58%, transparent);
-  }
-  .poster-timeline span::before,
-  .poster-timeline span::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    width: 0.65rem;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: var(--c);
-    box-shadow: 0 0 0.9rem var(--c);
-    translate: 0 -50%;
-  }
-  .poster-timeline span::before {
-    left: 0;
-  }
-  .poster-timeline span::after {
-    right: 0;
   }
 
   .poster-question {
@@ -1011,7 +975,6 @@
     .tile.variant-home.t-guide .card .body h2 {
       max-width: 38%;
     }
-    .tile.variant-home .poster-timeline,
     .tile.variant-home .poster-dictionary {
       width: 44%;
       margin-right: 3%;
@@ -1247,23 +1210,14 @@
       width: auto;
       height: 82%;
     }
-    .tile.variant-home .poster-timeline,
     .tile.variant-home .poster-dictionary {
       width: 42%;
       margin-right: 0.25rem;
-    }
-    .tile.variant-home.t-notation .poster-timeline {
-      width: 36%;
     }
     .tile.variant-home.t-choreo-cards .poster-card-stack {
       -webkit-mask-image: linear-gradient(to right, transparent, black 50%);
       mask-image: linear-gradient(to right, transparent, black 50%);
     }
-    .tile.variant-home .poster-timeline {
-      grid-template-columns: auto minmax(1.75rem, 3.5rem) auto;
-      gap: 0.3rem;
-    }
-    .tile.variant-home .poster-timeline strong,
     .tile.variant-home .poster-dictionary span {
       font-size: var(--font-size-compact, 0.75rem);
     }

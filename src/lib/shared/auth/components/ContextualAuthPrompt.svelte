@@ -17,6 +17,15 @@
     type PhoneSignInSession,
   } from "../phone-sign-in/phone-sign-in-session.svelte.js";
   import { growFade, popIn } from "#lib/shared/transitions/motion.js";
+  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import ThemePreview from "#lib/shared/settings/components/tabs/background/ThemePreview.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { BackgroundType } from "@austencloud/backgrounds";
+  import {
+    BACKGROUND_CARD_REGISTRY,
+    getCardMetadata,
+  } from "@austencloud/backgrounds/card";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { authPromptCopy } from "../domain/auth-prompt-copy";
   import { onDestroy, tick, untrack } from "svelte";
@@ -34,6 +43,8 @@
     onFacebookAuth?: () => void;
     encoreOffer?: boolean;
     onAcceptEncore?: () => void;
+    /** The sequence being saved or shared; the art plays it when given. */
+    artifact?: SequenceData | null;
   }
 
   let {
@@ -49,6 +60,7 @@
     onFacebookAuth,
     encoreOffer = false,
     onAcceptEncore,
+    artifact = null,
   }: Props = $props();
 
   let showEmailAuth = $state(false);
@@ -119,6 +131,19 @@
 
   onDestroy(dropPhoneSession);
 
+  // The full sheet sits on the person's own background, with a sequence
+  // playing beside the sign-in choices. The navigation panel and the short
+  // step-cap prompt stay plain: they already sit inside the app's chrome.
+  const withArt = $derived(!embedded && !compact);
+  const backgroundType = $derived(
+    getSettings().backgroundType || BackgroundType.COSMIC
+  );
+  const backgroundFallback = $derived(
+    (getCardMetadata(backgroundType) ?? BACKGROUND_CARD_REGISTRY[0])
+      ?.gradient ?? "#0b0d12"
+  );
+  const showcase = $derived(withArt ? import("./AuthShowcase.svelte") : null);
+
   const titleId = $derived(`${idPrefix}-title`);
   const descriptionId = $derived(`${idPrefix}-description`);
 
@@ -150,210 +175,248 @@
   class="contextual-auth-prompt"
   class:compact
   class:embedded
+  class:split={withArt}
+  class:phone-up={withArt && showPhoneSignIn}
   class:encore-offer={encoreOffer}
   aria-labelledby={titleId}
   aria-describedby={descriptionId}
+  style:--art-fallback={withArt ? backgroundFallback : null}
 >
-  {#if !embedded}
-    <header class="prompt-header">
-      {#if !compact}
-        <div class="brand-lockup" transition:growFade>
-          <span class="brand-mark">
-            <img src="/branding/logo.jpg" alt="" width="56" height="56" />
-          </span>
-          <span class="brand-name">Flow Arts Composer</span>
-        </div>
-      {/if}
-
-      {#if showClose}
-        <button
-          class="close-button"
-          type="button"
-          onclick={onClose}
-          aria-label={t("common_close")}
-          transition:popIn
-        >
-          <i class="fas fa-times" aria-hidden="true"></i>
-        </button>
-      {/if}
-    </header>
+  {#if withArt}
+    <div class="art-canvas" aria-hidden="true">
+      <ThemePreview type={backgroundType} fallback={backgroundFallback} />
+    </div>
+    <div class="art-stage">
+      <DualSourceCrossfade active={showPhoneSignIn ? "second" : "first"}>
+        {#snippet first()}
+          <div class="art-sequence" aria-hidden="true">
+            {#if showcase}
+              {#await showcase then mod}
+                <mod.default sequence={artifact} />
+              {/await}
+            {/if}
+          </div>
+        {/snippet}
+        {#snippet second()}
+          <div class="art-code">
+            {#if phonePanel && phoneSession}
+              {#await phonePanel then mod}
+                <div class="code-card">
+                  <mod.default session={phoneSession} part="code" />
+                </div>
+              {/await}
+            {/if}
+          </div>
+        {/snippet}
+      </DualSourceCrossfade>
+    </div>
   {/if}
 
-  <div class="prompt-copy">
-    {#if compact}
-      <div class="fac-signature">
-        <img src="/branding/logo.jpg" alt="" width="28" height="28" />
-        {#if encoreOffer}<span transition:growFade={{ axis: "x" }}
-            >{t("auth_one_time_extension")}</span
-          >{/if}
+  <div class="sign-in-column">
+    {#if !embedded}
+      <header class="prompt-header">
+        {#if !compact}
+          <div class="brand-lockup" transition:growFade>
+            <span class="brand-mark">
+              <img src="/branding/logo.jpg" alt="" width="56" height="56" />
+            </span>
+            <span class="brand-name">Flow Arts Composer</span>
+          </div>
+        {/if}
+
+        {#if showClose}
+          <button
+            class="close-button"
+            type="button"
+            onclick={onClose}
+            aria-label={t("common_close")}
+            transition:popIn
+          >
+            <i class="fas fa-times" aria-hidden="true"></i>
+          </button>
+        {/if}
+      </header>
+    {/if}
+
+    <div class="prompt-copy">
+      {#if compact}
+        <div class="fac-signature">
+          <img src="/branding/logo.jpg" alt="" width="28" height="28" />
+          {#if encoreOffer}<span transition:growFade={{ axis: "x" }}
+              >{t("auth_one_time_extension")}</span
+            >{/if}
+        </div>
+      {/if}
+      <div id={titleId} class="prompt-heading" role="heading" aria-level="2">
+        <Crossfade key={content.title}>
+          {authPromptCopy(content.title)}
+        </Crossfade>
       </div>
-    {/if}
-    <div id={titleId} class="prompt-heading" role="heading" aria-level="2">
-      <Crossfade key={content.title}>
-        {authPromptCopy(content.title)}
-      </Crossfade>
+      <div id={descriptionId} class="prompt-description">
+        <Crossfade key={content.body} animateHeight>
+          {authPromptCopy(content.body)}
+        </Crossfade>
+      </div>
     </div>
-    <div id={descriptionId} class="prompt-description">
-      <Crossfade key={content.body} animateHeight>
-        {authPromptCopy(content.body)}
-      </Crossfade>
-    </div>
-  </div>
 
-  <div class="auth-methods">
-    <Crossfade
-      key={encoreOffer
-        ? "encore"
-        : compact
-          ? "compact"
-          : inAppBrowser
-            ? "browser"
-            : showPhoneSignIn
-              ? "phone"
-              : showEmailAuth
-                ? "email"
-                : "providers"}
-      animateHeight
-    >
-      {#if compact && encoreOffer}
-        <button class="encore-button" type="button" onclick={onAcceptEncore}>
-          {t("auth_keep_going")}
-          <i class="fas fa-arrow-right" aria-hidden="true"></i>
-        </button>
-      {:else if compact}
-        <EmailAuthTabs bind:mode compact showMethods={showOtherProviders} />
-        <button
-          class="more-methods"
-          type="button"
-          aria-expanded={showOtherProviders}
-          onclick={() => (showOtherProviders = !showOtherProviders)}
-        >
-          <Crossfade key={showOtherProviders}>
-            {showOtherProviders
-              ? t("auth_fewer_options")
-              : t("auth_more_sign_in_options")}
-          </Crossfade>
-        </button>
-        {#if showOtherProviders}
-          <div
-            transition:growFade
-            onoutrostart={(event) =>
-              ((event.currentTarget as HTMLElement).inert = true)}
-            onintrostart={(event) =>
-              ((event.currentTarget as HTMLElement).inert = false)}
-          >
-            <SocialAuthCompact {mode} {onFacebookAuth} />
-          </div>
-        {/if}
-      {:else if inAppBrowser}
-        <div class="email-flow">
-          <div class="email-divider">
-            <span>{t("auth_continue_by_email")}</span>
-          </div>
-          <EmailAuthTabs bind:mode {compact} showModeSwitch={false} />
-        </div>
-
-        <p class="provider-warning">
-          {t("auth_social_blocked_browser")}
-        </p>
-        <SocialAuthCompact {mode} {onFacebookAuth} />
-      {:else if showPhoneSignIn}
-        <div class="email-flow phone-flow">
-          <button
-            class="email-back"
-            type="button"
-            onclick={() => (showPhoneSignIn = false)}
-          >
-            <i class="fas fa-arrow-left" aria-hidden="true"></i>
-            {t("auth_other_sign_in_options")}
+    <div class="auth-methods">
+      <Crossfade
+        key={encoreOffer
+          ? "encore"
+          : compact
+            ? "compact"
+            : inAppBrowser
+              ? "browser"
+              : showPhoneSignIn
+                ? "phone"
+                : showEmailAuth
+                  ? "email"
+                  : "providers"}
+        animateHeight
+      >
+        {#if compact && encoreOffer}
+          <button class="encore-button" type="button" onclick={onAcceptEncore}>
+            {t("auth_keep_going")}
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
           </button>
-          {#if phonePanel && phoneSession}
-            {#await phonePanel then mod}
-              <mod.default session={phoneSession} />
-            {/await}
-          {/if}
-        </div>
-      {:else if showEmailAuth}
-        <div class="email-flow" bind:this={emailFlow}>
+        {:else if compact}
+          <EmailAuthTabs bind:mode compact showMethods={showOtherProviders} />
           <button
-            class="email-back"
+            class="more-methods"
             type="button"
-            onclick={() => (showEmailAuth = false)}
+            aria-expanded={showOtherProviders}
+            onclick={() => (showOtherProviders = !showOtherProviders)}
           >
-            <i class="fas fa-arrow-left" aria-hidden="true"></i>
-            {t("auth_other_sign_in_options")}
+            <Crossfade key={showOtherProviders}>
+              {showOtherProviders
+                ? t("auth_fewer_options")
+                : t("auth_more_sign_in_options")}
+            </Crossfade>
           </button>
-          <EmailAuthTabs bind:mode {compact} showModeSwitch={false} />
-        </div>
-      {:else}
-        <div class="method-grid">
-          <div class="google-method">
-            <SocialAuthCompact {mode} {onFacebookAuth} />
-          </div>
-
-          <div class="email-method-slot">
-            <button
-              class="email-method"
-              type="button"
-              onclick={openEmailAuth}
-              aria-label={lastUsedEmail
-                ? t("auth_continue_email_last_used")
-                : t("auth_continue_email")}
+          {#if showOtherProviders}
+            <div
+              transition:growFade
+              onoutrostart={(event) =>
+                ((event.currentTarget as HTMLElement).inert = true)}
+              onintrostart={(event) =>
+                ((event.currentTarget as HTMLElement).inert = false)}
             >
-              {#if lastUsedEmail}
-                <LastUsedBadge />
-              {/if}
-              <i class="fas fa-envelope" aria-hidden="true"></i>
-              <span>{t("auth_continue_email")}</span>
-            </button>
-          </div>
-
-          {#if phoneOffered}
-            <button
-              class="phone-method"
-              type="button"
-              onpointerenter={warmPhoneSignIn}
-              onpointerdown={warmPhoneSignIn}
-              onfocus={warmPhoneSignIn}
-              onclick={openPhoneSignIn}
-            >
-              <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
-              <span>Use your phone</span>
-            </button>
+              <SocialAuthCompact {mode} {onFacebookAuth} />
+            </div>
           {/if}
-        </div>
-      {/if}
-    </Crossfade>
+        {:else if inAppBrowser}
+          <div class="email-flow">
+            <div class="email-divider">
+              <span>{t("auth_continue_by_email")}</span>
+            </div>
+            <EmailAuthTabs bind:mode {compact} showModeSwitch={false} />
+          </div>
 
-    {#if facebookError}
-      <p class="provider-error" role="alert" transition:growFade>
-        {facebookError}
-      </p>
-    {/if}
-  </div>
-
-  {#if !encoreOffer && (!compact || showOtherProviders)}
-    <button
-      class="mode-toggle"
-      type="button"
-      onclick={toggleMode}
-      transition:growFade
-      onoutrostart={(event) =>
-        ((event.currentTarget as HTMLElement).inert = true)}
-      onintrostart={(event) =>
-        ((event.currentTarget as HTMLElement).inert = false)}
-    >
-      <Crossfade key={mode}>
-        {#if mode === "signup"}
-          <span>{t("auth_already_have_account")}</span>
-          <strong>{t("auth_sign_in")}</strong>
+          <p class="provider-warning">
+            {t("auth_social_blocked_browser")}
+          </p>
+          <SocialAuthCompact {mode} {onFacebookAuth} />
+        {:else if showPhoneSignIn}
+          <div class="email-flow phone-flow">
+            <button
+              class="email-back"
+              type="button"
+              onclick={() => (showPhoneSignIn = false)}
+            >
+              <i class="fas fa-arrow-left" aria-hidden="true"></i>
+              {t("auth_other_sign_in_options")}
+            </button>
+            {#if phonePanel && phoneSession}
+              {#await phonePanel then mod}
+                <mod.default
+                  session={phoneSession}
+                  part={withArt ? "words" : "both"}
+                />
+              {/await}
+            {/if}
+          </div>
+        {:else if showEmailAuth}
+          <div class="email-flow" bind:this={emailFlow}>
+            <button
+              class="email-back"
+              type="button"
+              onclick={() => (showEmailAuth = false)}
+            >
+              <i class="fas fa-arrow-left" aria-hidden="true"></i>
+              {t("auth_other_sign_in_options")}
+            </button>
+            <EmailAuthTabs bind:mode {compact} showModeSwitch={false} />
+          </div>
         {:else}
-          <span>{t("auth_new_here")}</span>
-          <strong>{t("auth_create_account")}</strong>
+          <div class="method-grid">
+            <div class="google-method">
+              <SocialAuthCompact {mode} {onFacebookAuth} />
+            </div>
+
+            <div class="email-method-slot">
+              <button
+                class="email-method"
+                type="button"
+                onclick={openEmailAuth}
+                aria-label={lastUsedEmail
+                  ? t("auth_continue_email_last_used")
+                  : t("auth_continue_email")}
+              >
+                {#if lastUsedEmail}
+                  <LastUsedBadge />
+                {/if}
+                <i class="fas fa-envelope" aria-hidden="true"></i>
+                <span>{t("auth_continue_email")}</span>
+              </button>
+            </div>
+
+            {#if phoneOffered}
+              <button
+                class="phone-method"
+                type="button"
+                onpointerenter={warmPhoneSignIn}
+                onpointerdown={warmPhoneSignIn}
+                onfocus={warmPhoneSignIn}
+                onclick={openPhoneSignIn}
+              >
+                <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                <span>Use your phone</span>
+              </button>
+            {/if}
+          </div>
         {/if}
       </Crossfade>
-    </button>
-  {/if}
+
+      {#if facebookError}
+        <p class="provider-error" role="alert" transition:growFade>
+          {facebookError}
+        </p>
+      {/if}
+    </div>
+
+    {#if !encoreOffer && (!compact || showOtherProviders)}
+      <button
+        class="mode-toggle"
+        type="button"
+        onclick={toggleMode}
+        transition:growFade
+        onoutrostart={(event) =>
+          ((event.currentTarget as HTMLElement).inert = true)}
+        onintrostart={(event) =>
+          ((event.currentTarget as HTMLElement).inert = false)}
+      >
+        <Crossfade key={mode}>
+          {#if mode === "signup"}
+            <span>{t("auth_already_have_account")}</span>
+            <strong>{t("auth_sign_in")}</strong>
+          {:else}
+            <span>{t("auth_new_here")}</span>
+            <strong>{t("auth_create_account")}</strong>
+          {/if}
+        </Crossfade>
+      </button>
+    {/if}
+  </div>
 </section>
 
 <style>
@@ -401,16 +464,108 @@
     padding: clamp(1.35rem, 3.2cqw, 3.25rem);
     overflow: hidden;
     color: var(--theme-text, #f8fafc);
-    background: color-mix(
-      in srgb,
-      rgb(from var(--theme-panel-bg, #0b0d12) r g b / 1) 20%,
-      #0b0d12
-    );
+    background: var(--theme-panel-elevated-bg, #0b0d12);
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.16));
     border-radius: clamp(1rem, 1.4cqw, 1.5rem);
     box-shadow:
       0 2rem 5rem rgba(0, 0, 0, 0.48),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .sign-in-column {
+    position: relative;
+    container-type: inline-size;
+    min-width: 0;
+  }
+
+  /* The full sheet: the person's own background behind everything, a sequence
+     playing on it, and the sign-in choices on the app's panel color beside it.
+     Below 45rem the art is a band across the top. */
+  .contextual-auth-prompt.split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    width: min(calc(100vw - 2rem), 32rem);
+    padding: 0;
+    background: var(--art-fallback, #0b0d12);
+  }
+
+  .art-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .art-stage {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    min-width: 0;
+    height: clamp(9rem, 24svh, 14rem);
+    padding: 0.75rem;
+    box-sizing: border-box;
+    transition: height var(--duration-normal) var(--ease-standard);
+  }
+
+  /* The code needs its full square, so the band opens up for it. */
+  .phone-up .art-stage {
+    height: 18.5rem;
+  }
+
+  .art-sequence,
+  .art-code {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  .code-card {
+    padding: 1rem 1rem 0.5rem;
+    background: var(--theme-panel-bg, rgba(0, 0, 0, 0.75));
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
+    border-radius: var(--radius-lg, 1rem);
+    box-shadow: var(--theme-panel-shadow, 0 1rem 3rem rgba(0, 0, 0, 0.35));
+  }
+
+  .split .sign-in-column {
+    z-index: 1;
+    padding: 1.25rem;
+    background: var(--theme-panel-bg, rgba(0, 0, 0, 0.75));
+  }
+
+  @media (min-width: 45rem) {
+    .contextual-auth-prompt.split {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      width: min(calc(100vw - 2rem), clamp(52rem, 46vw, 72rem));
+      min-height: min(clamp(34rem, 55vh, 40rem), calc(100dvh - 3rem));
+    }
+
+    .art-stage,
+    .phone-up .art-stage {
+      height: auto;
+      padding: clamp(1rem, 2.5vw, 2.5rem);
+    }
+
+    .split .sign-in-column {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: clamp(1.5rem, 3vw, 3rem);
+    }
+  }
+
+  /* Short landscape screens: the column gives up padding before it scrolls. */
+  @media (max-height: 35rem) and (min-width: 45rem) {
+    .split .sign-in-column {
+      padding-block: 0.5rem;
+    }
+
+    .split .mode-toggle {
+      margin-top: 0.5rem;
+    }
   }
 
   .prompt-header {
@@ -779,7 +934,8 @@
   @media (prefers-reduced-motion: reduce) {
     .close-button,
     .email-method,
-    .mode-toggle {
+    .mode-toggle,
+    .art-stage {
       transition: none;
     }
 
