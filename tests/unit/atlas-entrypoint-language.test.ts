@@ -29,15 +29,20 @@ describe("Kinetic Atlas public entry points", () => {
     }
   });
 
-  it("uses the Atlas name in contextual links and accessibility labels", () => {
-    const contextualLinks = [
-      readSource("src/routes/(public)/notation/staves/+page.svelte"),
-      readSource("src/routes/(public)/notation/poi/+page.svelte"),
-    ];
-    for (const source of contextualLinks) {
-      expect(source).toMatch(/href="\/atlas"\s*>Kinetic Atlas<\/LinkChip/);
+  it("keeps the gated Atlas out of the prop pages' contextual links", () => {
+    // The Atlas is still Coming Soon, so the prop pages must not promise it
+    // "defines every term". Restore the links when the Atlas opens.
+    for (const prop of ["staves", "fans", "clubs", "buugeng", "poi"]) {
+      const source = readSource(
+        `src/routes/(public)/notation/${prop}/+page.svelte`
+      );
+      expect(source, `${prop} still links /atlas`).not.toContain(
+        'href="/atlas"'
+      );
     }
+  });
 
+  it("uses the Atlas name in accessibility labels", () => {
     const atlas = readSource(
       "src/routes/(public)/atlas/_components/KineticAtlasDraft.svelte"
     );

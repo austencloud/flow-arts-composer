@@ -5,7 +5,7 @@
 
   const TITLE = "Poi Notation | Can The Kinetic Alphabet Write Poi?";
   const DESCRIPTION =
-    "Poi can perform Kinetic Alphabet patterns with steady rotation. Learn where momentum limits the notation and how it relates to Vulcan Tech Gospel.";
+    "Poi can perform Kinetic Alphabet patterns with steady rotation. Learn where momentum limits the notation and how it compares with Vulcan Tech Gospel.";
   const URL = "https://tkaflowarts.com/notation/poi";
 </script>
 
@@ -57,20 +57,16 @@
         reference follows a prop that swings under gravity.
       </p>
       <p>
-        The Kinetic Alphabet builds on VTG, created by Noel Yee and spinners at
-        the Vulcan Lofts in Oakland. VTG's four timing and direction categories
-        are encoded in TKA's Type 1 letters. Poi spinners who know split-same
+        The Kinetic Alphabet is its own system, but the two share some ground.
+        VTG's four timing and direction categories line up with the timing and
+        direction of TKA's Type 1 letters, so poi spinners who know split-same
         and tog-opposite can already read that part of the alphabet.
       </p>
       <p>
-        A Poi Lab module is planned for Flow Arts Composer to identify sequences
-        a momentum-based prop can perform. It has not been built yet. The <LinkChip
+        When you're ready to read the notation, the <LinkChip
           size="inline"
           href="/guide">guide</LinkChip
-        >
-        explains the notation, and the <LinkChip size="inline" href="/atlas"
-          >Kinetic Atlas</LinkChip
-        > defines its terms.
+        > introduces every concept in order.
       </p>
     </div>
   </section>
