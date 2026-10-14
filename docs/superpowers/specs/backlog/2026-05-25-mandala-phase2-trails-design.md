@@ -2,15 +2,17 @@
 status: backlog
 value: 2
 effort: M
-remaining: Reconcile the removed MandalaViewerControls target with current MandalaControlDock/MeditationControls, then verify whether phase-2 trails already exist.
+remaining: "Implement ghost capture, bounded trails, controls and matching export compositing on the current MandalaPane/MandalaControlDock owners. No ghostBuffer, trailEnabled, trailLength, GhostFrame or suppressGlow implementation exists in shared mandala/sequence-viewer; 7d1dfff785 changed the motion owner, so the old MandalaViewerControls and local RAF instructions are historical."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: ready
 ---
 
 # Mandala Trails / Afterimage — Phase 2 Design Spec
+
+> 2026-10-14 triage: Implement ghost capture, bounded trails, controls and matching export compositing on the current MandalaPane/MandalaControlDock owners. No ghostBuffer, trailEnabled, trailLength, GhostFrame or suppressGlow implementation exists in shared mandala/sequence-viewer; 7d1dfff785 changed the motion owner, so the old MandalaViewerControls and local RAF instructions are historical. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 > **DRIFT WARNING — 2026-08-02.** Verified 2026-08-02. The named integration target `MandalaViewerControls.svelte` is GONE (0 repo matches) — the detector reads commit traffic on mandala paths as progress on this spec, but that traffic belongs to the control-dock consolidation that replaced the target. Feature itself remains unbuilt; re-scope onto `MandalaControlDock.svelte` / `MeditationControls.svelte` first.
 >

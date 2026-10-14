@@ -1,3 +1,5 @@
+> Archived 2026-10-14: Matching scope is recorded in `docs/superpowers/specs/shipped/2026-07-25-creators-discovery-design.md`.
+
 # Handoff: audit the Creators rebuild (2026-07-26)
 
 You are auditing work I finished today, adversarially. Assume it is wrong until

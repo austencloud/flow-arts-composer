@@ -2,14 +2,16 @@
 status: active
 value: 3
 effort: L
-remaining: "Verify God File Decomposition against the current God File Decomposition runtime and acceptance criteria before resuming implementation. Prior recorded remainder: 'Says \"Draft\"; real decomposition landed unevenly. ChoreoCard 2090→287. Museum3DScene 1770→1374 (target 600). Orchestrator + library-repository untouched'"
+remaining: "Rebaseline remaining responsibility splits against current owners, then verify behavior for any additional extraction; the old claim that library-repository and viewer orchestration were untouched is obsolete. library-repository imports extracted batch/recycle services (8bc4149650), museum helpers and viewer action/fullscreen/footer splits exist, but Museum3DScene is now 2404 lines and animation-render-loop 2817, so original line targets alone cannot establish completion."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: in-progress
 ---
 # God File Decomposition
+
+> 2026-10-14 triage: Rebaseline remaining responsibility splits against current owners, then verify behavior for any additional extraction; the old claim that library-repository and viewer orchestration were untouched is obsolete. library-repository imports extracted batch/recycle services (8bc4149650), museum helpers and viewer action/fullscreen/footer splits exist, but Museum3DScene is now 2404 lines and animation-render-loop 2817, so original line targets alone cannot establish completion. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Queue evidence (2026-10-07):** Partial decomposition landed; the old Draft label no longer describes current code. See frontmatter for the remaining work.
 

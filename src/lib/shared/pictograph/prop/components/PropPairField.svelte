@@ -13,6 +13,7 @@
     hint,
     disabled = false,
     showColors = false,
+    fill = false,
   }: {
     value: ResolvedPropConfig;
     label?: string;
@@ -29,6 +30,12 @@
      * picks the props the user is looking at turns it on.
      */
     showColors?: boolean;
+    /**
+     * Span the row like a setting: label at the leading edge, the current
+     * pair and chevron at the trailing edge. Off, the button sizes to its
+     * label for sitting beside other controls.
+     */
+    fill?: boolean;
   } = $props();
   let choosing = $state(false);
   let hand = $state<"both" | "left" | "right">("both");
@@ -39,16 +46,22 @@
   );
 </script>
 
-<div class="prop-pair-field">
+<div class="prop-pair-field" class:fill>
   <PanelButton
     variant="secondary"
     {disabled}
+    fullWidth={fill}
     ariaExpanded={choosing}
     onclick={() => (choosing = !choosing)}
   >
-    <PropCompositionPreview propType={value.leftPropType} size={32} neutral />
-    {label}: {pairLabel}
-    <i class="fas fa-chevron-down" aria-hidden="true"></i>
+    <span class="lead">
+      <PropCompositionPreview propType={value.leftPropType} size={32} neutral />
+      {fill ? label : `${label}:`}
+    </span>
+    <span class="value">
+      {pairLabel}
+      <i class="fas fa-chevron-down" aria-hidden="true"></i>
+    </span>
   </PanelButton>
   {#if choosing && !disabled}
     <div class="picker" transition:growFade>
@@ -97,6 +110,33 @@
     align-items: flex-start;
     gap: 12px;
     min-width: 0;
+  }
+
+  .lead,
+  .value {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  /* As a row, the button spans the field and reads like the setting rows
+     beside it: what it is on the left, what it is set to on the right. */
+  .prop-pair-field.fill {
+    align-items: stretch;
+  }
+
+  .prop-pair-field.fill :global(.panel-btn) {
+    justify-content: space-between;
+    padding-inline: 14px 16px;
+  }
+
+  .prop-pair-field.fill .value {
+    flex-shrink: 0;
+  }
+
+  .prop-pair-field.fill .value i {
+    color: var(--theme-text-dim);
   }
 
   .picker {
