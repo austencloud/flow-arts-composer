@@ -1,0 +1,169 @@
+{
+  "sourceSequenceId": "seq_1791923102683_sysj46042",
+  "word": "IΨ-IΨ-IΨ-IΨ-",
+  "startPlacement": "beta5",
+  "leftSteps": [
+    {
+      "duration": 1,
+      "startLocation": "s",
+      "endLocation": "e",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "pro",
+      "rotationDirection": "ccw",
+      "turns": 0
+    },
+    {
+      "duration": 1,
+      "startLocation": "e",
+      "endLocation": "w",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "dash",
+      "rotationDirection": "ccw",
+      "turns": 1
+    },
+    {
+      "duration": 1,
+      "startLocation": "w",
+      "endLocation": "n",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "anti",
+      "rotationDirection": "ccw",
+      "turns": 1
+    },
+    {
+      "duration": 1,
+      "startLocation": "n",
+      "endLocation": "s",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "dash",
+      "rotationDirection": "ccw",
+      "turns": 1
+    },
+    {
+      "duration": 1,
+      "startLocation": "s",
+      "endLocation": "w",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "anti",
+      "rotationDirection": "ccw",
+      "turns": 1
+    },
+    {
+      "duration": 1,
+      "startLocation": "w",
+      "endLocation": "e",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "dash",
+      "rotationDirection": "ccw",
+      "turns": 1
+    },
+    {
+      "duration": 1,
+      "startLocation": "e",
+      "endLocation": "n",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "pro",
+      "rotationDirection": "ccw",
+      "turns": 0
+    },
+    {
+      "duration": 1,
+      "startLocation": "n",
+      "endLocation": "s",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "dash",
+      "rotationDirection": "ccw",
+      "turns": 1
+    }
+  ],
+  "rightSteps": [
+    {
+      "duration": 1,
+      "startLocation": "s",
+      "endLocation": "e",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "anti",
+      "rotationDirection": "cw",
+      "turns": 1
+    },
+    {
+      "duration": 1,
+      "startLocation": "e",
+      "endLocation": "w",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "dash",
+      "rotationDirection": "cw",
+      "turns": 1
+    },
+    {
+      "duration": 1,
+      "startLocation": "w",
+      "endLocation": "n",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "pro",
+      "rotationDirection": "cw",
+      "turns": 0
+    },
+    {
+      "duration": 1,
+      "startLocation": "n",
+      "endLocation": "s",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "dash",
+      "rotationDirection": "cw",
+      "turns": 1
+    },
+    {
+      "duration": 1,
+      "startLocation": "s",
+      "endLocation": "w",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "pro",
+      "rotationDirection": "cw",
+      "turns": 0
+    },
+    {
+      "duration": 1,
+      "startLocation": "w",
+      "endLocation": "e",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "dash",
+      "rotationDirection": "cw",
+      "turns": 1
+    },
+    {
+      "duration": 1,
+      "startLocation": "e",
+      "endLocation": "n",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "anti",
+      "rotationDirection": "cw",
+      "turns": 1
+    },
+    {
+      "duration": 1,
+      "startLocation": "n",
+      "endLocation": "s",
+      "startOrientation": "out",
+      "endOrientation": "out",
+      "motionType": "dash",
+      "rotationDirection": "cw",
+      "turns": 1
+    }
+  ]
+}
