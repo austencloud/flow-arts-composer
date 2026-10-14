@@ -1,3 +1,4 @@
+import { publishOperation } from "./publish-permission-error";
 /**
  * LibraryRepository - Core Library Implementation
  *
@@ -197,7 +198,8 @@ export class LibraryRepository {
    */
   private async touchSequenceCollections(
     userId: string,
-    collectionIds: readonly string[]
+    collectionIds: readonly string[],
+    publishing = false
   ): Promise<void> {
     const uniqueIds = [...new Set(collectionIds)];
     if (uniqueIds.length === 0) return;
@@ -206,14 +208,23 @@ export class LibraryRepository {
     const CONCURRENCY = 8;
     for (let i = 0; i < uniqueIds.length; i += CONCURRENCY) {
       const results = await Promise.allSettled(
-        uniqueIds
-          .slice(i, i + CONCURRENCY)
-          .map((collectionId) =>
+        uniqueIds.slice(i, i + CONCURRENCY).map((collectionId) => {
+          const refresh = () =>
             updateDoc(
               doc(firestore, getUserCollectionPath(userId, collectionId)),
               { updatedAt: serverTimestamp() }
-            )
-          )
+            );
+          return publishing
+            ? publishOperation(
+                {
+                  step: "refresh-sequence-collection",
+                  path: "users/{uid}/collections/{collectionId}",
+                  operation: "update",
+                },
+                refresh
+              )
+            : refresh();
+        })
       );
 
       for (const result of results) {
@@ -1010,7 +1021,10 @@ export class LibraryRepository {
     const docRef = doc(firestore, getUserSequencePath(userId, sequenceId));
 
     // Read existing from local cache (fast - Firestore serves from cache first)
-    const existing = await this.getSequence(sequenceId, userId);
+    const existing =
+      updates.visibility === "public"
+        ? await this.getSequenceForPublish(sequenceId, userId)
+        : await this.getSequence(sequenceId, userId);
     if (!existing) {
       throw new LibraryError("Sequence not found", "NOT_FOUND", sequenceId);
     }
@@ -1043,12 +1057,23 @@ export class LibraryRepository {
     const visibilityChanged =
       updates.visibility !== undefined &&
       updates.visibility !== existing.visibility;
+    const updateOwner = () =>
+      updateDoc(docRef, {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
     const updateWrite = trackWrite(
       () =>
-        updateDoc(docRef, {
-          ...updates,
-          updatedAt: serverTimestamp(),
-        }),
+        updates.visibility === "public"
+          ? publishOperation(
+              {
+                step: "update-owner-sequence",
+                path: "users/{uid}/sequences/{sequenceId}",
+                operation: "update",
+              },
+              updateOwner
+            )
+          : updateOwner(),
       "library"
     );
 
@@ -1128,7 +1153,11 @@ export class LibraryRepository {
       }
 
       try {
-        await this.touchSequenceCollections(userId, existing.collectionIds);
+        await this.touchSequenceCollections(
+          userId,
+          existing.collectionIds,
+          updates.visibility === "public"
+        );
       } catch (error) {
         this.reportError(
           "Visibility changed, but its collections may not have refreshed on other devices yet.",
@@ -1369,6 +1398,30 @@ export class LibraryRepository {
     );
   }
 
+  private async getSequenceForPublish(
+    sequenceId: string,
+    owner: string
+  ): Promise<LibrarySequence | null> {
+    try {
+      return await publishOperation(
+        {
+          step: "read-publish-source",
+          path: "users/{uid}/sequences/{sequenceId}",
+          operation: "get",
+        },
+        () => this.getSequenceStrict(sequenceId, owner)
+      );
+    } catch (error) {
+      this.reportError(
+        "Couldn't publish your sequence",
+        error,
+        "publish-sequence",
+        { sequenceId }
+      );
+      throw error;
+    }
+  }
+
   /**
    * `ownerId` is the user the caller already captured. Pass it whenever the
    * publish is one step of a longer operation (adding a member to a public
@@ -1378,7 +1431,7 @@ export class LibraryRepository {
    */
   async publishSequence(sequenceId: string, ownerId?: string): Promise<void> {
     const owner = this.ownerFor(ownerId);
-    const existing = await this.getSequence(sequenceId, owner);
+    const existing = await this.getSequenceForPublish(sequenceId, owner);
     if (!existing) {
       throw new LibraryError("Sequence not found", "NOT_FOUND", sequenceId);
     }
@@ -1396,7 +1449,18 @@ export class LibraryRepository {
       ...ensureComposition(existing),
     };
     await this.publicIndexSyncer.syncToPublicIndex(compositionReady, owner);
-    await this.touchSequenceCollections(owner, existing.collectionIds);
+    try {
+      await this.touchSequenceCollections(owner, existing.collectionIds, true);
+    } catch (error) {
+      this.reportError(
+        "Visibility changed, but its collections may not have refreshed on other devices yet.",
+        error,
+        "collection-refresh",
+        { sequenceId },
+        "warning"
+      );
+      throw error;
+    }
   }
 
   /** Same owner discipline as {@link publishSequence}. */
