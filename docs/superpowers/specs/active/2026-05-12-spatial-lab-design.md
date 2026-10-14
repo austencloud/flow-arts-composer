@@ -2,14 +2,16 @@
 status: active
 value: 2
 effort: S
-remaining: 'Shipped as a full 3D Threlte scene, directly contradicting the spec''s "pure 2D SVG, no Three.js" decision. No tests'
+remaining: "Archive this original SVG architecture record after coordinator review: f4d3d52089 explicitly replaces SpatialCanvas and its six SVG children with SpatialScene/Scene3D/Avatar3D, preserving analysis through projection. Current implementation and eight focused spatial-lab test files live under src/lib/features/lab/tabs/spatial-lab and tests/unit/spatial-lab; any new runtime acceptance should target that replacement, not rebuild the SVG design."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: superseded
 ---
 # Spatial Lab — Design Spec
+
+> 2026-10-14 triage: Archive this original SVG architecture record after coordinator review: f4d3d52089 explicitly replaces SpatialCanvas and its six SVG children with SpatialScene/Scene3D/Avatar3D, preserving analysis through projection. Current implementation and eight focused spatial-lab test files live under src/lib/features/lab/tabs/spatial-lab and tests/unit/spatial-lab; any new runtime acceptance should target that replacement, not rebuild the SVG design. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 > **DRIFT WARNING — 2026-08-02.** Shipped as a full **3D Threlte** scene, directly contradicting the spec's "pure 2D SVG, no Three.js" decision. No tests
 >

@@ -2,15 +2,17 @@
 status: backlog
 value: 2
 effort: S
-remaining: Current source has no release-tour or data-release-anchor usage; implement entry anchors and release-tour state, then verify deep links.
+remaining: "Implement release entry metadata retention, validated Show me navigation/arrival state, unread discovery/rollup, release-aware reload copy and release-debt reporting. toPublicChangelog still strips entries to category/text (scripts/lib/release-module-gate.mjs:610–612), and release-tour/data-release-anchor are absent; 24a63db357 only changes rich-text rendering."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-10-14
 work_state: ready
 ---
 
 # Release Notes Deep-Linking + Discovery — Design
+
+> 2026-10-14 triage: Implement release entry metadata retention, validated Show me navigation/arrival state, unread discovery/rollup, release-aware reload copy and release-debt reporting. toPublicChangelog still strips entries to category/text (scripts/lib/release-module-gate.mjs:610–612), and release-tour/data-release-anchor are absent; 24a63db357 only changes rich-text rendering. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Date:** 2026-07-28
 **Status:** Approved (brainstormed with Austen)

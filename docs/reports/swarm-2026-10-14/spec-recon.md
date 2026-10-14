@@ -16,6 +16,16 @@ Method: read each reviewed spec completely; inspect named source paths/symbols a
 | `backlog/2026-05-25-mandala-phase2-trails-design.md` | unverified | ready | 7d1dfff785, d88b6e934c; inventory below | high |
 | `backlog/2026-05-29-glb-environment-registry-design.md` | ready | ready | 24fab771cc, 66d9541160; inventory below | high |
 | `backlog/2026-07-27-staff-choreography-first-lesson-design.md` | blocked | blocked | f59e0af77c, a97b743f05; inventory below | high |
+| `backlog/2026-08-30-3d-scene-zero-jank-startup-design.md` | unverified | ready | 7d1dfff785, dfe4d3cafa, a97b743f05; inventory below | high |
+| `active/2026-06-04-header-pattern-glyphs-design.md` | unverified | ready | 7de49088a8, eca23555b1; inventory below | high |
+| `backlog/2026-05-23-accessibility-fixes-design.md` | unverified | in-progress | 7d1dfff785, b44d0acb4c, a97b743f05; inventory below | high |
+| `backlog/2026-07-13-wall-plane-depth-solver-design.md` | ready | ready | f558fd9fc9, f13606f440, acb57580f7; inventory below | high |
+| `backlog/2026-07-28-release-notes-deep-linking-design.md` | ready | ready | 24a63db357, 18e572b3b9; inventory below | high |
+| `active/2026-04-20-sequence-engine-unification-design.md` | unverified | in-progress | 8e2070ea59; inventory below | high |
+| `active/2026-04-24-native-mobile-integration-design.md` | unverified | in-progress | d25b918eaa, 7ba33e00bf; inventory below | high |
+| `active/2026-05-04-god-file-decomposition-design.md` | unverified | in-progress | 8bc4149650, 3f0e5016b9, a97b743f05; inventory below | high |
+| `active/2026-05-12-spatial-lab-design.md` | unverified | superseded | f4d3d52089, 6b040a60a1, 4e4cae6c51; inventory below | high |
+| `active/2026-05-25-mandala-roadmap.md` | unverified | in-progress | 443c7b6fec, 7e6d7ed3bf; inventory below | medium |
 
 ## Evidence inventories and verdict rationale
 
@@ -79,9 +89,69 @@ Observed: `src/routes/(public)/learn/staff-spinning-choreography/+page.server.ts
 
 Remaining: Build the contract-valid fixture lesson and shared synchronized playback integration, then obtain the VIDEO-001 approved media package and Austen release review. Current route only preserves the production 404/noindex gate (f59e0af77c); no LessonMediaRequest or ApprovedLessonMediaPackage appears in src, so the gate must not be mistaken for completed Stage 1.
 
+### backlog/2026-08-30-3d-scene-zero-jank-startup-design.md
+
+Observed: manager, coordinator, Viewer3DScene, Viewer3DCanvas and SceneControlWorkspace exist; proposed scene-effect-task-scheduler-3d.ts does not. Manager lines 2–24 statically import pooled effect classes and initialize lines 154–166 allocate all listed pools. Workspace lines 2/18/21 statically import MobileSceneControls, SaveSceneModal and SceneControlInspector. Viewer3DCanvas has shared warmup/reveal coordination, but that does not satisfy the demanded effect-slot architecture. History: scoped log includes `7d1dfff785` motion migration, `dfe4d3cafa` performer controls and `a97b743f05` toolchain migration. Inference: the central implementation is absent; no current trace evidence established. Keep the retirement note as historical context, not completion proof.
+
+Remaining: Implement demand-loaded pooled effects and conditional control imports, then measure the specified 1080p/4K startup and reveal acceptance. scene-effects-manager-3d.ts still statically imports renderers and initializes every pool at lines 154–166, SceneControlWorkspace imports closed controls eagerly, and scene-effect-task-scheduler-3d.ts is absent despite later startup work (7d1dfff785).
+
+### active/2026-06-04-header-pattern-glyphs-design.md
+
+Observed: TurnPatternGlyph, ReversalPatternGlyph, reversal-patterns and reversal-matcher remain feature-local; proposed shared glyph/sequence-pattern paths are absent. Actual header owner is `src/lib/shared/animation-engine/components/layers/WordHeader.svelte`; `rg -n 'TurnPattern|ReversalPattern|turnGlyph|reversalGlyph' src/lib/shared/animation-engine src/lib/shared/video-export` returns no matches. Export owners are now `src/lib/shared/video-export/services/{canvas-renderer,export-frame-compositor}.ts`. History: `7de49088a8 feat(motion): animation surfaces move on the shared motion clock`; `eca23555b1 fix: render current shop hero card fronts and inverse word groups`. Inference: reusable glyphs are pre-existing dependencies; header/export feature remains unbuilt.
+
+Remaining: Promote turn/reversal domain and glyph primitives, wire capped raw signatures into WordHeader/AnimatorCanvas, and add video-export parity. Glyphs and reversal modules remain under features/choreo-card, no turnGlyph/reversalGlyph wiring was found in animation-engine or video-export, and 7de49088a8 changed header motion rather than implementing this scope.
+
+### backlog/2026-05-23-accessibility-fixes-design.md
+
+Observed: all named current UI owners exist; proposed 3d/utils/reduced-motion.ts does not. Environment3D has prefersReducedMotion at 130/265 and worker worlds consume reducedMotion, so the old claim of zero coverage is obsolete, but full viewer/effect override/static-glow acceptance is not established. CardInspectModal has no FocusTrap; MotionVisibilityToggle only handles Escape and retains role=button backdrop plus dialog without modal/focus management; LegalSheet lines 1–45 has no trap and unhidden backdrop. BottomNavigation nav (183 onward) lacks aria-label. ChoreoCardThumbnail has dynamic button labels (869). SidebarFooter retains 0.25/0.15 alpha (520/542); AccountPopover version link retains opacity 0.6. ViewerOverflowMenu has since moved to drawer-related infrastructure, so its old backdrop snippet is historical. History: `7d1dfff785` shared motion, `b44d0acb4c` surface alignment, `a97b743f05` migration. Inference: mixed existing improvements and concrete remaining gaps. Proposal: do not implement the scan-radio nonissue.
+
+Remaining: Complete focus containment/restoration in CardInspectModal, MotionVisibilityToggle and LegalSheet, label BottomNavigation, and fix SidebarFooter/AccountPopover contrast before keyboard, screen-reader and reduced-motion acceptance. ChoreoCardThumbnail now has labels and Environment3D has reduced-motion handling, but LegalSheet still lacks focus trapping and SidebarFooter retains 0.25/0.15 icon alpha; the scan-radio item is explicitly a false positive in this spec.
+
+### backlog/2026-07-13-wall-plane-depth-solver-design.md
+
+Observed: `wall-feasibility.ts` declares withCheat and optional depthOffset, and wall-feasibility-scanner/concavity-solver plus their tests exist. `rg --files src tests scripts` finds no depth-feasibility-solver, scan-wall-feasibility or elbow-pole-computer named target. No solveStepDepth producer established. History for metadata includes `f558fd9fc9 refactor(app): complete performer-relative hand migration` and `f13606f440 feat(library): archive SpiroAnim quarter-space sequences`. The spec's `acb57580f7` is historical experimental evidence, not proof of depth solver delivery. Inference: ready implementation gap; future labeled-fixture and visual gates remain.
+
+Remaining: Implement solveStepDepth and its scanner/renderer integration using existing wall-feasibility and concavity owners; the depth solver, scan-wall-feasibility.ts and depth-solver test are absent, while wall-feasibility.ts only declares depthOffset/withCheat (f558fd9fc9). Reconcile current IK owner paths, then validate reachable crossing fixtures, scan-version behavior and Austen's visual gate before claiming a working cheat.
+
+### backlog/2026-07-28-release-notes-deep-linking-design.md
+
+Observed: version models, release gate/script, hooks and current settings-owned WhatsNewModal, whats-new-state, ChangeGroupSection and VersionDetailContent exist. `toPublicChangelog` returns only category/text. No release-tour/data-release-anchor or --debt implementation found in scoped search; current seen state has high-water-mark storage but that is pre-existing scaffolding. History: `24a63db357 fix(release-notes): render **bold** runs instead of raw asterisks`; `18e572b3b9 chore(release): prepare v0.44.1 and fix visibility validation`. Inference: topical traffic does not implement this contract; forward-only migration and legacy behavior still apply.
+
+Remaining: Implement release entry metadata retention, validated Show me navigation/arrival state, unread discovery/rollup, release-aware reload copy and release-debt reporting. toPublicChangelog still strips entries to category/text (scripts/lib/release-module-gate.mjs:610–612), and release-tour/data-release-anchor are absent; 24a63db357 only changes rich-text rendering.
+
+### active/2026-04-20-sequence-engine-unification-design.md
+
+Observed: canonical `packages/tka-types/src/{step,motion,builders}.ts` exist; StepData extends Step with app fields and derived left/right reversals, rather than being deleted. Engine deriveReversals and unit tests exist. App `sequence-extender.ts:318` calls completeLOOPExtension; `generate/circular/` no longer contains Strict executors. `8e2070ea59 Unify LOOP extension completion in the sequence engine` deletes the app executors/registrations and adds package completion, MCP/app/QR regression tests. `docs/architecture/loop-execution.md` documents replacement semantics, including rejection of quartered rewound and orientation-based completion. MCP package adapter imports engine; build.mjs bundles it. Old deployment/functions/broadcast path is absent. Selection state exists under create/shared/state/selection; no reversal-backfill filename was found in src/packages/scripts. Package version 0.1.0 is observed locally, not evidence of registry publication. Inference: Phase 3 remainder is obsolete, while full multi-phase scope has unresolved migration and external acceptance. No production database or npm query performed.
+
+Remaining: Retire the stale Phase 3 rebuild instruction: 8e2070ea59 removed app LOOP executors and routes extension through completeLOOPExtension, documented in docs/architecture/loop-execution.md. Reconcile the retained StepData subtype contract and remaining broadcast, production reversal/backfill and package-publication acceptance; current source and local package version 0.1.0 do not establish the required production monitoring or npm release.
+
+### active/2026-04-24-native-mobile-integration-design.md
+
+Observed: android exists and ios does not; AndroidManifest includes tka.run and /q/, /sequence/, /store/. Both well-known link files and ios-build/android-build workflows exist, but AASA contains `TEAMID.com.tkaflowarts.composer` and src/app.html:536 comments out an XXXXX app-id banner. package.json/config and native initializer/platform detector/haptics implement the native foundation; native-google-auth dynamically imports @capacitor-firebase/authentication rather than the old proposed plugin. Capgo updater and incoming share-target are dependencies. `rg -n 'sqlite|@capacitor/share|@capacitor/filesystem|bluetooth-le|capacitor-nfc' src package.json` returned no matches. Card scan, share intake and update services exist, but physical per-card tracking/store/subscription/recording/BLE/NFC acceptance was not established. History: `d25b918eaa feat(app): show phone app updates and restart into them`; `7ba33e00bf fix(app): keep the update button out of web browsers`. Inference: partial implementation; do not infer store absence or account state solely from repository contents. Proposal: revalidate historical pricing/policy and cloud-build choices before release, without treating this metadata review as release authorization.
+
+Remaining: Finish iOS project/signing/link configuration, durable native SQLite/filesystem cache and outgoing share, then validate device/store/OTA and premium hardware acceptance. Android, native Google auth, Capgo updates and incoming share intake exist (d25b918eaa), but ios/ is absent, apple-app-site-association retains TEAMID, and the smart banner is commented out; incoming share-target support does not implement @capacitor/share delivery.
+
+### active/2026-05-04-god-file-decomposition-design.md
+
+Observed: full named-file inventory was checked with rg --files plus Python basename/kebab-case resolution and line counts. Phase 1 registry dispatch exists in animation-render-loop (dispatchEffect, line 1252; loop at 2086), and EffectRendererManager uses EFFECT_PLUGINS/generic overlay lifecycle; AnimationEngine is 830 lines. Phase 2: choreo-card layout/cell pipeline and renamed crossfader exist; feature ChoreoCard is 310 lines, shared viewer ChoreoCard 1520 (distinct owners). All four museum helpers exist; Museum3DScene is 2404 lines. library-action-handler, shared fullscreen controller and save-panel-state exist; CompositionLab/old SaveToLibraryPanel names are absent (current SaveToLibraryView/Dialog exist). Phase 3: library-recycle-bin/batch-operations, group-conversation-manager/mappers, canvas-2d glyph/transform helpers, card-composer/cell-border-renderer, export-frame-compositor, flag admin/defaults, auth boot/profile updater, collision diagnostic/pose mapper all exist. Phase 4: webgpu trail/shaders, terrain CPU/mesh/skirt, chunk messages/types/zones, all three footer variants, defer/trash dialogs, terrain material/world loop, deep-ocean state/fish controls, phrase-effort state/persister, sequence-actions state/orchestrator and animation-visibility-migrations exist. Named deck-interior/deck-vtg-labels, led-settings-section and editing-pane-persistence are absent; old DeckBrowser/DeepOceanLab/CompositionLab are no longer named owners. ViewerFooter is 157 lines, repository 1884, orchestrator 1383; line counts are observations, not quality verdicts. History: `8bc4149650 fix(library): route batch, recycle-bin, conflict, and labeler writes through the public-sequence persister`; `3f0e5016b9` animation layers and `a97b743f05` migration show subsequent growth. Inference: many extractions landed; remaining scope needs responsibility review, not replay of all 28 splits.
+
+Remaining: Rebaseline remaining responsibility splits against current owners, then verify behavior for any additional extraction; the old claim that library-repository and viewer orchestration were untouched is obsolete. library-repository imports extracted batch/recycle services (8bc4149650), museum helpers and viewer action/fullscreen/footer splits exist, but Museum3DScene is now 2404 lines and animation-render-loop 2817, so original line targets alone cannot establish completion.
+
+### active/2026-05-12-spatial-lab-design.md
+
+Observed: `f4d3d52089 feat(spatial-lab): replace SVG canvas with 3D avatar scene` explicitly records deleting SpatialCanvas plus six SVG components, using Scene3D/Avatar3D/Prop3D, adding snapping, migrating demo sequences/state and preserving analysis via a 2D projection bridge. Commit body reports 61 tests passing and build/type checks at that time; these are historical claims, not checks run here. Current files under `src/lib/features/lab/tabs/spatial-lab/` contain SpatialLab, SpatialScene, controls/status, view/toggle/info/preset/sequence/transport controls, state/constants and body rotation/reach/crossing/plane split/projection/grid snap/taxonomy/demo services. Eight tests exist under `tests/unit/spatial-lab/`, contradicting the old 'No tests' remainder. Sequence mode shipped in `6b040a60a1`, taxonomy in `4e4cae6c51`. Inference: explicit replacement commit supports superseding this architectural record; it does not certify today's UI acceptance. Proposal: coordinator moves to archived, not shipped.
+
+Remaining: Archive this original SVG architecture record after coordinator review: f4d3d52089 explicitly replaces SpatialCanvas and its six SVG children with SpatialScene/Scene3D/Avatar3D, preserving analysis through projection. Current implementation and eight focused spatial-lab test files live under src/lib/features/lab/tabs/spatial-lab and tests/unit/spatial-lab; any new runtime acceptance should target that replacement, not rebuild the SVG design.
+
+### active/2026-05-25-mandala-roadmap.md
+
+Observed: Phase 1 MandalaPane/SequenceMandala/render/export owners exist. Phase 2 trail symbols are absent as recorded above. Phase 3 has collection/publication/revision services and viewer URL infrastructure, but no exact-settings tka.run acceptance established. Phase 4 has meditation session, audio, types/defaults, controls/overlay wired into MandalaModule; history `443c7b6fec feat(mandala): implement MeditateTab with mandala selector and default mandalas`, followed by `7e6d7ed3bf refactor(mandala): unify 3-tab module into single-panel gallery`. Phase 10 has mandala-path-interpolator and morphChanges integration in SequenceMandala plus Shape Matrix morph owner; full two-sequence selection/path-correspondence acceptance not established. No phase-specific formations/chains/FFT/fractal/tessellation/extrusion implementation identified in mandala module/shared owner inventories. Separate phase 2/3 specs already exist in backlog; phase 4–11 designs are in backlog/someday (read-only, outside this worker's edit scope). Inference: roadmap partially implemented beyond viewer; no whole-roadmap completion or new duplicate specs justified.
+
+Remaining: Continue from the existing viewer/export, meditation and collection/publication owners; meditation is implemented in src/lib/features/mandala/tabs/meditate (443c7b6fec), and shape morphing exists in mandala-path-interpolator.ts. Trails remain absent, while exact-settings short links, formations/chains, FFT reactivity, fractal nesting, tessellation and 3D extrusion still need their own acceptance review; reuse the existing phase specs instead of creating duplicates.
+
 ## MOVE CANDIDATES
 
-Shipped: none. Archived: none. No reviewed spec has all scoped acceptance evidence or a documented wholesale replacement established by this review.
+Shipped: none. Archived: active/2026-05-12-spatial-lab-design.md. Replacement decision f4d3d52089 explicitly deletes SVG canvas components and adopts SpatialScene/Scene3D/Avatar3D; see inventory. Coordinator must move the file; no move performed here.
 
 ## REBUILD HAZARDS
 
@@ -95,6 +165,11 @@ Shipped: none. Archived: none. No reviewed spec has all scoped acceptance eviden
 - CLEARED: `backlog/2026-05-25-mandala-phase2-trails-design.md`. Traffic does not establish the requested deliverable; see evidence above.
 - CLEARED: `backlog/2026-05-29-glb-environment-registry-design.md`. Traffic does not establish the requested deliverable; see evidence above.
 - CLEARED: `backlog/2026-07-27-staff-choreography-first-lesson-design.md`. Traffic does not establish the requested deliverable; see evidence above.
+- CLEARED: `backlog/2026-08-30-3d-scene-zero-jank-startup-design.md`. Traffic does not establish the requested deliverable; see evidence above.
+- CLEARED: `active/2026-06-04-header-pattern-glyphs-design.md`. Traffic does not establish the requested deliverable; see evidence above.
+- CONFIRMED: `backlog/2026-05-23-accessibility-fixes-design.md`. Reuse existing scope; inspect the remaining gap above.
+- CLEARED: `backlog/2026-07-13-wall-plane-depth-solver-design.md`. Traffic does not establish the requested deliverable; see evidence above.
+- CLEARED: `backlog/2026-07-28-release-notes-deep-linking-design.md`. Traffic does not establish the requested deliverable; see evidence above.
 
 ## NEEDS AUSTEN
 
@@ -104,23 +179,25 @@ Shipped: none. Archived: none. No reviewed spec has all scoped acceptance eviden
 
 ## Verification
 
-Pending final npm run specs:check, npm run specs:test, and git diff --check.
+npm run specs:check: 194 specs checked; 0 invalid (exit 0).
+
+npm run specs:test: tests 6; pass 6; fail 0; cancelled/skipped/todo 0 (exit 0).
+
+git diff --check: no output (exit 0) at batch 1; final check pending.
+
+Commit batch 1: 86e67ae4e7 docs(specs): reconcile first ten rebuild-hazard candidates.
+
+Additional eventual decisions: native mobile needs iOS signing/store identity, device proof and unresolved monetization/hardware choices; sequence-engine production backfill/publication require evidence and separate external authorization. No such action was taken.
 
 ## NOT REACHED
 
 Unverified queue, active first then backlog, filename order (excluding reviewed specs):
 
-- `active/2026-04-20-sequence-engine-unification-design.md`
-- `active/2026-04-24-native-mobile-integration-design.md`
-- `active/2026-05-04-god-file-decomposition-design.md`
-- `active/2026-05-12-spatial-lab-design.md`
-- `active/2026-05-25-mandala-roadmap.md`
 - `active/2026-05-28-animation-engine-rearchitecture-design.md`
 - `active/2026-05-28-inspect-panel-redesign-design.md`
 - `active/2026-05-30-deriver-collapse-design.md`
 - `active/2026-05-31-ceremony-phase5-stateless-isolated-design.md`
 - `active/2026-05-31-unified-generation-vocabulary-design.md`
-- `active/2026-06-04-header-pattern-glyphs-design.md`
 - `active/2026-06-12-canon-prop-creators-redesign.md`
 - `active/2026-06-16-effect-leg-bolstering-design.md`
 - `active/2026-06-16-modular-kit-museum-design.md`
@@ -206,7 +283,6 @@ Unverified queue, active first then backlog, filename order (excluding reviewed 
 - `backlog/2026-04-05-unified-view-toggle-and-perf-harness.md`
 - `backlog/2026-04-11-collision-lab-future-work.md`
 - `backlog/2026-04-15-unified-gpu-render-pipeline-design.md`
-- `backlog/2026-05-23-accessibility-fixes-design.md`
 - `backlog/2026-05-23-firebase-cost-optimization-design.md`
 - `backlog/2026-05-23-spacing-token-system-design.md`
 - `backlog/2026-05-23-utility-deduplication-design.md`
@@ -216,5 +292,4 @@ Unverified queue, active first then backlog, filename order (excluding reviewed 
 - `backlog/2026-07-16-beat-to-step-nomenclature-design.md`
 - `backlog/2026-07-31-qft-one-surface-design.md`
 - `backlog/2026-08-01-scene3d-treeshaking-followup-design.md`
-- `backlog/2026-08-30-3d-scene-zero-jank-startup-design.md`
 - `backlog/2026-09-04-post-studio-screen-take-source-design.md`
