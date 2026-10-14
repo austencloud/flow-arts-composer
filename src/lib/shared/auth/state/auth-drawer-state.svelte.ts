@@ -1,4 +1,5 @@
 import type { AuthNudgeTrigger } from "../domain/auth-nudge-trigger";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { trackAuthSurfaceOpened } from "#lib/shared/analytics/auth-events.js";
 import { createGuestEncoreState } from "./guest-encore-state.svelte";
 
@@ -45,6 +46,9 @@ let _initialMode = $state<"signin" | "signup">("signup");
 let _reason = $state<AuthNudgeTrigger | null>(null);
 let _stepCapAttempts = $state(0);
 let _stepCapSequenceId = $state<string | null>(null);
+// The sequence the person was saving or sharing when the sheet opened. The
+// sheet plays it on its art; without one it plays a showcase sequence.
+let _artifact = $state.raw<SequenceData | null>(null);
 
 export const authDrawerState = {
   guestEncore,
@@ -95,10 +99,14 @@ export const authDrawerState = {
   get stepCapAttempts() {
     return _stepCapAttempts;
   },
+  get artifact() {
+    return _artifact;
+  },
   show(
     mode: "signin" | "signup" = "signup",
     reason?: AuthNudgeTrigger,
-    sequenceId?: string
+    sequenceId?: string,
+    artifact?: SequenceData | null
   ) {
     guestEncore.restore();
     this.dismissGuestSaveNudge();
@@ -116,6 +124,7 @@ export const authDrawerState = {
     }
     _initialMode = mode;
     _reason = reason ?? null;
+    _artifact = artifact?.steps?.length ? artifact : null;
     _stepCapSequenceId =
       reason === "step-cap-guest" ? (sequenceId ?? null) : null;
     _open = true;
@@ -127,6 +136,7 @@ export const authDrawerState = {
   },
   hide() {
     _open = false;
+    _artifact = null;
   },
   /**
    * Called by the auth listener whenever the user's authenticated status
@@ -138,6 +148,7 @@ export const authDrawerState = {
     if (guestSaveToastId) removeToast(guestSaveToastId, "programmatic");
     guestSaveToastId = null;
     _open = false;
+    _artifact = null;
     _initialMode = "signup";
     _reason = null;
     _stepCapAttempts = 0;
