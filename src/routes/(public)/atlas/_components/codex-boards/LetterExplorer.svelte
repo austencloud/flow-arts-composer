@@ -345,9 +345,6 @@
               </p>
             {/if}
             <div class="context-links">
-              <LinkChip href="/learn/concepts/words-alpha-beta"
-                >Open the lesson</LinkChip
-              >
               <LinkChip href="/browse/you/collections/founding_tka-1"
                 >View all 19 cards</LinkChip
               >
