@@ -36,7 +36,7 @@ const VIEWING_CONTROL_PATH =
 /** PropPairField hosts that pick props to save, not props on screen. */
 const SAVE_PAIR_HOSTS = [
   "src/lib/features/create/shared/components/SaveToLibraryDialog.svelte",
-  "src/lib/features/create/shared/components/SaveToLibraryPanel.svelte",
+  "src/lib/features/create/shared/components/SaveToLibraryView.svelte",
   "src/lib/shared/library/components/SavePropDialog.svelte",
 ];
 
