@@ -106,8 +106,7 @@
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://tkaflowarts.com/" },
-      { "@type": "ListItem", "position": 2, "name": "Flow Arts History", "item": "https://tkaflowarts.com/history" },
-      { "@type": "ListItem", "position": 3, "name": "The LOOP Algebra", "item": "${URL}" }
+      { "@type": "ListItem", "position": 2, "name": "The LOOP Algebra", "item": "${URL}" }
     ]
   }
   </script>`}

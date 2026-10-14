@@ -116,14 +116,6 @@
       {/each}
     </ul>
     <nav aria-label="More about timing and direction">
-      <PanelButton href="/history"
-        ><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>Explore
-        the history</PanelButton
-      >
-      <PanelButton href="/history#archive-record-vtg"
-        ><i class="fa-solid fa-box-archive" aria-hidden="true"></i>VTG history
-        record</PanelButton
-      >
       <PanelButton href="/learn/concepts"
         ><i class="fa-solid fa-graduation-cap" aria-hidden="true"
         ></i>Interactive lessons</PanelButton

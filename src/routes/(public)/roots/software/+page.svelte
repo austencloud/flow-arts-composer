@@ -251,12 +251,6 @@
           {
             "@type": "ListItem",
             position: 2,
-            name: "Flow Arts History",
-            item: "https://tkaflowarts.com/history",
-          },
-          {
-            "@type": "ListItem",
-            position: 3,
             name: "Software History",
             item: URL,
           },
@@ -398,14 +392,6 @@
               <LinkChip href={links.vtgPlay}>VTG on Google Play</LinkChip>
               <LinkChip href={links.vtgIos}>VTG on the App Store</LinkChip>
             </div>
-            <p class="context-link">
-              For what VTG contributed to The Kinetic Alphabet itself, read the <LinkChip
-                size="inline"
-                wrap
-                href="/history#archive-record-vtg"
-                >VTG record in the history archive</LinkChip
-              >.
-            </p>
           </div>
         {/snippet}
         {#snippet media()}<SoftwareGallery

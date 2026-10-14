@@ -108,14 +108,6 @@
         {t("shape_engine_read_ratios")}
         <i class="fas fa-arrow-right" aria-hidden="true"></i>
       </a>
-      <a href="/history#archive-record-vtg">
-        {t("shape_engine_vtg_record")}
-        <i class="fas fa-arrow-right" aria-hidden="true"></i>
-      </a>
-      <a href="/history#archive-record-lorq">
-        {t("shape_engine_lorq_record")}
-        <i class="fas fa-arrow-right" aria-hidden="true"></i>
-      </a>
       <a
         href={ORIGINAL_SHAPE_MATRIX_URL}
         target="_blank"

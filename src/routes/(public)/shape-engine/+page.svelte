@@ -113,8 +113,7 @@
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://tkaflowarts.com/" },
-      { "@type": "ListItem", "position": 2, "name": "Flow Arts History", "item": "https://tkaflowarts.com/history" },
-      { "@type": "ListItem", "position": 3, "name": "${KINETIC_SHAPE_ENGINE_NAME}", "item": "${CANONICAL_URL}" }
+      { "@type": "ListItem", "position": 2, "name": "${KINETIC_SHAPE_ENGINE_NAME}", "item": "${CANONICAL_URL}" }
     ]
   }
   </script>`}

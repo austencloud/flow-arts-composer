@@ -28,16 +28,13 @@
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://tkaflowarts.com/" },
-      { "@type": "ListItem", "position": 2, "name": "Flow Arts History", "item": "https://tkaflowarts.com/history" },
-      { "@type": "ListItem", "position": 3, "name": "Poi", "item": "${URL}" }
+      { "@type": "ListItem", "position": 2, "name": "Poi", "item": "${URL}" }
     ]
   }
   </script>`}
 </Seo>
 
 <div class="editorial">
-  <a class="back-link" href="/history">← Flow Arts History</a>
-
   <header class="editorial-header">
     <h1 class="page-title">Poi Notation</h1>
     <p class="page-subtitle">Can The Kinetic Alphabet write poi?</p>
@@ -63,10 +60,7 @@
         The Kinetic Alphabet builds on VTG, created by Noel Yee and spinners at
         the Vulcan Lofts in Oakland. VTG's four timing and direction categories
         are encoded in TKA's Type 1 letters. Poi spinners who know split-same
-        and tog-opposite can already read that part of the alphabet. The sources
-        and full lineage are on the <LinkChip size="inline" href="/history"
-          >history page</LinkChip
-        >.
+        and tog-opposite can already read that part of the alphabet.
       </p>
       <p>
         A Poi Lab module is planned for Flow Arts Composer to identify sequences

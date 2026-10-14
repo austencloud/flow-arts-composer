@@ -7777,6 +7777,7 @@
   "guide_zans_title": "Zan's Diamond",
   "guide_zans_tagline": "One hand path. Twenty-four words.",
   "guide_zans_credit": "A pattern by {name}.",
+  "guide_zans_credit_link": "{name} on YouTube",
   "guide_zans_path_title": "One hand, one path",
   "guide_zans_path_body_1": "Zan's Diamond comes down to a single route for one hand. From the bottom point it shifts to the right, dashes across to the left, shifts up to the top, and dashes back down. Then it does the same the other way round: shift left, dash right, shift up, dash down.",
   "guide_zans_path_body_2": "Eight moves, and the hand is back where it started. The four shifts draw the diamond's edges and the four dashes draw its two crossing lines, which is where the name comes from. Watch the blue hand trace it.",
