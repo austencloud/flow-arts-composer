@@ -26,8 +26,6 @@
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
-  import PropSelectionSheet from "#lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
-  import { createGlobalChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
   import { getCreateModuleContext } from "../../context/create-module-context";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type { StepOperator } from "#lib/features/create/shared/services/step-operator.js";
@@ -40,10 +38,7 @@
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { PathShapeValue } from "../../services/step-operations/path-shape-handler";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import {
-    getSettings,
-    updateSettings,
-  } from "#lib/shared/application/state/app-state.svelte.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { UndoOperationType } from "../../services/undo-manager";
   import {
     FLOAT_TURNS,
@@ -203,10 +198,6 @@
     }
     lastIsMulti = multi;
   });
-
-  // Prop selection sheet state
-  let propSheetOpen = $state(false);
-  let propSheetHand = $state<"left" | "right">("left");
 
   // Get current prop types from settings
   const settings = $derived(getSettings());
@@ -412,19 +403,6 @@
     activeSequenceState.selectStep(stepNumber);
   }
 
-  function handleOpenPropSheet(hand: "left" | "right") {
-    propSheetHand = hand;
-    propSheetOpen = true;
-  }
-
-  function handlePropSelect(propType: PropType) {
-    if (propSheetHand === "left") {
-      updateSettings({ leftPropType: propType });
-    } else {
-      updateSettings({ rightPropType: propType });
-    }
-  }
-
   function handlePushUndoSnapshot() {
     CreateModuleState.pushUndoSnapshot(
       UndoOperationType.MODIFY_BEAT_PROPERTIES
@@ -601,7 +579,6 @@
             stepData={selectedStepNumber === 0 ? null : selectedStepData}
             onTurnsChange={handleTurnsChange}
             onRotationChange={handleRotationChange}
-            onOpenPropSheet={handleOpenPropSheet}
             onPathShapeChange={handlePathShapeChange}
             onPathShapeClear={handlePathShapeClear}
             {batchSteps}
@@ -612,16 +589,6 @@
     </Crossfade>
   </div>
 </CreatePanelDrawer>
-
-<!-- Prop Selection Sheet - rendered as sibling to StepEditorPanel -->
-<PropSelectionSheet
-  bind:isOpen={propSheetOpen}
-  selectedPropType={propSheetHand === "left" ? leftPropType : rightPropType}
-  color={propSheetHand === "left" ? "blue" : "red"}
-  title={propSheetHand === "left" ? "Select Left Prop" : "Select Right Prop"}
-  onSelect={handlePropSelect}
-  chirality={createGlobalChiralitySeam(propSheetHand)}
-/>
 
 <style>
   .drawer-zone {

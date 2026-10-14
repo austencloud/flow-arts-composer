@@ -23,7 +23,6 @@
   import { getViewportManager } from "#lib/shared/device/get-viewport-manager.js";
   import PropControlPair from "./PropControlPair.svelte";
   import PropTurnsControl from "./PropTurnsControl.svelte";
-  import PropTypeRow from "./PropTypeRow.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
@@ -69,7 +68,6 @@
     stepData: StepData | null;
     onTurnsChange: (color: HandSide, delta: number) => void;
     onRotationChange: (color: HandSide, direction: RotationDirection) => void;
-    onOpenPropSheet?: (hand: "left" | "right") => void;
     onPathShapeChange?: (color: HandSide, shape: PathShapeValue) => void;
     onPathShapeClear?: (color: HandSide) => void;
     // Multi-select: every selected step + the batch turns writer
@@ -88,7 +86,6 @@
     stepData,
     onTurnsChange,
     onRotationChange,
-    onOpenPropSheet,
     onPathShapeChange,
     onPathShapeClear,
     batchSteps,
@@ -357,15 +354,7 @@
       onPathShapeClear={onPathShapeClear
         ? () => onPathShapeClear(color)
         : undefined}
-    >
-      {#snippet trailingControl()}
-        <PropTypeRow
-          hand={color === HandSide.LEFT ? "left" : "right"}
-          compact={narrow}
-          {onOpenPropSheet}
-        />
-      {/snippet}
-    </PropTurnsControl>
+    />
   </div>
 {/snippet}
 

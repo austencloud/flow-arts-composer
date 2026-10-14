@@ -8018,6 +8018,8 @@
   "create_controls_less_turn_whole": "Remove one turn: {hand}",
   "create_controls_more_turn_whole": "Add one turn: {hand}",
   "create_controls_path": "{hand} path: {shape}",
+  "create_controls_path_short": "Path",
+  "create_controls_path_options": "Path options: {hand} ({shape})",
   "create_controls_reset_path": "Reset {hand} path to global",
   "create_controls_toggle_rotation": "Toggle {hand} rotation (currently {direction})",
   "create_controls_cw_short": "CW",
