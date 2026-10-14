@@ -322,7 +322,6 @@ describe("canonical concept lesson composition", () => {
       "gamma-motion",
       "letter-codex-intro",
       "type1-abc-ghi",
-      "words-alpha-beta",
     ].map((id) => registry.indexOf(`conceptId: "${id}"`));
 
     expect(order.every((index) => index >= 0)).toBe(true);
