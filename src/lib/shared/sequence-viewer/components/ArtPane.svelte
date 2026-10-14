@@ -703,7 +703,7 @@
         snapshot,
         poster,
         ...(savedComposition ? { composition: savedComposition } : {}),
-        source: "viewer",
+        source: "viewer" as const,
         // Lineage stamp: link back to the raw source sequence (spec:
         // 2026-07-12-art-in-library-design.md Unit 3).
         ...(sourceWord ? { sourceWord } : {}),

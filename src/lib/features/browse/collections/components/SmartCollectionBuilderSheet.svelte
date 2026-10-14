@@ -29,6 +29,8 @@ one rail while the live matching grid gets the rest of the canvas.
   import FilterRuleStrip from "#lib/shared/browse/components/FilterRuleStrip.svelte";
   import SmartCollectionNameField from "#lib/features/library/components/SmartCollectionNameField.svelte";
 
+  import type { Section } from "#lib/features/browse/gallery-home/gallery-drill-catalog.svelte.js";
+
   type FilterPickerSection =
     | "chooser"
     | "level"
@@ -72,7 +74,7 @@ one rail while the live matching grid gets the rest of the canvas.
   });
 
   let modalOpen = $state(false);
-  let drillSection = $state<FilterPickerSection | "more">("chooser");
+  let drillSection = $state<Section>("chooser");
   // Remount seed for the picker drill: editing an applied chip reopens the
   // picker ON that filter's editor instead of the chooser.
   let pickerSeed = $state<{ section?: FilterPickerSection }>({

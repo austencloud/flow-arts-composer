@@ -173,8 +173,8 @@
     onPropLookChange?: (look: PropLook) => void;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
-    triangleGrip: TriangleGrip;
-    onTriangleGripChange: (grip: TriangleGrip) => void;
+    triangleGrip?: TriangleGrip;
+    onTriangleGripChange?: (grip: TriangleGrip) => void;
     /** A sheet can reset this transient route when it closes. */
     isActive?: boolean;
     /** Lets a sheet temporarily reclaim root-only control space while drilled. */
@@ -712,6 +712,12 @@
       ((drill?.kind === "fan-look" && isFanPropType(drill.prop)) ||
         (selectedPropType !== null && isFanPropType(selectedPropType)))
   );
+  const detailProp = $derived(
+    drill?.kind === "details" || drill?.kind === "fan-look"
+      ? drill.prop
+      : selectedPropType
+  );
+
   // Fans own their richer build / frame / cover contract. The global artwork
   // setting only appears for a selected prop with a captured 3D sprite.
   const showPropLook = $derived(
@@ -741,12 +747,6 @@
     })
   );
 
-  const detailProp = $derived(
-    drill?.kind === "details" || drill?.kind === "fan-look"
-      ? drill.prop
-      : selectedPropType
-  );
-
   // The triangle's grip is a look on top of the tile, like the fan build. It
   // shows as a two-pill row on the hoop styles page, in the triangle's
   // details and on the rail.
@@ -756,7 +756,7 @@
   const currentGrip = $derived(normalizeTriangleGrip(triangleGrip));
   function chooseGrip(grip: TriangleGrip) {
     if (currentGrip === grip) return;
-    onTriangleGripChange(grip);
+    onTriangleGripChange?.(grip);
   }
 
   // Size is a property of the current prop, not a prop of its own. Every big
@@ -995,9 +995,9 @@
             aria-label={t("settings_design_source", {
               name: railCredit.originator,
             })}
-            ><span class="credit-long">{railCredit.originator}</span
-            ><span class="credit-short" aria-hidden="true"
-              >{railCredit.short}</span
+            ><span class="credit-long">{railCredit.originator}</span><span
+              class="credit-short"
+              aria-hidden="true">{railCredit.short}</span
             ></LinkChip
           >
         {/if}
@@ -1064,10 +1064,14 @@
         singleHand={chirality?.hands.length === 1
           ? chirality.hands[0]?.hand
           : undefined}
-        leftFlipped={chirality?.hands.find((state) => state.hand === "left")
-          ?.flipped}
-        rightFlipped={chirality?.hands.find((state) => state.hand === "right")
-          ?.flipped}
+        leftFlipped={chirality?.hands.find(
+          (state: import("./prop-chirality-seam").PropChiralityHandState) =>
+            state.hand === "left"
+        )?.flipped}
+        rightFlipped={chirality?.hands.find(
+          (state: import("./prop-chirality-seam").PropChiralityHandState) =>
+            state.hand === "right"
+        )?.flipped}
       />
       {#if prop !== PropType.HAND && !isUnlocked(prop)}
         <i class="fas fa-lock lock-glyph" aria-hidden="true"></i>
@@ -1106,10 +1110,14 @@
         singleHand={chirality?.hands.length === 1
           ? chirality.hands[0]?.hand
           : undefined}
-        leftFlipped={chirality?.hands.find((state) => state.hand === "left")
-          ?.flipped}
-        rightFlipped={chirality?.hands.find((state) => state.hand === "right")
-          ?.flipped}
+        leftFlipped={chirality?.hands.find(
+          (state: import("./prop-chirality-seam").PropChiralityHandState) =>
+            state.hand === "left"
+        )?.flipped}
+        rightFlipped={chirality?.hands.find(
+          (state: import("./prop-chirality-seam").PropChiralityHandState) =>
+            state.hand === "right"
+        )?.flipped}
       />
     {/if}
   {/snippet}
@@ -1249,7 +1257,9 @@
               aria-label={t("settings_choices_for", { item: drillTitle })}
               class:dragging={railDragging}
               style={balancedColumns(familyTiles.length)}
-              style:--family-count={familyChoices(drill.base).length}
+              style:--family-count={drill.kind === "family"
+                ? familyChoices(drill.base).length
+                : 0}
               class:comfortable={tileDensity === "comfortable"}
               class:inspector={tileDensity === "inspector"}
               class:fill={drillLayout !== null}

@@ -98,6 +98,11 @@
   );
   const hands = ["left", "right"] as const;
   const handColors = { left: "#3b82f6", right: "#ef4444" };
+  // Stable render order so the {#each} keys don't churn as planes toggle.
+  const visiblePlaneList = $derived(
+    (Object.values(Plane) as Plane[]).filter((p) => visiblePlanes.has(p))
+  );
+
   const joinedPlanes = $derived(
     visiblePlaneList.map((plane) => {
       const config = PLANE_MODE_CONFIGS[planeMode];
@@ -167,11 +172,6 @@
   const centerPointMaterial = getGridMaterial(0xf59e0b);
   const orientationHelpers = $derived(
     getGridOrientationHelperArgs(effectiveSize)
-  );
-
-  // Stable render order so the {#each} keys don't churn as planes toggle.
-  const visiblePlaneList = $derived(
-    (Object.values(Plane) as Plane[]).filter((p) => visiblePlanes.has(p))
   );
 
   const _viewDir = new Vector3();

@@ -75,7 +75,7 @@
   <OptionPickerContent
     options={harnessOptions as never[]}
     organizerService={() =>
-      sectionTitles.map((title) => ({ title, pictographs: [] }))}
+      sectionTitles.map((title: string) => ({ title, pictographs: [] }))}
     sizerService={() => ({
       pictographSize: 80,
       pictographSizeString: "80px",

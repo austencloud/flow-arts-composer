@@ -34,7 +34,7 @@
 
   let languageItems = $derived(
     locales.map((locale) => ({
-      label: languageNames[locale],
+      label: languageNames[locale] ?? locale,
       icon: "fas fa-language",
       selected: currentLanguage === locale,
       action: () => selectLanguage(locale),

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { lessonQuestion } from "./lesson-question.js";
   import { onMount } from "svelte";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
@@ -54,7 +55,9 @@
     TYPE1_LESSON_LETTERS.find((item) => item.letter === selectedLetter) ??
       TYPE1_LESSON_LETTERS[0]
   );
-  const activeQuestion = $derived(TYPE1_QUESTIONS[questionIndex]);
+  const activeQuestion = $derived(
+    lessonQuestion(TYPE1_QUESTIONS, questionIndex)
+  );
   const answerLetter = $derived(
     TYPE1_LESSON_LETTERS.find(
       (item) => item.letter === activeQuestion.answer
@@ -87,10 +90,7 @@
 
     pictographs = Object.fromEntries(
       results
-        .filter(
-          (result): result is { letter: Letter; pictograph: PictographData } =>
-            Boolean(result.pictograph)
-        )
+        .filter((result) => result.pictograph !== null)
         .map((result) => [result.letter, result.pictograph])
     );
     loading = false;

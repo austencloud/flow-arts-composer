@@ -40,7 +40,7 @@
     const match = gate.reason.match(
       /^(\d+) beats can't split into (\d+) equal parts$/
     );
-    return match
+    return match?.[1] !== undefined && match[2] !== undefined
       ? t("create_deep_loop_cannot_split", { beats: match[1], parts: match[2] })
       : gate.reason;
   });
@@ -52,7 +52,7 @@
     const match = props.guestLock.reason.match(
       /at least (\d+) steps\. Guests cap at (\d+)/
     );
-    return match
+    return match?.[1] !== undefined && match[2] !== undefined
       ? t("create_deep_loop_guest_length", {
           minimum: match[1],
           maximum: match[2],

@@ -8,7 +8,7 @@ import { createStepData } from "#lib/shared/foundation/domain/factories/create-s
  * playback moves it, one beat at a time, or the way Create moves it after a
  * delete. Needs a real `document.createElement`.
  */
-export function mountStepCellRow(stepCount: number) {
+export function mountStepCellRow(stepCount: number, shouldAnimate = false) {
   let selected = $state<number | null>(null);
   const deleteRequests: number[] = [];
   const root = document.body.appendChild(document.createElement("div"));
@@ -28,6 +28,7 @@ export function mountStepCellRow(stepCount: number) {
       props: {
         step: createStepData({ id: `step-${stepNumber}`, stepNumber }),
         index: stepNumber - 1,
+        shouldAnimate,
         get isSelected() {
           return selected === stepNumber;
         },

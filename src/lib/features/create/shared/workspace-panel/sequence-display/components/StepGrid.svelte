@@ -729,7 +729,8 @@
     // Keep that imperative read out of this effect's dependencies, or cleanup
     // can clear and restore the same container until Svelte reaches its depth
     // guard when the first grid mounts.
-    untrack(() => scrollState.setScrollContainer(scrollContainerRef));
+    const container = scrollContainerRef;
+    untrack(() => scrollState.setScrollContainer(container));
 
     // The overflow read forces layout; while the tool panel slides it waits
     // for the settle instead of landing in every frame.
@@ -758,7 +759,10 @@
 
   const stepIdentities = $derived(
     stepIdentityMode === "slot"
-      ? steps.map((_step, index) => `${stepIdentityPrefix}:slot:${index}`)
+      ? steps.map(
+          (_step: StepData, index: number) =>
+            `${stepIdentityPrefix}:slot:${index}`
+        )
       : createStableStepIdentities(steps)
   );
   const getStepKey = (_step: StepData, index: number) =>

@@ -12,6 +12,7 @@
   import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import WordHeader from "#lib/shared/animation-engine/components/layers/WordHeader.svelte";
   import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
+  import type { ComponentProps } from "svelte";
   import WordActionMenu from "#lib/shared/choreo-card/components/WordActionMenu.svelte";
   import ShareActionMenu from "#lib/shared/share/components/ShareActionMenu.svelte";
   import { resolveSequenceIdentityTitle } from "../services/viewer-title";
@@ -103,6 +104,10 @@
     shareStatusMessage?: string;
     onShareActionSelect: (actionId: string) => void;
   }
+
+  type WordActionTrigger = Parameters<
+    ComponentProps<typeof WordActionMenu>["trigger"]
+  >[0];
 
   let {
     ctx,
@@ -475,7 +480,7 @@
   </div>
 
   <div class="header-word-slot">
-    {#snippet wordTrigger(actions)}
+    {#snippet wordTrigger(actions: WordActionTrigger)}
       <button
         type="button"
         class="header-word-action"
