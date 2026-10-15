@@ -81,21 +81,25 @@
 <div class="editorial">
   <header class="editorial-header">
     <h1 class="page-title">Prop Notation</h1>
-    <p class="page-subtitle">One alphabet, read through each prop</p>
+    <p class="page-subtitle">Pick a prop to play the same sequence with it</p>
   </header>
 
-  <section class="editorial-section" style="--accent: #22c55e">
-    <div class="prose">
-      <p>
-        The Kinetic Alphabet began on paper with a red pen and a blue pen. A pen
-        works like a small staff, with two visible ends, so the notation was
-        built around double staff. Every other prop is read by translating from
-        the staff. Pick a prop to play the same sequence with it.
-      </p>
+  <!-- The prop pick is the page's one decision, so it leads, directly above
+       the player and text it changes (2026-10-15, Austen's call). -->
+  <section
+    class="editorial-section has-duo prop-picker"
+    style="--accent: #14b8a6"
+  >
+    <div class="prop-switcher">
+      <SegmentedControl
+        {options}
+        value={selected}
+        onchange={choose}
+        color="accent"
+        semantics="tabs"
+        ariaLabel="Prop"
+      />
     </div>
-  </section>
-
-  <section class="editorial-section has-duo" style="--accent: #14b8a6">
     <div class="section-duo demo-star">
       <div class="duo-demo">
         <SequenceHeroDemo
@@ -103,18 +107,7 @@
           note={current.note}
           leftPropType={current.propType}
           rightPropType={current.propType}
-        >
-          {#snippet toolbar()}
-            <SegmentedControl
-              {options}
-              value={selected}
-              onchange={choose}
-              color="accent"
-              semantics="tabs"
-              ariaLabel="Prop"
-            />
-          {/snippet}
-        </SequenceHeroDemo>
+        />
       </div>
       <div class="duo-copy">
         <div class="prop-panels">
@@ -184,6 +177,18 @@
 </div>
 
 <style>
+  /* The switcher heads the picker section, centred over both columns. The
+     header above already separates it from the title, so no rule line. */
+  .prop-picker.editorial-section {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .prop-switcher {
+    display: flex;
+    justify-content: center;
+    margin-bottom: clamp(1.5rem, 1rem + 1vw, 2.5rem);
+  }
+
   /* All five panels sit in one cell. The tallest sets the height, so the
      page never shifts when the pick changes. */
   .prop-panels {
