@@ -184,6 +184,22 @@ describe("sitemap.xml curated sequence URLs", () => {
     expect(occurrences).toBe(1);
   });
 
+  it("lists each guide page's language editions, and nothing else localized", async () => {
+    mocks.listDocuments.mockResolvedValue({ documents: [] });
+    const xml = await (await GET(event())).text();
+
+    for (const locale of ["de", "es", "fr", "it", "pt"]) {
+      expect(xml).toContain(
+        `<loc>https://tkaflowarts.com/${locale}/guide</loc>`
+      );
+      expect(xml).toContain(
+        `<loc>https://tkaflowarts.com/${locale}/guide/zans-diamond</loc>`
+      );
+    }
+    expect(xml).not.toContain("/de/about");
+    expect(xml).not.toContain("/de/guides/");
+  });
+
   it("falls back to zero curated URLs and still serves a 200 sitemap when Firestore fails", async () => {
     const consoleError = vi
       .spyOn(console, "error")
