@@ -72,6 +72,8 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     onClose,
     entrance = "scale",
     titleId,
+    active = true,
+    session,
   } = $props<{
     constraintPreset: "smooth" | "mixed" | "choppy";
     handPathMode: "smooth" | "mixed" | "choppy";
@@ -94,6 +96,12 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     /** Forwarded to GenerationSettingsOverlay's heading id, so a host stage's
      *  aria-labelledby points at the title this overlay actually renders. */
     titleId?: string;
+    /** False while a host keeps this overlay built but hidden between opens
+     *  (ExpandedCardStage). Going inactive returns to the root list. */
+    active?: boolean;
+    /** Changes on every open of a kept overlay; each new value while active
+     *  reloads the local settings from the props, as a fresh mount would. */
+    session?: unknown;
   }>();
 
   let hapticService: HapticFeedback | null = $state(null);
@@ -165,6 +173,41 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     )
   );
   const availableStartOrientations = $derived(startOrientationsForLevel(level));
+
+  // A kept overlay is not remounted per open, so each open reloads what a
+  // mount would have: the settings from the props, and the root list.
+  let wasActive = untrack(() => active);
+  let lastSession = untrack(() => session);
+  $effect.pre(() => {
+    const on = active;
+    const current = session;
+    untrack(() => {
+      if (on && (!wasActive || current !== lastSession)) {
+        loadFromProps();
+      } else if (!on && wasActive) {
+        selected = null;
+        resetConfirmOpen = false;
+      }
+    });
+    wasActive = on;
+    lastSession = current;
+  });
+
+  function loadFromProps() {
+    localConstraintPreset = constraintPreset;
+    localHandPathMode = handPathMode;
+    localMotionTypeFilter = motionTypeFilter;
+    localBlockedPlacements = startEndOptions?.blockedStartPlacements ?? [];
+    localEndPlacements = startEndOptions?.endPlacements ?? [];
+    localLeftOri = clampStartOrientationToLevel(
+      startEndOptions?.leftStartOrientation,
+      level
+    );
+    localRightOri = clampStartOrientationToLevel(
+      startEndOptions?.rightStartOrientation,
+      level
+    );
+  }
 
   // Current preset (All / Classic 3 / Custom) derived from the blocked list.
   const currentPreset = $derived(

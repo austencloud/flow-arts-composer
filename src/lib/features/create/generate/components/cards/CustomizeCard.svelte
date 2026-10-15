@@ -9,6 +9,7 @@ to three rows. Click opens the expanded overlay.
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type {
+    CustomizeOverlayProps,
     StartEndOptions,
     PanelCoordinationState,
   } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
@@ -71,6 +72,14 @@ to three rows. Click opens the expanded overlay.
   let hapticService: HapticFeedback | null = $state(null);
   const panelState = getContext<PanelCoordinationState>("panelState");
 
+  // Once primed, keep the stage's closed panel current: a grid change made
+  // here redraws its tiles now, while nothing is animating, not on the next
+  // open.
+  let primed = $state(false);
+  $effect(() => {
+    if (primed) panelState?.primeCustomizeOverlay?.(overlayProps());
+  });
+
   onMount(() => {
     hapticService = getHapticFeedback();
 
@@ -81,6 +90,16 @@ to three rows. Click opens the expanded overlay.
     if (customizeOverlayWasOpen() && !panelState?.isCustomizeOverlayOpen) {
       openOverlay();
     }
+
+    // Let the stage build the panel while the page is idle, so its thirty-two
+    // pictographs are not built inside the first tap's morph.
+    const prime = () => (primed = true);
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(prime, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(prime, 1500);
+    return () => window.clearTimeout(id);
   });
 
   // One pass answers both questions: is anything non-default, and what is it.
@@ -119,7 +138,11 @@ to three rows. Click opens the expanded overlay.
   }
 
   function openOverlay() {
-    panelState?.openCustomizeOverlay?.({
+    panelState?.openCustomizeOverlay?.(overlayProps());
+  }
+
+  function overlayProps(): CustomizeOverlayProps {
+    return {
       constraintPreset,
       handPathMode,
       motionTypeFilter,
@@ -133,7 +156,7 @@ to three rows. Click opens the expanded overlay.
       onMotionTypeFilterChange,
       onStartEndChange: onStartEndChange ?? null,
       onResetAll: onResetAll ?? null,
-    });
+    };
   }
 
   function handleKeydown(event: KeyboardEvent) {
