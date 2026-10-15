@@ -47,33 +47,14 @@ export const ZANS_DIAMOND_CREDIT: { name: string; href: string | null } = {
 };
 
 /**
- * Zan's own uploads the guide sends people to, all on his channel (titles,
- * years and the 3:17 start of his set checked against YouTube 2026-10-15; the
- * set's start comes from that video's own description). Titles stay as he
- * wrote them; `note` is a message key.
+ * Zan's own Zan's Diamond tutorial on his channel (title and year checked
+ * against YouTube 2026-10-15). The title stays as he wrote it.
  */
-export const ZANS_DIAMOND_VIDEOS: readonly {
-  id: string;
-  title: string;
-  year: string;
-  start?: number;
-  note?: TranslationKey;
-}[] = [
-  { id: "QhWo4cLj184", title: "Poi Tutorial: Zan's Diamond", year: "2011" },
-  {
-    id: "CFez03GHpTE",
-    title: "Poi Transmission: Spinning in Arizona",
-    year: "2008",
-    start: 197,
-    note: "guide_zans_video_note_set",
-  },
-  {
-    id: "CGZFNcNrFiU",
-    title: "Poi Profile of Zan",
-    year: "2011",
-    note: "guide_zans_video_note_profile",
-  },
-];
+export const ZANS_DIAMOND_TUTORIAL = {
+  id: "QhWo4cLj184",
+  title: "Poi Tutorial: Zan's Diamond",
+  year: "2011",
+} as const;
 
 /** The author-verified record the variations were derived from. */
 export const ZANS_DIAMOND_SOURCE_SEQUENCE_ID = "seq_1791923102683_sysj46042";
