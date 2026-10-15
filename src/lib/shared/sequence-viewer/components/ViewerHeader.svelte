@@ -11,6 +11,7 @@
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import WordHeader from "#lib/shared/animation-engine/components/layers/WordHeader.svelte";
+  import { deriveHeaderPatternGlyphs } from "#lib/shared/foundation/domain/sequence-patterns/header-pattern-glyphs.js";
   import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
   import type { ComponentProps } from "svelte";
   import WordActionMenu from "#lib/shared/choreo-card/components/WordActionMenu.svelte";
@@ -175,6 +176,9 @@
   /** True only when the slot is showing `sequence.word` itself — gates the
    *  glyph renderer and the word-specific actions in the menu below. */
   const isWordTitle = $derived(!trimmedTitleOverride && !!sequence.word);
+  const headerPatterns = $derived(
+    isWordTitle ? deriveHeaderPatternGlyphs(sequence) : null
+  );
   const activeWordStepNumber = $derived(
     ctx.editingPane !== "image" &&
       ctx.highlightedStepIndex !== null &&
@@ -511,6 +515,8 @@
               darkMode
               presentation="chrome"
               activeStepNumber={activeWordStepNumber}
+              turnGlyphEntries={headerPatterns?.turnGlyphEntries ?? null}
+              reversalGlyph={headerPatterns?.reversalGlyph ?? null}
             />
           {:else}
             <!-- A tunnel name sets TKA words against prose ("BBBA × ΩORZ
