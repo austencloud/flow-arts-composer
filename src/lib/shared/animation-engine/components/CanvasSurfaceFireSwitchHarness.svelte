@@ -2,6 +2,7 @@
   import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
   import type { TipEffectMap } from "../domain/types/tip-effect-types";
   import { DEFAULT_FIRE_CONFIG } from "../domain/types/fire-types";
+  import { QualityTier } from "../domain/types/quality-types";
   import CanvasSurface from "./CanvasSurface.svelte";
 
   const leftProp: PropState = {
@@ -34,7 +35,7 @@
     {tipEffectMap}
     gridVisible={false}
     contextId="mounted-fire-switch-review"
-    initialQualityTier="low"
+    initialQualityTier={QualityTier.LOW}
     onInitialized={() => (initialized = true)}
   />
 </div>
