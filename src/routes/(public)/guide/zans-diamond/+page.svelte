@@ -334,8 +334,11 @@
     gap: var(--spacing-sm, 8px);
     text-align: center;
   }
+  /* A sentence too long for the column wraps into even lines, not one
+     stranded word. */
   .sentence {
     display: block;
+    text-wrap: balance;
   }
   .zans-guide .lede {
     font-size: 1.125rem;
