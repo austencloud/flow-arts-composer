@@ -1,6 +1,6 @@
 # TIKA Testing - Programmatic Interaction
 
-**Repository status (2026-10-14):** `package.json` declares `tika:evaluate` and `tika:opus`, and `scripts/tika/test-run.mjs` exists. However, `scripts/tika/evaluate.ts` imports an absent `src/lib/features/learn/tika/evaluation/scenarios/baseline-scenarios` module; `test-run.mjs` also probes that legacy path. Their existence does not establish that those entrypoints run successfully. Existing JSON scenarios are loaded by `scripts/tika/run-evaluation.mjs`. HTTP examples below do not establish current endpoint authentication.
+**Repository status (2026-10-15):** `scripts/tika/run-evaluation.mjs` is the one scenario runner; `npm run tika:evaluate` and `tika:evaluate:dry` call it. The older `scripts/tika/evaluate.ts` was retired because its scenario module and JSON reply contract no longer exist. `/api/tika/ask` requires a Firebase bearer token, and none of these scripts send one yet, so live runs fail with `Missing Authorization Bearer token` until that is added. HTTP examples below predate that requirement.
 
 ## Quick Health Check (No Options Needed)
 
@@ -8,7 +8,7 @@
 node scripts/tika/test-run.mjs
 ```
 
-Sends a single test question, shows latency + tools called + response preview.
+Checks that the scenario file, knowledge graph, glossary, and letter types exist, then confirms the dev server answers on `/api/tika/ask`. It sends no token and no question, so it never starts a model call.
 
 ## Full Validator (Structural)
 
@@ -25,14 +25,14 @@ node --import tsx scripts/tika-validator.ts [options]
 ## Full Evaluator (With Opus Review)
 
 ```bash
-npx tsx scripts/tika/evaluate.ts [options]
+node scripts/tika/run-evaluation.mjs [options]
 ```
 
-- `--category <letter|position|type|motion>` - Filter
-- `--level <1-4>` - Difficulty filter
-- `--with-opus` - Opus review of responses
+- `--category <name>` - Run one category from `scenarios.json`
+- `--limit <n>` - First N scenarios
+- `--opus` - Opus review of responses scoring under 70 (paid API)
 - `--dry-run` - Show scenarios only
-- Output: `scripts/tika/reports/`
+- Output: `scripts/tika/reports/`, summarized by `node scripts/tika/analyze-results.mjs`
 
 ## Manual API Call
 
