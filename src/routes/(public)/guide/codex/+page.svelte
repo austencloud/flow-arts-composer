@@ -184,6 +184,15 @@
     }
   }
 
+  /* From 2000px wide, the 1480px column made the board width-bound and left
+     a band of empty screen under it at 2560x1440. A wider column lets the
+     screen's height decide the cells instead. */
+  @media (min-width: 2000px) {
+    .codex-guide {
+      max-width: 2400px;
+    }
+  }
+
   /* Past 3000px the board widens to min(88vw, 3400px) (BoardAtlas); the
      page takes the same column. */
   @media (min-width: 3000px) {
