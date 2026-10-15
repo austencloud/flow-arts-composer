@@ -9,6 +9,7 @@
     {"Name": "FlowArtsRuntime", "Enabled": true},
     {"Name": "PythonScriptPlugin", "Enabled": true},
     {"Name": "EditorScriptingUtilities", "Enabled": true},
-    {"Name": "Interchange", "Enabled": true}
+    {"Name": "Interchange", "Enabled": true},
+    {"Name": "AndroidFileServer", "Enabled": false}
   ]
 }
