@@ -151,7 +151,7 @@
 
     function counts() {
       return {
-        strands: goo.sim.strands.size,
+        strands: goo.sim.strands.length,
         drops: goo.sim.drops.length,
         splats: goo.glass.splats.length,
         streaks: goo.glass.streaks.length,

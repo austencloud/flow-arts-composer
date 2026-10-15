@@ -1,37 +1,46 @@
 import { describe, expect, it } from "vitest";
 import {
-  GOO_NODES,
   GooStrandSim,
-  resolveGooShape,
   ropeLength,
   type GooMaterial,
+  type GooStrand,
   type GooTipInput,
 } from "./goo-strand-sim";
 
 const BOUNDS = { width: 1068, height: 1068 };
 const FRAME = 1 / 60;
-const END = GOO_NODES - 1;
+const K = 145 * 2.136;
 
 function material(patch: Partial<GooMaterial> = {}): GooMaterial {
   return {
-    viscosity: 0.45,
-    amount: 0.6,
-    ambient: 0.4,
+    viscosity: 0,
+    tension: 0.3,
     intensity: 0.6,
+    ambient: 0.4,
+    motion: 0.6,
+    ambientSpawnRate: 8,
+    motionSpawnRate: 40,
+    referenceSpeed: 3,
+    baseRadius: 0.04,
     gravity: 1,
-    scale: 2.136,
-    referenceSpeed: 3 * 60 * 2.136,
+    spew: "flow",
+    pxPerMeter: K,
     ...patch,
   };
+}
+
+function rope(sim: GooStrandSim, id: string): GooStrand | undefined {
+  return sim.strands.find((strand) => strand.attached && strand.tip === id);
 }
 
 /** Run the sim and report what the rope and drops did along the way. */
 function simulate(
   mat: GooMaterial,
   seconds: number,
-  tipAt: (t: number) => { x: number; y: number }
+  tipAt: (t: number) => { x: number; y: number },
+  random: () => number = () => 0.5
 ) {
-  const sim = new GooStrandSim(() => 0.5);
+  const sim = new GooStrandSim(random);
   let drips = 0;
   let longest = 0;
   let hungBelow = false;
@@ -46,11 +55,20 @@ function simulate(
       if (!before.has(drop)) drips++;
       else if (drop.y > before.get(drop)!) dropFell = true;
     }
-    const strand = sim.strands.get("0-0")!;
+    const strand = rope(sim, "0-0");
+    if (!strand) continue;
     longest = Math.max(longest, ropeLength(strand));
-    if (strand.y[END]! > tip.y + 10) hungBelow = true;
+    if (strand.y[strand.count - 1]! * K > tip.y + 10) hungBelow = true;
   }
   return { sim, drips, longest, hungBelow, dropFell, impacts };
+}
+
+/** Repeatable pseudo-random numbers, so a chance below one half can still win. */
+function seeded(seed = 1) {
+  return () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 2 ** 32;
+  };
 }
 
 const still = () => ({ x: 534, y: 300 });
@@ -67,42 +85,40 @@ describe("GooStrandSim", () => {
     expect(run.dropFell).toBe(true);
   });
 
-  it("makes thick goo drip less often and stretch further than watery goo", () => {
-    const watery = simulate(material({ viscosity: 0 }), 30, still);
-    const thick = simulate(material({ viscosity: 1 }), 30, still);
+  it("makes thick goo drip less often and hang longer than watery goo", () => {
+    const watery = simulate(material({ ambient: 0.2, viscosity: 0 }), 20, still);
+    const thick = simulate(material({ ambient: 0.2, viscosity: 1 }), 20, still);
     expect(watery.drips).toBeGreaterThan(thick.drips);
     expect(thick.longest).toBeGreaterThan(watery.longest);
   });
 
   it("drips faster at rest when the steady flow is turned up", () => {
-    const trickle = simulate(material({ ambient: 0.2 }), 30, still);
-    const flowing = simulate(material({ ambient: 1 }), 30, still);
+    const trickle = simulate(material({ ambient: 0.2 }), 20, still);
+    const flowing = simulate(material({ ambient: 1 }), 20, still);
     expect(flowing.drips).toBeGreaterThan(trickle.drips);
   });
 
-  it("throws drops at the glass off a spinning tip without stretching forever", () => {
-    const mat = material();
-    const run = simulate(mat, 6, spin);
+  it("flings drops at the glass off a spinning tip and sheds an overlong rope", () => {
+    const run = simulate(material({ ambient: 0 }), 6, spin, seeded());
     expect(run.drips).toBeGreaterThan(3);
     expect(run.impacts).toBeGreaterThan(0);
-    // The rope stops growing at its longest; one frame of travel may overshoot.
-    expect(run.longest).toBeLessThan(resolveGooShape(mat).maxLength * 1.5);
+    const strand = rope(run.sim, "0-0")!;
+    expect(run.longest).toBeLessThan(strand.maxLength * 1.5);
   });
 
-  it("restarts the rope on a tip that jumps and drops ropes of lost tips", () => {
+  it("restarts the rope on a tip that jumps and lets go of ropes of lost tips", () => {
     const sim = new GooStrandSim(() => 0.5);
     const mat = material();
     for (let i = 0; i < 60; i++) {
       sim.step([{ id: "a", x: 100, y: 100 }], FRAME, mat, BOUNDS);
     }
     sim.step([{ id: "a", x: 900, y: 900 }], FRAME, mat, BOUNDS);
-    const strand = sim.strands.get("a")!;
-    expect(Math.hypot(strand.x[END]! - 900, strand.y[END]! - 900)).toBeLessThan(
-      5
-    );
+    const strand = rope(sim, "a")!;
+    expect(Math.hypot(strand.x[0]! * K - 900, strand.y[0]! * K - 900)).toBeLessThan(1);
 
     sim.step([{ id: "b", x: 500, y: 500 }], FRAME, mat, BOUNDS);
-    expect([...sim.strands.keys()]).toEqual(["b"]);
+    expect(rope(sim, "a")).toBeUndefined();
+    expect(rope(sim, "b")).toBeDefined();
   });
 
   it("holds still on a paused frame", () => {
@@ -111,7 +127,7 @@ describe("GooStrandSim", () => {
     for (let i = 0; i < 30; i++) {
       sim.step([{ id: "a", x: 300, y: 300 }], FRAME, mat, BOUNDS);
     }
-    const strand = sim.strands.get("a")!;
+    const strand = rope(sim, "a")!;
     const x = [...strand.x];
     const y = [...strand.y];
     sim.step([{ id: "a", x: 300, y: 300 }], 0, mat, BOUNDS);

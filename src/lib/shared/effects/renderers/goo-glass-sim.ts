@@ -17,7 +17,7 @@ import type { GooImpact } from "./goo-strand-sim";
  */
 
 /** Splats on the glass at once. */
-export const GOO_MAX_SPLATS = 240;
+export const GOO_MAX_SPLATS = 140;
 /** Points a streak keeps before it starts a new one. */
 const STREAK_POINTS = 48;
 export const GOO_MAX_STREAKS = 48;
@@ -194,7 +194,7 @@ export class GooGlassSim {
     const radius = SPREAD * impact.r;
     // The hit throws specks off, mostly the way the drop was going.
     const count = Math.round(
-      (0.5 + 4 * clamp01(speed / (900 * scale))) * look.splash
+      (0.3 + 2.2 * clamp01(speed / (1500 * scale))) * look.splash
     );
     for (let i = 0; i < count; i++) {
       const angle = heading + (this.random() * 2 - 1) * 1.4;

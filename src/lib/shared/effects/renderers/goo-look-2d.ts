@@ -21,12 +21,10 @@ export interface GooLook2D {
   dryTime: number;
   /** 0..1: how ragged a fresh splat lands before it pulls round. */
   splash: number;
-  /** 0..1: how readily a thin thread breaks into beads. */
-  beading: number;
-  /** 0..1: overall opacity of the liquid. */
-  opacity: number;
   /** 0..1: how far a thread pulls out before it breaks, against Classic. */
   string: number;
+  /** Share of gravity it falls under; ectoplasm drifts down slowly. */
+  gravity: number;
 }
 
 const LOOKS: Record<Exclude<GooIntent["palette"], "custom">, GooLook2D> = {
@@ -38,9 +36,8 @@ const LOOKS: Record<Exclude<GooIntent["palette"], "custom">, GooLook2D> = {
     grip: 0.8,
     dryTime: 18,
     splash: 0.8,
-    beading: 0.35,
-    opacity: 0.94,
     string: 1,
+    gravity: 1,
   },
   mercury: {
     metal: 1,
@@ -50,9 +47,8 @@ const LOOKS: Record<Exclude<GooIntent["palette"], "custom">, GooLook2D> = {
     grip: 0.2,
     dryTime: 40,
     splash: 0.15,
-    beading: 1,
-    opacity: 1,
     string: 0.2,
+    gravity: 1,
   },
   acid: {
     metal: 0,
@@ -62,9 +58,8 @@ const LOOKS: Record<Exclude<GooIntent["palette"], "custom">, GooLook2D> = {
     grip: 0.7,
     dryTime: 14,
     splash: 0.9,
-    beading: 0.4,
-    opacity: 0.92,
     string: 1,
+    gravity: 1,
   },
   blood: {
     metal: 0,
@@ -74,9 +69,8 @@ const LOOKS: Record<Exclude<GooIntent["palette"], "custom">, GooLook2D> = {
     grip: 0.75,
     dryTime: 45,
     splash: 1,
-    beading: 0.2,
-    opacity: 0.97,
     string: 0.55,
+    gravity: 1,
   },
   spirit: {
     metal: 0,
@@ -86,9 +80,8 @@ const LOOKS: Record<Exclude<GooIntent["palette"], "custom">, GooLook2D> = {
     grip: 0.6,
     dryTime: 2.5,
     splash: 0.6,
-    beading: 0.5,
-    opacity: 0.72,
     string: 0.8,
+    gravity: 0.4,
   },
 };
 
