@@ -29,6 +29,14 @@ import {
   type LoopReflectionAxis,
 } from "./loop-icons.js";
 import { drawMonochromeImage } from "./tinted-image.js";
+import {
+  paintTurnGlyph,
+  paintReversalGlyph,
+  TURN_GLYPH_BOX_W_CQI,
+  TURN_GLYPH_BOX_H_CQI,
+  type TurnGlyphEntry,
+  type ReversalGlyphData,
+} from "./pattern-glyphs.js";
 
 export interface HeaderOptions {
   canvasWidth: number;
@@ -39,6 +47,9 @@ export interface HeaderOptions {
   difficultyLevel?: number;
   showDifficultyBadge?: boolean;
   loopComponents?: Set<LOOPComponentId>;
+  /** Optional sequence pattern indicators, shown only when the word can fit between them. */
+  turnGlyphEntries?: readonly TurnGlyphEntry[] | null;
+  reversalGlyph?: ReversalGlyphData | null;
   /** When rotated is active, picks fa-arrows-spin (quartered) vs fa-rotate (halved) */
   rotationPeriod?: LoopRotationPeriod;
   /** When inverted is active, picks checkerboard circle (quartered) vs circle-half-stroke (halved) */
@@ -147,6 +158,49 @@ function isAlphaToken(token: string): boolean {
   return token === "α";
 }
 
+function measureGlyphWordWidth(
+  word: string,
+  glyphImages: Map<string, GlyphImageData>,
+  headerHeight: number
+): number {
+  const availableH = headerHeight * GLYPH_HEIGHT_RATIO;
+  const letterGap = headerHeight * LETTER_GAP_RATIO;
+  let width = 0;
+  for (const token of tokenizeGlyphWord(word)) {
+    const data = glyphImages.get(token);
+    if (!data) continue;
+    const scale = availableH / data.naturalHeight;
+    width += data.naturalWidth * scale;
+    if (data.isDash) width += DASH_GAP_SVG * scale + DASH_W_SVG * scale;
+    width += letterGap;
+  }
+  return width > 0 ? width - letterGap : 0;
+}
+
+function measureCompressedGlyphWordWidth(
+  segments: CompressedSegment[],
+  glyphImages: Map<string, GlyphImageData>,
+  headerHeight: number
+): number {
+  const availableH = headerHeight * GLYPH_HEIGHT_RATIO;
+  const letterGap = headerHeight * LETTER_GAP_RATIO;
+  let width = 0;
+  for (let si = 0; si < segments.length; si++) {
+    const seg = segments[si]!;
+    if (si > 0) width += headerHeight * GROUP_GAP_SCALE;
+    for (const token of seg.tokens) {
+      const data = glyphImages.get(token);
+      if (!data) continue;
+      const scale = availableH / data.naturalHeight;
+      width += data.naturalWidth * scale;
+      if (data.isDash) width += DASH_GAP_SVG * scale + DASH_W_SVG * scale;
+      width += letterGap;
+    }
+    if (seg.tokens.length > 0) width -= letterGap;
+  }
+  return width;
+}
+
 function renderGlyphWord(
   ctx: CanvasRenderingContext2D,
   word: string,
@@ -164,22 +218,7 @@ function renderGlyphWord(
   const verticalCenter = headerHeight / 2;
 
   const tokens = tokenizeGlyphWord(word);
-
-  // First pass: compute total row width for centering
-  let totalWidth = 0;
-  for (const token of tokens) {
-    const data = glyphImages.get(token);
-    if (!data) continue;
-    const scale = availableH / data.naturalHeight;
-    const glyphW = data.naturalWidth * scale;
-    totalWidth += glyphW;
-    if (data.isDash) {
-      totalWidth += DASH_GAP_SVG * scale + DASH_W_SVG * scale;
-    }
-    totalWidth += letterGap;
-  }
-  // Remove trailing gap (guard on totalWidth, not tokens.length, to handle all-missing case)
-  if (totalWidth > 0) totalWidth -= letterGap;
+  const totalWidth = measureGlyphWordWidth(word, glyphImages, headerHeight);
 
   // Second pass: draw
   const widthFit = fitWordToBounds(totalWidth, canvasWidth, horizontalBounds);
@@ -249,25 +288,11 @@ function renderCompressedGlyphWord(
   const dotRadius = (headerHeight * DOT_SIZE_SCALE) / 2;
   const groupGap = headerHeight * GROUP_GAP_SCALE;
 
-  // First pass: compute total width
-  let totalWidth = 0;
-  for (let si = 0; si < segments.length; si++) {
-    const seg = segments[si]!;
-    if (si > 0) {
-      totalWidth += groupGap;
-    }
-    for (const token of seg.tokens) {
-      const data = glyphImages.get(token);
-      if (!data) continue;
-      const scale = availableH / data.naturalHeight;
-      totalWidth += data.naturalWidth * scale;
-      if (data.isDash) {
-        totalWidth += DASH_GAP_SVG * scale + DASH_W_SVG * scale;
-      }
-      totalWidth += letterGap;
-    }
-    if (seg.tokens.length > 0) totalWidth -= letterGap;
-  }
+  const totalWidth = measureCompressedGlyphWordWidth(
+    segments,
+    glyphImages,
+    headerHeight
+  );
 
   // Second pass: draw
   const widthFit = fitWordToBounds(totalWidth, canvasWidth, horizontalBounds);
@@ -346,6 +371,8 @@ export function renderHeader(
     difficultyLevel = 1,
     showDifficultyBadge = true,
     loopComponents,
+    turnGlyphEntries,
+    reversalGlyph,
     rotationPeriod,
     inversionPeriod,
     reflectionAxis,
@@ -433,15 +460,87 @@ export function renderHeader(
     );
   }
 
+  let patternWordInset = 0;
+  if (canvasWidth >= 300 && (turnGlyphEntries?.length || reversalGlyph)) {
+    const unit = badgeSize / TURN_GLYPH_BOX_H_CQI;
+    const glyphWidth = TURN_GLYPH_BOX_W_CQI * unit;
+    const gap = Math.max(4, headerHeight * 0.06);
+    const leftX = badgePadding + (showDifficultyBadge ? badgeSize + gap : 0);
+    const iconSize = badgeSize * LOOP_ICON_SIZE_SCALE;
+    const stripWidth = hasLoop
+      ? computeLoopIconStripWidth(loopComponents, iconSize, overlayComponents)
+      : 0;
+    const rightIndicatorLeft = hasLoop
+      ? canvasWidth -
+        badgePadding -
+        stripWidth -
+        iconSize * LOOP_ICON_STRIP_OFFSET_SCALE
+      : canvasWidth - badgePadding;
+    const rightX = rightIndicatorLeft - (hasLoop ? gap : 0) - glyphWidth;
+    const leftExtent = turnGlyphEntries?.length ? leftX + glyphWidth : 0;
+    const rightExtent = reversalGlyph ? rightX : canvasWidth;
+    const neededInset = Math.max(leftExtent, canvasWidth - rightExtent);
+    const naturalFontSize = Math.max(
+      10,
+      Math.floor(headerHeight * HEADER_WORD_FONT_SCALE)
+    );
+    let naturalWordWidth: number;
+    if (
+      glyphImages?.size &&
+      compressedSegments &&
+      (compressedSegments.length > 1 ||
+        compressedSegments.some((segment) => segment.repeat > 1))
+    ) {
+      naturalWordWidth = measureCompressedGlyphWordWidth(
+        compressedSegments,
+        glyphImages,
+        headerHeight
+      );
+    } else if (glyphImages?.size) {
+      naturalWordWidth = measureGlyphWordWidth(word, glyphImages, headerHeight);
+    } else {
+      ctx.font = `700 ${naturalFontSize}px Gelasio, Georgia, serif`;
+      naturalWordWidth = ctx.measureText(word).width;
+    }
+    // Leave a usable centered word slot. A glyph is omitted as a whole; its
+    // period is never cropped or presented as a shorter pattern.
+    if (canvasWidth - 2 * (neededInset + gap + 10) >= naturalWordWidth) {
+      const y = (headerHeight - badgeSize) / 2;
+      if (turnGlyphEntries?.length) {
+        paintTurnGlyph(ctx, turnGlyphEntries, {
+          x: leftX,
+          y,
+          width: glyphWidth,
+          height: badgeSize,
+        });
+      }
+      if (reversalGlyph) {
+        paintReversalGlyph(
+          ctx,
+          reversalGlyph,
+          { x: rightX, y, width: glyphWidth, height: badgeSize },
+          {
+            muted: darkMode ? "#9ca3af" : "#6b7280",
+          },
+          true
+        );
+      }
+      patternWordInset = neededInset + gap;
+    }
+  }
+
   const wordSideInset = Math.min(
     canvasWidth / 2,
-    calculateHeaderWordSideInset({
-      headerHeight,
-      indicatorSizeScale,
-      showDifficultyBadge,
-      loopComponents,
-      overlayComponents,
-    })
+    Math.max(
+      patternWordInset,
+      calculateHeaderWordSideInset({
+        headerHeight,
+        indicatorSizeScale,
+        showDifficultyBadge,
+        loopComponents,
+        overlayComponents,
+      })
+    )
   );
   const wordHorizontalBounds = {
     left: wordSideInset,
@@ -475,7 +574,13 @@ export function renderHeader(
 
   // Word: compressed glyphs → flat glyphs → styled text → plain text
   if (word?.trim()) {
-    if (compressedSegments && (compressedSegments.length > 1 || compressedSegments.some((s) => s.repeat > 1)) && glyphImages && glyphImages.size > 0) {
+    if (
+      compressedSegments &&
+      (compressedSegments.length > 1 ||
+        compressedSegments.some((s) => s.repeat > 1)) &&
+      glyphImages &&
+      glyphImages.size > 0
+    ) {
       renderCompressedGlyphWord(
         ctx,
         compressedSegments!,

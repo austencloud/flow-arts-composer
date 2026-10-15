@@ -1,4 +1,4 @@
-import { SIMPLE_PATTERNS } from "./reversal-patterns";
+import { SIMPLE_PATTERNS } from "#lib/shared/foundation/domain/sequence-patterns/reversal-patterns.js";
 
 export type ReversalMotion = "pro" | "anti" | "static" | "dash";
 

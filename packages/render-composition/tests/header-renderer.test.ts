@@ -24,6 +24,9 @@ function createMockCtx() {
     beginPath: vi.fn(),
     moveTo: vi.fn(),
     lineTo: vi.fn(),
+    arcTo: vi.fn(),
+    clip: vi.fn(),
+    lineTo: vi.fn(),
     bezierCurveTo: vi.fn(),
     quadraticCurveTo: vi.fn(),
     arc: vi.fn(),
@@ -47,6 +50,48 @@ afterEach(() => {
 });
 
 describe("renderHeader", () => {
+  it("draws complete pattern periods beside the centered word", () => {
+    const ctx = createMockCtx();
+    renderHeader(ctx, {
+      canvasWidth: 900,
+      headerHeight: 70,
+      word: "TEST",
+      turnGlyphEntries: Array.from({ length: 8 }, () => ({ left: 1, right: 2 })),
+      reversalGlyph: { sequence: "PRB-PRB-", period: 8 },
+    });
+    // One badge arc and both dots for every reversal beat.
+    expect(ctx.arc).toHaveBeenCalledTimes(17);
+    expect(ctx.fillText).toHaveBeenCalledWith("TEST", 450, 35);
+    const dotCalls = vi.mocked(ctx.arc).mock.calls.slice(1);
+    expect(dotCalls).toHaveLength(16);
+    // All eight columns fit in their right-hand glyph box.
+    expect(dotCalls.every(([cx, , r]) => cx - r >= 0 && cx + r <= 900)).toBe(true);
+  });
+
+  it("omits both pattern glyphs when the header is narrow", () => {
+    const ctx = createMockCtx();
+    renderHeader(ctx, {
+      canvasWidth: 299,
+      headerHeight: 70,
+      word: "TEST",
+      turnGlyphEntries: [{ left: 1, right: 2 }],
+      reversalGlyph: { sequence: "PR", period: 2 },
+    });
+    expect(ctx.arc).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a long word at its natural size by omitting the glyphs", () => {
+    const ctx = createMockCtx();
+    vi.mocked(ctx.measureText).mockReturnValue({ width: 800 } as TextMetrics);
+    renderHeader(ctx, {
+      canvasWidth: 900,
+      headerHeight: 70,
+      word: "LONG WORD",
+      turnGlyphEntries: [{ left: 1, right: 2 }],
+      reversalGlyph: { sequence: "PR", period: 2 },
+    });
+    expect(ctx.arc).toHaveBeenCalledTimes(1);
+  });
   it("draws header background in dark mode", () => {
     const ctx = createMockCtx();
     renderHeader(ctx, {

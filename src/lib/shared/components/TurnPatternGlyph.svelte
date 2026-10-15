@@ -4,48 +4,50 @@
   Float motions render as hatched bars at a fixed height.
 
   Long patterns scale horizontally to fit the glyph box (shared geometry
-  in turn-glyph-layout.ts, mirrored by the print rasterizer). Heights
+  in render-composition, mirrored by the print rasterizer). Heights
   never scale — bar height encodes the turn value.
 -->
 <script lang="ts">
-  import { layoutTurnGlyph } from "./turn-glyph-layout";
+  import {
+    layoutTurnGlyph,
+    turnBarHeightCqi,
+    type TurnGlyphEntry,
+  } from "@tka/render-composition";
 
   interface Props {
-    entries: { left: number; right: number; leftFloat?: boolean; rightFloat?: boolean }[];
+    entries: readonly TurnGlyphEntry[];
     /** Width of the containing glyph box, cqi. CardBack's box is 10cqi. */
     maxWidthCqi?: number;
   }
 
   const { entries, maxWidthCqi = 10 }: Props = $props();
 
-  const HEIGHT_PER_TURN = 1.8;
-  const MIN_HEIGHT = 0.5;
-  const FLOAT_HEIGHT = 1.2;
-
   const layout = $derived(layoutTurnGlyph(entries.length, maxWidthCqi));
-
-  function barHeight(value: number, isFloat: boolean): number {
-    if (isFloat) return FLOAT_HEIGHT;
-    return value === 0 ? MIN_HEIGHT : value * HEIGHT_PER_TURN;
-  }
 </script>
 
 <div class="turn-glyph">
   <div
     class="bars-row"
-    style="gap: {layout.groupGap}cqi; --bar-w: {layout.barW}cqi; --intra-gap: {layout.intraGap}cqi; --bar-radius: {layout.radius}cqi; --hatch-step: {0.4 * layout.scale}cqi;"
+    style="gap: calc(var(--glyph-unit, 1cqi) * {layout.groupGap}); --bar-w: calc(var(--glyph-unit, 1cqi) * {layout.barW}); --intra-gap: calc(var(--glyph-unit, 1cqi) * {layout.intraGap}); --bar-radius: calc(var(--glyph-unit, 1cqi) * {layout.radius}); --hatch-step: calc(var(--glyph-unit, 1cqi) * {0.4 *
+      layout.scale});"
   >
     {#each entries as entry}
       <div class="bar-group">
         <div
           class="bar blue"
           class:float={entry.leftFloat}
-          style="height: {barHeight(entry.left, !!entry.leftFloat)}cqi;"
+          style="height: calc(var(--glyph-unit, 1cqi) * {turnBarHeightCqi(
+            entry.left,
+            !!entry.leftFloat
+          )});"
         ></div>
         <div
           class="bar red"
           class:float={entry.rightFloat}
-          style="height: {barHeight(entry.right, !!entry.rightFloat)}cqi;"
+          style="height: calc(var(--glyph-unit, 1cqi) * {turnBarHeightCqi(
+            entry.right,
+            !!entry.rightFloat
+          )});"
         ></div>
       </div>
     {/each}
@@ -72,11 +74,15 @@
   .bar {
     width: var(--bar-w);
     border-radius: var(--bar-radius) var(--bar-radius) 0 0;
-    min-height: 0.5cqi;
+    min-height: calc(var(--glyph-unit, 1cqi) * 0.5);
   }
 
-  .bar.blue { background: var(--tka-blue-hand, #3498db); }
-  .bar.red { background: var(--tka-red-hand, #e74c3c); }
+  .bar.blue {
+    background: var(--tka-blue-hand, #3498db);
+  }
+  .bar.red {
+    background: var(--tka-red-hand, #e74c3c);
+  }
 
   .bar.float {
     background: repeating-linear-gradient(
@@ -89,6 +95,10 @@
     opacity: 0.7;
   }
 
-  .bar.float.blue { color: var(--tka-blue-hand, #3498db); }
-  .bar.float.red { color: var(--tka-red-hand, #e74c3c); }
+  .bar.float.blue {
+    color: var(--tka-blue-hand, #3498db);
+  }
+  .bar.float.red {
+    color: var(--tka-red-hand, #e74c3c);
+  }
 </style>
