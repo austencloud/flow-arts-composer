@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "FlowFestCrowd.h"
 #include "FlowFestWorld.generated.h"
 
 class UDirectionalLightComponent;
@@ -49,6 +50,16 @@ public:
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Camp")
     void SetPlayerCamp(FString CampLandmark, bool bBuilt);
 
+    /** Player participation draws nearby spectators' attention without taking over story state. */
+    UFUNCTION(BlueprintCallable, Category="Flow Fest|Crowd")
+    void SetPlayerCrowdPresence(FVector WorldPosition, bool bAtFire, bool bJoining);
+
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Crowd")
+    int32 GetCrowdActivityCount(int32 Activity) const;
+
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Crowd")
+    int32 GetCrowdSize() const { return People.Num(); }
+
 private:
     struct FSiteRoad
     {
@@ -87,11 +98,7 @@ private:
         AActor* Actor = nullptr;
         UFlowFestAvatarComponent* Avatar = nullptr;
         UFlowFestPropComponent* Prop = nullptr;
-        FVector2D Center;
-        float Phase = 0.f;
-        float Radius = 0.f;
-        float Speed = 0.f;
-        float Facing = 0.f;
+        EFlowFestCrowdActivity LastActivity = EFlowFestCrowdActivity::Rest;
         bool bPerformancePlaying = false;
     };
 
@@ -117,6 +124,7 @@ private:
     bool bHasPlayerTentPlacement = false;
     TArray<FSiteVehicle> Vehicles;
     TArray<FFestivalPerson> People;
+    FFlowFestCrowd Crowd;
     TMap<FString, FVector2D> Landmarks;
     TMap<FString, float> SourceMeshHeights;
 
