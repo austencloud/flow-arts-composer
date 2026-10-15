@@ -220,25 +220,19 @@ export const ZANS_DIAMOND_FAMILIES: readonly ZansDiamondFamily[] = (
 export const ZANS_DIAMOND_ORIGINAL: ZansDiamondVariation =
   ZANS_DIAMOND_VARIATIONS.find((v) => v.family === "original")!;
 
-/** The short caption under a card: which hand changed and by how much. */
+/**
+ * The caption beside a variation's word. Its family heading already says
+ * which hand changed and how, so the caption only gives how far ahead the
+ * changed hand starts.
+ */
 export function zansDiamondVariationLabel(
   variation: ZansDiamondVariation,
   t: (key: TranslationKey, params?: Record<string, string | number>) => string
 ): string {
-  switch (variation.family) {
-    case "original":
-      return t("guide_zans_label_original");
-    case "stagger":
-      return t("guide_zans_label_stagger", { n: variation.offset });
-    case "right-reversed":
-      return variation.offset === 0
-        ? t("guide_zans_label_right_reversed")
-        : t("guide_zans_label_right_reversed_ahead", { n: variation.offset });
-    case "left-reversed":
-      return variation.offset === 0
-        ? t("guide_zans_label_left_reversed")
-        : t("guide_zans_label_left_reversed_ahead", { n: variation.offset });
-  }
+  if (variation.family === "original") return t("guide_zans_label_original");
+  if (variation.offset === 0) return t("guide_zans_label_together");
+  if (variation.offset === 1) return t("guide_zans_label_one_ahead");
+  return t("guide_zans_label_ahead", { n: variation.offset });
 }
 
 function handMotion(hand: HandSide, step: SoloPropStepData) {
@@ -267,6 +261,48 @@ function stillHand(hand: HandSide, at: GridLocation, orientation: Orientation) {
     propType: PropType.HAND,
     gridMode: GridMode.DIAMOND,
   });
+}
+
+/**
+ * The path alone as a Guide strip: the left hand's eight steps with the right
+ * hand present but hidden (isVisible: false is how pictographs and the
+ * animator encode an absent hand). No letters, since one hand spells none.
+ */
+export function zansDiamondPathStrip(): StepData[] {
+  const left = arrangeSoloPropSteps(ZANS_DIAMOND_LEFT_STEPS, FORWARD);
+  const home = left[0]!.startLocation;
+  const hidden = () => ({
+    ...stillHand(HandSide.RIGHT, home, left[0]!.startOrientation),
+    isVisible: false,
+  });
+  const placement = (at: GridLocation) => getGridPlacementFromLocations(at, at);
+  const start = createStepData({
+    id: "zans-path-start",
+    stepNumber: 0,
+    letter: null,
+    startPlacement: placement(home),
+    endPlacement: placement(home),
+    gridMode: GridMode.DIAMOND,
+    motions: {
+      left: stillHand(HandSide.LEFT, home, left[0]!.startOrientation),
+      right: hidden(),
+    },
+  });
+  const beats = left.map((step, i) =>
+    createStepData({
+      id: `zans-path-${i + 1}`,
+      stepNumber: i + 1,
+      letter: null,
+      startPlacement: placement(step.startLocation),
+      endPlacement: placement(step.endLocation),
+      gridMode: GridMode.DIAMOND,
+      motions: {
+        left: handMotion(HandSide.LEFT, step),
+        right: hidden(),
+      },
+    })
+  );
+  return [start, ...beats];
 }
 
 /**
