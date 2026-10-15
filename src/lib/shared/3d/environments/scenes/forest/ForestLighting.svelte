@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveThrelteScene } from "../../../scene-boot/threlte-handles";
   import { useTask, useThrelte } from "@threlte/core";
   import { tryGetAdaptiveQualityContext } from "../../../context/adaptive-quality-context";
   import type { HemisphereLightConfig } from "../../domain/models/scene-configs/shared-scene-config";
@@ -36,7 +37,8 @@
     shadowRefreshToken = 0,
   }: Props = $props();
 
-  const { scene } = useThrelte();
+  const { scene: sceneValue } = useThrelte();
+  const scene = resolveThrelteScene(sceneValue);
   const adaptiveQuality = tryGetAdaptiveQualityContext();
   let rig: ForestLightingRig | null = null;
 

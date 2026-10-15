@@ -1,7 +1,10 @@
 <script lang="ts">
+  import {
+    resolveThrelteScene,
+    resolveThrelteRenderer,
+  } from "../../scene-boot/threlte-handles";
   import { useTask, useThrelte } from "@threlte/core";
   import { onMount, untrack } from "svelte";
-  import type { WebGLRenderer } from "three";
   import { userProportionsState } from "@austencloud/scene-3d";
   import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import type { CosmicVariant } from "../domain/enums/environment-enums";
@@ -42,9 +45,9 @@
   };
   const activeConfig = $derived(config ?? defaultConfigs[variant]());
   const motionScale = $derived(resolveMotionScale(prefersReducedMotion()));
-  const { camera, renderer, scene } = useThrelte() as unknown as ReturnType<
-    typeof useThrelte
-  > & { renderer: WebGLRenderer };
+  const { camera, renderer: rendererValue, scene: sceneValue } = useThrelte();
+  const scene = resolveThrelteScene(sceneValue);
+  const renderer = resolveThrelteRenderer(rendererValue);
   const sceneFeatures = getSceneFeatureContext();
   let world: CosmicEnvironmentWorld | null = null;
   let elapsed = 0;

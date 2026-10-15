@@ -50,8 +50,8 @@
     <Character3D
       id={`winter-fire-court-${friend.id}`}
       avatarId={profile.characterId}
-      leftPropState={null}
-      rightPropState={null}
+      bluePropState={null}
+      redPropState={null}
       position={{
         x: friend.x,
         y: groundY + friend.surfaceElevation,

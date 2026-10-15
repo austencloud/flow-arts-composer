@@ -1,8 +1,11 @@
 <script lang="ts">
+  import {
+    resolveThrelteScene,
+    resolveThrelteRenderer,
+  } from "../../scene-boot/threlte-handles";
   import { useTask, useThrelte } from "@threlte/core";
   import { userProportionsState } from "@austencloud/scene-3d";
   import { onMount, untrack } from "svelte";
-  import type { WebGLRenderer } from "three";
   import { tryGetAdaptiveQualityContext } from "../../context/adaptive-quality-context";
   import { getSceneFeatureContext } from "../../scene-features/context/scene-feature-context";
   import {
@@ -45,9 +48,9 @@
     typeof window === "undefined" ||
     new URLSearchParams(window.location.search).get("emberGroundDetail") !==
       "off";
-  const { camera, renderer, scene } = useThrelte() as unknown as ReturnType<
-    typeof useThrelte
-  > & { renderer: WebGLRenderer };
+  const { camera, renderer: rendererValue, scene: sceneValue } = useThrelte();
+  const scene = resolveThrelteScene(sceneValue);
+  const renderer = resolveThrelteRenderer(rendererValue);
   const adaptiveQuality = tryGetAdaptiveQualityContext();
   let sceneFeatures: ReturnType<typeof getSceneFeatureContext> | null = null;
   try {

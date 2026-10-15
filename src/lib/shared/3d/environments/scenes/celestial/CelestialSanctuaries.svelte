@@ -99,7 +99,9 @@
       const platform = getPlatform(String(child.userData.tka_platform ?? ""));
       if (!platform) return;
       const position = platform.positions[viewport];
-      child.position.set(position[0], position[1], position[2] + stageZOffset);
+      const [x, y, z] = position;
+      if (x === undefined || y === undefined || z === undefined) return;
+      child.position.set(x, y, z + stageZOffset);
     });
   });
 </script>
