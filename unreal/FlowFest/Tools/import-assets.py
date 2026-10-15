@@ -148,7 +148,14 @@ def author_ecology_material(material, asset_name):
     # FBX reimport retains stale sample nodes and WPO on an existing material.
     # Reauthoring all three small materials prevents graph accumulation and
     # guarantees each TextureSample has an assigned imported source texture.
-    ME.delete_all_material_expressions(material)
+    # UE 5.8's DeleteAllMaterialExpressions iterates GetExpressions while each
+    # DeleteMaterialExpression removes from that same array, skipping entries.
+    # Delete a snapshot instead so repeated FBX imports cannot leave empty
+    # TextureSamples connected to the newly authored ecology graph.
+    for old in list(ME.get_material_expressions(material)):
+        ME.delete_material_expression(material, old)
+    if ME.get_material_expressions(material):
+        raise RuntimeError('Ecology material graph did not clear: ' + material.get_path_name())
     folder = '/Game/FlowFest/Textures/Ecology'
     base = import_file(base_path, folder, asset_name + '_BaseColor')
     color = expression(material, u.MaterialExpressionTextureSample, texture=base)
