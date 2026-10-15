@@ -186,6 +186,7 @@ async function prepareCapture(character, profile, filename, captureRole = profil
   return output;
 }
 function writeCatalog(entries) {
+  mkdirSync(join(project, 'Content/Data'), { recursive: true });
   writeFileSync(join(project, 'Content/Data/characters.json'), JSON.stringify({ version: 1,
     characters: entries.map(({ id, name, key, folder, mesh, skeleton, animations, bones, textures, materials }) =>
       ({ id, name, key, folder, mesh, skeleton, animations, bones,
