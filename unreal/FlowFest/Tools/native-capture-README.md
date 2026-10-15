@@ -1,58 +1,38 @@
 # Production performance capture
 
-The capture bundle samples the existing Svelte/Three production performer and
-mounted pose rigs at 30 fps. It exports all 16 deployed character rigs for the
-`fire-poi`, `fire-hoop`, `juggler`, `led-flow`, and `ride` profiles. The four
-performance profiles use one generated production LOOP snapshot per profile,
-shared across all characters. Each JSON frame contains local bone transforms,
-the performer world transform, and the final rendered prop transforms. `ride`
-contains the live pedal transforms. Raw captures belong in
-`unreal/FlowFest/Saved/PerformanceCaptures`, outside packaged game data.
-Ride frames also record `boneRootParentWorld`, the world transform of the
-non-bone parent above Hips. This includes Avatar3D's per-rig height scale;
-`skinnedMeshLocal` alone does not include it. Reconstruct a Ride joint in the
-vehicle frame as `inverse(vehicleWorld) * boneRootParentWorld * boneTRSChain`.
+The native capture bundle samples Flow Arts Composer's production Svelte/Three performer and mounted pose rigs at 30 fps. It uses an isolated Chrome and an ephemeral server rooted in the exact source worktree. Raw JSON belongs in `unreal/FlowFest/Saved/PerformanceCaptures`, outside packaged game data. Keep each generated sequence snapshot with its clips: a new snapshot can produce a different 16-step LOOP.
 
-Run from a worktree at the exact committed source revision with dependencies
-installed. Use d2 for the build and browser capture:
+The default pass records 80 legacy clips for 16 deployed characters: four flow profiles and one ride pose per rig. The family pass adds 41 prop families × A/B × 16 rigs, or 1,312 captures. Each family routine has 480 frames over 16 seconds. The planned native animation total also includes 176 locomotion clips, for 1,568 clips across all groups. The family pass and full native verification for this upgrade are still pending.
+
+Build and capture from a worktree at the exact committed source revision, with dependencies installed. Use d2 for this long job:
 
 ```powershell
 pnpm exec vite build --config unreal/FlowFest/Tools/native-capture.vite.config.mjs
 node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures
+$env:FLOW_FEST_CAPTURE_FAMILY_MODE = '1'
+node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures
+Remove-Item Env:FLOW_FEST_CAPTURE_FAMILY_MODE
 ```
 
-The runner serves only the built bundle and `static/` assets on an ephemeral
-loopback port. It starts Playwright's isolated Chrome for capture, writes 80 JSON
-clips plus `manifest.json`, and stops the server and browser when finished. The
-bundle is written to `unreal/FlowFest/Intermediate/native-capture-static`.
-Keep the complete raw directory and its generated sequences for later repair.
-The production generator may produce a different LOOP on a fresh full run.
+The bundle is written to `unreal/FlowFest/Intermediate/native-capture-static`. The runner stops its server and browser after each pass. It writes `manifest.json` for legacy captures and updates `family-manifest.json` incrementally for family captures. Each family/variant also has a preserved `family-<family>-<A-or-B>.sequence.json` snapshot. The family runner reuses existing valid clips and snapshots on reruns, so an interrupted capture can resume in the same directory. Keep the complete raw directory for later repair.
 
-To recapture selected rigs from the same LOOP snapshots, preserve the existing
-output directory (especially its four `x-bot_<profile>.json` files), rebuild
-the bundle at the desired source revision, and set a comma-separated filter:
+To capture a bounded family subset, use comma-separated filters before the family-mode runner. For example:
 
 ```powershell
-$env:FLOW_FEST_CAPTURE_CHARACTERS = 'ch01,ch07,ch21,ch22,ch41,ch42'
+$env:FLOW_FEST_CAPTURE_FAMILY_MODE = '1'
+$env:FLOW_FEST_CAPTURE_CHARACTERS = 'ch01,ch07'
+$env:FLOW_FEST_CAPTURE_FAMILIES = 'poi,hoop'
+$env:FLOW_FEST_CAPTURE_VARIANTS = 'A,B'
 node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures
-Remove-Item Env:FLOW_FEST_CAPTURE_CHARACTERS
+Remove-Item Env:FLOW_FEST_CAPTURE_FAMILY_MODE,Env:FLOW_FEST_CAPTURE_CHARACTERS,Env:FLOW_FEST_CAPTURE_FAMILIES,Env:FLOW_FEST_CAPTURE_VARIANTS
 ```
 
-Focused capture replaces only the selected rigs' five files. It reads the
-preserved x-bot sequence in each profile, injects those snapshots into both the
-rendered scene and output JSON, and keeps the original 80-entry manifest. Check
-that all 80 files still match the manifest and that each frame contains the
-deployed GLB's full bone set before importing animations. GLB skins may omit
-unweighted ancestors from `skeleton.bones`; the exporter traverses parent Bone
-nodes to include them.
+Check family names against the source prop catalog before setting `FLOW_FEST_CAPTURE_FAMILIES`. A filtered pilot is useful for diagnosing a rig or converter but does not establish the full 1,312-routine gate. Do not combine family mode with `FLOW_FEST_CAPTURE_RIDE_ONLY`.
 
-To repair only Ride samples while preserving all performance JSON and the
-original manifest, set `FLOW_FEST_CAPTURE_RIDE_ONLY=1` before the runner. It
-can be combined with `FLOW_FEST_CAPTURE_CHARACTERS` for selected rigs. Remove
-both environment variables after capture.
+For a focused legacy recapture, preserve the existing output directory, especially its four `x-bot_<profile>.json` files. Set `FLOW_FEST_CAPTURE_CHARACTERS` to the desired rig IDs. The runner injects preserved LOOP snapshots into both the rendered scene and output JSON and keeps the original 80-entry legacy manifest. Set `FLOW_FEST_CAPTURE_RIDE_ONLY=1` to repair only ride samples; it may be combined with the character filter. Clear the environment variables after capture.
 
-To run this on d2, use `scripts/d2-run.ps1` for a committed full capture job or
-reuse its scratch worktree for a focused repair so the preserved raw directory
-remains available. Keep build and capture logs on d2, and transfer the finished
-`Saved/PerformanceCaptures` directory back to the task worktree for native
-conversion. Do not capture from the primary checkout's port 5173 server.
+Each captured performance frame contains local bones, the performer world transform, rendered prop transforms, and left/right wrist positions. Ride frames also contain `boneRootParentWorld`, the world transform of the non-bone parent above Hips. It carries Avatar3D's per-rig height scale, which `skinnedMeshLocal` does not. Reconstruct a ride joint in the vehicle frame as `inverse(vehicleWorld) * boneRootParentWorld * boneTRSChain`. Validate that frames contain the deployed GLB's full bone set; GLB skins may omit unweighted ancestors from `skeleton.bones`, so the exporter traverses parent Bone nodes.
+
+`prepare-characters.mjs` converts captures to native animations. `prepare-prop-motion.mjs` reduces each family capture to a `flow-fest-prop-motion-v2` track. Each frame contains 20 numbers: two seven-number prop-root transforms and two three-number captured wrist anchors, converted into native coordinates. The runtime uses these anchors to align each animated prop root with the live sampled hand. These tools support `--family-only --allow-partial --capture-id <rig-id>` for incremental conversion, with `--captures <raw-directory>` also required by `prepare-characters.mjs`. Without `--allow-partial`, family conversion requires all 82 family A/B roles. The package gate requires the complete set.
+
+For d2, use `scripts/d2-run.ps1` for a committed full capture or its scratch worktree for a focused repair, keeping the preserved raw directory available. Keep build and capture logs on d2, then transfer the finished `Saved/PerformanceCaptures` directory to the native build worktree. Do not capture from the primary checkout's port 5173 server.
