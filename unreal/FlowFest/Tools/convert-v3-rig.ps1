@@ -17,22 +17,14 @@ $staged = Join-Path $tools 'staged/Characters'
 $output = Join-Path $ConvertRoot "converted-v3/$Rig"
 $blender = if ($BlenderPath) { $BlenderPath } else { Join-Path $ConvertRoot 'blender-5.0.1-windows-x64/blender.exe' }
 $sourceTools = Join-Path $BaseScratch 'unreal/FlowFest/Tools'
-$prepareSource = Join-Path $SourceRoot 'unreal/FlowFest/Tools/prepare-characters.mjs'
-if (-not (Test-Path -LiteralPath $prepareSource)) {
-    $prepareSource = Join-Path $ConvertRoot 'shared-tools/prepare-characters.mjs'
-}
-$sharedHelper = Join-Path $SourceRoot 'unreal/Shared/Tools/character-catalog.mjs'
-if (-not (Test-Path -LiteralPath $sharedHelper)) {
-    $sharedHelper = Join-Path $ConvertRoot 'shared-tools/character-catalog.mjs'
-}
-$museumHelper = Join-Path $SourceRoot 'unreal/Shared/Tools/museum-performance-contract.mjs'
-if (-not (Test-Path -LiteralPath $museumHelper)) {
-    $museumHelper = Join-Path $ConvertRoot 'shared-tools/museum-performance-contract.mjs'
-}
+$prepareSource = Join-Path $ConvertRoot 'shared-tools/prepare-characters.mjs'
+$converterSource = Join-Path $ConvertRoot 'shared-tools/convert-characters.py'
+$sharedHelper = Join-Path $ConvertRoot 'shared-tools/character-catalog.mjs'
+$museumHelper = Join-Path $ConvertRoot 'shared-tools/museum-performance-contract.mjs'
 
 foreach ($required in @($CaptureRoot, $BaseScratch, $SourceRoot, $blender,
-        (Join-Path $sourceTools 'staged/Characters/imports.json'), $prepareSource, $sharedHelper,
-        $museumHelper,
+        (Join-Path $sourceTools 'staged/Characters/imports.json'), $prepareSource, $converterSource,
+        $sharedHelper, $museumHelper,
         (Join-Path $SourceRoot 'node_modules/vite'))) {
     if (-not (Test-Path -LiteralPath $required)) { throw "Missing $required" }
 }
@@ -75,7 +67,7 @@ $manifest | ConvertTo-Json -Depth 40 -Compress |
     Set-Content (Join-Path $captureSnapshot 'family-manifest.json') -Encoding utf8
 
 Copy-Item -LiteralPath $prepareSource -Destination $tools -Force
-Copy-Item -LiteralPath (Join-Path $sourceTools 'convert-characters.py') -Destination $tools -Force
+Copy-Item -LiteralPath $converterSource -Destination $tools -Force
 Copy-Item -LiteralPath $sharedHelper -Destination (Join-Path $jobRoot 'unreal/Shared/Tools/character-catalog.mjs') -Force
 Copy-Item -LiteralPath $museumHelper -Destination (Join-Path $jobRoot 'unreal/Shared/Tools/museum-performance-contract.mjs') -Force
 $baseline = Get-Content (Join-Path $sourceTools 'staged/Characters/imports.json') -Raw | ConvertFrom-Json
