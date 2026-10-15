@@ -57,6 +57,8 @@ def import_file(path, folder, name, mesh=False):
                         connect_property(leaf, 'A', u.MaterialProperty.MP_OPACITY_MASK)
                         connect_property(leaf, 'RGB', u.MaterialProperty.MP_SUBSURFACE_COLOR)
                 ensure_instancing(material)
+                if (folder.startswith('/Game/FlowFest/Assets/Trees/') and material.get_name().endswith('_leaves')) or job_wind_family(folder):
+                    add_foliage_wind(material, folder.startswith('/Game/FlowFest/Assets/Trees/'))
                 ME.recompile_material(material)
                 ED.save_loaded_asset(material)
             elif isinstance(material, u.MaterialInstanceConstant):
@@ -91,6 +93,55 @@ def ensure_instancing(material):
         ME.set_base_material_usage(material, usage, True)
     if not ME.has_material_usage(material, usage):
         raise RuntimeError(f'Instancing usage was not enabled on {material.get_path_name()}')
+
+def job_wind_family(folder):
+    return folder == '/Game/FlowFest/Assets/Ecology'
+
+def add_foliage_wind(material, tree):
+    """Small height-weighted WPO motion, so stems stay planted in the soil."""
+    base = ME.get_material_property_input_node(material, u.MaterialProperty.MP_BASE_COLOR)
+    if base:
+        random = expression(material, u.MaterialExpressionPerInstanceRandom)
+        dark = expression(material, u.MaterialExpressionConstant3Vector,
+                          constant=u.LinearColor(.82, .9, .76, 1))
+        light = expression(material, u.MaterialExpressionConstant3Vector,
+                           constant=u.LinearColor(1.1, 1.06, .87, 1))
+        variation = expression(material, u.MaterialExpressionLinearInterpolate)
+        varied_color = expression(material, u.MaterialExpressionMultiply)
+        connect(dark, '', variation, 'A'); connect(light, '', variation, 'B')
+        connect(random, '', variation, 'Alpha')
+        connect(base, '', varied_color, 'A'); connect(variation, '', varied_color, 'B')
+        connect_property(varied_color, '', u.MaterialProperty.MP_BASE_COLOR)
+    time = expression(material, u.MaterialExpressionTime)
+    world = expression(material, u.MaterialExpressionWorldPosition)
+    object_pos = expression(material, u.MaterialExpressionObjectPositionWS)
+    x = expression(material, u.MaterialExpressionComponentMask, r=True)
+    height_delta = expression(material, u.MaterialExpressionSubtract)
+    height = expression(material, u.MaterialExpressionComponentMask, b=True)
+    phase = expression(material, u.MaterialExpressionAdd)
+    speed = expression(material, u.MaterialExpressionMultiply)
+    wavelength = expression(material, u.MaterialExpressionMultiply)
+    sine = expression(material, u.MaterialExpressionSine)
+    weight = expression(material, u.MaterialExpressionDivide)
+    wave = expression(material, u.MaterialExpressionMultiply)
+    strength = expression(material, u.MaterialExpressionScalarParameter,
+                          parameter_name='WindStrength', default_value=.38)
+    controlled = expression(material, u.MaterialExpressionMultiply)
+    direction = expression(material, u.MaterialExpressionConstant3Vector,
+                           constant=u.LinearColor(9 if tree else 3, 4 if tree else 1.5, 0, 1))
+    offset = expression(material, u.MaterialExpressionMultiply)
+    connect(time, '', speed, 'A'); connect(scalar(material, .68 if tree else 1.8), '', speed, 'B')
+    connect(world, '', x, '')
+    connect(x, '', wavelength, 'A'); connect(scalar(material, .002), '', wavelength, 'B')
+    connect(speed, '', phase, 'A'); connect(wavelength, '', phase, 'B')
+    connect(phase, '', sine, '')
+    connect(world, '', height_delta, 'A'); connect(object_pos, '', height_delta, 'B')
+    connect(height_delta, '', height, '')
+    connect(height, '', weight, 'A'); connect(scalar(material, 650 if tree else 65), '', weight, 'B')
+    connect(sine, '', wave, 'A'); connect(weight, '', wave, 'B')
+    connect(wave, '', controlled, 'A'); connect(strength, '', controlled, 'B')
+    connect(direction, '', offset, 'A'); connect(controlled, '', offset, 'B')
+    connect_property(offset, '', u.MaterialProperty.MP_WORLD_POSITION_OFFSET)
 
 def material(name, color, roughness=.8, metallic=0, emissive=0):
     path = '/Game/FlowFest/Materials/' + name
@@ -141,7 +192,9 @@ for name, args in palette.items():
         if (STAGED / 'GroundDetail.png').exists():
             detail_tex = import_file(STAGED / 'GroundDetail.png', '/Game/FlowFest/Textures', 'GroundDetail')
             detail = expression(m, u.MaterialExpressionTextureSample, texture=detail_tex)
-            blend = expression(m, u.MaterialExpressionLinearInterpolate, const_alpha=.68)
+            # Surveyed imagery establishes the field/woodland structure; detail is
+            # a close-range modulation, not a replacement photograph.
+            blend = expression(m, u.MaterialExpressionLinearInterpolate, const_alpha=.27)
             connect(sample, 'RGB', blend, 'A')
             connect(detail, 'RGB', blend, 'B')
             connect_property(blend, '', u.MaterialProperty.MP_BASE_COLOR)
@@ -152,6 +205,13 @@ for name, args in palette.items():
             ED.save_loaded_asset(normal_tex)
             normal = expression(m, u.MaterialExpressionTextureSample, texture=normal_tex, sampler_type=u.MaterialSamplerType.SAMPLERTYPE_NORMAL)
             connect_property(normal, 'RGB', u.MaterialProperty.MP_NORMAL)
+    if name == 'M_Dirt' and (STAGED / 'GroundDetail.png').exists():
+        detail_tex = import_file(STAGED / 'GroundDetail.png', '/Game/FlowFest/Textures', 'GroundDetail')
+        detail = expression(m, u.MaterialExpressionTextureSample, texture=detail_tex)
+        earth = expression(m, u.MaterialExpressionMultiply)
+        connect(c, '', earth, 'A')
+        connect(detail, 'RGB', earth, 'B')
+        connect_property(earth, '', u.MaterialProperty.MP_BASE_COLOR)
     ME.layout_material_expressions(m)
     ME.recompile_material(m)
     ED.save_loaded_asset(m)

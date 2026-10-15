@@ -26,6 +26,11 @@ const staged = join(here, 'staged');
 mkdirSync(staged, { recursive: true });
 const jobs = site.assets.map(a => ({ id: a.family.replaceAll('-', '_'), family: a.family, source: resolve(source, a.source.startsWith('/models/') ? 'static'+a.source : a.source.replace(/^\//, '')), kind: 'Trees' }));
 jobs.push({ id: 'SM_Car', source: join(source,'static/models/flow-fest/cars/ace-hatchback.glb'), kind: 'Car' });
+jobs.push(
+  { id: 'ForestGrass', source: join(source, 'static/models/flow-fest-sim/ecology/forest-grass-prototypes.glb'), kind: 'Ecology' },
+  { id: 'DampSedge', source: join(source, 'static/models/forest/ground-life/damp-sedge-tussock.glb'), kind: 'Ecology' },
+  { id: 'HazelShrub', source: join(source, 'static/models/forest/ground-life/woodland-hazel-shrub.glb'), kind: 'Ecology' },
+);
 for (const job of jobs) {
   if (!existsSync(job.source) && job.source.includes('/models/')) job.source = join(source, 'static', job.source.substring(job.source.indexOf('/models/')+1));
   const output = join(staged, job.id + '.glb');

@@ -44,6 +44,15 @@ assert.equal(first.camps.filter((item) => item.type === "player-tent").length, 1
 assert.equal(first.camps.filter((item) => item.type !== "canopy").length, 53);
 assert.equal(first.vehicles.length, 44);
 assert.equal(first.assets.length, 39);
+assert.ok(first.grass.length > 20000, "source woodland and clearing grass must be retained");
+assert.ok(first.groundLife.length > 0, "source sedge and hazel understory must be retained");
+assert.equal(first.ecologyAudit.grassRouteIntrusions, 0);
+assert.equal(first.ecologyAudit.groundLifeRouteIntrusions, 0);
+assert.deepEqual(new Set(first.grass.map((item) => item.species)), new Set(["summer-sward", "woodland-grass"]));
+for (const item of [...first.grass, ...first.groundLife]) {
+  assert.ok(Number.isFinite(item.x) && Number.isFinite(item.y) && Number.isFinite(item.z));
+  assert.ok(item.x >= -512 && item.x <= 512 && item.z >= -512 && item.z <= 512);
+}
 
 const families = new Set(first.assets.map((asset) => asset.family));
 for (const tree of [...first.trees, ...first.backdropTrees]) {

@@ -165,6 +165,14 @@ export async function buildSiteData(sourceRoot = repoRoot) {
       rotation: tree.rotation, family: tree.familyId,
       measuredHeight: tree.measuredHeightMeters, scale: tree.scale,
     }));
+    // Retain the web scene's measured, route-cleared forest floor instead of
+    // independently scattering decoration over the surveyed roads and camps.
+    const grass = dressing.forestEcology.grass.map(({ x, y, z, rotation, widthMeters, heightMeters, species, tier, colorIndex }) => ({
+      x, y, z, rotation, widthMeters, heightMeters, species, tier, colorIndex,
+    }));
+    const groundLife = dressing.forestEcology.groundLife.map(({ x, y, z, rotation, scale, species }) => ({
+      x, y, z, rotation, scale, species,
+    }));
     const usedFamilies = new Set([...trees, ...backdropTrees].map((tree) => tree.family));
     const assets = species.families.filter((family) => usedFamilies.has(family.familyId)).map((family) => ({
       family: family.familyId,
@@ -183,7 +191,11 @@ export async function buildSiteData(sourceRoot = repoRoot) {
         minX: bounds.minX, minZ: bounds.minZ, heightFile: "terrain-height.f32",
         imageryFile: "ortho.webp", canopyFile: "surface-offset.u16", manifestFile: "terrain.manifest.json",
       },
-      roads, landmarks, trees, backdropTrees, camps,
+      roads, landmarks, trees, backdropTrees, grass, groundLife, camps,
+      ecologyAudit: {
+        grassRouteIntrusions: dressing.forestEcology.audit.grassRouteIntrusions,
+        groundLifeRouteIntrusions: dressing.forestEcology.audit.groundLifeRouteIntrusions,
+      },
       vehicles: dressing.parkedCars.map((car) => ({
         x: car.x, y: car.y, z: car.z, rotation: car.rotation,
         model: car.modelId, paintIndex: car.paintIndex,
