@@ -12,6 +12,8 @@
   import "#lib/shared/selection/selection.css";
   import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
   import LessonBoardSlot from "../live-board/LessonBoardSlot.svelte";
+  import { getLiveLessonBoard } from "../live-board/live-lesson-board.svelte";
+  import { MOTION_MAP_HOME } from "#lib/shared/guide-topics/hand-motions-topic.js";
   import {
     GridMode,
     type GridLocation,
@@ -48,12 +50,25 @@
     onBack,
     viewMode = "step",
     readingOpen = false,
+    arrivedFrom = null,
   } = $props<{
     onComplete?: (nextConceptId?: string) => void;
     onBack?: () => void;
     viewMode?: ExperienceViewMode;
     readingOpen?: boolean;
+    arrivedFrom?: string | null;
   }>();
+
+  /**
+   * Hand Motions opens on the blue hand alone on West of the diamond grid.
+   * Continue settles the board into that picture before it flies there, and
+   * Previous from Hand Motions lands back on it, so the hand the learner
+   * sees is one hand the whole way (Austen, 2026-10-15).
+   */
+  const NEXT_LESSON = "hand-motions-intro";
+  const HANDOFF = { left: MOTION_MAP_HOME, right: null };
+  const backFromMotions = untrack(() => arrivedFrom === NEXT_LESSON);
+  const liveBoard = getLiveLessonBoard();
 
   const workshop = createPlacementWorkshopState(
     getExperiencePersistence("hand-placements"),
@@ -63,15 +78,19 @@
   let boardElement: HTMLDivElement;
   let forwardButton = $state<HTMLButtonElement | null>(null);
   let gridMode = $state<GridMode>(
-    workshop.phase === "explore" ? GridMode.DIAMOND : GridMode.BOX
+    workshop.phase === "explore" || backFromMotions
+      ? GridMode.DIAMOND
+      : GridMode.BOX
   );
   let preset = $state<{
     left: GridLocation | null;
     right: GridLocation | null;
   }>(
-    workshop.canFinish
-      ? placementExample("beta", GridMode.BOX)
-      : { left: null, right: null }
+    backFromMotions && workshop.canFinish
+      ? HANDOFF
+      : workshop.canFinish
+        ? placementExample("beta", GridMode.BOX)
+        : { left: null, right: null }
   );
   let placement = $state<PropPlacementChange>(
     untrack(() => ({
@@ -143,8 +162,13 @@
   });
   onDestroy(() => stageMotion.cancel());
 
+  /** Continue was pressed: the board is settling before Hand Motions. */
+  let leaving = $state(false);
   const instruction = $derived(
-    !workshop.canFinish && placement.complete && placement.activeHand === null
+    leaving ||
+      (!workshop.canFinish &&
+        placement.complete &&
+        placement.activeHand === null)
       ? ""
       : placement.activeHand === HandSide.LEFT
         ? t("learn_ui_tap_left_hand")
@@ -313,8 +337,23 @@
     else boardElement.focus({ preventScroll: true });
   }
 
-  function finish() {
-    if (workshop.canFinish) onComplete?.("hand-motions-intro");
+  async function finish() {
+    if (!workshop.canFinish || leaving) return;
+    leaving = true;
+    cancelClear();
+    const posed =
+      gridMode === GridMode.DIAMOND &&
+      placement.leftLocation === HANDOFF.left &&
+      placement.rightLocation === HANDOFF.right;
+    const settle = motionDuration(DURATION.dramatic);
+    if (!posed) {
+      gridMode = GridMode.DIAMOND;
+      replacedPairs = [];
+      lit = null;
+      loadPair(HANDOFF.left, HANDOFF.right);
+      if (settle > 0) await new Promise((done) => setTimeout(done, settle));
+    }
+    onComplete?.(NEXT_LESSON);
   }
 
   export function handleBack() {
@@ -350,6 +389,10 @@
             class="board"
             data-placement-stage="board"
             bind:this={boardElement}
+            {@attach (node) => {
+              // Back from Hand Motions, the hands ride the board in.
+              if (backFromMotions) liveBoard?.follow(node);
+            }}
             tabindex="-1"
             role="group"
             aria-label={t("learn_ui_hand_placement_grid")}

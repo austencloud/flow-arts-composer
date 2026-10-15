@@ -60,6 +60,8 @@ Supports two navigation modes:
 
   // Navigation mode: step-by-step or scroll-through
   let viewMode = $state<ExperienceViewMode>("step");
+  /** The lesson this one was reached from, by Continue or Previous. */
+  let arrivedFrom = $state<string | null>(null);
   let readingOpen = $state(false);
   const hasInlineReading = $derived(
     concept.id === "grid" || concept.id === "hand-placements"
@@ -159,12 +161,29 @@ Supports two navigation modes:
       isConceptExperienceAvailable(nextConcept.id) &&
       onContinue
     ) {
-      liveBoard.capture();
-      onContinue(nextConcept, getConceptPlaceIdForLesson(nextConcept.id));
+      moveTo(nextConcept);
       return;
     }
 
     // After completing, go back to concept list
+    handleClose();
+  }
+
+  /** Continue and Previous both keep this view and its board. */
+  function moveTo(next: LearnConcept) {
+    liveBoard.capture();
+    // Set before the lesson changes, so the next one mounts knowing it.
+    arrivedFrom = concept.id;
+    onContinue?.(next, getConceptPlaceIdForLesson(next.id));
+  }
+
+  function handlePrevious(conceptId: string) {
+    const previous = getConceptById(conceptId);
+    if (previous && isConceptExperienceAvailable(previous.id) && onContinue) {
+      hapticService?.trigger("selection");
+      moveTo(previous);
+      return;
+    }
     handleClose();
   }
 </script>
@@ -177,7 +196,7 @@ Supports two navigation modes:
       onclick={handleBackButton}
       aria-label={t("learn_go_back")}
     >
-      <span class="back-icon">‹</span>
+      <i class="fa-solid fa-chevron-left back-icon" aria-hidden="true"></i>
       <span class="back-text">{t("learn_back")}</span>
     </button>
 
@@ -258,7 +277,9 @@ Supports two navigation modes:
           <Experience
             {viewMode}
             {readingOpen}
+            {arrivedFrom}
             onComplete={handlePracticeComplete}
+            onPrevious={onContinue ? handlePrevious : undefined}
             onBack={handleClose}
           />
         {:else}
@@ -321,7 +342,7 @@ Supports two navigation modes:
   .back-button {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.5rem;
     padding: 0.5rem 1rem;
     background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke);
@@ -342,8 +363,9 @@ Supports two navigation modes:
     transform: translateX(-2px);
   }
 
+  /* An icon, not the "‹" glyph: the glyph sat high of the text's middle. */
   .back-icon {
-    font-size: 1.5rem;
+    font-size: 0.75rem;
     line-height: 1;
   }
 

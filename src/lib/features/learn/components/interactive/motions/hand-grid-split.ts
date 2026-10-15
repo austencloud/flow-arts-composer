@@ -95,3 +95,25 @@ export function runHandGridSplit(
     () => {}
   );
 }
+
+const GROW_CLASS = "hand-grid-grow";
+
+/**
+ * Runs `mutate`, which swaps the first stage for the motion map or back, with
+ * the Start picture growing into the map (Austen, 2026-10-15: "blow it up to
+ * be the main one on the left with the hand staying in the same place"). The
+ * two share one view-transition name while `html.hand-grid-grow` is set
+ * (view-transitions.css); both show the blue hand on West of a diamond grid,
+ * so the group's box carries one picture between the two sizes.
+ */
+export function runHandGridGrow(mutate: () => void): void {
+  const html = document.documentElement;
+  html.classList.add(GROW_CLASS);
+  const release = () => html.classList.remove(GROW_CLASS);
+  const transition = startMorph(mutate);
+  if (!transition) {
+    release();
+    return;
+  }
+  void transition.finished.then(release, release);
+}
