@@ -270,9 +270,13 @@
           aim.handleKeydown(event, point.location, point.hand)}
         role="button"
         tabindex={aim.isPressable(point.location, point.hand) ? 0 : -1}
-        aria-label="{point.label} point{isLeftAt(point)
-          ? ` (${leftNoun})`
-          : ''}{isRightAt(point) ? ` (${rightNoun})` : ''}"
+        aria-label="{point.label} point{isLeftAt(point) && isRightAt(point)
+          ? ` (${leftNoun} and ${rightNoun})`
+          : isLeftAt(point)
+            ? ` (${leftNoun})`
+            : isRightAt(point)
+              ? ` (${rightNoun})`
+              : ''}"
         aria-disabled={!aim.isPressable(point.location, point.hand)}
       />
     {/each}

@@ -40,6 +40,10 @@
   let moves = $state(0);
   let announcement = $state("");
 
+  // Static has no arrow to aim at, so once the two travelling moves are
+  // found its slot says how to make it: tap the point the hand is on.
+  const staticHint = $derived(!!found.shift && !!found.dash && !found.static);
+
   function moved(
     move: HandMove,
     by: "demo" | "learner",
@@ -73,7 +77,8 @@
           made?.move === "static"
             ? handPoints.find((point) => point.location === made.from)
             : undefined}
-        <li class:lit={lit === move.id} class:found={!!made}>
+        {@const hinted = move.id === "static" && staticHint}
+        <li class:lit={lit === move.id} class:found={!!made} class:hinted>
           <div class="art" aria-hidden="true">
             {#if picture}
               <div class="picture">
@@ -106,7 +111,11 @@
             {/if}
           </div>
           <span class="name">{handMotionsTopicText(move.name)}</span>
-          <span class="caption">{handMotionsTopicText(move.caption)}</span>
+          <span class="caption"
+            >{hinted
+              ? t("learn_motion_static_hint")
+              : handMotionsTopicText(move.caption)}</span
+          >
           <i class="fa-solid fa-check check" aria-hidden="true"></i>
         </li>
       {/each}
@@ -245,6 +254,18 @@
     box-shadow:
       inset 0 0 0 1px var(--theme-text),
       0 0 1.25rem color-mix(in srgb, var(--theme-text) 30%, transparent);
+  }
+
+  /* The one slot left, with how to fill it. */
+  .moves li.hinted {
+    border-style: dashed;
+    border-color: var(--theme-text);
+  }
+
+  .hinted .name,
+  .hinted .caption {
+    color: var(--theme-text);
+    opacity: 1;
   }
 
   .art {

@@ -1,28 +1,20 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   GridLocation,
   GridMode,
 } from "../../../src/lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { getPlacementGridPoints } from "../../../src/lib/shared/pictograph/grid/services/placement-grid-points";
 import {
-  PLACEMENT_CHALLENGES,
   PLACEMENT_KINDS,
   placementKindFor,
   placementExample,
   placementPairPreview,
   PLACEMENT_LETTERS,
-  placementCorrection,
-  placementCorrectionPair,
   changePlacementGrid,
   restorePlacementWorkshop,
   transformPlacement,
 } from "../../../src/lib/features/learn/components/interactive/placements/hand-placement-lesson";
-import {
-  createPlacementWorkshopState,
-  PLACEMENT_SUCCESS_HOLD_MS,
-} from "../../../src/lib/features/learn/components/interactive/placements/placement-experience-state.svelte";
-import { HandSide } from "../../../src/lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PropPlacementChange } from "../../../src/lib/shared/pictograph/grid/domain/prop-placement";
+import { createPlacementWorkshopState } from "../../../src/lib/features/learn/components/interactive/placements/placement-experience-state.svelte";
 
 function memory(saved?: unknown) {
   let workshop = saved;
@@ -36,119 +28,6 @@ function memory(saved?: unknown) {
     getPhaseData: <T>(_key: string, fallback: T) => fallback,
   };
 }
-
-describe("hand placement automatic progression", () => {
-  afterEach(() => {
-    vi.clearAllTimers();
-    vi.useRealTimers();
-  });
-
-  it("holds each success before advancing and ends on completion, not another lesson", () => {
-    vi.useFakeTimers();
-    const workshop = createPlacementWorkshopState(memory());
-    workshop.practice();
-    for (let round = 0; round < PLACEMENT_CHALLENGES.length; round++) {
-      workshop.check(workshop.challenge!.kind);
-      workshop.scheduleAutoAdvance(() => workshop.next());
-      vi.advanceTimersByTime(PLACEMENT_SUCCESS_HOLD_MS - 1);
-      expect(workshop.round).toBe(round);
-      expect(workshop.feedback).toBe("correct");
-      vi.advanceTimersByTime(1);
-      expect(workshop.round).toBe(round + 1);
-    }
-    expect(workshop.phase).toBe("complete");
-    const advance = vi.fn();
-    workshop.scheduleAutoAdvance(advance);
-    vi.runAllTimers();
-    expect(advance).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    "edit",
-    "clear",
-    "select",
-    "explore",
-    "restart",
-    "cleanup",
-    "manual next",
-  ])("cancels the pending advance on %s", (action) => {
-    vi.useFakeTimers();
-    const workshop = createPlacementWorkshopState(memory());
-    workshop.practice();
-    workshop.check("alpha");
-    const advance = vi.fn(() => workshop.next());
-    const cleanup = workshop.scheduleAutoAdvance(advance);
-    vi.advanceTimersByTime(PLACEMENT_SUCCESS_HOLD_MS / 2);
-    if (action === "edit") workshop.edited();
-    if (action === "clear" || action === "select")
-      workshop.evaluatePlacement({
-        leftLocation: GridLocation.NORTH,
-        rightLocation: action === "clear" ? null : GridLocation.SOUTH,
-        complete: action !== "clear",
-        activeHand: HandSide.RIGHT,
-        canUndo: true,
-      });
-    if (action === "explore") workshop.explore();
-    if (action === "restart") workshop.practice();
-    if (action === "cleanup") cleanup();
-    if (action === "manual next") workshop.next();
-    vi.runAllTimers();
-    expect(advance).not.toHaveBeenCalled();
-    expect(workshop.round).toBe(action === "manual next" ? 1 : 0);
-  });
-
-  it("keeps wrong answers in place and gives a resumed success a fresh hold", () => {
-    vi.useFakeTimers();
-    const workshop = createPlacementWorkshopState(memory());
-    workshop.practice();
-    const advance = vi.fn(() => workshop.next());
-    workshop.check("gamma");
-    workshop.scheduleAutoAdvance(advance);
-    vi.runAllTimers();
-    expect(advance).not.toHaveBeenCalled();
-    workshop.check("alpha");
-    const suspend = workshop.scheduleAutoAdvance(advance);
-    vi.advanceTimersByTime(600);
-    suspend();
-    vi.advanceTimersByTime(5000);
-    expect(workshop.round).toBe(0);
-    workshop.scheduleAutoAdvance(advance);
-    vi.advanceTimersByTime(PLACEMENT_SUCCESS_HOLD_MS);
-    expect(advance).toHaveBeenCalledTimes(1);
-    expect(workshop.round).toBe(1);
-  });
-
-  it("keeps a later practice round and its checkpoint while reading interrupts the success hold", () => {
-    vi.useFakeTimers();
-    const persistence = memory({
-      version: 1,
-      phase: "practice",
-      round: 2,
-      explored: ["alpha", "beta"],
-    });
-    const workshop = createPlacementWorkshopState(persistence);
-    workshop.check(workshop.challenge!.kind);
-    const advance = vi.fn(() => workshop.next());
-    const stopForReading = workshop.scheduleAutoAdvance(advance);
-    vi.advanceTimersByTime(PLACEMENT_SUCCESS_HOLD_MS / 2);
-    stopForReading();
-    vi.advanceTimersByTime(PLACEMENT_SUCCESS_HOLD_MS * 3);
-
-    expect(advance).not.toHaveBeenCalled();
-    expect(workshop.phase).toBe("practice");
-    expect(workshop.round).toBe(2);
-    expect(workshop.feedback).toBe("correct");
-    expect(persistence.load().phaseData.workshop).toMatchObject({
-      phase: "practice",
-      round: 2,
-    });
-
-    workshop.scheduleAutoAdvance(advance);
-    vi.advanceTimersByTime(PLACEMENT_SUCCESS_HOLD_MS);
-    expect(advance).toHaveBeenCalledOnce();
-    expect(workshop.round).toBe(3);
-  });
-});
 
 describe("hand placement workshop domain", () => {
   it("keeps the placement family through 45-degree rotations and every reflection axis", () => {
@@ -307,29 +186,6 @@ describe("hand placement workshop domain", () => {
       expect(counts).toEqual({ alpha: 4, beta: 4, gamma: 8 });
     });
 
-    it(`gives a valid one-hand correction for every wrong ${mode} answer`, () => {
-      const points = getPlacementGridPoints(mode);
-      for (const left of points)
-        for (const right of points)
-          for (const target of PLACEMENT_KINDS) {
-            if (placementKindFor(left.location, right.location) === target)
-              continue;
-            const message = placementCorrection(
-              left.location,
-              right.location,
-              target,
-              mode
-            );
-            const destination = points.find((point) =>
-              message.endsWith(`to ${point.label}.`)
-            );
-            expect(destination).toBeDefined();
-            expect(placementKindFor(left.location, destination!.location)).toBe(
-              target
-            );
-          }
-    });
-
     it(`renders examples on the selected ${mode} grid`, () => {
       const points = getPlacementGridPoints(mode);
       for (const kind of PLACEMENT_KINDS) {
@@ -337,15 +193,6 @@ describe("hand placement workshop domain", () => {
         expect(placementKindFor(example.left, example.right)).toBe(kind);
         expect(points.some((p) => p.location === example.left)).toBe(true);
         expect(points.some((p) => p.location === example.right)).toBe(true);
-      }
-    });
-    it(`keeps the first hand fixed in every ${mode} visual correction`, () => {
-      for (const point of getPlacementGridPoints(mode)) {
-        for (const target of PLACEMENT_KINDS) {
-          const pair = placementCorrectionPair(point.location, target, mode);
-          expect(pair.left).toBe(point.location);
-          expect(placementKindFor(pair.left, pair.right)).toBe(target);
-        }
       }
     });
   }
@@ -360,181 +207,109 @@ describe("hand placement workshop domain", () => {
     ).toBeNull();
   });
 
-  it("does not trust corrupt or legacy completion checkpoints", () => {
+  it("does not trust corrupt checkpoints", () => {
     for (const value of [
       null,
-      { version: 0, round: 6 },
-      { version: 1, phase: "complete", round: -1 },
-      { version: 1, phase: "complete", round: 2.5 },
+      { version: 0, phase: "complete" },
+      { version: 3, phase: "complete" },
+      { version: 1, phase: "complete", round: 2 },
       { version: 1, phase: "complete", round: 999 },
+      { version: 2, phase: "box", explored: ["alpha"], boxFound: [] },
     ]) {
-      expect(restorePlacementWorkshop(value)).toMatchObject({
+      expect(restorePlacementWorkshop(value).phase).toBe("explore");
+    }
+  });
+
+  it("carries version 1 progress into the two rounds", () => {
+    expect(
+      restorePlacementWorkshop({ version: 1, phase: "complete", round: 6 })
+        .phase
+    ).toBe("complete");
+    expect(
+      restorePlacementWorkshop({
+        version: 1,
+        phase: "practice",
+        round: 4,
+        explored: ["alpha", "beta", "gamma"],
+      })
+    ).toMatchObject({ phase: "box", boxFound: [] });
+    expect(
+      restorePlacementWorkshop({
+        version: 1,
         phase: "explore",
         round: 0,
-      });
-    }
-    expect(
-      restorePlacementWorkshop({ version: 1, phase: "complete", round: 2 })
-        .phase
-    ).not.toBe("complete");
+        explored: ["beta", "nonsense"],
+      })
+    ).toMatchObject({ phase: "explore", explored: ["beta"] });
   });
 });
 
-describe("self-paced practice progress", () => {
-  it("keeps completion available after free-play edits and clearing", () => {
-    const state = createPlacementWorkshopState(
-      memory({ version: 1, phase: "complete", round: 6, explored: [] })
-    );
-    state.edited();
-    state.evaluatePlacement({
-      leftLocation: null,
-      rightLocation: null,
-      complete: false,
-      activeHand: HandSide.LEFT,
-      canUndo: false,
-    });
-    expect(state.canFinish).toBe(true);
-    expect(state.builtCount).toBe(6);
-    expect(state.feedback).toBe("idle");
-  });
-  const alphaPlacement: PropPlacementChange = {
-    leftLocation: GridLocation.NORTH,
-    rightLocation: GridLocation.SOUTH,
-    activeHand: null,
-    complete: true,
-    canUndo: true,
-  };
-
-  it("confirms committed placements immediately without advancing or double-counting", () => {
+describe("find-all-three rounds", () => {
+  it("finds all three on the diamond, then on the box grid, then opens free play", () => {
     const state = createPlacementWorkshopState(memory());
-    state.practice();
-    state.evaluatePlacement(alphaPlacement);
-    expect(state.feedback).toBe("correct");
-    expect(state.builtCount).toBe(1);
-    expect(state.round).toBe(0);
-    state.evaluatePlacement(alphaPlacement);
-    expect(state.builtCount).toBe(1);
-    expect(state.next()).toBe(true);
-    expect(state.builtCount).toBe(1);
-    expect(state.next()).toBe(false);
-  });
-
-  it("withholds confirmation while editing and rechecks an unchanged committed point", () => {
-    const state = createPlacementWorkshopState(memory());
-    state.practice();
-    state.evaluatePlacement(alphaPlacement);
-    state.evaluatePlacement({ ...alphaPlacement, activeHand: HandSide.RIGHT });
-    expect(state.feedback).toBe("idle");
-    expect(state.next()).toBe(false);
-    state.evaluatePlacement(alphaPlacement);
-    expect(state.feedback).toBe("correct");
-    state.evaluatePlacement({
-      ...alphaPlacement,
-      rightLocation: null,
-      complete: false,
-    });
-    expect(state.feedback).toBe("idle");
-    expect(state.builtCount).toBe(0);
-    expect(state.next()).toBe(false);
-  });
-
-  it("rechecks wrong constructions but never grades free exploration", () => {
-    const state = createPlacementWorkshopState(memory());
-    state.evaluatePlacement(alphaPlacement);
-    expect(state.feedback).toBe("idle");
-    expect(state.builtCount).toBe(0);
-    state.practice();
-    state.evaluatePlacement({
-      ...alphaPlacement,
-      rightLocation: GridLocation.NORTH,
-    });
-    expect(state.feedback).toBe("incorrect");
-    expect(state.next()).toBe(false);
-    state.evaluatePlacement(alphaPlacement);
-    expect(state.feedback).toBe("correct");
-    state.explore();
-    state.evaluatePlacement(alphaPlacement);
-    expect(state.feedback).toBe("idle");
-  });
-  it("keeps wrong feedback through retry selection and only credits the correction", () => {
-    const state = createPlacementWorkshopState(memory());
-    state.practice();
-    const wrong = { ...alphaPlacement, rightLocation: GridLocation.NORTH };
-    state.evaluatePlacement(wrong);
-    state.evaluatePlacement({ ...wrong, activeHand: HandSide.RIGHT });
-    expect(state.feedback).toBe("incorrect");
-    expect(state.builtCount).toBe(0);
-    expect(state.next()).toBe(false);
-    state.evaluatePlacement(wrong);
-    expect(state.feedback).toBe("incorrect");
-    state.evaluatePlacement(alphaPlacement);
-    expect(state.feedback).toBe("correct");
-    expect(state.builtCount).toBe(1);
-  });
-
-  it("requires each correct construction, invalidates edited answers, and never double-advances", () => {
-    const state = createPlacementWorkshopState(memory());
-    expect(state.next()).toBe(false);
-    state.practice();
-    state.check("beta");
-    expect(state.feedback).toBe("incorrect");
-    expect(state.next()).toBe(false);
-    state.check("alpha");
-    state.edited();
-    expect(state.next()).toBe(false);
-    for (const question of PLACEMENT_CHALLENGES) {
-      expect(state.canFinish).toBe(false);
-      state.check(question.kind);
-      expect(state.next()).toBe(true);
-      expect(state.next()).toBe(false);
+    expect(state.phase).toBe("explore");
+    expect(state.advance()).toBe(false);
+    for (const kind of PLACEMENT_KINDS) {
+      expect(state.roundDone).toBe(false);
+      state.discover(kind);
     }
+    expect(state.roundDone).toBe(true);
+    expect(state.advance()).toBe(true);
+    expect(state.phase).toBe("box");
+    expect(state.found).toEqual([]);
+    expect(state.canFinish).toBe(false);
+    state.discover("gamma");
+    state.discover("alpha");
+    expect(state.advance()).toBe(false);
+    state.discover("beta");
+    expect(state.advance()).toBe(true);
+    expect(state.phase).toBe("complete");
     expect(state.canFinish).toBe(true);
+    expect(state.roundDone).toBe(false);
+    expect(state.advance()).toBe(false);
   });
 
-  it("resumes completed rounds without converting old checks into new passes", () => {
+  it("counts each placement once per round, in any order", () => {
+    const state = createPlacementWorkshopState(memory());
+    state.discover("beta");
+    state.discover("beta");
+    expect(state.explored).toEqual(["beta"]);
+    state.discover("gamma");
+    state.discover("alpha");
+    state.advance();
+    state.discover("beta");
+    expect(state.boxFound).toEqual(["beta"]);
+    expect(state.explored).toEqual(["beta", "gamma", "alpha"]);
+  });
+
+  it("saves each find and resumes the round in progress", () => {
     const persistence = memory();
     const first = createPlacementWorkshopState(persistence);
-    first.practice();
-    first.check("alpha");
-    first.next();
-    first.check("beta");
+    for (const kind of PLACEMENT_KINDS) first.discover(kind);
+    first.advance();
+    first.discover("alpha");
+    expect(persistence.load().phaseData.workshop).toEqual({
+      version: 2,
+      phase: "box",
+      explored: ["alpha", "beta", "gamma"],
+      boxFound: ["alpha"],
+    });
     const resumed = createPlacementWorkshopState(persistence);
-    expect(resumed.round).toBe(1);
-    expect(resumed.challenge?.kind).toBe("beta");
-    expect(resumed.feedback).toBe("idle");
-    expect(resumed.next()).toBe(false);
-    resumed.explore();
-    resumed.practice();
-    expect(resumed.round).toBe(1);
+    expect(resumed.phase).toBe("box");
+    expect(resumed.found).toEqual(["alpha"]);
   });
 
   it("opens review in exploration without overwriting the saved lesson", () => {
     const persistence = memory({
-      version: 1,
-      phase: "practice",
-      round: 4,
-      explored: ["alpha"],
+      version: 2,
+      phase: "box",
+      explored: ["alpha", "beta", "gamma"],
+      boxFound: ["alpha"],
     });
     const review = createPlacementWorkshopState(persistence, true);
     expect(review.phase).toBe("explore");
     review.discover("gamma");
-    review.practice();
-    review.check("alpha");
-    review.next();
+    review.advance();
     expect(persistence.savePhaseData).not.toHaveBeenCalled();
-  });
-
-  it("counts distinct discoveries, and resets practice after a completed pass", () => {
-    const state = createPlacementWorkshopState(
-      memory({ version: 1, phase: "complete", round: 6, explored: [] })
-    );
-    state.discover("beta");
-    state.discover("beta");
-    expect(state.explored).toEqual(["beta"]);
-    state.explore();
-    expect(state.canFinish).toBe(true);
-    state.practice();
-    expect(state.round).toBe(0);
-    expect(state.canFinish).toBe(false);
   });
 });

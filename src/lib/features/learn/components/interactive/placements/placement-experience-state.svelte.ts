@@ -7,57 +7,35 @@
 
 import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
 import {
-  PLACEMENT_CHALLENGES,
+  PLACEMENT_KINDS,
   placementKindFor,
   placementExample,
   restorePlacementWorkshop,
-  type PlacementWorkshopCheckpoint,
+  type PlacementWorkshopPhase,
 } from "./hand-placement-lesson";
 import type { PlacementType } from "../../../domain/constants/placement-quiz-data";
-import type { PropPlacementChange } from "#lib/shared/pictograph/grid/domain/prop-placement.js";
 import type {
   GridMode,
   GridLocation,
 } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
-// Reading time for the successful placement, not an animation duration.
+// Reading time for a built placement before the hands leave the board.
 export const PLACEMENT_SUCCESS_HOLD_MS = 1200;
 
-/** The live lesson's construction flow. Legacy quiz consumers below
- * keep their old contract; they are not mounted by the current experience. */
+/** The live lesson: find all three on the diamond grid, then on the box
+ * grid, then free play. Legacy quiz consumers below keep their old
+ * contract; they are not mounted by the current experience. */
 export function createPlacementWorkshopState(
   persistence: ReturnType<typeof getExperiencePersistence>,
   review = false
 ) {
   const saved = restorePlacementWorkshop(persistence.load().phaseData?.workshop);
-  let phase = $state<PlacementWorkshopCheckpoint["phase"]>(
-    review ? "explore" : saved.phase
-  );
-  let round = $state(saved.round);
+  let phase = $state<PlacementWorkshopPhase>(review ? "explore" : saved.phase);
   let explored = $state(saved.explored);
-  let feedback = $state<"idle" | "correct" | "incorrect">("idle");
-  let advanceTimer: ReturnType<typeof setTimeout> | undefined;
-
-  function cancelAutoAdvance() {
-    clearTimeout(advanceTimer);
-    advanceTimer = undefined;
-  }
-
-  function scheduleAutoAdvance(advance: () => void) {
-    cancelAutoAdvance();
-    if (phase !== "practice" || feedback !== "correct") return cancelAutoAdvance;
-    const completedRound = round;
-    advanceTimer = setTimeout(() => {
-      advanceTimer = undefined;
-      if (phase === "practice" && feedback === "correct" && round === completedRound)
-        advance();
-    }, PLACEMENT_SUCCESS_HOLD_MS);
-    return cancelAutoAdvance;
-  }
+  let boxFound = $state(review ? [] : saved.boxFound);
   let examples = $state<
     Record<string, { left: GridLocation; right: GridLocation }>
   >({});
-  const challenge = $derived(PLACEMENT_CHALLENGES[round] ?? null);
 
   function rememberPlacement(
     left: GridLocation | null,
@@ -76,61 +54,31 @@ export function createPlacementWorkshopState(
   function save() {
     if (!review)
       persistence.savePhaseData("workshop", {
-        version: 1,
+        version: 2,
         phase,
-        round,
         explored,
+        boxFound,
       });
   }
+
+  /** The placements found in the current round. */
+  const found = $derived(
+    phase === "box" ? boxFound : phase === "explore" ? explored : PLACEMENT_KINDS
+  );
+  const roundDone = $derived(
+    phase !== "complete" && PLACEMENT_KINDS.every((kind) => found.includes(kind))
+  );
+
   function discover(kind: PlacementType) {
-    if (explored.includes(kind)) return;
-    explored = [...explored, kind];
+    if (phase === "complete" || found.includes(kind)) return;
+    if (phase === "explore") explored = [...explored, kind];
+    else boxFound = [...boxFound, kind];
     save();
   }
-  function explore() {
-    cancelAutoAdvance();
-    phase = "explore";
-    feedback = "idle";
-    save();
-  }
-  function practice() {
-    cancelAutoAdvance();
-    if (round === PLACEMENT_CHALLENGES.length) round = 0;
-    phase = "practice";
-    feedback = "idle";
-    save();
-  }
-  function check(kind: PlacementType | null) {
-    if (phase !== "practice" || !challenge || !kind) return;
-    feedback = kind === challenge.kind ? "correct" : "incorrect";
-    if (feedback !== "correct") cancelAutoAdvance();
-  }
-  function edited() {
-    cancelAutoAdvance();
-    feedback = "idle";
-  }
-  function evaluatePlacement(change: PropPlacementChange) {
-    if (phase !== "practice") return;
-    if (!change.complete) {
-      cancelAutoAdvance();
-      feedback = "idle";
-      return;
-    }
-    // Keep the mistake visible while the learner retries. Selecting a hand
-    // invalidates success, but does not erase an unresolved wrong answer.
-    if (change.activeHand !== null) {
-      cancelAutoAdvance();
-      if (feedback !== "incorrect") feedback = "idle";
-      return;
-    }
-    check(placementKindFor(change.leftLocation, change.rightLocation));
-  }
-  function next() {
-    cancelAutoAdvance();
-    if (phase !== "practice" || feedback !== "correct") return false;
-    round++;
-    feedback = "idle";
-    if (round === PLACEMENT_CHALLENGES.length) phase = "complete";
+  /** Moves on once every placement in this round is found. */
+  function advance() {
+    if (!roundDone) return false;
+    phase = phase === "explore" ? "box" : "complete";
     save();
     return true;
   }
@@ -138,35 +86,25 @@ export function createPlacementWorkshopState(
     get phase() {
       return phase;
     },
-    get round() {
-      return round;
-    },
     get explored() {
       return explored;
     },
-    get feedback() {
-      return feedback;
+    get boxFound() {
+      return boxFound;
     },
-    get builtCount() {
-      return round + (feedback === "correct" ? 1 : 0);
+    get found() {
+      return found;
     },
-    get challenge() {
-      return challenge;
+    get roundDone() {
+      return roundDone;
     },
     get canFinish() {
-      return round === PLACEMENT_CHALLENGES.length;
+      return phase === "complete";
     },
     discover,
+    advance,
     rememberPlacement,
     examplePair,
-    explore,
-    practice,
-    check,
-    edited,
-    evaluatePlacement,
-    scheduleAutoAdvance,
-    cancelAutoAdvance,
-    next,
   };
 }
 
