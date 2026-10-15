@@ -137,6 +137,7 @@
       await waitReady(key);
       if (!scene) throw new Error("Performer capture scene is not mounted");
       scene.pauseAutoLoop();
+      await scene.settleCapturePose();
       const frames = [];
       for (let frame = 0; frame < 480; frame += 1) {
         frames.push(await scene.sampleFrame(frame));

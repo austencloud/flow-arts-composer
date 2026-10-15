@@ -47,6 +47,18 @@
     return productionRigReady(scene, id);
   }
 
+  export async function settleCapturePose(): Promise<void> {
+    performer.seekScore(0);
+    await tick();
+    const frameMs = 1000 / 30;
+    for (let step = 1; step <= 12; step += 1) {
+      scheduler.run(captureClockOriginMs + step * frameMs);
+      resetFrameInvalidation();
+      await tick();
+    }
+    captureClockOriginMs += 12 * frameMs;
+  }
+
   export async function sampleFrame(
     frame: number
   ): Promise<ReturnType<typeof captureNativeFrame>> {
