@@ -32,3 +32,18 @@
 - Uncertainty: `learn_place_1_8_name` says “Sequences & Reversals”; no glossary entry establishes whether this title specifically means hand-path, prop-spin, or full-time reversal. Used the general 시퀀스와 방향 전환 rather than restricting it to prop spin.
 - Uncertainty: the glossary does not establish Korean terms for bridge letter, Tap Route, negative space (네거티브 스페이스), tracing coverage, or mandala. The choices above are provisional and have not had native review.
 - Delivery: committed only in the assigned `codex/i18n-ko` worktree for coordinator integration. No primary checkout access, push, merge, installation, dev server, full build, broad check, or catalog-validator rewrite was performed.
+
+## R3 (2026-10-14)
+
+- Scope: 1,119 new catalog keys translated; 0 retranslation entries; 0 review entries. All assigned keys are present. Proper names, notation, formats, and placeholder-only labels legitimately remain identical where appropriate.
+- Initial apply: `messages/ko.json: inserted 1119, replaced 0, refused 0`.
+- Final apply after wording and accessibility review: `messages/ko.json: inserted 0, replaced 1119, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 7.07s. Exit 0.
+- Focused audit: exactly 1,119 additions; no existing catalog values changed or removed; exact placeholder names and multiplicities; exact markup tags; all output values single-line. Before appending this ledger, `git diff --stat` showed only `messages/ko.json`, 1,120 insertions and 1 deletion (net +1,119). `git diff --check` passed.
+- Glossary: sentences use 해요체; short labels use noun phrases. Grid = 그리드; Box = 박스; Diamond = 다이아몬드; placement = 위치; sequence = 시퀀스; pictograph = 픽토그램; step = 단계; beat = 비트; turn = 회전; prop = 프롭. Counters follow numbers: {count}개, {count}장, {count}명, {count}회. LOOP transforms use 미러, 회전, 교체, 반전, 2등분/4등분. Static and Shift retain category names. Product names, FPS, TnD, and notation stay English.
+- Placement names remain English under the explicit batch brief, overriding the glossary's optional Korean transliterations. The combined Alpha, beta, gamma label preserves source case. Smart Collection = 스마트 컬렉션; composition = 작품; formation = 대형; tunnel = 터널; mandala = 만다라. Match-all and match-any conditions remain distinct as 모두 일치 and 하나라도 일치.
+- Context review: `viewer_final_to` is an arrow's accessibility label between start/end placement glyphs in PlacementGlyph.svelte, translated 종료 위치로. The Effort section in TunnelMotionSettings.svelte explicitly describes within-beat acceleration/deceleration; 강약 is used for its short label. ProfileHeroSection.svelte describes Catdog as one identity made from two props; retained Catdog rather than inventing an established Korean term.
+- Uncertainty: the glossary supplies no Korean equivalent for Catdog; its established Korean community usage could not be established. Catdog remains English.
+- Uncertainty: Effort (강약), formation (대형), tunnel (터널), and named palette display labels are provisional Korean wording without native review. Palette labels are translated as display text; no effect identifiers or data were changed.
+- Delivery: committed only in the assigned codex/i18n-ko worktree for coordinator integration. No primary checkout access, other worktree access, push, merge, installation, dev server, full build, broad check, or catalog-validator rewrite was performed.
