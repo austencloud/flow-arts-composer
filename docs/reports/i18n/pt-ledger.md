@@ -102,3 +102,18 @@
 - Uncertain: driving style / carrier path have no glossary entries; rendered estilo de condução / trajetória de suporte. Cat-eye is olho de gato and triquetra is triquetra. Native terminology review remains needed.
 - Uncertain: turn in the source phrase negative space or a turn is not defined more precisely; rendered giro without assuming which body part turns. Thumb switch is troca de polegar; the glossary does not specify a Portuguese technical term.
 - No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
+
+## P2 — 2026-10-14
+
+- Batch: `batch-P2.json`; 401 translated entries, 0 retranslation entries, 0 review entries. Protected Static labels retain identical source values where appropriate.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-P2.json`.
+- Apply result: `messages/pt.json: inserted 401, replaced 0, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 401 insertions, 0 deletions (net +401 lines).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Focused inspection: all 401 batch keys are present and match the applied catalog; exactly 401 catalog additions belong to this batch, and no existing values changed. Placeholder names and occurrence counts and all markup tags/attributes match the source. No multiline values or Unicode replacement characters. `git diff --check` passed. The ai-bust mechanical pass at HIGH severity returned `[]`; manual review preserved teaching points, step order, and emphasized terms.
+- Glossary choices: Brazilian Portuguese with você and infinitive action labels; posição, trajetória da mão, volta, sentido de rotação, ponto central, posição cêntrica, bastão, props and timing. Orientations use full para dentro / para fora throughout, including arrow progressions. Motion categories, placement names, protected product names, VTG labels and notation remain English. Shift/Dash are kept singular as category labels even when the English heading pluralizes them. Prospin, Antispin, Isolation and Extension remain English; linear extension is Extension linear. Opening/closing is abertura/fechamento; high/low slots are espaços superior/inferior. Thumb switch uses troca de polegar, consistent with P1. Same/Opp dots are described as pontos de mesma direção / de direções opostas; code parameters s, o, op and cl are preserved.
+- Uncertain: leading/following has no Portuguese glossary entry; rendered mão que vai à frente / mão que segue. Native terminology review remains needed.
+- Uncertain: high/low slots and opening/closing have no glossary entries; superior/inferior and abertura/fechamento describe their source meaning without establishing an officially reviewed Portuguese technical term.
+- Uncertain: turn in negative space or a turn does not specify a body part. Rendered giro, consistent with P1, without assuming which body part turns. Where the source explicitly says body turns, rendered voltas do corpo.
+- No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
