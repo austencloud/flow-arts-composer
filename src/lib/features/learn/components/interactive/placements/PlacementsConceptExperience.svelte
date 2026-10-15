@@ -11,7 +11,6 @@
   import GridModeToggle from "#lib/features/create/construct/shared/components/GridModeToggle.svelte";
   import "#lib/shared/selection/selection.css";
   import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
-  import { getPlacementGridPoints } from "#lib/shared/pictograph/grid/services/placement-grid-points.js";
   import LessonBoardSlot from "../live-board/LessonBoardSlot.svelte";
   import {
     GridMode,
@@ -35,15 +34,11 @@
   } from "./placement-experience-state.svelte";
   import PlacementSlots, { type PlacementSlot } from "./PlacementSlots.svelte";
   import {
-    PLACEMENT_CHALLENGES,
     PLACEMENT_KINDS,
     PLACEMENT_LETTERS,
     placementKindFor,
     placementExample,
-    placementPreview,
     placementPairPreview,
-    placementCorrection,
-    placementCorrectionPair,
     transformPlacement,
     changePlacementGrid,
   } from "./hand-placement-lesson";
@@ -68,11 +63,7 @@
   let boardElement: HTMLDivElement;
   let forwardButton = $state<HTMLButtonElement | null>(null);
   let gridMode = $state<GridMode>(
-    workshop.challenge && workshop.phase === "practice"
-      ? workshop.challenge.gridMode
-      : workshop.canFinish
-        ? GridMode.BOX
-        : GridMode.DIAMOND
+    workshop.phase === "explore" ? GridMode.DIAMOND : GridMode.BOX
   );
   let preset = $state<{
     left: GridLocation | null;
@@ -105,9 +96,10 @@
   /** The placement just built, which its slot answers. */
   let lit = $state<PlacementType | null>(null);
   let builds = $state(0);
-  // While exploring, a built placement holds for a beat and then the hands
+  // In each round a built placement holds for a beat and then the hands
   // leave the board, so each placement is built fresh rather than dragged
-  // from the last one (Austen, 2026-10-14).
+  // from the last one. Once all three are found the next round starts by
+  // itself, with no Next button (Austen, 2026-10-14).
   let clearTimer: ReturnType<typeof setTimeout> | undefined;
   function cancelClear() {
     clearTimeout(clearTimer);
@@ -118,60 +110,18 @@
     const builtEpoch = epoch;
     clearTimer = setTimeout(() => {
       clearTimer = undefined;
-      if (workshop.phase === "explore" && epoch === builtEpoch)
-        replacePair(null, null);
+      if (workshop.canFinish || epoch !== builtEpoch) return;
+      replacePair(null, null);
+      if (workshop.roundDone) void nextRound();
     }, PLACEMENT_SUCCESS_HOLD_MS);
   }
   onDestroy(cancelClear);
   let boardWidth = $state(300);
   let boardHeight = $state(320);
   let experienceElement: HTMLDivElement;
-  const correct = $derived(workshop.feedback === "correct");
-  let pageVisible = $state(true);
-  $effect(() => {
-    const updateVisibility = () => {
-      pageVisible = !document.hidden;
-    };
-    updateVisibility();
-    document.addEventListener("visibilitychange", updateVisibility);
-    return () =>
-      document.removeEventListener("visibilitychange", updateVisibility);
-  });
-  $effect(() => {
-    // Keep the successful pictograph readable before reusing the existing Next
-    // transition. Editing, leaving, or hiding the page cancels this round's wait.
-    [workshop.round, workshop.phase];
-    if (!correct || !pageVisible || readingOpen) return;
-    return workshop.scheduleAutoAdvance(() => void next());
-  });
-  const incorrect = $derived(workshop.feedback === "incorrect");
-  const correctionPreview = $derived(
-    incorrect && workshop.challenge && placement.leftLocation
-      ? placementPreview(
-          workshop.challenge.kind,
-          gridMode,
-          placement.leftLocation
-        )
-      : null
-  );
   const built = $derived(
     placementKindFor(placement.leftLocation, placement.rightLocation)
   );
-  // After a wrong try the board marks where the right hand belongs.
-  const correctionTarget = $derived.by(() => {
-    if (!correctionPreview || !workshop.challenge || !placement.leftLocation)
-      return null;
-    const { right } = placementCorrectionPair(
-      placement.leftLocation,
-      workshop.challenge.kind,
-      gridMode
-    );
-    return (
-      getPlacementGridPoints(gridMode).find(
-        (point) => point.location === right
-      ) ?? null
-    );
-  });
   const stageMotion = createLayoutMotion({
     getRoot: () => experienceElement,
     groups: [
@@ -194,28 +144,18 @@
   onDestroy(() => stageMotion.cancel());
 
   const instruction = $derived(
-    correct ||
-      (workshop.phase === "explore" &&
-        placement.complete &&
-        placement.activeHand === null)
+    !workshop.canFinish && placement.complete && placement.activeHand === null
       ? ""
-      : incorrect
-        ? t("learn_ui_try_again")
-        : placement.activeHand === HandSide.LEFT
-          ? t("learn_ui_tap_left_hand")
-          : placement.activeHand === HandSide.RIGHT
-            ? t("learn_ui_place_right_hand")
-            : t("learn_ui_drag_or_tap_hand")
+      : placement.activeHand === HandSide.LEFT
+        ? t("learn_ui_tap_left_hand")
+        : placement.activeHand === HandSide.RIGHT
+          ? t("learn_ui_place_right_hand")
+          : t("learn_ui_drag_or_tap_hand")
   );
 
-  const exploring = $derived(workshop.phase === "explore");
   // The board comes first. Grid modes, transforms and the worked examples
-  // only appear once all six practice placements are built.
+  // only appear once all three are found on both grids.
   const freePlay = $derived(workshop.canFinish);
-  const allFound = $derived(
-    PLACEMENT_KINDS.every((kind) => workshop.explored.includes(kind))
-  );
-  const practicing = $derived(!exploring && !workshop.canFinish);
 
   function placementBrief(kind: PlacementType) {
     return tDynamic(`guide_topic_placements_${kind}_brief`);
@@ -250,39 +190,19 @@
       ),
     }))
   );
-  // Exploring, a slot fills with the learner's own pair once found. Guided
-  // practice and free play show each placement's example; the slot asked for
-  // is marked, and after a wrong try it shows the fix.
+  // A slot fills with the learner's own pair, on this round's grid, once
+  // found. Free play shows all three and loads each onto the board.
   const slots = $derived<PlacementSlot[]>(
     examples.map(({ kind, pair, data }) => {
-      const found = workshop.explored.includes(kind);
-      const target = practicing && workshop.challenge?.kind === kind;
-      const fixing = target && correctionPreview !== null;
-      const showExample =
-        freePlay || (practicing && Boolean(workshop.challenge?.guided));
+      const found = workshop.found.includes(kind);
       return {
         kind,
-        pictureKey: fixing
-          ? `fix:${placement.leftLocation}`
-          : `${gridMode}:${pair.left}:${pair.right}`,
-        picture: fixing
-          ? correctionPreview
-          : (exploring ? found : showExample)
-            ? data
-            : null,
-        caption: fixing
-          ? placementCorrection(
-              placement.leftLocation!,
-              placement.rightLocation!,
-              kind,
-              gridMode
-            )
-          : (exploring ? found : showExample || (target && correct))
-            ? placementBrief(kind)
-            : null,
-        checked: exploring ? found : target && correct,
-        target,
-        correction: fixing,
+        pictureKey: `${gridMode}:${pair.left}:${pair.right}`,
+        picture: found ? data : null,
+        caption: found ? placementBrief(kind) : null,
+        checked: !freePlay && found,
+        target: false,
+        correction: false,
         selected:
           freePlay &&
           placement.leftLocation === pair.left &&
@@ -290,16 +210,12 @@
       };
     })
   );
-  const title = $derived(
-    exploring
-      ? t("learn_ui_hand_placements")
-      : workshop.canFinish
-        ? t("learn_ui_all_six_built")
-        : correct
-          ? `${PLACEMENT_TYPE_INFO[workshop.challenge!.kind].label} ✓`
-          : t("learn_ui_build_placement", {
-              placement: PLACEMENT_TYPE_INFO[workshop.challenge!.kind].label,
-            })
+  const lead = $derived(
+    workshop.phase === "explore"
+      ? t("learn_ui_place_both_hands_name")
+      : workshop.phase === "box"
+        ? t("learn_ui_find_three_box_grid")
+        : t("learn_ui_keep_exploring_instruction")
   );
 
   function changed(change: PropPlacementChange) {
@@ -314,32 +230,14 @@
         change.rightLocation,
         gridMode
       );
-    workshop.evaluatePlacement(change);
-    if (incorrect && change.complete && change.activeHand === null) {
-      const retryEpoch = epoch;
-      const retryRound = workshop.round;
-      void tick().then(() => {
-        if (
-          workshop.phase === "practice" &&
-          incorrect &&
-          epoch === retryEpoch &&
-          workshop.round === retryRound &&
-          placement.activeHand === null &&
-          placement.leftLocation === change.leftLocation &&
-          placement.rightLocation === change.rightLocation
-        )
-          grid?.moveProp(HandSide.RIGHT);
-      });
-    }
     if (!moved) return;
     const kind = placementKindFor(change.leftLocation, change.rightLocation);
     const settled = change.complete && change.activeHand === null;
-    if (exploring && kind) workshop.discover(kind);
-    if (settled && kind && (exploring || correct)) {
-      lit = kind;
-      builds++;
-    }
-    if (exploring && settled) scheduleClear();
+    if (freePlay || !kind || !settled) return;
+    workshop.discover(kind);
+    lit = kind;
+    builds++;
+    scheduleClear();
   }
 
   function loadPair(left: GridLocation | null, right: GridLocation | null) {
@@ -353,7 +251,6 @@
       canUndo: false,
     };
     epoch++;
-    workshop.edited();
   }
 
   function replacePair(left: GridLocation | null, right: GridLocation | null) {
@@ -402,24 +299,13 @@
     loadPair(pair.left, pair.right);
   }
 
-  async function practice() {
-    workshop.practice();
-    gridMode = workshop.challenge!.gridMode;
+  /** Diamond done: the board turns into the box grid. Box done: free play. */
+  async function nextRound() {
+    if (!workshop.advance()) return;
     replacedPairs = [];
-    loadPair(null, null);
-    await tick();
-    boardElement.focus({ preventScroll: true });
-  }
-
-  function explore() {
-    workshop.explore();
-  }
-
-  async function next() {
-    if (!workshop.next()) return;
-    if (workshop.challenge) {
-      gridMode = workshop.challenge.gridMode;
-      replacedPairs = [];
+    lit = null;
+    if (workshop.phase === "box") {
+      gridMode = GridMode.BOX;
       loadPair(null, null);
     }
     await tick();
@@ -432,25 +318,19 @@
   }
 
   export function handleBack() {
-    if (!exploring) explore();
-    else onBack?.();
+    onBack?.();
   }
 </script>
 
-<div class="placements-experience" class:correct bind:this={experienceElement}>
+<div class="placements-experience" bind:this={experienceElement}>
   <LessonStageFrame artifactLayout="workshop">
     {#snippet heading()}
       <div data-placement-stage="heading" aria-live="polite" aria-atomic="true">
-        <LessonStageHeading key={title} {title}>
-          <p>
-            {exploring
-              ? t("learn_ui_place_both_hands_instruction")
-              : workshop.canFinish
-                ? t("learn_ui_keep_exploring_instruction")
-                : gridMode === GridMode.DIAMOND
-                  ? t("learn_ui_diamond_grid")
-                  : t("learn_ui_box_grid")}
-          </p>
+        <LessonStageHeading
+          key={workshop.phase}
+          title={t("learn_ui_hand_placements")}
+        >
+          <p>{lead}</p>
         </LessonStageHeading>
       </div>
     {/snippet}
@@ -461,9 +341,7 @@
         class:free-play={freePlay}
         data-placement-layout="workshop"
       >
-        <div class="current-task" class:incorrect aria-live="polite">
-          {#if incorrect}<i class="fa-solid fa-circle-xmark" aria-hidden="true"
-            ></i>{/if}
+        <div class="current-task" aria-live="polite">
           <Crossfade key={instruction}>{instruction}</Crossfade>
         </div>
 
@@ -513,17 +391,6 @@
                   look="pictograph"
                 />
               {/snippet}
-              {#snippet figureLayer()}
-                {#if correctionTarget}
-                  <svg class="correction-target" viewBox="0 0 950 950">
-                    <circle
-                      cx={correctionTarget.x}
-                      cy={correctionTarget.y}
-                      r="58"
-                    />
-                  </svg>
-                {/if}
-              {/snippet}
             </PropPlacementGrid>
             <span class="sr-only" aria-live="polite"
               >{built ? PLACEMENT_TYPE_INFO[built].label : ""}</span
@@ -539,15 +406,6 @@
             />
           </div>
         </div>
-
-        {#if practicing}
-          <progress
-            class="practice-progress"
-            aria-label={t("learn_ui_placements_built")}
-            max={PLACEMENT_CHALLENGES.length}
-            value={workshop.builtCount}
-          ></progress>
-        {/if}
 
         <div
           class="hand-controls"
@@ -596,34 +454,14 @@
         class="lesson-navigation"
         aria-label={t("learn_ui_lesson_navigation")}
       >
-        {#if practicing}
+        {#if freePlay}
           <LessonStageControls
-            label={workshop.round === PLACEMENT_CHALLENGES.length - 1
-              ? t("learn_ui_finish_practice")
-              : t("learn_ui_next_placement")}
-            currentStep={workshop.round + 1}
-            totalSteps={PLACEMENT_CHALLENGES.length}
+            label={t("learn_ui_continue_hand_motions")}
+            currentStep={1}
+            totalSteps={1}
             showProgress={false}
-            actionDisabled={!correct}
             bind:actionRef={forwardButton}
-            onAction={next}
-          />
-        {:else}
-          <LessonStageControls
-            label={workshop.canFinish
-              ? t("learn_ui_continue_hand_motions")
-              : workshop.round > 0
-                ? t("learn_ui_resume_practice")
-                : t("learn_ui_next_practice")}
-            currentStep={Math.min(
-              workshop.round + 1,
-              PLACEMENT_CHALLENGES.length
-            )}
-            totalSteps={PLACEMENT_CHALLENGES.length}
-            showProgress={false}
-            actionDisabled={exploring && !allFound}
-            bind:actionRef={forwardButton}
-            onAction={workshop.canFinish ? finish : practice}
+            onAction={finish}
           />
         {/if}
       </nav>
@@ -669,9 +507,6 @@
     font-weight: 500;
     color: var(--theme-text-dim);
   }
-  .current-task.incorrect {
-    color: var(--semantic-error);
-  }
   .stage-row {
     display: grid;
     grid-template-columns: var(--placement-board-size) var(
@@ -689,31 +524,6 @@
   }
   .placement-slots {
     min-width: 0;
-  }
-  .correction-target {
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-  }
-  .correction-target circle {
-    fill: none;
-    stroke: var(--semantic-error);
-    stroke-width: 8;
-    stroke-dasharray: 22 14;
-    animation: target-turn 6s linear infinite;
-    transform-box: fill-box;
-    transform-origin: center;
-  }
-  @keyframes target-turn {
-    to {
-      transform: rotate(1turn);
-    }
-  }
-  .practice-progress {
-    display: block;
-    width: 8rem;
-    height: 0.375rem;
-    accent-color: var(--theme-accent);
   }
   .lesson-navigation {
     display: flex;
@@ -747,9 +557,6 @@
     line-height: 1.5;
     max-width: 38ch;
     color: var(--theme-text-dim);
-  }
-  .correct [data-placement-stage="heading"] :global(h1) {
-    color: var(--semantic-success);
   }
   .sr-only {
     position: absolute;

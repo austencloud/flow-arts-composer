@@ -1,5 +1,7 @@
 # Hand Positions copy review
 
+**Repository status (2026-10-14):** This approval record retains its historical title and September 5 text. The current lesson is Hand Placements (`hand-placements`), owned by `src/lib/features/learn/components/interactive/placements/PlacementsConceptExperience.svelte`. Current topic prose is `src/lib/shared/guide-topics/placements-topic.ts`, with the Guide content adapter at `src/routes/(public)/guide/level-1/_data/content/hand-placements.content.ts`. The former `hand-positions.content.ts` reference below is historical. Current practice progression uses `PLACEMENT_SUCCESS_HOLD_MS = 1200` in `placement-experience-state.svelte.ts`; earlier explicit-Next observations do not override that behavior.
+
 State: APPROVED for the September 5 clarity revision below. The earlier domain definitions remain verbatim Guide text.
 
 ## Later September 5 correction request

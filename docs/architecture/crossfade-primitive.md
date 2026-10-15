@@ -122,7 +122,7 @@ delayed-in stagger) is preserved via the `delay` prop.
 Rule + memory, deliberately NOT an automated lint/grep. A regex cannot reliably
 distinguish a true two-sibling crossfade from a single enter/exit fade without
 heavy false positives, and a noisy gate is worse than none (cross-ref
-`component-test-discipline.md`). The signal is carried by:
+[component-test-discipline.md](../../.claude/rules/component-test-discipline.md)). The signal is carried by:
 `.claude/rules/crossfade-primitive.md`, the package's `Crossfade.svelte` header
 doc, and memory `feedback_crossfade_no_layout_shift`.
 

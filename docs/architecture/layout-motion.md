@@ -1,5 +1,7 @@
 # Layout motion
 
+**Repository status (2026-10-14):** App-facing motion primitives come from `src/lib/shared/transitions/motion.ts`, which re-exports `@austencloud/motion`.
+
 Layout motion is an interaction contract, not decoration. It connects two
 states so the eye can follow what moved, appeared, disappeared, or changed
 size. Flow Arts Composer prevents meaningless movement and animates meaningful movement.
@@ -97,7 +99,7 @@ For every structural change:
 - trigger it again before the first transition finishes;
 - verify `prefers-reduced-motion: reduce`;
 - check the required responsive viewports from
-  `visual-verification-mandatory.md` and confirm that controls do not resize
+  [visual-verification-mandatory.md](../../.claude/rules/visual-verification-mandatory.md) and confirm that controls do not resize
   their neighbours while labels/icons swap;
 - check for console errors.
 

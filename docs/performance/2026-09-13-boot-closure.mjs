@@ -1,6 +1,6 @@
 /**
  * Static boot closure from a client build's Vite manifest. Companion to
- * `docs/performance/2026-09-13-startup-boot-graph.md`.
+ * `docs/archive/swarm-2026-10-14/performance/2026-09-13-startup-boot-graph.md`.
  *
  *   npm run build:fast
  *   node docs/performance/2026-09-13-boot-closure.mjs

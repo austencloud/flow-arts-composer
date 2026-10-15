@@ -7,7 +7,7 @@ Choreo-card iconography — faithful to the original guide's intent and layout, 
 a real facelift. Slow, one page at a time, each verified against the old artboard
 before moving on.
 
-**Endgame decided 2026-07-07** (ADR `docs/architecture/guide-single-source.md`):
+**Endgame decided 2026-07-07** (ADR `docs/archive/swarm-2026-10-14/architecture/guide-single-source.md`):
 these faithful `_pages/*` are THE guide — print AND online. The animated
 `_sections/ch*` web version is legacy, retired only once this rebuild reaches
 parity (do NOT delete it before then — it's the live web guide). Online

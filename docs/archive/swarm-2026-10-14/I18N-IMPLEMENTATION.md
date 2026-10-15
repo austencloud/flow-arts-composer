@@ -217,7 +217,7 @@ export const rtlLocales: ReadonlyArray<Locale> = ["ar", "he", "ur"] as const;
 
 The `<html dir="rtl">` attribute is automatically applied.
 
-**CSS:** Use logical properties (`margin-inline-end` not `margin-right`). See [RTL Migration Guide](./RTL-MIGRATION.md).
+**CSS:** Use logical properties (`margin-inline-end` not `margin-right`). See [RTL Migration Guide](../../RTL-MIGRATION.md).
 
 ---
 
@@ -297,5 +297,5 @@ npm run i18n:coverage      # Check adoption rate
 
 ## Related Documentation
 
-- [RTL Migration Guide](./RTL-MIGRATION.md) - CSS for right-to-left languages
-- [ADR 001](./adr/001-json-based-i18n.md) - Why JSON over Paraglide
+- [RTL Migration Guide](../../RTL-MIGRATION.md) - CSS for right-to-left languages
+- [ADR 001](../../adr/001-json-based-i18n.md) - Why JSON over Paraglide

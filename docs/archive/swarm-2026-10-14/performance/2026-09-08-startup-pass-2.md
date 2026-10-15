@@ -37,7 +37,7 @@ machine, not field percentiles or mobile hardware benchmarks. HTTP/browser proce
 warmth and server startup affect timing; do not combine different viewports into
 one speedup figure.
 
-The same [observation script](2026-09-08-startup-observer.js) runs before application
+The same [observation script](../../../performance/2026-09-08-startup-observer.js) runs before application
 scripts for before and after. It observes SVG presence, ancestor visibility and
 hit testing. This is a useful readiness proxy, not an actual painted-frame
 guarantee. Its own layout reads add overhead. Script resource totals use requests
@@ -121,4 +121,4 @@ of complete speed optimization is made here.
   request failed to determine clientAddress during server restart; application
   rendering continued.
 
-Numeric evidence: [second-pass report](2026-09-08-startup-pass-2-evidence.json).
+Numeric evidence: [second-pass report](../../../performance/2026-09-08-startup-pass-2-evidence.json).

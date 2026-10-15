@@ -22,7 +22,7 @@ last_triaged: 2026-05-04
 > `static/svg-precache-manifest.json`) and serves `/images/*` with
 > stale-while-revalidate. The body below is preserved as written for history.
 > Audited current state and remaining roadmap:
-> `docs/reference/offline-persistence-audit-2026-06-30.md`.
+> `docs/archive/swarm-2026-10-14/reference/offline-persistence-audit-2026-06-30.md`.
 
 ---
 

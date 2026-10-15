@@ -4,7 +4,7 @@
 > 2026-05-25 research pass and contains recommendations that predate the gait
 > clock, exact-step planner, terminal-transition work, authored turn clips, and
 > Stage footfall handoff. Use
-> [`docs/architecture/locomotion-research-canon.md`](../architecture/locomotion-research-canon.md)
+> [`docs/architecture/locomotion-research-canon.md`](../../../architecture/locomotion-research-canon.md)
 > for current research, ownership, adoption status, dataset licensing, rejected
 > assumptions, and verification requirements. Do not implement directly from
 > the recommendations below.

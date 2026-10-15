@@ -257,7 +257,7 @@ describe("PropPlacementGrid", () => {
     });
 
     const east = page.getByRole("button", {
-      name: "East point (left prop) (right prop)",
+      name: "East point (left prop and right prop)",
     });
     const target = east.element() as SVGCircleElement;
     const rect = target.getBoundingClientRect();

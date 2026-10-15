@@ -1,11 +1,9 @@
 # SEO Content Roadmap (2026-07-09)
 
 Keyword-mapped content strategy for tkaflowarts.com. Produced for the SEO
-overhaul (`docs/superpowers/specs/2026-07-09-seo-overhaul-design.md`, Phase 3).
+overhaul (`docs/superpowers/specs/shipped/2026-07-09-seo-overhaul-design.md`, Phase 3).
 
-Implementation note: `/notation` currently exists only as a 301 redirect to
-`/#notation` (`src/routes/(public)/notation/+page.server.ts`) — the pillar page
-below replaces that redirect.
+Implementation note (2026-10-14): `/notation` redirects with 301 to `/history`, owned by `src/routes/(public)/notation/+page.ts`. Individual `/notation/*` pages remain. The proposed pillar-page replacement below is the July strategy, not current routing.
 
 ## Business Summary
 
@@ -49,6 +47,7 @@ card-based practice exists today. That gap is the wedge for every page below.
 ## Keyword Clusters
 
 ### Cluster 1: Flow Arts Choreography (informational → commercial)
+
 - "flow arts choreography" — informational, hub
 - "how to choreograph a flow arts routine" — informational
 - "flow arts sequence ideas" — informational
@@ -56,6 +55,7 @@ card-based practice exists today. That gap is the wedge for every page below.
 - "flow arts choreography software" / "flow arts choreography app" — commercial
 
 ### Cluster 2: Flow Arts Notation (informational, low competition — own this)
+
 - "flow arts notation" — informational
 - "movement notation for staff spinning" — informational
 - "poi notation system" — informational
@@ -64,6 +64,7 @@ card-based practice exists today. That gap is the wedge for every page below.
   from Labanotation searches)
 
 ### Cluster 3: Choreography Card Games / Movement Card Decks (commercial)
+
 - "choreography card deck" — commercial
 - "movement card game" — commercial
 - "flow arts card deck" — commercial
@@ -71,6 +72,7 @@ card-based practice exists today. That gap is the wedge for every page below.
 - "dance choreography cards" (adjacent high-volume category term) — commercial
 
 ### Cluster 4: Learn Staff Spinning Choreography (informational → commercial)
+
 - "learn staff spinning" — informational
 - "staff spinning choreography for beginners" — informational
 - "staff spinning tricks in sequence" — informational
@@ -78,17 +80,19 @@ card-based practice exists today. That gap is the wedge for every page below.
 - "staff spinning practice tool" — commercial
 
 ### Cluster 5: Learn Poi Choreography (informational → commercial)
+
 - "learn poi choreography" — informational
 - "poi choreography for beginners" — informational
 - "how to sequence poi moves" — informational
 - "poi practice routine" — informational
 - "poi choreography app" — commercial
 
-Scope note (per `tka-domain.md`): TKA is built for double staves; Poi Lab is
+Scope note (per `.claude/rules/tka-domain.md`): TKA is built for double staves; Poi Lab is
 planned, not built. Poi pages must be honest — lead with staff, mention poi
 where genuinely supported, never overclaim poi tooling that doesn't exist.
 
 ### Cluster 6: Flow Arts Practice Tools / Drills (commercial)
+
 - "flow arts practice tools" — commercial
 - "flow arts drills" — informational
 - "prop spinning practice app" — commercial
@@ -96,6 +100,7 @@ where genuinely supported, never overclaim poi tooling that doesn't exist.
 - "choreography practice tool" — commercial
 
 ### Cluster 7: Flow Arts Gifts / Merch (commercial, seasonal)
+
 - "flow arts gift ideas" — commercial, seasonal
 - "gifts for poi spinners" / "gifts for staff spinners" — commercial
 - "flow arts card deck gift" — commercial
@@ -104,22 +109,28 @@ where genuinely supported, never overclaim poi tooling that doesn't exist.
 ## Topic Authority Map
 
 ### Pillar 1: Flow Arts Choreography
+
 Hub: **create `/learn/flow-arts-choreography`**
+
 - How to Choreograph a Flow Arts Routine — informational
 - Flow Arts Sequence Ideas for Beginners — informational
 - Flow Arts Choreography Software Compared — commercial
 - Links down into `/guide/level-1` chapters as the "go deeper" path
 
 ### Pillar 2: Flow Arts Notation
+
 Hub: **create `/notation`** (replaces the 301 redirect)
+
 - What Is Flow Arts Notation? — informational
 - The Kinetic Alphabet vs. Dance Notation (Labanotation comparison)
 - How to Write Down a Staff or Poi Sequence
 - Links directly into `/guide/level-1`
 
 ### Pillar 3: Choreography Card Games / Card Decks
+
 Hub: `/shop/loop-deck` (optimize) + **create `/shop/choreography-cards`**
 (category page)
+
 - What Is a Choreography Card Deck? — top-of-funnel into shop
 - Loop Deck product page — "flow arts card deck", "staff spinning cards"
 - T&D Trilogy product page — "poi practice cards"
@@ -127,40 +138,48 @@ Hub: `/shop/loop-deck` (optimize) + **create `/shop/choreography-cards`**
   aerial hoop/belly dance decks, captures that traffic
 
 ### Pillar 4: Learn Staff Spinning Choreography
+
 Hub: **create `/learn/staff-spinning-choreography`**
+
 - Staff Spinning Choreography for Beginners
 - How to Build a Staff Routine Step by Step
 - Staff Spinning Practice Tools
 - Deep link into `/guide/level-1` chapter 1
 
 ### Pillar 5: Learn Poi Choreography
+
 Hub: **create `/learn/poi-choreography`** (honestly scoped)
+
 - Poi Choreography for Beginners
 - How to Sequence Poi Moves
 - Deep link into `/guide/level-1`, poi framing
 
 ### Pillar 6: Flow Arts Practice Tools
+
 Hub: `/` landing (optimize) + possible `/practice` page later
+
 - Flow Arts Practice Tools Compared
 - Flow Arts Drills for Daily Practice
 
 ### Pillar 7: Flow Arts Gifts / Merch
+
 Hub: **create `/shop/gifts`** (seasonal, lightweight)
+
 - Flow Arts Gift Guide
 - Gifts for Poi and Staff Spinners
 - Feeds `/shop/loop-deck` and `/shop/tnd-trilogy`
 
 ## Content Gap Analysis
 
-| Gap Topic | Why It Matters | Priority |
-|-----------|---------------|----------|
-| "What is flow arts notation" definitional page | Zero competitors own the term; the site's actual unique value prop | High |
-| "Choreography card deck" category page | Adjacent decks rank for the category term; no flow arts entry exists | High |
-| "Learn staff spinning choreography" landing | High-intent beginner traffic currently only reachable via generic tutorials | High |
-| "Learn poi choreography" landing | Same gap for poi searchers; scope honestly (Poi Lab not built) | Medium |
-| Labanotation comparison piece | Borrows search volume from a much bigger category | Medium |
-| Seasonal gift guide | Cheap; converts shop traffic in gift windows | Medium |
-| Practice tools/drills content | Lower distinct volume; overlaps app landing copy | Low-Medium |
+| Gap Topic                                      | Why It Matters                                                              | Priority   |
+| ---------------------------------------------- | --------------------------------------------------------------------------- | ---------- |
+| "What is flow arts notation" definitional page | Zero competitors own the term; the site's actual unique value prop          | High       |
+| "Choreography card deck" category page         | Adjacent decks rank for the category term; no flow arts entry exists        | High       |
+| "Learn staff spinning choreography" landing    | High-intent beginner traffic currently only reachable via generic tutorials | High       |
+| "Learn poi choreography" landing               | Same gap for poi searchers; scope honestly (Poi Lab not built)              | Medium     |
+| Labanotation comparison piece                  | Borrows search volume from a much bigger category                           | Medium     |
+| Seasonal gift guide                            | Cheap; converts shop traffic in gift windows                                | Medium     |
+| Practice tools/drills content                  | Lower distinct volume; overlaps app landing copy                            | Low-Medium |
 
 ## Prioritized Roadmap: First 4 New Pages
 

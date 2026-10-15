@@ -1,5 +1,7 @@
 # TIKA Improvement Architecture
 
+**Repository status (2026-10-14):** This January architecture remains a proposal for new files and workflow phases. Existing runtime model choices are owned by `src/lib/features/tika/domain/tika-model-catalog.ts` and include Haiku, Sonnet and DeepSeek; the Haiku-only table and token costs below are historical assumptions. Root scripts include `tika:evaluate` and `tika:opus`; curation/analysis commands are not implemented in `package.json`.
+
 **Date:** January 2026
 **Status:** Draft for Review
 
@@ -19,10 +21,10 @@ Transform TIKA from a "Haiku with tools" into a **domain-specialized teaching as
 
 ### The Opus-Haiku Partnership
 
-| Model | Role | When |
-|-------|------|------|
-| **Haiku** | Production runtime | Every user question |
-| **Opus** | Curriculum designer, example generator, reviewer | Development/QA cycle |
+| Model     | Role                                             | When                 |
+| --------- | ------------------------------------------------ | -------------------- |
+| **Haiku** | Production runtime                               | Every user question  |
+| **Opus**  | Curriculum designer, example generator, reviewer | Development/QA cycle |
 
 Haiku is cheap and fast. Opus is the "wise teacher" who trains Haiku through carefully curated examples and periodic quality audits.
 
@@ -32,10 +34,10 @@ Haiku is cheap and fast. Opus is the "wise teacher" who trains Haiku through car
 
 ### 2.1 Example Library
 
-The most impactful improvement. Few-shot examples show Haiku *how to behave*, not just what to know.
+The most impactful improvement. Few-shot examples show Haiku _how to behave_, not just what to know.
 
 ```
-src/lib/features/learn/tika/
+src/lib/features/tika/
 ├── examples/
 │   ├── index.ts              # Example selector logic
 │   ├── beginner-curious.ts   # Warm, encouraging, analogy-heavy
@@ -49,7 +51,7 @@ src/lib/features/learn/tika/
 Modular prompt assembly that's token-conscious.
 
 ```
-src/lib/features/learn/tika/prompts/
+src/lib/features/tika/prompts/
 ├── core-persona.ts           # ~200 tokens, always loaded
 ├── level-constraints.ts      # Dynamic based on user level
 ├── tool-guidance.ts          # When/how to call tools
@@ -92,22 +94,22 @@ scripts/tika/
 ```typescript
 interface TikaExample {
   id: string;
-  persona: 'beginner' | 'power-user' | 'skeptic' | 'academic';
+  persona: "beginner" | "power-user" | "skeptic" | "academic";
   userLevel: 1 | 2 | 3 | 4;
-  category: 'letter' | 'term' | 'comparison' | 'concept' | 'misconception';
+  category: "letter" | "term" | "comparison" | "concept" | "misconception";
 
   // The interaction
   userQuestion: string;
   idealResponse: string;
 
   // Metadata
-  toolsUsed: string[];           // Which tools Haiku should call
-  keyPoints: string[];           // Critical elements the response must include
-  antiPatterns?: string[];       // What to explicitly avoid
+  toolsUsed: string[]; // Which tools Haiku should call
+  keyPoints: string[]; // Critical elements the response must include
+  antiPatterns?: string[]; // What to explicitly avoid
 
   // Quality tracking
-  source: 'opus-generated' | 'opus-rewrite' | 'human-curated';
-  score?: number;                // Opus grading score (1-10)
+  source: "opus-generated" | "opus-rewrite" | "human-curated";
+  score?: number; // Opus grading score (1-10)
   createdAt: Date;
 }
 ```
@@ -124,10 +126,10 @@ interface TikaScenario {
   question: string;
 
   // Grading criteria
-  mustInclude: string[];         // Required concepts/terms
-  mustNotInclude: string[];      // Level violations to catch
-  expectedTools: string[];       // Tools that should be called
-  expectedTone: string;          // e.g., "encouraging", "technical"
+  mustInclude: string[]; // Required concepts/terms
+  mustNotInclude: string[]; // Level violations to catch
+  expectedTools: string[]; // Tools that should be called
+  expectedTone: string; // e.g., "encouraging", "technical"
 
   // Optional: Known-good answer for comparison
   referenceAnswer?: string;
@@ -145,19 +147,19 @@ interface EvaluationResult {
 
   // Grades (1-10)
   grades: {
-    domainAccuracy: number;      // TKA correctness
+    domainAccuracy: number; // TKA correctness
     levelAppropriateness: number; // No forbidden terms
-    personaMatch: number;        // Tone/style fit
-    conciseness: number;         // Not over-explaining
-    toolUsage: number;           // Called appropriate tools
+    personaMatch: number; // Tone/style fit
+    conciseness: number; // Not over-explaining
+    toolUsage: number; // Called appropriate tools
   };
 
   overallScore: number;
-  opusNotes: string;             // Detailed feedback
+  opusNotes: string; // Detailed feedback
 
   // Action items
-  recommendation: 'promote' | 'rewrite' | 'investigate' | 'acceptable';
-  suggestedRewrite?: string;     // Opus's improved version
+  recommendation: "promote" | "rewrite" | "investigate" | "acceptable";
+  suggestedRewrite?: string; // Opus's improved version
 }
 ```
 
@@ -166,21 +168,21 @@ interface EvaluationResult {
 ```typescript
 interface PromptConfig {
   // Core persona (always included)
-  corePersonaTokens: number;     // Target ~200
+  corePersonaTokens: number; // Target ~200
 
   // Dynamic sections
-  levelConstraints: boolean;     // Include level-specific limits
-  toolGuidance: boolean;         // Include tool calling hints
+  levelConstraints: boolean; // Include level-specific limits
+  toolGuidance: boolean; // Include tool calling hints
 
   // Examples
-  fewShotCount: 2 | 3 | 4;       // Number of examples to include
+  fewShotCount: 2 | 3 | 4; // Number of examples to include
   exampleSelectionStrategy:
-    | 'random'                   // Random from matching persona/level
-    | 'similarity'               // Closest to current question
-    | 'diverse';                 // Cover different categories
+    | "random" // Random from matching persona/level
+    | "similarity" // Closest to current question
+    | "diverse"; // Cover different categories
 
   // Negative examples
-  includeAntiPatterns: boolean;  // "Don't do this" examples
+  includeAntiPatterns: boolean; // "Don't do this" examples
   antiPatternCount: 0 | 1 | 2;
 }
 ```
@@ -190,7 +192,7 @@ interface PromptConfig {
 ## 4. File Structure
 
 ```
-src/lib/features/learn/tika/
+src/lib/features/tika/
 ├── components/                  # (existing UI)
 ├── types.ts                     # (existing types)
 │
@@ -296,7 +298,7 @@ mcp-server/data/                 # (existing)
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  Opus grades each Haiku response:                           │
-│  npm run tika:opus-review                                   │
+│  npm run tika:opus                                   │
 │                                                             │
 │  For each response:                                         │
 │  ├─ Grade on 5 dimensions (accuracy, level, tone, etc.)     │
@@ -309,7 +311,7 @@ mcp-server/data/                 # (existing)
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  Process recommendations:                                   │
-│  npm run tika:curate                                        │
+│  PROPOSED: curation (no root script)                                        │
 │                                                             │
 │  ├─ "promote": Add Haiku response to example library        │
 │  ├─ "rewrite": Add Opus version to example library          │
@@ -321,7 +323,7 @@ mcp-server/data/                 # (existing)
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  Identify patterns:                                         │
-│  npm run tika:analyze                                       │
+│  PROPOSED: analysis (no root script)                                       │
 │                                                             │
 │  ├─ Which categories score lowest?                          │
 │  ├─ Which level transitions are problematic?                │
@@ -359,34 +361,34 @@ mcp-server/data/                 # (existing)
 
 ### Current Prompt Size
 
-| Section | Tokens (approx) |
-|---------|-----------------|
-| System prompt | ~1,200 |
-| User question | ~20-100 |
-| Tool results | ~200-500 |
-| **Total Input** | ~1,500-1,800 |
+| Section         | Tokens (approx) |
+| --------------- | --------------- |
+| System prompt   | ~1,200          |
+| User question   | ~20-100         |
+| Tool results    | ~200-500        |
+| **Total Input** | ~1,500-1,800    |
 
 ### Optimized Prompt Size
 
-| Section | Tokens (approx) |
-|---------|-----------------|
-| Core persona | ~200 |
-| Level constraints | ~75 |
-| Few-shot examples (3) | ~350 |
-| Tool guidance | ~50 |
-| User question | ~20-100 |
-| Tool results | ~200-500 |
-| **Total Input** | ~900-1,300 |
+| Section               | Tokens (approx) |
+| --------------------- | --------------- |
+| Core persona          | ~200            |
+| Level constraints     | ~75             |
+| Few-shot examples (3) | ~350            |
+| Tool guidance         | ~50             |
+| User question         | ~20-100         |
+| Tool results          | ~200-500        |
+| **Total Input**       | ~900-1,300      |
 
 **Savings: ~30-40% reduction** while improving quality through examples.
 
 ### Cost Comparison (per 1000 questions)
 
-| Model | Input Tokens | Output Tokens | Cost |
-|-------|-------------|--------------|------|
-| Haiku (current) | 1.5M | 500K | ~$0.50 |
-| Haiku (optimized) | 1.0M | 500K | ~$0.35 |
-| Opus (review, 100 samples) | 200K | 50K | ~$4.50 |
+| Model                      | Input Tokens | Output Tokens | Cost   |
+| -------------------------- | ------------ | ------------- | ------ |
+| Haiku (current)            | 1.5M         | 500K          | ~$0.50 |
+| Haiku (optimized)          | 1.0M         | 500K          | ~$0.35 |
+| Opus (review, 100 samples) | 200K         | 50K           | ~$4.50 |
 
 Running Opus review on 10% of responses adds quality assurance for ~$5/1000 questions.
 
@@ -407,8 +409,8 @@ const PERSONA_PROFILES = {
       "Uses 'like...' comparisons",
       "Celebrates small understanding",
       "Proactively explains jargon",
-      "Invites follow-up questions"
-    ]
+      "Invites follow-up questions",
+    ],
   },
 
   powerUser: {
@@ -420,8 +422,8 @@ const PERSONA_PROFILES = {
       "Skips basic context",
       "Uses TKA terms naturally",
       "Compares to familiar concepts",
-      "Suggests advanced variations"
-    ]
+      "Suggests advanced variations",
+    ],
   },
 
   skeptic: {
@@ -433,8 +435,8 @@ const PERSONA_PROFILES = {
       "Acknowledges valid concerns",
       "Focuses on practical benefits",
       "Gives concrete use cases",
-      "Doesn't oversell"
-    ]
+      "Doesn't oversell",
+    ],
   },
 
   academic: {
@@ -446,9 +448,9 @@ const PERSONA_PROFILES = {
       "Uses proper terminology",
       "Explains systematic structure",
       "References underlying theory",
-      "Highlights novelty/contribution"
-    ]
-  }
+      "Highlights novelty/contribution",
+    ],
+  },
 };
 ```
 
@@ -471,18 +473,18 @@ const ANTI_PATTERNS = [
   {
     bad: "Both hands move in Type 1, which makes it unique.",
     why: "Multiple types have both hands moving (Types 1, 3, 5). The distinction is that both SHIFT.",
-    good: "Both hands shift (move to adjacent points) in Type 1."
+    good: "Both hands shift (move to adjacent points) in Type 1.",
   },
   {
     bad: "Alpha is when hands are 180 degrees apart.",
     why: "Uses implementation language instead of domain language.",
-    good: "Alpha means hands are at opposite grid points."
+    good: "Alpha means hands are at opposite grid points.",
   },
   {
     bad: "Let me explain quarter turns, which involve 90-degree rotations...",
     why: "User is at Level 1 - quarter turns are Level 3 concept.",
-    good: "That involves concepts from a more advanced level. First, let's make sure you're comfortable with [current level concept]."
-  }
+    good: "That involves concepts from a more advanced level. First, let's make sure you're comfortable with [current level concept].",
+  },
 ];
 ```
 
@@ -492,12 +494,12 @@ const ANTI_PATTERNS = [
 
 ### 8.1 With Existing System
 
-| Component | Integration |
-|-----------|-------------|
-| `system-prompts.ts` | Refactor to use modular assembler |
-| `+server.ts` (API) | Add prompt config, log for evaluation |
-| `knowledge-graph.ts` | Use for level constraint generation |
-| MCP server tools | Keep as-is, tools work well |
+| Component            | Integration                           |
+| -------------------- | ------------------------------------- |
+| `system-prompts.ts`  | Refactor to use modular assembler     |
+| `+server.ts` (API)   | Add prompt config, log for evaluation |
+| `knowledge-graph.ts` | Use for level constraint generation   |
+| MCP server tools     | Keep as-is, tools work well           |
 
 ### 8.2 With CI/CD
 
@@ -507,7 +509,7 @@ name: TIKA Quality Gate
 
 on:
   schedule:
-    - cron: '0 0 * * 0'  # Weekly
+    - cron: "0 0 * * 0" # Weekly
   workflow_dispatch:
 
 jobs:
@@ -527,6 +529,7 @@ jobs:
 ### 8.3 With Firebase (Future)
 
 Store evaluation results and examples in Firestore for:
+
 - Historical quality tracking
 - A/B testing different prompt configs
 - User feedback correlation
@@ -537,7 +540,7 @@ Store evaluation results and examples in Firestore for:
 
 ### Phase 1: Foundation (1-2 days)
 
-1. Create file structure under `src/lib/features/learn/tika/`
+1. Create file structure under `src/lib/features/tika/`
 2. Define TypeScript interfaces for examples and scenarios
 3. Build basic prompt assembler
 4. Refactor `system-prompts.ts` to use new assembler
@@ -573,14 +576,14 @@ Store evaluation results and examples in Firestore for:
 
 ## 10. Success Metrics
 
-| Metric | Current (Estimate) | Target |
-|--------|-------------------|--------|
-| Domain accuracy | 85% | 95% |
-| Level appropriateness | 70% | 95% |
-| Persona match | 60% | 85% |
-| Response latency | ~2s | <1.5s |
-| Token usage | ~1,500/req | ~1,000/req |
-| User satisfaction | Unknown | Measurable |
+| Metric                | Current (Estimate) | Target     |
+| --------------------- | ------------------ | ---------- |
+| Domain accuracy       | 85%                | 95%        |
+| Level appropriateness | 70%                | 95%        |
+| Persona match         | 60%                | 85%        |
+| Response latency      | ~2s                | <1.5s      |
+| Token usage           | ~1,500/req         | ~1,000/req |
+| User satisfaction     | Unknown            | Measurable |
 
 ### How We'll Measure
 
@@ -612,9 +615,10 @@ Store evaluation results and examples in Firestore for:
 
 ---
 
-*Document generated by Claude Opus 4.5 based on codebase analysis and 2026 best practices research.*
+_Document generated by Claude Opus 4.5 based on codebase analysis and 2026 best practices research._
 
 **Sources:**
+
 - [LLM Distillation Guide - Snorkel AI](https://snorkel.ai/blog/llm-distillation-demystified-a-complete-guide/)
 - [Few-Shot Prompting Guide](https://www.promptingguide.ai/techniques/fewshot)
 - [Distilling Step-by-Step - Google Research](https://research.google/blog/distilling-step-by-step-outperforming-larger-language-models-with-less-training-data-and-smaller-model-sizes/)

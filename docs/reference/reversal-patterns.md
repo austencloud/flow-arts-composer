@@ -2,9 +2,9 @@
 
 ## Overview
 
-TKA sequences describe two performers spinning props simultaneously: one designated **red**, the other **blue**. Each performer's prop rotates continuously in some direction. A **reversal** is when a performer's prop flips its rotation direction on a given beat — the hand keeps moving along its path, but the prop reverses.
+A TKA sequence describes one performer's two hands/props, canonically blue/left and red/right. Each prop rotates in a direction. A **reversal** is when a prop flips its rotation direction on a given beat while the hand continues along its path.
 
-A **reversal pattern** defines which performer(s) reverse on which beats. The pattern is applied cyclically: once the pattern completes, it repeats from the beginning for the duration of the sequence.
+A **reversal pattern** defines which hand(s) reverse on which beats. The pattern is applied cyclically: once the pattern completes, it repeats from the beginning for the duration of the sequence.
 
 There are 15 reversal patterns, organized into 4 families. All patterns beyond the Simple family are constructed from a single rule: take a seed pattern, swap R and B to produce its complement, then append the complement to the original. This doubles the period each time.
 
@@ -14,12 +14,12 @@ There are 15 reversal patterns, organized into 4 families. All patterns beyond t
 
 Each beat in a reversal pattern uses one of four symbols:
 
-| Symbol | Meaning |
-|--------|---------|
-| `-` | No reversal. Both performers continue their current rotation direction. |
-| `R` | Red reverses. Blue continues. |
-| `B` | Blue reverses. Red continues. |
-| `P` | Pair. Both red and blue reverse simultaneously. |
+| Symbol | Meaning                                                            |
+| ------ | ------------------------------------------------------------------ |
+| `-`    | No reversal. Both hands continue their current rotation direction. |
+| `R`    | Red reverses. Blue continues.                                      |
+| `B`    | Blue reverses. Red continues.                                      |
+| `P`    | Pair. Both red and blue reverse simultaneously.                    |
 
 A pattern like `P-P-` means: pair reversal on beat 1, nothing on beat 2, pair reversal on beat 3, nothing on beat 4, then repeat.
 
@@ -34,6 +34,7 @@ Given a pattern, its **complement** is produced by swapping every `R` with `B` a
 To build the next tier: take the current pattern, compute its complement, and append the complement to the end. This doubles the period.
 
 Example:
+
 - Seed: `RBBR`
 - Complement: `BRRB`
 - Next tier: `RBBRBRRB`
@@ -50,7 +51,7 @@ These patterns have short periods and no tiered construction.
 
 Pattern: `----` (period 1)
 
-No reversals ever. Both performers maintain their rotation direction throughout the sequence.
+No reversals ever. Both hands maintain their rotation direction throughout the sequence.
 
 ```
 Beat 1: - (no reversal)
@@ -61,7 +62,7 @@ Beat 1: - (no reversal)
 
 Pattern: `PPPP` (period 1)
 
-Both performers reverse on every single beat. The name comes from flow arts: "opening and closing the book" describes following a continuous hand path while the prop reverses direction each beat.
+Both hands reverse on every single beat. The name comes from flow arts: "opening and closing the book" describes following a continuous hand path while the prop reverses direction each beat.
 
 ```
 Beat 1: P (both reverse)
@@ -94,7 +95,7 @@ Beat 1: B (blue reverses)
 
 Pattern: `P-P-` (period 2)
 
-Both performers reverse together, but only on every other beat. Pair reversals are spaced out compared to Book.
+Both hands reverse together, but only on every other beat. Pair reversals are spaced out compared to Book.
 
 ```
 Beat 1: P (both reverse)
@@ -118,7 +119,7 @@ Beat 2: B (blue reverses)
 
 ## Solo Family (periods 8, 16, 32)
 
-Solo patterns use only `R` and `B` — no pair beats, no empty beats. Exactly one performer reverses on every beat. Each tier doubles the period using the complement rule.
+Solo patterns use only `R` and `B` — no pair beats, no empty beats. Exactly one hand reverses on every beat. Each tier doubles the period using the complement rule.
 
 ### Solo 1 (period 8)
 
@@ -137,7 +138,7 @@ Beat 7: R (red reverses)
 Beat 8: B (blue reverses)
 ```
 
-Red reverses on beats 1, 4, 6, 7. Blue reverses on beats 2, 3, 5, 8. Each performer reverses exactly 4 times per cycle.
+Red reverses on beats 1, 4, 6, 7. Blue reverses on beats 2, 3, 5, 8. Each hand reverses exactly 4 times per cycle.
 
 ### Solo 2 (period 16)
 
@@ -201,7 +202,7 @@ Beats 1-16 are Solo 2. Beats 17-32 are its complement.
 
 ## Dense Weave Family (periods 8, 16, 32)
 
-Dense Weave patterns alternate between single-hand beats (`R` or `B`) and pair beats (`P`). Every even-numbered position within the seed is a pair beat. This creates a texture where both performers sync up every other beat while trading off solo reversals in between.
+Dense Weave patterns alternate between single-hand beats (`R` or `B`) and pair beats (`P`). Every even-numbered position within the seed is a pair beat. This creates a texture where both hands sync up every other beat while trading off solo reversals in between.
 
 ### Dense Weave 1 (period 8)
 
@@ -345,17 +346,17 @@ Beat  8: P    Beat 16: P    Beat 24: P    Beat 32: P
 
 A reversal pattern works with a sequence when the pattern's period divides evenly into the sequence's beat count. If it doesn't divide evenly, the pattern would restart mid-cycle, which breaks the intended structure.
 
-| Pattern | Period | Works with beat counts |
-|---------|--------|----------------------|
-| Continuous | 1 | Any |
-| Book | 1 | Any |
-| Red Book | 1 | Any |
-| Blue Book | 1 | Any |
-| Long Book | 2 | Any even number (2, 4, 6, 8, ...) |
-| Alternating | 2 | Any even number (2, 4, 6, 8, ...) |
-| Solo 1, Dense Weave 1, Sparse Weave 1 | 8 | 8, 16, 24, 32, ... |
-| Solo 2, Dense Weave 2, Sparse Weave 2 | 16 | 16, 32, 48, 64, ... |
-| Solo 3, Dense Weave 3, Sparse Weave 3 | 32 | 32, 64, 96, 128, ... |
+| Pattern                               | Period | Works with beat counts            |
+| ------------------------------------- | ------ | --------------------------------- |
+| Continuous                            | 1      | Any                               |
+| Book                                  | 1      | Any                               |
+| Red Book                              | 1      | Any                               |
+| Blue Book                             | 1      | Any                               |
+| Long Book                             | 2      | Any even number (2, 4, 6, 8, ...) |
+| Alternating                           | 2      | Any even number (2, 4, 6, 8, ...) |
+| Solo 1, Dense Weave 1, Sparse Weave 1 | 8      | 8, 16, 24, 32, ...                |
+| Solo 2, Dense Weave 2, Sparse Weave 2 | 16     | 16, 32, 48, 64, ...               |
+| Solo 3, Dense Weave 3, Sparse Weave 3 | 32     | 32, 64, 96, 128, ...              |
 
 For deck enumeration, each deck specifies a beat count. Only patterns whose period divides that beat count are included in the deck's reversal pattern pool.
 
@@ -369,17 +370,17 @@ A reversal pattern produces a **clean LOOP boundary** (prop returns to its start
 
 All named patterns are LOOP-clean at their native period **except Sparse Weave 1** (5 reversals per hand = odd).
 
-| Pattern | Blue count | Red count | Boundary |
-|---------|-----------|-----------|----------|
-| Continuous | 0 (even) | 0 (even) | Clean |
-| Book | 4 (even) | 4 (even) | Clean |
-| Red/Blue Book | 0/4 (even) | 4/0 (even) | Clean |
-| Long Book | 2 (even) | 2 (even) | Clean |
-| Alternating | 2 (even) | 2 (even) | Clean |
-| Solo 1/2/3 | 4/8/16 (even) | 4/8/16 (even) | Clean |
-| Dense Weave 1/2/3 | 6/12/24 (even) | 6/12/24 (even) | Clean |
-| **Sparse Weave 1** | **5 (odd)** | **5 (odd)** | **Mismatch** |
-| Sparse Weave 2/3 | 10/20 (even) | 10/20 (even) | Clean |
+| Pattern            | Blue count     | Red count      | Boundary     |
+| ------------------ | -------------- | -------------- | ------------ |
+| Continuous         | 0 (even)       | 0 (even)       | Clean        |
+| Book               | 4 (even)       | 4 (even)       | Clean        |
+| Red/Blue Book      | 0/4 (even)     | 4/0 (even)     | Clean        |
+| Long Book          | 2 (even)       | 2 (even)       | Clean        |
+| Alternating        | 2 (even)       | 2 (even)       | Clean        |
+| Solo 1/2/3         | 4/8/16 (even)  | 4/8/16 (even)  | Clean        |
+| Dense Weave 1/2/3  | 6/12/24 (even) | 6/12/24 (even) | Clean        |
+| **Sparse Weave 1** | **5 (odd)**    | **5 (odd)**    | **Mismatch** |
+| Sparse Weave 2/3   | 10/20 (even)   | 10/20 (even)   | Clean        |
 
 ### When tiled to longer sequences
 
@@ -397,20 +398,20 @@ At every step count, exactly 25% of all possible reversal combinations are LOOP-
 
 ## Summary Table
 
-| # | Name | Pattern | Period | Family |
-|---|------|---------|--------|--------|
-| 1 | Continuous | `----` | 1 | Simple |
-| 2 | Book | `PPPP` | 1 | Simple |
-| 3 | Red Book | `RRRR` | 1 | Simple |
-| 4 | Blue Book | `BBBB` | 1 | Simple |
-| 5 | Long Book | `P-P-` | 2 | Simple |
-| 6 | Alternating | `RBRB` | 2 | Simple |
-| 7 | Solo 1 | `RBBRBRRB` | 8 | Solo |
-| 8 | Solo 2 | `RBBRBRRBBRRBRBBR` | 16 | Solo |
-| 9 | Solo 3 | `RBBRBRRBBRRBRBBRBRRBRBBRRBBRBRRB` | 32 | Solo |
-| 10 | Dense Weave 1 | `RPBPRPBP` | 8 | Dense Weave |
-| 11 | Dense Weave 2 | `RPBPRPBPBPRPBPRP` | 16 | Dense Weave |
-| 12 | Dense Weave 3 | `RPBPRPBPBPRPBPRPBPRPBPRPRPBPRPBP` | 32 | Dense Weave |
-| 13 | Sparse Weave 1 | `RBRPBRBP` | 8 | Sparse Weave |
-| 14 | Sparse Weave 2 | `RBRPBRBPBRBPRBRP` | 16 | Sparse Weave |
-| 15 | Sparse Weave 3 | `RBRPBRBPBRBPRBRPBRBPRBRPRBRPBRBP` | 32 | Sparse Weave |
+| #   | Name           | Pattern                            | Period | Family       |
+| --- | -------------- | ---------------------------------- | ------ | ------------ |
+| 1   | Continuous     | `----`                             | 1      | Simple       |
+| 2   | Book           | `PPPP`                             | 1      | Simple       |
+| 3   | Red Book       | `RRRR`                             | 1      | Simple       |
+| 4   | Blue Book      | `BBBB`                             | 1      | Simple       |
+| 5   | Long Book      | `P-P-`                             | 2      | Simple       |
+| 6   | Alternating    | `RBRB`                             | 2      | Simple       |
+| 7   | Solo 1         | `RBBRBRRB`                         | 8      | Solo         |
+| 8   | Solo 2         | `RBBRBRRBBRRBRBBR`                 | 16     | Solo         |
+| 9   | Solo 3         | `RBBRBRRBBRRBRBBRBRRBRBBRRBBRBRRB` | 32     | Solo         |
+| 10  | Dense Weave 1  | `RPBPRPBP`                         | 8      | Dense Weave  |
+| 11  | Dense Weave 2  | `RPBPRPBPBPRPBPRP`                 | 16     | Dense Weave  |
+| 12  | Dense Weave 3  | `RPBPRPBPBPRPBPRPBPRPBPRPRPBPRPBP` | 32     | Dense Weave  |
+| 13  | Sparse Weave 1 | `RBRPBRBP`                         | 8      | Sparse Weave |
+| 14  | Sparse Weave 2 | `RBRPBRBPBRBPRBRP`                 | 16     | Sparse Weave |
+| 15  | Sparse Weave 3 | `RBRPBRBPBRBPRBRPBRBPRBRPRBRPBRBP` | 32     | Sparse Weave |

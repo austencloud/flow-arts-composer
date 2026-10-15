@@ -1,5 +1,7 @@
 # Hand Positions UX audit, September 5, 2026
 
+**Repository status (2026-10-14):** Historical title: Hand Positions. Current lesson: Hand Placements (`hand-placements`), owned by `src/lib/features/learn/components/interactive/placements/PlacementsConceptExperience.svelte`. The registry publishes it with review status `built`; this does not establish new acceptance. `placement-experience-state.svelte.ts` retains the 1,200 ms automatic-success hold. September review/integration states below remain dated observations.
+
 Scope: the shipped hand-positions experience, not a repository-wide code-quality grade.
 
 ## Automatic practice progression, September 8

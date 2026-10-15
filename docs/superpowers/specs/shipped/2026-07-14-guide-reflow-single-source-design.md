@@ -8,7 +8,7 @@ durable guide-reader end state
 article was a disconnected duplicate of the real guide)
 **Related:** `2026-07-07-guide-reader-design.md` (the swappable-frame seam this
 builds on), `2026-06-21-guide-rebuild-tracker.md` (the 38-page rebuild),
-`docs/architecture/guide-single-source.md`, `2026-07-09-seo-overhaul-design.md`,
+`docs/archive/swarm-2026-10-14/architecture/guide-single-source.md`, `2026-07-09-seo-overhaul-design.md`,
 memory `project_guide_single_source`, `project_seo_overhaul`.
 
 ---

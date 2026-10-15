@@ -2,7 +2,7 @@
 
 > **STATUS (2026-07-17): SHELVED at the product-upload step** until real product
 > images exist. The resume path is the merchant product image pipeline spec:
-> `docs/superpowers/specs/2026-07-17-merchant-product-image-pipeline-design.md`.
+> `docs/superpowers/specs/backlog/2026-07-17-merchant-product-image-pipeline-design.md`.
 > Account is created and the website claim is done; every form value needed to
 > finish is recorded below.
 
@@ -69,15 +69,15 @@ Business description:
 
 ## Product values
 
-| Field | LOOP Deck | Timing & Direction Trilogy (per volume) |
-|---|---|---|
-| Title | LOOP Deck: 54 Flow Sequence Playing Cards | TKA 1/2/3 (Learning Letters / Writing Words / Speaking Sentences) |
-| Link | https://tkaflowarts.com/shop/loop-deck | https://tkaflowarts.com/shop/tka-1-learning-letters (etc.) |
-| Price | $35.00 (preorder; $45 regular after 2026-09-30) | $30.00 |
-| Availability | preorder | in_stock |
-| Condition | new | new |
-| Category | Arts & Entertainment > Hobbies & Creative Arts | same |
-| Description | 54 flow sequences printed as playing cards. Pick a transformation flavor and build your LOOP deck. | Three printed decks, every card color-coded by its timing and direction family. |
+| Field        | LOOP Deck                                                                                          | Timing & Direction Trilogy (per volume)                                         |
+| ------------ | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Title        | LOOP Deck: 54 Flow Sequence Playing Cards                                                          | TKA 1/2/3 (Learning Letters / Writing Words / Speaking Sentences)               |
+| Link         | https://tkaflowarts.com/shop/loop-deck                                                             | https://tkaflowarts.com/shop/tka-1-learning-letters (etc.)                      |
+| Price        | $35.00 (preorder; $45 regular after 2026-09-30)                                                    | $30.00                                                                          |
+| Availability | preorder                                                                                           | in_stock                                                                        |
+| Condition    | new                                                                                                | new                                                                             |
+| Category     | Arts & Entertainment > Hobbies & Creative Arts                                                     | same                                                                            |
+| Description  | 54 flow sequences printed as playing cards. Pick a transformation flavor and build your LOOP deck. | Three printed decks, every card color-coded by its timing and direction family. |
 
 Preorder note: Merchant Center preorder availability requires an availability date.
 The site's stated ship date is October 1 (LoopDeckConfiguratorPage/DeckArchitectPage:
