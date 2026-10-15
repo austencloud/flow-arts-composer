@@ -1,5 +1,6 @@
 """Unreal Editor Python: import all catalog variants and validate native meshes."""
 import json
+import re
 from pathlib import Path
 import unreal as u
 
@@ -29,7 +30,54 @@ def ensure_led_material():
 
 ensure_led_material()
 
-def import_mesh(name):
+def linear_color(hex_color):
+    values = [int(hex_color[index:index+2], 16) / 255 for index in (1, 3, 5)]
+    rgb = [value / 12.92 if value <= .04045 else ((value + .055) / 1.055) ** 2.4 for value in values]
+    return u.LinearColor(*rgb, 1)
+
+def finish_fan_mesh(mesh, name, variant, right):
+    build = variant.get('fanBuild')
+    if build not in ('fire', 'lotus', 'day', 'moon'): return
+    hand = '#ef4444' if right else '#3b82f6'
+    colors = {
+        'TKA_Fan_Day_Frame': '#f0f1f4' if variant.get('fanFrameColor') == 'white' else '#11141a',
+        'TKA_Fan_Cover_Solid_Recolor': hand,
+        'TKA_Fan_Moon_Frame': hand,
+    }
+    targets = {'day': ['TKA_Fan_Day_Frame'], 'moon': ['TKA_Fan_Moon_Frame'],
+               'fire': [], 'lotus': []}[build][:]
+    if variant.get('fanCover') == 'covered' and build in ('fire', 'day'):
+        targets.append('TKA_Fan_Cover_Solid_Recolor')
+    found = set()
+    for slot in range(mesh.get_num_sections(0)):
+        original = mesh.get_material(slot)
+        if not original: continue
+        source_name = original.get_name()
+        target = next((key for key in targets if source_name.startswith(key)), None)
+        # The original reimport mapped the right-hand cover to a shared red
+        # material. The selected GLB cover is the second material slot.
+        if not target and 'TKA_Fan_Cover_Solid_Recolor' in targets and slot == 1 and source_name == 'Hand_Recolor_Red':
+            target = 'TKA_Fan_Cover_Solid_Recolor'
+        if not target: continue
+        asset_name = re.sub(r'[^A-Za-z0-9_]', '_', f'M_FanFinish_{name}_{slot}')
+        path = f'/Game/FlowFest/Props/{asset_name}'
+        if not ED.does_asset_exist(path):
+            if not ED.duplicate_asset(original.get_path_name(), path):
+                raise RuntimeError(f'Could not duplicate fan material: {path}')
+        material = ED.load_asset(path)
+        expression = u.MaterialEditingLibrary.get_material_property_input_node(material, u.MaterialProperty.MP_BASE_COLOR)
+        if not expression: raise RuntimeError(f'Fan material has no base color: {path}')
+        kind = expression.get_class().get_name()
+        field = 'default_value' if kind == 'MaterialExpressionVectorParameter' else 'constant' if kind == 'MaterialExpressionConstant3Vector' else None
+        if not field: raise RuntimeError(f'Unexpected fan color expression {kind}: {path}')
+        expression.set_editor_property(field, linear_color(colors[target]))
+        u.MaterialEditingLibrary.recompile_material(material)
+        if not ED.save_loaded_asset(material): raise RuntimeError(f'Could not save fan material: {path}')
+        mesh.set_material(slot, material)
+        found.add(target)
+    if found != set(targets): raise RuntimeError(f'{name}: fan finish materials missing {set(targets)-found}')
+
+def import_mesh(name, variant=None, right=False):
     path = STAGED/f'{name}.fbx'
     if not path.exists(): raise FileNotFoundError(path)
     task = u.AssetImportTask()
@@ -54,6 +102,7 @@ def import_mesh(name):
     asset_path = f'/Game/FlowFest/Props/{name}.{name}'
     mesh = ED.load_asset(asset_path)
     if not isinstance(mesh,u.StaticMesh): raise RuntimeError(f'Import failed: {asset_path}')
+    if variant is not None: finish_fan_mesh(mesh, name, variant, right)
     extent = mesh.get_bounds().box_extent
     if max(extent.x,extent.y,extent.z) < 1: raise RuntimeError(f'Implausibly small mesh: {asset_path}')
     ED.save_loaded_asset(mesh)
@@ -66,7 +115,7 @@ for prop in CATALOG['props']:
             path=variant.get(field)
             if not path: continue
             name=path.rsplit('/',1)[-1].split('.')[0]
-            try: import_mesh(name)
+            try: import_mesh(name, variant if prop['id'] in ('fan','bigfan') else None, field == 'rightMesh')
             except Exception as exc:
                 report['errors'].append(f'{name}: {exc}')
 

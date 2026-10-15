@@ -278,6 +278,43 @@ def import_model(id, variant):
             if selected and selected not in parents and not (variant.get('fanCover')=='covered' and 'Fan_Cover' in parents):
                 bpy.data.objects.remove(obj,do_unlink=True)
 
+def hex_linear(hex_color):
+    channels = [int(hex_color[index:index+2], 16) / 255 for index in (1, 3, 5)]
+    return tuple(value / 12.92 if value <= .04045 else ((value + .055) / 1.055) ** 2.4
+                 for value in channels)
+
+def finish_fan_materials(variant, right, meshes):
+    """Apply the same per-build colors as Fan3D to the selected authored GLB parts."""
+    build = variant.get('fanBuild')
+    hand = '#ef4444' if right else '#3b82f6'
+    colors = {
+        'TKA_Fan_Cover_Solid_Recolor': hand,
+        'TKA_Fan_Moon_Frame': hand,
+        'TKA_Fan_Day_Frame': '#f0f1f4' if variant.get('fanFrameColor') == 'white' else '#11141a',
+    }
+    selected = {'day': {'TKA_Fan_Day_Frame'},
+                'moon': {'TKA_Fan_Moon_Frame'},
+                'fire': set(), 'lotus': set()}.get(build, set())
+    if variant.get('fanCover') == 'covered' and build in ('fire', 'day'):
+        selected.add('TKA_Fan_Cover_Solid_Recolor')
+    copies = {}
+    for obj in meshes:
+        for slot, original in enumerate(obj.data.materials):
+            if not original: continue
+            name = next((key for key in selected if original.name.startswith(key)), None)
+            if not name: continue
+            pointer = original.as_pointer()
+            if pointer not in copies:
+                material = original.copy()
+                material.name = f'{name}_{build}_{variant.get("fanFrameColor", "black")}_{"right" if right else "left"}'
+                color = (*hex_linear(colors[name]), 1)
+                material.diffuse_color = color
+                if material.use_nodes:
+                    bsdf = material.node_tree.nodes.get('Principled BSDF')
+                    if bsdf: bsdf.inputs['Base Color'].default_value = color
+                copies[pointer] = material
+            obj.data.materials[slot] = copies[pointer]
+
 CATALOG_MODELS = {
     'buugeng':'buugeng','bigbuugeng':'buugeng','chicken':'chicken','bigchicken':'chicken',
     'guitar':'guitar','ukulele':'ukulele','sword':'sword','sickles':'sickles',
@@ -322,8 +359,12 @@ def export_variant(prop, variant, right=False):
     if right:
         for obj in meshes:
             for index,material in enumerate(obj.data.materials):
+                if id in ('fan', 'bigfan') and material and material.name.startswith('TKA_Fan_'):
+                    continue
                 if material and (material == BLUE or 'Recolor' in material.name or 'recolor' in material.name):
                     obj.data.materials[index]=RED
+    if id in ('fan', 'bigfan') and variant.get('fanBuild') in ('fire', 'lotus', 'day', 'moon'):
+        finish_fan_materials(variant, right, meshes)
     coords=[obj.matrix_world @ Vector(corner) for obj in meshes for corner in obj.bound_box]
     lo=[min(v[axis] for v in coords) for axis in range(3)]
     hi=[max(v[axis] for v in coords) for axis in range(3)]
