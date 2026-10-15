@@ -512,6 +512,21 @@
     width: min(calc(100vw - 2rem), 32rem);
     padding: 0;
     background: var(--art-fallback, #0b0d12);
+    border: 0;
+  }
+
+  /* The sheet's edge is drawn over the art and the column alike. A border on
+     the sheet itself showed the fallback gradient through it, so it changed
+     color around the edge and all but vanished along the bottom. */
+  .contextual-auth-prompt.split::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px
+      var(--theme-stroke-strong, rgba(255, 255, 255, 0.16));
+    pointer-events: none;
   }
 
   .art-canvas {
