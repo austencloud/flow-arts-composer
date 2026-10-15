@@ -431,12 +431,16 @@ html.generate-card-morph-loop::view-transition-new(generate-card-loop) {
 }
 
 /* The box clips what rides in it. The margin leaves room for the panel's
-   shadow, which the contents never reach. */
+   shadow, which the contents never reach. The clip resizes on its own
+   animation, which defaults to plain ease; it runs on the box's curve so its
+   edge never trails the box. */
 html.generate-card-morph-loop::view-transition-group-children(
     generate-card-loop
   ) {
   overflow: clip;
   overflow-clip-margin: 24px;
+  animation-duration: var(--duration-dramatic);
+  animation-timing-function: var(--ease-out);
 }
 
 html.generate-card-morph-loop::view-transition-group(*.loop-face),
