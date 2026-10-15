@@ -17,14 +17,20 @@
    * from the engine's own interpolator at t=0.5 (see halfway-pose.ts).
    */
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import {
+    createMotionData,
+    type MotionData,
+  } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
     Orientation,
     RotationDirection,
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import {
+    GridMode,
+    GridLocation,
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { halfwayPose, type HalfwayMotion } from "../_data/halfway-pose";
 
@@ -64,7 +70,7 @@
       propType: PropType.STAFF,
       gridMode: GridMode.DIAMOND,
     });
-  const pic = (id: string, left, right) => ({
+  const pic = (id: string, left: MotionData, right: MotionData) => ({
     id: `l2t1-${id}`,
     letter: null,
     gridMode: GridMode.DIAMOND,
@@ -95,8 +101,18 @@
     sub: string;
     startTop: string;
     endTop: string;
-    left: { type: MotionType; from: GridLocation; to: GridLocation; rot: RotationDirection };
-    right: { type: MotionType; from: GridLocation; to: GridLocation; rot: RotationDirection };
+    left: {
+      type: MotionType;
+      from: GridLocation;
+      to: GridLocation;
+      rot: RotationDirection;
+    };
+    right: {
+      type: MotionType;
+      from: GridLocation;
+      to: GridLocation;
+      rot: RotationDirection;
+    };
     leftTurns: number;
     rightTurns: number;
   }): Strip {
@@ -106,8 +122,24 @@
       halfTurns(type, turns) % 2 === 0 ? IN : OUT;
     const bEnd = endOri(opts.left.type, opts.leftTurns);
     const rEnd = endOri(opts.right.type, opts.rightTurns);
-    const bHalf: HalfwayMotion = { type: opts.left.type, from: opts.left.from, to: opts.left.to, rot: opts.left.rot, startOri: IN, endOri: bEnd, turns: opts.leftTurns };
-    const rHalf: HalfwayMotion = { type: opts.right.type, from: opts.right.from, to: opts.right.to, rot: opts.right.rot, startOri: IN, endOri: rEnd, turns: opts.rightTurns };
+    const bHalf: HalfwayMotion = {
+      type: opts.left.type,
+      from: opts.left.from,
+      to: opts.left.to,
+      rot: opts.left.rot,
+      startOri: IN,
+      endOri: bEnd,
+      turns: opts.leftTurns,
+    };
+    const rHalf: HalfwayMotion = {
+      type: opts.right.type,
+      from: opts.right.from,
+      to: opts.right.to,
+      rot: opts.right.rot,
+      startOri: IN,
+      endOri: rEnd,
+      turns: opts.rightTurns,
+    };
     return {
       y: opts.y,
       letter: opts.letter,
@@ -116,12 +148,38 @@
       sub: opts.sub,
       startTop: opts.startTop,
       endTop: opts.endTop,
-      start: pic(`${opts.letter}-start`, stat(B, opts.left.from, IN), stat(R, opts.right.from, IN)),
-      end: pic(`${opts.letter}-end`, stat(B, opts.left.to, bEnd), stat(R, opts.right.to, rEnd)),
+      start: pic(
+        `${opts.letter}-start`,
+        stat(B, opts.left.from, IN),
+        stat(R, opts.right.from, IN)
+      ),
+      end: pic(
+        `${opts.letter}-end`,
+        stat(B, opts.left.to, bEnd),
+        stat(R, opts.right.to, rEnd)
+      ),
       combined: pic(
         `${opts.letter}-full`,
-        mo(B, opts.left.type, opts.left.from, opts.left.to, opts.left.rot, IN, bEnd, opts.leftTurns),
-        mo(R, opts.right.type, opts.right.from, opts.right.to, opts.right.rot, IN, rEnd, opts.rightTurns)
+        mo(
+          B,
+          opts.left.type,
+          opts.left.from,
+          opts.left.to,
+          opts.left.rot,
+          IN,
+          bEnd,
+          opts.leftTurns
+        ),
+        mo(
+          R,
+          opts.right.type,
+          opts.right.from,
+          opts.right.to,
+          opts.right.rot,
+          IN,
+          rEnd,
+          opts.rightTurns
+        )
       ),
       halfway: [
         { motion: bHalf, color: B },
@@ -138,10 +196,54 @@
   const C_RED = { type: MotionType.ANTI, from: N, to: E, rot: CCW }; // anti = low
 
   const STRIPS: Strip[] = [
-    makeStrip({ y: 162, letter: "A", supPos: "hi", sub: "“A-One”", startTop: "in", endTop: "mixed", left: A_BLUE, right: A_RED, leftTurns: 1, rightTurns: 0 }),
-    makeStrip({ y: 268, letter: "B", supPos: "hi", sub: "“B-One”", startTop: "in", endTop: "mixed", left: B_BLUE, right: B_RED, leftTurns: 1, rightTurns: 0 }),
-    makeStrip({ y: 576, letter: "C", supPos: "hi", sub: "“C-High-One”", startTop: "in", endTop: "out", left: C_BLUE, right: C_RED, leftTurns: 1, rightTurns: 0 }),
-    makeStrip({ y: 689, letter: "C", supPos: "lo", sub: "“C-Low-One”", startTop: "in", endTop: "in", left: C_BLUE, right: C_RED, leftTurns: 0, rightTurns: 1 }),
+    makeStrip({
+      y: 162,
+      letter: "A",
+      supPos: "hi",
+      sub: "“A-One”",
+      startTop: "in",
+      endTop: "mixed",
+      left: A_BLUE,
+      right: A_RED,
+      leftTurns: 1,
+      rightTurns: 0,
+    }),
+    makeStrip({
+      y: 268,
+      letter: "B",
+      supPos: "hi",
+      sub: "“B-One”",
+      startTop: "in",
+      endTop: "mixed",
+      left: B_BLUE,
+      right: B_RED,
+      leftTurns: 1,
+      rightTurns: 0,
+    }),
+    makeStrip({
+      y: 576,
+      letter: "C",
+      supPos: "hi",
+      sub: "“C-High-One”",
+      startTop: "in",
+      endTop: "out",
+      left: C_BLUE,
+      right: C_RED,
+      leftTurns: 1,
+      rightTurns: 0,
+    }),
+    makeStrip({
+      y: 689,
+      letter: "C",
+      supPos: "lo",
+      sub: "“C-Low-One”",
+      startTop: "in",
+      endTop: "in",
+      left: C_BLUE,
+      right: C_RED,
+      leftTurns: 0,
+      rightTurns: 1,
+    }),
   ];
 
   // ── Layout (pt, column centers from the original's frame captions) ───────────
@@ -170,36 +272,63 @@
   const HEAVY_RULE = 352;
 
   const poses = (strip: Strip) =>
-    strip.halfway.map((h) => ({ ...halfwayPose(h.motion, h.color), fill: h.color === HandSide.LEFT ? BLUE_FILL : RED_FILL }));
+    strip.halfway.map((h) => ({
+      ...halfwayPose(h.motion, h.color),
+      fill: h.color === HandSide.LEFT ? BLUE_FILL : RED_FILL,
+    }));
 </script>
 
 <div class="t1-page">
-  <div class="rule heavy" style="left:0; top:{HEAVY_RULE * S}px; width:{612 * S}px"></div>
+  <div
+    class="rule heavy"
+    style="left:0; top:{HEAVY_RULE * S}px; width:{612 * S}px"
+  ></div>
 
   <!-- Top intro + big B (left|right). -->
-  <p class="para" style="top:{48 * S}px; right:{142 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
+  <p
+    class="para"
+    style="top:{48 * S}px; right:{142 * S}px; font-size:{16 *
+      S}px; line-height:{19 * S}px"
+  >
     {@html translate("guide_l2_print_type1dualshiftpage_0")}
   </p>
   <div class="big-letter" style="left:{430 * S}px; top:{50 * S}px">B</div>
-  <span class="lr hi" style="left:{478 * S}px; top:{46 * S}px">{translate("guide_l2_print_left")}</span>
-  <span class="lr lo" style="left:{478 * S}px; top:{93 * S}px">{translate("guide_l2_print_right")}</span>
+  <span class="lr hi" style="left:{478 * S}px; top:{46 * S}px"
+    >{translate("guide_l2_print_left")}</span
+  >
+  <span class="lr lo" style="left:{478 * S}px; top:{93 * S}px"
+    >{translate("guide_l2_print_right")}</span
+  >
 
   <!-- Middle text between the two halves. -->
-  <p class="para" style="top:{372 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
+  <p
+    class="para"
+    style="top:{372 * S}px; font-size:{16 * S}px; line-height:{19 * S}px"
+  >
     {@html translate("guide_l2_print_type1dualshiftpage_1")}
   </p>
-  <p class="para bold" style="top:{428 * S}px; right:{142 * S}px; font-size:{20 * S}px; line-height:{24 * S}px">
+  <p
+    class="para bold"
+    style="top:{428 * S}px; right:{142 * S}px; font-size:{20 *
+      S}px; line-height:{24 * S}px"
+  >
     {@html translate("guide_l2_print_type1dualshiftpage_2")}
   </p>
   <div class="big-letter" style="left:{408 * S}px; top:{430 * S}px">C</div>
   <span class="cs hi" style="left:{460 * S}px; top:{435 * S}px">Prospin</span>
   <span class="cs lo" style="left:{460 * S}px; top:{487 * S}px">Antispin</span>
-  <p class="para" style="top:{500 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
+  <p
+    class="para"
+    style="top:{500 * S}px; font-size:{16 * S}px; line-height:{19 * S}px"
+  >
     {@html translate("guide_l2_print_type1dualshiftpage_3")}
   </p>
 
   <!-- Bottom code note. -->
-  <p class="para italic" style="top:{776 * S}px; font-size:{14.5 * S}px; line-height:{18 * S}px">
+  <p
+    class="para italic"
+    style="top:{776 * S}px; font-size:{14.5 * S}px; line-height:{18 * S}px"
+  >
     {@html translate("guide_l2_print_type1dualshiftpage_4")}
   </p>
 
@@ -208,54 +337,159 @@
     {@const hp = poses(strip)}
     <!-- Row label (letter + super/sub) and sublabel. -->
     <div class="row-letter" style="left:{92 * S}px; top:{(strip.y + 4) * S}px">
-      {strip.letter}<span class="sup {strip.supPos}" style="color:{strip.supColor}">1</span>
+      {strip.letter}<span
+        class="sup {strip.supPos}"
+        style="color:{strip.supColor}">1</span
+      >
     </div>
-    <div class="row-sub" style="left:{56 * S}px; top:{(strip.y + 42) * S}px; width:{88 * S}px">{strip.sub}</div>
+    <div
+      class="row-sub"
+      style="left:{56 * S}px; top:{(strip.y + 42) * S}px; width:{88 * S}px"
+    >
+      {strip.sub}
+    </div>
 
     <!-- Captions (thumbs / start / halfway / end). -->
     {#if si === 0 || si === 2}
-      <span class="cap" style="left:{150 * S}px; top:{(strip.y - 30) * S}px">{translate("guide_l2_print_thumbs")}</span>
-      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_start")}</span>
-      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_halfway")}</span>
-      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_end")}</span>
+      <span class="cap" style="left:{150 * S}px; top:{(strip.y - 30) * S}px"
+        >{translate("guide_l2_print_thumbs")}</span
+      >
+      <span
+        class="frame-cap"
+        style="left:{START_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE *
+          S}px">{translate("guide_l2_frame_start")}</span
+      >
+      <span
+        class="frame-cap"
+        style="left:{HALF_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE *
+          S}px">{translate("guide_l2_frame_halfway")}</span
+      >
+      <span
+        class="frame-cap"
+        style="left:{END_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE *
+          S}px">{translate("guide_l2_frame_end")}</span
+      >
     {/if}
-    <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 26) * S}px; width:{SIZE * S}px">{strip.startTop}</span>
-    <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 26) * S}px; width:{SIZE * S}px">{strip.endTop}</span>
+    <span
+      class="thumb-cap"
+      style="left:{START_X * S}px; top:{(strip.y - 26) * S}px; width:{SIZE *
+        S}px">{strip.startTop}</span
+    >
+    <span
+      class="thumb-cap"
+      style="left:{END_X * S}px; top:{(strip.y - 26) * S}px; width:{SIZE * S}px"
+      >{strip.endTop}</span
+    >
 
     <!-- start -->
-    <div class="mini" style="left:{START_X * S}px; top:{strip.y * S}px; width:{SIZE * S}px; height:{SIZE * S}px">
-      <PictographContainer pictographData={strip.start} gridMode={GridMode.DIAMOND} leftPropTypeOverride={PropType.STAFF} rightPropTypeOverride={PropType.STAFF} {...PICTO_FLAGS} />
+    <div
+      class="mini"
+      style="left:{START_X * S}px; top:{strip.y * S}px; width:{SIZE *
+        S}px; height:{SIZE * S}px"
+    >
+      <PictographContainer
+        pictographData={strip.start}
+        gridMode={GridMode.DIAMOND}
+        leftPropTypeOverride={PropType.STAFF}
+        rightPropTypeOverride={PropType.STAFF}
+        {...PICTO_FLAGS}
+      />
     </div>
     <!-- halfway: bare grid + two staff poses -->
-    <div class="mini" style="left:{HALF_X * S}px; top:{strip.y * S}px; width:{SIZE * S}px; height:{SIZE * S}px">
+    <div
+      class="mini"
+      style="left:{HALF_X * S}px; top:{strip.y * S}px; width:{SIZE *
+        S}px; height:{SIZE * S}px"
+    >
       <svg class="halfway-staff" viewBox="0 0 950 950" aria-hidden="true">
         {#each hp as p (p.fill)}
-          <g transform="translate({p.cx}, {p.cy}) rotate({p.deg}) translate(-126.4, -38.9)">
+          <g
+            transform="translate({p.cx}, {p.cy}) rotate({p.deg}) translate(-126.4, -38.9)"
+          >
             <path d={STAFF_D} fill={p.fill} />
           </g>
         {/each}
       </svg>
     </div>
     <!-- end -->
-    <div class="mini" style="left:{END_X * S}px; top:{strip.y * S}px; width:{SIZE * S}px; height:{SIZE * S}px">
-      <PictographContainer pictographData={strip.end} gridMode={GridMode.DIAMOND} leftPropTypeOverride={PropType.STAFF} rightPropTypeOverride={PropType.STAFF} {...PICTO_FLAGS} />
+    <div
+      class="mini"
+      style="left:{END_X * S}px; top:{strip.y * S}px; width:{SIZE *
+        S}px; height:{SIZE * S}px"
+    >
+      <PictographContainer
+        pictographData={strip.end}
+        gridMode={GridMode.DIAMOND}
+        leftPropTypeOverride={PropType.STAFF}
+        rightPropTypeOverride={PropType.STAFF}
+        {...PICTO_FLAGS}
+      />
     </div>
     <!-- combined -->
-    <div class="mini" style="left:{COMB_X * S}px; top:{strip.y * S}px; width:{SIZE * S}px; height:{SIZE * S}px">
-      <PictographContainer pictographData={strip.combined} gridMode={GridMode.DIAMOND} leftPropTypeOverride={PropType.STAFF} rightPropTypeOverride={PropType.STAFF} {...PICTO_FLAGS} />
+    <div
+      class="mini"
+      style="left:{COMB_X * S}px; top:{strip.y * S}px; width:{SIZE *
+        S}px; height:{SIZE * S}px"
+    >
+      <PictographContainer
+        pictographData={strip.combined}
+        gridMode={GridMode.DIAMOND}
+        leftPropTypeOverride={PropType.STAFF}
+        rightPropTypeOverride={PropType.STAFF}
+        {...PICTO_FLAGS}
+      />
     </div>
-    <div class="comb-label" style="left:{COMB_X * S}px; top:{(strip.y + SIZE - 8) * S}px; width:{SIZE * S}px">
+    <div
+      class="comb-label"
+      style="left:{COMB_X * S}px; top:{(strip.y + SIZE - 8) *
+        S}px; width:{SIZE * S}px"
+    >
       {strip.letter}<span class="sup {strip.supPos}">1</span>
     </div>
 
     <!-- flow arrows + "=" -->
-    <svg class="flow-arrow" style="left:{(HALF_X - 22) * S}px; top:{(rowMid(strip.y) - 5) * S}px; width:{ARROW_W * S}px; height:{10 * S}px" viewBox="0 0 {ARROW_W} 10" aria-hidden="true">
-      <line x1="0" y1="5" x2={ARROW_W - 7} y2="5" stroke="#141414" stroke-width="2" /><polygon points="{ARROW_W - 8},1.3 {ARROW_W},5 {ARROW_W - 8},8.7" fill="#141414" />
+    <svg
+      class="flow-arrow"
+      style="left:{(HALF_X - 22) * S}px; top:{(rowMid(strip.y) - 5) *
+        S}px; width:{ARROW_W * S}px; height:{10 * S}px"
+      viewBox="0 0 {ARROW_W} 10"
+      aria-hidden="true"
+    >
+      <line
+        x1="0"
+        y1="5"
+        x2={ARROW_W - 7}
+        y2="5"
+        stroke="#141414"
+        stroke-width="2"
+      /><polygon
+        points="{ARROW_W - 8},1.3 {ARROW_W},5 {ARROW_W - 8},8.7"
+        fill="#141414"
+      />
     </svg>
-    <svg class="flow-arrow" style="left:{(END_X - 22) * S}px; top:{(rowMid(strip.y) - 5) * S}px; width:{ARROW_W * S}px; height:{10 * S}px" viewBox="0 0 {ARROW_W} 10" aria-hidden="true">
-      <line x1="0" y1="5" x2={ARROW_W - 7} y2="5" stroke="#141414" stroke-width="2" /><polygon points="{ARROW_W - 8},1.3 {ARROW_W},5 {ARROW_W - 8},8.7" fill="#141414" />
+    <svg
+      class="flow-arrow"
+      style="left:{(END_X - 22) * S}px; top:{(rowMid(strip.y) - 5) *
+        S}px; width:{ARROW_W * S}px; height:{10 * S}px"
+      viewBox="0 0 {ARROW_W} 10"
+      aria-hidden="true"
+    >
+      <line
+        x1="0"
+        y1="5"
+        x2={ARROW_W - 7}
+        y2="5"
+        stroke="#141414"
+        stroke-width="2"
+      /><polygon
+        points="{ARROW_W - 8},1.3 {ARROW_W},5 {ARROW_W - 8},8.7"
+        fill="#141414"
+      />
     </svg>
-    <span class="equals" style="left:{(COMB_X - 15) * S}px; top:{rowMid(strip.y) * S}px">=</span>
+    <span
+      class="equals"
+      style="left:{(COMB_X - 15) * S}px; top:{rowMid(strip.y) * S}px">=</span
+    >
   {/each}
 </div>
 
@@ -388,4 +622,3 @@
     color: #3c3c46;
   }
 </style>
-

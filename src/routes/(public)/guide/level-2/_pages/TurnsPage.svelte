@@ -49,7 +49,7 @@
   import PoseFrame from "../_components/PoseFrame.svelte";
   import { bakeReversals } from "../../level-1/_data/guide-sequence-adapter";
   import { getGuideSequenceClick } from "../../level-1/_data/guide-data-context";
-  import { getGuideActiveStep } from "../../level-1/_data/guide-active-step.svelte";
+  import { getGuideActiveStep } from "../../level-1/_data/guide-active-step.svelte.js";
 
   const S = 816 / 612; // pt → px
   const { EAST: E, SOUTH: SO_ } = GridLocation;
@@ -231,7 +231,9 @@
     startOrientation: so,
     endOrientation: eo,
   });
-  const mstep = (left, right) => ({ motions: { left, right } });
+  const mstep = (left: ReturnType<typeof m>, right: ReturnType<typeof m>) => ({
+    motions: { left, right },
+  });
   const mseq = (steps: unknown[]) => ({
     leftPropType: "staff",
     rightPropType: "staff",

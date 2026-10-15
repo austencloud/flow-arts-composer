@@ -16,14 +16,20 @@
    * interpolator (dash forced linear). High glyph = red, low = blue.
    */
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import {
+    createMotionData,
+    type MotionData,
+  } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
     Orientation,
     RotationDirection,
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import {
+    GridMode,
+    GridLocation,
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { halfwayPose, type HalfwayMotion } from "../_data/halfway-pose";
 
@@ -63,7 +69,7 @@
       propType: PropType.STAFF,
       gridMode: GridMode.DIAMOND,
     });
-  const pic = (id: string, left, right) => ({
+  const pic = (id: string, left: MotionData, right: MotionData) => ({
     id: `l2t3-${id}`,
     letter: null,
     gridMode: GridMode.DIAMOND,
@@ -72,7 +78,13 @@
   const stat = (color: HandSide, loc: GridLocation, ori: Orientation) =>
     mo(color, MotionType.STATIC, loc, loc, NOROT, ori, ori);
 
-  type Hand = { type: MotionType; from: GridLocation; to: GridLocation; rot: RotationDirection; turns: number };
+  type Hand = {
+    type: MotionType;
+    from: GridLocation;
+    to: GridLocation;
+    rot: RotationDirection;
+    turns: number;
+  };
   type Strip = {
     y: number;
     labelLines: string[];
@@ -87,7 +99,9 @@
     halfway: { motion: HalfwayMotion; color: HandSide }[];
   };
 
-  const half = (h: Hand): number => (h.type === MotionType.ANTI || h.type === MotionType.DASH ? 1 : 0) + h.turns;
+  const half = (h: Hand): number =>
+    (h.type === MotionType.ANTI || h.type === MotionType.DASH ? 1 : 0) +
+    h.turns;
   const endOf = (h: Hand): Orientation => (half(h) % 2 === 0 ? IN : OUT);
 
   function makeStrip(opts: {
@@ -119,12 +133,38 @@
       supColor: opts.supPos === "hi" ? RED_FILL : BLUE_FILL,
       dot: opts.dot,
       captions: opts.captions,
-      start: pic("start", stat(B, opts.left.from, IN), stat(R, opts.right.from, IN)),
-      end: pic("end", stat(B, opts.left.to, bEnd), stat(R, opts.right.to, rEnd)),
+      start: pic(
+        "start",
+        stat(B, opts.left.from, IN),
+        stat(R, opts.right.from, IN)
+      ),
+      end: pic(
+        "end",
+        stat(B, opts.left.to, bEnd),
+        stat(R, opts.right.to, rEnd)
+      ),
       combined: pic(
         "full",
-        mo(B, opts.left.type, opts.left.from, opts.left.to, opts.left.rot, IN, bEnd, opts.left.turns),
-        mo(R, opts.right.type, opts.right.from, opts.right.to, opts.right.rot, IN, rEnd, opts.right.turns)
+        mo(
+          B,
+          opts.left.type,
+          opts.left.from,
+          opts.left.to,
+          opts.left.rot,
+          IN,
+          bEnd,
+          opts.left.turns
+        ),
+        mo(
+          R,
+          opts.right.type,
+          opts.right.from,
+          opts.right.to,
+          opts.right.rot,
+          IN,
+          rEnd,
+          opts.right.turns
+        )
       ),
       halfway: [
         { motion: hm(opts.left, bEnd), color: B },
@@ -134,13 +174,52 @@
   }
 
   // Z- = dash(blue s→n) + anti shift(red e→n cw), variation [7].
-  const DASH_BLUE = (turns: number, rot: RotationDirection): Hand => ({ type: MotionType.DASH, from: SO_, to: N, rot, turns });
-  const SHIFT_RED = (turns: number): Hand => ({ type: MotionType.ANTI, from: E, to: N, rot: CW, turns });
+  const DASH_BLUE = (turns: number, rot: RotationDirection): Hand => ({
+    type: MotionType.DASH,
+    from: SO_,
+    to: N,
+    rot,
+    turns,
+  });
+  const SHIFT_RED = (turns: number): Hand => ({
+    type: MotionType.ANTI,
+    from: E,
+    to: N,
+    rot: CW,
+    turns,
+  });
 
   const STRIPS: Strip[] = [
-    makeStrip({ y: 266, labelLines: ["“Z-Dash", "High-One”"], labelY: 260, supPos: "hi", dot: null, captions: true, left: DASH_BLUE(0, NOROT), right: SHIFT_RED(1) }),
-    makeStrip({ y: 510, labelLines: ["“Z-Dash", "Same", "Low-One”"], labelY: 506, supPos: "lo", dot: "same", captions: true, left: DASH_BLUE(1, CW), right: SHIFT_RED(0) }),
-    makeStrip({ y: 613, labelLines: ["“Z-Dash", "Opp", "Low-One”"], labelY: 614, supPos: "lo", dot: "opp", captions: false, left: DASH_BLUE(1, CCW), right: SHIFT_RED(0) }),
+    makeStrip({
+      y: 266,
+      labelLines: ["“Z-Dash", "High-One”"],
+      labelY: 260,
+      supPos: "hi",
+      dot: null,
+      captions: true,
+      left: DASH_BLUE(0, NOROT),
+      right: SHIFT_RED(1),
+    }),
+    makeStrip({
+      y: 510,
+      labelLines: ["“Z-Dash", "Same", "Low-One”"],
+      labelY: 506,
+      supPos: "lo",
+      dot: "same",
+      captions: true,
+      left: DASH_BLUE(1, CW),
+      right: SHIFT_RED(0),
+    }),
+    makeStrip({
+      y: 613,
+      labelLines: ["“Z-Dash", "Opp", "Low-One”"],
+      labelY: 614,
+      supPos: "lo",
+      dot: "opp",
+      captions: false,
+      left: DASH_BLUE(1, CCW),
+      right: SHIFT_RED(0),
+    }),
   ];
 
   // ── Layout (pt) ─────────────────────────────────────────────────────────────
@@ -170,60 +249,104 @@
   const ARROW_W = 14.5;
 
   const poses = (strip: Strip) =>
-    strip.halfway.map((h) => ({ ...halfwayPose(h.motion, h.color), fill: h.color === HandSide.LEFT ? BLUE_FILL : RED_FILL }));
+    strip.halfway.map((h) => ({
+      ...halfwayPose(h.motion, h.color),
+      fill: h.color === HandSide.LEFT ? BLUE_FILL : RED_FILL,
+    }));
 </script>
 
 <div class="t3-page">
   <!-- Intro. -->
-  <p class="para" style="top:{54 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
+  <p
+    class="para"
+    style="top:{54 * S}px; font-size:{16 * S}px; line-height:{19 * S}px"
+  >
     {@html translate("guide_l2_print_type3crossshiftpage_0")}
   </p>
 
   <!-- Slot rule + big Z- (shift|dash). -->
-  <p class="para bold" style="top:{99 * S}px; right:{142 * S}px; font-size:{20 * S}px; line-height:{24 * S}px">
+  <p
+    class="para bold"
+    style="top:{99 * S}px; right:{142 * S}px; font-size:{20 *
+      S}px; line-height:{24 * S}px"
+  >
     {@html translate("guide_l2_print_type3crossshiftpage_1")}
   </p>
-  <p class="para" style="top:{165 * S}px; right:{142 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
+  <p
+    class="para"
+    style="top:{165 * S}px; right:{142 * S}px; font-size:{16 *
+      S}px; line-height:{19 * S}px"
+  >
     {@html translate("guide_l2_print_type3crossshiftpage_2")}
   </p>
   <div class="big-letter" style="left:{430 * S}px; top:{112 * S}px">Z-</div>
   <span class="cs hi" style="left:{489 * S}px; top:{112 * S}px">Shift</span>
   <span class="cs lo" style="left:{489 * S}px; top:{160 * S}px">Dash</span>
 
-  <p class="para" style="top:{199 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
+  <p
+    class="para"
+    style="top:{199 * S}px; font-size:{16 * S}px; line-height:{19 * S}px"
+  >
     {@html translate("guide_l2_print_type3crossshiftpage_3")}
   </p>
 
   <!-- Halfway-position teaching. -->
-  <p class="para bold-italic" style="top:{348 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
+  <p
+    class="para bold-italic"
+    style="top:{348 * S}px; font-size:{16 * S}px; line-height:{18 * S}px"
+  >
     {@html translate("guide_l2_print_type3crossshiftpage_4")}
   </p>
-  <p class="para" style="top:{370 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
+  <p
+    class="para"
+    style="top:{370 * S}px; font-size:{16 * S}px; line-height:{18 * S}px"
+  >
     {@html translate("guide_l2_print_type3crossshiftpage_5")}
   </p>
 
   <!-- Same/Opp lead-in. -->
-  <p class="para" style="top:{428 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
+  <p
+    class="para"
+    style="top:{428 * S}px; font-size:{16 * S}px; line-height:{18 * S}px"
+  >
     {@html translate("guide_l2_print_type3crossshiftpage_6")}
   </p>
 
   <!-- Closing. -->
-  <p class="para bold-italic" style="top:{695 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
+  <p
+    class="para bold-italic"
+    style="top:{695 * S}px; font-size:{16 * S}px; line-height:{18 * S}px"
+  >
     {@html translate("guide_l2_print_type3crossshiftpage_7")}
   </p>
-  <p class="para" style="top:{717 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
+  <p
+    class="para"
+    style="top:{717 * S}px; font-size:{16 * S}px; line-height:{18 * S}px"
+  >
     {@html translate("guide_l2_print_type3crossshiftpage_8")}
   </p>
 
   <!-- Footnote. -->
-  <div class="rule footnote" style="left:0; top:{752.1 * S}px; width:{612 * S}px"></div>
-  <p class="para italic" style="top:{758 * S}px; font-size:{14.5 * S}px; line-height:{18 * S}px">
+  <div
+    class="rule footnote"
+    style="left:0; top:{752.1 * S}px; width:{612 * S}px"
+  ></div>
+  <p
+    class="para italic"
+    style="top:{758 * S}px; font-size:{14.5 * S}px; line-height:{18 * S}px"
+  >
     {@html translate("guide_l2_print_type3crossshiftpage_9")}
   </p>
 
   <!-- Group separators. -->
-  <div class="rule heavy" style="left:0; top:{414.6 * S}px; width:{612 * S}px"></div>
-  <div class="rule thin" style="left:{88 * S}px; top:{596 * S}px; width:{436 * S}px"></div>
+  <div
+    class="rule heavy"
+    style="left:0; top:{414.6 * S}px; width:{612 * S}px"
+  ></div>
+  <div
+    class="rule thin"
+    style="left:{88 * S}px; top:{596 * S}px; width:{436 * S}px"
+  ></div>
 
   <!-- Three breakdown strips. -->
   {#each STRIPS as strip, si (si)}
@@ -232,66 +355,189 @@
       Z-<span class="sup {strip.supPos}" style="color:{strip.supColor}">1</span>
     </div>
     {#if strip.dot === "same"}
-      <span class="dir-dot" style="left:{LETTER_CX * S}px; top:{(strip.y - 2) * S}px"></span>
+      <span
+        class="dir-dot"
+        style="left:{LETTER_CX * S}px; top:{(strip.y - 2) * S}px"
+      ></span>
     {:else if strip.dot === "opp"}
-      <span class="dir-dot" style="left:{LETTER_CX * S}px; top:{(strip.y + 44) * S}px"></span>
+      <span
+        class="dir-dot"
+        style="left:{LETTER_CX * S}px; top:{(strip.y + 44) * S}px"
+      ></span>
     {/if}
     {#each strip.labelLines as line, li (li)}
-      <div class="row-sub" style="left:{16 * S}px; top:{(strip.labelY + li * 13) * S}px; width:{92 * S}px">{line}</div>
+      <div
+        class="row-sub"
+        style="left:{16 * S}px; top:{(strip.labelY + li * 13) *
+          S}px; width:{92 * S}px"
+      >
+        {line}
+      </div>
     {/each}
 
     <!-- Captions. -->
     {#if strip.captions}
-      <span class="cap" style="left:{150 * S}px; top:{(strip.y - 32) * S}px">{translate("guide_l2_print_thumbs")}</span>
-      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_start")}</span>
-      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_halfway")}</span>
-      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_end")}</span>
-      <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_in")}</span>
-      <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">mixed</span>
+      <span class="cap" style="left:{150 * S}px; top:{(strip.y - 32) * S}px"
+        >{translate("guide_l2_print_thumbs")}</span
+      >
+      <span
+        class="frame-cap"
+        style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE *
+          S}px">{translate("guide_l2_frame_start")}</span
+      >
+      <span
+        class="frame-cap"
+        style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE *
+          S}px">{translate("guide_l2_frame_halfway")}</span
+      >
+      <span
+        class="frame-cap"
+        style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE *
+          S}px">{translate("guide_l2_frame_end")}</span
+      >
+      <span
+        class="thumb-cap"
+        style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE *
+          S}px">{translate("guide_l2_frame_in")}</span
+      >
+      <span
+        class="thumb-cap"
+        style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE *
+          S}px">mixed</span
+      >
     {:else}
-      <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_in")}</span>
-      <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_out")}</span>
+      <span
+        class="thumb-cap"
+        style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE *
+          S}px">{translate("guide_l2_frame_in")}</span
+      >
+      <span
+        class="thumb-cap"
+        style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE *
+          S}px">{translate("guide_l2_frame_out")}</span
+      >
     {/if}
 
     <!-- start -->
-    <div class="mini" style="left:{START_X * S}px; top:{strip.y * S}px; width:{SIZE * S}px; height:{SIZE * S}px">
-      <PictographContainer pictographData={strip.start} gridMode={GridMode.DIAMOND} leftPropTypeOverride={PropType.STAFF} rightPropTypeOverride={PropType.STAFF} {...PICTO_FLAGS} />
+    <div
+      class="mini"
+      style="left:{START_X * S}px; top:{strip.y * S}px; width:{SIZE *
+        S}px; height:{SIZE * S}px"
+    >
+      <PictographContainer
+        pictographData={strip.start}
+        gridMode={GridMode.DIAMOND}
+        leftPropTypeOverride={PropType.STAFF}
+        rightPropTypeOverride={PropType.STAFF}
+        {...PICTO_FLAGS}
+      />
     </div>
     <!-- halfway -->
-    <div class="mini" style="left:{HALF_X * S}px; top:{strip.y * S}px; width:{SIZE * S}px; height:{SIZE * S}px">
+    <div
+      class="mini"
+      style="left:{HALF_X * S}px; top:{strip.y * S}px; width:{SIZE *
+        S}px; height:{SIZE * S}px"
+    >
       <svg class="halfway-staff" viewBox="0 0 950 950" aria-hidden="true">
         {#each hp as p (p.fill)}
-          <g transform="translate({p.cx}, {p.cy}) rotate({p.deg}) translate(-126.4, -38.9)">
+          <g
+            transform="translate({p.cx}, {p.cy}) rotate({p.deg}) translate(-126.4, -38.9)"
+          >
             <path d={STAFF_D} fill={p.fill} />
           </g>
         {/each}
       </svg>
     </div>
     <!-- end -->
-    <div class="mini" style="left:{END_X * S}px; top:{strip.y * S}px; width:{SIZE * S}px; height:{SIZE * S}px">
-      <PictographContainer pictographData={strip.end} gridMode={GridMode.DIAMOND} leftPropTypeOverride={PropType.STAFF} rightPropTypeOverride={PropType.STAFF} {...PICTO_FLAGS} />
+    <div
+      class="mini"
+      style="left:{END_X * S}px; top:{strip.y * S}px; width:{SIZE *
+        S}px; height:{SIZE * S}px"
+    >
+      <PictographContainer
+        pictographData={strip.end}
+        gridMode={GridMode.DIAMOND}
+        leftPropTypeOverride={PropType.STAFF}
+        rightPropTypeOverride={PropType.STAFF}
+        {...PICTO_FLAGS}
+      />
     </div>
     <!-- combined -->
-    <div class="mini" style="left:{COMB_X * S}px; top:{strip.y * S}px; width:{SIZE * S}px; height:{SIZE * S}px">
-      <PictographContainer pictographData={strip.combined} gridMode={GridMode.DIAMOND} leftPropTypeOverride={PropType.STAFF} rightPropTypeOverride={PropType.STAFF} {...PICTO_FLAGS} />
+    <div
+      class="mini"
+      style="left:{COMB_X * S}px; top:{strip.y * S}px; width:{SIZE *
+        S}px; height:{SIZE * S}px"
+    >
+      <PictographContainer
+        pictographData={strip.combined}
+        gridMode={GridMode.DIAMOND}
+        leftPropTypeOverride={PropType.STAFF}
+        rightPropTypeOverride={PropType.STAFF}
+        {...PICTO_FLAGS}
+      />
     </div>
-    <div class="comb-label" style="left:{COMB_X * S}px; top:{(strip.y + SIZE - 10) * S}px; width:{SIZE * S}px">
+    <div
+      class="comb-label"
+      style="left:{COMB_X * S}px; top:{(strip.y + SIZE - 10) *
+        S}px; width:{SIZE * S}px"
+    >
       Z-<span class="sup {strip.supPos}" style="color:{strip.supColor}">1</span>
     </div>
     {#if strip.dot === "same"}
-      <span class="dir-dot" style="left:{COMB_CX * S}px; top:{(strip.y + SIZE - 18) * S}px"></span>
+      <span
+        class="dir-dot"
+        style="left:{COMB_CX * S}px; top:{(strip.y + SIZE - 18) * S}px"
+      ></span>
     {:else if strip.dot === "opp"}
-      <span class="dir-dot" style="left:{COMB_CX * S}px; top:{(strip.y + SIZE + 6) * S}px"></span>
+      <span
+        class="dir-dot"
+        style="left:{COMB_CX * S}px; top:{(strip.y + SIZE + 6) * S}px"
+      ></span>
     {/if}
 
     <!-- flow arrows + "=" -->
-    <svg class="flow-arrow" style="left:{(HALF_X - 22) * S}px; top:{(rowMid(strip.y) - 5) * S}px; width:{ARROW_W * S}px; height:{10 * S}px" viewBox="0 0 {ARROW_W} 10" aria-hidden="true">
-      <line x1="0" y1="5" x2={ARROW_W - 7} y2="5" stroke="#141414" stroke-width="2" /><polygon points="{ARROW_W - 8},1.3 {ARROW_W},5 {ARROW_W - 8},8.7" fill="#141414" />
+    <svg
+      class="flow-arrow"
+      style="left:{(HALF_X - 22) * S}px; top:{(rowMid(strip.y) - 5) *
+        S}px; width:{ARROW_W * S}px; height:{10 * S}px"
+      viewBox="0 0 {ARROW_W} 10"
+      aria-hidden="true"
+    >
+      <line
+        x1="0"
+        y1="5"
+        x2={ARROW_W - 7}
+        y2="5"
+        stroke="#141414"
+        stroke-width="2"
+      /><polygon
+        points="{ARROW_W - 8},1.3 {ARROW_W},5 {ARROW_W - 8},8.7"
+        fill="#141414"
+      />
     </svg>
-    <svg class="flow-arrow" style="left:{(END_X - 22) * S}px; top:{(rowMid(strip.y) - 5) * S}px; width:{ARROW_W * S}px; height:{10 * S}px" viewBox="0 0 {ARROW_W} 10" aria-hidden="true">
-      <line x1="0" y1="5" x2={ARROW_W - 7} y2="5" stroke="#141414" stroke-width="2" /><polygon points="{ARROW_W - 8},1.3 {ARROW_W},5 {ARROW_W - 8},8.7" fill="#141414" />
+    <svg
+      class="flow-arrow"
+      style="left:{(END_X - 22) * S}px; top:{(rowMid(strip.y) - 5) *
+        S}px; width:{ARROW_W * S}px; height:{10 * S}px"
+      viewBox="0 0 {ARROW_W} 10"
+      aria-hidden="true"
+    >
+      <line
+        x1="0"
+        y1="5"
+        x2={ARROW_W - 7}
+        y2="5"
+        stroke="#141414"
+        stroke-width="2"
+      /><polygon
+        points="{ARROW_W - 8},1.3 {ARROW_W},5 {ARROW_W - 8},8.7"
+        fill="#141414"
+      />
     </svg>
-    <span class="equals" style="left:{(COMB_X - 15) * S}px; top:{rowMid(strip.y) * S}px">=</span>
+    <span
+      class="equals"
+      style="left:{(COMB_X - 15) * S}px; top:{rowMid(strip.y) * S}px">=</span
+    >
   {/each}
 </div>
 

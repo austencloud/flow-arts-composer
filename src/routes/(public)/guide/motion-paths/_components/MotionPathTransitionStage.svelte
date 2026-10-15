@@ -301,7 +301,8 @@
         if (source === "first") firstSeek = seek;
         else secondSeek = seek;
       },
-      onReady: (loadIdentity) => markSequenceReady(source, key, loadIdentity),
+      onReady: (loadIdentity: string | null) =>
+        markSequenceReady(source, key, loadIdentity),
       onCanvasInitialized: () => markCanvasReady(source, key),
       onLoadError: () => handleLoadError(source, key),
     };
