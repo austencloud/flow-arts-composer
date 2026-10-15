@@ -75,6 +75,8 @@ def import_file(path, folder, name, mesh=False):
                 ensure_instancing(material)
                 if ((folder.startswith('/Game/FlowFest/Assets/Trees/') and material.get_name().endswith('_leaves')) or job_wind_family(folder)) and not ME.get_material_property_input_node(material, u.MaterialProperty.MP_WORLD_POSITION_OFFSET):
                     add_foliage_wind(material, folder.startswith('/Game/FlowFest/Assets/Trees/'))
+                if ((folder.startswith('/Game/FlowFest/Assets/Trees/') and material.get_name().endswith('_leaves')) or job_wind_family(folder)):
+                    migrate_wind_masks(material)
                 if job_wind_family(folder):
                     # The ecology source is opaque, two-sided foliage. Give its
                     # back face colored transmission from the same (possibly
@@ -130,6 +132,38 @@ def ensure_instancing(material):
 
 def job_wind_family(folder):
     return folder == '/Game/FlowFest/Assets/Ecology'
+
+def migrate_wind_masks(material):
+    """Repair masks in an existing wind graph without touching color or alpha."""
+    root = ME.get_material_property_input_node(material, u.MaterialProperty.MP_WORLD_POSITION_OFFSET)
+    if not root:
+        raise RuntimeError('Foliage wind graph missing: ' + material.get_path_name())
+    stack = [root]
+    visited = set()
+    x_mask = height_mask = None
+    while stack:
+        node = stack.pop()
+        if node.get_path_name() in visited:
+            continue
+        visited.add(node.get_path_name())
+        inputs = ME.get_inputs_for_material_expression(material, node)
+        if isinstance(node, u.MaterialExpressionComponentMask) and len(inputs) == 1:
+            source = inputs[0]
+            if isinstance(source, u.MaterialExpressionWorldPosition):
+                x_mask = node
+            elif isinstance(source, u.MaterialExpressionSubtract):
+                operands = ME.get_inputs_for_material_expression(material, source)
+                if (any(isinstance(x, u.MaterialExpressionWorldPosition) for x in operands)
+                        and any(isinstance(x, u.MaterialExpressionObjectPositionWS) for x in operands)):
+                    height_mask = node
+        stack.extend(inputs)
+    if not x_mask or not height_mask:
+        raise RuntimeError('Foliage wind masks not found: ' + material.get_path_name())
+    for mask, channels in ((x_mask, (True, False, False, False)),
+                           (height_mask, (False, False, True, False))):
+        for channel, enabled in zip(('r', 'g', 'b', 'a'), channels):
+            if mask.get_editor_property(channel) != enabled:
+                mask.set_editor_property(channel, enabled)
 
 def add_foliage_wind(material, tree):
     """Small height-weighted WPO motion, so stems stay planted in the soil."""
