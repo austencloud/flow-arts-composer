@@ -8,6 +8,11 @@ import {
   withPickVersion,
   type PickVersionFields,
 } from "#lib/shared/settings/domain/prop-version-rule.js";
+vi.mock("./BuugengPairPreview.svelte", async () => ({
+  default: (await import("./__test-stubs__/BuugengPairPreviewStub.svelte"))
+    .default,
+}));
+
 import BentoPropGrid from "./BentoPropGrid.svelte";
 
 const CLUB_PICKER_PROPS = [
@@ -191,7 +196,7 @@ describe("BentoPropGrid style settings", () => {
     expect(held.propArtwork).toBe("model");
   });
 
-  it("keeps a buugeng style's chirality on the same page", async () => {
+  it("keeps a buugeng style's pair picker on the same page", async () => {
     const onChange = vi.fn();
     render(BentoPropGrid, {
       selectedPropType: PropType.TRIGENG,
@@ -208,7 +213,11 @@ describe("BentoPropGrid style settings", () => {
 
     await page.getByRole("button", { name: "Choose Triad style" }).click();
     const styles = page.getByRole("region", { name: "Triad styles" });
-    await styles.getByRole("radio", { name: /^B/ }).first().click();
+    await styles
+      .getByRole("radio", { name: "Mirrored, Left B, right A" })
+      .click();
+    // A pair pick writes only the hand that changed.
+    expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledWith("left", true);
   });
 });

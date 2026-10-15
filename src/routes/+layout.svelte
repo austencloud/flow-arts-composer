@@ -211,10 +211,11 @@
   const MARKETING_EXCLUDE = new Set(["/notation/qft"]);
   // The guide's sheet surfaces stay chrome-free: the print, book, handbook and
   // cover-lab pages (+page@(public)) render bare 8.5x11 sheets for printing,
-  // and the Codex pages are a sheet viewer with its own sticky print toolbar
-  // (/guide/codex) plus two noindex dev tools (poster, parity).
+  // and so do the Codex sub-pages: its print sheets (/guide/codex/print) and
+  // two noindex dev tools (poster, parity). /guide/codex itself is a guide
+  // page whose rail sits under the site header, so it keeps the chrome.
   const MARKETING_EXCLUDE_PATTERN =
-    /^\/guide\/(?:codex(?:\/|$)|level-[12]\/(?:print|book|handbook|cover-lab)\/?$)/;
+    /^\/guide\/(?:codex\/|level-[12]\/(?:print|book|handbook|cover-lab)\/?$)/;
   const isMarketing = $derived.by(() => {
     const p = routePathFor(page.url.pathname);
     if (MARKETING_EXCLUDE.has(p)) return false;

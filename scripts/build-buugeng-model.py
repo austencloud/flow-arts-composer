@@ -171,11 +171,17 @@ def import_body(
 
     # Author its width on Blender X and its length on Blender Z; glTF's Y-up
     # conversion preserves the prop contract.
+    #
+    # The width is mirrored. The photo trace is the opposite hand from the
+    # notation artwork (static/images/props/buugeng.svg), and buugeng chirality
+    # A has to be one shape in every version (2026-10-15). A mirror reverses the
+    # winding, so the fill's normals are flipped back to face the same way.
     for vertex in body.data.vertices:
         source = vertex.co - center
         along_width = source.x * cos_turn - source.y * sin_turn
         along_length = source.x * sin_turn + source.y * cos_turn
-        vertex.co = Vector((along_width * scale, 0.0, along_length * scale))
+        vertex.co = Vector((-along_width * scale, 0.0, along_length * scale))
+    body.data.flip_normals()
 
     body.data.materials.append(body_material)
     solidify = body.modifiers.new("9.5mm body stock", "SOLIDIFY")
