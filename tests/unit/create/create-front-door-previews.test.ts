@@ -89,7 +89,22 @@ const WITH_SCENES = ALL.filter((id) =>
 
 /** runAfterNamedRouteMorphIdle waits this long without requestIdleCallback, as in jsdom. */
 const IDLE_FALLBACK_MS = 180;
+/** After the page settles, once the cards have already arrived. */
 const FIRST_TURN_MS = IDLE_FALLBACK_MS + METHOD_PREVIEW_TIMING.startDelayMs;
+/** The cards' wave: one stagger per card after the first, then a fade. */
+function waveMs(sceneCount: number): number {
+  return (
+    (sceneCount - 1) * METHOD_PREVIEW_TIMING.revealStaggerMs +
+    METHOD_PREVIEW_TIMING.revealFadeMs
+  );
+}
+/** The first time the board opens, the turns also wait for the wave. */
+function firstOpenTurnMs(sceneCount = WITH_SCENES.length): number {
+  return (
+    Math.max(IDLE_FALLBACK_MS, waveMs(sceneCount)) +
+    METHOD_PREVIEW_TIMING.startDelayMs
+  );
+}
 const TURN_CYCLE_MS =
   METHOD_PREVIEW_TIMING.turnMs + METHOD_PREVIEW_TIMING.gapMs;
 
@@ -286,7 +301,7 @@ describe("Create front door, method previews", () => {
     render();
     setOpen(true);
 
-    advance(FIRST_TURN_MS - 1);
+    advance(firstOpenTurnMs() - 1);
     expect(playingMethod()).toBeNull();
 
     advance(1);
@@ -296,6 +311,27 @@ describe("Create front door, method previews", () => {
     advance(TURN_CYCLE_MS);
     expect(playingMethod()).toBe("generate");
     expect(preview("construct")?.dataset.playing).toBe("false");
+  });
+
+  it("brings the cards in together, in board order, before the first turn", () => {
+    render();
+    setOpen(true);
+
+    // Every stand-in is ready on mount, so the wave starts at once.
+    const stagger = METHOD_PREVIEW_TIMING.revealStaggerMs;
+    expect(preview("construct")?.dataset.revealed).toBe("true");
+    expect(preview("generate")?.dataset.revealed).toBe("false");
+
+    advance(stagger);
+    expect(preview("generate")?.dataset.revealed).toBe("true");
+    expect(preview("shape-engine")?.dataset.revealed).toBe("false");
+
+    advance(stagger * (WITH_SCENES.length - 2));
+    for (const id of WITH_SCENES) {
+      expect(preview(id)?.dataset.revealed).toBe("true");
+    }
+    // The first turn waits for the last card's fade.
+    expect(playingMethod()).toBeNull();
   });
 
   it("keeps the turns waiting while the boot screen covers the page", async () => {
@@ -324,7 +360,7 @@ describe("Create front door, method previews", () => {
   it("ends the turns when a method is chosen", () => {
     render();
     setOpen(true);
-    advance(FIRST_TURN_MS);
+    advance(firstOpenTurnMs());
     expect(playingMethod()).toBe("construct");
 
     card("generate").click();
@@ -339,7 +375,7 @@ describe("Create front door, method previews", () => {
   it("keeps the turns going when a guest taps a locked method", () => {
     render({ locked: ["fuse"] });
     setOpen(true);
-    advance(FIRST_TURN_MS);
+    advance(firstOpenTurnMs());
 
     card("fuse").click();
     flushSync();
@@ -401,7 +437,7 @@ describe("Create front door, method previews", () => {
     const queriesBefore = vi.mocked(window.matchMedia).mock.results.length;
     render();
     setOpen(true);
-    advance(FIRST_TURN_MS);
+    advance(firstOpenTurnMs());
     expect(playingMethod()).toBe("construct");
 
     // vitest-setup.ts stubs matchMedia, and the stub's addEventListener
@@ -433,7 +469,7 @@ describe("Create front door, method previews", () => {
   it("follows the app's Reduce Motion setting while the board is open", () => {
     render();
     setOpen(true);
-    advance(FIRST_TURN_MS);
+    advance(firstOpenTurnMs());
     expect(playingMethod()).toBe("construct");
 
     appMotionSetting.set("reducedMotion", true);
@@ -453,7 +489,7 @@ describe("Create front door, method previews", () => {
   it("ends the turns when the board closes and starts over when it opens again", () => {
     render();
     setOpen(true);
-    advance(FIRST_TURN_MS);
+    advance(firstOpenTurnMs());
     expect(playingMethod()).toBe("construct");
 
     setOpen(false);
@@ -509,7 +545,7 @@ describe("Create front door, method previews", () => {
     expect(sketch.querySelector(".method-glyph")).toBeNull();
     expect(preview("sketch")).toBeNull();
 
-    advance(FIRST_TURN_MS);
+    advance(firstOpenTurnMs(2));
     expect(playingMethod()).toBe("construct");
     advance(TURN_CYCLE_MS);
     expect(playingMethod()).toBe("generate");

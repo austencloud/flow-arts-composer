@@ -109,6 +109,12 @@ These rules hold everywhere:
 - Each box is reserved from first paint and shows the method's tint until its
   scene is ready. `Crossfade` then brings in the scene's finished picture.
   Nothing around it moves.
+- The cards arrive together (2026-10-14). Each holds its tint until every
+  scene is ready, or until 3 s after the first one is, then the ready cards
+  fade in as one wave in board order, 80 ms apart. A scene that misses the
+  wave fades in on its own when it is ready. Before this, each card swapped
+  on its own clock: three separate arrivals in no order on a desktop, the
+  first turn starting mid-fade, and Shape arriving 15 s late on a slow phone.
 
 ### Composition
 
@@ -353,8 +359,9 @@ Generate's first roll (added 2026-10-10).
   then a gap of about half a second before the next card. Generate's turn runs
   4.6 s so its four steps can play their moves (2026-10-11). One constant in the
   turn coordinator owns these timings, including the hover delay below.
-- Turns begin after the board has painted, the browser is idle, and any
-  chooser crossfade has finished, so opening Create is not slowed.
+- Turns begin after the board has painted, the browser is idle, any chooser
+  crossfade has finished, and the cards' arrival wave has settled, so opening
+  Create is not slowed and no card starts moving while others fade in.
 - Each time the front door opens, the cards take two rounds of turns, then all
   rest on their finished pictures.
 - With a mouse or trackpad, resting the pointer on a card for a moment, or
