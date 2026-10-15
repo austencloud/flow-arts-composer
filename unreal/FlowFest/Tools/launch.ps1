@@ -104,8 +104,8 @@ if ($AutoExit) {
         }
     }
     if ($LogPath -and (Test-Path -LiteralPath $LogPath -PathType Leaf) -and
-        (Select-String -LiteralPath $LogPath -SimpleMatch 'Failed to compile Material' -Quiet)) {
-        throw "Flow Fest rendered with failed material shaders. See $LogPath"
+        (Select-String -LiteralPath $LogPath -Pattern 'Failed to compile Material|LogTemp: Error:' -Quiet)) {
+        throw "Flow Fest reported a native asset/runtime error or failed material shader. See $LogPath"
     }
     if ($Smoke -and ((-not (Test-Path -LiteralPath $LogPath -PathType Leaf)) -or
         (Get-Item -LiteralPath $LogPath).LastWriteTimeUtc -lt $launchStarted -or
