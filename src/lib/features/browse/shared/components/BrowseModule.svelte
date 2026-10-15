@@ -97,6 +97,10 @@
   const initialGalleryLetter = parseGalleryLetterQuery(
     new URLSearchParams(page.url.searchParams)
   );
+  // Review-only comparison. The unflagged Browse route keeps its current entry.
+  const contentFirstShowAllPreview = $derived(
+    page.url.searchParams.get("browseShowAll") === "results"
+  );
 
   const engine = createBrowseEngine({
     persistKey: "tka-browse-gallery",
@@ -724,6 +728,7 @@
                   <FilterWorkspace
                     {engine}
                     collections={collectionOptions}
+                    {contentFirstShowAllPreview}
                     {resultsPane}
                     onSaveSmart={() => (smartSaveOpen = true)}
                     onEject={applyToGrid}

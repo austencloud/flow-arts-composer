@@ -41,6 +41,7 @@ the below-seam actions mutate the engine in place.
     onEject,
     onClose,
     splitMinHeight = 0,
+    contentFirstShowAllPreview = false,
   }: {
     engine: BrowseEngine;
     collections?: CollectionOption[];
@@ -62,6 +63,8 @@ the below-seam actions mutate the engine in place.
     /** Forwarded to the drill: a short host (a modal) can be wide enough for
      * the split pane and still too short for its stacked left column. */
     splitMinHeight?: number;
+    /** Opt-in review variant: Show all opens on the results with Filters ready. */
+    contentFirstShowAllPreview?: boolean;
   } = $props();
 
   const eject = (mutate: () => void) => (onEject ? onEject(mutate) : mutate());
@@ -370,6 +373,7 @@ the below-seam actions mutate the engine in place.
       onSplitCapableChange={(capable) => (splitCapable = capable)}
       onSectionChange={(section) => (drillSection = section)}
       {splitMinHeight}
+      {contentFirstShowAllPreview}
       bind:showAllPane
       {resultsHeader}
       {resultsPane}
