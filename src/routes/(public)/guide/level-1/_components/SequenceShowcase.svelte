@@ -49,6 +49,7 @@
     strip,
     trail = null,
     loop = false,
+    onStepChange,
   }: {
     /** Playable sequence for the animation canvas (the DEFAULT / entry-0 example). */
     sequence: SequenceData;
@@ -102,6 +103,11 @@
      * first pass. Omitted → the single play the guide pages use.
      */
     loop?: boolean;
+    /**
+     * The player's live 1-based fractional beat, for a host whose text
+     * follows the playing beat (0 while the start pose shows).
+     */
+    onStepChange?: (step: number) => void;
   } = $props();
 
   const propType = $derived(render?.propType ?? PropType.HAND);
@@ -165,6 +171,7 @@
   let liveStep = $state(0);
   function handleStepChange(step: number) {
     liveStep = step;
+    onStepChange?.(step);
   }
   const totalBeats = $derived(curSequence?.steps?.length ?? 0);
   const activeT = $derived.by(() => {

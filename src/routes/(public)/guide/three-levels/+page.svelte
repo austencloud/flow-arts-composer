@@ -12,9 +12,10 @@
    * established framework.
    *
    * It opens on a named pattern playing (Zan's Diamond), then follows one
-   * family, Gage DeMello's twelve-beat CAPs, through the three descriptions
-   * with a single live figure. The figure's readout follows the section being
-   * read. Every CAP comes from #lib/shared/guide-topics/caps-topic.ts.
+   * family, Gage DeMello's twelve-beat CAPs, through the three descriptions.
+   * Each level is the Guide's own SequenceShowcase playing the same chosen
+   * CAP, with that level's reading beside the canvas. Every CAP comes from
+   * #lib/shared/guide-topics/caps-topic.ts.
    */
   import { onMount } from "svelte";
   import { browser, dev } from "$app/env";
@@ -23,7 +24,7 @@
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
-  import CapFigure, { type CapLevel } from "./_components/CapFigure.svelte";
+  import CapReadout from "./_components/CapReadout.svelte";
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -40,6 +41,7 @@
     CAPS,
     CAP_RELATIONS,
     CAP_WORDS,
+    capStrip,
     type CapRelation,
   } from "#lib/shared/guide-topics/caps-topic.js";
 
@@ -103,30 +105,30 @@
     })),
   }));
 
-  // The figure's readout follows the section crossing the middle of the
-  // screen. Before the first cap section it shows the name level.
-  let level = $state<CapLevel>("name");
-  let sectionEls: Record<CapLevel, HTMLElement | undefined> = $state({
-    name: undefined,
-    letters: undefined,
-    vtg: undefined,
-  });
-  onMount(() => {
-    if (typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          const found = (Object.keys(sectionEls) as CapLevel[]).find(
-            (key) => sectionEls[key] === entry.target
-          );
-          if (found) level = found;
-        }
-      },
-      { rootMargin: "-45% 0px -45% 0px", threshold: 0 }
-    );
-    for (const el of Object.values(sectionEls)) if (el) io.observe(el);
-    return () => io.disconnect();
+  // Every level plays the chosen CAP. By name it shows no letters, on the
+  // canvas or in the strip; the VTG level adds each beat's element.
+  const capItems = $derived(capStrip(cap));
+  const capByName = $derived(
+    stripToSequence(unlettered(capItems), { word: "", name: "CAP" })
+  );
+  const capLettered = $derived(
+    stripToSequence(capItems, { word: cap.word, name: cap.word })
+  );
+  const capRender = (level: "name" | "letters" | "vtg") =>
+    ({
+      propType: PropType.STAFF,
+      showTKA: level !== "name",
+      showStepNumbers: true,
+      showElemental: level === "vtg",
+    }) satisfies PictographRender;
+
+  // The beat each reading follows, reported by its showcase's player.
+  let lettersStep = $state(0);
+  let vtgStep = $state(0);
+  $effect(() => {
+    void cap;
+    lettersStep = 0;
+    vtgStep = 0;
   });
 
   // Pictographs follow the site theme, as the Level 1 pages do.
@@ -185,148 +187,177 @@
 
   <GuideShell>
     <article class="essay guide-page-route">
-      <header class="intro">
+      <header class="intro centered">
         <p class="eyebrow">{t("guide_caps_eyebrow")}</p>
         <h1>{t("guide_caps_title")}</h1>
         <p class="lede">{t("guide_caps_lede")}</p>
       </header>
 
-      <section class="names" aria-labelledby="names-heading">
-        <div class="prose">
+      <section class="level" aria-labelledby="names-heading">
+        <div class="centered">
           <h2 id="names-heading">{t("guide_caps_names_title")}</h2>
           <p>{t("guide_caps_names_body")}</p>
         </div>
-        <div class="named">
-          <SequenceShowcase
-            variant="compact"
-            sequence={zans.sequence}
-            items={zans.items}
-            render={zans.render}
-            loop
-            {picTheme}
-          >
-            {#snippet text()}
-              <div class="name-label">
-                <h3>Zan's Diamond</h3>
-                <p>
-                  {t("guide_caps_names_by", { name: ZANS_DIAMOND_CREDIT.name })}
-                </p>
-              </div>
-            {/snippet}
-          </SequenceShowcase>
-        </div>
-        <div class="prose">
+        <SequenceShowcase
+          variant="compact"
+          sequence={zans.sequence}
+          items={zans.items}
+          render={zans.render}
+          loop
+          {picTheme}
+        >
+          {#snippet text()}
+            <div class="name-label">
+              <h3>Zan's Diamond</h3>
+              <p>
+                {t("guide_caps_names_by", { name: ZANS_DIAMOND_CREDIT.name })}
+              </p>
+            </div>
+          {/snippet}
+        </SequenceShowcase>
+        <div class="centered">
           <p>{t("guide_caps_names_limit")}</p>
         </div>
       </section>
 
-      <div class="caps">
-        <div class="caps-text">
-          <section
-            class="level"
-            bind:this={sectionEls.name}
-            aria-labelledby="cap-heading"
-          >
-            <h2 id="cap-heading">{t("guide_caps_cap_title")}</h2>
-            <p>{t("guide_caps_cap_body")}</p>
-            <p>{t("guide_caps_cap_rules", { count: CAPS.length })}</p>
-            <p>{t("guide_caps_cap_limit")}</p>
-            <p class="credit">{t("guide_caps_cap_credit")}</p>
-            <div class="links">
-              <LinkChip href={EIGHT_STEP_SOURCE} target="_blank" rel="noopener"
-                >{t("guide_caps_link_source")}</LinkChip
-              >
-              <LinkChip href={localHref("/notation/caps")}
-                >{t("guide_caps_link_caps")}</LinkChip
-              >
-            </div>
-          </section>
-
-          <section
-            class="level"
-            bind:this={sectionEls.letters}
-            aria-labelledby="letters-heading"
-          >
-            <h2 id="letters-heading">{t("guide_caps_letters_title")}</h2>
-            <p>{t("guide_caps_letters_body")}</p>
-            <p>{t("guide_caps_letters_repeat")}</p>
-            <div
-              class="picker"
-              role="group"
-              aria-label={t("guide_caps_picker_label")}
-            >
-              {#each groups as group (group.relation)}
-                <div class="picker-group">
-                  <p class="picker-heading">{t(group.label)}</p>
-                  <div class="picker-words">
-                    {#each group.words as entry (entry.word)}
-                      <button
-                        type="button"
-                        class="word"
-                        class:selected={entry.word === cap.word}
-                        aria-pressed={entry.word === cap.word}
-                        aria-label={entry.word}
-                        onclick={() => (capIndex = entry.i)}
-                      >
-                        {#if browser}
-                          <TKAWordGlyph
-                            word={entry.word}
-                            height={22}
-                            darkMode={picTheme === "dark"}
-                          />
-                        {:else}
-                          <span class="word-text">{entry.word}</span>
-                        {/if}
-                      </button>
-                    {/each}
-                  </div>
-                </div>
-              {/each}
-            </div>
-            <p>
-              {t("guide_caps_letters_shared", {
-                caps: CAPS.length,
-                words: CAP_WORDS.length,
-              })}
-            </p>
-            <p>{t("guide_caps_letters_think")}</p>
-          </section>
-
-          <section
-            class="level"
-            bind:this={sectionEls.vtg}
-            aria-labelledby="vtg-heading"
-          >
-            <h2 id="vtg-heading">{t("guide_caps_vtg_title")}</h2>
-            <p>{t("guide_caps_vtg_body")}</p>
-            <p>{t("guide_caps_vtg_cap")}</p>
-            <p>{t("guide_caps_vtg_check")}</p>
-            {#if sameWord.total > 1}
-              <div class="same-word">
-                <button type="button" onclick={nextSameWord}>
-                  {t("guide_caps_same_word")}
-                </button>
-                <span>{t("guide_caps_figure_count", sameWord)}</span>
-              </div>
-            {/if}
-          </section>
+      <section class="level" aria-labelledby="cap-heading">
+        <div class="centered">
+          <h2 id="cap-heading">{t("guide_caps_cap_title")}</h2>
+          <p>{t("guide_caps_cap_body")}</p>
+          <p>{t("guide_caps_cap_rules", { count: CAPS.length })}</p>
         </div>
-
-        <div class="figure-col">
-          <div class="sticky">
-            <CapFigure
-              {cap}
-              {level}
-              {picTheme}
-              position={capIndex + 1}
-              total={CAPS.length}
-              onNext={nextCap}
-            />
+        <SequenceShowcase
+          sequence={capByName}
+          items={capItems}
+          render={capRender("name")}
+          loop
+          {picTheme}
+        >
+          {#snippet text()}
+            <div class="beside">
+              <h3>{t("guide_caps_figure_name")}</h3>
+              <p>{t("guide_caps_cap_limit")}</p>
+              <div class="cycle">
+                <button type="button" onclick={nextCap}>
+                  {t("guide_caps_show_another")}
+                </button>
+                <span
+                  >{t("guide_caps_figure_count", {
+                    n: capIndex + 1,
+                    total: CAPS.length,
+                  })}</span
+                >
+              </div>
+            </div>
+          {/snippet}
+        </SequenceShowcase>
+        <div class="centered">
+          <p class="credit">{t("guide_caps_cap_credit")}</p>
+          <div class="links">
+            <LinkChip href={EIGHT_STEP_SOURCE} target="_blank" rel="noopener"
+              >{t("guide_caps_link_source")}</LinkChip
+            >
+            <LinkChip href={localHref("/notation/caps")}
+              >{t("guide_caps_link_caps")}</LinkChip
+            >
           </div>
         </div>
-      </div>
+      </section>
 
-      <section class="close" aria-labelledby="close-heading">
+      <section class="level" aria-labelledby="letters-heading">
+        <div class="centered">
+          <h2 id="letters-heading">{t("guide_caps_letters_title")}</h2>
+          <p>{t("guide_caps_letters_body")}</p>
+          <p>{t("guide_caps_letters_repeat")}</p>
+        </div>
+        <SequenceShowcase
+          sequence={capLettered}
+          items={capItems}
+          render={capRender("letters")}
+          loop
+          {picTheme}
+          onStepChange={(step) => (lettersStep = step)}
+        >
+          {#snippet text()}
+            <CapReadout {cap} level="letters" step={lettersStep} {picTheme} />
+          {/snippet}
+        </SequenceShowcase>
+        <div
+          class="picker"
+          role="group"
+          aria-label={t("guide_caps_picker_label")}
+        >
+          {#each groups as group (group.relation)}
+            <div class="picker-group">
+              <p class="picker-heading">{t(group.label)}</p>
+              <div class="picker-words">
+                {#each group.words as entry (entry.word)}
+                  <button
+                    type="button"
+                    class="word"
+                    class:selected={entry.word === cap.word}
+                    aria-pressed={entry.word === cap.word}
+                    aria-label={entry.word}
+                    onclick={() => (capIndex = entry.i)}
+                  >
+                    {#if browser}
+                      <TKAWordGlyph
+                        word={entry.word}
+                        height={22}
+                        darkMode={picTheme === "dark"}
+                      />
+                    {:else}
+                      <span class="word-text">{entry.word}</span>
+                    {/if}
+                  </button>
+                {/each}
+              </div>
+            </div>
+          {/each}
+        </div>
+        <div class="centered">
+          <p>
+            {t("guide_caps_letters_shared", {
+              caps: CAPS.length,
+              words: CAP_WORDS.length,
+            })}
+          </p>
+          <p>{t("guide_caps_letters_think")}</p>
+        </div>
+      </section>
+
+      <section class="level" aria-labelledby="vtg-heading">
+        <div class="centered">
+          <h2 id="vtg-heading">{t("guide_caps_vtg_title")}</h2>
+          <p>{t("guide_caps_vtg_body")}</p>
+          <p>{t("guide_caps_vtg_cap")}</p>
+        </div>
+        <SequenceShowcase
+          sequence={capLettered}
+          items={capItems}
+          render={capRender("vtg")}
+          loop
+          {picTheme}
+          onStepChange={(step) => (vtgStep = step)}
+        >
+          {#snippet text()}
+            <div class="beside">
+              <CapReadout {cap} level="vtg" step={vtgStep} {picTheme} />
+              <p>{t("guide_caps_vtg_check")}</p>
+              {#if sameWord.total > 1}
+                <div class="cycle">
+                  <button type="button" onclick={nextSameWord}>
+                    {t("guide_caps_same_word")}
+                  </button>
+                  <span>{t("guide_caps_figure_count", sameWord)}</span>
+                </div>
+              {/if}
+            </div>
+          {/snippet}
+        </SequenceShowcase>
+      </section>
+
+      <section class="level centered" aria-labelledby="close-heading">
         <h2 id="close-heading">{t("guide_caps_close_title")}</h2>
         <p>{t("guide_caps_close_body")}</p>
         <p>{t("guide_caps_close_take")}</p>
@@ -353,12 +384,11 @@
     color: var(--theme-text);
     display: flex;
     flex-direction: column;
-    gap: clamp(40px, 6vw, 72px);
+    gap: clamp(56px, 8vw, 96px);
     --ink: var(--theme-text);
     --ink-dim: var(--theme-text-muted);
   }
   .essay h1 {
-    text-align: left;
     margin: 0;
     padding: 0;
     grid-column: auto;
@@ -368,14 +398,24 @@
     margin: 0;
   }
   .essay p {
-    max-width: 64ch;
     line-height: 1.65;
     color: var(--theme-text-muted);
     margin: 0;
   }
-  .intro {
+
+  /* Headings, intros and section prose sit centred, as on the other Guide
+     pages; the reading beside each canvas reads left. */
+  .centered {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: center;
+  }
+  .centered p {
+    max-width: 64ch;
+  }
+  .intro {
     gap: var(--spacing-sm, 8px);
   }
   .essay .eyebrow {
@@ -388,22 +428,17 @@
     font-size: 1.125rem;
     color: var(--theme-text);
   }
-  .prose {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+  .essay .credit {
+    font-size: 0.875rem;
   }
 
-  .names {
+  /* One level: its heading and prose, its showcase, then any follow-up. */
+  .level {
     display: flex;
     flex-direction: column;
     gap: clamp(20px, 3vw, 32px);
   }
-  .named {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
-    gap: clamp(20px, 3vw, 32px);
-  }
+
   .name-label {
     display: flex;
     flex-direction: column;
@@ -412,55 +447,63 @@
   .name-label h3 {
     font-size: 1.0625rem;
   }
-  .essay .credit {
-    font-size: 0.875rem;
-  }
   .essay .name-label p {
     font-size: 0.875rem;
   }
 
-  /* The cap sections read on the left while the figure stays in view on the
-     right. Narrow screens put the figure in a bar pinned to the top. */
-  .caps {
-    display: grid;
-    /* The figure is about 0.9 as tall as it is wide, so a short window
-       narrows it until it fits below the header. */
-    grid-template-columns: minmax(0, 1fr) minmax(
-        0,
-        min(560px, calc((100svh - 112px) * 1.1))
-      );
-    gap: clamp(24px, 4vw, 56px);
-    align-items: start;
-  }
-  .caps-text {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(64px, 18vh, 200px);
-    padding-block: 0 25vh;
-  }
-  .level {
+  /* The reading beside a CAP's canvas. */
+  .beside {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
   }
-  .figure-col {
-    align-self: stretch;
+  .beside h3 {
+    font-size: 1.5rem;
   }
-  .sticky {
-    position: sticky;
-    top: calc(var(--marketing-header-h, 64px) + 16px);
+  .beside p {
+    max-width: 44ch;
+  }
+  .cycle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+  .cycle button {
+    min-height: 44px;
+    padding: 0 1rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--theme-text) 22%, transparent);
+    background: color-mix(in oklab, var(--theme-text) 6%, transparent);
+    color: var(--theme-text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .cycle button:hover {
+    background: color-mix(in oklab, var(--theme-text) 12%, transparent);
+  }
+  .cycle button:focus-visible {
+    outline: 2px solid var(--semantic-warning);
+    outline-offset: 2px;
+  }
+  .cycle span {
+    font-size: 0.875rem;
+    color: var(--theme-text-muted);
+    font-variant-numeric: tabular-nums;
   }
 
   .picker {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-block: 0.25rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem 2rem;
   }
   .picker-group {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    align-items: center;
+    gap: 0.4rem;
   }
   .essay .picker-heading {
     font-size: 0.8125rem;
@@ -469,7 +512,9 @@
   .picker-words {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 6px;
+    max-width: 22rem;
   }
   .word {
     display: grid;
@@ -498,76 +543,11 @@
     outline-offset: 2px;
   }
 
-  .close {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  .same-word {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem 0.75rem;
-  }
-  .same-word button {
-    min-height: 44px;
-    padding: 0 1rem;
-    border-radius: 999px;
-    border: 1px solid color-mix(in oklab, var(--theme-text) 22%, transparent);
-    background: color-mix(in oklab, var(--theme-text) 6%, transparent);
-    color: var(--theme-text);
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .same-word button:hover {
-    background: color-mix(in oklab, var(--theme-text) 12%, transparent);
-  }
-  .same-word button:focus-visible {
-    outline: 2px solid var(--semantic-warning);
-    outline-offset: 2px;
-  }
-  .same-word span {
-    font-size: 0.875rem;
-    color: var(--theme-text-muted);
-  }
   .links {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: var(--spacing-sm, 8px);
     margin-top: 0.25rem;
-  }
-
-  @media (max-width: 899px) {
-    .caps {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    /* The figure comes first and pins to the top while the text scrolls. */
-    .figure-col {
-      order: -1;
-      position: sticky;
-      top: var(--marketing-header-h, 64px);
-      z-index: 5;
-      padding-block: 8px;
-      background: var(--theme-panel-bg);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid
-        color-mix(in oklab, var(--theme-text) 10%, transparent);
-    }
-    /* Narrow enough that the figure drops its strip and stays a short bar. */
-    .sticky {
-      position: static;
-      max-width: 459px;
-      margin-inline: auto;
-    }
-    .caps-text {
-      gap: clamp(48px, 12vh, 120px);
-    }
-  }
-  /* Too short to pin a bar without hiding the text. */
-  @media (max-width: 899px) and (max-height: 560px) {
-    .figure-col {
-      position: static;
-    }
   }
 </style>
