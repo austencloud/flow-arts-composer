@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-07
 **Status:** Approved (design), pending implementation plan
-**Related:** `docs/architecture/guide-single-source.md` (single-source decision),
+**Related:** `docs/archive/swarm-2026-10-14/architecture/guide-single-source.md` (single-source decision),
 `docs/superpowers/specs/2026-06-21-guide-rebuild-tracker.md` (page rebuild),
 memory `project_guide_single_source`.
 

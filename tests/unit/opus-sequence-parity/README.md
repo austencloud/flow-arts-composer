@@ -6,7 +6,7 @@ so these tests assert completed LOOP behavior directly instead of preserving
 known defects as parity expectations.
 
 Findings and migration sequence:
-`docs/reports/opus-batch-2026-09-12/sequence-engine-parity.md`.
+`docs/archive/swarm-2026-10-14/reports/opus-batch-2026-09-12/sequence-engine-parity.md`.
 
 ## What runs by default
 
@@ -16,7 +16,7 @@ Findings and migration sequence:
 | `loop-completion-contract.test.ts`      | Does each supported legacy operation preserve its seed, produce its requested transformation, chain coherent steps, and close placement plus orientation? |
 
 The historical differential and the D1/D2 examples remain documented in
-`docs/reports/opus-batch-2026-09-12/sequence-engine-parity.md`; the production
+`docs/archive/swarm-2026-10-14/reports/opus-batch-2026-09-12/sequence-engine-parity.md`; the production
 contract now requires those cases to be coherent and closed.
 
 ## Determinism
