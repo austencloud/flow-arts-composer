@@ -86,7 +86,9 @@ The scripted experience covers the first night. Car and EUC movement remains sim
 
 ### Shared native foundation
 
-Flow Fest and Museum share the native contract owner at `unreal/Shared/Tools`, with runtime primitives intended for the `FlowArtsRuntime` module under `unreal/Shared/FlowArtsRuntime`. The shared work owns catalog and capture validation, provenance, and asset distribution. Flow Fest owns the performer implementation until its current motion gates pass; extracting that implementation is a separate migration. Festival geography, journeys, attendee schedules, and UI remain game-specific.
+Flow Fest and Museum use the `FlowArtsRuntime` plugin under `unreal/Shared/FlowArtsRuntime`. It owns native avatar animation, equipment, grip IK, the synchronized playback clock, and routine transitions. `unreal/Shared/Tools` owns character catalog evaluation and capture validation. Festival geography, journeys, attendee schedules, and UI remain game-specific. Flow Fest's project enables the plugin through `AdditionalPluginDirectories: ["../Shared"]` and redirects its former game-module component names to the shared module.
+
+A detached editable delivery must keep `Project` and `Shared` beside each other: `Project/FlowFest.uproject`, `Shared/FlowArtsRuntime/FlowArtsRuntime.uplugin`, and `Shared/Tools`. Copy the generated project content and both game and plugin binaries as well as source; copying the `.uproject` alone is insufficient. Full source asset regeneration still requires the repository and its dependencies, as described above.
 
 The current family schema is `flow-fest-prop-motion-v3`, captured with revision `clock-isolated-body-v3`. Character, physical prop family, and routine A/B must match exactly. Existing schema tags and `/Game/FlowFest` asset paths remain compatible during adoption. Moving assets to another mount requires an Unreal asset migration; renaming raw `.uasset` files is not supported. The prop converter's tested native Feet space is `(source.z, -source.x, source.y) * 100`; skeleton import and static prop mesh spaces have their own basis transformations and must not be treated as interchangeable.
 
