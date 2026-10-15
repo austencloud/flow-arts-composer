@@ -469,7 +469,19 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                     };
                     if (TestTrue(*FString::Printf(TEXT("A to B switch loads: %s"), *Case), SwitchTo(1)))
                     {
-                        for (int32 Step = 0; Step < 3; ++Step) TickSwitch(.02f, Step == 0, TEXT("A-to-B"));
+                        const bool bProbeBuugeng = Family.Contains(TEXT("buugeng"));
+                        const FVector RightWristBeforeB = Body->GetSocketLocation(TEXT("RightHand"));
+                        TArray<FVector, TInlineAllocator<4>> RightWristDuringB;
+                        for (int32 Step = 0; Step < (bProbeBuugeng ? 4 : 3); ++Step)
+                        {
+                            TickSwitch(.02f, Step == 0, TEXT("A-to-B"));
+                            if (bProbeBuugeng) RightWristDuringB.Add(Body->GetSocketLocation(TEXT("RightHand")));
+                        }
+                        if (bProbeBuugeng)
+                            UE_LOG(LogTemp, Warning, TEXT("FlowFestBuugengContinuation %s rightWrist t0=%s t02=%s t04=%s t06=%s t08=%s"),
+                                *Case, *RightWristBeforeB.ToCompactString(),
+                                *RightWristDuringB[0].ToCompactString(), *RightWristDuringB[1].ToCompactString(),
+                                *RightWristDuringB[2].ToCompactString(), *RightWristDuringB[3].ToCompactString());
                         if (TestTrue(*FString::Printf(TEXT("Interrupted B to A switch loads: %s"), *Case), SwitchTo(0)))
                             for (int32 Step = 0; Step < 10; ++Step) TickSwitch(.02f, Step == 0, TEXT("interrupted-B-to-A"));
                     }
