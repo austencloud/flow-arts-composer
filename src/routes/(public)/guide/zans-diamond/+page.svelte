@@ -2,8 +2,9 @@
   /**
    * /guide/zans-diamond: Zan's Diamond as one hand path, the original
    * two-hand word, and the 23 variations made by changing one hand. Every
-   * word is a SequenceShowcase (the guide's player + pictograph strip), so the
-   * page reads like the Level 1 topics it builds on. The record lives in
+   * word plays in a SequenceShowcase (the guide's player + pictograph strip);
+   * each family is one showcase that cycles through its words, so the page
+   * reads like the Level 1 topics it builds on. The record lives in
    * #lib/shared/guide-topics/zans-diamond-topic.ts.
    */
   import { onMount } from "svelte";
@@ -53,13 +54,26 @@
     };
   };
   const original = showcase(ZANS_DIAMOND_ORIGINAL);
-  const families = ZANS_DIAMOND_FAMILIES.map((family) => ({
-    ...family,
-    members: family.variations.map((variation) => ({
-      variation,
-      ...showcase(variation),
-    })),
-  }));
+  // Each family is one player that cycles through its words with the guide's
+  // "Show another example" control; entry 0 prerenders.
+  const families = $derived(
+    ZANS_DIAMOND_FAMILIES.map((family) => {
+      const first = showcase(family.variations[0]!);
+      return {
+        ...family,
+        first,
+        pool: family.variations.map((variation) => ({
+          word: variation.word,
+          loopLabel: "",
+          proseHtml: t("guide_zans_variation_line", {
+            label: zansDiamondVariationLabel(variation, t),
+            word: variation.word,
+          }),
+          items: zansDiamondStrip(variation),
+        })),
+      };
+    })
+  );
 
   // "{name}" in the lede becomes the link to Zan's channel.
   const NAME_SLOT = "\u0000";
@@ -143,32 +157,22 @@
     </SequenceShowcase>
 
     <section class="families" aria-labelledby="families-heading">
-      <h2 id="families-heading">{t("guide_zans_families_title")}</h2>
-      <p>{t("guide_zans_families_lead")}</p>
+      <div class="families-intro">
+        <h2 id="families-heading">{t("guide_zans_families_title")}</h2>
+        <p>{t("guide_zans_families_lead")}</p>
+      </div>
       {#each families as family (family.id)}
-        <section class="family" aria-labelledby="family-{family.id}">
-          <h3 id="family-{family.id}">{t(family.title)}</h3>
-          <p>{t(family.body)}</p>
-          <div class="bands">
-            {#each family.members as member (member.variation.id)}
-              <SequenceShowcase
-                variant="compact"
-                sequence={member.sequence}
-                items={member.items}
-                {picTheme}
-              >
-                {#snippet text()}
-                  <span class="band-label">
-                    <span class="word">{member.variation.word}</span>
-                    <span class="caption"
-                      >{zansDiamondVariationLabel(member.variation, t)}</span
-                    >
-                  </span>
-                {/snippet}
-              </SequenceShowcase>
-            {/each}
-          </div>
-        </section>
+        <SequenceShowcase
+          sequence={family.first.sequence}
+          items={family.first.items}
+          pool={family.pool}
+          {picTheme}
+        >
+          {#snippet text()}
+            <h3>{t(family.title)}</h3>
+            <p>{t(family.body)}</p>
+          {/snippet}
+        </SequenceShowcase>
       {/each}
     </section>
 
@@ -239,35 +243,13 @@
   .families {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-md, 16px);
+    gap: clamp(32px, 5vw, 56px);
   }
-  .family {
+  .families-intro {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm, 8px);
-    margin-top: var(--spacing-lg, 24px);
   }
-  .bands {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-lg, 24px);
-    margin-top: var(--spacing-sm, 8px);
-  }
-  .band-label {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .band-label .word {
-    font-weight: 650;
-    color: var(--theme-text);
-    overflow-wrap: anywhere;
-  }
-  .band-label .caption {
-    font-size: 0.875rem;
-    color: var(--theme-text-muted);
-  }
-
   .collection {
     display: flex;
     flex-direction: column;
