@@ -32,6 +32,9 @@ export type PictographRender = {
   showReversals?: boolean;
   /** Non-radial grid points. Default false. */
   showNonRadialPoints?: boolean;
+  /** The app's own step label in each cell's top-left ("Start", 1, 2, ...), from
+   *  each item's stepNumber. Default false. */
+  showStepNumbers?: boolean;
 };
 
 /**
