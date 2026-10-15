@@ -14,7 +14,7 @@ clipped 415px of that content instead of scrolling.
 Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 -->
 <script lang="ts">
-  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount, untrack } from "svelte";
@@ -34,6 +34,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     getBlockedPlacementsForPreset,
     StartPlacementPreset,
   } from "../../shared/domain/start-placement-presets";
+  import SettingsDrillRow from "#lib/shared/ui/components/settings-drill/SettingsDrillRow.svelte";
   import SettingsDrillPanel, {
     type SettingsDrillItem,
   } from "#lib/shared/ui/components/settings-drill/SettingsDrillPanel.svelte";
@@ -288,8 +289,22 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     )
   );
 
+  function orientationWord(ori: string): string {
+    return tDynamic(
+      ori === "in" || ori === "out"
+        ? `create_ui_orientation_${ori}_short`
+        : `create_action_orientation_${ori}_short`
+    );
+  }
+
+  const orientationValue = $derived(
+    `${t("create_ui_left")}: ${orientationWord(localLeftOri)} · ${t("create_ui_right")}: ${orientationWord(localRightOri)}`
+  );
+
   // Style is a screen of its own only on a panel too small for its controls
-  // beside the placements (CustomizeOverview's rows layout).
+  // beside the placements (CustomizeOverview's rows layout). Start orientation
+  // is one only on a panel too small for it beside the start grid, where the
+  // picker folds it to a row.
   const drillItems = $derived<SettingsDrillItem[]>([
     {
       id: "style",
@@ -300,6 +315,12 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
       id: "startPos",
       label: t("create_ui_start_placement_label"),
       value: startPosDisplay,
+    },
+    {
+      id: "startOri",
+      label: t("create_ui_prop_orientations"),
+      value: orientationValue,
+      parent: "startPos",
     },
     {
       id: "endPos",
@@ -472,36 +493,24 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
               presets={startPlacementPresets}
               {gridMode}
             >
-              <!-- Beside the picker, not on a screen of its own: the props in
-                   the grid redraw as these change, so the setting and its
-                   result are visible at the same time. -->
+              <!-- Beside the picker where there is room: the props in the
+                   grid redraw as these change, so the setting and its result
+                   are visible at the same time. On a panel too small for both,
+                   a row that opens them on a screen of their own. -->
               {#snippet aside()}
-                <section class="ori-block" aria-labelledby={oriHeadingId}>
-                  <h5 class="ori-heading" id={oriHeadingId}>
-                    {t("create_ui_prop_orientations")}
-                  </h5>
-                  <div class="ori-row">
-                    <span class="ori-hand ori-blue">{t("create_ui_left")}</span>
-                    <PropOrientationControl
-                      hand="left"
-                      orientation={localLeftOri}
-                      allowedOrientations={availableStartOrientations}
-                      onOrientationChange={handleLeftOriChange}
-                    />
-                  </div>
-                  <div class="ori-row">
-                    <span class="ori-hand ori-red">{t("create_ui_right")}</span>
-                    <PropOrientationControl
-                      hand="right"
-                      orientation={localRightOri}
-                      allowedOrientations={availableStartOrientations}
-                      onOrientationChange={handleRightOriChange}
-                    />
-                  </div>
-                </section>
+                {@render orientationControls(true)}
+              {/snippet}
+              {#snippet asideFolded()}
+                <SettingsDrillRow
+                  label={t("create_ui_prop_orientations")}
+                  value={orientationValue}
+                  onclick={() => openScreen("startOri")}
+                />
               {/snippet}
             </MultiSelectPlacementPicker>
           </div>
+        {:else if id === "startOri"}
+          {@render orientationControls(false)}
         {:else if id === "endPos"}
           <div class="drill-fill grid-fill">
             <MultiSelectPlacementPicker
@@ -519,6 +528,37 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   {/snippet}
 </GenerationSettingsOverlay>
 
+{#snippet orientationControls(withHeading: boolean)}
+  <section
+    class="ori-block"
+    aria-labelledby={withHeading ? oriHeadingId : undefined}
+  >
+    {#if withHeading}
+      <h5 class="ori-heading" id={oriHeadingId}>
+        {t("create_ui_prop_orientations")}
+      </h5>
+    {/if}
+    <div class="ori-row">
+      <span class="ori-hand ori-blue">{t("create_ui_left")}</span>
+      <PropOrientationControl
+        hand="left"
+        orientation={localLeftOri}
+        allowedOrientations={availableStartOrientations}
+        onOrientationChange={handleLeftOriChange}
+      />
+    </div>
+    <div class="ori-row">
+      <span class="ori-hand ori-red">{t("create_ui_right")}</span>
+      <PropOrientationControl
+        hand="right"
+        orientation={localRightOri}
+        allowedOrientations={availableStartOrientations}
+        onOrientationChange={handleRightOriChange}
+      />
+    </div>
+  </section>
+{/snippet}
+
 <ConfirmDialog
   bind:isOpen={resetConfirmOpen}
   title={t("create_ui_reset_all_settings")}
@@ -531,26 +571,17 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 />
 
 <style>
-  /* Full-height wrapper for the placement screens. It is a size container so
-     the picker can fit its square grid to the height the pane actually has. */
+  /* Full-height wrapper for the placement screens. The picker takes its whole
+     box and fits itself to it (layout "split"); on a box too small even at
+     the touch floor, it overflows into the drill body's scroller. */
   .grid-fill {
-    container-type: size;
     display: flex;
     flex-direction: column;
     min-width: 0;
   }
 
-  /* The two sizes the picker's grid may take, measured against this wrapper.
-     Stacked (narrow panes), chips and the status line sit above the grid, so
-     the square is the height minus that band. The 20rem floor keeps a cell
-     legible on a 412px-tall window; below it the body scrolls instead, since
-     a readable cell you scroll to beats a smudge you do not. Side by side
-     (wide panes), the controls move beside the grid, so it may use nearly the
-     whole height. */
   .grid-fill :global(.multi-select-grid) {
-    --placement-grid-size: min(100%, max(20rem, calc(100cqh - 8.5rem)));
-    --placement-grid-split-size: max(18rem, calc(100cqh - 1rem));
-    flex: 0 0 auto;
+    flex: 1 1 0;
     min-height: 0;
   }
 
