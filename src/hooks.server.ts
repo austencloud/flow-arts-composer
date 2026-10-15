@@ -17,6 +17,7 @@ import { guardInternalRoute } from "./config/build-flags";
 import { getRequestEvent, read } from "$app/server";
 import { rtlLocales } from "#lib/shared/i18n/i18n.svelte.js";
 import {
+  catalogAssetPath,
   isLocalizedPublicPath,
   localizeHref,
   splitLocalePath,
@@ -46,10 +47,11 @@ const pageCatalogs = new Map<SeoLocale, Promise<Record<string, string>>>();
 function pageCatalog(locale: SeoLocale): Promise<Record<string, string>> {
   let catalog = pageCatalogs.get(locale);
   if (!catalog) {
-    catalog = read(PAGE_CATALOG_URL[locale]).json() as Promise<
-      Record<string, string>
-    >;
-    pageCatalogs.set(locale, catalog);
+    catalog = read(
+      catalogAssetPath(PAGE_CATALOG_URL[locale])
+    ).json() as Promise<Record<string, string>>;
+    // The dev server serves edited catalogs fresh; keep them uncached there.
+    if (!dev) pageCatalogs.set(locale, catalog);
   }
   return catalog;
 }
