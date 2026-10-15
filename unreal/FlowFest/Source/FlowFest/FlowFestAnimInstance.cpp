@@ -30,6 +30,7 @@ void UFlowFestAnimInstance::Configure(const TMap<FName, TObjectPtr<UAnimSequence
     OutgoingPerformanceWeights.Empty();
     OutgoingPerformanceRates.Empty();
     OutgoingPerformanceLoops.Empty();
+    OutgoingPerformanceProfiles.Empty();
     PerformanceTime = 0.f;
     PerformanceWeight = 0.f;
     PerformanceRate = 1.f;
@@ -86,11 +87,32 @@ void UFlowFestAnimInstance::StartPerformance(UAnimSequence* Clip, bool bLoop, FN
         OutgoingPerformanceWeights.Add(PerformanceWeight);
         OutgoingPerformanceRates.Add(PerformanceRate);
         OutgoingPerformanceLoops.Add(bPerformanceLoop);
+        OutgoingPerformanceProfiles.Add(PerformanceProfile);
+    }
+    // An interrupted A -> B -> A switch can find A still fading out. Resume
+    // that exact clip and clock instead of evaluating two copies of A on
+    // opposite sides of B in a sequential skeletal rotation blend. Besides
+    // avoiding a one-frame pose jump, this preserves its existing blend weight.
+    float ResumedTime = 0.f;
+    float ResumedWeight = 0.f;
+    for (int32 Index = OutgoingPerformanceClips.Num() - 1; Index >= 0; --Index)
+    {
+        if (OutgoingPerformanceClips[Index] != Clip || OutgoingPerformanceProfiles[Index] != Profile)
+            continue;
+        ResumedTime = OutgoingPerformanceTimes[Index];
+        ResumedWeight = OutgoingPerformanceWeights[Index];
+        OutgoingPerformanceClips.RemoveAt(Index);
+        OutgoingPerformanceTimes.RemoveAt(Index);
+        OutgoingPerformanceWeights.RemoveAt(Index);
+        OutgoingPerformanceRates.RemoveAt(Index);
+        OutgoingPerformanceLoops.RemoveAt(Index);
+        OutgoingPerformanceProfiles.RemoveAt(Index);
+        break;
     }
     PerformanceClip = Clip;
     PerformanceProfile = Profile;
-    PerformanceTime = 0.f;
-    PerformanceWeight = 0.f;
+    PerformanceTime = ResumedTime;
+    PerformanceWeight = ResumedWeight;
     PerformanceRate = 1.f;
     bPerformanceLoop = bLoop;
     bPerformanceTarget = true;
@@ -131,11 +153,12 @@ float UFlowFestAnimInstance::GetOutgoingPerformanceWeight() const
     return Sum;
 }
 
-bool UFlowFestAnimInstance::GetOutgoingPerformanceSample(int32 Index, float& Seconds, float& Weight) const
+bool UFlowFestAnimInstance::GetOutgoingPerformanceSample(int32 Index, float& Seconds, float& Weight, FName& Profile) const
 {
     if (!OutgoingPerformanceTimes.IsValidIndex(Index)) return false;
     Seconds = OutgoingPerformanceTimes[Index];
     Weight = OutgoingPerformanceWeights[Index];
+    Profile = OutgoingPerformanceProfiles[Index];
     return true;
 }
 
@@ -183,16 +206,19 @@ void UFlowFestAnimInstance::Advance(float DeltaSeconds)
     }
     // A finite response time creates true per-bone pose blends, including
     // interrupted transitions, rather than swapping PlayAnimation assets.
-    const float Alpha = 1.f - FMath::Exp(-Dt / .18f);
+    const float MotionAlpha = 1.f - FMath::Exp(-Dt / .18f);
+    // Source wrist paths can move sharply at a routine switch. Give the
+    // incoming and outgoing performance poses time to meet at the grip.
+    const float PerformanceAlpha = 1.f - FMath::Exp(-Dt / .30f);
     for (int32 Index = 0; Index < MotionWeights.Num(); ++Index)
     {
         const float Goal = MotionNames[Index] == TargetMotion && !bPerformanceTarget ? 1.f : 0.f;
-        MotionWeights[Index] = FMath::Lerp(MotionWeights[Index], Goal, Alpha);
+        MotionWeights[Index] = FMath::Lerp(MotionWeights[Index], Goal, MotionAlpha);
     }
-    PerformanceWeight = FMath::Lerp(PerformanceWeight, bPerformanceTarget ? 1.f : 0.f, Alpha);
+    PerformanceWeight = FMath::Lerp(PerformanceWeight, bPerformanceTarget ? 1.f : 0.f, PerformanceAlpha);
     for (int32 Index = OutgoingPerformanceWeights.Num() - 1; Index >= 0; --Index)
     {
-        OutgoingPerformanceWeights[Index] *= 1.f - Alpha;
+        OutgoingPerformanceWeights[Index] *= 1.f - PerformanceAlpha;
         if (OutgoingPerformanceWeights[Index] < .0001f)
         {
             OutgoingPerformanceClips.RemoveAt(Index);
@@ -200,6 +226,7 @@ void UFlowFestAnimInstance::Advance(float DeltaSeconds)
             OutgoingPerformanceWeights.RemoveAt(Index);
             OutgoingPerformanceRates.RemoveAt(Index);
             OutgoingPerformanceLoops.RemoveAt(Index);
+            OutgoingPerformanceProfiles.RemoveAt(Index);
         }
     }
     if (!bPerformanceTarget && PerformanceWeight < .0001f)
@@ -207,6 +234,18 @@ void UFlowFestAnimInstance::Advance(float DeltaSeconds)
         PerformanceWeight = 0.f;
         PerformanceClip = nullptr;
         PerformanceTime = 0.f;
+    }
+    // Locomotion and performance have different response times. Keep their
+    // combined blend normalized so the pose never gains or loses influence.
+    float TotalWeight = PerformanceWeight;
+    for (const float Weight : MotionWeights) TotalWeight += Weight;
+    for (const float Weight : OutgoingPerformanceWeights) TotalWeight += Weight;
+    if (TotalWeight > SMALL_NUMBER)
+    {
+        const float InvTotal = 1.f / TotalWeight;
+        PerformanceWeight *= InvTotal;
+        for (float& Weight : MotionWeights) Weight *= InvTotal;
+        for (float& Weight : OutgoingPerformanceWeights) Weight *= InvTotal;
     }
 }
 
@@ -253,27 +292,57 @@ void FFlowFestAnimProxy::PreUpdate(UAnimInstance* Instance, float DeltaSeconds)
     MeshToWorld = Source->GetSkelMeshComponent()
         ? Source->GetSkelMeshComponent()->GetComponentTransform() : FTransform::Identity;
     bCapturedWristsValid = false;
-    // Prop and body clocks advance together in this PreUpdate. Read the
-    // authored wrist chord here, before the mesh evaluates on another thread.
-    // A faded outgoing clip remains in the array until its weight reaches
-    // 0.0001. Treat it as settled once its contribution is below 0.001;
-    // otherwise the next routine never receives seam correction during tests
-    // or the first loop after a same-frame switch.
-    if (Source->PerformanceClip && Source->PerformanceWeight > .999f &&
-        Source->GetOutgoingPerformanceWeight() < .001f)
+    // Local-bone rotation blends can bow a wrist far outside the path between
+    // two authored hand samples. Follow the weighted captured wrist path for
+    // a fully performing body, including interrupted routine changes. The
+    // same proxy clock drives both the body and prop root before evaluation.
+    float MotionWeight = 0.f;
+    for (float Weight : Source->MotionWeights) MotionWeight += Weight;
+    const float PerformanceWeight = Source->PerformanceWeight + Source->GetOutgoingPerformanceWeight();
+    if (Source->PerformanceClip && PerformanceWeight > .99f && MotionWeight < .01f)
     {
         if (const UFlowFestPropComponent* Prop = Source->GripSource.Get())
         {
-            FVector LeftWorld, RightWorld;
-            if (Prop->SampleCapturedWrists(Source->PerformanceProfile, Source->PerformanceTime,
-                LeftWorld, RightWorld))
+            FVector LeftSum = FVector::ZeroVector, RightSum = FVector::ZeroVector;
+            float SampledWeight = 0.f;
+            const auto Add = [&Prop, &LeftSum, &RightSum, &SampledWeight]
+                (FName Profile, float Time, float Weight)
             {
-                CapturedWristComponent[0] = MeshToWorld.InverseTransformPosition(LeftWorld);
-                CapturedWristComponent[1] = MeshToWorld.InverseTransformPosition(RightWorld);
+                if (Weight < .001f) return;
+                FVector Left, Right;
+                if (!Prop->SampleCapturedWrists(Profile, Time, Left, Right)) return;
+                LeftSum += Left * Weight;
+                RightSum += Right * Weight;
+                SampledWeight += Weight;
+            };
+            for (int32 Index = 0; Index < Source->OutgoingPerformanceClips.Num(); ++Index)
+                Add(Source->OutgoingPerformanceProfiles[Index], Source->OutgoingPerformanceTimes[Index],
+                    Source->OutgoingPerformanceWeights[Index]);
+            Add(Source->PerformanceProfile, Source->PerformanceTime, Source->PerformanceWeight);
+            if (SampledWeight > PerformanceWeight - .001f && SampledWeight > .99f)
+            {
+                CapturedWristComponent[0] = MeshToWorld.InverseTransformPosition(LeftSum / SampledWeight);
+                CapturedWristComponent[1] = MeshToWorld.InverseTransformPosition(RightSum / SampledWeight);
+                if (Source->GetOutgoingPerformanceWeight() > .05f && bLastCapturedWristsValid)
+                {
+                    // A newly selected routine can put its hand far from the
+                    // outgoing pose. Limit the first steps of that source
+                    // path so the attached prop and wrist travel together.
+                    const float MaxStepCm = FMath::Max(1.f, DeltaSeconds * 300.f);
+                    for (int32 Hand = 0; Hand < 2; ++Hand)
+                    {
+                        const FVector Delta = CapturedWristComponent[Hand] - LastCapturedWristComponent[Hand];
+                        CapturedWristComponent[Hand] = LastCapturedWristComponent[Hand] + Delta.GetClampedToMaxSize(MaxStepCm);
+                    }
+                }
+                LastCapturedWristComponent[0] = CapturedWristComponent[0];
+                LastCapturedWristComponent[1] = CapturedWristComponent[1];
+                bLastCapturedWristsValid = true;
                 bCapturedWristsValid = true;
             }
         }
     }
+    if (!bCapturedWristsValid) bLastCapturedWristsValid = false;
 }
 
 bool FFlowFestAnimProxy::Evaluate(FPoseContext& Output)

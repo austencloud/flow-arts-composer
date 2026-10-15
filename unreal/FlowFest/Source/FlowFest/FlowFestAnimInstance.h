@@ -29,7 +29,7 @@ public:
     float GetPerformanceWeight() const { return PerformanceWeight; }
     float GetOutgoingPerformanceWeight() const;
     int32 GetOutgoingPerformanceCount() const { return OutgoingPerformanceClips.Num(); }
-    bool GetOutgoingPerformanceSample(int32 Index, float& Seconds, float& Weight) const;
+    bool GetOutgoingPerformanceSample(int32 Index, float& Seconds, float& Weight, FName& Profile) const;
     bool IsPerforming() const { return bPerformanceTarget; }
     float GetMotionWeight(FName Name) const;
     void SetFootCorrection(float LeftCm, float RightCm);
@@ -49,6 +49,7 @@ private:
     TArray<float> OutgoingPerformanceWeights;
     TArray<float> OutgoingPerformanceRates;
     TArray<bool> OutgoingPerformanceLoops;
+    TArray<FName> OutgoingPerformanceProfiles;
     TArray<FName> MotionNames;
     TArray<float> MotionTimes;
     TArray<float> MotionRates;
@@ -78,7 +79,9 @@ private:
     float FootCorrectionCm[2] = {0.f, 0.f};
     FTransform MeshToWorld = FTransform::Identity;
     FVector CapturedWristComponent[2] = {FVector::ZeroVector, FVector::ZeroVector};
+    FVector LastCapturedWristComponent[2] = {FVector::ZeroVector, FVector::ZeroVector};
     bool bCapturedWristsValid = false;
+    bool bLastCapturedWristsValid = false;
     void CorrectFoot(FPoseContext& Output, FName UpperName, FName KneeName, FName FootName, float CorrectionCm);
     void CorrectHand(FPoseContext& Output, FName UpperName, FName ElbowName, FName HandName, const FVector& Target);
 };

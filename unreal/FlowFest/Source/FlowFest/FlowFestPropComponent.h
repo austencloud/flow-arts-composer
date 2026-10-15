@@ -95,6 +95,7 @@ private:
     {
         TArray<FPropMotionFrame> Frames;
         float Fps = 30.f;
+        FName Profile = NAME_None;
     };
 
     UPROPERTY(Transient) TObjectPtr<USceneComponent> AvatarRoot;

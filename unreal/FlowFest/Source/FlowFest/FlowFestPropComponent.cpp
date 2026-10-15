@@ -503,7 +503,7 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
         SwitchRightVisual = RightVisualRoot->GetRelativeRotation().Quaternion();
     }
     if (bSwitchingPerformance)
-        OutgoingPerformanceTracks.Add({MoveTemp(PerformanceFrames), PerformanceFps});
+        OutgoingPerformanceTracks.Add({MoveTemp(PerformanceFrames), PerformanceFps, PerformanceProfile});
     else
         OutgoingPerformanceTracks.Reset();
     PerformanceFrames = MoveTemp(Parsed);
@@ -521,18 +521,37 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
 bool UFlowFestPropComponent::SampleCapturedWrists(FName Profile, float Seconds,
     FVector& LeftWorld, FVector& RightWorld) const
 {
-    if (Profile != PerformanceProfile || !bHasGripSamples || !AvatarRoot ||
-        PerformanceFrames.IsEmpty() || !FMath::IsFinite(Seconds)) return false;
-    const float Frame = FMath::Fmod(FMath::Max(0.f, Seconds) * PerformanceFps,
-        static_cast<float>(PerformanceFrames.Num()));
+    if (!bHasGripSamples || !AvatarRoot || !FMath::IsFinite(Seconds)) return false;
+    const TArray<FPropMotionFrame>* Frames = nullptr;
+    float Fps = 0.f;
+    if (Profile == PerformanceProfile)
+    {
+        Frames = &PerformanceFrames;
+        Fps = PerformanceFps;
+    }
+    else
+    {
+        for (const FPropMotionTrack& Track : OutgoingPerformanceTracks)
+        {
+            if (Track.Profile == Profile)
+            {
+                Frames = &Track.Frames;
+                Fps = Track.Fps;
+                break;
+            }
+        }
+    }
+    if (!Frames || Frames->IsEmpty() || Fps <= 0.f) return false;
+    const float Frame = FMath::Fmod(FMath::Max(0.f, Seconds) * Fps,
+        static_cast<float>(Frames->Num()));
     const int32 First = FMath::FloorToInt(Frame);
-    const int32 Second = (First + 1) % PerformanceFrames.Num();
+    const int32 Second = (First + 1) % Frames->Num();
     const float Alpha = Frame - First;
     const FTransform RootWorld = AvatarRoot->GetComponentTransform();
     LeftWorld = RootWorld.TransformPosition(FMath::Lerp(
-        PerformanceFrames[First].LeftGrip, PerformanceFrames[Second].LeftGrip, Alpha));
+        (*Frames)[First].LeftGrip, (*Frames)[Second].LeftGrip, Alpha));
     RightWorld = RootWorld.TransformPosition(FMath::Lerp(
-        PerformanceFrames[First].RightGrip, PerformanceFrames[Second].RightGrip, Alpha));
+        (*Frames)[First].RightGrip, (*Frames)[Second].RightGrip, Alpha));
     return !LeftWorld.ContainsNaN() && !RightWorld.ContainsNaN();
 }
 
@@ -558,9 +577,11 @@ bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight,
     if (Animator && AvatarRoot && BoundBodyMesh)
     {
         const int32 Count = Animator->GetOutgoingPerformanceCount();
-        if (OutgoingPerformanceTracks.Num() > Count)
-            OutgoingPerformanceTracks.RemoveAt(0, OutgoingPerformanceTracks.Num() - Count);
-        bBlendOutgoing = Count > 0 && Count == OutgoingPerformanceTracks.Num();
+        // The avatar may still carry a fading clip from a previous prop family.
+        // Its prop data is no longer equipped, so that weight must follow the
+        // live wrist as a natural hand attachment instead of shifting the
+        // indices of this family's outgoing tracks.
+        bBlendOutgoing = Count > 0;
     }
     if (bBlendOutgoing)
     {
@@ -608,11 +629,25 @@ bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight,
         const FVector NaturalRightGrip = RootWorld.InverseTransformPosition(
             BoundBodyMesh->GetSocketLocation(TEXT("RightHand")));
         float OutgoingWeight = 0.f;
-        for (int32 Index = 0; Index < OutgoingPerformanceTracks.Num(); ++Index)
+        TArray<bool> UsedTracks;
+        UsedTracks.Init(false, OutgoingPerformanceTracks.Num());
+        for (int32 Index = 0; Index < Animator->GetOutgoingPerformanceCount(); ++Index)
         {
             float Time = 0.f, Weight = 0.f;
-            if (!Animator->GetOutgoingPerformanceSample(Index, Time, Weight)) continue;
-            const FPropMotionTrack& Track = OutgoingPerformanceTracks[Index];
+            FName Profile = NAME_None;
+            if (!Animator->GetOutgoingPerformanceSample(Index, Time, Weight, Profile)) continue;
+            int32 TrackIndex = INDEX_NONE;
+            for (int32 Candidate = 0; Candidate < OutgoingPerformanceTracks.Num(); ++Candidate)
+            {
+                if (!UsedTracks[Candidate] && OutgoingPerformanceTracks[Candidate].Profile == Profile)
+                {
+                    TrackIndex = Candidate;
+                    UsedTracks[Candidate] = true;
+                    break;
+                }
+            }
+            if (TrackIndex == INDEX_NONE) continue;
+            const FPropMotionTrack& Track = OutgoingPerformanceTracks[TrackIndex];
             if (Track.Frames.IsEmpty()) continue;
             const float TrackFrame = FMath::Fmod(FMath::Max(0.f, Time) * Track.Fps, static_cast<float>(Track.Frames.Num()));
             const int32 I = FMath::FloorToInt(TrackFrame), J = (I + 1) % Track.Frames.Num();
@@ -626,6 +661,8 @@ bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight,
                 FQuat::Slerp(Track.Frames[I].RightVisual, Track.Frames[J].RightVisual, Fraction), Weight);
             OutgoingWeight += Weight;
         }
+        for (int32 Candidate = UsedTracks.Num() - 1; Candidate >= 0; --Candidate)
+            if (!UsedTracks[Candidate]) OutgoingPerformanceTracks.RemoveAt(Candidate);
         Add(Blend(A.Left, B.Left), Blend(A.Right, B.Right),
             FMath::Lerp(A.LeftGrip, B.LeftGrip, Alpha), FMath::Lerp(A.RightGrip, B.RightGrip, Alpha),
             FQuat::Slerp(A.LeftVisual, B.LeftVisual, Alpha),

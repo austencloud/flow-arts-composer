@@ -152,7 +152,9 @@ bool FFlowFestLocomotionTest::RunTest(const FString& Parameters)
                 Anim->GetOutgoingPerformanceWeight() > .9f);
             TestTrue(TEXT("Routine switch does not teleport the hand"),
                 FVector::Distance(BeforeSwitch, AfterSwitch) < 15.f);
-            Settle(30);
+            // The performance fade is deliberately slower than locomotion;
+            // wait for it to finish before asserting the terminal weight.
+            Settle(44);
             TestTrue(TEXT("Incoming routine reaches full weight"),
                 Anim->GetPerformanceWeight() > .99f && Anim->GetOutgoingPerformanceWeight() < .001f);
         }
