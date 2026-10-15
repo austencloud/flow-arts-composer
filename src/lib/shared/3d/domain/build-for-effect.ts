@@ -34,7 +34,7 @@ export interface PropBuildEquip {
  * builds; writes remain restricted to the current package shape.
  */
 type EffectPropBuild = Omit<PropBuild, "fanBuild"> & {
-  readonly fanBuild: PropBuild["fanBuild"] | "flat-grip" | "star";
+  readonly fanBuild: PropBuild["fanBuild"] | "flat-grip" | "star" | "astral";
 };
 
 /** Every member of the "Double Staff build" family. */
@@ -147,6 +147,11 @@ export function buildForEffect(
       return fireEquip(propType, current);
     case "led":
       if (FAN_PROPS.has(propType)) {
+        // Internal model review can select Astral explicitly. Enabling LEDs
+        // keeps that assembly while the public effect default stays Moon.
+        if (current.fanBuild === "astral") {
+          return equipBuild({ fanCover: "bare" }, current);
+        }
         return equipBuild({ fanBuild: "moon", fanCover: "bare" }, current);
       }
       return equipProp(DOUBLE_STAFF_FAMILY, PropType.CAPSULE_BATON, propType);
