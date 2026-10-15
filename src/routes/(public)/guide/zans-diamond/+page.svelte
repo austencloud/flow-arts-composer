@@ -107,10 +107,15 @@
     })
   );
 
+  // Centred blocks start each sentence on its own line.
+  const sentences = (text: string) => text.split(/(?<=[.!?])\s+/);
+
   // "{name}" in the lede becomes the link to Zan's channel.
   const NAME_SLOT = "\u0000";
   const lede = $derived(
-    t("guide_zans_lede", { name: NAME_SLOT }).split(NAME_SLOT)
+    sentences(t("guide_zans_lede", { name: NAME_SLOT })).map((sentence) =>
+      sentence.split(NAME_SLOT)
+    )
   );
 
   // Pictographs follow the site theme, as the Level 1 pages do.
@@ -154,18 +159,24 @@
     <header class="intro">
       <h1>{t("guide_zans_title")}</h1>
       <p class="lede">
-        {lede[0]}{#if ZANS_DIAMOND_CREDIT.href}<a
-            href={ZANS_DIAMOND_CREDIT.href}
-            target="_blank"
-            rel="noopener noreferrer">{ZANS_DIAMOND_CREDIT.name}</a
-          >{:else}{ZANS_DIAMOND_CREDIT.name}{/if}{lede[1] ?? ""}
+        {#each lede as parts, i (i)}<span class="sentence"
+            >{parts[0]}{#if parts.length > 1}{#if ZANS_DIAMOND_CREDIT.href}<a
+                  href={ZANS_DIAMOND_CREDIT.href}
+                  target="_blank"
+                  rel="noopener noreferrer">{ZANS_DIAMOND_CREDIT.name}</a
+                >{:else}{ZANS_DIAMOND_CREDIT.name}{/if}{parts[1]}{/if}</span
+          >{/each}
       </p>
     </header>
 
     <section class="from-zan" aria-labelledby="from-zan-heading">
       <div class="from-zan-intro">
         <h2 id="from-zan-heading">{t("guide_zans_from_zan_title")}</h2>
-        <p>{t("guide_zans_from_zan_body")}</p>
+        <p>
+          {#each sentences(t("guide_zans_from_zan_body")) as sentence, i (i)}<span
+              class="sentence">{sentence}</span
+            >{/each}
+        </p>
       </div>
       <div class="from-zan-video">
         <SourceVideoCard
@@ -227,7 +238,11 @@
     <section class="families" aria-labelledby="families-heading">
       <div class="families-intro">
         <h2 id="families-heading">{t("guide_zans_families_title")}</h2>
-        <p>{t("guide_zans_families_lead")}</p>
+        <p>
+          {#each sentences(t("guide_zans_families_lead")) as sentence, i (i)}<span
+              class="sentence">{sentence}</span
+            >{/each}
+        </p>
       </div>
       {#each families as family (family.id)}
         <SequenceShowcase
@@ -249,7 +264,11 @@
     </section>
 
     <footer class="collection">
-      <p>{t("guide_zans_collection_body")}</p>
+      <p>
+        {#each sentences(t("guide_zans_collection_body")) as sentence, i (i)}<span
+            class="sentence">{sentence}</span
+          >{/each}
+      </p>
       <div class="links">
         <LinkChip href={ZANS_DIAMOND_COLLECTION_PATH}
           ><i class="fa-solid fa-layer-group" aria-hidden="true"></i>
@@ -314,6 +333,9 @@
     align-items: center;
     gap: var(--spacing-sm, 8px);
     text-align: center;
+  }
+  .sentence {
+    display: block;
   }
   .zans-guide .lede {
     font-size: 1.125rem;
