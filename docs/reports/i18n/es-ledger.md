@@ -169,3 +169,14 @@ Astra back-translation review of the P batches: SAMPLE 172 / FLAGGED 5 /
 2.9%. Applied two fixes (Composer intro, inbox "moved to original message").
 Dismissed three flags asking for English "Petal": counted petals translate
 normally under the 2026-10-14 glossary decision.
+
+## Z1 — 2026-10-14
+
+- Scope: 5 translated entries, 11 retranslated entries, 0 review entries (16 total). Retranslations follow the new English, removing the superseded claims about prop rotation and mirrored words. No native-language review was performed.
+- Applied only with the supplied apply-batch.js command. Result: `messages/es.json: inserted 5, replaced 11, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Gate result: `Test Files  1 passed (1)` and `Tests  66 passed (66)`; duration 37.27s, exit 0.
+- Catalog diff before this ledger: only messages/es.json, 16 insertions and 11 deletions, matching 5 new and 11 replaced keys. `git diff --check` passed.
+- Glossary choices: preserved Zan's Diamond, Zan Moore, Shift and Dash. Used cuadrícula Diamante for the named grid and diamante for its shape; trayectoria, tiempo, paso, variación, props and Práctica follow the glossary. Generic playback loop becomes bucle. Labels remain single-line; the collection action uses the infinitive Abrir. Prose addresses the reader with tú.
+- Uncertainty: none regarding glossary terms; native acceptance has not been established.
+- Delivery: assigned codex/i18n-es branch for the coordinator; no integration or push. The explicit batch apply/gate instructions supersede the translate skill's general catalog rewrite and regeneration workflow.
