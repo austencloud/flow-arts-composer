@@ -31,11 +31,11 @@
   setArcadeSessionContext(session);
 
   const game = getGame("pictograph-to-letter");
-  const level = game?.levels[0];
+  const level = game?.challenges[0];
 
   let round = $state(0);
   function start() {
-    if (game && level) session.startLevel(game, level);
+    if (game && level) session.startChallenge(game, level);
   }
   start();
 
