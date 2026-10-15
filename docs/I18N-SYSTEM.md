@@ -22,6 +22,7 @@
 **Flow Arts Composer uses a lightweight, JSON-based i18n system that replaced Paraglide in January 2025.**
 
 **Key features:**
+
 - Type-safe translations with IDE autocomplete
 - Reactive locale switching without page reload
 - Lazy loading of non-default locales
@@ -44,6 +45,7 @@
 #### Context
 
 Paraglide generated **1,114 barrel-exported files** that were imported on every page load:
+
 - Each translation key became a separate `.js` file
 - Barrel exports (`index.ts`) re-exported all 1,114 files
 - Vite couldn't tree-shake barrel exports effectively
@@ -52,14 +54,14 @@ Paraglide generated **1,114 barrel-exported files** that were imported on every 
 
 #### Consequences of Paraglide's Approach
 
-| Metric | With Paraglide | Impact |
-|--------|---------------|--------|
-| Files per locale | 1,114 | Build complexity |
-| Network requests (dev) | 1,000+ | Slow dev server |
-| Cold start time | 3-5 seconds | Poor DX |
-| Bundle size overhead | ~40KB | Unnecessary code |
-| Type safety | ✅ Excellent | Good |
-| Tree shaking | ❌ Failed | Bloat |
+| Metric                 | With Paraglide | Impact           |
+| ---------------------- | -------------- | ---------------- |
+| Files per locale       | 1,114          | Build complexity |
+| Network requests (dev) | 1,000+         | Slow dev server  |
+| Cold start time        | 3-5 seconds    | Poor DX          |
+| Bundle size overhead   | ~40KB          | Unnecessary code |
+| Type safety            | ✅ Excellent   | Good             |
+| Tree shaking           | ❌ Failed      | Bloat            |
 
 #### Decision Drivers
 
@@ -92,39 +94,44 @@ async function loadLocale(locale: Locale): Promise<Messages> {
 
 #### Results
 
-| Metric | Before | After | Change |
-|--------|--------|-------|--------|
-| Files per locale | 1,114 | 1 | **99.9% reduction** |
-| Network requests (dev) | 1,000+ | 1-2 | **99.8% reduction** |
-| Cold start time | 3-5s | <500ms | **6-10x faster** |
-| Bundle overhead | ~40KB | ~2KB | **95% reduction** |
-| Type safety | ✅ | ✅ | Maintained |
+| Metric                 | Before | After  | Change              |
+| ---------------------- | ------ | ------ | ------------------- |
+| Files per locale       | 1,114  | 1      | **99.9% reduction** |
+| Network requests (dev) | 1,000+ | 1-2    | **99.8% reduction** |
+| Cold start time        | 3-5s   | <500ms | **6-10x faster**    |
+| Bundle overhead        | ~40KB  | ~2KB   | **95% reduction**   |
+| Type safety            | ✅     | ✅     | Maintained          |
 
 #### Tradeoffs
 
 **What we gained:**
+
 - 99.9% fewer files
 - Near-instant dev server
 - Complete control over loading
 - Simpler mental model
 
 **What we kept:**
+
 - Full TypeScript autocomplete
 - Compile-time key validation
 - Parameter interpolation
 - All the type safety Paraglide provided
 
 **What we lost:**
+
 - Nothing meaningful - Paraglide's overhead had no benefits for our use case
 
 #### Lessons for Others
 
 **Use Paraglide if:**
+
 - You need its code generation features (we didn't)
 - You have complex pluralization needs (ICU MessageFormat)
 - You need their specific tooling ecosystem
 
 **Use JSON-based approach if:**
+
 - Performance is critical (dev server, bundle size)
 - You want full control over loading strategy
 - Your translation needs are straightforward
@@ -154,6 +161,7 @@ Convert to JSON:
 ```
 
 **Migration script:**
+
 ```bash
 # Extract all Paraglide exports to JSON
 node scripts/paraglide-to-json.js messages/en.js > messages/en.json
@@ -162,23 +170,23 @@ node scripts/paraglide-to-json.js messages/en.js > messages/en.json
 ### Step 2: Update component imports
 
 **Before (Paraglide):**
+
 ```svelte
 <script lang="ts">
   import * as m from "$paraglide/messages";
 </script>
 
-<h1>{m.app_name()}</h1>
-<p>{m.nav_create()}</p>
+<h1>{m.app_name()}</h1><p>{m.nav_create()}</p>
 ```
 
 **After (JSON-based):**
+
 ```svelte
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 </script>
 
-<h1>{t("app_name")}</h1>
-<p>{t("nav_create")}</p>
+<h1>{t("app_name")}</h1><p>{t("nav_create")}</p>
 ```
 
 ### Step 3: Remove Paraglide dependencies
@@ -212,17 +220,18 @@ Ensures all locales have the same keys and no translations are missing.
 
 **Measured with `npm run build && npm run size`**
 
-| Component | Size (gzipped) | Notes |
-|-----------|----------------|-------|
-| i18n core (`i18n.svelte.ts`) | 1.2 KB | Reactive state + loader |
-| English messages (`messages/en.json`) | 3.8 KB | Inline (default locale) |
-| Other locales | 3-4 KB each | Lazy loaded on demand |
-| Type definitions | 0 KB | Compile-time only |
+| Component                             | Size (gzipped) | Notes                   |
+| ------------------------------------- | -------------- | ----------------------- |
+| i18n core (`i18n.svelte.ts`)          | 1.2 KB         | Reactive state + loader |
+| English messages (`messages/en.json`) | 3.8 KB         | Inline (default locale) |
+| Other locales                         | 3-4 KB each    | Lazy loaded on demand   |
+| Type definitions                      | 0 KB           | Compile-time only       |
 
 **Total overhead for English-only users:** 5 KB
 **Total overhead when switching locales:** 8-9 KB (one additional locale file)
 
 **Paraglide comparison:**
+
 - Paraglide core: ~12 KB
 - Paraglide barrel exports: ~25 KB
 - Total: **~37 KB** vs our **5 KB** = **86% reduction**
@@ -231,30 +240,31 @@ Ensures all locales have the same keys and no translations are missing.
 
 **Dev server (Vite HMR):**
 
-| Scenario | Paraglide | JSON-based | Improvement |
-|----------|-----------|------------|-------------|
-| Initial page load | 1,200+ requests | 2 requests | 600x fewer |
-| Locale switch | 50-100 requests | 1 request | 50-100x fewer |
-| HMR update | 100-200 requests | 1-5 requests | 20-200x fewer |
+| Scenario          | Paraglide        | JSON-based   | Improvement   |
+| ----------------- | ---------------- | ------------ | ------------- |
+| Initial page load | 1,200+ requests  | 2 requests   | 600x fewer    |
+| Locale switch     | 50-100 requests  | 1 request    | 50-100x fewer |
+| HMR update        | 100-200 requests | 1-5 requests | 20-200x fewer |
 
 **Production build:**
 
-| Scenario | Paraglide | JSON-based | Improvement |
-|----------|-----------|------------|-------------|
-| Initial load (EN) | 3 chunks | 1 chunk | 3x fewer |
-| Locale switch | 1 request | 1 request | Same |
+| Scenario          | Paraglide | JSON-based | Improvement |
+| ----------------- | --------- | ---------- | ----------- |
+| Initial load (EN) | 3 chunks  | 1 chunk    | 3x fewer    |
+| Locale switch     | 1 request | 1 request  | Same        |
 
 ### Cold Start Performance
 
 **Measured with Chrome DevTools Performance tab:**
 
-| Metric | Paraglide | JSON-based | Improvement |
-|--------|-----------|------------|-------------|
-| Module evaluation | 450ms | 12ms | **37x faster** |
-| Parse time | 180ms | 8ms | **22x faster** |
-| Total to interactive | 3.2s | 0.4s | **8x faster** |
+| Metric               | Paraglide | JSON-based | Improvement    |
+| -------------------- | --------- | ---------- | -------------- |
+| Module evaluation    | 450ms     | 12ms       | **37x faster** |
+| Parse time           | 180ms     | 8ms        | **22x faster** |
+| Total to interactive | 3.2s      | 0.4s       | **8x faster**  |
 
 **Why so much faster?**
+
 - Fewer files = fewer module evaluations
 - JSON parsing is native and extremely fast
 - No barrel export chain to resolve
@@ -326,11 +336,8 @@ TypeScript generates a union type from `messages/en.json`:
 
 ```typescript
 // Auto-generated from messages/en.json
-export type TranslationKey =
-  | "app_name"
-  | "nav_create"
-  | "generator_level"
-  // ... 1,398 more keys
+export type TranslationKey = "app_name" | "nav_create" | "generator_level";
+// ... 1,398 more keys
 
 // Only valid keys accepted
 t("nav_create"); // ✅
@@ -424,6 +431,40 @@ Better: Use CSS logical properties (see RTL guide).
 
 ---
 
+### Regional fallback and sparse overrides
+
+Merged from [I18N-IMPLEMENTATION.md](archive/swarm-2026-10-14/I18N-IMPLEMENTATION.md) (original directory: `docs/`) on 2026-10-14.
+
+`src/lib/shared/i18n/i18n.svelte.ts` registers regional variants in
+`regionalLocales`. A lookup such as `es-MX` tries its override, then `es`, then
+English. Regional files need only the keys that differ from the base locale.
+Register a new variant, add its override JSON and expose it in the language
+selector; keep base-locale registration and loading in the existing i18n owner.
+The registered variants are `es-MX`, `es-AR`, `pt-BR`, `pt-PT`, `zh-CN`, `zh-TW`
+and `fr-CA`.
+
+### Explicit singular and plural keys
+
+The implementation guide's practical example uses separate messages:
+
+```json
+{
+  "library_one_sequence": "1 sequence",
+  "library_many_sequences": "{count} sequences"
+}
+```
+
+```svelte
+<p>
+  {count === 1
+    ? t("library_one_sequence")
+    : t("library_many_sequences", { count })}
+</p>
+```
+
+These are illustrative keys. This two-branch example does not implement all
+plural categories needed by every locale.
+
 ## Adding New Locales
 
 ### Step 1: Create translation file
@@ -451,7 +492,17 @@ Edit `src/lib/shared/i18n/i18n.svelte.ts`:
 
 ```typescript
 export const locales = [
-  "en", "es", "fr", "de", "pt", "zh", "ja", "ko", "ar", "ru", "it",
+  "en",
+  "es",
+  "fr",
+  "de",
+  "pt",
+  "zh",
+  "ja",
+  "ko",
+  "ar",
+  "ru",
+  "it",
   "hi", // Add Hindi
 ] as const;
 ```
@@ -512,6 +563,7 @@ Edit `messages/en.json`:
 ```
 
 **Key naming conventions:**
+
 - Use `snake_case`
 - Prefix with module/feature: `generator_`, `browse_`, `settings_`
 - Be specific: `generator_level_no_turns` not `level_1`
@@ -720,6 +772,7 @@ test("Arabic locale applies RTL", async ({ page }) => {
 **Cause:** Key exists in English but not in current locale.
 
 **Fix:**
+
 ```bash
 npm run i18n:validate:fix
 ```
@@ -731,6 +784,7 @@ Then translate the `[NEEDS TRANSLATION]` placeholders.
 **Cause:** Types are out of sync with JSON files.
 
 **Fix:**
+
 ```bash
 npm run i18n:types
 ```
@@ -740,12 +794,14 @@ npm run i18n:types
 **Cause:** Locale file failed to load or isn't registered.
 
 **Debug:**
+
 ```javascript
 console.log("Current locale:", getLocale());
 console.log("Available locales:", locales);
 ```
 
 **Check:**
+
 1. Is locale in `locales` array?
 2. Is dynamic import added to `loadLocaleMessages()`?
 3. Does `messages/{locale}.json` exist?
@@ -753,6 +809,7 @@ console.log("Available locales:", locales);
 ### Parameter not interpolating
 
 **Problem:**
+
 ```svelte
 {t("dashboard_welcome", { name: userName })}
 <!-- Output: "Welcome, {name}!" instead of "Welcome, John!" -->
@@ -767,6 +824,7 @@ console.log("Available locales:", locales);
 **Cause:** Using directional CSS properties instead of logical.
 
 **Fix:**
+
 ```bash
 npm run css:rtl
 ```
