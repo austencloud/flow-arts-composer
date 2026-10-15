@@ -36,7 +36,8 @@ foreach ($entry in $selected) {
     }
 }
 
-New-Item -ItemType Directory -Path $captureSnapshot, $staged, $output -Force | Out-Null
+New-Item -ItemType Directory -Path $captureSnapshot, $staged, $output,
+    (Join-Path $jobRoot 'unreal/FlowFest/Content/Data') -Force | Out-Null
 foreach ($entry in $selected) {
     $target = Join-Path $captureSnapshot $entry.filename
     if (-not (Test-Path -LiteralPath $target)) {
