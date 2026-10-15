@@ -4,21 +4,37 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadDeployedCharacters } from '../../Shared/Tools/character-catalog.mjs';
+import { museumPerformanceEntries, assertMuseumRawCapture } from '../../Shared/Tools/museum-performance-contract.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const project = resolve(here, '..');
-const repo = resolve(project, '../..');
-const source = resolve(process.argv[2] || repo);
+const option = name => {
+  const index = process.argv.indexOf(name);
+  if (index < 0) return null;
+  const value = process.argv[index + 1];
+  if (!value || value.startsWith('--')) throw new Error(`${name} requires a value`);
+  return value;
+};
+const project = resolve(option('--project') || resolve(here, '..'));
+const performanceManifestFile = option('--performance-manifest');
+const museumMode = performanceManifestFile !== null;
+const baseStaged = option('--base-staged') ? resolve(option('--base-staged')) : resolve(here, 'staged/Characters');
+if (museumMode && (!process.argv.includes('--project') || existsSync(join(project, 'FlowFest.uproject'))))
+  throw new Error('Museum performance staging requires an explicit non-FlowFest --project');
+const repo = resolve(here, '../../..');
+const source = resolve(process.argv[2]?.startsWith('--') ? repo : (process.argv[2] || repo));
 const capturesFlag = process.argv.indexOf('--captures');
-const capturesDir = capturesFlag < 0 ? null : resolve(process.argv[capturesFlag + 1] || '');
-const captureIdFlag = process.argv.indexOf('--capture-id');
-const captureId = captureIdFlag < 0 ? null : process.argv[captureIdFlag + 1];
+const capturesOption = option('--captures');
+const capturesDir = capturesOption === null ? null : resolve(capturesOption);
+const captureId = option('--capture-id');
 const familyOnly = process.argv.includes('--family-only');
 const legacyOnly = process.argv.includes('--legacy-only');
 const allowPartial = process.argv.includes('--allow-partial');
-if (capturesFlag >= 0 && (!process.argv[capturesFlag + 1] || !existsSync(capturesDir)))
+if (museumMode && (familyOnly || legacyOnly || allowPartial || captureId))
+  throw new Error('Museum manifest mode cannot combine with legacy capture filters');
+if (museumMode && !capturesDir) throw new Error('--performance-manifest requires --captures');
+if (capturesFlag >= 0 && !existsSync(capturesDir))
   throw new Error(`Missing native performance capture directory: ${capturesDir}`);
-if (captureIdFlag >= 0 && (!captureId || !capturesDir))
+if (captureId && !capturesDir)
   throw new Error('--capture-id requires an ID and --captures directory');
 if (familyOnly && !capturesDir) throw new Error('--family-only requires --captures directory');
 if (legacyOnly && (!capturesDir || familyOnly)) throw new Error('--legacy-only requires --captures and cannot combine with --family-only');
@@ -27,7 +43,7 @@ const dependencyRoot = existsSync(join(repo, 'node_modules/.pnpm')) ? repo : sou
 const definitions = await loadDeployedCharacters(source);
 if (definitions.length !== 16 || new Set(definitions.map(x => x.id)).size !== 16)
   throw new Error(`Expected exactly 16 unique deployed avatars; found ${definitions.length}`);
-if (!familyOnly) {
+if (!familyOnly && !museumMode) {
   for (const character of definitions) {
     const input = join(source, character.sourceRelativePath);
     if (!existsSync(input)) throw new Error(`Missing deployed rig ${input}`);
@@ -77,7 +93,7 @@ await MeshoptDecoder.ready;
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
   'draco3d.decoder': await draco.createDecoderModule(), 'meshopt.decoder': MeshoptDecoder,
 });
-const staged = join(here, 'staged/Characters');
+const staged = museumMode ? join(project, 'Tools/staged/Characters') : join(here, 'staged/Characters');
 mkdirSync(staged, { recursive: true });
 const animations = {
   Idle: 'idle-rm.glb', Walk: 'walk-forward-rm.glb', Run: 'run-rm.glb', Jump: 'jump-up-rm.glb',
@@ -86,15 +102,16 @@ const animations = {
   RunStrafeLeft: 'strafe-run-left.glb', RunStrafeRight: 'strafe-run-right.glb',
 };
 const animationSource = join(source, 'static/animations/locomotion-pack');
-for (const file of Object.values(animations)) if (!existsSync(join(animationSource, file))) throw new Error(`Missing source motion ${file}`);
+if (!museumMode)
+  for (const file of Object.values(animations)) if (!existsSync(join(animationSource, file))) throw new Error(`Missing source motion ${file}`);
 const characters = [];
 const legacyProfiles = [['FirePoi', 'fire-poi'], ['FireHoop', 'fire-hoop'], ['Juggler', 'juggler'], ['LedFlow', 'led-flow']];
-const captureManifests = capturesDir
+const captureManifests = capturesDir && !museumMode
   ? ['manifest.json', 'family-manifest.json']
       .filter(file => existsSync(join(capturesDir, file)))
       .map(file => JSON.parse(readFileSync(join(capturesDir, file), 'utf8')))
   : [];
-if (capturesDir && !captureManifests.length) throw new Error('Native capture manifest missing');
+if (capturesDir && !museumMode && !captureManifests.length) throw new Error('Native capture manifest missing');
 for (const manifest of captureManifests)
   if (manifest.schema !== 'flow-fest-native-export-manifest-v1')
     throw new Error(`Unexpected native capture manifest: ${manifest.schema}`);
@@ -118,7 +135,7 @@ const availableProfiles = (id) => captureProfiles.filter(([, role]) =>
   (!legacyOnly || !role.startsWith('family-')) &&
   (!allowPartial || (captureArtifacts.some(entry => entry.character === id && entry.role === role) &&
     existsSync(join(capturesDir, `${id}_${role}.json`)))));
-if (capturesDir) {
+if (capturesDir && !museumMode) {
   for (const { id } of definitions.filter(x => !captureId || x.id === captureId)) {
     for (const [, role] of availableProfiles(id)) {
       const file = join(capturesDir, `${id}_${role}.json`);
@@ -130,22 +147,23 @@ if (capturesDir) {
     }
   }
 }
-async function prepareCapture(character, profile, filename, captureRole = profile) {
+async function prepareCapture(character, profile, filename, captureRole = profile, museumEntry = null) {
   const captureFile = join(capturesDir, filename);
   const output = join(staged, character.key, `capture_${profile}.glb`);
+  const capture = JSON.parse(readFileSync(captureFile, 'utf8'));
+  const ride = profile === 'Ride';
+  if (capture.character !== character.id || capture.fps !== 30 ||
+      capture.schema !== (ride ? 'flow-fest-native-mounted-v1' : 'flow-fest-native-performance-v1') ||
+      (!ride && (capture.role !== captureRole || capture.frames.length !== (museumEntry?.frames ?? 480))) ||
+      capture.frames.length < 2)
+    throw new Error(`Invalid native capture contract: ${filename}`);
+  if (museumEntry) assertMuseumRawCapture(capture, museumEntry);
   if (existsSync(output) && statSync(output).mtimeMs >= Math.max(
     statSync(captureFile).mtimeMs, statSync(character.decoded).mtimeMs,
     statSync(fileURLToPath(import.meta.url)).mtimeMs)) {
     console.log(`Reusing capture ${character.id}/${profile}`);
     return output;
   }
-  const capture = JSON.parse(readFileSync(captureFile, 'utf8'));
-  const ride = profile === 'Ride';
-  if (capture.character !== character.id || capture.fps !== 30 ||
-      capture.schema !== (ride ? 'flow-fest-native-mounted-v1' : 'flow-fest-native-performance-v1') ||
-      (!ride && (capture.role !== captureRole || capture.frames.length !== 480)) ||
-      capture.frames.length < 2)
-    throw new Error(`Invalid native capture contract: ${filename}`);
   const doc = await io.read(character.decoded);
   for (const old of doc.getRoot().listAnimations()) old.dispose();
   const jointName = name => name.replace(/^mixamorig\d*:?/, '');
@@ -194,6 +212,29 @@ function writeCatalog(entries) {
     characters: entries.map(({ id, name, key, folder, mesh, skeleton, animations, bones, textures, materials }) =>
       ({ id, name, key, folder, mesh, skeleton, animations, bones,
         textures: textures.map(({ name, asset }) => ({ name, asset })), materials })) }, null, 2) + '\n');
+}
+if (museumMode) {
+  const performanceManifest = JSON.parse(readFileSync(resolve(performanceManifestFile), 'utf8'));
+  const museumEntries = museumPerformanceEntries(performanceManifest);
+  const sourceManifestFile = join(baseStaged, 'imports.json');
+  if (!existsSync(sourceManifestFile)) throw new Error(`Missing prepared base character manifest: ${sourceManifestFile}`);
+  const sourceManifest = JSON.parse(readFileSync(sourceManifestFile, 'utf8'));
+  const sourceCharacter = sourceManifest.characters.find(entry => entry.id === 'x-bot');
+  if (!sourceCharacter) throw new Error('Missing prepared x-bot rig');
+  const character = structuredClone(sourceCharacter);
+  if (!existsSync(character.decoded)) character.decoded = join(baseStaged, 'x_bot.glb');
+  if (!existsSync(character.decoded)) throw new Error('Missing prepared x-bot rig');
+  character.captures = {};
+  for (const item of museumEntries) {
+    character.captures[item.profile] = await prepareCapture(character, item.profile,
+      item.filename, item.profile, item);
+    character.animations[`Flow_${item.profile}`] = `${character.folder}/A_Flow_${item.profile}.A_Flow_${item.profile}`;
+  }
+  const stagedManifest = { version: 1, animationSource: sourceManifest.animationSource,
+    animations: {}, characters: [character], performanceManifest: resolve(performanceManifestFile) };
+  writeFileSync(join(staged, 'imports.json'), JSON.stringify(stagedManifest, null, 2) + '\n');
+  console.log(`Prepared ${museumEntries.length} Museum performances from existing x-bot rig`);
+  process.exit(0);
 }
 if (familyOnly) {
   const stagedManifestFile = join(staged, 'imports.json');

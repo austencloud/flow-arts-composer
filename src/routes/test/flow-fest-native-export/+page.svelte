@@ -23,7 +23,7 @@
     (prop) => prop !== PropType.HAND
   );
   type Variant = "A" | "B";
-  type CaptureRole = FlowFestPerformerRole | `family-${PropType}-${Variant}`;
+  type CaptureRole = string;
   const familyKey = (
     family: PropType,
     variant: Variant
@@ -33,6 +33,8 @@
     Partial<Record<FlowFestPerformerRole, SequenceData>>
   >({});
   let familySnapshots = $state<Record<string, SequenceData>>({});
+  let customSequence = $state<SequenceData | null>(null);
+  let customMode = $state(false);
   let character = $state<CharacterId>(DEPLOYED_CHARACTER_IDS[0]!);
   let role = $state<CaptureRole>(roles[0]!);
   let propType = $state<PropType>(
@@ -54,6 +56,33 @@
     if (snapshot) return snapshot;
     if (!pool) throw new Error("Production LOOP snapshot is unavailable");
     return flowFestSequenceForPerformer(pool, nextRole);
+  }
+
+  function sequenceForCaptureRole(nextRole: CaptureRole): SequenceData {
+    if (customSequence && nextRole === role) return customSequence;
+    if (nextRole.startsWith("family-")) return familySnapshots[nextRole]!;
+    return sequenceForRole(nextRole as FlowFestPerformerRole);
+  }
+
+  function captureFrameCount(sequence: SequenceData): number {
+    if (!sequence?.steps?.length)
+      throw new Error("Authored sequence has no steps");
+    const scoreUnits = sequence.steps.reduce((total, step) => {
+      if (!Number.isFinite(step.duration) || step.duration <= 0)
+        throw new Error("Authored sequence has an invalid step duration");
+      return total + step.duration;
+    }, 0);
+    const exactFrames = scoreUnits * 30;
+    const frameCount = Math.round(exactFrames);
+    if (
+      !Number.isSafeInteger(frameCount) ||
+      frameCount <= 0 ||
+      Math.abs(exactFrames - frameCount) > 1e-6
+    )
+      throw new Error(
+        "Authored sequence duration must resolve to whole 30 fps frames"
+      );
+    return frameCount;
   }
 
   function setSequenceSnapshots(
@@ -113,7 +142,7 @@
 
   async function capturePerformance(
     nextCharacter: CharacterId,
-    nextRole: CaptureRole,
+    nextRole: string,
     nextSequence: SequenceData,
     nextPropType: PropType,
     nextEffectId: "fire" | "led"
@@ -121,13 +150,13 @@
     if (busy) throw new Error("Capture already running");
     if (!DEPLOYED_CHARACTER_IDS.includes(nextCharacter))
       throw new Error("Unknown deployed rig or Flow Fest profile");
-    if (nextSequence.steps.length !== 16)
-      throw new Error("Native performance requires one generated 16-step LOOP");
+    const frameCount = captureFrameCount(nextSequence);
     busy = true;
     try {
       mode = "perform";
       character = nextCharacter;
       role = nextRole;
+      customSequence = nextSequence;
       propType = nextPropType;
       effectId = nextEffectId;
       sceneKey += 1;
@@ -139,9 +168,10 @@
       scene.pauseAutoLoop();
       await scene.settleCapturePose();
       const frames = [];
-      for (let frame = 0; frame < 480; frame += 1) {
+      for (let frame = 0; frame < frameCount; frame += 1) {
         frames.push(await scene.sampleFrame(frame));
-        if (frame % 30 === 0) status = `${character} / ${role}: ${frame}/480`;
+        if (frame % 30 === 0)
+          status = `${character} / ${role}: ${frame}/${frameCount}`;
       }
       status = `Captured ${character} / ${role}`;
       return {
@@ -177,6 +207,11 @@
       );
     if (!roles.includes(nextRole)) throw new Error("Unknown Flow Fest profile");
     const profile = FLOW_FEST_PERFORMER_PROFILES[nextRole];
+    if (
+      sequenceForRole(nextRole).steps.length !== 16 ||
+      captureFrameCount(sequenceForRole(nextRole)) !== 480
+    )
+      throw new Error("Flow Fest profile requires 480 frames");
     return capturePerformance(
       nextCharacter,
       nextRole,
@@ -194,6 +229,8 @@
     if (!families.includes(family) || (variant !== "A" && variant !== "B"))
       throw new Error("Unknown physical prop family or variant");
     const sequence = await prepareFamily(family, variant);
+    if (sequence.steps.length !== 16 || captureFrameCount(sequence) !== 480)
+      throw new Error("Family capture requires a 16-step, 480-frame LOOP");
     const effect: "fire" | "led" =
       family.includes("fire") ||
       family.includes("torch") ||
@@ -206,6 +243,28 @@
       sequence,
       family,
       effect
+    );
+  }
+
+  async function captureSequence(
+    nextCharacter: CharacterId,
+    profile: string,
+    sequence: SequenceData,
+    nextPropType: PropType,
+    nextEffectId: "fire" | "led"
+  ) {
+    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(profile))
+      throw new Error("Invalid authored performance profile");
+    if (!families.includes(nextPropType))
+      throw new Error("Unknown physical prop type");
+    if (nextEffectId !== "fire" && nextEffectId !== "led")
+      throw new Error("Unknown effect type");
+    return capturePerformance(
+      nextCharacter,
+      profile,
+      sequence,
+      nextPropType,
+      nextEffectId
     );
   }
 
@@ -252,20 +311,28 @@
       families,
       captureOne,
       captureFamily,
+      captureSequence,
       captureRide,
       setSequenceSnapshots,
       prepareFamily,
       setFamilySequenceSnapshots,
       getFamilySequenceSnapshots,
       getStatus: () => status,
-      isReady: () => pool !== null,
+      isReady: () => customMode || pool !== null,
     };
     (
       window as Window & { flowFestNativeCapture?: typeof api }
     ).flowFestNativeCapture = api;
-    const familyCapture = new URLSearchParams(window.location.search).has(
-      "family"
-    );
+    const params = new URLSearchParams(window.location.search);
+    customMode = params.has("custom");
+    if (customMode) {
+      status = "Ready for authored sequence capture";
+      return () => {
+        delete (window as Window & { flowFestNativeCapture?: typeof api })
+          .flowFestNativeCapture;
+      };
+    }
+    const familyCapture = params.has("family");
     void generateFlowFestPerformerPool({ count: familyCapture ? 1 : 4 })
       .then((generated) => {
         pool = generated;
@@ -293,7 +360,7 @@
       <CanvasLifecycle />
       <T.PerspectiveCamera makeDefault position={[0, 1.6, 5]} />
       <T.AmbientLight intensity={2} />
-      {#if pool}
+      {#if pool || customSequence}
         {#key sceneKey}
           {#if mode === "ride"}
             <NativeRideScene
@@ -309,9 +376,7 @@
               {character}
               {propType}
               {effectId}
-              sequence={role.startsWith("family-")
-                ? familySnapshots[role]!
-                : sequenceForRole(role as FlowFestPerformerRole)}
+              sequence={sequenceForCaptureRole(role)}
               onReady={() => {
                 readyKey = sceneKey;
               }}

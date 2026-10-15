@@ -9,10 +9,25 @@ import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { Matrix4, Quaternion, Vector3 } from "three";
+import { museumPerformanceEntries, assertMuseumRawCapture,
+  MUSEUM_PROP_COORDINATE_BASIS } from '../../Shared/Tools/museum-performance-contract.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const project = resolve(here, "..");
-const rawDir = resolve(process.argv[2] ?? join(project, "Saved/PerformanceCaptures"));
+const option = name => {
+  const index = process.argv.indexOf(name);
+  if (index < 0) return null;
+  const value = process.argv[index + 1];
+  if (!value || value.startsWith('--')) throw new Error(`${name} requires a path`);
+  return value;
+};
+const project = resolve(option('--project') ?? resolve(here, ".."));
+const performanceManifestFile = option('--performance-manifest');
+const museumMode = performanceManifestFile !== null;
+if (museumMode && (!option('--project') || existsSync(join(project, 'FlowFest.uproject'))))
+  throw new Error('Museum performance output requires a separate explicit project');
+const positionalCaptures = process.argv[2]?.startsWith('--') ? null : process.argv[2];
+const rawDir = resolve(option('--captures') ?? positionalCaptures ??
+  join(project, museumMode ? 'Saved/PerformanceCaptures' : 'Saved/PerformanceCaptures-v3'));
 const outputDir = join(project, "Content/Data/PropMotion");
 const familyOnly = process.argv.includes('--family-only');
 const allowPartial = process.argv.includes('--allow-partial');
@@ -21,6 +36,8 @@ const captureId = captureIdFlag < 0 ? null : process.argv[captureIdFlag + 1];
 if (allowPartial && !familyOnly) throw new Error('--allow-partial requires --family-only');
 if (captureIdFlag >= 0 && (!captureId || !allowPartial))
   throw new Error('--capture-id requires an ID and --allow-partial');
+if (museumMode && (familyOnly || allowPartial || captureId))
+  throw new Error('Museum manifest mode cannot combine with family or partial capture flags');
 const profiles = new Map([
   ["fire-poi", "FirePoi"],
   ["fire-hoop", "FireHoop"],
@@ -150,15 +167,28 @@ if (process.argv[2] === "--verify-sample") {
 }
 
 const manifests = [];
-for (const filename of ['manifest.json', 'family-manifest.json']) {
-  if (!existsSync(join(rawDir, filename))) continue;
-  const manifest = JSON.parse(await readFile(join(rawDir, filename), "utf8"));
-  if (manifest.schema !== "flow-fest-native-export-manifest-v1")
-    throw new Error(`Unexpected capture manifest: ${manifest.schema}`);
-  manifests.push(manifest);
+let museumManifest = null;
+let museumEntries = null;
+if (museumMode) {
+  museumManifest = JSON.parse(await readFile(resolve(performanceManifestFile), 'utf8'));
+  museumEntries = museumPerformanceEntries(museumManifest);
 }
-if (!manifests.length) throw new Error(`Missing native capture manifest in ${rawDir}`);
-const artifacts = manifests.flatMap(manifest => manifest.artifacts);
+if (!museumMode) {
+  for (const filename of ['manifest.json', 'family-manifest.json']) {
+    if (!existsSync(join(rawDir, filename))) continue;
+    const manifest = JSON.parse(await readFile(join(rawDir, filename), "utf8"));
+    if (manifest.schema !== "flow-fest-native-export-manifest-v1")
+      throw new Error(`Unexpected capture manifest: ${manifest.schema}`);
+    manifests.push(manifest);
+  }
+  if (!manifests.length) throw new Error(`Missing native capture manifest in ${rawDir}`);
+}
+const artifacts = museumMode
+  ? museumEntries.map(item => {
+      return { character: 'x-bot', role: item.profile, filename: `x_bot_${item.profile}.json`,
+        propType: 'staff', frames: item.frames, sequence: item.sequence };
+    })
+  : manifests.flatMap(manifest => manifest.artifacts);
 const keys = artifacts.map(entry => `${entry.character}/${entry.role}`);
 if (new Set(keys).size !== keys.length) throw new Error('Duplicate character/role in capture manifests');
 const familyArtifacts = artifacts.filter(entry => entry.role.startsWith('family-'));
@@ -171,7 +201,7 @@ for (const entry of artifacts.filter(entry =>
   (!familyOnly || entry.role.startsWith('family-')) &&
   (!captureId || entry.character === captureId) &&
   (!allowPartial || existsSync(join(rawDir, entry.filename))))) {
-  const profile = profileForRole(entry.role);
+  const profile = museumMode ? entry.role : profileForRole(entry.role);
   if (!profile) continue; // mounted pose has no held prop
   const captureBytes = await readFile(join(rawDir, entry.filename));
   const capture = JSON.parse(captureBytes.toString('utf8'));
@@ -180,6 +210,7 @@ for (const entry of artifacts.filter(entry =>
       (entry.propType && capture.propType !== entry.propType) ||
       capture.fps !== 30 || capture.frames.length !== entry.frames)
     throw new Error(`Invalid production capture: ${entry.filename}`);
+  if (museumMode) assertMuseumRawCapture(capture, museumEntries.find(item => item.profile === profile));
   const family = /^family-([a-z0-9_]+)-[AB]$/.exec(entry.role)?.[1];
   if (family && (capture.propType !== family || capture.frames.length !== 480))
     throw new Error(`Capture family/timing mismatch: ${entry.filename}`);
@@ -187,7 +218,7 @@ for (const entry of artifacts.filter(entry =>
     throw new Error(`Capture revision mismatch: ${entry.filename}`);
   const hasVisualBody = capture.frames.every(frame =>
     frame.leftProp?.rotatedBodyWorld && frame.rightProp?.rotatedBodyWorld);
-  if (family && !hasVisualBody)
+  if ((family || museumMode) && !hasVisualBody)
     throw new Error(`Family capture lacks animated visual bodies: ${entry.filename}`);
   const frames = capture.frames.map((frame, index) => {
     if (!frame.performerWorld || !frame.leftProp?.propRootWorld ||
@@ -214,16 +245,17 @@ for (const entry of artifacts.filter(entry =>
     sourceFrameCount: frames.length,
     captureRevision: capture.captureRevision ?? 'legacy',
     sourceSHA256: createHash('sha256').update(captureBytes).digest('hex'),
-    coordinateBasis: "source XYZ to UE Feet (Z,-X,Y); rotation uses mirrored avatar basis and fixed native mesh X=-1",
+    coordinateBasis: MUSEUM_PROP_COORDINATE_BASIS,
     frames,
   };
   await writeFile(join(outputDir, filename), JSON.stringify(clip));
   generated.push({ character: entry.character, profile, filename, frames: frames.length,
-    schema: clip.schema, captureRevision: clip.captureRevision, sourceSHA256: clip.sourceSHA256 });
+    schema: clip.schema, captureRevision: clip.captureRevision, sourceSHA256: clip.sourceSHA256,
+    ...(museumMode ? { sequenceId: museumEntries.find(item => item.profile === profile).sequenceId } : {}) });
 }
 if (!generated.length) throw new Error('No complete listed prop captures available for staging');
 if (!allowPartial && !familyOnly && !captureId && generated.length !== artifacts.filter(
-  entry => profileForRole(entry.role)).length)
+  entry => museumMode || profileForRole(entry.role)).length)
   throw new Error(`Prop motion generation missed a listed capture: ${generated.length}`);
 const manifestPath = join(outputDir, 'manifest.json');
 let clips = generated;

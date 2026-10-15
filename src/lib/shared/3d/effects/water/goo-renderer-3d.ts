@@ -64,6 +64,16 @@ interface Liquid {
   pools: boolean;
   /** 0-1: how readily a landing throws satellite droplets. */
   splashy: number;
+  /** Light the liquid gives off in its own color (acid, spirit). */
+  glow: number;
+  /** Fraction of its size a free drop loses each second (spirit fades). */
+  evaporate: number;
+}
+
+/** Repeatable 0-1 scatter, so a replay sprays the same way. */
+function scatter(n: number): number {
+  const x = Math.sin(n * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
 }
 
 function makeLiquid(): Liquid {
@@ -78,6 +88,8 @@ function makeLiquid(): Liquid {
     metalness: 0,
     pools: true,
     splashy: 0.5,
+    glow: 0,
+    evaporate: 0,
   };
 }
 
@@ -92,6 +104,8 @@ function copyLiquid(target: Liquid, source: Liquid): void {
   target.metalness = source.metalness;
   target.pools = source.pools;
   target.splashy = source.splashy;
+  target.glow = source.glow;
+  target.evaporate = source.evaporate;
 }
 
 /**
@@ -150,6 +164,8 @@ interface Drop {
 
 interface SourceState {
   accumulator: number;
+  /** Fountain drops owed to this source, carried between frames. */
+  jet: number;
   lastSeen: number;
   strand: number;
   last: Vector3;
@@ -224,21 +240,31 @@ function createWetMaterial(envMap: DataTexture): MeshPhysicalMaterial {
         `#include <common>
          attribute float aAlpha;
          attribute float aMetalness;
+         attribute float aGlow;
          varying float vGooAlpha;
-         varying float vGooMetalness;`
+         varying float vGooMetalness;
+         varying float vGooGlow;`
       )
       .replace(
         "#include <begin_vertex>",
         `#include <begin_vertex>
          vGooAlpha = aAlpha;
-         vGooMetalness = aMetalness;`
+         vGooMetalness = aMetalness;
+         vGooGlow = aGlow;`
       );
     shader.fragmentShader = shader.fragmentShader
       .replace(
         "#include <common>",
         `#include <common>
          varying float vGooAlpha;
-         varying float vGooMetalness;`
+         varying float vGooMetalness;
+         varying float vGooGlow;`
+      )
+      .replace(
+        "#include <emissivemap_fragment>",
+        `#include <emissivemap_fragment>
+         // Glowing liquid lights itself, densest where the view crosses most of it.
+         totalEmissiveRadiance += diffuseColor.rgb * vGooGlow;`
       )
       .replace(
         "#include <color_fragment>",
@@ -280,6 +306,7 @@ function makeTubeGeometry(): BufferGeometry {
   const colors = new Float32Array(positions.length);
   const alphas = new Float32Array(STRANDS * VERTICES);
   const metalnesses = new Float32Array(STRANDS * VERTICES);
+  const glows = new Float32Array(STRANDS * VERTICES);
   const indices = new Uint16Array(STRANDS * (RINGS - 1) * SIDES * 6);
   let index = 0;
   for (let strand = 0; strand < STRANDS; strand++) {
@@ -307,6 +334,7 @@ function makeTubeGeometry(): BufferGeometry {
   geometry.setAttribute("color", dynamic(colors, 3));
   geometry.setAttribute("aAlpha", dynamic(alphas, 1));
   geometry.setAttribute("aMetalness", dynamic(metalnesses, 1));
+  geometry.setAttribute("aGlow", dynamic(glows, 1));
   return geometry;
 }
 
@@ -369,6 +397,10 @@ export class GooRenderer3D {
     new Float32Array(DROPS),
     1
   ).setUsage(DynamicDrawUsage);
+  private readonly dropGlows = new InstancedBufferAttribute(
+    new Float32Array(DROPS),
+    1
+  ).setUsage(DynamicDrawUsage);
   private readonly dropMesh = new InstancedMesh(
     this.sphereGeometry,
     this.wetMaterial,
@@ -390,6 +422,8 @@ export class GooRenderer3D {
   private readonly scratch = new Vector3();
   private readonly velocity = new Vector3();
   private frame = 0;
+  private jets = 0;
+  private readonly jetVelocity = new Vector3();
   private strandCursor = 0;
   private dropCursor = 0;
   private seed = 0x2f6b1d;
@@ -404,6 +438,7 @@ export class GooRenderer3D {
     this.sphereGeometry.setAttribute("color", new BufferAttribute(colors, 3));
     this.sphereGeometry.setAttribute("aAlpha", this.dropAlphas);
     this.sphereGeometry.setAttribute("aMetalness", this.dropMetalnesses);
+    this.sphereGeometry.setAttribute("aGlow", this.dropGlows);
     this.tubeMesh.frustumCulled = false;
     this.dropMesh.frustumCulled = false;
     this.dropMesh.instanceMatrix.setUsage(DynamicDrawUsage);
@@ -432,6 +467,7 @@ export class GooRenderer3D {
       if (!state) {
         state = {
           accumulator: 0,
+          jet: 0,
           lastSeen: this.frame,
           strand: -1,
           last: new Vector3(source.position.x, source.position.y, source.position.z),
@@ -541,6 +577,8 @@ export class GooRenderer3D {
       return;
     }
 
+    this.welling(source, state, liquid, dt);
+
     let strand =
       state.strand >= 0 ? this.strands[state.strand]! : undefined;
     if (
@@ -575,10 +613,66 @@ export class GooRenderer3D {
     strand.rootFrom.copy(state.last);
     strand.rootTo.set(source.position.x, source.position.y, source.position.z);
     // Liquid leaves the tip at the emission rate, measured in drips.
-    const drips = Math.min(5, rate * (p.spewStyle === "splash" ? 0.45 : 0.32));
+    // It eases toward its ceiling instead of hitting it, so a hard spin
+    // still pours more than a gentle one and each preset's amount shows.
+    const drips =
+      6 * (1 - Math.exp((-rate * (p.spewStyle === "splash" ? 0.45 : 0.32)) / 6));
     const added = drips * sphereVolume(strand.nozzle * 1.45) * dt;
     if (strand.count >= 2) strand.vol[0] += added;
     else strand.bulb += added;
+  }
+
+  /**
+   * Liquid the prop gives off on its own wells up out of the tip in a small
+   * fountain, while liquid thrown by motion stays in the rope: Fountain
+   * sprays, Classic spits now and then, Whip only flings.
+   */
+  private welling(
+    source: GooTipSource3D,
+    state: SourceState,
+    liquid: Liquid,
+    dt: number
+  ): void {
+    const p = source.params;
+    const ambient = clamp01(p.ambientEmission);
+    const rate = Math.min(
+      32,
+      ambient ** 3 * p.ambientSpawnRate * 4 * (1 - 0.7 * liquid.viscosity)
+    );
+    if (!(rate > 0)) {
+      state.jet = 0;
+      return;
+    }
+    state.jet = Math.min(4, state.jet + dt * rate);
+    while (state.jet >= 1) {
+      state.jet -= 1;
+      const n = ++this.jets;
+      // A strong source throws a tall, tight column of fat drops; a weak
+      // one spits low and wide.
+      const angle = scatter(n) * Math.PI * 2;
+      const spread = (0.08 + 0.3 * scatter(n + 0.31)) * (1.6 - ambient);
+      const lift = (1.2 + 2.2 * ambient * ambient) * (0.85 + 0.3 * scatter(n + 0.57));
+      const velocity = this.jetVelocity.set(
+        source.velocity.x * 0.4 + Math.cos(angle) * spread,
+        source.velocity.y * 0.4 + lift,
+        source.velocity.z * 0.4 + Math.sin(angle) * spread
+      );
+      this.spawnDrop(
+        source.position,
+        velocity,
+        p.baseRadius * (0.2 + 0.3 * ambient) * (0.8 + 0.4 * scatter(n + 0.83)),
+        liquid,
+        this.dropLifetime(
+          source.position.y,
+          source.collisionFloorY,
+          velocity.y,
+          liquid.gravity,
+          0.34
+        ),
+        0,
+        true
+      );
+    }
   }
 
   private readLiquid(liquid: Liquid, source: GooTipSource3D): void {
@@ -595,6 +689,14 @@ export class GooRenderer3D {
     liquid.pools = !p.resolvedPalette.suppressPuddles;
     liquid.splashy =
       p.spewStyle === "splash" ? 1 : p.spewStyle === "flow" ? 0.45 : 0.15;
+    // Each palette is its own liquid, not only its own color.
+    liquid.glow = p.palette === "acid" ? 0.7 : p.palette === "spirit" ? 1.1 : 0;
+    liquid.evaporate = 0;
+    if (p.palette === "spirit") {
+      // Ectoplasm drifts down slowly and fades before it reaches the floor.
+      liquid.gravity *= 0.4;
+      liquid.evaporate = 0.9;
+    }
   }
 
   /** Map the source's liquid controls onto the rope's physics. */
@@ -686,6 +788,13 @@ export class GooRenderer3D {
         this.collide(strand);
       }
       if (!strand.active) continue;
+      if (!strand.attached && strand.liquid.evaporate > 0) {
+        // A fading rope thins everywhere at once: volume goes as size cubed.
+        const keep = Math.exp(-3 * strand.liquid.evaporate * dt);
+        strand.bulb *= keep;
+        for (let segment = 0; segment < strand.count - 1; segment++)
+          strand.vol[segment] = strand.vol[segment]! * keep;
+      }
       this.drain(strand, dt);
       this.resample(strand);
       this.breakNeck(strand);
@@ -1098,7 +1207,8 @@ export class GooRenderer3D {
       liquid.alpha,
       Math.abs((strand.pos[o + 1]! - strand.prev[o + 1]!) / h),
       (strand.pos[o]! - strand.prev[o]!) / h,
-      (strand.pos[o + 2]! - strand.prev[o + 2]!) / h
+      (strand.pos[o + 2]! - strand.prev[o + 2]!) / h,
+      liquid.glow
     );
   }
 
@@ -1148,6 +1258,13 @@ export class GooRenderer3D {
     for (const drop of this.drops) {
       if (!drop.active) continue;
       drop.age += dt;
+      if (drop.liquid.evaporate > 0) {
+        drop.radius *= Math.exp(-drop.liquid.evaporate * dt);
+        if (drop.radius < SPENT_RADIUS) {
+          drop.active = false;
+          continue;
+        }
+      }
       const previousY = drop.position.y;
       drop.velocity.y += drop.liquid.gravity * dt;
       drop.position.addScaledVector(drop.velocity, dt);
@@ -1224,7 +1341,8 @@ export class GooRenderer3D {
       liquid.alpha,
       impact,
       drop.velocity.x,
-      drop.velocity.z
+      drop.velocity.z,
+      liquid.glow
     );
   }
 
@@ -1279,6 +1397,8 @@ export class GooRenderer3D {
       .array as Float32Array;
     const metalnesses = (this.tubeGeometry.getAttribute("aMetalness") as BufferAttribute)
       .array as Float32Array;
+    const glows = (this.tubeGeometry.getAttribute("aGlow") as BufferAttribute)
+      .array as Float32Array;
     for (let index = 0; index < STRANDS; index++) {
       const strand = this.strands[index]!;
       const base = index * VERTICES;
@@ -1299,10 +1419,11 @@ export class GooRenderer3D {
         colors[vertex * 3 + 2] = b;
         alphas[vertex] = strand.liquid.alpha;
         metalnesses[vertex] = strand.liquid.metalness;
+        glows[vertex] = strand.liquid.glow;
       }
     }
     this.tubeMesh.visible = any;
-    for (const name of ["position", "normal", "color", "aAlpha", "aMetalness"])
+    for (const name of ["position", "normal", "color", "aAlpha", "aMetalness", "aGlow"])
       this.tubeGeometry.getAttribute(name).needsUpdate = true;
   }
 
@@ -1494,6 +1615,7 @@ export class GooRenderer3D {
       this.dropMesh.setColorAt(count, drop.liquid.core);
       this.dropAlphas.setX(count, drop.liquid.alpha);
       this.dropMetalnesses.setX(count, drop.liquid.metalness);
+      this.dropGlows.setX(count, drop.liquid.glow);
       count++;
     }
     const wasVisible = this.dropMesh.visible;
@@ -1505,6 +1627,7 @@ export class GooRenderer3D {
         this.dropMesh.instanceColor.needsUpdate = true;
       this.dropAlphas.needsUpdate = true;
       this.dropMetalnesses.needsUpdate = true;
+      this.dropGlows.needsUpdate = true;
     }
   }
 

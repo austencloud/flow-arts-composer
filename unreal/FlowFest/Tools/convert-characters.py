@@ -13,17 +13,25 @@ import bpy
 from mathutils import Vector
 
 HERE = Path(__file__).resolve().parent
-STAGED = HERE / 'staged' / 'Characters'
-MANIFEST = json.loads((STAGED / 'imports.json').read_text(encoding='utf-8'))
-
 parser = argparse.ArgumentParser()
+parser.add_argument('--project', type=Path, help='Unreal project containing Tools/staged/Characters')
+parser.add_argument('--staged', type=Path, help='Explicit staged Characters directory')
+parser.add_argument('--profiles-only', action='store_true', help='Convert only manifest-listed custom performances')
 parser.add_argument('--id', action='append', help='Only convert these character IDs')
 parser.add_argument('--family-only', action='store_true', help='Convert only staged P_<family>_A/B captures')
 parser.add_argument('--allow-partial', action='store_true', help='Pilot only: convert available family captures for explicit --id')
 parser.add_argument('--force', action='store_true', help='Re-export assets even when FBX is current')
 args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
+STAGED = (args.staged or (args.project / 'Tools' / 'staged' / 'Characters' if args.project else HERE / 'staged' / 'Characters')).resolve()
+MANIFEST = json.loads((STAGED / 'imports.json').read_text(encoding='utf-8'))
 if args.allow_partial and (not args.family_only or not args.id):
     raise RuntimeError('--allow-partial requires --family-only and explicit --id')
+if args.profiles_only and args.family_only:
+    raise RuntimeError('--profiles-only cannot combine with --family-only')
+if args.profiles_only and (len(MANIFEST['characters']) != 1 or MANIFEST['characters'][0]['id'] != 'x-bot' or
+                           not MANIFEST['characters'][0].get('captures') or
+                           any(not name.startswith('M_') for name in MANIFEST['characters'][0]['captures'])):
+    raise RuntimeError('--profiles-only requires staged x-bot Museum captures')
 bpy.context.scene.render.fps = 30
 
 
@@ -113,7 +121,7 @@ def prepare_rig(character):
         root.location.z -= floor
     armature.animation_data_clear()
     mesh_file = STAGED / character['key'] / f'SK_{character["key"]}.fbx'
-    if not args.family_only and not is_current(mesh_file, Path(character['decoded'])):
+    if not args.family_only and not args.profiles_only and not is_current(mesh_file, Path(character['decoded'])):
         export_fbx(mesh_file, armature, meshes, False)
     return armature, meshes
 
@@ -133,7 +141,7 @@ def retarget_clip(character, target, clip_name, source_path, captured=False):
     scene = bpy.context.scene
     scene.render.fps = 30
     start, end = map(int, source.animation_data.action.frame_range)
-    if end <= start or end - start > 600:
+    if end <= start or end - start > (3600 if captured else 600):
         raise RuntimeError(f'{source_path}: unreasonable animation range {start}-{end}')
     source_hip_bone = source_bones['Hips'].bone
     target_hip_bone = target.pose.bones['Hips'].bone
@@ -193,7 +201,7 @@ for character in MANIFEST['characters']:
                                      for profile in character.get('captures', {})):
         raise RuntimeError(f'{character["id"]}: no staged family captures for pilot')
     target, meshes = prepare_rig(character)
-    if not args.family_only:
+    if not args.family_only and not args.profiles_only:
         for clip_name, filename in MANIFEST['animations'].items():
             source_path = Path(MANIFEST['animationSource']) / filename
             output = STAGED / character['key'] / f'A_{clip_name}.fbx'
@@ -201,6 +209,8 @@ for character in MANIFEST['characters']:
                 continue
             retarget_clip(character, target, clip_name, source_path)
     for profile, path in character.get('captures', {}).items():
+        if args.profiles_only and not profile.startswith('M_'):
+            continue
         if args.family_only and not (profile.startswith('P_') and profile.endswith(('_A', '_B'))):
             continue
         name = 'Ride' if profile == 'Ride' else f'Flow_{profile}'

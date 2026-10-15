@@ -1,6 +1,7 @@
 #include "MuseumHUD.h"
 #include "MuseumCharacter.h"
 #include "MuseumWorld.h"
+#include "MuseumPerformerStation.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
 #include "GameFramework/PlayerController.h"
@@ -43,7 +44,7 @@ void AMuseumHUD::DrawHUD()
         DrawText(Room ? Room->Name : TEXT("Between galleries"), Soft, 30, 59, Font, 1.1f);
         DrawText(FString::Printf(TEXT("%d rooms  |  %d exhibits  |  %d figures"), Museum->GetRooms().Num(), Museum->GetExhibitCount(), Museum->GetPerformerCount()), Soft, 30, 82, Font, .85f);
     }
-    DrawText(TEXT("WASD + mouse  |  E examine  |  F5 save  |  F9 load  |  R entrance"), Soft, 22, H - 32, Font, 1.f);
+    DrawText(TEXT("WASD + mouse  |  E examine  |  P play/pause  |  B restart  |  F5 save  |  F9 load  |  R entrance"), Soft, 22, H - 32, Font, 1.f);
     if (!Visitor->GetNotice().IsEmpty()) DrawText(Visitor->GetNotice(), Cream, W * .42f, 30, Font, 1.2f);
     if (const FMuseumExhibit* Exhibit = Visitor->GetOpenExhibit())
     {
@@ -67,4 +68,11 @@ void AMuseumHUD::DrawHUD()
         DrawRect(FLinearColor(.025f, .033f, .035f, .88f), W / 2 - 220, H - 105, 440, 55);
         DrawText(FString::Printf(TEXT("E  EXAMINE  %s"), *NearbyExhibit->Title), Cream, W / 2 - 200, H - 88, Font, 1.f);
     }
+    if (!Visitor->GetOpenExhibit())
+        if (const AMuseumPerformerStation* Station = Visitor->GetNearbyPerformer())
+        {
+            DrawRect(FLinearColor(.025f, .033f, .035f, .88f), W / 2 - 240, H - 167, 480, 48);
+            DrawText(FString::Printf(TEXT("%s  |  %s  |  P pause/play  B restart"),
+                *Station->GetDisplayLabel(), *Station->GetPlaybackStatus()), Cream, W / 2 - 225, H - 152, Font, .9f);
+        }
 }
