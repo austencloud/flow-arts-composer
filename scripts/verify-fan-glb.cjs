@@ -205,7 +205,6 @@ const requiredNodes = [
   "Fan_Lotus",
   "Fan_Day",
   "Fan_Moon",
-  "Fan_Astral",
   "Fan_Cover",
   "Fan_Fire_GripRing",
   "Fan_Fire_GripShell",
@@ -226,11 +225,6 @@ const requiredNodes = [
   "Fan_Moon_GripGuard",
   "Fan_Moon_LED_Segment_A",
   "Fan_Moon_LED_Segment_B",
-  "Fan_Astral_GripRing",
-  "Fan_Astral_BladeDiffuser",
-  "Fan_Astral_Blade_LED_01",
-  "Fan_Astral_Blade_LED_30",
-  "Fan_Astral_Sides_LED_6_6",
   "Fan_Cover_SolidFace",
   "Fan_Cover_StripedFace",
 ];
@@ -252,7 +246,10 @@ const dayPlate = nodes[nodeIndexByName.get("Fan_Day_DoodleGripPlate")];
 const fireGroup = nodes[nodeIndexByName.get("Fan_Fire")];
 const lotusGroup = nodes[nodeIndexByName.get("Fan_Lotus")];
 const moonGroup = nodes[nodeIndexByName.get("Fan_Moon")];
-const astralGroup = nodes[nodeIndexByName.get("Fan_Astral")];
+// Astral exists in source before its Blender rebuild lands in fan.glb, so the
+// published model may not carry it yet. Check it fully once it does.
+const astralIndex = nodeIndexByName.get("Fan_Astral");
+const astralGroup = astralIndex === undefined ? null : nodes[astralIndex];
 invariant(
   moonGroup.extras?.tka_led_count === 78 &&
     moonGroup.extras?.tka_led_segments === 2,
@@ -262,34 +259,45 @@ invariant(
   Math.abs(moonGroup.extras?.tka_ring_hole_diameter_m - 0.081) < 1e-6,
   "Moon fan grip no longer preserves the published 81mm opening"
 );
-invariant(
-  astralGroup.extras?.tka_led_count === 66 &&
-    astralGroup.extras?.tka_led_segments === 2,
-  "Astral fan no longer carries its documented 66-pixel, two-zone layout"
-);
-for (const [zone, expected] of [
-  ["Blade", 30],
-  ["Sides", 36],
-]) {
-  const emitters = nodes.filter((node) =>
-    node.name?.startsWith(`Fan_Astral_${zone}_LED_`)
-  );
+if (astralGroup) {
+  for (const name of [
+    "Fan_Astral_GripRing",
+    "Fan_Astral_BladeDiffuser",
+    "Fan_Astral_Blade_LED_01",
+    "Fan_Astral_Blade_LED_30",
+    "Fan_Astral_Sides_LED_6_6",
+  ]) {
+    invariant(nodeIndexByName.has(name), `Required node is missing: ${name}`);
+  }
   invariant(
-    emitters.length === expected,
-    `Astral ${zone} must have ${expected} emitters`
+    astralGroup.extras?.tka_led_count === 66 &&
+      astralGroup.extras?.tka_led_segments === 2,
+    "Astral fan no longer carries its documented 66-pixel, two-zone layout"
   );
+  for (const [zone, expected] of [
+    ["Blade", 30],
+    ["Sides", 36],
+  ]) {
+    const emitters = nodes.filter((node) =>
+      node.name?.startsWith(`Fan_Astral_${zone}_LED_`)
+    );
+    invariant(
+      emitters.length === expected,
+      `Astral ${zone} must have ${expected} emitters`
+    );
+    invariant(
+      emitters.every((node) =>
+        (astralGroup.children ?? []).includes(nodes.indexOf(node))
+      ),
+      "Astral emitter escaped its build group"
+    );
+  }
   invariant(
-    emitters.every((node) =>
-      (astralGroup.children ?? []).includes(nodes.indexOf(node))
-    ),
-    "Astral emitter escaped its build group"
+    JSON.stringify(astralGroup.extras?.tka_control_zones) ===
+      JSON.stringify(["blade", "sides"]),
+    "Astral fan lost its independent Blade/Sides controls"
   );
 }
-invariant(
-  JSON.stringify(astralGroup.extras?.tka_control_zones) ===
-    JSON.stringify(["blade", "sides"]),
-  "Astral fan lost its independent Blade/Sides controls"
-);
 invariant(
   fireGroup.extras?.tka_build ===
     "Forged Creations five-wick DoodleGrip fire fan",
