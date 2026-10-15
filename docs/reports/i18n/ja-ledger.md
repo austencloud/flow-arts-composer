@@ -47,3 +47,16 @@
 - Terms needing native/community confirmation: Effort is `力の加減`; Catdog is `キャットドッグ`; timing passes are `パス`; Fidelity is `再現度`; Creep is `ゆっくり加速`; Staircase is `段階的加速`. These have no glossary entries. The source hints establish the two acceleration presets' behavior; no native review or established Japanese community usage is claimed.
 - Shared-key uncertainty: `viewer_ui_linear` labels both a geometric path and an effort fallback. `直線` follows the path usage; one shared translation cannot express both contexts as specifically as separate keys would. No key or code changes were made.
 - No push, merge, primary checkout access, installation, build, dev server, broad check, or other locale edits performed. Branch and worktree are retained for the coordinator.
+
+## R4 — 2026-10-14
+
+- Scope: 852 new batch entries translated; 0 retranslate entries and 0 review entries supplied. Work remained in `E:/worktrees/tka-platform/i18n-ja`, branch `codex/i18n-ja`.
+- Apply result: `messages/ja.json: inserted 852, replaced 0, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Gate result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0, duration 9.20s.
+- Scope evidence before this ledger: only `messages/ja.json` changed, with 853 insertions and 1 deletion, net 852 lines. A parsed comparison against HEAD confirmed exactly the 852 batch-owned additions, no existing value changes, and no deleted keys. All output values match the applied catalog.
+- Focused checks: placeholder names and occurrence counts and exact markup tag multisets match English; no full-width spaces, multiline values, or added sentence-final punctuation. `git diff --check` passed. The ai-bust HIGH/CRITICAL scan returned `[]`; contextual review preserved source meaning and claims.
+- Glossary: sequence uses `シーケンス`, step `ステップ`, beat `ビート`, duration `長さ`, rotation direction `回転方向`, prop `プロップ`, performer `パフォーマー`, timing `タイミング`, library `ライブラリ`, and orientation `向き`. Product names including Flow Arts Composer, Post Studio, TKA, LOOP, and Choreo Cards retain English. Sentences use です・ます; labels omit the copula. Theme and gradient display names are localized, without changing identifiers.
+- Post Studio terminology: take is `テイク`, timing mapping is `タイミングの対応付け`, landing is `到達` / `到達点`, playhead is `再生ヘッド`, and a sequence pass is `周目`. The nearby timing source uses numbered landings and `sequenceFrame.pass`; the translations describe arrivals and repeated passes without implying a prop is dropped onto the floor.
+- Uncertain terminology: `landing` and `pass` have no glossary entries or native/community review; `到達` / `到達点` and `周目` are contextual choices. The short repeated-arrival labels use `1到達分`. Native review is not claimed.
+- No push, merge, primary checkout access, installation, build, dev server, broad check, or other locale edits performed. Branch and worktree are retained for the coordinator, as explicitly requested.
