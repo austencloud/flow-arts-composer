@@ -54,6 +54,28 @@ function directChild(ancestor: Object3D, target: Object3D): Object3D {
   return child;
 }
 
+function renderedPropBranches(performer: Object3D): Object3D[] {
+  const rig = performer.parent;
+  if (!rig) return [];
+  const avatarBranch = directChild(rig, performer);
+  return rig.children.filter(
+    (child) =>
+      child !== avatarBranch &&
+      containsMesh(child, false) &&
+      !containsMesh(child, true)
+  );
+}
+
+export function productionRigReady(scene: Scene, id: string): boolean {
+  const performer = scene.getObjectByName(`PERFORMER_${id}`);
+  if (!performer || renderedPropBranches(performer).length !== 2) return false;
+  let skinned = false;
+  performer.traverse((object) => {
+    if ((object as { isSkinnedMesh?: boolean }).isSkinnedMesh) skinned = true;
+  });
+  return skinned;
+}
+
 export function captureNativeFrame(
   scene: Scene,
   id: string,
@@ -85,14 +107,7 @@ export function captureNativeFrame(
 
   // PerformerRig renders the avatar, then blue/left and red/right hand trees.
   // The prop tree is HandAnchor -> PropAnchor -> correction -> Prop3D.
-  const rig = performer.parent;
-  const avatarBranch = directChild(rig, performer);
-  const propBranches = rig.children.filter(
-    (child) =>
-      child !== avatarBranch &&
-      containsMesh(child, false) &&
-      !containsMesh(child, true)
-  );
+  const propBranches = renderedPropBranches(performer);
   if (propBranches.length !== 2)
     throw new Error(
       `Expected two rendered prop branches for ${id}, found ${propBranches.length}`

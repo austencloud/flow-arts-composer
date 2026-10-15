@@ -11,7 +11,7 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { FlowFestPerformerRole } from "../flow-fest-sim/flow-fest-performer-sequences.js";
   import { FLOW_FEST_PERFORMER_PROFILES } from "../flow-fest-sim/flow-fest-performer-sequences.js";
-  import { captureNativeFrame } from "./native-capture.js";
+  import { captureNativeFrame, productionRigReady } from "./native-capture.js";
 
   interface Props {
     character: CharacterId;
@@ -33,12 +33,7 @@
   }
 
   export function hasRenderedRig(): boolean {
-    const root = scene.getObjectByName(`PERFORMER_${id}`);
-    let skinned = false;
-    root?.traverse((object) => {
-      if ((object as { isSkinnedMesh?: boolean }).isSkinnedMesh) skinned = true;
-    });
-    return skinned;
+    return productionRigReady(scene, id);
   }
 
   export async function sampleFrame(
