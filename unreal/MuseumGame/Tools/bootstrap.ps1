@@ -60,7 +60,7 @@ if (-not $SkipAssets) {
     $characterManifest = Join-Path $project 'Saved\Performers\characters.json'
     & node (Join-Path $repo 'unreal\Shared\Tools\character-catalog.mjs') --source-root $repo --output $characterManifest
     if ($LASTEXITCODE -ne 0) { throw "Native character catalog generation failed ($LASTEXITCODE)" }
-    & $BlenderExe -b -noaudio --python (Join-Path $PSScriptRoot 'convert-shells.py')
+    & $BlenderExe -b --factory-startup --python-exit-code 1 -noaudio --python (Join-Path $PSScriptRoot 'convert-shells.py')
     if ($LASTEXITCODE -ne 0) { throw "Museum shell conversion failed ($LASTEXITCODE)" }
     $performerLog = Join-Path $project 'Saved\performers-convert.log'
     & $BlenderExe -b -noaudio --python (Join-Path $PSScriptRoot 'convert-performers.py') 2>&1 | Tee-Object -FilePath $performerLog
