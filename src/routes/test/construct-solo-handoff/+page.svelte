@@ -1,499 +1,562 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
-  import { tick } from "svelte";
+  import { untrack } from "svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte";
+  import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
+  import { deriveLettersForSequence } from "#lib/shared/navigation/services/letter-deriver.js";
+  import { createConstructSoloReviewSequence } from "./construct-solo-review-fixture";
+  import {
+    createSoloAuthoringState,
+    setSoloAuthoringContext,
+  } from "./solo-authoring-state.svelte";
+  import { handName, otherHand } from "./construct-solo-proposal";
+  import SoloStartChoices from "./SoloStartChoices.svelte";
+  import SoloMotionChoices from "./SoloMotionChoices.svelte";
+  import SoloPathPreview from "./SoloPathPreview.svelte";
 
-  const VIEWPORTS = [
-    { id: "phone", label: "375 × 667", width: 375, height: 667, scale: 0.9 },
+  const authoring = createSoloAuthoringState(
     {
-      id: "landscape",
-      label: "960 × 412",
-      width: 960,
-      height: 412,
-      scale: 0.75,
+      loadCatalog: (gridMode) => motionQueryHandler.queryMotions({ gridMode }),
+      deriveLetters: deriveLettersForSequence,
     },
-    {
-      id: "tablet",
-      label: "820 × 1180",
-      width: 820,
-      height: 1180,
-      scale: 0.62,
-    },
-    {
-      id: "laptop",
-      label: "1440 × 900",
-      width: 1440,
-      height: 900,
-      scale: 0.58,
-    },
-    { id: "hd", label: "1920 × 1080", width: 1920, height: 1080, scale: 0.46 },
-    {
-      id: "wide",
-      label: "2560 × 1440",
-      width: 2560,
-      height: 1440,
-      scale: 0.35,
-    },
-    { id: "4k", label: "3840 × 2160", width: 3840, height: 2160, scale: 0.25 },
-  ] as const;
-
-  type ViewportId = (typeof VIEWPORTS)[number]["id"];
-
-  let viewportId = $state<ViewportId>("laptop");
-  let frameRevision = $state(0);
-  let frameReady = $state(false);
-
-  const selectedViewport = $derived(
-    VIEWPORTS.find((viewport) => viewport.id === viewportId) ?? VIEWPORTS[3]
+    createConstructSoloReviewSequence("left")
   );
-  const frameSource = $derived(
-    `/test/construct-solo-handoff/proposal?review=${frameRevision}`
+  setSoloAuthoringContext(authoring);
+  const visibility = new AnimationVisibilityStateManager({ ephemeral: true });
+  const effects = createEffectsConfigState(undefined, { persist: false });
+  let mobilePanel = $state("build");
+  let referenceShown = $state(false);
+  const colorName = $derived(handName(authoring.activeHand));
+  const nextStep = $derived((authoring.active?.steps.length ?? 0) + 1);
+  const referencePicture = $derived(
+    authoring.reference
+      ? !authoring.active
+        ? authoring.reference.startPlacement
+        : authoring.reference.steps[
+            Math.min(nextStep - 1, authoring.reference.steps.length - 1)
+          ]
+      : null
+  );
+  const title = $derived(
+    authoring.result
+      ? authoring.reference
+        ? "Blue + red sequence"
+        : colorName + " solo"
+      : !authoring.active
+        ? "Choose where " + colorName.toLowerCase() + " starts"
+        : authoring.complete
+          ? colorName + " path complete"
+          : "Choose " + colorName.toLowerCase() + " step " + nextStep
+  );
+  const displayedSequence = $derived(
+    authoring.result ??
+      (referenceShown && authoring.reference
+        ? authoring.reference
+        : authoring.active)
   );
 
-  async function reloadProposal(): Promise<void> {
-    frameReady = false;
-    frameRevision += 1;
-    await tick();
-  }
-
-  async function openFullSize(): Promise<void> {
-    await goto("/test/construct-solo-handoff/proposal");
+  $effect(() => {
+    void authoring.draft.gridMode;
+    untrack(() => {
+      void authoring.loadCatalog();
+    });
+  });
+  $effect(() => {
+    void authoring.activeHand;
+    untrack(() => {
+      mobilePanel = "build";
+      referenceShown = false;
+    });
+  });
+  function newSolo() {
+    authoring.newSolo();
+    mobilePanel = "build";
+    referenceShown = false;
   }
 </script>
 
-<svelte:head>
-  <title>Construct solo handoff review</title>
-</svelte:head>
+<svelte:head><title>Construct · single-hand authoring test</title></svelte:head>
 
-<main class="review-page">
-  <header class="review-header">
-    <div>
-      <span class="eyebrow">Solo-aware UX harness</span>
-      <h1>Choreo Card → Construct</h1>
-      <p>
-        A proposed first-run flow built with real sequence data, motion catalog
-        options, and production pictograph renderers.
-      </p>
+<main
+  class="solo-workbench"
+  data-hand={authoring.activeHand}
+  data-mode={authoring.result
+    ? "review"
+    : authoring.reference
+      ? "partner"
+      : "solo"}
+>
+  <header class="toolbar">
+    <div class="identity">
+      <h1>Construct</h1>
+      <span>Single-hand test</span>
+      <LinkChip href="/test/construct-solo-handoff/proposal" size="inline"
+        >Fixture walkthrough</LinkChip
+      >
     </div>
-    <div class="header-actions">
-      <PanelButton variant="secondary" onclick={reloadProposal}>
-        Reset walkthrough
-      </PanelButton>
-      <PanelButton variant="primary" onclick={openFullSize}>
-        Open full size
-      </PanelButton>
+    <div class="history-actions">
+      <PanelButton
+        disabled={!authoring.history.canUndo}
+        onclick={() => authoring.history.undo()}>Undo</PanelButton
+      >
+      <PanelButton
+        disabled={!authoring.history.canRedo}
+        onclick={() => authoring.history.redo()}>Redo</PanelButton
+      >
+      <PanelButton onclick={newSolo}>New solo</PanelButton>
     </div>
   </header>
 
-  <div class="review-layout">
-    <aside class="review-rail">
-      <section class="fixture-summary">
-        <span class="section-label">Fixture</span>
-        <strong>Left-hand smooth box</strong>
-        <span>8 canonical steps · complete solo artifact</span>
-      </section>
+  <div class="mobile-switch">
+    <SegmentedControl
+      ariaLabel="Workspace panel"
+      semantics="tabs"
+      color="accent"
+      value={mobilePanel}
+      onchange={(value) => (mobilePanel = value)}
+      options={[
+        {
+          value: "build",
+          label: authoring.result
+            ? "Playback"
+            : "Build " + colorName.toLowerCase(),
+        },
+        {
+          value: "path",
+          label: "Your path",
+          count: authoring.active?.steps.length ?? 0,
+        },
+      ]}
+    />
+  </div>
 
-      <section>
-        <span class="section-label" id="solo-viewport-label">Viewport</span>
-        <div
-          class="viewport-options"
-          role="radiogroup"
-          aria-labelledby="solo-viewport-label"
-        >
-          {#each VIEWPORTS as viewport}
-            <button
-              type="button"
-              class:active={viewport.id === viewportId}
-              role="radio"
-              aria-checked={viewport.id === viewportId}
-              onclick={() => (viewportId = viewport.id)}
-            >
-              <strong>{viewport.label}</strong>
-              <span>{Math.round(viewport.scale * 100)}% review scale</span>
-            </button>
-          {/each}
-        </div>
-      </section>
-
-      <section class="truth-panel">
-        <span class="section-label">What is real here</span>
-        <dl>
-          <div>
-            <dt>Artifact</dt>
-            <dd><code>soloPropToSequence</code></dd>
-          </div>
-          <div>
-            <dt>Sequence</dt>
-            <dd>production <code>StepGrid</code></dd>
-          </div>
-          <div>
-            <dt>Hand</dt>
-            <dd>left only</dd>
-          </div>
-          <div>
-            <dt>Options</dt>
-            <dd>production motion catalog</dd>
-          </div>
-          <div>
-            <dt>Rendering</dt>
-            <dd>production pictographs</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section class="review-question">
-        <span class="section-label">Walkthrough</span>
-        <p>
-          Start by continuing blue. Then press <strong>Add red path</strong> to see
-          the separate pairing task. Choose the saved red path to reach the normal
-          two-hand state.
-        </p>
-      </section>
-    </aside>
-
-    <section
-      class="review-workspace"
-      aria-label="Solo-aware Construct proposal"
-    >
-      <header class="frame-header">
-        <div>
-          <strong>{selectedViewport.width} × {selectedViewport.height}</strong>
-          <span>interactive proposal</span>
-        </div>
-        <span class:ready={frameReady} class="status">
-          {frameReady ? "Ready to review" : "Loading proposal…"}
-        </span>
-      </header>
-
-      <div class="preview-scroll">
-        <div
-          class="viewport-shell"
-          style={`--frame-width:${selectedViewport.width}px;--frame-height:${selectedViewport.height}px;--frame-scale:${selectedViewport.scale};--display-width:${selectedViewport.width * selectedViewport.scale}px;--display-height:${selectedViewport.height * selectedViewport.scale}px;`}
-        >
-          {#key frameRevision}
-            <iframe
-              src={frameSource}
-              title="Solo-aware Construct walkthrough"
-              onload={() => (frameReady = true)}
-            ></iframe>
-          {/key}
-        </div>
+  <div class="workspace">
+    <section class="artifact" class:mobile-hidden={mobilePanel !== "path"}>
+      {#if authoring.reference && !authoring.result}
+        <SegmentedControl
+          ariaLabel="Path to inspect"
+          semantics="tabs"
+          color="accent"
+          value={referenceShown ? "reference" : "active"}
+          onchange={(value) => (referenceShown = value === "reference")}
+          options={[
+            { value: "active", label: colorName + " · building" },
+            {
+              value: "reference",
+              label: handName(authoring.draft.primaryHand) + " · fixed",
+            },
+          ]}
+        />
+      {/if}
+      <div class="path-stage">
+        <SoloPathPreview
+          sequence={displayedSequence}
+          title={authoring.result
+            ? authoring.reference
+              ? "Combined pictographs"
+              : colorName + " path"
+            : referenceShown && authoring.reference
+              ? handName(authoring.draft.primaryHand) + " path · fixed"
+              : colorName + " path"}
+          focusStep={referenceShown
+            ? nextStep
+            : (authoring.active?.steps.length ?? 0)}
+        />
       </div>
     </section>
+
+    <section
+      class="builder"
+      class:mobile-hidden={mobilePanel !== "build"}
+      aria-label="Active hand builder"
+    >
+      <header class="task-heading">
+        <div class="task-copy">
+          <Crossfade key={title}><h2>{title}</h2></Crossfade>
+          <p>
+            {authoring.result
+              ? "Play your sequence, or return to editing."
+              : authoring.reference
+                ? `${handName(authoring.draft.primaryHand)} stays fixed · ${authoring.active?.steps.length ?? 0} of ${authoring.targetLength} steps built`
+                : !authoring.active
+                  ? "Choose a hand, then a starting pictograph."
+                  : "Pick a pictograph to add one motion."}
+          </p>
+        </div>
+        {#if referencePicture && !authoring.result}
+          <figure class="reference">
+            <div class="reference-picture">
+              <PictographContainer
+                pictographData={referencePicture}
+                gridMode={authoring.draft.gridMode}
+                disableTransitions
+                showStepNumber={false}
+              />
+            </div>
+            <figcaption>
+              {handName(authoring.draft.primaryHand)}
+              {authoring.active
+                ? `step ${Math.min(nextStep, authoring.targetLength!)}`
+                : "start"} · fixed
+            </figcaption>
+          </figure>
+        {/if}
+      </header>
+
+      <div
+        class="decision"
+        class:review={!!authoring.result}
+        class:starting={!authoring.active && !authoring.result}
+      >
+        {#if authoring.result}
+          <div class="player">
+            <InlineAnimationPlayer
+              sequence={authoring.result}
+              autoPlay={false}
+              fill
+              visibilityManagerOverride={visibility}
+              effectsConfigState={effects}
+              disableContextMenu
+            />
+          </div>
+        {:else if authoring.complete}
+          <div class="complete">
+            <h3>Both paths have {authoring.targetLength} steps.</h3>
+            <p>Combine them to see the two-hand pictographs and animation.</p>
+            {#if authoring.error}<p role="alert">{authoring.error}</p>{/if}
+            <PanelButton
+              variant="primary"
+              disabled={authoring.busy}
+              ariaBusy={authoring.busy}
+              onclick={authoring.review}
+            >
+              {authoring.busy ? "Combining…" : "Combine paths"}
+            </PanelButton>
+          </div>
+        {:else if !authoring.active}
+          <SoloStartChoices />
+        {:else}
+          <SoloMotionChoices />
+        {/if}
+      </div>
+
+      <footer class="builder-actions">
+        {#if authoring.result}
+          <PanelButton variant="primary" onclick={authoring.resume}
+            >Keep editing</PanelButton
+          >
+          {#if !authoring.reference}<PanelButton
+              onclick={() => {
+                authoring.resume();
+                authoring.addPartner();
+              }}
+              >Add {handName(otherHand(authoring.activeHand)).toLowerCase()} path</PanelButton
+            >{/if}
+        {:else if !authoring.reference && authoring.active?.steps.length}
+          <PanelButton onclick={authoring.review}>Review solo</PanelButton>
+          <PanelButton onclick={authoring.addPartner}
+            >Add {handName(otherHand(authoring.activeHand)).toLowerCase()} path</PanelButton
+          >
+        {:else}
+          <span
+            >{authoring.reference
+              ? "Every choice here changes only " +
+                colorName.toLowerCase() +
+                "."
+              : "A solo can stand on its own. A second hand is optional."}</span
+          >
+        {/if}
+      </footer>
+    </section>
   </div>
+  <footer class="session-note">
+    <span role="status">{authoring.notice}</span>
+    <LinkChip href="/test/construct-solo-handoff/proposal" size="inline" wrap
+      >Fixture walkthrough</LinkChip
+    ><span class="ephemeral">Test session · not saved</span>
+  </footer>
 </main>
 
 <style>
   :global(html),
   :global(body) {
     margin: 0;
-    min-height: 100%;
-    background: #090b11;
-  }
-
-  .review-page {
-    min-height: 100dvh;
-    padding: clamp(16px, 2vw, 36px);
-    background:
-      radial-gradient(
-        circle at 12% 8%,
-        rgba(255, 145, 35, 0.08),
-        transparent 28%
-      ),
-      #090b11;
-    color: var(--theme-text, #f7f8fb);
-    font-family: system-ui, sans-serif;
-  }
-
-  .review-header,
-  .review-layout {
-    width: min(100%, 1760px);
-    margin-inline: auto;
-  }
-
-  .review-header {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 24px;
-    margin-bottom: 20px;
-  }
-
-  .eyebrow,
-  .section-label {
-    color: var(--theme-accent, #ff9123);
-    font-size: var(--font-size-compact, 12px);
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  h1,
-  p {
-    margin: 0;
-  }
-
-  h1 {
-    margin-top: 4px;
-    font-size: clamp(28px, 3vw, 48px);
-    letter-spacing: -0.035em;
-  }
-
-  .review-header p {
-    max-width: 54rem;
-    margin-top: 7px;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.62));
-    line-height: 1.5;
-  }
-
-  .header-actions {
-    display: flex;
-    flex: none;
-    gap: 8px;
-  }
-
-  .review-layout {
-    display: grid;
-    grid-template-columns: minmax(260px, 330px) minmax(0, 1fr);
-    gap: 18px;
-  }
-
-  .review-rail,
-  .review-workspace {
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    border-radius: 18px;
-    background: var(--theme-panel-bg, #11131a);
-  }
-
-  .review-rail {
-    align-self: start;
-    padding: 14px;
-  }
-
-  .review-rail section + section {
-    margin-top: 18px;
-  }
-
-  .section-label {
-    display: block;
-    margin-bottom: 8px;
-  }
-
-  .fixture-summary {
-    padding: 12px;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    border-radius: 12px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-  }
-
-  .fixture-summary strong,
-  .fixture-summary > span:last-child {
-    display: block;
-  }
-
-  .fixture-summary strong {
-    font-size: 14px;
-  }
-
-  .fixture-summary > span:last-child {
-    margin-top: 3px;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.58));
-    font-size: 12px;
-  }
-
-  .viewport-options {
-    display: grid;
-    gap: 6px;
-  }
-
-  .viewport-options button {
-    display: flex;
-    min-height: var(--min-touch-target, 44px);
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 8px 10px;
-    border: 1px solid transparent;
-    border-radius: 10px;
-    background: transparent;
-    color: var(--theme-text, #fff);
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .viewport-options button:hover {
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
-  }
-
-  .viewport-options button.active {
-    border-color: color-mix(
-      in srgb,
-      var(--theme-accent, #ff9123) 55%,
-      transparent
-    );
-    background: color-mix(
-      in srgb,
-      var(--theme-accent, #ff9123) 13%,
-      transparent
-    );
-  }
-
-  .viewport-options strong,
-  .viewport-options span {
-    display: block;
-  }
-
-  .viewport-options strong {
-    font-size: 13px;
-  }
-
-  .viewport-options span {
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.58));
-    font-size: 11px;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .truth-panel,
-  .review-question {
-    padding: 12px;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    border-radius: 12px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-  }
-
-  dl {
-    display: grid;
-    gap: 8px;
-    margin: 0;
-  }
-
-  dl div {
-    display: grid;
-    grid-template-columns: 5rem minmax(0, 1fr);
-    gap: 8px;
-    font-size: 12px;
-  }
-
-  dt {
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.58));
-  }
-
-  dd {
-    min-width: 0;
-    margin: 0;
-    overflow-wrap: anywhere;
-  }
-
-  code {
-    font-size: 11px;
-  }
-
-  .review-question p {
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.68));
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .review-workspace {
-    min-width: 0;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
+    scrollbar-gutter: auto;
+    background: var(--theme-background, #101014);
   }
-
-  .frame-header {
+  .solo-workbench,
+  .solo-workbench :global(*) {
+    box-sizing: border-box;
+  }
+  .solo-workbench {
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 16px;
+    color: var(--theme-text, #fafafa);
+    font-family: system-ui, sans-serif;
+    font-size: 16px;
+    background: var(--theme-panel-bg, #101014);
+  }
+  .toolbar {
     display: flex;
-    min-height: 54px;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 9px 12px;
-    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    min-height: 48px;
   }
-
-  .frame-header strong,
-  .frame-header span {
-    display: block;
+  .identity {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
   }
-
-  .frame-header strong {
-    font-size: 13px;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .frame-header div span,
-  .status {
-    margin-top: 2px;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.58));
-    font-size: 11px;
-  }
-
-  .status {
+  h1 {
+    font-size: 20px;
     margin: 0;
   }
-
-  .status.ready {
-    color: var(--semantic-success, #4ade80);
+  .identity span,
+  .ephemeral {
+    color: var(--theme-text-dim);
+    font-size: 12px;
   }
-
-  .preview-scroll {
-    min-height: 720px;
-    padding: 18px;
-    overflow: auto;
-    background: #05070a;
+  .history-actions {
+    display: flex;
+    gap: 8px;
   }
-
-  .viewport-shell {
-    width: var(--display-width);
-    height: var(--display-height);
-    margin-inline: auto;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    border-radius: 10px;
-    background: #07121b;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.38);
+  .workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: clamp(10px, 1.2vw, 18px);
+    min-height: 0;
   }
-
-  iframe {
+  .artifact {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    min-height: 0;
+    padding: 16px;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 16px;
+    background: var(--theme-card-bg);
+  }
+  .path-stage {
+    flex: 1;
+    min-height: 0;
+  }
+  .builder {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 12px;
+    min-height: 0;
+    min-width: 0;
+    padding: 16px;
+  }
+  .task-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+  }
+  .task-copy {
+    min-width: 0;
+  }
+  h2 {
+    margin: 0;
+    font-size: 22px;
+    line-height: 1.2;
+  }
+  .task-heading p {
+    margin: 8px 0 0;
+    color: var(--theme-text-dim);
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .reference {
+    margin: 0;
+    width: 130px;
+    flex: none;
+  }
+  .reference-picture {
+    width: 100%;
+    height: 112px;
+  }
+  figcaption {
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .decision {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 12px;
+  }
+  .decision.review {
     display: block;
-    width: var(--frame-width);
-    height: var(--frame-height);
-    border: 0;
-    background: #07121b;
-    transform: scale(var(--frame-scale));
-    transform-origin: top left;
   }
-
-  @media (max-width: 980px) {
-    .review-header {
-      align-items: start;
-      flex-direction: column;
+  .builder-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--theme-text-dim);
+  }
+  .session-note {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 20px;
+    font-size: 12px;
+    color: var(--theme-text-dim);
+  }
+  .complete {
+    grid-row: 1/-1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 16px;
+  }
+  .complete h3,
+  .complete p {
+    margin: 0;
+  }
+  .player {
+    height: 100%;
+    width: 100%;
+  }
+  .mobile-switch {
+    display: none;
+  }
+  @media (min-width: 2200px) {
+    .workspace {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: 40px;
     }
-
-    .review-layout {
-      grid-template-columns: 1fr;
-    }
-
-    .viewport-options {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .builder {
+      padding-inline: clamp(16px, 3vw, 100px);
     }
   }
-
-  @media (max-width: 560px) {
-    .review-page {
-      padding: 10px;
-    }
-
-    .header-actions,
-    .header-actions :global(button) {
-      width: 100%;
-    }
-
-    .viewport-options {
-      grid-template-columns: 1fr;
-    }
-
-    .preview-scroll {
-      min-height: 540px;
+  @media (max-width: 700px) {
+    .solo-workbench {
       padding: 8px;
+      gap: 8px;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+    }
+    .identity span {
+      display: none;
+    }
+    .toolbar {
+      gap: 8px;
+    }
+    h1 {
+      font-size: 16px;
+    }
+    .history-actions {
+      gap: 4px;
+    }
+    .history-actions :global(button) {
+      padding-inline: 9px;
+      font-size: 14px;
+    }
+    .mobile-switch {
+      display: block;
+    }
+    .workspace {
+      display: block;
+    }
+    .artifact,
+    .builder {
+      height: 100%;
+    }
+    .mobile-hidden {
+      display: none;
+    }
+    .builder {
+      padding: 4px;
+      gap: 8px;
+    }
+    .decision {
+      gap: 8px;
+    }
+    h2 {
+      font-size: 18px;
+    }
+    .task-heading p {
+      margin-top: 4px;
+    }
+    .reference {
+      width: 86px;
+    }
+    .reference-picture {
+      height: 70px;
+    }
+    .session-note {
+      min-height: 30px;
+    }
+    .ephemeral {
+      display: none;
+    }
+  }
+  @media (min-width: 701px) and (max-width: 1000px) and (min-height: 800px) {
+    .workspace {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 0.38fr) minmax(0, 0.62fr);
+      gap: 12px;
+    }
+    .builder {
+      padding: 8px;
+    }
+  }
+  @media (max-height: 550px) and (min-width: 701px) {
+    .solo-workbench {
+      padding: 8px;
+      gap: 6px;
+    }
+    .workspace {
+      gap: 12px;
+      grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+    }
+    .artifact,
+    .builder {
+      padding: 6px;
+      gap: 6px;
+    }
+    .reference {
+      width: 74px;
+    }
+    .reference-picture {
+      height: 52px;
+    }
+    h2 {
+      font-size: 18px;
+    }
+    .task-heading p {
+      margin-top: 3px;
+    }
+    .decision {
+      gap: 6px;
+    }
+    .decision.starting {
+      grid-template-columns: 270px minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+    }
+    .session-note {
+      min-height: 16px;
     }
   }
 </style>
