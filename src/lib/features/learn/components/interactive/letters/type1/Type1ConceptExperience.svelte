@@ -1,15 +1,24 @@
+<!--
+  Type 1 letters on the shared lesson shell: pick any of A B C / G H I and
+  compare the real pictographs, answer three letter checks (Next waits for
+  the right answer), then the pattern map.
+-->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { getCodexLetterMappingRepo } from "#lib/features/learn/codex/get-codex-letter-mapping-repo.js";
   import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { ExperienceViewMode } from "../../../../domain/types";
   import { getExperiencePersistence } from "../../../../state/experience-persistence.svelte";
-  import ExperienceProgressIndicator from "../../ExperienceProgressIndicator.svelte";
+  import LessonStageControls from "../../LessonStageControls.svelte";
+  import LessonStageFrame from "../../LessonStageFrame.svelte";
+  import LessonStageHeading from "../../LessonStageHeading.svelte";
   import {
     TYPE1_ACCENTS,
     TYPE1_LESSON_LETTERS,
@@ -28,11 +37,13 @@
     viewMode?: ExperienceViewMode;
   } = $props();
 
+  const PHASE_COUNT = 3;
   const haptic = getHapticFeedback();
   const persistence = getExperiencePersistence("type1-abc-ghi");
   const saved = persistence.load();
+  const curriculumLabel = $derived(tDynamic("learn_ui_level_one"));
 
-  let phase = $state(Math.min(3, Math.max(1, saved.step || 1)));
+  let phase = $state(Math.min(PHASE_COUNT, Math.max(1, saved.step || 1)));
   let selectedLetter = $state<Letter>(
     persistence.getPhaseData<Letter>(
       "selectedLetter",
@@ -62,6 +73,34 @@
   );
   const selectedAnswerData = $derived(
     TYPE1_LESSON_LETTERS.find((item) => item.letter === selectedAnswer) ?? null
+  );
+  const isLast = $derived(phase === PHASE_COUNT);
+  const lastQuestion = $derived(questionIndex === TYPE1_QUESTIONS.length - 1);
+  /** The quiz step waits for the right answer before Next opens. */
+  const actionDisabled = $derived(phase === 2 && answerState !== "correct");
+  const headingKey = $derived(phase === 2 ? `2-${questionIndex}` : phase);
+  const title = $derived(
+    phase === 1
+      ? tDynamic("learn_type1_title")
+      : phase === 2
+        ? tDynamic(`learn_type1_question_${questionIndex + 1}`)
+        : tDynamic("learn_type1_map_title")
+  );
+  const description = $derived(
+    phase === 1
+      ? tDynamic("learn_type1_intro")
+      : phase === 2
+        ? tDynamic("learn_type1_choose_instruction")
+        : tDynamic("learn_type1_map_summary")
+  );
+  const actionLabel = $derived(
+    phase === 1
+      ? tDynamic("learn_type1_check_pattern")
+      : phase === 2
+        ? lastQuestion
+          ? tDynamic("learn_type1_see_map")
+          : tDynamic("learn_type1_next_pattern")
+        : tDynamic("learn_type1_complete")
   );
 
   function patternLabel(pattern: keyof typeof TYPE1_PATTERN_LABELS): string {
@@ -103,7 +142,7 @@
   }
 
   function goToPhase(nextPhase: number) {
-    phase = Math.min(3, Math.max(1, nextPhase));
+    phase = Math.min(PHASE_COUNT, Math.max(1, nextPhase));
     persistence.saveStep(phase);
     selectedAnswer = null;
     answerState = null;
@@ -135,6 +174,29 @@
     onComplete?.();
   }
 
+  function handlePrimaryAction() {
+    if (actionDisabled) return;
+    if (phase === 1) goToPhase(2);
+    else if (phase === 2) nextQuestion();
+    else complete();
+  }
+
+  function handleKeydown(event: KeyboardEvent): void {
+    if (viewMode !== "step" || event.defaultPrevented) return;
+    if (
+      event.target instanceof Element &&
+      event.target.closest("button, input, select, textarea, [role='slider']")
+    )
+      return;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      handlePrimaryAction();
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      handleBack();
+    }
+  }
+
   export function handleBack() {
     if (phase > 1) {
       goToPhase(phase - 1);
@@ -144,245 +206,237 @@
   }
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
 <div
-  class="experience"
+  class="type1-experience"
   class:review-mode={viewMode === "scroll"}
   style:--type-one={TYPE1_ACCENTS[0]}
   style:--type-one-pair={TYPE1_ACCENTS[1]}
+  onkeydown={handleKeydown}
+  tabindex="0"
+  role="application"
+  aria-label={t("learn_ui_named_lesson_keyboard", {
+    title: tDynamic("learn_concept_type1_abc_ghi_name"),
+  })}
 >
-  {#if phase === 1}
-    <section class="explore-grid" aria-labelledby="type1-title">
-      <div class="copy-column">
-        <p class="eyebrow">{tDynamic("learn_type1_eyebrow")}</p>
-        <h1 id="type1-title">{tDynamic("learn_type1_title")}</h1>
-        <p class="lede">{tDynamic("learn_type1_intro")}</p>
-
-        <div class="letter-groups">
-          <div class="letter-family">
-            <div class="family-label">
-              <span>{tDynamic("learn_type1_alpha_family")}</span>
-              <small>A · B · C</small>
-            </div>
-            <div
-              class="letter-row"
-              aria-label={tDynamic("learn_type1_alpha_letters_aria")}
-            >
-              {#each TYPE1_LESSON_LETTERS.filter((item) => item.placementFamily === "alpha") as item}
-                <button
-                  type="button"
-                  class:active={selectedLetter === item.letter}
-                  aria-pressed={selectedLetter === item.letter}
-                  onclick={() => chooseLetter(item.letter)}
-                >
-                  <strong>{item.letter}</strong>
-                  <small>{patternLabel(item.pattern)}</small>
-                </button>
-              {/each}
-            </div>
-          </div>
-
-          <div class="letter-family">
-            <div class="family-label">
-              <span>{tDynamic("learn_type1_beta_family")}</span>
-              <small>G · H · I</small>
-            </div>
-            <div
-              class="letter-row"
-              aria-label={tDynamic("learn_type1_beta_letters_aria")}
-            >
-              {#each TYPE1_LESSON_LETTERS.filter((item) => item.placementFamily === "beta") as item}
-                <button
-                  type="button"
-                  class:active={selectedLetter === item.letter}
-                  aria-pressed={selectedLetter === item.letter}
-                  onclick={() => chooseLetter(item.letter)}
-                >
-                  <strong>{item.letter}</strong>
-                  <small>{patternLabel(item.pattern)}</small>
-                </button>
-              {/each}
-            </div>
-          </div>
-        </div>
-
-        <div class="current-reading">
-          <span class="big-letter">{activeLetter.letter}</span>
-          <div>
-            <strong>{patternLabel(activeLetter.pattern)}</strong>
-            <p>
-              {tDynamic("learn_type1_family_shift", {
-                family: familyLabel(activeLetter.placementFamily),
-              })}
-            </p>
-          </div>
-        </div>
-
-        <button
-          class="primary-action"
-          type="button"
-          onclick={() => goToPhase(2)}
-        >
-          {tDynamic("learn_type1_check_pattern")}
-          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-        </button>
-      </div>
-
-      <div class="visual-column">
-        <div
-          class="type-stripe"
-          aria-label={tDynamic("learn_type1_colors_aria")}
-        >
-          <span></span><span></span>
-        </div>
-        <LessonPictographStage
-          pictograph={pictographs[activeLetter.letter] ?? null}
-          {loading}
-          accent={activeLetter.pattern === "anti-anti"
-            ? TYPE1_ACCENTS[1]
-            : TYPE1_ACCENTS[0]}
-        />
-        <p>{tDynamic("learn_type1_visual_note")}</p>
-      </div>
-    </section>
-  {:else if phase === 2}
-    <section class="challenge" aria-labelledby="type1-check-title">
-      <div class="challenge-header">
-        <p class="eyebrow">
-          {tDynamic("learn_type1_letter_check", {
-            current: questionIndex + 1,
-            total: TYPE1_QUESTIONS.length,
-          })}
-        </p>
-        <h1 id="type1-check-title">
-          {tDynamic(`learn_type1_question_${questionIndex + 1}`)}
-        </h1>
-        <p>{tDynamic("learn_type1_choose_instruction")}</p>
-      </div>
-
-      <div class="challenge-grid">
-        <LessonPictographStage
-          pictograph={pictographs[
-            selectedAnswer ?? activeQuestion.choices[0]
-          ] ?? null}
-          {loading}
-          accent={answerState === "wrong"
-            ? "var(--semantic-error)"
-            : TYPE1_ACCENTS[0]}
-        />
-
-        <div class="answer-panel">
-          <div
-            class="letter-answers"
-            aria-label={tDynamic("learn_type1_choose_letter_aria")}
-          >
-            {#each activeQuestion.choices as letter}
-              <button
-                type="button"
-                class:selected={selectedAnswer === letter}
-                class:correct={answerState !== null &&
-                  letter === activeQuestion.answer}
-                class:wrong={answerState === "wrong" &&
-                  selectedAnswer === letter}
-                disabled={answerState === "correct"}
-                onclick={() => answerQuestion(letter)}
-              >
-                {letter}
-              </button>
-            {/each}
-          </div>
-
-          {#if answerState === "wrong" && selectedAnswerData}
-            <div class="feedback wrong-feedback" role="status">
-              <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
-              <p>
-                {tDynamic("learn_type1_wrong_feedback", {
-                  letter: selectedAnswerData.letter,
-                  pattern: patternLabel(selectedAnswerData.pattern),
-                  family: familyLabel(selectedAnswerData.placementFamily),
-                  targetPattern: patternLabel(answerLetter.pattern),
-                  targetFamily: familyLabel(answerLetter.placementFamily),
-                })}
-              </p>
-            </div>
-          {:else if answerState === "correct"}
-            <div class="feedback correct-feedback" role="status">
-              <i class="fa-solid fa-check" aria-hidden="true"></i>
-              <p>
-                {tDynamic("learn_type1_correct_feedback", {
-                  letter: answerLetter.letter,
-                  pattern: patternLabel(answerLetter.pattern),
-                  family: familyLabel(answerLetter.placementFamily),
-                })}
-              </p>
-            </div>
-          {/if}
-
-          <button
-            class="primary-action"
-            type="button"
-            disabled={answerState !== "correct"}
-            onclick={nextQuestion}
-          >
-            {questionIndex === TYPE1_QUESTIONS.length - 1
-              ? tDynamic("learn_type1_see_map")
-              : tDynamic("learn_type1_next_pattern")}
-            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-          </button>
-        </div>
-      </div>
-    </section>
-  {:else}
-    <section class="summary" aria-labelledby="type1-summary-title">
-      <p class="eyebrow">{tDynamic("learn_type1_map_eyebrow")}</p>
-      <h1 id="type1-summary-title">{tDynamic("learn_type1_map_title")}</h1>
-      <p class="summary-lede">{tDynamic("learn_type1_map_summary")}</p>
-
-      <div class="pattern-map">
-        <div class="map-heading">{tDynamic("learn_type1_pattern_heading")}</div>
-        <div class="map-heading">Alpha</div>
-        <div class="map-heading">Beta</div>
-        {#each [{ pattern: "pro-pro", alpha: "A", beta: "G" }, { pattern: "anti-anti", alpha: "B", beta: "H" }, { pattern: "hybrid", alpha: "C", beta: "I" }] as row}
-          <div class="pattern-name">
-            {patternLabel(row.pattern as keyof typeof TYPE1_PATTERN_LABELS)}
-          </div>
-          <div class="mapped-letter">{row.alpha}</div>
-          <div class="mapped-letter">{row.beta}</div>
-        {/each}
-      </div>
-
-      <button
-        class="primary-action complete-action"
-        type="button"
-        onclick={complete}
+  <LessonStageFrame artifactLayout="workshop">
+    {#snippet heading()}
+      <LessonStageHeading
+        key={headingKey}
+        {title}
+        eyebrow={tDynamic("learn_concept_type1_abc_ghi_name")}
       >
-        {tDynamic("learn_type1_complete")}
-        <i class="fa-solid fa-check" aria-hidden="true"></i>
-      </button>
-    </section>
-  {/if}
+        <p>{description}</p>
+      </LessonStageHeading>
+    {/snippet}
 
-  <ExperienceProgressIndicator currentStep={phase} totalSteps={3} />
+    {#snippet artifact()}
+      <Crossfade key={phase} duration={DURATION.normal}>
+        {#if phase === 1}
+          <section class="explore-grid" aria-label={title}>
+            <div class="copy-column">
+              <div class="letter-groups">
+                <div class="letter-family">
+                  <div class="family-label">
+                    <span>{tDynamic("learn_type1_alpha_family")}</span>
+                    <small>A · B · C</small>
+                  </div>
+                  <div
+                    class="letter-row"
+                    aria-label={tDynamic("learn_type1_alpha_letters_aria")}
+                  >
+                    {#each TYPE1_LESSON_LETTERS.filter((item) => item.placementFamily === "alpha") as item}
+                      <button
+                        type="button"
+                        class:active={selectedLetter === item.letter}
+                        aria-pressed={selectedLetter === item.letter}
+                        onclick={() => chooseLetter(item.letter)}
+                      >
+                        <strong>{item.letter}</strong>
+                        <small>{patternLabel(item.pattern)}</small>
+                      </button>
+                    {/each}
+                  </div>
+                </div>
+
+                <div class="letter-family">
+                  <div class="family-label">
+                    <span>{tDynamic("learn_type1_beta_family")}</span>
+                    <small>G · H · I</small>
+                  </div>
+                  <div
+                    class="letter-row"
+                    aria-label={tDynamic("learn_type1_beta_letters_aria")}
+                  >
+                    {#each TYPE1_LESSON_LETTERS.filter((item) => item.placementFamily === "beta") as item}
+                      <button
+                        type="button"
+                        class:active={selectedLetter === item.letter}
+                        aria-pressed={selectedLetter === item.letter}
+                        onclick={() => chooseLetter(item.letter)}
+                      >
+                        <strong>{item.letter}</strong>
+                        <small>{patternLabel(item.pattern)}</small>
+                      </button>
+                    {/each}
+                  </div>
+                </div>
+              </div>
+
+              <div class="current-reading">
+                <span class="big-letter">{activeLetter.letter}</span>
+                <div>
+                  <strong>{patternLabel(activeLetter.pattern)}</strong>
+                  <p>
+                    {tDynamic("learn_type1_family_shift", {
+                      family: familyLabel(activeLetter.placementFamily),
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="visual-column">
+              <div
+                class="type-stripe"
+                aria-label={tDynamic("learn_type1_colors_aria")}
+              >
+                <span></span><span></span>
+              </div>
+              <LessonPictographStage
+                pictograph={pictographs[activeLetter.letter] ?? null}
+                {loading}
+                accent={activeLetter.pattern === "anti-anti"
+                  ? TYPE1_ACCENTS[1]
+                  : TYPE1_ACCENTS[0]}
+              />
+              <p>{tDynamic("learn_type1_visual_note")}</p>
+            </div>
+          </section>
+        {:else if phase === 2}
+          <section class="challenge-grid" aria-label={title}>
+            <LessonPictographStage
+              pictograph={pictographs[
+                selectedAnswer ?? activeQuestion.choices[0]
+              ] ?? null}
+              {loading}
+              accent={answerState === "wrong"
+                ? "var(--semantic-error)"
+                : TYPE1_ACCENTS[0]}
+            />
+
+            <div class="answer-panel">
+              <p class="question-count">
+                {tDynamic("learn_type1_letter_check", {
+                  current: questionIndex + 1,
+                  total: TYPE1_QUESTIONS.length,
+                })}
+              </p>
+              <div
+                class="letter-answers"
+                aria-label={tDynamic("learn_type1_choose_letter_aria")}
+              >
+                {#each activeQuestion.choices as letter}
+                  <button
+                    type="button"
+                    class:selected={selectedAnswer === letter}
+                    class:correct={answerState !== null &&
+                      letter === activeQuestion.answer}
+                    class:wrong={answerState === "wrong" &&
+                      selectedAnswer === letter}
+                    disabled={answerState === "correct"}
+                    onclick={() => answerQuestion(letter)}
+                  >
+                    {letter}
+                  </button>
+                {/each}
+              </div>
+
+              {#if answerState === "wrong" && selectedAnswerData}
+                <div class="feedback wrong-feedback" role="status">
+                  <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                  <p>
+                    {tDynamic("learn_type1_wrong_feedback", {
+                      letter: selectedAnswerData.letter,
+                      pattern: patternLabel(selectedAnswerData.pattern),
+                      family: familyLabel(selectedAnswerData.placementFamily),
+                      targetPattern: patternLabel(answerLetter.pattern),
+                      targetFamily: familyLabel(answerLetter.placementFamily),
+                    })}
+                  </p>
+                </div>
+              {:else if answerState === "correct"}
+                <div class="feedback correct-feedback" role="status">
+                  <i class="fa-solid fa-check" aria-hidden="true"></i>
+                  <p>
+                    {tDynamic("learn_type1_correct_feedback", {
+                      letter: answerLetter.letter,
+                      pattern: patternLabel(answerLetter.pattern),
+                      family: familyLabel(answerLetter.placementFamily),
+                    })}
+                  </p>
+                </div>
+              {:else}
+                <div class="feedback feedback-placeholder" aria-hidden="true">
+                </div>
+              {/if}
+            </div>
+          </section>
+        {:else}
+          <section class="summary" aria-label={title}>
+            <div class="pattern-map">
+              <div class="map-heading">
+                {tDynamic("learn_type1_pattern_heading")}
+              </div>
+              <div class="map-heading">Alpha</div>
+              <div class="map-heading">Beta</div>
+              {#each [{ pattern: "pro-pro", alpha: "A", beta: "G" }, { pattern: "anti-anti", alpha: "B", beta: "H" }, { pattern: "hybrid", alpha: "C", beta: "I" }] as row}
+                <div class="pattern-name">
+                  {patternLabel(
+                    row.pattern as keyof typeof TYPE1_PATTERN_LABELS
+                  )}
+                </div>
+                <div class="mapped-letter">{row.alpha}</div>
+                <div class="mapped-letter">{row.beta}</div>
+              {/each}
+            </div>
+          </section>
+        {/if}
+      </Crossfade>
+    {/snippet}
+
+    {#snippet controls()}
+      <LessonStageControls
+        progressAppearance="steps"
+        label={actionLabel}
+        currentStep={phase}
+        totalSteps={PHASE_COUNT}
+        onAction={handlePrimaryAction}
+        onPrevious={handleBack}
+        previousDisabled={phase === 1}
+        actionIcon={isLast ? "check" : "arrow"}
+        {actionDisabled}
+        {curriculumLabel}
+      />
+    {/snippet}
+  </LessonStageFrame>
 </div>
 
 <style>
-  .experience {
-    --lesson-max: 80rem;
-    display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
-    gap: 1rem;
+  .type1-experience {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
     width: 100%;
-    height: 100%;
-    min-height: 0;
-    padding: 4.75rem clamp(1rem, 3vw, 3rem) 1rem;
-    overflow: auto;
+    min-height: 100%;
+    color: var(--theme-text);
+    outline: none;
     container-type: inline-size;
   }
 
-  .explore-grid,
-  .challenge,
-  .summary {
-    width: min(100%, var(--lesson-max));
-    margin: auto;
+  .type1-experience :global(.lesson-stage-frame) {
+    --lesson-workshop-max: 80rem;
+    --lesson-controls-max: 64rem;
   }
 
   .explore-grid {
@@ -390,6 +444,7 @@
     grid-template-columns: minmax(20rem, 0.95fr) minmax(22rem, 1.05fr);
     align-items: center;
     gap: clamp(2rem, 5vw, 5rem);
+    width: 100%;
   }
 
   .copy-column {
@@ -397,38 +452,6 @@
     align-content: center;
     gap: 1.15rem;
     min-width: 0;
-  }
-
-  .eyebrow {
-    margin: 0;
-    background: linear-gradient(90deg, var(--type-one), var(--type-one-pair));
-    background-clip: text;
-    color: transparent;
-    font-size: clamp(0.72rem, 0.8vw, 0.9rem);
-    font-weight: 850;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  h1 {
-    max-width: 18ch;
-    margin: 0;
-    color: var(--theme-text);
-    font-size: clamp(2rem, 4.1cqw, 4.4rem);
-    font-weight: 850;
-    letter-spacing: -0.045em;
-    line-height: 0.98;
-    text-wrap: balance;
-  }
-
-  .lede,
-  .summary-lede,
-  .challenge-header > p:last-child {
-    max-width: 58ch;
-    margin: 0;
-    color: var(--theme-text-dim);
-    font-size: clamp(1rem, 1.35cqw, 1.16rem);
-    line-height: 1.55;
   }
 
   .letter-groups {
@@ -493,7 +516,7 @@
     background:
       linear-gradient(var(--theme-card-bg), var(--theme-card-bg)) padding-box,
       linear-gradient(90deg, var(--type-one), var(--type-one-pair)) border-box;
-    box-shadow: inset 0 -3px 0 var(--type-one);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--type-one) 50%, transparent);
   }
 
   .current-reading {
@@ -502,8 +525,8 @@
     align-items: center;
     gap: 0.9rem;
     padding: 0.9rem 1rem;
-    border-left: 4px solid var(--type-one);
-    border-radius: 0 0.9rem 0.9rem 0;
+    border: 1px solid color-mix(in srgb, var(--type-one) 45%, var(--theme-stroke));
+    border-radius: 0.9rem;
     background: color-mix(in srgb, var(--type-one) 10%, var(--theme-card-bg));
   }
 
@@ -531,34 +554,6 @@
     margin: 0.2rem 0 0;
     color: var(--theme-text-dim);
     font-size: 0.86rem;
-  }
-
-  .primary-action {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    justify-self: start;
-    gap: 0.65rem;
-    min-height: 3.2rem;
-    padding: 0.75rem 1.2rem;
-    border: 1px solid color-mix(in srgb, var(--type-one) 70%, white 14%);
-    border-radius: 0.85rem;
-    background: var(--type-one);
-    color: #061013;
-    font: inherit;
-    font-weight: 850;
-    cursor: pointer;
-  }
-
-  .primary-action:hover:not(:disabled) {
-    filter: brightness(1.12);
-    transform: translateY(-1px);
-  }
-
-  .primary-action:disabled {
-    cursor: not-allowed;
-    filter: saturate(0.2);
-    opacity: 0.38;
   }
 
   button:focus-visible {
@@ -599,34 +594,28 @@
     background: var(--type-one-pair);
   }
 
-  .challenge {
-    display: grid;
-    align-content: center;
-    gap: clamp(1.3rem, 3vw, 2.4rem);
-  }
-
-  .challenge-header {
-    display: grid;
-    justify-items: center;
-    gap: 0.55rem;
-    text-align: center;
-  }
-
-  .challenge-header h1 {
-    max-width: 22ch;
-    font-size: clamp(1.8rem, 3.5cqw, 3.4rem);
-  }
-
   .challenge-grid {
     display: grid;
     grid-template-columns: minmax(18rem, 1fr) minmax(18rem, 0.85fr);
     align-items: center;
     gap: clamp(1.5rem, 4vw, 4rem);
+    width: 100%;
   }
 
   .answer-panel {
     display: grid;
     gap: 1rem;
+    min-width: 0;
+  }
+
+  .question-count {
+    margin: 0;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact, 0.75rem);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .letter-answers button {
@@ -649,12 +638,12 @@
 
   .letter-answers button.correct {
     border-color: var(--semantic-success);
-    box-shadow: inset 0 -4px 0 var(--semantic-success);
+    box-shadow: 0 0 0 1px var(--semantic-success);
   }
 
   .letter-answers button.wrong {
     border-color: var(--semantic-error);
-    box-shadow: inset 0 -4px 0 var(--semantic-error);
+    box-shadow: 0 0 0 1px var(--semantic-error);
   }
 
   .feedback {
@@ -669,15 +658,18 @@
     background: var(--theme-card-bg);
   }
 
+  /* The feedback slot keeps its height before an answer, so the answer
+     buttons do not jump when the feedback appears. */
+  .feedback-placeholder {
+    border-color: transparent;
+    background: none;
+  }
+
   .feedback p {
     margin: 0;
     color: var(--theme-text-dim);
     font-size: 0.9rem;
     line-height: 1.5;
-  }
-
-  .feedback strong {
-    color: var(--theme-text);
   }
 
   .wrong-feedback i {
@@ -690,14 +682,8 @@
 
   .summary {
     display: grid;
-    align-content: center;
     justify-items: center;
-    gap: 1.25rem;
-    text-align: center;
-  }
-
-  .summary h1 {
-    max-width: 18ch;
+    width: 100%;
   }
 
   .pattern-map {
@@ -748,14 +734,6 @@
     font-weight: 900;
   }
 
-  .complete-action {
-    justify-self: center;
-  }
-
-  :global(.experience > .progress-indicator) {
-    justify-self: center;
-  }
-
   @container (max-width: 760px) {
     .explore-grid,
     .challenge-grid {
@@ -765,17 +743,9 @@
     .visual-column {
       order: -1;
     }
-
-    h1 {
-      font-size: clamp(2rem, 10cqw, 3.4rem);
-    }
   }
 
   @container (max-width: 480px) {
-    .experience {
-      padding: 4rem 0.75rem 0.75rem;
-    }
-
     .letter-family {
       grid-template-columns: 1fr;
     }
@@ -787,10 +757,6 @@
   }
 
   @media (max-height: 560px) and (min-width: 700px) {
-    .experience {
-      padding-top: 3.9rem;
-    }
-
     .explore-grid,
     .challenge-grid {
       align-items: start;
@@ -800,11 +766,6 @@
       gap: 0.6rem;
     }
 
-    h1 {
-      font-size: clamp(1.7rem, 4cqw, 2.6rem);
-    }
-
-    .lede,
     .visual-column > p {
       font-size: 0.78rem;
     }
@@ -819,7 +780,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .primary-action,
     button {
       transition: none;
     }
