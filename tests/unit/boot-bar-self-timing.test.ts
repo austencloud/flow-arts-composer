@@ -5,6 +5,13 @@
  * milestone before it arrives, or never lets the screen go all look like
  * "the app is slow" rather than a bug. These replay recorded boots against
  * the real inline script with a controlled clock.
+ *
+ * The fill moves by CSS transform transitions, which the compositor runs
+ * even while the main thread is blocked. JSDOM runs no transitions, so the
+ * harness models the compositor: every inline transform write becomes a
+ * move (when, from where, to where, how long), and the fill's position at
+ * any moment is read from that schedule. The script's own reads of the
+ * computed transform get the same modelled position.
  */
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
@@ -32,7 +39,15 @@ interface Probe {
   profile: Profile;
   defaultProfile: boolean;
   milestones: Array<{ name: string; t: number; ignored?: true }>;
-  samples: Array<{ t: number; pct: number }>;
+  samples: Array<{ t: number; pct: number; target: number }>;
+}
+
+/** One inline transform write, as the compositor would run it. */
+interface Move {
+  at: number;
+  from: number;
+  to: number;
+  ms: number;
 }
 
 interface Timer {
@@ -60,6 +75,21 @@ const DEV_WARM: Timeline = [
 ];
 const SCRIPT_START = 200;
 
+/** The second warm dev boot round 1 measured in the browser, with the
+ * 2.3 s main-thread block of MainApplication's init (6796 to 9082 ms) in
+ * which no timer could run. Its profile is its own timings. */
+const DEV_WARM_2_START = 284;
+const DEV_WARM_2: Timeline = [
+  [2725, "scripts"],
+  [3028, "shell"],
+  [3072, "hydrated"],
+  [6196, "cloud"],
+  [6260, "session"],
+  [8378, "ready"],
+];
+const DEV_WARM_2_BLOCK: [number, number] = [6796, 9082];
+const FILL_PX = 300;
+
 let pages: JSDOM[] = [];
 afterEach(() => {
   for (const page of pages) page.window.close();
@@ -73,6 +103,23 @@ function boot(
     reduceMotion?: boolean;
     hidden?: "landing";
     seed?: Record<string, string>;
+    startAt?: number;
+    /** No timer runs inside this window; due timers wait for its end. */
+    blocked?: [number, number];
+    /** The main thread's animation clock runs this far behind the
+     * compositor, as in a long task: computed styles and getAnimations()
+     * see the fill where it was `lag` ms ago. */
+    lag?: number;
+    /** When the page renders its first frame. Unset (with no frameEvery),
+     * animation frame callbacks run at once. */
+    firstFrame?: number;
+    /** Frames come on this period; a blocked main thread delays them. */
+    frameEvery?: number;
+    /** Before this time the fill's computed transform reads "none", as
+     * when its style is not resolved yet. */
+    unresolvedUntil?: number;
+    /** What the computed transform reads until then. */
+    unresolvedAs?: string;
   } = {}
 ) {
   // pretendToBeVisual: JSDOM documents are otherwise hidden, and the ticker
@@ -85,7 +132,7 @@ function boot(
   pages.push(page);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const win = page.window as any;
-  let clock = SCRIPT_START;
+  let clock = options.startAt ?? SCRIPT_START;
   Object.defineProperty(win.performance, "now", {
     configurable: true,
     value: () => clock,
@@ -102,6 +149,21 @@ function boot(
     timers.push({ run, at: clock + ms, every: ms, live: true });
   win.clearTimeout = win.clearInterval = (id?: number) => {
     if (id && timers[id - 1]) timers[id - 1]!.live = false;
+  };
+  win.requestAnimationFrame = (run: (t: number) => void) => {
+    const every = options.frameEvery;
+    if (options.firstFrame === undefined && every === undefined) {
+      run(clock);
+      return 0;
+    }
+    const next = every ? Math.floor(clock / every) * every + every : clock;
+    timers.push({
+      run: () => run(clock),
+      at: Math.max(next, options.firstFrame ?? -Infinity),
+      every: null,
+      live: true,
+    });
+    return 0;
   };
   Object.defineProperty(win.navigator, "languages", { value: ["en"] });
   if (options.reduceMotion) {
@@ -133,23 +195,103 @@ function boot(
   const text = document.getElementById("loading-text")!;
   if (options.hidden === "landing") screen.style.display = "none";
 
+  // The compositor model. The CSS starts the fill at 5%.
+  const moves: Move[] = [{ at: -Infinity, from: 5, to: 5, ms: 0 }];
+  const transitions: string[] = [];
+  let transitionMs = 0;
+  function shown(t: number): number {
+    let move = moves[0]!;
+    for (const candidate of moves) if (candidate.at <= t) move = candidate;
+    if (move.ms <= 0 || t >= move.at + move.ms) return move.to;
+    return move.from + ((move.to - move.from) * (t - move.at)) / move.ms;
+  }
+  const styleProto = Object.getPrototypeOf(fill.style);
+  const transformSetter = Object.getOwnPropertyDescriptor(
+    styleProto,
+    "transform"
+  )!.set!;
+  const transitionSetter = Object.getOwnPropertyDescriptor(
+    styleProto,
+    "transition"
+  )!.set!;
+  Object.defineProperty(fill.style, "transition", {
+    configurable: true,
+    get: () => fill.style.getPropertyValue("transition"),
+    set(value: string) {
+      transitions.push(value);
+      const ms = /transform (\d+(?:\.\d+)?)ms/.exec(value);
+      transitionMs = ms ? parseFloat(ms[1]!) : 0;
+      transitionSetter.call(fill.style, value);
+    },
+  });
+  Object.defineProperty(fill.style, "transform", {
+    configurable: true,
+    get: () => fill.style.getPropertyValue("transform"),
+    set(value: string) {
+      const shift = /^translateX\((-?[\d.]+)%\)$/.exec(value);
+      if (!shift) throw new Error(`unexpected fill transform ${value}`);
+      moves.push({
+        at: clock,
+        from: shown(clock),
+        to: 100 + parseFloat(shift[1]!),
+        ms: transitionMs,
+      });
+      transformSetter.call(fill.style, value);
+    },
+  });
+  Object.defineProperty(fill, "offsetWidth", { get: () => FILL_PX });
+  const computed = win.getComputedStyle.bind(win);
+  const seen = () => clock - (options.lag ?? 0);
+  win.getComputedStyle = (element: Element) =>
+    element === fill
+      ? {
+          transform:
+            clock < (options.unresolvedUntil ?? -Infinity)
+              ? (options.unresolvedAs ?? "none")
+              : `matrix(1, 0, 0, 1, ${((shown(seen()) - 100) / 100) * FILL_PX}, 0)`,
+        }
+      : computed(element);
+  if (options.lag !== undefined) {
+    // A transition the main thread has not seen finish is still listed; one
+    // it has not seen start has no start time yet.
+    fill.getAnimations = () => {
+      const move = moves.at(-1)!;
+      if (move.ms <= 0 || seen() >= move.at + move.ms) return [];
+      return [
+        {
+          transitionProperty: "transform",
+          startTime: seen() >= move.at ? move.at : null,
+        },
+      ] as unknown as Animation[];
+    };
+  }
+
   win.eval(loadingScript);
 
-  const width = () => parseFloat(fill.style.width || "5");
-  // Every observation of the fill: one per timer run and per milestone.
-  const widths: Array<{ t: number; w: number }> = [{ t: clock, w: width() }];
+  const width = () => shown(clock);
+  /** The fill's on-screen position every 5 ms between two times. */
+  function trace(from: number, to: number) {
+    const points: Array<{ t: number; w: number }> = [];
+    for (let t = from; t <= to; t += 5) points.push({ t, w: shown(t) });
+    return points;
+  }
 
+  const [blockFrom, blockTo] = options.blocked ?? [Infinity, Infinity];
   function advance(to: number) {
     for (;;) {
       const due = timers
         .filter((timer) => timer.live && timer.at <= to)
         .sort((a, b) => a.at - b.at)[0];
       if (!due) break;
+      // A blocked main thread: the timer runs when the block ends.
+      if (due.at > blockFrom && due.at < blockTo) {
+        due.at = blockTo;
+        continue;
+      }
       clock = Math.max(clock, due.at);
       if (due.every) due.at += due.every;
       else due.live = false;
       due.run();
-      widths.push({ t: clock, w: width() });
     }
     clock = Math.max(clock, to);
   }
@@ -158,7 +300,6 @@ function boot(
     for (const [at, name] of timeline) {
       advance(at);
       win.__tkaBootMilestone(name);
-      widths.push({ t: clock, w: width() });
     }
   }
 
@@ -168,8 +309,12 @@ function boot(
     fill,
     text,
     marks,
-    widths,
+    moves,
+    transitions,
+    shown,
+    trace,
     width,
+    now: () => clock,
     advance,
     replay,
     probe: () => win.__tkaBootBar as Probe,
@@ -180,14 +325,43 @@ function boot(
   };
 }
 
-/** Longest stretch, before ready, in which the script wrote no new width. */
-function longestStall(probe: Probe, readyAt: number): number {
-  const writes = [SCRIPT_START, ...probe.samples.map((s) => s.t), readyAt];
+/** Longest stretch, before ready, in which the fill sat still on screen. */
+function longestStall(
+  points: Array<{ t: number; w: number }>,
+  readyAt: number
+): number {
   let longest = 0;
-  for (let i = 1; i < writes.length; i++) {
-    longest = Math.max(longest, writes[i]! - writes[i - 1]!);
+  let since = points[0]!.t;
+  for (let i = 1; i < points.length && points[i]!.t <= readyAt; i++) {
+    if (points[i]!.w !== points[i - 1]!.w) since = points[i]!.t;
+    longest = Math.max(longest, points[i]!.t - since);
   }
   return longest;
+}
+
+function expectMonotonic(points: Array<{ t: number; w: number }>) {
+  for (let i = 1; i < points.length; i++) {
+    expect(points[i]!.w, `at ${points[i]!.t}`).toBeGreaterThanOrEqual(
+      points[i - 1]!.w - 1e-9
+    );
+  }
+}
+
+/** Each profiled milestone's share is out of reach until it arrives. */
+function expectNoEarlyClaims(
+  run: ReturnType<typeof boot>,
+  timeline: Timeline,
+  profile: Profile,
+  startAt: number
+) {
+  const ready = profile.t.ready!;
+  for (const [at, name] of timeline) {
+    if (name === "ready" || profile.t[name] === undefined) continue;
+    const cap = 4 + 96 * (profile.t[name]! / ready);
+    for (const point of run.trace(startAt, at - 1)) {
+      expect(point.w, `${name} at ${point.t}`).toBeLessThan(cap);
+    }
+  }
 }
 
 /** The profile the first dev warm boot leaves behind. */
@@ -202,27 +376,193 @@ describe("boot bar self-timing", () => {
     const profile = devWarmProfile();
     const run = boot({ profile });
     run.replay(DEV_WARM);
-    const probe = run.probe();
-    expect(probe.defaultProfile).toBe(false);
+    expect(run.probe().defaultProfile).toBe(false);
 
     const readyAt = 4370;
-    const before = run.widths.filter((entry) => entry.t < readyAt);
-    for (let i = 1; i < before.length; i++) {
-      expect(before[i]!.w).toBeGreaterThanOrEqual(before[i - 1]!.w);
-    }
-    // Each profiled milestone's share is out of reach until it arrives.
-    const ready = profile.t.ready!;
-    for (const [at, name] of DEV_WARM) {
-      if (name === "ready" || profile.t[name] === undefined) continue;
-      const cap = 4 + 96 * (profile.t[name]! / ready);
-      for (const entry of run.widths.filter((e) => e.t < at)) {
-        expect(entry.w, `${name} at ${entry.t}`).toBeLessThan(cap);
-      }
-    }
-    expect(longestStall(probe, readyAt)).toBeLessThanOrEqual(600);
-    // The fill ends full and the screen goes.
-    expect(run.fill.style.width).toBe("100%");
+    const points = run.trace(SCRIPT_START, readyAt);
+    expectMonotonic(points);
+    expectNoEarlyClaims(run, DEV_WARM, profile, SCRIPT_START);
+    expect(longestStall(points, readyAt)).toBeLessThanOrEqual(600);
+    // The fill moves by transform only, ends full, and the screen goes.
+    expect(run.fill.style.width).toBe("");
+    expect(run.shown(run.now() + 200)).toBe(100);
     expect(run.screen.classList.contains("loaded")).toBe(true);
+  });
+
+  it("keeps moving through a blocked main thread (dev warm 2, round 1's failure)", () => {
+    const profile: Profile = {
+      v: 1,
+      at: 0,
+      t: Object.fromEntries([
+        ["start", DEV_WARM_2_START],
+        ...DEV_WARM_2.map(([t, name]) => [name, t]),
+      ]),
+    };
+    const run = boot({
+      profile,
+      startAt: DEV_WARM_2_START,
+      blocked: DEV_WARM_2_BLOCK,
+    });
+    run.replay(DEV_WARM_2);
+    const [blockFrom, blockTo] = DEV_WARM_2_BLOCK;
+    // The block held: no tick ran, so the probe has no sample inside it.
+    expect(
+      run.probe().samples.filter((s) => s.t > blockFrom && s.t < blockTo)
+    ).toEqual([]);
+
+    const readyAt = 8378;
+    const points = run.trace(DEV_WARM_2_START, readyAt);
+    expectMonotonic(points);
+    expectNoEarlyClaims(run, DEV_WARM_2, profile, DEV_WARM_2_START);
+    expect(longestStall(points, readyAt)).toBeLessThanOrEqual(600);
+    // The compositor's transition moved the fill inside the block.
+    expect(run.shown(8000)).toBeGreaterThan(run.shown(blockFrom + 20) + 5);
+  });
+
+  it("never pulls the fill back when the main thread's clock lags the compositor", () => {
+    const profile: Profile = {
+      v: 1,
+      at: 0,
+      t: Object.fromEntries([
+        ["start", DEV_WARM_2_START],
+        ...DEV_WARM_2.map(([t, name]) => [name, t]),
+      ]),
+    };
+    const run = boot({
+      profile,
+      startAt: DEV_WARM_2_START,
+      blocked: DEV_WARM_2_BLOCK,
+      lag: 300,
+    });
+    run.replay(DEV_WARM_2);
+    // No write ever starts behind where the compositor has the fill.
+    for (const move of run.moves.slice(1)) {
+      expect(move.to, `write at ${move.at}`).toBeGreaterThanOrEqual(
+        move.from - 0.005
+      );
+    }
+    const points = run.trace(DEV_WARM_2_START, 8378);
+    expectMonotonic(points);
+    expectNoEarlyClaims(run, DEV_WARM_2, profile, DEV_WARM_2_START);
+    expect(longestStall(points, 8378)).toBeLessThanOrEqual(600);
+  });
+
+  it("waits for the first frame to start a segment, then runs for the time left", () => {
+    const profile: Profile = {
+      v: 1,
+      at: 0,
+      t: Object.fromEntries([
+        ["start", DEV_WARM_2_START],
+        ...DEV_WARM_2.map(([t, name]) => [name, t]),
+      ]),
+    };
+    const firstFrame = DEV_WARM_2_START + 120;
+    const run = boot({ profile, startAt: DEV_WARM_2_START, firstFrame });
+    // Nothing is written before the first frame: a transition written then
+    // would jump straight to its end.
+    run.advance(firstFrame - 1);
+    expect(run.moves).toHaveLength(1);
+    run.advance(firstFrame);
+    const glide = run.moves.at(-1)!;
+    expect(glide.at).toBe(firstFrame);
+    expect(glide.from).toBeCloseTo(5, 2);
+    // The segment's linear part still ends when it would have.
+    const span = DEV_WARM_2[0]![0] - DEV_WARM_2_START;
+    expect(glide.ms).toBeCloseTo(0.85 * span - 120, 0);
+    expect(run.transitions.at(-1)).toBe(
+      `transform ${Math.round(0.85 * span - 120)}ms linear`
+    );
+    run.replay(DEV_WARM_2);
+    const points = run.trace(DEV_WARM_2_START, 8378);
+    expectMonotonic(points);
+    expectNoEarlyClaims(run, DEV_WARM_2, profile, DEV_WARM_2_START);
+    expect(
+      longestStall(
+        points.filter((p) => p.t >= firstFrame),
+        8378
+      )
+    ).toBeLessThanOrEqual(600);
+  });
+
+  it("starts each segment on a frame, and a blocked page delays it without a step back", () => {
+    const profile: Profile = {
+      v: 1,
+      at: 0,
+      t: Object.fromEntries([
+        ["start", DEV_WARM_2_START],
+        ...DEV_WARM_2.map(([t, name]) => [name, t]),
+      ]),
+    };
+    // A milestone lands just before a block: its segment waits for the
+    // block to end, and the fill keeps its old move until then.
+    const run = boot({
+      profile,
+      startAt: DEV_WARM_2_START,
+      frameEvery: 16,
+      blocked: [6261, 6700],
+      lag: 300,
+    });
+    run.replay(DEV_WARM_2);
+    const segments = run.moves.filter(
+      (m) => m.ms > 0 && m.ms !== 80 && m.ms !== 200
+    );
+    expect(segments.length).toBeGreaterThan(3);
+    for (const move of segments) {
+      // On a frame; the first frame after the block comes when it ends.
+      expect(
+        move.at % 16 === 0 || move.at === 6700,
+        `segment at ${move.at}`
+      ).toBe(true);
+    }
+    const session = segments.find((m) => m.at >= 6260)!;
+    expect(session.at).toBeGreaterThanOrEqual(6700);
+    for (const move of run.moves.slice(1)) {
+      expect(move.to, `write at ${move.at}`).toBeGreaterThanOrEqual(
+        move.from - 0.005
+      );
+    }
+    const points = run.trace(DEV_WARM_2_START + 16, 8378);
+    expectMonotonic(points);
+    expectNoEarlyClaims(run, DEV_WARM_2, profile, DEV_WARM_2_START);
+    expect(longestStall(points, 8378)).toBeLessThanOrEqual(600);
+  });
+
+  it("restarts an early milestone's segment from where the fill is, only steeper", () => {
+    const profile: Profile = {
+      v: 1,
+      at: 0,
+      t: {
+        start: 200,
+        scripts: 1200,
+        shell: 2200,
+        hydrated: 3200,
+        ready: 4200,
+      },
+    };
+    const share = (name: string) => 4 + 96 * (profile.t[name]! / 4200);
+    const run = boot({ profile });
+    run.advance(700);
+    const before = run.width();
+    const writes = run.moves.length;
+    run.replay([[700, "scripts"]]); // expected at 1200
+    const segment = run.moves.slice(writes);
+    // Pinned where it was (to the 0.01% the style is written in), then one
+    // linear transition from there.
+    expect(segment).toHaveLength(2);
+    expect(segment[0]!.ms).toBe(0);
+    for (const value of [segment[0]!.from, segment[0]!.to, segment[1]!.from]) {
+      expect(Math.abs(value - before)).toBeLessThanOrEqual(0.005);
+    }
+    const linear = segment[1]!;
+    expect(linear.ms).toBe(850);
+    expect(linear.to).toBeCloseTo(
+      share("scripts") + 0.85 * (share("shell") - share("scripts")),
+      2
+    );
+    const nominal = (share("shell") - share("scripts")) / 1000;
+    expect((linear.to - linear.from) / linear.ms).toBeGreaterThan(nominal);
+    expect(run.transitions.at(-1)).toBe("transform 850ms linear");
+    expectMonotonic(run.trace(SCRIPT_START, 2000));
   });
 
   it("handles out-of-order arrivals: no regression, one dismissal, late ranks logged", () => {
@@ -242,9 +582,7 @@ describe("boot bar self-timing", () => {
       [4773, "settings"],
       [4791, "ready"],
     ]);
-    for (let i = 1; i < run.widths.length; i++) {
-      expect(run.widths[i]!.w).toBeGreaterThanOrEqual(run.widths[i - 1]!.w);
-    }
+    expectMonotonic(run.trace(SCRIPT_START, 5000));
     expect(run.width()).toBeGreaterThanOrEqual(atCloud);
     expect(run.marks.filter((m) => m === "boot:splash:shell-handoff")).toEqual([
       "boot:splash:shell-handoff",
@@ -306,6 +644,9 @@ describe("boot bar self-timing", () => {
     const late = run.width();
     expect(late).toBeGreaterThan(early);
     expect(late).toBeLessThan(cloudCap);
+    // The tail is short ticker steps, never a stall.
+    expect(longestStall(run.trace(1108, 3600), 3600)).toBeLessThanOrEqual(600);
+    expect(run.probe().samples.at(-1)!.target).toBeLessThan(cloudCap);
 
     // Expected ready is about 2.2 s, so "Almost there" waits for the 4 s floor.
     run.advance(3990);
@@ -328,24 +669,51 @@ describe("boot bar self-timing", () => {
   it("keeps the 100 shim as ready and turns lower percents into marks only", () => {
     const run = boot();
     run.advance(600);
-    const before = run.width();
+    const writes = run.moves.length;
     run.win.__tkaLoadProgress(72, "Starting up...");
-    expect(run.width()).toBe(before);
+    expect(run.moves.length).toBe(writes);
     expect(run.screen.classList.contains("loaded")).toBe(false);
     expect(run.marks).toContain("boot:splash:legacy:72");
 
     run.win.__tkaLoadProgress(100, "Ready");
-    expect(run.fill.style.width).toBe("100%");
+    expect(run.transitions.at(-1)).toBe("transform 200ms ease");
+    expect(run.shown(run.now() + 200)).toBe(100);
+    expect(run.screen.getAttribute("aria-valuenow")).toBe("100");
     expect(run.screen.classList.contains("loaded")).toBe(true);
     expect(run.probe().milestones.at(-1)?.name).toBe("ready");
   });
 
-  it("still moves the fill under reduced motion and leaves at once", () => {
+  it("still moves the fill under reduced motion, without transitions, and leaves at once", () => {
     const run = boot({ reduceMotion: true });
     run.advance(1500);
     expect(run.width()).toBeGreaterThan(5);
     run.replay([[1600, "ready"]]);
+    expect(new Set(run.transitions)).toEqual(new Set(["none"]));
+    expect(run.moves.every((m) => m.ms === 0)).toBe(true);
     expect(run.screen.isConnected).toBe(false);
+  });
+
+  it("never reads an unresolved or foreign transform as a full fill", () => {
+    // "none", or the identity a cold boot under reduced motion read while
+    // other animations sat on the fill.
+    for (const [reduceMotion, unresolvedAs] of [
+      [false, "none"],
+      [true, "none"],
+      [false, "matrix(1, 0, 0, 1, 0, 0)"],
+      [true, "matrix(1, 0, 0, 1, 0, 0)"],
+    ] as const) {
+      const run = boot({
+        profile: devWarmProfile(),
+        reduceMotion,
+        unresolvedUntil: SCRIPT_START + 200,
+        unresolvedAs,
+      });
+      run.advance(SCRIPT_START + 150);
+      expect(Number(run.screen.getAttribute("aria-valuenow"))).toBeLessThan(50);
+      expect(run.probe().samples.every((s) => s.pct < 50)).toBe(true);
+      run.replay(DEV_WARM.slice(0, 3));
+      expect(run.width()).toBeGreaterThan(5);
+    }
   });
 
   it("finishes the boot when storage throws", () => {
@@ -354,8 +722,21 @@ describe("boot bar self-timing", () => {
     run.replay(DEV_WARM.slice(0, 4));
     expect(run.width()).toBeGreaterThan(5);
     run.replay([[4370, "ready"]]);
-    expect(run.fill.style.width).toBe("100%");
+    expect(run.shown(run.now() + 200)).toBe(100);
     expect(run.screen.classList.contains("loaded")).toBe(true);
+  });
+
+  it("probes what is on screen and reports it as the progressbar value", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    run.advance(2000);
+    const sample = run.probe().samples.at(-1)!;
+    // Mid-segment the target is ahead of the fill, and the sample is the fill.
+    expect(sample.target).toBeGreaterThan(sample.pct);
+    expect(sample.pct).toBeCloseTo(run.shown(sample.t), 1);
+    expect(Number(run.screen.getAttribute("aria-valuenow"))).toBe(
+      Math.round((100 * (sample.pct - 4)) / 96)
+    );
   });
 
   it("leaves a hidden (landing) screen alone: no ticker, no profile", () => {

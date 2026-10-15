@@ -160,7 +160,13 @@ readable; on a short pane the body scrolls instead.
           )}
         >
           <span class="pictograph-wrapper">
-            <PictographContainer pictographData={variation} />
+            <!-- No per-pictograph fade: the tiles arrive inside the card's
+                 morph, which already fades the panel in, and thirty-two fades
+                 starting in its first frames cost the morph frames. -->
+            <PictographContainer
+              pictographData={variation}
+              disableContentTransitions
+            />
           </span>
           {#if !on}
             <span class="off-overlay">

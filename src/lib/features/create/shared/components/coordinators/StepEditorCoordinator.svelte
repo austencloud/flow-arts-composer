@@ -1,8 +1,10 @@
 <!--
   StepEditorCoordinator.svelte
 
-  Manages the shared drawer opened by workspace pictographs and mandalas.
-  Handles single-beat editing and the selected mandala viewer.
+  The step editor view. While a step or mandala is selected the tool panel
+  shows this in place of the tab's tools, the way the save view takes the
+  same place (see CreationToolPanelSlot). The step grid beside it stays live.
+  Handles single-beat editing, batch editing and the selected mandala viewer.
 
   This coordinator is separate from SequenceActionsCoordinator because:
   - Beat Editor opens directly on pictograph click (bypasses Sequence Actions)
@@ -22,14 +24,14 @@
   import BatchStepEditor from "../sequence-actions/BatchStepEditor.svelte";
   import MandalaViewerPanel from "../sequence-actions/MandalaViewerPanel.svelte";
   import StepControlsZone from "../sequence-actions/StepControlsZone.svelte";
-  import CreatePanelDrawer from "../CreatePanelDrawer.svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
   import { getCreateModuleContext } from "../../context/create-module-context";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type { StepOperator } from "#lib/features/create/shared/services/step-operator.js";
-  import { canShowStepEditorDrawer } from "../../services/step-editor-availability";
+  import { isStepEditorViewShown } from "../../services/step-editor-availability";
+  import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
   import { getSequenceOverlayState } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
   import {
     HandSide,
@@ -47,15 +49,6 @@
 
   const logger = createComponentLogger("StepEditorCoordinator");
 
-  // Tabs that support the Beat Editor Panel
-  // Only tabs with beat sequences support individual beat editing
-  const SUPPORTED_TABS = new Set([
-    "construct",
-    "assemble",
-    "generate",
-    "spell",
-  ]);
-
   const ctx = getCreateModuleContext();
   const { CreateModuleState, panelState, layout } = ctx;
   const isSideBySideLayout = $derived(layout.shouldUseSideBySideLayout);
@@ -64,10 +57,6 @@
   // Services
   const hapticService: HapticFeedback = getHapticFeedback();
   const StepOperator: StepOperator = getStepOperator();
-
-  // Only supported build tabs can host the editor.
-  const currentTab = $derived(navigationState.activeTab);
-  const isTabSupported = $derived(SUPPORTED_TABS.has(currentTab));
 
   // CRITICAL: Track the active tab's sequence state reactively
   // We need to access reactive properties directly to establish dependencies.
@@ -103,24 +92,28 @@
 
   // Get current sequence with explicit reactive tracking
   const sequence = $derived.by(() => activeSequenceState.currentSequence);
+  // False once a close starts: the view stays mounted while it fades out.
   const isOpen = $derived(
-    panelState.isStepEditorPanelOpen &&
-      isTabSupported &&
-      canShowStepEditorDrawer({
-        sequence,
-        selectedStepNumber,
-        selectedStepNumbers: activeSequenceState.selectedStepNumbers,
-        hasMandalaSelection: panelState.mandalaViewerSelection !== null,
-        isSequenceViewerOpen: sequenceOverlay.isOpen,
-      })
+    isStepEditorViewShown({
+      isPanelOpen: panelState.isStepEditorPanelOpen,
+      activeTab: navigationState.activeTab,
+      sequence,
+      selectedStepNumber,
+      selectedStepNumbers: activeSequenceState.selectedStepNumbers,
+      hasMandalaSelection: panelState.mandalaViewerSelection !== null,
+      isSequenceViewerOpen: sequenceOverlay.isOpen,
+    })
   );
 
-  // The viewer overlay survives Create HMR independently from this drawer.
-  // If both states restore, the viewer owns the screen and clears the editor.
+  // Escape leaves the editor, as it leaves the save view. Dialogs opened from
+  // inside the editor sit above it and take their own Escape first.
   $effect(() => {
-    if (sequenceOverlay.isOpen && panelState.isStepEditorPanelOpen) {
-      panelState.closeStepEditorPanel();
-    }
+    if (!isOpen) return;
+    return getEscapeLayerManager().register({
+      id: "create:step-editor",
+      canDismiss: () => true,
+      dismiss: handleActiveClose,
+    });
   });
 
   // CRITICAL FIX: Compute selectedStepData directly instead of using the getter
@@ -174,30 +167,35 @@
   });
   const totalBeats = $derived(sequence?.steps?.length ?? 0);
 
-  // Discriminator for the shared-drawer crossfade: single-step editor vs batch
-  // editor. Both bodies live in ONE persistent CreatePanelDrawer, so switching
-  // modes crossfades the content in place instead of closing/reopening a drawer.
+  // Discriminator for the view's crossfade: single-step editor vs batch
+  // editor. Both bodies live in this one view, so switching modes crossfades
+  // the content in place.
   const selectionMode = $derived<"single" | "multi">(
     isMultiSelect ? "multi" : "single"
   );
-  const mandalaSelection = $derived(panelState.mandalaViewerSelection);
-  const drawerMode = $derived<"editor" | "mandala">(
+  // Closing clears the mandala selection at once, but the view is still
+  // fading out. It keeps showing what it showed until it is gone.
+  let shownMandala = $state(panelState.mandalaViewerSelection);
+  $effect.pre(() => {
+    const selection = panelState.mandalaViewerSelection;
+    if (isOpen) shownMandala = selection;
+  });
+  const mandalaSelection = $derived(shownMandala);
+  // The same holds for the turn controls and the single/batch choice.
+  let shownControlsStep = $state(
+    selectedStepNumber === 0 ? null : selectedStepData
+  );
+  let shownSelectionMode = $state<"single" | "multi">(selectionMode);
+  $effect.pre(() => {
+    const step = selectedStepNumber === 0 ? null : selectedStepData;
+    const mode = selectionMode;
+    if (!isOpen) return;
+    shownControlsStep = step;
+    shownSelectionMode = mode;
+  });
+  const viewMode = $derived<"editor" | "mandala">(
     mandalaSelection ? "mandala" : "editor"
   );
-
-  // Re-open the editor panel when a multi-selection becomes active. Covers the
-  // HMR/refresh restore path: the persisted multi set comes back but
-  // selectedStepNumber is null in multi mode, so the single-step auto-open
-  // effect doesn't fire. Only opens on the false→true transition (never
-  // auto-closes) so it doesn't fight a manual close.
-  let lastIsMulti = false;
-  $effect(() => {
-    const multi = isMultiSelect;
-    if (multi && !lastIsMulti && isTabSupported && !sequenceOverlay.isOpen) {
-      panelState.openStepEditorPanel();
-    }
-    lastIsMulti = multi;
-  });
 
   // Get current prop types from settings
   const settings = $derived(getSettings());
@@ -225,13 +223,8 @@
     activeSequenceState.clearSelection();
   }
 
-  // The single shared drawer routes its close to the active panel's handler.
+  // Escape routes its close to the active panel's handler.
   function handleActiveClose() {
-    // Playback hides the drawer from the moment Play starts loading the player
-    // until Stop. Its external-close notification must not discard the
-    // selection that Stop reopens the editor on.
-    if (panelState.workspacePlayback || panelState.workspacePlaybackPreparation)
-      return;
     if (mandalaSelection) {
       panelState.closeMandalaViewer();
     } else if (isMultiSelect) {
@@ -501,31 +494,19 @@
 </script>
 
 <!--
-  ONE persistent drawer shell hosts the mandala viewer and both editor modes.
-  The outer crossfade morphs viewer ↔ editor; the editor's inner crossfade
-  handles single ↔ multi. Blue/red turn controls stay mounted across editor
-  modes, and the drawer close routes to whichever panel is active.
+  ONE view hosts the mandala viewer and both editor modes. The outer
+  crossfade morphs viewer ↔ editor; the editor's inner crossfade handles
+  single ↔ multi. Blue/red turn controls stay mounted across editor modes.
 
-  In editor mode Backspace and Delete keep deleting the selected step from
-  anywhere in this non-modal drawer, the drawer itself included: a click on
-  empty space such as the pictograph leaves focus on its <dialog>. Every other
-  open drawer or dialog, and any layer nested in this one, swallows them; see
-  isLayerOwnedKeyboardTarget in the keyboard domain.
+  It is a region of the page, not a dialog, so Backspace and Delete keep
+  deleting the selected step from anywhere in it.
 -->
-<CreatePanelDrawer
-  {isOpen}
-  panelName="step-editor"
-  fullHeightOnMobile={true}
-  showHandle={true}
-  closeOnBackdrop={false}
-  focusTrap={false}
-  autoFocus={false}
-  keyboardShortcutsPassthrough={drawerMode === "editor"}
-  ariaLabel={mandalaSelection ? "Mandala viewer panel" : "Step editor panel"}
-  onClose={handleActiveClose}
+<section
+  class="step-editor-view"
+  aria-label={mandalaSelection ? "Mandala viewer panel" : "Step editor panel"}
 >
   <div class="drawer-zone">
-    <Crossfade key={drawerMode} fill duration={DURATION.fast}>
+    <Crossfade key={viewMode} fill duration={DURATION.fast}>
       {#if mandalaSelection && sequence}
         <MandalaViewerPanel
           {sequence}
@@ -539,8 +520,8 @@
       {:else}
         <div class="editor-body">
           <div class="top-zone">
-            <Crossfade key={selectionMode} fill duration={DURATION.fast}>
-              {#if isMultiSelect}
+            <Crossfade key={shownSelectionMode} fill duration={DURATION.fast}>
+              {#if shownSelectionMode === "multi"}
                 <BatchStepEditor
                   steps={batchSteps}
                   stepNumbers={batchStepNumbers}
@@ -573,10 +554,10 @@
 
           <!-- Persistent, morphing blue/red turn controls (single ↔ multi). -->
           <StepControlsZone
-            {selectionMode}
+            selectionMode={shownSelectionMode}
             stacked={!isSideBySideLayout}
             compact={!isSideBySideLayout}
-            stepData={selectedStepNumber === 0 ? null : selectedStepData}
+            stepData={shownControlsStep}
             onTurnsChange={handleTurnsChange}
             onRotationChange={handleRotationChange}
             onPathShapeChange={handlePathShapeChange}
@@ -588,9 +569,19 @@
       {/if}
     </Crossfade>
   </div>
-</CreatePanelDrawer>
+</section>
 
 <style>
+  /* Layout containment makes this view the containing block for fixed
+     descendants, so the admin inspect view fills the editor's place, as it
+     filled the drawer, not the whole screen. */
+  .step-editor-view {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    contain: layout;
+  }
+
   .drawer-zone {
     position: relative;
     width: 100%;
@@ -598,7 +589,7 @@
     min-height: 0;
   }
 
-  /* Drawer body = crossfading top zone (grows) + persistent bottom controls. */
+  /* Body = crossfading top zone (grows) + persistent bottom controls. */
   .editor-body {
     display: flex;
     flex-direction: column;

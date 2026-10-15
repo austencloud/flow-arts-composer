@@ -119,3 +119,17 @@ then "hybrid" when the two hands differ. Example shape:
 `eightstep-72-base.json` per-beat `timing` disagrees with `TYPE1_ROTATION` for
 D, E, F, J, K, L. Add a note to `docs/research/spiroanim/README.md` when the
 page is built.
+
+## Build notes (2026-10-14)
+
+Built at `/guide/three-levels`. Departures from the plan above:
+
+- The credit line links to Gage's Eight Step source (`EIGHT_STEP.md` in
+  SpiroAnim) instead of the History archive record, because the public archive
+  is withdrawn until author outreach is done.
+- The exits go to LOOPs (Level 1 permutations), the Codex and Ratios. Gage's
+  collection is private, so it is not linked.
+- The Prospin and Inspin page no longer exists; the hub card sits after Zan's
+  Diamond.
+- The timing note is recorded in `docs/research/spiroanim/README.md`: 108 of
+  864 beats conflict with the canon.

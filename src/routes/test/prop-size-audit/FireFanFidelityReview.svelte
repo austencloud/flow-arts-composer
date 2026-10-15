@@ -34,14 +34,15 @@
       id: "fire-bare",
       name: "DoodleGrip Fire · bare",
       note: "Measured five-wick crown, curved outside rails, welded lattice, and DoodleGrip shell.",
-      preview: "/images/props/build-previews/fan-fire-bare-complete.webp",
+      preview: "/images/props/build-previews/fan-fire-bare-complete.webp?v=2",
       renderKey: "fan__fire_bare",
     },
     {
       id: "fire-covered",
       name: "DoodleGrip Fire · covered",
       note: "The fitted crescent sleeve follows the real wick crown instead of replacing it with dots.",
-      preview: "/images/props/build-previews/fan-fire-covered-complete.webp",
+      preview:
+        "/images/props/build-previews/fan-fire-covered-complete.webp?v=2",
       renderKey: "fan__fire_covered",
     },
     {
