@@ -164,8 +164,7 @@
       font-size: clamp(1rem, 1.8vh, 1.8rem);
       line-height: 1.3;
     }
-    /* All sixteen tiles on one line: the tile width shares the column, so
-       the two groups never wrap onto a second line of tiles. */
+    /* The icons scale with the screen's height, like the header. */
     .props {
       margin-block: clamp(6px, 1.2vh, 28px);
       --prop-img-size: clamp(2.25rem, 4.2vh, 4.5rem);
