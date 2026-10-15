@@ -602,6 +602,9 @@ export const PROP_TIP_POINTS: Record<string, PropTipConfig> = {
   // Both branches end on the axis at the staff's half-width; the saw cuts slant
   // across that point, so the staff's own ends are the stick's.
   stick: STAFF_TIP_POINTS,
+  // The back plug and the cap's closed end sit exactly at the staff's
+  // half-width, so the staff's own ends are the pen's.
+  pen: STAFF_TIP_POINTS,
 
   // Club family
   club: CLUB_TIP_POINTS,

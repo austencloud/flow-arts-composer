@@ -119,6 +119,7 @@ export const WORKER_PERFORMER_PROP_TYPES = [
   "capsule_baton",
   "fire_double_staff",
   "stick",
+  "pen",
   "hand",
 ] as const satisfies readonly CanonicalWorkerPropType[];
 

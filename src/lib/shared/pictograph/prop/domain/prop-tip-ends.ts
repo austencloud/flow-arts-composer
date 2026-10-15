@@ -28,6 +28,7 @@ const TWO_ENDED_PROPS: ReadonlySet<PropType> = new Set([
   PropType.CAPSULE_BATON,
   PropType.FIRE_DOUBLE_STAFF,
   PropType.STICK,
+  PropType.PEN,
   PropType.ENERGY_STAFF,
   PropType.BUUGENG,
   PropType.BIGBUUGENG,
