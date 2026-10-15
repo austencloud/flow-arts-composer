@@ -69,6 +69,8 @@ function visualRotation(prop) {
   const body = fromSample(prop.rotatedBodyWorld);
   const local = root.invert().multiply(body);
   local.decompose(pos, rot, scale);
+  if (pos.length() > 1e-4)
+    throw new Error(`Rotated body has unsupported animated pivot offset: ${pos.toArray()}`);
   if (Math.max(Math.abs(scale.x - 1), Math.abs(scale.y - 1), Math.abs(scale.z - 1)) > 1e-4)
     throw new Error(`Unexpected rotated-body scale: ${scale.toArray()}`);
   const native = mirrorX.clone().multiply(new Matrix4().makeRotationFromQuaternion(rot)).multiply(mirrorX);
