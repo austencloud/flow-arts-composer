@@ -100,7 +100,7 @@ export const TRICK_NAMES: readonly TrickName[] = [
     usage: "On a staff, the thumb end isolates while the pinky end extends.",
     detail:
       "A club can perform either path, so club spinners learn isolation and extension as separate moves with the same underlying geometry.",
-    link: { href: "/notation/clubs", label: "Clubs" },
+    link: { href: "/notation/props#clubs", label: "Clubs" },
   },
   {
     id: "antispin",

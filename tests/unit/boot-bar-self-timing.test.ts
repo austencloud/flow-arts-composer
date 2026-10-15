@@ -1008,6 +1008,53 @@ describe("boot holds and the composed milestone", () => {
     expect(dismissals(run)).toHaveLength(1);
   });
 
+  it("gives a hold asked for after ready its own 4 s, so a slow view's pieces still get their time", () => {
+    // 5173 in Austen's Chrome, 2026-10-15: the Create view mounted 3.4 s after
+    // ready and asked for the preview hold then; a cap counted from ready
+    // timed the previews out 0.6 s later and the screen left on empty tiles.
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    const releaseView = run.win.__tkaBootHold("module-view");
+    run.replay([[4370, "ready"]]);
+    run.advance(4370 + 3390);
+    const releasePreviews = run.win.__tkaBootHold("create-previews");
+    run.advance(4370 + 3400);
+    releaseView();
+    run.advance(4370 + 4000);
+    expect(loaded(run)).toBe(false);
+    run.advance(4370 + 4600);
+    releasePreviews();
+    expect(loaded(run)).toBe(true);
+    expect(at(run, "composed")).toBe(8970);
+    expect(run.marks).not.toContain("boot:splash:hold-cap");
+    expect(run.probe().holds.some((hold) => hold.timedOut)).toBe(false);
+  });
+
+  it("times each hold out on its own clock and lets none hold past ready + 8 s", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    run.win.__tkaBootHold("module-view");
+    run.replay([[4370, "ready"]]);
+    run.advance(4370 + 3500);
+    run.win.__tkaBootHold("create-previews");
+    run.advance(4370 + 4000);
+    // The view ran out; the previews, asked for later, still hold.
+    expect(loaded(run)).toBe(false);
+    expect(run.probe().holds[0]).toMatchObject({ timedOut: true });
+    run.advance(4370 + 6000);
+    run.win.__tkaBootHold("late");
+    run.advance(4370 + 7500);
+    expect(loaded(run)).toBe(false);
+    expect(run.probe().holds[1]).toMatchObject({ timedOut: true });
+    run.advance(4370 + 7999);
+    expect(loaded(run)).toBe(false);
+    run.advance(4370 + 8000);
+    expect(loaded(run)).toBe(true);
+    expect(at(run, "composed")).toBe(12370);
+    expect(run.probe().holds.every((hold) => hold.timedOut)).toBe(true);
+    expect(dismissals(run)).toHaveLength(1);
+  });
+
   it("ignores a hold asked for after dismissal, and one on a route without the screen", () => {
     const run = boot({ profile: devWarmProfile() });
     run.replay(DEV_WARM.slice(0, 6));
