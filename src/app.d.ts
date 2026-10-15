@@ -8,7 +8,12 @@
 declare global {
   namespace App {
     // interface Error {}
-    // interface Locals {}
+    interface Locals {
+      /** Language of a localized public page, from its URL folder. */
+      pageLocale?: import("#lib/shared/i18n/seo-locales.js").SeoLocale;
+      /** That language's catalog, scoped to this request. */
+      pageMessages?: Record<string, string>;
+    }
     // interface PageData {}
     interface PageState {
       moduleId?: string;

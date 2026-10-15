@@ -73,6 +73,10 @@ export default defineConfig({
         "tests/setup/stubs/app-navigation.ts"
       ),
       "$app/state": path.resolve(projectRoot, "tests/setup/stubs/app-state.ts"),
+      "$app/server": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-server.ts"
+      ),
       $shared: path.resolve(projectRoot, "src/lib/shared"),
       // node_modules/@tka/render-core is a symlink into the PRIMARY checkout's
       // packages/ (pnpm links the workspace package once and worktrees share
