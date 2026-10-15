@@ -30,3 +30,9 @@
 - 40 existing keys corrected to the glossary by the coordinator: diamond grid is Raute and box is Quadrat (replacing Diamant, Diamantgitter, Diamond-Modus, Box-Modus); The Kinetic Alphabet and Codex stay English (replacing Kinetisches Alphabet and Kodex); Zan's Diamond stays a proper name (replacing Zans Diamant).
 - `effect_deep_option_diamond` keeps Diamant: it names an effect shape, not the grid.
 - Gate: `Test Files  1 passed (1)`; `Tests  66 passed (66)`.
+
+## REV (coordinator) — 2026-10-14
+
+- gpt-6-astra review of a 69-key sample flagged 5 (7.2%); all 5 fixes applied.
+- Sweeps from the findings: Handweg to Handpfad (glossary section 3, 9 keys); Double-Staff to Doppelstab in the two FAQ answers.
+- Gate: `Tests  66 passed (66)`.
