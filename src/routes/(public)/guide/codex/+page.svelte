@@ -20,8 +20,12 @@
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import CodexPropPicker from "./_components/CodexPropPicker.svelte";
-  import { CODEX_DEFAULT_PROP, parseCodexProp } from "./_data/codex-props";
+  import PropChoiceRow from "#lib/shared/pictograph/prop/components/PropChoiceRow.svelte";
+  import {
+    CODEX_DEFAULT_PROP,
+    codexPropSections,
+    parseCodexProp,
+  } from "./_data/codex-props";
 
   // A letter link (?letter=K) opens on that letter; LetterCodex reads the rest
   // of the explorer state from the URL itself.
@@ -47,6 +51,7 @@
   });
 
   function chooseProp(next: PropType): void {
+    if (next === propType) return;
     propType = next;
     mutateCurrentUrl((url) => {
       if (next === CODEX_DEFAULT_PROP) url.searchParams.delete("prop");
@@ -70,24 +75,36 @@
 
 <GuideShell>
   <article class="codex-guide guide-page-route">
-    <div class="intro">
-      <TopicHeader
-        title={tDynamic("guide_codex_heading")}
-        lede={tDynamic("guide_codex_intro")}
+    <TopicHeader
+      title={tDynamic("guide_codex_heading")}
+      lede={tDynamic("guide_codex_intro")}
+    />
+
+    <!-- The app's inline prop choice, the same tiles the other guide pages
+         use. Each tile names its prop, so the choice needs no caption. -->
+    <div class="props">
+      <PropChoiceRow
+        value={propType}
+        sections={codexPropSections()}
+        label={tDynamic("guide_codex_prop")}
+        onchange={chooseProp}
       />
-      <CodexPropPicker value={propType} onChange={chooseProp} />
+    </div>
+
+    <LetterCodex {initialLetter} board="atlas" {propType} />
+
+    <div class="print">
       <PanelButton variant="secondary" href={localHref("/guide/codex/print")}>
         {tDynamic("guide_codex_print")}
       </PanelButton>
-    </div>
-
-    <div class="board-host">
-      <LetterCodex {initialLetter} board="atlas" {propType} />
     </div>
   </article>
 </GuideShell>
 
 <style>
+  /* One column, top to bottom like every guide page: the Guide's header, the
+     prop tiles, the full-width board, and the print link once the board has
+     been read. */
   .codex-guide {
     width: 100%;
     min-width: 0;
@@ -95,24 +112,30 @@
     margin-inline: auto;
     padding: clamp(20px, 3vw, 56px);
     color: var(--theme-text);
-    /* The board sizes its cells so all five rows fit under the page chrome.
-       This page's chrome is the site header, the padding above and the
-       centred intro with its print button underneath; the Atlas default
-       (28.5rem) also counts the glossary's own header row. */
-    --codex-atlas-chrome: 25rem;
+    /* The board's height term: the header, padding and the prop row above
+       it. On a laptop the board is width-bound and scrolls a little; this
+       keeps a wide, short screen from drawing cells taller than it holds. */
+    --codex-atlas-chrome: 26rem;
     /* TopicHeader speaks in the guide's ink tokens. */
     --ink: var(--theme-text);
     --ink-dim: var(--theme-text-dim);
   }
 
-  /* The Guide's official header (TopicHeader), the print button under it. */
-  .intro {
+  .props {
+    margin-block: clamp(16px, 2vw, 28px) clamp(20px, 2.5vw, 40px);
+    --prop-choice-justify: center;
+    --prop-choice-label-align: center;
+    /* Sixteen families on one line at laptop width: both groups side by
+       side, wrapping to two lines only on narrower screens. */
+    --prop-tile-width: 4.25rem;
+    --prop-tile-gap: 6px;
+    --prop-img-size: 1.6rem;
+  }
+
+  .print {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-md, 16px);
-    margin-bottom: clamp(20px, 2.5vw, 40px);
-    text-align: center;
+    justify-content: center;
+    margin-top: clamp(24px, 3vw, 48px);
   }
 
   /* Past 3000px the board widens to min(88vw, 3400px) (BoardAtlas); the
@@ -124,58 +147,18 @@
     }
   }
 
-  /* A desktop screen holds the whole Codex without a scroll. The board is
-     wider than the screen is tall (twelve cells by five rows), so the free
-     space is beside it, not above: the header, prop picker and print button
-     take a column on the left and the board gets the full height to the
-     right, sized to that box (BoardAtlas, `codex-atlas-fit`). Below this
-     size the page reads top to bottom and the board scrolls as before. The
-     height floor keeps cells at about 56px or more; a shorter screen scrolls. */
-  @media (min-width: 80rem) and (min-height: 760px) {
+  /* On a 4K screen the cells run 250px or more; laptop-sized tiles beside
+     them read as a footnote. The tiles grow, and the board's height term
+     takes the taller rows above it so the five rows still fit the screen. */
+  @media (min-width: 2400px) and (min-height: 1400px) {
     .codex-guide {
-      display: grid;
-      grid-template-columns: clamp(17rem, 19vw, 26rem) minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr);
-      column-gap: clamp(1.5rem, 2.5vw, 4.5rem);
-      box-sizing: border-box;
-      max-width: none;
-      height: calc(100dvh - var(--marketing-header-h, 64px));
-      padding: clamp(16px, 2.5vh, 48px) clamp(20px, 2.5vw, 64px);
+      --codex-atlas-chrome: 52rem;
     }
-    .intro {
-      justify-content: center;
-      margin: 0;
-      min-height: 0;
-    }
-    .board-host {
-      container: codex-atlas-fit / size;
-      display: grid;
-      align-content: center;
-      min-width: 0;
-      min-height: 0;
-    }
-  }
-
-  /* Past 2400px the board's cells run 200-260px; a column set at laptop size
-     reads as a footnote beside them. The column, its header and the picker
-     grow together; the board keeps the rest. */
-  @media (min-width: 2400px) and (min-height: 760px) {
-    .codex-guide {
-      grid-template-columns: clamp(26rem, 14vw, 36rem) minmax(0, 1fr);
-      --codex-prop-chip: 4rem;
-      --codex-prop-words: 1.6rem;
-    }
-    .intro {
-      gap: 1.75rem;
-    }
-    .codex-guide .intro :global(.topic-head) {
-      max-width: none;
-    }
-    .codex-guide .intro :global(.topic-head h1) {
-      font-size: 7rem;
-    }
-    .codex-guide .intro :global(.topic-head .lede) {
-      font-size: 1.9rem;
+    .props {
+      --prop-tile-width: 6.5rem;
+      --prop-tile-gap: 10px;
+      --prop-img-size: 2.6rem;
+      --font-size-compact: 15px;
     }
   }
 </style>
