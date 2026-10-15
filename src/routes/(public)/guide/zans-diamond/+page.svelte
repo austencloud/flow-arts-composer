@@ -41,12 +41,12 @@
     trackingMode: TrackingMode.HAND,
   };
 
-  // Hand paths carry no letters; each cell is numbered instead.
-  const RENDER: PictographRender = { propType: PropType.HAND, showTKA: false };
-  const STEP_LABELS = [
-    "Start",
-    ...ZANS_DIAMOND_ORIGINAL.letters.map((_, i) => String(i + 1)),
-  ];
+  // Hand paths carry no letters; each cell shows the app's step label.
+  const RENDER: PictographRender = {
+    propType: PropType.HAND,
+    showTKA: false,
+    showStepNumbers: true,
+  };
 
   const showcase = (variation: ZansDiamondVariation) => {
     const items = zansDiamondStrip(variation);
@@ -137,7 +137,6 @@
       items={original.items}
       trail={PATH_TRAIL}
       render={RENDER}
-      stepLabels={STEP_LABELS}
       loop
       {picTheme}
     >
@@ -158,7 +157,6 @@
           items={family.first.items}
           pool={family.pool}
           render={RENDER}
-          stepLabels={STEP_LABELS}
           loop
           {picTheme}
         >
