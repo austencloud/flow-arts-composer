@@ -357,6 +357,12 @@ export interface PanelCoordinationState {
    */
   get customizeOverlayPrimer(): CustomizeOverlayProps | null;
   primeCustomizeOverlay(props: CustomizeOverlayProps): void;
+  /**
+   * Replace the open panel's snapshot, for a change made outside the panel
+   * that it has to follow while open (the Level strip). Does nothing while
+   * the panel is closed.
+   */
+  refreshCustomizeOverlay(props: CustomizeOverlayProps): void;
 
   // TnD panel state (Hands, Props, Match turns)
   get isTnDPanelOpen(): boolean;
@@ -1130,6 +1136,12 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     },
 
     primeCustomizeOverlay(props: CustomizeOverlayProps) {
+      customizeOverlayPrimer = props;
+    },
+
+    refreshCustomizeOverlay(props: CustomizeOverlayProps) {
+      if (!customizeOverlayProps) return;
+      customizeOverlayProps = props;
       customizeOverlayPrimer = props;
     },
 
