@@ -3,7 +3,8 @@ param(
     [string]$CaptureRoot = 'E:/FlowFestLivingCaptures-v3',
     [string]$ConvertRoot = 'E:/FlowFestLivingConvert',
     [string]$BaseScratch = 'E:/worktrees/tka-platform/run-02211e90e7',
-    [string]$SourceRoot = 'E:/tka-platform'
+    [string]$SourceRoot = 'E:/tka-platform',
+    [string]$BlenderPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -13,7 +14,7 @@ $captureSnapshot = Join-Path $jobRoot 'captures'
 $tools = Join-Path $jobRoot 'unreal/FlowFest/Tools'
 $staged = Join-Path $tools 'staged/Characters'
 $output = Join-Path $ConvertRoot "converted-v3/$Rig"
-$blender = Join-Path $ConvertRoot 'blender-5.0.1-windows-x64/blender.exe'
+$blender = if ($BlenderPath) { $BlenderPath } else { Join-Path $ConvertRoot 'blender-5.0.1-windows-x64/blender.exe' }
 $sourceTools = Join-Path $BaseScratch 'unreal/FlowFest/Tools'
 $prepareSource = Join-Path $ConvertRoot 'shared-tools/prepare-characters.mjs'
 if (-not (Test-Path -LiteralPath $prepareSource)) {
