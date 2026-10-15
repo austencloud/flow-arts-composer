@@ -22,7 +22,7 @@
     const segments = embedded ? 64 : 6;
     const geo = new CircleGeometry(config.radius, segments);
     if (embedded) {
-      const positions = geo.attributes.position;
+      const positions = geo.getAttribute("position");
       for (let vertex = 1; vertex < positions.count; vertex += 1) {
         const segment = (vertex - 1) % segments;
         const angle = (segment / segments) * Math.PI * 2;

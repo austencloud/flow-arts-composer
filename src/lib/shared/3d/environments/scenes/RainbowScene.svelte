@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveThrelteScene } from "../../scene-boot/threlte-handles";
   import { useTask, useThrelte } from "@threlte/core";
   import { userProportionsState } from "@austencloud/scene-3d";
   import { untrack } from "svelte";
@@ -23,7 +24,8 @@
     stageRadiusGrowth = 0,
     worldYOffset = 0,
   }: Props = $props();
-  const { camera, scene } = useThrelte();
+  const { camera, scene: sceneValue } = useThrelte();
+  const scene = resolveThrelteScene(sceneValue);
   const sceneFeatures = getSceneFeatureContext();
   const quality = tryGetAdaptiveQualityContext();
   const reducedMotion = new MediaQuery("(prefers-reduced-motion: reduce)");

@@ -25,15 +25,13 @@
     pulse = 0,
   }: Props = $props();
 
+  const uniforms = { uTime: { value: 0 }, uOpacity: { value: opacity } };
   const material = new ShaderMaterial({
     transparent: true,
     depthWrite: false,
     side: DoubleSide,
     toneMapped: false,
-    uniforms: {
-      uTime: { value: 0 },
-      uOpacity: { value: opacity },
-    },
+    uniforms,
     vertexShader: `
       varying vec2 vUv;
       uniform float uTime;
@@ -101,9 +99,9 @@
   });
 
   useTask((delta) => {
-    material.uniforms.uTime.value += Math.min(delta, 1 / 20) * speed;
+    uniforms.uTime.value += Math.min(delta, 1 / 20) * speed;
     pulseEnergy = Math.max(0, pulseEnergy - delta * 0.7);
-    material.uniforms.uOpacity.value = opacity * (1 + pulseEnergy * 0.08);
+    uniforms.uOpacity.value = opacity * (1 + pulseEnergy * 0.08);
   });
 
   onDestroy(() => {

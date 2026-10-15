@@ -49,7 +49,9 @@
   const active = $derived(sample !== null);
   const pose = $derived(sample?.snapshot ?? null);
   const renderedState = $derived(pose?.propState ?? fallbackState);
-  const position = $derived(pose?.center ?? ([0, 0, 0] as const));
+  const position = $derived<[number, number, number]>(
+    pose?.center ?? [0, 0, 0]
+  );
   const normalizedAge = $derived(
     Math.max(
       0,

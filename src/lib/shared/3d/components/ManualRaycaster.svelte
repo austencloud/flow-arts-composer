@@ -1,4 +1,8 @@
 <script lang="ts">
+  import {
+    resolveThrelteScene,
+    resolveThrelteRenderer,
+  } from "../scene-boot/threlte-handles";
   /**
    * ManualRaycaster
    *
@@ -35,7 +39,9 @@
     onMeshLeave,
   }: Props = $props();
 
-  const { scene, camera, renderer } = useThrelte();
+  const { scene: sceneValue, camera, renderer: rendererValue } = useThrelte();
+  const scene = resolveThrelteScene(sceneValue);
+  const renderer = resolveThrelteRenderer(rendererValue);
 
   const raycaster = new Raycaster();
   const pointer = new Vector2();

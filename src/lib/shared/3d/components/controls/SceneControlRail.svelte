@@ -100,8 +100,12 @@
     aria-label="Scene controls"
   >
     <EditHistoryShortcutBridge
-      onUndo={() => viewer.undo()}
-      onRedo={() => viewer.redo()}
+      onUndo={() => {
+        viewer.undo();
+      }}
+      onRedo={() => {
+        viewer.redo();
+      }}
       canUndo={viewer.canUndo}
       canRedo={viewer.canRedo}
       undoLabel="3D scene change"

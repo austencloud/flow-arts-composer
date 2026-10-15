@@ -66,12 +66,16 @@
   });
 
   const flights: BatFlight[] = untrack(() =>
-    [
-      [-5, 15.5, -25, 54, 26, 0.08, 5.2],
-      [14, 19, -42, 62, 31, 0.46, 4.6],
-      [-18, 12.5, -53, 48, 23, 0.71, 5.8],
-      [25, 22, -68, 70, 36, 0.29, 4.2],
-    ].map(
+    (
+      [
+        [-5, 15.5, -25, 54, 26, 0.08, 5.2],
+        [14, 19, -42, 62, 31, 0.46, 4.6],
+        [-18, 12.5, -53, 48, 23, 0.71, 5.8],
+        [25, 22, -68, 70, 36, 0.29, 4.2],
+      ] satisfies Array<
+        [number, number, number, number, number, number, number]
+      >
+    ).map(
       ([centerX, height, depth, span, duration, phase, wingSpeed], index) => {
         const group = new Group();
         const mesh = new Mesh(sharedGeometry, sharedMaterial);

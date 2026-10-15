@@ -12,7 +12,7 @@ function quantize(value: number, step: number): number {
 
 /** Build a stable key for a rig-local center plus quaternion orientation. */
 export function createGhostPropPoseKey3D(
-  center: Vector3,
+  center: Pick<Vector3, "x" | "y" | "z">,
   propState: PropState3D,
   positionQuantization: number,
   angleQuantization: number
@@ -33,7 +33,7 @@ export function createGhostPropPoseKey3D(
 }
 
 export function captureGhostPropPose3D(
-  center: Vector3,
+  center: Pick<Vector3, "x" | "y" | "z">,
   propState: PropState3D
 ): GhostPropPose3D {
   return {

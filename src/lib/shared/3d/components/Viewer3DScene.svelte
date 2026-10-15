@@ -1,4 +1,8 @@
 <script lang="ts">
+  import {
+    resolveThrelteScene,
+    resolveThrelteRenderer,
+  } from "../scene-boot/threlte-handles";
   import { T, useTask, useThrelte, useScheduler } from "@threlte/core";
   import { HTML, layers, type ThrelteLayers } from "@threlte/extras";
   import { flushSync, onMount, onDestroy, tick, type Snippet } from "svelte";
@@ -21,7 +25,7 @@
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
-  import type { CharacterInstanceState } from "../state/character-instance-state.svelte";
+  import type { CharacterInstanceState } from "../state/character-instance-state.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
   import { resolvePerformerProp } from "#lib/shared/3d/state/performer-prop-resolution.js";
@@ -70,7 +74,7 @@
   import {
     createPerformerPointerInteraction,
     type PerformerPointerInteraction,
-  } from "./performer-interaction/performer-pointer-interaction.svelte";
+  } from "./performer-interaction/performer-pointer-interaction.svelte.js";
   import { resolvePerformerUpperBodyStance } from "../domain/performer-upper-body-stance";
   import { resolvePerformerContact } from "../domain/performer-contact-displacement";
   import { resolveGridJoin3D } from "../services/grid-join-3d";
@@ -242,8 +246,22 @@
     ? import("../effects/EffectOrchestrator3D.svelte")
     : null;
   const transitionVisual = tryGetEnvironmentTransitionVisualContext();
-  const { renderer, camera, scene } = useThrelte();
+  const { renderer: rendererValue, camera, scene: sceneValue } = useThrelte();
+  const scene = resolveThrelteScene(sceneValue);
+  const renderer = resolveThrelteRenderer(rendererValue);
   const { scheduler, resetFrameInvalidation } = useScheduler();
+
+  function resolvePerformerTipMap(
+    performer: CharacterInstanceState,
+    fallbackEffect: TipEffectMap[string]["effect"]
+  ): TipEffectMap {
+    return performer.rawHandEffects
+      ? {
+          "0": { effect: performer.rawHandEffects.left },
+          "1": { effect: performer.rawHandEffects.right },
+        }
+      : { "*": { effect: fallbackEffect } };
+  }
 
   function markPerformerCharacterReady(
     performerId: string,
@@ -692,7 +710,7 @@
 <!-- Lighting - reduced when the environment provides its own -->
 <T.AmbientLight intensity={viewerBaseLighting.ambientIntensity} />
 <T.DirectionalLight
-  position={VIEWER_KEY_LIGHT_POSITION}
+  position={[...VIEWER_KEY_LIGHT_POSITION]}
   intensity={viewerBaseLighting.directionalIntensity}
 />
 
@@ -702,7 +720,7 @@
   layers={PROTECTED_PERFORMER_LAYER}
 />
 <T.DirectionalLight
-  position={VIEWER_PROTECTED_LIGHTING.directionalPosition}
+  position={[...VIEWER_PROTECTED_LIGHTING.directionalPosition]}
   intensity={VIEWER_PROTECTED_LIGHTING.directionalIntensity}
   layers={PROTECTED_PERFORMER_LAYER}
 />
@@ -831,12 +849,7 @@
       <!-- When the two hands run different effects, key the map per prop
          instead of the wildcard. resolveEffect already reads propIndex, so
          prop 0 (blue, left) and prop 1 (red, right) each take their own. -->
-      {@const perfTipMap = performer.rawHandEffects
-        ? {
-            "0": { effect: performer.rawHandEffects.left },
-            "1": { effect: performer.rawHandEffects.right },
-          }
-        : { "*": { effect: perfEffect } }}
+      {@const perfTipMap = resolvePerformerTipMap(performer, perfEffect)}
       {@const performerCurrentStep = resolvePerformerStepSource(
         performerSteps?.[i],
         currentStep,
