@@ -29,6 +29,8 @@ To make a cooked Windows build after bootstrap:
 
 Packaging verifies the imported performance data before cooking and checks staged data afterward. The native archive lives under `Builds/Windows`.
 
+Run `Tools/smoke-playback.ps1` after importing, or pass `-Executable` with a packaged `MuseumGame.exe`. It checks all animated stations, exercises pause/resume/restart, measures body/prop alignment for a full loop, captures a fresh rendered screenshot, and stops its own test process. See [verification results](VERIFICATION.md).
+
 ## Play
 
 | Key | Action |
