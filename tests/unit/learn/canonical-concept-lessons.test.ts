@@ -178,7 +178,8 @@ describe("canonical concept lesson composition", () => {
     expect(motions).not.toContain("timingDirectionOnly");
     expect(motions).not.toContain("letterQueryHandler");
     expect(motions).not.toContain("LessonPictographStage");
-    expect(placementsSrc).toContain('onComplete?.("hand-motions-intro")');
+    expect(placementsSrc).toContain('const NEXT_LESSON = "hand-motions-intro"');
+    expect(placementsSrc).toContain("onComplete?.(NEXT_LESSON)");
     expect(placementsSrc).toContain("PropPlacementGrid");
     expect(placementSlots).toContain("PictographContainer");
     expect(placementsSrc).toContain("leftPropType={PropType.HAND}");
