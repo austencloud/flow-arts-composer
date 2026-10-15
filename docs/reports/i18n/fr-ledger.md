@@ -131,3 +131,23 @@
 - Source ambiguity preserved: the static two-turn guidance says to use negative space or a turn without identifying what turns. Those sentences use neutral `l’espace négatif ou une rotation`; no body turn is inferred there. The separate staff-marking sentence explicitly mentions body turns and is translated accordingly.
 - Prose review: ai-bust mechanical pass returned `[]` at HIGH/CRITICAL severity. Judgment review preserved the source teaching sequence, emphasis and steps; repeated runtime/print descriptions reflect the supplied variants. No independent confirmation of source technical claims or native review is claimed.
 - No primary-checkout access, other-worktree access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator.
+
+
+## P3 — 2026-10-14
+
+- Batch: P3, `batch-P3.json`; 676 translated keys, 0 retranslated keys, 0 review entries. The supplied batch contains Shape Engine and verified Level 1 text; no effect or inbox keys occur in this batch.
+- Initial apply: `messages/fr.json: inserted 676, replaced 0, refused 0`.
+- Final apply: `messages/fr.json: inserted 0, replaced 676, refused 0`.
+- Catalog diff before ledger: only `messages/fr.json` changed; 676 insertions, 0 deletions. Exact scope check confirmed all 676 batch keys added, all previous values unchanged, and every output value applied.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files 1 passed (1)`; `Tests 66 passed (66)`; duration 8.46s; exit 0.
+- Initial gate: 65 passed, 1 failed because six highlighted mnemonic phrases were identical to English. Fixed in the output file, reapplied through the supplied script, and reran the unchanged test successfully.
+- Focused checks: exact placeholder and HTML tag/attribute multiplicity preserved; all values single-line; no vous/votre/vos forms; `git diff --check` passed.
+- Glossary: informal `tu`, infinitive action buttons, prop = `accessoire`, staff = `bâton`, double staff = `bâton double`, hand path = `trajectoire de la main`, turn = `tour`, step = `étape`, musical count = `temps`, Box = `Carré`, Diamond = `Diamant`. Full orientation phrases `vers l’intérieur` / `vers l’extérieur` are used throughout, including print labels.
+- Protected brands, motion categories, VTG labels, placements, letters, sequence words, CSS classes, style attributes and hex colors retained. Split highlighted category segments such as `Dual` + `-Shifts` and `Cross` + `-Shifts` keep the source spelling and emphasis. Legitimately identical values are protected notation, names, numerical labels and French cognates (99 values after corrections).
+- Mnemonics: retained Disco Jam, Exploding Kitten, Fruity Loops, Magic Potion, Never Quit and Open Road to preserve their DJ/EK/FL/MP/NQ/OR initials, adding consistent French meanings in parentheses in all label, highlighted and print variants. These are teaching mnemonics rather than translated sequence words.
+- Terms outside the glossary, without native/community review: negative space = `espace négatif`, body turns = `rotations du corps`, wall plane = `plan frontal`, wheel plane = `plan latéral`, hand/prop/full reversal = `inversion de main/d’accessoire/complète`, thumb/pinky end = `extrémité côté pouce/auriculaire`, leading/following = `meneuse/suiveuse`, realization = `réalisation`, driving styles = `styles de mouvement`. French mnemonic glosses also remain unreviewed.
+- Source discrepancy preserved: the Type 3 letter labels pair beta→gamma with Sig Dash/Del Dash and alpha→gamma with The Dash/Om Dash, whereas the Type 2 labels pair alpha→gamma with Sigma/Delta and beta→gamma with Theta/Omega. No notation correction or independent verification was attempted in this translation-only batch.
+- Shape Engine historical attributions, numerical claims and teaching calculations are translated from the supplied English, not independently established facts. No native review is claimed.
+- Prose review using the ai-bust skill: mechanical pass returned `[]` at HIGH/CRITICAL severity; judgment review preserved teaching steps and emphasis, with repeated print/SEO variants reflecting the source.
+- No primary-checkout access, other-worktree access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator as instructed.
