@@ -48,6 +48,7 @@
     text,
     strip,
     trail = null,
+    loop = false,
   }: {
     /** Playable sequence for the animation canvas (the DEFAULT / entry-0 example). */
     sequence: SequenceData;
@@ -95,9 +96,19 @@
      * hand travels). Omitted → the player's own trail settings, as before.
      */
     trail?: TrailSettings | null;
+    /**
+     * Keep playing instead of playing once. A circular sequence wraps from
+     * its last beat straight to beat 1, so the start pose shows only on the
+     * first pass. Omitted → the single play the guide pages use.
+     */
+    loop?: boolean;
   } = $props();
 
   const propType = $derived(render?.propType ?? PropType.HAND);
+  // The text alternative names only what the strip draws: no letter when the
+  // letter glyph is hidden.
+  const describe = (p: PictographData) =>
+    describePictograph(render?.showTKA === false ? { ...p, letter: null } : p);
 
   // Index is CLIENT state (default 0), so entries 1+ never render server-side -
   // only the default example's strip prerenders (the SEO / page-weight split).
@@ -217,7 +228,7 @@
       leftPropType={propType}
       rightPropType={propType}
       scrubbable
-      singlePlay
+      singlePlay={!loop}
       beatIndicators={false}
       trailSettingsOverride={trail}
       onStepChange={handleStepChange}
@@ -353,13 +364,13 @@
     {#if hasPool}
       {#each pool ?? [] as e, ei (ei)}
         {#each e.items as pos, n (pos.id ?? `${ei}-${n}`)}
-          <span>{describePictograph(pos)}</span>
+          <span>{describe(pos)}</span>
         {/each}
         <span>{e.proseHtml}</span>
       {/each}
     {:else}
       {#each items as pos, n (pos.id ?? n)}
-        <span>{describePictograph(pos)}</span>
+        <span>{describe(pos)}</span>
       {/each}
     {/if}
   </div>

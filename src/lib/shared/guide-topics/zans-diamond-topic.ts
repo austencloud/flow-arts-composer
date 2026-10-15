@@ -53,9 +53,6 @@ export const ZANS_DIAMOND_SOURCE_SEQUENCE_ID = "seq_1791923102683_sysj46042";
 export const ZANS_DIAMOND_COLLECTION_PATH =
   "/browse/explore/collections/PBp3GSBO6igCKPwJyLZNmVEmamI3/dab5fdca-b279-4a50-bd7a-67f291fce071";
 
-/** The Level 1 topic whose letters most of the variations are spelled in. */
-export const ZANS_DIAMOND_CROSS_SHIFTS_PATH = "/guide/level-1/hm-type34";
-
 type Raw = readonly [
   from: string,
   to: string,
@@ -261,48 +258,6 @@ function stillHand(hand: HandSide, at: GridLocation, orientation: Orientation) {
     propType: PropType.HAND,
     gridMode: GridMode.DIAMOND,
   });
-}
-
-/**
- * The path alone as a Guide strip: the left hand's eight steps with the right
- * hand present but hidden (isVisible: false is how pictographs and the
- * animator encode an absent hand). No letters, since one hand spells none.
- */
-export function zansDiamondPathStrip(): StepData[] {
-  const left = arrangeSoloPropSteps(ZANS_DIAMOND_LEFT_STEPS, FORWARD);
-  const home = left[0]!.startLocation;
-  const hidden = () => ({
-    ...stillHand(HandSide.RIGHT, home, left[0]!.startOrientation),
-    isVisible: false,
-  });
-  const placement = (at: GridLocation) => getGridPlacementFromLocations(at, at);
-  const start = createStepData({
-    id: "zans-path-start",
-    stepNumber: 0,
-    letter: null,
-    startPlacement: placement(home),
-    endPlacement: placement(home),
-    gridMode: GridMode.DIAMOND,
-    motions: {
-      left: stillHand(HandSide.LEFT, home, left[0]!.startOrientation),
-      right: hidden(),
-    },
-  });
-  const beats = left.map((step, i) =>
-    createStepData({
-      id: `zans-path-${i + 1}`,
-      stepNumber: i + 1,
-      letter: null,
-      startPlacement: placement(step.startLocation),
-      endPlacement: placement(step.endLocation),
-      gridMode: GridMode.DIAMOND,
-      motions: {
-        left: handMotion(HandSide.LEFT, step),
-        right: hidden(),
-      },
-    })
-  );
-  return [start, ...beats];
 }
 
 /**

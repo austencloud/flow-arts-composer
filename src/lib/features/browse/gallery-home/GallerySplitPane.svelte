@@ -22,6 +22,8 @@
     section: Section;
     ruleCounts?: Readonly<Record<string, number>>;
     idle: boolean;
+    /** Results-first review entry. Never writes the saved pane preference. */
+    contentFirstShowAllPreview?: boolean;
     onSelectCategory: (entry: CategoryEntry) => void;
     editor: Snippet;
     resultsHeader?: Snippet;
@@ -34,6 +36,7 @@
     section,
     ruleCounts,
     idle,
+    contentFirstShowAllPreview = false,
     onSelectCategory,
     editor,
     resultsHeader,
@@ -73,7 +76,9 @@
   }
 
   let filterPaneWidth = $state(restorePaneWidth());
-  let filterPaneCollapsed = $state(restorePaneCollapsed());
+  let filterPaneCollapsed = $state(
+    restorePaneCollapsed() || contentFirstShowAllPreview
+  );
   let dragStartPaneWidth = $state(FILTER_PANE_DEFAULT);
   let paneResizing = $state(false);
 
