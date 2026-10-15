@@ -933,13 +933,13 @@ void AFlowFestWorld::SetTimeOfDay(float Hour)
     const float MoonAltitude = 31.f + 10.f * FMath::Sin((TimeOfDay - 23.f) * PI / 12.f);
     Moon->SetWorldRotation(FRotator(-MoonAltitude, 48.f, 0.f));
     Moon->SetIntensity(1.2f * Night);
-    SkyLight->SetIntensity(FMath::Lerp(0.8f, 1.2f, Daylight));
+    SkyLight->SetIntensity(FMath::Lerp(0.8f, 1.8f, Daylight));
     Fog->SetFogDensity(FMath::Lerp(0.013f, 0.008f, Daylight));
-    // Keep the camera within two stops of an incident-light exposure in daylight.
+    // Allow canopy shade while bounding dark adaptation against the incident sunlight.
     // A histogram dominated by shaded ground otherwise overexposes the sunlit canopy.
     // The zero EV100 floor still limits dark adaptation around the nighttime fire.
     PostProcess->Settings.AutoExposureMinBrightness = FMath::Max(0.f,
-        FMath::Log2(FMath::Max(1.f, SunLux) / 2.5f) - 2.f);
+        FMath::Log2(FMath::Max(1.f, SunLux) / 2.5f) - 4.5f);
     PostProcess->Settings.AutoExposureBias = -0.8f * Daylight;
     PostProcess->Settings.BloomIntensity = FMath::Lerp(0.85f, 0.32f, Daylight);
 }
