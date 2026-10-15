@@ -58,6 +58,7 @@ public:
     bool IsEnteringPerformance() const { return bEnteringPerformance; }
     bool IsReturningToHands() const { return bReturningToHands; }
     FTransform GetPropRootTransform(bool bLeft) const;
+    FQuat GetVisualRotation(bool bLeft) const;
 
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Props")
     void SetVisible(bool bNewVisible);
@@ -85,6 +86,8 @@ private:
         FTransform Right;
         FVector LeftGrip = FVector::ZeroVector;
         FVector RightGrip = FVector::ZeroVector;
+        FQuat LeftVisual = FQuat::Identity;
+        FQuat RightVisual = FQuat::Identity;
     };
     struct FPropMotionTrack
     {
@@ -95,6 +98,8 @@ private:
     UPROPERTY(Transient) TObjectPtr<USceneComponent> AvatarRoot;
     UPROPERTY(Transient) TObjectPtr<USceneComponent> LeftRoot;
     UPROPERTY(Transient) TObjectPtr<USceneComponent> RightRoot;
+    UPROPERTY(Transient) TObjectPtr<USceneComponent> LeftVisualRoot;
+    UPROPERTY(Transient) TObjectPtr<USceneComponent> RightVisualRoot;
     UPROPERTY(Transient) TObjectPtr<UStaticMeshComponent> LeftMesh;
     UPROPERTY(Transient) TObjectPtr<UStaticMeshComponent> RightMesh;
     UPROPERTY(Transient) TObjectPtr<USkeletalMeshComponent> BoundBodyMesh;
@@ -132,9 +137,13 @@ private:
     float TransitionStart = 0.f;
     FTransform TransitionLeft = FTransform::Identity;
     FTransform TransitionRight = FTransform::Identity;
+    FQuat TransitionLeftVisual = FQuat::Identity;
+    FQuat TransitionRightVisual = FQuat::Identity;
     bool bSwitchingPerformance = false;
     FTransform SwitchLeft = FTransform::Identity;
     FTransform SwitchRight = FTransform::Identity;
+    FQuat SwitchLeftVisual = FQuat::Identity;
+    FQuat SwitchRightVisual = FQuat::Identity;
 
     void UpdatePose();
     void UpdateEffects();

@@ -7,6 +7,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 import { Matrix4, Quaternion, Vector3 } from "three";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -57,6 +58,28 @@ const pos = new Vector3();
 const rot = new Quaternion();
 const scale = new Vector3();
 const round = (n) => Math.round(n * 1e5) / 1e5;
+const mirrorX = new Matrix4().makeScale(-1, 1, 1);
+function visualRotation(prop) {
+  if (!prop.rotatedBodyWorld)
+    throw new Error('Capture lacks rotatedBodyWorld for native visual rotation');
+  // The static FBX is baked in the source prop's unrotated +Y geometry pose.
+  // The source rotates that geometry below propRoot. The native static mesh
+  // has a fixed X reflection; conjugating by it keeps the rotation proper.
+  const root = fromSample(prop.propRootWorld);
+  const body = fromSample(prop.rotatedBodyWorld);
+  const local = root.invert().multiply(body);
+  local.decompose(pos, rot, scale);
+  if (Math.max(Math.abs(scale.x - 1), Math.abs(scale.y - 1), Math.abs(scale.z - 1)) > 1e-4)
+    throw new Error(`Unexpected rotated-body scale: ${scale.toArray()}`);
+  const native = mirrorX.clone().multiply(new Matrix4().makeRotationFromQuaternion(rot)).multiply(mirrorX);
+  const q = new Quaternion().setFromRotationMatrix(native).normalize();
+  const asymmetric = new Vector3(.17, .29, -.11);
+  const expected = asymmetric.clone().applyQuaternion(rot).applyMatrix4(mirrorX);
+  const actual = asymmetric.clone().applyMatrix4(mirrorX).applyQuaternion(q);
+  if (actual.distanceTo(expected) > 1e-6)
+    throw new Error(`Visual prop basis mismatch: ${actual.distanceTo(expected)}`);
+  return [q.x, q.y, q.z, q.w].map(round);
+}
 function pose(performerInverse, propRootWorld) {
   performerInverse.clone().multiply(fromSample(propRootWorld)).decompose(pos, rot, scale);
   if (Math.max(Math.abs(scale.x - 1), Math.abs(scale.y - 1), Math.abs(scale.z - 1)) > 1e-4)
@@ -117,6 +140,8 @@ if (process.argv[2] === "--verify-sample") {
     pose(performerInverse, frame.rightProp.propRootWorld);
     gripPosition(frame, 'Left');
     gripPosition(frame, 'Right');
+    visualRotation(frame.leftProp);
+    visualRotation(frame.rightProp);
   }
   console.log(`Verified mirrored native basis against ${sample.frames.length * 2} captured prop poses`);
   process.exit(0);
@@ -146,7 +171,8 @@ for (const entry of artifacts.filter(entry =>
   (!allowPartial || existsSync(join(rawDir, entry.filename))))) {
   const profile = profileForRole(entry.role);
   if (!profile) continue; // mounted pose has no held prop
-  const capture = JSON.parse(await readFile(join(rawDir, entry.filename), "utf8"));
+  const captureBytes = await readFile(join(rawDir, entry.filename));
+  const capture = JSON.parse(captureBytes.toString('utf8'));
   if (capture.schema !== "flow-fest-native-performance-v1" ||
       capture.character !== entry.character || capture.role !== entry.role ||
       (entry.propType && capture.propType !== entry.propType) ||
@@ -155,32 +181,43 @@ for (const entry of artifacts.filter(entry =>
   const family = /^family-([a-z0-9_]+)-[AB]$/.exec(entry.role)?.[1];
   if (family && (capture.propType !== family || capture.frames.length !== 480))
     throw new Error(`Capture family/timing mismatch: ${entry.filename}`);
+  if (family && capture.captureRevision !== 'clock-isolated-body-v3')
+    throw new Error(`Capture revision mismatch: ${entry.filename}`);
+  const hasVisualBody = capture.frames.every(frame =>
+    frame.leftProp?.rotatedBodyWorld && frame.rightProp?.rotatedBodyWorld);
+  if (family && !hasVisualBody)
+    throw new Error(`Family capture lacks animated visual bodies: ${entry.filename}`);
   const frames = capture.frames.map((frame, index) => {
     if (!frame.performerWorld || !frame.leftProp?.propRootWorld ||
         !frame.rightProp?.propRootWorld || frame.frame !== index)
       throw new Error(`Incomplete prop pose: ${entry.filename} frame ${index}`);
     const performerInverse = fromSample(frame.performerWorld).invert();
-    return [
+    const compact = [
       ...pose(performerInverse, frame.leftProp.propRootWorld),
       ...pose(performerInverse, frame.rightProp.propRootWorld),
       ...gripPosition(frame, 'Left'),
       ...gripPosition(frame, 'Right'),
     ];
+    if (hasVisualBody) compact.push( ...visualRotation(frame.leftProp), ...visualRotation(frame.rightProp));
+    return compact;
   });
   const character = entry.character.replaceAll("-", "_");
   const filename = `${character}_${profile}.json`;
   const clip = {
-    schema: "flow-fest-prop-motion-v2",
+    schema: hasVisualBody ? "flow-fest-prop-motion-v3" : "flow-fest-prop-motion-v2",
     character: entry.character,
     profile,
     propId: String(capture.propType).toLowerCase(),
     fps: 30,
     sourceFrameCount: frames.length,
+    captureRevision: capture.captureRevision ?? 'legacy',
+    sourceSHA256: createHash('sha256').update(captureBytes).digest('hex'),
     coordinateBasis: "source XYZ to UE Feet (Z,-X,Y); rotation uses mirrored avatar basis and fixed native mesh X=-1",
     frames,
   };
   await writeFile(join(outputDir, filename), JSON.stringify(clip));
-  generated.push({ character: entry.character, profile, filename, frames: frames.length });
+  generated.push({ character: entry.character, profile, filename, frames: frames.length,
+    schema: clip.schema, captureRevision: clip.captureRevision, sourceSHA256: clip.sourceSHA256 });
 }
 if (!generated.length) throw new Error('No complete listed prop captures available for staging');
 if (!allowPartial && !familyOnly && !captureId && generated.length !== artifacts.filter(

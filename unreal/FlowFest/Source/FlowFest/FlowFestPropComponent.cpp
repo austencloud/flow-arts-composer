@@ -148,12 +148,18 @@ void UFlowFestPropComponent::Initialize(USceneComponent* Parent)
     };
     LeftRoot = CreateRoot(TEXT("FlowFestLeftPropRoot"));
     RightRoot = CreateRoot(TEXT("FlowFestRightPropRoot"));
+    LeftVisualRoot = NewObject<USceneComponent>(GetOwner(), TEXT("FlowFestLeftPropVisual"));
+    LeftVisualRoot->SetupAttachment(LeftRoot);
+    LeftVisualRoot->RegisterComponent();
+    RightVisualRoot = NewObject<USceneComponent>(GetOwner(), TEXT("FlowFestRightPropVisual"));
+    RightVisualRoot->SetupAttachment(RightRoot);
+    RightVisualRoot->RegisterComponent();
     // Wrist positions follow the scaled character, but the physical props
     // retain their authored centimeter dimensions across normalized rigs.
     LeftRoot->SetAbsolute(false, false, true);
     RightRoot->SetAbsolute(false, false, true);
-    LeftMesh = CreateMesh(TEXT("FlowFestLeftPropMesh"), LeftRoot);
-    RightMesh = CreateMesh(TEXT("FlowFestRightPropMesh"), RightRoot);
+    LeftMesh = CreateMesh(TEXT("FlowFestLeftPropMesh"), LeftVisualRoot);
+    RightMesh = CreateMesh(TEXT("FlowFestRightPropMesh"), RightVisualRoot);
     SetVisible(bVisible);
 }
 
@@ -197,7 +203,8 @@ bool UFlowFestPropComponent::BindHands(USkeletalMeshComponent* BodyMesh)
 
 bool UFlowFestPropComponent::IsReady() const
 {
-    return LeftRoot && RightRoot && LeftMesh && RightMesh && LeftMesh->GetStaticMesh() && RightMesh->GetStaticMesh();
+    return LeftRoot && RightRoot && LeftVisualRoot && RightVisualRoot &&
+        LeftMesh && RightMesh && LeftMesh->GetStaticMesh() && RightMesh->GetStaticMesh();
 }
 
 bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
@@ -242,6 +249,8 @@ bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
     if (!RightAsset) return false;
     LeftMesh->SetStaticMesh(LeftAsset);
     RightMesh->SetStaticMesh(RightAsset);
+    LeftVisualRoot->SetRelativeRotation(FQuat::Identity);
+    RightVisualRoot->SetRelativeRotation(FQuat::Identity);
     double AuthoredLength = 0;
     Prop->TryGetNumberField(TEXT("authoredLengthCm"), AuthoredLength);
     bool bAdjustable = false;
@@ -282,12 +291,12 @@ bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
                 Light->RegisterComponent();
                 return Light;
             };
-            LeftEffectLights.Add(AddLight(LeftRoot));
-            RightEffectLights.Add(AddLight(RightRoot));
-            LeftFlames.Add(AddFlame(GetOwner(), LeftRoot, Location));
-            RightFlames.Add(AddFlame(GetOwner(), RightRoot, Location));
-            LeftLEDs.Add(AddLED(GetOwner(), LeftRoot, Location));
-            RightLEDs.Add(AddLED(GetOwner(), RightRoot, Location));
+            LeftEffectLights.Add(AddLight(LeftVisualRoot));
+            RightEffectLights.Add(AddLight(RightVisualRoot));
+            LeftFlames.Add(AddFlame(GetOwner(), LeftVisualRoot, Location));
+            RightFlames.Add(AddFlame(GetOwner(), RightVisualRoot, Location));
+            LeftLEDs.Add(AddLED(GetOwner(), LeftVisualRoot, Location));
+            RightLEDs.Add(AddLED(GetOwner(), RightVisualRoot, Location));
         }
     }
     EquippedPropId = PropId;
@@ -374,6 +383,8 @@ void UFlowFestPropComponent::ClearPerformanceTransforms()
         RightRoot->AttachToComponent(BoundBodyMesh, FAttachmentTransformRules::KeepWorldTransform, TEXT("RightHand"));
         TransitionLeft = LeftRoot->GetRelativeTransform();
         TransitionRight = RightRoot->GetRelativeTransform();
+        TransitionLeftVisual = LeftVisualRoot->GetRelativeRotation().Quaternion();
+        TransitionRightVisual = RightVisualRoot->GetRelativeRotation().Quaternion();
         TransitionStart = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
         bReturningToHands = true;
     }
@@ -389,6 +400,8 @@ void UFlowFestPropComponent::TickComponent(float DeltaTime, ELevelTick TickType,
     Right.Blend(TransitionRight, FTransform(RightGripBasis, RightGripOffset), Alpha);
     LeftRoot->SetRelativeTransform(Left);
     RightRoot->SetRelativeTransform(Right);
+    LeftVisualRoot->SetRelativeRotation(FQuat::Slerp(TransitionLeftVisual, FQuat::Identity, Alpha));
+    RightVisualRoot->SetRelativeRotation(FQuat::Slerp(TransitionRightVisual, FQuat::Identity, Alpha));
     if (Alpha >= 1.f) bReturningToHands = false;
 }
 
@@ -418,8 +431,9 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
     const TArray<TSharedPtr<FJsonValue>>* Frames = nullptr;
     FString CapturedFamily;
     if (!Root->TryGetStringField(TEXT("schema"), Schema) ||
-        (Schema != TEXT("flow-fest-prop-motion-v1") && Schema != TEXT("flow-fest-prop-motion-v2")) ||
-        (Schema == TEXT("flow-fest-prop-motion-v2") &&
+        (Schema != TEXT("flow-fest-prop-motion-v1") && Schema != TEXT("flow-fest-prop-motion-v2") &&
+         Schema != TEXT("flow-fest-prop-motion-v3")) ||
+        (Schema != TEXT("flow-fest-prop-motion-v1") &&
             (!Root->TryGetStringField(TEXT("character"), CapturedCharacter) ||
              !Root->TryGetStringField(TEXT("profile"), CapturedProfile) ||
              CapturedCharacter != CharacterId.ToString() || CapturedProfile != Profile.ToString())) ||
@@ -431,7 +445,8 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
         UE_LOG(LogTemp, Warning, TEXT("Flow Fest prop performance mismatch: %s needs %s"), *Path, *EquippedFamily);
         return false;
     }
-    const bool bGrip = Schema == TEXT("flow-fest-prop-motion-v2");
+    const bool bGrip = Schema != TEXT("flow-fest-prop-motion-v1");
+    const bool bVisual = Schema == TEXT("flow-fest-prop-motion-v3");
     double SourceFrameCount = 0;
     if (bGrip && (!Root->TryGetNumberField(TEXT("sourceFrameCount"), SourceFrameCount) ||
         SourceFrameCount != Frames->Num() || Fps != 30.0 || Frames->Num() != 480))
@@ -441,13 +456,23 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
     for (const TSharedPtr<FJsonValue>& Entry : *Frames)
     {
         const TArray<TSharedPtr<FJsonValue>>* Values = nullptr;
-        if (!Entry.IsValid() || !Entry->TryGetArray(Values) || !Values || Values->Num() != (bGrip ? 20 : 14))
+        if (!Entry.IsValid() || !Entry->TryGetArray(Values) || !Values ||
+            Values->Num() != (bVisual ? 28 : bGrip ? 20 : 14))
             return false;
-        double N[20]{};
+        double N[28]{};
         for (int32 I = 0; I < Values->Num(); ++I)
         {
             if (!(*Values)[I].IsValid() || !(*Values)[I]->TryGetNumber(N[I]) || !FMath::IsFinite(N[I]))
                 return false;
+        }
+        if (bVisual)
+        {
+            for (int32 Offset : {20, 24})
+            {
+                const double SizeSquared = N[Offset]*N[Offset] + N[Offset+1]*N[Offset+1] +
+                    N[Offset+2]*N[Offset+2] + N[Offset+3]*N[Offset+3];
+                if (SizeSquared < .99 || SizeSquared > 1.01) return false;
+            }
         }
         auto Transform = [&N](int32 Offset)
         {
@@ -455,7 +480,14 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
             Rotation.Normalize();
             return FTransform(Rotation, FVector(N[Offset], N[Offset+1], N[Offset+2]));
         };
-        Parsed.Add({Transform(0), Transform(7), FVector(N[14], N[15], N[16]), FVector(N[17], N[18], N[19])});
+        auto Visual = [&N](int32 Offset)
+        {
+            FQuat Rotation(N[Offset], N[Offset+1], N[Offset+2], N[Offset+3]);
+            return Rotation.GetNormalized();
+        };
+        Parsed.Add({Transform(0), Transform(7), FVector(N[14], N[15], N[16]),
+            FVector(N[17], N[18], N[19]), bVisual ? Visual(20) : FQuat::Identity,
+            bVisual ? Visual(24) : FQuat::Identity});
     }
     // LoadPerformance precedes the avatar's clip switch. Capture the prop's
     // current world-space pose now, before its temporary hand attachment can
@@ -467,6 +499,8 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
         const FTransform RootWorld = AvatarRoot->GetComponentTransform();
         SwitchLeft = LeftRoot->GetComponentTransform().GetRelativeTransform(RootWorld);
         SwitchRight = RightRoot->GetComponentTransform().GetRelativeTransform(RootWorld);
+        SwitchLeftVisual = LeftVisualRoot->GetRelativeRotation().Quaternion();
+        SwitchRightVisual = RightVisualRoot->GetRelativeRotation().Quaternion();
     }
     if (bSwitchingPerformance)
         OutgoingPerformanceTracks.Add({MoveTemp(PerformanceFrames), PerformanceFps});
@@ -502,6 +536,7 @@ bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight,
     bool bBlendOutgoing = false;
     FVector BlendedLeftGrip = FVector::ZeroVector, BlendedRightGrip = FVector::ZeroVector;
     FVector BlendedLeftAnchor = FVector::ZeroVector, BlendedRightAnchor = FVector::ZeroVector;
+    FQuat BlendedLeftVisual = FQuat::Identity, BlendedRightVisual = FQuat::Identity;
     if (Animator && AvatarRoot && BoundBodyMesh)
     {
         const int32 Count = Animator->GetOutgoingPerformanceCount();
@@ -522,18 +557,27 @@ bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight,
         FTransform Left = FTransform::Identity, Right = FTransform::Identity;
         float Total = 0.f;
         auto Add = [&Left, &Right, &Total, &BlendedLeftGrip, &BlendedRightGrip,
-            &BlendedLeftAnchor, &BlendedRightAnchor]
+            &BlendedLeftAnchor, &BlendedRightAnchor, &BlendedLeftVisual, &BlendedRightVisual]
             (const FTransform& NextLeft, const FTransform& NextRight,
-             const FVector& LeftGrip, const FVector& RightGrip, float Weight)
+             const FVector& LeftGrip, const FVector& RightGrip,
+             const FQuat& NextLeftVisual, const FQuat& NextRightVisual, float Weight)
         {
             if (Weight <= 0.f) return;
-            if (Total <= 0.f) { Left = NextLeft; Right = NextRight; }
+            if (Total <= 0.f)
+            {
+                Left = NextLeft; Right = NextRight;
+                BlendedLeftVisual = NextLeftVisual;
+                BlendedRightVisual = NextRightVisual;
+            }
             else
             {
                 FTransform L, R;
-                L.Blend(Left, NextLeft, Weight / (Total + Weight));
-                R.Blend(Right, NextRight, Weight / (Total + Weight));
+                const float Fraction = Weight / (Total + Weight);
+                L.Blend(Left, NextLeft, Fraction);
+                R.Blend(Right, NextRight, Fraction);
                 Left = L; Right = R;
+                BlendedLeftVisual = FQuat::Slerp(BlendedLeftVisual, NextLeftVisual, Fraction).GetNormalized();
+                BlendedRightVisual = FQuat::Slerp(BlendedRightVisual, NextRightVisual, Fraction).GetNormalized();
             }
             BlendedLeftGrip += LeftGrip * Weight;
             BlendedRightGrip += RightGrip * Weight;
@@ -559,16 +603,19 @@ bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight,
             L.Blend(Track.Frames[I].Left, Track.Frames[J].Left, Fraction);
             R.Blend(Track.Frames[I].Right, Track.Frames[J].Right, Fraction);
             Add(L, R, FMath::Lerp(Track.Frames[I].LeftGrip, Track.Frames[J].LeftGrip, Fraction),
-                FMath::Lerp(Track.Frames[I].RightGrip, Track.Frames[J].RightGrip, Fraction), Weight);
+                FMath::Lerp(Track.Frames[I].RightGrip, Track.Frames[J].RightGrip, Fraction),
+                FQuat::Slerp(Track.Frames[I].LeftVisual, Track.Frames[J].LeftVisual, Fraction),
+                FQuat::Slerp(Track.Frames[I].RightVisual, Track.Frames[J].RightVisual, Fraction), Weight);
             OutgoingWeight += Weight;
         }
         Add(Blend(A.Left, B.Left), Blend(A.Right, B.Right),
             FMath::Lerp(A.LeftGrip, B.LeftGrip, Alpha), FMath::Lerp(A.RightGrip, B.RightGrip, Alpha),
-            FMath::Clamp(PoseWeight, 0.f, 1.f));
+            FQuat::Slerp(A.LeftVisual, B.LeftVisual, Alpha),
+            FQuat::Slerp(A.RightVisual, B.RightVisual, Alpha), FMath::Clamp(PoseWeight, 0.f, 1.f));
         const float NaturalWeight = FMath::Max(0.f, 1.f - OutgoingWeight - FMath::Clamp(PoseWeight, 0.f, 1.f));
         Add(Natural(TEXT("LeftHand"), LeftGripBasis, LeftGripOffset),
             Natural(TEXT("RightHand"), RightGripBasis, RightGripOffset),
-            NaturalLeftGrip, NaturalRightGrip, NaturalWeight);
+            NaturalLeftGrip, NaturalRightGrip, FQuat::Identity, FQuat::Identity, NaturalWeight);
         if (Total > SMALL_NUMBER)
         {
             BlendedLeftGrip /= Total; BlendedRightGrip /= Total;
@@ -580,10 +627,22 @@ bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight,
             Right.SetLocation(NaturalRightGrip - Right.GetRotation().RotateVector(BlendedRightAnchor));
             bSwitchingPerformance = false;
             SetPerformanceTransforms(Left, Right, 1.f);
+            LeftVisualRoot->SetRelativeRotation(BlendedLeftVisual);
+            RightVisualRoot->SetRelativeRotation(BlendedRightVisual);
             bEnteringPerformance = OutgoingWeight > .001f || PoseWeight < .999f;
         }
     }
-    else SetPerformanceTransforms(Blend(A.Left, B.Left), Blend(A.Right, B.Right), PoseWeight);
+    else
+    {
+        SetPerformanceTransforms(Blend(A.Left, B.Left), Blend(A.Right, B.Right), PoseWeight);
+        const FQuat LeftVisual = FQuat::Slerp(A.LeftVisual, B.LeftVisual, Alpha).GetNormalized();
+        const FQuat RightVisual = FQuat::Slerp(A.RightVisual, B.RightVisual, Alpha).GetNormalized();
+        const float Weight = FMath::Clamp(PoseWeight, 0.f, 1.f);
+        LeftVisualRoot->SetRelativeRotation(FQuat::Slerp(
+            bSwitchingPerformance ? SwitchLeftVisual : FQuat::Identity, LeftVisual, Weight));
+        RightVisualRoot->SetRelativeRotation(FQuat::Slerp(
+            bSwitchingPerformance ? SwitchRightVisual : FQuat::Identity, RightVisual, Weight));
+    }
     if (bHasGripSamples && BoundBodyMesh && AvatarRoot)
     {
         const FTransform RootWorld = AvatarRoot->GetComponentTransform();
@@ -645,6 +704,12 @@ FTransform UFlowFestPropComponent::GetPropRootTransform(bool bLeft) const
 {
     const USceneComponent* Root = bLeft ? LeftRoot : RightRoot;
     return Root ? Root->GetComponentTransform() : FTransform::Identity;
+}
+
+FQuat UFlowFestPropComponent::GetVisualRotation(bool bLeft) const
+{
+    const USceneComponent* Root = bLeft ? LeftVisualRoot : RightVisualRoot;
+    return Root ? Root->GetRelativeRotation().Quaternion() : FQuat::Identity;
 }
 
 void UFlowFestPropComponent::SetVisible(bool bNewVisible)
