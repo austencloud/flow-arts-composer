@@ -13,6 +13,7 @@
    * all of its stills, the fixed blue and red guide inks, because the prose
    * names those colours; a reader's saved hand colours belong to the engine.
    */
+  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import GuideShell from "../_components/GuideShell.svelte";
@@ -562,7 +563,7 @@
           <p>
             Each name describes the shape one end of the prop draws. Inspin is
             another name for prospin, as
-            <LinkChip size="inline" href="/guide/level-1/staff-motions">Staff Motions</LinkChip>
+            <LinkChip size="inline" href={localHref("/guide/level-1/staff-motions")}>Staff Motions</LinkChip>
             explains.
           </p>
         </div>

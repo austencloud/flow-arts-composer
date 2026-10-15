@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import { browser } from "$app/env";
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
@@ -101,7 +102,7 @@
           <p>{tDynamic("guide_paths_third_order_concave")}</p>
           <div class="links">
             <PanelButton href="/toys/third-order">{tDynamic("guide_paths_open_third_order")}</PanelButton>
-            <PanelButton href="/guide/ratios"
+            <PanelButton href={localHref("/guide/ratios")}
               >{tDynamic("guide_paths_spin_ratios")}</PanelButton
             >
           </div>

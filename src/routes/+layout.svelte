@@ -21,7 +21,10 @@
   import MarketingChrome from "#lib/shared/landing/components/MarketingChrome.svelte";
   import { siteCopyLocale } from "#lib/shared/landing/site-copy.js";
   import { pinDocumentLanguage } from "#lib/shared/i18n/i18n.svelte.js";
-  import { localizedPageLocale } from "#lib/shared/i18n/seo-locales.js";
+  import {
+    localizedPageLocale,
+    routePathFor,
+  } from "#lib/shared/i18n/seo-locales.js";
   import ViewCaptureListener from "#lib/shared/review/ViewCaptureListener.svelte";
   import { detectSiteMode, type SiteMode } from "../config/domains";
   import { navigationMorphs } from "#lib/shared/transitions/navigation-morphs.js";
@@ -213,7 +216,7 @@
   const MARKETING_EXCLUDE_PATTERN =
     /^\/guide\/(?:codex(?:\/|$)|level-[12]\/(?:print|book|handbook|cover-lab)\/?$)/;
   const isMarketing = $derived.by(() => {
-    const p = page.url.pathname;
+    const p = routePathFor(page.url.pathname);
     if (MARKETING_EXCLUDE.has(p)) return false;
     if (MARKETING_EXCLUDE_PATTERN.test(p)) return false;
     if (MARKETING_EXACT.has(p)) return true;

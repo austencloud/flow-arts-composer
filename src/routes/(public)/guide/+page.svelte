@@ -19,6 +19,7 @@
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { page } from "$app/state";
   import LocaleAlternates from "#lib/shared/components/LocaleAlternates.svelte";
+  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import {
     localizePath,
     splitLocalePath,
@@ -125,7 +126,7 @@
               {tDynamic("guide_hub_start_lesson")}
               <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
             </a>
-            <a class="secondary-action" href={firstTopicHref}>
+            <a class="secondary-action" href={localHref(firstTopicHref)}>
               {tDynamic("guide_hub_read_guide")}
             </a>
           </div>
@@ -144,7 +145,7 @@
         <ol class="stages">
           {#each levelOne as stage (stage.group)}
             <li class="stage" class:word-stage={stage.group === "1.2"}>
-              <a href={stage.href}>
+              <a href={localHref(stage.href)}>
                 <span class="stage-art" aria-hidden="true">
                   {#if stage.group === "1.0"}
                     <HubPictograph
@@ -178,7 +179,7 @@
 
         <div class="section-list">
           {#each guideSections as section (section.key)}
-            <a class="section-row" href={section.href}>
+            <a class="section-row" href={localHref(section.href)}>
               <span class="section-copy">
                 <strong class:level-heading={section.key === "level2"}>
                   {#if section.key === "level2"}

@@ -10,6 +10,7 @@
    * Replaces the per-page CosmicPageShell / inline background each marketing
    * page used to mount for itself.
    */
+  import { currentRoutePath } from "#lib/shared/i18n/localized-href.svelte.js";
   import type { Snippet } from "svelte";
   import type { BackgroundType } from "@austencloud/backgrounds";
   import { onMount } from "svelte";
@@ -93,7 +94,7 @@
     );
   });
 
-  const path = $derived(page.url.pathname);
+  const path = $derived(currentRoutePath());
   const isTimingLesson = $derived(
     path === "/learn/concepts/timing-and-direction"
   );

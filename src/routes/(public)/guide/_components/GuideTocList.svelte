@@ -11,10 +11,13 @@
    * crawlable link on every guide page.
    */
   import { onMount, tick } from "svelte";
-  import { page } from "$app/state";
   import type { ModuleDefinition, Section } from "@austencloud/sidebar";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import {
+    currentRoutePath,
+    localHref,
+  } from "#lib/shared/i18n/localized-href.svelte.js";
   import {
     buildGuideToc,
     guideTocModuleFor,
@@ -34,8 +37,8 @@
     onLinkClick?: () => void;
   } = $props();
 
-  const pathname = $derived(page.url.pathname);
-  const modules = $derived(buildGuideToc());
+  const pathname = $derived(currentRoutePath());
+  const modules = $derived(buildGuideToc(localHref));
   const currentModule = $derived(guideTocModuleFor(pathname));
   const currentSection = $derived(
     guideTocSectionFor(pathname, activeSectionId)
