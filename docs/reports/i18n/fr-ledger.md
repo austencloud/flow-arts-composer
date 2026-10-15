@@ -204,3 +204,16 @@ translate normally.
 - Glossary: followed the coordinator's explicit 2026-10-14 clarification overriding the glossary's older protected Petal entry. Ordinary nouns use masculine `pétale` / `pétales`, with singular `demi-pétale`, `aucun pétale` and `{count} pétale`; plural counts use `pétales`. Existing masculine articles and adjectives already agree. Flower and every other word remain unchanged; initial label capitalization is preserved.
 - Uncertain: none. No native review is claimed.
 - `git diff --check` passed. No primary-checkout access, other-worktree access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator as instructed.
+
+## Z1 - 2026-10-14
+
+- Batch: Z1, `batch-Z1.json`; 5 translated keys, 11 retranslated keys, 0 review entries. Retranslations follow the new English from the Zan's Diamond guide rewrite.
+- Apply result: `messages/fr.json: inserted 5, replaced 11, refused 0`.
+- Catalog diff before ledger: only `messages/fr.json` changed; 16 insertions, 11 deletions. Exact comparison confirmed that precisely the 16 batch entries changed, every output value was applied, and all values are single-line.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files 1 passed (1)`; `Tests 66 passed (66)`; duration 26.49s; exit 0.
+- Glossary: Zan's Diamond and Zan Moore remain unchanged; motion types remain Shift and Dash, including in prose. Diamond grid = `grille Diamant`; the geometric diamond in prose = `diamant`; hand path = `trajectoire` / `trajectoire pour une main`; beat = `temps`; step = `étape`; variation = `variante`; prop = `accessoire`; Practice = `Entraînement`. Informal singular address is retained and the collection button uses the infinitive `Ouvrir`.
+- Wording: `en avance` describes a hand's lead along the path; `à rebours` describes reversing its direction. The new text preserves the odd/even lead distinction, eight possible starting steps, and the distinction between 23 derived variants and 24 total versions. Removed source claims about prop rotation and mirror images were not retained.
+- Prose review with ai-bust: mechanical HIGH/CRITICAL scan returned `[]`; judgment review preserved the new source's meaning and counts. `git diff --check` passed.
+- Uncertain: none. No native review is claimed. Source factual claims were translated as supplied, not independently verified.
+- No primary-checkout access, other-worktree access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator as instructed.
