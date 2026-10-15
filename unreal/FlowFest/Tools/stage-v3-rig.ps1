@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$Rig,
     [string]$D2ConvertRoot = 'E:/FlowFestLivingConvert',
+    [string]$LocalConvertRoot,
     [switch]$FbxOnly
 )
 
@@ -16,21 +17,51 @@ $remoteManifest = Join-Path $project "Saved/v3-$Rig-converted-imports.json"
 $scp = 'C:/Windows/System32/OpenSSH/scp.exe'
 
 New-Item -ItemType Directory -Path $rigPath, (Split-Path -Parent $remoteManifest) -Force | Out-Null
-& $scp -q -o BatchMode=yes "$remote/imports.json" $remoteManifest
-if ($LASTEXITCODE -ne 0) { throw "Could not transfer $Rig conversion manifest" }
+$localStaged = if ($LocalConvertRoot) {
+    Join-Path $LocalConvertRoot "rigs/$Rig/unreal/FlowFest/Tools/staged/Characters"
+}
+if ($LocalConvertRoot) {
+    Copy-Item -LiteralPath (Join-Path $localStaged 'imports.json') -Destination $remoteManifest -Force
+} else {
+    & $scp -q -o BatchMode=yes "$remote/imports.json" $remoteManifest
+    if ($LASTEXITCODE -ne 0) { throw "Could not transfer $Rig conversion manifest" }
+}
 if ($FbxOnly) {
-    $remoteFiles = & 'C:/Windows/System32/OpenSSH/ssh.exe' d2 "Get-ChildItem -LiteralPath '$D2ConvertRoot/rigs/$Rig/unreal/FlowFest/Tools/staged/Characters/$key' -Filter 'A_Flow_P_*.fbx' -File | Select-Object -ExpandProperty Name"
-    if ($LASTEXITCODE -ne 0 -or @($remoteFiles).Count -ne 82) { throw "Expected 82 remote $Rig family FBXs" }
+    $remoteFiles = if ($LocalConvertRoot) {
+        Get-ChildItem -LiteralPath (Join-Path $localStaged $key) -Filter 'A_Flow_P_*.fbx' -File |
+            Select-Object -ExpandProperty Name
+    } else {
+        & 'C:/Windows/System32/OpenSSH/ssh.exe' d2 "Get-ChildItem -LiteralPath '$D2ConvertRoot/rigs/$Rig/unreal/FlowFest/Tools/staged/Characters/$key' -Filter 'A_Flow_P_*.fbx' -File | Select-Object -ExpandProperty Name"
+    }
+    if ((-not $LocalConvertRoot -and $LASTEXITCODE -ne 0) -or @($remoteFiles).Count -ne 82) {
+        throw "Expected 82 converted $Rig family FBXs"
+    }
     $missing = @($remoteFiles | Where-Object {
         $localPath = Join-Path $rigPath $_
-        -not (Test-Path -LiteralPath $localPath) -or (Get-Item -LiteralPath $localPath).Length -lt 1024
+        $LocalConvertRoot -or -not (Test-Path -LiteralPath $localPath) -or
+            (Get-Item -LiteralPath $localPath).Length -lt 1024
     })
     if ($missing.Count -gt 0) {
-        # One SFTP session is materially faster than 82 individual connections.
-        & $scp -q -o BatchMode=yes "$remote/$key/A_Flow_P_*.fbx" "$rigPath/"
-        if ($LASTEXITCODE -ne 0) { throw "Could not transfer $Rig family FBXs" }
+        if ($LocalConvertRoot) {
+            Copy-Item -Path (Join-Path $localStaged "$key/A_Flow_P_*.fbx") -Destination $rigPath -Force
+        } else {
+            # One SFTP session is materially faster than 82 individual connections.
+            & $scp -q -o BatchMode=yes "$remote/$key/A_Flow_P_*.fbx" "$rigPath/"
+            if ($LASTEXITCODE -ne 0) { throw "Could not transfer $Rig family FBXs" }
+        }
+    }
+    if ($LocalConvertRoot) {
+        foreach ($file in $remoteFiles) {
+            $source = Join-Path (Join-Path $localStaged $key) $file
+            $target = Join-Path $rigPath $file
+            if ((Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash -ne
+                (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash) {
+                throw "Staged FBX differs from conversion source: $Rig/$file"
+            }
+        }
     }
 } else {
+    if ($LocalConvertRoot) { throw 'Local conversion staging supports -FbxOnly' }
     for ($attempt = 1; $attempt -le 3; $attempt++) {
         & $scp -q -o BatchMode=yes -r "$remote/$key/." "$rigPath/"
         if ($LASTEXITCODE -eq 0) { break }

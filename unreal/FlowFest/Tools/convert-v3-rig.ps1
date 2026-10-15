@@ -4,7 +4,8 @@ param(
     [string]$ConvertRoot = 'E:/FlowFestLivingConvert',
     [string]$BaseScratch = 'E:/worktrees/tka-platform/run-02211e90e7',
     [string]$SourceRoot = 'E:/tka-platform',
-    [string]$BlenderPath
+    [string]$BlenderPath,
+    [ValidateRange(0, 64)][int]$BlenderThreads = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -89,7 +90,11 @@ Push-Location $jobRoot
 try {
     & node (Join-Path $tools 'prepare-characters.mjs') $SourceRoot --captures $captureSnapshot --family-only --capture-id $Rig
     if ($LASTEXITCODE -ne 0) { throw "prepare-characters failed: $LASTEXITCODE" }
-    & $blender --background --python (Join-Path $tools 'convert-characters.py') -- --id $Rig --family-only
+    $blenderArgs = @()
+    if ($BlenderThreads -gt 0) { $blenderArgs += @('-t', "$BlenderThreads") }
+    $blenderArgs += @('--background', '--python', (Join-Path $tools 'convert-characters.py'),
+        '--', '--id', $Rig, '--family-only')
+    & $blender @blenderArgs
     if ($LASTEXITCODE -ne 0) { throw "Blender conversion failed: $LASTEXITCODE" }
 } finally {
     Pop-Location
