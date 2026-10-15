@@ -108,6 +108,25 @@ describe("dropKnownNoise (PostHog before_send)", () => {
     expect(dropKnownNoise(event)).toBeNull();
   });
 
+  it("drops the older 'loop limit exceeded' wording of the same ResizeObserver noise", () => {
+    const event = exceptionEvent("ResizeObserver loop limit exceeded");
+    expect(dropKnownNoise(event)).toBeNull();
+  });
+
+  it("drops Firestore's clock-skew console warning, as console capture reports it", () => {
+    const event = exceptionEvent(
+      "[2026-10-14T13:09:09.240Z]  @firebase/firestore: Firestore (12.13.0): Detected an update time that is in the future: 1791983349241 > 1791983349240"
+    );
+    expect(dropKnownNoise(event)).toBeNull();
+  });
+
+  it("keeps other Firestore console errors visible", () => {
+    const event = exceptionEvent(
+      "[2026-10-06T10:00:00.000Z]  @firebase/firestore: Firestore (12.13.0): Could not reach Cloud Firestore backend."
+    );
+    expect(dropKnownNoise(event)).toBe(event);
+  });
+
   it("drops the iOS Safari messaging/unsupported-browser noise", () => {
     const event = exceptionEvent(
       "FirebaseError: Messaging: This browser doesn't support the API's required to use the Firebase SDK. (messaging/unsupported-browser)."
