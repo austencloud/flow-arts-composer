@@ -137,6 +137,35 @@ html.hand-grid-grow [inert] [data-hand-grid="map"] {
   height: 100%;
 }
 
+/* Hand Motions: the finished quiz board settling into the full board. Each
+   cell, picture and label carries its own name while the morph runs (set
+   inline by hand-grid-split.ts runBoardSettle); the cell boxes stretch, the
+   pictures stay square and the labels keep their size, so the name and bar
+   ride along and the description fades in. */
+::view-transition-group(*.hand-board-cell),
+::view-transition-group(*.hand-board-picture),
+::view-transition-group(*.hand-board-label) {
+  animation-duration: var(--duration-dramatic);
+  animation-timing-function: var(--ease-standard);
+}
+::view-transition-group(*.hand-board-picture),
+::view-transition-group(*.hand-board-label) {
+  z-index: 2;
+}
+::view-transition-old(*.hand-board-cell),
+::view-transition-new(*.hand-board-cell),
+::view-transition-old(*.hand-board-picture),
+::view-transition-new(*.hand-board-picture) {
+  animation-duration: var(--duration-dramatic);
+  height: 100%;
+}
+::view-transition-old(*.hand-board-label),
+::view-transition-new(*.hand-board-label) {
+  animation-duration: var(--duration-dramatic);
+  width: auto;
+  height: auto;
+}
+
 /* A generate bento card growing into its workspace (Customize, LOOP, Setups,
    TnD). The card wrapper and the expanded stage share one name, so the group
    carries the box between the grid slot and the stage or viewport while the

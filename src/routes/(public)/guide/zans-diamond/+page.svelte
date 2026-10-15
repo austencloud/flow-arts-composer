@@ -9,6 +9,7 @@
    * The props section plays the original again with a prop, poi first (Zan
    * teaches it with poi); the prop picked there also plays in every family
    * player. The first showcase stays a bare hand path.
+   * Zan's own videos follow the header, so the credit comes before the players.
    * The record lives in #lib/shared/guide-topics/zans-diamond-topic.ts.
    */
   import { onMount } from "svelte";
@@ -17,6 +18,7 @@
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import SourceVideoCard from "#lib/shared/components/SourceVideoCard.svelte";
   import PropChoiceRow from "#lib/shared/pictograph/prop/components/PropChoiceRow.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { PictographRender } from "../level-1/_data/guide-content-blocks";
@@ -32,6 +34,7 @@
     ZANS_DIAMOND_CREDIT,
     ZANS_DIAMOND_FAMILIES,
     ZANS_DIAMOND_ORIGINAL,
+    ZANS_DIAMOND_TUTORIAL,
     zansDiamondStrip,
     zansDiamondVariationLabel,
     type ZansDiamondVariation,
@@ -67,7 +70,8 @@
   ];
   const PROP_RENDER: PictographRender = $derived({ ...RENDER, propType });
 
-  // The prop's tip draws its petals, kept until the loop restarts.
+  // Each prop's tip draws its petals, kept until the loop restarts; the props
+  // player and every family player use it.
   const TIP_TRAIL: TrailSettings = {
     ...DEFAULT_TRAIL_SETTINGS,
     mode: TrailMode.LOOP_CLEAR,
@@ -103,10 +107,15 @@
     })
   );
 
+  // Centred blocks start each sentence on its own line.
+  const sentences = (text: string) => text.split(/(?<=[.!?])\s+/);
+
   // "{name}" in the lede becomes the link to Zan's channel.
   const NAME_SLOT = "\u0000";
   const lede = $derived(
-    t("guide_zans_lede", { name: NAME_SLOT }).split(NAME_SLOT)
+    sentences(t("guide_zans_lede", { name: NAME_SLOT })).map((sentence) =>
+      sentence.split(NAME_SLOT)
+    )
   );
 
   // Pictographs follow the site theme, as the Level 1 pages do.
@@ -150,13 +159,43 @@
     <header class="intro">
       <h1>{t("guide_zans_title")}</h1>
       <p class="lede">
-        {lede[0]}{#if ZANS_DIAMOND_CREDIT.href}<a
-            href={ZANS_DIAMOND_CREDIT.href}
-            target="_blank"
-            rel="noopener noreferrer">{ZANS_DIAMOND_CREDIT.name}</a
-          >{:else}{ZANS_DIAMOND_CREDIT.name}{/if}{lede[1] ?? ""}
+        {#each lede as parts, i (i)}<span class="sentence"
+            >{parts[0]}{#if parts.length > 1}{#if ZANS_DIAMOND_CREDIT.href}<a
+                  href={ZANS_DIAMOND_CREDIT.href}
+                  target="_blank"
+                  rel="noopener noreferrer">{ZANS_DIAMOND_CREDIT.name}</a
+                >{:else}{ZANS_DIAMOND_CREDIT.name}{/if}{parts[1]}{/if}</span
+          >{/each}
       </p>
     </header>
+
+    <section class="from-zan" aria-labelledby="from-zan-heading">
+      <div class="from-zan-intro">
+        <h2 id="from-zan-heading">{t("guide_zans_from_zan_title")}</h2>
+        <p>
+          {#each sentences(t("guide_zans_from_zan_body")) as sentence, i (i)}<span
+              class="sentence">{sentence}</span
+            >{/each}
+        </p>
+      </div>
+      <div class="from-zan-video">
+        <SourceVideoCard
+          id={ZANS_DIAMOND_TUTORIAL.id}
+          title={ZANS_DIAMOND_TUTORIAL.title}
+          creator={ZANS_DIAMOND_CREDIT.name}
+          year={ZANS_DIAMOND_TUTORIAL.year}
+        />
+      </div>
+      {#if ZANS_DIAMOND_CREDIT.href}
+        <LinkChip
+          href={ZANS_DIAMOND_CREDIT.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          ><i class="fab fa-youtube" aria-hidden="true"></i>
+          {t("guide_zans_channel")}</LinkChip
+        >
+      {/if}
+    </section>
 
     <SequenceShowcase
       sequence={original.sequence}
@@ -184,7 +223,6 @@
       {#snippet text()}
         <h2>{t("guide_zans_props_title")}</h2>
         <p>{t("guide_zans_props_spin")}</p>
-        <p>{t("guide_zans_props_turns")}</p>
         <div class="prop-choice">
           <span class="prop-label">{t("guide_zans_props_picker")}</span>
           <PropChoiceRow
@@ -193,7 +231,6 @@
             label={t("guide_zans_props_picker")}
             onchange={(pt) => (propType = pt)}
           />
-          <p class="prop-hint">{t("guide_zans_props_picker_hint")}</p>
         </div>
       {/snippet}
     </SequenceShowcase>
@@ -201,13 +238,18 @@
     <section class="families" aria-labelledby="families-heading">
       <div class="families-intro">
         <h2 id="families-heading">{t("guide_zans_families_title")}</h2>
-        <p>{t("guide_zans_families_lead")}</p>
+        <p>
+          {#each sentences(t("guide_zans_families_lead")) as sentence, i (i)}<span
+              class="sentence">{sentence}</span
+            >{/each}
+        </p>
       </div>
       {#each families as family (family.id)}
         <SequenceShowcase
           sequence={family.first.sequence}
           items={family.first.items}
           pool={family.pool}
+          trail={TIP_TRAIL}
           render={PROP_RENDER}
           canvasLetter={false}
           loop
@@ -222,7 +264,11 @@
     </section>
 
     <footer class="collection">
-      <p>{t("guide_zans_collection_body")}</p>
+      <p>
+        {#each sentences(t("guide_zans_collection_body")) as sentence, i (i)}<span
+            class="sentence">{sentence}</span
+          >{/each}
+      </p>
       <div class="links">
         <LinkChip href={ZANS_DIAMOND_COLLECTION_PATH}
           ><i class="fa-solid fa-layer-group" aria-hidden="true"></i>
@@ -260,9 +306,7 @@
     font-size: 1rem;
     font-weight: 600;
   }
-  /* guide.css centres every h1 on the hub's grid; this page reads left. */
   .zans-guide h1 {
-    text-align: left;
     margin: 0;
     padding: 0;
     grid-column: auto;
@@ -277,10 +321,24 @@
     color: var(--theme-text-muted);
     margin: 0;
   }
-  .intro {
+  /* The page header, the families intro and the closing note are centred
+     section breaks; the text beside each player reads left. */
+  .intro,
+  .from-zan,
+  .from-zan-intro,
+  .families-intro,
+  .collection {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: var(--spacing-sm, 8px);
+    text-align: center;
+  }
+  /* A sentence too long for the column wraps into even lines, not one
+     stranded word. */
+  .sentence {
+    display: block;
+    text-wrap: balance;
   }
   .zans-guide .lede {
     font-size: 1.125rem;
@@ -296,6 +354,20 @@
     text-decoration-thickness: 2px;
   }
 
+  .from-zan {
+    gap: var(--spacing-lg, 20px);
+  }
+  .from-zan-video {
+    width: min(100%, 480px);
+    text-align: left;
+  }
+  .from-zan-video :global(figcaption) {
+    color: var(--theme-text-muted);
+  }
+  .from-zan-video :global(figcaption strong) {
+    color: var(--theme-text);
+  }
+
   .prop-choice {
     display: flex;
     flex-direction: column;
@@ -306,9 +378,6 @@
     font-weight: 600;
     color: var(--theme-text-muted);
   }
-  .zans-guide .prop-hint {
-    font-size: var(--font-size-compact, 13px);
-  }
 
   .families {
     container-type: inline-size;
@@ -316,28 +385,10 @@
     flex-direction: column;
     gap: clamp(32px, 5vw, 56px);
   }
-  /* The intro sits on the showcases' grid: heading over the canvas column,
-     lead over the text column, so it does not leave the right half empty. */
-  .families-intro {
-    display: grid;
-    grid-template-columns: clamp(230px, 34cqw, 330px) minmax(0, 1fr);
-    column-gap: clamp(1.25rem, 4cqw, 2.5rem);
-    row-gap: var(--spacing-sm, 8px);
-    align-items: baseline;
-  }
-  @container (max-width: 600px) {
-    .families-intro {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-  .collection {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm, 8px);
-  }
   .links {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: var(--spacing-sm, 8px);
   }
 </style>

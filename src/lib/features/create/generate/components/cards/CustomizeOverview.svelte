@@ -12,11 +12,13 @@ The tiles replace the drill panel's plain text rows through its `listContent`
 slot. Navigation still belongs to SettingsDrillPanel: a placement tile only
 reports which setting was chosen.
 
-Layout follows the panel, not the window. Under 34rem of panel width the
-tiles stack, each pictograph grid as wide as the panel. From 34rem the Style
-tile spans the top and the two placement tiles sit side by side under it, each
-grid sized to the height the pane has, with a floor so the cells stay
-readable; on a short pane the body scrolls instead.
+Layout follows the panel, not the window, and never scrolls on a panel with
+room for the rows: fitOverview (customize-overview-layout.ts) measures the box
+and picks the arrangement that draws the previews largest. Where none draws
+them readably, the placement tiles drop their previews and open their pickers
+like rows; on the smallest panels Style becomes a row too. A preview that is
+dropped stays mounted, hidden, so the panel never rebuilds its pictographs
+when it moves between a small box and a large one.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -40,8 +42,12 @@ readable; on a short pane the body scrolls instead.
     orientStartPlacementVariations,
   } from "#lib/shared/components/placement-picker/placement-variations.js";
   import GenerationStylePanel from "#lib/shared/create/components/GenerationStylePanel.svelte";
+  import {
+    fitOverview,
+    type OverviewLayout,
+  } from "./customize-overview-layout";
 
-  type PlacementScreen = "startPos" | "endPos";
+  type OverviewScreen = "style" | "startPos" | "endPos";
 
   let {
     gridMode = GridMode.DIAMOND,
@@ -53,6 +59,7 @@ readable; on a short pane the body scrolls instead.
     onPropsChange,
     onHandsChange,
     onDashesChange,
+    styleValue,
     startBlocked,
     startValue,
     leftStartOrientation = Orientation.IN,
@@ -71,6 +78,8 @@ readable; on a short pane the body scrolls instead.
     onPropsChange: (v: GenerationStyleAxis) => void;
     onHandsChange: (v: GenerationStyleAxis) => void;
     onDashesChange: (v: GenerationDashChoice) => void;
+    /** The three style choices in words, for the Style row on a small panel. */
+    styleValue: string;
     /** Start placements the generator may NOT use. */
     startBlocked: readonly GridPlacement[];
     startValue: string;
@@ -83,7 +92,7 @@ readable; on a short pane the body scrolls instead.
     endValue: string;
     /** LOOP decides where a sequence ends, so the tile explains and stays put. */
     endLocked: boolean;
-    onOpen: (screen: PlacementScreen) => void;
+    onOpen: (screen: OverviewScreen) => void;
   } = $props();
 
   // The same sixteen pictographs the picker draws, loaded through the helper
@@ -114,6 +123,57 @@ readable; on a short pane the body scrolls instead.
   function endOn(p: GridPlacement) {
     return endAllowedSet.size === 0 || endAllowedSet.has(p);
   }
+
+  let frame = $state<HTMLElement | null>(null);
+  let styleTile = $state<HTMLElement | null>(null);
+  let note = $state<HTMLElement | null>(null);
+  let startHead = $state<HTMLElement | null>(null);
+  let layout = $state<OverviewLayout>("top");
+  let gridSize = $state(0);
+  let styleColumn = $state(0);
+
+  // The Style tile's height at another width: set the width, read the
+  // height, put it back. Two reads per resize, on a tile of a few controls.
+  // The height is freed too, since a hidden Style tile is held at zero.
+  function styleHeightAt(width: number): number {
+    if (!styleTile) return 0;
+    const previous = styleTile.style.cssText;
+    styleTile.style.width = `${width}px`;
+    styleTile.style.height = "auto";
+    const height = styleTile.offsetHeight;
+    styleTile.style.cssText = previous;
+    return height;
+  }
+
+  function fit() {
+    if (!frame || !note || !startHead) return;
+    const width = frame.clientWidth;
+    const height = frame.clientHeight;
+    // Parked out of sight between opens (ExpandedCardStage): keep the last
+    // arrangement, so the next open in the same panel changes nothing.
+    if (width === 0 || height === 0) return;
+    const next = fitOverview({
+      width,
+      height,
+      rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+      noteHeight: note.offsetHeight,
+      headHeight: startHead.offsetHeight,
+      styleHeightAt,
+    });
+    layout = next.layout;
+    gridSize = next.gridSize;
+    styleColumn = next.styleColumn;
+  }
+
+  // A ResizeObserver reports after layout and before paint, so the panel is
+  // first drawn already arranged, including on the frame it moves into a
+  // stage.
+  $effect(() => {
+    if (!frame) return;
+    const observer = new ResizeObserver(() => fit());
+    observer.observe(frame);
+    return () => observer.disconnect();
+  });
 </script>
 
 {#snippet chevron()}
@@ -187,10 +247,38 @@ readable; on a short pane the body scrolls instead.
   </span>
 {/snippet}
 
-<div class="customize-overview drill-grow">
-  <div class="overview-body">
+<div class="customize-overview drill-grow" bind:this={frame}>
+  <div
+    class="overview-body"
+    data-layout={layout}
+    style:--grid-size={gridSize ? `${gridSize}px` : null}
+    style:--style-column={styleColumn ? `${styleColumn}px` : null}
+  >
     <div class="tiles">
-      <section class="tile style-tile">
+      {#if layout === "rows"}
+        <button
+          class="tile placement-tile style-row"
+          type="button"
+          onclick={() => onOpen("style")}
+        >
+          <span class="tile-head">
+            <span class="tile-text">
+              <span class="tile-name">{t("create_ui_style_label")}</span>
+              <span class="tile-value">{styleValue}</span>
+            </span>
+            {@render chevron()}
+          </span>
+        </button>
+      {/if}
+
+      <!-- Kept in the layout when Style is a row, out of sight and out of the
+           tab order, because fitting measures it to decide when it returns. -->
+      <section
+        class="tile style-tile"
+        bind:this={styleTile}
+        inert={layout === "rows"}
+        aria-hidden={layout === "rows" ? "true" : undefined}
+      >
         <span class="tile-head">
           <span class="tile-text">
             <span class="tile-name">{t("create_ui_style_label")}</span>
@@ -214,7 +302,7 @@ readable; on a short pane the body scrolls instead.
         type="button"
         onclick={() => onOpen("startPos")}
       >
-        <span class="tile-head">
+        <span class="tile-head" bind:this={startHead}>
           <span class="tile-text">
             <span class="tile-name">{t("create_ui_start_placement_label")}</span
             >
@@ -259,29 +347,33 @@ readable; on a short pane the body scrolls instead.
 
     <!-- These settings persist across sessions, which is what made a saved
        Choppy props value look like a broken generator. -->
-    <p class="overview-note">{t("create_deep_settings_persist_note")}</p>
+    <p class="overview-note" bind:this={note}>
+      {t("create_deep_settings_persist_note")}
+    </p>
   </div>
 </div>
 
 <style>
   .customize-overview {
-    /* Size containment, so the layout can ask about height too. The overview
-       still fills the drill body (it is a .drill-grow child), and if its tiles
-       need more than that, they overflow into the body's scroller. A
-       container cannot restyle itself, so the layout lives one level in. */
-    container: customize-overview / size;
+    /* Size containment: the overview takes the drill body's box whatever its
+       tiles hold, so the box it measures is the box it was given. On a panel
+       too small even for the rows, the tiles overflow into the body's
+       scroller. */
+    contain: size;
   }
 
   .overview-body {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    min-height: 100%;
+    height: 100%;
   }
 
   .tiles {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    align-items: start;
     gap: 0.75rem;
   }
 
@@ -393,9 +485,27 @@ readable; on a short pane the body scrolls instead.
      when they do. */
   .tile-art {
     display: block;
-    width: 100%;
+    width: var(--grid-size, min(100%, 20rem));
     aspect-ratio: 1;
     margin-inline: auto;
+  }
+
+  /* Rows: the preview stays mounted but takes no room, and the tile reads as
+     its head alone, a row that opens the picker. */
+  [data-layout="style-rows"] .tile-art,
+  [data-layout="rows"] .tile-art {
+    display: none;
+  }
+
+  /* Held at zero height, so the hidden tile adds no empty scroll below the
+     rows on a panel too short for them. */
+  [data-layout="rows"] .style-tile {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
   }
 
   .placement-grid {
@@ -465,41 +575,44 @@ readable; on a short pane the body scrolls instead.
 
   .overview-note {
     flex: 0 0 auto;
-    margin: 0;
+    margin: auto 0 0;
     font-size: var(--font-size-sm, 0.875rem);
     line-height: 1.4;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
     text-align: center;
   }
 
-  /* Side by side: Style across the top, the two placement grids under it.
-     Each grid takes the height the pane leaves after the Style tile and the
-     tiles' own chrome, floored so a cell never shrinks past legibility; on a
-     short pane the drill body scrolls instead. */
-  @container customize-overview (min-width: 34rem) {
-    .tiles {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-template-areas:
-        "style style"
-        "start end";
-      gap: 1rem;
-    }
+  /* Style across the top, the two placement tiles side by side under it. */
+  [data-layout="top"] .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "style style"
+      "start end";
+    gap: 1rem;
+  }
 
-    .style-tile {
-      grid-area: style;
-    }
+  /* Style in a column on the left, the placement tiles beside it: a wide,
+     short panel has the width for three columns and not the height for two
+     rows. */
+  [data-layout="side"] .tiles {
+    grid-template-columns: var(--style-column) repeat(2, minmax(0, 1fr));
+    grid-template-areas: "style start end";
+    gap: 1rem;
+  }
 
-    .start-tile {
-      grid-area: start;
-    }
+  [data-layout="top"] .style-tile,
+  [data-layout="side"] .style-tile {
+    grid-area: style;
+  }
 
-    .end-tile {
-      grid-area: end;
-    }
+  [data-layout="top"] .start-tile,
+  [data-layout="side"] .start-tile {
+    grid-area: start;
+  }
 
-    .placement-tile .tile-art {
-      width: min(100%, max(20rem, calc(100cqh - 20rem)));
-    }
+  [data-layout="top"] .end-tile,
+  [data-layout="side"] .end-tile {
+    grid-area: end;
   }
 
   @media (prefers-reduced-motion: reduce) {

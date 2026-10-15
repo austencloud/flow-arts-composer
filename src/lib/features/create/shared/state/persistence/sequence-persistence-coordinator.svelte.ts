@@ -153,7 +153,7 @@ export function createSequencePersistenceCoordinator(
       if (!persistenceService || !state.autoSaveEnabled) return;
 
       try {
-        await persistenceService.clearCurrentState();
+        await persistenceService.clearCurrentState(tabId ?? cachedActiveTab);
       } catch (error) {
         console.error(
           "❌ PersistenceCoordinator: Failed to clear state:",
