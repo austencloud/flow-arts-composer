@@ -25,14 +25,12 @@ private:
     struct FVoice
     {
         TObjectPtr<UAudioComponent> Audio;
+        FName Asset;
         float BaseGain = 1.f;
-        float MaxDistanceCm = 6000.f;
-        bool bNight = false;
     };
     TArray<FVoice> Voices;
     bool bEnabled = true;
     bool bJamActive = false;
     float HourOfDay = 18.5f;
-    float Elapsed = 0.f;
-    void AddVoice(const TCHAR* Asset, const FVector& LocalPosition, float Gain, float MaxDistanceCm, bool bNight = false);
+    void AddVoice(const TCHAR* Asset, const FVector& LocalPosition, float Gain, float MaxDistanceCm);
 };

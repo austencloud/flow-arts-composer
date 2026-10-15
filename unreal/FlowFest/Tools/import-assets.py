@@ -57,7 +57,7 @@ def import_file(path, folder, name, mesh=False):
                         connect_property(leaf, 'A', u.MaterialProperty.MP_OPACITY_MASK)
                         connect_property(leaf, 'RGB', u.MaterialProperty.MP_SUBSURFACE_COLOR)
                 ensure_instancing(material)
-                if (folder.startswith('/Game/FlowFest/Assets/Trees/') and material.get_name().endswith('_leaves')) or job_wind_family(folder):
+                if ((folder.startswith('/Game/FlowFest/Assets/Trees/') and material.get_name().endswith('_leaves')) or job_wind_family(folder)) and not ME.get_material_property_input_node(material, u.MaterialProperty.MP_WORLD_POSITION_OFFSET):
                     add_foliage_wind(material, folder.startswith('/Game/FlowFest/Assets/Trees/'))
                 ME.recompile_material(material)
                 ED.save_loaded_asset(material)

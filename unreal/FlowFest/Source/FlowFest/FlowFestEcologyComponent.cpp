@@ -30,6 +30,10 @@ UFlowFestEcologyComponent::UFlowFestEcologyComponent()
 
 bool UFlowFestEcologyComponent::BuildFromSite()
 {
+    for (UHierarchicalInstancedStaticMeshComponent* Group : Groups)
+        if (Group) Group->DestroyComponent();
+    Groups.Reset();
+    WindMaterials.Reset();
     FString Source;
     if (!FFileHelper::LoadFileToString(Source, *(FPaths::ProjectContentDir() / TEXT("Data/site.json")))) return false;
     TSharedPtr<FJsonObject> Site;
@@ -42,6 +46,13 @@ bool UFlowFestEcologyComponent::BuildFromSite()
         { TEXT("HazelShrub"), TEXT("woodland-hazel-shrub") },
     };
     int32 Total = 0;
+    int32 Expected = 0;
+    for (const TCHAR* Field : { TEXT("grass"), TEXT("groundLife") })
+    {
+        const TArray<TSharedPtr<FJsonValue>>* Items = nullptr;
+        if (!Site->TryGetArrayField(Field, Items) || !Items) return false;
+        Expected += Items->Num();
+    }
     for (int32 FamilyIndex = 0; FamilyIndex < 3; ++FamilyIndex)
     {
         UStaticMesh* Mesh = EcologyMesh(Families[FamilyIndex].Asset);
@@ -94,7 +105,7 @@ bool UFlowFestEcologyComponent::BuildFromSite()
         }
     }
     UE_LOG(LogTemp, Display, TEXT("Flow Fest native ecology: %d source placements in %d families"), Total, Groups.Num());
-    return Total > 0;
+    return Groups.Num() == 3 && Total == Expected && Expected > 0;
 }
 
 void UFlowFestEcologyComponent::SetViewDistances(float GrassNearCm, float GrassFarCm, float UnderstoryFarCm)

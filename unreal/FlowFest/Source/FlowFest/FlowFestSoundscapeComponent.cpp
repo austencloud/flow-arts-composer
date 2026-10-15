@@ -2,7 +2,6 @@
 #include "FlowFestWorld.h"
 #include "Components/AudioComponent.h"
 #include "Engine/World.h"
-#include "GameFramework/PlayerController.h"
 #include "Sound/SoundAttenuation.h"
 #include "Sound/SoundWave.h"
 
@@ -12,7 +11,7 @@ UFlowFestSoundscapeComponent::UFlowFestSoundscapeComponent()
     PrimaryComponentTick.TickInterval = 0.2f;
 }
 
-void UFlowFestSoundscapeComponent::AddVoice(const TCHAR* Asset, const FVector& LocalPosition, float Gain, float MaxDistanceCm, bool bNight)
+void UFlowFestSoundscapeComponent::AddVoice(const TCHAR* Asset, const FVector& LocalPosition, float Gain, float MaxDistanceCm)
 {
     const FString Path = FString::Printf(TEXT("/Game/FlowFest/Audio/%s.%s"), Asset, Asset);
     USoundWave* Wave = LoadObject<USoundWave>(nullptr, *Path);
@@ -42,20 +41,23 @@ void UFlowFestSoundscapeComponent::AddVoice(const TCHAR* Asset, const FVector& L
     Audio->RegisterComponent();
     Audio->SetVolumeMultiplier(0.f);
     if (bEnabled) Audio->Play();
-    Voices.Add({ Audio, Gain, MaxDistanceCm, bNight });
+    Voices.Add({ Audio, FName(Asset), Gain });
 }
 
 bool UFlowFestSoundscapeComponent::BuildFromSite(AFlowFestWorld* SiteWorld)
 {
     if (!SiteWorld) return false;
+    for (FVoice& Voice : Voices)
+        if (Voice.Audio) Voice.Audio->DestroyComponent();
+    Voices.Reset();
     auto SitePosition = [SiteWorld](const TCHAR* Id) { return SiteWorld->GetLandmark(Id) + FVector(0.f, 0.f, 180.f); };
     AddVoice(TEXT("WoodlandWind"), SitePosition(TEXT("start")), .32f, 38000.f);
     AddVoice(TEXT("Birds"), SitePosition(TEXT("camp-upper")) + FVector(1500, 400, 450), .28f, 17000.f);
-    AddVoice(TEXT("Insects"), SitePosition(TEXT("camp-lower")) + FVector(-800, -700, 80), .15f, 13500.f, true);
+    AddVoice(TEXT("Insects"), SitePosition(TEXT("camp-lower")) + FVector(-800, -700, 80), .15f, 13500.f);
     AddVoice(TEXT("Camp"), SitePosition(TEXT("camp-lower")), .26f, 9000.f);
     AddVoice(TEXT("Fire"), SitePosition(TEXT("fire")), .48f, 6000.f);
     AddVoice(TEXT("Crowd"), SitePosition(TEXT("fire")) + FVector(300, 0, 0), .22f, 10500.f);
-    return Voices.Num() > 0;
+    return Voices.Num() == 6;
 }
 
 void UFlowFestSoundscapeComponent::SetEnabled(bool bInEnabled)
@@ -76,21 +78,15 @@ void UFlowFestSoundscapeComponent::TickComponent(float DeltaTime, ELevelTick Tic
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
     if (!bEnabled || !GetWorld()) return;
-    Elapsed += DeltaTime;
     const bool bNight = HourOfDay < 6.f || HourOfDay >= 19.f;
-    const APlayerController* Player = GetWorld()->GetFirstPlayerController();
-    FVector Listener = FVector::ZeroVector;
-    FRotator Rotation;
-    if (Player) Player->GetPlayerViewPoint(Listener, Rotation);
-    for (int32 Index = 0; Index < Voices.Num(); ++Index)
+    for (FVoice& Voice : Voices)
     {
-        FVoice& Voice = Voices[Index];
         if (!Voice.Audio) continue;
         float Gain = Voice.BaseGain;
-        if (Index == 1) Gain *= bNight ? .28f : 1.f;
-        if (Index == 2) Gain *= bNight ? 1.f : .17f;
-        if (Index == 4) Gain *= bNight ? 1.f : .55f;
-        if (Index == 5) Gain *= bJamActive ? 1.f : .45f;
+        if (Voice.Asset == TEXT("Birds")) Gain *= bNight ? .28f : 1.f;
+        if (Voice.Asset == TEXT("Insects")) Gain *= bNight ? 1.f : .17f;
+        if (Voice.Asset == TEXT("Fire")) Gain *= bNight ? 1.f : .55f;
+        if (Voice.Asset == TEXT("Crowd")) Gain *= bJamActive ? 1.f : .45f;
         // The sound engine handles spherical distance and line-of-sight obstruction.
         // Smooth only the day/jam gain changes here, avoiding a step at dusk.
         const float Current = Voice.Audio->VolumeMultiplier;

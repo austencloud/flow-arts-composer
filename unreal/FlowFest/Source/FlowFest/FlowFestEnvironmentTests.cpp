@@ -1,0 +1,50 @@
+#if WITH_DEV_AUTOMATION_TESTS
+#include "Misc/AutomationTest.h"
+#include "Dom/JsonObject.h"
+#include "Engine/StaticMesh.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+#include "Sound/SoundWave.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFlowFestEnvironmentAssetsTest, "FlowFest.Environment.EcologyAndSoundAssets",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FFlowFestEnvironmentAssetsTest::RunTest(const FString& Parameters)
+{
+    FString Source;
+    if (!TestTrue(TEXT("Exported site.json is present"),
+        FFileHelper::LoadFileToString(Source, *(FPaths::ProjectContentDir() / TEXT("Data/site.json"))))) return false;
+    TSharedPtr<FJsonObject> Site;
+    if (!TestTrue(TEXT("Exported site.json parses"),
+        FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Source), Site) && Site.IsValid())) return false;
+
+    const TArray<TSharedPtr<FJsonValue>>* Grass = nullptr;
+    const TArray<TSharedPtr<FJsonValue>>* GroundLife = nullptr;
+    if (!TestTrue(TEXT("Grass placements exist"), Site->TryGetArrayField(TEXT("grass"), Grass) && Grass)) return false;
+    if (!TestTrue(TEXT("Understory placements exist"), Site->TryGetArrayField(TEXT("groundLife"), GroundLife) && GroundLife)) return false;
+    TestTrue(TEXT("Source grass density retained"), Grass->Num() >= 20000);
+    TestTrue(TEXT("Source understory retained"), GroundLife->Num() >= 20);
+
+    const TSharedPtr<FJsonObject>* Audit = nullptr;
+    if (TestTrue(TEXT("Ecology clearance audit exists"), Site->TryGetObjectField(TEXT("ecologyAudit"), Audit) && Audit))
+    {
+        TestEqual(TEXT("No grass intersects performer routes"), (*Audit)->GetIntegerField(TEXT("grassRouteIntrusions")), 0);
+        TestEqual(TEXT("No understory intersects performer routes"), (*Audit)->GetIntegerField(TEXT("groundLifeRouteIntrusions")), 0);
+    }
+    for (const TCHAR* Name : { TEXT("ForestGrass"), TEXT("DampSedge"), TEXT("HazelShrub") })
+    {
+        const FString Path = FString::Printf(TEXT("/Game/FlowFest/Assets/Ecology/%s.%s"), Name, Name);
+        TestNotNull(*FString::Printf(TEXT("Imported ecology mesh %s"), Name), LoadObject<UStaticMesh>(nullptr, *Path));
+    }
+    for (const TCHAR* Name : { TEXT("WoodlandWind"), TEXT("Birds"), TEXT("Insects"), TEXT("Camp"), TEXT("Fire"), TEXT("Crowd") })
+    {
+        const FString Path = FString::Printf(TEXT("/Game/FlowFest/Audio/%s.%s"), Name, Name);
+        USoundWave* Wave = LoadObject<USoundWave>(nullptr, *Path);
+        if (TestNotNull(*FString::Printf(TEXT("Imported sound wave %s"), Name), Wave))
+            TestTrue(*FString::Printf(TEXT("Sound wave %s loops"), Name), Wave->bLooping);
+    }
+    return true;
+}
+#endif
