@@ -34,7 +34,7 @@
     ZANS_DIAMOND_CREDIT,
     ZANS_DIAMOND_FAMILIES,
     ZANS_DIAMOND_ORIGINAL,
-    ZANS_DIAMOND_VIDEOS,
+    ZANS_DIAMOND_TUTORIAL,
     zansDiamondStrip,
     zansDiamondVariationLabel,
     type ZansDiamondVariation,
@@ -167,17 +167,13 @@
         <h2 id="from-zan-heading">{t("guide_zans_from_zan_title")}</h2>
         <p>{t("guide_zans_from_zan_body")}</p>
       </div>
-      <div class="from-zan-videos">
-        {#each ZANS_DIAMOND_VIDEOS as video (video.id)}
-          <SourceVideoCard
-            id={video.id}
-            title={video.title}
-            creator={ZANS_DIAMOND_CREDIT.name}
-            year={video.year}
-            start={video.start}
-            note={video.note ? t(video.note) : ""}
-          />
-        {/each}
+      <div class="from-zan-video">
+        <SourceVideoCard
+          id={ZANS_DIAMOND_TUTORIAL.id}
+          title={ZANS_DIAMOND_TUTORIAL.title}
+          creator={ZANS_DIAMOND_CREDIT.name}
+          year={ZANS_DIAMOND_TUTORIAL.year}
+        />
       </div>
       {#if ZANS_DIAMOND_CREDIT.href}
         <LinkChip
@@ -336,18 +332,14 @@
   .from-zan {
     gap: var(--spacing-lg, 20px);
   }
-  /* Three cards a row on a wide column, wrapping to one per row on a phone. */
-  .from-zan-videos {
-    align-self: stretch;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: var(--spacing-lg, 20px);
+  .from-zan-video {
+    width: min(100%, 480px);
     text-align: left;
   }
-  .from-zan-videos :global(figcaption) {
+  .from-zan-video :global(figcaption) {
     color: var(--theme-text-muted);
   }
-  .from-zan-videos :global(figcaption strong) {
+  .from-zan-video :global(figcaption strong) {
     color: var(--theme-text);
   }
 
