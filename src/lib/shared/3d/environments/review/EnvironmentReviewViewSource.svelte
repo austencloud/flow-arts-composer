@@ -2,6 +2,10 @@
   /** Connect an environment harness to the app-wide copy/replay view owner. */
   import { onMount } from "svelte";
   import { useTask, useThrelte } from "@threlte/core";
+  import {
+    resolveThrelteScene,
+    resolveThrelteRenderer,
+  } from "../../scene-boot/threlte-handles";
   import { Raycaster } from "three";
   import { registerViewSource } from "#lib/shared/review/view-capture.js";
   import {
@@ -24,7 +28,7 @@
   const cameraPose = () => readEnvironmentReviewPose(threlte.camera.current);
   const target = () =>
     inspectEnvironmentReviewTarget(
-      threlte.scene,
+      resolveThrelteScene(threlte.scene),
       threlte.camera.current,
       raycaster
     );
@@ -34,10 +38,7 @@
       sceneId,
       pose: cameraPose,
       canvas: () => {
-        const renderer =
-          (threlte.renderer as { current?: import("three").WebGLRenderer })
-            .current ??
-          (threlte.renderer as unknown as import("three").WebGLRenderer);
+        const renderer = resolveThrelteRenderer(threlte.renderer);
         return renderer?.domElement ?? null;
       },
       target,

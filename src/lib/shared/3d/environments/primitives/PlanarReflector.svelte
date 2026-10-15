@@ -94,7 +94,7 @@
     const geometry = new ShapeGeometry(shape);
     geometry.computeBoundingBox();
     const bounds = geometry.boundingBox;
-    const positions = geometry.attributes.position;
+    const positions = geometry.getAttribute("position");
     const uv = geometry.attributes.uv;
     if (bounds && uv) {
       const spanX = Math.max(bounds.max.x - bounds.min.x, 0.001);

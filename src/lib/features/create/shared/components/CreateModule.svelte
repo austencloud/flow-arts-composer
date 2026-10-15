@@ -230,7 +230,8 @@
       authDrawerState.show(
         "signup",
         "step-cap-guest",
-        CreateModuleState?.sequenceState.currentSequence?.id
+        CreateModuleState?.sequenceState.currentSequence?.id,
+        CreateModuleState?.sequenceState.currentSequence
       );
     }
   }

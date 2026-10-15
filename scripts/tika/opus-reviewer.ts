@@ -181,7 +181,7 @@ const OPUS_TOOLS: Anthropic.Tool[] = [
         filepath: {
           type: "string",
           description:
-            'Path relative to project root (e.g., "mcp-server/data/letter-types.json")',
+            'Path relative to project root (e.g., "mcp-server-pkg/data/letter-types.json")',
         },
       },
       required: ["filepath"],
@@ -209,7 +209,8 @@ const OPUS_TOOLS: Anthropic.Tool[] = [
 // Tool Execution
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Load knowledge base data
+// Load knowledge base data. Glossary and letter types are generated from
+// @tka/domain into mcp-server-pkg/data by scripts/sync-mcp-data.mjs.
 const PROJECT_ROOT = process.cwd();
 
 function loadJsonFile(relativePath: string): unknown {
@@ -217,17 +218,17 @@ function loadJsonFile(relativePath: string): unknown {
   if (fs.existsSync(fullPath)) {
     return JSON.parse(fs.readFileSync(fullPath, "utf-8"));
   }
+  // Without this the verification tools quietly answer "not loaded".
+  console.warn(`[opus-reviewer] Missing data file: ${relativePath}`);
   return null;
 }
 
-const glossary = loadJsonFile("mcp-server/data/tka-glossary.json") as Record<
-  string,
-  unknown
-> | null;
-const letterTypes = loadJsonFile("mcp-server/data/letter-types.json") as Record<
-  string,
-  unknown
-> | null;
+const glossary = loadJsonFile(
+  "mcp-server-pkg/data/tka-glossary.json"
+) as Record<string, unknown> | null;
+const letterTypes = loadJsonFile(
+  "mcp-server-pkg/data/letter-types.json"
+) as Record<string, unknown> | null;
 
 // Load pictograph dataframe
 function loadPictographs(): Array<Record<string, string>> {

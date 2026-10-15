@@ -28,6 +28,8 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { authPromptCopy } from "../domain/auth-prompt-copy";
+  import { getMaxSteps } from "../domain/access-tier";
+  import { ENCORE_STEPS } from "../state/guest-encore-state.svelte";
   import { onDestroy, tick, untrack } from "svelte";
 
   interface Props {
@@ -131,10 +133,10 @@
 
   onDestroy(dropPhoneSession);
 
-  // The full sheet sits on the person's own background, with a sequence
-  // playing beside the sign-in choices. The navigation panel and the short
-  // step-cap prompt stay plain: they already sit inside the app's chrome.
-  const withArt = $derived(!embedded && !compact);
+  // The sheet sits on the person's own background, with a sequence playing
+  // beside the sign-in choices. The navigation panel stays plain: it already
+  // sits inside the app's chrome.
+  const withArt = $derived(!embedded);
   const backgroundType = $derived(
     getSettings().backgroundType || BackgroundType.COSMIC
   );
@@ -143,6 +145,13 @@
       ?.gradient ?? "#0b0d12"
   );
   const showcase = $derived(withArt ? import("./AuthShowcase.svelte") : null);
+
+  // The step-cap prompt draws the limit: the steps the person made, lit, out of
+  // the 64 an account allows. A one-time extension marks the steps it adds.
+  const ACCOUNT_STEPS = getMaxSteps("user");
+  const stepsMade = $derived(
+    Math.min(ACCOUNT_STEPS, artifact?.steps.length || getMaxSteps("guest"))
+  );
 
   const titleId = $derived(`${idPrefix}-title`);
   const descriptionId = $derived(`${idPrefix}-description`);
@@ -177,6 +186,7 @@
   class:embedded
   class:split={withArt}
   class:phone-up={withArt && showPhoneSignIn}
+  class:more-open={compact && showOtherProviders}
   class:encore-offer={encoreOffer}
   aria-labelledby={titleId}
   aria-describedby={descriptionId}
@@ -257,6 +267,20 @@
           {authPromptCopy(content.body)}
         </Crossfade>
       </div>
+      {#if compact}
+        <div class="step-meter" aria-hidden="true">
+          {#each { length: ACCOUNT_STEPS }, index (index)}
+            <span
+              class="step-cell"
+              class:made={index < stepsMade}
+              style:--along={index / Math.max(1, stepsMade - 1)}
+              class:offered={encoreOffer &&
+                index >= stepsMade &&
+                index < ENCORE_STEPS}
+            ></span>
+          {/each}
+        </div>
+      {/if}
     </div>
 
     <div class="auth-methods">
@@ -505,7 +529,19 @@
     height: clamp(9rem, 24svh, 14rem);
     padding: 0.75rem;
     box-sizing: border-box;
-    transition: height var(--duration-normal) var(--ease-standard);
+    transition:
+      height var(--duration-normal) var(--ease-standard),
+      padding var(--duration-normal) var(--ease-standard);
+  }
+
+  /* On a phone the step-cap sheet folds its band away while the other sign-in
+     choices are open, so they fit without scrolling. */
+  @media (width < 45rem) {
+    .more-open .art-stage {
+      height: 0;
+      padding-block: 0;
+      overflow: hidden;
+    }
   }
 
   /* The code needs its full square, so the band opens up for it. */
@@ -952,6 +988,86 @@
     padding: 2rem 1.5rem 1rem;
     border-color: var(--theme-stroke);
     box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.25);
+  }
+
+  /* The step-cap sheet carries less, so its split is narrower and shorter. */
+  .contextual-auth-prompt.split.compact {
+    width: min(calc(100vw - 2rem), 28rem);
+  }
+
+  .split.compact .sign-in-column {
+    padding: 1.25rem 1.25rem 0.75rem;
+  }
+
+  @media (min-width: 45rem) {
+    .contextual-auth-prompt.split.compact {
+      width: min(calc(100vw - 2rem), clamp(44rem, 38vw, 60rem));
+      min-height: min(clamp(28rem, 46vh, 34rem), calc(100dvh - 3rem));
+    }
+
+    .split.compact .sign-in-column {
+      padding: clamp(1.5rem, 3vw, 2.75rem);
+    }
+
+    .split.compact .prompt-heading {
+      font-size: 1.875rem;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+  }
+
+  /* Sixteen across, four down: one lit stretch of eight in a field of 64. */
+  .step-meter {
+    display: grid;
+    grid-template-columns: repeat(16, minmax(0, 1fr));
+    gap: 0.25rem;
+    margin-top: 1.25rem;
+  }
+
+  /* Short landscape screens: the step-cap sheet tightens before it scrolls. */
+  @media (max-height: 35rem) and (min-width: 45rem) {
+    .split.compact .sign-in-column {
+      padding-block: 0.5rem;
+    }
+
+    .split.compact .fac-signature {
+      margin-bottom: 0.5rem;
+    }
+
+    .split.compact .prompt-heading {
+      font-size: 1.5rem;
+    }
+
+    .split.compact .prompt-copy {
+      padding-bottom: 0.75rem;
+    }
+
+    .split.compact .step-meter {
+      margin-top: 0.75rem;
+    }
+  }
+
+  .step-cell {
+    aspect-ratio: 1;
+    background: color-mix(in srgb, var(--theme-text, #f8fafc) 6%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-text, #f8fafc) 16%, transparent);
+    border-radius: 0.2rem;
+  }
+
+  .step-cell.made {
+    /* The lit run fades from blue to red, one prop to the other. */
+    background: color-mix(
+      in oklab,
+      var(--prompt-blue),
+      var(--prompt-red) calc(var(--along) * 100%)
+    );
+    border-color: transparent;
+  }
+
+  .step-cell.offered {
+    background: color-mix(in srgb, var(--prompt-blue) 22%, transparent);
+    border-color: color-mix(in srgb, var(--prompt-blue) 60%, white);
   }
 
   .fac-signature {

@@ -161,7 +161,7 @@
       minDistance={2}
       maxDistance={maxOrbitDistance}
       maxPolarAngle={terrainSafeOrbit ? Math.PI / 2 - 0.02 : Math.PI / 2 + 0.04}
-      {collisionMeshes}
+      colliderMeshes={collisionMeshes}
       onchange={constrainAndSyncOrbit}
     />
   </T.PerspectiveCamera>

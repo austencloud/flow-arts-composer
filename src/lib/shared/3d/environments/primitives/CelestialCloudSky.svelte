@@ -71,6 +71,7 @@
     });
     cloudSystem.setAccessibility({
       reducedMotion: prefersReducedMotion(),
+      highContrast: false,
     });
     prepareCanvasContext(context);
     cloudSystem.draw(context, logicalDimensions);

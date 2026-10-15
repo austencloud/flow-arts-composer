@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveThrelteRenderer } from "../../../scene-boot/threlte-handles";
   import { useThrelte } from "@threlte/core";
   import { onMount } from "svelte";
   import {
@@ -28,7 +29,8 @@
   }
 
   let { scene = null, strength = 0.92 }: Props = $props();
-  const { renderer } = useThrelte();
+  const { renderer: rendererValue } = useThrelte();
+  const renderer = resolveThrelteRenderer(rendererValue);
   const groundDetailDisabled =
     import.meta.env.DEV &&
     typeof window !== "undefined" &&

@@ -174,7 +174,7 @@
 
     if (!config.enabled) return;
     const meteor = pool.find((candidate) => !candidate.active) ?? pool[0];
-    spawnMeteor(meteor, true);
+    if (meteor) spawnMeteor(meteor, true);
   });
 
   useTask((delta) => {

@@ -42,6 +42,7 @@
     DEFAULT_PERFORMER_HAND_DISTANCE,
     type PerformerHandDistance,
   } from "#lib/shared/3d/domain/performer-hand-distance.js";
+  import { QualityTier } from "../effects/types";
   import { buildTipEffectMap } from "#lib/shared/animation-engine/domain/tip-effect-map.js";
   import EffectOrchestrator3D from "#lib/shared/3d/effects/EffectOrchestrator3D.svelte";
 
@@ -124,6 +125,15 @@
   }
 
   const props: Props = $props();
+  const effectQualityTier = $derived(
+    props.effectQualityTier === "low"
+      ? QualityTier.LOW
+      : props.effectQualityTier === "medium"
+        ? QualityTier.MEDIUM
+        : props.effectQualityTier === "high"
+          ? QualityTier.HIGH
+          : undefined
+  );
   const tipEffectMap = $derived(buildTipEffectMap(props.effectId));
   const rigGroundOffset = $derived(
     props.position.y - userProportionsState.groundY
@@ -346,7 +356,7 @@
         currentStep={performerState.currentStepIndex + performerState.progress}
         totalSteps={performerState.totalSteps}
         seamlesslyLoopable={performerState.isCircular}
-        qualityTierOverride={props.effectQualityTier}
+        qualityTierOverride={effectQualityTier}
       />
     {/if}
   {/snippet}

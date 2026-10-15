@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveThrelteScene } from "../../../scene-boot/threlte-handles";
   import { T, useTask, useThrelte } from "@threlte/core";
   import { userProportionsState } from "@austencloud/scene-3d";
   import { onDestroy, untrack } from "svelte";
@@ -35,7 +36,8 @@
   const BASIN_NODE_NAME = "Ember_Volcanic_Basin_living_caldera";
 
   let { stageRadius = 3 }: Props = $props();
-  const { scene } = useThrelte();
+  const { scene: sceneValue } = useThrelte();
+  const scene = resolveThrelteScene(sceneValue);
   const groundY = $derived(userProportionsState.groundY);
   let basin = $state<Mesh | null>(null);
   const families = ["cold", "iron", "glass"] as const;
@@ -76,7 +78,9 @@
     const point = new Vector3();
     const world = new Float32Array(attribute.count * 3);
     for (let index = 0; index < attribute.count; index += 1) {
-      point.fromBufferAttribute(attribute, index).applyMatrix4(mesh.matrixWorld);
+      point
+        .fromBufferAttribute(attribute, index)
+        .applyMatrix4(mesh.matrixWorld);
       world[index * 3] = point.x;
       world[index * 3 + 1] = point.y;
       world[index * 3 + 2] = point.z;
@@ -87,7 +91,9 @@
   const ecology = $derived(
     createEmberSurfaceEcology(stageRadius, 9413, heightField)
   );
-  const scatterKey = $derived(`${stageRadius}:${heightField ? "seated" : "flat"}`);
+  const scatterKey = $derived(
+    `${stageRadius}:${heightField ? "seated" : "flat"}`
+  );
 
   const apronGeometry = $derived.by(() => {
     const field = heightField;
