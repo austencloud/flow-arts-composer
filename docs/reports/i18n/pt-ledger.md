@@ -81,3 +81,9 @@
 
 - 4 older keys restored Codex as a product name (was códice): learn_back_to_codex, tab_choreo_card_codex, tab_desc_choreo_card_codex, tab_learn_codex.
 - Gate: `Tests  66 passed (66)`.
+
+## REV (coordinator) — 2026-10-14
+
+- gpt-6-astra review of a sample of this wave flagged a handful of keys (see coordinator notes); all fixes applied.
+- Codex restored as a product name where older strings translated it; Double-Staff uses the glossary prop term.
+- Gate: `Tests 66 passed (66)`.
