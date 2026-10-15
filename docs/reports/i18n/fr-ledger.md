@@ -77,3 +77,15 @@
 - Legitimately identical values: Notation, Admin, Studio, Mandala, Art, Collections, Tunnel, Navigation, Animation, Performance, Image and Actions.
 - Prose review: ai-bust mechanical pass on the batch output returned no HIGH/CRITICAL findings. Judgment pass preserved source meaning and concise UI phrasing; repeated shortcut descriptions serve consistent commands rather than prose templates.
 - No primary-checkout access, integration, push, dependency installation, broad checks or dev server was performed. This worktree and branch remain for the coordinator.
+
+## F1 — 2026-10-14
+
+- Batch: F1, `batch-F1.json`; 0 translated keys, 18 retranslated keys, 0 reviewed keys. Formality correction only.
+- Apply result: `messages/fr.json: inserted 0, replaced 18, refused 0`.
+- Catalog diff before ledger: only `messages/fr.json` changed; 18 insertions, 18 deletions (18 existing values replaced, no key additions).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files 1 passed (1)`; `Tests 66 passed (66)`; duration 7.16s; exit 0.
+- Glossary: section 11 informal `tu`, with corresponding verb and possessive forms. Account action links use infinitives `Se connecter` and `S'inscrire`. Example email uses neutral `nom@exemple.com`. Existing wording, punctuation and meaning otherwise preserved.
+- Existing source discrepancies preserved by this formality-only scope: `feedback_group_feedback_desc` describes notification when feedback is taken into account rather than the English status changes and replies; `feedback_notification_prefs_subtitle` describes choosing notifications rather than delivery and alert types. These are established text differences, not resolved in F1.
+- Uncertain glossary terms: none.
+- No primary-checkout access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator.
