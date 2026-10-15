@@ -44,3 +44,19 @@
 - Legitimately identical values include French cognates (Animation, Performances, Effort, Mode, Tempo, Arc, Concave, copies, Format, Formation, Normal, Tunnel, instance, Saturation, Collections, Image, Notes, Public, air, Compositions), notation/product names, A–Z, FPS, Full HD and placeholder-only labels.
 - Prose review: ai-bust mechanical pass on the batch output returned no HIGH/CRITICAL findings after replacing seven source-style em dashes with sentence punctuation. Judgment pass preserved source meaning and avoided added claims.
 - No primary-checkout access, integration, push, dependency installation, broad checks or dev server was performed. This worktree and branch remain for the coordinator.
+
+## R4 — 2026-10-14
+
+- Batch: R4, `batch-R4.json`; 852 translated keys, 0 retranslation entries, 0 review entries.
+- Apply result: `messages/fr.json: inserted 852, replaced 0, refused 0`.
+- Catalog diff before ledger: `messages/fr.json | 854`; 853 insertions, 1 deletion (net +852 lines). Only the catalog changed before this ledger update.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files 1 passed (1)`; `Tests 66 passed (66)`; duration 7.97s; exit 0.
+- Focused scope verification: all 852 batch keys added, every previous catalog value unchanged, every output value applied. Placeholder multiplicity, markup parity, single-line values and absence of vous/votre/vos checked.
+- Glossary: informal `tu`; infinitive action buttons; step = `étape`; beat = `temps`; prop = `accessoire`; staff = `bâton`; club = `massue`; performer = `artiste`; grid = `grille`; timing = `timing`; Rotated LOOPs = `LOOP pivotés`. Flow Arts Composer, TKA, LOOP, Post Studio, Choreo Card(s), platform brands, placeholders and technical identifiers are retained.
+- Navigation follows earlier batches: Construct = `Construire`, Generate = `Générer`, Assemble = `Assembler`, Fuse = `Fusionner`, Tunnel = `Tunnel`; 3D Studio = `Studio 3D`. These additional surface names are not specified in the glossary and have not had native review.
+- Post Studio terminology outside the glossary: take = `prise`, map timing = `caler le timing`, tap = `appui` or the action `marquer`, landing = `arrivée`, move = `mouvement`, pass = `passage`, playhead = `tête de lecture`. Landing is interpreted from the supplied description of props reaching positions; no independent behavior or native terminology review was performed.
+- Theme and avatar gradient labels are translated as display labels (for example Ember = `Braise`, Pride = `Fierté`, Void = `Vide`); their keys and identifiers are unchanged. No native review was available.
+- Legitimately identical values: Style, Standard, Reel, Story, Timing, Tempo, Animation, Mandala and `Version {version}`.
+- Prose review: ai-bust mechanical pass on the batch output returned no HIGH/CRITICAL findings. Judgment pass preserved source meaning, concise labels and the source's playful guest-limit prompts.
+- No primary-checkout access, integration, push, dependency installation, broad checks or dev server was performed. This worktree and branch remain for the coordinator.
