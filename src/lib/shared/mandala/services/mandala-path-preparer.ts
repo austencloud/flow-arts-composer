@@ -91,6 +91,11 @@ export function resolveMandalaTipOffsets(
   trackingMode: TrackingMode,
   pointMode: "effective" | "baseline" = "effective"
 ): MandalaTipOffset[] {
+  // Bare hands have no prop tips; trace the center the hand is rendered around.
+  if (propType?.toLowerCase() === "hand") {
+    return [{ dx: 0, dy: 0 }];
+  }
+
   // Static sequence mandalas use the shipped prop geometry. Live animation
   // overlays use effective points so Effects Lab assignments still line up with
   // the trails on screen.
