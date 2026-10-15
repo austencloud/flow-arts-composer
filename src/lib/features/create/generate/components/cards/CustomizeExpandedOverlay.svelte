@@ -538,23 +538,25 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
         {t("create_ui_prop_orientations")}
       </h5>
     {/if}
-    <div class="ori-row">
-      <span class="ori-hand ori-blue">{t("create_ui_left")}</span>
-      <PropOrientationControl
-        hand="left"
-        orientation={localLeftOri}
-        allowedOrientations={availableStartOrientations}
-        onOrientationChange={handleLeftOriChange}
-      />
-    </div>
-    <div class="ori-row">
-      <span class="ori-hand ori-red">{t("create_ui_right")}</span>
-      <PropOrientationControl
-        hand="right"
-        orientation={localRightOri}
-        allowedOrientations={availableStartOrientations}
-        onOrientationChange={handleRightOriChange}
-      />
+    <div class="ori-hands">
+      <div class="ori-row">
+        <span class="ori-hand ori-blue">{t("create_ui_left")}</span>
+        <PropOrientationControl
+          hand="left"
+          orientation={localLeftOri}
+          allowedOrientations={availableStartOrientations}
+          onOrientationChange={handleLeftOriChange}
+        />
+      </div>
+      <div class="ori-row">
+        <span class="ori-hand ori-red">{t("create_ui_right")}</span>
+        <PropOrientationControl
+          hand="right"
+          orientation={localRightOri}
+          allowedOrientations={availableStartOrientations}
+          onOrientationChange={handleRightOriChange}
+        />
+      </div>
     </div>
   </section>
 {/snippet}
@@ -586,6 +588,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   }
 
   .ori-block {
+    container: ori-block / inline-size;
     display: flex;
     flex-direction: column;
     gap: 0.625rem;
@@ -601,6 +604,22 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     font-size: var(--font-size-sm, 0.875rem);
     font-weight: 600;
     color: var(--theme-text, white);
+  }
+
+  .ori-hands {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  /* Wide enough for both hands on one line: half the height, which under a
+     stacked grid is height the grid gets back. */
+  @container ori-block (min-width: 38rem) {
+    .ori-hands {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 1.5rem;
+    }
   }
 
   /* Capped: four short labels are a compact control, and letting the row
