@@ -11,7 +11,6 @@
   import GridModeToggle from "#lib/features/create/construct/shared/components/GridModeToggle.svelte";
   import "#lib/shared/selection/selection.css";
   import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
-  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { getPlacementGridPoints } from "#lib/shared/pictograph/grid/services/placement-grid-points.js";
   import LessonBoardSlot from "../live-board/LessonBoardSlot.svelte";
   import {
@@ -30,7 +29,11 @@
   import LessonStageFrame from "../LessonStageFrame.svelte";
   import LessonStageHeading from "../LessonStageHeading.svelte";
   import LessonStageControls from "../LessonStageControls.svelte";
-  import { createPlacementWorkshopState } from "./placement-experience-state.svelte";
+  import {
+    createPlacementWorkshopState,
+    PLACEMENT_SUCCESS_HOLD_MS,
+  } from "./placement-experience-state.svelte";
+  import PlacementSlots, { type PlacementSlot } from "./PlacementSlots.svelte";
   import {
     PLACEMENT_CHALLENGES,
     PLACEMENT_KINDS,
@@ -99,7 +102,27 @@
   let replacedPairs = $state<
     { left: GridLocation | null; right: GridLocation | null }[]
   >([]);
-  let hoveredExample = $state<PlacementType | null>(null);
+  /** The placement just built, which its slot answers. */
+  let lit = $state<PlacementType | null>(null);
+  let builds = $state(0);
+  // While exploring, a built placement holds for a beat and then the hands
+  // leave the board, so each placement is built fresh rather than dragged
+  // from the last one (Austen, 2026-10-14).
+  let clearTimer: ReturnType<typeof setTimeout> | undefined;
+  function cancelClear() {
+    clearTimeout(clearTimer);
+    clearTimer = undefined;
+  }
+  function scheduleClear() {
+    cancelClear();
+    const builtEpoch = epoch;
+    clearTimer = setTimeout(() => {
+      clearTimer = undefined;
+      if (workshop.phase === "explore" && epoch === builtEpoch)
+        replacePair(null, null);
+    }, PLACEMENT_SUCCESS_HOLD_MS);
+  }
+  onDestroy(cancelClear);
   let boardWidth = $state(300);
   let boardHeight = $state(320);
   let experienceElement: HTMLDivElement;
@@ -171,7 +194,10 @@
   onDestroy(() => stageMotion.cancel());
 
   const instruction = $derived(
-    correct
+    correct ||
+      (workshop.phase === "explore" &&
+        placement.complete &&
+        placement.activeHand === null)
       ? ""
       : incorrect
         ? t("learn_ui_try_again")
@@ -190,10 +216,6 @@
     PLACEMENT_KINDS.every((kind) => workshop.explored.includes(kind))
   );
   const practicing = $derived(!exploring && !workshop.canFinish);
-  /** The placement the side panel names: the one built, or the one asked for. */
-  const featured = $derived<PlacementType | null>(
-    practicing && !correct ? (workshop.challenge?.kind ?? null) : built
-  );
 
   function placementBrief(kind: PlacementType) {
     return tDynamic(`guide_topic_placements_${kind}_brief`);
@@ -228,6 +250,46 @@
       ),
     }))
   );
+  // Exploring, a slot fills with the learner's own pair once found. Guided
+  // practice and free play show each placement's example; the slot asked for
+  // is marked, and after a wrong try it shows the fix.
+  const slots = $derived<PlacementSlot[]>(
+    examples.map(({ kind, pair, data }) => {
+      const found = workshop.explored.includes(kind);
+      const target = practicing && workshop.challenge?.kind === kind;
+      const fixing = target && correctionPreview !== null;
+      const showExample =
+        freePlay || (practicing && Boolean(workshop.challenge?.guided));
+      return {
+        kind,
+        pictureKey: fixing
+          ? `fix:${placement.leftLocation}`
+          : `${gridMode}:${pair.left}:${pair.right}`,
+        picture: fixing
+          ? correctionPreview
+          : (exploring ? found : showExample)
+            ? data
+            : null,
+        caption: fixing
+          ? placementCorrection(
+              placement.leftLocation!,
+              placement.rightLocation!,
+              kind,
+              gridMode
+            )
+          : (exploring ? found : showExample || (target && correct))
+            ? placementBrief(kind)
+            : null,
+        checked: exploring ? found : target && correct,
+        target,
+        correction: fixing,
+        selected:
+          freePlay &&
+          placement.leftLocation === pair.left &&
+          placement.rightLocation === pair.right,
+      };
+    })
+  );
   const title = $derived(
     exploring
       ? t("learn_ui_hand_placements")
@@ -245,6 +307,7 @@
       change.leftLocation !== placement.leftLocation ||
       change.rightLocation !== placement.rightLocation;
     placement = change;
+    if (moved || change.activeHand !== null) cancelClear();
     if (change.complete && change.activeHand === null)
       workshop.rememberPlacement(
         change.leftLocation,
@@ -270,7 +333,13 @@
     }
     if (!moved) return;
     const kind = placementKindFor(change.leftLocation, change.rightLocation);
+    const settled = change.complete && change.activeHand === null;
     if (exploring && kind) workshop.discover(kind);
+    if (settled && kind && (exploring || correct)) {
+      lit = kind;
+      builds++;
+    }
+    if (exploring && settled) scheduleClear();
   }
 
   function loadPair(left: GridLocation | null, right: GridLocation | null) {
@@ -457,81 +526,19 @@
               {/snippet}
             </PropPlacementGrid>
             <span class="sr-only" aria-live="polite"
-              >{built
-                ? PLACEMENT_TYPE_INFO[built].label
-                : t("learn_ui_your_placement")}</span
+              >{built ? PLACEMENT_TYPE_INFO[built].label : ""}</span
             >
           </div>
 
-          <!-- The side panel always holds its space, so building a placement
-               never pushes the board around. -->
-          <aside class="placement-panel" class:incorrect>
-            {#if correctionPreview && workshop.challenge}
-              <figure class="correction">
-                <div class="correction-art" aria-hidden="true">
-                  <PictographContainer
-                    pictographData={correctionPreview}
-                    showTKA={true}
-                    showPlacements={false}
-                    showReversals={false}
-                    showTnD={false}
-                    showElemental={false}
-                    leftPropTypeOverride={PropType.HAND}
-                    rightPropTypeOverride={PropType.HAND}
-                  />
-                </div>
-                <figcaption>
-                  {placementCorrection(
-                    placement.leftLocation!,
-                    placement.rightLocation!,
-                    workshop.challenge.kind,
-                    gridMode
-                  )}
-                </figcaption>
-              </figure>
-            {:else if featured}
-              <Crossfade key={`${featured}-${correct}`}>
-                <div
-                  class="reveal"
-                  class:target={practicing && !correct}
-                  class:success={correct}
-                >
-                  <span class="reveal-symbol" aria-hidden="true"
-                    >{PLACEMENT_TYPE_INFO[featured].symbol}</span
-                  >
-                  <span class="reveal-name"
-                    >{PLACEMENT_TYPE_INFO[featured]
-                      .label}{#if correct}{" ✓"}{/if}</span
-                  >
-                  {#if !practicing || correct || workshop.challenge?.guided}
-                    <span class="reveal-brief">{placementBrief(featured)}</span>
-                  {/if}
-                </div>
-              </Crossfade>
-            {:else}
-              <div class="reveal empty">
-                <span class="reveal-symbol" aria-hidden="true">?</span>
-                <span class="reveal-name">{t("learn_ui_your_placement")}</span>
-              </div>
-            {/if}
-          </aside>
+          <div class="placement-slots">
+            <PlacementSlots
+              {slots}
+              {lit}
+              {builds}
+              onStudy={freePlay ? study : undefined}
+            />
+          </div>
         </div>
-
-        {#if exploring}
-          <ul class="discoveries" aria-label={t("learn_ui_placement_examples")}>
-            {#each PLACEMENT_KINDS as kind (kind)}
-              {@const found = workshop.explored.includes(kind)}
-              <li class="discovery" class:found>
-                <span class="discovery-symbol" aria-hidden="true"
-                  >{PLACEMENT_TYPE_INFO[kind].symbol}</span
-                >
-                <span class="discovery-name" class:sr-only={!found}
-                  >{PLACEMENT_TYPE_INFO[kind].label}{#if found}{" ✓"}{/if}</span
-                >
-              </li>
-            {/each}
-          </ul>
-        {/if}
 
         {#if practicing}
           <progress
@@ -581,49 +588,6 @@
             </div>
           {/if}
         </div>
-
-        {#if freePlay}
-          <div
-            class="examples"
-            role="group"
-            aria-label={t("learn_ui_placement_examples")}
-          >
-            {#each examples as example (example.kind)}
-              {@const matches =
-                placement.leftLocation === example.pair.left &&
-                placement.rightLocation === example.pair.right}
-              <div
-                class="example tka-seq-cell"
-                class:is-selected={matches}
-                class:is-hovered={hoveredExample === example.kind}
-              >
-                <div class="example-art" aria-hidden="true">
-                  <PictographContainer
-                    pictographData={example.data}
-                    showTKA={true}
-                    showPlacements={false}
-                    showReversals={false}
-                    showTnD={false}
-                    showElemental={false}
-                    leftPropTypeOverride={PropType.HAND}
-                    rightPropTypeOverride={PropType.HAND}
-                  />
-                </div>
-                <button
-                  type="button"
-                  class="tka-seq-hit"
-                  aria-label={t("learn_ui_study_placement_example", {
-                    placement: PLACEMENT_TYPE_INFO[example.kind].label,
-                  })}
-                  aria-pressed={matches}
-                  onpointerenter={() => (hoveredExample = example.kind)}
-                  onpointerleave={() => (hoveredExample = null)}
-                  onclick={() => study(example.kind)}
-                ></button>
-              </div>
-            {/each}
-          </div>
-        {/if}
       </div>
     {/snippet}
 
@@ -675,10 +639,18 @@
     width: 100%;
     min-height: 100%;
     color: var(--theme-text);
-    /* The heading above and the chips, hand controls and Continue below take
-       about 31rem; the board gets the rest so Continue stays on screen. */
-    --placement-board-size: clamp(18rem, calc(100svh - 31rem), 52rem);
-    --placement-panel-width: clamp(11rem, 22cqw, 18rem);
+    /* The heading above and the hand controls and Continue below take
+       about 28rem; the board gets the rest so Continue stays on screen, and
+       leaves the slot column its width beside it. */
+    --placement-board-size: clamp(
+      18rem,
+      min(
+        calc(100svh - 28rem),
+        calc(100cqw - var(--placement-panel-width) - 3rem)
+      ),
+      52rem
+    );
+    --placement-panel-width: clamp(15rem, 26cqw, 21rem);
     --lesson-workshop-max: 78rem;
   }
   .workshop {
@@ -715,6 +687,9 @@
     width: 100%;
     min-width: 0;
   }
+  .placement-slots {
+    min-width: 0;
+  }
   .correction-target {
     width: 100%;
     height: 100%;
@@ -732,109 +707,6 @@
   @keyframes target-turn {
     to {
       transform: rotate(1turn);
-    }
-  }
-  .placement-panel {
-    display: grid;
-    align-content: center;
-    min-height: 12rem;
-    min-width: 0;
-  }
-  .reveal {
-    display: grid;
-    justify-items: start;
-    gap: 0.35rem;
-  }
-  .reveal-symbol {
-    font-size: clamp(3.5rem, 7cqw, 6rem);
-    line-height: 1;
-    font-weight: 600;
-    color: var(--theme-accent);
-  }
-  .reveal-name {
-    font-size: clamp(1.4rem, 2.4cqw, 2rem);
-    font-weight: 700;
-    line-height: 1.15;
-    color: var(--theme-text);
-  }
-  .reveal-brief {
-    font-size: 1rem;
-    line-height: 1.45;
-    color: var(--theme-text-dim);
-  }
-  .reveal.target .reveal-symbol {
-    color: var(--theme-text-dim);
-  }
-  .reveal.success .reveal-symbol,
-  .reveal.success .reveal-name {
-    color: var(--semantic-success);
-  }
-  .reveal.empty .reveal-symbol,
-  .reveal.empty .reveal-name {
-    color: var(--theme-text-tertiary, var(--theme-text-dim));
-    opacity: 0.6;
-  }
-  .correction {
-    display: grid;
-    gap: 0.75rem;
-    margin: 0;
-  }
-  .correction-art {
-    width: min(100%, 9rem);
-    aspect-ratio: 1;
-    border-radius: 12px;
-    overflow: hidden;
-    outline: 2px solid var(--semantic-error);
-    outline-offset: 2px;
-  }
-  .correction figcaption {
-    font-size: 0.95rem;
-    line-height: 1.45;
-    color: var(--theme-text);
-  }
-  .discoveries {
-    display: flex;
-    justify-content: center;
-    gap: 0.75rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .discovery {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 2.75rem;
-    padding: 0.35rem 1rem;
-    border: 1px dashed var(--theme-stroke);
-    border-radius: 999px;
-    color: var(--theme-text-dim);
-    transition:
-      border-color var(--duration-normal) var(--ease-out),
-      background var(--duration-normal) var(--ease-out),
-      color var(--duration-normal) var(--ease-out);
-  }
-  .discovery-symbol {
-    font-size: 1.35rem;
-    line-height: 1;
-    font-weight: 600;
-  }
-  .discovery-name {
-    font-weight: 600;
-  }
-  .discovery.found {
-    border-style: solid;
-    border-color: var(--theme-accent);
-    background: var(--theme-card-bg);
-    color: var(--theme-text);
-    animation: discovery-found var(--duration-emphasis) var(--ease-out);
-  }
-  .discovery.found .discovery-symbol {
-    color: var(--theme-accent);
-  }
-  @keyframes discovery-found {
-    40% {
-      transform: scale(1.08);
     }
   }
   .practice-progress {
@@ -879,21 +751,6 @@
   .correct [data-placement-stage="heading"] :global(h1) {
     color: var(--semantic-success);
   }
-  .examples {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 7rem));
-    gap: 0.75rem;
-  }
-  .example {
-    min-width: 0;
-    aspect-ratio: 1;
-    --selection-selected-transform: none;
-  }
-  .example-art {
-    width: 100%;
-    aspect-ratio: 1;
-    overflow: hidden;
-  }
   .sr-only {
     position: absolute;
     width: 1px;
@@ -906,59 +763,58 @@
     border: 0;
   }
 
-  /* Narrow stages stack the panel under the board, still at a fixed height. */
+  /* Narrow stages stack the slots under the board, as do portrait screens,
+     where the slots beside the board would leave it a third of the width. */
   @container (max-width: 44rem) {
     .stage-row {
-      grid-template-columns: min(100%, var(--placement-board-size));
+      /* The row sizes itself, since a percentage track inside a centred,
+         shrink-to-fit row collapses to its content's minimum. */
+      width: min(100%, var(--placement-board-size));
+      grid-template-columns: minmax(0, 1fr);
       justify-items: center;
       gap: 0.75rem;
     }
-    .placement-panel {
-      min-height: 6.5rem;
+    .placement-slots {
       width: 100%;
     }
-    .reveal {
-      grid-template-columns: auto 1fr;
-      column-gap: 0.75rem;
-      align-items: center;
+  }
+  @media (max-aspect-ratio: 1 / 1) {
+    .placements-experience {
+      --placement-board-size: clamp(18rem, calc(100svh - 33rem), 52rem);
     }
-    .reveal-symbol {
-      grid-row: span 2;
-      font-size: 3.25rem;
+    .stage-row {
+      /* The row sizes itself, since a percentage track inside a centred,
+         shrink-to-fit row collapses to its content's minimum. */
+      width: min(100%, var(--placement-board-size));
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: center;
+      gap: 0.75rem;
     }
-    .reveal-name {
-      font-size: 1.3rem;
-    }
-    .correction {
-      grid-template-columns: 5.5rem 1fr;
-      align-items: center;
+    .placement-slots {
+      width: 100%;
     }
   }
 
+  /* Phones leave room under the board for the slot row above Continue. */
   @media (max-width: 760px) {
     .placements-experience {
-      --placement-board-size: min(
-        calc(100cqw - 1.5rem),
-        calc(100svh - 22rem),
-        26rem
+      --placement-board-size: max(
+        14rem,
+        min(calc(100cqw - 1.5rem), calc(100svh - 26rem), 26rem)
       );
-    }
-    .discovery {
-      padding-inline: 0.75rem;
     }
   }
 
   @media (min-width: 2400px) and (min-height: 1700px) {
     .placements-experience {
       --placement-board-size: 64rem;
-      --placement-panel-width: 26rem;
+      --placement-panel-width: 28rem;
       --lesson-workshop-max: 104rem;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .correction-target circle,
-    .discovery.found {
+    .correction-target circle {
       animation: none;
     }
   }
