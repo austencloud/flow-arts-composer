@@ -32,10 +32,10 @@ function experience(
  * experiences. Cards, routes, and the lesson renderer all read this one list,
  * so a future lesson cannot appear available before its component exists.
  *
- * Only lessons Austen is confident in stay here. Rotation Direction,
- * Dual-Shifts, Gamma, Pictograph Anatomy, Type 1, Reading a Choreo Card,
- * Staff Placements and Words keep their components in the codebase but are
- * withdrawn until each is rebuilt to that standard. Re-adding an entry
+ * Only lessons Austen is confident in stay here. Timing and Direction,
+ * Rotation Direction, Dual-Shifts, Gamma, Pictograph Anatomy, Type 1,
+ * Reading a Choreo Card, Staff Placements and Words keep their components
+ * in the codebase but are withdrawn until each is rebuilt to that standard. Re-adding an entry
  * republishes the lesson, its route, its Guide link and its sitemap entry.
  */
 export const CONCEPT_EXPERIENCES = [
@@ -62,18 +62,6 @@ export const CONCEPT_EXPERIENCES = [
     reviewStatus: "built",
     load: () =>
       import("../components/interactive/motions/MotionsConceptExperience.svelte"),
-  }),
-  experience({
-    conceptId: "timing-and-direction",
-    guideSlug: "hand-motions",
-    guideLabel: "Hand Motions",
-    reference: {
-      href: "/timing-and-direction",
-      label: "Timing and Direction",
-    },
-    reviewStatus: "built",
-    load: () =>
-      import("../components/interactive/motions/TimingDirectionConceptExperience.svelte"),
   }),
 ] as const satisfies readonly ConceptExperienceDefinition[];
 
