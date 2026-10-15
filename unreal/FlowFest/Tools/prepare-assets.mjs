@@ -43,6 +43,23 @@ for (const job of jobs) {
   for (const ext of [...doc.getRoot().listExtensionsUsed()]) {
     if (['EXT_meshopt_compression','KHR_draco_mesh_compression','EXT_texture_webp'].includes(ext.extensionName)) ext.dispose();
   }
+  if (job.kind === 'Ecology') {
+    const materials = doc.getRoot().listMaterials();
+    if (materials.length !== 1) throw new Error(`${job.id}: expected one source ecology material`);
+    const material = materials[0];
+    for (const [suffix, texture, required] of [
+      ['BaseColor', material.getBaseColorTexture(), true],
+      ['Normal', material.getNormalTexture(), false],
+      ['MetallicRoughness', material.getMetallicRoughnessTexture(), false],
+    ]) {
+      if (!texture) {
+        if (required) throw new Error(`${job.id}: source base color texture missing`);
+        continue;
+      }
+      if (texture.getMimeType() !== 'image/png') throw new Error(`${job.id}: ${suffix} was not decoded to PNG`);
+      writeFileSync(join(staged, `${job.id}_${suffix}.png`), texture.getImage());
+    }
+  }
   await io.write(output, doc);
   job.decoded = output;
   console.log('Decoded', job.id);

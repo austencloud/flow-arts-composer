@@ -15,7 +15,8 @@ def import_file(path, folder, name, mesh=False):
     target = folder + '/' + name
     # These three small source meshes may change during site art passes. Reimport
     # them on every run so an existing project never keeps an older silhouette.
-    if not ED.does_asset_exist(target) or folder == '/Game/FlowFest/Assets/Ecology':
+    if (not ED.does_asset_exist(target)
+            or folder in ('/Game/FlowFest/Assets/Ecology', '/Game/FlowFest/Textures/Ecology')):
         task = u.AssetImportTask()
         task.filename = str(path)
         task.destination_path = folder
@@ -47,6 +48,7 @@ def import_file(path, folder, name, mesh=False):
             material = slot.material_interface
             if isinstance(material, u.Material):
                 if job_wind_family(folder):
+                    author_ecology_material(material, name)
                     # All three source GLB materials declare doubleSided=true and
                     # alphaMode=OPAQUE. FBX drops the sidedness flag; preserve it
                     # without inventing alpha masking absent from the source.
@@ -132,6 +134,47 @@ def ensure_instancing(material):
 
 def job_wind_family(folder):
     return folder == '/Game/FlowFest/Assets/Ecology'
+
+def author_ecology_material(material, asset_name):
+    """Bind decoded source textures; FBX's embedded ecology samplers have no Texture2D."""
+    base_path = STAGED / (asset_name + '_BaseColor.png')
+    if not base_path.is_file():
+        raise RuntimeError('Ecology source base color missing: ' + str(base_path))
+    # FBX reimport retains stale sample nodes and WPO on an existing material.
+    # Reauthoring all three small materials prevents graph accumulation and
+    # guarantees each TextureSample has an assigned imported source texture.
+    ME.delete_all_material_expressions(material)
+    folder = '/Game/FlowFest/Textures/Ecology'
+    base = import_file(base_path, folder, asset_name + '_BaseColor')
+    color = expression(material, u.MaterialExpressionTextureSample, texture=base)
+    connect_property(color, 'RGB', u.MaterialProperty.MP_BASE_COLOR)
+    normal_path = STAGED / (asset_name + '_Normal.png')
+    if normal_path.is_file():
+        normal = import_file(normal_path, folder, asset_name + '_Normal')
+        normal.set_editor_property('compression_settings', u.TextureCompressionSettings.TC_NORMALMAP)
+        normal.set_editor_property('srgb', False)
+        ED.save_loaded_asset(normal)
+        sample = expression(material, u.MaterialExpressionTextureSample,
+                            texture=normal, sampler_type=u.MaterialSamplerType.SAMPLERTYPE_NORMAL)
+        connect_property(sample, 'RGB', u.MaterialProperty.MP_NORMAL)
+    mr_path = STAGED / (asset_name + '_MetallicRoughness.png')
+    if mr_path.is_file():
+        mr = import_file(mr_path, folder, asset_name + '_MetallicRoughness')
+        mr.set_editor_property('compression_settings', u.TextureCompressionSettings.TC_MASKS)
+        mr.set_editor_property('srgb', False)
+        ED.save_loaded_asset(mr)
+        sample = expression(material, u.MaterialExpressionTextureSample,
+                            texture=mr, sampler_type=u.MaterialSamplerType.SAMPLERTYPE_MASKS)
+        green = expression(material, u.MaterialExpressionComponentMask,
+                           r=False, g=True, b=False, a=False)
+        connect(sample, 'RGB', green, '')
+        connect_property(green, '', u.MaterialProperty.MP_ROUGHNESS)
+    else:
+        connect_property(scalar(material, .88), '', u.MaterialProperty.MP_ROUGHNESS)
+    connect_property(scalar(material, 0), '', u.MaterialProperty.MP_METALLIC)
+    for node in ME.get_material_expressions(material):
+        if isinstance(node, u.MaterialExpressionTextureSample) and not node.get_editor_property('texture'):
+            raise RuntimeError('Unbound ecology texture sampler: ' + material.get_path_name())
 
 def migrate_wind_masks(material):
     """Repair masks in an existing wind graph without touching color or alpha."""

@@ -3,6 +3,7 @@
 #include "Dom/JsonObject.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialExpressionTextureSample.h"
 #include "Materials/MaterialInterface.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
@@ -53,6 +54,21 @@ bool FFlowFestEnvironmentAssetsTest::RunTest(const FString& Parameters)
                     BaseMaterial->GetExpressionInputForProperty(MP_SubsurfaceColor) : nullptr;
                 TestTrue(*FString::Printf(TEXT("Ecology material %s[%d] has colored subsurface transmission"), Name, Slot),
                     Subsurface && Subsurface->Expression);
+                int32 BoundSamples = 0;
+                if (BaseMaterial)
+                {
+                    for (const TObjectPtr<UMaterialExpression>& Expression : BaseMaterial->GetExpressions())
+                    {
+                        if (const UMaterialExpressionTextureSample* Sample = Cast<UMaterialExpressionTextureSample>(Expression.Get()))
+                        {
+                            TestNotNull(*FString::Printf(TEXT("Ecology %s[%d] texture sample is bound"), Name, Slot),
+                                Sample->Texture.Get());
+                            BoundSamples += Sample->Texture ? 1 : 0;
+                        }
+                    }
+                }
+                TestTrue(*FString::Printf(TEXT("Ecology material %s[%d] uses source textures"), Name, Slot),
+                    BoundSamples > 0);
             }
         }
     }
