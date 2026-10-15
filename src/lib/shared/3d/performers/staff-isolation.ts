@@ -28,7 +28,7 @@ export function wrapStaffIsolationPhase(phase: number): number {
 export function sampleStaffIsolation(
   phase: number,
   tipOffset: readonly [number, number, number] = [0, 0, 0],
-  lengthM = ISOLATION_STAFF_CONTACT.lengthM
+  lengthM: number = ISOLATION_STAFF_CONTACT.lengthM
 ): PropState3D {
   const angle = (wrapStaffIsolationPhase(phase) * Math.PI) / 2;
   const shaftRotation = new Quaternion().setFromAxisAngle(AXIS, -angle);
