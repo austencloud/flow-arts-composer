@@ -193,7 +193,7 @@
     "/history/draft",
   ]);
   // /notation is a subtree: the per-prop and per-system pages
-  // (/notation/staves, /notation/fans, ...) all render the same persistent
+  // (/notation/props and the old per-prop addresses) all render the same persistent
   // chrome. Its own index only redirects to /history.
   const MARKETING_SUBTREES = [
     "/shop",
@@ -204,7 +204,7 @@
   ];
   // Carve-outs inside those subtrees. The QfT app is an instrument, not a page
   // about one: it wants the whole viewport, owns its own bottom chrome, and
-  // carries its own way back out to /notation/poi. The persistent site header on
+  // carries its own way back out to /notation/props#poi. The persistent site header on
   // top of that reads as a page wrapped around an app. Shape Engine used to
   // sit here as /notation/shape-matrix; it now owns /shape-engine, outside
   // every marketing subtree, so it needs no carve-out.

@@ -18,7 +18,7 @@ const KNOWN_DOORS = new Set([
   "/learn/guide", // Level 1 guide reader (the /guide/level-1 static page is a retired 308)
   "/endless-spinner",
   "/composer",
-  "/notation/poi",
+  "/notation/props#poi",
 ]);
 
 describe("landing FAQ content contract", () => {
