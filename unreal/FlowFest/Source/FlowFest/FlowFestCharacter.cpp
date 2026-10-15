@@ -157,6 +157,11 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
             CameraBoom->SocketOffset = FVector(0, 0, 0);
             if (AController* C = GetController()) C->SetControlRotation(FRotator(-6.f, 145.f, 0));
         }
+        float ReviewHour = -1.f;
+        if ((bReviewMode || !Showcase.IsEmpty()) &&
+            FParse::Value(FCommandLine::Get(), TEXT("FlowFestHour="), ReviewHour) &&
+            FMath::IsFinite(ReviewHour) && ReviewHour >= 0.f && ReviewHour <= 24.f)
+            FestivalWorld->SetTimeOfDay(ReviewHour);
     }
 
     StartupSeconds += DeltaSeconds;
@@ -577,7 +582,7 @@ void AFlowFestCharacter::PlaceReviewCamera()
         ReviewSite == TEXT("camp") ? FVector(-1400, -1000, 0) : FVector(-2200, -1900, 600);
     FVector Position = Target + Offset;
     if (ReviewSite == TEXT("fire") || ReviewSite == TEXT("camp"))
-        Position.Z = FestivalWorld->SampleGround(Position.X * .01f, Position.Y * .01f) + 100.f;
+        Position.Z = FestivalWorld->SampleGround(Position.X * .01f, Position.Y * .01f) + (ReviewSite == TEXT("camp") ? 230.f : 100.f);
     GetCharacterMovement()->StopMovementImmediately();
     GetCharacterMovement()->SetMovementMode(MOVE_Flying);
     bPhotoFly = true;

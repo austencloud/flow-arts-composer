@@ -7,6 +7,7 @@ param(
     [string]$Character = '',
     [string]$Prop = '',
     [ValidateSet('', 'flow', 'ride', 'walk', 'jump')][string]$Showcase = '',
+    [ValidateRange(0, 24)][double]$Hour = 17,
     [switch]$Wardrobe,
     [switch]$Offscreen,
     [switch]$AutoExit,
@@ -50,6 +51,10 @@ if ($Review) { $arguments += "-FlowFestReview=$Review" }
 if ($Character) { $arguments += "-FlowFestCharacter=$Character" }
 if ($Prop) { $arguments += "-FlowFestProp=$Prop" }
 if ($Showcase) { $arguments += "-FlowFestShowcase=$Showcase" }
+if ($PSBoundParameters.ContainsKey('Hour')) {
+    if (-not $Review -and -not $Showcase) { throw '-Hour requires a review location or character showcase.' }
+    $arguments += '-FlowFestHour=' + $Hour.ToString([Globalization.CultureInfo]::InvariantCulture)
+}
 if ($Wardrobe) { $arguments += '-FlowFestWardrobe' }
 if ($Capture) { $arguments += "-FlowFestCapture=$Capture" }
 if ($AutoExit) { $arguments += '-FlowFestAutoExit' }
