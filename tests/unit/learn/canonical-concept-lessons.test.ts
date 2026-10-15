@@ -118,6 +118,9 @@ describe("canonical concept lesson composition", () => {
     const placementsSrc = readSource(
       "src/lib/features/learn/components/interactive/placements/PlacementsConceptExperience.svelte"
     );
+    const placementSlots = readSource(
+      "src/lib/features/learn/components/interactive/placements/PlacementSlots.svelte"
+    );
     const handPlayer = readSource(
       "src/lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte"
     );
@@ -177,16 +180,15 @@ describe("canonical concept lesson composition", () => {
     expect(motions).not.toContain("LessonPictographStage");
     expect(placementsSrc).toContain('onComplete?.("hand-motions-intro")');
     expect(placementsSrc).toContain("PropPlacementGrid");
-    expect(placementsSrc).toContain("PictographContainer");
+    expect(placementSlots).toContain("PictographContainer");
     expect(placementsSrc).toContain("leftPropType={PropType.HAND}");
     expect(placementsSrc).toContain("rightPropType={PropType.HAND}");
-    // The readout and every example name the placement. The canonical
+    // The readout and every slot name the placement. The canonical
     // pictograph already draws the glyph, so a second decorative one beside it
     // would print the same fact twice.
-    expect(placementsSrc.replace(/\s+/g, " ")).toContain(
-      'built ? PLACEMENT_TYPE_INFO[built].label : t("learn_ui_your_placement")'
-    );
-    expect(placementsSrc).toContain("PLACEMENT_TYPE_INFO[example.kind].label");
+    expect(placementsSrc).toContain("PLACEMENT_TYPE_INFO[built].label");
+    expect(placementSlots).toContain("PLACEMENT_TYPE_INFO[slot.kind]");
+    expect(placementSlots).toContain("{info.label}");
     expect(placementsSrc).not.toContain("TKAWordGlyph");
     expect(placementsSrc).not.toContain("focusPhase");
     expect(placementsSrc).not.toContain("Try it");
