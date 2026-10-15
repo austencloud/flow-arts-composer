@@ -21,7 +21,7 @@ describe("Create front-door source contract", () => {
     expect(source).not.toContain("create-method-bar");
   });
 
-  it("exposes All methods through the shared navigation owner", () => {
+  it("opens All methods from the module header, not a sidebar row", () => {
     const mainInterfaceSource = readFileSync(
       resolve(root, "src/lib/shared/MainInterface.svelte"),
       "utf8"
@@ -36,8 +36,30 @@ describe("Create front-door source contract", () => {
 
     expect(mainInterfaceSource).toContain("isModuleHomeOpen");
     expect(mainInterfaceSource).toContain("onModuleHomeSelect");
-    expect(desktopNavigationSource).toContain("MODULE_HOME_SECTION_PREFIX");
-    expect(desktopNavigationSource).toContain("module.home.optionLabel");
+    expect(desktopNavigationSource).toContain(
+      "opensOnTap: module.home !== undefined"
+    );
+    expect(desktopNavigationSource).toContain("onModuleHomeSelect");
+    expect(desktopNavigationSource).not.toContain("MODULE_HOME_SECTION_PREFIX");
+    expect(desktopNavigationSource).not.toContain("module.home.optionLabel");
+  });
+
+  it("sends the phone drawer straight to a module's home", () => {
+    const switcherSource = readFileSync(
+      resolve(
+        root,
+        "src/lib/shared/navigation/components/ModuleSwitcher.svelte"
+      ),
+      "utf8"
+    );
+    const homeBranch = switcherSource.indexOf("if (module.home) {");
+    const drillBranch = switcherSource.indexOf("selectedModuleId = moduleId;");
+
+    expect(homeBranch).toBeGreaterThan(-1);
+    expect(drillBranch).toBeGreaterThan(homeBranch);
+    expect(switcherSource.slice(homeBranch, drillBranch)).toContain(
+      "onModuleHomeSelect?.(moduleId)"
+    );
   });
 
   it("hands the active Construct guide sole ownership of its heading", () => {
