@@ -7,7 +7,7 @@
 > **Implemented precursor:** This document remains the contract for the v1
 > instrumentation currently in code. The official production end state is
 > specified in
-> [`../superpowers/specs/2026-07-27-official-card-production-ledger-design.md`](../superpowers/specs/2026-07-27-official-card-production-ledger-design.md).
+> [`../superpowers/specs/backlog/2026-07-27-official-card-production-ledger-design.md`](../superpowers/specs/backlog/2026-07-27-official-card-production-ledger-design.md).
 > Under that design, v1 records remain `legacy-serialized` artwork facts.
 > Downloadable front-bearing exports become prototypes rather than evidence of
 > official production.

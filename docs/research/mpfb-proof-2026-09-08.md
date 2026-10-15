@@ -1,5 +1,7 @@
 # One MPFB character in TKA
 
+**Repository status (2026-10-14):** The reference-pass heading records 2026-09-14, while the review records a last Git change of 2026-09-13. That discrepancy is retained without inventing a corrected date. Local model assets were not accessed; use the current Character Playground route rather than the retired bake-off entry for new inspection.
+
 Status: local evaluation complete; not promoted to the production roster.
 
 ## Reference quality pass, 2026-09-14
@@ -94,7 +96,7 @@ only its export copy has the modelling keys and helper geometry baked away.
 ## Delivered asset
 
 - Named local candidate: `intake-mpfb-proof`, displayed as **MPFB Proof**.
-- Bake-off: `/test/avatar-bakeoff?candidate=intake-mpfb-proof&pose=neutral&lighting=studio`.
+- Current entry: `/test/character-playground` (see [Character Playground](character-playground.md) for current candidate selection). Historical bake-off URL: `/test/avatar-bakeoff?candidate=intake-mpfb-proof&pose=neutral&lighting=studio`.
 - Staff lab: `/test/staff-grip?character=intake-current&view=quad&play=0`;
   current intake is a mutable slot, so verify its file hash before future reviews.
 - Source: `E:/3D-Models/mpfb-proof-20260908/generated/mpfb-proof-source.blend`.

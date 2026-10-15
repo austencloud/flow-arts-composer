@@ -1,5 +1,7 @@
 # Valid TKA English Words
 
+**Repository status (2026-10-14):** The 1,137 count and membership list are the recorded 2026-05-27 Google 10k plus dwyl corpus, not a newly regenerated guarantee under current generator constraints.
+
 Generated: 2026-05-27
 Sources: Google 10k common English + dwyl/english-words (filtered for real words)
 
@@ -12,7 +14,7 @@ Sources: Google 10k common English + dwyl/english-words (filtered for real words
 ## Bridge-Free Words
 
 Every letter transition is direct — no bridge letters inserted.
-These are the cleanest TKA sequences: beat count = letter count + 1.
+For this dated bridge-free corpus, letters correspond to performed steps. A displayed opening/start cell adds one cell, not one performed beat. Current `SequenceData` stores `startPlacement` separately from `steps`.
 
 ### 12 letters (1)
 
@@ -113,7 +115,7 @@ Membership reconciliation: 25 of those 26 words also occur in the May list
 above (case-insensitive). `MOTORSPORTS` occurs only in the February source; it
 remains an earlier candidate here, without changing the May list or its count.
 The February source's "letters + 1" counts a displayed start cell in addition
-to performed steps; `SequenceData.startPosition` is separate from `steps`.
+to performed steps; `SequenceData.startPlacement` is separate from `steps`.
 
 ## Teaching Examples
 

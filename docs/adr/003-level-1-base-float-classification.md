@@ -73,9 +73,9 @@ The following must be preserved everywhere float motions flow:
 
 1. **Construction.** Any code that converts a pro/anti motion into a float MUST record `prefloatMotionType` (the original pro or anti) and `prefloatRotationDirection` (the original cw or ccw). Sites that currently do this correctly:
    - `packages/sequence-engine/src/generation/builder/SequenceBuilder.ts` (generator path)
-   - `src/lib/features/create/generate/shared/services/implementations/TurnManager.ts` (interactive fl-turn assignment)
-   - `src/lib/features/create/shared/services/implementations/step-operations/TurnsHandler.ts` (step editor)
-   - `src/lib/features/create/shared/services/implementations/TurnPatternManager.ts` (pattern apply)
+   - `src/lib/features/create/generate/shared/services/turn-manager.ts` (interactive fl-turn assignment)
+   - `src/lib/features/create/shared/services/step-operations/turns-handler.ts` (step editor)
+   - `src/lib/shared/create/services/turn-pattern-manager.ts` (pattern apply)
 
 2. **Transport.** Any transformation that passes a motion between subsystems MUST carry the prefloat fields through. The engine → app boundary is covered by `BuildResultTransformer.mapMotion`.
 
@@ -97,7 +97,7 @@ The following must be preserved everywhere float motions flow:
 
 The canonical regression test is `packages/sequence-engine/tests/integration/float-prefloat-preservation.test.ts`. It asserts that every float motion emitted by the engine carries both prefloat fields, and that non-float motions never carry them.
 
-The turn-color interpreter (`src/lib/shared/pictograph/tka-glyph/services/implementations/TurnColorInterpreter.ts`) already implements the base-type read correctly for TYPE1_HYBRID letters. Other letter types currently default to blue-top / red-bottom and are unaffected by this decision.
+The turn-color interpreter (`src/lib/shared/pictograph/tka-glyph/services/turn-color-interpreter.ts`) already implements the base-type read correctly for TYPE1_HYBRID letters. Other letter types currently default to blue-top / red-bottom and are unaffected by this decision.
 
 ---
 

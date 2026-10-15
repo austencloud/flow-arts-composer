@@ -1,7 +1,9 @@
 # TKA Museum Documentation
 
+**Repository status (2026-10-14):** This tree contains the web museum owner `src/lib/features/museum/MuseumModule.svelte`; `v1-shippable-scope.md` is a draft text-only slice. Which delivery target leads remains a product decision. The README already declares the story bible, gift shop and real story private under `austencloud/flow-arts-private` / `museum/`; those sources are not in this tree and were not inspected. The declared canon relationship below is preserved without asserting private-source availability.
+
 > **Project:** The Kinetic Archive
-> **Engine:** Unreal Engine 5 (Steam release) + Web App integration (deep link handoff to TKA Scribe)
+> **Proposed platform:** Unreal Engine 5 (Steam release) + Web App integration (deep link handoff to Flow Arts Composer)
 > **Status:** Pre-production (Story Bible phase)
 > **Tone:** Museum of Jurassic Technology meets Stanley Parable
 

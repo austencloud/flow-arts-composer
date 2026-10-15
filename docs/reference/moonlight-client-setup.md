@@ -1,5 +1,7 @@
 # Moonlight Client Setup (new machine → 4090 host)
 
+**Repository status (2026-10-14):** The machine addresses, software and commands below record the 2026-08-02 setup. Host availability and current machine configuration were not inspected from this worktree.
+
 Runbook for turning a fresh Windows machine into a Moonlight thin client for the
 4090 workstation. Written to be executed top to bottom by an agent on the new
 machine. Every command is PowerShell and copy-pasteable.
@@ -18,10 +20,10 @@ host desktop. Clients paired against the old Sunshine install must pair again.
 
 ## Roles
 
-| Role | What it runs | Set up by |
-|---|---|---|
-| **Host** | Apollo + Tailscale. The 4090 workstation. | Already done. Do not modify. |
-| **Client** | Tailscale + Moonlight. The machine you are on now. | This document. |
+| Role       | What it runs                                       | Set up by                    |
+| ---------- | -------------------------------------------------- | ---------------------------- |
+| **Host**   | Apollo + Tailscale. The 4090 workstation.          | Already done. Do not modify. |
+| **Client** | Tailscale + Moonlight. The machine you are on now. | This document.               |
 
 The client never installs Apollo. Streaming is one-directional: client watches
 and controls the host.
@@ -105,13 +107,13 @@ foreach ($p in 47984, 47989, 47990, 48010, 3389) {
 
 All five should be `True`. What they are:
 
-| Port | Purpose |
-|---|---|
-| 47984 | Sunshine HTTPS control |
+| Port  | Purpose                                           |
+| ----- | ------------------------------------------------- |
+| 47984 | Sunshine HTTPS control                            |
 | 47989 | Sunshine HTTP control, the port Moonlight targets |
-| 47990 | Sunshine web dashboard (pairing PIN entry) |
-| 48010 | Sunshine RTSP |
-| 3389 | RDP, the recovery path if streaming breaks |
+| 47990 | Sunshine web dashboard (pairing PIN entry)        |
+| 48010 | Sunshine RTSP                                     |
+| 3389  | RDP, the recovery path if streaming breaks        |
 
 Sunshine also uses UDP `47998-48010` for the actual video and audio. UDP is not
 TCP-probeable; a successful stream in Step 7 is the proof.
@@ -173,6 +175,7 @@ immediately before typing the PIN, not ahead of time.
    ```
 
    Moonlight displays a four-digit PIN.
+
 3. Type that PIN into the dashboard's PIN tab, give the device a clear name, and
    submit.
 
@@ -244,16 +247,16 @@ Set-ItemProperty $k richpresence "true" -Type String
 
 The settings that matter and why:
 
-| Setting | Value | Reason |
-|---|---|---|
-| `hostaudio` | `false` | Audio plays on the client only. `true` also plays it out of the host's speakers. |
-| `keepawake` | `true` | Client does not sleep mid-stream. |
-| `quitAppAfter` | `true` | **Reversed for Apollo on 2026-08-04.** Apollo pauses a session on disconnect and deliberately holds its virtual display open for resume, so a client that only disconnects strands a phantom monitor on the host. The laptop did that to d2 twice, once mid-work. This does not tear down the host's Windows session; it terminates the streamed *app*, which is what releases the display. |
-| `mouseacceleration` | `false` | Raw input, 1:1 pointer. |
-| `capturesyskeys` | `0` | Alt+Tab and Win stay local unless fullscreen. Set `1` to send them to the host in fullscreen. |
-| `videocfg` / `videodec` | `0` | Auto-negotiate codec and hardware decoder. Only pin these when diagnosing. |
-| `unlockbitrate` | `false` | Keeps the slider inside sane limits. |
-| `width` / `height` | `1920x1200` | Laptop panel. **Change to this machine's native resolution.** |
+| Setting                 | Value       | Reason                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hostaudio`             | `false`     | Audio plays on the client only. `true` also plays it out of the host's speakers.                                                                                                                                                                                                                                                                                                            |
+| `keepawake`             | `true`      | Client does not sleep mid-stream.                                                                                                                                                                                                                                                                                                                                                           |
+| `quitAppAfter`          | `true`      | **Reversed for Apollo on 2026-08-04.** Apollo pauses a session on disconnect and deliberately holds its virtual display open for resume, so a client that only disconnects strands a phantom monitor on the host. The laptop did that to d2 twice, once mid-work. This does not tear down the host's Windows session; it terminates the streamed _app_, which is what releases the display. |
+| `mouseacceleration`     | `false`     | Raw input, 1:1 pointer.                                                                                                                                                                                                                                                                                                                                                                     |
+| `capturesyskeys`        | `0`         | Alt+Tab and Win stay local unless fullscreen. Set `1` to send them to the host in fullscreen.                                                                                                                                                                                                                                                                                               |
+| `videocfg` / `videodec` | `0`         | Auto-negotiate codec and hardware decoder. Only pin these when diagnosing.                                                                                                                                                                                                                                                                                                                  |
+| `unlockbitrate`         | `false`     | Keeps the slider inside sane limits.                                                                                                                                                                                                                                                                                                                                                        |
+| `width` / `height`      | `1920x1200` | Laptop panel. **Change to this machine's native resolution.**                                                                                                                                                                                                                                                                                                                               |
 
 Adjust `width`, `height`, and `bitrate` to this machine's display and link. These
 are the in-app defaults only; the launchers in Step 7 override them per profile.
@@ -312,13 +315,13 @@ Run the appropriate launcher with the performance overlay on:
 
 Read the overlay and record the numbers. The laptop's verified on-LAN baseline:
 
-| Metric | Laptop baseline |
-|---|---|
-| Host processing latency | 2.1 ms |
-| Network latency | 3 ms |
-| Decode time | 0.76 ms (hardware HEVC) |
-| Render time | 0.59 ms |
-| Dropped frames | 0.00% |
+| Metric                  | Laptop baseline         |
+| ----------------------- | ----------------------- |
+| Host processing latency | 2.1 ms                  |
+| Network latency         | 3 ms                    |
+| Decode time             | 0.76 ms (hardware HEVC) |
+| Render time             | 0.59 ms                 |
+| Dropped frames          | 0.00%                   |
 
 Decode time above a few milliseconds means software decoding. Fix the codec
 choice rather than lowering the bitrate.
@@ -383,7 +386,7 @@ Identifying left from right is the other trap, because identical panels share a
 `friendly_name`. Use position, not names. The service log's display enumeration
 carries `info.origin_point.x`, and the panel with the smallest x is the
 leftmost. Windows puts the primary at x 0, so a left-hand secondary is
-*negative*.
+_negative_.
 
 Verify from the capture geometry the log prints at stream start, not by
 eyeballing which windows are on screen:
@@ -432,7 +435,7 @@ config first and post it back with your addition, or you will silently drop
   Pair fresh.
 - **`quitAppAfter` must be `true` against Apollo.** This reverses the original
   Sunshine-era advice, which read `true` as tearing down the host's Windows
-  session. It does not. It terminates the streamed *app*, and on Apollo that is
+  session. It does not. It terminates the streamed _app_, and on Apollo that is
   the only thing that releases a virtual display: Apollo pauses on disconnect
   and holds the display open for resume, so a client that merely disconnects
   strands a phantom monitor on the host until something terminates the app.
@@ -492,7 +495,7 @@ Authentication, which the host requires.
 
 ## Related
 
-- `docs/superpowers/specs/2026-07-19-remote-4090-workstation-laptop-handoff.md`
+- `docs/superpowers/handoffs/2026-07-19-remote-4090-workstation-laptop-handoff.md`
   is the host build record and the open-items ledger.
 - Tailscale connection types: <https://tailscale.com/kb/1257/connection-types>
 - Apollo (the host): <https://github.com/ClassicOldSong/Apollo>

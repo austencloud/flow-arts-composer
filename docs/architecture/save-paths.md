@@ -1,41 +1,40 @@
 # Save Paths & Public Index Architecture
 
-Key facts about how the system is wired. Read the actual source files — do not trust agent summaries of call chains.
+## Library save ownership
 
-## Two Separate Save Paths
+The UI save and repository save share the library repository boundary.
+`getLibrarySaveService()` in
+`src/lib/features/library/get-library-save-service.ts` injects
+`getLibraryRepository()`. `LibrarySaveService` then calls
+`libraryRepository.saveSequenceWithMetadata(sequence, metadata)` in
+`src/lib/features/library/services/library-save-service.ts`.
 
-There are two completely independent ways a sequence gets written to Firestore. They do NOT share logic.
+The repository implementation is
+`src/lib/shared/library/services/library-repository.ts`. The Create module's
+`src/lib/features/create/shared/services/sequence-persister.ts` persists local
+workspace state through the shared persistence layer; it is not the library
+Firestore writer. Keep visibility and public-index concerns in the library owners.
 
-| Path | Entry point | Post-write side effects |
-|------|-------------|------------------------|
-| **UI save** | `LibrarySaveService` → `SequencePersister` | Public index sync (added March 2026), thumbnail upload, tag creation |
-| **Repository save** | `LibraryRepository.saveSequence()` | Public index sync, achievement tracking, conflict detection, tag migration |
+## Public index wiring
 
-`LibrarySaveService` uses `SequencePersister` for the actual Firestore write. `SequencePersister` is a focused persistence tool: it takes sequence data and metadata, writes a single document to `users/{uid}/sequences/{id}`, and returns the ID. No callbacks, no post-write hooks, no side effects. It does NOT call `LibraryRepository`. Adding logic to `LibraryRepository` does not affect the UI save path.
+`src/lib/shared/library/get-library-repository.ts` accepts the registered
+`IPublicIndexSyncer` factory. The composition root
+`src/lib/shared/composition-root/register-library-repository.ts` registers
+`createLazyPublicIndexSyncer`, whose adapter is
+`src/lib/shared/library/services/create-lazy-public-index-syncer.ts`.
+The adapter defers loading the implementation while satisfying the repository's
+synchronous dependency.
 
-## Public Index Sync
+`src/lib/features/library/get-public-index-syncer.ts` composes `PublicIndexSyncer`
+with moderation dependencies and `getBrowseLoader()`. Its implementation in
+`src/lib/features/library/services/public-index-syncer.ts` accepts an optional
+`PublicSequencesLoader`, adds normalized published data through `addToCache`,
+updates cached thumbnails and removes unpublished entries through `removeFromCache`.
+These are getter/factory dependencies; the old library-container/`IBrowseLoader`
+account does not describe this wiring.
 
-The `publicSequences` Firestore collection is the community library. It is populated by `PublicIndexSyncer.syncToPublicIndex()`. This only runs when:
-- `LibraryRepository.saveSequence()` is called with `visibility: "public"`, OR
-- `LibrarySaveService.saveSequence()` is called with `visibility: "public"` (wired March 2026)
-- `LibraryRepository.publishSequence()` / `unpublishSequence()` is called directly
+## Historical correction
 
-`SequencePersister.saveSequence()` alone never syncs to the public index.
-
-## Browse Gallery Cache
-
-The community library UI reads from `PublicSequencesLoader` (`browse` module), which fetches the `publicSequences` collection once and caches the result in memory. The cache is NOT invalidated automatically — if the public index changes and the cache isn't updated, users see stale data until they refresh.
-
-`PublicIndexSyncer` holds a reference to `IBrowseLoader` and updates the cache directly after every write:
-- **Publish** (`syncToPublicIndex`): builds a `SequenceData` from the data already in memory and calls `browseLoader.addToCache()` — no extra Firestore fetch, sequence appears instantly
-- **Unpublish/delete** (`removeFromPublicIndex`): calls `browseLoader.removeFromCache(id)` — gallery reflects the removal immediately
-
-`IBrowseLoader` is injected into `PublicIndexSyncer` via the library container as an optional dep. If it's absent (e.g. SSR, test environments), publish/unpublish still work — the cache just won't be updated.
-
-## Module Boundaries
-
-- `create` module owns `SequencePersister` — it's a low-level write tool, no library concepts
-- `library` module owns `LibraryRepository`, `LibrarySaveService`, `PublicIndexSyncer`
-- `browse` module owns `PublicSequencesLoader` and `IBrowseLoader`
-- `PublicIndexSyncer` depends on `IBrowseLoader` (interface only) to invalidate the browse cache after public index writes — this is intentional; the syncer is the authority on when the public index changes
-- Do not add library-level concerns (visibility, public sync) to `SequencePersister`
+The March account described two independent Firestore save paths and a
+Create-owned `SequencePersister` library writer. That account is superseded by
+the repository call and composition-root wiring above, inspected on 2026-10-14.

@@ -1,5 +1,7 @@
 # Flow Arts Composer i18n System: Complete Guide
 
+**Repository status (2026-10-14):** English has 9,654 keys, German 8,976; 678 English keys are absent from German. Regional lookups fall back to the base locale and then English in `i18n.svelte.ts`. Historical benchmark and migration-output blocks below are retained as recorded results, not current measurements or coverage claims.
+
 ## Table of Contents
 
 1. [Overview](#overview)
@@ -19,7 +21,7 @@
 
 ## Overview
 
-**Flow Arts Composer uses a lightweight, JSON-based i18n system that replaced Paraglide in January 2025.**
+**Flow Arts Composer uses a lightweight JSON-based i18n system.** The migration record below gives January 2025; that historical date has not been independently established from this tree.
 
 **Key features:**
 
@@ -214,7 +216,7 @@ Ensures all locales have the same keys and no translations are missing.
 
 ---
 
-## Performance Comparison
+## Historical Performance Comparison
 
 ### Bundle Size Analysis
 
@@ -344,7 +346,7 @@ t("nav_create"); // ✅
 t("invalid_key"); // ❌ TypeScript error
 ```
 
-IDE autocomplete shows all 1,398 keys.
+IDE autocomplete follows the generated English catalog; the 1,398-key example above is historical.
 
 ---
 
@@ -537,7 +539,7 @@ Checks that all keys match English.
 
 ### Step 7: Update language selector UI
 
-Edit `src/lib/shared/settings/components/tabs/LanguageTab.svelte`:
+Edit `src/lib/shared/settings/components/tabs/preferences/LanguagePreference.svelte`:
 
 ```typescript
 const languageNames: Record<Locale, { native: string; english: string }> = {
@@ -668,7 +670,7 @@ npm run i18n:coverage              # Show translation adoption %
 
 ### CI/CD Integration
 
-Add to `.github/workflows/ci.yml`:
+Add to `.github/workflows/web-ci.yml`:
 
 ```yaml
 - name: Validate translations

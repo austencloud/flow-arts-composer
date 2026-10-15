@@ -1,5 +1,7 @@
 # Contact-correct performers
 
+**Repository status (2026-10-14):** The later [implementation review](contact-correct-performers-implementation-review.md) records an implemented candidate and rejection. The [September 21 lab evidence](contact-correct-performers-evidence.md) is experimental; physical acceptance remains incomplete. The original plan and blockers below are historical checkpoints.
+
 Status: architecture and implementation plan, 2026-09-20. Acceptance is pending.
 
 ## Required result
@@ -91,17 +93,17 @@ and the intended palm grip, not entire hands or the held arm.
 
 These are acceptance thresholds, not claimed measurements:
 
-| Measure | Gate | Reason |
-| --- | --- | --- |
-| Fixed endpoint drift | <= 0.5 mm | Rigid authored geometry should be numerically exact |
-| Palm contact residual | <= 2 mm | A larger gap is apparent in close-up |
-| Staff/palm axis residual | <= 2 degrees | Prevent a visibly skewed channel |
-| Finger/shaft penetration | <= 0.5 mm | Numerical tolerance, not permission for visible overlap |
-| Intended finger surface contact | <= 2 mm for supported fingers | Detect open fingers as well as penetration |
-| Body/prop penetration | <= 1 mm proxy tolerance, no visible mesh overlap | Proxy and visual gates are both required |
-| Arm reach excess | <= 1 mm without bone stretching | Do not disguise impossible reach |
-| Held-pose jitter | <= 0.1 mm and 0.1 degree after initialization | Frozen poses must stay frozen |
-| Continuity | no discontinuous branch changes or seam snap | Record maximum per-sample displacement/angle and acceleration |
+| Measure                         | Gate                                             | Reason                                                        |
+| ------------------------------- | ------------------------------------------------ | ------------------------------------------------------------- |
+| Fixed endpoint drift            | <= 0.5 mm                                        | Rigid authored geometry should be numerically exact           |
+| Palm contact residual           | <= 2 mm                                          | A larger gap is apparent in close-up                          |
+| Staff/palm axis residual        | <= 2 degrees                                     | Prevent a visibly skewed channel                              |
+| Finger/shaft penetration        | <= 0.5 mm                                        | Numerical tolerance, not permission for visible overlap       |
+| Intended finger surface contact | <= 2 mm for supported fingers                    | Detect open fingers as well as penetration                    |
+| Body/prop penetration           | <= 1 mm proxy tolerance, no visible mesh overlap | Proxy and visual gates are both required                      |
+| Arm reach excess                | <= 1 mm without bone stretching                  | Do not disguise impossible reach                              |
+| Held-pose jitter                | <= 0.1 mm and 0.1 degree after initialization    | Frozen poses must stay frozen                                 |
+| Continuity                      | no discontinuous branch changes or seam snap     | Record maximum per-sample displacement/angle and acceleration |
 
 Sweep at fixed 1/240-cycle intervals plus midpoints; repeat at different frame
 partitions and random seek order. Use at least ch07, a substantially different

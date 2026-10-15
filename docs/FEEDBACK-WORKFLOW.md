@@ -1,5 +1,7 @@
 # Feedback & Release Workflow
 
+**Repository status (2026-10-14):** The five-status explanation below records the earlier workflow. Current command behavior is owned by `scripts/fetch-feedback.js`, `scripts/release.js` and the linked skills; the old batch description does not establish every release's process.
+
 Complete guide to the feedback-to-release pipeline in Flow Arts Composer.
 
 ---
@@ -443,7 +445,7 @@ interface FeedbackItem {
 
 ## Related Documentation
 
-- `/fb` command: `.claude/commands/fb.md`
-- `/release` command: `.claude/commands/release.md`
+- `/fb` command: `.agents/skills/fb/SKILL.md`
+- `/release` command: `.agents/skills/release/SKILL.md`
 - Release script: `scripts/release.js`
 - Fetch feedback script: `fetch-feedback.js`

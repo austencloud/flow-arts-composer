@@ -83,9 +83,8 @@ the readable Guide and arcade implementations separate.
 
 This decision refines, rather than discards, the earlier ADRs:
 
-- `docs/archive/swarm-2026-10-14/architecture/guide-single-source.md` still governs the Guide's written content and
-  print/online parity.
-- `docs/archive/swarm-2026-10-14/learn/concepts-convergence-notes.md` governs the instructional experience.
+- The [July Guide source decision](../archive/swarm-2026-10-14/architecture/guide-single-source.md) records the earlier print/online parity plan; the October amendment above governs migrations.
+- The [June convergence notes](../archive/swarm-2026-10-14/learn/concepts-convergence-notes.md) record the earlier instructional rationale.
 
 "Canonical Guide content" and "canonical way to learn" are no longer treated
 as the same product role.

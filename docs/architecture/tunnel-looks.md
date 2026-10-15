@@ -17,29 +17,29 @@ kaleidoscope. It has been modeled three ways:
    legibility but was redundant (`Radial + mirror + 4` == Mandala; Cross ==
    `fold 2 + reflect`) and re-introduced a hidden sub-toggle. It also ceilinged
    the real goal.
-3. **Primitives (this ADR)** — the tunnel is a *study rig*: run any sequence
+3. **Primitives (this ADR)** — the tunnel is a _study rig_: run any sequence
    through the gamut, see its mandala every representative way. That wants an open
    combination space, not a fixed list.
 
-Austen (2026-07-06): *"reduce all of the variables and parameters down to their
+Austen (2026-07-06): _"reduce all of the variables and parameters down to their
 most reasonably sized minimum primitive so that you can construct them through the
-combination of multiple without much domain knowledge."*
+combination of multiple without much domain knowledge."_
 
 ## Decision
 
 Model the tunnel as a **closed primitive vocabulary**. The always-drawn base plus
-a set of copies *generated* from an orthogonal `TunnelConfig`. No named looks.
+a set of copies _generated_ from an orthogonal `TunnelConfig`. No named looks.
 
 ```ts
 // tunnel-config.ts
 interface TunnelConfig {
-  fold: 1 | 2 | 4 | 8;   // rotational arms (cyclic order)
-  mirror: boolean;       // reflect across vertical axis
-  flip: boolean;         // reflect across horizontal axis (N↔S)
-  invert: boolean;       // alternate arms motion-invert (PRO↔ANTI)
-  echo: boolean;         // alternate arms time-reverse
-  staggerSteps: number;  // arm k shows the sequence offset by k×this (0 = off)
-  speed: boolean;        // alternate arms traverse at ½× / 2×
+  fold: 1 | 2 | 4 | 8; // rotational arms (cyclic order)
+  mirror: boolean; // reflect across vertical axis
+  flip: boolean; // reflect across horizontal axis (N↔S)
+  invert: boolean; // alternate arms motion-invert (PRO↔ANTI)
+  echo: boolean; // alternate arms time-reverse
+  staggerSteps: number; // arm k shows the sequence offset by k×this (0 = off)
+  speed: boolean; // alternate arms traverse at ½× / 2×
 }
 ```
 
@@ -84,7 +84,7 @@ Modulators are free (no new copies); only `fold`/`mirror`/`flip` grow the count.
 The Tunnel section is the primitive controls, all top-level peers (no named
 looks): a **Fold** `SegmentedControl` `[1·2·4·8]`, a wrapping row of
 **Mirror / Flip / Invert / Echo / Speed** `FilterChipBase` toggle chips (per
-`chip-primitives.md`), a compact **Stagger** − N + stepper, the **Grid** icon
+[chip-primitives.md](../../.claude/rules/chip-primitives.md)), a compact **Stagger** − N + stepper, the **Grid** icon
 toggle, and a live prop-count readout. No checkboxes; 44px touch floor.
 
 ## Consequences
@@ -102,7 +102,7 @@ toggle, and a live prop-count readout. No checkboxes; 44px touch floor.
 
 ## Rejected
 
-- **Named looks as presets.** Austen wants *away* from the named vocabulary; the
+- **Named looks as presets.** Austen wants _away_ from the named vocabulary; the
   playground covers discoverability.
 - **Modulators that add copies.** Would explode the count and double-count the
   symmetry. They transform existing arms instead.
@@ -126,6 +126,6 @@ toggle, and a live prop-count readout. No checkboxes; 44px touch floor.
 
 ## Related
 
-- `never-hand-roll.md` (reuses `sequence-transforms.ts`), `chip-primitives.md`,
-  `no-checkboxes.md`, `no-layout-shift.md`, `effects-earn-their-slot.md`,
-  `visualization-routing.md`, `crossfade-primitive.md`, `sequence-viewer-shell.md`.
+- [never-hand-roll.md](../../.claude/rules/never-hand-roll.md) (reuses `sequence-transforms.ts`), [chip-primitives.md](../../.claude/rules/chip-primitives.md),
+  [no-checkboxes.md](../../.claude/rules/no-checkboxes.md), [no-layout-shift.md](../../.claude/rules/no-layout-shift.md), [effects-earn-their-slot.md](../../.claude/rules/effects-earn-their-slot.md),
+  [visualization-routing.md](../../.claude/rules/visualization-routing.md), `crossfade-primitive.md`, `sequence-viewer-shell.md`.

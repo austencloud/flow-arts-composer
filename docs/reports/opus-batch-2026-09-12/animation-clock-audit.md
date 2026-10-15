@@ -1,17 +1,19 @@
 # Animation clock and sampling audit
 
+**Repository status (2026-10-14):** The specific C1 loop-remainder defect is superseded: `src/lib/shared/animation-engine/services/animation-playback-controller.ts` now computes `boundaryOverrun` and preserves it modulo `loopBody`. The focused regression file is `src/lib/shared/animation-engine/services/__tests__/animation-playback-controller-loop-wrap-overrun.test.ts` (not run by this documentation task). C2 hidden-tab/lap policy, step duration and the other findings below are not certified closed.
+
 Read-only audit of the playback clock: elapsed-time to step mapping, fractional
 step durations, speed changes, backward stepping, seek endpoints, hidden-tab
 resume, drift across many loops, and pose discontinuities.
 
-| | |
-| --- | --- |
-| Date | 2026-09-13 |
-| Base SHA | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`) |
-| Final SHA | `6883e8f4a3b9421f98840760a2959e62859a16b9` — every deliverable is complete at this commit; this line is recorded by its child commit |
-| Revision | 2026-09-13, corrections to the C1 post-fix assertion, the C2 clamp's status as policy, and the C3 band figure. Measured results unchanged. |
-| Branch | `claude/animation-clock-audit-ri0dna` |
-| Production code changed | none |
+|                         |                                                                                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Date                    | 2026-09-13                                                                                                                                 |
+| Base SHA                | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`)                                                                                 |
+| Final SHA               | `6883e8f4a3b9421f98840760a2959e62859a16b9` — every deliverable is complete at this commit; this line is recorded by its child commit       |
+| Revision                | 2026-09-13, corrections to the C1 post-fix assertion, the C2 clamp's status as policy, and the C3 band figure. Measured results unchanged. |
+| Branch                  | `claude/animation-clock-audit-ri0dna`                                                                                                      |
+| Production code changed | none                                                                                                                                       |
 
 ## Owned files
 
@@ -100,12 +102,12 @@ lost.
 Measured, 8-beat canonical LOOP, durations summing to 12.51 beats, 60 Hz, speed
 1.0:
 
-| Case | Nominal lap | Measured lap | Drift |
-| --- | --- | --- | --- |
-| Seamless | 12 510.00 ms | 12 516.67 ms | +6.67 ms/lap; +133.3 ms after 20 laps |
-| Freeform | 13 220.00 ms | 13 233.33 ms | +13.33 ms/lap |
-| Seamless, jittered frames | 12 510.00 ms | — | +30.09 ms/lap mean, every lap strictly long |
-| Seamless, speed 3× | 4 170.00 ms | — | +13.33 ms/lap = 0.04 beats of sequence time |
+| Case                      | Nominal lap  | Measured lap | Drift                                       |
+| ------------------------- | ------------ | ------------ | ------------------------------------------- |
+| Seamless                  | 12 510.00 ms | 12 516.67 ms | +6.67 ms/lap; +133.3 ms after 20 laps       |
+| Freeform                  | 13 220.00 ms | 13 233.33 ms | +13.33 ms/lap                               |
+| Seamless, jittered frames | 12 510.00 ms | —            | +30.09 ms/lap mean, every lap strictly long |
+| Seamless, speed 3×        | 4 170.00 ms  | —            | +13.33 ms/lap = 0.04 beats of sequence time |
 
 Two properties make this worse than noise. The error is **one-signed**: the
 playhead is reset to a fixed point and then has to cover the full lap again, so
@@ -114,7 +116,7 @@ including the jittered one. And under a steady cadence it is **identical every
 lap** (`max − min < 1e-6`), so it is a straight line, not something that
 averages out.
 
-Bound on the loss: at most one frame of *sequence* time per lap, i.e.
+Bound on the loss: at most one frame of _sequence_ time per lap, i.e.
 `frameDelta × speed` — up to ~50 ms of sequence time per lap at 3× on a 60 Hz
 display.
 
@@ -175,8 +177,8 @@ document goes hidden — and of the hosts that drive a playback controller, only
 (`CanvasSection.svelte`), `InlineSequencePlayer.svelte`,
 `FuseAnimationPreview.svelte`, the onboarding play step and
 `SequenceDrawerHost.svelte` all claim the same module singleton
-(`getAnimationPlaybackController()`) without gating it. *(Host enumeration is
-static grep evidence, not a runtime observation of which hosts mount together.)*
+(`getAnimationPlaybackController()`) without gating it. _(Host enumeration is
+static grep evidence, not a runtime observation of which hosts mount together.)_
 
 Measured:
 
@@ -208,7 +210,7 @@ loop — so no deliberate large-delta caller is clamped by the change.
 complete fix.** Three things follow from it and need deciding rather than
 assuming:
 
-- *It trades wall-clock sync for continuity.* Clamping means the playhead
+- _It trades wall-clock sync for continuity._ Clamping means the playhead
   deliberately stops tracking elapsed real time across a stall: after a 30 s
   suspension the sequence is 30 s behind where the wall clock says it should be,
   permanently. That is the right trade for a looping visual, and the wrong one
@@ -219,11 +221,11 @@ assuming:
   threshold as a re-seed (advance nothing, exactly what the gate does today).
   Which is correct depends on whether playback is meant to be a clock or a
   loop; that is a product call.
-- *Any threshold is arbitrary.* 100 ms (≈ six dropped frames at 60 Hz) is a
+- _Any threshold is arbitrary._ 100 ms (≈ six dropped frames at 60 Hz) is a
   common choice, but nothing in this codebase derives it. It must be large
   enough not to slow playback during ordinary jank and small enough to catch a
   real stall; both edges are judgement.
-- *It does not recover skipped logical laps.* The measured lap loss above is
+- _It does not recover skipped logical laps._ The measured lap loss above is
   not fixed by clamping. A suspension spanning three laps still delivers one
   boundary crossing at most — with a clamp it delivers none, since the frame
   only advances 100 ms — so `onLoopComplete` under-counts either way and the
@@ -325,7 +327,7 @@ clock's own map puts those traversals 1 and 4 time units apart.
 Consequence: step mode and continuous mode play the same sequence with different
 rhythms, and step mode silently ignores an edit made in the duration editor. The
 fix is small (pass the step index and multiply by its duration), but whether step
-mode is *meant* to be a uniform pager is a product call, so this is listed as a
+mode is _meant_ to be a uniform pager is a product call, so this is listed as a
 follow-up rather than a defect to patch.
 
 ### C7 — `jumpToStep` and `seekToStep` clamp one beat apart
@@ -350,10 +352,10 @@ live switch.
 No production code changed, so "before" and "after" refer to the state of the
 suites with and without the added audit files.
 
-| Run | Result |
-| --- | --- |
+| Run                                                                        | Result                           |
+| -------------------------------------------------------------------------- | -------------------------------- |
 | Before — `tests/unit/animation-engine` + `src/lib/shared/animation-engine` | 67 files, 397 tests, all passing |
-| After — the same plus `tests/unit/opus-animation-clock-audit` | 70 files, 432 tests, all passing |
+| After — the same plus `tests/unit/opus-animation-clock-audit`              | 70 files, 432 tests, all passing |
 
 Command (project config, as `AGENTS.md` requires):
 
