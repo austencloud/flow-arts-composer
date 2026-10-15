@@ -1,5 +1,7 @@
 # Poi Legality — everything we know, in one place
 
+**Repository status (2026-10-14):** Later measured transcription evidence is in [the SpiroAnim corpus](../research/spiroanim/README.md). Letter resolution in that corpus does not prove every transition physically executable; the dynamic-transition uncertainties below remain.
+
 **What this is.** Every attempt this project has made to define which TKA motions
 a poi can actually perform, what each attempt produced, and what survived. It
 exists because the work keeps getting redone from scratch, and because "how does
@@ -46,13 +48,13 @@ the transition layer, which nobody has measured yet. Section 5.
 
 `src/lib/features/levels/poi-lab/services/poi-constraint-validator.ts`
 
-| # | Rule | Stated reason |
-|---|---|---|
-| 1 | FLOAT only at the position's gravity orientation | — |
-| 2 | ANTI at 0 turns never | "no tramel motion" |
-| 3 | PRO at 0 turns with IN orientation never | "cannot isolate inward-facing swinging prop" |
-| 4 | DASH needs ≥ 0.5 turns | "can't stop momentum on a dime" |
-| 5 | No instant CW↔CCW spin reversal | "needs stall or transition beat" |
+| #   | Rule                                             | Stated reason                                |
+| --- | ------------------------------------------------ | -------------------------------------------- |
+| 1   | FLOAT only at the position's gravity orientation | —                                            |
+| 2   | ANTI at 0 turns never                            | "no tramel motion"                           |
+| 3   | PRO at 0 turns with IN orientation never         | "cannot isolate inward-facing swinging prop" |
+| 4   | DASH needs ≥ 0.5 turns                           | "can't stop momentum on a dime"              |
+| 5   | No instant CW↔CCW spin reversal                  | "needs stall or transition beat"             |
 
 Rules 1–4 are per-motion (`validateMotion`); rule 5 is per-transition
 (`validateTransition`).
@@ -60,17 +62,17 @@ Rules 1–4 are per-motion (`validateMotion`); rule 5 is per-transition
 Supporting map, `poi-gravity-orientation-deriver.ts` — the orientation a prop
 takes hanging under gravity at each grid location:
 
-| Location | Gravity orientation |
-|---|---|
-| N | IN (down = toward centre) |
-| E | CLOCK |
-| S | OUT (down = away from centre) |
-| W | COUNTER |
+| Location          | Gravity orientation                             |
+| ----------------- | ----------------------------------------------- |
+| N                 | IN (down = toward centre)                       |
+| E                 | CLOCK                                           |
+| S                 | OUT (down = away from centre)                   |
+| W                 | COUNTER                                         |
 | NE / SE / SW / NW | CLOCK_IN / CLOCK_OUT / COUNTER_OUT / COUNTER_IN |
-| CENTER | CENTER_S |
+| CENTER            | CENTER_S                                        |
 
-Austen's verdict on the five rules at the time: *"it didn't really get it
-right."* Section 3 shows two of them were in fact exactly right, and Section 5
+Austen's verdict on the five rules at the time: _"it didn't really get it
+right."_ Section 3 shows two of them were in fact exactly right, and Section 5
 shows which one is actually wrong.
 
 Composer wiring: `apply-poi-legal-filter.ts`, gated
@@ -79,7 +81,7 @@ Composer wiring: `apply-poi-legal-filter.ts`, gated
 ### Attempt 2 — the momentum simulator (built, reverted)
 
 Thesis (Austen's, recorded in
-`docs/superpowers/specs/2026-07-18-poi-momentum-simulator-brainstorm-handoff.md`):
+`docs/superpowers/handoffs/2026-07-18-poi-momentum-simulator-brainstorm-handoff.md`):
 **poi legality is governed by momentum continuity.** A move is legal only if it
 continues an achievable momentum, and achievability is physics — the worked
 example being that an extension is impossible below a minimum hand speed,
@@ -94,7 +96,7 @@ rather than a boolean, because feasibility is tempo-dependent.
 The brainstorm paused on one question that was never answered:
 
 > Is "poi-legal" **(A)** a pure tempo envelope, **(B)** mostly categorical, or
-> **(C)** two separable layers — categorical *and* physical, reported separately?
+> **(C)** two separable layers — categorical _and_ physical, reported separately?
 
 It was built anyway and **reverted as unusable** — `47402bab2c`, "Revert
 docs(poi): momentum-simulator design spec". The reverted direction included the
@@ -102,7 +104,7 @@ tempo math and slack modelling.
 
 ### Attempt 3 — curation by eye (the current state)
 
-`docs/superpowers/specs/2026-07-19-poi-legal-matrix-design.md`. Ratified restart
+`docs/superpowers/specs/shipped/2026-07-19-poi-legal-matrix-design.md`. Ratified restart
 after the revert:
 
 - Flowers first — the VTG pattern matrix is the base.
@@ -157,11 +159,11 @@ console.log(ok,bad);"
 ## 4. What the QfT app knows about this
 
 `/notation/qft` implements Cushing's 2011 poi notation, which is the same
-subject from the other end: a notation designed *for* poi rather than a filter
-*over* TKA. Two things there are evidence:
+subject from the other end: a notation designed _for_ poi rather than a filter
+_over_ TKA. Two things there are evidence:
 
-- The source itself encodes the gravity asymmetry: *"A pendulum never touches 7,
-  8, or 1, because those point upward."* Position 8 is north.
+- The source itself encodes the gravity asymmetry: _"A pendulum never touches 7,
+  8, or 1, because those point upward."_ Position 8 is north.
 - `PENDULUM_PATH = [2,3,4,5,6,5,4,3,2]` in `qft-model.ts` — per-increment prop
   rates of `+1,+1,+1,+1,−1,−1,−1,−1`. The reversals sit at 2 and 6, the
   horizontal.
@@ -192,10 +194,10 @@ reversals, no transitions, no dashes and no floats. Rules 1, 4 and 5 have never
 been tested against any data.
 
 Rule 5 is the one known to be wrong. It forbids spin reversal outright — and the
-extendulum is a spin reversal that is performed. Austen, 2026-07-30: *"many
+extendulum is a spin reversal that is performed. Austen, 2026-07-30: _"many
 reversals of momentum are possible if done in a specific way where the
 orientation lands in a specific way and we just haven't developed the language
-or algorithms to identify that quite yet."*
+or algorithms to identify that quite yet."_
 
 ### The candidate language: θ, the prop's angle from gravity-down
 
@@ -205,11 +207,11 @@ map. Not confirmed by Austen and not tested against data.**
 Define θ as the angle between the prop's bearing and straight down.
 `getGravityOrientation` is already the θ = 0 map.
 
-| θ | State | What it explains |
-|---|---|---|
-| 0 | Hanging straight down. Bottom of the swing, fastest point. No momentum required to be here. | Rule 1 — FLOAT only at gravity orientation |
-| ±90° | Horizontal. Top of a gravity-driven swing arc, where angular velocity naturally reaches zero. | **Where reversals are possible.** The extendulum reverses at bearing 2 and 6 — the horizontals — and moves fastest at the bottom |
-| →180° | Overhead. The cord needs speed to stay taut or the head falls. | The extension floor the simulator was chasing |
+| θ     | State                                                                                         | What it explains                                                                                                                 |
+| ----- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | Hanging straight down. Bottom of the swing, fastest point. No momentum required to be here.   | Rule 1 — FLOAT only at gravity orientation                                                                                       |
+| ±90°  | Horizontal. Top of a gravity-driven swing arc, where angular velocity naturally reaches zero. | **Where reversals are possible.** The extendulum reverses at bearing 2 and 6 — the horizontals — and moves fastest at the bottom |
+| →180° | Overhead. The cord needs speed to stay taut or the head falls.                                | The extension floor the simulator was chasing                                                                                    |
 
 One sentence: **a poi move is legal when every reversal of prop momentum occurs
 at θ = ±90°, and every sustained extension carries the speed to hold θ past 90°.**
@@ -237,15 +239,15 @@ extension condition is physical and tempo-dependent.
 
 ## 6. Where the code lives
 
-| Path | What |
-|---|---|
-| `src/lib/features/levels/poi-lab/` | All move-legality code. The five rules, the gravity map, the verdict store, the composer filter |
-| `.../poi-lab/data/poi-legal-matrix.json` | The 784 curated verdicts |
-| `.../poi-lab/services/apply-poi-legal-filter.ts` | Composer entry point, gated `DEV \|\| isAdmin()` |
-| `src/routes/test/poi-matrix/` | The curation surface + its dev-only save endpoint |
-| `src/routes/(public)/notation/poi/` | The public poi page — says Poi Lab is planned |
-| `src/lib/shared/notation/qft/` | Cushing's 2011 poi notation, implemented |
-| `docs/reference/archive/qft-notation/` | The 2011 source material |
+| Path                                             | What                                                                                            |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `src/lib/features/levels/poi-lab/`               | All move-legality code. The five rules, the gravity map, the verdict store, the composer filter |
+| `.../poi-lab/data/poi-legal-matrix.json`         | The 784 curated verdicts                                                                        |
+| `.../poi-lab/services/apply-poi-legal-filter.ts` | Composer entry point, gated `DEV \|\| isAdmin()`                                                |
+| `src/routes/test/poi-matrix/`                    | The curation surface + its dev-only save endpoint                                               |
+| `src/routes/(public)/notation/poi/`              | The public poi page — says Poi Lab is planned                                                   |
+| `src/lib/shared/notation/qft/`                   | Cushing's 2011 poi notation, implemented                                                        |
+| `docs/reference/archive/qft-notation/`           | The 2011 source material                                                                        |
 
 **Two unrelated `poi` trees are not legality:** `src/lib/features/poi/` and
 `src/lib/shared/poi/` are LED / POV-strip hardware code.
@@ -268,10 +270,10 @@ extension condition is physical and tempo-dependent.
 
 ## Related
 
-- `docs/superpowers/specs/2026-07-18-poi-momentum-simulator-brainstorm-handoff.md`
+- `docs/superpowers/handoffs/2026-07-18-poi-momentum-simulator-brainstorm-handoff.md`
   — attempt 2 in full, including the Verlet reuse target
-- `docs/superpowers/specs/2026-07-19-poi-legal-matrix-design.md` — attempt 3
-- `docs/superpowers/specs/active/2026-07-17-poi-legal-composer-filtering-design.md`
+- `docs/superpowers/specs/shipped/2026-07-19-poi-legal-matrix-design.md` — attempt 3
+- `docs/superpowers/specs/shipped/2026-07-17-poi-legal-composer-filtering-design.md`
   — the symbolic filter's own admission that five rules are a first pass
 - `docs/reference/archive/qft-notation/README.md` — the 2011 source
 - `.claude/rules/mcp-ground-truth.md`, `.claude/rules/no-fabrication.md`

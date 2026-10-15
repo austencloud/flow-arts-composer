@@ -1,7 +1,9 @@
 # TKA Museum Documentation
 
+**Repository status (2026-10-14):** This tree contains the web museum owner `src/lib/features/museum/MuseumModule.svelte`; `v1-shippable-scope.md` is a draft text-only slice. Which delivery target leads remains a product decision. The README already declares the story bible, gift shop and real story private under `austencloud/flow-arts-private` / `museum/`; those sources are not in this tree and were not inspected. The declared canon relationship below is preserved without asserting private-source availability.
+
 > **Project:** The Kinetic Archive
-> **Engine:** Unreal Engine 5 (Steam release) + Web App integration (deep link handoff to TKA Scribe)
+> **Proposed platform:** Unreal Engine 5 (Steam release) + Web App integration (deep link handoff to Flow Arts Composer)
 > **Status:** Pre-production (Story Bible phase)
 > **Tone:** Museum of Jurassic Technology meets Stanley Parable
 
@@ -19,17 +21,17 @@ The museum-dev tracker (`node scripts/museum-dev.js`) records how decisions were
 
 ## Document Index
 
-| Document | Status | Description |
-|----------|--------|-------------|
-| `story-bible.md` (private) | **Canon** | Master document. Creative principles, K's arc, factions, endings, deep lore, all locked decisions. |
-| [museum-layout.md](./museum-layout.md) | Needs revision | Physical wing layout. Still uses retired Wing 1-8 numbering. Spatial reference only. |
-| [vtg-wing.md](./vtg-wing.md) | Partially superseded | Vulcan Cave elemental design. Some content folded into story bible. |
-| [story-audit-march-2026.md](./story-audit-march-2026.md) | Active | Story quality audit with predicted Steam rating and comp titles. |
-| [stanley-parable-reference.md](./stanley-parable-reference.md) | Active | Stanley Parable design lessons and source URLs. |
-| `gift-shop.md` (private) | Active | Fake items, digital unlocks, real merch concepts. |
-| `real-story.md` (private) | Active | Austen's actual development story (outside the fiction). |
-| [tka-os/design.md](./tka-os/design.md) | Active | The retro Windows 93 app experience design. |
-| [plaques/lascaux-tablets.md](./plaques/lascaux-tablets.md) | Active | Sample plaque text and audio script. |
+| Document                                                                | Status               | Description                                                                                        |
+| ----------------------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------- |
+| `story-bible.md` (private)                                              | **Canon**            | Master document. Creative principles, K's arc, factions, endings, deep lore, all locked decisions. |
+| [museum-layout.md](../archive/swarm-2026-10-14/museum/museum-layout.md) | Needs revision       | Physical wing layout. Still uses retired Wing 1-8 numbering. Spatial reference only.               |
+| [vtg-wing.md](./vtg-wing.md)                                            | Partially superseded | Vulcan Cave elemental design. Some content folded into story bible.                                |
+| [story-audit-march-2026.md](./story-audit-march-2026.md)                | Active               | Story quality audit with predicted Steam rating and comp titles.                                   |
+| [stanley-parable-reference.md](./stanley-parable-reference.md)          | Active               | Stanley Parable design lessons and source URLs.                                                    |
+| `gift-shop.md` (private)                                                | Active               | Fake items, digital unlocks, real merch concepts.                                                  |
+| `real-story.md` (private)                                               | Active               | Austen's actual development story (outside the fiction).                                           |
+| [tka-os/design.md](./tka-os/design.md)                                  | Active               | The retro Windows 93 app experience design.                                                        |
+| [plaques/lascaux-tablets.md](./plaques/lascaux-tablets.md)              | Active               | Sample plaque text and audio script.                                                               |
 
 ---
 
@@ -37,19 +39,19 @@ The museum-dev tracker (`node scripts/museum-dev.js`) records how decisions were
 
 From the story bible's Canonical Decisions table:
 
-| Decision | Detail |
-|----------|--------|
-| Engine | Unreal Engine 5 |
-| Tone | Museum of Jurassic Technology meets Stanley Parable. Commit to the bit, never wink. |
-| K | One character: narrator + annotator + defector + developer + renovator. Never seen, traces only. Male, born ~1968. |
-| Endings | Three sequential rooms (Fear / Isolation / Collaboration), not branching choices. Scrooge effect. |
-| Austen | Meta-only. Not a character. No exhibit, no named mention. Developer and voice actor. |
-| Factions | Order of the Closed Palm (Bureau of Kinetic Containment) vs. The Scribes. |
-| Vessels | Concept retired. Historical figures are Scribes, not reincarnating souls. |
-| Lethe | Ancient, repeated across history, always incomplete. Not a single 1994 event. |
-| Building | "The Kinetic Archive" on entrance. Three architectural eras: Order-built (pre-2003), Crumble (2003-2008), K's museum (post-2008). |
-| VTG handling | Terms as Easter eggs. System name "Vulcan Tech Gospel" never appears in fiction. |
-| Andy Kaufman Rule | The audience's confusion about what's real IS the art. |
+| Decision          | Detail                                                                                                                            |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Engine            | Unreal Engine 5                                                                                                                   |
+| Tone              | Museum of Jurassic Technology meets Stanley Parable. Commit to the bit, never wink.                                               |
+| K                 | One character: narrator + annotator + defector + developer + renovator. Never seen, traces only. Male, born ~1968.                |
+| Endings           | Three sequential rooms (Fear / Isolation / Collaboration), not branching choices. Scrooge effect.                                 |
+| Austen            | Meta-only. Not a character. No exhibit, no named mention. Developer and voice actor.                                              |
+| Factions          | Order of the Closed Palm (Bureau of Kinetic Containment) vs. The Scribes.                                                         |
+| Vessels           | Concept retired. Historical figures are Scribes, not reincarnating souls.                                                         |
+| Lethe             | Ancient, repeated across history, always incomplete. Not a single 1994 event.                                                     |
+| Building          | "The Kinetic Archive" on entrance. Three architectural eras: Order-built (pre-2003), Crumble (2003-2008), K's museum (post-2008). |
+| VTG handling      | Terms as Easter eggs. System name "Vulcan Tech Gospel" never appears in fiction.                                                  |
+| Andy Kaufman Rule | The audience's confusion about what's real IS the art.                                                                            |
 
 ---
 
@@ -82,11 +84,11 @@ Staleness check: `node scripts/check-lore-staleness.cjs` (reads the private stor
 
 ## Skills
 
-| Skill | Purpose |
-|-------|---------|
-| `/museum` | Full department briefing (dispatches 7 parallel agents) or focused department view |
-| `/museum-lore` | Writers' room lore discussion. Mandatory session-close protocol. |
+| Skill          | Purpose                                                                            |
+| -------------- | ---------------------------------------------------------------------------------- |
+| `/museum`      | Full department briefing (dispatches 7 parallel agents) or focused department view |
+| `/museum-lore` | Writers' room lore discussion. Mandatory session-close protocol.                   |
 
 ---
 
-*Last updated: 2026-09-27*
+_Last updated: 2026-09-27_

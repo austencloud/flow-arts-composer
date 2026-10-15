@@ -72,5 +72,5 @@ owns its mounted-panel state and cancels animation frames/listeners on teardown;
 background callbacks check cancellation before changing state. No shared
 carousel geometry or scheduler API changed.
 
-Evidence: [numeric results](2026-09-08-construct-pass-3-evidence.json) and
-[repeatable interaction probe](2026-09-08-construct-pass-3-probe.js).
+Evidence: [numeric results](../../../performance/2026-09-08-construct-pass-3-evidence.json) and
+[repeatable interaction probe](../../../performance/2026-09-08-construct-pass-3-probe.js).

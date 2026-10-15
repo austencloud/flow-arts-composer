@@ -1,6 +1,6 @@
 # Plaque: The Lascaux Tablets
 
-> Location: Wing 1 - Ancient Origins
+> Historical placement: Wing 1 - Ancient Origins (retired numbered layout; current placement unresolved).
 > Type: Primary artifact display
 > Audio: Yes (AI-generated narration)
 
@@ -92,7 +92,7 @@
 
 ---
 
-*[Ambient cave sounds fade slightly]*
+_[Ambient cave sounds fade slightly]_
 
 The Lascaux Notation Tablets.
 
@@ -108,7 +108,7 @@ Thirty-five thousand years ago, someone stood in a cave much like this one and t
 
 Some things never change.
 
-*[Ambient cave sounds return]*
+_[Ambient cave sounds return]_
 
 ---
 
@@ -119,12 +119,14 @@ Some things never change.
 Two stone tablets displayed on a raised platform with dramatic lighting:
 
 **OOGA Tablet:**
+
 - Larger of the two (~30cm x 20cm)
 - Ochre markings showing stylized figures with burning branches
 - Four distinct "beats" visible
 - Primitive but clearly systematic
 
 **UG Tablet:**
+
 - Smaller (~15cm x 10cm)
 - Simpler two-position diagram
 - More worn, suggesting heavy use
@@ -172,4 +174,4 @@ Dr. Henri Marchand is mentioned as having died before publishing. His "posthumou
 
 ---
 
-*Last updated: 2026-01-27*
+_Last updated: 2026-01-27_

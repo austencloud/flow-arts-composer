@@ -20,7 +20,7 @@
  * (b) locks the duplication against future drift until it is deleted.
  *
  * Part of the read-only sequence-engine parity audit; see
- * `docs/reports/opus-batch-2026-09-12/sequence-engine-parity.md`.
+ * `docs/archive/swarm-2026-10-14/reports/opus-batch-2026-09-12/sequence-engine-parity.md`.
  */
 
 import { describe, expect, it } from "vitest";

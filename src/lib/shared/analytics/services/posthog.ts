@@ -144,7 +144,7 @@ function resolveBootstrapDistinctId(token: string): string | undefined {
  *
  * These console.error strings are confirmed SDK/browser chatter, not app bugs.
  * The original set was 80%+ of $exception volume on the Instagram-referral session that
- * prompted this audit (docs/architecture/in-app-browser-path.md), burying real
+ * prompted this audit (docs/archive/swarm-2026-10-14/architecture/in-app-browser-path.md), burying real
  * errors under noise nobody could act on. This is a DENYLIST: only an event
  * matching one of these three patterns is dropped, everything else — including
  * event shapes this list has never seen — passes through untouched. An

@@ -1,5 +1,7 @@
 # The VTG Wing (Perpetually Under Construction)
 
+**Repository status (2026-10-14):** Room and numbered-wing placements below belong to the retired museum layout and remain historical pending current canon placement. The VTG acknowledgment and anti-misattribution requirements remain intact. [The museum README](README.md) already marks this document partly superseded.
+
 > This document describes the handling of Vulcan Tech Gospel acknowledgment in the museum.
 
 ---
@@ -9,6 +11,7 @@
 Vulcan Tech Gospel (VTG) is a real notation framework created by Noel Yee and spinners at the Vulcan Lofts in Oakland. Many flow artists learn VTG before encountering TKA. The terms "pro" and "anti" in TKA are borrowed from (and adapted from) VTG's terminology.
 
 We need to acknowledge VTG's existence and influence without:
+
 1. Creating the impression we're parodying or attacking VTG
 2. Having to actually build a detailed VTG exhibit
 3. Confusing visitors who don't know what VTG is
@@ -28,6 +31,7 @@ The VTG wing exists but is never finished. It's always "under renovation." This 
 **Location:** Visible from Wing 5 (Digital Revolution), off to the side
 
 **What visitors see:**
+
 - Roped-off entrance
 - Construction scaffolding visible inside
 - Dust sheets over shapes that might be displays
@@ -57,6 +61,7 @@ The VTG wing exists but is never finished. It's always "under renovation." This 
 ```
 
 **Smaller sign on the rope:**
+
 ```
 HARD HAT AREA
 Authorized Personnel Only
@@ -65,11 +70,13 @@ Authorized Personnel Only
 ### Replay/Easter Egg Access
 
 On subsequent playthroughs, observant visitors might notice:
+
 - A small gap in the rope barrier
 - The rope is slightly loose
 - A sign that says "ALMOST READY" (it wasn't there before)
 
 If they try to squeeze through, something absurd prevents entry:
+
 - Rocks fall from the ceiling, blocking the path
 - A comically large "CLOSED" sign drops down
 - A construction worker (clearly a mannequin) falls over and blocks the way
@@ -98,14 +105,17 @@ The mystery of what WOULD be in this wing is part of the joke. It's always almos
 ## Why This Works
 
 ### For people who know VTG:
+
 They'll recognize the reference. The joke is that Austen's museum is disorganized enough that he hasn't finished this wing yet. It's self-deprecating about the MUSEUM, not about VTG.
 
 Noel Yee should find this funny - "Austen acknowledges us but is too busy with his own stuff to actually make our exhibit."
 
 ### For people who don't know VTG:
+
 It's just another museum wing that's under construction. Museums have these all the time. It adds verisimilitude.
 
 ### For the meta-layer:
+
 It's honest. TKA borrowed from VTG. A real museum about kinetic notation WOULD have a VTG exhibit. This museum... is working on it.
 
 ---
@@ -126,12 +136,15 @@ But for MVP: it's under construction forever.
 ## Alternative Approaches (Not Chosen)
 
 ### Option B: The Parallel Timeline (Alternate Dimension)
+
 A plaque mentions VTG exists in an "alternate timeline" and artifacts cannot be displayed. This was rejected because it's too dismissive - it sounds like we're saying VTG isn't real.
 
 ### Option C: The Academic Rivalry
+
 A corkboard of competing papers arguing about VTG vs TKA. Rejected because it creates direct comparison/conflict that might feel like criticism.
 
 ### Option D: Don't Mention VTG at All
+
 Rejected because it would be noticed by tech heads and might seem like an intentional snub.
 
 ---
@@ -146,4 +159,4 @@ This is the truth. The joke is at Austen's expense, not VTG's.
 
 ---
 
-*Last updated: 2026-01-27*
+_Last updated: 2026-01-27_

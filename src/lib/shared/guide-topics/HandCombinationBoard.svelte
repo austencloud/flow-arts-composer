@@ -24,6 +24,9 @@
   named by `hintLabel`; `goal` rings the cell asked for (Austen, 2026-10-12:
   learners could not tell what the six were, so they can tap one for help).
 
+  `peek` shows an unfound cell's picture for a moment, without its check:
+  the Learn quiz uses it to show what a wrong answer looks like.
+
   A host can set `--board-wide-columns` (6 by default) for a wide board.
 -->
 <script lang="ts">
@@ -55,6 +58,7 @@
     goal?: HandCombinationId | null;
     onHint?: (id: HandCombinationId) => void;
     hintLabel?: (name: string) => string;
+    peek?: HandCombinationId | null;
   }
 
   let {
@@ -70,6 +74,7 @@
     goal = null,
     onHint = undefined,
     hintLabel = (name) => name,
+    peek = null,
   }: Props = $props();
 
   /** Where the example's hands start, for a cell that plays its move. */
@@ -117,6 +122,7 @@
         class:lit={lit === combination.id}
         class:hintable
         class:goal={hintable && goal === combination.id}
+        class:peek={!isFound && peek === combination.id}
         style:--tone-a={tones[0]}
         style:--tone-b={tones[1]}
         aria-hidden={isFound || hintable ? undefined : "true"}
@@ -233,12 +239,23 @@
     border-radius: 0.75rem;
     transition:
       background-color var(--transition-normal),
-      border-color var(--transition-normal);
+      border-color var(--transition-normal),
+      box-shadow var(--transition-normal);
   }
 
+  /* The cell just found stands out from the blue page: a light ring and
+     glow, as the Learn slots light (Austen, 2026-10-14). */
   .cell.lit {
-    background: color-mix(in srgb, var(--tone-a) 12%, transparent);
-    border-color: color-mix(in srgb, var(--tone-a) 60%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-text, currentColor) 12%,
+      transparent
+    );
+    border-color: var(--theme-text, currentColor);
+    box-shadow:
+      inset 0 0 0 1px var(--theme-text, currentColor),
+      0 0 1.25rem
+        color-mix(in srgb, var(--theme-text, currentColor) 30%, transparent);
   }
 
   /* An unfound cell asked for as a hint: ringed and tinted whole, its name
@@ -248,6 +265,18 @@
     border-color: color-mix(in srgb, var(--tone-a) 70%, transparent);
   }
 
+  /* A wrong answer's own picture, shown for a moment. */
+  .cell.peek {
+    border-style: dashed;
+    border-color: currentColor;
+  }
+
+  .peek .picture {
+    opacity: 1;
+  }
+
+  .peek .name,
+  .peek .bar,
   .goal .name,
   .goal .bar,
   .hintable:hover .name,

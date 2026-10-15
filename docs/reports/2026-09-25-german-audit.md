@@ -1,5 +1,7 @@
 # German interface audit — September 25, 2026
 
+**Repository status (2026-10-14):** English has 9,654 keys, German 8,976; 678 English keys are absent from German. This is a JSON key-set comparison on this tree, not evidence that every missing key is reachable. The audit-time 717-key gap below remains historical; guide prose, dependency wording and native-speaker review remain separate acceptance work.
+
 ## September 27 correction: guest account prompts
 
 The earlier verification missed dynamically constructed translation keys. A guest visiting `/feedback/submit` saw `auth_nudge_module_other`, which was absent from both English and German. The same defect affected the 3D Studio, Fuse, Tunnel, and Assemble prompts; their subsequent account-dialog titles and descriptions also lacked translations. The earlier authentication coverage must not be read as verification of every guest gate.

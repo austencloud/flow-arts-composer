@@ -12,7 +12,7 @@ whose retained instances preserve close animations and form state. The inbox
 continues mounting at startup because it owns pending message delivery recovery.
 
 This addresses Vite development loading. The earlier
-[vendor chunk change](2026-10-07-vendor-chunk-split.md) affects production builds.
+[vendor chunk change](../../../performance/2026-10-07-vendor-chunk-split.md) affects production builds.
 
 ## Evidence
 

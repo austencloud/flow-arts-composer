@@ -272,6 +272,6 @@ users. Repetition of the phrase is not the outcome.
 
 These files preserve the implementation history behind this strategy:
 
-- [`2026-07-16-flow-arts-software-seo-design.md`](../superpowers/specs/2026-07-16-flow-arts-software-seo-design.md)
-- [`2026-07-16-seo-a-plus-plan.md`](../superpowers/specs/2026-07-16-seo-a-plus-plan.md)
+- [`2026-07-16-flow-arts-software-seo-design.md`](../superpowers/specs/shipped/2026-07-16-flow-arts-software-seo-design.md)
+- [`2026-07-16-seo-a-plus-plan.md`](../superpowers/specs/audits/2026-07-16-seo-a-plus-plan.md)
 - 2026-07-17 external search research backlog

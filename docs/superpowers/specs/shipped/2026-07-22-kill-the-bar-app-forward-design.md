@@ -2,7 +2,7 @@
 
 **Status:** Phase A implemented 2026-07-22; **Revision 1 (post-Codex-review)
 appended below — read §R before trusting §5, §6, and the Phase B claims.**
-**Supersedes the relevant parts of:** `docs/architecture/in-app-browser-path.md`
+**Supersedes the relevant parts of:** `docs/archive/swarm-2026-10-14/architecture/in-app-browser-path.md`
 (that doc's "iOS escape is impossible, manual only" conclusion was based on a
 stale reading of `x-safari-https://`; see §5)
 **Related:** `.claude/rules/never-hand-roll.md`, `no-checkboxes.md`,

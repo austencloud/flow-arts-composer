@@ -57,6 +57,15 @@ Mobile and desktop keep functional parity while allowing different layouts. Use 
 
 Use `BaseModal` and the size variants in `modal-tokens.css` before adding custom widths. Modal size controls the content band; it does not authorize a local type ramp. Components inside a modal should react to the modal body with container queries.
 
+Merged from [MODAL_SIZING_STRATEGY.md](../archive/swarm-2026-10-14/MODAL_SIZING_STRATEGY.md) (original directory: `docs/`) on 2026-10-14.
+
+Content requirements and safe viewport bounds constrain both width and height.
+A wide but short viewport may need stacked panels or tabs rather than the layout
+chosen from width alone. Keep the content reachable when the ideal arrangement
+does not fit. The current implementation reference is
+`src/lib/shared/foundation/ui/modal/modal-tokens.css`; use its variants and safe
+bounds before adding a layout-specific exception.
+
 ## Verification matrix
 
 Every responsive visual change is checked at these CSS viewports:
