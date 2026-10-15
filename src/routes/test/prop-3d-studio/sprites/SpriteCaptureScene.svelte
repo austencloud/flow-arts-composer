@@ -23,7 +23,6 @@
     Vector3,
     Quaternion,
   } from "three";
-  import type { WebGLRenderer } from "three";
   import {
     Plane,
     Prop3D,
@@ -74,11 +73,12 @@
   const FRAMES_GIVE_UP = 600;
 
   const { scene, renderer } = useThrelte();
-  scene.background = null;
-  const gl = renderer as WebGLRenderer;
+  const activeScene = "current" in scene ? scene.current : scene;
+  activeScene.background = null;
+  const gl = "current" in renderer ? renderer.current : renderer;
   gl.setClearColor(0x000000, 0);
-  scene.environment = getRoomEnvironmentTexture(gl);
-  scene.environmentIntensity = 0.9;
+  activeScene.environment = getRoomEnvironmentTexture(gl);
+  activeScene.environmentIntensity = 0.9;
 
   const propState = {
     centerPathAngle: 0,
@@ -228,7 +228,7 @@
     const heightPx = Math.round(box.height * pixelsPerUnit);
     gl.setSize(widthPx, heightPx, false);
     gl.setPixelRatio(1);
-    gl.render(scene, camera);
+    gl.render(activeScene, camera);
     if (coverage(gl.domElement) < 0.002) {
       // Geometry is placed but nothing painted yet (materials/textures still
       // streaming). Keep rendering until pixels land or we give up.
