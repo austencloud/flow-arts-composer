@@ -5,6 +5,16 @@
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
 #include "GameFramework/PlayerController.h"
+#include "Styling/CoreStyle.h"
+
+void AFlowFestHUD::DrawLabel(const FString& Text, FLinearColor Color, float X, float Y, UFont* Font, float Scale)
+{
+    // Rasterize at the final pixel size instead of enlarging a small bitmap font.
+    const int32 PointSize = FMath::Max(8, FMath::RoundToInt(10.f * Scale));
+    const FSlateFontInfo Face = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), PointSize);
+    FCanvasTextItem Item(FVector2D(X, Y), FText::FromString(Text), Face, Color);
+    Canvas->DrawItem(Item);
+}
 
 void AFlowFestHUD::DrawHUD()
 {
@@ -29,38 +39,38 @@ void AFlowFestHUD::DrawHUD()
 
     DrawRect(Surface, Pad, Pad, PanelWidth, 199.f * Scale);
     DrawRect(Accent, Pad, Pad, 5.f * Scale, 199.f * Scale);
-    DrawText(TEXT("FLOW FEST  /  THURSDAY ARRIVAL"), Accent, Pad + 22.f * Scale, Pad + 17.f * Scale, Small, 1.22f * Scale);
+    DrawLabel(Traveler->Phase == EFlowFestPhase::Morning ? TEXT("FLOW FEST  /  FRIDAY MORNING") : TEXT("FLOW FEST  /  THURSDAY ARRIVAL"), Accent, Pad + 22.f * Scale, Pad + 17.f * Scale, Small, 1.22f * Scale);
     const FString Title = Traveler->GetObjectiveTitle();
-    DrawText(Title, Ink, Pad + 22.f * Scale, Pad + 51.f * Scale, Title.Len() > 37 ? Small : Medium, (Title.Len() > 37 ? 1.38f : 1.15f) * Scale);
+    DrawLabel(Title, Ink, Pad + 22.f * Scale, Pad + 51.f * Scale, Title.Len() > 37 ? Small : Medium, (Title.Len() > 37 ? 1.38f : 1.15f) * Scale);
     const FString Detail = Traveler->GetObjectiveDetail();
     const int32 MaxDetailChars = W < 1100.f ? 43 : 75;
     int32 BreakAt = INDEX_NONE;
     if (Detail.Len() > MaxDetailChars) BreakAt = Detail.Find(TEXT(" "), ESearchCase::CaseSensitive, ESearchDir::FromEnd, MaxDetailChars);
-    DrawText(BreakAt > 0 ? Detail.Left(BreakAt) : Detail, Muted, Pad + 22.f * Scale, Pad + 102.f * Scale, Small, 1.18f * Scale);
-    if (BreakAt > 0) DrawText(Detail.Mid(BreakAt + 1), Muted, Pad + 22.f * Scale, Pad + 120.f * Scale, Small, 1.18f * Scale);
+    DrawLabel(BreakAt > 0 ? Detail.Left(BreakAt) : Detail, Muted, Pad + 22.f * Scale, Pad + 102.f * Scale, Small, 1.18f * Scale);
+    if (BreakAt > 0) DrawLabel(Detail.Mid(BreakAt + 1), Muted, Pad + 22.f * Scale, Pad + 120.f * Scale, Small, 1.18f * Scale);
     DrawRect(Line, Pad + 22.f * Scale, Pad + 145.f * Scale, PanelWidth - 44.f * Scale, 1.f * Scale);
-    DrawText(Traveler->GetInteractHint(), Accent, Pad + 22.f * Scale, Pad + 157.f * Scale, Medium, 1.05f * Scale);
+    DrawLabel(Traveler->GetInteractHint(), Accent, Pad + 22.f * Scale, Pad + 157.f * Scale, Medium, 1.05f * Scale);
     const FString Notice = Traveler->GetNotice();
     if (!Notice.IsEmpty())
     {
         DrawRect(Surface, Pad, Pad + 210.f * Scale, PanelWidth, 43.f * Scale);
-        DrawText(Notice, Ink, Pad + 16.f * Scale, Pad + 221.f * Scale, Small, 1.08f * Scale);
+        DrawLabel(Notice, Ink, Pad + 16.f * Scale, Pad + 221.f * Scale, Small, 1.08f * Scale);
     }
 
     const float StatusWidth = 250.f * Scale;
     const float StatusX = W - StatusWidth - Pad;
     DrawRect(Surface, StatusX, Pad, StatusWidth, 125.f * Scale);
-    DrawText(Traveler->GetModeLabel(), Accent, StatusX + 16.f * Scale, Pad + 15.f * Scale, Small, 1.3f * Scale);
+    DrawLabel(Traveler->GetModeLabel(), Accent, StatusX + 16.f * Scale, Pad + 15.f * Scale, Small, 1.3f * Scale);
     const AFlowFestWorld* FestivalWorld = Traveler->GetFestivalWorld();
     if (FestivalWorld)
     {
         float Hours = FestivalWorld->GetTimeOfDay();
         const int32 HH = FMath::FloorToInt(Hours);
         const int32 MM = FMath::FloorToInt((Hours - HH) * 60.f);
-        DrawText(FString::Printf(TEXT("%02d:%02d  /  %s"), HH, MM, Traveler->Phase == EFlowFestPhase::Morning ? TEXT("FRIDAY") : TEXT("THURSDAY")), Ink,
+        DrawLabel(FString::Printf(TEXT("%02d:%02d  /  %s"), HH, MM, Traveler->Phase == EFlowFestPhase::Morning ? TEXT("FRIDAY") : TEXT("THURSDAY")), Ink,
             StatusX + 16.f * Scale, Pad + 48.f * Scale, Small, 1.15f * Scale);
     }
-    DrawText(FString::Printf(TEXT("ENERGY  %d%%"), FMath::RoundToInt(Traveler->Energy)), Muted,
+    DrawLabel(FString::Printf(TEXT("ENERGY  %d%%"), FMath::RoundToInt(Traveler->Energy)), Muted,
         StatusX + 16.f * Scale, Pad + 81.f * Scale, Small, 1.12f * Scale);
 
     // A restrained in-world direction cue. It reports distance but does not complete objectives.
@@ -72,15 +82,15 @@ void AFlowFestHUD::DrawHUD()
         const float MarkerY = H - 155.f * Scale;
         DrawRect(Surface, CenterX - 108.f * Scale, MarkerY - 13.f * Scale, 216.f * Scale, 47.f * Scale);
         const float TipX = CenterX + FMath::Clamp(FMath::Sin(RelativeYaw) * 75.f * Scale, -75.f * Scale, 75.f * Scale);
-        DrawText(TEXT("^"), Accent, TipX - 6.f * Scale, MarkerY - 14.f * Scale, Medium, 1.2f * Scale);
-        DrawText(FString::Printf(TEXT("%.0f m"), Traveler->GetObjectiveDistanceMeters()), Ink, CenterX - 28.f * Scale, MarkerY + 15.f * Scale, Small, 1.1f * Scale);
+        DrawLabel(TEXT("^"), Accent, TipX - 6.f * Scale, MarkerY - 14.f * Scale, Medium, 1.2f * Scale);
+        DrawLabel(FString::Printf(TEXT("%.0f m"), Traveler->GetObjectiveDistanceMeters()), Ink, CenterX - 28.f * Scale, MarkerY + 15.f * Scale, Small, 1.1f * Scale);
     }
 
     const float FooterH = 64.f * Scale;
     DrawRect(Surface, Pad, H - FooterH - Pad, W - 2.f * Pad, FooterH);
-    DrawText(TEXT("WASD MOVE  |  MOUSE LOOK  |  SHIFT SPRINT  |  SPACE JUMP  |  E INTERACT  |  Q FLOW  |  V EUC  |  C CHARACTER + GEAR"), Ink,
+    DrawLabel(TEXT("WASD MOVE  |  MOUSE LOOK  |  SHIFT SPRINT  |  SPACE JUMP  |  E INTERACT  |  Q FLOW  |  V EUC  |  C CHARACTER + GEAR"), Ink,
         Pad + 15.f * Scale, H - FooterH - Pad + 11.f * Scale, Small, 1.08f * Scale);
-    DrawText(TEXT("F CAMERA  |  P PHOTO FLY  |  T TRAVEL NEAR OBJECTIVE  |  G LIGHT  |  F5 SAVE  |  F9 LOAD  |  F10 RESTART"), Muted,
+    DrawLabel(TEXT("F CAMERA  |  P PHOTO FLY  |  T TRAVEL NEAR OBJECTIVE  |  G LIGHT  |  F5 SAVE  |  F9 LOAD  |  F10 RESTART"), Muted,
         Pad + 15.f * Scale, H - FooterH - Pad + 36.f * Scale, Small, 1.03f * Scale);
 
     // Minimal crosshair remains visible over complex terrain.
@@ -98,14 +108,14 @@ void AFlowFestHUD::DrawWardrobe(AFlowFestCharacter* Traveler)
     DrawRect(Surface, X, Y, PW, H - 76.f * S);
     DrawRect(Accent, X, Y, PW, 3.f * S);
     auto Text = [&](const FString& Label, float DX, float DY, FLinearColor Color, float Size = 1.4f)
-    { DrawText(Label, Color, X + DX * S, Y + DY * S, Font, Size * S); };
+    { DrawLabel(Label, Color, X + DX * S, Y + DY * S, Font, Size * S); };
     auto Choice = [&](const FString& Label, FName Key, float DX, float DY, float Width, bool Selected)
     {
         const bool Over = Hovered == Key;
         const float BX = X + DX * S, BY = Y + DY * S;
         DrawRect(Selected ? FLinearColor(.20f, .24f, .22f) : Over ? FLinearColor(.12f, .19f, .20f) : Button, BX, BY, Width * S, 42.f * S);
         if (Selected) DrawRect(Accent, BX, BY, 3.f * S, 42.f * S);
-        DrawText(Label, Selected ? Accent : Ink, BX + 12.f * S, BY + 12.f * S, Font, (Label.Len() > 35 ? 1.02f : 1.22f) * S);
+        DrawLabel(Label, Selected ? Accent : Ink, BX + 12.f * S, BY + 12.f * S, Font, (Label.Len() > 35 ? 1.02f : 1.22f) * S);
         AddHitBox(FVector2D(BX, BY), FVector2D(Width * S, 42.f * S), Key, true);
     };
     Text(TEXT("CHARACTER + GEAR"), 26, 25, Accent, 2.f);
@@ -139,10 +149,10 @@ void AFlowFestHUD::DrawWardrobe(AFlowFestCharacter* Traveler)
     for (const auto& Item : Characters) if (Item.Id == Traveler->GetCharacterId()) CharacterName = Item.Name;
     for (const auto& Item : Props) if (Item.Id == Traveler->GetEquippedPropId()) PropName = Item.Name;
     DrawRect(Surface, 38.f * S, H - 150.f * S, 680.f * S, 112.f * S);
-    DrawText(CharacterName, Ink, 62.f * S, H - 132.f * S, GEngine->GetMediumFont(), 1.5f * S);
-    DrawText(PropName, Accent, 62.f * S, H - 84.f * S, Font, 1.4f * S);
+    DrawLabel(CharacterName, Ink, 62.f * S, H - 132.f * S, GEngine->GetMediumFont(), 1.5f * S);
+    DrawLabel(PropName, Accent, 62.f * S, H - 84.f * S, Font, 1.4f * S);
     const FString Notice = Traveler->GetNotice();
-    if (!Notice.IsEmpty()) DrawText(Notice, Accent, 62.f * S, 48.f * S, Font, 1.4f * S);
+    if (!Notice.IsEmpty()) DrawLabel(Notice, Accent, 62.f * S, 48.f * S, Font, 1.4f * S);
 }
 
 void AFlowFestHUD::NotifyHitBoxClick(FName BoxName)

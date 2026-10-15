@@ -14,6 +14,7 @@ public:
     virtual void NotifyHitBoxBeginCursorOver(FName BoxName) override { Hovered = BoxName; }
     virtual void NotifyHitBoxEndCursorOver(FName BoxName) override { if (Hovered == BoxName) Hovered = NAME_None; }
 private:
+    void DrawLabel(const FString& Text, FLinearColor Color, float X, float Y, UFont* Font, float Scale);
     void DrawWardrobe(class AFlowFestCharacter* Traveler);
     FName Hovered;
     int32 PropPage = 0;

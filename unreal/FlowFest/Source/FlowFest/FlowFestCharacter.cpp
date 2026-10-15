@@ -444,19 +444,19 @@ void AFlowFestCharacter::Interact()
 void AFlowFestCharacter::SelectOne()
 {
     if (bWardrobeOpen) return;
-    if (Phase == EFlowFestPhase::Loadout) { LoadoutChoice = 0; DepartureChoice = 0; Notify(TEXT("Loadout: staff + tent. [E] depart")); }
+    if (Phase == EFlowFestPhase::Loadout) { LoadoutChoice = 0; DepartureChoice = 0; Notify(TEXT("Early departure. Full energy. [E] depart")); }
     else if (Phase == EFlowFestPhase::ChooseCamp) { Camp = EFlowFestCamp::LowerTent; bInVehicle = true; Advance(EFlowFestPhase::CampArrival); }
 }
 void AFlowFestCharacter::SelectTwo()
 {
     if (bWardrobeOpen) return;
-    if (Phase == EFlowFestPhase::Loadout) { LoadoutChoice = 1; DepartureChoice = 1; Notify(TEXT("Loadout: LED staff + tent. Later departure. [E] depart")); }
+    if (Phase == EFlowFestPhase::Loadout) { LoadoutChoice = 1; DepartureChoice = 1; Notify(TEXT("Afternoon departure. [E] depart")); }
     else if (Phase == EFlowFestPhase::ChooseCamp) { Camp = EFlowFestCamp::UpperTent; bInVehicle = true; Advance(EFlowFestPhase::CampArrival); }
 }
 void AFlowFestCharacter::SelectThree()
 {
     if (bWardrobeOpen) return;
-    if (Phase == EFlowFestPhase::Loadout) { LoadoutChoice = 2; DepartureChoice = 2; Notify(TEXT("Loadout: wheel + car camp. Evening arrival. [E] depart")); }
+    if (Phase == EFlowFestPhase::Loadout) { LoadoutChoice = 2; DepartureChoice = 2; Notify(TEXT("Evening departure. [E] depart")); }
     else if (Phase == EFlowFestPhase::ChooseCamp) { Camp = EFlowFestCamp::CarCamp; bInVehicle = true; Advance(EFlowFestPhase::CampArrival); }
 }
 
@@ -873,7 +873,7 @@ void AFlowFestCharacter::RunSmoke()
     {
         SetActorLocation(FestivalWorld->GetLandmark(Id) + FVector(0, 0, 110), false);
     };
-    Expect(CharacterChoices.Num() == 16 && PropChoices.Num() == 65, TEXT("complete deployed character and prop catalogs"));
+    Expect(CharacterChoices.Num() == 16 && PropChoices.Num() == 71, TEXT("complete deployed character and prop catalogs"));
     const FName PreviousCharacter = CharacterId, PreviousProp = EquippedPropId;
     auto CheckPose = [this, &Expect](const FString& Label)
     {
@@ -1044,7 +1044,7 @@ FString AFlowFestCharacter::GetObjectiveDetail() const
     if (bReviewMode) return TEXT("Measured festival site. F10 begins the playable Thursday journey.");
     switch (Phase)
     {
-    case EFlowFestPhase::Loadout: return TEXT("1 Staff + tent   2 LED staff + later start   3 Wheel + car camp. Press E to depart.");
+    case EFlowFestPhase::Loadout: return TEXT("1 Early   2 Afternoon   3 Evening. Choose character and gear with C; E to depart.");
     case EFlowFestPhase::ChooseCamp: return TEXT("1 Lower tent   2 Upper tent   3 Car camp");
     case EFlowFestPhase::NightFreeRoam: return Jam == EFlowFestJam::Active ? TEXT("Flow [Q], then press E to finish the jam.") : TEXT("Enter the circle on foot and press E.");
     case EFlowFestPhase::Morning: return TEXT("The first night is complete. Explore Friday or press F10 for a new Thursday.");
