@@ -104,3 +104,12 @@ export function alternatesFor(
     { hreflang: "x-default", path },
   ];
 }
+
+/**
+ * The asset path SvelteKit's read() can find for a `?url` import. After a
+ * catalog edit the dev server appends a cache-busting `?t=` query, which
+ * read() treats as part of the file name.
+ */
+export function catalogAssetPath(url: string): string {
+  return url.split("?")[0] ?? url;
+}

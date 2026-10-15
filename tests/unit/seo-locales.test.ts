@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   SEO_LOCALES,
   alternatesFor,
+  catalogAssetPath,
   isLocalizedPublicPath,
   localizeHref,
   localizePath,
@@ -81,5 +82,16 @@ describe("seo locale registry", () => {
     for (const locale of SEO_LOCALES) {
       expect(normalizeModuleId(locale)).toBeFalsy();
     }
+  });
+});
+
+describe("catalogAssetPath", () => {
+  it("drops the dev server's cache-busting query so read() finds the file", () => {
+    expect(catalogAssetPath("/messages/de.json?t=1792035115119")).toBe(
+      "/messages/de.json"
+    );
+    expect(catalogAssetPath("/_app/immutable/assets/de.B1x2.json")).toBe(
+      "/_app/immutable/assets/de.B1x2.json"
+    );
   });
 });
