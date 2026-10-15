@@ -342,22 +342,13 @@
   // learner is here, so they play the moment the board lands there.
   onMount(warmHandMotionsIntroWhenIdle);
 
-  async function finish() {
+  // Continue leaves at once (Austen, 2026-10-15): the hands used to slide
+  // to Hand Motions' start point first, a wait before anything happened.
+  // The board flies on its own and the next lesson's blue hand rides it.
+  function finish() {
     if (!workshop.canFinish || leaving) return;
     leaving = true;
     cancelClear();
-    const posed =
-      gridMode === GridMode.DIAMOND &&
-      placement.leftLocation === HANDOFF.left &&
-      placement.rightLocation === HANDOFF.right;
-    const settle = motionDuration(DURATION.dramatic);
-    if (!posed) {
-      gridMode = GridMode.DIAMOND;
-      replacedPairs = [];
-      lit = null;
-      loadPair(HANDOFF.left, HANDOFF.right);
-      if (settle > 0) await new Promise((done) => setTimeout(done, settle));
-    }
     onComplete?.(NEXT_LESSON);
   }
 
