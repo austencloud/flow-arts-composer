@@ -1,0 +1,20 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/HUD.h"
+#include "FlowFestHUD.generated.h"
+
+UCLASS()
+class FLOWFEST_API AFlowFestHUD : public AHUD
+{
+    GENERATED_BODY()
+public:
+    virtual void DrawHUD() override;
+    virtual void NotifyHitBoxClick(FName BoxName) override;
+    virtual void NotifyHitBoxBeginCursorOver(FName BoxName) override { Hovered = BoxName; }
+    virtual void NotifyHitBoxEndCursorOver(FName BoxName) override { if (Hovered == BoxName) Hovered = NAME_None; }
+private:
+    void DrawWardrobe(class AFlowFestCharacter* Traveler);
+    FName Hovered;
+    int32 PropPage = 0;
+};
