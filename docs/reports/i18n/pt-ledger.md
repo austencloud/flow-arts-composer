@@ -132,3 +132,18 @@
 - Uncertain: driving styles, realization, crossing and phase have no glossary entries; rendered estilos de condução, realização, cruzamento and fase. Shape Engine remains its existing product name; Level Matrix / Ratio Playground use matriz de níveis / área de proporções. Native terminology review remains needed.
 - Uncertain: wall plane / wheel plane, finger-spinning, and hand/prop/full reversals have no glossary entries. Rendered plano de parede / plano de roda, girar o bastão entre os dedos, and reversão da mão / do prop / completa. Leading/following uses mão que lidera / mão que segue. English mnemonic retention with Portuguese glosses needs native pedagogical review.
 - No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
+
+## P4 — 2026-10-14
+
+- Batch: `batch-P4.json`; 906 translated entries (399 effect, 211 feedback, 296 inbox), 0 retranslation entries, 0 review entries. Twenty entries legitimately match English through shared Portuguese words, loanwords, technical terms, or proper names.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-P4.json`.
+- Apply result: `messages/pt.json: inserted 906, replaced 0, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 906 insertions, 0 deletions (net +906 lines).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Focused inspection: all 906 batch keys match the output and applied catalog; exactly 906 new keys belong to this batch, with all existing catalog values unchanged. Placeholder names and occurrence counts and all markup tags/attributes match English. No multiline values or Unicode replacement characters. `git diff --check` passed. The ai-bust mechanical pass at HIGH severity returned `[]`; manual review preserved direct wording, short labels, and sentence order.
+- Glossary choices: Brazilian Portuguese with você, infinitive action labels, salvar, sequência, coleção, biblioteca, caixa de entrada, visualizador, bastão and props. Sequence positions use passo; musical counts use batida. Flow Arts Composer remains the product name. Effect trail uses rastro consistently, preset uses predefinição, afterglow uses resplendor, and velocity threshold uses the full limiar de velocidade.
+- Source context: `src/lib/shared/animation-engine/components/effects-panel/effect-ui-label.ts` explicitly localizes display copy while preserving effect option values and presets. Consequently effect and preset display labels are translated, while code identifiers, Tesla, LED and Sumi remain unchanged. Pétalas describes the visual particles rather than the protected flow-arts term Petal.
+- Source limitations: `feedback_needs_info_hint` contains only the fragment `details below.`. `feedback_no_status_feedback`, `feedback_priority_title` and `feedback_lane_title` receive parameters at their call sites that are absent from their English values. Translations preserve the supplied English text and placeholder sets; no missing content or parameters were invented.
+- Uncertain: creative preset names have no reviewed Portuguese glossary entries. Cold gas-blue burn uses chama azul-gás fria; Gilt Wyrm uses serpente dourada; Banked Ember uses brasa abafada. Native terminology review remains needed.
+- No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed. Changes remain on the assigned worker branch for coordinator integration, as requested.
