@@ -1,40 +1,93 @@
 <script lang="ts">
   /**
-   * /guide/zans-diamond: Zan's Diamond reduced to one hand path, the original
-   * two-hand word, and how staggering or reversing one hand builds all 24
-   * variations, each one playable. The record lives in
-   * #lib/shared/guide-topics/zans-diamond-topic.ts; the players mount on the
-   * client after first paint (and only while near the viewport) so the
-   * prerendered page stays light and Firebase-free at startup.
+   * /guide/zans-diamond: Zan's Diamond as one hand path, the original
+   * two-hand word, and the 23 variations made by changing one hand. Every
+   * word is a SequenceShowcase (the guide's player + pictograph strip), so the
+   * page reads like the Level 1 topics it builds on. The record lives in
+   * #lib/shared/guide-topics/zans-diamond-topic.ts.
    */
-  import { onMount, type Component } from "svelte";
+  import { onMount } from "svelte";
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
+  import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
+  import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import ZansDiamondPathFigure from "./_components/ZansDiamondPathFigure.svelte";
+  import {
+    DEFAULT_TRAIL_SETTINGS,
+    TrackingMode,
+    TrailMode,
+    type TrailSettings,
+  } from "#lib/shared/animation-engine/domain/types/trail-types.js";
   import {
     ZANS_DIAMOND_COLLECTION_PATH,
     ZANS_DIAMOND_CREDIT,
     ZANS_DIAMOND_CROSS_SHIFTS_PATH,
     ZANS_DIAMOND_FAMILIES,
     ZANS_DIAMOND_ORIGINAL,
-    ZANS_DIAMOND_PATH,
+    zansDiamondPathStrip,
+    zansDiamondStrip,
     zansDiamondVariationLabel,
     type ZansDiamondVariation,
   } from "#lib/shared/guide-topics/zans-diamond-topic.js";
 
-  type CardProps = { variation: ZansDiamondVariation; caption: string };
-  let Card = $state<Component<CardProps> | null>(null);
-  let lit = $state<number | null>(null);
+  // The hand draws the diamond as it travels; the drawing stays until the
+  // loop restarts.
+  const PATH_TRAIL: TrailSettings = {
+    ...DEFAULT_TRAIL_SETTINGS,
+    mode: TrailMode.LOOP_CLEAR,
+    trackingMode: TrackingMode.HAND,
+  };
 
-  onMount(async () => {
-    const mod = await import("./_components/ZansDiamondVariationCard.svelte");
-    Card = mod.default;
+  const pathItems = zansDiamondPathStrip();
+  const pathSequence = stripToSequence(pathItems, { name: "zans-path" });
+
+  const showcase = (variation: ZansDiamondVariation) => {
+    const items = zansDiamondStrip(variation);
+    return {
+      items,
+      sequence: stripToSequence(items, {
+        word: variation.word,
+        name: variation.word,
+      }),
+    };
+  };
+  const original = showcase(ZANS_DIAMOND_ORIGINAL);
+  const families = ZANS_DIAMOND_FAMILIES.map((family) => ({
+    ...family,
+    members: family.variations.map((variation) => ({
+      variation,
+      ...showcase(variation),
+    })),
+  }));
+
+  // "{name}" in the lede becomes the link to Zan's channel.
+  const NAME_SLOT = "\u0000";
+  const lede = $derived(
+    t("guide_zans_lede", { name: NAME_SLOT }).split(NAME_SLOT)
+  );
+
+  // Pictographs follow the site theme, as the Level 1 pages do.
+  let picTheme = $state<"light" | "dark">("dark");
+  onMount(() => {
+    const root = document.documentElement;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const resolve = () => {
+      const attr = root.getAttribute("data-theme");
+      picTheme = (attr ? attr === "dark" : mq.matches) ? "dark" : "light";
+    };
+    resolve();
+    mq.addEventListener("change", resolve);
+    const observer = new MutationObserver(resolve);
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    return () => {
+      mq.removeEventListener("change", resolve);
+      observer.disconnect();
+    };
   });
-
-  const caption = (variation: ZansDiamondVariation) =>
-    zansDiamondVariationLabel(variation, t);
 </script>
 
 <GuideSeo
@@ -54,100 +107,72 @@
   <article class="zans-guide guide-page-route">
     <header class="intro">
       <h1>{t("guide_zans_title")}</h1>
-      <p class="tagline">{t("guide_zans_tagline")}</p>
-      <p class="credit">
-        {t("guide_zans_credit", { name: ZANS_DIAMOND_CREDIT.name })}
-        {#if ZANS_DIAMOND_CREDIT.href}
-          <LinkChip size="inline" href={ZANS_DIAMOND_CREDIT.href}
-            ><i class="fa-solid fa-video" aria-hidden="true"></i>
-            {t("guide_zans_credit_link", {
-              name: ZANS_DIAMOND_CREDIT.name,
-            })}</LinkChip
-          >
-        {/if}
+      <p class="lede">
+        {lede[0]}{#if ZANS_DIAMOND_CREDIT.href}<a
+            href={ZANS_DIAMOND_CREDIT.href}
+            target="_blank"
+            rel="noopener noreferrer">{ZANS_DIAMOND_CREDIT.name}</a
+          >{:else}{ZANS_DIAMOND_CREDIT.name}{/if}{lede[1] ?? ""}
       </p>
     </header>
 
-    <section class="path" aria-labelledby="path-heading">
-      <div class="path-figure">
-        <ZansDiamondPathFigure bind:lit label={t("guide_zans_path_figure")} />
-      </div>
-      <div class="path-text">
-        <h2 id="path-heading">{t("guide_zans_path_title")}</h2>
+    <SequenceShowcase
+      sequence={pathSequence}
+      items={pathItems}
+      trail={PATH_TRAIL}
+      {picTheme}
+    >
+      {#snippet text()}
+        <h2>{t("guide_zans_path_title")}</h2>
         <p>{t("guide_zans_path_body_1")}</p>
         <p>{t("guide_zans_path_body_2")}</p>
-        <ol class="moves" aria-label={t("guide_zans_path_title")}>
-          {#each ZANS_DIAMOND_PATH as move, i (i)}
-            <li class="move {move.kind}" class:lit={lit === i}>
-              <span class="points"
-                >{move.from.toUpperCase()}<span class="to" aria-hidden="true"
-                  >→</span
-                >{move.to.toUpperCase()}</span
-              >
-              <span class="kind"
-                >{move.kind === "dash"
-                  ? t("guide_zans_move_dash")
-                  : t("guide_zans_move_shift")}</span
-              >
-            </li>
-          {/each}
-        </ol>
-      </div>
-    </section>
+      {/snippet}
+    </SequenceShowcase>
 
-    <section class="original" aria-labelledby="original-heading">
-      <div class="original-text">
-        <h2 id="original-heading">{t("guide_zans_original_title")}</h2>
+    <SequenceShowcase
+      sequence={original.sequence}
+      items={original.items}
+      {picTheme}
+    >
+      {#snippet text()}
+        <h2>{t("guide_zans_original_title")}</h2>
         <p>
           {t("guide_zans_original_body", { word: ZANS_DIAMOND_ORIGINAL.word })}
         </p>
-      </div>
-      <div class="original-card">
-        {#if Card}
-          <Card
-            variation={ZANS_DIAMOND_ORIGINAL}
-            caption={caption(ZANS_DIAMOND_ORIGINAL)}
-          />
-        {:else}
-          <p class="loading" role="status">{t("guide_zans_players_loading")}</p>
-        {/if}
-      </div>
-    </section>
+      {/snippet}
+    </SequenceShowcase>
 
     <section class="families" aria-labelledby="families-heading">
       <h2 id="families-heading">{t("guide_zans_families_title")}</h2>
-      <p class="lead">{t("guide_zans_families_lead")}</p>
-      {#each ZANS_DIAMOND_FAMILIES as family (family.id)}
+      <p>{t("guide_zans_families_lead")}</p>
+      {#each families as family (family.id)}
         <section class="family" aria-labelledby="family-{family.id}">
           <h3 id="family-{family.id}">{t(family.title)}</h3>
           <p>{t(family.body)}</p>
-          {#if Card}
-            <ul class="cards">
-              {#each family.variations as variation (variation.id)}
-                <li><Card {variation} caption={caption(variation)} /></li>
-              {/each}
-            </ul>
-          {:else}
-            <ul class="cards words">
-              {#each family.variations as variation (variation.id)}
-                <li>
-                  <span class="word">{variation.word}</span>
-                  <span class="caption">{caption(variation)}</span>
-                </li>
-              {/each}
-            </ul>
-          {/if}
+          <div class="bands">
+            {#each family.members as member (member.variation.id)}
+              <SequenceShowcase
+                variant="compact"
+                sequence={member.sequence}
+                items={member.items}
+                {picTheme}
+              >
+                {#snippet text()}
+                  <span class="band-label">
+                    <span class="word">{member.variation.word}</span>
+                    <span class="caption"
+                      >{zansDiamondVariationLabel(member.variation, t)}</span
+                    >
+                  </span>
+                {/snippet}
+              </SequenceShowcase>
+            {/each}
+          </div>
         </section>
       {/each}
     </section>
 
-    <section class="why" aria-labelledby="why-heading">
-      <h2 id="why-heading">{t("guide_zans_why_title")}</h2>
-      <p>{t("guide_zans_why_body")}</p>
-    </section>
-
-    <section class="collection" aria-labelledby="collection-heading">
-      <h2 id="collection-heading">{t("guide_zans_collection_title")}</h2>
+    <footer class="collection">
       <p>{t("guide_zans_collection_body")}</p>
       <div class="links">
         <LinkChip href={ZANS_DIAMOND_COLLECTION_PATH}
@@ -159,7 +184,7 @@
           {t("guide_zans_read_cross_shifts")}</LinkChip
         >
       </div>
-    </section>
+    </footer>
   </article>
 </GuideShell>
 
@@ -167,171 +192,90 @@
   .zans-guide {
     width: 100%;
     min-width: 0;
-    max-width: 1480px;
+    max-width: 1180px;
     margin-inline: auto;
     padding: clamp(20px, 3vw, 56px);
     color: var(--theme-text);
-    display: grid;
-    gap: clamp(32px, 5vw, 64px);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(40px, 6vw, 72px);
   }
-  /* guide.css gives every h1 grid-column: full for the hub; in this flow it
-     would open a second implicit column, so the title band is a flex column. */
+  /* guide.css centres every h1 on the hub's grid; this page reads left. */
   .zans-guide h1 {
     text-align: left;
     margin: 0;
-    padding: 0 0 var(--spacing-sm, 8px);
+    padding: 0;
     grid-column: auto;
   }
-  .zans-guide h2 {
-    margin: 0 0 var(--spacing-sm, 8px);
-  }
+  .zans-guide h2,
   .zans-guide h3 {
-    margin: 0 0 var(--spacing-xs, 4px);
+    margin: 0;
   }
   .zans-guide p {
-    max-width: 62ch;
+    max-width: 64ch;
     line-height: 1.6;
     color: var(--theme-text-muted);
-    margin: 0 0 var(--spacing-sm, 8px);
+    margin: 0;
   }
   .intro {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xs, 4px);
+    gap: var(--spacing-sm, 8px);
   }
-  .tagline {
-    font-size: 1.15rem;
-  }
-  .credit {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--spacing-xs, 4px);
-    font-size: 0.95rem;
-  }
-
-  /* The path: figure beside its prose on wide screens, stacked on phones. */
-  .path {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--spacing-lg, 24px);
-    align-items: center;
-  }
-  .path-figure {
-    width: min(100%, 460px);
-    margin-inline: auto;
-  }
-  @media (min-width: 900px) {
-    .path {
-      grid-template-columns: minmax(280px, 460px) minmax(0, 1fr);
-    }
-    .path-figure {
-      margin-inline: 0;
-    }
-  }
-  .moves {
-    list-style: none;
-    margin: var(--spacing-sm, 8px) 0 0;
-    padding: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-xs, 4px);
-  }
-  .move {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 6px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
-    font-size: 14px;
-    font-variant-numeric: tabular-nums;
-    color: var(--theme-text-muted);
-    transition:
-      background-color var(--transition-fast, 160ms),
-      border-color var(--transition-fast, 160ms),
-      color var(--transition-fast, 160ms);
-  }
-  .move .points {
-    font-weight: 650;
-    letter-spacing: 0.04em;
-  }
-  .move .to {
-    padding-inline: 3px;
-    opacity: 0.6;
-  }
-  .move .kind {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .move.lit {
+  .zans-guide .lede {
+    font-size: 1.125rem;
     color: var(--theme-text);
-    border-color: var(--prop-blue, #3b82f6);
-    background: color-mix(in srgb, var(--prop-blue, #3b82f6) 18%, transparent);
   }
-
-  /* The original: prose beside one card. */
-  .original {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--spacing-lg, 24px);
-    align-items: center;
+  .lede a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
   }
-  .original-card {
-    width: min(100%, 360px);
-    margin-inline: auto;
-  }
-  @media (min-width: 900px) {
-    .original {
-      grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
-    }
-    .original-card {
-      margin-inline: 0;
-    }
+  .lede a:hover {
+    text-decoration-thickness: 2px;
   }
 
   .families {
-    display: grid;
-    gap: var(--spacing-lg, 24px);
-  }
-  .family {
-    display: grid;
-    gap: var(--spacing-xs, 4px);
-  }
-  .cards {
-    list-style: none;
-    margin: var(--spacing-sm, 8px) 0 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: var(--spacing-md, 16px);
   }
-  .cards > li {
-    min-width: 0;
+  .family {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm, 8px);
+    margin-top: var(--spacing-lg, 24px);
   }
-  .cards.words > li {
-    display: grid;
+  .bands {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 24px);
+    margin-top: var(--spacing-sm, 8px);
+  }
+  .band-label {
+    display: flex;
+    flex-direction: column;
     gap: 2px;
-    padding: var(--spacing-sm, 8px);
-    border-radius: var(--radius-md, 12px);
-    background: var(--theme-surface, rgba(255, 255, 255, 0.04));
   }
-  .cards.words .word {
+  .band-label .word {
     font-weight: 650;
+    color: var(--theme-text);
     overflow-wrap: anywhere;
   }
-  .cards.words .caption {
-    font-size: 13px;
+  .band-label .caption {
+    font-size: 0.875rem;
     color: var(--theme-text-muted);
   }
-  .loading {
-    font-size: 14px;
+
+  .collection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm, 8px);
   }
   .links {
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-sm, 8px);
-    margin-top: var(--spacing-xs, 4px);
   }
 </style>
