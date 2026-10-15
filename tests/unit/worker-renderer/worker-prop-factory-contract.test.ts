@@ -86,9 +86,10 @@ const CANONICAL_PROP_SOURCE_HASHES = {
   "frame-materials.ts":
     "b87df4094b88553c53cf560df7f741655284c52894a48f4b631d8d87336c3ceb",
   // Stick: stick.glb for the left hand, stick-right.glb for the right, the
-  // same pair worker-gltf-props.ts registers.
+  // same pair worker-gltf-props.ts registers. Pen: pen.glb at real size,
+  // registered unstretched in worker-gltf-props.ts too.
   "prop-model-registry.ts":
-    "df5dad3b015a70acac80731e7ea7e81bfc6025639a39c7cb8a8b639fcf03247c",
+    "a136778ac2631e81c0444a3f4e4650137f25601fd1d3a8a59f5920ed425fb8a3",
   "prop-model-recolor.ts":
     "01f7cda639579236bf5cc45c3806f70b9967d5fa7a91c157f78959ad15f38813",
 } as const;
