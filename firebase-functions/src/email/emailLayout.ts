@@ -21,9 +21,13 @@ export const emailPalette = {
   text: "#c8c7d9",
   muted: "#8e8da6",
   faint: "#6c6b84",
-  buttonFrom: "#5865f2",
-  buttonTo: "#7b4fe0",
-  buttonFallback: "#6a5ae9",
+  // The app's --gradient-primary at its default theme (src/app.css). Mail
+  // cannot know the reader's background theme, so it uses the base pair.
+  buttonFrom: "#6366f1",
+  buttonTo: "#8b5cf6",
+  buttonFallback: "#7761f4",
+  // Clips render on black; the stage around them matches.
+  stage: "#000000",
   buttonText: "#ffffff",
   secondaryFill: "#1f1f2e",
   secondaryStroke: "#3a3a54",
@@ -208,6 +212,29 @@ export function statusChip(label: string, tone: EmailTone): string {
 /** A quoted surface for words someone else wrote. HTML in. */
 export function insetBlock(html: string): string {
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:6px 0 26px"><tr><td bgcolor="${emailPalette.inset}" style="background-color:${emailPalette.inset};border:1px solid ${emailPalette.insetStroke};border-radius:14px;padding:18px 20px;font-family:${SANS};font-size:16px;line-height:26px;color:${emailPalette.text}">${html}</td></tr></table>`;
+}
+
+export interface EmailImage {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  href?: string;
+}
+
+/**
+ * A full-width picture on a black stage, such as an animated GIF of a
+ * sequence. Clients that do not animate GIFs (Outlook desktop) show the
+ * first frame; with images blocked the alt text reads on the stage.
+ * Non-https sources render nothing.
+ */
+export function heroImage(image: EmailImage): string {
+  if (!/^https:\/\//i.test(image.src)) return "";
+  const img = `<img src="${escapeHtml(image.src)}" width="${image.width}" height="${image.height}" alt="${escapeHtml(image.alt)}" style="display:block;width:100%;max-width:${image.width}px;height:auto;border:0;border-radius:14px;font-family:${SANS};font-size:15px;line-height:22px;color:${emailPalette.muted}">`;
+  const linked = image.href
+    ? `<a href="${escapeHtml(image.href)}" target="_blank" style="text-decoration:none">${img}</a>`
+    : img;
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 26px"><tr><td align="center" bgcolor="${emailPalette.stage}" style="background-color:${emailPalette.stage};border-radius:14px">${linked}</td></tr></table>`;
 }
 
 /** A one-time code, large and spaced for reading off one screen into another. */

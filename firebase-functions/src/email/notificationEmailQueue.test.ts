@@ -166,6 +166,30 @@ describe("notification email content", () => {
     expect(email.html).not.toContain("<strong>today</strong>");
   });
 
+  it("shows the release hero linked to the lead, and drops a non-https one", () => {
+    const highlight =
+      "**New in Explore: [Zan's Diamond](https://tkaflowarts.com/c/5YMQ), 24 versions.** Each one delays a hand.";
+    const withHero = createPlatformUpdateEmail({
+      version: "0.48.0",
+      highlights: [highlight],
+      heroImage: {
+        url: "https://assets.tkaflowarts.com/email/releases/0.48.0/hero.gif",
+      },
+    });
+
+    expect(withHero.html).toContain(
+      '<a href="https://tkaflowarts.com/c/5YMQ" target="_blank" style="text-decoration:none"><img src="https://assets.tkaflowarts.com/email/releases/0.48.0/hero.gif"'
+    );
+    expect(withHero.html).toContain('alt="Zan&#39;s Diamond, 24 versions"');
+
+    const insecure = createPlatformUpdateEmail({
+      version: "0.48.0",
+      highlights: [highlight],
+      heroImage: { url: "http://example.com/hero.gif" },
+    });
+    expect(insecure.html).not.toContain("example.com");
+  });
+
   it("renders release Markdown instead of leaking its markers", () => {
     const highlight =
       "**New in Explore: [Zan's Diamond](https://tkaflowarts.com/browse/explore/collections/abc), 24 versions of one pattern.** Each one delays a hand.";
