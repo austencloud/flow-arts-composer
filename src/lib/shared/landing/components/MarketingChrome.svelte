@@ -12,7 +12,7 @@
    */
   import type { Snippet } from "svelte";
   import type { BackgroundType } from "@austencloud/backgrounds";
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { page } from "$app/state";
   import { isNamedRouteMorphActive } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import { opaqueFade } from "#lib/shared/transitions/motion.js";
@@ -48,6 +48,9 @@
   // load from then on, whenever the current page actually shows the sky.
   let firstFramesPresented = $state(false);
   let liveBackgroundRequested = false;
+  // True once the live canvas has mounted. It fades in over the placeholder
+  // instead of replacing it in one frame.
+  let liveBackgroundShown = $state(false);
 
   onMount(() => {
     let mounted = true;
@@ -82,16 +85,43 @@
   // page that paints its own opaque surface (the guide book, the archive) it
   // would be invisible and still burn the GPU for the whole read; it loads the
   // first time the reader reaches a star-field page instead.
+  //
+  // The chunk is large and fetched on demand, so one failed fetch (a dev server
+  // re-bundling its dependencies, a flaky link, a stale chunk name after a
+  // deploy) used to leave the placeholder up for the rest of the visit: the
+  // request was marked done before it resolved and nothing ever asked again.
+  // A failure now backs off and retries, then reopens the request so the next
+  // star-field page visit tries once more.
+  const RETRY_DELAYS_MS = [800, 2500, 7000];
+  let retryTimer = 0;
+
+  function loadLiveBackground(attempt = 0) {
+    import("#lib/shared/background/shared/components/BackgroundHost.svelte")
+      .then(({ default: BackgroundHost }) => {
+        LiveBackground = BackgroundHost;
+      })
+      .catch((error: unknown) => {
+        const delay = RETRY_DELAYS_MS[attempt];
+        if (delay === undefined) {
+          console.warn("[MarketingChrome] Live background failed to load:", error);
+          liveBackgroundRequested = false;
+          return;
+        }
+        retryTimer = window.setTimeout(
+          () => loadLiveBackground(attempt + 1),
+          delay
+        );
+      });
+  }
+
   $effect(() => {
     if (!firstFramesPresented || pageOwnsSurface || liveBackgroundRequested)
       return;
     liveBackgroundRequested = true;
-    void import("#lib/shared/background/shared/components/BackgroundHost.svelte").then(
-      ({ default: BackgroundHost }) => {
-        LiveBackground = BackgroundHost;
-      }
-    );
+    loadLiveBackground();
   });
+
+  onDestroy(() => clearTimeout(retryTimer));
 
   const path = $derived(page.url.pathname);
   const isTimingLesson = $derived(
@@ -124,9 +154,12 @@
 
 <div class="mkt-shell">
   <div class="mkt-fallback" aria-hidden="true"></div>
-  <div class="mkt-bg">
+  <div class="mkt-bg" class:mkt-bg-shown={liveBackgroundShown}>
     {#if LiveBackground && !pageOwnsSurface}
-      <LiveBackground backgroundType={marketingBackground.type} />
+      <LiveBackground
+        backgroundType={marketingBackground.type}
+        onReady={() => (liveBackgroundShown = true)}
+      />
     {/if}
   </div>
 
@@ -195,91 +228,42 @@
     position: fixed;
     inset: 0;
     z-index: 1;
+    opacity: 0;
+    transition: opacity 600ms ease-out;
   }
 
+  .mkt-bg-shown {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mkt-bg {
+      transition: none;
+    }
+  }
+
+  /* The placeholder under the live sky, shown from the first byte until the
+     animated canvas has loaded. It is a plain gradient in the live sky's own
+     base colors (sampled from the rendered canvas: near-black violet at the
+     top, deep blue at the foot) and carries no stars, so the canvas fading in
+     adds the aurora and the stars instead of replacing a different picture.
+     It used to carry a CSS dot grid, which read as a fake star field next to
+     the real one. */
   .mkt-fallback {
     position: fixed;
     inset: 0;
     z-index: 0;
-    overflow: hidden;
-    background:
-      radial-gradient(
-        ellipse at 72% 24%,
-        rgba(92, 72, 170, 0.3),
-        transparent 36%
-      ),
-      radial-gradient(
-        ellipse at 20% 78%,
-        rgba(32, 85, 144, 0.18),
-        transparent 42%
-      ),
-      radial-gradient(
-        130% 100% at 50% -10%,
-        #181b3d 0%,
-        #0c0e20 48%,
-        #06070f 100%
-      );
-  }
-
-  /* The first response already contains a real star field. Unequal tile sizes
-     keep the repeated radial gradients from resolving into a visible grid,
-     while remaining cheaper than an image request or a canvas startup. */
-  .mkt-fallback::before,
-  .mkt-fallback::after {
-    content: "";
-    position: absolute;
-    inset: -15%;
-    pointer-events: none;
-  }
-
-  .mkt-fallback::before {
-    opacity: 0.72;
-    background-image:
-      radial-gradient(
-        circle,
-        rgba(255, 255, 255, 0.82) 0 0.7px,
-        transparent 1px
-      ),
-      radial-gradient(
-        circle,
-        rgba(185, 205, 255, 0.7) 0 0.8px,
-        transparent 1.15px
-      ),
-      radial-gradient(
-        circle,
-        rgba(255, 255, 255, 0.5) 0 0.55px,
-        transparent 0.9px
-      );
-    background-position:
-      7px 13px,
-      43px 71px,
-      103px 29px;
-    background-size:
-      83px 89px,
-      137px 149px,
-      211px 197px;
-  }
-
-  .mkt-fallback::after {
-    opacity: 0.48;
-    background-image:
-      radial-gradient(
-        circle,
-        #ffffff 0 1px,
-        rgba(180, 200, 255, 0.45) 1.4px,
-        transparent 2px
-      ),
-      radial-gradient(
-        circle,
-        rgba(220, 210, 255, 0.9) 0 0.9px,
-        transparent 1.5px
-      );
-    background-position:
-      31px 47px,
-      149px 91px;
-    background-size:
-      263px 241px,
-      347px 311px;
+    background: linear-gradient(
+      180deg,
+      #0a0a1a 0%,
+      #0d0d1f 10%,
+      #16142c 25%,
+      #1c2538 40%,
+      #1b293f 55%,
+      #163253 70%,
+      #103259 85%,
+      #0a2142 100%
+    );
   }
 
   .mkt-layer {

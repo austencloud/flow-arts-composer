@@ -210,7 +210,11 @@ describe("homepage constrained enhancement boundaries", () => {
     expect(landingEvents).not.toContain(
       "if (isConstrainedConnection()) return;"
     );
-    expect(marketingChrome).toContain("if (isConstrainedConnection()) return;");
+    // A bandwidth estimate says nothing about whether the GPU can draw stars, so
+    // the live sky waits only for an explicit data-saver request. Gating it on
+    // isConstrainedConnection() left slow-but-fine links on the placeholder.
+    expect(marketingChrome).not.toContain("isConstrainedConnection");
+    expect(marketingChrome).toContain("prefersReducedData()");
     expect(homeHero).toContain("if (isConstrainedConnection()) return;");
     expect(homeHero).toContain("connectionAware={true}");
     // The hero is the most above-the-fold element on the site. The default

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "variant": "fan-fire-bare",
+  "output": {
+    "path": "static/images/props/build-previews/fan-fire-bare-complete.webp",
+    "width": 640,
+    "height": 240
+  },
+  "capture": {
+    "route": "/test/prop-3d-studio/capture?prop=fan&fanBuild=fire&fanCover=bare&rz=-90&zoom=0.94",
+    "viewport": "1280x480@1",
+    "downscale": "640x240 lanczos",
+    "shiftYPx1280": -12,
+    "model": "static/models/props/fan.glb",
+    "modelSha256": "c366811930a43c28f30e6a1b1bd2054a817272d6f5c62b574f10e357046f19c1",
+    "modelBuilder": "scripts/build-fan-model.py",
+    "date": "2026-09-06"
+  }
+}

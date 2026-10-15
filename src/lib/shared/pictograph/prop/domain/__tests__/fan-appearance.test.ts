@@ -111,10 +111,10 @@ describe("fan appearance", () => {
 
     expect(covered).toMatchObject({
       label: "Covered Fan",
-      image: "/images/props/build-previews/fan-fire-covered-complete.webp",
+      image: "/images/props/build-previews/fan-fire-covered-complete.webp?v=2",
     });
     expect(fire?.image).toBe(
-      "/images/props/build-previews/fan-fire-bare-complete.webp"
+      "/images/props/build-previews/fan-fire-bare-complete.webp?v=2"
     );
     expect(options.map(({ id }) => id)).not.toContain("bare");
     expect(fire?.imageScale).toBe(1.92);

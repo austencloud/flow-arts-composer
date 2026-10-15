@@ -166,4 +166,60 @@ describe("LiveSlots", () => {
     expect(states).toEqual([true, false, false]);
     slots.destroy();
   });
+
+  it("update moves a tile to another medium and re-ranks it there", () => {
+    const slots = new LiveSlots();
+    slots.budgets.sequence = 1;
+    slots.budgets.clip = 2;
+    const { nodes, states, actions } = mount(slots, false);
+    intersect(nodes);
+    flushFrames();
+    expect(states).toEqual([true, false, false]);
+
+    // The two tiles that lost out on the engine budget learn they have a
+    // clip: the clip budget has room for both.
+    for (const index of [1, 2]) {
+      actions[index]?.update({
+        medium: "clip",
+        hover: false,
+        onChange: (live) => (states[index] = live),
+      });
+    }
+    flushFrames();
+    expect(states).toEqual([true, true, true]);
+    expect(slots.liveCount).toMatchObject({ sequence: 1, clip: 2 });
+
+    // The incumbent switches medium: its engine token is dropped at once and
+    // it competes again under the clip budget, where it ranks first and the
+    // farthest tile is parked.
+    actions[0]?.update({
+      medium: "clip",
+      hover: false,
+      onChange: (live) => (states[0] = live),
+    });
+    expect(states[0]).toBe(false);
+    flushFrames();
+    expect(states).toEqual([true, true, false]);
+    expect(slots.liveCount).toMatchObject({ sequence: 0, clip: 2 });
+    slots.destroy();
+  });
+
+  it("update with the same medium keeps the token and swaps the callback", () => {
+    const slots = new LiveSlots();
+    slots.budgets.sequence = 1;
+    const { nodes, states, actions } = mount(slots, false);
+    intersect(nodes);
+    flushFrames();
+    let seen: boolean | null = null;
+    actions[0]?.update({
+      medium: "sequence",
+      hover: false,
+      onChange: (live) => (seen = live),
+    });
+    flushFrames();
+    expect(states[0]).toBe(true);
+    expect(seen).toBeNull();
+    actions[0]?.destroy();
+    slots.destroy();
+  });
 });

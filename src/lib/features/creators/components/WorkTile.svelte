@@ -32,13 +32,23 @@
     unitPx: number;
     /** The wall's liveness budget; this tile animates only while it holds a token. */
     slots: LiveSlots;
+    /** A pre-rendered loop of the work. With one, the stage plays a video
+     *  (cheap enough that the wall budgets twelve) instead of an engine. */
+    loopClipUrl?: string | null;
     onselect: (sequence: SequenceData) => void;
     /** Jump to the maker's profile rather than opening the work. */
     oncreator: (creator: EnhancedUserProfile) => void;
   }
 
-  let { sequence, creator, unitPx, slots, onselect, oncreator }: Props =
-    $props();
+  let {
+    sequence,
+    creator,
+    unitPx,
+    slots,
+    loopClipUrl = null,
+    onselect,
+    oncreator,
+  }: Props = $props();
 
   /** Ambient token from the wall's coordinator. */
   let live = $state(false);
@@ -59,7 +69,7 @@
 <div
   class="tile"
   use:slots.tile={{
-    medium: "sequence",
+    medium: loopClipUrl ? "clip" : "sequence",
     hover: false,
     onChange: (next) => (live = next),
   }}
@@ -69,6 +79,7 @@
       word={sequenceWord}
       {loadSequence}
       activation="ambient"
+      {loopClipUrl}
       playbackActive={live}
       playbackMounted={live}
       allowQR={false}

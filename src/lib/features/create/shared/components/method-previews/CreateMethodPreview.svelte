@@ -7,10 +7,11 @@
    *
    * The box is reserved from first paint and shows the method's tint. Once
    * the board is open and idle and any route morph has finished, the
-   * method's scene loads and draws its finished picture in the hidden layer. When the scene
-   * reports ready, the box crossfades from the tint to the scene, so nothing
-   * around it moves. Turns arrive from the front door's coordinator as
-   * `playing` and `turn`.
+   * method's scene loads and draws its finished picture in the hidden layer.
+   * When the scene reports ready and the front door reveals the card (the
+   * cards arrive together, in board order), the box crossfades from the tint
+   * to the scene, so nothing around it moves. Turns arrive from the front
+   * door's coordinator as `playing` and `turn`.
    *
    * The box is decorative: inert and hidden from assistive technology, so
    * the card stays one native button with its own name. The host gives it a
@@ -20,6 +21,8 @@
   import { onDestroy } from "svelte";
   import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import { METHOD_PREVIEW_TIMING } from "../../state/method-preview-turns.svelte";
+  import { awaitAccountSettings } from "#lib/shared/settings/state/account-settings-ready.js";
   import { runAfterNamedRouteMorphIdle } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import { classifyPreviewShape } from "./method-preview-layout";
   import {
@@ -31,6 +34,7 @@
     methodId,
     color,
     open = true,
+    revealed = true,
     playing = false,
     turn = 0,
     onready,
@@ -49,6 +53,11 @@
      * wait waits to load until the board opens again.
      */
     open?: boolean;
+    /**
+     * Whether the front door lets this card arrive. A ready scene stays
+     * behind the tint until then, so the cards fade in together.
+     */
+    revealed?: boolean;
     /** True while it is this card's turn. */
     playing?: boolean;
     /** The coordinator's turn number. */
@@ -70,6 +79,7 @@
   let destroyed = false;
 
   const shape = $derived(classifyPreviewShape(width, height));
+  const shown = $derived(ready && revealed);
 
   // A scene draws for its box. A zero-size report (the board hidden for a
   // moment) keeps the last real size, so a loaded scene is never torn down.
@@ -93,8 +103,17 @@
   // and any route morph has finished (spec: Performance), and only while
   // the board is open: a method picked during the wait would otherwise load
   // every scene behind its workspace. A loaded scene stays.
+  //
+  // It also waits for the signed-in account's settings. Before they arrive
+  // the pictographs would draw this browser's saved props, then swap to the
+  // account's props while the scene plays. The tint covers the wait.
+  let accountSettingsReady = $state(false);
+  void awaitAccountSettings().then(() => {
+    accountSettingsReady = true;
+  });
+
   $effect(() => {
-    if (!open || load) return;
+    if (!open || load || !accountSettingsReady) return;
     return runAfterNamedRouteMorphIdle(() => {
       load = true;
     });
@@ -118,7 +137,10 @@
   aria-hidden="true"
   style:--method-color={color}
 >
-  <DualSourceCrossfade active={ready ? "second" : "first"}>
+  <DualSourceCrossfade
+    active={shown ? "second" : "first"}
+    duration={METHOD_PREVIEW_TIMING.revealFadeMs}
+  >
     {#snippet first()}
       <span class="tint"></span>
     {/snippet}
@@ -129,7 +151,7 @@
           active={load}
           debugName={`create method preview ${methodId}`}
           props={{
-            playing: playing && ready,
+            playing: playing && shown,
             turn,
             shape,
             width,

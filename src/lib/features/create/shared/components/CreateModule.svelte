@@ -1101,20 +1101,15 @@
           active={panelState.isSequenceActionsPanelOpen}
         />
 
-        <!-- Step Editor Coordinator - Opens when clicking a pictograph (deferred until first opened) -->
-        <LazyMount
-          loader={() => import("./coordinators/StepEditorCoordinator.svelte")}
-          active={panelState.isStepEditorPanelOpen}
-        />
-
         <!-- LOOP Coordinator -->
         <LOOPCoordinator />
 
         <!-- Start/End Options Coordinator -->
         <StartEndCoordinator />
 
-        <!-- Save to Library is a mode of the workspace layout (the tool panel
-             becomes SaveToLibraryView), not a drawer mounted here. -->
+        <!-- Save to Library and the step editor are modes of the workspace
+             layout (the tool panel becomes SaveToLibraryView or the step
+             editor; see CreationToolPanelSlot), not drawers mounted here. -->
 
         <!-- Sequence Transfer Confirmation Dialog -->
         <TransferConfirmDialog

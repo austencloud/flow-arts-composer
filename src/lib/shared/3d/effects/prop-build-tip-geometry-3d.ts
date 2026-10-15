@@ -10,6 +10,7 @@ import {
   type PropTipConfig,
 } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import type { PropTipAnchor3D } from "./prop-tip-geometry-3d";
+import { astralFanBladePoint } from "../domain/astral-fan-geometry";
 
 /**
  * The prop-build inputs that move a prop's tracked effect emitters.
@@ -27,6 +28,7 @@ export interface PropBuildTipGeometry3D {
     | "lotus"
     | "day"
     | "moon"
+    | "astral"
     | "flat-grip"
     | "star";
   readonly finish: "fire" | "day";
@@ -161,6 +163,10 @@ export const FAN_MOON_RIM_POINTS_M = [
   { x: 0.2897787, y: 0.1045398, z: 0 },
 ] as const;
 
+export const FAN_ASTRAL_RIM_POINTS_M = [1, 0.75, 0.5, 0.25, 0].map(
+  (amount) => ({ ...astralFanBladePoint(amount), z: 0 })
+);
+
 interface Offset3D {
   readonly x: number;
   readonly y: number;
@@ -231,6 +237,9 @@ function fanAnchors(
   }
   if (build.fanBuild === "moon") {
     return fixedAnchors(FAN_MOON_RIM_POINTS_M, scale);
+  }
+  if (build.fanBuild === "astral") {
+    return fixedAnchors(FAN_ASTRAL_RIM_POINTS_M, scale);
   }
   return silhouetteAnchors(
     FAN_TIP_POINTS,

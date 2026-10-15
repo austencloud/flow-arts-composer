@@ -46,10 +46,29 @@ export const onNewVersionEmail = onDocumentCreated(
           (highlight): highlight is string => typeof highlight === "string"
         )
       : undefined;
+    const changelogEntries = Array.isArray(data.changelogEntries)
+      ? data.changelogEntries.filter(
+          (entry): entry is { category: string; text: string } =>
+            typeof entry?.category === "string" &&
+            typeof entry?.text === "string"
+        )
+      : undefined;
+    const hero = data.heroImage;
+    const heroImage =
+      typeof hero?.url === "string"
+        ? {
+            url: hero.url,
+            alt: typeof hero.alt === "string" ? hero.alt : undefined,
+            width: Number.isFinite(hero.width) ? hero.width : undefined,
+            height: Number.isFinite(hero.height) ? hero.height : undefined,
+          }
+        : undefined;
     const email = createPlatformUpdateEmail({
       version,
       releaseNotes,
       highlights,
+      changelogEntries,
+      heroImage,
     });
     const failures: unknown[] = [];
 

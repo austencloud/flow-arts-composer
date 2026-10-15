@@ -2,7 +2,8 @@
  * Zan's Diamond guide record. The silent failures: the checked-in variation
  * table drifting from what the generator derives against the real dataframe,
  * a strip whose placements do not chain, a hand path that no longer closes,
- * or a caption key missing in one locale.
+ * two hand floats drawn on top of each other, or a caption key missing in one
+ * locale.
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -158,6 +159,44 @@ describe("zansDiamondStrip", () => {
   });
 });
 
+describe("hands shifting together", () => {
+  // Hand shifts render as floats. When both hands float along the same path,
+  // only the letter's per-colour "(fl, fl)" special placement keeps the two
+  // arrows apart; without it the right arrow covers the left.
+  it("has a two-float placement for every letter where both hands share a shift", () => {
+    const letters = new Set<string>();
+    for (const variation of ZANS_DIAMOND_VARIATIONS) {
+      for (const box of zansDiamondStrip(variation).slice(1)) {
+        const { left, right } = box.motions;
+        const shift = (m: typeof left) =>
+          m?.motionType === "pro" || m?.motionType === "anti";
+        if (
+          box.letter &&
+          shift(left) &&
+          shift(right) &&
+          left!.startLocation === right!.startLocation &&
+          left!.endLocation === right!.endLocation
+        ) {
+          letters.add(box.letter);
+        }
+      }
+    }
+    expect(letters.size).toBeGreaterThan(0);
+    for (const letter of letters) {
+      const data = JSON.parse(
+        readFileSync(
+          resolve(
+            process.cwd(),
+            `static/data/arrow_placement/special/from_layer1/${letter}_placements.json`
+          ),
+          "utf8"
+        )
+      ) as Record<string, Record<string, unknown>>;
+      expect(data[letter]?.["(fl, fl)"], letter).toBeDefined();
+    }
+  });
+});
+
 describe("copy and links", () => {
   it("names every family and caption in both locales", () => {
     const keys = new Set<string>(
@@ -183,7 +222,7 @@ describe("copy and links", () => {
       expect(english[key], key).toBeTruthy();
       expect(german[key], key).toBeTruthy();
     }
-    expect(seen.size).toBe(6);
+    expect(seen.size).toBe(4);
   });
 
   it("links the collection by the app's own browse path", () => {

@@ -293,18 +293,6 @@
     box-shadow: none;
   }
 
-  /* The step editor keeps a dense, animated SVG tree open for the lifetime of
-     the drawer. Sampling the scene behind that native dialog can corrupt its
-     composited surface into a theme-colored ellipse in Chromium. Give this
-     long-lived editor a stable paint surface instead of a backdrop filter. */
-  :global(.drawer-content.step-editor-panel-container) {
-    --sheet-bg: var(--sheet-bg-solid, rgb(15, 15, 20));
-    --sheet-filter: none;
-    background: var(--sheet-bg);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-
   /*
    * Side-by-side layout (Desktop): Panels slide from right
    * Width uses measured tool panel container width for pixel-perfect alignment
@@ -319,15 +307,6 @@
     /* Use measured tool panel width for exact alignment */
     width: var(--measured-panel-width, clamp(360px, 44.44vw, 900px));
     max-width: 100%;
-  }
-
-  /* This is a flush workspace pane on desktop, not a floating card. Pinning
-     the edge geometry also keeps descendants inside the drawer's paint box. */
-  :global(
-    .drawer-content.step-editor-panel-container.side-by-side-layout[data-placement="right"]
-  ) {
-    border-radius: 0;
-    overflow: hidden;
   }
 
   /*

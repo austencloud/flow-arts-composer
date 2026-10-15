@@ -4,8 +4,7 @@
   "description": "Firebase Cloud Functions for Flow Arts Composer",
   "main": "lib/index.js",
   "scripts": {
-    "build": "tsc && npm run copy-templates",
-    "copy-templates": "node -e \"require('fs').cpSync('src/templates', 'lib/templates', {recursive: true})\"",
+    "build": "tsc",
     "build:watch": "tsc --watch",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",

@@ -30,6 +30,9 @@
     showPlacements = false,
     showReversals = false,
     showNonRadialPoints = false,
+    /** Draw the app's StepNumber overlay ("Start" for step 0, else the
+     *  number) from the data's stepNumber, as the Create step grid does. */
+    showStepNumbers = false,
     /** Opt-in theme override for the reflow flow view. "dark" renders the
      *  pictograph dark (dark fill + light grid/props) instead of the print
      *  ink-on-white that getGuidePrintMode() otherwise forces; "light" keeps the
@@ -53,8 +56,15 @@
     showPlacements?: boolean;
     showReversals?: boolean;
     showNonRadialPoints?: boolean;
+    showStepNumbers?: boolean;
     forceTheme?: "light" | "dark";
   } = $props();
+
+  const stepNumber = $derived(
+    showStepNumbers && data && "stepNumber" in data
+      ? ((data as { stepNumber?: number | null }).stepNumber ?? null)
+      : null
+  );
 
   let prepared: PreparedPictographData | null = $state(null);
   let wrapperEl: HTMLElement | undefined = $state();
@@ -74,7 +84,13 @@
   // `data`, so it lands in the SSR/prerendered HTML even though the visual SVG
   // renders client-side (async prepare + IntersectionObserver). Without this the
   // 30+ pictographs on each indexable chapter page are empty, undescribed divs.
-  const a11yLabel = $derived(data ? describePictograph(data) : (label ?? ""));
+  // Describe what is drawn: with the letter glyph hidden, the label leaves
+  // the letter out too.
+  const a11yLabel = $derived(
+    data
+      ? describePictograph(showTKA ? data : { ...data, letter: null })
+      : (label ?? "")
+  );
   const hasA11yLabel = $derived(!!a11yLabel && a11yLabel !== "Pictograph (empty)");
 
   $effect(() => {
@@ -159,6 +175,8 @@
         {showElemental}
         {showPlacements}
         {showNonRadialPoints}
+        {stepNumber}
+        showStepNumber={showStepNumbers}
         leftMotionVisible={true}
         rightMotionVisible={true}
       />

@@ -32,10 +32,10 @@ function experience(
  * experiences. Cards, routes, and the lesson renderer all read this one list,
  * so a future lesson cannot appear available before its component exists.
  *
- * Only lessons Austen is confident in stay here. Rotation Direction,
- * Dual-Shifts, Gamma, Pictograph Anatomy, Type 1, Reading a Choreo Card,
- * Staff Placements and Words keep their components in the codebase but are
- * withdrawn until each is rebuilt to that standard. Re-adding an entry
+ * Only lessons Austen is confident in stay here. Timing and Direction,
+ * Rotation Direction, Dual-Shifts, Gamma, Pictograph Anatomy, Type 1,
+ * Reading a Choreo Card, Staff Placements and Words keep their components
+ * in the codebase but are withdrawn until each is rebuilt to that standard. Re-adding an entry
  * republishes the lesson, its route, its Guide link and its sitemap entry.
  */
 export const CONCEPT_EXPERIENCES = [
@@ -63,18 +63,6 @@ export const CONCEPT_EXPERIENCES = [
     load: () =>
       import("../components/interactive/motions/MotionsConceptExperience.svelte"),
   }),
-  experience({
-    conceptId: "timing-and-direction",
-    guideSlug: "hand-motions",
-    guideLabel: "Hand Motions",
-    reference: {
-      href: "/timing-and-direction",
-      label: "Timing and Direction",
-    },
-    reviewStatus: "built",
-    load: () =>
-      import("../components/interactive/motions/TimingDirectionConceptExperience.svelte"),
-  }),
 ] as const satisfies readonly ConceptExperienceDefinition[];
 
 const byConceptId = new Map(
@@ -101,4 +89,51 @@ export function isConceptExperienceAvailable(conceptId: string): boolean {
 
 export function getAvailableConcepts(): LearnConcept[] {
   return TKA_CONCEPTS.filter((concept) => byConceptId.has(concept.id));
+}
+
+const loadedExperiences = new Map<string, ConceptExperienceComponent>();
+const pendingExperiences = new Map<
+  string,
+  Promise<ConceptExperienceComponent | undefined>
+>();
+
+/**
+ * The lesson component if it has already loaded. Moving from one lesson to
+ * the next renders in the same frame when the next one was preloaded, so the
+ * learner never sees a loading gap between lessons.
+ */
+export function getLoadedConceptExperience(
+  conceptId: string
+): ConceptExperienceComponent | undefined {
+  return loadedExperiences.get(conceptId);
+}
+
+export function loadConceptExperience(
+  conceptId: string
+): Promise<ConceptExperienceComponent | undefined> {
+  const loaded = loadedExperiences.get(conceptId);
+  if (loaded) return Promise.resolve(loaded);
+  const pending = pendingExperiences.get(conceptId);
+  if (pending) return pending;
+  const definition = byConceptId.get(conceptId);
+  if (!definition) return Promise.resolve(undefined);
+  const request = definition
+    .load()
+    .then((module) => {
+      loadedExperiences.set(conceptId, module.default);
+      return module.default;
+    })
+    .finally(() => pendingExperiences.delete(conceptId));
+  pendingExperiences.set(conceptId, request);
+  return request;
+}
+
+/** The published lesson that follows this one, in curriculum order. */
+export function getNextConceptExperience(
+  conceptId: string
+): ConceptExperienceDefinition | undefined {
+  const index = CONCEPT_EXPERIENCES.findIndex(
+    (entry) => entry.conceptId === conceptId
+  );
+  return index < 0 ? undefined : CONCEPT_EXPERIENCES[index + 1];
 }

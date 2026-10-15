@@ -35,12 +35,15 @@ const ROW_PATH = `${PROP_TYPE_DIR}/PropChiralityRow.svelte`;
 const SEAM_PATH = `${PROP_TYPE_DIR}/prop-chirality-seam.ts`;
 const SHEET_PATH = `${PROP_TYPE_DIR}/PropSelectionSheet.svelte`;
 
-/** Every surface that hands the picker a chirality seam. Add new ones here. */
+/**
+ * Every surface that hands the picker a chirality seam. Add new ones here.
+ * The Create step editor no longer opens the picker: its prop button changed
+ * the prop for the whole sequence, so it was removed, and a buugeng hand's
+ * A/B flip sits in the editor's own action row (ChiralityToggle) instead.
+ */
 const HOSTS: Record<string, string> = {
   "global prop drawer (P key)":
     "src/lib/shared/application/components/MainApplication.svelte",
-  "create step editor sheet":
-    "src/lib/features/create/shared/components/coordinators/StepEditorCoordinator.svelte",
   "settings prop type tab":
     "src/lib/shared/settings/components/tabs/PropTypeTab.svelte",
   "sequence viewer props panel":
@@ -88,7 +91,9 @@ describe("buugeng chirality is owned by the prop picker", () => {
     expect(grid).toContain("chirality?: PropChiralitySeam");
     // Gated on the prop actually being buugeng-family, so staff users never
     // see a control that would do nothing.
-    expect(grid).toMatch(/\{#if chirality && isBuugengFamilyProp\(drill\.prop\)\}/);
+    expect(grid).toMatch(
+      /\{#if chirality && isBuugengFamilyProp\(drill\.prop\)\}/
+    );
   });
 
   it("the row routes to SegmentedControl rather than a hand-rolled toggle", () => {
@@ -138,15 +143,6 @@ describe("buugeng chirality is owned by the prop picker", () => {
       main.indexOf("function handleCatDogToggle")
     );
     expect(mainHandler).not.toContain("propDrawerState.close()");
-
-    const stepEditor = read(
-      "src/lib/features/create/shared/components/coordinators/StepEditorCoordinator.svelte"
-    );
-    const stepHandler = stepEditor.slice(
-      stepEditor.indexOf("function handlePropSelect"),
-      stepEditor.indexOf("function handlePushUndoSnapshot")
-    );
-    expect(stepHandler).not.toContain("propSheetOpen = false");
 
     const arena = read(
       "src/lib/features/arena/components/battle/ArenaPropDrawer.svelte"

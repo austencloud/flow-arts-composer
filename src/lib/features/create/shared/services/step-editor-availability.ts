@@ -23,8 +23,7 @@ interface StepEditorSelectionAvailability {
   hasMandalaSelection: boolean;
 }
 
-interface StepEditorDrawerAvailability
-  extends StepEditorSelectionAvailability {
+interface StepEditorDrawerAvailability extends StepEditorSelectionAvailability {
   isSequenceViewerOpen: boolean;
 }
 
@@ -51,7 +50,36 @@ export function canShowStepEditorDrawer(
   availability: StepEditorDrawerAvailability
 ): boolean {
   return (
-    !availability.isSequenceViewerOpen &&
-    hasStepEditorSelection(availability)
+    !availability.isSequenceViewerOpen && hasStepEditorSelection(availability)
+  );
+}
+
+/** Build tabs whose sequences have steps to edit. */
+export const STEP_EDITOR_TABS: ReadonlySet<string> = new Set([
+  "construct",
+  "assemble",
+  "generate",
+  "spell",
+]);
+
+interface StepEditorViewAvailability extends StepEditorDrawerAvailability {
+  isPanelOpen: boolean;
+  activeTab: string | null | undefined;
+}
+
+/**
+ * Whether the tool panel shows the step editor (or the mandala viewer that
+ * shares its place) instead of the tab's tools.
+ */
+export function isStepEditorViewShown({
+  isPanelOpen,
+  activeTab,
+  ...availability
+}: StepEditorViewAvailability): boolean {
+  return (
+    isPanelOpen &&
+    !!activeTab &&
+    STEP_EDITOR_TABS.has(activeTab) &&
+    canShowStepEditorDrawer(availability)
   );
 }

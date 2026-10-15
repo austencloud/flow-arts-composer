@@ -19,10 +19,15 @@
   import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
   import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { createAnimationScope } from "#lib/shared/animation-engine/state/animation-scope.svelte.js";
+  import { clipStripStep } from "#lib/shared/sequence-clips/loop-clip-spec.js";
 
   interface Props {
     word: string;
     posterUrl?: string | null;
+    /** A pre-rendered loop of the sequence (see sequence-clips). An ambient
+     *  preview plays it in a <video> instead of mounting an engine; the
+     *  card, hover and step strip behave exactly as they do for a live one. */
+    loopClipUrl?: string | null;
     loadSequence?: () => Promise<SequenceData | null>;
     /** A host-owned sequence bypasses the lazy loader and updates in place. */
     sequence?: SequenceData | null;
@@ -59,6 +64,7 @@
   let {
     word,
     posterUrl = null,
+    loopClipUrl = null,
     loadSequence,
     sequence: directSequence = null,
     transitionKey = null,
@@ -106,6 +112,21 @@
   let playerReady = $state(false);
   let playerRuntimeError = $state(false);
   let playbackStep = $state(1);
+  // Loop-clip playback. A clip that fails to load hands the tile back to the
+  // engine path, so a bad object in the bucket costs one broken-video event,
+  // not a blank tile.
+  let clipFailed = $state(false);
+  let clipElement = $state<HTMLVideoElement | null>(null);
+  $effect(() => {
+    void loopClipUrl;
+    clipFailed = false;
+  });
+  const clipActive = $derived(
+    !alwaysLive && activation === "ambient" && !!loopClipUrl && !clipFailed
+  );
+  const clipStepDurations = $derived(
+    (sequence?.steps ?? []).map((step) => step.duration ?? 1)
+  );
   let directSequenceId = $state<string | null>(null);
   let resolutionPromise: Promise<SequenceData | null> | null = null;
   const sequence = $derived(directSequence ?? loadedSequence);
@@ -168,6 +189,46 @@
       !playerRuntimeError &&
       (!playerMounted || !playerReady || ambientCardRevealed)
   );
+  // Same gate the live player gets through playbackAllowed, applied to the
+  // clip's own play/pause so a tile under the card, off screen, or without a
+  // token stops decoding.
+  const clipShouldPlay = $derived(
+    clipActive &&
+      playerMounted &&
+      playerReady &&
+      playbackActive &&
+      visible &&
+      !ambientCardRevealed
+  );
+  $effect(() => {
+    const video = clipElement;
+    if (!video || !clipActive) return;
+    if (clipShouldPlay) {
+      video.muted = true;
+      void video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  });
+
+  function syncClipStep(): void {
+    const video = clipElement;
+    if (!video || !clipActive) return;
+    const step = clipStripStep(clipStepDurations, video.currentTime);
+    playbackStep = step;
+    onStepChange?.(step, sequence?.id ?? null);
+  }
+  // Per decoded frame where the browser offers it (the strip's ring then
+  // moves as smoothly as it does under a live engine); timeupdate (~4 Hz)
+  // is the floor everywhere else.
+  function followClipFrames(): void {
+    const video = clipElement;
+    if (!video || video.paused || !clipActive) return;
+    syncClipStep();
+    if ("requestVideoFrameCallback" in video) {
+      video.requestVideoFrameCallback(() => followClipFrames());
+    }
+  }
   const loadingRequestedPlayer = $derived(
     playerRequested &&
       (resolutionState === "loading" ||
@@ -324,6 +385,7 @@
   data-activation={activation}
   data-playback-active={playbackActive}
   data-player-mounted={playerMounted}
+  data-clip={clipActive}
   data-carousel-step={playbackStep}
   onpointerenter={revealAmbientCard}
   onpointerleave={hideAmbientCard}
@@ -341,71 +403,100 @@
   >
     <div class="player-zone">
       <div class="live-player">
-        <LazyMount
-          loader={() =>
-            import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
-          active={playerMounted}
-          keepAlive={false}
-          prefetch={nearViewport && sequence !== null}
-          debugName="sequence showcase animation"
-          onStatusChange={(status) => (playerLoadState = status)}
-          props={{
-            sequence,
-            transitionKey,
-            leftPropType:
-              leftPropType ?? recordedPropConfig?.leftPropType ?? null,
-            rightPropType:
-              rightPropType ?? recordedPropConfig?.rightPropType ?? null,
-            primaryPropColors: playerPropColors,
-            autoPlay: true,
-            showControls: false,
-            chrome: "minimal",
-            fill: true,
-            scrubbable: alwaysLive,
-            interactive: alwaysLive || activation === "manual",
-            hoverHint: "none",
-            cornerToggle: !alwaysLive && activation === "manual",
-            playbackAllowed:
-              playbackActive && (alwaysLive || visible) && !ambientCardRevealed,
-            resumeWhenPlaybackAllowed: true,
-            externalBpm: 60,
-            // A live reference demonstrates the whole sequence, even when the
-            // visitor's workspace is set to repeat an individual count.
-            externalPlaybackMode: alwaysLive ? "continuous" : null,
-            externalPlaying,
-            onExternalPlayingChange,
-            singlePlay,
-            initialStep,
-            disableContextMenu: true,
-            hideStepNumbers: true,
-            beatIndicators: false,
-            onStepChange: (step: number, sequenceId: string | null) => {
-              if (directSequence && sequenceId !== directSequence.id) return;
-              playbackStep = step;
-              onStepChange?.(step, sequenceId);
-            },
-            onSeekRef,
-            onReady: () => {
-              playerReady = true;
-              playerRuntimeError = false;
-            },
-            onLoadError: () => {
-              playerRuntimeError = true;
-            },
-            visibilityManagerOverride: previewAnimationScope.visibility,
-            effectsConfigState: previewAnimationScope.effects,
-            trailSettingsOverride: previewAnimationScope.settings.trail,
-          }}
-        >
-          {#snippet error(_caught, retry)}
-            <div class="preview-error" role="alert">
-              <span>{t("preview_player_failed")}</span>
-              <button type="button" onclick={retry}
-                >{t("browse_ui_try_again")}</button
-              >
-            </div>
-          {/snippet}
-        </LazyMount>
+        {#if clipActive}
+          {#if playerMounted}
+            <video
+              class="loop-clip"
+              src={loopClipUrl}
+              muted
+              loop
+              playsinline
+              disablepictureinpicture
+              preload="auto"
+              aria-hidden="true"
+              bind:this={clipElement}
+              onloadeddata={() => {
+                playerReady = true;
+                playerRuntimeError = false;
+                playerLoadState = "loaded";
+              }}
+              onplay={followClipFrames}
+              ontimeupdate={syncClipStep}
+              onerror={() => {
+                clipFailed = true;
+                playerReady = false;
+              }}
+            ></video>
+          {/if}
+        {:else}
+          <LazyMount
+            loader={() =>
+              import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
+            active={playerMounted}
+            keepAlive={false}
+            prefetch={nearViewport && sequence !== null}
+            debugName="sequence showcase animation"
+            onStatusChange={(status) => (playerLoadState = status)}
+            props={{
+              sequence,
+              transitionKey,
+              leftPropType:
+                leftPropType ?? recordedPropConfig?.leftPropType ?? null,
+              rightPropType:
+                rightPropType ?? recordedPropConfig?.rightPropType ?? null,
+              primaryPropColors: playerPropColors,
+              autoPlay: true,
+              showControls: false,
+              chrome: "minimal",
+              fill: true,
+              scrubbable: alwaysLive,
+              interactive: alwaysLive || activation === "manual",
+              hoverHint: "none",
+              cornerToggle: !alwaysLive && activation === "manual",
+              playbackAllowed:
+                playbackActive &&
+                (alwaysLive || visible) &&
+                !ambientCardRevealed,
+              resumeWhenPlaybackAllowed: true,
+              externalBpm: 60,
+              // A live reference demonstrates the whole sequence, even when the
+              // visitor's workspace is set to repeat an individual count.
+              externalPlaybackMode: alwaysLive ? "continuous" : null,
+              externalPlaying,
+              onExternalPlayingChange,
+              singlePlay,
+              initialStep,
+              disableContextMenu: true,
+              hideStepNumbers: true,
+              beatIndicators: false,
+              onStepChange: (step: number, sequenceId: string | null) => {
+                if (directSequence && sequenceId !== directSequence.id) return;
+                playbackStep = step;
+                onStepChange?.(step, sequenceId);
+              },
+              onSeekRef,
+              onReady: () => {
+                playerReady = true;
+                playerRuntimeError = false;
+              },
+              onLoadError: () => {
+                playerRuntimeError = true;
+              },
+              visibilityManagerOverride: previewAnimationScope.visibility,
+              effectsConfigState: previewAnimationScope.effects,
+              trailSettingsOverride: previewAnimationScope.settings.trail,
+            }}
+          >
+            {#snippet error(_caught, retry)}
+              <div class="preview-error" role="alert">
+                <span>{t("preview_player_failed")}</span>
+                <button type="button" onclick={retry}
+                  >{t("browse_ui_try_again")}</button
+                >
+              </div>
+            {/snippet}
+          </LazyMount>
+        {/if}
       </div>
 
       {#if controls}
@@ -568,6 +659,16 @@
   .live-player {
     position: absolute;
     inset: 0;
+  }
+  .loop-clip {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    /* Clips are baked on black. Lighten keeps every lit pixel and lets the
+       stage colour through wherever the clip is dark, so a clip tile sits on
+       the same stage as an engine tile instead of in a black square. */
+    mix-blend-mode: lighten;
   }
 
   .sequence-preview.with-controls {

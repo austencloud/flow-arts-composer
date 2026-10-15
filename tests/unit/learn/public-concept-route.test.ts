@@ -10,6 +10,7 @@ async function loadConcept(conceptId: string) {
 
 describe("public concept route", () => {
   const withdrawn = [
+    "timing-and-direction",
     "staff-placements",
     "words-alpha-beta",
     "reading-choreo-cards",
@@ -20,15 +21,10 @@ describe("public concept route", () => {
     "type1-abc-ghi",
   ];
 
-  it("prerenders only the four confident lessons", async () => {
+  it("prerenders only the three confident lessons", async () => {
     const paths = (await entries()).map(({ conceptId }) => conceptId);
 
-    expect(paths).toEqual([
-      "grid",
-      "hand-placements",
-      "hand-motions-intro",
-      "timing-and-direction",
-    ]);
+    expect(paths).toEqual(["grid", "hand-placements", "hand-motions-intro"]);
     for (const conceptId of withdrawn) expect(paths).not.toContain(conceptId);
   });
 
@@ -40,6 +36,6 @@ describe("public concept route", () => {
 
   it("still opens the surrounding published lessons", async () => {
     await expect(loadConcept("grid")).resolves.toEqual({});
-    await expect(loadConcept("timing-and-direction")).resolves.toEqual({});
+    await expect(loadConcept("hand-motions-intro")).resolves.toEqual({});
   });
 });

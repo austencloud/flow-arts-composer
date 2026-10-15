@@ -47,7 +47,6 @@ Navigation via bottom tabs (mobile-first UX pattern)
     isShallowGoto,
     mutateCurrentUrl,
   } from "#lib/shared/navigation/services/url-state.js";
-  import { withViewTransition } from "./play/state/view-transition";
 
   type LearnMode = "concepts" | "play" | "tika" | "guide";
 
@@ -199,11 +198,14 @@ Navigation via bottom tabs (mobile-first UX pattern)
   function openConcept(
     concept: LearnConcept,
     routeMode: "push" | "replace" | "none",
-    conceptPlaceId: string | null = null
+    conceptPlaceId: string | null = null,
+    continued = false
   ) {
     if (!isConceptExperienceAvailable(concept.id)) return;
 
-    if (selectedConcept?.id !== concept.id) conceptOpenCount++;
+    // Continuing keeps the open concept view, so its live grid carries into
+    // the next lesson instead of being rebuilt.
+    if (!continued && selectedConcept?.id !== concept.id) conceptOpenCount++;
     selectedConcept = concept;
     returnPlaceId = conceptPlaceId;
     setActiveConceptId(concept.id);
@@ -276,7 +278,7 @@ Navigation via bottom tabs (mobile-first UX pattern)
     concept: LearnConcept,
     conceptPlaceId: string | null
   ) {
-    withViewTransition(() => openConcept(concept, "replace", conceptPlaceId));
+    openConcept(concept, "replace", conceptPlaceId, true);
   }
 
   // Handle back from detail view
