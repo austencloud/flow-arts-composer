@@ -74,3 +74,10 @@
 - Context evidence: `MediaPieceCard.svelte` and `CompositeControls.svelte` use Performance for camera/video content, rendered `パフォーマンス`. `SmartCollectionRuleSummary.svelte` uses Looks in beside `sourceLabel`, rendered `検索対象`. `transform-functions.ts` defines flip as north/south reflection, rendered `上下反転` to distinguish it from invert (`反転`). `module-definitions.ts` identifies `module_post` as the Studio navigation surface.
 - Terminology needing native/product confirmation: Flow identity is `フローのプロフィール`; Jump to is `移動先検索`; Realm is `レルム`. The glossary does not prescribe these terms, and no native/community review or canonical Japanese product naming is claimed.
 - Experimental-module labels were translated because the explicit R5 batch requires every supplied key, overriding the translation skill's default released-module filter. Only the requested apply script and focused gate were used; no broad validator, installation, build, dev server, push, merge, primary checkout access, or other locale edits were performed. Branch and worktree are retained for the coordinator.
+
+## REV (coordinator, 2026-10-14)
+
+Astra back-translation review: SAMPLE 232 / FLAGGED 2 / 0.86%. Both flags
+asked for アルファ/ベータ/ガンマ; dismissed because placement names stay in
+Latin script for ja, ru and ko (glossary decision 2026-10-14). No catalog
+changes.
