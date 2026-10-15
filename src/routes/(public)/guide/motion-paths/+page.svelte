@@ -2,6 +2,7 @@
   import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import { browser } from "$app/env";
   import GuideShell from "../_components/GuideShell.svelte";
+  import Sentences from "../_components/Sentences.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import MotionPathExplorer from "./_components/MotionPathExplorer.svelte";
   import MotionPathExplanation from "./_components/MotionPathExplanation.svelte";
@@ -26,14 +27,14 @@
   <article class="motion-path-guide guide-page-route">
     <header class="intro">
       <h1>{tDynamic("guide_paths_title")}</h1>
-      <p>{tDynamic("guide_paths_tagline")}</p>
+      <p><Sentences text={tDynamic("guide_paths_tagline")} /></p>
     </header>
 
     <MotionPathExplanation />
 
     <header class="explorer-intro">
       <h2>{tDynamic("guide_paths_try_four")}</h2>
-      <p>{tDynamic("guide_paths_try_four_body")}</p>
+      <p><Sentences text={tDynamic("guide_paths_try_four_body")} /></p>
     </header>
 
     {#if browser}
@@ -96,12 +97,16 @@
         </section>
 
         <section aria-labelledby="third-order-heading">
-          <h2 id="third-order-heading">{tDynamic("guide_paths_third_order")}</h2>
+          <h2 id="third-order-heading">
+            {tDynamic("guide_paths_third_order")}
+          </h2>
           <p>{tDynamic("guide_paths_third_order_body")}</p>
           <p>{tDynamic("guide_paths_third_order_explore")}</p>
           <p>{tDynamic("guide_paths_third_order_concave")}</p>
           <div class="links">
-            <PanelButton href="/toys/third-order">{tDynamic("guide_paths_open_third_order")}</PanelButton>
+            <PanelButton href="/toys/third-order"
+              >{tDynamic("guide_paths_open_third_order")}</PanelButton
+            >
             <PanelButton href={localHref("/guide/ratios")}
               >{tDynamic("guide_paths_spin_ratios")}</PanelButton
             >
@@ -114,7 +119,9 @@
           <p>{tDynamic("guide_paths_awkward_body")}</p>
           <p>{tDynamic("guide_paths_awkward_advice")}</p>
           <div class="links">
-            <PanelButton href="/create">{tDynamic("guide_paths_open_composer")}</PanelButton>
+            <PanelButton href="/create"
+              >{tDynamic("guide_paths_open_composer")}</PanelButton
+            >
           </div>
         </section>
       </div>
@@ -131,15 +138,21 @@
     padding: clamp(20px, 3vw, 56px);
     color: var(--theme-text);
   }
+  /* The page header and the explorer's intro are centred section breaks. */
+  .intro,
+  .explorer-intro {
+    text-align: center;
+  }
   .intro {
     margin-bottom: var(--spacing-lg, 24px);
   }
   .intro h1 {
-    text-align: left;
+    text-align: center;
     padding: 0 0 var(--spacing-md, 16px);
   }
   .intro p {
-    max-width: none;
+    max-width: 60ch;
+    margin-inline: auto;
     font-size: clamp(16px, 1.3vw, 20px);
     color: var(--theme-text-muted);
   }
@@ -152,8 +165,8 @@
     line-height: 1.15;
   }
   .explorer-intro p {
-    margin: 0;
-    max-width: none;
+    margin: 0 auto;
+    max-width: 60ch;
     font-size: 16px;
     line-height: 1.6;
     color: var(--theme-text-muted);

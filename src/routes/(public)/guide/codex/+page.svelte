@@ -10,6 +10,7 @@
    */
   import { browser } from "$app/env";
   import GuideShell from "../_components/GuideShell.svelte";
+  import Sentences from "../_components/Sentences.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import LetterCodex from "../../atlas/_components/LetterCodex.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
@@ -39,7 +40,7 @@
     <header class="intro">
       <div class="intro-text">
         <h1>{tDynamic("guide_codex_heading")}</h1>
-        <p>{tDynamic("guide_codex_intro")}</p>
+        <p><Sentences text={tDynamic("guide_codex_intro")} /></p>
       </div>
       <PanelButton variant="secondary" href={localHref("/guide/codex/print")}>
         {tDynamic("guide_codex_print")}
@@ -59,41 +60,41 @@
     padding: clamp(20px, 3vw, 56px);
     color: var(--theme-text);
     /* The board sizes its cells so all five rows fit under the page chrome.
-       This page's chrome is the site header, the padding above and the intro;
-       the Atlas default (28.5rem) also counts the glossary's own header row. */
-    --codex-atlas-chrome: 22rem;
+       This page's chrome is the site header, the padding above and the
+       centred intro with its print button underneath; the Atlas default
+       (28.5rem) also counts the glossary's own header row. */
+    --codex-atlas-chrome: 25rem;
   }
 
+  /* A centred section break, like every Guide page header. */
   .intro {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: var(--spacing-md, 16px) var(--spacing-xl, 32px);
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md, 16px);
     margin-bottom: clamp(20px, 2.5vw, 40px);
+    text-align: center;
   }
 
   .intro-text {
     min-width: 0;
-    flex: 1 1 28rem;
   }
 
   .intro h1 {
-    text-align: left;
+    text-align: center;
     padding: 0 0 var(--spacing-sm, 8px);
   }
 
   .intro p {
-    margin: 0;
+    margin: 0 auto;
     max-width: 60ch;
     font-size: clamp(16px, 1.3vw, 20px);
     line-height: 1.5;
     color: var(--theme-text-muted);
   }
 
-  /* Past 3000px the board widens to min(88vw, 3400px) (BoardAtlas). Give the
-     heading the same column so it starts at the board's left edge instead of
-     sitting in a narrow strip above the middle of it. */
+  /* Past 3000px the board widens to min(88vw, 3400px) (BoardAtlas); the
+     page takes the same column. */
   @media (min-width: 3000px) {
     .codex-guide {
       max-width: min(88vw, 3400px);

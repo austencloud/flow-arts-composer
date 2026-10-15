@@ -14,6 +14,8 @@
    */
   import { onMount } from "svelte";
   import GuideShell from "../_components/GuideShell.svelte";
+  import Sentences from "../_components/Sentences.svelte";
+  import { sentences } from "../_components/sentences";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
@@ -107,9 +109,6 @@
     })
   );
 
-  // Centred blocks start each sentence on its own line.
-  const sentences = (text: string) => text.split(/(?<=[.!?])\s+/);
-
   // "{name}" in the lede becomes the link to Zan's channel.
   const NAME_SLOT = "\u0000";
   const lede = $derived(
@@ -173,9 +172,7 @@
       <div class="from-zan-intro">
         <h2 id="from-zan-heading">{t("guide_zans_from_zan_title")}</h2>
         <p>
-          {#each sentences(t("guide_zans_from_zan_body")) as sentence, i (i)}<span
-              class="sentence">{sentence}</span
-            >{/each}
+          <Sentences text={t("guide_zans_from_zan_body")} />
         </p>
       </div>
       <div class="from-zan-video">
@@ -239,9 +236,7 @@
       <div class="families-intro">
         <h2 id="families-heading">{t("guide_zans_families_title")}</h2>
         <p>
-          {#each sentences(t("guide_zans_families_lead")) as sentence, i (i)}<span
-              class="sentence">{sentence}</span
-            >{/each}
+          <Sentences text={t("guide_zans_families_lead")} />
         </p>
       </div>
       {#each families as family (family.id)}
@@ -265,9 +260,7 @@
 
     <footer class="collection">
       <p>
-        {#each sentences(t("guide_zans_collection_body")) as sentence, i (i)}<span
-            class="sentence">{sentence}</span
-          >{/each}
+        <Sentences text={t("guide_zans_collection_body")} />
       </p>
       <div class="links">
         <LinkChip href={ZANS_DIAMOND_COLLECTION_PATH}
@@ -334,8 +327,8 @@
     gap: var(--spacing-sm, 8px);
     text-align: center;
   }
-  /* A sentence too long for the column wraps into even lines, not one
-     stranded word. */
+  /* The lede sets its own sentence spans around the link (Sentences.svelte
+     does the rest): a long sentence wraps into even lines. */
   .sentence {
     display: block;
     text-wrap: balance;
