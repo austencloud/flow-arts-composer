@@ -5822,7 +5822,7 @@
   "learn_motion_quiz_prompt": "Which one is this? Tap its name.",
   "learn_motion_quiz_picture": "The combination to name",
   "learn_motion_quiz_board": "The six hand combinations",
-  "learn_motion_quiz_miss": "That one is {name}. Try another.",
+  "learn_motion_quiz_miss": "Not {name}. Try another.",
   "learn_motion_quiz_hit": "Yes, that's {name}.",
   "learn_motion_path_aria": "{name}: {caption}",
   "learn_motion_map_prompt": "Pick a point to move the hand.",

@@ -98,6 +98,7 @@
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
       <li
         class="cell"
+        data-combination-cell={combination.id}
         class:found={isFound}
         class:lit={lit === combination.id}
         class:hintable
@@ -114,7 +115,7 @@
           : undefined}
       >
         <div class="art" aria-hidden="true">
-          <div class="picture">
+          <div class="picture" data-combination-picture={combination.id}>
             <PictographContainer
               pictographData={data}
               gridMode={GridMode.DIAMOND}
@@ -136,7 +137,7 @@
             />
           </div>
         </div>
-        <div class="label">
+        <div class="label" data-combination-label={combination.id}>
           <span class="name">{plainTopicText(combination.name)}</span>
           <span class="bar" aria-hidden="true"></span>
           {#if showDescriptions}
