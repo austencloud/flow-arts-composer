@@ -170,3 +170,16 @@
 Astra back-translation review of the P batches: SAMPLE 172 / FLAGGED 3 /
 1.7%. Applied all three fixes (single-turn wording, authored performers,
 Shift as the motion name).
+
+## P6 — 2026-10-14
+
+- Batch: `batch-P6.json`; 0 translated entries, 21 retranslated entries, 0 review entries. Terminology correction only.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-P6.json`.
+- Apply result: `messages/pt.json: inserted 0, replaced 21, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 21 insertions, 21 deletions (21 corrected keys; net 0 lines).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Glossary choice: the coordinator's explicit 2026-10-14 P6 instruction supersedes the glossary's older protected Petal entry. Ordinary singular/plural nouns use pétala/pétalas, with Pétala at the start of labels. Existing feminine agreement (meia, uma, duas, alinhadas, Mesmas) already fits and needs no changes. Flower/Flowers remains exactly as supplied.
+- Focused inspection: exactly the 21 retranslation keys changed. Reversing only the Petal/Petals substitutions reproduces every original string, confirming that all other wording, placeholders, punctuation, markup and protected names are unchanged. `git diff --check` passed.
+- Uncertain: none. No native-speaker review performed.
+- Changes remain on the assigned worker branch for coordinator integration. No primary checkout access, install, broad checks, dev server, integration or push performed.
