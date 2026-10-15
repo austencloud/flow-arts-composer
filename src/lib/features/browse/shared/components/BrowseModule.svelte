@@ -320,6 +320,15 @@
           contextId: artifactId,
         })
       );
+    } else if (intent.kind === "public-collection-detail") {
+      const { ownerId, collectionId, collectionName } = intent;
+      requestAnimationFrame(() =>
+        browseNavigationState.viewPublicCollectionDetail(
+          ownerId,
+          collectionId,
+          collectionName
+        )
+      );
     } else if (intent.kind === "collection-detail") {
       const contextId = intent.foreignOwnerId
         ? `${intent.foreignOwnerId}:${intent.collectionId}`

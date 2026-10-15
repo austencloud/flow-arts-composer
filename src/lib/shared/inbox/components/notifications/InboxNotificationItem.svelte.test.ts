@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => ({
   mapDocToSequence: vi.fn(),
   openSequenceViewer: vi.fn(),
   openCreatorProfile: vi.fn(),
+  setPendingBrowseIntent: vi.fn(),
+  showToast: vi.fn(),
 }));
 
 vi.mock("$app/navigation", () => ({
@@ -54,6 +56,14 @@ vi.mock(
 
 vi.mock("#lib/features/creators/state/creators-routing.svelte.js", () => ({
   openCreatorProfile: mocks.openCreatorProfile,
+}));
+
+vi.mock("#lib/features/browse/state/pending-browse-intent.svelte.js", () => ({
+  setPendingBrowseIntent: mocks.setPendingBrowseIntent,
+}));
+
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
+  showToast: mocks.showToast,
 }));
 
 vi.mock(
@@ -98,6 +108,8 @@ describe("InboxNotificationItem navigation", () => {
     mocks.mapDocToSequence.mockReset();
     mocks.openSequenceViewer.mockReset();
     mocks.openCreatorProfile.mockReset();
+    mocks.setPendingBrowseIntent.mockReset();
+    mocks.showToast.mockReset();
     mocks.openCreatorProfile.mockResolvedValue(undefined);
   });
 
@@ -235,6 +247,85 @@ describe("InboxNotificationItem navigation", () => {
     );
     expect(mocks.closeInbox).toHaveBeenCalledOnce();
     expect(mocks.goto).not.toHaveBeenCalled();
+    expect(mocks.showUserError).not.toHaveBeenCalled();
+  });
+
+  it("opens a created public collection on its Explore page", async () => {
+    const notification = {
+      id: "created-collection-1",
+      userId: "admin-user",
+      type: "admin-content-created",
+      message: 'Duncan created collection "8-step caps"',
+      createdAt: new Date("2026-10-14T21:52:15.000Z"),
+      read: true,
+      fromUserId: "creator-2",
+      fromUserName: "Duncan",
+      contentType: "collection",
+      collectionId: "collection-2",
+      collectionName: "8-step caps",
+    } satisfies UserNotification;
+    mocks.getDocFromServer.mockResolvedValue({
+      exists: () => true,
+      data: () => ({ name: "8-step caps", isPublic: true }),
+    });
+
+    render(InboxNotificationItem, { notification });
+
+    await page
+      .getByRole("button", { name: 'Duncan created collection "8-step caps"' })
+      .click();
+
+    await vi.waitFor(() => {
+      expect(mocks.handleModuleChange).toHaveBeenCalledWith(
+        "browse",
+        "gallery"
+      );
+    });
+    expect(mocks.getDocFromServer).toHaveBeenCalledWith({
+      path: "users/creator-2/collections/collection-2",
+    });
+    expect(mocks.setPendingBrowseIntent).toHaveBeenCalledWith({
+      kind: "public-collection-detail",
+      ownerId: "creator-2",
+      collectionId: "collection-2",
+      collectionName: "8-step caps",
+    });
+    expect(mocks.closeInbox).toHaveBeenCalledOnce();
+    expect(mocks.showToast).not.toHaveBeenCalled();
+    expect(mocks.showUserError).not.toHaveBeenCalled();
+  });
+
+  it("says a created private collection cannot be opened", async () => {
+    const notification = {
+      id: "created-collection-2",
+      userId: "admin-user",
+      type: "admin-content-created",
+      message: 'Sky created smart collection "Drafts"',
+      createdAt: new Date("2026-10-14T21:52:15.000Z"),
+      read: true,
+      fromUserId: "creator-3",
+      fromUserName: "Sky",
+      contentType: "collection",
+      collectionId: "collection-3",
+      collectionName: "Drafts",
+    } satisfies UserNotification;
+    mocks.getDocFromServer.mockResolvedValue({
+      exists: () => true,
+      data: () => ({ name: "Drafts", isPublic: false }),
+    });
+
+    render(InboxNotificationItem, { notification });
+
+    await page
+      .getByRole("button", { name: 'Sky created smart collection "Drafts"' })
+      .click();
+
+    await vi.waitFor(() => {
+      expect(mocks.showToast).toHaveBeenCalledOnce();
+    });
+    expect(mocks.setPendingBrowseIntent).not.toHaveBeenCalled();
+    expect(mocks.handleModuleChange).not.toHaveBeenCalled();
+    expect(mocks.closeInbox).not.toHaveBeenCalled();
     expect(mocks.showUserError).not.toHaveBeenCalled();
   });
 });
