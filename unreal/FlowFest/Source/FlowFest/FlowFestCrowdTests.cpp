@@ -1,4 +1,5 @@
 #include "FlowFestCrowd.h"
+#include "FlowFestAvatarComponent.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
@@ -26,16 +27,37 @@ bool FFlowFestCrowdScheduleTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("Persistent population"), Crowd.GetAgents().Num(), 38);
     TSet<FString> Ids;
     TSet<int32> EverActive;
+    TSet<FName> FireProfiles;
+    TSet<FName> PracticeProfiles;
     for (const FFlowFestCrowdAgent& Agent : Crowd.GetAgents())
     {
         Ids.Add(Agent.Id);
         if (Agent.Role == 3)
         {
+            FireProfiles.Add(Agent.PerformanceId);
+            TestEqual(TEXT("Fire finish remains assigned"), Agent.FinishId, FName(TEXT("fire")));
+            TestTrue(TEXT("Fire dancer uses its equipped family"),
+                Agent.PerformanceId == UFlowFestAvatarComponent::ResolvePerformanceProfile(Agent.PropId, 0)
+                || Agent.PerformanceId == UFlowFestAvatarComponent::ResolvePerformanceProfile(Agent.PropId, 1));
             TestTrue(TEXT("Fire dancer has a corridor route"), Agent.Route.Num() > 2);
             for (int32 I = 1; I < Agent.Route.Num(); ++I)
                 TestTrue(TEXT("No long off-road route hop"), FVector2D::Distance(Agent.Route[I - 1], Agent.Route[I]) < 25.f);
         }
+        else if (Agent.Role == 4)
+        {
+            PracticeProfiles.Add(Agent.PerformanceId);
+            TestEqual(TEXT("Practice LED finish remains assigned"), Agent.FinishId, FName(TEXT("led")));
+            TestTrue(TEXT("Practice dancer uses its equipped family"),
+                Agent.PerformanceId == UFlowFestAvatarComponent::ResolvePerformanceProfile(Agent.PropId, 0)
+                || Agent.PerformanceId == UFlowFestAvatarComponent::ResolvePerformanceProfile(Agent.PropId, 1));
+        }
     }
+    for (const FName Profile : { FName(TEXT("P_poi_A")), FName(TEXT("P_poi_B")),
+                                 FName(TEXT("P_bighoop_A")), FName(TEXT("P_bighoop_B")) })
+        TestTrue(*FString::Printf(TEXT("Fire profile %s is assigned"), *Profile.ToString()), FireProfiles.Contains(Profile));
+    for (const FName Profile : { FName(TEXT("P_club_A")), FName(TEXT("P_club_B")),
+                                 FName(TEXT("P_capsule_baton_A")), FName(TEXT("P_capsule_baton_B")) })
+        TestTrue(*FString::Printf(TEXT("Practice profile %s is assigned"), *Profile.ToString()), PracticeProfiles.Contains(Profile));
     TestEqual(TEXT("Identity IDs are unique"), Ids.Num(), 38);
     for (int32 Rotation = 0; Rotation < 5; ++Rotation)
     {

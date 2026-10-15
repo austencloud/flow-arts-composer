@@ -1,4 +1,5 @@
 #include "FlowFestCrowd.h"
+#include "FlowFestAvatarComponent.h"
 
 namespace
 {
@@ -6,9 +7,7 @@ constexpr float TwoPi = 2.f * PI;
 const TCHAR* Names[] = { TEXT("Wren"), TEXT("Bo"), TEXT("Sage"), TEXT("Cass"), TEXT("Juniper"), TEXT("Rook"), TEXT("Mira"), TEXT("Dez"), TEXT("Ash"), TEXT("Poppy"), TEXT("Kit"), TEXT("Lark"), TEXT("Nico"), TEXT("Sol"), TEXT("Wilder"), TEXT("Fen"), TEXT("Marlow"), TEXT("Tam"), TEXT("Rue"), TEXT("Ozzy"), TEXT("Sparrow"), TEXT("Indigo"), TEXT("Cleo"), TEXT("Bram"), TEXT("Delta"), TEXT("Onyx"), TEXT("Vale"), TEXT("Hollis"), TEXT("Wynn"), TEXT("Zephyr"), TEXT("Callum"), TEXT("Nova"), TEXT("Piper"), TEXT("Ridge"), TEXT("Sunny"), TEXT("Thea"), TEXT("Blaze"), TEXT("Coriander"), TEXT("Echo"), TEXT("Fable") };
 const FName Avatars[] = { TEXT("ch01"), TEXT("ch07"), TEXT("ch12"), TEXT("ch18"), TEXT("ch21"), TEXT("ch22"), TEXT("ch24"), TEXT("ch41"), TEXT("ch42") };
 const FName PerformerProps[] = { TEXT("poi"), TEXT("bighoop") };
-const FName PerformerClips[] = { TEXT("FirePoi"), TEXT("FireHoop") };
 const FName PracticeProps[] = { TEXT("club"), TEXT("capsule_baton") };
-const FName PracticeClips[] = { TEXT("Juggler"), TEXT("LedFlow") };
 
 float Hash01(int32 Index, int32 Salt)
 {
@@ -63,6 +62,7 @@ void FFlowFestCrowd::Initialize(const TMap<FString, FVector2D>& InLandmarks,
     Agents.Reset();
     const TCHAR* Homes[] = { TEXT("camp-lower"), TEXT("camp-upper"), TEXT("camp-car") };
     int32 PerformerCount = 0;
+    int32 PracticeCount = 0;
     for (int32 I = 0; I < 38; ++I)
     {
         FFlowFestCrowdAgent Agent;
@@ -80,14 +80,17 @@ void FFlowFestCrowd::Initialize(const TMap<FString, FVector2D>& InLandmarks,
             Agent.PerformerOrdinal = PerformerCount++;
             const int32 Profile = Agent.PerformerOrdinal % UE_ARRAY_COUNT(PerformerProps);
             Agent.PropId = PerformerProps[Profile];
-            Agent.PerformanceId = PerformerClips[Profile];
+            Agent.PerformanceId = UFlowFestAvatarComponent::ResolvePerformanceProfile(
+                Agent.PropId, (Agent.PerformerOrdinal / UE_ARRAY_COUNT(PerformerProps)) % 2);
             Agent.FinishId = TEXT("fire");
         }
         else if (Agent.Role == 4 && I % 2 == 0)
         {
-            const int32 Profile = (I / 2) % UE_ARRAY_COUNT(PracticeProps);
+            const int32 PracticeOrdinal = PracticeCount++;
+            const int32 Profile = PracticeOrdinal % UE_ARRAY_COUNT(PracticeProps);
             Agent.PropId = PracticeProps[Profile];
-            Agent.PerformanceId = PracticeClips[Profile];
+            Agent.PerformanceId = UFlowFestAvatarComponent::ResolvePerformanceProfile(
+                Agent.PropId, (PracticeOrdinal / UE_ARRAY_COUNT(PracticeProps)) % 2);
             Agent.FinishId = TEXT("led");
         }
         Agents.Add(MoveTemp(Agent));

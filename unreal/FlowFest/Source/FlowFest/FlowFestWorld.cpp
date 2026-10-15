@@ -175,18 +175,15 @@ void AFlowFestWorld::Tick(float DeltaSeconds)
         {
             if (bPerforming && Person.Prop && !Agent.PerformanceId.IsNone())
             {
-                const FName Profile = UFlowFestAvatarComponent::ResolvePerformanceProfile(Agent.PropId, I % 2);
-                Person.bPerformancePlaying = Person.Avatar->PlayPerformance(Profile);
+                const FName Profile = Agent.PerformanceId;
+                Person.bPerformancePlaying = Person.Prop->LoadPerformance(Agent.AvatarId, Profile)
+                    && Person.Avatar->PlayPerformance(Profile);
                 if (Person.bPerformancePlaying)
                 {
                     Person.Avatar->SetPerformancePhase(FMath::Frac(Agent.PhaseOffset / (2.f * PI)));
-                    Person.bPerformancePlaying = Person.Prop->LoadPerformance(Agent.AvatarId, Profile);
-                    if (Person.bPerformancePlaying)
-                    {
-                        Person.Prop->SetFinish(Agent.FinishId);
-                    }
-                    else Person.Avatar->StopPerformance();
+                    Person.Prop->SetFinish(Agent.FinishId);
                 }
+                else Person.Avatar->StopPerformance();
             }
             else if (Person.bPerformancePlaying)
             {
