@@ -93,14 +93,14 @@ describe("prop studio build previews", () => {
 
     const frames = fanFramePreviewOptions({ ...appearance, cover: "bare" });
     expect(frames.map((option) => option.image)).toEqual([
-      "/images/props/build-previews/fan-day-black-bare-complete.webp",
-      "/images/props/build-previews/fan-day-white-bare-complete.webp",
+      "/images/props/build-previews/fan-day-black-bare-complete.webp?v=2",
+      "/images/props/build-previews/fan-day-white-bare-complete.webp?v=2",
     ]);
 
     const covers = fanCoverPreviewOptions(appearance);
     expect(covers.map((option) => option.image)).toEqual([
-      "/images/props/build-previews/fan-day-white-bare-complete.webp",
-      "/images/props/build-previews/fan-day-white-covered-complete.webp",
+      "/images/props/build-previews/fan-day-white-bare-complete.webp?v=2",
+      "/images/props/build-previews/fan-day-white-covered-complete.webp?v=2",
     ]);
 
     expectAssets([...builds, ...frames, ...covers]);
