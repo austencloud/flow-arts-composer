@@ -5,6 +5,8 @@ import {
   isLocalizedPublicPath,
   localizeHref,
   localizePath,
+  localizedPageLocale,
+  routePathFor,
   splitLocalePath,
 } from "#lib/shared/i18n/seo-locales.js";
 import { normalizeModuleId } from "#lib/shared/navigation/config/module-definitions.js";
@@ -31,6 +33,9 @@ describe("seo locale registry", () => {
     expect(isLocalizedPublicPath("/guide/zans-diamond")).toBe(true);
     expect(isLocalizedPublicPath("/guide/level-1/print")).toBe(false);
     expect(isLocalizedPublicPath("/guide/level-1/book/3")).toBe(false);
+    expect(isLocalizedPublicPath("/guide/level-2/print")).toBe(false);
+    expect(isLocalizedPublicPath("/guide/codex/poster")).toBe(false);
+    expect(isLocalizedPublicPath("/guide/codex")).toBe(true);
     expect(isLocalizedPublicPath("/guidebook")).toBe(false);
     expect(isLocalizedPublicPath("/about")).toBe(false);
   });
@@ -62,6 +67,14 @@ describe("seo locale registry", () => {
       "/guide/ratios"
     );
     expect(alternatesFor("/about")).toEqual([]);
+  });
+
+  it("names a URL's page language only for localized pages", () => {
+    expect(localizedPageLocale("/de/guide/ratios")).toBe("de");
+    expect(localizedPageLocale("/guide/ratios")).toBeUndefined();
+    expect(localizedPageLocale("/de/about")).toBeUndefined();
+    expect(routePathFor("/it/guide")).toBe("/guide");
+    expect(routePathFor("/it/about")).toBe("/it/about");
   });
 
   it("never collides with an app module id", () => {

@@ -17,6 +17,16 @@
   } from "#lib/features/learn/domain/concept-routes.js";
   import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { page } from "$app/state";
+  import LocaleAlternates from "#lib/shared/components/LocaleAlternates.svelte";
+  import {
+    localizePath,
+    splitLocalePath,
+  } from "#lib/shared/i18n/seo-locales.js";
+
+  const hubUrl = $derived(
+    `https://tkaflowarts.com${localizePath("/guide", splitLocalePath(page.url.pathname).locale)}`
+  );
 
   const firstTopic = bodyPagesByGroup()[0]?.entries[0]?.entry;
   const firstTopicHref = firstTopic
@@ -73,9 +83,10 @@
 <svelte:head>
   <title>{tDynamic("guide_hub_seo_title")}</title>
   <meta name="description" content={tDynamic("guide_hub_seo_description")} />
-  <link rel="canonical" href="https://tkaflowarts.com/guide" />
+  <link rel="canonical" href={hubUrl} />
+  <LocaleAlternates path="/guide" />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://tkaflowarts.com/guide" />
+  <meta property="og:url" content={hubUrl} />
   <meta property="og:title" content={tDynamic("guide_hub_title")} />
   <meta
     property="og:description"

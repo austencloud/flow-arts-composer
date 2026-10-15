@@ -1,6 +1,6 @@
 import type { Reroute } from "@sveltejs/kit/hooks";
 import {
-  isLocalizedPublicPath,
+  localizedPageLocale,
   splitLocalePath,
 } from "#lib/shared/i18n/seo-locales.js";
 
@@ -11,6 +11,7 @@ import {
  * folder is not an app module.
  */
 export const reroute: Reroute = ({ url }) => {
-  const { locale, path } = splitLocalePath(url.pathname);
-  if (locale !== "en" && isLocalizedPublicPath(path)) return path;
+  if (localizedPageLocale(url.pathname)) {
+    return splitLocalePath(url.pathname).path;
+  }
 };

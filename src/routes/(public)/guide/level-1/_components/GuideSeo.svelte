@@ -9,6 +9,13 @@
    * The /print + /book replicas stay `noindex` (they're derivatives); the
    * canonical always points at the reflowable article route rendered here.
    */
+  import { page } from "$app/state";
+  import LocaleAlternates from "#lib/shared/components/LocaleAlternates.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import {
+    localizePath,
+    splitLocalePath,
+  } from "#lib/shared/i18n/seo-locales.js";
   import { LANDING_DOMAIN } from "../../../../../config/domains";
 
   type Crumb = { name: string; path: string };
@@ -33,7 +40,10 @@
   } = $props();
 
   const abs = (p: string) => (p.startsWith("http") ? p : `${LANDING_DOMAIN}${p}`);
-  const canonical = $derived(abs(path));
+  // /de/guide/... is the German edition of the English path it is given.
+  const pageLocale = $derived(splitLocalePath(page.url.pathname).locale);
+  const localized = (p: string) => abs(localizePath(p, pageLocale));
+  const canonical = $derived(localized(path));
   const imageAbs = $derived(abs(image));
 
   const AUTHOR = { "@type": "Person", name: "Austen Cloud", url: `${LANDING_DOMAIN}/about` };
@@ -54,24 +64,24 @@
             url: canonical,
             provider: PUBLISHER,
             author: AUTHOR,
-            inLanguage: "en",
-            educationalLevel: "Beginner to Intermediate",
-            teaches: "Flow arts choreography notation for double staves and dual-wielded props",
+            inLanguage: pageLocale,
+            educationalLevel: t("guide_seo_educational_level"),
+            teaches: t("guide_seo_teaches"),
           }
         : {
             "@type": "LearningResource",
             name: title,
             description,
             url: canonical,
-            learningResourceType: "Instructional guide",
+            learningResourceType: t("guide_seo_resource_type"),
             educationalUse: "instruction",
-            educationalLevel: "Beginner to Intermediate",
+            educationalLevel: t("guide_seo_educational_level"),
             author: AUTHOR,
             publisher: PUBLISHER,
-            inLanguage: "en",
+            inLanguage: pageLocale,
             datePublished,
             ...(partOf
-              ? { isPartOf: { "@type": "Course", name: partOf.name, url: abs(partOf.path) } }
+              ? { isPartOf: { "@type": "Course", name: partOf.name, url: localized(partOf.path) } }
               : {}),
           };
 
@@ -83,7 +93,7 @@
           "@type": "ListItem",
           position: i + 1,
           name: b.name,
-          item: abs(b.path),
+          item: localized(b.path),
         })),
       });
     }
@@ -102,7 +112,7 @@
 
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="The Kinetic Alphabet" />
-  <meta property="og:locale" content="en_US" />
+  <LocaleAlternates {path} />
   <meta property="og:url" content={canonical} />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />

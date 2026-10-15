@@ -13,6 +13,7 @@
  */
 
 import type { TranslationKey } from "./i18n-types.js";
+import { localizedPageLocale } from "./seo-locales.js";
 import enMessagesStatic from "../../../../messages/en.json";
 
 // Available locales - must match messages/*.json files
@@ -433,9 +434,7 @@ export function t(
   if (!text) {
     // Development warning for missing keys
     if (import.meta.env.DEV) {
-      console.warn(
-        `Missing translation key: ${key} (locale: ${activeLocale})`
-      );
+      console.warn(`Missing translation key: ${key} (locale: ${activeLocale})`);
     }
     return key;
   }
@@ -458,6 +457,18 @@ export function t(
  * Call this once in your root layout
  */
 export async function initI18n(): Promise<void> {
+  // A localized public page (/de/guide/...) is published in one language.
+  // Following the visitor's saved or browser language would rewrite it after
+  // hydration, for search engines that render JavaScript too.
+  const pageLocale =
+    typeof location === "undefined"
+      ? undefined
+      : localizedPageLocale(location.pathname);
+  if (pageLocale) {
+    await setPageLocale(pageLocale);
+    return;
+  }
+
   const initialLocale = getInitialLocale();
 
   await setLocale(initialLocale);
@@ -580,9 +591,7 @@ export function tDynamic(
 
   if (!text) {
     if (import.meta.env.DEV && !silent) {
-      console.warn(
-        `Missing translation key: ${key} (locale: ${activeLocale})`
-      );
+      console.warn(`Missing translation key: ${key} (locale: ${activeLocale})`);
     }
     return key;
   }

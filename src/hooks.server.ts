@@ -18,6 +18,7 @@ import { getRequestEvent, read } from "$app/server";
 import { rtlLocales } from "#lib/shared/i18n/i18n.svelte.js";
 import {
   isLocalizedPublicPath,
+  localizeHref,
   splitLocalePath,
   type SeoLocale,
 } from "#lib/shared/i18n/seo-locales.js";
@@ -229,9 +230,13 @@ export const handle: Handle = async ({ event, resolve }) => {
   const { locale: pageLocale, path: pagePath } = splitLocalePath(
     event.url.pathname
   );
-  if (pageLocale !== "en" && isLocalizedPublicPath(pagePath)) {
-    event.locals.pageLocale = pageLocale;
-    event.locals.pageMessages = await pageCatalog(pageLocale);
+  const localizedLocale =
+    pageLocale !== "en" && isLocalizedPublicPath(pagePath)
+      ? pageLocale
+      : undefined;
+  if (localizedLocale) {
+    event.locals.pageLocale = localizedLocale;
+    event.locals.pageMessages = await pageCatalog(localizedLocale);
   }
 
   // Resolve the request with security headers
@@ -241,12 +246,23 @@ export const handle: Handle = async ({ event, resolve }) => {
     preload: (asset) => shouldPreloadRouteAsset(routePath, asset),
     transformPageChunk: (chunk) => {
       const html = transformLandingChunk(chunk);
-      const lang = event.locals.pageLocale;
+      const lang = localizedLocale;
       if (!lang) return html;
       const dir = rtlLocales.includes(lang) ? "rtl" : "ltr";
-      return html.replace('<html lang="en"', `<html lang="${lang}" dir="${dir}"`);
+      return html.replace(
+        '<html lang="en"',
+        `<html lang="${lang}" dir="${dir}"`
+      );
     },
   });
+
+  // A retired guide address redirects to its English successor. From a
+  // localized page, keep the reader (and the prerendered meta refresh) in
+  // the page's language.
+  const redirectTo = response.headers.get("location");
+  if (localizedLocale && redirectTo) {
+    response.headers.set("location", localizeHref(redirectTo, event.url));
+  }
 
   // =========================================================================
   // CORS HEADERS FOR SESSION REPLAY (PostHog)

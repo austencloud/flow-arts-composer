@@ -13,7 +13,10 @@
    * own JSON-LD <script> block, extra preconnect links).
    */
   import type { Snippet } from "svelte";
+  import { page } from "$app/state";
   import { LANDING_DOMAIN } from "../../../config/domains";
+  import { localizePath, splitLocalePath } from "../i18n/seo-locales";
+  import LocaleAlternates from "./LocaleAlternates.svelte";
 
   const DEFAULT_OG_IMAGE = `${LANDING_DOMAIN}/branding/og-image.png`;
 
@@ -36,20 +39,38 @@
     noindex?: boolean;
     children?: Snippet;
   } = $props();
+
+  // `canonical` names the English page. A localized edition (/de/guide/...)
+  // is its own canonical URL; LocaleAlternates links the editions together.
+  const englishPath = $derived(
+    canonical.startsWith(LANDING_DOMAIN)
+      ? canonical.slice(LANDING_DOMAIN.length) || "/"
+      : null
+  );
+  const pageLocale = $derived(splitLocalePath(page.url.pathname).locale);
+  const pageUrl = $derived(
+    englishPath === null
+      ? canonical
+      : `${LANDING_DOMAIN}${localizePath(englishPath, pageLocale)}`
+  );
 </script>
 
 <svelte:head>
   <title>{title}</title>
   <meta name="description" content={description} />
-  <link rel="canonical" href={canonical} />
+  <link rel="canonical" href={pageUrl} />
   {#if noindex}
     <meta name="robots" content="noindex, nofollow" />
   {/if}
 
   <meta property="og:type" content={ogType} />
   <meta property="og:site_name" content="The Kinetic Alphabet" />
-  <meta property="og:locale" content="en_US" />
-  <meta property="og:url" content={canonical} />
+  {#if englishPath === null}
+    <meta property="og:locale" content="en_US" />
+  {:else}
+    <LocaleAlternates path={englishPath} />
+  {/if}
+  <meta property="og:url" content={pageUrl} />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImage} />

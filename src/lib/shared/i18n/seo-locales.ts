@@ -23,12 +23,16 @@ export const OG_LOCALE: Record<PageLocale, string> = {
 
 const LOCALIZED_ROOTS = ["/guide"];
 
-// Noindex replicas (print, book) and editing tools inside the guide tree.
+// Noindex replicas (print, book) and dev tools inside the guide tree.
 const EXCLUDED_PREFIXES = [
   "/guide/level-1/print",
   "/guide/level-1/book",
   "/guide/level-1/handbook",
   "/guide/level-1/cover-lab",
+  "/guide/level-2/print",
+  "/guide/level-2/book",
+  "/guide/codex/parity",
+  "/guide/codex/poster",
 ];
 
 const under = (path: string, prefix: string) =>
@@ -54,6 +58,19 @@ export function splitLocalePath(pathname: string): {
   const [, first = "", ...rest] = pathname.split("/");
   if (!isSeoLocale(first)) return { locale: "en", path: pathname };
   return { locale: first, path: `/${rest.join("/")}` };
+}
+
+/** The language a URL's page is published in, when it is a localized page. */
+export function localizedPageLocale(pathname: string): SeoLocale | undefined {
+  const { locale, path } = splitLocalePath(pathname);
+  return locale !== "en" && isLocalizedPublicPath(path) ? locale : undefined;
+}
+
+/** The route path a URL renders: `/de/guide/x` renders `/guide/x`. */
+export function routePathFor(pathname: string): string {
+  return localizedPageLocale(pathname)
+    ? splitLocalePath(pathname).path
+    : pathname;
 }
 
 export function localizePath(path: string, locale: PageLocale): string {

@@ -30,7 +30,7 @@ vi.mock("$app/server", () => ({
 import { handle } from "../../src/hooks.server";
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-async function render(path: string) {
+async function render(path: string, redirectTo?: string) {
   const request = new Request(`https://tkaflowarts.com${path}`);
   const locals: App.Locals = {};
   const event = {
@@ -46,6 +46,12 @@ async function render(path: string) {
     options
   ) => {
     await Promise.resolve();
+    if (redirectTo) {
+      return new Response(null, {
+        status: 308,
+        headers: { location: redirectTo },
+      });
+    }
     const html = await options?.transformPageChunk?.({
       html: '<html lang="en" class="dark"><body></body></html>',
       done: true,
@@ -56,7 +62,11 @@ async function render(path: string) {
     event,
     resolve,
   } as unknown as Parameters<Handle>[0]);
-  return { html: await response.text(), locals };
+  return {
+    html: await response.text(),
+    locals,
+    location: response.headers.get("location"),
+  };
 }
 
 describe("localized public page language", () => {
@@ -77,6 +87,13 @@ describe("localized public page language", () => {
     const about = await render("/de/about");
     expect(about.locals.pageLocale).toBeUndefined();
     expect(about.html).toContain('<html lang="en"');
+  });
+
+  it("keeps a redirect from a localized page in that language", async () => {
+    const german = await render("/de/guide/old-name", "/guide/new-name");
+    expect(german.location).toBe("/de/guide/new-name");
+    const english = await render("/guide/old-name", "/guide/new-name");
+    expect(english.location).toBe("/guide/new-name");
   });
 
   it("makes t() answer in the request's language during a render", async () => {
