@@ -7,7 +7,6 @@ its feet at local Z=0. Unreal's FBX importer converts metres to centimetres.
 """
 import argparse
 import json
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -23,15 +22,6 @@ parser.add_argument("--source-root", type=Path, help="Repository containing stat
 parser.add_argument("--id", action="append", help="Convert only this deployed avatar ID")
 args = parser.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
 
-catalog = (repo / "node_modules/@austencloud/scene-3d/src/lib/config/avatar-definitions.ts").read_text(encoding="utf-8")
-deployed = re.search(r"const DEPLOYED_AVATAR_DEFINITIONS:[\s\S]*?= \[([\s\S]*?)\n\];", catalog)
-if not deployed:
-    raise RuntimeError("Cannot read deployed avatar catalog")
-ids = re.findall(r'id:\s*"([^"]+)",\s*name:\s*"[^"]+"', deployed.group(1))
-if len(ids) != 16 or len(set(ids)) != 16:
-    raise RuntimeError(f"Expected 16 unique deployed avatars, got {ids}")
-if args.id and set(args.id) - set(ids):
-    raise RuntimeError(f"Unknown deployed avatar IDs: {sorted(set(args.id) - set(ids))}")
 if args.source_root:
     source_root = args.source_root.resolve()
 else:
@@ -42,18 +32,32 @@ else:
             cwd=repo, text=True,
         ).strip()
         source_root = Path(common).resolve().parent
-source = source_root / "static/models/avatars/_optimized"
-if not source.is_dir():
-    raise RuntimeError(f"Avatar source directory is missing: {source}")
 output.mkdir(parents=True, exist_ok=True)
+manifest_path = output / "characters.json"
+subprocess.run(
+    ["node", str(repo / "unreal/Shared/Tools/character-catalog.mjs"),
+     "--source-root", str(args.source_root.resolve() if args.source_root else repo),
+     "--output", str(manifest_path)],
+    check=True,
+)
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+if manifest.get("schema") != "flow-arts-native-characters-v1":
+    raise RuntimeError(f"Unsupported native character manifest: {manifest_path}")
+characters = manifest["characters"]
+ids = [character["id"] for character in characters]
+if len(ids) != 16 or len(set(ids)) != 16:
+    raise RuntimeError(f"Expected 16 unique deployed avatars, got {ids}")
+if args.id and set(args.id) - set(ids):
+    raise RuntimeError(f"Unknown deployed avatar IDs: {sorted(set(args.id) - set(ids))}")
 
-for avatar_id in ids:
+for character in characters:
+    avatar_id = character["id"]
     if args.id and avatar_id not in args.id:
         continue
-    glb = source / f"{avatar_id}.glb"
+    glb = source_root / character["sourceRelativePath"]
     if not glb.is_file():
         raise RuntimeError(f"Missing deployed avatar: {glb}")
-    key = avatar_id.replace("-", "_")
+    key = character["key"]
     fbx = output / f"SM_{key}.fbx"
     if fbx.is_file() and fbx.stat().st_mtime >= max(glb.stat().st_mtime, Path(__file__).stat().st_mtime):
         print("MUSEUM_PERFORMER_CACHED", avatar_id, fbx)
