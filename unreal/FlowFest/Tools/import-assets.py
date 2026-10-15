@@ -149,9 +149,13 @@ def add_foliage_wind(material, tree):
     time = expression(material, u.MaterialExpressionTime)
     world = expression(material, u.MaterialExpressionWorldPosition)
     object_pos = expression(material, u.MaterialExpressionObjectPositionWS)
-    x = expression(material, u.MaterialExpressionComponentMask, r=True)
+    # UE's mask defaults vary across engine versions. Explicitly clear the
+    # unused channels so the wind chain stays scalar under the SM6 compiler.
+    x = expression(material, u.MaterialExpressionComponentMask,
+                   r=True, g=False, b=False, a=False)
     height_delta = expression(material, u.MaterialExpressionSubtract)
-    height = expression(material, u.MaterialExpressionComponentMask, b=True)
+    height = expression(material, u.MaterialExpressionComponentMask,
+                        r=False, g=False, b=True, a=False)
     phase = expression(material, u.MaterialExpressionAdd)
     speed = expression(material, u.MaterialExpressionMultiply)
     wavelength = expression(material, u.MaterialExpressionMultiply)
@@ -212,7 +216,8 @@ for name, args in palette.items():
     if name == 'M_Ground' and (STAGED / 'TerrainOrtho.png').exists():
         tex = import_file(STAGED / 'TerrainOrtho.png', '/Game/FlowFest/Textures', 'TerrainOrtho')
         world = expression(m, u.MaterialExpressionWorldPosition)
-        mask = expression(m, u.MaterialExpressionComponentMask, r=True, g=True)
+        mask = expression(m, u.MaterialExpressionComponentMask,
+                          r=True, g=True, b=False, a=False)
         divide = expression(m, u.MaterialExpressionDivide)
         add = expression(m, u.MaterialExpressionAdd)
         sample = expression(m, u.MaterialExpressionTextureSample, texture=tex)
