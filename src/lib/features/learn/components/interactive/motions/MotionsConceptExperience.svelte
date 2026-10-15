@@ -3,12 +3,13 @@
   motion map (one hand, three moves), two hands finding the six combinations,
   then the six on one board before Timing and Direction. The map and the two
   hands are each done once everything in them is found; what was found is
-  saved with the stage.
+  saved with the stage. The last stage names each of the six from its
+  picture, then shows the board with every description.
   Spec: docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md
 -->
 <script lang="ts">
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
-  import { onDestroy, tick } from "svelte";
+  import { onDestroy, tick, untrack } from "svelte";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import HandCombinationBoard from "#lib/shared/guide-topics/HandCombinationBoard.svelte";
@@ -42,6 +43,7 @@
   import HandMotionsIntroStage from "./HandMotionsIntroStage.svelte";
   import HandMotionsMapStage from "./HandMotionsMapStage.svelte";
   import HandPairsStage from "./HandPairsStage.svelte";
+  import HandMotionsQuizStage from "./HandMotionsQuizStage.svelte";
   import { runHandGridSplit } from "./hand-grid-split";
 
   let {
@@ -112,6 +114,20 @@
       : {}
   );
 
+  let quizAnswered = $state<HandCombinationId[]>(
+    current
+      ? persistence
+          .getPhaseData<string[]>("quizAnswered", [])
+          .filter((id): id is HandCombinationId => COMBINATION_IDS.has(id))
+      : []
+  );
+  // Review opens on the finished board.
+  const quizDone = $derived(
+    viewMode === "scroll" || quizAnswered.length === HAND_COMBINATIONS.length
+  );
+  /** The quiz stays up until its last answer has had its moment. */
+  let quizOpen = $state(untrack(() => !quizDone));
+
   if (viewMode !== "scroll" && !current) {
     persistence.saveStep(savedStep);
     persistence.savePhaseData(schemaKey, HAND_MOTIONS_STAGE_SCHEMA_VERSION);
@@ -138,7 +154,9 @@
       ? Object.keys(mapMoves).length === MOTION_MAP_MOVES.length
       : stepIndex === PAIRS_STAGE
         ? Object.keys(pairsFound).length === HAND_COMBINATIONS.length
-        : true
+        : stepIndex === BOARD_STAGE
+          ? !quizOpen
+          : true
   );
   const description = $derived(
     stepIndex === INTRO_STAGE
@@ -147,9 +165,11 @@
         ? handMotionsTopicText("mapPrompt")
         : stepIndex === PAIRS_STAGE
           ? handMotionsTopicText("pairsPrompt")
-          : // The pairs stage already named all six, so the board needs no
-            // lead (Austen, 2026-10-12).
-            ""
+          : // The pairs stage already named all six, so the finished board
+            // needs no lead (Austen, 2026-10-12).
+            !quizOpen
+            ? ""
+            : t("learn_motion_quiz_prompt")
   );
 
   /** The map and the two hands share one stage: the map splits into them. */
@@ -208,6 +228,14 @@
         ? "success"
         : "selection"
     );
+  }
+
+  function answeredQuiz(id: HandCombinationId): void {
+    if (quizAnswered.includes(id)) return;
+    quizAnswered = [...quizAnswered, id];
+    if (viewMode !== "scroll")
+      persistence.savePhaseData("quizAnswered", quizAnswered);
+    haptic?.trigger(quizDone ? "success" : "selection");
   }
 
   const nextConceptId = isConceptExperienceAvailable("timing-and-direction")
@@ -292,6 +320,15 @@
           <HandMotionsMapStage found={mapMoves} onFind={foundMove} />
         {:else if stepIndex === PAIRS_STAGE}
           <HandPairsStage found={pairsFound} onFind={foundCombination} />
+        {:else if quizOpen}
+          <div class="board-stage quiz">
+            <HandMotionsQuizStage
+              answered={quizAnswered}
+              onAnswer={answeredQuiz}
+              onMiss={() => haptic?.trigger("warning")}
+              onFinish={() => (quizOpen = false)}
+            />
+          </div>
         {:else}
           <div class="board-stage">
             <HandCombinationBoard
@@ -415,6 +452,29 @@
   @media (min-aspect-ratio: 3 / 2) and (max-aspect-ratio: 11 / 5) and (min-height: 1100px) {
     .board-stage {
       --board-wide-columns: 3;
+      width: min(100%, calc(3 * var(--board-art) + 6.5rem));
+    }
+  }
+
+  /* The quiz puts the picture to name over the board, so the board's
+     pictures give up height to it: two rows of three under it, or one row
+     of six on a landscape screen. */
+  .board-stage.quiz {
+    --board-art: max(5.5rem, calc((100 * var(--lesson-vh) - 35.5rem) / 3.4));
+    --quiz-picture: calc(1.4 * var(--board-art));
+    width: min(100%, calc(3 * var(--board-art) + 6.5rem));
+  }
+
+  @media (min-aspect-ratio: 3 / 2) {
+    .board-stage.quiz {
+      --board-art: max(6rem, calc((100 * var(--lesson-vh) - 32rem) / 2.4));
+      width: min(100%, calc(6 * var(--board-art) + 9rem));
+    }
+  }
+
+  @media (min-aspect-ratio: 3 / 2) and (max-aspect-ratio: 11 / 5) and (min-height: 1100px) {
+    .board-stage.quiz {
+      --board-art: max(5.5rem, calc((100 * var(--lesson-vh) - 35.5rem) / 3.4));
       width: min(100%, calc(3 * var(--board-art) + 6.5rem));
     }
   }
