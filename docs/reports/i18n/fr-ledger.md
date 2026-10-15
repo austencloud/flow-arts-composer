@@ -60,3 +60,20 @@
 - Legitimately identical values: Style, Standard, Reel, Story, Timing, Tempo, Animation, Mandala and `Version {version}`.
 - Prose review: ai-bust mechanical pass on the batch output returned no HIGH/CRITICAL findings. Judgment pass preserved source meaning, concise labels and the source's playful guest-limit prompts.
 - No primary-checkout access, integration, push, dependency installation, broad checks or dev server was performed. This worktree and branch remain for the coordinator.
+
+## R5 — 2026-10-14
+
+- Batch: R5, `batch-R5.json`; 517 translated keys, 0 retranslation entries, 0 review entries.
+- Initial apply: `messages/fr.json: inserted 517, replaced 0, refused 0`.
+- Final apply after singular agreement correction: `messages/fr.json: inserted 0, replaced 517, refused 0`.
+- Catalog diff before ledger: `messages/fr.json | 517`; 517 insertions, 0 deletions. Only the catalog changed before this ledger update.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files 1 passed (1)`; `Tests 66 passed (66)`; duration 9.79s; exit 0.
+- Focused scope verification: all 517 batch keys added, every previous catalog value unchanged, every output value applied. Placeholder multiplicity, markup parity, single-line values and absence of vous/votre/vos checked. `git diff --check` passed.
+- Glossary: informal `tu`; infinitive action buttons; prop = `accessoire`; step = `étape`; placement = `position`; performer = `artiste`; library = `bibliothèque`. TKA, LOOP, Flow Arts Composer, Choreo Cards, platform names, keyboard combinations and placeholders are retained. Motion-independent Shift Start is `Décaler le départ`; the Shift key in combinations stays English.
+- Navigation and settings terms outside the glossary: Jump to = `Aller à`, Smart Collection = `collection intelligente` (consistent with R3), command palette = `palette de commandes`, prop preset = `préréglage d’accessoires`, flow identity = `identité de flow`, quick feedback = `retour rapide`. No native review was available.
+- Source context: `nav_ui_your_username` is a form placeholder in UsernameEditor and InstagramUsernameEditor, not an actual user identifier, so it becomes `ton_identifiant`. `landing_spinner_generated` names one history entry without a sequence word and uses singular `Générée`. Neither source data nor user names were translated.
+- Uncertain naming: `keyboard_context_realm` is rendered as `Royaume`; the glossary does not establish whether Realm is a product name or a translatable navigation label. Native/product naming review remains outstanding.
+- Legitimately identical values: Notation, Admin, Studio, Mandala, Art, Collections, Tunnel, Navigation, Animation, Performance, Image and Actions.
+- Prose review: ai-bust mechanical pass on the batch output returned no HIGH/CRITICAL findings. Judgment pass preserved source meaning and concise UI phrasing; repeated shortcut descriptions serve consistent commands rather than prose templates.
+- No primary-checkout access, integration, push, dependency installation, broad checks or dev server was performed. This worktree and branch remain for the coordinator.
