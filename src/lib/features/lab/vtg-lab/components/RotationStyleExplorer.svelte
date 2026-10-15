@@ -167,7 +167,7 @@
     sessionStorage.setItem(RED_ORI_STORAGE_KEY, rightOri);
   });
 
-  function turnKey(left, right): string {
+  function turnKey(left: number, right: number): string {
     const f = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
     return `${f(left)}|${f(right)}`;
   }

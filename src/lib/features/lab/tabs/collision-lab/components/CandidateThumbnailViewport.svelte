@@ -36,7 +36,11 @@
   import { STAGE } from "@austencloud/scene-3d";
   import type { PropState3D } from "@austencloud/scene-3d";
   import { Plane } from "@austencloud/scene-3d";
-  import type { DiamondPosition, HandOrientation, StancePose } from "../domain/types";
+  import type {
+    DiamondPosition,
+    HandOrientation,
+    StancePose,
+  } from "../domain/types";
   import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
 
   interface Props {
@@ -58,7 +62,6 @@
     rightPosition,
     rightOrientation,
   }: Props = $props();
-
 
   const GRID_FORWARD_OFFSET = STAGE.AVATAR_GRID_OFFSET; // 0.3 m
 
@@ -156,16 +159,16 @@
         rotation.y={facingAngle}
       >
         <Avatar3D
-          {leftPropState}
-          {rightPropState}
+          bluePropState={leftPropState}
+          redPropState={rightPropState}
           position={{ x: 0, y: 0, z: 0 }}
           facingAngle={0}
           {spinePitchOffset}
           visible={true}
           isActive={false}
           enableLocomotion={false}
-          {leftPropAnchorRef}
-          {rightPropAnchorRef}
+          bluePropAnchorRef={leftPropAnchorRef}
+          redPropAnchorRef={rightPropAnchorRef}
         />
       </T.Group>
 

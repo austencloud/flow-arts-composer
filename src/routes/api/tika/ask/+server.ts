@@ -840,12 +840,18 @@ export const POST: RequestHandler = async (event) => {
     return result.toUIMessageStreamResponse();
   } catch (error) {
     console.error("[TIKA API] Error:", error);
+    // requireFirebaseUser throws status 401 for a missing or rejected token.
+    const signInFailed =
+      typeof error === "object" &&
+      error !== null &&
+      "status" in error &&
+      error.status === 401;
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : "Unknown error",
       }),
       {
-        status: 500,
+        status: signInFailed ? 401 : 500,
         headers: { "Content-Type": "application/json" },
       }
     );

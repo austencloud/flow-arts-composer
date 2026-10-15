@@ -89,7 +89,7 @@
   let rightOrientation = $state<OrientationValue>(Orientation.IN);
   let propType = $state<PropType>(PropType.BIGFAN);
   let presentationPlane = $state<Plane>(Plane.WALL);
-  let viewpoint = $state(FanViewpoint.AUDIENCE);
+  let viewpoint = $state<FanViewpoint>(FanViewpoint.AUDIENCE);
   let workingRelation = $state<WorkingFanRelationValue>(
     WorkingFanRelation.UNLABELED
   );
@@ -121,8 +121,8 @@
 
   function resetPlacement(
     nextGridMode: GridMode,
-    nextLeftLocation,
-    nextRightLocation
+    nextLeftLocation: GridLocation,
+    nextRightLocation: GridLocation
   ) {
     gridMode = nextGridMode;
     leftLocation = nextLeftLocation;

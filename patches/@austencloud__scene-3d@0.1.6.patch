@@ -4513,7 +4513,7 @@ diff --git a/dist/lib/components/props/Poi3D.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index 4c2d4a9b12da3596bfed1803e1a6d6649fa0dfd9..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Prop3D.svelte b/dist/lib/components/props/Prop3D.svelte
-index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f2bcccdd0c7da899ec20d18b5be71b7c0729842 100644
+index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..e2678f79a7787f4706cc8a2a9a81689fed5ebb75 100644
 --- a/dist/lib/components/props/Prop3D.svelte
 +++ b/dist/lib/components/props/Prop3D.svelte
 @@ -10,9 +10,13 @@
@@ -4548,7 +4548,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f2bcccdd0c7da899ec20d18b5be71b7
    }
  
    let {
-@@ -48,114 +56,165 @@
+@@ -48,114 +56,167 @@
      visible = true,
      isActivePlayer = false,
      length,
@@ -4577,7 +4577,9 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f2bcccdd0c7da899ec20d18b5be71b7
 +
 +  // Models authored at 0.9 m that stretch to the performer's staff length.
 +  const stretchesToStaffLength = $derived(
-+    propType === PropType.FIRE_DOUBLE_STAFF || propType === PropType.STICK,
++    propType === PropType.FIRE_DOUBLE_STAFF ||
++      propType === PropType.STICK ||
++      propType === PropType.PEN,
 +  );
  </script>
  
@@ -25179,7 +25181,7 @@ index 8a455aeebd6a4c8f408c732ac0c1bb2c177c2ab3..7cb29372ae34f587e0d58225dc3a5659
    const rotation = $derived(computePropRotation(propState));
  
 diff --git a/src/lib/components/props/Prop3D.svelte b/src/lib/components/props/Prop3D.svelte
-index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..93b2f91991d481f921cd0e28fab61f501f2d71fb 100644
+index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..a1024c3d49df362c9640931d97fca9e0868a7f7b 100644
 --- a/src/lib/components/props/Prop3D.svelte
 +++ b/src/lib/components/props/Prop3D.svelte
 @@ -10,9 +10,13 @@
@@ -25220,7 +25222,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..93b2f91991d481f921cd0e28fab61f50
    }
  
    let {
-@@ -48,114 +57,167 @@
+@@ -48,114 +57,169 @@
      visible = true,
      isActivePlayer = false,
      length,
@@ -25249,7 +25251,9 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..93b2f91991d481f921cd0e28fab61f50
 +
 +  // Models authored at 0.9 m that stretch to the performer's staff length.
 +  const stretchesToStaffLength = $derived(
-+    propType === PropType.FIRE_DOUBLE_STAFF || propType === PropType.STICK,
++    propType === PropType.FIRE_DOUBLE_STAFF ||
++      propType === PropType.STICK ||
++      propType === PropType.PEN,
 +  );
  </script>
  

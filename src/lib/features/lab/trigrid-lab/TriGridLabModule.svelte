@@ -38,7 +38,7 @@
     rightLocation = locs[1]!;
   }
 
-  function handlePlacementChange(left, right) {
+  function handlePlacementChange(left: GridLocation, right: GridLocation) {
     leftLocation = left;
     rightLocation = right;
   }
@@ -73,17 +73,21 @@
         {showGrid}
         onModeChange={handleModeChange}
         onPlacementChange={handlePlacementChange}
-        onLeftOrientationChange={(o) => { leftOrientation = o; }}
-        onRightOrientationChange={(o) => { rightOrientation = o; }}
-        onMotionTypeChange={(t) => { motionType = t; }}
-        onToggleGrid={() => { showGrid = !showGrid; }}
+        onLeftOrientationChange={(o) => {
+          leftOrientation = o;
+        }}
+        onRightOrientationChange={(o) => {
+          rightOrientation = o;
+        }}
+        onMotionTypeChange={(t) => {
+          motionType = t;
+        }}
+        onToggleGrid={() => {
+          showGrid = !showGrid;
+        }}
       />
 
-      <TriGridPlacementInfo
-        {leftLocation}
-        {rightLocation}
-        {mode}
-      />
+      <TriGridPlacementInfo {leftLocation} {rightLocation} {mode} />
     </aside>
   </div>
 </div>
@@ -144,7 +148,8 @@
     flex-shrink: 0;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2)) var(--scrollbar-track, transparent);
+    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2))
+      var(--scrollbar-track, transparent);
   }
 
   @media (max-width: 768px) {

@@ -187,14 +187,20 @@
     { color?: string; base?: string; intensity: number }
   > = {
     "DG Glowworm": { color: "#7fe4ff", base: "#061418", intensity: 1.0 },
-    "DG Alcove Firelight": { color: "#ff9a3a", base: "#2a1a10", intensity: 0.75 },
+    "DG Alcove Firelight": {
+      color: "#ff9a3a",
+      base: "#2a1a10",
+      intensity: 0.75,
+    },
   };
   function tuneShellMaterials(shell: Object3D): void {
     const seen = new Set<MeshStandardMaterial>();
     shell.traverse((child) => {
       const mesh = child as Mesh;
       if (!mesh.isMesh) return;
-      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      const mats = Array.isArray(mesh.material)
+        ? mesh.material
+        : [mesh.material];
       for (const mat of mats) {
         if (!(mat instanceof MeshStandardMaterial) || seen.has(mat)) continue;
         seen.add(mat);
@@ -225,13 +231,21 @@
       isChannel: layout ? inRect(layout.channel, cx(plane), cz(plane)) : false,
       width: sx(plane),
       depth: sz(plane),
-      position: [cx(plane), plane.surfaceY, cz(plane)] as [number, number, number],
+      position: [cx(plane), plane.surfaceY, cz(plane)] as [
+        number,
+        number,
+        number,
+      ],
     }));
   const waterlinePlanes = (layout?.waterPlanes ?? [])
     .filter((plane) => plane.surfaceY !== GROTTO_WATERLINE_Y)
     .map((plane, index) => ({
       id: `waterline-${index}`,
-      position: [cx(plane), plane.surfaceY - 0.02, cz(plane)] as [number, number, number],
+      position: [cx(plane), plane.surfaceY - 0.02, cz(plane)] as [
+        number,
+        number,
+        number,
+      ],
       scale: [sx(plane), 0.04, sz(plane)] as [number, number, number],
     }));
   const waterVolumes = (layout?.waterVolumes ?? []).map((volume) => ({
@@ -256,11 +270,11 @@
           (GROTTO_WATERLINE_Y + WATERFALL_TOP_Y) / 2,
           cz(layout.waterfall),
         ] as [number, number, number],
-        scale: [0.12, WATERFALL_TOP_Y - GROTTO_WATERLINE_Y, Math.min(1.6, sz(layout.waterfall))] as [
-          number,
-          number,
-          number,
-        ],
+        scale: [
+          0.12,
+          WATERFALL_TOP_Y - GROTTO_WATERLINE_Y,
+          Math.min(1.6, sz(layout.waterfall)),
+        ] as [number, number, number],
       }
     : null;
 
@@ -287,7 +301,10 @@
 
   /** Opener dais and label plinth: plain stone, the pedestal stands on the dais. */
   const massing = fixtures
-    .filter((fixture) => fixture.kind === "opener-dais" || fixture.kind === "opener-plinth")
+    .filter(
+      (fixture) =>
+        fixture.kind === "opener-dais" || fixture.kind === "opener-plinth"
+    )
     .map((fixture) => ({
       id: fixture.id,
       position: [
@@ -376,7 +393,12 @@
         .then((steps) => {
           if (cancelled) return;
           if (!spec.opener) caseSteps[caseWord] = steps;
-          pedestalFaces[spec.id] = faceUriFor(sequenceId, propType, spec.opener, steps);
+          pedestalFaces[spec.id] = faceUriFor(
+            sequenceId,
+            propType,
+            spec.opener,
+            steps
+          );
         })
         .catch((error) => console.error("[pedestal]", error));
       void reversed;
@@ -389,13 +411,16 @@
 
   const pedestals = $derived(
     pedestalSpecs.map((spec) => {
-      const settings = spec.caseWord ? performerSettings[spec.caseWord] : undefined;
+      const settings = spec.caseWord
+        ? performerSettings[spec.caseWord]
+        : undefined;
       return {
         id: spec.id,
         position: spec.position,
         height: spec.height,
         diameter: spec.diameter,
-        faceUri: settings && !settings.traceVisible ? null : pedestalFaces[spec.id],
+        faceUri:
+          settings && !settings.traceVisible ? null : pedestalFaces[spec.id],
         animated: spec.opener,
       };
     })
@@ -407,7 +432,8 @@
       const sequenceId = fixture.sequenceId!;
       const hybrid = isHybrid(safeBoundSteps(sequenceId));
       const showcase = fixtures.find(
-        (other) => other.kind === "case-showcase" && other.caseWord === fixture.caseWord
+        (other) =>
+          other.kind === "case-showcase" && other.caseWord === fixture.caseWord
       )!;
       return {
         id: fixture.id,
@@ -437,7 +463,10 @@
       );
       const awake = Math.min(
         1,
-        Math.max(0, (CONSOLE_WAKE_M - distance) / (CONSOLE_WAKE_M - CONSOLE_FULL_M))
+        Math.max(
+          0,
+          (CONSOLE_WAKE_M - distance) / (CONSOLE_WAKE_M - CONSOLE_FULL_M)
+        )
       );
       const engaged: Record<string, boolean> = settings
         ? {
@@ -595,7 +624,8 @@
       const dx = target.point.x - aimOrigin.x;
       const dy = target.point.y - aimOrigin.y;
       const dz = target.point.z - aimOrigin.z;
-      const along = dx * aimDirection.x + dy * aimDirection.y + dz * aimDirection.z;
+      const along =
+        dx * aimDirection.x + dy * aimDirection.y + dz * aimDirection.z;
       if (along <= 0.15 || along > REACH_M) continue;
       const offset = Math.hypot(
         dx - aimDirection.x * along,
@@ -632,7 +662,11 @@
   });
 
   // ── Runtime lights (the pooled point lights, same plan as the graybox) ───
-  const WATER_ROUTE = new Set([APPROACH_ROOM_ID, GALLERY_ROOM_ID, GROTTO_ROOM_ID]);
+  const WATER_ROUTE = new Set([
+    APPROACH_ROOM_ID,
+    GALLERY_ROOM_ID,
+    GROTTO_ROOM_ID,
+  ]);
   const lit = $derived(
     visible && currentRoomId !== null && WATER_ROUTE.has(currentRoomId)
   );
@@ -807,7 +841,7 @@
         position={pedestal.position}
         height={pedestal.height}
         diameter={pedestal.diameter}
-        faceUri={pedestal.faceUri}
+        faceUri={pedestal.faceUri ?? null}
         tint={WATER_TINT}
         animated={pedestal.animated && lit}
       />
