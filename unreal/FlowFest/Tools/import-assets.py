@@ -75,6 +75,22 @@ def import_file(path, folder, name, mesh=False):
                 ensure_instancing(material)
                 if ((folder.startswith('/Game/FlowFest/Assets/Trees/') and material.get_name().endswith('_leaves')) or job_wind_family(folder)) and not ME.get_material_property_input_node(material, u.MaterialProperty.MP_WORLD_POSITION_OFFSET):
                     add_foliage_wind(material, folder.startswith('/Game/FlowFest/Assets/Trees/'))
+                if job_wind_family(folder):
+                    # The ecology source is opaque, two-sided foliage. Give its
+                    # back face colored transmission from the same (possibly
+                    # instance-tinted) base color instead of leaving it black.
+                    if not ME.get_material_property_input_node(material, u.MaterialProperty.MP_SUBSURFACE_COLOR):
+                        color = ME.get_material_property_input_node(material, u.MaterialProperty.MP_BASE_COLOR)
+                        if not color:
+                            raise RuntimeError('Ecology base color missing: ' + material.get_path_name())
+                        transmission = expression(material, u.MaterialExpressionMultiply)
+                        tint = expression(material, u.MaterialExpressionConstant3Vector,
+                                          constant=u.LinearColor(.42, .52, .34, 1))
+                        connect(color, '', transmission, 'A')
+                        connect(tint, '', transmission, 'B')
+                        connect_property(transmission, '', u.MaterialProperty.MP_SUBSURFACE_COLOR)
+                    if not ME.get_material_property_input_node(material, u.MaterialProperty.MP_SUBSURFACE_COLOR):
+                        raise RuntimeError('Ecology subsurface color missing: ' + material.get_path_name())
                 ME.recompile_material(material)
                 ED.save_loaded_asset(material)
             elif isinstance(material, u.MaterialInstanceConstant):

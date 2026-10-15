@@ -35,6 +35,84 @@ bool Finite(const FVector& V)
     return FMath::IsFinite(V.X) && FMath::IsFinite(V.Y) && FMath::IsFinite(V.Z);
 }
 
+struct FGripDiagnosticSample
+{
+    int32 Index = 0;
+    float Seconds = 0.f;
+    float GripError = 0.f;
+    float AnchorError = 0.f;
+    FTransform AvatarRoot;
+    FTransform LeftPropRoot;
+    FTransform RightPropRoot;
+    FVector Hips;
+    FVector LeftHand;
+    FVector RightHand;
+};
+
+void LogGripDiagnostics(const FString& Case, FName CharacterId, FName Profile,
+    const TArray<FGripDiagnosticSample>& Samples)
+{
+    FString Character = CharacterId.ToString();
+    Character.ReplaceInline(TEXT("-"), TEXT("_"));
+    const FString Path = FPaths::ProjectContentDir() / TEXT("Data/PropMotion") /
+        FString::Printf(TEXT("%s_%s.json"), *Character, *Profile.ToString());
+    FString Source;
+    TSharedPtr<FJsonObject> Motion;
+    const TArray<TSharedPtr<FJsonValue>>* Frames = nullptr;
+    if (!FFileHelper::LoadFileToString(Source, *Path) ||
+        !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Source), Motion) ||
+        !Motion.IsValid() || !Motion->TryGetArrayField(TEXT("frames"), Frames) || !Frames || Frames->IsEmpty())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FlowFestGripDiagnostics could not read %s"), *Path);
+        return;
+    }
+    auto GetFrame = [Frames](int32 Index, FTransform& Left, FTransform& Right,
+        FVector& LeftGrip, FVector& RightGrip)
+    {
+        const TArray<TSharedPtr<FJsonValue>>* Values = nullptr;
+        if (!(*Frames)[Index]->TryGetArray(Values) || !Values || Values->Num() != 20) return false;
+        auto N = [Values](int32 I) { return (*Values)[I]->AsNumber(); };
+        auto Root = [&N](int32 I)
+        {
+            FQuat Q(N(I+3), N(I+4), N(I+5), N(I+6));
+            Q.Normalize();
+            return FTransform(Q, FVector(N(I), N(I+1), N(I+2)));
+        };
+        Left = Root(0); Right = Root(7);
+        LeftGrip = FVector(N(14), N(15), N(16));
+        RightGrip = FVector(N(17), N(18), N(19));
+        return true;
+    };
+    for (const FGripDiagnosticSample& Sample : Samples)
+    {
+        const float Frame = FMath::Fmod(FMath::Max(0.f, Sample.Seconds) * 30.f, Frames->Num());
+        const int32 First = FMath::FloorToInt(Frame);
+        const int32 Second = (First + 1) % Frames->Num();
+        const float Alpha = Frame - First;
+        FTransform FirstLeft, FirstRight, SecondLeft, SecondRight;
+        FVector FirstLeftGrip, FirstRightGrip, SecondLeftGrip, SecondRightGrip;
+        if (!GetFrame(First, FirstLeft, FirstRight, FirstLeftGrip, FirstRightGrip) ||
+            !GetFrame(Second, SecondLeft, SecondRight, SecondLeftGrip, SecondRightGrip)) continue;
+        const FVector LeftGrip = FMath::Lerp(FirstLeftGrip, SecondLeftGrip, Alpha);
+        const FVector RightGrip = FMath::Lerp(FirstRightGrip, SecondRightGrip, Alpha);
+        const FVector LeftAnchor = FMath::Lerp(FirstLeft.InverseTransformPosition(FirstLeftGrip),
+            SecondLeft.InverseTransformPosition(SecondLeftGrip), Alpha);
+        const FVector RightAnchor = FMath::Lerp(FirstRight.InverseTransformPosition(FirstRightGrip),
+            SecondRight.InverseTransformPosition(SecondRightGrip), Alpha);
+        const FVector LeftPropAnchor = Sample.AvatarRoot.InverseTransformPosition(
+            Sample.LeftPropRoot.TransformPosition(LeftAnchor));
+        const FVector RightPropAnchor = Sample.AvatarRoot.InverseTransformPosition(
+            Sample.RightPropRoot.TransformPosition(RightAnchor));
+        const float LeftError = FVector::Distance(Sample.LeftHand, LeftGrip);
+        const float RightError = FVector::Distance(Sample.RightHand, RightGrip);
+        UE_LOG(LogTemp, Warning, TEXT("FlowFestGripDiagnostics %s sample=%d phase=%.5f grip=%.2f anchor=%.2f side=%s leftErr=%.2f rightErr=%.2f UE_hips=%s UE_L=%s captured_L=%s propAnchor_L=%s UE_R=%s captured_R=%s propAnchor_R=%s"),
+            *Case, Sample.Index, Sample.Seconds / 16.f, Sample.GripError, Sample.AnchorError,
+            LeftError >= RightError ? TEXT("left") : TEXT("right"), LeftError, RightError,
+            *Sample.Hips.ToCompactString(), *Sample.LeftHand.ToCompactString(), *LeftGrip.ToCompactString(), *LeftPropAnchor.ToCompactString(),
+            *Sample.RightHand.ToCompactString(), *RightGrip.ToCompactString(), *RightPropAnchor.ToCompactString());
+    }
+}
+
 struct FScopedMotionWorld
 {
     UWorld* World = nullptr;
@@ -164,6 +242,8 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                 float CasePeakGrip = 0.f;
                 float CasePeakAnchor = 0.f;
                 bool bPoseValid = true;
+                FGripDiagnosticSample PeakDiagnostic;
+                TArray<FGripDiagnosticSample> LandmarkDiagnostics;
                 // 32 evenly spaced samples plus both sides of the loop seam.
                 for (int32 Sample = 0; Sample < 34; ++Sample)
                 {
@@ -193,10 +273,28 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                         !HeldProp->IsEnteringPerformance() &&
                         Finite(HeldProp->GetPropRootTransform(true).GetLocation()) &&
                         Finite(HeldProp->GetPropRootTransform(false).GetLocation());
-                    CasePeakGrip = FMath::Max(CasePeakGrip, Error);
+                    if (Error > CasePeakGrip || (Sample == 0 && CasePeakGrip == 0.f))
+                    {
+                        CasePeakGrip = Error;
+                        PeakDiagnostic = {Sample, Seconds, Error, AnchorError, Frame,
+                            HeldProp->GetPropRootTransform(true), HeldProp->GetPropRootTransform(false),
+                            Hips, LeftHand, RightHand};
+                    }
                     CasePeakAnchor = FMath::Max(CasePeakAnchor, AnchorError);
+                    if (Sample == 0 || Sample == 8 || Sample == 16 || Sample == 24 || Sample == 32)
+                        LandmarkDiagnostics.Add({Sample, Seconds, Error, AnchorError, Frame,
+                            HeldProp->GetPropRootTransform(true), HeldProp->GetPropRootTransform(false),
+                            Hips, LeftHand, RightHand});
                 }
                 TestTrue(*FString::Printf(TEXT("Finite pose and shared clock: %s"), *Case), bPoseValid);
+                if (CasePeakGrip > GripToleranceCm || CasePeakAnchor > GripToleranceCm)
+                {
+                    Body->UpdateBounds();
+                    UE_LOG(LogTemp, Warning, TEXT("FlowFestGripDiagnostics %s meshHeight=%.2fcm bodyRelativeScale=%s"),
+                        *Case, Body->Bounds.BoxExtent.Z * 2.f, *Body->GetRelativeScale3D().ToCompactString());
+                    LandmarkDiagnostics.Add(PeakDiagnostic);
+                    LogGripDiagnostics(Case, CharacterId, Profile, LandmarkDiagnostics);
+                }
                 if (CasePeakGrip > GlobalPeakGrip) { GlobalPeakGrip = CasePeakGrip; GlobalOffender = Case; }
                 if (CasePeakGrip > FamilyPeakGrip) { FamilyPeakGrip = CasePeakGrip; FamilyOffender = Case; }
                 GlobalPeakAnchor = FMath::Max(GlobalPeakAnchor, CasePeakAnchor);
