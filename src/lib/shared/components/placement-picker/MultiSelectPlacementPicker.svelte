@@ -8,12 +8,14 @@ Displays all 16 placements with toggle behavior:
 Uses blocklist approach: placements in blockedPlacements are excluded.
 
 Two layouts. `stack` (default) puts the quick choices and status line above
-the grid and any `aside` content below it. `split` does the same on a narrow
-pane, and from 40rem of its own width moves the grid to the left and the
-choices, status and aside into a column beside it, so a wide pane spends its
-height on the grid instead of on a band of chips. The host sizes the grid
-through two custom properties, --placement-grid-size (stacked) and
---placement-grid-split-size (side by side); both default to the full width.
+the grid and any `aside` content below it, the grid as wide as the picker.
+`split` fits the picker to the box its host gives it (placement-picker-fit.ts):
+it measures the box and picks stacked or side by side (grid left, a column of
+choices, status and aside beside it), whichever draws the grid larger. When
+neither draws it comfortably and the host passed `asideFolded`, the aside
+gives way to that folded form, a row that opens it on a screen of its own.
+The aside that is not showing stays mounted, out of sight, because fitting
+measures it to decide when it returns.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -26,6 +28,7 @@ through two custom properties, --placement-grid-size (stacked) and
   } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { onMount, type Snippet } from "svelte";
+  import { fitPicker, type PickerArrangement } from "./placement-picker-fit";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { getLetterBorderColorSafe } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
   import {
@@ -54,6 +57,7 @@ through two custom properties, --placement-grid-size (stacked) and
     presets = [],
     layout = "stack",
     aside,
+    asideFolded,
   } = $props<{
     blockedPlacements: GridPlacement[];
     onBlockedChange: (blocked: GridPlacement[]) => void;
@@ -62,10 +66,12 @@ through two custom properties, --placement-grid-size (stacked) and
     rightStartOrientation?: Orientation;
     /** Named shortcuts shown beside All and Choose one. */
     presets?: PlacementSelectionPreset[];
-    /** `split` moves the controls beside the grid when there is room. */
+    /** `split` fits the picker to its box, beside or above the grid. */
     layout?: "stack" | "split";
     /** Extra controls that belong with the grid, such as start orientation. */
     aside?: Snippet;
+    /** The aside folded to one row, for a box too small for it (`split`). */
+    asideFolded?: Snippet;
   }>();
 
   // State
@@ -210,16 +216,79 @@ through two custom properties, --placement-grid-size (stacked) and
       rightStartOrientation
     )
   );
+
+  let root = $state<HTMLElement | null>(null);
+  let controlsEl = $state<HTMLElement | null>(null);
+  let asideEl = $state<HTMLElement | null>(null);
+  let foldedEl = $state<HTMLElement | null>(null);
+  let arrangement = $state<PickerArrangement | null>(null);
+  let folded = $state(false);
+  let gridSize = $state(0);
+  let column = $state(0);
+
+  // A part's height at another width: set the width, free the height (a
+  // parked part is held at zero), read, put it back.
+  function heightAt(el: HTMLElement, width: number): number {
+    const previous = el.style.cssText;
+    el.style.width = `${width}px`;
+    el.style.height = "auto";
+    const height = el.offsetHeight;
+    el.style.cssText = previous;
+    return height;
+  }
+
+  function fit() {
+    if (!root || !controlsEl) return;
+    const box = getComputedStyle(root);
+    const width = root.clientWidth;
+    const height =
+      root.clientHeight -
+      parseFloat(box.paddingTop) -
+      parseFloat(box.paddingBottom);
+    // Parked out of sight between opens: keep the last arrangement.
+    if (width === 0 || height <= 0) return;
+    const controls = controlsEl;
+    const asidePart = asideEl;
+    const foldedPart = foldedEl;
+    const next = fitPicker({
+      width,
+      height,
+      rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+      controlsHeightAt: (w) => heightAt(controls, w),
+      asideHeightAt: asidePart ? (w) => heightAt(asidePart, w) : undefined,
+      foldedHeightAt: foldedPart ? (w) => heightAt(foldedPart, w) : undefined,
+    });
+    arrangement = next.arrangement;
+    folded = next.folded;
+    gridSize = next.gridSize;
+    column = next.column;
+  }
+
+  // A ResizeObserver reports after layout and before paint, so the picker is
+  // first drawn already arranged.
+  $effect(() => {
+    if (layout !== "split" || !root || !controlsEl) return;
+    const observer = new ResizeObserver(() => fit());
+    observer.observe(root);
+    return () => observer.disconnect();
+  });
 </script>
 
-<div class="multi-select-grid" class:split={layout === "split"}>
+<div
+  class="multi-select-grid"
+  class:split={layout === "split"}
+  bind:this={root}
+  data-arrangement={layout === "split" ? arrangement : null}
+  style:--fit-grid={gridSize ? `${gridSize}px` : null}
+  style:--fit-column={column ? `${column}px` : null}
+>
   {#if isLoading}
     <div class="loading-placeholder">
       <span>{t("shared_placement_loading")}</span>
     </div>
   {:else}
     <div class="picker-layout">
-      <div class="picker-controls">
+      <div class="picker-controls" bind:this={controlsEl}>
         <div
           class="quick-actions"
           role="toolbar"
@@ -358,7 +427,26 @@ through two custom properties, --placement-grid-size (stacked) and
       </div>
 
       {#if aside}
-        <div class="picker-aside">{@render aside()}</div>
+        <div
+          class="picker-aside"
+          class:parked={folded}
+          bind:this={asideEl}
+          inert={folded}
+          aria-hidden={folded ? "true" : undefined}
+        >
+          {@render aside()}
+        </div>
+      {/if}
+      {#if aside && asideFolded && layout === "split"}
+        <div
+          class="picker-aside picker-aside-folded"
+          class:parked={!folded}
+          bind:this={foldedEl}
+          inert={!folded}
+          aria-hidden={folded ? undefined : "true"}
+        >
+          {@render asideFolded()}
+        </div>
       {/if}
     </div>
   {/if}
@@ -366,7 +454,7 @@ through two custom properties, --placement-grid-size (stacked) and
 
 <style>
   .multi-select-grid {
-    container: placement-picker / inline-size;
+    position: relative;
     padding: 8px 0;
   }
 
@@ -434,44 +522,48 @@ through two custom properties, --placement-grid-size (stacked) and
     margin-inline: auto;
   }
 
-  /* Side by side. The grid takes what the host allows, leaving the control
-     column at least 16rem; the column sits at the grid's top edge so the
-     chips stay next to the cells they act on. */
-  @container placement-picker (min-width: 40rem) {
-    .split .picker-layout {
-      display: grid;
-      grid-template-columns: auto minmax(16rem, 24rem);
-      grid-template-rows: auto 1fr;
-      grid-template-areas:
-        "grid controls"
-        "grid aside";
-      justify-content: center;
-      align-items: start;
-      column-gap: 24px;
-      row-gap: 16px;
-    }
+  /* Fitted: the grid takes the size fitting chose. */
+  .split .variations-grid {
+    width: var(--fit-grid, 100%);
+  }
 
-    .split .variations-grid {
-      grid-area: grid;
-      width: min(
-        var(--placement-grid-split-size, 100cqw),
-        calc(100cqw - 16rem - 24px)
-      );
-      margin-inline: 0;
-    }
+  /* Side by side. The column sits at the grid's top edge so the chips stay
+     next to the cells they act on. */
+  [data-arrangement="side"] .picker-layout {
+    display: grid;
+    grid-template-columns: var(--fit-grid) var(--fit-column);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "grid controls"
+      "grid aside";
+    justify-content: center;
+    align-items: start;
+    column-gap: 24px;
+    row-gap: 16px;
+  }
 
-    .split .picker-controls {
-      grid-area: controls;
-    }
+  [data-arrangement="side"] .variations-grid {
+    grid-area: grid;
+    margin-inline: 0;
+  }
 
-    .split .picker-aside {
-      grid-area: aside;
-    }
+  [data-arrangement="side"] .picker-controls {
+    grid-area: controls;
+  }
 
-    .split .status-row {
-      flex-direction: column;
-      align-items: flex-start;
-    }
+  [data-arrangement="side"] .picker-aside {
+    grid-area: aside;
+  }
+
+  /* The aside not in use: mounted and measurable, but taking no room and
+     adding no scroll. */
+  .picker-aside.parked {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
   }
 
   .placement-cell {
