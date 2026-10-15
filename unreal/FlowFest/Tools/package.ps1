@@ -14,6 +14,8 @@ if (-not $ArchiveDirectory) { $ArchiveDirectory = Join-Path $projectRoot 'Builds
 foreach ($required in @($projectFile, $map, $site, $uat)) {
     if (-not (Test-Path -LiteralPath $required)) { throw "Missing prerequisite: $required. Run bootstrap.ps1 successfully before packaging." }
 }
+& node (Join-Path $PSScriptRoot 'validate-runtime-data.mjs') (Join-Path $projectRoot 'Content\Data')
+if ($LASTEXITCODE -ne 0) { throw 'Native runtime data failed validation before packaging.' }
 if (-not (Test-Path -LiteralPath $ArchiveDirectory)) { New-Item -ItemType Directory -Path $ArchiveDirectory -Force | Out-Null }
 $archivePath = (Resolve-Path -LiteralPath $ArchiveDirectory).Path
 
@@ -76,24 +78,8 @@ $props = Get-Content -LiteralPath (Join-Path $dataDir 'props.json') -Raw | Conve
 if (@($characters.characters).Count -ne 16 -or @($props.props).Count -ne 41 -or @($props.props | ForEach-Object { $_.variants }).Count -ne 71) {
     throw 'Staged native catalogs are incomplete; expected 16 characters and 41 props / 71 variants.'
 }
-foreach ($character in $characters.characters) {
-    $key = $character.id.Replace('-', '_')
-    $profiles = @('FirePoi', 'FireHoop', 'Juggler', 'LedFlow')
-    foreach ($prop in $props.props) {
-        $profiles += "P_$($prop.id)_A"
-        $profiles += "P_$($prop.id)_B"
-    }
-    foreach ($profile in $profiles) {
-        $clipPath = Join-Path $dataDir "PropMotion\${key}_${profile}.json"
-        $clip = Get-Content -LiteralPath $clipPath -Raw | ConvertFrom-Json
-        if ($clip.schema -notin @('flow-fest-prop-motion-v1', 'flow-fest-prop-motion-v2') -or $clip.fps -ne 30 -or @($clip.frames).Count -ne 480) {
-            throw "Staged prop motion is invalid: $clipPath"
-        }
-        if ($profile.StartsWith('P_') -and ($clip.schema -ne 'flow-fest-prop-motion-v2' -or @($clip.frames[0]).Count -ne 20)) {
-            throw "Staged family performance lacks grip validation samples: $clipPath"
-        }
-    }
-}
+& node (Join-Path $PSScriptRoot 'validate-runtime-data.mjs') $dataDir
+if ($LASTEXITCODE -ne 0) { throw 'Packaged native runtime data failed validation.' }
 if (@($siteData.grass).Count -lt 20000 -or @($siteData.groundLife).Count -lt 20) {
     throw 'Staged living ecology data is incomplete.'
 }
