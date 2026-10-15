@@ -112,6 +112,31 @@ html.hand-grid-split [data-hand-side="pairs"] {
   }
 }
 
+/* Hand Motions: the first stage's Start picture grows into the motion map,
+   and shrinks back on Previous. The stage leaving is still in the page while
+   it fades out (Svelte marks it inert), so only the arriving picture takes
+   the name. Owner: runHandGridGrow in
+   features/learn/components/interactive/motions/hand-grid-split.ts. */
+html.hand-grid-grow [data-hand-grid="start"],
+html.hand-grid-grow [data-hand-grid="map"] {
+  view-transition-name: hand-grid-grow;
+}
+html.hand-grid-grow [inert] [data-hand-grid="start"],
+html.hand-grid-grow [inert] [data-hand-grid="map"] {
+  view-transition-name: none;
+}
+::view-transition-group(hand-grid-grow) {
+  z-index: 5;
+  animation-duration: var(--duration-dramatic);
+  animation-timing-function: var(--ease-standard);
+}
+::view-transition-old(hand-grid-grow),
+::view-transition-new(hand-grid-grow) {
+  animation-duration: var(--duration-dramatic);
+  /* Both pictures fill the box at every size, so the hand stays on its point. */
+  height: 100%;
+}
+
 /* A generate bento card growing into its workspace (Customize, LOOP, Setups,
    TnD). The card wrapper and the expanded stage share one name, so the group
    carries the box between the grid slot and the stage or viewport while the

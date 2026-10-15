@@ -44,17 +44,21 @@
   import HandMotionsMapStage from "./HandMotionsMapStage.svelte";
   import HandPairsStage from "./HandPairsStage.svelte";
   import HandMotionsQuizStage from "./HandMotionsQuizStage.svelte";
-  import { runHandGridSplit } from "./hand-grid-split";
+  import { runHandGridGrow, runHandGridSplit } from "./hand-grid-split";
 
   let {
     onComplete,
     onBack,
+    onPrevious,
     viewMode = "step",
   } = $props<{
     onComplete?: (nextConceptId?: string) => void;
     onBack?: () => void;
+    /** Previous on the first stage goes back to Hand Placements. */
+    onPrevious?: (conceptId: string) => void;
     viewMode?: ExperienceViewMode;
   }>();
+  const PREVIOUS_LESSON = "hand-placements";
 
   const INTRO_STAGE = 0;
   const MAP_STAGE = 1;
@@ -185,7 +189,13 @@
     const clamped = Math.min(BOARD_STAGE, Math.max(INTRO_STAGE, next));
     if (clamped === stepIndex) return;
     const revision = ++layoutRevision;
-    if (isHandsStage(stepIndex) && isHandsStage(clamped)) {
+    const grows =
+      (stepIndex === INTRO_STAGE && clamped === MAP_STAGE) ||
+      (stepIndex === MAP_STAGE && clamped === INTRO_STAGE);
+    if (grows) {
+      stageMotion.cancel();
+      runHandGridGrow(() => (stepIndex = clamped));
+    } else if (isHandsStage(stepIndex) && isHandsStage(clamped)) {
       stageMotion.cancel();
       runHandGridSplit(
         experienceElement,
@@ -292,7 +302,8 @@
       goToStep(stepIndex - 1);
       return;
     }
-    onBack?.();
+    if (onPrevious) onPrevious(PREVIOUS_LESSON);
+    else onBack?.();
   }
 </script>
 
@@ -356,7 +367,9 @@
         previousLabel={viewMode === "scroll"
           ? t("learn_ui_close_review")
           : t("learn_ui_previous")}
-        previousDisabled={viewMode !== "scroll" && stepIndex === INTRO_STAGE}
+        previousDisabled={viewMode !== "scroll" &&
+          stepIndex === INTRO_STAGE &&
+          !onPrevious}
         actionDisabled={!stageDone}
         {curriculumLabel}
       />
