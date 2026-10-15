@@ -7,13 +7,14 @@
 -->
 <script lang="ts">
   /**
-   * Gage's chart reduced to its eight hand paths. Each path is one
-   * SequenceShowcase whose hand trail draws the path, cycling through the
-   * nine ways the chart spins it (the capping hand's spin against the
-   * circling hand's). The paths sit in Gage's four pairs, named by what they
-   * share: which way the hands travel, and whether they start a quarter apart.
-   * The opening player shows the first path with bare hands. Like Zan's
-   * Diamond, these are hand paths, so the strips show no letters.
+   * Gage's chart reduced to its eight hand paths, shown before it is told.
+   * Three tiles open the page: both hands, then each hand alone (the left
+   * caps, two beats on and one back; the right keeps circling). Then one
+   * player with a prop, beside the prop picker and a spin picker per hand:
+   * the nine pairings of the chart. Every path player below follows those
+   * picks, so the reader changes the spins once and watches all eight paths.
+   * The paths sit in Gage's four pairs, two to a row on a wide screen. Like
+   * Zan's Diamond, these are hand paths, so the strips show no letters.
    * The record lives in #lib/shared/guide-topics/caps-topic.ts.
    */
   import { onMount } from "svelte";
@@ -23,7 +24,9 @@
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
+  import HandTile from "./_components/HandTile.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import PropChoiceRow from "#lib/shared/pictograph/prop/components/PropChoiceRow.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { PictographRender } from "../level-1/_data/guide-content-blocks";
@@ -41,6 +44,7 @@
     capPairing,
     capStrip,
     type Cap,
+    type CapHandPath,
     type CapRelation,
     type CapSpin,
   } from "#lib/shared/guide-topics/caps-topic.js";
@@ -49,24 +53,24 @@
   const EIGHT_STEP_SOURCE =
     "https://github.com/rbgirard/spiroanim/blob/main/docs/EIGHT_STEP.md";
 
-  // The hands draw their paths as they travel; the drawing stays until the
-  // loop restarts. With props on, the trail still follows the hands.
-  const PATH_TRAIL: TrailSettings = {
+  // The bare hands draw their path as they travel: the left hand closes the
+  // ring once in twelve beats, the right in four. The drawing stays until the
+  // loop restarts.
+  const HAND_TRAIL: TrailSettings = {
     ...DEFAULT_TRAIL_SETTINGS,
     mode: TrailMode.LOOP_CLEAR,
     trackingMode: TrackingMode.HAND,
   };
-
-  // Hand paths carry no letters; each cell shows the app's step label.
-  const RENDER: PictographRender = {
-    propType: PropType.HAND,
-    showTKA: false,
-    showStepNumbers: true,
+  // With a prop, each tip draws its pattern, which is where the spins differ.
+  const TIP_TRAIL: TrailSettings = {
+    ...DEFAULT_TRAIL_SETTINGS,
+    mode: TrailMode.LOOP_CLEAR,
+    trackingMode: TrackingMode.RIGHT_END,
   };
 
-  // The prop every hand-path player spins. Page state only: each visit opens
-  // on staff.
+  // Page state only: each visit opens on staff, both hands antispin.
   let propType = $state<PropType>(PropType.STAFF);
+  // Eight, so the tiles fill whole rows of eight, four or two.
   const PROP_CHOICES: readonly PropType[] = [
     PropType.STAFF,
     PropType.POI,
@@ -74,30 +78,47 @@
     PropType.BUUGENG,
     PropType.FAN,
     PropType.MINIHOOP,
+    PropType.BIGHOOP,
+    PropType.TRIAD,
   ];
-  const PROP_RENDER: PictographRender = $derived({ ...RENDER, propType });
+  let leftSpin = $state<CapSpin>("antispin");
+  let rightSpin = $state<CapSpin>("antispin");
 
+  // Hand paths carry no letters; each cell shows the app's step label.
+  const PROP_RENDER: PictographRender = $derived({
+    propType,
+    showTKA: false,
+    showStepNumbers: true,
+  });
+
+  const SPINS: readonly CapSpin[] = ["antispin", "extension", "prospin"];
+  const SPIN_LABEL: Record<CapSpin, Parameters<typeof t>[0]> = {
+    antispin: "guide_eightstep_spin_antispin",
+    extension: "guide_eightstep_spin_extension",
+    prospin: "guide_eightstep_spin_prospin",
+  };
+  const spinOptions = (tone: "blue" | "red") =>
+    SPINS.map((spin) => ({ value: spin, label: t(SPIN_LABEL[spin]), tone }));
+
+  // The chart's left hand always caps, so the left pick is the capping spin.
+  const capOf = (path: CapHandPath, capping: CapSpin, circling: CapSpin) =>
+    path.caps.find((cap) => {
+      const pairing = capPairing(cap);
+      return pairing.capping === capping && pairing.circling === circling;
+    })!;
+  // The CAP id names the sequence, so the player reloads on every new pick
+  // even where two pairings spell the same word.
   const showcase = (cap: Cap) => {
     const items = capStrip(cap);
     return {
       items,
-      sequence: stripToSequence(items, { word: cap.word, name: cap.word }),
+      sequence: stripToSequence(items, { word: cap.word, name: cap.id }),
     };
   };
-  const opening = showcase(CAP_HAND_PATHS[0]!.caps[0]!);
 
-  const SPIN_WORD: Record<CapSpin, Parameters<typeof t>[0]> = {
-    extension: "guide_caps_spin_extension",
-    antispin: "guide_caps_spin_antispin",
-    prospin: "guide_caps_spin_prospin",
-  };
-  const pairingLabel = (cap: Cap) => {
-    const { capping, circling } = capPairing(cap);
-    return t("guide_eightstep_pairing", {
-      capping: t(SPIN_WORD[capping]),
-      circling: t(SPIN_WORD[circling]),
-    });
-  };
+  const firstPath = CAP_HAND_PATHS[0]!;
+  const hands = showcase(firstPath.caps[0]!).sequence;
+  const spinExample = $derived(showcase(capOf(firstPath, leftSpin, rightSpin)));
 
   // What tells the two paths in each of Gage's pairs apart.
   const PATH_COPY: Record<
@@ -138,30 +159,27 @@
     },
   };
 
+  // Each group's heading says what its paths share; Gage's own name for the
+  // pair rides above it.
   const GROUP_COPY: Record<
     CapRelation,
-    { title: Parameters<typeof t>[0]; body: Parameters<typeof t>[0] }
+    { title: Parameters<typeof t>[0]; gage: string }
   > = {
     opposite: {
       title: "guide_eightstep_group_opposite_title",
-      body: "guide_eightstep_group_opposite_body",
+      gage: "Opposite",
     },
-    same: {
-      title: "guide_eightstep_group_same_title",
-      body: "guide_eightstep_group_same_body",
-    },
+    same: { title: "guide_eightstep_group_same_title", gage: "Same" },
     "quarter-aligned": {
       title: "guide_eightstep_group_quarter_aligned_title",
-      body: "guide_eightstep_group_quarter_aligned_body",
+      gage: "Quarter Aligned",
     },
     "quarter-opposed": {
       title: "guide_eightstep_group_quarter_opposed_title",
-      body: "guide_eightstep_group_quarter_opposed_body",
+      gage: "Quarter Opposed",
     },
   };
 
-  // Each hand path is one player that cycles through its nine pairings with
-  // the guide's "Show another example" control; entry 0 prerenders.
   const groups = $derived(
     CAP_RELATIONS.map((relation) => ({
       relation,
@@ -170,22 +188,10 @@
         (path) => ({
           column: path.column,
           ...PATH_COPY[path.column]!,
-          first: showcase(path.caps[0]!),
-          pool: path.caps.map((cap) => ({
-            word: cap.word,
-            loopLabel: "",
-            proseHtml: pairingLabel(cap),
-            items: capStrip(cap),
-          })),
+          ...showcase(capOf(path, leftSpin, rightSpin)),
         })
       ),
     }))
-  );
-
-  // Centred blocks start each sentence on its own line.
-  const sentences = (text: string) => text.split(/(?<=[.!?])\s+/);
-  const lede = $derived(
-    sentences(t("guide_eightstep_lede", { name: "Gage DeMello" }))
   );
 
   // Pictographs follow the site theme, as the Level 1 pages do.
@@ -247,78 +253,133 @@
       <header class="intro">
         <h1>{t("guide_eightstep_title")}</h1>
         <p class="lede">
-          {#each lede as sentence, i (i)}<span class="sentence">{sentence}</span
-            >{/each}
+          {t("guide_eightstep_lede", { name: "Gage DeMello" })}
         </p>
       </header>
 
-      <SequenceShowcase
-        sequence={opening.sequence}
-        items={opening.items}
-        trail={PATH_TRAIL}
-        render={RENDER}
-        loop
-        {picTheme}
-      >
-        {#snippet text()}
-          <h2>{t("guide_eightstep_hands_title")}</h2>
-          <p>{t("guide_eightstep_hands_body")}</p>
-        {/snippet}
-      </SequenceShowcase>
-
-      <section class="spins" aria-labelledby="spins-heading">
-        <h2 id="spins-heading">{t("guide_eightstep_spins_title")}</h2>
-        <p>
-          {#each sentences(t("guide_eightstep_spins_body")) as sentence, i (i)}<span
-              class="sentence">{sentence}</span
-            >{/each}
-        </p>
-        <div class="prop-choice">
-          <span class="prop-label">{t("guide_eightstep_prop")}</span>
-          <PropChoiceRow
-            value={propType}
-            options={PROP_CHOICES}
-            label={t("guide_eightstep_prop")}
-            onchange={(pt) => (propType = pt)}
+      <section class="hands" aria-labelledby="hands-heading">
+        <h2 id="hands-heading">{t("guide_eightstep_hands_title")}</h2>
+        <div class="hand-tiles">
+          <HandTile
+            sequence={hands}
+            hand="both"
+            caption={t("guide_eightstep_hand_both")}
+            trail={HAND_TRAIL}
+          />
+          <HandTile
+            sequence={hands}
+            hand="left"
+            caption={t("guide_eightstep_hand_left")}
+            trail={HAND_TRAIL}
+          />
+          <HandTile
+            sequence={hands}
+            hand="right"
+            caption={t("guide_eightstep_hand_right")}
+            trail={HAND_TRAIL}
           />
         </div>
-        <LinkChip href={localHref("/guide/prospin-and-inspin")}
-          >{t("guide_eightstep_link_prospin")}</LinkChip
-        >
       </section>
 
-      {#each groups as group (group.relation)}
-        <section
-          class="group"
-          aria-labelledby={`group-${group.relation}-heading`}
+      <div class="spin-demo">
+        <SequenceShowcase
+          sequence={spinExample.sequence}
+          items={spinExample.items}
+          trail={TIP_TRAIL}
+          render={PROP_RENDER}
+          canvasLetter={false}
+          loop
+          {picTheme}
         >
-          <div class="group-intro">
-            <h2 id={`group-${group.relation}-heading`}>{t(group.title)}</h2>
-            <p>
-              {#each sentences(t(group.body)) as sentence, i (i)}<span
-                  class="sentence">{sentence}</span
-                >{/each}
-            </p>
-          </div>
-          {#each group.paths as path (path.column)}
-            <SequenceShowcase
-              sequence={path.first.sequence}
-              items={path.first.items}
-              pool={path.pool}
-              trail={PATH_TRAIL}
-              render={PROP_RENDER}
-              canvasLetter={false}
-              loop
-              {picTheme}
-            >
-              {#snippet text()}
-                <h3>{t(path.title)}</h3>
-                <p>{t(path.body)}</p>
-              {/snippet}
-            </SequenceShowcase>
-          {/each}
-        </section>
-      {/each}
+          {#snippet text()}
+            <h2>{t("guide_eightstep_spins_title")}</h2>
+            <p>{t("guide_eightstep_spins_body")}</p>
+            <div class="pickers">
+              <div class="picker">
+                <span class="picker-label">{t("guide_eightstep_prop")}</span>
+                <PropChoiceRow
+                  value={propType}
+                  options={PROP_CHOICES}
+                  label={t("guide_eightstep_prop")}
+                  onchange={(pt) => (propType = pt)}
+                />
+              </div>
+              <div class="picker">
+                <span class="picker-label" id="spin-left-label"
+                  >{t("guide_eightstep_spin_left")}</span
+                >
+                <SegmentedControl
+                  options={spinOptions("blue")}
+                  value={leftSpin}
+                  onchange={(spin) => (leftSpin = spin)}
+                  ariaLabelledby="spin-left-label"
+                  semantics="radiogroup"
+                  color="blue"
+                />
+              </div>
+              <div class="picker">
+                <span class="picker-label" id="spin-right-label"
+                  >{t("guide_eightstep_spin_right")}</span
+                >
+                <SegmentedControl
+                  options={spinOptions("red")}
+                  value={rightSpin}
+                  onchange={(spin) => (rightSpin = spin)}
+                  ariaLabelledby="spin-right-label"
+                  semantics="radiogroup"
+                  color="red"
+                />
+              </div>
+            </div>
+            <div class="chip">
+              <LinkChip href={localHref("/guide/prospin-and-inspin")}
+                >{t("guide_eightstep_link_prospin")}</LinkChip
+              >
+            </div>
+          {/snippet}
+        </SequenceShowcase>
+      </div>
+
+      <section class="paths" aria-labelledby="paths-heading">
+        <div class="paths-intro">
+          <h2 id="paths-heading">{t("guide_eightstep_paths_title")}</h2>
+          <p>{t("guide_eightstep_paths_body")}</p>
+        </div>
+        {#each groups as group (group.relation)}
+          <section
+            class="group"
+            aria-labelledby={`group-${group.relation}-heading`}
+          >
+            <div class="group-head">
+              <span class="gage-name"
+                >{t("guide_eightstep_gage_name", { name: group.gage })}</span
+              >
+              <h3 id={`group-${group.relation}-heading`}>{t(group.title)}</h3>
+            </div>
+            <div class="group-paths">
+              {#each group.paths as path (path.column)}
+                <SequenceShowcase
+                  sequence={path.sequence}
+                  items={path.items}
+                  trail={TIP_TRAIL}
+                  render={PROP_RENDER}
+                  variant="compact"
+                  canvasLetter={false}
+                  loop
+                  {picTheme}
+                >
+                  {#snippet text()}
+                    <div class="path-label">
+                      <h4>{t(path.title)}</h4>
+                      <p>{t(path.body)}</p>
+                    </div>
+                  {/snippet}
+                </SequenceShowcase>
+              {/each}
+            </div>
+          </section>
+        {/each}
+      </section>
 
       <footer class="credit">
         <p>{t("guide_caps_cap_credit")}</p>
@@ -338,31 +399,26 @@
 {/if}
 
 <style>
+  /* Wider than the reading pages: on a large screen the paths go two to a
+     row instead of leaving the sides empty. */
   .eight-step {
     width: 100%;
     min-width: 0;
-    max-width: 1180px;
+    max-width: 2560px;
     margin-inline: auto;
     padding: clamp(20px, 3vw, 56px);
     color: var(--theme-text);
     display: flex;
     flex-direction: column;
-    gap: clamp(40px, 6vw, 72px);
-    /* SequenceShowcase colours its example cycler with the Level 1 ink
-       tokens; map them to this page's theme, as /guide/zans-diamond does. */
+    gap: clamp(48px, 6vw, 88px);
+    container-type: inline-size;
+    /* SequenceShowcase colours its controls with the Level 1 ink tokens; map
+       them to this page's theme, as /guide/zans-diamond does. */
     --ink: var(--theme-text);
     --ink-dim: var(--theme-text-muted);
-  }
-  /* The cycler's label line and button use the page's type, not the Level 1
-     book serif. */
-  .eight-step :global(.example-prose > p),
-  .eight-step :global(.cycle-btn),
-  .eight-step :global(.cycle-count) {
-    font-family: inherit;
-  }
-  .eight-step :global(.example-prose > p) {
-    font-size: 1rem;
-    font-weight: 600;
+    /* The hand tiles and the spin section share one width, growing on very
+       wide screens so they don't sit as a thin column in the middle. */
+    --demo-width: clamp(1320px, 62cqw, 1680px);
   }
   .eight-step h1 {
     margin: 0;
@@ -370,59 +426,174 @@
     grid-column: auto;
   }
   .eight-step h2,
-  .eight-step h3 {
+  .eight-step h3,
+  .eight-step h4 {
     margin: 0;
   }
   .eight-step p {
-    max-width: 64ch;
+    max-width: 72ch;
     line-height: 1.6;
     color: var(--theme-text-muted);
     margin: 0;
   }
-  /* The page header, section intros and the credit are centred section
-     breaks; the text beside each player reads left. */
   .intro,
-  .spins,
-  .group-intro,
-  .credit {
+  .paths-intro,
+  .credit,
+  .hands {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--spacing-sm, 8px);
     text-align: center;
   }
-  /* A sentence too long for the column wraps into even lines, not one
-     stranded word. */
-  .sentence {
-    display: block;
-    text-wrap: balance;
-  }
   .eight-step .lede {
     font-size: 1.125rem;
     color: var(--theme-text);
+    text-wrap: balance;
   }
 
-  .spins {
-    gap: var(--spacing-md, 12px);
+  /* Three tiles in a row, as large as the row allows; a phone stacks them
+     at a size that still fits one tile on screen. */
+  .hands {
+    gap: var(--spacing-lg, 20px);
   }
-  .prop-choice {
+  .hand-tiles {
+    width: 100%;
+    max-width: var(--demo-width);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(12px, 2.5vw, 32px);
+  }
+  @container (max-width: 640px) {
+    .hand-tiles {
+      grid-template-columns: minmax(0, 22rem);
+      justify-content: center;
+    }
+  }
+
+  /* As wide as the hand tiles above it, so the text column ends with its
+     pickers instead of running on into empty space. */
+  .spin-demo {
+    width: 100%;
+    max-width: var(--demo-width);
+    margin-inline: auto;
+  }
+  /* The spin canvas is the section's picture: larger than the guide's usual
+     feature canvas, so it carries the column its pickers fill. */
+  .spin-demo :global(.banner > .canvas-box) {
+    flex-basis: clamp(230px, 34cqw, 420px);
+  }
+  /* The spin section's text column holds the pickers, left-aligned. */
+  .pickers {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: var(--spacing-md, 12px);
+    margin-top: var(--spacing-sm, 8px);
+    container-type: inline-size;
+  }
+  .picker {
+    display: flex;
+    flex-direction: column;
     gap: var(--spacing-xs, 6px);
   }
-  .prop-label {
+  .picker-label {
     font-size: var(--font-size-compact, 13px);
     font-weight: 600;
     color: var(--theme-text-muted);
   }
+  /* Eight props in whole rows: one row of eight, two of four, four of two. */
+  .picker :global(.prop-grid) {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 104px));
+  }
+  @container (min-width: 780px) {
+    .picker :global(.prop-grid) {
+      grid-template-columns: repeat(8, minmax(0, 104px));
+    }
+  }
+  @container (max-width: 300px) {
+    .picker :global(.prop-grid) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .picker :global(.prop-option) {
+    max-width: none;
+  }
+  /* Three short words don't need the whole column. */
+  .picker :global(.segmented-control) {
+    max-width: 28rem;
+  }
+  .chip {
+    margin-top: var(--spacing-sm, 8px);
+  }
+  /* Stacked on a phone, the showcase puts its whole text column above the
+     canvas, which would leave the picture a screen below the pickers that
+     change it. Unwrap the text column so the canvas sits between the heading
+     and the pickers. */
+  @container (max-width: 600px) {
+    .spin-demo :global(.banner-text) {
+      display: contents;
+    }
+    .spin-demo :global(.banner > .canvas-box) {
+      order: 1;
+    }
+    .spin-demo .pickers,
+    .spin-demo .chip {
+      order: 2;
+    }
+  }
 
-  .group {
-    container-type: inline-size;
+  .paths {
     display: flex;
     flex-direction: column;
-    gap: clamp(32px, 5vw, 56px);
+    gap: clamp(40px, 5vw, 72px);
   }
+  .group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 20px);
+  }
+  .group-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+  }
+  .gage-name {
+    font-size: var(--font-size-compact, 13px);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--theme-text-muted);
+  }
+  .group h3 {
+    font-size: 1.375rem;
+  }
+  /* A group's two paths sit side by side once each has room for its canvas
+     and a full strip; below that they stack. */
+  .group-paths {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(28px, 3vw, 48px);
+  }
+  @container (min-width: 2300px) {
+    .group-paths {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .path-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .path-label h4 {
+    font-size: 1.0625rem;
+    color: var(--theme-text);
+  }
+  .path-label p {
+    font-size: 0.9375rem;
+  }
+
   .links {
     display: flex;
     flex-wrap: wrap;
