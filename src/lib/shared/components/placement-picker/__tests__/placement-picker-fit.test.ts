@@ -63,8 +63,11 @@ describe("fitPicker", () => {
     expect(fitPicker(m).folded).toBe(false);
   });
 
-  it("holds the touch floor on a box too small for any arrangement", () => {
-    expect(fitPicker(box(600, 150)).gridSize).toBe(MIN_GRID_PX);
+  it("holds the touch floor on a box too small for any arrangement, in the one that overflows least", () => {
+    const fit = fitPicker(box(656, 100));
+    expect(fit.gridSize).toBe(MIN_GRID_PX);
+    expect(fit.arrangement).toBe("side");
+    expect(fit.folded).toBe(true);
   });
 
   it("fits every box with room for the floor, and keeps the aside whenever the grid is comfortable with it", () => {

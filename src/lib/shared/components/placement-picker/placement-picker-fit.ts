@@ -8,8 +8,9 @@
 //
 // When neither draws the grid comfortably and the host gave a folded form of
 // the aside (a row that opens it as a screen of its own), the aside folds.
-// Below the touch floor nothing more can give way, and the host's scroller
-// takes the rest.
+// Below the touch floor nothing more can give way: the grid holds the floor in
+// whichever arrangement overflows least, and the host's scroller takes the
+// rest.
 
 export type PickerArrangement = "stack" | "side";
 
@@ -48,52 +49,76 @@ function sideColumn(width: number, rem: number): number {
   return Math.min(24 * rem, Math.max(16 * rem, width * 0.36));
 }
 
-function candidates(m: PickerMeasure, folded: boolean): PickerFit[] {
+interface Candidate extends PickerFit {
+  /** Fits the box with its grid at gridSize. */
+  fits: boolean;
+  /** Height the arrangement takes with its grid at the touch floor. */
+  heightAtFloor: number;
+}
+
+function candidates(m: PickerMeasure, folded: boolean): Candidate[] {
   const asideAt = folded ? m.foldedHeightAt : m.asideHeightAt;
   const asideBelow = (w: number) => (asideAt ? STACK_GAP + asideAt(w) : 0);
   const asideBeside = (w: number) => (asideAt ? SIDE_ROW_GAP + asideAt(w) : 0);
+  const floor = Math.min(m.width, MIN_GRID_PX);
 
-  const out: PickerFit[] = [
+  const band = m.controlsHeightAt(m.width) + STACK_GAP + asideBelow(m.width);
+  const out: Candidate[] = [
     {
       arrangement: "stack",
       folded,
-      gridSize: Math.min(
-        m.width,
-        m.height - m.controlsHeightAt(m.width) - STACK_GAP - asideBelow(m.width)
-      ),
+      gridSize: Math.min(m.width, m.height - band),
       column: 0,
+      fits: true,
+      heightAtFloor: band + floor,
     },
   ];
 
   const column = sideColumn(m.width, m.rem);
   const room = m.width - column - SIDE_COLUMN_GAP;
   const columnHeight = m.controlsHeightAt(column) + asideBeside(column);
-  if (room >= MIN_GRID_PX && columnHeight <= m.height) {
+  if (room >= MIN_GRID_PX) {
     out.push({
       arrangement: "side",
       folded,
       gridSize: Math.min(m.height, room),
       column,
+      fits: columnHeight <= m.height,
+      heightAtFloor: Math.max(floor, columnHeight),
     });
   }
   return out;
 }
 
-function largest(fits: PickerFit[]): PickerFit {
-  return fits.reduce((a, b) => (b.gridSize > a.gridSize ? b : a));
+function largest(fits: Candidate[]): Candidate | null {
+  const fitting = fits.filter((f) => f.fits);
+  return fitting.length
+    ? fitting.reduce((a, b) => (b.gridSize > a.gridSize ? b : a))
+    : null;
+}
+
+function result(c: Candidate, gridSize: number): PickerFit {
+  const { arrangement, folded, column } = c;
+  return { arrangement, folded, gridSize: Math.floor(gridSize), column };
 }
 
 export function fitPicker(m: PickerMeasure): PickerFit {
-  let best = largest(candidates(m, false));
   const canFold = Boolean(m.asideHeightAt && m.foldedHeightAt);
-  if (canFold && best.gridSize < COMFORT_GRID_REM * m.rem) {
-    const folded = largest(candidates(m, true));
-    if (folded.gridSize > best.gridSize) best = folded;
+  const unfolded = candidates(m, false);
+  const all = canFold ? [...unfolded, ...candidates(m, true)] : unfolded;
+
+  let best = largest(unfolded);
+  if (canFold && (!best || best.gridSize < COMFORT_GRID_REM * m.rem)) {
+    const folded = largest(all.filter((c) => c.folded));
+    if (folded && (!best || folded.gridSize > best.gridSize)) best = folded;
   }
-  return {
-    ...best,
-    gridSize: Math.floor(
-      Math.min(m.width, Math.max(best.gridSize, MIN_GRID_PX))
-    ),
-  };
+  if (best && best.gridSize >= Math.min(m.width, MIN_GRID_PX)) {
+    return result(best, Math.min(m.width, best.gridSize));
+  }
+
+  // Too small for the grid at the floor in any arrangement.
+  const least = all.reduce((a, b) =>
+    b.heightAtFloor < a.heightAtFloor ? b : a
+  );
+  return result(least, Math.min(m.width, MIN_GRID_PX));
 }
