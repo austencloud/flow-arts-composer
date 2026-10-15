@@ -59,11 +59,19 @@ def import_file(path, folder, name, mesh=False):
                         material.set_editor_property('blend_mode', u.BlendMode.BLEND_MASKED)
                         material.set_editor_property('opacity_mask_clip_value', .42)
                         material.set_editor_property('shading_model', u.MaterialShadingModel.MSM_TWO_SIDED_FOLIAGE)
-                        leaf = ME.get_material_property_input_node(material, u.MaterialProperty.MP_BASE_COLOR)
-                        if not isinstance(leaf, u.MaterialExpressionTextureSample):
-                            raise RuntimeError('Expected leaf color texture on ' + material.get_path_name())
-                        connect_property(leaf, 'A', u.MaterialProperty.MP_OPACITY_MASK)
-                        connect_property(leaf, 'RGB', u.MaterialProperty.MP_SUBSURFACE_COLOR)
+                        # A previous pass may have wrapped base color in the
+                        # per-instance tint multiply. Keep the coverage and
+                        # subsurface links already authored on that material.
+                        opacity = ME.get_material_property_input_node(material, u.MaterialProperty.MP_OPACITY_MASK)
+                        subsurface = ME.get_material_property_input_node(material, u.MaterialProperty.MP_SUBSURFACE_COLOR)
+                        if not opacity or not subsurface:
+                            leaf = ME.get_material_property_input_node(material, u.MaterialProperty.MP_BASE_COLOR)
+                            if not isinstance(leaf, u.MaterialExpressionTextureSample):
+                                raise RuntimeError('Leaf color texture missing from unfinished material ' + material.get_path_name())
+                            if not opacity:
+                                connect_property(leaf, 'A', u.MaterialProperty.MP_OPACITY_MASK)
+                            if not subsurface:
+                                connect_property(leaf, 'RGB', u.MaterialProperty.MP_SUBSURFACE_COLOR)
                 ensure_instancing(material)
                 if ((folder.startswith('/Game/FlowFest/Assets/Trees/') and material.get_name().endswith('_leaves')) or job_wind_family(folder)) and not ME.get_material_property_input_node(material, u.MaterialProperty.MP_WORLD_POSITION_OFFSET):
                     add_foliage_wind(material, folder.startswith('/Game/FlowFest/Assets/Trees/'))
