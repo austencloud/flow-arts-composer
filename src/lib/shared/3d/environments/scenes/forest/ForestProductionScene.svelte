@@ -1,4 +1,8 @@
 <script lang="ts">
+  import {
+    resolveThrelteScene,
+    resolveThrelteRenderer,
+  } from "../../../scene-boot/threlte-handles";
   import { T, useTask, useThrelte } from "@threlte/core";
   import { useDraco, useGltf, useMeshopt, useTexture } from "@threlte/extras";
   import { userProportionsState } from "@austencloud/scene-3d";
@@ -36,7 +40,9 @@
     active = true,
   }: Props = $props();
 
-  const { camera, renderer, scene } = useThrelte();
+  const { camera, renderer: rendererValue, scene: sceneValue } = useThrelte();
+  const scene = resolveThrelteScene(sceneValue);
+  const renderer = resolveThrelteRenderer(rendererValue);
   const adaptiveQuality = tryGetAdaptiveQualityContext();
   let sceneFeatures: ReturnType<typeof getSceneFeatureContext> | null = null;
   try {

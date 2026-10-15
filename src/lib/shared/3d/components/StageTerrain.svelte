@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveThrelteScene } from "../scene-boot/threlte-handles";
   /**
    * StageTerrain
    *
@@ -16,7 +17,10 @@
 
   import { onMount, onDestroy } from "svelte";
   import { useThrelte } from "@threlte/core";
-  import { ChunkManager, type ChunkState } from "#lib/shared/3d/procedural-engine/core/chunk-manager.js";
+  import {
+    ChunkManager,
+    type ChunkState,
+  } from "#lib/shared/3d/procedural-engine/core/chunk-manager.js";
   import { VegetationManager } from "#lib/shared/3d/procedural-engine/rendering/instanced-vegetation.js";
   import { AtmosphereManager } from "#lib/shared/3d/procedural-engine/rendering/atmosphere.js";
   import { SeededNoise } from "#lib/shared/3d/procedural-engine/generation/seed-generator.js";
@@ -56,7 +60,8 @@
     cameraPosition = { x: 0, y: 0, z: 0 },
   }: Props = $props();
 
-  const { scene } = useThrelte();
+  const { scene: sceneValue } = useThrelte();
+  const scene = resolveThrelteScene(sceneValue);
 
   // Managers
   let chunkManager: ChunkManager | null = $state(null);
@@ -80,7 +85,12 @@
       terrainPhysics = new TerrainPhysicsManager(physicsState);
 
       // Add immediate stage ground collider at the correct height
-      terrainPhysics.addStageGroundCollider(0, 0, stageRadius + stageBlendWidth, STAGE_HEIGHT);
+      terrainPhysics.addStageGroundCollider(
+        0,
+        0,
+        stageRadius + stageBlendWidth,
+        STAGE_HEIGHT
+      );
     }
 
     vegetationManager = new VegetationManager(scene, { useGLTFModels: true });
@@ -115,7 +125,11 @@
           );
         }
 
-        if (chunk && vegetationManager && state.meshData.vegetation.length > 0) {
+        if (
+          chunk &&
+          vegetationManager &&
+          state.meshData.vegetation.length > 0
+        ) {
           const chunkWorldX = chunk.chunkX * chunkSize;
           const chunkWorldZ = chunk.chunkZ * chunkSize;
           vegetationManager.addChunkVegetation(
@@ -209,11 +223,7 @@
 
     const chunk = state.entity.chunk;
     if (chunk) {
-      mesh.position.set(
-        chunk.chunkX * chunkSize,
-        0,
-        chunk.chunkZ * chunkSize
-      );
+      mesh.position.set(chunk.chunkX * chunkSize, 0, chunk.chunkZ * chunkSize);
     }
 
     scene.add(mesh);

@@ -3,7 +3,10 @@
   import type { WorkerPerformerInteractionBridge } from "../services/worker-performer-interaction";
 
   interface Props {
-    bridge: WorkerPerformerInteractionBridge;
+    bridge: Pick<
+      WorkerPerformerInteractionBridge,
+      "takeMoveHint" | "projectStagePosition"
+    >;
     position: { x: number; z: number };
     groundY: number;
     placing: boolean;
@@ -25,7 +28,7 @@
   });
 </script>
 
-{#if showHint && !placing && projected.visible}
+{#if showHint && !placing && projected?.visible}
   <span
     class="move-hint"
     style:left={`${projected.x}px`}

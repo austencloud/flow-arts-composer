@@ -481,7 +481,6 @@
       side: DoubleSide,
       depthWrite: true,
       fog: true,
-      extensions: { derivatives: true },
       // The strip lies in a carved bed that is close to coplanar with it, so
       // single terrain triangles could win the depth test and punch blocky
       // holes in the surface.
@@ -633,7 +632,9 @@
       (u.uBaseColor!.value as Color).set(config.baseColor);
       (u.uHotColor!.value as Color).set(config.hotColor);
       (u.uCrustColor!.value as Color).set(config.crustColor);
-      (u.uLeveeColor!.value as Color).set(config.leveeColor ?? config.crustColor);
+      (u.uLeveeColor!.value as Color).set(
+        config.leveeColor ?? config.crustColor
+      );
       u.uWarpIntensity!.value = config.warpIntensity;
       u.uCrustCoverage!.value = config.crustCoverage;
       u.uEdgeCooling!.value = config.edgeCooling ?? 0.34;

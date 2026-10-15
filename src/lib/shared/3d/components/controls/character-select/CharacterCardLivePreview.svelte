@@ -139,7 +139,7 @@
         autoRotate={active && !reduceMotion}
         autoRotateSpeed={2.4}
         oncreate={(controls) => {
-          controls.update();
+          controls.update(0);
         }}
       />
     </T.PerspectiveCamera>
@@ -162,10 +162,10 @@
       showProps={previewState.hasSequence}
       showEffects={false}
       {visiblePlanes}
-      leftPropType={toScenePropType(
+      bluePropType={toScenePropType(
         sourcePerformer?.effectiveProp ?? standaloneDefaults.prop
       )}
-      rightPropType={toScenePropType(
+      redPropType={toScenePropType(
         sourcePerformer?.effectiveProp ?? standaloneDefaults.prop
       )}
       propBuild={sourcePerformer?.effectivePropBuild}
