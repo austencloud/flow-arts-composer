@@ -573,6 +573,11 @@ bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight,
         {
             BlendedLeftGrip /= Total; BlendedRightGrip /= Total;
             BlendedLeftAnchor /= Total; BlendedRightAnchor /= Total;
+            // A linear blend of two prop-root translations and two local grip
+            // offsets is not a rigid grip constraint. Solve each blended root
+            // against the wrist actually evaluated by the skeletal pose.
+            Left.SetLocation(NaturalLeftGrip - Left.GetRotation().RotateVector(BlendedLeftAnchor));
+            Right.SetLocation(NaturalRightGrip - Right.GetRotation().RotateVector(BlendedRightAnchor));
             bSwitchingPerformance = false;
             SetPerformanceTransforms(Left, Right, 1.f);
             bEnteringPerformance = OutgoingWeight > .001f || PoseWeight < .999f;
