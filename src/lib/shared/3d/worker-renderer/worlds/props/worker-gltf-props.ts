@@ -106,6 +106,11 @@ export const WORKER_PROP_MODEL_REGISTRY: Partial<
     scale: 1,
     gripOffsetY: 0,
   }),
+  // A real pen at a real size, held through its middle; never stretched.
+  [CANONICAL_PROP_TYPE.PEN]: model("pen.glb", {
+    scale: 1,
+    gripOffsetY: 0,
+  }),
 };
 
 export interface WorkerPropModelResolution {
@@ -150,6 +155,7 @@ export const REGISTRY_WORKER_PROP_TYPES = [
   CANONICAL_PROP_TYPE.CAPSULE_BATON,
   CANONICAL_PROP_TYPE.FIRE_DOUBLE_STAFF,
   CANONICAL_PROP_TYPE.STICK,
+  CANONICAL_PROP_TYPE.PEN,
 ] as const;
 
 export function resolveWorkerPropModel(

@@ -59,6 +59,9 @@ export const SELECTIVE_COLOR_PROP_TYPES = [
   // painted image and the cut ends and buds are saturated or dark, so the
   // branch stays a branch on both hands.
   "stick",
+  // Pen: the cap, clip and printed band (#B4B4B4) take left or right; the
+  // black plug and barrel are dark and stay black, as a real pen's do.
+  "pen",
   // Hoop family: commit 9fefc947d5 regenerated these glyphs with a neutral
   // #9A9A9A tube (repainted to the hand colour here) and #1C1C1F / #3A3A3F
   // hardware plus a #C9AC68 grip band that selective mode preserves. Before

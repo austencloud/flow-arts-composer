@@ -97,6 +97,7 @@
         isSequenceViewerOpen: sequenceOverlay.isOpen,
       })
   );
+  const isOverlayView = $derived(isSaveView || isStepEditorView);
   const toolStageKey = $derived(
     isSaveView ? "save" : isStepEditorView ? "step-editor" : "tools"
   );
@@ -288,7 +289,7 @@
   <div
     class="creation-tool-content generate-tool-content"
     class:is-active={isGeneratePanelActive}
-    class:save-mode={isSaveView || isStepEditorView}
+    class:save-mode={isOverlayView}
     aria-hidden={!showGeneratePanel}
     aria-busy={showGeneratePanel && generateLoadStatus === "loading"}
     inert={!showGeneratePanel}
@@ -310,10 +311,107 @@
     </div>
   </div>
 
-  <!-- The tools, the save view and the step editor trade places like the
+  <!-- The tools stay mounted under the save view and the step editor, hidden
+       like the generator, so the option picker is already drawn and laid out
+       when it comes back instead of building its pictographs mid fade. -->
+  <div
+    class="tool-stage tools-layer"
+    class:is-idle={showGeneratePanel}
+    class:covered={isOverlayView}
+    aria-hidden={isOverlayView}
+    inert={isOverlayView}
+  >
+    {#if !isPersistenceFullyInitialized}
+      <!-- Loading state while persistence is being restored -->
+      <div class="persistence-loading">
+        <ProgressRing percent={-1} size={32} strokeWidth={3} />
+        <p>{t("create_ui_restoring_sequence")}</p>
+      </div>
+    {:else if activeToolPanel && activeToolPanel !== "generate"}
+      <!-- Render the appropriate tool panel based on active tab -->
+      <div class="creation-tool-content" data-active-tab={activeToolPanel}>
+        {#key activeToolPanel}
+          <div class="sub-tab-content" data-tab={activeToolPanel}>
+            {#if activeToolPanel === "construct"}
+              <!-- Constructor Mode - Manual builder (step by step) -->
+              {#if isPickerStateLoading}
+                <div class="picker-loading">
+                  <ProgressRing percent={-1} size={32} strokeWidth={3} />
+                  <p>{t("create_ui_loading_options")}</p>
+                </div>
+              {:else}
+                <ConstructTabContent
+                  shouldShowStartPlacementPicker={shouldShowStartPlacementPicker ===
+                    true}
+                  startPlacementState={constructTabState.startPlacementStateService}
+                  currentSequence={currentSequenceData}
+                  currentGridMode={sequenceGridMode}
+                  gridJoin={sequenceJoin}
+                  initialStartPlacement={currentStartPlacement}
+                  lockStartGridMode={isEditingExistingStart}
+                  startPlacementValidationMessage={constructTabState.error}
+                  {onOptionSelected}
+                  onStartPlacementNavigateToAdvanced={() => {}}
+                  onStartPlacementNavigateToDefault={() => {}}
+                  {isSideBySideLayout}
+                  {onOpenFilters}
+                  {onCloseFilters}
+                  {isFilterPanelOpen}
+                  isContinuousOnly={constructTabState.isContinuousOnly}
+                  onToggleContinuous={(value) =>
+                    constructTabState.setContinuousOnly(value)}
+                  onStartPlacementSubmitted={handleStartPlacementSubmitted}
+                />
+              {/if}
+            {:else if activeToolPanel === "assemble"}
+              <!-- Assemble Mode - Click grid points to build sequences (deferred chunk) -->
+              {@const assembleTabState = createModuleState.assembleTabState}
+              {#if assembleTabState}
+                <LazyMount
+                  loader={() =>
+                    import("../../assemble/components/AssembleToolPanel.svelte")}
+                  active
+                  props={{ tabState: assembleTabState }}
+                />
+              {:else}
+                <div class="coming-soon-panel">
+                  <p>{t("create_ui_assemble_loading")}</p>
+                </div>
+              {/if}
+            {:else if activeToolPanel === "fuse"}
+              <!-- Fuse Mode - Combine two sequences into one (deferred chunk) -->
+              <LazyMount
+                loader={() => import("#lib/features/fuse/FuseTab.svelte")}
+                active
+              />
+            {:else if activeToolPanel === "tunnel"}
+              <LazyMount
+                loader={() => import("../../tunnel/TunnelTab.svelte")}
+                active
+              />
+            {:else if activeToolPanel === "shape-engine"}
+              <!-- Shape - pick a shape pairing, get the sequence (deferred chunk) -->
+              <LazyMount
+                loader={() =>
+                  import("../../shape-engine/ShapeEngineTab.svelte")}
+                active
+              />
+            {/if}
+          </div>
+        {/key}
+      </div>
+    {:else if !activeToolPanel}
+      <!-- Fallback case -->
+      <div class="no-tab-selected">
+        <p>{t("create_ui_no_tab_selected")}</p>
+      </div>
+    {/if}
+  </div>
+
+  <!-- The save view and the step editor trade places with the tools like the
        start placement picker and the option picker do: the leaving one fades
        out, then the arriving one fades in, both pinned to the same box. -->
-  <div class="tool-stage" class:is-idle={showGeneratePanel}>
+  <div class="tool-stage" class:is-idle={!isOverlayView}>
     <Crossfade key={toolStageKey} duration={DURATION.normal} mode="swap" fill>
       {#if isSaveView}
         <div class="creation-tool-content" data-active-tab="save">
@@ -333,90 +431,6 @@
               active
             />
           </div>
-        </div>
-      {:else if !isPersistenceFullyInitialized}
-        <!-- Loading state while persistence is being restored -->
-        <div class="persistence-loading">
-          <ProgressRing percent={-1} size={32} strokeWidth={3} />
-          <p>{t("create_ui_restoring_sequence")}</p>
-        </div>
-      {:else if activeToolPanel && activeToolPanel !== "generate"}
-        <!-- Render the appropriate tool panel based on active tab -->
-        <div class="creation-tool-content" data-active-tab={activeToolPanel}>
-          {#key activeToolPanel}
-            <div class="sub-tab-content" data-tab={activeToolPanel}>
-              {#if activeToolPanel === "construct"}
-                <!-- Constructor Mode - Manual builder (step by step) -->
-                {#if isPickerStateLoading}
-                  <div class="picker-loading">
-                    <ProgressRing percent={-1} size={32} strokeWidth={3} />
-                    <p>{t("create_ui_loading_options")}</p>
-                  </div>
-                {:else}
-                  <ConstructTabContent
-                    shouldShowStartPlacementPicker={shouldShowStartPlacementPicker ===
-                      true}
-                    startPlacementState={constructTabState.startPlacementStateService}
-                    currentSequence={currentSequenceData}
-                    currentGridMode={sequenceGridMode}
-                    gridJoin={sequenceJoin}
-                    initialStartPlacement={currentStartPlacement}
-                    lockStartGridMode={isEditingExistingStart}
-                    startPlacementValidationMessage={constructTabState.error}
-                    {onOptionSelected}
-                    onStartPlacementNavigateToAdvanced={() => {}}
-                    onStartPlacementNavigateToDefault={() => {}}
-                    {isSideBySideLayout}
-                    {onOpenFilters}
-                    {onCloseFilters}
-                    {isFilterPanelOpen}
-                    isContinuousOnly={constructTabState.isContinuousOnly}
-                    onToggleContinuous={(value) =>
-                      constructTabState.setContinuousOnly(value)}
-                    onStartPlacementSubmitted={handleStartPlacementSubmitted}
-                  />
-                {/if}
-              {:else if activeToolPanel === "assemble"}
-                <!-- Assemble Mode - Click grid points to build sequences (deferred chunk) -->
-                {@const assembleTabState = createModuleState.assembleTabState}
-                {#if assembleTabState}
-                  <LazyMount
-                    loader={() =>
-                      import("../../assemble/components/AssembleToolPanel.svelte")}
-                    active
-                    props={{ tabState: assembleTabState }}
-                  />
-                {:else}
-                  <div class="coming-soon-panel">
-                    <p>{t("create_ui_assemble_loading")}</p>
-                  </div>
-                {/if}
-              {:else if activeToolPanel === "fuse"}
-                <!-- Fuse Mode - Combine two sequences into one (deferred chunk) -->
-                <LazyMount
-                  loader={() => import("#lib/features/fuse/FuseTab.svelte")}
-                  active
-                />
-              {:else if activeToolPanel === "tunnel"}
-                <LazyMount
-                  loader={() => import("../../tunnel/TunnelTab.svelte")}
-                  active
-                />
-              {:else if activeToolPanel === "shape-engine"}
-                <!-- Shape - pick a shape pairing, get the sequence (deferred chunk) -->
-                <LazyMount
-                  loader={() =>
-                    import("../../shape-engine/ShapeEngineTab.svelte")}
-                  active
-                />
-              {/if}
-            </div>
-          {/key}
-        </div>
-      {:else if !activeToolPanel}
-        <!-- Fallback case -->
-        <div class="no-tab-selected">
-          <p>{t("create_ui_no_tab_selected")}</p>
         </div>
       {/if}
     </Crossfade>
@@ -467,15 +481,19 @@
     display: none;
   }
 
-  /* Save mode: the generator fades under the arriving save view and stops
-     taking input; its panel stays mounted with its settings. */
-  .generate-tool-content {
+  /* Save view or step editor: the tool underneath fades out and stops taking
+     input but stays mounted with its state and drawn pictographs. Coming
+     back, it waits for the leaving view to finish fading, the same swap the
+     crossfade above uses, so the two never show through each other. */
+  .generate-tool-content,
+  .tools-layer {
     transition:
-      opacity var(--duration-normal) var(--ease-standard),
-      visibility 0s linear 0s;
+      opacity var(--duration-normal) var(--ease-standard) var(--duration-normal),
+      visibility 0s linear var(--duration-normal);
   }
 
-  .generate-tool-content.save-mode {
+  .generate-tool-content.save-mode,
+  .tools-layer.covered {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -486,7 +504,9 @@
 
   @media (prefers-reduced-motion: reduce) {
     .generate-tool-content,
-    .generate-tool-content.save-mode {
+    .generate-tool-content.save-mode,
+    .tools-layer,
+    .tools-layer.covered {
       transition: none;
     }
   }

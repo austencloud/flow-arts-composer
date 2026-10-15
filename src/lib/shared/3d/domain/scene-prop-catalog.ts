@@ -67,6 +67,7 @@ export const SCENE_PROP_FAMILIES: readonly ScenePropFamily[] = [
       { id: PropType.CAPSULE_BATON, label: "LED Baton" },
       { id: PropType.FIRE_DOUBLE_STAFF, label: "Fire Staff" },
       { id: PropType.STICK, label: "Stick" },
+      { id: PropType.PEN, label: "Pen" },
     ],
   },
   {
@@ -189,15 +190,16 @@ export function findScenePropFamilyByRepresentative(
    diameter, and draws every other model at the size it was authored. So every
    length control in the product — the performer's own `staffLengthCm`, a
    pinned lab length, the body-derived hug fit — reaches the plain Staff, the
-   Fire Staff and the Stick and stops at the LED Baton. Anything reporting a prop's size has to
-   say which of those it is looking at.
+   Fire Staff and the Stick and stops at the LED Baton and the Pen. Anything
+   reporting a prop's size has to say which of those it is looking at.
 
    The numbers are each model's own `authored_length_m` node extra, written by
    scripts/build-capsule-baton-model.py (0.8636 m, "a 34\" baton, the same
    overall length as the default staff") and
    scripts/build-fire-double-staff-model.py (0.9 m) and
-   scripts/build-stick-model.py (0.9 m, both hands' branches), and confirmed
-   against the shipped GLBs' POSITION accessor bounds.
+   scripts/build-stick-model.py (0.9 m, both hands' branches) and
+   scripts/build-pen-model.py (0.142 m, a real pen at a real size), and
+   confirmed against the shipped GLBs' POSITION accessor bounds.
 
    The table covers the Double Staff family because that is the only family
    whose builds mix procedural and model-backed geometry, so it is the only
@@ -220,6 +222,7 @@ const MODEL_BUILD_LENGTHS: Partial<Record<PropType, ModelBuildLength>> = {
   [PropType.CAPSULE_BATON]: { authoredCm: 86.36, stretches: false },
   [PropType.FIRE_DOUBLE_STAFF]: { authoredCm: 90, stretches: true },
   [PropType.STICK]: { authoredCm: 90, stretches: true },
+  [PropType.PEN]: { authoredCm: 14.2, stretches: false },
 };
 
 /**
@@ -257,6 +260,7 @@ const PROP_PREVIEW_IMAGES: Partial<Record<PropType, string>> = {
   [PropType.CAPSULE_BATON]: "capsule-baton.webp",
   [PropType.FIRE_DOUBLE_STAFF]: "fire-double-staff.webp",
   [PropType.STICK]: "stick.webp",
+  [PropType.PEN]: "pen.webp",
   [PropType.CHICKEN]: "chicken.webp",
   [PropType.BIGCHICKEN]: "big-chicken.webp",
   [PropType.CLUB]: "club.webp",
