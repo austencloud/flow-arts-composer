@@ -87,3 +87,17 @@
 - gpt-6-astra review of a sample of this wave flagged a handful of keys (see coordinator notes); all fixes applied.
 - Codex restored as a product name where older strings translated it; Double-Staff uses the glossary prop term.
 - Gate: `Tests 66 passed (66)`.
+
+## P1 — 2026-10-14
+
+- Scope: 401 translated entries, 0 retranslated entries, 0 review entries. All 401 required output keys are present. This batch contains guide prose and labels; no native-language review was performed.
+- Applied only with the supplied apply-batch.js command. Initial result: `messages/es.json: inserted 401, replaced 0, refused 0`. Final result after preserving the split Cross-Shift label: `messages/es.json: inserted 0, replaced 401, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final gate result: `Test Files  1 passed (1)` and `Tests  66 passed (66)`; duration 17.45s, exit 0. Rerun after the final label correction.
+- Focused contract review: required/applied 401/401; all 5348 preexisting catalog values preserved; placeholder occurrence counts and markup preserved; all values single-line; no usted/ustedes/vosotros/vuestro address forms or Unicode replacement characters. Result: 0 errors. `git diff --check` passed.
+- Catalog diff before this ledger: only messages/es.json, exactly 401 insertions and 0 deletions.
+- Glossary choices: neutral Latin American Spanish with tú and infinitive action buttons. Used trayectoria de la mano, cuadrícula, posición, vuelta, sentido horario/antihorario, hacia dentro/hacia fuera, prop/props, bastón doble, clava, Diamante, Cuadrado and Práctica. Preserved The Kinetic Alphabet, Codex, Composer, Zan's Diamond, Shift/Dash/Static/Float/Pro/Anti, Dual-Shift/Cross-Shift/Dual-Dash, Prospin/Inspin/Antispin/Isolation/Extension/Flower and notation data. Cross and Dual remain English because CodexSheet.svelte assembles them with -Shift/-Dash into category labels. Ordinary petal counts use pétalo; no Petal category label occurs in this batch.
+- Teaching choices: retained the source sentence and step order, all ratio values and formulas, and the distinction between added prop vueltas and laps around the center. Preserved surrounding spaces in sentence fragments used around links/formulas. Arc/Linear/Concave/Hybrid become Arco/Lineal/Cóncava/Híbrida consistently throughout these guides. Third Order becomes Tercer orden; it is not listed as a protected product name in the glossary.
+- Other wording choices: stagger → desfase (consistent with earlier batches); lap → recorrido, to distinguish it from a TKA vuelta; driving styles → estilos de conducción; cat-eye → ojo de gato. These terms have no explicit glossary rows; native acceptance of recorrido and estilos de conducción has not been established. Flower remains English as required, even where a Spanish noun would read more naturally.
+- Copy review: used the ai-bust mechanical pre-pass on the output (HIGH/CRITICAL findings: none) and reviewed meaning, terminology and split-label composition against the source. No additional product claims were introduced.
+- Delivery: committed on the assigned codex/i18n-es branch for the coordinator. No primary-checkout access, integration, push, server, installation, broad checks or prohibited git commands were used.
