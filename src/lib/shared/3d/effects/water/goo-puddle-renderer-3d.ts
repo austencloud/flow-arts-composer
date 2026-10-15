@@ -5,13 +5,16 @@ import {
   DynamicDrawUsage,
   Mesh,
   MeshPhysicalMaterial,
+  type Texture,
 } from "three";
 
-const CAPACITY = 64;
+const CAPACITY = 96;
 const VERTICES = 288;
 const MAX_VOLUME = 0.025;
 const MAX_IMPACTS = 4;
 const IMPACT_LIFETIME = 2.2;
+/** Grid vertices one frame may rebuild across every pool. */
+const FRAME_VERTICES = 6000;
 
 interface Impact {
   x: number;
@@ -33,7 +36,18 @@ interface Puddle {
   metalness: number;
   alpha: number;
   seed: number;
+  /** Length along the travel direction over width; relaxes toward 1. */
+  stretch: number;
+  dirX: number;
+  dirZ: number;
   impacts: Impact[];
+  // Per-frame caches for the vertex loop.
+  bound: number;
+  lobeCos3: number;
+  lobeSin3: number;
+  lobeCos5: number;
+  lobeSin5: number;
+  domeHeight: number;
 }
 
 /** One dynamic mesh keeps ground liquid glossy without a draw call per bead. */
@@ -45,9 +59,11 @@ export class GooPuddleRenderer3D {
   private readonly colors = new Float32Array(CAPACITY * VERTICES * 3);
   private readonly alphas = new Float32Array(CAPACITY * VERTICES);
   private readonly metalnesses = new Float32Array(CAPACITY * VERTICES);
+  private readonly normals = new Float32Array(CAPACITY * VERTICES * 3);
+  private readonly waveData = new Float32Array(4 * MAX_IMPACTS * 5);
   private readonly material: MeshPhysicalMaterial;
 
-  constructor(material: MeshPhysicalMaterial) {
+  constructor(material: MeshPhysicalMaterial, envMap?: Texture) {
     const indices = new Uint16Array(CAPACITY * VERTICES * 6);
     this.geometry.setIndex(
       new BufferAttribute(indices, 1).setUsage(DynamicDrawUsage)
@@ -71,7 +87,7 @@ export class GooPuddleRenderer3D {
     );
     this.geometry.setAttribute(
       "normal",
-      new BufferAttribute(new Float32Array(this.positions.length), 3).setUsage(
+      new BufferAttribute(this.normals, 3).setUsage(
         DynamicDrawUsage
       )
     );
@@ -79,14 +95,23 @@ export class GooPuddleRenderer3D {
     // Three does not clone shader hooks. Keep the per-vertex opacity and metalness
     // used by the shared wet material while letting the liquid have its own shine.
     this.material.onBeforeCompile = material.onBeforeCompile;
-    this.material.roughness = 0.11;
+    this.material.roughness = 0.05;
     this.material.clearcoat = 1;
     this.material.clearcoatRoughness = 0.07;
-    this.material.envMapIntensity = 1.25;
+    // A floor film sees the softboxes at grazing angles; keep them as lines,
+    // not a pool-wide glare.
+    this.material.envMapIntensity = 0.6;
+    if (envMap) this.material.envMap = envMap;
+    // A flat film has no thick middle, so skip the bead thickness falloff.
+    this.material.defines = { ...this.material.defines, GOO_FLAT: "" };
     this.mesh = new Mesh(this.geometry, this.material);
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 101;
     this.mesh.visible = false;
+  }
+
+  get count(): number {
+    return this.puddles.length;
   }
 
   deposit(
@@ -99,7 +124,9 @@ export class GooPuddleRenderer3D {
     color: Color,
     metalness: number,
     alpha: number,
-    impactSpeed = 1
+    impactSpeed = 1,
+    velocityX = 0,
+    velocityZ = 0
   ): void {
     if (![x, z, floorY, beadRadius].every(Number.isFinite) || beadRadius <= 0)
       return;
@@ -116,9 +143,14 @@ export class GooPuddleRenderer3D {
     for (const puddle of this.puddles) {
       if (Math.abs(puddle.floorY - floorY) > 0.01) continue;
       const distance = Math.hypot(puddle.x - x, puddle.z - z);
-      // Drops inside an existing pool feed it; landings near its rim keep a
-      // lobe of their own so the liquid can spread without moving the old one.
-      if (distance < puddle.radius * 0.85 && distance < nearestDistance) {
+      // Drops inside an existing pool feed it; a comparable landing near its
+      // rim keeps a lobe of their own so the liquid can spread without moving
+      // the old one. A small bead at the rim just runs into the pool.
+      const reach =
+        incomingRadius < puddle.radius * 0.6
+          ? puddle.radius + incomingRadius * 0.5
+          : puddle.radius * 0.85;
+      if (distance < reach && distance < nearestDistance) {
         nearest = puddle;
         nearestDistance = distance;
       }
@@ -127,6 +159,10 @@ export class GooPuddleRenderer3D {
       const added = Math.min(volume, MAX_VOLUME - nearest.volume);
       const total = nearest.volume + added;
       if (added > 0) {
+        // The pool's middle drifts a little toward where the liquid arrived.
+        const pull = (added / total) * 0.5;
+        nearest.x += (x - nearest.x) * pull;
+        nearest.z += (z - nearest.z) * pull;
         nearest.color.lerp(color, added / total);
         nearest.viscosity += (viscosity - nearest.viscosity) * (added / total);
         nearest.tension += (tension - nearest.tension) * (added / total);
@@ -142,13 +178,22 @@ export class GooPuddleRenderer3D {
       this.addImpact(nearest, x, z, beadRadius, impactSpeed);
       return;
     }
-    if (this.puddles.length === CAPACITY) this.puddles.shift();
+    if (this.puddles.length === CAPACITY) this.evict();
+    // Liquid landing on the move smears forward along its travel.
+    const travel = Math.hypot(velocityX, velocityZ);
+    const stretch = Number.isFinite(travel)
+      ? 1 + Math.min(1.2, travel * 0.35) * (1 - 0.5 * viscosity)
+      : 1;
+    const dirX = travel > 1e-4 ? velocityX / travel : 1;
+    const dirZ = travel > 1e-4 ? velocityZ / travel : 0;
+    const radius = incomingRadius * 0.68;
+    const shift = (stretch - 1) * radius * 0.5;
     const puddle: Puddle = {
-      x,
-      z,
+      x: x + dirX * shift,
+      z: z + dirZ * shift,
       floorY,
       volume,
-      radius: incomingRadius * 0.68,
+      radius,
       viscosity,
       tension,
       idle: 0,
@@ -156,7 +201,16 @@ export class GooPuddleRenderer3D {
       metalness,
       alpha,
       seed: Math.sin(x * 12.9898 + z * 78.233 + floorY * 37.719),
+      stretch,
+      dirX,
+      dirZ,
       impacts: [],
+      bound: 0,
+      lobeCos3: 1,
+      lobeSin3: 0,
+      lobeCos5: 1,
+      lobeSin5: 0,
+      domeHeight: 0,
     };
     this.addImpact(puddle, x, z, beadRadius, impactSpeed);
     this.puddles.push(puddle);
@@ -178,10 +232,11 @@ export class GooPuddleRenderer3D {
           puddle.impacts.splice(impactIndex, 1);
       }
       const target =
-        Math.cbrt(puddle.volume) * (1.8 + 0.35 * (1 - puddle.tension));
-      puddle.radius +=
-        (target - puddle.radius) *
-        (1 - Math.exp(-(1.8 - 1.45 * puddle.viscosity) * dt));
+        Math.cbrt(puddle.volume) * (2.3 + 0.6 * (1 - puddle.tension));
+      const spread = 1 - Math.exp(-(1.8 - 1.45 * puddle.viscosity) * dt);
+      puddle.radius += (target - puddle.radius) * spread;
+      // Surface tension slowly pulls a smear back toward round.
+      puddle.stretch += (1 - puddle.stretch) * spread * 0.25 * (0.5 + puddle.tension);
       if (puddle.idle > 18) this.puddles.splice(i, 1);
     }
     const groups = this.connectedGroups();
@@ -195,13 +250,31 @@ export class GooPuddleRenderer3D {
     const triangles = index.array as Uint16Array;
     let vertexStart = 0;
     let indexCount = 0;
+    // One frame's grid shares a vertex budget: a crowded floor gets coarser
+    // cells instead of a slower frame.
+    let floorArea = 0;
     for (const group of groups) {
       let minX = Infinity;
       let maxX = -Infinity;
       let minZ = Infinity;
       let maxZ = -Infinity;
       for (const puddle of group) {
-        const reach = puddle.radius * 1.12;
+        const reach = this.reach(puddle);
+        minX = Math.min(minX, puddle.x - reach);
+        maxX = Math.max(maxX, puddle.x + reach);
+        minZ = Math.min(minZ, puddle.z - reach);
+        maxZ = Math.max(maxZ, puddle.z + reach);
+      }
+      floorArea += (maxX - minX) * (maxZ - minZ);
+    }
+    const sharedCell = Math.sqrt(floorArea / FRAME_VERTICES);
+    for (const group of groups) {
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minZ = Infinity;
+      let maxZ = -Infinity;
+      for (const puddle of group) {
+        const reach = this.reach(puddle);
         minX = Math.min(minX, puddle.x - reach);
         maxX = Math.max(maxX, puddle.x + reach);
         minZ = Math.min(minZ, puddle.z - reach);
@@ -210,21 +283,33 @@ export class GooPuddleRenderer3D {
       const width = maxX - minX;
       const depth = maxZ - minZ;
       const budget = group.length * VERTICES;
-      const columns = Math.min(
-        256,
-        Math.max(8, Math.floor(Math.sqrt((budget * width) / depth)))
+      // Size cells to the pools, not their count: a long streak of many
+      // overlapping pools needs no more grid than one pool of its area.
+      const meanRadius =
+        group.reduce((sum, puddle) => sum + puddle.radius, 0) / group.length;
+      const cell = Math.max(
+        meanRadius / 6,
+        0.006,
+        sharedCell,
+        Math.sqrt((width * depth) / budget)
       );
-      const rows = Math.max(8, Math.floor(budget / columns));
+      const columns = Math.min(256, Math.max(8, Math.ceil(width / cell) + 1));
+      const rows = Math.min(
+        Math.max(8, Math.floor(budget / columns)),
+        Math.max(8, Math.ceil(depth / cell) + 1)
+      );
       const stepX = width / (columns - 1);
       const stepZ = depth / (rows - 1);
       const edgeWidth = Math.max(stepX, stepZ);
       const averageRadius =
         group.reduce((sum, puddle) => sum + puddle.radius, 0) / group.length;
-      const binCount = Math.min(
-        columns,
-        Math.max(1, Math.ceil(width / averageRadius))
-      );
-      const bins: Puddle[][] = Array.from({ length: binCount }, () => []);
+      // A thin wet film darkens the floor just past the pool's rim.
+      const halo = averageRadius * 0.22;
+      // Bin pools on a coarse 2D grid so each vertex tests only its neighbors.
+      const binSize = Math.max(averageRadius, Math.sqrt((width * depth) / 1024));
+      const binsX = Math.max(1, Math.min(columns, Math.ceil(width / binSize)));
+      const binsZ = Math.max(1, Math.min(rows, Math.ceil(depth / binSize)));
+      const bins: Puddle[][] = Array.from({ length: binsX * binsZ }, () => []);
       const impactSources = group
         .filter((puddle) => puddle.impacts.length > 0)
         .sort(
@@ -233,32 +318,36 @@ export class GooPuddleRenderer3D {
             right.impacts[right.impacts.length - 1]!.age
         )
         .slice(0, 4);
+      const waves = this.liveWaves(impactSources);
+      const binOf = (value: number, min: number, span: number, count: number) =>
+        Math.max(0, Math.min(count - 1, Math.floor(((value - min) / span) * count)));
       for (const puddle of group) {
-        const first = Math.max(
-          0,
-          Math.floor(
-            ((puddle.x - puddle.radius * 1.2 - minX) / width) * binCount
-          )
+        const reach = this.reach(puddle);
+        const x0 = binOf(puddle.x - reach, minX, width, binsX);
+        const x1 = binOf(puddle.x + reach, minX, width, binsX);
+        const z0 = binOf(puddle.z - reach, minZ, depth, binsZ);
+        const z1 = binOf(puddle.z + reach, minZ, depth, binsZ);
+        for (let bz = z0; bz <= z1; bz++)
+          for (let bx = x0; bx <= x1; bx++) bins[bz * binsX + bx]!.push(puddle);
+        // Cache the per-pool constants the vertex loop needs.
+        puddle.bound = reach;
+        puddle.lobeCos3 = Math.cos(puddle.seed * 1.7);
+        puddle.lobeSin3 = Math.sin(puddle.seed * 1.7);
+        puddle.lobeCos5 = Math.cos(puddle.seed * 0.9);
+        puddle.lobeSin5 = Math.sin(puddle.seed * 0.9);
+        puddle.domeHeight = Math.min(
+          // Liquid on a floor settles a few millimetres deep, so a pool reads
+          // as a flat glossy film with a soft meniscus, not a dome.
+          0.009,
+          Math.max(0.0025, (puddle.volume / (Math.PI * puddle.radius ** 2)) * 1.5)
         );
-        const last = Math.min(
-          binCount - 1,
-          Math.floor(
-            ((puddle.x + puddle.radius * 1.2 - minX) / width) * binCount
-          )
-        );
-        for (let bin = first; bin <= last; bin++) bins[bin]!.push(puddle);
       }
       for (let row = 0; row < rows; row++) {
         const vz = minZ + row * stepZ;
+        const binRow = binOf(vz, minZ, depth, binsZ) * binsX;
         for (let column = 0; column < columns; column++) {
           const vx = minX + column * stepX;
-          const candidates =
-            bins[
-              Math.min(
-                binCount - 1,
-                Math.floor((column / (columns - 1)) * binCount)
-              )
-            ]!;
+          const candidates = bins[binRow + binOf(vx, minX, width, binsX)]!;
           const vertex = vertexStart + row * columns + column;
           const offset = vertex * 3;
           let field = -Infinity;
@@ -266,20 +355,35 @@ export class GooPuddleRenderer3D {
           let strongest = group[0]!;
           let strongestField = -Infinity;
           for (const puddle of candidates) {
-            const localX = vx - puddle.x;
-            const localZ = vz - puddle.z;
-            if (
-              Math.abs(localX) > puddle.radius * 1.2 ||
-              Math.abs(localZ) > puddle.radius * 1.2
-            )
+            const offsetX = vx - puddle.x;
+            const offsetZ = vz - puddle.z;
+            const bound = puddle.bound;
+            if (Math.abs(offsetX) > bound || Math.abs(offsetZ) > bound)
               continue;
-            const angle = Math.atan2(localZ, localX);
+            // Measure in the smear's frame: squeezed along travel, so the
+            // same round field reaches further forward and back.
+            const along =
+              (offsetX * puddle.dirX + offsetZ * puddle.dirZ) / puddle.stretch;
+            const across = offsetZ * puddle.dirX - offsetX * puddle.dirZ;
+            const localX = along * puddle.dirX - across * puddle.dirZ;
+            const localZ = along * puddle.dirZ + across * puddle.dirX;
+            // Irregular rim: sin(3a + p) and sin(5a - q) from the direction's
+            // cosine and sine, without an atan2 per vertex.
+            const distance = Math.hypot(localX, localZ);
+            const c = distance > 1e-9 ? localX / distance : 1;
+            const s = distance > 1e-9 ? localZ / distance : 0;
+            const sin3 = 3 * s - 4 * s * s * s;
+            const cos3 = 4 * c * c * c - 3 * c;
+            const s2 = s * s;
+            const c2 = c * c;
+            const sin5 = s * (16 * s2 * s2 - 20 * s2 + 5);
+            const cos5 = c * (16 * c2 * c2 - 20 * c2 + 5);
             const reach =
               puddle.radius *
               (1 +
-                0.055 * Math.sin(angle * 3 + puddle.seed * 1.7) +
-                0.035 * Math.sin(angle * 5 - puddle.seed * 0.9));
-            const local = Math.hypot(localX, localZ) / reach;
+                0.055 * (sin3 * puddle.lobeCos3 + cos3 * puddle.lobeSin3) +
+                0.035 * (sin5 * puddle.lobeCos5 - cos5 * puddle.lobeSin5));
+            const local = distance / reach;
             const signed = reach * (1 - local);
             field =
               field === -Infinity
@@ -289,16 +393,10 @@ export class GooPuddleRenderer3D {
                     signed,
                     Math.min(reach, puddle.radius) * 0.12
                   );
-            const dome = Math.sqrt(Math.max(0, 1 - local ** 4));
-            const height = Math.min(
-              0.027,
-              Math.max(
-                0.008,
-                (puddle.volume / (Math.PI * puddle.radius ** 2)) * 1.8
-              )
-            );
+            const local2 = local * local;
+            const dome = Math.sqrt(Math.max(0, 1 - local2 * local2));
             const localLift =
-              height * dome * (0.85 + 0.15 * Math.min(1, local));
+              puddle.domeHeight * dome * (0.85 + 0.15 * Math.min(1, local));
             lift = this.smoothMax(lift, localLift, 0.002);
             if (signed > strongestField) {
               strongestField = signed;
@@ -309,24 +407,31 @@ export class GooPuddleRenderer3D {
           let wave = 0;
           if (field > 0) {
             const edgeFade = Math.min(1, field / (averageRadius * 0.125));
-            for (const puddle of impactSources)
-              wave += this.waveHeight(puddle, vx, vz, edgeFade);
+            if (waves > 0) wave = this.waveHeight(waves, vx, vz, edgeFade);
           }
+          const wet = field > 0 ? 0 : Math.max(0, 1 + field / halo);
           this.positions[offset + 1] =
             group[0]!.floorY +
-            Math.max(
-              0.0015,
-              0.0015 + lift + Math.min(0.012, Math.max(-0.012, wave))
-            );
+            (field > 0
+              ? Math.max(
+                  0.0015,
+                  0.0015 + lift + Math.min(0.012, Math.max(-0.012, wave))
+                )
+              : 0.0012);
           this.positions[offset + 2] = vz;
-          this.colors[offset] = strongest.color.r;
-          this.colors[offset + 1] = strongest.color.g;
-          this.colors[offset + 2] = strongest.color.b;
+          const shade = field > 0 ? 1 : 0.45;
+          this.colors[offset] = strongest.color.r * shade;
+          this.colors[offset + 1] = strongest.color.g * shade;
+          this.colors[offset + 2] = strongest.color.b * shade;
           const fade = Math.min(1, Math.max(0, (18 - strongest.idle) / 3));
+          // The pool thins toward its rim, so the floor shows through there.
+          const depth = Math.min(1, Math.max(0, field / (averageRadius * 0.35)));
+          const body =
+            Math.min(1, Math.max(0, field / edgeWidth)) * (0.45 + 0.55 * depth);
           this.alphas[vertex] =
             strongest.alpha *
             fade *
-            Math.min(1, Math.max(0, field / edgeWidth));
+            Math.max(body, 0.3 * wet * wet);
           this.metalnesses[vertex] = strongest.metalness;
         }
       }
@@ -351,6 +456,7 @@ export class GooPuddleRenderer3D {
           triangles[indexCount++] = d;
         }
       }
+      this.writeNormals(vertexStart, columns, rows, stepX, stepZ);
       vertexStart += columns * rows;
     }
     this.geometry.setDrawRange(0, indexCount);
@@ -361,7 +467,6 @@ export class GooPuddleRenderer3D {
     this.geometry.getAttribute("color").needsUpdate = true;
     this.geometry.getAttribute("aAlpha").needsUpdate = true;
     this.geometry.getAttribute("aMetalness").needsUpdate = true;
-    this.geometry.computeVertexNormals();
     this.geometry.getAttribute("normal").needsUpdate = true;
     this.mesh.visible = true;
   }
@@ -389,24 +494,100 @@ export class GooPuddleRenderer3D {
     });
   }
 
+  /** Flatten this frame's visible ripples: x, z, front, width, amplitude. */
+  private liveWaves(sources: readonly Puddle[]): number {
+    let count = 0;
+    for (const puddle of sources) {
+      const width = Math.max(0.03, puddle.radius * 0.23);
+      const speed = 0.28 + 0.25 * (1 - puddle.viscosity);
+      const damping = 1.4 + 3.4 * puddle.viscosity;
+      for (const impact of puddle.impacts) {
+        const amplitude = impact.amplitude * Math.exp(-damping * impact.age);
+        if (amplitude < 0.0002) continue;
+        const offset = count * 5;
+        this.waveData[offset] = impact.x;
+        this.waveData[offset + 1] = impact.z;
+        this.waveData[offset + 2] = impact.age * speed;
+        this.waveData[offset + 3] = width;
+        this.waveData[offset + 4] = amplitude;
+        count++;
+      }
+    }
+    return count;
+  }
+
   private waveHeight(
-    puddle: Puddle,
+    waves: number,
     x: number,
     z: number,
     edgeFade: number
   ): number {
     if (edgeFade <= 0) return 0;
+    const data = this.waveData;
     let height = 0;
-    for (const impact of puddle.impacts) {
-      const distance = Math.hypot(x - impact.x, z - impact.z);
-      const front = impact.age * (0.28 + 0.25 * (1 - puddle.viscosity));
-      const width = Math.max(0.03, puddle.radius * 0.23);
-      const phase = (distance - front) / width;
-      const envelope = Math.exp(-1.1 * phase * phase);
-      const decay = Math.exp(-(1.4 + 3.4 * puddle.viscosity) * impact.age);
-      height += impact.amplitude * Math.cos(phase * Math.PI) * envelope * decay;
+    for (let wave = 0; wave < waves; wave++) {
+      const offset = wave * 5;
+      const width = data[offset + 3]!;
+      const phase =
+        (Math.hypot(x - data[offset]!, z - data[offset + 1]!) - data[offset + 2]!) / width;
+      if (phase > 3 || phase < -3) continue;
+      height +=
+        data[offset + 4]! * Math.cos(phase * Math.PI) * Math.exp(-1.1 * phase * phase);
     }
     return Math.min(0.012, Math.max(-0.012, height)) * edgeFade;
+  }
+
+  /** Grid normals from height differences; no per-triangle pass needed. */
+  private writeNormals(
+    start: number,
+    columns: number,
+    rows: number,
+    stepX: number,
+    stepZ: number
+  ): void {
+    const positions = this.positions;
+    const normals = this.normals;
+    for (let row = 0; row < rows; row++) {
+      const up = Math.max(0, row - 1);
+      const down = Math.min(rows - 1, row + 1);
+      for (let column = 0; column < columns; column++) {
+        const left = Math.max(0, column - 1);
+        const right = Math.min(columns - 1, column + 1);
+        const slopeX =
+          (positions[(start + row * columns + right) * 3 + 1]! -
+            positions[(start + row * columns + left) * 3 + 1]!) /
+          ((right - left) * stepX);
+        const slopeZ =
+          (positions[(start + down * columns + column) * 3 + 1]! -
+            positions[(start + up * columns + column) * 3 + 1]!) /
+          ((down - up) * stepZ);
+        const length = Math.hypot(slopeX, 1, slopeZ);
+        const offset = (start + row * columns + column) * 3;
+        normals[offset] = -slopeX / length;
+        normals[offset + 1] = 1 / length;
+        normals[offset + 2] = -slopeZ / length;
+      }
+    }
+  }
+
+  /** Half-width of the box a pool and its wet rim can touch. */
+  private reach(puddle: Puddle): number {
+    return puddle.radius * puddle.stretch * 1.35;
+  }
+
+  /** A full floor drops its smallest settled pool, not its newest. */
+  private evict(): void {
+    let victim = 0;
+    let smallest = Infinity;
+    for (let index = 0; index < this.puddles.length; index++) {
+      const puddle = this.puddles[index]!;
+      const score = puddle.volume / (1 + puddle.idle);
+      if (score < smallest) {
+        smallest = score;
+        victim = index;
+      }
+    }
+    this.puddles.splice(victim, 1);
   }
 
   private smoothMax(a: number, b: number, width: number): number {
