@@ -45,6 +45,12 @@ const labels = {
   triquetra2: 'Triquetra 2', capsule_baton: 'LED Baton', fire_double_staff: 'Fire Double Staff',
 };
 const variantsFor = id => {
+  if (id === 'buugeng' || id === 'bigbuugeng') return [
+    { id: 'matching-a', leftFlipped: false, rightFlipped: false },
+    { id: 'mirrored-ab', leftFlipped: false, rightFlipped: true },
+    { id: 'mirrored-ba', leftFlipped: true, rightFlipped: false },
+    { id: 'matching-b', leftFlipped: true, rightFlipped: true },
+  ];
   if (id === 'fan' || id === 'bigfan') {
     const result = [{ id: 'pictograph' }];
     for (const build of ['fire', 'lotus', 'day', 'moon', 'flat-grip', 'star']) {
@@ -89,8 +95,8 @@ function tipOffsets(id, variant, scale) {
   return [];
 }
 const catalog = types.map(id => {
-  const sourceModel = glbs[id];
   const base = bigBases[id] || id;
+  const sourceModel = glbs[id] || glbs[base];
   const category = ['staff', 'simple_staff', 'staff_v2', 'bigstaff', 'capsule_baton', 'fire_double_staff', 'stick', 'pen'].includes(id) ? 'staff' :
     ['contactball', 'bigcontactball', 'doublecontactball', 'bigdoublecontactball'].includes(id) ? 'ball' : base;
   const scale = modelScale[id] || (id.startsWith('big') ? 1.4 : 1);

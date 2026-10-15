@@ -215,6 +215,7 @@ bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
         if (Id == TEXT("fan") || Id == TEXT("bigfan")) Variant = TEXT("pictograph");
         else if (Id == TEXT("triad") || Id == TEXT("bigtriad") || Id == TEXT("quiad")) Variant = TEXT("fire");
         else if (Id == TEXT("triangle")) Variant = TEXT("corner");
+        else if (Id == TEXT("buugeng") || Id == TEXT("bigbuugeng")) Variant = TEXT("matching-a");
     }
     const TSharedPtr<FJsonObject> Build = FindVariant(Prop, Variant);
     if (!Build.IsValid())

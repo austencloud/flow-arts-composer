@@ -293,9 +293,11 @@ def export_variant(prop, variant, right=False):
     key=f"{id}_{variant['id']}".replace('-','_') + ('_right' if right else '')
     model=CATALOG_MODELS.get(id)
     if model:
-        if right: CATALOG_MODELS[id]='stick-right'
+        # Stick has a separate authored red-hand model. Every other right-hand
+        # prop retains its own physical geometry and changes only hand color.
+        if right and id == 'stick': CATALOG_MODELS[id]='stick-right'
         import_model(id,variant)
-        if right: CATALOG_MODELS[id]=model
+        if right and id == 'stick': CATALOG_MODELS[id]=model
     elif id in ('fan','bigfan') and variant.get('fanBuild') not in (None,'pictograph'):
         source={'flat-grip':'fan-flat-grip','star':'fan-star'}.get(variant['fanBuild'],'fan')
         CATALOG_MODELS[id]=source
@@ -313,6 +315,10 @@ def export_variant(prop, variant, right=False):
             orientation=Matrix.Translation((0,offset,0)) @ Matrix.Rotation(math.pi,4,'X') @ orientation
         for obj in meshes:
             obj.matrix_world=orientation @ Matrix.Scale(prop['scale'],4) @ obj.matrix_world
+    if id in ('buugeng','bigbuugeng') and variant['rightFlipped' if right else 'leftFlipped']:
+        mirror=Matrix.Scale(-1,4,Vector((1,0,0)))
+        for obj in meshes:
+            obj.matrix_world=mirror @ obj.matrix_world
     if right:
         for obj in meshes:
             for index,material in enumerate(obj.data.materials):
