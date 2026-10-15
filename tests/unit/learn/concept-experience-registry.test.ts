@@ -16,12 +16,6 @@ const expectedPublishedIds = [
   "hand-placements",
   "hand-motions-intro",
   "timing-and-direction",
-  "reading-choreo-cards",
-  "rotation-direction",
-  "dual-shifts-alpha-beta",
-  "gamma-motion",
-  "letter-codex-intro",
-  "type1-abc-ghi",
 ];
 
 const learnDomainDir = resolve(process.cwd(), "src/lib/features/learn/domain");
@@ -78,7 +72,7 @@ describe("concept experience registry", () => {
   );
 
   it("lists only lessons that have a real published experience", () => {
-    expect(expectedPublishedIds).toHaveLength(10);
+    expect(expectedPublishedIds).toHaveLength(4);
     expect(getAvailableConcepts().map((concept) => concept.id)).toEqual(
       expectedPublishedIds
     );
@@ -87,23 +81,35 @@ describe("concept experience registry", () => {
     );
   });
 
-  it.each([
+  // Guide slug null: the lesson shared its Guide topic with a lesson that
+  // stays published, so the topic itself still opens that other lesson.
+  it.each<[string, string | null]>([
     ["staff-placements", "staff-placements"],
     ["words-alpha-beta", "words"],
+    ["reading-choreo-cards", null],
+    ["rotation-direction", "staff-motions"],
+    ["dual-shifts-alpha-beta", "hm-type1"],
+    ["gamma-motion", "hm-gamma"],
+    ["letter-codex-intro", "codex"],
+    ["type1-abc-ghi", "lt1-abc-ghi"],
   ])(
     "withdraws %s while retaining its curriculum and Guide reference",
     (conceptId, guideSlug) => {
       expect(TKA_CONCEPTS.some((concept) => concept.id === conceptId)).toBe(
         true
       );
-      expect(GUIDE_BODY_PAGES.some((page) => page.id === guideSlug)).toBe(true);
       expect(getConceptExperience(conceptId)).toBeUndefined();
-      expect(getConceptExperienceForGuideSlug(guideSlug)).toBeUndefined();
+      if (guideSlug) {
+        expect(GUIDE_BODY_PAGES.some((page) => page.id === guideSlug)).toBe(
+          true
+        );
+        expect(getConceptExperienceForGuideSlug(guideSlug)).toBeUndefined();
+      }
       expect(isConceptExperienceAvailable(conceptId)).toBe(false);
       expect(
         getAvailableConcepts().some((concept) => concept.id === conceptId)
       ).toBe(false);
-      expect(isConceptExperienceAvailable("letter-codex-intro")).toBe(true);
+      expect(isConceptExperienceAvailable("grid")).toBe(true);
     }
   );
 
@@ -127,14 +133,6 @@ describe("concept experience registry", () => {
     expect(handMotions?.guideSlug).toBe("hand-motions");
     expect(getConceptExperienceForGuideSlug("hand-motions")).toBe(handMotions);
     expect(isConceptExperienceAvailable("hand-motions")).toBe(false);
-  });
-
-  it("publishes rotation direction as its own focused lesson", () => {
-    const rotationDirection = getConceptExperience("rotation-direction");
-
-    expect(rotationDirection?.guideSlug).toBe("staff-motions");
-    expect(rotationDirection?.reviewStatus).toBe("built");
-    expect(isConceptExperienceAvailable("rotation-direction")).toBe(true);
   });
 
   it("shares the written reference without displacing the full hand-motions lesson", () => {
