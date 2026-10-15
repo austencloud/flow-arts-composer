@@ -9,6 +9,7 @@
    * The props section plays the original again with a prop, poi first (Zan
    * teaches it with poi); the prop picked there also plays in every family
    * player. The first showcase stays a bare hand path.
+   * Zan's own videos follow the header, so the credit comes before the players.
    * The record lives in #lib/shared/guide-topics/zans-diamond-topic.ts.
    */
   import { onMount } from "svelte";
@@ -16,9 +17,9 @@
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
-  import GuidePropTrigger from "../level-1/_components/GuidePropTrigger.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
-  import PropSelectionSheet from "#lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
+  import SourceVideoCard from "#lib/shared/components/SourceVideoCard.svelte";
+  import PropChoiceRow from "#lib/shared/pictograph/prop/components/PropChoiceRow.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { PictographRender } from "../level-1/_data/guide-content-blocks";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -33,6 +34,7 @@
     ZANS_DIAMOND_CREDIT,
     ZANS_DIAMOND_FAMILIES,
     ZANS_DIAMOND_ORIGINAL,
+    ZANS_DIAMOND_VIDEOS,
     zansDiamondStrip,
     zansDiamondVariationLabel,
     type ZansDiamondVariation,
@@ -56,10 +58,20 @@
   // The prop the props section and every family player use. Page state only:
   // each visit opens on poi.
   let propType = $state<PropType>(PropType.POI);
-  let propSheetOpen = $state(false);
+  // The short list the section offers in place, poi first. Six tiles keep the
+  // row on one line in the text column; the hand path already plays above.
+  const PROP_CHOICES: readonly PropType[] = [
+    PropType.POI,
+    PropType.STAFF,
+    PropType.CLUB,
+    PropType.BUUGENG,
+    PropType.FAN,
+    PropType.MINIHOOP,
+  ];
   const PROP_RENDER: PictographRender = $derived({ ...RENDER, propType });
 
-  // The prop's tip draws its petals, kept until the loop restarts.
+  // Each prop's tip draws its petals, kept until the loop restarts; the props
+  // player and every family player use it.
   const TIP_TRAIL: TrailSettings = {
     ...DEFAULT_TRAIL_SETTINGS,
     mode: TrailMode.LOOP_CLEAR,
@@ -150,6 +162,34 @@
       </p>
     </header>
 
+    <section class="from-zan" aria-labelledby="from-zan-heading">
+      <div class="from-zan-intro">
+        <h2 id="from-zan-heading">{t("guide_zans_from_zan_title")}</h2>
+        <p>{t("guide_zans_from_zan_body")}</p>
+      </div>
+      <div class="from-zan-videos">
+        {#each ZANS_DIAMOND_VIDEOS as video (video.id)}
+          <SourceVideoCard
+            id={video.id}
+            title={video.title}
+            creator={ZANS_DIAMOND_CREDIT.name}
+            year={video.year}
+            start={video.start}
+            note={video.note ? t(video.note) : ""}
+          />
+        {/each}
+      </div>
+      {#if ZANS_DIAMOND_CREDIT.href}
+        <LinkChip
+          href={ZANS_DIAMOND_CREDIT.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          ><i class="fab fa-youtube" aria-hidden="true"></i>
+          {t("guide_zans_channel")}</LinkChip
+        >
+      {/if}
+    </section>
+
     <SequenceShowcase
       sequence={original.sequence}
       items={original.items}
@@ -176,15 +216,14 @@
       {#snippet text()}
         <h2>{t("guide_zans_props_title")}</h2>
         <p>{t("guide_zans_props_spin")}</p>
-        <p>{t("guide_zans_props_turns")}</p>
         <div class="prop-choice">
           <span class="prop-label">{t("guide_zans_props_picker")}</span>
-          <GuidePropTrigger
-            {propType}
-            expanded={propSheetOpen}
-            onclick={() => (propSheetOpen = true)}
+          <PropChoiceRow
+            value={propType}
+            options={PROP_CHOICES}
+            label={t("guide_zans_props_picker")}
+            onchange={(pt) => (propType = pt)}
           />
-          <p class="prop-hint">{t("guide_zans_props_picker_hint")}</p>
         </div>
       {/snippet}
     </SequenceShowcase>
@@ -199,6 +238,7 @@
           sequence={family.first.sequence}
           items={family.first.items}
           pool={family.pool}
+          trail={TIP_TRAIL}
           render={PROP_RENDER}
           canvasLetter={false}
           loop
@@ -223,18 +263,6 @@
     </footer>
   </article>
 </GuideShell>
-
-<!-- Pictographs draw notation here, so the sheet offers no Version 2 look
-     and no colour edits to the reader's app settings. -->
-<PropSelectionSheet
-  bind:isOpen={propSheetOpen}
-  selectedPropType={propType}
-  title={t("guide_zans_props_picker")}
-  showPropLook={false}
-  propLook="pictograph"
-  showColors={false}
-  onSelect={(pt: PropType) => (propType = pt)}
-/>
 
 <style>
   .zans-guide {
@@ -263,9 +291,7 @@
     font-size: 1rem;
     font-weight: 600;
   }
-  /* guide.css centres every h1 on the hub's grid; this page reads left. */
   .zans-guide h1 {
-    text-align: left;
     margin: 0;
     padding: 0;
     grid-column: auto;
@@ -280,10 +306,18 @@
     color: var(--theme-text-muted);
     margin: 0;
   }
-  .intro {
+  /* The page header, the families intro and the closing note are centred
+     section breaks; the text beside each player reads left. */
+  .intro,
+  .from-zan,
+  .from-zan-intro,
+  .families-intro,
+  .collection {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: var(--spacing-sm, 8px);
+    text-align: center;
   }
   .zans-guide .lede {
     font-size: 1.125rem;
@@ -299,19 +333,33 @@
     text-decoration-thickness: 2px;
   }
 
+  .from-zan {
+    gap: var(--spacing-lg, 20px);
+  }
+  /* Three cards a row on a wide column, wrapping to one per row on a phone. */
+  .from-zan-videos {
+    align-self: stretch;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--spacing-lg, 20px);
+    text-align: left;
+  }
+  .from-zan-videos :global(figcaption) {
+    color: var(--theme-text-muted);
+  }
+  .from-zan-videos :global(figcaption strong) {
+    color: var(--theme-text);
+  }
+
   .prop-choice {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs, 6px);
-    max-width: 320px;
   }
   .prop-label {
     font-size: var(--font-size-compact, 13px);
     font-weight: 600;
     color: var(--theme-text-muted);
-  }
-  .zans-guide .prop-hint {
-    font-size: var(--font-size-compact, 13px);
   }
 
   .families {
@@ -320,28 +368,10 @@
     flex-direction: column;
     gap: clamp(32px, 5vw, 56px);
   }
-  /* The intro sits on the showcases' grid: heading over the canvas column,
-     lead over the text column, so it does not leave the right half empty. */
-  .families-intro {
-    display: grid;
-    grid-template-columns: clamp(230px, 34cqw, 330px) minmax(0, 1fr);
-    column-gap: clamp(1.25rem, 4cqw, 2.5rem);
-    row-gap: var(--spacing-sm, 8px);
-    align-items: baseline;
-  }
-  @container (max-width: 600px) {
-    .families-intro {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-  .collection {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm, 8px);
-  }
   .links {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: var(--spacing-sm, 8px);
   }
 </style>

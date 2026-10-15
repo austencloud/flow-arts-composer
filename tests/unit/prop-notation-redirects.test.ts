@@ -6,6 +6,10 @@ import {
   PROPS,
   isPropKey,
 } from "../../src/routes/(public)/notation/props/props-content";
+import {
+  findPropTypeByValue,
+  getPropTypeDisplayInfo,
+} from "../../src/lib/shared/pictograph/prop/domain/prop-type-display-registry";
 
 // The five per-prop pages merged into /notation/props on 2026-10-15. Each old
 // address must 301 to the hash that picks its own prop; a wrong or unknown
@@ -30,5 +34,22 @@ describe("old per-prop notation addresses", () => {
     }
     expect(isPropKey("poi")).toBe(true);
     expect(isPropKey("history")).toBe(false);
+  });
+
+  // The switcher shows each prop's picker art. An unknown prop type falls
+  // back to the staff picture, which would put five staves on the picker.
+  it("every prop's tab resolves to its own picture", () => {
+    const images = PROP_KEYS.map((prop) => {
+      const type = findPropTypeByValue(PROPS[prop].propType);
+      expect(type, prop).toBeDefined();
+      return getPropTypeDisplayInfo(type!).image;
+    });
+    expect(new Set(images).size).toBe(PROP_KEYS.length);
+    for (const image of images) {
+      const file = image.split("?")[0]!;
+      expect(() =>
+        readFileSync(resolve(process.cwd(), `static${file}`))
+      ).not.toThrow();
+    }
   });
 });
