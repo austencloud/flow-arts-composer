@@ -19,6 +19,9 @@ even when Svelte recreates the component instance.
 
 <script lang="ts">
   import { onDestroy } from "svelte";
+  import { DURATION, EASE_STANDARD } from "@austencloud/motion";
+  import { reducedMotion } from "../../../transitions/motion";
+  import { artworkSwapRatio, PropSwapRelease } from "./prop-swap-scale";
   import {
     Orientation,
     HandSide,
@@ -58,9 +61,23 @@ even when Svelte recreates the component instance.
   let previousImageSrc: string | null = null;
   let fadeTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
+  let swapScale = $state(1);
+  let swapSnapping = $state(false);
+  let previousCenter: { x: number; y: number } | null = null;
+  const swapRelease = new PropSwapRelease();
+
   $effect(() => {
     const currentSrc = propAssets?.imageSrc;
+    const center = propAssets?.center;
     if (previousImageSrc !== null && currentSrc !== previousImageSrc) {
+      swapRelease.start(
+        artworkSwapRatio(previousCenter, center),
+        reducedMotion() || directPositioning || isTransforming,
+        (scale, snapping) => {
+          swapScale = scale;
+          swapSnapping = snapping;
+        }
+      );
       // SVG content actually changed (prop type swap) - trigger a brief fade.
       // Schedule the reset ONLY inside this branch. Do NOT clear the pending
       // reset from the effect teardown: this effect re-runs whenever the parent
@@ -68,20 +85,22 @@ even when Svelte recreates the component instance.
       // (regeneration). If the teardown cleared the timeout on such a re-run,
       // the `if` above would be skipped (same src) and no new reset would be
       // scheduled, stranding propFading = true and leaving the prop at opacity
-      // 0.15 permanently. Keeping the timer alive lets it reset the fade even
+      // 0.45 permanently. Keeping the timer alive lets it reset the fade even
       // across unrelated re-runs.
       propFading = true;
       if (fadeTimeoutId !== null) clearTimeout(fadeTimeoutId);
       fadeTimeoutId = setTimeout(() => {
         propFading = false;
         fadeTimeoutId = null;
-      }, 150);
+      }, DURATION.fast);
     }
     previousImageSrc = currentSrc ?? null;
+    previousCenter = center ? { ...center } : null;
   });
 
   // Unmount cleanup only. Deliberately not the effect teardown (see above).
   onDestroy(() => {
+    swapRelease.destroy();
     if (fadeTimeoutId !== null) clearTimeout(fadeTimeoutId);
     if (settleFrame !== null) cancelAnimationFrame(settleFrame);
   });
@@ -265,8 +284,10 @@ even when Svelte recreates the component instance.
   const transformString = $derived(
     `translate(${displayedX}px, ${displayedY}px) ` +
       `rotate(${displayedRotation}deg) ` +
-      (shouldMirror ? "scaleX(-1) " : "") +
-      `translate(${-propAssets.center.x}px, ${-propAssets.center.y}px)`
+      (shouldMirror ? "scaleX(-1) " : "")
+  );
+  const centeringTransform = $derived(
+    `translate(${-propAssets.center.x}px, ${-propAssets.center.y}px)`
   );
 
   // Update displayed position with cache-aware frame deferral for CSS transitions
@@ -579,19 +600,27 @@ even when Svelte recreates the component instance.
       role="button"
       tabindex="0"
     >
-      {@render propArtwork()}
-      {#if isSelected}
-        <circle
-          class="selection-ring"
-          cx={propPosition.x}
-          cy={propPosition.y}
-          r="32"
-          fill="none"
-          stroke="var(--semantic-info, #3b82f6)"
-          stroke-width="3"
-          opacity="0.8"
-        />
-      {/if}
+      <g
+        class="prop-swap"
+        class:swap-snapping={swapSnapping}
+        style="transform: scale({swapScale}); --swap-duration: {DURATION.normal}ms; --swap-easing: {EASE_STANDARD};"
+      >
+        <g class="prop-artwork" style="transform: {centeringTransform};">
+          {@render propArtwork()}
+          {#if isSelected}
+            <circle
+              class="selection-ring"
+              cx={propPosition.x}
+              cy={propPosition.y}
+              r="32"
+              fill="none"
+              stroke="var(--semantic-info, #3b82f6)"
+              stroke-width="3"
+              opacity="0.8"
+            />
+          {/if}
+        </g>
+      </g>
     </g>
   {:else}
     <!-- Non-interactive prop - display only -->
@@ -606,19 +635,27 @@ even when Svelte recreates the component instance.
       data-direct-positioning={directPositioning || undefined}
       style="transform: {transformString};"
     >
-      {@render propArtwork()}
-      {#if isSelected}
-        <circle
-          class="selection-ring"
-          cx={propPosition.x}
-          cy={propPosition.y}
-          r="32"
-          fill="none"
-          stroke="var(--semantic-info, #3b82f6)"
-          stroke-width="3"
-          opacity="0.8"
-        />
-      {/if}
+      <g
+        class="prop-swap"
+        class:swap-snapping={swapSnapping}
+        style="transform: scale({swapScale}); --swap-duration: {DURATION.normal}ms; --swap-easing: {EASE_STANDARD};"
+      >
+        <g class="prop-artwork" style="transform: {centeringTransform};">
+          {@render propArtwork()}
+          {#if isSelected}
+            <circle
+              class="selection-ring"
+              cx={propPosition.x}
+              cy={propPosition.y}
+              r="32"
+              fill="none"
+              stroke="var(--semantic-info, #3b82f6)"
+              stroke-width="3"
+              opacity="0.8"
+            />
+          {/if}
+        </g>
+      </g>
     </g>
   {/if}
 {/if}
@@ -635,7 +672,16 @@ even when Svelte recreates the component instance.
 
   /* Brief fade when prop type changes (SVG content swap) */
   .prop-svg.prop-fading {
-    opacity: 0.15;
+    opacity: 0.45;
+  }
+
+  .prop-swap {
+    transition: transform var(--swap-duration) var(--swap-easing);
+  }
+
+  .prop-swap.swap-snapping,
+  .prop-artwork {
+    transition: none;
   }
 
   /* Disable transitions during sequence transforms to prevent janky mid-calculation animation */
@@ -644,7 +690,8 @@ even when Svelte recreates the component instance.
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .prop-svg {
+    .prop-svg,
+    .prop-swap {
       transition: none;
     }
   }
