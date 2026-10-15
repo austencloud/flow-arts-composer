@@ -120,6 +120,11 @@ float AMuseumPerformerStation::GetGripErrorCm() const
     return Prop ? Prop->GetGripErrorCm() : 0.f;
 }
 
+float AMuseumPerformerStation::GetPropAnchorErrorCm() const
+{
+    return Prop ? Prop->GetPropAnchorErrorCm() : 0.f;
+}
+
 FTransform AMuseumPerformerStation::GetPropRootTransform(bool bLeft) const
 {
     return Prop ? Prop->GetPropRootTransform(bLeft) : FTransform::Identity;

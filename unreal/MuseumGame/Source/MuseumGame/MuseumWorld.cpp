@@ -382,6 +382,33 @@ void AMuseumWorld::RunPlaybackSmoke(float DeltaSeconds)
         SmokeElapsed = 0.f;
         return;
     }
+    if (SmokeStage == 5)
+    {
+        // All performers have passed the initial blend. Sample every tick for
+        // longer than the longest authored four-second loop, including wraps.
+        for (const AMuseumPerformerStation* Station : AnimatedStations)
+        {
+            if (!Station || !Station->IsPlaying() || !Station->IsPropReady())
+            { FailSmoke(TEXT("station stopped during full-cycle grip check")); return; }
+            const float Grip = Station->GetGripErrorCm();
+            const float Anchor = Station->GetPropAnchorErrorCm();
+            if (!FMath::IsFinite(Grip) || !FMath::IsFinite(Anchor) || Grip > 15.f || Anchor > 15.f)
+            {
+                FailSmoke(FString::Printf(TEXT("%s (%s): grip %.2f cm, prop anchor %.2f cm"),
+                    *Station->GetStationId(), *Station->GetProfile().ToString(), Grip, Anchor));
+                return;
+            }
+            SmokePeakGripCm = FMath::Max(SmokePeakGripCm, Grip);
+            SmokePeakAnchorCm = FMath::Max(SmokePeakAnchorCm, Anchor);
+        }
+        SmokeElapsed += DeltaSeconds;
+        if (SmokeElapsed < 4.2f) return;
+        UE_LOG(LogTemp, Display, TEXT("MUSEUM_PLAYBACK_SMOKE PASS: 33 stations, 31 animated, 25 exact captures, one hidden formation; pause, resume, restart, full-cycle grip peak %.2f cm, anchor peak %.2f cm"),
+            SmokePeakGripCm, SmokePeakAnchorCm);
+        SmokeStage = -1;
+        SetActorTickEnabled(false);
+        return;
+    }
     SmokeElapsed += DeltaSeconds;
     if (SmokeElapsed < .4f) return;
     SmokeElapsed = 0.f;
@@ -418,14 +445,15 @@ void AMuseumWorld::RunPlaybackSmoke(float DeltaSeconds)
         { FailSmoke(TEXT("restart did not reset authored phase")); return; }
         SmokeStage = 4;
     }
-    else
+    else if (SmokeStage == 4)
     {
         if (!Sample->IsPlaying() || Sample->GetPlaybackPhase() <= .001f ||
             !FMath::IsFinite(Sample->GetGripErrorCm()) || Sample->GetGripErrorCm() > 15.f)
         { FailSmoke(TEXT("restart did not play within the 15 cm grip bound")); return; }
-        UE_LOG(LogTemp, Display, TEXT("MUSEUM_PLAYBACK_SMOKE PASS: 33 stations, 31 animated, 25 exact captures, one hidden formation; phase, pause, resume, restart, and props within 15 cm grip"));
-        SmokeStage = -1;
-        SetActorTickEnabled(false);
+        SmokePeakGripCm = 0.f;
+        SmokePeakAnchorCm = 0.f;
+        SmokeElapsed = 0.f;
+        SmokeStage = 5;
     }
 }
 

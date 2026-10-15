@@ -73,6 +73,8 @@ private:
     float SmokeElapsed = 0.f;
     float SmokePhase = 0.f;
     float SmokeHiddenPhase = 0.f;
+    float SmokePeakGripCm = 0.f;
+    float SmokePeakAnchorCm = 0.f;
     FTransform SmokeLeftProp = FTransform::Identity;
     FTransform SmokeRightProp = FTransform::Identity;
     void RunPlaybackSmoke(float DeltaSeconds);

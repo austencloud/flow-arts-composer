@@ -33,6 +33,7 @@ public:
     bool IsBodyVisible() const { return bShowBody; }
     float GetPlaybackPhase() const;
     float GetGripErrorCm() const;
+    float GetPropAnchorErrorCm() const;
     FTransform GetPropRootTransform(bool bLeft) const;
     bool IsPropReady() const;
 
