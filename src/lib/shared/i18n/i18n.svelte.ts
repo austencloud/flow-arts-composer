@@ -13,6 +13,7 @@
  */
 
 import type { TranslationKey } from "./i18n-types.js";
+import { localizedPageLocale } from "./seo-locales.js";
 import enMessagesStatic from "../../../../messages/en.json";
 
 // Available locales - must match messages/*.json files
@@ -164,10 +165,39 @@ export function getBaseLocale(locale: Locale): BaseLocale {
 }
 
 /**
+ * The language and catalog of the page the server is rendering, when that
+ * page is a localized public page (/de/guide/...). src/hooks.server.ts puts
+ * them on the request and exposes SvelteKit's request accessor on globalThis,
+ * because this module also runs in the browser and in workers, where
+ * `$app/server` cannot be imported. Undefined in the browser and for every
+ * other server render.
+ */
+function requestCatalog(): { locale: Locale; messages: Messages } | undefined {
+  if (!import.meta.env.SSR) return undefined;
+  try {
+    const getEvent = (
+      globalThis as typeof globalThis & {
+        __tkaRequestEvent?: () => { locals: App.Locals };
+      }
+    ).__tkaRequestEvent;
+    const locals = getEvent?.().locals;
+    if (locals?.pageLocale && locals.pageMessages) {
+      return {
+        locale: locals.pageLocale,
+        messages: locals.pageMessages as Messages,
+      };
+    }
+  } catch {
+    // Calls outside a request (tests, scripts) have no event.
+  }
+  return undefined;
+}
+
+/**
  * Get the current locale (reactive)
  */
 export function getLocale(): Locale {
-  return currentLocale;
+  return requestCatalog()?.locale ?? currentLocale;
 }
 
 /**
@@ -175,7 +205,7 @@ export function getLocale(): Locale {
  * @returns "rtl" for Arabic, "ltr" for all others
  */
 export function getLocaleDirection(
-  locale: Locale = currentLocale
+  locale: Locale = getLocale()
 ): "ltr" | "rtl" {
   return rtlLocales.includes(locale) ? "rtl" : "ltr";
 }
@@ -212,6 +242,8 @@ export function pinDocumentLanguage(locale: Locale | null): void {
  * rather than falling back to English.
  */
 export function isTranslated(key: TranslationKey): boolean {
+  const scoped = requestCatalog();
+  if (scoped) return Boolean(scoped.messages[key]);
   if (messages[key]) return true;
   const base = getBaseLocale(currentLocale);
   return base !== currentLocale && Boolean(localeCache.get(base)?.[key]);
@@ -225,6 +257,19 @@ export function isTranslated(key: TranslationKey): boolean {
  * to enable the fallback chain: es-MX → es → en
  */
 export async function setLocale(locale: Locale): Promise<void> {
+  await applyLocale(locale, true);
+}
+
+/**
+ * Show a localized public page in its URL's language without saving it as the
+ * visitor's choice. Public pages follow their address; the app keeps the
+ * language the visitor picked.
+ */
+export async function setPageLocale(locale: Locale): Promise<void> {
+  await applyLocale(locale, false);
+}
+
+async function applyLocale(locale: Locale, persist: boolean): Promise<void> {
   const request = ++localeRequest;
   const canonicalLocale = toLocale(locale);
   if (!canonicalLocale) {
@@ -261,7 +306,7 @@ export async function setLocale(locale: Locale): Promise<void> {
   currentLocale = locale;
   messages = localeCache.get(locale) || (enMessages as Messages);
 
-  if (typeof document !== "undefined") {
+  if (persist && typeof document !== "undefined") {
     document.cookie = `${LOCALE_COOKIE_NAME}=${locale}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE}`;
   }
   updateHtmlLanguage();
@@ -368,18 +413,20 @@ export function t(
   key: TranslationKey,
   params?: Record<string, string | number>
 ): string {
-  let text = messages[key];
+  const scoped = requestCatalog();
+  const activeLocale = scoped?.locale ?? currentLocale;
+  let text = (scoped?.messages ?? messages)[key];
 
   // Fallback chain: regional → base → English
   if (!text) {
     // Try base locale if current is regional
-    const base = getBaseLocale(currentLocale);
-    if (base !== currentLocale && localeCache.has(base)) {
+    const base = getBaseLocale(activeLocale);
+    if (base !== activeLocale && localeCache.has(base)) {
       text = localeCache.get(base)?.[key];
     }
 
     // Try English as final fallback
-    if (!text && currentLocale !== "en") {
+    if (!text && activeLocale !== "en") {
       text = (enMessages as Messages)[key];
     }
   }
@@ -387,9 +434,7 @@ export function t(
   if (!text) {
     // Development warning for missing keys
     if (import.meta.env.DEV) {
-      console.warn(
-        `Missing translation key: ${key} (locale: ${currentLocale})`
-      );
+      console.warn(`Missing translation key: ${key} (locale: ${activeLocale})`);
     }
     return key;
   }
@@ -412,6 +457,18 @@ export function t(
  * Call this once in your root layout
  */
 export async function initI18n(): Promise<void> {
+  // A localized public page (/de/guide/...) is published in one language.
+  // Following the visitor's saved or browser language would rewrite it after
+  // hydration, for search engines that render JavaScript too.
+  const pageLocale =
+    typeof location === "undefined"
+      ? undefined
+      : localizedPageLocale(location.pathname);
+  if (pageLocale) {
+    await setPageLocale(pageLocale);
+    return;
+  }
+
   const initialLocale = getInitialLocale();
 
   await setLocale(initialLocale);
@@ -514,27 +571,27 @@ export function tDynamic(
     }
   }
 
-  let text = messages[key];
+  const scoped = requestCatalog();
+  const activeLocale = scoped?.locale ?? currentLocale;
+  let text = (scoped?.messages ?? messages)[key];
 
   // Fallback chain: regional → base → English
   if (!text) {
     // Try base locale if current is regional
-    const base = getBaseLocale(currentLocale);
-    if (base !== currentLocale && localeCache.has(base)) {
+    const base = getBaseLocale(activeLocale);
+    if (base !== activeLocale && localeCache.has(base)) {
       text = localeCache.get(base)?.[key];
     }
 
     // Try English as final fallback
-    if (!text && currentLocale !== "en") {
+    if (!text && activeLocale !== "en") {
       text = (enMessages as Messages)[key];
     }
   }
 
   if (!text) {
     if (import.meta.env.DEV && !silent) {
-      console.warn(
-        `Missing translation key: ${key} (locale: ${currentLocale})`
-      );
+      console.warn(`Missing translation key: ${key} (locale: ${activeLocale})`);
     }
     return key;
   }

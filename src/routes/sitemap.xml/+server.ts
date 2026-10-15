@@ -1,4 +1,9 @@
 import { LANDING_DOMAIN } from "../../config/domains";
+import {
+  isLocalizedPublicPath,
+  localizePath,
+  SEO_LOCALES,
+} from "#lib/shared/i18n/seo-locales.js";
 import { GUIDE_BODY_PAGES } from "../(public)/guide/level-1/_data/guide-manifest";
 import { LEVEL2_TOPIC_PAGES } from "../(public)/guide/level-2/_data/level2-topic-routes";
 import { TIMING_DIRECTION_ARTICLE_SLUGS } from "../(public)/timing-and-direction/_data/timing-direction-articles";
@@ -214,6 +219,16 @@ export const GET: RequestHandler = async () => {
     ...learnConceptsEntries,
     ...curatedUrls.map((url) => ({ url })),
   ];
+  // Each page's language editions (/de/guide/...). The pages' hreflang tags
+  // pair them; the sitemap only has to list them.
+  const localizedEntries = allEntries.flatMap(({ url }) =>
+    isLocalizedPublicPath(`/${url}`)
+      ? SEO_LOCALES.map((locale) => ({
+          url: localizePath(`/${url}`, locale).slice(1),
+        }))
+      : []
+  );
+  allEntries.push(...localizedEntries);
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

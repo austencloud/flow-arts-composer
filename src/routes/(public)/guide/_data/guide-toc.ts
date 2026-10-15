@@ -13,7 +13,8 @@
  *    (`LEVEL2_ANCHOR_ROUTE_SLUG`) with the section anchor.
  *  - Ratios, Motion paths, Zan's Diamond, Three levels, Codex: single links. Downloads: the three PDFs.
  *
- * Call it inside a `$derived` so locale changes re-run the labels.
+ * Call it inside a `$derived` so locale changes re-run the labels. Pass a
+ * localizer to point the rows at a language folder (/de/guide/...).
  */
 import type {
   ModuleDefinition,
@@ -49,7 +50,19 @@ const icon = (name: string) =>
 const level2SectionKey = (id: string) =>
   `guide_runtime_section_${id.replaceAll("-", "_")}`;
 
-export function buildGuideToc(): ModuleDefinition[] {
+export function buildGuideToc(
+  localize: (href: string) => string = (href) => href
+): ModuleDefinition[] {
+  return guideToc().map((module) => ({
+    ...module,
+    ...(module.href ? { href: localize(module.href) } : {}),
+    sections: module.sections.map((section) =>
+      section.href ? { ...section, href: localize(section.href) } : section
+    ),
+  }));
+}
+
+function guideToc(): ModuleDefinition[] {
   const level1Groups: SectionGroup[] = [];
   const level1Sections: Section[] = [];
   for (const { group, entries } of bodyPagesByGroup()) {

@@ -15,6 +15,8 @@
    * open the in-place LegalSheet instead of navigating.
    */
   import LegalSheet from "#lib/shared/legal/components/LegalSheet.svelte";
+  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
+  import PageLanguageLinks from "./PageLanguageLinks.svelte";
   import { trackCtaClick } from "#lib/shared/analytics/landing-events.js";
   import { siteCopy } from "../site-copy";
   import { composerIntent } from "../services/composer-prefetch";
@@ -100,7 +102,10 @@
   <div class="col-content">
     <ul>
       {#each col.links as link}
-        <li><LinkChip href={link.href}>{siteCopy(link.label)}</LinkChip></li>
+        <li>
+          <LinkChip href={localHref(link.href)}>{siteCopy(link.label)}</LinkChip
+          >
+        </li>
       {/each}
     </ul>
   </div>
@@ -148,6 +153,8 @@
         </details>
       {/each}
     </div>
+
+    <PageLanguageLinks />
 
     <div class="bottom">
       <p class="legal-line">

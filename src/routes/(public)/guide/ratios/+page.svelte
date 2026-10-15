@@ -13,6 +13,7 @@
    * all of its stills, the fixed blue and red guide inks, because the prose
    * names those colours; a reader's saved hand colours belong to the engine.
    */
+  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import GuideShell from "../_components/GuideShell.svelte";
@@ -69,6 +70,8 @@
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 
   /** The engine's own 144 band: three ratios, both styles, both starts, diamond. */
+  // Languages that close the sentence after the link end it with bare punctuation.
+  const spaced = (text: string) => (/^[.,;:!?]/.test(text) ? text : ` ${text}`);
   const ORIGINAL_AXIS_FILTER = matrixFiltersForSize("large").left;
   const FAMILY_TURNS = [0, 1, 2] as const;
   const BASE_LEVEL = 1;
@@ -560,10 +563,10 @@
             {/each}
           </dl>
           <p>
-            Each name describes the shape one end of the prop draws. Inspin is
-            another name for prospin, as
-            <LinkChip size="inline" href="/guide/level-1/staff-motions">Staff Motions</LinkChip>
-            explains.
+            {tDynamic("guide_ratios_names_note")}
+            <LinkChip size="inline" href={localHref("/guide/level-1/staff-motions")}
+              >{tDynamic("verified_level1_staff_motions_274")}</LinkChip
+            >{spaced(tDynamic("guide_ratios_names_note_end"))}
           </p>
         </div>
 

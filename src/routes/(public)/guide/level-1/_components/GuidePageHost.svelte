@@ -33,6 +33,7 @@
   import { TOPIC_PAGES } from "../_topics/topic-pages";
   import { guideRelatedLinks } from "../_data/guide-related-links";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
 
   let { slug }: { slug: string } = $props();
 
@@ -233,7 +234,7 @@
               >
             {/if}
             {#each relatedLinks as link (link.href)}
-              <LinkChip href={link.href}
+              <LinkChip href={localHref(link.href)}
                 ><i class="fa-solid fa-{link.icon}" aria-hidden="true"></i>
                 {t(link.labelKey)}</LinkChip
               >
@@ -275,7 +276,7 @@
 
     <nav class="topic-nav" aria-label="Guide navigation">
       {#if prev}
-        <a class="nav-link prev" href="/guide/level-1/{prev.id}">
+        <a class="nav-link prev" href={localHref(`/guide/level-1/${prev.id}`)}>
           <span class="nav-dir">Previous</span><span class="nav-title"
             >{prev.title}</span
           >
@@ -283,9 +284,9 @@
       {:else}
         <span class="nav-spacer"></span>
       {/if}
-      <a class="nav-link hub" href="/guide">All guides</a>
+      <a class="nav-link hub" href={localHref("/guide")}>All guides</a>
       {#if next}
-        <a class="nav-link next" href="/guide/level-1/{next.id}">
+        <a class="nav-link next" href={localHref(`/guide/level-1/${next.id}`)}>
           <span class="nav-dir">Next</span><span class="nav-title"
             >{next.title}</span
           >

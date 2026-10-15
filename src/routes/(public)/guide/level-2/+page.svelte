@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
@@ -29,13 +30,13 @@
     <h2>{tDynamic("guide_level2_chapters")}</h2>
     <ol>
       <li>
-        <a href="/guide/level-2/turns">
+        <a href={localHref("/guide/level-2/turns")}>
           <strong>{tDynamic("guide_level2_chapter1_title")}</strong>
           <span>{tDynamic("guide_level2_chapter1_description")}</span>
         </a>
       </li>
       <li>
-        <a href="/guide/level-2/double-turns">
+        <a href={localHref("/guide/level-2/double-turns")}>
           <strong>{tDynamic("guide_level2_chapter2_title")}</strong>
           <span>{tDynamic("guide_level2_chapter2_description")}</span>
         </a>

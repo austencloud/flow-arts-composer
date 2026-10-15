@@ -10,10 +10,10 @@
    * Replaces the per-page CosmicPageShell / inline background each marketing
    * page used to mount for itself.
    */
+  import { currentRoutePath } from "#lib/shared/i18n/localized-href.svelte.js";
   import type { Snippet } from "svelte";
   import type { BackgroundType } from "@austencloud/backgrounds";
   import { onDestroy, onMount } from "svelte";
-  import { page } from "$app/state";
   import { isNamedRouteMorphActive } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -123,7 +123,7 @@
 
   onDestroy(() => clearTimeout(retryTimer));
 
-  const path = $derived(page.url.pathname);
+  const path = $derived(currentRoutePath());
   const isTimingLesson = $derived(
     path === "/learn/concepts/timing-and-direction"
   );

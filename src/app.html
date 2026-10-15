@@ -1703,12 +1703,17 @@
         "ru",
         "it",
       ];
+      // A language folder (/de/guide/...) names the page's language.
+      var __tkaBootFolder = location.pathname.split("/")[1] || "";
       var __tkaBootCookie = document.cookie.match(
         /(?:^|;\s*)PARAGLIDE_LOCALE=([^;]+)/
       );
-      var __tkaBootLocale = __tkaBootCookie
-        ? __tkaBootCookie[1].split("-")[0].toLowerCase()
-        : "";
+      var __tkaBootLocale =
+        ["de", "es", "fr", "it", "pt"].indexOf(__tkaBootFolder) !== -1
+          ? __tkaBootFolder
+          : __tkaBootCookie
+            ? __tkaBootCookie[1].split("-")[0].toLowerCase()
+            : "";
       if (__tkaBootLocales.indexOf(__tkaBootLocale) === -1) {
         __tkaBootLocale =
           (navigator.languages || [navigator.language])

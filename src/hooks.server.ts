@@ -14,6 +14,55 @@ import {
 } from "#lib/server/performance/landing-preload-policy.js";
 import { normalizeModuleId } from "#lib/shared/navigation/config/module-definitions.js";
 import { guardInternalRoute } from "./config/build-flags";
+import { getRequestEvent, read } from "$app/server";
+import { rtlLocales } from "#lib/shared/i18n/i18n.svelte.js";
+import {
+  isLocalizedPublicPath,
+  localizeHref,
+  splitLocalePath,
+  type SeoLocale,
+} from "#lib/shared/i18n/seo-locales.js";
+import deCatalogUrl from "../messages/de.json?url";
+import esCatalogUrl from "../messages/es.json?url";
+import frCatalogUrl from "../messages/fr.json?url";
+import itCatalogUrl from "../messages/it.json?url";
+import ptCatalogUrl from "../messages/pt.json?url";
+
+/**
+ * Catalogs for the localized public pages (/de/guide/..., see
+ * seo-locales.ts). Imported as asset URLs and read on demand, so they ship as
+ * static files instead of growing the Worker toward Cloudflare's 25 MiB cap.
+ * In practice only the prerender reads them: the language pages are static.
+ */
+const PAGE_CATALOG_URL: Record<SeoLocale, string> = {
+  de: deCatalogUrl,
+  es: esCatalogUrl,
+  fr: frCatalogUrl,
+  it: itCatalogUrl,
+  pt: ptCatalogUrl,
+};
+const pageCatalogs = new Map<SeoLocale, Promise<Record<string, string>>>();
+
+function pageCatalog(locale: SeoLocale): Promise<Record<string, string>> {
+  let catalog = pageCatalogs.get(locale);
+  if (!catalog) {
+    catalog = read(PAGE_CATALOG_URL[locale]).json() as Promise<
+      Record<string, string>
+    >;
+    pageCatalogs.set(locale, catalog);
+  }
+  return catalog;
+}
+
+// t() runs in the browser and in workers too, where importing `$app/server`
+// would break the bundle. Hand it SvelteKit's request accessor from this
+// server entry instead; the accessor holds no state, so overlapping renders
+// each read their own request's language.
+(
+  globalThis as typeof globalThis & {
+    __tkaRequestEvent?: typeof getRequestEvent;
+  }
+).__tkaRequestEvent = getRequestEvent;
 
 /**
  * Whether a request is for the dev-only harnesses under `/test`.
@@ -176,12 +225,44 @@ export const handle: Handle = async ({ event, resolve }) => {
   );
   if (appPathRejection) return appPathRejection;
 
+  // A localized public page renders in its URL's language. The catalog rides
+  // on this request so concurrent renders cannot swap languages.
+  const { locale: pageLocale, path: pagePath } = splitLocalePath(
+    event.url.pathname
+  );
+  const localizedLocale =
+    pageLocale !== "en" && isLocalizedPublicPath(pagePath)
+      ? pageLocale
+      : undefined;
+  if (localizedLocale) {
+    event.locals.pageLocale = localizedLocale;
+    event.locals.pageMessages = await pageCatalog(localizedLocale);
+  }
+
   // Resolve the request with security headers
   const routePath = event.route?.id === "/" ? "/" : event.url.pathname;
+  const transformLandingChunk = createLandingPageTransformer(routePath);
   const response = await resolve(event, {
     preload: (asset) => shouldPreloadRouteAsset(routePath, asset),
-    transformPageChunk: createLandingPageTransformer(routePath),
+    transformPageChunk: (chunk) => {
+      const html = transformLandingChunk(chunk);
+      const lang = localizedLocale;
+      if (!lang) return html;
+      const dir = rtlLocales.includes(lang) ? "rtl" : "ltr";
+      return html.replace(
+        '<html lang="en"',
+        `<html lang="${lang}" dir="${dir}"`
+      );
+    },
   });
+
+  // A retired guide address redirects to its English successor. From a
+  // localized page, keep the reader (and the prerendered meta refresh) in
+  // the page's language.
+  const redirectTo = response.headers.get("location");
+  if (localizedLocale && redirectTo) {
+    response.headers.set("location", localizeHref(redirectTo, event.url));
+  }
 
   // =========================================================================
   // CORS HEADERS FOR SESSION REPLAY (PostHog)

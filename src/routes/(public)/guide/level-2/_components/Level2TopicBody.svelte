@@ -13,6 +13,7 @@
    * and its setGuideData call) on every topic change — cheap, since these
    * are static content pages anyway.
    */
+  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import GuideCompanionHost from "../../_components/GuideCompanionHost.svelte";
   import { setGuideData } from "../../level-1/_data/guide-data-context";
   import type { GuideChapterData } from "../../level-1/_data/guide-types";
@@ -52,7 +53,7 @@
 
   <nav class="topic-nav" aria-label={t("guide_l2_topic_navigation")}>
     {#if prev}
-      <a class="nav-link prev" href="/guide/level-2/{prev.slug}">
+      <a class="nav-link prev" href={localHref(`/guide/level-2/${prev.slug}`)}>
         <span class="nav-dir">{t("guide_l2_previous")}</span><span
           class="nav-title">{localizedLevel2Topic(prev, "h1")}</span
         >
@@ -60,11 +61,11 @@
     {:else}
       <span class="nav-spacer"></span>
     {/if}
-    <a class="nav-link hub" href="/guide/level-2/{meta.chapter}"
+    <a class="nav-link hub" href={localHref(`/guide/level-2/${meta.chapter}`)}
       >{t("guide_l2_chapter_overview")}</a
     >
     {#if next}
-      <a class="nav-link next" href="/guide/level-2/{next.slug}">
+      <a class="nav-link next" href={localHref(`/guide/level-2/${next.slug}`)}>
         <span class="nav-dir">{t("guide_l2_next")}</span><span class="nav-title"
           >{localizedLevel2Topic(next, "h1")}</span
         >
