@@ -19,10 +19,10 @@ export function createSignInCodeHtml(code: string, magicLink: string): string {
       paragraph("Enter this code in Flow Arts Composer to finish signing in."),
       codeBlock(code),
       paragraph("It expires in 30 minutes."),
-      paragraph("Signing in from a web browser instead?"),
+      paragraph("On another device or browser? Sign in with the link instead."),
       buttonRow([
         {
-          label: "Sign in in a browser",
+          label: "Sign in with the link",
           href: magicLink,
           variant: "secondary",
         },

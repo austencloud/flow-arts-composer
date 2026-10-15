@@ -131,5 +131,5 @@ export function richTextToHtml(input: string): string {
 
 // Links read as pills, never underlined text (.claude/rules/no-text-links.md).
 function inlineLinkPill(label: string, href: string): string {
-  return `<a href="${escapeHtml(href)}" target="_blank" style="color:${emailPalette.linkText};background-color:${emailPalette.linkFill};border:1px solid ${emailPalette.linkStroke};border-radius:999px;padding:1px 9px;text-decoration:none;font-weight:600;white-space:nowrap">${escapeHtml(label)}</a>`;
+  return `<a href="${escapeHtml(href)}" target="_blank" style="color:${emailPalette.linkText};background-color:${emailPalette.linkFill};border-radius:999px;padding:1px 7px;text-decoration:none;font-weight:600;white-space:nowrap">${escapeHtml(label)}</a>`;
 }

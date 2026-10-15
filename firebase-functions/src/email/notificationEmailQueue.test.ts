@@ -190,7 +190,7 @@ describe("notification email content", () => {
       expect(part).not.toContain("](");
     }
     expect(email.html).toContain(
-      "New in Explore: Zan&#39;s Diamond, 24 versions of one pattern."
+      "Zan&#39;s Diamond, 24 versions of one pattern</h1>"
     );
     expect(email.html).toContain(
       'href="https://tkaflowarts.com/browse/explore/collections/abc"'

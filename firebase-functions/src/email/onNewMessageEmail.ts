@@ -25,6 +25,10 @@ export const onNewMessageEmail = onDocumentCreated(
       typeof messageData.senderName === "string"
         ? messageData.senderName
         : "Someone";
+    const senderAvatar =
+      typeof messageData.senderAvatar === "string"
+        ? messageData.senderAvatar
+        : undefined;
     const { conversationId, messageId } = event.params;
     const conversation = await db
       .collection("conversations")
@@ -53,7 +57,7 @@ export const onNewMessageEmail = onDocumentCreated(
       : [];
     if (recipientIds.length === 0) return;
 
-    const email = createMessageEmail(senderName, conversationId);
+    const email = createMessageEmail(senderName, conversationId, senderAvatar);
     const results = await Promise.allSettled(
       recipientIds.map((userId) =>
         queueUserNotificationEmail({

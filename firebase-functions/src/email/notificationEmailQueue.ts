@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
 import {
+  avatar,
   buttonRow,
   changeSection,
   divider,
@@ -10,8 +11,8 @@ import {
   footerText,
   headline,
   insetBlock,
+  linkPill,
   metaLine,
-  monogram,
   paragraph,
   renderEmail,
   statusChip,
@@ -136,7 +137,8 @@ export async function queueUserNotificationEmail(
 
 export function createMessageEmail(
   senderName: string,
-  conversationId: string
+  conversationId: string,
+  senderAvatar?: string
 ): NotificationEmail {
   const conversationUrl = `${INBOX_URL}&conversation=${encodeURIComponent(conversationId)}`;
   const senderLabel = plainTextLabel(senderName, "Someone");
@@ -155,7 +157,7 @@ export function createMessageEmail(
       title: `New message from ${senderLabel}`,
       preheader: `${senderLabel} sent you a message in Flow Arts Composer.`,
       body: [
-        monogram(senderLabel),
+        avatar(senderLabel, senderAvatar),
         headline(`${senderLabel} sent you a message`),
         paragraph("Open the conversation to read it and reply."),
         buttonRow([{ label: "Open conversation", href: conversationUrl }]),
@@ -210,11 +212,12 @@ export interface ReleaseChangelogEntry {
 }
 
 const RELEASE_SECTIONS = [
-  { category: "added", heading: "New", tone: "added" },
-  { category: "improved", heading: "Improved", tone: "improved" },
-  { category: "fixed", heading: "Fixed", tone: "fixed" },
+  { category: "added", heading: "New" },
+  { category: "improved", heading: "Improved" },
+  { category: "fixed", heading: "Fixed" },
 ] as const;
-const RELEASE_ITEMS_PER_SECTION = 4;
+// A taste of each category; the release notes page holds the full list.
+const RELEASE_ITEMS_PER_SECTION = 3;
 
 export function createPlatformUpdateEmail(input: {
   version: string;
@@ -232,59 +235,65 @@ export function createPlatformUpdateEmail(input: {
   );
 
   // The first highlight leads: its bold run becomes the headline and the
-  // thing it links to becomes the main button.
+  // thing it links to becomes the main button. A "New in Explore:" style
+  // prefix moves up beside the version instead of crowding the headline.
   const lead =
     highlights[0] ?? entries.find((entry) => entry.category === "added")?.text;
   const split = lead ? splitLeadingBold(lead) : null;
-  const headlineText = split?.lead || `What's new in ${version}`;
+  const leadParts = split ? splitKicker(split.lead) : null;
+  const headlineText = leadParts?.title || `What's new in ${version}`;
   const ledeSource = split ? split.rest : lead;
   const leadLink = lead ? richTextLinks(lead)[0] : undefined;
+  const meta = [`Version ${version}`, leadParts?.kicker]
+    .filter(Boolean)
+    .join(" · ");
 
-  const sections: {
-    heading: string;
-    tone: EmailTone;
-    items: string[];
-  }[] = RELEASE_SECTIONS.map((section) => ({
-    heading: section.heading,
-    tone: section.tone,
-    items: entries
-      .filter((entry) => entry.category === section.category)
-      .map((entry) => entry.text)
-      .filter((text) => text !== lead),
-  })).filter((section) => section.items.length > 0);
+  const sections: { heading: string; items: string[] }[] = RELEASE_SECTIONS.map(
+    (section) => ({
+      heading: section.heading,
+      items: entries
+        .filter((entry) => entry.category === section.category)
+        .map((entry) => entry.text)
+        .filter((text) => text !== lead),
+    })
+  ).filter((section) => section.items.length > 0);
   if (sections.length === 0 && highlights.length > 1) {
     sections.push({
       heading: "Also in this release",
-      tone: "added",
       items: highlights.slice(1),
     });
   }
+  const changeCount = Math.max(entries.length, highlights.length);
   const fallbackDetail = lead
     ? ""
     : input.releaseNotes?.trim() ||
       "Open the release notes to see what changed.";
 
-  const buttons: EmailButton[] = leadLink
-    ? [
-        { label: `Open ${leadLink.label}`, href: leadLink.href },
-        { label: "Release notes", href: releaseUrl, variant: "secondary" },
-      ]
-    : [{ label: "Read the release notes", href: releaseUrl }];
-
-  const sectionHtml = sections.map((section, index) =>
-    changeSection({
-      heading: section.heading,
-      tone: section.tone,
-      items: section.items
-        .slice(0, RELEASE_ITEMS_PER_SECTION)
-        .map((item) => richTextToHtml(item)),
-      more:
-        section.items.length > RELEASE_ITEMS_PER_SECTION
-          ? `${section.items.length - RELEASE_ITEMS_PER_SECTION} more in the release notes`
-          : undefined,
-      last: index === sections.length - 1,
-    })
+  const button: EmailButton = leadLink
+    ? { label: `Open ${leadLink.label}`, href: leadLink.href }
+    : { label: "Read the release notes", href: releaseUrl };
+  const releaseNotesLink = linkPill(
+    changeCount > 1
+      ? `All ${changeCount} changes in the release notes`
+      : "Release notes",
+    releaseUrl
   );
+  const changesHtml = sections.length
+    ? divider() +
+      sections
+        .map((section) =>
+          changeSection({
+            heading: section.heading,
+            items: section.items
+              .slice(0, RELEASE_ITEMS_PER_SECTION)
+              .map((item) => richTextToHtml(item)),
+          })
+        )
+        .join("\n") +
+      releaseNotesLink
+    : leadLink
+      ? `<p style="margin:8px 0 0">${releaseNotesLink}</p>`
+      : "";
 
   const textSections = sections.flatMap((section) => [
     "",
@@ -297,7 +306,7 @@ export function createPlatformUpdateEmail(input: {
     text: [
       `Flow Arts Composer ${version} is available.`,
       "",
-      headlineText,
+      split ? split.lead : headlineText,
       ledeSource ? richTextToPlain(ledeSource) : fallbackDetail,
       ...textSections,
       "",
@@ -313,17 +322,28 @@ export function createPlatformUpdateEmail(input: {
         ? richTextToPlain(ledeSource, { withUrls: false })
         : `Flow Arts Composer ${version} is available.`,
       body: [
-        metaLine(`Version ${version}`),
-        headline(headlineText),
+        metaLine(meta),
+        headline(headlineText, { editorial: true }),
         ledeSource
           ? paragraph(richTextToHtml(ledeSource))
           : paragraph(escapeHtml(fallbackDetail).replace(/\n/g, "<br>")),
-        buttonRow(buttons),
-        sectionHtml.length ? divider() + sectionHtml.join("\n") : "",
+        buttonRow([button]),
+        changesHtml,
       ].join("\n"),
       footer: settingsFooter("release emails"),
     }),
   };
+}
+
+/**
+ * Splits "New in Explore: Zan's Diamond, 24 versions." into a short kicker
+ * and a headline without its closing period. A long or absent prefix stays
+ * in the headline.
+ */
+function splitKicker(text: string): { kicker?: string; title: string } {
+  const trimmed = text.trim().replace(/\.$/, "");
+  const match = /^([^:]{3,32}):\s+(\S[\s\S]*)$/.exec(trimmed);
+  return match ? { kicker: match[1], title: match[2]! } : { title: trimmed };
 }
 
 function settingsFooter(category: string): string {
