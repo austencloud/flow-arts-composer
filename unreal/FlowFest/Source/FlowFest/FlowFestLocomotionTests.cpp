@@ -105,6 +105,7 @@ bool FFlowFestLocomotionTest::RunTest(const FString& Parameters)
     Settle(10);
     Avatar->SetMotion(FVector(0, 0, -180), true, false);
     Motion(TEXT("Fall"));
+    Step(.05f);
     Avatar->SetMotion(FVector::ZeroVector, false, false);
     Motion(TEXT("Land"));
     Step(.05f);
