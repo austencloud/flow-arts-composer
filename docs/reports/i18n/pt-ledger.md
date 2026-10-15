@@ -117,3 +117,18 @@
 - Uncertain: high/low slots and opening/closing have no glossary entries; superior/inferior and abertura/fechamento describe their source meaning without establishing an officially reviewed Portuguese technical term.
 - Uncertain: turn in negative space or a turn does not specify a body part. Rendered giro, consistent with P1, without assuming which body part turns. Where the source explicitly says body turns, rendered voltas do corpo.
 - No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
+
+## P3 — 2026-10-14
+
+- Batch: `batch-P3.json`; 676 translated entries, 0 retranslation entries, 0 review entries. Of the 676 entries, 82 retain identical source values because they are protected names, notation, numbers, or language-neutral templates.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-P3.json`.
+- Apply result: `messages/pt.json: inserted 676, replaced 0, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 676 insertions, 0 deletions (net +676 lines).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Focused inspection: all 676 batch keys match the output and applied catalog; exactly 676 new keys belong to this batch, with all existing catalog values unchanged. Placeholder names and occurrence counts and all markup tags/attributes match English. No multiline values or Unicode replacement characters. `git diff --check` passed. The ai-bust mechanical pass at HIGH severity returned `[]`; manual review preserved teaching steps, examples, and highlighted terms.
+- Glossary choices: Brazilian Portuguese with você and infinitive action labels; grade, quadrado, diamante, posição, trajetória da mão, volta, sentido de rotação, bastão, props, performer and timing. Sequence positions use passo; musical counts use batida. Orientations use full para dentro / para fora, including captions and print labels. Placement names, VTG labels, motion categories, protected products, sequence words and letters remain English. Prospin, Antispin, Isolation, Flower and Petal remain English; plural Flowers/Petals follows the existing P1 convention. LOOP transforms use espelhado, rotacionado and trocado.
+- Mnemonic choice: DJ/EK/FL/MP/NQ/OR phrases retain their English mnemonic alongside a literal Portuguese gloss in the teaching examples, preserving the initial-letter association without inventing replacement mnemonics. Standalone print phrase keys translate the English meaning. No fact or notation corrections were inferred from the source.
+- Uncertain: driving styles, realization, crossing and phase have no glossary entries; rendered estilos de condução, realização, cruzamento and fase. Shape Engine remains its existing product name; Level Matrix / Ratio Playground use matriz de níveis / área de proporções. Native terminology review remains needed.
+- Uncertain: wall plane / wheel plane, finger-spinning, and hand/prop/full reversals have no glossary entries. Rendered plano de parede / plano de roda, girar o bastão entre os dedos, and reversão da mão / do prop / completa. Leading/following uses mão que lidera / mão que segue. English mnemonic retention with Portuguese glosses needs native pedagogical review.
+- No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
