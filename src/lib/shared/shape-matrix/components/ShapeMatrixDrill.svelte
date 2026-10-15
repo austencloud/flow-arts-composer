@@ -1335,9 +1335,10 @@
             onsettled={finishCrossfade}
           />
           {#if playerLoadFailure}
+            {@const failure = playerLoadFailure}
             <div class="player-load-notice" role="alert">
               <p>{t("shape_engine_animation_failed")}</p>
-              <PanelButton onclick={() => retryPlayerLoad(playerLoadFailure)}
+              <PanelButton onclick={() => retryPlayerLoad(failure)}
                 >{t("shape_engine_try_again")}</PanelButton
               >
             </div>

@@ -12,10 +12,13 @@
   // them. Drawn once from the same easing the animation runs.
   const CURVE_WIDTH = 100;
   const CURVE_HEIGHT = 60;
-  const curveSamples = EFFORTS.map((effort) =>
-    sampleEffortCurve(effort.id, 64)
+  const curveSamples = EFFORTS.map((effort) => ({
+    id: effort.id,
+    samples: sampleEffortCurve(effort.id, 64),
+  }));
+  const sampledValues = curveSamples.flatMap(({ samples }) =>
+    samples.map((sample) => sample.value)
   );
-  const sampledValues = curveSamples.flat().map((sample) => sample.value);
   const lowest = Math.min(0, ...sampledValues);
   const highest = Math.max(1, ...sampledValues);
   const margin = (highest - lowest) * 0.08;
@@ -25,9 +28,9 @@
   const START_Y = curveY(0);
   const END_Y = curveY(1);
   const CURVE_PATHS = new Map(
-    EFFORTS.map((effort, index) => [
-      effort.id,
-      curveSamples[index]
+    curveSamples.map(({ id, samples }) => [
+      id,
+      samples
         .map(
           (sample, step) =>
             `${step ? "L" : "M"}${(sample.t * CURVE_WIDTH).toFixed(1)} ${curveY(sample.value).toFixed(1)}`
@@ -39,8 +42,8 @@
 
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
-  import type { AnimationVisibilityStateManager } from "../../state/animation-visibility-state.svelte";
+  import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte.js";
+  import type { AnimationVisibilityStateManager } from "../../state/animation-visibility-state.svelte.js";
   import { getAnimationVisibilityContext } from "../../state/animation-visibility-context";
 
   let {

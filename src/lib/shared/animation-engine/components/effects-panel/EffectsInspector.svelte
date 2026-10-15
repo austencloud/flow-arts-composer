@@ -86,6 +86,9 @@
   // This inspector tunes the 2D canvas, so every manifest read asks for the 2D
   // view's controls.
   const fineControls = $derived(advancedControls(effect, "2d"));
+  const selectedFineControlId = $derived(
+    (fineControls[selectedFineControl] ?? fineControls[0])?.id
+  );
   const hasLooks = $derived(registration.presetGroup.presets.length > 0);
 
   // Some effects have nothing the flat-field manifest can address — LED's
@@ -186,11 +189,7 @@
             </p>
           {:then mod}
             {@const Panel = mod.default}
-            <Panel
-              {onBack}
-              embedded
-              paged={pagedRichDetail && effect === "led"}
-            />
+            <Panel {onBack} embedded paged={false} />
           {:catch}
             <div class="load-status">
               <p role="alert">{t("effect_deep_tune_load_failed")}</p>
@@ -263,8 +262,8 @@
               {config}
               view="2d"
               tiers={["advanced"]}
-              only={boundedFine
-                ? [fineControls[selectedFineControl]?.id ?? fineControls[0].id]
+              only={boundedFine && selectedFineControlId
+                ? [selectedFineControlId]
                 : undefined}
               {propType}
               {overrides}
