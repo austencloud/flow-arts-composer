@@ -53,9 +53,6 @@ export const ZANS_DIAMOND_SOURCE_SEQUENCE_ID = "seq_1791923102683_sysj46042";
 export const ZANS_DIAMOND_COLLECTION_PATH =
   "/browse/explore/collections/PBp3GSBO6igCKPwJyLZNmVEmamI3/dab5fdca-b279-4a50-bd7a-67f291fce071";
 
-/** The Level 1 topic whose letters most of the variations are spelled in. */
-export const ZANS_DIAMOND_CROSS_SHIFTS_PATH = "/guide/level-1/hm-type34";
-
 type Raw = readonly [
   from: string,
   to: string,
@@ -220,25 +217,19 @@ export const ZANS_DIAMOND_FAMILIES: readonly ZansDiamondFamily[] = (
 export const ZANS_DIAMOND_ORIGINAL: ZansDiamondVariation =
   ZANS_DIAMOND_VARIATIONS.find((v) => v.family === "original")!;
 
-/** The short caption under a card: which hand changed and by how much. */
+/**
+ * The caption beside a variation's word. Its family heading already says
+ * which hand changed and how, so the caption only gives how far ahead the
+ * changed hand starts.
+ */
 export function zansDiamondVariationLabel(
   variation: ZansDiamondVariation,
   t: (key: TranslationKey, params?: Record<string, string | number>) => string
 ): string {
-  switch (variation.family) {
-    case "original":
-      return t("guide_zans_label_original");
-    case "stagger":
-      return t("guide_zans_label_stagger", { n: variation.offset });
-    case "right-reversed":
-      return variation.offset === 0
-        ? t("guide_zans_label_right_reversed")
-        : t("guide_zans_label_right_reversed_ahead", { n: variation.offset });
-    case "left-reversed":
-      return variation.offset === 0
-        ? t("guide_zans_label_left_reversed")
-        : t("guide_zans_label_left_reversed_ahead", { n: variation.offset });
-  }
+  if (variation.family === "original") return t("guide_zans_label_original");
+  if (variation.offset === 0) return t("guide_zans_label_together");
+  if (variation.offset === 1) return t("guide_zans_label_one_ahead");
+  return t("guide_zans_label_ahead", { n: variation.offset });
 }
 
 function handMotion(hand: HandSide, step: SoloPropStepData) {

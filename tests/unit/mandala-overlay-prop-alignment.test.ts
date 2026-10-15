@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import { getPropDimensions } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { setTrailPointOverrideProvider } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
 import {
   CLUB_TIP_REACH,
@@ -199,6 +200,34 @@ describe("animation mandala trail-point alignment", () => {
       { dx: 0, dy: 0 },
     ]);
   });
+
+  it.each(["baseline", "effective"] as const)(
+    "traces bare hands from their centers when both ends are requested (%s)",
+    (pointMode) => {
+      const handTips = resolveMandalaTipOffsets(
+        PropType.HAND,
+        TrackingMode.BOTH_ENDS,
+        pointMode
+      );
+      const paths = calculate(
+        [staticEastStep()],
+        PropType.HAND,
+        PropType.HAND,
+        undefined,
+        { left: handTips, right: handTips }
+      );
+
+      expect(handTips).toEqual([{ dx: 0, dy: 0 }]);
+      expect(paths.left).toHaveLength(1);
+      expect(paths.right).toHaveLength(1);
+      const scale = computeEngineAlignedMandalaScale(950);
+      for (const path of [paths.left[0]!, paths.right[0]!]) {
+        const start = firstPoint(path.d);
+        expect(start.x * scale).toBeCloseTo(ENGINE_GRID_RADIUS, 1);
+        expect(start.y * scale).toBeCloseTo(0, 1);
+      }
+    }
+  );
 
   it("keeps static sequence mandalas on each prop's canonical tips", () => {
     setTipPointOverrideProvider((propType) =>

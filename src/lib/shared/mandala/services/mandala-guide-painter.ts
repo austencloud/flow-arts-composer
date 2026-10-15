@@ -10,10 +10,12 @@
  *
  * Coordinates: `scale` maps mandala units to CSS pixels around the canvas
  * center; `dpr` maps CSS pixels to device pixels. Stroke width is given in
- * CSS pixels and compensated for `scale`, exactly as the live overlay always
- * did, so a 2.5px guide is 2.5px whether it sits in a 150px tile or a
- * 1400px stage.
+ * CSS pixels and compensated for `scale`, so a 2.5px guide is 2.5px whether
+ * it sits in a 150px tile or a 1400px stage. Below that, the line thins with
+ * the drawing (fitMandalaStrokeWidth): a fixed 2.5px line fills in a 32px
+ * matrix tile or a 99px tunnel card until the mandala reads as a blob.
  */
+import { MANDALA_GRID_RADIUS } from "../domain/mandala-constants";
 import { compositeMandalaOverlap } from "./mandala-overlap-compositor";
 import { mixColors } from "../domain/mandala-palette";
 import { resolveViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
@@ -112,6 +114,34 @@ export class MandalaOverlapMasks {
 	}
 }
 
+/**
+ * The hand circle's radius, in CSS pixels, at which a guide gets its full
+ * stroke width. A Shape Matrix tile of about 120px (extent fit) or an
+ * animator about 200px square reaches it, so those and anything larger keep
+ * the width they ask for.
+ */
+const FULL_STROKE_HAND_RADIUS_PX = 32;
+
+/** The thinnest a fitted line gets, in CSS pixels, so it never vanishes. */
+const MIN_FITTED_STROKE_PX = 0.6;
+
+/**
+ * The stroke width, in CSS pixels, a guide drawn at `scale` paints with: the
+ * requested width once the hand circle is FULL_STROKE_HAND_RADIUS_PX or
+ * larger, thinning in proportion below that. A still and the live guide
+ * drawn at the same scale get the same line, so the Shape Matrix hero's
+ * still-to-live handoff is unchanged.
+ */
+export function fitMandalaStrokeWidth(
+	strokeWidth: number,
+	scale: number
+): number {
+	const handRadius = MANDALA_GRID_RADIUS * scale;
+	const fitted =
+		strokeWidth * Math.min(1, handRadius / FULL_STROKE_HAND_RADIUS_PX);
+	return Math.max(Math.min(strokeWidth, MIN_FITTED_STROKE_PX), fitted);
+}
+
 function revealDash(
 	path: PreparedMandalaPath,
 	progress: number,
@@ -172,8 +202,9 @@ export function paintMandalaGuide(
 	// centred too, so the two still coincide.
 	const center = { x: pixelWidth / dpr / 2, y: pixelHeight / dpr / 2 };
 	// Compensate stroke width for the scale transform so it stays constant in
-	// CSS pixels.
-	const adjustedStrokeWidth = options.strokeWidth / options.scale;
+	// CSS pixels (thinned for a small drawing).
+	const adjustedStrokeWidth =
+		fitMandalaStrokeWidth(options.strokeWidth, options.scale) / options.scale;
 
 	context.save();
 	context.setTransform(1, 0, 0, 1, 0, 0);
