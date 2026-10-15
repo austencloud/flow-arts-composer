@@ -35,9 +35,11 @@
     color,
     open = true,
     revealed = true,
+    instant = false,
     playing = false,
     turn = 0,
     onready,
+    onfailed,
     loader,
   }: {
     /**
@@ -58,12 +60,19 @@
      * behind the tint until then, so the cards fade in together.
      */
     revealed?: boolean;
+    /**
+     * The card arrives behind the boot screen: the scene replaces the tint
+     * with no fade, so the page is whole when the screen leaves.
+     */
+    instant?: boolean;
     /** True while it is this card's turn. */
     playing?: boolean;
     /** The coordinator's turn number. */
     turn?: number;
     /** Fires once, when the scene has drawn its finished picture. */
     onready?: (methodId: string) => void;
+    /** Fires once, when the scene's code could not load. */
+    onfailed?: (methodId: string) => void;
     /** Test seam. Defaults to the method's registered scene. */
     loader?: () => Promise<MethodPreviewSceneModule>;
   } = $props();
@@ -128,6 +137,10 @@
     ready = true;
     onready?.(methodId);
   }
+
+  function handleStatus(status: "loading" | "loaded" | "error"): void {
+    if (status === "error" && !destroyed && !ready) onfailed?.(methodId);
+  }
 </script>
 
 <span
@@ -139,7 +152,7 @@
 >
   <DualSourceCrossfade
     active={shown ? "second" : "first"}
-    duration={METHOD_PREVIEW_TIMING.revealFadeMs}
+    duration={instant ? 0 : METHOD_PREVIEW_TIMING.revealFadeMs}
   >
     {#snippet first()}
       <span class="tint"></span>
@@ -150,6 +163,7 @@
           loader={sceneLoader}
           active={load}
           debugName={`create method preview ${methodId}`}
+          onStatusChange={handleStatus}
           props={{
             playing: playing && shown,
             turn,

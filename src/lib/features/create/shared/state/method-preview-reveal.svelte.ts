@@ -10,6 +10,13 @@
  * as one wave in board order. A scene that misses the wave arrives on its own
  * as soon as it is ready. Turns wait for the wave to settle.
  *
+ * Behind the boot screen there is nothing to see a wave on: cards ready
+ * while it covers the page arrive at once, without a fade, so the page is
+ * whole when the screen leaves. If the screen has to leave before every
+ * scene is ready (its hold ran out), revealNow() brings the ready cards in
+ * at once under it rather than after the hold. A card whose scene failed to
+ * load counts as done, so the others do not wait out the hold for it.
+ *
  * Owns arrival only: scenes own their drawing, and the turn coordinator owns
  * the turns that follow.
  */
@@ -26,6 +33,8 @@ export interface MethodPreviewRevealOptions {
   onReveal?: (id: string) => void;
   /** Defaults to previewMotionReduced(): the system and app settings. */
   reducedMotion?: () => boolean;
+  /** Whether the boot screen covers the page. Defaults to never. */
+  covered?: () => boolean;
   timing?: Partial<
     Pick<
       typeof METHOD_PREVIEW_TIMING,
@@ -37,8 +46,14 @@ export interface MethodPreviewRevealOptions {
 export interface MethodPreviewReveal {
   /** Whether a card's scene is showing. */
   isRevealed(id: string): boolean;
+  /** Whether a card arrived behind the boot screen, with no fade. */
+  isInstant(id: string): boolean;
   /** A card's scene has drawn its finished picture. */
   notifyReady(id: string): void;
+  /** A card's scene could not load; it keeps its tint. */
+  notifyFailed(id: string): void;
+  /** The boot screen is leaving: the ready cards arrive now, with no fade. */
+  revealNow(): void;
   /** Runs `go` once the wave has settled (at once if it has); returns a cancel. */
   afterWave(go: () => void): () => void;
   dispose(): void;
@@ -49,13 +64,17 @@ export function createMethodPreviewReveal(
 ): MethodPreviewReveal {
   const timing = { ...METHOD_PREVIEW_TIMING, ...options.timing };
   const isReduced = options.reducedMotion ?? previewMotionReduced;
+  const isCovered = options.covered ?? (() => false);
 
   let revealed = $state<ReadonlySet<string>>(new Set());
+  let instant = $state<ReadonlySet<string>>(new Set());
   const ready = new Set<string>();
+  const failed = new Set<string>();
   const waiting = new Set<() => void>();
   const timers = new Set<ReturnType<typeof setTimeout>>();
   let holdTimer: ReturnType<typeof setTimeout> | null = null;
   let waveStarted = false;
+  let leaving = false;
   let settled = false;
   let disposed = false;
 
@@ -69,6 +88,7 @@ export function createMethodPreviewReveal(
 
   function reveal(id: string): void {
     if (revealed.has(id)) return;
+    if (isCovered() || leaving) instant = new Set([...instant, id]);
     revealed = new Set([...revealed, id]);
     options.onReveal?.(id);
   }
@@ -86,7 +106,7 @@ export function createMethodPreviewReveal(
     if (holdTimer !== null) clearTimeout(holdTimer);
     holdTimer = null;
     const ids = options.order().filter((id) => ready.has(id));
-    if (isReduced()) {
+    if (isReduced() || isCovered() || leaving) {
       for (const id of ids) reveal(id);
       settle();
       return;
@@ -102,6 +122,12 @@ export function createMethodPreviewReveal(
     );
   }
 
+  function allDone(): boolean {
+    return options
+      .order()
+      .every((orderId) => ready.has(orderId) || failed.has(orderId));
+  }
+
   function notifyReady(id: string): void {
     if (disposed || ready.has(id)) return;
     ready.add(id);
@@ -110,7 +136,7 @@ export function createMethodPreviewReveal(
       reveal(id);
       return;
     }
-    if (options.order().every((orderId) => ready.has(orderId))) {
+    if (allDone()) {
       runWave();
       return;
     }
@@ -120,6 +146,19 @@ export function createMethodPreviewReveal(
         if (!disposed) runWave();
       }, timing.revealHoldMs);
     }
+  }
+
+  function notifyFailed(id: string): void {
+    if (disposed || ready.has(id) || failed.has(id)) return;
+    failed.add(id);
+    if (!waveStarted && allDone()) runWave();
+  }
+
+  function revealNow(): void {
+    if (disposed || waveStarted || ready.size === 0) return;
+    leaving = true;
+    runWave();
+    leaving = false;
   }
 
   function afterWave(go: () => void): () => void {
@@ -143,7 +182,10 @@ export function createMethodPreviewReveal(
 
   return {
     isRevealed: (id) => revealed.has(id),
+    isInstant: (id) => instant.has(id),
     notifyReady: (id) => untrack(() => notifyReady(id)),
+    notifyFailed: (id) => untrack(() => notifyFailed(id)),
+    revealNow: () => untrack(revealNow),
     afterWave: (go) => untrack(() => afterWave(go)),
     dispose,
   };
