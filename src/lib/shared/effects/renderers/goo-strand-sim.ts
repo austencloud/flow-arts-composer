@@ -16,8 +16,7 @@ import { resolveGooLook2D, type GooLook2D } from "./goo-look-2d";
  *
  * The sim runs in meters with the 3D goo's own tuning (y down, so gravity is
  * positive). Tips come in as canvas pixels and are mapped through
- * `pxPerMeter`. Drops flying toward the viewer hit the glass in front of the
- * scene; they leave through `impacts`, in pixels, for `GooGlassSim`.
+ * `pxPerMeter`. Drops fall until they leave the canvas.
  */
 
 export const GOO_NODES = 20;
@@ -112,17 +111,6 @@ export interface GooDrop {
   /** Direction it points when it is too slow to have a heading. */
   ax: number;
   ay: number;
-  /** Age at which it reaches the glass; Infinity for one that falls away. */
-  glassAt: number;
-}
-
-/** A drop arriving on the glass this frame, in canvas pixels. */
-export interface GooImpact {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  r: number;
 }
 
 export interface GooTipInput {
@@ -197,13 +185,6 @@ export function totalVolume(strand: GooStrand): number {
   return volume;
 }
 
-/** A drop flying at the viewer looms larger as it nears the glass. */
-export function approach(drop: GooDrop): number {
-  if (!Number.isFinite(drop.glassAt)) return 1;
-  const t = Math.min(1, drop.age / drop.glassAt);
-  return 1 + 0.35 * t * t;
-}
-
 function makeStrand(): GooStrand {
   return {
     attached: false,
@@ -240,8 +221,6 @@ export class GooStrandSim {
   readonly strands: GooStrand[] = [];
   /** Live drops, in meters. */
   readonly drops: GooDrop[] = [];
-  /** Drops that reached the glass during the last step. */
-  readonly impacts: GooImpact[] = [];
   private tips = new Map<string, TipState>();
   private spare: GooStrand[] = [];
   private jets = 0;
@@ -261,7 +240,6 @@ export class GooStrandSim {
     material: GooMaterial,
     bounds: { width: number; height: number }
   ): void {
-    this.impacts.length = 0;
     const dt = Number.isFinite(frameDt) ? Math.min(Math.max(frameDt, 0), MAX_FRAME) : 0;
     this.material = material;
     this.look = material.look ?? resolveGooLook2D("classic");
@@ -298,7 +276,6 @@ export class GooStrandSim {
     this.spare.push(...this.strands);
     this.strands.length = 0;
     this.drops.length = 0;
-    this.impacts.length = 0;
     this.tips.clear();
   }
 
@@ -332,7 +309,7 @@ export class GooStrandSim {
       state.mist = Math.min(1, state.mist + dt * rate * 0.3);
       if (state.mist >= 1) {
         state.mist = 0;
-        this.spawnDrop(x, y, vx, vy, m.baseRadius * 0.28, 0, 0.35);
+        this.spawnDrop(x, y, vx, vy, m.baseRadius * 0.28, 0);
       }
       return;
     }
@@ -410,9 +387,7 @@ export class GooStrandSim {
         vx * 0.4 + Math.cos(angle) * spread,
         vy * 0.4 - lift,
         m.baseRadius * (0.2 + 0.3 * ambient) * (0.8 + 0.4 * scatter(n + 0.83)),
-        0,
-        // Only the drops sprayed toward the viewer can reach the glass.
-        Math.max(0, Math.sin(angle))
+        0
       );
     }
   }
@@ -799,8 +774,7 @@ export class GooStrandSim {
       vx / weight,
       vy / weight,
       radius,
-      Math.min(0.45, 0.12 + 0.18 * (elongation - 1)),
-      -1
+      Math.min(0.45, 0.12 + 0.18 * (elongation - 1))
     );
   }
 
@@ -843,26 +817,16 @@ export class GooStrandSim {
 
   // ---------------------------------------------------------------- drops
 
-  /**
-   * `toward` is how much of the drop's flight heads at the viewer: 0 never
-   * reaches the glass, a negative value lets its speed decide.
-   */
   private spawnDrop(
     x: number,
     y: number,
     vx: number,
     vy: number,
     r: number,
-    wobble: number,
-    toward: number
+    wobble: number
   ): void {
     if (this.drops.length >= GOO_MAX_DROPS || r < SPENT_RADIUS) return;
     const speed = Math.hypot(vx, vy);
-    // Most drops fly past the glass; a hard fling sends more of them at it,
-    // and a slow drip almost always falls straight down.
-    const chance = toward < 0 ? 0.02 + 0.1 * Math.min(1, speed / 6) : toward * 0.12;
-    const glassAt =
-      this.random() < chance ? 0.12 + 0.38 * this.random() : Infinity;
     this.drops.push({
       x,
       y,
@@ -873,7 +837,6 @@ export class GooStrandSim {
       wobble,
       ax: speed > 1e-3 ? vx / speed : 0,
       ay: speed > 1e-3 ? vy / speed : 1,
-      glassAt,
     });
   }
 
@@ -888,16 +851,6 @@ export class GooStrandSim {
       drop.vy += this.gravity * dt;
       drop.x += drop.vx * dt;
       drop.y += drop.vy * dt;
-      if (drop.age >= drop.glassAt) {
-        this.impacts.push({
-          x: drop.x * k,
-          y: drop.y * k,
-          vx: drop.vx * k,
-          vy: drop.vy * k,
-          r: drop.r * k * approach(drop),
-        });
-        continue;
-      }
       const margin = drop.r * 4;
       const gone =
         drop.r < SPENT_RADIUS ||

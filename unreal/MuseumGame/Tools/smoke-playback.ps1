@@ -2,7 +2,7 @@ param(
     [string]$ProjectFile = (Join-Path $PSScriptRoot '..\MuseumGame.uproject'),
     [string]$EngineRoot = 'C:\Program Files\Epic Games\UE_5.8',
     [string]$Executable,
-    [ValidateSet('Playback', 'Movement')][string]$Mode = 'Playback',
+    [ValidateSet('Playback', 'Movement', 'Progression')][string]$Mode = 'Playback',
     [switch]$MovementBaseline,
     [int]$FrameRate = 60,
     [int]$TimeoutSeconds = 180
@@ -25,7 +25,11 @@ try {
     if ($TimeoutSeconds -le 0) { throw 'TimeoutSeconds must be positive.' }
     if ($FrameRate -le 0) { throw 'FrameRate must be positive.' }
     if ($MovementBaseline -and $Mode -ne 'Movement') { throw 'MovementBaseline requires Movement mode.' }
-    $marker = if ($Mode -eq 'Movement') { 'MUSEUM_MOVEMENT_SMOKE' } else { 'MUSEUM_PLAYBACK_SMOKE' }
+    $marker = switch ($Mode) {
+        'Movement' { 'MUSEUM_MOVEMENT_SMOKE' }
+        'Progression' { 'MUSEUM_PROGRESSION_SMOKE' }
+        default { 'MUSEUM_PLAYBACK_SMOKE' }
+    }
     $projectPath = (Resolve-Path -LiteralPath $ProjectFile).Path
     $projectDir = Split-Path -Parent $projectPath
     $packaged = -not [string]::IsNullOrWhiteSpace($Executable)
@@ -75,6 +79,8 @@ try {
     if ($Mode -eq 'Movement') {
         $arguments += '-MuseumMovementSmoke'
         if ($MovementBaseline) { $arguments += '-MuseumMovementBaseline' }
+    } elseif ($Mode -eq 'Progression') {
+        $arguments += '-MuseumProgressionSmoke'
     } else {
         $arguments += @('-MuseumPlaybackSmoke', '-MuseumStartX=502', '-MuseumStartY=32', '-MuseumStartYaw=90', '-MuseumShot')
     }

@@ -37,20 +37,17 @@ function rope(sim: GooStrandSim, id: string): GooStrand | undefined {
 function simulate(
   mat: GooMaterial,
   seconds: number,
-  tipAt: (t: number) => { x: number; y: number },
-  random: () => number = () => 0.5
+  tipAt: (t: number) => { x: number; y: number }
 ) {
-  const sim = new GooStrandSim(random);
+  const sim = new GooStrandSim(() => 0.5);
   let drips = 0;
   let longest = 0;
   let hungBelow = false;
   let dropFell = false;
-  let impacts = 0;
   for (let t = 0; t < seconds; t += FRAME) {
     const tip: GooTipInput = { id: "0-0", ...tipAt(t) };
     const before = new Map(sim.drops.map((d) => [d, d.y]));
     sim.step([tip], FRAME, mat, BOUNDS);
-    impacts += sim.impacts.length;
     for (const drop of sim.drops) {
       if (!before.has(drop)) drips++;
       else if (drop.y > before.get(drop)!) dropFell = true;
@@ -60,15 +57,7 @@ function simulate(
     longest = Math.max(longest, ropeLength(strand));
     if (strand.y[strand.count - 1]! * K > tip.y + 10) hungBelow = true;
   }
-  return { sim, drips, longest, hungBelow, dropFell, impacts };
-}
-
-/** Repeatable pseudo-random numbers, so a chance below one half can still win. */
-function seeded(seed = 1) {
-  return () => {
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    return seed / 2 ** 32;
-  };
+  return { sim, drips, longest, hungBelow, dropFell };
 }
 
 const still = () => ({ x: 534, y: 300 });
@@ -98,10 +87,9 @@ describe("GooStrandSim", () => {
     expect(flowing.drips).toBeGreaterThan(trickle.drips);
   });
 
-  it("flings drops at the glass off a spinning tip and sheds an overlong rope", () => {
-    const run = simulate(material({ ambient: 0 }), 6, spin, seeded());
+  it("flings drops off a spinning tip and sheds an overlong rope", () => {
+    const run = simulate(material({ ambient: 0 }), 6, spin);
     expect(run.drips).toBeGreaterThan(3);
-    expect(run.impacts).toBeGreaterThan(0);
     const strand = rope(run.sim, "0-0")!;
     expect(run.longest).toBeLessThan(strand.maxLength * 1.5);
   });
