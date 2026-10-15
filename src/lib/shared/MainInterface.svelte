@@ -33,12 +33,21 @@
     handleSectionChange,
     initializeNavigationHistory,
     getModuleDefinitions,
+    isModuleListFinal,
     moduleSections,
     navigationCoordinator,
   } from "./navigation-coordinator/navigation-coordinator.svelte";
+  import { holdBootScreen } from "./application/services/boot-screen";
 
   // Get module definitions reactively
   const moduleDefinitions = $derived(getModuleDefinitions());
+
+  // The boot screen stays up until the navigation shows its final items, so
+  // the sidebar never gains modules after the screen leaves.
+  const releaseNavHold = holdBootScreen("nav");
+  $effect(() => {
+    if (isModuleListFinal()) releaseNavHold();
+  });
 
   // Layout components
   import MobileNavigation from "./navigation/components/MobileNavigation.svelte";
