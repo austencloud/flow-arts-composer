@@ -256,12 +256,12 @@ bool AMuseumWorld::LoadMuseum()
         const float Yaw = Facing == TEXT("north") ? -90.f : Facing == TEXT("south") ? 90.f : Facing == TEXT("west") ? 180.f : 0.f;
         if (!SequenceId.IsEmpty())
         {
-            FActorSpawnParameters Spawn;
-            Spawn.Owner = this;
-            Spawn.Name = FName(*FString::Printf(TEXT("MuseumPerformer_%02d"), Index));
-            Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+            FActorSpawnParameters StationSpawn;
+            StationSpawn.Owner = this;
+            StationSpawn.Name = FName(*FString::Printf(TEXT("MuseumPerformer_%02d"), Index));
+            StationSpawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
             AMuseumPerformerStation* Station = GetWorld()->SpawnActor<AMuseumPerformerStation>(
-                AMuseumPerformerStation::StaticClass(), Feet, FRotator(0, Yaw, 0), Spawn);
+                AMuseumPerformerStation::StaticClass(), Feet, FRotator(0, Yaw, 0), StationSpawn);
             if (!Station)
             {
                 UE_LOG(LogTemp, Error, TEXT("Museum performer %s could not spawn"), *StringField(Json, TEXT("id")));
