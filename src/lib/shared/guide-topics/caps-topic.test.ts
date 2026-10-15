@@ -22,6 +22,7 @@ import {
   capCell,
   capHandSteps,
   capStrip,
+  capWorksOnPoi,
   type CapHand,
 } from "./caps-topic";
 
@@ -246,6 +247,19 @@ describe("what the Eight Step page says about them", () => {
         circling: CODE[circling!],
       });
     }
+  });
+
+  it("puts on poi only the CAPs whose every beat runs out to out", () => {
+    // Anti with one turn and pro with none keep the poi pointing out; pro
+    // with one turn ends each beat pointing in.
+    const outToOut = new Set(["antispin", "extension"]);
+    for (const cap of CAPS) {
+      const { capping, circling } = capPairing(cap);
+      expect(capWorksOnPoi(cap), cap.id).toBe(
+        outToOut.has(capping) && outToOut.has(circling)
+      );
+    }
+    expect(CAPS.filter(capWorksOnPoi)).toHaveLength(32);
   });
 });
 

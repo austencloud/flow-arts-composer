@@ -11,10 +11,11 @@
    * Three tiles open the page: both hands, then each hand alone (the left
    * caps, two beats on and one back; the right keeps circling). Then one
    * player with a prop, beside the prop picker and a spin picker per hand:
-   * the nine pairings of the chart. Every path player below follows those
-   * picks, so the reader changes the spins once and watches all eight paths.
-   * The paths sit in Gage's four pairs, two to a row on a wide screen. Like
-   * Zan's Diamond, these are hand paths, so the strips show no letters.
+   * the nine pairings of the chart, named by motion and turns. Picking poi
+   * flags the pairings poi can't spin. Then one box per pair of paths in
+   * Gage's chart, each stepping through its two paths in all nine spins with
+   * "Show another example", as Zan's Diamond does. These are hand paths, so
+   * the strips show no letters.
    * The record lives in #lib/shared/guide-topics/caps-topic.ts.
    */
   import { onMount } from "svelte";
@@ -43,6 +44,7 @@
     CAP_RELATIONS,
     capPairing,
     capStrip,
+    capWorksOnPoi,
     type Cap,
     type CapHandPath,
     type CapRelation,
@@ -118,45 +120,21 @@
 
   const firstPath = CAP_HAND_PATHS[0]!;
   const hands = showcase(firstPath.caps[0]!).sequence;
-  const spinExample = $derived(showcase(capOf(firstPath, leftSpin, rightSpin)));
+  const spinCap = $derived(capOf(firstPath, leftSpin, rightSpin));
+  const spinExample = $derived(showcase(spinCap));
+  const notForPoi = (cap: Cap) =>
+    propType === PropType.POI && !capWorksOnPoi(cap);
 
   // What tells the two paths in each of Gage's pairs apart.
-  const PATH_COPY: Record<
-    number,
-    { title: Parameters<typeof t>[0]; body: Parameters<typeof t>[0] }
-  > = {
-    1: {
-      title: "guide_eightstep_path_split_title",
-      body: "guide_eightstep_path_split_body",
-    },
-    2: {
-      title: "guide_eightstep_path_together_title",
-      body: "guide_eightstep_path_together_body",
-    },
-    3: {
-      title: "guide_eightstep_path_together_title",
-      body: "guide_eightstep_path_together_body",
-    },
-    4: {
-      title: "guide_eightstep_path_split_title",
-      body: "guide_eightstep_path_split_body",
-    },
-    5: {
-      title: "guide_eightstep_path_ahead_title",
-      body: "guide_eightstep_path_ahead_body",
-    },
-    6: {
-      title: "guide_eightstep_path_behind_title",
-      body: "guide_eightstep_path_behind_body",
-    },
-    7: {
-      title: "guide_eightstep_path_swap_title",
-      body: "guide_eightstep_path_swap_body",
-    },
-    8: {
-      title: "guide_eightstep_path_apart_title",
-      body: "guide_eightstep_path_apart_body",
-    },
+  const PATH_TITLE: Record<number, Parameters<typeof t>[0]> = {
+    1: "guide_eightstep_path_split_title",
+    2: "guide_eightstep_path_together_title",
+    3: "guide_eightstep_path_together_title",
+    4: "guide_eightstep_path_split_title",
+    5: "guide_eightstep_path_ahead_title",
+    6: "guide_eightstep_path_behind_title",
+    7: "guide_eightstep_path_swap_title",
+    8: "guide_eightstep_path_apart_title",
   };
 
   // Each group's heading says what its paths share; Gage's own name for the
@@ -180,18 +158,48 @@
     },
   };
 
+  // Poi-friendly pairings first, so a box's opening examples suit every
+  // prop; each pairing then shows both of the pair's paths in turn.
+  const PAIRINGS: readonly [CapSpin, CapSpin][] = [
+    ["antispin", "antispin"],
+    ["antispin", "extension"],
+    ["extension", "antispin"],
+    ["extension", "extension"],
+    ["antispin", "prospin"],
+    ["prospin", "antispin"],
+    ["extension", "prospin"],
+    ["prospin", "extension"],
+    ["prospin", "prospin"],
+  ];
+  const exampleProse = (path: CapHandPath, cap: Cap) => {
+    const { capping, circling } = capPairing(cap);
+    const line = t("guide_eightstep_example", {
+      path: t(PATH_TITLE[path.column]!),
+      left: t(SPIN_LABEL[capping]),
+      right: t(SPIN_LABEL[circling]),
+    });
+    return notForPoi(cap) ? `${line} ${t("guide_eightstep_not_poi")}` : line;
+  };
+
+  // One box per pair: its examples cycle with "Show another example".
   const groups = $derived(
-    CAP_RELATIONS.map((relation) => ({
-      relation,
-      ...GROUP_COPY[relation],
-      paths: CAP_HAND_PATHS.filter((p) => p.relation === relation).map(
-        (path) => ({
-          column: path.column,
-          ...PATH_COPY[path.column]!,
-          ...showcase(capOf(path, leftSpin, rightSpin)),
-        })
-      ),
-    }))
+    CAP_RELATIONS.map((relation) => {
+      const paths = CAP_HAND_PATHS.filter((p) => p.relation === relation);
+      const entries = PAIRINGS.flatMap(([capping, circling]) =>
+        paths.map((path) => ({ path, cap: capOf(path, capping, circling) }))
+      );
+      return {
+        relation,
+        ...GROUP_COPY[relation],
+        first: showcase(entries[0]!.cap),
+        pool: entries.map(({ path, cap }) => ({
+          word: cap.id,
+          loopLabel: "",
+          proseHtml: exampleProse(path, cap),
+          items: capStrip(cap),
+        })),
+      };
+    })
   );
 
   // Pictographs follow the site theme, as the Level 1 pages do.
@@ -331,6 +339,9 @@
                 />
               </div>
             </div>
+            {#if notForPoi(spinCap)}
+              <p class="poi-note">{t("guide_eightstep_poi_note")}</p>
+            {/if}
             <div class="chip">
               <LinkChip href={localHref("/guide/prospin-and-inspin")}
                 >{t("guide_eightstep_link_prospin")}</LinkChip
@@ -345,40 +356,31 @@
           <h2 id="paths-heading">{t("guide_eightstep_paths_title")}</h2>
           <p>{t("guide_eightstep_paths_body")}</p>
         </div>
-        {#each groups as group (group.relation)}
-          <section
-            class="group"
-            aria-labelledby={`group-${group.relation}-heading`}
-          >
-            <div class="group-head">
-              <span class="gage-name"
-                >{t("guide_eightstep_gage_name", { name: group.gage })}</span
-              >
-              <h3 id={`group-${group.relation}-heading`}>{t(group.title)}</h3>
-            </div>
-            <div class="group-paths">
-              {#each group.paths as path (path.column)}
-                <SequenceShowcase
-                  sequence={path.sequence}
-                  items={path.items}
-                  trail={TIP_TRAIL}
-                  render={PROP_RENDER}
-                  variant="compact"
-                  canvasLetter={false}
-                  loop
-                  {picTheme}
-                >
-                  {#snippet text()}
-                    <div class="path-label">
-                      <h4>{t(path.title)}</h4>
-                      <p>{t(path.body)}</p>
-                    </div>
-                  {/snippet}
-                </SequenceShowcase>
-              {/each}
-            </div>
-          </section>
-        {/each}
+        <div class="group-grid">
+          {#each groups as group (group.relation)}
+            <SequenceShowcase
+              sequence={group.first.sequence}
+              items={group.first.items}
+              pool={group.pool}
+              trail={TIP_TRAIL}
+              render={PROP_RENDER}
+              canvasLetter={false}
+              loop
+              {picTheme}
+            >
+              {#snippet text()}
+                <div class="group-text">
+                  <span class="gage-name"
+                    >{t("guide_eightstep_gage_name", {
+                      name: group.gage,
+                    })}</span
+                  >
+                  <h3>{t(group.title)}</h3>
+                </div>
+              {/snippet}
+            </SequenceShowcase>
+          {/each}
+        </div>
       </section>
 
       <footer class="credit">
@@ -526,6 +528,12 @@
   .chip {
     margin-top: var(--spacing-sm, 8px);
   }
+  .poi-note {
+    margin-top: var(--spacing-sm, 8px);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--theme-text);
+  }
   /* Stacked on a phone, the showcase puts its whole text column above the
      canvas, which would leave the picture a screen below the pickers that
      change it. Unwrap the text column so the canvas sits between the heading
@@ -538,6 +546,7 @@
       order: 1;
     }
     .spin-demo .pickers,
+    .spin-demo .poi-note,
     .spin-demo .chip {
       order: 2;
     }
@@ -548,17 +557,17 @@
     flex-direction: column;
     gap: clamp(40px, 5vw, 72px);
   }
-  .group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-lg, 20px);
+  /* One box per pair of paths: a column on most screens, two side by side
+     once each has room for its canvas and a full strip. */
+  .group-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(28px, 3vw, 48px);
   }
-  .group-head {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    text-align: center;
+  @container (min-width: 2300px) {
+    .group-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
   .gage-name {
     font-size: var(--font-size-compact, 13px);
@@ -566,32 +575,20 @@
     letter-spacing: 0.04em;
     color: var(--theme-text-muted);
   }
-  .group h3 {
-    font-size: 1.375rem;
-  }
-  /* A group's two paths sit side by side once each has room for its canvas
-     and a full strip; below that they stack. */
-  .group-paths {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: clamp(28px, 3vw, 48px);
-  }
-  @container (min-width: 2300px) {
-    .group-paths {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-  .path-label {
+  .group-text {
     display: flex;
     flex-direction: column;
     gap: 2px;
   }
-  .path-label h4 {
-    font-size: 1.0625rem;
-    color: var(--theme-text);
+  .group-grid h3 {
+    font-size: 1.375rem;
   }
-  .path-label p {
-    font-size: 0.9375rem;
+  /* Stacked, the showcase centres its example line; the heading follows. */
+  @container (max-width: 600px) {
+    .group-text {
+      align-items: center;
+      text-align: center;
+    }
   }
 
   .links {

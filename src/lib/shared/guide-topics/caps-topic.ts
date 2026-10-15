@@ -904,6 +904,21 @@ export function capPairing(cap: Cap): { capping: CapSpin; circling: CapSpin } {
   return { capping: cap.left.spins[0]!, circling: cap.right.spins[0]! };
 }
 
+/**
+ * Whether a CAP spins on poi: every beat of both hands starts and ends with
+ * the prop pointing out, so the poi keep their momentum. A staff can end a
+ * beat pointing any way.
+ */
+export function capWorksOnPoi(cap: Cap): boolean {
+  return [cap.left, cap.right].every((hand) =>
+    capHandSteps(hand).every(
+      (step) =>
+        step.startOrientation === Orientation.OUT &&
+        step.endOrientation === Orientation.OUT
+    )
+  );
+}
+
 /** The shortest run of letters the word repeats, e.g. "KEC". */
 export function capCell(word: string): string {
   for (let size = 1; size < word.length; size++) {
