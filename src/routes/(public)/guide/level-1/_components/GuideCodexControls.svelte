@@ -23,7 +23,7 @@
     HandSide,
     RotationDirection,
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { getGuideCodexState } from "../_data/guide-codex-state.svelte";
+  import { getGuideCodexState } from "../_data/guide-codex-state.svelte.js";
   import type { GuideCodexVisibility } from "../_data/guide-codex-persistence";
 
   const codex = getGuideCodexState();
@@ -92,7 +92,7 @@
     <PropControlPair compact>
       {#snippet leftContent()}
         <PropTurnsControl
-          color="blue"
+          hand="left"
           turns={codex.leftTurns}
           rotationDirection={RotationDirection.NO_ROTATION}
           showRotation={false}
@@ -103,7 +103,7 @@
       {/snippet}
       {#snippet rightContent()}
         <PropTurnsControl
-          color="red"
+          hand="right"
           turns={codex.rightTurns}
           rotationDirection={RotationDirection.NO_ROTATION}
           showRotation={false}

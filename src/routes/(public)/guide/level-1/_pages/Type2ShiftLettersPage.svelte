@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
+  import {
+    localizeLevel1Text,
+    localizeLevel1SelectionLabel,
+  } from "../_data/localize-level1-content";
   /**
    * Type 2 - Shift (letters) - body page (manifest `lt2-wxyz`), faithful to
    * proof p27 / "1.1 - Type 2 - Shifts" artboard.
@@ -50,11 +53,11 @@
     editText,
     guideEdit,
     registerEditSource,
-  } from "../_data/guide-edit.svelte";
+  } from "../_data/guide-edit.svelte.js";
   import { bakeReversals } from "../_data/guide-sequence-adapter";
   import { getGuideSequenceClick } from "../_data/guide-data-context";
-  import { getGuideActiveStep } from "../_data/guide-active-step.svelte";
-  import { overrideStepsFor } from "../_data/guide-overrides.svelte";
+  import { getGuideActiveStep } from "../_data/guide-active-step.svelte.js";
+  import { overrideStepsFor } from "../_data/guide-overrides.svelte.js";
 
   const S = 816 / 612; // pt → px (4/3)
   const { NORTH: N, EAST: E, SOUTH: SO_, WEST: W } = GridLocation;
@@ -127,8 +130,8 @@
     }) as unknown as StepData;
 
   const startFor = (
-    leftLoc,
-    rightLoc,
+    leftLoc: GridLocation,
+    rightLoc: GridLocation,
     id: string,
     letter: Letter | null = null
   ): StepData =>
@@ -157,7 +160,11 @@
     {
       x: 97,
       y: 193.6,
-      label: { start: GridPlacement.GAMMA1, end: GridPlacement.ALPHA1, t: "γ→α" },
+      label: {
+        start: GridPlacement.GAMMA1,
+        end: GridPlacement.ALPHA1,
+        t: "γ→α",
+      },
       tag: "OPEN",
       cells: [
         {
@@ -181,7 +188,11 @@
     {
       x: 334.9,
       y: 193.6,
-      label: { start: GridPlacement.GAMMA1, end: GridPlacement.BETA1, t: "γ→β" },
+      label: {
+        start: GridPlacement.GAMMA1,
+        end: GridPlacement.BETA1,
+        t: "γ→β",
+      },
       tag: "CLOSE",
       cells: [
         {
@@ -205,7 +216,11 @@
     {
       x: 97,
       y: 325.5,
-      label: { start: GridPlacement.ALPHA1, end: GridPlacement.GAMMA1, t: "α→γ" },
+      label: {
+        start: GridPlacement.ALPHA1,
+        end: GridPlacement.GAMMA1,
+        t: "α→γ",
+      },
       tag: "CLOSE",
       cells: [
         {
@@ -229,7 +244,11 @@
     {
       x: 334.9,
       y: 325.5,
-      label: { start: GridPlacement.BETA1, end: GridPlacement.GAMMA1, t: "β→γ" },
+      label: {
+        start: GridPlacement.BETA1,
+        end: GridPlacement.GAMMA1,
+        t: "β→γ",
+      },
       tag: "OPEN",
       cells: [
         {
@@ -425,7 +444,8 @@
 <div class="t2-letters">
   <!-- selfTitled: the calligraphic title with the canonical Type-2 purple. -->
   <div class="guide-title">
-    {localizeLevel1Text("Type 2 - ")}<span style="color:{T2_PURPLE}">Shift</span>
+    {localizeLevel1Text("Type 2 - ")}<span style="color:{T2_PURPLE}">Shift</span
+    >
   </div>
 
   <!-- The four letter boxes with position labels + OPEN/CLOSE tags. -->
@@ -450,7 +470,8 @@
     <span
       class="box-tag"
       style="left:{(box.x + BCELL * 2 - 60) * S}px; top:{(box.y - 16) *
-        S}px; width:{60 * S}px; font-size:{12 * S}px">{localizeLevel1Text(box.tag)}</span
+        S}px; width:{60 * S}px; font-size:{12 * S}px"
+      >{localizeLevel1Text(box.tag)}</span
     >
     {#each box.cells as c, ci (ci)}
       {@const key = `t2-${c.name}`}
