@@ -616,6 +616,18 @@ export function handleCreateFrontDoor(
   handleModuleHome("create", source, options);
 }
 
+/**
+ * Whether getModuleDefinitions() has its final list: until auth and the
+ * feature flags are initialized it shows only the core modules. A guest's
+ * list is those core modules, so a guest waits only for auth; the flags'
+ * Firestore round trip matters only to a signed-in account. Reactive.
+ */
+export function isModuleListFinal(): boolean {
+  if (!authState.isInitialized) return false;
+  if (!authState.isAuthenticated || authState.isAnonymous) return true;
+  return featureFlagService.isInitialized;
+}
+
 // Export as a getter function that reads feature flags reactively
 // This ensures the module list updates when user role or feature flags change
 export function getModuleDefinitions() {

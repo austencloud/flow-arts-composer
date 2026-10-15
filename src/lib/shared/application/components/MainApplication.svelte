@@ -52,6 +52,10 @@
 
   import { getContext, onMount } from "svelte";
   import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
+  import {
+    holdBootScreen,
+    releaseBootHold,
+  } from "#lib/shared/application/services/boot-screen.js";
   import MainInterface from "../../MainInterface.svelte";
   import PostSaveActivationHost from "../../onboarding/components/PostSaveActivationHost.svelte";
   import {
@@ -117,6 +121,16 @@
   let isInitialized = $derived(getIsInitialized());
   let initializationError = $derived(getInitializationError());
   let settings = $derived(getSettings());
+
+  // The boot screen stays up until the active module's own view is in the
+  // page, not its skeleton: ModuleRenderer releases this hold once the module
+  // has mounted. Held here, before anything can report ready, because on a
+  // cold boot ready arrives while the auth spinner below still stands in for
+  // MainInterface.
+  holdBootScreen("module-view");
+  $effect(() => {
+    if (initializationError) releaseBootHold("module-view");
+  });
 
   // Root tokens also reach menus and editors rendered through portals.
   $effect(() => {
