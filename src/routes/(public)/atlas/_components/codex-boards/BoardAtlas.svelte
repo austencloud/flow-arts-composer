@@ -213,9 +213,10 @@
      (container-type: size). Then the height term is that box, not a guess at
      the page chrome: twelve across and five rows, whichever binds first.
      Everything in a band that is not a cell - its heading, the caption slot
-     over each row, the padding and frames, the gaps between bands - is a
-     fixed 23.5rem in all (measured at 1440 and 3840 wide; none of it scales
-     with the cells), plus the codex host's own top padding. The board keeps
+     over each row, the padding and frames, the gaps between bands - is
+     tightened here so the cells get the height, and is then a fixed 20.75rem
+     in all (measured with 60px and 80px cells; none of it scales with the
+     cells), plus the codex host's own top padding. The board keeps
      its desktop twelve-across flow at every width the host allows, so the
      five-row count stays true. */
   @container codex-atlas-fit (min-width: 0px) {
@@ -224,7 +225,10 @@
       margin-inline: 0;
     }
     .bands {
-      --atlas-band-chrome: 24rem;
+      gap: 0.6rem;
+      --band-pad-y: 0.4rem;
+      --settings-codex-row-caption-gap: 0.45rem;
+      --atlas-band-chrome: 21rem;
       --codex-picto-size: max(
         3rem,
         min(
