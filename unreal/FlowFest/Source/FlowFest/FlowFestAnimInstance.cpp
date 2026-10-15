@@ -11,12 +11,14 @@
 
 void UFlowFestAnimInstance::Configure(const TMap<FName, TObjectPtr<UAnimSequence>>& InMotions)
 {
-    MotionClips.Empty(); MotionNames.Empty(); MotionTimes.Empty(); MotionWeights.Empty();
+    MotionClips.Empty(); MotionNames.Empty(); MotionTimes.Empty(); MotionRates.Empty(); MotionTargetRates.Empty(); MotionWeights.Empty();
     for (const auto& Pair : InMotions)
     {
         MotionNames.Add(Pair.Key);
         MotionClips.Add(Pair.Value);
         MotionTimes.Add(0.f);
+        MotionRates.Add(1.f);
+        MotionTargetRates.Add(1.f);
         MotionWeights.Add(Pair.Key == TEXT("Idle") ? 1.f : 0.f);
     }
     TargetMotion = TEXT("Idle");
@@ -42,6 +44,32 @@ bool UFlowFestAnimInstance::SetMotion(FName Name)
     }
     TargetMotion = Name;
     return true;
+}
+
+void UFlowFestAnimInstance::SetMotionRate(FName Name, float Rate)
+{
+    const int32 Index = MotionNames.IndexOfByKey(Name);
+    if (MotionTargetRates.IsValidIndex(Index) && FMath::IsFinite(Rate))
+        MotionTargetRates[Index] = FMath::Clamp(Rate, .55f, 2.4f);
+}
+
+void UFlowFestAnimInstance::SetMotionTime(FName Name, float Seconds)
+{
+    const int32 Index = MotionNames.IndexOfByKey(Name);
+    if (MotionTimes.IsValidIndex(Index) && MotionClips.IsValidIndex(Index) && MotionClips[Index] && FMath::IsFinite(Seconds))
+        MotionTimes[Index] = FMath::Clamp(Seconds, 0.f, MotionClips[Index]->GetPlayLength());
+}
+
+float UFlowFestAnimInstance::GetMotionRate(FName Name) const
+{
+    const int32 Index = MotionNames.IndexOfByKey(Name);
+    return MotionRates.IsValidIndex(Index) ? MotionRates[Index] : 0.f;
+}
+
+float UFlowFestAnimInstance::GetMotionTime(FName Name) const
+{
+    const int32 Index = MotionNames.IndexOfByKey(Name);
+    return MotionTimes.IsValidIndex(Index) ? MotionTimes[Index] : 0.f;
 }
 
 void UFlowFestAnimInstance::StartPerformance(UAnimSequence* Clip, bool bLoop)
@@ -116,6 +144,7 @@ void UFlowFestAnimInstance::Advance(float DeltaSeconds)
     // never snaps a pose back to its first frame while its weight is rising.
     for (int32 Index = 0; Index < MotionClips.Num(); ++Index)
     {
+        MotionRates[Index] = FMath::Lerp(MotionRates[Index], MotionTargetRates[Index], 1.f - FMath::Exp(-Dt / .12f));
         if (const UAnimSequence* Clip = MotionClips[Index])
         {
             const float Length = Clip->GetPlayLength();
@@ -123,8 +152,8 @@ void UFlowFestAnimInstance::Advance(float DeltaSeconds)
             {
                 const bool bOneShot = MotionNames[Index] == TEXT("Jump") || MotionNames[Index] == TEXT("Land");
                 MotionTimes[Index] = bOneShot
-                    ? FMath::Min(MotionTimes[Index] + Dt, Length)
-                    : FMath::Fmod(MotionTimes[Index] + Dt, Length);
+                    ? FMath::Min(MotionTimes[Index] + Dt * MotionRates[Index], Length)
+                    : FMath::Fmod(MotionTimes[Index] + Dt * MotionRates[Index], Length);
             }
         }
     }

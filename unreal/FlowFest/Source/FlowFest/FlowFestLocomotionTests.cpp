@@ -80,11 +80,16 @@ bool FFlowFestLocomotionTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("Walk enters with a skeletal crossfade"),
         Anim->GetMotionWeight(TEXT("Walk")) > 0.f && Anim->GetMotionWeight(TEXT("Idle")) > 0.f);
     Settle();
+    TestTrue(TEXT("Walk cadence tracks measured source travel at 120 cm/s"),
+        FMath::IsNearlyEqual(Anim->GetMotionRate(TEXT("Walk")), 120.f / 184.f, .02f));
     Avatar->SetMotion(FVector(500, 0, 0), false, false);
     Motion(TEXT("Run"));
     Step(.05f);
     TestTrue(TEXT("Run enters with a skeletal crossfade"),
         Anim->GetMotionWeight(TEXT("Run")) > 0.f && Anim->GetMotionWeight(TEXT("Walk")) > 0.f);
+    Settle();
+    TestTrue(TEXT("Run cadence tracks measured source travel at 500 cm/s"),
+        FMath::IsNearlyEqual(Anim->GetMotionRate(TEXT("Run")), 500.f / 440.f, .02f));
     Avatar->SetMotion(FVector(400, 0, 0), false, false);
     Motion(TEXT("Run"));
     Avatar->SetMotion(FVector(360, 0, 0), false, false);
@@ -99,6 +104,8 @@ bool FFlowFestLocomotionTest::RunTest(const FString& Parameters)
 
     Avatar->SetMotion(FVector(0, 0, 200), true, false);
     Motion(TEXT("Jump"));
+    TestTrue(TEXT("Physical takeoff skips the authored grounded anticipation"),
+        FMath::IsNearlyEqual(Anim->GetMotionTime(TEXT("Jump")), .50f, .01f));
     Step(.05f);
     Avatar->SetMotion(FVector(0, 0, -180), true, false);
     Motion(TEXT("Jump"));
@@ -108,6 +115,8 @@ bool FFlowFestLocomotionTest::RunTest(const FString& Parameters)
     Step(.05f);
     Avatar->SetMotion(FVector::ZeroVector, false, false);
     Motion(TEXT("Land"));
+    TestTrue(TEXT("Physical contact starts the authored landing settle"),
+        FMath::IsNearlyEqual(Anim->GetMotionTime(TEXT("Land")), .50f, .01f));
     Step(.05f);
     TestTrue(TEXT("Landing blends from fall"),
         Anim->GetMotionWeight(TEXT("Land")) > 0.f && Anim->GetMotionWeight(TEXT("Fall")) > 0.f);

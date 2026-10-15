@@ -15,6 +15,10 @@ class FLOWFEST_API UFlowFestAnimInstance : public UAnimInstance
 public:
     void Configure(const TMap<FName, TObjectPtr<UAnimSequence>>& InMotions);
     bool SetMotion(FName Name);
+    void SetMotionRate(FName Name, float Rate);
+    void SetMotionTime(FName Name, float Seconds);
+    float GetMotionRate(FName Name) const;
+    float GetMotionTime(FName Name) const;
     void StartPerformance(UAnimSequence* Clip, bool bLoop);
     void StopPerformance();
     void SetPerformancePhase(float NormalizedPhase);
@@ -43,6 +47,8 @@ private:
     TArray<bool> OutgoingPerformanceLoops;
     TArray<FName> MotionNames;
     TArray<float> MotionTimes;
+    TArray<float> MotionRates;
+    TArray<float> MotionTargetRates;
     TArray<float> MotionWeights;
     FName TargetMotion = NAME_None;
     float PerformanceTime = 0.f;

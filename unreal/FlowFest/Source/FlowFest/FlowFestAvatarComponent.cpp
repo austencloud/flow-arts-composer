@@ -19,6 +19,25 @@ constexpr const TCHAR* RequiredMotions[] = {
     TEXT("RunStrafeLeft"), TEXT("RunStrafeRight")
 };
 
+// Source root travel per loop, measured after the 190.5 cm rig scale. The
+// body clip clocks follow actor travel so planted feet do not drift at crowd
+// speeds or while accelerating.
+float AuthoredTravelCmPerSecond(FName Motion)
+{
+    if (Motion == TEXT("Walk")) return 184.f;
+    if (Motion == TEXT("Run")) return 440.f;
+    if (Motion == TEXT("Backward")) return 117.f;
+    if (Motion == TEXT("StrafeLeft") || Motion == TEXT("StrafeRight")) return 177.f;
+    if (Motion == TEXT("RunStrafeLeft") || Motion == TEXT("RunStrafeRight")) return 450.f;
+    return 0.f;
+}
+
+// Source jump-up begins with an anticipatory crouch. At physical takeoff its
+// feet start lifting at roughly 0.50 s. Falling-to-landing reaches floor
+// contact at roughly 0.50 s; its remaining frames contain the landing settle.
+constexpr float JumpTakeoffSourceSeconds = .50f;
+constexpr float LandContactSourceSeconds = .50f;
+
 bool IsDeployedId(FName Id)
 {
     static const TSet<FName> Deployed = {
@@ -195,6 +214,7 @@ void UFlowFestAvatarComponent::SetMotion(FVector WorldVelocity, bool bInAir, boo
 {
     if (!BodyMesh || !BodyMesh->GetSkeletalMeshAsset() || PerformanceClip)
         return;
+    UFlowFestAnimInstance* Animator = Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance());
     const float Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
     if (bMounted)
     {
@@ -218,8 +238,11 @@ void UFlowFestAvatarComponent::SetMotion(FVector WorldVelocity, bool bInAir, boo
         if (!bWasInAir)
         {
             const auto* Jump = Clips.Find(TEXT("Jump"));
-            TakeoffUntil = Now + (Jump && *Jump ? FMath::Min((*Jump)->GetPlayLength(), .42f) : .25f);
+            const float JumpLength = Jump && *Jump ? (*Jump)->GetPlayLength() : .75f;
+            const float TakeoffSourceTime = FMath::Min(JumpTakeoffSourceSeconds, JumpLength * .75f);
+            TakeoffUntil = Now + FMath::Max(.1f, JumpLength - TakeoffSourceTime);
             PlayMotion(TEXT("Jump"));
+            if (Animator) Animator->SetMotionTime(TEXT("Jump"), TakeoffSourceTime);
         }
         else if (Now >= TakeoffUntil && WorldVelocity.Z < -30.f)
             PlayMotion(TEXT("Fall"));
@@ -230,8 +253,11 @@ void UFlowFestAvatarComponent::SetMotion(FVector WorldVelocity, bool bInAir, boo
     {
         bWasInAir = false;
         const auto* Land = Clips.Find(TEXT("Land"));
-        LandingUntil = Now + (Land && *Land ? (*Land)->GetPlayLength() : 0.f);
+        const float LandLength = Land && *Land ? (*Land)->GetPlayLength() : 0.f;
+        const float ContactSourceTime = FMath::Min(LandContactSourceSeconds, LandLength * .75f);
+        LandingUntil = Now + FMath::Max(.1f, LandLength - ContactSourceTime);
         PlayMotion(TEXT("Land"));
+        if (Animator) Animator->SetMotionTime(TEXT("Land"), ContactSourceTime);
         return;
     }
     if (Now < LandingUntil)
@@ -241,16 +267,22 @@ void UFlowFestAvatarComponent::SetMotion(FVector WorldVelocity, bool bInAir, boo
     const float Speed = FVector2D(Local.X, Local.Y).Size();
     // Separation between walk and run thresholds avoids rapid clip toggling.
     const bool bRunning = Speed > (CurrentMotion.ToString().StartsWith(TEXT("Run")) ? 370.f : 430.f);
+    FName SelectedMotion;
     if (Speed < (CurrentMotion == TEXT("Idle") ? 20.f : 9.f))
-        PlayMotion(TEXT("Idle"));
+        SelectedMotion = TEXT("Idle");
     else if (Local.X < -FMath::Abs(Local.Y) * .75f)
-        PlayMotion(TEXT("Backward"));
+        SelectedMotion = TEXT("Backward");
     else if (Local.Y < -FMath::Abs(Local.X) * .75f)
-        PlayMotion(bRunning ? TEXT("RunStrafeLeft") : TEXT("StrafeLeft"));
+        SelectedMotion = bRunning ? FName(TEXT("RunStrafeLeft")) : FName(TEXT("StrafeLeft"));
     else if (Local.Y > FMath::Abs(Local.X) * .75f)
-        PlayMotion(bRunning ? TEXT("RunStrafeRight") : TEXT("StrafeRight"));
+        SelectedMotion = bRunning ? FName(TEXT("RunStrafeRight")) : FName(TEXT("StrafeRight"));
     else
-        PlayMotion(bRunning ? TEXT("Run") : TEXT("Walk"));
+        SelectedMotion = bRunning ? FName(TEXT("Run")) : FName(TEXT("Walk"));
+    if (PlayMotion(SelectedMotion) && Animator)
+    {
+        const float AuthoredSpeed = AuthoredTravelCmPerSecond(SelectedMotion);
+        if (AuthoredSpeed > 0.f) Animator->SetMotionRate(SelectedMotion, Speed / AuthoredSpeed);
+    }
 }
 
 FTransform UFlowFestAvatarComponent::GetHandTransform(bool bLeft) const
