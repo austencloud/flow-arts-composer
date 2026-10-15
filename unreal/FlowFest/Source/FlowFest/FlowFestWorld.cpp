@@ -1,6 +1,8 @@
 #include "FlowFestWorld.h"
 #include "FlowFestAvatarComponent.h"
 #include "FlowFestPropComponent.h"
+#include "FlowFestEcologyComponent.h"
+#include "FlowFestSoundscapeComponent.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Components/SceneComponent.h"
@@ -17,6 +19,8 @@
 #include "Dom/JsonObject.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "GameFramework/Pawn.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/Actor.h"
 #include "HAL/PlatformFileManager.h"
 #include "Json.h"
@@ -60,6 +64,10 @@ AFlowFestWorld::AFlowFestWorld()
     PrimaryActorTick.bStartWithTickEnabled = false;
     SiteRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SiteRoot"));
     RootComponent = SiteRoot;
+    Ecology = CreateDefaultSubobject<UFlowFestEcologyComponent>(TEXT("Ecology"));
+    Ecology->SetupAttachment(SiteRoot);
+    Soundscape = CreateDefaultSubobject<UFlowFestSoundscapeComponent>(TEXT("Soundscape"));
+    Soundscape->SetupAttachment(SiteRoot);
 
     Sun = CreateDefaultSubobject<UDirectionalLightComponent>(TEXT("Sun"));
     Sun->SetupAttachment(SiteRoot);
@@ -109,6 +117,11 @@ AFlowFestWorld::AFlowFestWorld()
     PostProcess->Settings.AutoExposureSpeedUp = 2.f;
     PostProcess->Settings.bOverride_AutoExposureSpeedDown = true;
     PostProcess->Settings.AutoExposureSpeedDown = 1.f;
+    // Preserve sunlit foliage when the player is standing beneath a dark canopy.
+    PostProcess->Settings.bOverride_LocalExposureHighlightContrastScale = true;
+    PostProcess->Settings.LocalExposureHighlightContrastScale = 0.7f;
+    PostProcess->Settings.bOverride_LocalExposureShadowContrastScale = true;
+    PostProcess->Settings.LocalExposureShadowContrastScale = 0.9f;
     PostProcess->Settings.bOverride_BloomIntensity = true;
     PostProcess->Settings.BloomIntensity = 0.45f;
     PostProcess->Settings.bOverride_VignetteIntensity = true;
@@ -127,11 +140,13 @@ void AFlowFestWorld::BeginPlay()
     BuildTerrain();
     BuildRoads();
     BuildTrees();
+    if (!Ecology->BuildFromSite()) UE_LOG(LogTemp, Error, TEXT("Flow Fest ecology could not load; run the environment asset import."));
     BuildCamps();
     BuildVehicles();
     BuildFestivalLandmarks();
     BuildLanterns();
     BuildPeople();
+    if (!Soundscape->BuildFromSite(this)) UE_LOG(LogTemp, Error, TEXT("Flow Fest soundscape could not load; run the audio import."));
     SetTimeOfDay(TimeOfDay);
 }
 
@@ -145,25 +160,49 @@ void AFlowFestWorld::Tick(float DeltaSeconds)
             + 0.04f * FMath::Sin(Seconds * 13.7f + 1.3f);
         FireLight->SetIntensity(15000.f * Flicker);
     }
-    for (FFestivalPerson& Person : People)
+    Crowd.Tick(DeltaSeconds);
+    const TArray<FFlowFestCrowdAgent>& Agents = Crowd.GetAgents();
+    for (int32 I = 0; I < People.Num() && I < Agents.Num(); ++I)
     {
+        FFestivalPerson& Person = People[I];
+        const FFlowFestCrowdAgent& Agent = Agents[I];
         if (!IsValid(Person.Actor) || !IsValid(Person.Avatar)) continue;
-        Person.Phase += DeltaSeconds * Person.Speed;
-        const FVector2D At = Person.Center + FVector2D(FMath::Cos(Person.Phase), FMath::Sin(Person.Phase)) * Person.Radius;
-        const FVector2D Tangent(-FMath::Sin(Person.Phase), FMath::Cos(Person.Phase));
-        const FVector2D VelocityMeters = Tangent * (Person.Radius * Person.Speed);
-        const float Yaw = Person.Radius > 0.f ? FMath::RadiansToDegrees(FMath::Atan2(Tangent.Y, Tangent.X)) : Person.Facing;
-        const FVector LocalFoot = ToWorld(At.X, At.Y);
+        const FVector LocalFoot = ToWorld(Agent.Position.X, Agent.Position.Y);
         Person.Actor->SetActorLocation(SiteRoot->GetComponentTransform().TransformPosition(LocalFoot));
-        Person.Actor->SetActorRotation(FRotator(0.f, Yaw + SiteRoot->GetComponentRotation().Yaw, 0.f));
-        const FVector WorldVelocity = SiteRoot->GetComponentTransform().TransformVectorNoScale(FVector(VelocityMeters.X, VelocityMeters.Y, 0.f) * MetresToCm);
-        Person.Avatar->SetMotion(WorldVelocity, false, false);
-        if (Person.Prop)
+        Person.Actor->SetActorRotation(FRotator(0.f, Agent.Facing + SiteRoot->GetComponentRotation().Yaw, 0.f));
+        const bool bPerforming = Agent.Activity == EFlowFestCrowdActivity::Perform || Agent.Activity == EFlowFestCrowdActivity::Practice;
+        if (Person.LastActivity != Agent.Activity)
         {
-            if (Person.bPerformancePlaying)
-                Person.Prop->SetPerformanceTime(Person.Avatar->GetPerformanceTime());
-            else
-                Person.Prop->SetHandTransforms(Person.Avatar->GetHandTransform(true), Person.Avatar->GetHandTransform(false));
+            if (bPerforming && Person.Prop && !Agent.PerformanceId.IsNone())
+            {
+                const FName Profile = Agent.PerformanceId;
+                Person.bPerformancePlaying = Person.Prop->LoadPerformance(Agent.AvatarId, Profile)
+                    && Person.Avatar->PlayPerformance(Profile);
+                if (Person.bPerformancePlaying)
+                {
+                    Person.Avatar->SetPerformancePhase(FMath::Frac(Agent.PhaseOffset / (2.f * PI)));
+                    Person.Prop->SetFinish(Agent.FinishId);
+                }
+                else
+                {
+                    Person.Avatar->StopPerformance();
+                    Person.Prop->ClearPerformanceTransforms();
+                }
+            }
+            else if (Person.bPerformancePlaying)
+            {
+                Person.Avatar->StopPerformance();
+                Person.Prop->ClearPerformanceTransforms();
+                Person.bPerformancePlaying = false;
+            }
+            if (!Person.bPerformancePlaying && Person.Prop) Person.Prop->SetFinish(NAME_None);
+            Person.LastActivity = Agent.Activity;
+        }
+        const FVector WorldVelocity = SiteRoot->GetComponentTransform().TransformVectorNoScale(FVector(Agent.Velocity.X, Agent.Velocity.Y, 0.f) * MetresToCm);
+        Person.Avatar->SetMotion(WorldVelocity, false, false);
+        if (Person.Prop && !Person.bPerformancePlaying)
+        {
+            Person.Prop->SetHandTransforms(Person.Avatar->GetHandTransform(true), Person.Avatar->GetHandTransform(false));
         }
     }
 }
@@ -809,129 +848,110 @@ void AFlowFestWorld::BuildLanterns()
 
 void AFlowFestWorld::BuildPeople()
 {
-    int32 PersonIndex = 0;
-    // Match the web community's ordinary-human roster; exclude its creature catalog entries.
-    static const FName HumanRoster[] = {
-        TEXT("ch01"), TEXT("ch07"), TEXT("ch12"), TEXT("ch18"), TEXT("ch21"),
-        TEXT("ch22"), TEXT("ch24"), TEXT("ch41"), TEXT("ch42")
-    };
-    const auto AddPerson = [&](const FVector2D& Center, float Facing, float Radius, float Speed,
-                               FName PropId = NAME_None, FName Finish = NAME_None, FName Performance = NAME_None)
+    TArray<TArray<FVector2D>> RoadLines;
+    for (const FSiteRoad& Road : Roads)
+        RoadLines.Add(Road.Points);
+    Crowd.Initialize(Landmarks, RoadLines, TimeOfDay);
+    People.Reset();
+    const TArray<FFlowFestCrowdAgent>& Agents = Crowd.GetAgents();
+    for (const FFlowFestCrowdAgent& Agent : Agents)
     {
         FFestivalPerson Person;
-        Person.Center = Center;
-        Person.Facing = Facing;
-        Person.Radius = Radius;
-        Person.Speed = Speed;
-        Person.Phase = FMath::DegreesToRadians(Facing);
-        const FVector2D InitialAt = Center + FVector2D(FMath::Cos(Person.Phase), FMath::Sin(Person.Phase)) * Radius;
-        const FVector2D InitialTangent(-FMath::Sin(Person.Phase), FMath::Cos(Person.Phase));
-        const float InitialYaw = Radius > 0.f
-            ? FMath::RadiansToDegrees(FMath::Atan2(InitialTangent.Y, InitialTangent.X)) : Facing;
-        const FVector Foot = SiteRoot->GetComponentTransform().TransformPosition(ToWorld(InitialAt.X, InitialAt.Y));
+        const FVector Foot = SiteRoot->GetComponentTransform().TransformPosition(ToWorld(Agent.Position.X, Agent.Position.Y));
         FActorSpawnParameters Spawn;
         Spawn.Owner = this;
-        Spawn.Name = FName(*FString::Printf(TEXT("FlowFestPerson_%02d"), PersonIndex));
+        Spawn.Name = FName(*Agent.Id);
         Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
         Person.Actor = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), Foot,
-            FRotator(0.f, InitialYaw + SiteRoot->GetComponentRotation().Yaw, 0.f), Spawn);
-        if (!Person.Actor)
+            FRotator(0.f, Agent.Facing + SiteRoot->GetComponentRotation().Yaw, 0.f), Spawn);
+        if (Person.Actor)
         {
-            UE_LOG(LogTemp, Error, TEXT("Could not spawn Flow Fest person %d"), PersonIndex++);
-            return;
-        }
-        USceneComponent* Feet = NewObject<USceneComponent>(Person.Actor, TEXT("Feet"));
-        Person.Actor->SetRootComponent(Feet);
-        Feet->RegisterComponent();
-        Person.Actor->SetActorLocation(Foot);
-        Person.Avatar = NewObject<UFlowFestAvatarComponent>(Person.Actor, TEXT("Avatar"));
-        Person.Avatar->RegisterComponent();
-        Person.Avatar->Initialize(Feet, HumanRoster[PersonIndex % UE_ARRAY_COUNT(HumanRoster)]);
-        Person.Avatar->SetPresentation(true, false);
-
-        if (!PropId.IsNone() && Person.Avatar->GetBodyMesh() &&
-            Person.Avatar->GetBodyMesh()->GetSkeletalMeshAsset())
-        {
-            Person.Prop = NewObject<UFlowFestPropComponent>(Person.Actor, TEXT("Prop"));
-            Person.Prop->RegisterComponent();
-            Person.Prop->Initialize(Feet);
-            if (Person.Prop->Equip(PropId))
+            USceneComponent* Feet = NewObject<USceneComponent>(Person.Actor, TEXT("Feet"));
+            Person.Actor->SetRootComponent(Feet);
+            Feet->RegisterComponent();
+            Person.Actor->SetActorLocation(Foot);
+            Person.Avatar = NewObject<UFlowFestAvatarComponent>(Person.Actor, TEXT("Avatar"));
+            Person.Avatar->RegisterComponent();
+            Person.Avatar->Initialize(Feet, Agent.AvatarId);
+            Person.Avatar->SetFootstepsEnabled(bSoundEnabled);
+            Person.Avatar->SetPresentation(true, false);
+            if (!Agent.PropId.IsNone() && Person.Avatar->GetBodyMesh() &&
+                Person.Avatar->GetBodyMesh()->GetSkeletalMeshAsset())
             {
-                Person.Prop->BindHands(Person.Avatar->GetBodyMesh());
-                Person.Prop->SetFinish(Finish);
-                Person.Prop->SetHandTransforms(Person.Avatar->GetHandTransform(true), Person.Avatar->GetHandTransform(false));
-                Person.bPerformancePlaying = Person.Avatar->PlayPerformance(Performance);
-                if (Person.bPerformancePlaying &&
-                    !Person.Prop->LoadPerformance(Person.Avatar->GetCharacterId(), Performance))
+                Person.Prop = NewObject<UFlowFestPropComponent>(Person.Actor, TEXT("Prop"));
+                Person.Prop->RegisterComponent();
+                Person.Prop->Initialize(Feet);
+                if (Person.Prop->Equip(Agent.PropId))
                 {
-                    Person.Avatar->StopPerformance();
-                    Person.bPerformancePlaying = false;
-                    Person.Prop->ClearPerformanceTransforms();
+                    Person.Prop->BindHands(Person.Avatar->GetBodyMesh());
+                    Person.Avatar->BindPerformanceProp(Person.Prop);
+                    Person.Prop->SetFinish(NAME_None);
+                    Person.Prop->SetHandTransforms(Person.Avatar->GetHandTransform(true),
+                                                   Person.Avatar->GetHandTransform(false));
                 }
-                if (Person.bPerformancePlaying)
-                    Person.Prop->SetPerformanceTime(Person.Avatar->GetPerformanceTime());
             }
+            Person.Avatar->SetMotion(FVector::ZeroVector, false, false);
         }
-        Person.Avatar->SetMotion(FVector::ZeroVector, false, false);
         People.Add(Person);
-        ++PersonIndex;
-    };
-
-    if (const FVector2D* Fire = Landmarks.Find(TEXT("fire")))
-    {
-        // Keep the fire center clear for two performers; visitors stand beyond the benches.
-        AddPerson(*Fire + FVector2D(1.8f, 0.f), 110.f, 0.f, 1.4f, TEXT("poi"), TEXT("fire"), TEXT("FirePoi"));
-        AddPerson(*Fire + FVector2D(-2.f, 1.3f), -50.f, 0.f, 1.7f, TEXT("bighoop"), TEXT("fire"), TEXT("FireHoop"));
-        for (int32 I = 0; I < 6; ++I)
-        {
-            const float Angle = 2.f * PI * (I + .35f) / 6.f;
-            const FVector2D At = *Fire + FVector2D(FMath::Cos(Angle), FMath::Sin(Angle)) * 9.f;
-            AddPerson(At, FMath::RadiansToDegrees(Angle) + 180.f, 0.f, 0.f);
-        }
     }
-    if (const FVector2D* Workshop = Landmarks.Find(TEXT("workshop")))
-    {
-        AddPerson(*Workshop + FVector2D(-4.f, 3.f), 45.f, 0.f, 1.1f, TEXT("club"), TEXT("led"), TEXT("Juggler"));
-        AddPerson(*Workshop + FVector2D(5.f, -5.f), -90.f, 2.2f, .45f);
-        AddPerson(*Workshop + FVector2D(5.f, 3.f), 180.f, 0.f, 0.f, TEXT("capsule_baton"), TEXT("led"), TEXT("LedFlow"));
-        AddPerson(*Workshop + FVector2D(-5.f, -3.f), 35.f, 0.f, 0.f);
-    }
-    if (const FVector2D* Gate = Landmarks.Find(TEXT("gate")))
-    {
-        AddPerson(*Gate + FVector2D(-5.f, 6.f), -30.f, 0.f, 0.f);
-        AddPerson(*Gate + FVector2D(6.f, -7.f), 135.f, 2.4f, .38f);
-        AddPerson(*Gate + FVector2D(8.f, 5.f), -115.f, 0.f, 0.f);
-    }
-    if (const FVector2D* Lower = Landmarks.Find(TEXT("camp-lower")))
-    {
-        AddPerson(*Lower + FVector2D(-8.f, 10.f), 40.f, 2.f, .4f);
-        AddPerson(*Lower + FVector2D(7.f, -9.f), -130.f, 0.f, 0.f);
-    }
-    if (const FVector2D* Upper = Landmarks.Find(TEXT("camp-upper")))
-    {
-        AddPerson(*Upper + FVector2D(4.f, 8.f), 185.f, 2.f, .38f);
-        AddPerson(*Upper + FVector2D(-6.f, -7.f), 35.f, 0.f, 0.f);
-    }
+    UE_LOG(LogTemp, Display, TEXT("Flow Fest living crowd: %d persistent identities, %d road lines"),
+           People.Num(), RoadLines.Num());
     SetActorTickEnabled(People.Num() > 0 || FireLight != nullptr);
+}
+
+void AFlowFestWorld::SetSoundEnabled(bool bEnabled)
+{
+    bSoundEnabled = bEnabled;
+    Soundscape->SetEnabled(bEnabled);
+    if (APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0))
+        if (UFlowFestAvatarComponent* PlayerAvatar = Player->FindComponentByClass<UFlowFestAvatarComponent>())
+            PlayerAvatar->SetFootstepsEnabled(bEnabled);
+    for (FFestivalPerson& Person : People)
+        if (IsValid(Person.Avatar)) Person.Avatar->SetFootstepsEnabled(bEnabled);
+}
+
+void AFlowFestWorld::SetJamSoundActive(bool bActive)
+{
+    Soundscape->SetJamActive(bActive);
 }
 
 void AFlowFestWorld::SetTimeOfDay(float Hour)
 {
     TimeOfDay = FMath::Fmod(FMath::Fmod(Hour, 24.f) + 24.f, 24.f);
+    Crowd.SetTimeOfDay(TimeOfDay);
+    Soundscape->SetTimeOfDay(TimeOfDay);
     // Two atmosphere lights retain a cool terrain silhouette after the sun leaves the horizon.
     // The moon stays high enough for paths to catch grazing light; the fire stays much brighter locally.
     const float Altitude = FMath::Sin((TimeOfDay - 6.f) * PI / 12.f) * 68.f;
     Sun->SetWorldRotation(FRotator(-Altitude, 205.f, 0.f));
     const float Daylight = FMath::Clamp((Altitude + 8.f) / 24.f, 0.f, 1.f);
-    Sun->SetIntensity(FMath::Lerp(0.f, 85000.f, Daylight));
+    // Low sun loses energy through the atmosphere before its warm light reaches the valley.
+    const float SunLux = 85000.f * Daylight * Daylight;
+    Sun->SetIntensity(SunLux);
     Sun->SetLightColor(FLinearColor::LerpUsingHSV(FLinearColor(1.f, 0.47f, 0.24f), FLinearColor(1.f, 0.94f, 0.82f), FMath::Clamp(Altitude / 35.f, 0.f, 1.f)));
     const float Night = 1.f - FMath::Clamp((Altitude + 3.f) / 9.f, 0.f, 1.f);
     const float MoonAltitude = 31.f + 10.f * FMath::Sin((TimeOfDay - 23.f) * PI / 12.f);
     Moon->SetWorldRotation(FRotator(-MoonAltitude, 48.f, 0.f));
     Moon->SetIntensity(1.2f * Night);
-    SkyLight->SetIntensity(FMath::Lerp(0.8f, 1.2f, Daylight));
+    SkyLight->SetIntensity(FMath::Lerp(0.8f, 1.8f, Daylight));
     Fog->SetFogDensity(FMath::Lerp(0.013f, 0.008f, Daylight));
-    // Limit dark adaptation so moonlit terrain remains visibly darker than the fire circle.
-    PostProcess->Settings.AutoExposureMinBrightness = FMath::Lerp(0.f, -3.f, Daylight);
+    // Allow canopy shade while bounding dark adaptation against the incident sunlight.
+    // A histogram dominated by shaded ground otherwise overexposes the sunlit canopy.
+    // The zero EV100 floor still limits dark adaptation around the nighttime fire.
+    PostProcess->Settings.AutoExposureMinBrightness = FMath::Max(0.f,
+        FMath::Log2(FMath::Max(1.f, SunLux) / 2.5f) - 4.5f);
+    PostProcess->Settings.AutoExposureBias = -0.8f * Daylight;
     PostProcess->Settings.BloomIntensity = FMath::Lerp(0.85f, 0.32f, Daylight);
+}
+
+void AFlowFestWorld::SetPlayerCrowdPresence(FVector WorldPosition, bool bAtFire, bool bJoining)
+{
+    const FVector Local = SiteRoot->GetComponentTransform().InverseTransformPosition(WorldPosition);
+    Crowd.SetPlayerPresence(FVector2D(Local.X, Local.Y) / MetresToCm, bAtFire, bJoining);
+}
+
+int32 AFlowFestWorld::GetCrowdActivityCount(int32 Activity) const
+{
+    if (Activity < 0 || Activity > static_cast<int32>(EFlowFestCrowdActivity::Rest)) return 0;
+    return Crowd.GetCount(static_cast<EFlowFestCrowdActivity>(Activity));
 }

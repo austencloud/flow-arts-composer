@@ -1,16 +1,26 @@
 # Flow Fest for Unreal Engine 5.8
 
-This is a native Unreal Engine 5.8 C++ game of the Thursday arrival and first night at Flow Fest. It uses the measured site terrain and placements exported from the browser simulator's source data. It does not embed or run the browser simulator. This guide is also included in the detached delivery copy at `E:/FlowFestNative58/Project`.
+This is a native Unreal Engine 5.8 C++ game of the Thursday arrival and first night at Flow Fest. It uses the measured site terrain and placements exported from the browser simulator's source data. It does not embed or run the browser simulator. The living-world delivery is staged at `E:/FlowFestLivingWorld58` with an editable `Project` and sibling `Shared` plugin directory. See [VERIFICATION.md](VERIFICATION.md) for the current build and package gates. The earlier `E:/FlowFestNative58` delivery remains separate.
 
-## Build and launch
+## Play the delivered build
 
-Prerequisites for full asset regeneration: Unreal Engine 5.8.3 for Windows, a UE 5.8 compatible Visual Studio C++ toolchain, Node.js and the source repository dependencies, and Blender 5.0. The editor target has compiled with Visual Studio 2026 MSVC 14.50.35717. Generated Unreal assets are excluded from Git. The detached delivery copy includes those assets and can be opened in the editor, edited in C++, and repackaged. Full regeneration must run from `unreal/FlowFest` inside the source repository because its tools import files from the repository's `src` and `static` trees. Do not run `bootstrap.ps1` from the detached `E:/FlowFestNative58/Project` copy.
+- [Play Flow Fest](E:/FlowFestLivingWorld58/Builds/Windows/FlowFest.exe) — open the packaged Windows game.
+- [Open the editable Unreal project](E:/FlowFestLivingWorld58/Project/FlowFest.uproject) — requires Unreal Engine 5.8.3 and the delivered [Shared runtime plugin](E:/FlowFestLivingWorld58/Shared/FlowArtsRuntime) beside `Project`.
 
-First capture the production performances from the repository root on d2:
+Use **W A S D** and the mouse to move and look. Press **C** to choose a character and props, **E** to interact, **Q** to flow, **R** to switch the equipped family's A/B routine, and **M** to toggle sound. **F5** saves and **F9** loads. The full controls and first-night route are in [Play](#play).
+
+## Rebuild from source
+
+Prerequisites for full asset regeneration: Unreal Engine 5.8.3 for Windows, a UE 5.8 compatible Visual Studio C++ toolchain, Node.js and the source repository dependencies, and Blender 5.0. The editor target for this upgrade has compiled with Visual Studio 2026 MSVC 14.50.35717. Generated Unreal assets are excluded from Git. Full regeneration must run from `unreal/FlowFest` inside the source repository because its tools import files from the repository's `src` and `static` trees. Do not run `bootstrap.ps1` from a detached delivery copy.
+
+Capture the production performances from the repository root on d2. The default run records the 80 legacy clips. Run family mode as well for the 41 prop families and A/B routines:
 
 ```powershell
 pnpm exec vite build --config unreal/FlowFest/Tools/native-capture.vite.config.mjs
-node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures
+node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures-v3
+$env:FLOW_FEST_CAPTURE_FAMILY_MODE = '1'
+node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures-v3
+Remove-Item Env:FLOW_FEST_CAPTURE_FAMILY_MODE
 ```
 
 Transfer that complete capture directory to the native build machine. Then, from the repository's `unreal/FlowFest` directory, run:
@@ -20,11 +30,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Tools\bootstrap.ps1 -S
 .\Launch.cmd
 ```
 
-`bootstrap.ps1` exports the site data, converts the source GLBs and WebP textures for native import, authors campsite meshes in Blender, converts all 16 deployed characters and their locomotion, converts all 41 physical prop types and 71 variants for both hands, compiles the C++ editor target, and saves the Unreal assets and map. It also ports the authored electric unicycle. It creates a `node_modules` junction in the task worktree when needed. You can override `-EngineRoot`, `-BlenderExe`, and `-CompilerVersion`. Use the skip switches only when rerunning a completed stage.
+`bootstrap.ps1` exports the site and ecology data, converts source GLBs and textures for native import, authors campsite and ground meshes in Blender, converts all 16 deployed characters and their locomotion, converts all 41 physical prop families and 71 variants for both hands, imports captured routines and six original ambient loops, compiles the C++ editor target, and saves the Unreal assets and map. It also ports the authored electric unicycle. It creates a `node_modules` junction in the task worktree when needed. You can override `-EngineRoot`, `-BlenderExe`, and `-CompilerVersion`. Use the skip switches only when rerunning a completed stage.
 
-Performance capture must precede a fresh bootstrap. The harness samples the production performer, IK, fingers, prop transforms, and mounted pose. The static runner uses an isolated browser and closes its temporary server when finished. The 80 captures contain four flow profiles plus one mounted pose for each character. Pass another location with `bootstrap.ps1 -CaptureDirectory <directory>`. Raw captures stay in `Saved`; only compact prop motion goes into the packaged runtime data. See [the capture guide](Tools/native-capture-README.md) for exact revision and repair instructions.
+Performance capture must precede a fresh bootstrap. The harness samples the production performer, IK, fingers, prop transforms, and mounted pose. The static runner uses an isolated browser and closes its temporary server when finished. All 1,312 family routines (41 families × A/B × 16 rigs) have been captured at 480 frames and 30 fps. The complete native animation set also calls for 64 legacy flow clips, 16 ride clips, and 176 locomotion clips, or 1,568 clips total. Pass another location with `bootstrap.ps1 -CaptureDirectory <directory>`. Raw captures stay in `Saved`; compact prop motion goes into packaged runtime data. The 16 verified family archives, SHA-256 sidecars, and completion report are in `E:/FlowFestLivingWorld58/Evidence/LivingCaptures-v3`. See [the capture guide](Tools/native-capture-README.md) for incremental capture and repair instructions.
 
-The delivery archive at `E:/FlowFestNative58/Evidence/production-performances.tar.gz` preserves those raw captures. Verify its SHA-256 against `9792c6a5947afc83ab270ff65effdab1e26c0a9a621275a689fa7df907284b2c`, then extract it into the repository's `unreal/FlowFest/Saved` directory. The archive's top-level folder becomes `Saved/PerformanceCaptures`. See `E:/FlowFestNative58/START-HERE.md` for the recovery commands.
+The earlier archive at `E:/FlowFestNative58/Evidence/production-performances.tar.gz` preserves the 80 legacy captures only. Its SHA-256 is `9792c6a5947afc83ab270ff65effdab1e26c0a9a621275a689fa7df907284b2c`. It does not replace the new family capture pass.
 
 `Launch.cmd` starts Unreal Editor in game mode at 1600×900. The PowerShell launcher also supports review captures:
 
@@ -36,7 +46,7 @@ The delivery archive at `E:/FlowFestNative58/Evidence/production-performances.ta
 .\Tools\launch.ps1 -Character ch01 -Showcase ride
 ```
 
-For a cooked Windows build from generated assets, run `Package.cmd` in either the repository project or detached delivery project. It invokes Unreal Automation Tool's `BuildCookRun` with build, cook, stage, package, pak, and archive enabled. The default archive directory is `Builds`; `-ArchiveDirectory` can target another local directory. `-EngineRoot` and `-CompilerVersion` are also accepted. The packaging script validates staged terrain, character and prop catalogs, and all 64 compact prop-motion clips. Launch its Windows archive with:
+For a cooked Windows build from generated assets, run `Package.cmd` in the repository project. It invokes Unreal Automation Tool's `BuildCookRun` with build, cook, stage, package, pak, and archive enabled. The default archive directory is `Builds`; `-ArchiveDirectory` can target another local directory. `-EngineRoot` and `-CompilerVersion` are also accepted. The packaging script checks the staged site, character and prop catalogs, and complete compact motion set before packaging. The package result for this upgrade is recorded in [VERIFICATION.md](VERIFICATION.md). Launch a completed Windows archive with:
 
 ```powershell
 .\Tools\launch.ps1 -PackageRoot .\Builds\Windows
@@ -44,7 +54,7 @@ For a cooked Windows build from generated assets, run `Package.cmd` in either th
 
 The package launcher requires both `FlowFest.exe` and `FlowFest/Content/Paks` inside the supplied root. Without `-PackageRoot`, it launches the editor game mode.
 
-Review positions are `gate`, `camp`, `fire`, and `overview`. A capture is requested after 25 seconds so shaders and assets can settle; automatic exit occurs after 40 seconds. Review mode logs average and maximum game frame delta after a 10-second warmup at capture or exit; these are not GPU timings. Review placement changes only the current session and does not alter saved progress. `-Smoke` checks all character rigs, animation loop durations and bone positions, all prop variants, movement, all three camp journeys, and save/load in a separate `FlowFestNative58Smoke` save slot. See the Unreal log for `FlowFestSmoke PASS` or `FlowFestSmoke FAIL`.
+Review positions are `gate`, `camp`, `fire`, and `overview`. A capture is requested after 25 seconds so shaders and assets can settle; automatic exit occurs after 40 seconds. Review mode logs average and maximum game frame delta after a 10-second warmup at capture or exit; these are not GPU timings. Review placement changes only the current session and does not alter saved progress. `-Smoke` checks the 1,312 family performances, legacy rigs, movement, camp journeys, and save/load in a separate `FlowFestNative58Smoke` slot. The `FlowFest.Motion` automation test samples the family routines against imported bodies and props. A filtered pilot is useful for diagnosis; it cannot establish the full 1,312-routine gate. The full native test and packaged smoke have passed; see [VERIFICATION.md](VERIFICATION.md) for the logs and remaining review gates.
 
 ## Play
 
@@ -63,26 +73,39 @@ Press **C** to choose your character and equipment. All 16 deployed characters a
 | V | Toggle EUC when on foot |
 | C | Open character and gear selection; click to equip, C or Esc to close |
 | Q | Start/stop a synchronized flow performance; moving ends it |
+| R | Cycle the equipped prop family's A/B routine |
+| M | Toggle festival sound |
 | T | Travel near the current objective for review; interaction is still required |
 | G | Cycle time-of-day presets |
 | F5 / F9 | Save / load native progress |
 | F10 | Begin a new Thursday journey |
 | Esc | Quit the game |
 
-Progress is also saved as the story advances. Load explicitly with F9. The native `FlowFestNative58` save slot is separate from browser storage. Saves are versioned and validated before loading.
+Progress is also saved as the story advances. Load explicitly with F9. The native `FlowFestNative58` save slot is separate from browser storage. Version 2 saves add the A/B routine and sound setting; version 1 saves still load.
 
 ## Native scope and limits
 
-The native world builds terrain, roads, trees, camps, parked cars, landmarks, visitors, fire, sky, and fog from exported site data and imported assets. The HUD and C++ state machine cover loadout, arrival, gate check-in, three camp choices, camp setup, workshop field, fire jam, and Friday morning. The character system uses the existing deployed character meshes, source materials, 11 locomotion clips per rig, and captured production performances. Props retain their authored geometry, variants, hand colors, and physical dimensions.
+The native world builds terrain, roads, trees, camps, parked cars, landmarks, visitors, fire, sky, and fog from exported site data and imported assets. The ecology export adds 21,731 grass placements and 20 damp-sedge and hazel understory placements, with tree and grass wind, varied foliage tint, and ground surface layers. Native attendee schedules use 38 named crowd members with route following, social stops, and rotating fire turns. Six original procedural mono loops provide woodland, camp, crowd, and fire ambience with distance attenuation, configured occlusion, and gains that change with time of day and jam state. The HUD and C++ state machine cover loadout, arrival, gate check-in, three camp choices, camp setup, workshop field, fire jam, and Friday morning. The character system retains the 16 deployed meshes and 11 locomotion clips per rig. Props retain all 71 authored variants, hand colors, and physical dimensions.
 
-The scripted experience currently covers the first night. The car and EUC use character movement; the car has no Chaos vehicle physics. The EUC uses the production mounted contact pose. Four captured performance profiles drive the catalog: poi, hoop, club, and double baton; other prop families share the closest profile. The browser's live sequence editor, multiplayer services, arbitrary live IK generation, and browser storage synchronization are not native features. Camp dressing, visitor behavior, and fire use native implementations. Photo flight and travel near objective are review aids.
+The scripted experience covers the first night. Car and EUC movement remains simple; the car has no Chaos vehicle physics. The EUC uses the production mounted contact pose. Each of the 41 prop families has two finite captured routines rather than an arbitrary native TKA sequence evaluator. Camp dressing, visitor behavior, and fire use native implementations. Photo flight and travel near objective are review aids.
 
 ## Asset provenance
 
-- `Tools/export-site.ts` reads the source terrain manifest, height and surface data, runtime contract, species manifest, and production dressing. It writes `Content/Data/site.json` and the height samples used by the native world. The exported contract fixes the source site's coordinate frame and places roads, trees, camps, vehicles, and landmarks.
-- `Tools/prepare-assets.mjs` decodes the source tree and car GLBs and their textures. `Tools/author-assets.py` converts them to FBX and builds the additional campsite and set meshes. `Tools/import-assets.py` imports those assets and creates native materials and the festival map.
+### Shared native foundation
+
+Flow Fest and Museum use the `FlowArtsRuntime` plugin under `unreal/Shared/FlowArtsRuntime`. It owns native avatar animation, equipment, grip IK, the synchronized playback clock, and routine transitions. `unreal/Shared/Tools` owns character catalog evaluation and capture validation. Festival geography, journeys, attendee schedules, and UI remain game-specific. Flow Fest's project enables the plugin through `AdditionalPluginDirectories: ["../Shared"]` and redirects its former game-module component names to the shared module.
+
+A detached editable delivery must keep `Project` and `Shared` beside each other: `Project/FlowFest.uproject`, `Shared/FlowArtsRuntime/FlowArtsRuntime.uplugin`, and `Shared/Tools`. Copy the generated project content and both game and plugin binaries as well as source; copying the `.uproject` alone is insufficient. Full source asset regeneration still requires the repository and its dependencies, as described above.
+
+The current family schema is `flow-fest-prop-motion-v3`, captured with revision `clock-isolated-body-v3`. Character, physical prop family, and routine A/B must match exactly. Existing schema tags and `/Game/FlowFest` asset paths remain compatible during adoption. Moving assets to another mount requires an Unreal asset migration; renaming raw `.uasset` files is not supported. The prop converter's tested native Feet space is `(source.z, -source.x, source.y) * 100`; skeleton import and static prop mesh spaces have their own basis transformations and must not be treated as interchangeable.
+
+### Sources
+
+- `Tools/export-site.ts` reads the source terrain, runtime contract, species manifest, production dressing, grass, and ground-life ecology. It writes `Content/Data/site.json` and height samples in the source site's coordinate frame, preserving road and camp clearings.
+- `Tools/prepare-assets.mjs` decodes source tree, ecology, and car GLBs and their textures. `Tools/author-assets.py` converts them to FBX and builds campsite and set meshes. `Tools/import-assets.py` imports those assets, preserves foliage transparency and double-sided surfaces, and creates native materials and the festival map.
 - The imported Ace '11 hatchback is by [Daniel Zhabotinsky](https://sketchfab.com/3d-models/055ff8a21b8d4d279debca089e2fafcd), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), as recorded in the source repository's `static/models/flow-fest/cars/CREDITS.md`.
 - Generated tree meshes originate from [@dgreenheck/ez-tree](https://github.com/dgreenheck/ez-tree), MIT licensed. The existing Flow Fest source scene provides the tree instances.
-- `Tools/prepare-characters.mjs`, `convert-characters.py`, and `import-characters.py` port the deployed avatar catalog and source locomotion. The capture harness ports production flow and mounted poses into native animation assets.
-- `Tools/prepare-props.mjs`, `convert-props.py`, and `import-props.py` port the physical prop catalog, including authored GLBs and source procedural shapes. `prepare-prop-motion.mjs` reduces captured prop roots to interpolated runtime tracks.
+- `Tools/prepare-characters.mjs`, `convert-characters.py`, and `import-characters.py` port the deployed avatar catalog and source locomotion. The capture harness ports production flow and mounted poses into native animation assets. Walking, running, and directional movement match playback cadence to travel speed; jump and landing playback start at the source contact events. Terrain foot correction and contact-triggered footsteps run while walking.
+- `Tools/prepare-props.mjs`, `convert-props.py`, and `import-props.py` port the physical prop catalog, including authored GLBs and source procedural shapes. `prepare-prop-motion.mjs` compacts corrected family captures into version 3, 28-number frames: two prop-root transforms, two wrist anchors, and two visual-body quaternions. Native playback aligns roots to sampled hands and reproduces the source mesh rotation, including its starting orientation. Body animation, props, and routine transitions share a playback clock. Compact files retain the raw capture SHA-256.
+- `Tools/prepare-audio.py` synthesizes six original mono ambient loops; `Tools/import-audio.py` imports them as looping Unreal sound waves.
 - `Tools/convert-euc.py` reproduces the source electric-unicycle geometry and materials. `import-euc.py` stores the body and rotating wheel separately.

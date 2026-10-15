@@ -14,6 +14,8 @@ if (-not $ArchiveDirectory) { $ArchiveDirectory = Join-Path $projectRoot 'Builds
 foreach ($required in @($projectFile, $map, $site, $uat)) {
     if (-not (Test-Path -LiteralPath $required)) { throw "Missing prerequisite: $required. Run bootstrap.ps1 successfully before packaging." }
 }
+& node (Join-Path $PSScriptRoot 'validate-runtime-data.mjs') (Join-Path $projectRoot 'Content\Data')
+if ($LASTEXITCODE -ne 0) { throw 'Native runtime data failed validation before packaging.' }
 if (-not (Test-Path -LiteralPath $ArchiveDirectory)) { New-Item -ItemType Directory -Path $ArchiveDirectory -Force | Out-Null }
 $archivePath = (Resolve-Path -LiteralPath $ArchiveDirectory).Path
 
@@ -76,15 +78,10 @@ $props = Get-Content -LiteralPath (Join-Path $dataDir 'props.json') -Raw | Conve
 if (@($characters.characters).Count -ne 16 -or @($props.props).Count -ne 41 -or @($props.props | ForEach-Object { $_.variants }).Count -ne 71) {
     throw 'Staged native catalogs are incomplete; expected 16 characters and 41 props / 71 variants.'
 }
-foreach ($character in $characters.characters) {
-    $key = $character.id.Replace('-', '_')
-    foreach ($profile in @('FirePoi', 'FireHoop', 'Juggler', 'LedFlow')) {
-        $clipPath = Join-Path $dataDir "PropMotion\${key}_${profile}.json"
-        $clip = Get-Content -LiteralPath $clipPath -Raw | ConvertFrom-Json
-        if ($clip.schema -ne 'flow-fest-prop-motion-v1' -or $clip.fps -le 0 -or @($clip.frames).Count -lt 2) {
-            throw "Staged prop motion is invalid: $clipPath"
-        }
-    }
+& node (Join-Path $PSScriptRoot 'validate-runtime-data.mjs') $dataDir
+if ($LASTEXITCODE -ne 0) { throw 'Packaged native runtime data failed validation.' }
+if (@($siteData.grass).Count -lt 20000 -or @($siteData.groundLife).Count -lt 20) {
+    throw 'Staged living ecology data is incomplete.'
 }
 foreach ($document in @('README.md', 'CREDITS.md')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot $document) -Destination (Join-Path $packageRoot $document) -Force

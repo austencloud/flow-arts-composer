@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "FlowFestCrowd.h"
 #include "FlowFestWorld.generated.h"
 
 class UDirectionalLightComponent;
@@ -18,6 +19,8 @@ class UStaticMesh;
 class UStaticMeshComponent;
 class UFlowFestAvatarComponent;
 class UFlowFestPropComponent;
+class UFlowFestEcologyComponent;
+class UFlowFestSoundscapeComponent;
 
 /** Measured Flow Fest site. East and south are metres; UE X and Y are centimetres. */
 UCLASS()
@@ -48,6 +51,19 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Camp")
     void SetPlayerCamp(FString CampLandmark, bool bBuilt);
+
+    /** Player participation draws nearby spectators' attention without taking over story state. */
+    UFUNCTION(BlueprintCallable, Category="Flow Fest|Crowd")
+    void SetPlayerCrowdPresence(FVector WorldPosition, bool bAtFire, bool bJoining);
+
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Crowd")
+    int32 GetCrowdActivityCount(int32 Activity) const;
+
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Crowd")
+    int32 GetCrowdSize() const { return People.Num(); }
+
+    void SetSoundEnabled(bool bEnabled);
+    void SetJamSoundActive(bool bActive);
 
 private:
     struct FSiteRoad
@@ -87,15 +103,14 @@ private:
         AActor* Actor = nullptr;
         UFlowFestAvatarComponent* Avatar = nullptr;
         UFlowFestPropComponent* Prop = nullptr;
-        FVector2D Center;
-        float Phase = 0.f;
-        float Radius = 0.f;
-        float Speed = 0.f;
-        float Facing = 0.f;
+        EFlowFestCrowdActivity LastActivity = EFlowFestCrowdActivity::Rest;
         bool bPerformancePlaying = false;
     };
 
     UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> SiteRoot;
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UFlowFestEcologyComponent> Ecology;
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UFlowFestSoundscapeComponent> Soundscape;
+    bool bSoundEnabled = true;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UDirectionalLightComponent> Sun;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UDirectionalLightComponent> Moon;
     UPROPERTY(VisibleAnywhere) TObjectPtr<USkyLightComponent> SkyLight;
@@ -117,6 +132,7 @@ private:
     bool bHasPlayerTentPlacement = false;
     TArray<FSiteVehicle> Vehicles;
     TArray<FFestivalPerson> People;
+    FFlowFestCrowd Crowd;
     TMap<FString, FVector2D> Landmarks;
     TMap<FString, float> SourceMeshHeights;
 

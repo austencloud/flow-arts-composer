@@ -79,6 +79,8 @@ private:
     float JamSpinSeconds = 0.f;
     bool bInitialPlacementDone = false;
     bool bWardrobeOpen = false;
+    bool bSoundEnabled = true;
+    int32 PerformanceVariant = 0;
     FName CharacterId = TEXT("ch01");
     FName EquippedPropId = TEXT("capsule_baton");
     TArray<FFlowFestChoice> CharacterChoices;
@@ -105,6 +107,11 @@ private:
     FString Showcase;
     bool bShowcaseStarted = false;
     FString CapturePath;
+    FString ActiveCapturePath;
+    int32 CaptureFrames = 1;
+    int32 CapturedFrames = 0;
+    float CaptureStart = 25.f;
+    float CaptureInterval = .1f;
     FDateTime CapturePreviousTimestamp;
 
     void SetForward() { bForward = true; }
@@ -132,6 +139,8 @@ private:
     void TogglePhotoFly();
     void ToggleEUC();
     void ToggleStaff();
+    void CyclePerformance();
+    void ToggleSound();
     void StopFlow();
     void TravelToObjective();
     void CycleTime();

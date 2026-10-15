@@ -229,8 +229,8 @@
     if (!families.includes(family) || (variant !== "A" && variant !== "B"))
       throw new Error("Unknown physical prop family or variant");
     const sequence = await prepareFamily(family, variant);
-    if (captureFrameCount(sequence) !== 480)
-      throw new Error("Family capture requires 480 frames");
+    if (sequence.steps.length !== 16 || captureFrameCount(sequence) !== 480)
+      throw new Error("Family capture requires a 16-step, 480-frame LOOP");
     const effect: "fire" | "led" =
       family.includes("fire") ||
       family.includes("torch") ||

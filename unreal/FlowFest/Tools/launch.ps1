@@ -3,10 +3,14 @@ param(
     [string]$PackageRoot = '',
     [ValidateSet('', 'gate', 'camp', 'fire', 'overview')][string]$Review = '',
     [string]$Capture = '',
+    [ValidateRange(1, 300)][int]$CaptureFrames = 1,
+    [ValidateRange(0, 300)][double]$CaptureStart = 25,
+    [ValidateRange(0.033334, 5)][double]$CaptureInterval = 0.1,
     [string]$LogPath = '',
     [string]$Character = '',
     [string]$Prop = '',
-    [ValidateSet('', 'flow', 'ride')][string]$Showcase = '',
+    [ValidateSet('', 'flow', 'ride', 'walk', 'jump')][string]$Showcase = '',
+    [ValidateRange(0, 24)][double]$Hour = 17,
     [switch]$Wardrobe,
     [switch]$Offscreen,
     [switch]$AutoExit,
@@ -50,8 +54,19 @@ if ($Review) { $arguments += "-FlowFestReview=$Review" }
 if ($Character) { $arguments += "-FlowFestCharacter=$Character" }
 if ($Prop) { $arguments += "-FlowFestProp=$Prop" }
 if ($Showcase) { $arguments += "-FlowFestShowcase=$Showcase" }
+if ($PSBoundParameters.ContainsKey('Hour')) {
+    if (-not $Review -and -not $Showcase) { throw '-Hour requires a review location or character showcase.' }
+    $arguments += '-FlowFestHour=' + $Hour.ToString([Globalization.CultureInfo]::InvariantCulture)
+}
 if ($Wardrobe) { $arguments += '-FlowFestWardrobe' }
-if ($Capture) { $arguments += "-FlowFestCapture=$Capture" }
+if ($Capture) {
+    $arguments += "-FlowFestCapture=$Capture"
+    $arguments += "-FlowFestCaptureFrames=$CaptureFrames"
+    $arguments += '-FlowFestCaptureStart=' + $CaptureStart.ToString([Globalization.CultureInfo]::InvariantCulture)
+    $arguments += '-FlowFestCaptureInterval=' + $CaptureInterval.ToString([Globalization.CultureInfo]::InvariantCulture)
+} elseif ($CaptureFrames -gt 1 -or $PSBoundParameters.ContainsKey('CaptureStart') -or $PSBoundParameters.ContainsKey('CaptureInterval')) {
+    throw 'Capture timing requires -Capture with an absolute .png path.'
+}
 if ($AutoExit) { $arguments += '-FlowFestAutoExit' }
 if ($Smoke) { $arguments += '-FlowFestSmoke' }
 if ($AutoExit -and $Smoke -and -not $LogPath) { throw '-AutoExit -Smoke requires -LogPath to verify a fresh PASS record.' }
@@ -78,8 +93,19 @@ if ($AutoExit) {
     $gameProcess.WaitForExit()
     $gameProcess.Refresh()
     if ($gameProcess.ExitCode -ne 0) { throw "Flow Fest exited with code $($gameProcess.ExitCode). See $LogPath" }
-    if ($Capture -and ((-not (Test-Path -LiteralPath $Capture)) -or (Get-Item -LiteralPath $Capture).LastWriteTimeUtc -lt $launchStarted)) {
-        throw "Flow Fest did not produce a new capture: $Capture"
+    if ($Capture) {
+        for ($frame = 0; $frame -lt $CaptureFrames; $frame++) {
+            $framePath = if ($frame -eq 0) { $Capture } else {
+                Join-Path (Split-Path -Parent $Capture) ('{0}-{1:D3}.png' -f [IO.Path]::GetFileNameWithoutExtension($Capture), $frame)
+            }
+            if ((-not (Test-Path -LiteralPath $framePath)) -or (Get-Item -LiteralPath $framePath).LastWriteTimeUtc -lt $launchStarted) {
+                throw "Flow Fest did not produce a new capture: $framePath"
+            }
+        }
+    }
+    if ($LogPath -and (Test-Path -LiteralPath $LogPath -PathType Leaf) -and
+        (Select-String -LiteralPath $LogPath -Pattern 'Failed to compile Material|LogTemp: Error:' -Quiet)) {
+        throw "Flow Fest reported a native asset/runtime error or failed material shader. See $LogPath"
     }
     if ($Smoke -and ((-not (Test-Path -LiteralPath $LogPath -PathType Leaf)) -or
         (Get-Item -LiteralPath $LogPath).LastWriteTimeUtc -lt $launchStarted -or

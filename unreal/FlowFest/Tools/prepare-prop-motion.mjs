@@ -15,16 +15,19 @@ import { museumPerformanceEntries, assertMuseumRawCapture,
 const here = dirname(fileURLToPath(import.meta.url));
 const option = name => {
   const index = process.argv.indexOf(name);
-  return index < 0 ? null : process.argv[index + 1];
+  if (index < 0) return null;
+  const value = process.argv[index + 1];
+  if (!value || value.startsWith('--')) throw new Error(`${name} requires a path`);
+  return value;
 };
 const project = resolve(option('--project') ?? resolve(here, ".."));
 const performanceManifestFile = option('--performance-manifest');
 const museumMode = performanceManifestFile !== null;
-if ((process.argv.includes('--project') && !option('--project')) ||
-    (process.argv.includes('--performance-manifest') && !performanceManifestFile))
-  throw new Error('--project and --performance-manifest require paths');
-const rawDir = resolve(process.argv[2]?.startsWith('--') ? join(project, "Saved/PerformanceCaptures") :
-  (process.argv[2] ?? join(project, "Saved/PerformanceCaptures")));
+if (museumMode && (!option('--project') || existsSync(join(project, 'FlowFest.uproject'))))
+  throw new Error('Museum performance output requires a separate explicit project');
+const positionalCaptures = process.argv[2]?.startsWith('--') ? null : process.argv[2];
+const rawDir = resolve(option('--captures') ?? positionalCaptures ??
+  join(project, museumMode ? 'Saved/PerformanceCaptures' : 'Saved/PerformanceCaptures-v3'));
 const outputDir = join(project, "Content/Data/PropMotion");
 const familyOnly = process.argv.includes('--family-only');
 const allowPartial = process.argv.includes('--allow-partial');
@@ -171,14 +174,14 @@ if (museumMode) {
   museumEntries = museumPerformanceEntries(museumManifest);
 }
 if (!museumMode) {
-for (const filename of ['manifest.json', 'family-manifest.json']) {
-  if (!existsSync(join(rawDir, filename))) continue;
-  const manifest = JSON.parse(await readFile(join(rawDir, filename), "utf8"));
-  if (manifest.schema !== "flow-fest-native-export-manifest-v1")
-    throw new Error(`Unexpected capture manifest: ${manifest.schema}`);
-  manifests.push(manifest);
-}
-if (!manifests.length) throw new Error(`Missing native capture manifest in ${rawDir}`);
+  for (const filename of ['manifest.json', 'family-manifest.json']) {
+    if (!existsSync(join(rawDir, filename))) continue;
+    const manifest = JSON.parse(await readFile(join(rawDir, filename), "utf8"));
+    if (manifest.schema !== "flow-fest-native-export-manifest-v1")
+      throw new Error(`Unexpected capture manifest: ${manifest.schema}`);
+    manifests.push(manifest);
+  }
+  if (!manifests.length) throw new Error(`Missing native capture manifest in ${rawDir}`);
 }
 const artifacts = museumMode
   ? museumEntries.map(item => {
@@ -256,7 +259,7 @@ if (!allowPartial && !familyOnly && !captureId && generated.length !== artifacts
   throw new Error(`Prop motion generation missed a listed capture: ${generated.length}`);
 const manifestPath = join(outputDir, 'manifest.json');
 let clips = generated;
-  if (allowPartial || familyOnly) {
+if (allowPartial || familyOnly) {
   const previous = existsSync(manifestPath) ? JSON.parse(await readFile(manifestPath, 'utf8')) : null;
   if (previous && (previous.schema !== 'flow-fest-prop-motion-manifest-v1' || !Array.isArray(previous.clips)))
     throw new Error(`Unexpected existing prop manifest: ${manifestPath}`);

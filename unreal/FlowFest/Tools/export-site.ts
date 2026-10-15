@@ -85,7 +85,7 @@ function extractCampMeshes(root: Object3D) {
   return camps;
 }
 
-export async function buildSiteData(sourceRoot = repoRoot) {
+async function buildSiteBundle(sourceRoot = repoRoot) {
   const manifestBytes = await readFile(sourceFile(sourceRoot, "terrain.manifest.json"));
   const manifest = JSON.parse(manifestBytes.toString("utf8")) as TerrainManifest;
   const heightBytes = await readFile(sourceFile(sourceRoot, "terrain-height.f32"));
@@ -165,6 +165,14 @@ export async function buildSiteData(sourceRoot = repoRoot) {
       rotation: tree.rotation, family: tree.familyId,
       measuredHeight: tree.measuredHeightMeters, scale: tree.scale,
     }));
+    // Retain the web scene's measured, route-cleared forest floor instead of
+    // independently scattering decoration over the surveyed roads and camps.
+    const grass = dressing.forestEcology.grass.map(({ x, y, z, rotation, widthMeters, heightMeters, species, tier, colorIndex }) => ({
+      x, y, z, rotation, widthMeters, heightMeters, species, tier, colorIndex,
+    }));
+    const groundLife = dressing.forestEcology.groundLife.map(({ x, y, z, rotation, scale, species }) => ({
+      x, y, z, rotation, scale, species,
+    }));
     const usedFamilies = new Set([...trees, ...backdropTrees].map((tree) => tree.family));
     const assets = species.families.filter((family) => usedFamilies.has(family.familyId)).map((family) => ({
       family: family.familyId,
@@ -174,7 +182,11 @@ export async function buildSiteData(sourceRoot = repoRoot) {
     })).sort((a, b) => a.family < b.family ? -1 : a.family > b.family ? 1 : 0);
     if (assets.length !== usedFamilies.size) throw new Error("Tree family manifest is incomplete");
     const camps = extractCampMeshes(dressing.root);
-    return {
+    const groundSurface = dressing.groundSurface;
+    if (groundSurface.data.length !== groundSurface.width * groundSurface.height * 4) {
+      throw new Error("Ground-family mask byte count is invalid");
+    }
+    return { mask: groundSurface.data, site: {
       version: 1,
       coordinateSystem: { units: "meters", x: "east", y: "up above NAVD88 origin", z: "south", rotation: "radians about +Y" },
       terrain: {
@@ -183,7 +195,17 @@ export async function buildSiteData(sourceRoot = repoRoot) {
         minX: bounds.minX, minZ: bounds.minZ, heightFile: "terrain-height.f32",
         imageryFile: "ortho.webp", canopyFile: "surface-offset.u16", manifestFile: "terrain.manifest.json",
       },
-      roads, landmarks, trees, backdropTrees, camps,
+      groundSurface: {
+        file: "ground-family-mask.rgba",
+        width: groundSurface.width, height: groundSurface.height,
+        minX: bounds.minX, maxX: bounds.maxX, minZ: bounds.minZ, maxZ: bounds.maxZ,
+        audit: groundSurface.audit,
+      },
+      roads, landmarks, trees, backdropTrees, grass, groundLife, camps,
+      ecologyAudit: {
+        grassRouteIntrusions: dressing.forestEcology.audit.grassRouteIntrusions,
+        groundLifeRouteIntrusions: dressing.forestEcology.audit.groundLifeRouteIntrusions,
+      },
       vehicles: dressing.parkedCars.map((car) => ({
         x: car.x, y: car.y, z: car.z, rotation: car.rotation,
         model: car.modelId, paintIndex: car.paintIndex,
@@ -202,19 +224,24 @@ export async function buildSiteData(sourceRoot = repoRoot) {
         productionSource: "src/routes/test/flow-fest-sim/flow-fest-production-geometry.ts",
         workshopNote: "Middle Earth activity-tier center; no surveyed workshop point in the current plan.",
       },
-    };
+    } };
   } finally {
     dressing.dispose();
   }
 }
 
+export async function buildSiteData(sourceRoot = repoRoot) {
+  return (await buildSiteBundle(sourceRoot)).site;
+}
+
 export async function exportSite(sourceRoot = repoRoot) {
-  const data = await buildSiteData(sourceRoot);
+  const { site: data, mask } = await buildSiteBundle(sourceRoot);
   await mkdir(outputDir, { recursive: true });
   for (const name of ["terrain-height.f32", "surface-offset.u16", "terrain.manifest.json", "ortho.webp"]) {
     await copyFile(sourceFile(sourceRoot, name), join(outputDir, name));
   }
   await writeFile(join(outputDir, "site.json"), `${JSON.stringify(data, null, 2)}\n`);
+  await writeFile(join(outputDir, data.groundSurface.file), mask);
   return data;
 }
 

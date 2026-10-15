@@ -7,8 +7,8 @@
 #include "Components/InputComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Containers/Set.h"
 #include "Animation/AnimInstance.h"
-#include "Animation/AnimSingleNodeInstance.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
@@ -23,6 +23,7 @@
 #include "HAL/FileManager.h"
 #include "HAL/PlatformMisc.h"
 #include "Misc/CommandLine.h"
+#include "Misc/App.h"
 #include "Misc/Paths.h"
 #include "Misc/Parse.h"
 #include "Misc/FileHelper.h"
@@ -36,13 +37,22 @@ namespace
 constexpr float InteractionRadius = 1800.f;
 constexpr float ArriveRadius = 2600.f;
 constexpr float VehicleRadius = 3400.f;
+
+float OnFootSpeedCmPerSecond(float ForwardInput, float RightInput, bool bSprint)
+{
+    if (!bSprint) return 185.f;
+    const float InputMagnitude = FVector2D(ForwardInput, RightInput).Size();
+    const float BackwardFraction = InputMagnitude > SMALL_NUMBER
+        ? FMath::Clamp(-ForwardInput / InputMagnitude, 0.f, 1.f) : 0.f;
+    return FMath::Lerp(440.f, 280.f, BackwardFraction);
+}
 }
 
 AFlowFestCharacter::AFlowFestCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
     GetCapsuleComponent()->InitCapsuleSize(42.f, 92.f);
-    GetCharacterMovement()->MaxWalkSpeed = 380.f;
+    GetCharacterMovement()->MaxWalkSpeed = 185.f;
     GetCharacterMovement()->JumpZVelocity = 500.f;
     GetCharacterMovement()->AirControl = .35f;
     bUseControllerRotationYaw = false;
@@ -109,6 +119,23 @@ void AFlowFestCharacter::BeginPlay()
         UE_LOG(LogTemp, Error, TEXT("FlowFestCapture must be an absolute .png path"));
         CapturePath.Empty();
     }
+    if (!CapturePath.IsEmpty())
+    {
+        FParse::Value(FCommandLine::Get(), TEXT("FlowFestCaptureFrames="), CaptureFrames);
+        FParse::Value(FCommandLine::Get(), TEXT("FlowFestCaptureStart="), CaptureStart);
+        FParse::Value(FCommandLine::Get(), TEXT("FlowFestCaptureInterval="), CaptureInterval);
+        CaptureFrames = FMath::Clamp(CaptureFrames, 1, 300);
+        CaptureStart = FMath::Clamp(CaptureStart, 0.f, 300.f);
+        CaptureInterval = FMath::Clamp(CaptureInterval, 1.f / 30.f, 5.f);
+        // A screenshot may stall wall time. Review sequences use the same
+        // 30 Hz simulation step so that stalls cannot skip animation poses.
+        if (CaptureFrames > 1)
+        {
+            FApp::SetFixedDeltaTime(1.0 / 30.0);
+            FApp::SetUseFixedTimeStep(true);
+            UE_LOG(LogTemp, Display, TEXT("FlowFestVisual fixed 30 Hz capture; not a performance benchmark"));
+        }
+    }
     if (APlayerController* PC = Cast<APlayerController>(GetController()))
     {
         PC->bShowMouseCursor = false;
@@ -123,6 +150,7 @@ void AFlowFestCharacter::BeginPlay()
     Props->Initialize(AvatarRoot);
     Props->Equip(EquippedPropId);
     Props->BindHands(Avatar->GetBodyMesh());
+    Avatar->BindPerformanceProp(Props);
     SyncModeVisuals();
     if (FParse::Param(FCommandLine::Get(), TEXT("FlowFestWardrobe"))) ToggleWardrobe();
 }
@@ -145,7 +173,7 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
         bInitialPlacementDone = true;
         if (!bReviewMode) ApplyPhaseTime();
         SyncPlayerCamp();
-        if (Showcase == TEXT("flow") || Showcase == TEXT("ride"))
+        if (Showcase == TEXT("flow") || Showcase == TEXT("ride") || Showcase == TEXT("jump") || Showcase == TEXT("walk"))
         {
             Phase = EFlowFestPhase::FestivalNight;
             SetActorLocationAndRotation(FestivalWorld->GetLandmark(TEXT("workshop")) + FVector(0, 0, 110), FRotator::ZeroRotator, false);
@@ -157,6 +185,11 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
             CameraBoom->SocketOffset = FVector(0, 0, 0);
             if (AController* C = GetController()) C->SetControlRotation(FRotator(-6.f, 145.f, 0));
         }
+        float ReviewHour = -1.f;
+        if ((bReviewMode || !Showcase.IsEmpty()) &&
+            FParse::Value(FCommandLine::Get(), TEXT("FlowFestHour="), ReviewHour) &&
+            FMath::IsFinite(ReviewHour) && ReviewHour >= 0.f && ReviewHour <= 24.f)
+            FestivalWorld->SetTimeOfDay(ReviewHour);
     }
 
     StartupSeconds += DeltaSeconds;
@@ -165,6 +198,13 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     {
         bShowcaseStarted = true;
         ToggleStaff();
+    }
+    // Review-only input follows the same movement and animation path as play.
+    if (Showcase == TEXT("walk")) bForward = StartupSeconds >= 22.f && StartupSeconds < 27.f;
+    if (Showcase == TEXT("jump") && !bShowcaseStarted && StartupSeconds >= 24.7f && GetCharacterMovement()->IsMovingOnGround())
+    {
+        bShowcaseStarted = true;
+        JumpOrRise();
     }
     if ((bReviewMode || !Showcase.IsEmpty() || !CapturePath.IsEmpty()) && StartupSeconds >= 10.f)
     {
@@ -181,13 +221,16 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
             RunSmoke();
         }
     }
-    if (!CapturePath.IsEmpty() && !bCaptureRequested && StartupSeconds >= 25.f)
+    if (!CapturePath.IsEmpty() && !bCaptureRequested && CapturedFrames < CaptureFrames &&
+        StartupSeconds >= CaptureStart + CapturedFrames * CaptureInterval)
     {
         if (GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport)
         {
             FHighResScreenshotConfig& Screenshot = GetHighResScreenshotConfig();
-            CapturePreviousTimestamp = IFileManager::Get().GetTimeStamp(*CapturePath);
-            Screenshot.SetFilename(CapturePath);
+            ActiveCapturePath = CapturedFrames == 0 ? CapturePath :
+                FPaths::GetPath(CapturePath) / FString::Printf(TEXT("%s-%03d.png"), *FPaths::GetBaseFilename(CapturePath), CapturedFrames);
+            CapturePreviousTimestamp = IFileManager::Get().GetTimeStamp(*ActiveCapturePath);
+            Screenshot.SetFilename(ActiveCapturePath);
             Screenshot.SetResolution(1920, 1080);
             UE_LOG(LogTemp, Display, TEXT("FlowFestVisual character=%s body=%s bounds=%s camera=%s arm=%.1f"),
                 *CharacterId.ToString(), *Avatar->GetBodyMesh()->GetComponentLocation().ToString(),
@@ -200,17 +243,20 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
                 *Body->GetSocketLocation(TEXT("LeftHand")).ToString(), *Body->Bounds.Origin.ToString(), *BodyScreen.ToString(),
                 Body->IsVisible(), Body->bHiddenInGame, Body->bOwnerNoSee, *FollowCamera->GetComponentRotation().ToString());
             bCaptureRequested = GEngine->GameViewport->Viewport->TakeHighResScreenShot();
-            UE_LOG(LogTemp, Display, TEXT("Flow Fest high-res screenshot %s: %s"), bCaptureRequested ? TEXT("requested") : TEXT("failed"), *CapturePath);
+            UE_LOG(LogTemp, Display, TEXT("Flow Fest high-res screenshot %s frame=%d time=%.3f: %s"), bCaptureRequested ? TEXT("requested") : TEXT("failed"), CapturedFrames, StartupSeconds, *ActiveCapturePath);
             ReportFrameTiming();
         }
     }
-    if (bCaptureRequested && !bCaptureReady && FPlatformFileManager::Get().GetPlatformFile().FileExists(*CapturePath)
-        && IFileManager::Get().GetTimeStamp(*CapturePath) > CapturePreviousTimestamp)
+    if (bCaptureRequested && FPlatformFileManager::Get().GetPlatformFile().FileExists(*ActiveCapturePath)
+        && IFileManager::Get().GetTimeStamp(*ActiveCapturePath) > CapturePreviousTimestamp)
     {
-        bCaptureReady = true;
-        UE_LOG(LogTemp, Display, TEXT("Flow Fest screenshot written: %s"), *CapturePath);
+        ++CapturedFrames;
+        bCaptureRequested = false;
+        bCaptureReady = CapturedFrames == CaptureFrames;
+        UE_LOG(LogTemp, Display, TEXT("Flow Fest screenshot written (%d/%d): %s"), CapturedFrames, CaptureFrames, *ActiveCapturePath);
     }
-    if (bAutoExit && StartupSeconds >= 40.f)
+    const float ExitSeconds = FMath::Max(40.f, CaptureStart + (CaptureFrames - 1) * CaptureInterval + 15.f);
+    if (bAutoExit && StartupSeconds >= ExitSeconds)
     {
         ReportFrameTiming();
         const bool bCaptureFailed = !CapturePath.IsEmpty() && !bCaptureReady;
@@ -249,7 +295,11 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     }
     if (bPhotoFly) AddMovementInput(FVector::UpVector, (bRise ? 1.f : 0.f) - (bDescend ? 1.f : 0.f));
 
-    const float Speed = bPhotoFly ? 1600.f : bInVehicle ? (bSprint ? 2100.f : 1400.f) : bOnEUC ? 1050.f : bSprint ? 640.f : 380.f;
+    // The only authored reverse gait travels about 117 cm/s at 1x. Keep an S
+    // sprint within its 2.4x cadence range, with diagonal input interpolating
+    // smoothly toward the normal lateral sprint speed.
+    const float Speed = bPhotoFly ? 1600.f : bInVehicle ? (bSprint ? 2100.f : 1400.f)
+        : bOnEUC ? 1050.f : OnFootSpeedCmPerSecond(ForwardInput, RightInput, bSprint);
     GetCharacterMovement()->MaxWalkSpeed = Speed;
     GetCharacterMovement()->MaxFlySpeed = Speed;
     if (Phase == EFlowFestPhase::DriveIn && bInVehicle && !bPhotoFly && !FMath::IsNearlyZero(ForwardInput))
@@ -262,7 +312,12 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     Avatar->SetMotion(GetVelocity(), GetCharacterMovement()->IsFalling(), bOnEUC && !bWardrobeOpen);
     if (bOnEUC && !bWardrobeOpen) EUCWheel->AddLocalRotation(FRotator(0, 0, FMath::RadiansToDegrees(GetVelocity().Dot(GetActorForwardVector()) * DeltaSeconds / 36.3f)));
     Props->SetHandTransforms(Avatar->GetHandTransform(true), Avatar->GetHandTransform(false));
-    if (bStaffSpinning) Props->SetPerformanceTime(Avatar->GetPerformanceTime());
+    if (FestivalWorld)
+    {
+        const bool bAtFire = Near(TEXT("fire"), 24.f);
+        FestivalWorld->SetPlayerCrowdPresence(GetActorLocation(), bAtFire, bAtFire && bStaffSpinning);
+        FestivalWorld->SetJamSoundActive(bAtFire && (bStaffSpinning || Jam == EFlowFestJam::Active));
+    }
 }
 
 void AFlowFestCharacter::SetupPlayerInputComponent(UInputComponent* Input)
@@ -293,6 +348,8 @@ void AFlowFestCharacter::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindKey(EKeys::P, IE_Pressed, this, &AFlowFestCharacter::TogglePhotoFly);
     Input->BindKey(EKeys::V, IE_Pressed, this, &AFlowFestCharacter::ToggleEUC);
     Input->BindKey(EKeys::Q, IE_Pressed, this, &AFlowFestCharacter::ToggleStaff);
+    Input->BindKey(EKeys::R, IE_Pressed, this, &AFlowFestCharacter::CyclePerformance);
+    Input->BindKey(EKeys::M, IE_Pressed, this, &AFlowFestCharacter::ToggleSound);
     Input->BindKey(EKeys::T, IE_Pressed, this, &AFlowFestCharacter::TravelToObjective);
     Input->BindKey(EKeys::G, IE_Pressed, this, &AFlowFestCharacter::CycleTime);
     Input->BindKey(EKeys::F5, IE_Pressed, this, &AFlowFestCharacter::SaveProgress);
@@ -309,7 +366,7 @@ void AFlowFestCharacter::QuitGame() { if (bWardrobeOpen) { ToggleWardrobe(); ret
 
 void AFlowFestCharacter::ReportFrameTiming()
 {
-    if ((!bReviewMode && Showcase.IsEmpty() && CapturePath.IsEmpty()) || bTimingReported) return;
+    if ((!bReviewMode && Showcase.IsEmpty() && CapturePath.IsEmpty()) || bTimingReported || CaptureFrames > 1) return;
     bTimingReported = true;
     if (FrameSampleCount > 0)
     {
@@ -493,9 +550,7 @@ void AFlowFestCharacter::ToggleStaff()
     if (bWardrobeOpen) return;
     if (bInVehicle || bPhotoFly || bOnEUC) { Notify(TEXT("Step onto the ground to flow")); return; }
     if (bStaffSpinning) { StopFlow(); return; }
-    const FString Id = EquippedPropId.ToString();
-    const FName Profile = Id.StartsWith(TEXT("poi")) ? TEXT("FirePoi") : Id.Contains(TEXT("hoop")) ? TEXT("FireHoop") :
-        Id.Contains(TEXT("club")) ? TEXT("Juggler") : TEXT("LedFlow");
+    const FName Profile = UFlowFestAvatarComponent::ResolvePerformanceProfile(EquippedPropId, PerformanceVariant);
     if (!Props->LoadPerformance(CharacterId, Profile) || !Avatar->PlayPerformance(Profile))
     {
         StopFlow();
@@ -504,8 +559,22 @@ void AFlowFestCharacter::ToggleStaff()
     }
     GetCharacterMovement()->StopMovementImmediately();
     bStaffSpinning = true;
-    Props->SetFinish(Profile == TEXT("FirePoi") || Profile == TEXT("FireHoop") ? TEXT("fire") : TEXT("led"));
-    Props->SetPerformanceTime(0.f);
+    Props->ResetFinish();
+}
+void AFlowFestCharacter::CyclePerformance()
+{
+    if (bWardrobeOpen) return;
+    const bool bResume = bStaffSpinning;
+    if (bResume) StopFlow();
+    PerformanceVariant = (PerformanceVariant + 1) % 2;
+    if (bResume) ToggleStaff();
+    Notify(PerformanceVariant == 0 ? TEXT("Flow routine A") : TEXT("Flow routine B"));
+}
+void AFlowFestCharacter::ToggleSound()
+{
+    bSoundEnabled = !bSoundEnabled;
+    if (FestivalWorld) FestivalWorld->SetSoundEnabled(bSoundEnabled);
+    Notify(bSoundEnabled ? TEXT("Festival sound on") : TEXT("Festival sound muted"));
 }
 void AFlowFestCharacter::StopFlow()
 {
@@ -551,7 +620,7 @@ void AFlowFestCharacter::PlaceReviewCamera()
         ReviewSite == TEXT("camp") ? FVector(-1400, -1000, 0) : FVector(-2200, -1900, 600);
     FVector Position = Target + Offset;
     if (ReviewSite == TEXT("fire") || ReviewSite == TEXT("camp"))
-        Position.Z = FestivalWorld->SampleGround(Position.X * .01f, Position.Y * .01f) + 100.f;
+        Position.Z = FestivalWorld->SampleGround(Position.X * .01f, Position.Y * .01f) + (ReviewSite == TEXT("camp") ? 230.f : 100.f);
     GetCharacterMovement()->StopMovementImmediately();
     GetCharacterMovement()->SetMovementMode(MOVE_Flying);
     bPhotoFly = true;
@@ -588,7 +657,11 @@ void AFlowFestCharacter::SyncModeVisuals()
     CameraBoom->bDoCollisionTest = !bWardrobeOpen;
     CameraBoom->TargetArmLength = bWardrobeOpen ? 340.f : (bFirstPerson || bPhotoFly) ? 0.f : bInVehicle ? 680.f : 420.f;
     CameraBoom->SocketOffset = bWardrobeOpen ? FVector(0, 150, -10) : (bFirstPerson || bPhotoFly) ? FVector(25, 0, 68) : FVector(0, 0, 65);
-    GetCharacterMovement()->bOrientRotationToMovement = !bInVehicle;
+    // Keep the standing body facing the view yaw so S and A/D are real
+    // backward and strafe travel in the avatar's local frame. The vehicle
+    // keeps its steering yaw; the unicycle still faces its travel direction.
+    bUseControllerRotationYaw = !bInVehicle && !bOnEUC && !bPhotoFly;
+    GetCharacterMovement()->bOrientRotationToMovement = !bInVehicle && (bOnEUC || bPhotoFly);
     SyncPlayerCamp();
 }
 
@@ -650,6 +723,7 @@ void AFlowFestCharacter::ChooseCharacter(FName Id)
     if (!Avatar->SetCharacter(Id)) { Notify(TEXT("Character asset could not load")); return; }
     CharacterId = Id;
     Props->BindHands(Avatar->GetBodyMesh());
+    Avatar->BindPerformanceProp(Props);
     SyncModeVisuals();
     SaveProgress();
 }
@@ -661,6 +735,7 @@ void AFlowFestCharacter::ChooseProp(FName Id)
     if (!Props->Equip(Id)) { Notify(TEXT("Prop asset could not load")); return; }
     EquippedPropId = Id;
     Props->BindHands(Avatar->GetBodyMesh());
+    Avatar->BindPerformanceProp(Props);
     SaveProgress();
 }
 
@@ -713,6 +788,7 @@ void AFlowFestCharacter::SaveProgress()
     Save->Hour = FestivalWorld ? FestivalWorld->GetTimeOfDay() : 15.f;
     Save->bInVehicle = bInVehicle; Save->bCampBuilt = bCampBuilt;
     Save->CharacterId = CharacterId; Save->PropId = EquippedPropId; Save->bOnEUC = bOnEUC;
+    Save->bSoundEnabled = bSoundEnabled; Save->PerformanceVariant = PerformanceVariant;
     if (!UGameplayStatics::SaveGameToSlot(Save, SaveSlot(), 0)) Notify(TEXT("Save failed"));
 }
 
@@ -748,12 +824,16 @@ void AFlowFestCharacter::LoadProgress()
     Energy = Save->Energy; bInVehicle = Save->bInVehicle; bCampBuilt = Save->bCampBuilt;
     bOnEUC = Save->bOnEUC && !bInVehicle; bPhotoFly = false; bStaffSpinning = false;
     CharacterId = Save->CharacterId; EquippedPropId = Save->PropId;
+    bSoundEnabled = Save->bSoundEnabled;
+    PerformanceVariant = FMath::Clamp(Save->PerformanceVariant, 0, 1);
     Avatar->SetCharacter(CharacterId); Props->Equip(EquippedPropId);
     Props->BindHands(Avatar->GetBodyMesh());
+    Avatar->BindPerformanceProp(Props);
     JamSpinSeconds = 0.f;
     GetCharacterMovement()->SetMovementMode(MOVE_Walking);
     SetActorLocationAndRotation(Save->Position, Save->Rotation, false);
     if (FestivalWorld) FestivalWorld->SetTimeOfDay(Save->Hour);
+    if (FestivalWorld) FestivalWorld->SetSoundEnabled(bSoundEnabled);
     bInitialPlacementDone = true;
     SyncModeVisuals();
     Notify(TEXT("Native journey loaded"));
@@ -874,11 +954,17 @@ void AFlowFestCharacter::RunSmoke()
         SetActorLocation(FestivalWorld->GetLandmark(Id) + FVector(0, 0, 110), false);
     };
     Expect(CharacterChoices.Num() == 16 && PropChoices.Num() == 71, TEXT("complete deployed character and prop catalogs"));
+    Expect(FMath::IsNearlyEqual(OnFootSpeedCmPerSecond(-1.f, 0.f, true), 280.f)
+        && FMath::IsNearlyEqual(OnFootSpeedCmPerSecond(1.f, 0.f, true), 440.f)
+        && FMath::IsNearlyEqual(OnFootSpeedCmPerSecond(0.f, 1.f, true), 440.f)
+        && OnFootSpeedCmPerSecond(-1.f, 1.f, true) > 280.f
+        && OnFootSpeedCmPerSecond(-1.f, 1.f, true) < 440.f,
+        TEXT("backward sprint cap preserves lateral and forward travel"));
     const FName PreviousCharacter = CharacterId, PreviousProp = EquippedPropId;
     auto CheckPose = [this, &Expect](const FString& Label)
     {
         USkeletalMeshComponent* Body = Avatar->GetBodyMesh();
-        Body->TickAnimation(0.f, false);
+        for (int32 Settle = 0; Settle < 24; ++Settle) Body->TickAnimation(.05f, false);
         Body->RefreshBoneTransforms();
         const FVector Origin = AvatarRoot->GetComponentLocation();
         const FVector Hips = Body->GetSocketLocation(TEXT("Hips")) - Origin;
@@ -888,6 +974,7 @@ void AFlowFestCharacter::RunSmoke()
             && Foot.Z > -50.f && Foot.Z < 200.f, *FString::Printf(TEXT("plausible imported pose %s"), *Label));
         UE_LOG(LogTemp, Display, TEXT("FlowFestPose %s hips=%s head=%s foot=%s"), *Label, *Hips.ToString(), *Head.ToString(), *Foot.ToString());
     };
+    int32 FamilyProfilesLoaded = 0;
     for (const FFlowFestChoice& Choice : CharacterChoices)
     {
         Expect(Avatar->SetCharacter(Choice.Id), *FString::Printf(TEXT("load character %s and locomotion"), *Choice.Id.ToString()));
@@ -897,11 +984,6 @@ void AFlowFestCharacter::RunSmoke()
         Expect(LoadObject<UObject>(nullptr, *FString::Printf(TEXT("/Game/FlowFest/Characters/%s/A_Ride.A_Ride"), *Key)) != nullptr,
             *FString::Printf(TEXT("pedal-contact ride for %s"), *Choice.Id.ToString()));
         Avatar->SetMotion(FVector::ZeroVector, false, true);
-        if (UAnimSingleNodeInstance* Instance = Avatar->GetBodyMesh()->GetSingleNodeInstance())
-        {
-            Expect(FMath::IsNearlyEqual(Instance->GetLength(), 1.f, .001f), TEXT("mounted pose has exact one-second loop duration"));
-            Instance->SetPosition(.5f, false);
-        }
         CheckPose(Choice.Id.ToString() + TEXT("/Ride"));
         const FTransform AvatarFrame = AvatarRoot->GetComponentTransform();
         const FVector LeftRideFoot = AvatarFrame.InverseTransformPosition(Avatar->GetBodyMesh()->GetSocketLocation(TEXT("LeftFoot")));
@@ -914,33 +996,77 @@ void AFlowFestCharacter::RunSmoke()
             *FString::Printf(TEXT("mounted feet align with native wheel for %s"), *Choice.Id.ToString()));
         for (const TCHAR* Profile : {TEXT("FirePoi"), TEXT("FireHoop"), TEXT("Juggler"), TEXT("LedFlow")})
         {
+            const FName PhysicalProp = FCString::Strcmp(Profile, TEXT("FirePoi")) == 0 ? FName(TEXT("poi"))
+                : FCString::Strcmp(Profile, TEXT("FireHoop")) == 0 ? FName(TEXT("bighoop"))
+                : FCString::Strcmp(Profile, TEXT("Juggler")) == 0 ? FName(TEXT("club")) : FName(TEXT("capsule_baton"));
+            Expect(Props->Equip(PhysicalProp), TEXT("matching legacy performance prop"));
             Expect(Avatar->PlayPerformance(FName(Profile)), *FString::Printf(TEXT("production performance %s/%s"), *Choice.Id.ToString(), Profile));
-            if (UAnimSingleNodeInstance* Instance = Avatar->GetBodyMesh()->GetSingleNodeInstance())
-            {
-                Expect(FMath::IsNearlyEqual(Instance->GetLength(), 16.f, .001f), TEXT("performance has exact 16-second loop duration"));
-                Instance->SetPosition(.5f, false);
-            }
+            Expect(FMath::IsNearlyEqual(Avatar->GetPerformanceLength(), 16.f, .001f), TEXT("performance has exact 16-second loop duration"));
+            Avatar->SetPerformancePhase(.5f / 16.f);
             CheckPose(Choice.Id.ToString() + TEXT("/") + Profile);
             Expect(Props->LoadPerformance(Choice.Id, FName(Profile)), *FString::Printf(TEXT("prop motion %s/%s"), *Choice.Id.ToString(), Profile));
             Props->SetPerformanceTime(.5f);
             Props->ClearPerformanceTransforms();
             Avatar->StopPerformance();
         }
+        TSet<FName> SeenFamilyProfiles;
+        for (const FFlowFestChoice& PropChoice : PropChoices)
+        {
+            const FName ProfileA = UFlowFestAvatarComponent::ResolvePerformanceProfile(PropChoice.Id, 0);
+            const FName ProfileB = UFlowFestAvatarComponent::ResolvePerformanceProfile(PropChoice.Id, 1);
+            if (ProfileA.IsNone() || ProfileB.IsNone() || ProfileA == ProfileB)
+            {
+                Expect(false, *FString::Printf(TEXT("valid family profiles for %s"), *PropChoice.Id.ToString()));
+                continue;
+            }
+            if (SeenFamilyProfiles.Contains(ProfileA) && SeenFamilyProfiles.Contains(ProfileB)) continue;
+            const bool bEquipped = Props->Equip(PropChoice.Id) && Props->IsReady();
+            Expect(bEquipped, *FString::Printf(TEXT("matching family performance prop %s"), *PropChoice.Id.ToString()));
+            if (!bEquipped) continue;
+            for (const FName Profile : {ProfileA, ProfileB})
+            {
+                if (SeenFamilyProfiles.Contains(Profile)) continue;
+                SeenFamilyProfiles.Add(Profile);
+                const FString Label = Choice.Id.ToString() + TEXT("/") + Profile.ToString();
+                const bool bPropLoaded = Props->LoadPerformance(Choice.Id, Profile);
+                const bool bBodyLoaded = Avatar->PlayPerformance(Profile);
+                const bool bExactLength = bBodyLoaded && FMath::IsNearlyEqual(Avatar->GetPerformanceLength(), 16.f, .001f);
+                Expect(bPropLoaded && bBodyLoaded && bExactLength,
+                    *FString::Printf(TEXT("cooked family body, prop track and 16-second loop %s"), *Label));
+                if (bPropLoaded && bBodyLoaded && bExactLength) ++FamilyProfilesLoaded;
+                Props->ClearPerformanceTransforms();
+                Avatar->StopPerformance();
+            }
+        }
+        Expect(SeenFamilyProfiles.Num() == 82,
+            *FString::Printf(TEXT("82 unique family routines for %s"), *Choice.Id.ToString()));
     }
+    Expect(FamilyProfilesLoaded == 1312, TEXT("all 1312 cooked family performances load"));
+    UE_LOG(LogTemp, Display, TEXT("FlowFestSmoke cooked family performances loaded: %d/1312"), FamilyProfilesLoaded);
     for (const FFlowFestChoice& Choice : PropChoices)
     {
         Expect(Props->Equip(Choice.Id) && Props->IsReady(), *FString::Printf(TEXT("load both hands for %s"), *Choice.Id.ToString()));
         Props->SetFinish(TEXT("fire")); Props->SetVisible(false); Props->SetVisible(true);
         Props->SetFinish(TEXT("led")); Props->SetFinish(TEXT("none"));
     }
-    Avatar->SetCharacter(PreviousCharacter); Props->Equip(PreviousProp); Props->BindHands(Avatar->GetBodyMesh());
+    Avatar->SetCharacter(PreviousCharacter); Props->Equip(PreviousProp); Props->BindHands(Avatar->GetBodyMesh()); Avatar->BindPerformanceProp(Props);
     Expect(EUCMesh->GetStaticMesh() && EUCWheel->GetStaticMesh(), TEXT("authored unicycle body and rotating wheel"));
     ChooseCharacter(TEXT("ch44")); ChooseProp(TEXT("fan:day_white_covered"));
+    const bool PreviousSoundEnabled = bSoundEnabled;
+    const int32 PreviousPerformanceVariant = PerformanceVariant;
+    bSoundEnabled = false;
+    PerformanceVariant = 1;
     SaveProgress();
     Avatar->SetCharacter(PreviousCharacter); CharacterId = PreviousCharacter;
     Props->Equip(PreviousProp); EquippedPropId = PreviousProp;
+    bSoundEnabled = true;
+    PerformanceVariant = 0;
     LoadProgress();
     Expect(CharacterId == TEXT("ch44") && EquippedPropId == TEXT("fan:day_white_covered"), TEXT("selected character and prop variant persistence"));
+    Expect(!bSoundEnabled && PerformanceVariant == 1, TEXT("sound and routine selection persistence"));
+    bSoundEnabled = PreviousSoundEnabled;
+    PerformanceVariant = PreviousPerformanceVariant;
+    FestivalWorld->SetSoundEnabled(bSoundEnabled);
     ChooseCharacter(PreviousCharacter); ChooseProp(PreviousProp);
     const TCHAR* CampIds[] = {TEXT("camp-lower"), TEXT("camp-upper"), TEXT("camp-car")};
     const EFlowFestCamp Camps[] = {EFlowFestCamp::LowerTent, EFlowFestCamp::UpperTent, EFlowFestCamp::CarCamp};
@@ -979,6 +1105,8 @@ void AFlowFestCharacter::RunSmoke()
             MoveTo(CampIds[CampIndex]); Interact();
             Expect(Phase == EFlowFestPhase::MakeCamp, TEXT("tent camp walk home"));
         }
+        Expect(bUseControllerRotationYaw && !GetCharacterMovement()->bOrientRotationToMovement,
+            TEXT("on-foot view facing leaves reverse and strafe gait reachable"));
         Interact(); Expect(Phase == EFlowFestPhase::WalkToFestival && bCampBuilt, TEXT("make camp"));
         MoveTo(TEXT("workshop")); Interact();
         Expect(Phase == EFlowFestPhase::FestivalNight, TEXT("workshop"));

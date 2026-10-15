@@ -9,29 +9,32 @@ import { museumPerformanceEntries, assertMuseumRawCapture } from '../../Shared/T
 const here = dirname(fileURLToPath(import.meta.url));
 const option = name => {
   const index = process.argv.indexOf(name);
-  return index < 0 ? null : process.argv[index + 1];
+  if (index < 0) return null;
+  const value = process.argv[index + 1];
+  if (!value || value.startsWith('--')) throw new Error(`${name} requires a value`);
+  return value;
 };
 const project = resolve(option('--project') || resolve(here, '..'));
 const performanceManifestFile = option('--performance-manifest');
 const museumMode = performanceManifestFile !== null;
 const baseStaged = option('--base-staged') ? resolve(option('--base-staged')) : resolve(here, 'staged/Characters');
-if (['--project', '--performance-manifest', '--base-staged'].some(flag => process.argv.includes(flag) && !option(flag)))
-  throw new Error('--project, --performance-manifest and --base-staged require paths');
+if (museumMode && (!process.argv.includes('--project') || existsSync(join(project, 'FlowFest.uproject'))))
+  throw new Error('Museum performance staging requires an explicit non-FlowFest --project');
 const repo = resolve(here, '../../..');
 const source = resolve(process.argv[2]?.startsWith('--') ? repo : (process.argv[2] || repo));
 const capturesFlag = process.argv.indexOf('--captures');
-const capturesDir = capturesFlag < 0 ? null : resolve(process.argv[capturesFlag + 1] || '');
-const captureIdFlag = process.argv.indexOf('--capture-id');
-const captureId = captureIdFlag < 0 ? null : process.argv[captureIdFlag + 1];
+const capturesOption = option('--captures');
+const capturesDir = capturesOption === null ? null : resolve(capturesOption);
+const captureId = option('--capture-id');
 const familyOnly = process.argv.includes('--family-only');
 const legacyOnly = process.argv.includes('--legacy-only');
 const allowPartial = process.argv.includes('--allow-partial');
 if (museumMode && (familyOnly || legacyOnly || allowPartial || captureId))
   throw new Error('Museum manifest mode cannot combine with legacy capture filters');
 if (museumMode && !capturesDir) throw new Error('--performance-manifest requires --captures');
-if (capturesFlag >= 0 && (!process.argv[capturesFlag + 1] || !existsSync(capturesDir)))
+if (capturesFlag >= 0 && !existsSync(capturesDir))
   throw new Error(`Missing native performance capture directory: ${capturesDir}`);
-if (captureIdFlag >= 0 && (!captureId || !capturesDir))
+if (captureId && !capturesDir)
   throw new Error('--capture-id requires an ID and --captures directory');
 if (familyOnly && !capturesDir) throw new Error('--family-only requires --captures directory');
 if (legacyOnly && (!capturesDir || familyOnly)) throw new Error('--legacy-only requires --captures and cannot combine with --family-only');

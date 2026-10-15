@@ -42,4 +42,6 @@ public:
     UPROPERTY(SaveGame) FName CharacterId = TEXT("ch01");
     UPROPERTY(SaveGame) FName PropId = TEXT("capsule_baton");
     UPROPERTY(SaveGame) bool bOnEUC = false;
+    UPROPERTY(SaveGame) bool bSoundEnabled = true;
+    UPROPERTY(SaveGame) int32 PerformanceVariant = 0;
 };
