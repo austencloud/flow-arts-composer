@@ -19,8 +19,11 @@ MANIFEST = json.loads((STAGED / 'imports.json').read_text(encoding='utf-8'))
 parser = argparse.ArgumentParser()
 parser.add_argument('--id', action='append', help='Only convert these character IDs')
 parser.add_argument('--family-only', action='store_true', help='Convert only staged P_<family>_A/B captures')
+parser.add_argument('--allow-partial', action='store_true', help='Pilot only: convert available family captures for explicit --id')
 parser.add_argument('--force', action='store_true', help='Re-export assets even when FBX is current')
 args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
+if args.allow_partial and (not args.family_only or not args.id):
+    raise RuntimeError('--allow-partial requires --family-only and explicit --id')
 bpy.context.scene.render.fps = 30
 
 
@@ -183,9 +186,12 @@ def retarget_clip(character, target, clip_name, source_path, captured=False):
 for character in MANIFEST['characters']:
     if args.id and character['id'] not in args.id:
         continue
-    if args.family_only and len([profile for profile in character.get('captures', {})
+    if args.family_only and not args.allow_partial and len([profile for profile in character.get('captures', {})
                                  if profile.startswith('P_') and profile.endswith(('_A', '_B'))]) != 82:
         raise RuntimeError(f'{character["id"]}: expected 82 staged family captures')
+    if args.allow_partial and not any(profile.startswith('P_') and profile.endswith(('_A', '_B'))
+                                     for profile in character.get('captures', {})):
+        raise RuntimeError(f'{character["id"]}: no staged family captures for pilot')
     target, meshes = prepare_rig(character)
     if not args.family_only:
         for clip_name, filename in MANIFEST['animations'].items():

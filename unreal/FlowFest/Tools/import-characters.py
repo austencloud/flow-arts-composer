@@ -19,8 +19,11 @@ CAPTURE_ONLY = os.environ.get('FLOWFEST_CAPTURE_ONLY') == '1'
 LOCOMOTION_ONLY = os.environ.get('FLOWFEST_LOCOMOTION_ONLY') == '1'
 FAMILY_ONLY = os.environ.get('FLOWFEST_FAMILY_ONLY') == '1'
 CAPTURE_ID = os.environ.get('FLOWFEST_CAPTURE_ID')
+ALLOW_PARTIAL = os.environ.get('FLOWFEST_ALLOW_PARTIAL') == '1'
 if sum((CAPTURE_ONLY, LOCOMOTION_ONLY, FAMILY_ONLY)) > 1:
     raise RuntimeError('Choose one import subset: capture-only, locomotion-only, or family-only')
+if ALLOW_PARTIAL and (not FAMILY_ONLY or not CAPTURE_ID):
+    raise RuntimeError('FLOWFEST_ALLOW_PARTIAL requires FLOWFEST_FAMILY_ONLY=1 and FLOWFEST_CAPTURE_ID')
 TOOLS = u.AssetToolsHelpers.get_asset_tools()
 ED = u.EditorAssetLibrary
 u.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
@@ -254,6 +257,7 @@ def bind_appearance(character, mesh):
 
 
 imported_count = 0
+imported_family_profiles = 0
 for character in MANIFEST['characters']:
     if CAPTURE_ID and character['id'] != CAPTURE_ID:
         continue
@@ -290,9 +294,16 @@ for character in MANIFEST['characters']:
             restore_reference_scale(animation, reference_roots, character['id'])
     if (CAPTURE_ONLY or FAMILY_ONLY) and not character.get('captures'):
         raise RuntimeError(f'{character["id"]}: no staged captures for performance import')
-    if FAMILY_ONLY and len([profile for profile in character['captures'] if profile.startswith('P_') and profile.endswith(('_A', '_B'))]) != 82:
+    family_profiles = [profile for profile in character.get('captures', {})
+                       if profile.startswith('P_') and profile.endswith(('_A', '_B'))]
+    if FAMILY_ONLY and not ALLOW_PARTIAL and len(family_profiles) != 82:
         raise RuntimeError(f'{character["id"]}: expected 82 staged family performances')
-    for profile in (() if LOCOMOTION_ONLY else character.get('captures', {})):
+    if ALLOW_PARTIAL:
+        family_profiles = [profile for profile in family_profiles
+                           if (STAGED / key / f'A_Flow_{profile}.fbx').is_file()]
+        if not family_profiles:
+            raise RuntimeError(f'{character["id"]}: no converted family performances for pilot')
+    for profile in (() if LOCOMOTION_ONLY else (family_profiles if FAMILY_ONLY else character.get('captures', {}))):
         if FAMILY_ONLY and not (profile.startswith('P_') and profile.endswith(('_A', '_B'))):
             continue
         name = 'Ride' if profile == 'Ride' else f'Flow_{profile}'
@@ -303,6 +314,8 @@ for character in MANIFEST['characters']:
         if abs(animation.get_play_length() - expected_seconds) > .05:
             raise RuntimeError(f'{character["id"]}: A_{name} duration {animation.get_play_length():.3f}s, expected {expected_seconds:.3f}s')
         restore_reference_scale(animation, reference_roots, character['id'])
+        if FAMILY_ONLY:
+            imported_family_profiles += 1
     ED.save_loaded_asset(mesh)
     ED.save_loaded_asset(skeleton)
     imported_count += 1
@@ -311,3 +324,5 @@ for character in MANIFEST['characters']:
 if CAPTURE_ID and imported_count != 1 or not CAPTURE_ID and imported_count != 16:
     raise RuntimeError(f'Character import count mismatch: {imported_count}')
 u.log(f'FLOWFEST_CHARACTERS_IMPORTED {imported_count}')
+if FAMILY_ONLY:
+    u.log(f'FLOWFEST_FAMILY_PROFILES_IMPORTED {imported_family_profiles}')
