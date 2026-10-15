@@ -5,15 +5,17 @@
   Designed to be used inside PropControlPair which provides the card styling.
   Uses CSS custom properties from parent card for color theming.
 
-  Full mode stacks the turns row over a row holding the rotation toggle and
-  the Path toggle. Compact mode puts turns, rotation and the Path toggle on one
-  row. Either way the path choices open as a full-width row underneath.
+  Full mode stacks the turns row over an action row: rotation, the Buugeng
+  A/B flip (Buugeng-family props only) and the Path toggle. Only the actions
+  that apply are shown, centred; the row keeps its height even when empty so
+  the turns row never moves when an action appears. Compact mode puts turns
+  and the actions on one row, where each action keeps a fixed grid slot so the
+  stepper never moves sideways. Either way the path choices open as a
+  full-width row underneath.
 
   Path choices are fine-tuning most people never need, so they stay closed
-  behind the Path toggle. While closed, the toggle still names a step's own
-  path ("Path · Arc") and shows a dot in compact mode, so an override is never
-  hidden. The toggle keeps its slot on steps that do not travel, so the row
-  does not jump sideways when moving between steps.
+  behind the Path toggle. While closed, the toggle names a step's own shape
+  ("Concave") and shows a dot, so an override is never hidden.
 
   With wholeSteps, a −1 / +1 pair flanks the half-turn pair (same grammar as
   the duration row: coarse outside, fine inside). The pair appears only when
@@ -30,6 +32,10 @@
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { isBuugengFamilyProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+  import ChiralityToggle from "./ChiralityToggle.svelte";
 
   type PathChoice = PathShapeValue | "auto";
 
@@ -80,6 +86,16 @@
   }: Props = $props();
 
   const displayTurns = $derived(turns === "fl" ? "fl" : turns);
+
+  // The A/B flip belongs to the hand's prop, so it shows on every step while
+  // that hand holds a Buugeng-family prop.
+  const settings = $derived(getSettings());
+  const showChirality = $derived(
+    isBuugengFamilyProp(
+      (hand === "left" ? settings.leftPropType : settings.rightPropType) ??
+        PropType.STAFF
+    )
+  );
 
   const directionIcon = $derived(
     rotationDirection === RotationDirection.NO_ROTATION
@@ -174,6 +190,7 @@
   const compactSlots = $derived([
     "turns",
     "rotation",
+    ...(showChirality ? ["chirality"] : []),
     ...(pathAvailable ? ["pathtoggle"] : []),
     ...(trailingControl ? ["trailing"] : []),
   ]);
@@ -200,6 +217,7 @@
   class:red={hand === "right"}
   class:compact
   class:whole-steps={wholeSteps}
+  class:has-chirality={showChirality}
   style:grid-template-columns={compact ? compactColumns : undefined}
   style:grid-template-areas={compact ? compactAreas : undefined}
 >
@@ -286,6 +304,12 @@
         <span class="invert-label">{directionLabel}</span>
       </span>
     </button>
+
+    {#if showChirality}
+      <div class="chirality-slot" class:compact>
+        <ChiralityToggle {hand} {compact} />
+      </div>
+    {/if}
 
     {#if pathAvailable}
       <button
@@ -381,8 +405,24 @@
     gap: 8px;
   }
 
+  /* Full mode: actions that do not apply leave the row entirely, so the ones
+     that do sit centred instead of beside an invisible gap. The row keeps one
+     touch target of height so nothing above it moves when an action appears. */
+  .action-row:not(.compact) {
+    min-height: var(--min-touch-target);
+    flex-wrap: wrap;
+  }
+
+  .action-row:not(.compact) > .reserved {
+    display: none;
+  }
+
   .action-row.compact {
     display: contents;
+  }
+
+  .chirality-slot.compact {
+    grid-area: chirality;
   }
 
   .turns-row {
@@ -436,7 +476,8 @@
   }
 
   /* Compact card: the stepper (four buttons, a 36px value, 4px gaps = 228px)
-     shares its row with the rotation and Path buttons (4 + 44 + 4 + 44). */
+     shares its row with the rotation and Path buttons (4 + 44 + 4 + 44), plus
+     the A/B flip (4 + 44) when the hand holds a Buugeng-family prop. */
   @container hand-card (min-width: 324px) {
     .turns-controls.compact {
       column-gap: 4px;
@@ -444,13 +485,25 @@
     .turns-controls.compact .turns-row {
       gap: 4px;
     }
-    .turns-controls.compact .ctrl-btn.whole {
+    .turns-controls.compact:not(.has-chirality) .ctrl-btn.whole {
       display: flex;
     }
-    .turns-controls.compact .half-num {
+    .turns-controls.compact:not(.has-chirality) .half-num {
       display: inline;
     }
-    .turns-controls.compact .half-icon {
+    .turns-controls.compact:not(.has-chirality) .half-icon {
+      display: none;
+    }
+  }
+
+  @container hand-card (min-width: 372px) {
+    .turns-controls.compact.has-chirality .ctrl-btn.whole {
+      display: flex;
+    }
+    .turns-controls.compact.has-chirality .half-num {
+      display: inline;
+    }
+    .turns-controls.compact.has-chirality .half-icon {
       display: none;
     }
   }
@@ -702,6 +755,32 @@
 
   .path-label.ghost {
     visibility: hidden;
+  }
+
+  /* Full mode with the A/B flip: rotation (~104) + A/B (~67) + a labelled Path
+     (136) overflow a narrow card, so Path drops to its icon (and override
+     dot) until the card can hold all three labels. */
+  .turns-controls.has-chirality:not(.compact) .path-toggle {
+    width: var(--min-touch-target);
+    padding: 0;
+  }
+
+  .turns-controls.has-chirality:not(.compact) .path-label-stack,
+  .turns-controls.has-chirality:not(.compact) .path-toggle-chevron {
+    display: none;
+  }
+
+  @container hand-card (min-width: 340px) {
+    .turns-controls.has-chirality:not(.compact) .path-toggle {
+      width: auto;
+      padding: 0 14px;
+    }
+    .turns-controls.has-chirality:not(.compact) .path-label-stack {
+      display: grid;
+    }
+    .turns-controls.has-chirality:not(.compact) .path-toggle-chevron {
+      display: inline;
+    }
   }
 
   .path-toggle-chevron {

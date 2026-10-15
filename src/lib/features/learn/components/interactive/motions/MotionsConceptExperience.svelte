@@ -28,6 +28,7 @@
   import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
   import type { ExperienceViewMode } from "../../../domain/types";
+  import { isConceptExperienceAvailable } from "../../../domain/concept-experience-registry";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
   import LessonStageControls from "../LessonStageControls.svelte";
   import LessonStageFrame from "../LessonStageFrame.svelte";
@@ -209,6 +210,10 @@
     );
   }
 
+  const nextConceptId = isConceptExperienceAvailable("timing-and-direction")
+    ? "timing-and-direction"
+    : undefined;
+
   function complete(): void {
     if (viewMode === "scroll") {
       onComplete?.();
@@ -216,7 +221,9 @@
     }
     persistence.reset();
     haptic?.trigger("success");
-    onComplete?.("timing-and-direction");
+    // Timing and Direction is withdrawn for now; finishing returns to Learn
+    // until it is published again.
+    onComplete?.(nextConceptId);
   }
 
   function handlePrimaryAction(): void {
@@ -301,7 +308,7 @@
       <LessonStageControls
         progressAppearance="steps"
         label={isLast
-          ? viewMode === "scroll"
+          ? viewMode === "scroll" || !nextConceptId
             ? t("learn_ui_done")
             : t("learn_ui_continue_timing_direction")
           : t("learn_ui_next")}

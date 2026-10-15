@@ -7,7 +7,7 @@
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import GridMergeAnimation from "./grid-merge/GridMergeAnimation.svelte";
+  import LessonBoardSlot from "./live-board/LessonBoardSlot.svelte";
   import GridScrollView from "./grid-concept/GridScrollView.svelte";
   import GridStepHeader from "./grid-concept/GridStepHeader.svelte";
   import { createGridExperienceState } from "./grid-concept/grid-experience-state.svelte";
@@ -101,7 +101,7 @@
 
       {#snippet artifact()}
         <div class="grid-artifact">
-          <GridMergeAnimation
+          <LessonBoardSlot
             phase={experienceState.effectivePhase}
             highlightPhase={experienceState.effectiveHighlightPhase}
           />
@@ -133,22 +133,11 @@
     outline: none;
   }
 
+  /* The session's live board fills this square; Hand Placements then flies
+     the same board into its own stage. */
   .grid-artifact {
     width: 100%;
     height: 100%;
-    display: grid;
-    place-items: center;
-    /* Hand Placements inherits this exact stage. Let the lesson frame own the
-       size so the completed grid does not jump from a legacy 400px cap to the
-       larger hand-placement artifact during the concept handoff. */
-    --grid-merge-max-width: 100%;
-  }
-
-  .grid-artifact :global(svg) {
-    width: 100%;
-    height: 100%;
-    max-width: none;
-    max-height: none;
   }
 
   .control-focus-anchor {

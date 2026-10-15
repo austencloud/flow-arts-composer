@@ -1215,7 +1215,48 @@
     width: 100%;
     overflow: hidden;
     position: relative;
-    transition: background-color var(--duration-normal) var(--ease-standard-out);
+    transition:
+      background-color var(--duration-normal) var(--ease-standard-out),
+      opacity var(--duration-fast) var(--ease-standard),
+      visibility 0s;
+  }
+
+  /* The step editor is see-through so the app's background runs under it
+     (see CreatePanelDrawer). It covers the tool panel beside the sequence,
+     or the whole layout on phones where it fills the workspace, so that part
+     fades out while the editor is open. The dialog keeps its open attribute
+     until it has finished sliding away, so the covered part only returns
+     once the editor is gone. */
+  :global(.create-workspace-body .tool-panel-container) {
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      visibility 0s;
+  }
+
+  :global(
+    .create-workspace-body:has(
+        .step-editor-panel-container.side-by-side-layout[open]
+      )
+      .tool-panel-container
+  ),
+  :global(
+    .create-workspace-body:has(
+        .step-editor-panel-container:not(.side-by-side-layout)[open]
+      )
+      > .create-tab
+  ) {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      visibility 0s linear var(--duration-fast);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .create-tab,
+    :global(.create-workspace-body .tool-panel-container) {
+      transition: none;
+    }
   }
 
   .create-loading {
