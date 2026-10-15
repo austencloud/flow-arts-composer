@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  COMFORT_GRID_REM,
+  KEEP_ASIDE_SHARE,
   MIN_GRID_PX,
   fitPicker,
   type PickerMeasure,
@@ -44,7 +44,7 @@ describe("fitPicker", () => {
     expect(fit.gridSize).toBe(520);
   });
 
-  it("stacks in a tall, narrow box and keeps the aside when the grid is comfortable", () => {
+  it("stacks in a tall, narrow box and keeps the aside when it costs the grid nothing", () => {
     const fit = fitPicker(box(400, 900));
     expect(fit.arrangement).toBe("stack");
     expect(fit.folded).toBe(false);
@@ -55,6 +55,13 @@ describe("fitPicker", () => {
     const fit = fitPicker(box(343, 530));
     expect(fit.folded).toBe(true);
     expect(fit.gridSize).toBeGreaterThan(300);
+  });
+
+  it("folds the aside in a squarish box, where beside or below it costs the grid most", () => {
+    const fit = fitPicker(box(587, 540));
+    expect(fit.folded).toBe(true);
+    expect(fit.arrangement).toBe("stack");
+    expect(fit.gridSize).toBeGreaterThan(360);
   });
 
   it("never folds when the host gave no folded form", () => {
@@ -70,7 +77,7 @@ describe("fitPicker", () => {
     expect(fit.folded).toBe(true);
   });
 
-  it("fits every box with room for the floor, and keeps the aside whenever the grid is comfortable with it", () => {
+  it("fits every box with room for the floor, and folds only when the aside would cost the grid more than its share", () => {
     for (let w = 320; w <= 2400; w += 40) {
       for (let h = 300; h <= 1600; h += 40) {
         const m = box(w, h);
@@ -78,9 +85,13 @@ describe("fitPicker", () => {
         if (fit.gridSize > MIN_GRID_PX) {
           expect(heightUsed(m, w)).toBeLessThanOrEqual(h);
         }
-        if (fit.folded) {
+        if (fit.folded && fit.gridSize > MIN_GRID_PX) {
           const unfolded = fitPicker({ ...m, foldedHeightAt: undefined });
-          expect(unfolded.gridSize).toBeLessThan(COMFORT_GRID_REM * 16);
+          // An unfolded aside that cannot fit at all holds the floor.
+          if (unfolded.gridSize > MIN_GRID_PX)
+            expect(unfolded.gridSize).toBeLessThan(
+              KEEP_ASIDE_SHARE * fit.gridSize
+            );
         }
       }
     }

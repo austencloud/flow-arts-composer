@@ -6,8 +6,11 @@
 // - side: the grid on the left, a column of choices, status and aside beside
 //   it, for a box wider than it is tall.
 //
-// When neither draws the grid comfortably and the host gave a folded form of
-// the aside (a row that opens it as a screen of its own), the aside folds.
+// The aside stays in view when that costs the grid little: within
+// KEEP_ASIDE_SHARE of the grid it would draw folded. Otherwise, when the host
+// gave a folded form (a row that opens the aside as a screen of its own), the
+// aside folds. In a squarish box the aside costs the most either way, beside
+// the grid it takes width and under it height, so that is where it folds.
 // Below the touch floor nothing more can give way: the grid holds the floor in
 // whichever arrangement overflows least, and the host's scroller takes the
 // rest.
@@ -35,8 +38,8 @@ export interface PickerFit {
   column: number;
 }
 
-/** Below this the cells read as small, and folding the aside is worth it. */
-export const COMFORT_GRID_REM = 18;
+/** The aside stays in view while the grid keeps this share of its folded size. */
+export const KEEP_ASIDE_SHARE = 0.85;
 
 /** Four 48px touch targets, three 8px gaps, 4px of padding a side. */
 export const MIN_GRID_PX = 4 * 48 + 3 * 8 + 8;
@@ -108,9 +111,14 @@ export function fitPicker(m: PickerMeasure): PickerFit {
   const all = canFold ? [...unfolded, ...candidates(m, true)] : unfolded;
 
   let best = largest(unfolded);
-  if (canFold && (!best || best.gridSize < COMFORT_GRID_REM * m.rem)) {
+  if (canFold) {
     const folded = largest(all.filter((c) => c.folded));
-    if (folded && (!best || folded.gridSize > best.gridSize)) best = folded;
+    if (
+      folded &&
+      (!best || best.gridSize < KEEP_ASIDE_SHARE * folded.gridSize)
+    ) {
+      best = folded;
+    }
   }
   if (best && best.gridSize >= Math.min(m.width, MIN_GRID_PX)) {
     return result(best, Math.min(m.width, best.gridSize));
