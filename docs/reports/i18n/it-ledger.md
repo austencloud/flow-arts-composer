@@ -15,3 +15,18 @@
 - Text review: ai-bust mechanical pass on the batch output reported no HIGH/CRITICAL findings; manually reviewed translations against the English source and glossary.
 - Uncertain: the glossary does not specify Construct, Assemble or Hall of Shame localization. The choices above are provisional pending native/product review. No native reviewer participated in this run.
 - Delivery: committed on codex/i18n-it for the coordinator. No integration, push, dev server, installation, build or broad type-check was run.
+
+## 2026-10-14 - R2
+
+- Scope: 871 translated keys, 0 retranslate entries, 0 review entries; all supplied keys completed.
+- Applied exclusively through the supplied apply-batch.js with out-R2.json and batch-R2.json.
+- Apply result: `messages/it.json: inserted 871, replaced 0, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 11.30s.
+- Before appending this section, `git diff --stat` showed only messages/it.json: 871 insertions, 0 deletions. Confirmed all preexisting catalog values unchanged and exactly the 871 batch keys added. Placeholders (including occurrence counts), markup tags and single-line values checked against the supplied source.
+- Glossary: Box -> Quadrato; Diamond -> Diamante; placement -> posizione; hand path -> percorso della mano; prop -> attrezzo; staff -> bastone; pictograph -> pittogramma; sequence positions -> passo; turn -> giro; downbeat -> battere; timing remains timing. Tu address and second-person imperative buttons throughout.
+- Preserved notation names, letters and data: Alpha/Beta/Gamma, Pro/Anti, Shift/Dash/Static, Prospin/Antispin/Isolation, Split-Same/Tog-Same/Quarter-Opp/Quarter-Same, TKA, VTG, LOOP, Codex, Composer, Flow Arts Composer, Choreo Cards, compass-point codes and every placeholder. Normalized category and placement capitalization in prose where English used lowercase names.
+- Other wording: Tap Route -> Tocca il percorso; bridge letter -> lettera ponte; streak -> serie; game Bloom/Blooms -> fioritura/fioriture; hold -> sosta or resta, according to context. Reversal -> inversione where the source describes spin-direction changes.
+- Text review: ai-bust mechanical pass on out-R2.json finished with `[]` (no HIGH/CRITICAL findings) after replacing source em dashes with colons and expressing the fire feedback without the emoji. Manually reviewed meaning, glossary terms and button phrasing.
+- Uncertain: the glossary does not specify Tap Route, bridge letter, game Bloom/Blooms, or reversal; choices above are provisional pending native/product review. Kept the technical loanword dataframe in learn_place_1_5_description because the English explicitly uses it; no independent claim about the data model was established. No native reviewer participated in this run.
+- Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout access, integration, push, installation, dev server, build, broad type-check or prohibited validator was run.
