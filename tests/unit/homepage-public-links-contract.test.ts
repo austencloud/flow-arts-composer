@@ -133,7 +133,8 @@ describe("homepage public-links contract", () => {
 
   it("every linked route is a real page, not a redirect stub", () => {
     for (const entry of hrefEntries) {
-      const cleanPath = entry.href.replace(/^\//, "");
+      // A hash or query picks state on the page; the route is the path alone.
+      const cleanPath = entry.href.replace(/[#?].*$/, "").replace(/^\//, "");
       const publicDir = resolve(
         process.cwd(),
         `src/routes/(public)/${cleanPath}`

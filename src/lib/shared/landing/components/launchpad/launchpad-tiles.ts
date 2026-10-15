@@ -115,11 +115,11 @@ export const LAUNCHPAD_TILES: LaunchpadTileDef[] = [
     icon: "fa-bezier-curve",
     media: "pictograph",
     chips: [
-      { label: "Staves", href: "/notation/staves" },
-      { label: "Fans", href: "/notation/fans" },
-      { label: "Clubs", href: "/notation/clubs" },
-      { label: "Buugeng", href: "/notation/buugeng" },
-      { label: "Poi", href: "/notation/poi" },
+      { label: "Staves", href: "/notation/props#staves" },
+      { label: "Fans", href: "/notation/props#fans" },
+      { label: "Clubs", href: "/notation/props#clubs" },
+      { label: "Buugeng", href: "/notation/props#buugeng" },
+      { label: "Poi", href: "/notation/props#poi" },
     ],
   },
   {
