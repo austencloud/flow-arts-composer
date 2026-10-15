@@ -767,7 +767,10 @@
      where the slots beside the board would leave it a third of the width. */
   @container (max-width: 44rem) {
     .stage-row {
-      grid-template-columns: min(100%, var(--placement-board-size));
+      /* The row sizes itself, since a percentage track inside a centred,
+         shrink-to-fit row collapses to its content's minimum. */
+      width: min(100%, var(--placement-board-size));
+      grid-template-columns: minmax(0, 1fr);
       justify-items: center;
       gap: 0.75rem;
     }
@@ -780,7 +783,10 @@
       --placement-board-size: clamp(18rem, calc(100svh - 33rem), 52rem);
     }
     .stage-row {
-      grid-template-columns: min(100%, var(--placement-board-size));
+      /* The row sizes itself, since a percentage track inside a centred,
+         shrink-to-fit row collapses to its content's minimum. */
+      width: min(100%, var(--placement-board-size));
+      grid-template-columns: minmax(0, 1fr);
       justify-items: center;
       gap: 0.75rem;
     }
@@ -789,12 +795,12 @@
     }
   }
 
+  /* Phones leave room under the board for the slot row above Continue. */
   @media (max-width: 760px) {
     .placements-experience {
-      --placement-board-size: min(
-        calc(100cqw - 1.5rem),
-        calc(100svh - 22rem),
-        26rem
+      --placement-board-size: max(
+        14rem,
+        min(calc(100cqw - 1.5rem), calc(100svh - 26rem), 26rem)
       );
     }
   }
