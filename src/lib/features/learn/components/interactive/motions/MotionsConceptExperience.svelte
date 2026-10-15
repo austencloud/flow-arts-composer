@@ -469,11 +469,11 @@
     }
   }
 
-  /* The quiz puts the picture to name over the board, so the board's
-     pictures give up height to it: two rows of three under it, or one row
-     of six on a landscape screen. */
+  /* The quiz puts the picture to name and its answer line over the board,
+     so the board's pictures give up height to them: two rows of three under
+     it, or one row of six on a landscape screen. */
   .board-stage.quiz {
-    --board-art: max(5.5rem, calc((100 * var(--lesson-vh) - 35.5rem) / 3.4));
+    --board-art: max(5.5rem, calc((100 * var(--lesson-vh) - 38.5rem) / 3.4));
     --quiz-picture: calc(1.4 * var(--board-art));
     width: min(100%, calc(3 * var(--board-art) + 6.5rem));
   }
@@ -483,7 +483,7 @@
     .board-stage.quiz {
       --quiz-picture: max(
         8rem,
-        min(16rem, calc(100 * var(--lesson-vh) - 33.5rem))
+        min(16rem, calc(100 * var(--lesson-vh) - 36.5rem))
       );
       width: 100%;
     }
@@ -491,14 +491,14 @@
 
   @media (min-aspect-ratio: 3 / 2) {
     .board-stage.quiz {
-      --board-art: max(6rem, calc((100 * var(--lesson-vh) - 32rem) / 2.4));
+      --board-art: max(6rem, calc((100 * var(--lesson-vh) - 35rem) / 2.4));
       width: min(100%, calc(6 * var(--board-art) + 9rem));
     }
   }
 
   @media (min-aspect-ratio: 3 / 2) and (max-aspect-ratio: 11 / 5) and (min-height: 1100px) {
     .board-stage.quiz {
-      --board-art: max(5.5rem, calc((100 * var(--lesson-vh) - 35.5rem) / 3.4));
+      --board-art: max(5.5rem, calc((100 * var(--lesson-vh) - 38.5rem) / 3.4));
       width: min(100%, calc(3 * var(--board-art) + 6.5rem));
     }
   }
