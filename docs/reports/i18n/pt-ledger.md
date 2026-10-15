@@ -32,3 +32,17 @@
 - Uncertain: blooms in challenge names has no glossary entry; rendered florescimentos, keeping it distinct from the protected motion term Flower.
 - Uncertain: dataframe is retained as a technical loanword in `learn_place_1_5_description`; the source does not establish a preferred Portuguese domain term.
 - No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
+
+## R3 — 2026-10-14
+
+- Batch: `batch-R3.json`; 1,107 translated entries, 0 retranslation entries, 0 review entries. Protected names, loanwords, notation, and language-neutral templates retain their source values where appropriate.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-R3.json`.
+- Apply result: `messages/pt.json: inserted 1107, replaced 0, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 1,108 insertions, 1 deletion (net +1,107 lines; the previous final entry gains a comma).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Focused inspection: exactly 1,107 catalog additions, all belonging to this batch; no existing catalog values changed. All output values match the applied catalog. Placeholder names and occurrence counts match English; no added markup tags, multiline values, or Unicode replacement characters. `git diff --check` passed.
+- Glossary choices: Brazilian Portuguese with você and infinitive action labels; posição, grade, Quadrado, Diamante, passo, volta, andamento, trajetória da mão, props, performer and timing. Placement names, compass point identifiers, protected product names and Shift remain English. Repetition controls use repetição, while notation uses LOOP. Smart Collection is coleção inteligente; Fork is criar versão; Flip/Flipped are virar/virado, consistent with the earlier transformation vocabulary. Post navigation uses Post Studio.
+- Source context: `viewer_ui_static` is the paused/static mandala display option opposite Animated in `MandalaCategoryControl.svelte`, so it is Estático, not the protected TKA motion category Static. `viewer_ui_start` labels a starting position in step numbers and card settings, so it is Início. Linear shifts is movimentos Shift lineares.
+- Uncertain: TKA Core / Core are shelf navigation labels in `WorkShelfRail.svelte`, rendered Núcleo TKA / Núcleo. The glossary does not establish whether Core should be protected as a named deck group; native terminology review remains needed.
+- No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
