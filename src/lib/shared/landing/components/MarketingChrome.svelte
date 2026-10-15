@@ -14,7 +14,6 @@
   import type { Snippet } from "svelte";
   import type { BackgroundType } from "@austencloud/backgrounds";
   import { onDestroy, onMount } from "svelte";
-  import { page } from "$app/state";
   import { isNamedRouteMorphActive } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
