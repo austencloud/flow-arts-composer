@@ -42,7 +42,7 @@
   let showCourseMap = $state(false);
   let mapElement = $state<HTMLDivElement | undefined>(undefined);
   let pendingMapScroll = false;
-  // Null until the learner picks a place; the map then opens on their next one.
+  // Null until the learner picks a place; the map then opens on their next step.
   let selectedPlaceId = $state<string | null>(null);
   const levelOnePlaces = getConceptPlacesByLevel(1);
   const availableConcepts = getAvailableConcepts();
@@ -63,25 +63,30 @@
       }
     );
 
-    const syncPlaceFromUrl = () => {
+    const syncPlaceFromUrl = (navigated: boolean) => {
       const placeId = readConceptPlaceId(
         new URLSearchParams(window.location.search)
       );
       const place = placeId ? getConceptPlace(placeId) : undefined;
       if (place?.tkaLevel === 1) {
         const mapWasVisible = showCourseMap;
-        selectedPlaceId = place.id;
+        // On arrival the place only reopens the map; the centre stays on the
+        // learner's next step. Back and forward between picked places select.
+        selectedPlaceId = navigated ? place.id : null;
         pendingMapScroll = true;
         showCourseMap = true;
         if (mapWasVisible) void tick().then(scrollToLinkedMap);
+      } else if (navigated) {
+        selectedPlaceId = null;
       }
     };
-    syncPlaceFromUrl();
-    window.addEventListener("popstate", syncPlaceFromUrl);
+    const handlePopstate = () => syncPlaceFromUrl(true);
+    syncPlaceFromUrl(false);
+    window.addEventListener("popstate", handlePopstate);
 
     return () => {
       unsubscribe();
-      window.removeEventListener("popstate", syncPlaceFromUrl);
+      window.removeEventListener("popstate", handlePopstate);
     };
   });
 
@@ -213,18 +218,16 @@
       completedAvailableCount === availableConcepts.length
   );
 
-  // The Atlas centres the place holding the hero's lesson. Once every lesson
-  // is done, the next step is the place after the last one.
+  // The next step is the first place, in course order, with a lesson still
+  // to finish. Once every lesson is done there is none.
   const nextPlaceId = $derived.by(() => {
-    const lessonId = currentConcept().id;
-    const index = levelOnePlaces.findIndex((place) =>
-      place.lessonIds.some((reference) => reference.lessonId === lessonId)
-    );
-    if (index < 0) return levelOnePlaces[0]!.id;
-    const place = isJourneyComplete
-      ? (levelOnePlaces[index + 1] ?? levelOnePlaces[index]!)
-      : levelOnePlaces[index]!;
-    return place.id;
+    void progress;
+    return levelOnePlaces.find((place) =>
+      place.lessonIds.some(
+        ({ lessonId }) =>
+          conceptProgressService.getConceptStatus(lessonId) !== "completed"
+      )
+    )?.id;
   });
 
   // A new function per progress change, so the map re-reads lesson status.
@@ -312,7 +315,7 @@
         onintroend={scrollToLinkedMap}
       >
         <ConceptLevelMap
-          selectedId={selectedPlaceId ?? nextPlaceId}
+          selectedId={selectedPlaceId ?? nextPlaceId ?? levelOnePlaces[0]!.id}
           {nextPlaceId}
           {lessonStatus}
           onSelect={handlePlaceSelect}
