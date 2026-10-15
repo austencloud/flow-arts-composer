@@ -96,6 +96,26 @@ export interface CustomizeSummary {
   accessibleSummary: string;
 }
 
+/**
+ * All three style choices in words, defaults included: the Style row a small
+ * Customize panel shows in place of the controls.
+ */
+export function describeStyle(
+  constraintPreset: StyleAxisValue,
+  handPathMode: StyleAxisValue,
+  motionTypeFilter: DashFilter
+): string {
+  return [
+    t("create_ui_summary_props", {
+      value: t(STYLE_AXIS_LABELS[constraintPreset]),
+    }),
+    t("create_ui_summary_hands", { value: t(STYLE_AXIS_LABELS[handPathMode]) }),
+    t("create_ui_summary_dashes", {
+      value: t(DASH_LABELS[dashKey(motionTypeFilter)]),
+    }),
+  ].join(" · ");
+}
+
 /** How many rows the collapsed card can show before it starts counting. */
 export const MAX_SUMMARY_ROWS = 3;
 

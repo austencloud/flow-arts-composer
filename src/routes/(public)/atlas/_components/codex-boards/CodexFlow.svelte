@@ -12,7 +12,8 @@
 <script lang="ts">
   import CodexBox from "../../../guide/codex/_components/CodexBox.svelte";
   import CodexTransitionGlyph from "../../../guide/codex/_components/CodexTransitionGlyph.svelte";
-  import { CODEX_BOXES, typeName, type TaggedBox } from "./codex-letters";
+  import { CODEX_BOXES, type TaggedBox } from "./codex-letters";
+  import { codexTypeLabel } from "../../../guide/codex/_data/codex-groups";
 
   let {
     onSelect,
@@ -42,7 +43,7 @@
     </div>
   {/if}
   {#each boxes as tagged, index (tagged.key)}
-    <div class="abox" aria-label={typeName(tagged.type)}>
+    <div class="abox" aria-label={codexTypeLabel(tagged.type)}>
       <!-- Flat-board captions all occupy this same reserved header slot. The
            print sheet keeps its original per-cell placement. -->
       <CodexBox
