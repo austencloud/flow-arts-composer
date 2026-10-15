@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { loadDeployedCharacters } from '../../Shared/Tools/character-catalog.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const project = resolve(here, '..');
@@ -23,13 +24,13 @@ if (familyOnly && !capturesDir) throw new Error('--family-only requires --captur
 if (legacyOnly && (!capturesDir || familyOnly)) throw new Error('--legacy-only requires --captures and cannot combine with --family-only');
 if (allowPartial && !familyOnly) throw new Error('--allow-partial requires --family-only');
 const dependencyRoot = existsSync(join(repo, 'node_modules/.pnpm')) ? repo : source;
-const catalogFile = join(source, 'node_modules/@austencloud/scene-3d/src/lib/config/avatar-definitions.ts');
-const catalog = readFileSync(catalogFile, 'utf8');
-const deployed = catalog.match(/const DEPLOYED_AVATAR_DEFINITIONS:[\s\S]*?= \[([\s\S]*?)\n\];/)?.[1];
-if (!deployed) throw new Error(`Cannot read deployed avatar catalog: ${catalogFile}`);
-const definitions = [...deployed.matchAll(/id:\s*"([^"]+)",\s*name:\s*"([^"]+)"/g)].map(([, id, name]) => ({ id, name }));
+const definitions = await loadDeployedCharacters(source);
 if (definitions.length !== 16 || new Set(definitions.map(x => x.id)).size !== 16)
   throw new Error(`Expected exactly 16 unique deployed avatars; found ${definitions.length}`);
+for (const character of definitions) {
+  const input = join(source, character.sourceRelativePath);
+  if (!existsSync(input)) throw new Error(`Missing deployed rig ${input}`);
+}
 if (captureId && !definitions.some(x => x.id === captureId))
   throw new Error(`Unknown deployed capture character: ${captureId}`);
 
@@ -216,9 +217,8 @@ if (familyOnly) {
   console.log(`Prepared ${prepared} family performances for ${captureId || 'all 16'} native characters`);
   process.exit(0);
 }
-for (const { id, name } of definitions) {
-  const input = join(source, 'static/models/avatars/_optimized', `${id}.glb`);
-  if (!existsSync(input)) throw new Error(`Missing deployed rig ${input}`);
+for (const { id, name, sourceRelativePath } of definitions) {
+  const input = join(source, sourceRelativePath);
   const key = id.replaceAll('-', '_');
   const folder = `/Game/FlowFest/Characters/${key}`;
   const decoded = join(staged, `${key}.glb`);

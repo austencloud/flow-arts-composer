@@ -15,9 +15,18 @@ $staged = Join-Path $tools 'staged/Characters'
 $output = Join-Path $ConvertRoot "converted-v3/$Rig"
 $blender = Join-Path $ConvertRoot 'blender-5.0.1-windows-x64/blender.exe'
 $sourceTools = Join-Path $BaseScratch 'unreal/FlowFest/Tools'
+$prepareSource = Join-Path $ConvertRoot 'shared-tools/prepare-characters.mjs'
+if (-not (Test-Path -LiteralPath $prepareSource)) {
+    $prepareSource = Join-Path $SourceRoot 'unreal/FlowFest/Tools/prepare-characters.mjs'
+}
+$sharedHelper = Join-Path $SourceRoot 'unreal/Shared/Tools/character-catalog.mjs'
+if (-not (Test-Path -LiteralPath $sharedHelper)) {
+    $sharedHelper = Join-Path $ConvertRoot 'shared-tools/character-catalog.mjs'
+}
 
 foreach ($required in @($CaptureRoot, $BaseScratch, $SourceRoot, $blender,
-        (Join-Path $sourceTools 'staged/Characters/imports.json'))) {
+        (Join-Path $sourceTools 'staged/Characters/imports.json'), $prepareSource, $sharedHelper,
+        (Join-Path $SourceRoot 'node_modules/vite'))) {
     if (-not (Test-Path -LiteralPath $required)) { throw "Missing $required" }
 }
 $manifest = Get-Content (Join-Path $CaptureRoot 'family-manifest.json') -Raw | ConvertFrom-Json
@@ -37,7 +46,17 @@ foreach ($entry in $selected) {
 }
 
 New-Item -ItemType Directory -Path $captureSnapshot, $staged, $output,
-    (Join-Path $jobRoot 'unreal/FlowFest/Content/Data') -Force | Out-Null
+    (Join-Path $jobRoot 'unreal/FlowFest/Content/Data'),
+    (Join-Path $jobRoot 'unreal/Shared/Tools') -Force | Out-Null
+$jobDependencies = Join-Path $jobRoot 'node_modules'
+if (-not (Test-Path -LiteralPath $jobDependencies)) {
+    # The shared catalog helper resolves Vite from its own module location.
+    # Point this thin worker at the installed source dependencies without a copy.
+    New-Item -ItemType Junction -Path $jobDependencies -Target (Join-Path $SourceRoot 'node_modules') | Out-Null
+}
+if (-not (Test-Path -LiteralPath (Join-Path $jobDependencies 'vite'))) {
+    throw "Thin worker cannot resolve Vite: $jobDependencies"
+}
 foreach ($entry in $selected) {
     $target = Join-Path $captureSnapshot $entry.filename
     if (-not (Test-Path -LiteralPath $target)) {
@@ -48,8 +67,9 @@ $manifest.artifacts = $selected
 $manifest | ConvertTo-Json -Depth 40 -Compress |
     Set-Content (Join-Path $captureSnapshot 'family-manifest.json') -Encoding utf8
 
-Copy-Item -LiteralPath (Join-Path $sourceTools 'prepare-characters.mjs') -Destination $tools -Force
+Copy-Item -LiteralPath $prepareSource -Destination $tools -Force
 Copy-Item -LiteralPath (Join-Path $sourceTools 'convert-characters.py') -Destination $tools -Force
+Copy-Item -LiteralPath $sharedHelper -Destination (Join-Path $jobRoot 'unreal/Shared/Tools/character-catalog.mjs') -Force
 $baseline = Get-Content (Join-Path $sourceTools 'staged/Characters/imports.json') -Raw | ConvertFrom-Json
 foreach ($character in $baseline.characters) {
     foreach ($profile in @($character.captures.PSObject.Properties.Name | Where-Object { $_ -like 'P_*' })) {
