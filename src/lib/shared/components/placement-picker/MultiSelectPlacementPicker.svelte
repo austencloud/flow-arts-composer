@@ -185,7 +185,7 @@ through two custom properties, --placement-grid-size (stacked) and
     allPlacements.filter((placement) => !blockedSet.has(placement)).length
   );
   const matchingPreset = $derived(
-    presets.find((preset) =>
+    presets.find((preset: PlacementSelectionPreset) =>
       hasSameBlockedPlacements(blockedPlacements, preset.blockedPlacements)
     )
   );
