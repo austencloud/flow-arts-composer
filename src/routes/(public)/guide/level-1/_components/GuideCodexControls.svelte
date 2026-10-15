@@ -17,7 +17,7 @@
   import PropControlPair from "#lib/features/create/shared/components/sequence-actions/PropControlPair.svelte";
   import PropTurnsControl from "#lib/features/create/shared/components/sequence-actions/PropTurnsControl.svelte";
   import PropSelectionSheet from "#lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
-  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import GuidePropTrigger from "./GuidePropTrigger.svelte";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     HandSide,
@@ -27,9 +27,6 @@
   import type { GuideCodexVisibility } from "../_data/guide-codex-persistence";
 
   const codex = getGuideCodexState();
-
-  // Current prop's real button art + name, for the drawer trigger.
-  const propInfo = $derived(getPropTypeDisplayInfo(codex.propType));
 
   let propDrawerOpen = $state(false);
 
@@ -59,17 +56,11 @@
 <div class="codex-controls">
   <div class="group">
     <span class="group-label">Prop</span>
-    <button
-      type="button"
-      class="prop-trigger"
+    <GuidePropTrigger
+      propType={codex.propType}
+      expanded={propDrawerOpen}
       onclick={() => (propDrawerOpen = true)}
-      aria-haspopup="dialog"
-      aria-expanded={propDrawerOpen}
-    >
-      <img class="prop-art" src={propInfo.image} alt="" aria-hidden="true" />
-      <span class="prop-name">{propInfo.label}</span>
-      <i class="fas fa-chevron-down" aria-hidden="true"></i>
-    </button>
+    />
   </div>
 
   <div class="group">
@@ -177,53 +168,6 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
-  }
-
-  /* Prop trigger - a full-width settings row (art + name + chevron) that opens
-     the app-wide PropSelectionSheet drawer, matching Create / Arena. */
-  .prop-trigger {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    min-height: var(--min-touch-target, 44px);
-    padding: 8px 12px;
-    border-radius: 12px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.05));
-    border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
-    color: var(--theme-text, #fff);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition:
-      background var(--duration-fast) var(--ease-standard),
-      border-color var(--duration-fast) var(--ease-standard);
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .prop-trigger:hover {
-      background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.1));
-      border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
-    }
-  }
-  .prop-trigger:focus-visible {
-    outline: 2px solid var(--theme-accent, #6366f1);
-    outline-offset: 2px;
-  }
-  .prop-art {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    flex-shrink: 0;
-  }
-  .prop-name {
-    flex: 1;
-    text-align: left;
-    font-size: var(--font-size-min, 14px);
-    font-weight: 600;
-  }
-  .prop-trigger .fa-chevron-down {
-    font-size: 11px;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
-    flex-shrink: 0;
   }
 
   .chip-row {
