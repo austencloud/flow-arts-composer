@@ -296,11 +296,16 @@
   /* The step editor keeps a dense, animated SVG tree open for the lifetime of
      the drawer. Sampling the scene behind that native dialog can corrupt its
      composited surface into a theme-colored ellipse in Chromium. Give this
-     long-lived editor a stable paint surface instead of a backdrop filter. */
+     long-lived editor a stable paint surface instead of a backdrop filter.
+     That surface is the app's own themed background, pinned to the viewport,
+     so the editor reads as the same workspace as the option picker it covers
+     instead of a gray slab. The solid color is the fallback under it. */
   :global(.drawer-content.step-editor-panel-container) {
     --sheet-bg: var(--sheet-bg-solid, rgb(15, 15, 20));
     --sheet-filter: none;
-    background: var(--sheet-bg);
+    background-color: var(--sheet-bg);
+    background-image: var(--gradient-cosmic, none);
+    background-attachment: fixed;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
