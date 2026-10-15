@@ -4,6 +4,7 @@
   import CanvasLifecycle from "#lib/shared/3d/components/CanvasLifecycle.svelte";
   import { DEPLOYED_CHARACTER_IDS } from "#lib/shared/3d/config/deployed-characters.js";
   import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     FLOW_FEST_PERFORMER_PROFILES,
     flowFestSequenceForPerformer,
@@ -18,6 +19,7 @@
     FLOW_FEST_PERFORMER_PROFILES
   ) as FlowFestPerformerRole[];
   let pool = $state<FlowFestPerformerSequencePool | null>(null);
+  let sequenceSnapshots = $state<Partial<Record<FlowFestPerformerRole, SequenceData>>>({});
   let character = $state<CharacterId>(DEPLOYED_CHARACTER_IDS[0]!);
   let role = $state<FlowFestPerformerRole>(roles[0]!);
   let sceneKey = $state(0);
@@ -27,6 +29,20 @@
   let mode = $state<"perform" | "ride">("perform");
   let busy = false;
   let status = $state("Generating production LOOP snapshot…");
+
+  function sequenceForRole(nextRole: FlowFestPerformerRole): SequenceData {
+    const snapshot = sequenceSnapshots[nextRole];
+    if (snapshot) return snapshot;
+    if (!pool) throw new Error("Production LOOP snapshot is unavailable");
+    return flowFestSequenceForPerformer(pool, nextRole);
+  }
+
+  function setSequenceSnapshots(snapshots: Partial<Record<FlowFestPerformerRole, SequenceData>>): void {
+    for (const nextRole of roles)
+      if (!snapshots[nextRole]?.steps.length)
+        throw new Error(`Missing preserved ${nextRole} sequence`);
+    sequenceSnapshots = snapshots;
+  }
 
   async function waitReady(key: number): Promise<void> {
     const deadline = performance.now() + 45_000;
@@ -66,7 +82,7 @@
       await waitReady(key);
       if (!scene) throw new Error("Performer capture scene is not mounted");
       scene.pauseAutoLoop();
-      const sequence = flowFestSequenceForPerformer(pool, role);
+      const sequence = sequenceForRole(role);
       const frames = [];
       for (let frame = 0; frame < sequence.steps.length * 30; frame += 1) {
         frames.push(await scene.sampleFrame(frame));
@@ -138,6 +154,7 @@
       roles,
       captureOne,
       captureRide,
+      setSequenceSnapshots,
       getStatus: () => status,
       isReady: () => pool !== null,
     };
@@ -186,7 +203,7 @@
               bind:this={scene}
               {character}
               {role}
-              sequence={flowFestSequenceForPerformer(pool, role)}
+              sequence={sequenceForRole(role)}
               onReady={() => {
                 readyKey = sceneKey;
               }}

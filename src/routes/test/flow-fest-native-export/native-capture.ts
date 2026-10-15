@@ -1,6 +1,7 @@
 import {
   Quaternion,
   Vector3,
+  type Bone,
   type Object3D,
   type Scene,
   type SkinnedMesh,
@@ -30,6 +31,31 @@ function worldTransform(object: Object3D): TransformSample {
     quaternion: quaternion.toArray() as [number, number, number, number],
     scale: scale.toArray() as [number, number, number],
   };
+}
+
+/** GLB skins may omit unweighted ancestors from skeleton.bones. Their local
+ * transforms still drive every descendant, so include the complete bone chain. */
+function posedBones(mesh: SkinnedMesh): Bone[] {
+  const result: Bone[] = [];
+  const seen = new Set<Bone>();
+  function include(bone: Bone): void {
+    const parent = bone.parent;
+    if (parent && (parent as Bone).isBone) include(parent as Bone);
+    if (!seen.has(bone)) {
+      seen.add(bone);
+      result.push(bone);
+    }
+  }
+  for (const bone of mesh.skeleton.bones) include(bone);
+  return result;
+}
+
+function boneSamples(mesh: SkinnedMesh) {
+  return posedBones(mesh).map((bone) => ({
+    name: bone.name,
+    parent: (bone.parent as Bone | null)?.isBone ? bone.parent!.name : null,
+    local: localTransform(bone),
+  }));
 }
 
 function containsMesh(root: Object3D, skinned: boolean): boolean {
@@ -143,13 +169,7 @@ export function captureNativeFrame(
     score,
     performerWorld: worldTransform(performer),
     skinnedMeshLocal: localTransform(skinned),
-    bones: skinned.skeleton.bones.map((bone) => ({
-      name: bone.name,
-      parent: (bone.parent as { isBone?: boolean } | null)?.isBone
-        ? bone.parent?.name
-        : null,
-      local: localTransform(bone),
-    })),
+    bones: boneSamples(skinned),
     leftProp: prop(propBranches[0]!),
     rightProp: prop(propBranches[1]!),
   };
@@ -178,13 +198,7 @@ export function captureMountedFrame(scene: Scene, id: string, frame: number) {
     timeSeconds: frame / 30,
     performerWorld: worldTransform(performer),
     skinnedMeshLocal: localTransform(mesh),
-    bones: mesh.skeleton.bones.map((bone) => ({
-      name: bone.name,
-      parent: (bone.parent as { isBone?: boolean } | null)?.isBone
-        ? bone.parent?.name
-        : null,
-      local: localTransform(bone),
-    })),
+    bones: boneSamples(mesh),
     leftPedalWorld: worldTransform(left),
     rightPedalWorld: worldTransform(right),
   };

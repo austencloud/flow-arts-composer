@@ -3,7 +3,7 @@
  * Usage: node capture-performances.mjs http://127.0.0.1:5174 ./out
  * The URL must be a server rooted in this task worktree. */
 import { chromium } from "playwright";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const [baseUrl, outputArg] = process.argv.slice(2);
@@ -14,6 +14,7 @@ if (!baseUrl || !outputArg) {
 }
 const outputDir = resolve(outputArg);
 await mkdir(outputDir, { recursive: true });
+const selected = process.env.FLOW_FEST_CAPTURE_CHARACTERS?.split(",").map((id) => id.trim()).filter(Boolean);
 
 const browser = await chromium.launch({ headless: true, channel: "chrome" });
 try {
@@ -41,8 +42,21 @@ try {
       `Expected 16 rigs and four profiles; got ${catalog.characters.length} and ${catalog.roles.length}`
     );
 
+  if (selected) {
+    if (selected.some((id) => !catalog.characters.includes(id)))
+      throw new Error(`Unknown focused capture character: ${selected.join(", ")}`);
+    const snapshots = {};
+    for (const role of catalog.roles) {
+      const previous = JSON.parse(await readFile(resolve(outputDir, `x-bot_${role}.json`), "utf8"));
+      if (previous.role !== role || !previous.sequence?.steps?.length)
+        throw new Error(`Preserved production sequence missing for ${role}`);
+      snapshots[role] = previous.sequence;
+    }
+    await page.evaluate((value) => window.flowFestNativeCapture.setSequenceSnapshots(value), snapshots);
+  }
+
   const artifacts = [];
-  for (const character of catalog.characters) {
+  for (const character of selected ?? catalog.characters) {
     for (const role of catalog.roles) {
       process.stdout.write(`${character} / ${role}\n`);
       const result = await page.evaluate(
@@ -89,7 +103,7 @@ try {
       frames: ride.frames.length,
     });
   }
-  await writeFile(
+  if (!selected) await writeFile(
     resolve(outputDir, "manifest.json"),
     JSON.stringify(
       {
@@ -102,7 +116,7 @@ try {
     )
   );
   process.stdout.write(
-    `Captured ${artifacts.length} clips into ${outputDir}\n`
+    `${selected ? "Recaptured" : "Captured"} ${artifacts.length} clips into ${outputDir}\n`
   );
 } finally {
   await browser.close();
