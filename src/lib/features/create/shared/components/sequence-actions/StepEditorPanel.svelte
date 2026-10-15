@@ -158,15 +158,13 @@
     }
   });
 
-  // Reset displayed data when panel closes to avoid stale data on next open.
   // The inspect modal is subordinate to the editor: if the editor isn't open,
   // force the modal closed so a persisted-open flag can't pop it on the next
   // step click. On a refresh that restored the editor, isOpen is already true
-  // here, so a restored inspect modal survives.
+  // here, so a restored inspect modal survives. The displayed step is kept:
+  // the editor fades out showing it, then unmounts, so nothing goes stale.
   $effect(() => {
     if (!isOpen) {
-      displayedStepData = null;
-      displayedStepNumber = null;
       showInspectModal = false;
     }
   });
@@ -765,12 +763,6 @@
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
-  }
-
-  /* While actively dragging, force the closed-fist cursor across the panel */
-  :global(.drawer-content.dragging) .editor-panel,
-  :global(.drawer-content.dragging) .editor-panel :global(*) {
-    cursor: grabbing;
   }
 
   .panel-header {
