@@ -20,6 +20,7 @@
   import { onDestroy } from "svelte";
   import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import { awaitAccountSettings } from "#lib/shared/settings/state/account-settings-ready.js";
   import { runAfterNamedRouteMorphIdle } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import { classifyPreviewShape } from "./method-preview-layout";
   import {
@@ -93,8 +94,17 @@
   // and any route morph has finished (spec: Performance), and only while
   // the board is open: a method picked during the wait would otherwise load
   // every scene behind its workspace. A loaded scene stays.
+  //
+  // It also waits for the signed-in account's settings. Before they arrive
+  // the pictographs would draw this browser's saved props, then swap to the
+  // account's props while the scene plays. The tint covers the wait.
+  let accountSettingsReady = $state(false);
+  void awaitAccountSettings().then(() => {
+    accountSettingsReady = true;
+  });
+
   $effect(() => {
-    if (!open || load) return;
+    if (!open || load || !accountSettingsReady) return;
     return runAfterNamedRouteMorphIdle(() => {
       load = true;
     });
