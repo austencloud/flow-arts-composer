@@ -48,3 +48,20 @@
 - Uncertain: the glossary does not define Smart Collection, Effort, Creep, or Staircase. The contextual choices умная коллекция, усилие, плавный рост, and ступени need native/product terminology review.
 - Uncertain: Catdog is retained in English as a mixed-prop community term; ProfileHeroSection.svelte confirms the paired-prop context, but the preferred Russian community name is not established by the glossary.
 - No native review or live UI inspection was performed in this scoped catalog run. Notation and product-behavior claims were translated from the supplied English without independent verification.
+
+
+## R4 — 2026-10-14
+
+- Batch: R4. Translated 852 keys; retranslated 0; reviewed 0. The batch has no retranslate or review section.
+- Initial apply: `messages/ru.json: inserted 852, replaced 0, refused 0`.
+- Final apply after five wording refinements: `messages/ru.json: inserted 0, replaced 852, refused 0`. Reapplying the complete output does not represent additional retranslation work.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 11.20s. The initial gate also passed all 66 tests.
+- Before this ledger update, only `messages/ru.json` changed: 853 insertions and 1 deletion, including the comma on the former final entry. `git diff --check` passed.
+- Output audit: exactly 852 batch keys; every output value matches its applied catalog value; placeholders and markup match English with multiplicity; every value is one line; all pre-existing catalog values remain unchanged.
+- Glossary: lowercase вы; infinitive action buttons; последовательность, шаг, оборот, реквизит, пиктограмма, исполнитель, тайминг. TKA, LOOP, Flow Arts Composer, Post Studio, Choreo Card(s), provider names, formats, and placeholders remain unchanged. Reel/Reels are retained as Instagram format labels. Counts use number-independent phrasing, including «Доступно: {count}», «Нажатий: {count}», and «Пропущено: {count}».
+- Other choices: take → дубль; render → отрисовка; landing → завершение движения; playhead → курсор воспроизведения; footer → подвал; professional account → профессиональный аккаунт. Theme and gradient display names are translated, without changing identifiers.
+- Writing review: ai-bust mechanical and judgment passes completed. Removed em dashes; final CRITICAL scan returned `[]`. The 16 HIGH findings join independent JSON messages (mostly retry instructions), so consistent source-faithful UI wording was retained. This English-oriented scan does not establish native Russian quality.
+- Uncertain: the glossary does not define Post Studio's landing, take, or playhead terminology. The contextual choices завершение движения, дубль, and курсор воспроизведения need native/product terminology review; landing is rendered as a movement endpoint rather than an unsupported physical drop or catch.
+- Uncertain: Construct, Assemble, Fuse, and Tunnel are not defined by the glossary. This batch uses построение, сборка, слияние, and туннель respectively; distinct surface names need product review. Generic setup uses настройка in this batch.
+- No native review or live UI inspection was performed in this scoped catalog run. Product behavior and notation claims were translated from the supplied English without independent verification.
