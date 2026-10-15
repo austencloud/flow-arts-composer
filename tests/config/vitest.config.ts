@@ -87,6 +87,10 @@ export default defineConfig({
         projectRoot,
         "packages/render-core/src/index.ts"
       ),
+      "@tka/render-composition": path.resolve(
+        projectRoot,
+        "packages/render-composition/src/index.ts"
+      ),
     },
 
     // Worker pool. `pool: "forks"` is Vitest 4's default; it stays explicit so

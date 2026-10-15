@@ -48,6 +48,8 @@ export interface FrameCompositorConfig {
   isCompositeMode: boolean;
   sequenceWord: string;
   difficultyLevel: number | null;
+  turnGlyphEntries?: import("@tka/render-composition").TurnGlyphEntry[] | null;
+  reversalGlyph?: import("@tka/render-composition").ReversalGlyphData | null;
   loopComponents: Set<string> | null;
   rotationPeriod: Period | undefined;
   inversionPeriod: Period | undefined;
@@ -170,6 +172,8 @@ export class ExportFrameCompositor {
       isDarkMode,
       sequenceWord,
       difficultyLevel,
+      turnGlyphEntries,
+      reversalGlyph,
       loopComponents,
       rotationPeriod,
       inversionPeriod,
@@ -335,7 +339,9 @@ export class ExportFrameCompositor {
         rotationPeriod,
         inversionPeriod,
         overlayComponents,
-        reflectionAxis
+        reflectionAxis,
+        turnGlyphEntries,
+        reversalGlyph
       );
     }
 

@@ -16,6 +16,7 @@
  */
 
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { ReversalGlyphData } from "@tka/render-composition";
 import {
   REVERSAL_PATTERNS,
   type ReversalPatternDef,
@@ -36,6 +37,25 @@ export function stepToReversalSymbol(step: ReversalFields): ReversalSymbol {
 
 export function computeReversalSignature(steps: readonly ReversalFields[]): string {
   return steps.map(stepToReversalSymbol).join("");
+}
+
+/** Preserve the raw signature, including patterns absent from the deck catalog. */
+export function deriveReversalGlyphData(
+  steps: readonly ReversalFields[],
+): ReversalGlyphData | null {
+  const sequence = computeReversalSignature(steps);
+  if (sequence.length === 0) return null;
+
+  const n = sequence.length;
+  outer:
+  for (let period = 1; period <= n; period++) {
+    if (n % period !== 0) continue;
+    for (let i = period; i < n; i++) {
+      if (sequence[i] !== sequence[i % period]) continue outer;
+    }
+    return { sequence, period };
+  }
+  return { sequence, period: n };
 }
 
 function signatureMatchesPattern(signature: string, pattern: ReversalPatternDef): boolean {

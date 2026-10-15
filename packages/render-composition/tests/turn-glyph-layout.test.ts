@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   layoutTurnGlyph,
   TURN_GLYPH_BOX_W_CQI,
-} from "../turn-glyph-layout";
+} from "../src/pattern-glyphs";
 
 // The silent bug this guards: long turn patterns spilling past the card
 // border (live card) or getting clipped off both edges (print raster).

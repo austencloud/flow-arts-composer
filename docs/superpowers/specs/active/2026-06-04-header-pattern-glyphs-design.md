@@ -2,19 +2,37 @@
 status: active
 value: 3
 effort: M
-remaining: "Promote turn/reversal domain and glyph primitives, wire capped raw signatures into WordHeader/AnimatorCanvas, and add video-export parity. Glyphs and reversal modules remain under features/choreo-card, no turnGlyph/reversalGlyph wiring was found in animation-engine or video-export, and 7de49088a8 changed header motion rather than implementing this scope."
+remaining: "Implementation and focused regression checks complete. Finish browser viewport/theme checks and verify an encoded video frame after local integration."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-14
-work_state: ready
+last_triaged: 2026-10-15
+work_state: verification
 ---
 # Turn + Reversal Pattern Glyphs in the Animation Header — Design
 
 > 2026-10-14 triage: Promote turn/reversal domain and glyph primitives, wire capped raw signatures into WordHeader/AnimatorCanvas, and add video-export parity. Glyphs and reversal modules remain under features/choreo-card, no turnGlyph/reversalGlyph wiring was found in animation-engine or video-export, and 7de49088a8 changed header motion rather than implementing this scope. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Date:** 2026-06-04
-**Status:** Specced, not started
+**Status:** Implemented; browser acceptance in progress (2026-10-15)
+
+## Implementation evidence — 2026-10-15
+
+Turn/reversal domain now lives in `shared/foundation/domain/sequence-patterns`.
+The shared Svelte glyphs and `@tka/render-composition` painters use the same
+geometry. AnimatorCanvas and the separate gallery hover header derive complete
+periods, omitting each indicator independently when its period exceeds eight.
+Video export derives the same data once per export. Both renderers omit metadata
+when it would squeeze the word. Static image exports retain their existing options.
+
+The drift detector's WATCH finding was the July card-glyph width fix. That fix
+did not implement header glyphs; its scaling behavior is preserved here.
+
+Focused checks: 64 domain/card tests, 26 package tests, and 17 app bitmap/export
+tests pass. Card painter parity compares the prior drawing operations for numeric
+turns, floats, eight-entry turn patterns, and reversal periods 1, 4, and 8.
+Independent review identified the gallery hover header's separate wiring; it is
+now connected. Browser acceptance remains to be recorded before moving this spec.
 
 ## Problem
 
