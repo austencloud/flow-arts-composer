@@ -1,7 +1,7 @@
 # Timing and direction reference audit
 
 September 5, 2026. Scope: the public hub, its six mode articles, and the existing
-[historical evidence ledger](timing-direction-history.md). This is a local
+[historical evidence ledger](../../../reference/timing-direction-history.md). This is a local
 implementation audit, not a ranking report or a new inventorship investigation.
 
 ## Findings and this pass

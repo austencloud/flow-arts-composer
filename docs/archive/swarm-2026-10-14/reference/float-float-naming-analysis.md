@@ -1,14 +1,14 @@
 # The 0:1 Ratio Problem: Naming Float-Float Motions
 
 **Date:** 2026-03-26
-**Status:** RESOLVED 2026-04-18 — see [ADR 003](../adr/003-level-1-base-float-classification.md)
+**Status:** RESOLVED 2026-04-18 — see [ADR 003](../../../adr/003-level-1-base-float-classification.md)
 **Author:** Austen Cloud + Claude (theory session)
 
 ---
 
 > **Resolution (2026-04-18):** Approach 5 (Notional Direction Convention) was adopted after a bug-driven deliberation forced the question. The rule: every float carries its Level 1 base type (`prefloatMotionType`) and the letter is classified from base types, never from current display types. Double-float, single-float, and all edge cases are handled uniformly. The label never changes when a hand floats. PADS (Pro-Anti-Dash-Static priority order, defined in the Level 2 Guide *Glyphs / PADS* section) makes the prefloat state readable from the card: for pro/anti hybrids the pro motion occupies the high slot, so `R(fl, 0)` unambiguously means "float applied to the pro motion, zero turns on anti."
 >
-> This document is preserved as the deliberation record that led to the decision. For the canonical rule, invariants, and implementation sites, see **[ADR 003: Level-1-Base Float Classification](../adr/003-level-1-base-float-classification.md)**.
+> This document is preserved as the deliberation record that led to the decision. For the canonical rule, invariants, and implementation sites, see **[ADR 003: Level-1-Base Float Classification](../../../adr/003-level-1-base-float-classification.md)**.
 
 ---
 
