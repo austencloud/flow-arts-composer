@@ -210,7 +210,8 @@
      Each tab carries the prop's picture above its name, so the picker reads
      at a glance and holds its own against the player below it. */
   .prop-switcher {
-    width: min(100%, 44rem);
+    /* Grows with the screen so it keeps pace with the player on 4K. */
+    width: min(100%, clamp(44rem, 32vw, 76rem));
     margin: 0 auto clamp(1.5rem, 1rem + 1vw, 2.5rem);
   }
   .prop-switcher :global(.segmented-control) {
@@ -223,23 +224,24 @@
     border-radius: 10px;
   }
   .prop-switcher :global(.segment) {
-    padding: 0.6rem 0.25rem 0.55rem;
+    padding: clamp(0.6rem, 0.4rem + 0.4vw, 1.25rem) 0.25rem
+      clamp(0.55rem, 0.35rem + 0.35vw, 1.1rem);
     min-width: 0;
   }
   .prop-option {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.4rem;
+    gap: clamp(0.4rem, 0.3rem + 0.25vw, 0.8rem);
     width: 100%;
   }
   .prop-art {
     display: block;
     /* A set width, not a share of the label: the label is narrower than
        most props, so the art would shrink to the word under it. */
-    width: clamp(2.75rem, 1.5rem + 4vw, 5.5rem);
+    width: clamp(2.75rem, 1.5rem + 4vw, 9rem);
     max-width: 100%;
-    height: clamp(1.75rem, 1.4rem + 1.4vw, 2.75rem);
+    height: clamp(1.75rem, 1rem + 1.4vw, 4.5rem);
     mask-size: contain;
     mask-position: center;
     mask-repeat: no-repeat;
@@ -252,7 +254,7 @@
     opacity: 1;
   }
   .prop-option-label {
-    font-size: clamp(0.8rem, 0.74rem + 0.25vw, 0.95rem);
+    font-size: clamp(0.8rem, 0.7rem + 0.3vw, 1.4rem);
     font-weight: 600;
   }
   /* Text and player start on the same line under the switcher. */
