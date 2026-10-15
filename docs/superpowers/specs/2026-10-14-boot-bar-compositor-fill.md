@@ -55,7 +55,7 @@ on-screen position at any t from that schedule. Add:
 
 - **Blocked main thread (the case round 1 failed):** replay dev warm 2
   (`start 284, scripts 2725, shell 3028, hydrated 3072, cloud 6196, session
-  6260, ready 8378`) against its own profile, with no timers or milestone
+6260, ready 8378`) against its own profile, with no timers or milestone
   callbacks able to run between 6796 and 9082 ms (advance the fake clock
   without running timers). Assert the modelled position never sits
   unchanged for more than 600 ms before `ready`, never reaches the next
