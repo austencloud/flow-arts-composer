@@ -117,3 +117,47 @@ export function runHandGridGrow(mutate: () => void): void {
   }
   void transition.finished.then(release, release);
 }
+
+const SETTLE_PARTS = ["cell", "picture", "name"] as const;
+
+/** Names each combination cell's box, picture and name for the morph. */
+function nameBoardParts(root: HTMLElement): void {
+  for (const part of SETTLE_PARTS) {
+    for (const element of root.querySelectorAll<HTMLElement>(
+      `[data-combination-${part}]`
+    )) {
+      const id = element.getAttribute(`data-combination-${part}`);
+      element.style.viewTransitionName = `hand-board-${part}-${id}`;
+      element.style.setProperty("view-transition-class", `hand-board-${part}`);
+    }
+  }
+}
+
+function unnameBoardParts(root: HTMLElement): void {
+  for (const part of SETTLE_PARTS) {
+    for (const element of root.querySelectorAll<HTMLElement>(
+      `[data-combination-${part}]`
+    )) {
+      element.style.viewTransitionName = "";
+      element.style.removeProperty("view-transition-class");
+    }
+  }
+}
+
+/**
+ * Runs `mutate`, which swaps the finished quiz for the full board, with each
+ * combination's cell, picture and name moving from its quiz slot into its
+ * board slot (Austen, 2026-10-15: "morphed all of the corresponding hand
+ * motions neatly and nicely so the same component could be reused into its
+ * new slot"). The quiz's own picture and prompt fade with the page.
+ */
+export function runBoardSettle(root: HTMLElement, mutate: () => void): void {
+  nameBoardParts(root);
+  const transition = startMorph(mutate, async () => nameBoardParts(root));
+  if (!transition) {
+    unnameBoardParts(root);
+    return;
+  }
+  const release = () => unnameBoardParts(root);
+  void transition.finished.then(release, release);
+}

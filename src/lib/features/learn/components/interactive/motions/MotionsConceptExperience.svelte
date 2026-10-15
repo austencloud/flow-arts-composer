@@ -44,7 +44,11 @@
   import HandMotionsMapStage from "./HandMotionsMapStage.svelte";
   import HandPairsStage from "./HandPairsStage.svelte";
   import HandMotionsQuizStage from "./HandMotionsQuizStage.svelte";
-  import { runHandGridGrow, runHandGridSplit } from "./hand-grid-split";
+  import {
+    runBoardSettle,
+    runHandGridGrow,
+    runHandGridSplit,
+  } from "./hand-grid-split";
 
   let {
     onComplete,
@@ -337,7 +341,8 @@
               answered={quizAnswered}
               onAnswer={answeredQuiz}
               onMiss={() => haptic?.trigger("warning")}
-              onFinish={() => (quizOpen = false)}
+              onFinish={() =>
+                runBoardSettle(experienceElement, () => (quizOpen = false))}
             />
           </div>
         {:else}
