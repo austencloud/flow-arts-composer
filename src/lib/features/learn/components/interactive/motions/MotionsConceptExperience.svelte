@@ -31,6 +31,7 @@
   import type { ExperienceViewMode } from "../../../domain/types";
   import { isConceptExperienceAvailable } from "../../../domain/concept-experience-registry";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import LessonStageControls from "../LessonStageControls.svelte";
   import LessonStageFrame from "../LessonStageFrame.svelte";
   import LessonStageHeading from "../LessonStageHeading.svelte";
@@ -129,12 +130,16 @@
           .filter((id): id is HandCombinationId => COMBINATION_IDS.has(id))
       : []
   );
-  // Review opens on the finished board.
-  const quizDone = $derived(
-    viewMode === "scroll" || quizAnswered.length === HAND_COMBINATIONS.length
+  const quizDone = $derived(quizAnswered.length === HAND_COMBINATIONS.length);
+  /** Done stays open once the quiz has been finished, through any replay. */
+  let quizPassed = $state(
+    viewMode === "scroll" ||
+      (current && persistence.getPhaseData<boolean>("quizPassed", false)) ||
+      untrack(() => quizDone)
   );
-  /** The quiz stays up until its last answer has had its moment. */
-  let quizOpen = $state(untrack(() => !quizDone));
+  /** The quiz stays up until its last answer has had its moment. Review
+      opens on the finished board. */
+  let quizOpen = $state(viewMode !== "scroll" && untrack(() => !quizDone));
 
   if (viewMode !== "scroll" && !current) {
     persistence.saveStep(savedStep);
@@ -163,7 +168,7 @@
       : stepIndex === PAIRS_STAGE
         ? Object.keys(pairsFound).length === HAND_COMBINATIONS.length
         : stepIndex === BOARD_STAGE
-          ? !quizOpen
+          ? quizPassed
           : true
   );
   const description = $derived(
@@ -192,6 +197,7 @@
   function goToStep(next: number): void {
     const clamped = Math.min(BOARD_STAGE, Math.max(INTRO_STAGE, next));
     if (clamped === stepIndex) return;
+    if (clamped === BOARD_STAGE && !quizOpen) resetQuiz();
     const revision = ++layoutRevision;
     const grows =
       (stepIndex === INTRO_STAGE && clamped === MAP_STAGE) ||
@@ -242,6 +248,25 @@
         ? "success"
         : "selection"
     );
+  }
+
+  /** A fresh round: the six are asked again in a new order. */
+  function resetQuiz(): void {
+    quizAnswered = [];
+    quizOpen = true;
+    if (viewMode !== "scroll") persistence.savePhaseData("quizAnswered", []);
+  }
+
+  /** The finished board turns back into the quiz, each card into its slot. */
+  function replayQuiz(): void {
+    runBoardSettle(experienceElement, resetQuiz);
+    haptic?.trigger("selection");
+  }
+
+  function finishedQuiz(): void {
+    runBoardSettle(experienceElement, () => (quizOpen = false));
+    quizPassed = true;
+    if (viewMode !== "scroll") persistence.savePhaseData("quizPassed", true);
   }
 
   function answeredQuiz(id: HandCombinationId): void {
@@ -324,6 +349,12 @@
     {#snippet heading()}
       <LessonStageHeading key={stageKey} title={handMotionsTopicText("title")}>
         {#if description}<p class="stage-description">{description}</p>{/if}
+        {#if stepIndex === BOARD_STAGE && !quizOpen}
+          <PanelButton variant="secondary" onclick={replayQuiz}>
+            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+            <span>{t("learn_ui_practice_again")}</span>
+          </PanelButton>
+        {/if}
       </LessonStageHeading>
     {/snippet}
 
@@ -341,8 +372,7 @@
               answered={quizAnswered}
               onAnswer={answeredQuiz}
               onMiss={() => haptic?.trigger("warning")}
-              onFinish={() =>
-                runBoardSettle(experienceElement, () => (quizOpen = false))}
+              onFinish={finishedQuiz}
             />
           </div>
         {:else}
