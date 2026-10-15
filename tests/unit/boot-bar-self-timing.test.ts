@@ -40,6 +40,12 @@ interface Probe {
   defaultProfile: boolean;
   milestones: Array<{ name: string; t: number; ignored?: true }>;
   samples: Array<{ t: number; pct: number; target: number }>;
+  holds: Array<{
+    name: string;
+    at: number;
+    releasedAt?: number;
+    timedOut?: true;
+  }>;
 }
 
 /** One inline transform write: the fill placed, with no animation. */
@@ -650,9 +656,10 @@ describe("boot bar self-timing", () => {
         shell: 2200,
         hydrated: 3200,
         ready: 4200,
+        composed: 4700,
       },
     };
-    const share = (name: string) => 4 + 96 * (profile.t[name]! / 4200);
+    const share = (name: string) => 4 + 96 * (profile.t[name]! / 4700);
     const run = boot({ profile });
     run.advance(700);
     const before = run.width();
@@ -715,7 +722,7 @@ describe("boot bar self-timing", () => {
     expect(run.marks).toContain("boot:splash:settings");
   });
 
-  it("uses the built-in profile on a first visit and stores only pre-ready milestones", () => {
+  it("uses the built-in profile on a first visit and stores the in-order milestones through composed", () => {
     const run = boot({ seed: { "tka-load-bytes": "760000" } });
     expect(run.probe().defaultProfile).toBe(true);
     expect(run.probe().profile.t.ready).toBeGreaterThan(0);
@@ -733,8 +740,15 @@ describe("boot bar self-timing", () => {
       "cloud",
       "session",
       "ready",
+      "composed",
     ]);
-    expect(stored.t).toMatchObject({ start: 200, shell: 1086, ready: 4370 });
+    // Nothing held this boot, so composed came with ready.
+    expect(stored.t).toMatchObject({
+      start: 200,
+      shell: 1086,
+      ready: 4370,
+      composed: 4370,
+    });
   });
 
   it("stores nothing when the boot never went through the shell", () => {
@@ -773,10 +787,12 @@ describe("boot bar self-timing", () => {
     expect(run.text.textContent).toBe("Almost there");
   });
 
-  it("holds 'Almost there' until a second past a slow profile's ready", () => {
+  it("holds 'Almost there' until a second past a slow profile's composed", () => {
     const slow = devWarmProfile();
     for (const name of Object.keys(slow.t)) slow.t[name] = slow.t[name]! * 1.5;
-    const flip = Math.max(4000, slow.t.ready! + 1000);
+    // The profile's end sits at least 50 ms past its ready.
+    const end = Math.max(slow.t.composed!, slow.t.ready! + 50);
+    const flip = Math.max(4000, end + 1000);
     const run = boot({ profile: slow });
     run.advance(flip - 10);
     expect(run.text.textContent).toBe("Opening Flow Arts Composer");
@@ -800,7 +816,12 @@ describe("boot bar self-timing", () => {
     expect(run.shown(run.now() + 200)).toBe(100);
     expect(run.screen.getAttribute("aria-valuenow")).toBe("100");
     expect(run.screen.classList.contains("loaded")).toBe(true);
-    expect(run.probe().milestones.at(-1)?.name).toBe("ready");
+    expect(
+      run
+        .probe()
+        .milestones.slice(-2)
+        .map((m) => m.name)
+    ).toEqual(["ready", "composed"]);
   });
 
   it("still moves the fill under reduced motion, without animations, and leaves at once", () => {
@@ -873,5 +894,195 @@ describe("boot bar self-timing", () => {
     expect(run.probe().samples).toEqual([]);
     expect(run.stored()).toBeNull();
     expect(run.screen.style.display).toBe("none");
+  });
+});
+
+/** The holds app.html keeps the screen up for: the first view's pieces. */
+describe("boot holds and the composed milestone", () => {
+  const loaded = (run: ReturnType<typeof boot>) =>
+    run.screen.classList.contains("loaded");
+  const at = (run: ReturnType<typeof boot>, name: string) =>
+    run.probe().milestones.find((m) => m.name === name)?.t;
+  const dismissals = (run: ReturnType<typeof boot>) =>
+    run.marks.filter((m) => m === "boot:splash:dismiss-start");
+
+  it("keeps the screen up after ready until the last hold releases, which is composed", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    const releaseView = run.win.__tkaBootHold("module-view");
+    const releaseNav = run.win.__tkaBootHold("nav");
+    run.replay([[4370, "ready"]]);
+    expect(loaded(run)).toBe(false);
+
+    run.advance(4600);
+    releaseView();
+    expect(loaded(run)).toBe(false);
+    expect(at(run, "composed")).toBeUndefined();
+
+    run.advance(4900);
+    releaseNav();
+    expect(loaded(run)).toBe(true);
+    expect(at(run, "ready")).toBe(4370);
+    expect(at(run, "composed")).toBe(4900);
+    expect(run.probe().holds).toEqual([
+      { name: "module-view", at: 1108, releasedAt: 4600 },
+      { name: "nav", at: 1108, releasedAt: 4900 },
+    ]);
+    expect(run.marks).toContain("boot:hold:module-view:release");
+    expect(run.marks).toContain("boot:hold:nav:release");
+    expect(dismissals(run)).toHaveLength(1);
+    // The profile plans for the real end of loading.
+    expect(run.stored()!.t).toMatchObject({ ready: 4370, composed: 4900 });
+  });
+
+  it("never fills to 100% before composed, and keeps moving while holds are open", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    const release = run.win.__tkaBootHold("create-previews");
+    run.replay([[4370, "ready"]]);
+    const atReady = run.width();
+    run.advance(5400);
+    expect(run.width()).toBeGreaterThan(atReady);
+    const points = run.trace(SCRIPT_START, 5400);
+    expectMonotonic(points);
+    expectNoStepBack(run);
+    expect(Math.max(...points.map((p) => p.w))).toBeLessThan(100);
+    expect(run.screen.getAttribute("aria-valuenow")).not.toBe("100");
+
+    release();
+    expect(run.shown(run.now() + 200)).toBe(100);
+    expect(run.screen.getAttribute("aria-valuenow")).toBe("100");
+  });
+
+  it("plans the next boot's fill for composed: ready is a share short of full", () => {
+    const first = boot({ profile: devWarmProfile() });
+    first.replay(DEV_WARM.slice(0, 3));
+    const release = first.win.__tkaBootHold("module-view");
+    first.replay([[4370, "ready"]]);
+    first.advance(5370);
+    release();
+    const profile = first.stored()!;
+    expect(profile.t.composed).toBe(5370);
+
+    const run = boot({ profile });
+    run.replay(DEV_WARM.slice(0, 3));
+    const hold = run.win.__tkaBootHold("module-view");
+    run.replay([[4370, "ready"]]);
+    const readyShare = 4 + 96 * (4370 / 5370);
+    expect(run.width()).toBeLessThan(readyShare + 0.5);
+    run.advance(5300);
+    expect(run.width()).toBeGreaterThan(readyShare);
+    expect(run.width()).toBeLessThan(100);
+    expect(
+      longestStall(run.trace(SCRIPT_START, 5300), 5300)
+    ).toBeLessThanOrEqual(600);
+    hold();
+    expect(loaded(run)).toBe(true);
+  });
+
+  it("dismisses at ready + 4000 ms when a hold never releases, marking it timedOut", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    const releaseView = run.win.__tkaBootHold("module-view");
+    const releaseStuck = run.win.__tkaBootHold("create-previews");
+    run.replay([[4370, "ready"]]);
+    run.advance(4500);
+    releaseView();
+    run.advance(4370 + 3999);
+    expect(loaded(run)).toBe(false);
+    run.advance(4370 + 4000);
+    expect(loaded(run)).toBe(true);
+    expect(at(run, "composed")).toBe(8370);
+    expect(run.marks).toContain("boot:splash:hold-cap");
+    expect(run.probe().holds).toEqual([
+      { name: "module-view", at: 1108, releasedAt: 4500 },
+      { name: "create-previews", at: 1108, timedOut: true },
+    ]);
+    // A release after the cap is recorded and changes nothing else.
+    run.advance(9000);
+    expect(() => releaseStuck()).not.toThrow();
+    expect(run.probe().holds[1]).toMatchObject({
+      timedOut: true,
+      releasedAt: 9000,
+    });
+    expect(dismissals(run)).toHaveLength(1);
+  });
+
+  it("ignores a hold asked for after dismissal, and one on a route without the screen", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 6));
+    expect(loaded(run)).toBe(true);
+    const late = run.win.__tkaBootHold("late");
+    expect(typeof late).toBe("function");
+    expect(() => late()).not.toThrow();
+    expect(run.probe().holds).toEqual([]);
+
+    const landing = boot({ hidden: "landing" });
+    landing.win.__tkaBootHold("module-view");
+    expect(landing.probe().holds).toEqual([]);
+  });
+
+  it("composes at ready when every hold was released before it", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    run.win.__tkaBootHold("nav")();
+    run.replay([[4370, "ready"]]);
+    expect(loaded(run)).toBe(true);
+    expect(at(run, "composed")).toBe(4370);
+  });
+
+  it("treats a second release as a no-op", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    const releaseNav = run.win.__tkaBootHold("nav");
+    const releaseView = run.win.__tkaBootHold("module-view");
+    run.replay([[4370, "ready"]]);
+    run.advance(4500);
+    releaseNav();
+    run.advance(4600);
+    releaseNav();
+    expect(loaded(run)).toBe(false);
+    expect(run.probe().holds[0]!.releasedAt).toBe(4500);
+    expect(run.marks.filter((m) => m === "boot:hold:nav:release")).toHaveLength(
+      1
+    );
+    releaseView();
+    expect(loaded(run)).toBe(true);
+  });
+
+  it("still lets ready dismiss when the hold registry is broken", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    run.win.__tkaBootHold("module-view");
+    run.win.__tkaBootBar.holds = null;
+    run.replay([[4370, "ready"]]);
+    expect(loaded(run)).toBe(true);
+
+    // A release whose bookkeeping throws still composes.
+    const other = boot({ profile: devWarmProfile() });
+    other.replay(DEV_WARM.slice(0, 3));
+    const release = other.win.__tkaBootHold("nav");
+    other.replay([[4370, "ready"]]);
+    Object.defineProperty(other.win.performance, "mark", {
+      configurable: true,
+      value: () => {
+        throw new Error("mark blocked");
+      },
+    });
+    release();
+    expect(loaded(other)).toBe(true);
+  });
+
+  it("leaves at once under reduced motion when the last hold releases", () => {
+    const run = boot({ reduceMotion: true });
+    run.replay(DEV_WARM.slice(0, 3));
+    const release = run.win.__tkaBootHold("module-view");
+    run.replay([[4370, "ready"]]);
+    run.advance(4800);
+    expect(run.screen.isConnected).toBe(true);
+    expect(run.width()).toBeLessThan(100);
+    release();
+    expect(run.width()).toBe(100);
+    expect(run.screen.isConnected).toBe(false);
   });
 });

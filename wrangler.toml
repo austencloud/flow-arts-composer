@@ -14,6 +14,11 @@ R2_PUBLIC_URL = "https://assets.tkaflowarts.com"
 # This was set on the preview environment but not production, so replay links
 # silently returned null in prod.
 PUBLIC_POSTHOG_PROJECT_ID = "299320"
+# Build-time flag for PostHog source maps (vite.config.ts build.sourcemap,
+# scripts/upload-sourcemaps.js). Maps are made only when a PostHog key is also
+# in the build environment, which is true for the production build alone.
+# Cloudflare manages this project's plain variables from this file.
+VITE_SOURCEMAP = "true"
 
 [[r2_buckets]]
 binding = "QR_VIDEOS"

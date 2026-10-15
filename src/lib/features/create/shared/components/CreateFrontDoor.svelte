@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { onMount, untrack } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import type { Section } from "#lib/shared/navigation/domain/types.js";
   import type { CreateFrontDoorSource } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
@@ -18,7 +18,11 @@
   import { createMethodPreviewReveal } from "../state/method-preview-reveal.svelte";
   import { createMethodPreviewTurns } from "../state/method-preview-turns.svelte";
   import CreateMethodPreview from "./method-previews/CreateMethodPreview.svelte";
-  import { runAfterBootScreen } from "./method-previews/after-boot-screen";
+  import {
+    bootScreenCovers,
+    holdBootScreen,
+    runAfterBootScreen,
+  } from "#lib/shared/application/services/boot-screen.js";
   import { methodPreviewHold } from "./method-previews/method-preview-hold";
   import { METHOD_PREVIEW_SCENES } from "./method-previews/method-preview-scenes";
 
@@ -81,6 +85,7 @@
   const reveal = createMethodPreviewReveal({
     order: sceneOrder,
     onReveal: (methodId) => turns.notifyReady(methodId),
+    covered: bootScreenCovers,
   });
 
   const turns = createMethodPreviewTurns({
@@ -104,8 +109,43 @@
     },
   });
 
+  // When the board opens while the boot screen still covers the page (the
+  // board is the visit's first view), the screen stays up until every card
+  // has drawn its first picture or failed to load, so no card is an empty
+  // tint when it leaves. The cards are prepared behind it; the turns still
+  // wait for it to go. A visit that lands on a workspace never opens the
+  // board behind it, so it does not hold.
+  // If the hold runs out first, the ready cards arrive as the screen leaves.
+  let previewHoldTaken = false;
+  let releasePreviewHold = (): void => {};
+  let cancelLeavingReveal = (): void => {};
+  const settledPreviews = new Set<string>();
+
+  function holdForPreviews(): void {
+    if (previewHoldTaken) return;
+    previewHoldTaken = true;
+    if (sceneOrder().length === 0 || !bootScreenCovers()) return;
+    releasePreviewHold = holdBootScreen("create-previews");
+    cancelLeavingReveal = runAfterBootScreen(() => reveal.revealNow());
+  }
+
+  function settlePreview(methodId: string): void {
+    settledPreviews.add(methodId);
+    if (sceneOrder().every((id) => settledPreviews.has(id))) {
+      // After the cards' instant reveal reaches the page, so the screen
+      // starts to leave on a whole board.
+      void tick().then(() => releasePreviewHold());
+    }
+  }
+
   function handleReady(methodId: string): void {
     reveal.notifyReady(methodId);
+    settlePreview(methodId);
+  }
+
+  function handleFailed(methodId: string): void {
+    reveal.notifyFailed(methodId);
+    settlePreview(methodId);
   }
 
   // Turns pause while the page is hidden or the board is off screen.
@@ -140,6 +180,8 @@
     );
 
     return () => {
+      releasePreviewHold();
+      cancelLeavingReveal();
       motionQuery.removeEventListener("change", onMotionChange);
       unsubscribe();
       previewGate.dispose();
@@ -157,9 +199,11 @@
     void appReducedMotion;
     untrack(() => {
       if (!open) {
+        releasePreviewHold();
         turns.stop();
         return;
       }
+      holdForPreviews();
       previewsWanted = true;
       turns.start();
     });
@@ -259,9 +303,11 @@
                     color={method.color ?? "var(--theme-accent)"}
                     open={active}
                     revealed={reveal.isRevealed(method.id)}
+                    instant={reveal.isInstant(method.id)}
                     playing={turns.playingId === method.id}
                     turn={turns.turn}
                     onready={handleReady}
+                    onfailed={handleFailed}
                   />
                 {/if}
               {:else}
