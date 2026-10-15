@@ -418,7 +418,11 @@
 {/snippet}
 
 <style>
+  /* The editor is see-through, so the hand cards would otherwise sit straight
+     on the theme's backdrop (a bright Pride or fire canvas). The theme's
+     elevated panel surface gives their buttons a steady ground; no blur. */
   .controls-zone {
+    --prop-card-ground: var(--theme-panel-elevated-bg, rgba(0, 0, 0, 0.5));
     box-sizing: border-box;
     padding: 12px;
     padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
@@ -463,7 +467,7 @@
     border-radius: 10px;
     border: 1px solid rgba(var(--prop-color-rgb, 59, 130, 246), 0.4);
     background: rgba(var(--prop-color-rgb, 59, 130, 246), 0.2);
-    color: var(--prop-color, var(--semantic-info));
+    color: var(--prop-ink, var(--prop-color, var(--semantic-info)));
     font-size: 1.1rem;
     cursor: pointer;
     transition:

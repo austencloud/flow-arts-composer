@@ -576,7 +576,7 @@
   .turns-controls.blue .ctrl-btn {
     background: rgba(var(--prop-color-rgb, 59, 130, 246), 0.2);
     border-color: rgba(var(--prop-color-rgb, 59, 130, 246), 0.4);
-    color: var(--prop-color, var(--semantic-info));
+    color: var(--prop-ink, var(--prop-color, var(--semantic-info)));
   }
 
   .turns-controls.blue .ctrl-btn:hover:not(:disabled) {
@@ -589,7 +589,7 @@
   .turns-controls.red .ctrl-btn {
     background: rgba(var(--prop-color-rgb, 239, 68, 68), 0.2);
     border-color: rgba(var(--prop-color-rgb, 239, 68, 68), 0.4);
-    color: var(--prop-color, var(--semantic-error));
+    color: var(--prop-ink, var(--prop-color, var(--semantic-error)));
   }
 
   .turns-controls.red .ctrl-btn:hover:not(:disabled) {
@@ -665,7 +665,7 @@
   .turns-controls.blue .invert-btn {
     background: rgba(var(--prop-color-rgb, 59, 130, 246), 0.25);
     border-color: rgba(var(--prop-color-rgb, 59, 130, 246), 0.5);
-    color: var(--prop-color, var(--semantic-info));
+    color: var(--prop-ink, var(--prop-color, var(--semantic-info)));
     box-shadow: 0 2px 8px rgba(var(--prop-color-rgb, 59, 130, 246), 0.15);
   }
 
@@ -679,7 +679,7 @@
   .turns-controls.red .invert-btn {
     background: rgba(var(--prop-color-rgb, 239, 68, 68), 0.25);
     border-color: rgba(var(--prop-color-rgb, 239, 68, 68), 0.5);
-    color: var(--prop-color, var(--semantic-error));
+    color: var(--prop-ink, var(--prop-color, var(--semantic-error)));
     box-shadow: 0 2px 8px rgba(var(--prop-color-rgb, 239, 68, 68), 0.15);
   }
 
@@ -706,7 +706,7 @@
     border-radius: 10px;
     border: 1px solid rgba(var(--prop-color-rgb, 255, 255, 255), 0.3);
     background: transparent;
-    color: var(--prop-color, var(--theme-text, #fff));
+    color: var(--prop-ink, var(--prop-color, var(--theme-text, #fff)));
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;

@@ -167,23 +167,28 @@
     border-radius: 10px;
   }
 
-  /* Blue - Indigo glass pane */
+  /* Blue - Indigo glass pane. A host that sits on the theme's backdrop sets
+     --prop-card-ground so the hand's tint lies over a steady surface. */
   .prop-card.blue {
-    background: linear-gradient(
-      135deg,
-      rgba(var(--user-left-rgb, 59, 130, 246), 0.15) 0%,
-      rgba(var(--user-left-rgb, 59, 130, 246), 0.05) 100%
-    );
+    background:
+      linear-gradient(
+        135deg,
+        rgba(var(--user-left-rgb, 59, 130, 246), 0.15) 0%,
+        rgba(var(--user-left-rgb, 59, 130, 246), 0.05) 100%
+      ),
+      var(--prop-card-ground, transparent);
     border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.35);
   }
 
   /* Red - Rose glass pane */
   .prop-card.red {
-    background: linear-gradient(
-      135deg,
-      rgba(var(--user-right-rgb, 239, 68, 68), 0.15) 0%,
-      rgba(var(--user-right-rgb, 239, 68, 68), 0.05) 100%
-    );
+    background:
+      linear-gradient(
+        135deg,
+        rgba(var(--user-right-rgb, 239, 68, 68), 0.15) 0%,
+        rgba(var(--user-right-rgb, 239, 68, 68), 0.05) 100%
+      ),
+      var(--prop-card-ground, transparent);
     border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.35);
   }
 
@@ -244,14 +249,27 @@
     min-height: auto;
   }
 
+  /* --prop-ink is the hand's color lifted toward the theme text, the same mix
+     SegmentedControl uses for toned labels, so words and icons stay legible
+     over any theme backdrop while still reading as that hand. */
   .prop-card.blue {
     --prop-color: var(--user-left-color, var(--semantic-info));
     --prop-color-rgb: var(--user-left-rgb, 59, 130, 246);
+    --prop-ink: color-mix(
+      in srgb,
+      var(--prop-color) 72%,
+      var(--theme-text, #fff)
+    );
   }
 
   .prop-card.red {
     --prop-color: var(--user-right-color, var(--semantic-error));
     --prop-color-rgb: var(--user-right-rgb, 239, 68, 68);
+    --prop-ink: color-mix(
+      in srgb,
+      var(--prop-color) 72%,
+      var(--theme-text, #fff)
+    );
   }
 
   @media (prefers-reduced-motion: reduce) {
