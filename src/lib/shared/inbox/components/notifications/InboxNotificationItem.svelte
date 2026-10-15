@@ -21,6 +21,8 @@
   import { buildAdminSessionReplayUrl } from "#lib/features/admin/domain/session-replay-target.js";
   import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { resolveAdminCreatedSequenceTarget } from "../../domain/admin-created-sequence-target";
+  import { setPendingBrowseIntent } from "#lib/features/browse/state/pending-browse-intent.svelte.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { openCreatorProfile } from "#lib/features/creators/state/creators-routing.svelte.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
@@ -33,7 +35,7 @@
 
   // Track if this notification just became read (for animation)
   let justMarkedRead = $state(false);
-  let openingCreatedSequence = $state(false);
+  let openingCreatedContent = $state(false);
 
   // Watch for read state changes to trigger animation
   $effect(() => {
@@ -169,7 +171,7 @@
     sequenceId: string | undefined,
     ownerDisplayName: string | undefined
   ) {
-    if (openingCreatedSequence) return;
+    if (openingCreatedContent) return;
 
     const report = (failure: Error) => {
       getErrorHandler().showUserError({
@@ -191,7 +193,7 @@
       return;
     }
 
-    openingCreatedSequence = true;
+    openingCreatedContent = true;
     try {
       const [
         { doc, getDocFromServer },
@@ -233,7 +235,81 @@
       );
       report(failure);
     } finally {
-      openingCreatedSequence = false;
+      openingCreatedContent = false;
+    }
+  }
+
+  /**
+   * Open the collection an admin "created collection" notification names.
+   * A public one opens on its Explore page, the same view the Community feed
+   * opens. A private one has no view for anyone but its owner (Explore and
+   * the Library both read public or shared collections only), so the click
+   * says so instead of doing nothing.
+   */
+  async function openAdminCreatedCollection(
+    ownerId: string | undefined,
+    collectionId: string | undefined,
+    collectionName: string | undefined
+  ) {
+    if (openingCreatedContent) return;
+
+    const report = (failure: Error) => {
+      getErrorHandler().showUserError({
+        message: t("inbox_ui_this_collection_could_not_be_opened"),
+        technicalDetails: failure.message,
+        error: failure,
+        severity: "error",
+        context: {
+          module: "inbox",
+          tab: "notifications",
+          action: "openCreatedCollection",
+        },
+      });
+    };
+
+    if (!ownerId || !collectionId) {
+      report(new Error("Notification has no collection destination"));
+      return;
+    }
+
+    openingCreatedContent = true;
+    try {
+      const [{ doc, getDocFromServer }, { getFirestoreInstance }] =
+        await Promise.all([
+          import("firebase/firestore"),
+          import("#lib/shared/auth/firebase.js"),
+        ]);
+      const firestore = await getFirestoreInstance();
+      const snapshot = await getDocFromServer(
+        doc(firestore, `users/${ownerId}/collections/${collectionId}`)
+      );
+      if (!snapshot.exists()) {
+        throw new Error("The collection no longer exists");
+      }
+      if (snapshot.data()["isPublic"] !== true) {
+        showToast(t("inbox_ui_collection_is_private"), "info", 4000);
+        return;
+      }
+
+      setPendingBrowseIntent({
+        kind: "public-collection-detail",
+        ownerId,
+        collectionId,
+        collectionName:
+          (snapshot.data()["name"] as string | undefined) || collectionName,
+      });
+      await handleModuleChange("browse", "gallery");
+      inboxState.close();
+    } catch (caught) {
+      const failure =
+        caught instanceof Error ? caught : new Error(String(caught));
+      console.error(
+        "[InboxNotificationItem] Failed to open created collection:",
+        failure
+      );
+      report(failure);
+    } finally {
+      openingCreatedContent = false;
     }
   }
 
@@ -255,7 +331,9 @@
         | "shortCode"
         | "returnedUserId"
         | "postHogSessionId"
-        | "contentType",
+        | "contentType"
+        | "collectionId"
+        | "collectionName",
         string
       >
     > & { scanLat?: number | null; scanLng?: number | null };
@@ -361,6 +439,12 @@
             n["fromUserId"],
             n["sequenceId"],
             n["fromUserName"]
+          );
+        } else if (n["contentType"] === "collection") {
+          await openAdminCreatedCollection(
+            n["fromUserId"],
+            n["collectionId"],
+            n["collectionName"]
           );
         }
         break;

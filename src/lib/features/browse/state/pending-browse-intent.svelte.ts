@@ -55,6 +55,16 @@ export type CollectionDetailIntent = {
   revealSequenceId?: string;
 };
 
+/** Someone else's public collection, opened on its Explore page — the same
+ *  view the Community collections feed opens, with the owner's name and
+ *  Follow. Used where the opener is outside Browse, such as a notification. */
+export type PublicCollectionDetailIntent = {
+  kind: "public-collection-detail";
+  ownerId: string;
+  collectionId: string;
+  collectionName?: string;
+};
+
 /** One published visual in Explore > Visuals — e.g. a creator-profile tile
  *  opening the public detail view. Callers gate on `exploreVisualsVisible()`;
  *  Browse resolves the location either way (unpromoted deep links fall back
@@ -70,6 +80,7 @@ export type BrowseIntent =
   | OwnLibraryIntent
   | ArtShelfIntent
   | CollectionDetailIntent
+  | PublicCollectionDetailIntent
   | ExploreVisualDetailIntent;
 
 export function createCollectionDetailIntent(input: {
