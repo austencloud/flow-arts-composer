@@ -291,7 +291,9 @@ export async function handleModuleChange(
 ) {
   markNavigationIntent();
 
-  if (moduleId === "browse") {
+  // No tab means "open Browse" and lands on its home screen; a named tab
+  // (including legacy names like "gallery" or "library") maps to Explore or You.
+  if (moduleId === "browse" && targetTab !== undefined) {
     targetTab = normalizeBrowsePrimary(targetTab);
   }
 
@@ -504,13 +506,12 @@ export function handleSectionChange(
     return;
   }
 
-  // Selecting the backing method from the Create home still changes the
-  // visible surface and URL, even when the remembered tab ID already matches.
-  const entersCreateWorkspace =
-    module === "create" && navigationState.isCreateFrontDoorOpen;
+  // Picking a tab from a module's home screen still changes the visible
+  // surface and URL, even when the remembered backing tab already matches.
+  const leavesModuleHome = navigationState.isModuleHomeOpen(module);
 
   // Don't switch if same section and no surface transition is required.
-  if (sectionId === currentSectionId && !entersCreateWorkspace) {
+  if (sectionId === currentSectionId && !leavesModuleHome) {
     navDebug("SKIPPED: Already on this section");
     return;
   }
@@ -536,7 +537,7 @@ export function handleSectionChange(
   };
 
   // Use View Transitions if available
-  if (typeof doc.startViewTransition === "function" && !entersCreateWorkspace) {
+  if (typeof doc.startViewTransition === "function" && !leavesModuleHome) {
     // Add direction class for CSS to target
     document.documentElement.classList.remove(
       "tab-slide-left",
@@ -692,6 +693,8 @@ function buildPath(moduleId: ModuleId, sectionId?: string) {
   // Browse's own resolver at the end of the View Transition and used to leave
   // the address bar at /browse/you after the content had already changed.
   if (moduleId === "browse") {
+    // No section is Browse's home screen.
+    if (!normalizedSectionId) return "/browse";
     return normalizeBrowsePrimary(normalizedSectionId) === "you"
       ? "/browse/you/sequences"
       : "/browse/explore/sequences";
@@ -1009,7 +1012,7 @@ export function initializeNavigationHistory() {
     } else if (
       targetSection &&
       (targetSection !== navigationState.activeTab ||
-        (targetModule === "create" && navigationState.isCreateFrontDoorOpen))
+        navigationState.isModuleHomeOpen(targetModule))
     ) {
       handleSectionChange(targetSection, {
         skipHistory: true,

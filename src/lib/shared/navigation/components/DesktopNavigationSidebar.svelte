@@ -63,18 +63,6 @@
   }>();
 
   let hapticService: HapticFeedback | undefined;
-  const MODULE_HOME_SECTION_PREFIX = "__module-home__:";
-
-  function moduleHomeSectionId(moduleId: string): string {
-    return `${MODULE_HOME_SECTION_PREFIX}${moduleId}`;
-  }
-
-  function isModuleHomeSection(
-    moduleId: string,
-    sectionId: string | undefined
-  ): boolean {
-    return sectionId === moduleHomeSectionId(moduleId);
-  }
 
   // Pin state is the package's model (rail vs pinned). It is kept in lockstep
   // with the legacy desktopSidebarState so MainInterface's reserved-width var
@@ -117,16 +105,12 @@
   ): string {
     getReactiveLocale();
     const m = modules.find((x: ModuleDefinition) => x.id === moduleId);
-    if (m?.home && isModuleHomeSection(moduleId, sectionId)) {
-      return m.home.optionLabel ?? m.home.label;
-    }
     const s = m?.sections.find((x: Section) => x.id === sectionId);
     return s ? t(s.labelKey) : fallback;
   }
 
   // Role-based access + guest-tier gating (mirrors the old getFilteredSections).
   function filterSection(moduleId: string, sectionId: string): boolean {
-    if (isModuleHomeSection(moduleId, sectionId)) return true;
     return (
       featureFlagService.canAccessTab(moduleId as ModuleId, sectionId) &&
       isTabAccessible(moduleId as ModuleId, sectionId, accessTier)
@@ -166,16 +150,15 @@
       goto(def.linkHref);
       return;
     }
-    if (isModuleHomeSection(moduleId, targetSection)) {
+    // A module with a home screen opens it from its own row (rail or
+    // expanded tree); its tabs stay as sub-rows for direct jumps.
+    if (def?.home && !targetSection) {
       return onModuleHomeSelect?.(moduleId as ModuleId);
     }
     return onModuleChange?.(moduleId as ModuleId, targetSection);
   }
 
   function handleSectionChange(sectionId: string) {
-    if (isModuleHomeSection(currentModule, sectionId)) {
-      return onModuleHomeSelect?.(currentModule as ModuleId);
-    }
     return onSectionChange?.(sectionId);
   }
 
@@ -199,7 +182,6 @@
     sectionId: string,
     e: MouseEvent
   ) {
-    if (isModuleHomeSection(moduleId, sectionId)) return;
     const m = modules.find((x: ModuleDefinition) => x.id === moduleId);
     const s = m?.sections.find((x: Section) => x.id === sectionId);
     contextMenuState = {
@@ -268,18 +250,7 @@
         }))
       : modules.map((module) => ({
           ...module,
-          sections: module.home
-            ? [
-                {
-                  id: moduleHomeSectionId(module.id),
-                  label: module.home.optionLabel ?? module.home.label,
-                  icon: module.home.icon ?? module.icon,
-                  color: module.color,
-                  gradient: module.color,
-                },
-                ...module.sections,
-              ]
-            : module.sections,
+          opensOnTap: module.home !== undefined,
         }))
   );
   const hostCurrentModule = $derived(
@@ -292,7 +263,7 @@
   );
   const hostCurrentSection = $derived(
     !isInSettings && navigationState.isModuleHomeOpen(currentModule as ModuleId)
-      ? moduleHomeSectionId(currentModule)
+      ? ""
       : currentSection
   );
 
