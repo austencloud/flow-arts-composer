@@ -114,3 +114,20 @@
 - Source ambiguity: the Static 2-turn description says to use negative space or a turn, without identifying what turns. French uses the neutral `une rotation`; no claim that the performer turns on themselves is added.
 - Prose review: ai-bust mechanical pass on the output returned `[]` at HIGH/CRITICAL severity. Judgment pass preserved the source teaching sequence and factual statements; no native review or independent confirmation of source mathematics/history was performed.
 - No primary-checkout access, other-worktree access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator.
+
+## P2 — 2026-10-14
+
+- Batch: P2, `batch-P2.json`; 401 translated keys, 0 retranslated keys, 0 review entries. All supplied keys are guide text and controls; no effect or inbox keys occur in this batch.
+- Initial apply: `messages/fr.json: inserted 401, replaced 0, refused 0`.
+- Final apply after neutral rotation wording and exact Dual-Shifts label corrections: `messages/fr.json: inserted 0, replaced 401, refused 0`.
+- Catalog diff before ledger: only `messages/fr.json` changed; 401 insertions, 0 deletions. All 401 batch keys added, all previous values unchanged, and every output value applied.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files 1 passed (1)`; `Tests 66 passed (66)`; duration 10.05s; exit 0. Initial gate also passed 66 tests before the final wording corrections.
+- Focused checks: exact placeholder multiplicity and HTML tag/attribute multiplicity preserved; all values single-line; no vous/votre/vos forms; `git diff --check` passed.
+- Glossary choices: informal `tu`; infinitive action buttons; prop = `accessoire`, staff = `bâton`, hand path = `trajectoire de la main`, centric placement = `position centrée`, step = `étape`, turn = `tour`, Box = `Carré`, Diamond = `Diamant`. All orientation prose and labels use full `vers l’intérieur` / `vers l’extérieur`; rotation senses use `horaire` / `antihoraire`.
+- Protected categories, brands, placements, VTG labels, letters, code examples, symbols, class/style attributes and colors retained. Parenthesized notation pairs keep their original lowercase, e.g. `(pro|pro)` and `(dash|dash)`. The split highlighted source label `Dual` + `-Shifts` is preserved exactly. Letter/type labels legitimately identical to English remain present because all batch keys are required.
+- Teaching choices outside the glossary: high/low slots = `emplacements du haut et du bas`; leading/following = `main qui mène` / `main qui suit`; opening/closing = `ouverture` / `fermeture`; thumb/pinky ends = `extrémité côté pouce/auriculaire`; Same-dots/Opp-dots = `points de même sens et de sens opposés`; negative space = `espace négatif`. Spoken glyph modifiers such as High-One are translated as Haut-Un, while letters and code parameters remain intact. No native/community review was available for these terms.
+- Source ambiguity preserved: Dash examples count two thumb switches while showing only `(in → in)`, and two-turn Dash examples retain their abbreviated `(in → out)` endpoint notation. These are source teaching examples, not independently verified calculations; their counts and arrow sequences are unchanged in translation.
+- Source ambiguity preserved: the static two-turn guidance says to use negative space or a turn without identifying what turns. Those sentences use neutral `l’espace négatif ou une rotation`; no body turn is inferred there. The separate staff-marking sentence explicitly mentions body turns and is translated accordingly.
+- Prose review: ai-bust mechanical pass returned `[]` at HIGH/CRITICAL severity. Judgment review preserved the source teaching sequence, emphasis and steps; repeated runtime/print descriptions reflect the supplied variants. No independent confirmation of source technical claims or native review is claimed.
+- No primary-checkout access, other-worktree access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator.
