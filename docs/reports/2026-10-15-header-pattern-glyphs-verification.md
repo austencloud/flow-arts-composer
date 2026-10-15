@@ -74,19 +74,39 @@ detecting AI authorship.
 
 ## Card-back regression
 
-An existing one-step TEST sequence fixture built a real cosmic-theme BackJob.
-Both complete cards used the production compositor. One used current glyph
-bitmaps; the other used glyph bitmaps from the exact pre-feature formulas
-in `072cec902d^`. The remaining card layers were identical.
+The original [card montage](../../.artifacts/header-pattern-glyphs/card-back-before-after.png)
+is **withdrawn as visual acceptance evidence**. It used an incomplete, synthetic
+one-step TEST sequence and built the card at 822 × 1122 with 36 px bleed. The
+production card-back builder expects 1644 × 2244 with 72 px bleed: its brand
+and URL bitmaps are rasterized at a fixed 1644 px card width. Drawing those
+bitmaps into the undersized card clipped and enlarged the title. The synthetic
+step also lacked the locations, orientations, and placements needed for a
+representative mandala, leaving an uninformative circle.
 
-At 822 × 1122, comparison found **zero changed pixels across 922,284 pixels**,
-zero changed RGBA channels, and a maximum channel delta of zero. This isolates
-the changed painters inside a complete card composition. It does not run the
-entire previous commit in a separate runtime.
+The [original comparison data](../../.artifacts/header-pattern-glyphs/card-back-regression.json)
+remain valid only for their narrow claim: replacing the turn and reversal
+bitmaps with drawings from the pre-feature formulas changed zero RGBA channels
+within that same malformed BackJob. Independent browser Canvas2D glyph painter
+comparisons are noted above.
 
-Artifacts:
-[complete cards](../../.artifacts/header-pattern-glyphs/card-back-before-after.png)
-and [comparison data](../../.artifacts/header-pattern-glyphs/card-back-regression.json).
+A corrected render used the app's 16-step
+[`demo-sequence.json`](../../src/lib/shared/landing/data/demo-sequence.json),
+hydrated before building the cosmic-theme card at 1644 × 2244 with 72 px bleed,
+staff props on both hands, and no custom prop colors. Browser inspection found
+the title inside the card, a complete mandala, both corner glyphs, the start
+placement pictograph, URL, and step count. The
+[representative card](../../.artifacts/header-pattern-glyphs/card-back-representative.png)
+and [browser view](../../.artifacts/header-pattern-glyphs/card-back-corrected-browser.jpg)
+replace the withdrawn montage for visual inspection.
+
+The same production-sized BackJob was painted twice, replacing only the turn
+and reversal bitmaps with the exact pre-feature painter formulas for the second
+paint. The [corrected comparison](../../.artifacts/header-pattern-glyphs/card-back-corrected-comparison.png)
+found **zero changed pixels across 3,689,136 pixels**, zero changed RGBA channels,
+and a maximum channel difference of zero. See
+[comparison data](../../.artifacts/header-pattern-glyphs/card-back-corrected-regression.json).
+This isolates glyph painter output in a representative complete card; it does
+not execute the entire previous commit in a separate runtime.
 
 ## Encoded video
 
