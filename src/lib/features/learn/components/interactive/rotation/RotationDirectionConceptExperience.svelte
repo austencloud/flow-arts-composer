@@ -1,7 +1,12 @@
+<!--
+  Rotation Direction on the shared lesson shell: pick pro or anti and compare
+  the real pictographs, answer three direction checks (Next waits for the
+  right answer), then the two relationships side by side.
+-->
 <script lang="ts">
   import { lessonQuestion } from "../letters/type1/lesson-question.js";
   import { onMount } from "svelte";
-  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { getCodexLetterMappingRepo } from "#lib/features/learn/codex/get-codex-letter-mapping-repo.js";
   import {
@@ -11,9 +16,13 @@
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { ExperienceViewMode } from "../../../domain/types";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
-  import ExperienceProgressIndicator from "../ExperienceProgressIndicator.svelte";
+  import LessonStageControls from "../LessonStageControls.svelte";
+  import LessonStageFrame from "../LessonStageFrame.svelte";
+  import LessonStageHeading from "../LessonStageHeading.svelte";
   import {
     ROTATION_DIRECTION_LESSON,
     ROTATION_DIRECTION_QUESTIONS,
@@ -31,11 +40,13 @@
     viewMode?: ExperienceViewMode;
   } = $props();
 
+  const PHASE_COUNT = 3;
   const haptic = getHapticFeedback();
   const persistence = getExperiencePersistence("rotation-direction");
   const saved = persistence.load();
+  const curriculumLabel = $derived(tDynamic("learn_ui_level_one"));
 
-  let phase = $state(Math.min(3, Math.max(1, saved.step || 1)));
+  let phase = $state(Math.min(PHASE_COUNT, Math.max(1, saved.step || 1)));
   let selectedRelationship = $state<RotationRelationship>(
     persistence.getPhaseData<RotationRelationship>(
       "selectedRelationship",
@@ -68,6 +79,36 @@
   );
   const feedbackRelationship = $derived(
     ROTATION_DIRECTION_LESSON.find((item) => item.id === selectedAnswer) ?? null
+  );
+  const isLast = $derived(phase === PHASE_COUNT);
+  const lastQuestion = $derived(
+    questionIndex === ROTATION_DIRECTION_QUESTIONS.length - 1
+  );
+  /** The quiz step waits for the right answer before Next opens. */
+  const actionDisabled = $derived(phase === 2 && answerState !== "correct");
+  const headingKey = $derived(phase === 2 ? `2-${questionIndex}` : phase);
+  const title = $derived(
+    phase === 1
+      ? tDynamic("learn_rotation_title")
+      : phase === 2
+        ? tDynamic(`learn_rotation_question_${questionIndex + 1}`)
+        : tDynamic("learn_rotation_summary_title")
+  );
+  const description = $derived(
+    phase === 1
+      ? tDynamic("learn_rotation_intro")
+      : phase === 2
+        ? tDynamic("learn_rotation_check_hint")
+        : tDynamic("learn_rotation_summary")
+  );
+  const actionLabel = $derived(
+    phase === 1
+      ? tDynamic("learn_rotation_try_check")
+      : phase === 2
+        ? lastQuestion
+          ? tDynamic("learn_rotation_see_relationship")
+          : tDynamic("learn_rotation_next_pictograph")
+        : tDynamic("learn_rotation_complete")
   );
 
   function relationshipText(
@@ -106,7 +147,7 @@
   }
 
   function goToPhase(nextPhase: number) {
-    phase = Math.min(3, Math.max(1, nextPhase));
+    phase = Math.min(PHASE_COUNT, Math.max(1, nextPhase));
     persistence.saveStep(phase);
     selectedAnswer = null;
     answerState = null;
@@ -137,6 +178,29 @@
     onComplete?.();
   }
 
+  function handlePrimaryAction() {
+    if (actionDisabled) return;
+    if (phase === 1) goToPhase(2);
+    else if (phase === 2) nextQuestion();
+    else complete();
+  }
+
+  function handleKeydown(event: KeyboardEvent): void {
+    if (viewMode !== "step" || event.defaultPrevented) return;
+    if (
+      event.target instanceof Element &&
+      event.target.closest("button, input, select, textarea, [role='slider']")
+    )
+      return;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      handlePrimaryAction();
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      handleBack();
+    }
+  }
+
   export function handleBack() {
     if (phase > 1) {
       goToPhase(phase - 1);
@@ -146,236 +210,238 @@
   }
 </script>
 
-<div class="experience" class:review-mode={viewMode === "scroll"}>
-  {#if phase === 1}
-    <section class="lesson-grid" aria-labelledby="rotation-title">
-      <div class="lesson-copy">
-        <p class="eyebrow">{tDynamic("learn_rotation_eyebrow")}</p>
-        <h1 id="rotation-title">{tDynamic("learn_rotation_title")}</h1>
-        <p class="lede">{tDynamic("learn_rotation_intro")}</p>
+<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+<div
+  class="rotation-experience"
+  class:review-mode={viewMode === "scroll"}
+  onkeydown={handleKeydown}
+  tabindex="0"
+  role="application"
+  aria-label={t("learn_ui_named_lesson_keyboard", {
+    title: tDynamic("learn_concept_rotation_direction_name"),
+  })}
+>
+  <LessonStageFrame artifactLayout="workshop">
+    {#snippet heading()}
+      <LessonStageHeading
+        key={headingKey}
+        {title}
+        eyebrow={tDynamic("learn_concept_rotation_direction_name")}
+      >
+        <p>{description}</p>
+      </LessonStageHeading>
+    {/snippet}
 
-        <div
-          class="relationship-picker"
-          aria-label={tDynamic("learn_rotation_choose_relationship_aria")}
-        >
-          {#each ROTATION_DIRECTION_LESSON as item}
-            <button
-              type="button"
-              class="relationship-choice"
-              class:active={selectedRelationship === item.id}
-              aria-pressed={selectedRelationship === item.id}
-              style:--choice-accent={item.accent}
-              onclick={() => chooseRelationship(item.id)}
-            >
-              <span class="choice-name">{item.name}</span>
-              <span class="choice-cue">{relationshipText(item.id, "cue")}</span>
-            </button>
-          {/each}
-        </div>
-
-        <div
-          class="definition"
-          style:--choice-accent={activeRelationship.accent}
-        >
-          <span
-            class="definition-letter"
-            aria-label={tDynamic("learn_rotation_letter_aria", {
-              letter: activeRelationship.letter,
-            })}
-          >
-            {activeRelationship.letter}
-          </span>
-          <div>
-            <strong
-              >{activeRelationship.name}: {relationshipText(
-                activeRelationship.id,
-                "cue"
-              )}</strong
-            >
-            <p>{relationshipText(activeRelationship.id, "meaning")}</p>
-            <small
-              >{relationshipText(activeRelationship.id, "orientation")}</small
-            >
-          </div>
-        </div>
-
-        <button
-          class="primary-action"
-          type="button"
-          onclick={() => goToPhase(2)}
-        >
-          {tDynamic("learn_rotation_try_check")}
-          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-        </button>
-      </div>
-
-      <div class="visual-column">
-        <span class="visual-label"
-          >{tDynamic("learn_rotation_visual_label")}</span
-        >
-        <div class="visual-pair">
-          {#each ROTATION_DIRECTION_LESSON as item}
-            <article
-              class="visual-option"
-              class:active={selectedRelationship === item.id}
-              style:--choice-accent={item.accent}
-            >
-              <span class="option-label">
-                <strong>{item.letter}</strong>
-                {item.name} · {relationshipText(item.id, "cue")}
-              </span>
-              <LessonPictographStage
-                pictograph={pictographs[item.letter] ?? null}
-                {loading}
-                accent={item.accent}
-              />
-            </article>
-          {/each}
-        </div>
-        <p class="visual-note">{tDynamic("learn_rotation_visual_note")}</p>
-      </div>
-    </section>
-  {:else if phase === 2}
-    <section class="challenge" aria-labelledby="rotation-check-title">
-      <div class="challenge-header">
-        <p class="eyebrow">
-          {tDynamic("learn_rotation_direction_check", {
-            current: questionIndex + 1,
-            total: ROTATION_DIRECTION_QUESTIONS.length,
-          })}
-        </p>
-        <h1 id="rotation-check-title">
-          {tDynamic(`learn_rotation_question_${questionIndex + 1}`)}
-        </h1>
-        <p>{tDynamic("learn_rotation_check_hint")}</p>
-      </div>
-
-      <div class="challenge-grid">
-        <div class="challenge-visual">
-          <LessonPictographStage
-            pictograph={pictographs[activeQuestion.letter] ?? null}
-            {loading}
-            accent={questionRelationship.accent}
-          />
-        </div>
-
-        <div class="answer-panel">
-          <div
-            class="answers"
-            aria-label={tDynamic("learn_rotation_choose_answer_aria")}
-          >
-            {#each ROTATION_DIRECTION_LESSON as item}
-              <button
-                type="button"
-                class="answer-button"
-                class:selected={selectedAnswer === item.id}
-                class:correct={answerState !== null &&
-                  item.id === activeQuestion.answer}
-                class:wrong={answerState === "wrong" &&
-                  selectedAnswer === item.id}
-                disabled={answerState === "correct"}
-                style:--choice-accent={item.accent}
-                onclick={() => answerQuestion(item.id)}
+    {#snippet artifact()}
+      <Crossfade key={phase} duration={DURATION.normal}>
+        {#if phase === 1}
+          <section class="lesson-grid" aria-label={title}>
+            <div class="lesson-copy">
+              <div
+                class="relationship-picker"
+                aria-label={tDynamic("learn_rotation_choose_relationship_aria")}
               >
-                <span>{item.name}</span>
-                <small>{relationshipText(item.id, "cue")}</small>
-              </button>
-            {/each}
-          </div>
+                {#each ROTATION_DIRECTION_LESSON as item}
+                  <button
+                    type="button"
+                    class="relationship-choice"
+                    class:active={selectedRelationship === item.id}
+                    aria-pressed={selectedRelationship === item.id}
+                    style:--choice-accent={item.accent}
+                    onclick={() => chooseRelationship(item.id)}
+                  >
+                    <span class="choice-name">{item.name}</span>
+                    <span class="choice-cue"
+                      >{relationshipText(item.id, "cue")}</span
+                    >
+                  </button>
+                {/each}
+              </div>
 
-          {#if answerState === "wrong" && feedbackRelationship}
-            <div class="feedback wrong-feedback" role="status">
-              <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
-              <p>
-                {tDynamic("learn_rotation_wrong_feedback", {
-                  selected: feedbackRelationship.name,
-                  meaning: relationshipText(feedbackRelationship.id, "meaning"),
-                  correct: questionRelationship.name,
+              <div
+                class="definition"
+                style:--choice-accent={activeRelationship.accent}
+              >
+                <span
+                  class="definition-letter"
+                  aria-label={tDynamic("learn_rotation_letter_aria", {
+                    letter: activeRelationship.letter,
+                  })}
+                >
+                  {activeRelationship.letter}
+                </span>
+                <div>
+                  <strong
+                    >{activeRelationship.name}: {relationshipText(
+                      activeRelationship.id,
+                      "cue"
+                    )}</strong
+                  >
+                  <p>{relationshipText(activeRelationship.id, "meaning")}</p>
+                  <small
+                    >{relationshipText(
+                      activeRelationship.id,
+                      "orientation"
+                    )}</small
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="visual-column">
+              <span class="visual-label"
+                >{tDynamic("learn_rotation_visual_label")}</span
+              >
+              <div class="visual-pair">
+                {#each ROTATION_DIRECTION_LESSON as item}
+                  <article
+                    class="visual-option"
+                    class:active={selectedRelationship === item.id}
+                    style:--choice-accent={item.accent}
+                  >
+                    <span class="option-label">
+                      <strong>{item.letter}</strong>
+                      {item.name} · {relationshipText(item.id, "cue")}
+                    </span>
+                    <LessonPictographStage
+                      pictograph={pictographs[item.letter] ?? null}
+                      {loading}
+                      accent={item.accent}
+                    />
+                  </article>
+                {/each}
+              </div>
+              <p class="visual-note">
+                {tDynamic("learn_rotation_visual_note")}
+              </p>
+            </div>
+          </section>
+        {:else if phase === 2}
+          <section class="challenge-grid" aria-label={title}>
+            <div class="challenge-visual">
+              <LessonPictographStage
+                pictograph={pictographs[activeQuestion.letter] ?? null}
+                {loading}
+                accent={questionRelationship.accent}
+              />
+            </div>
+
+            <div class="answer-panel">
+              <p class="question-count">
+                {tDynamic("learn_rotation_direction_check", {
+                  current: questionIndex + 1,
+                  total: ROTATION_DIRECTION_QUESTIONS.length,
                 })}
               </p>
+              <div
+                class="answers"
+                aria-label={tDynamic("learn_rotation_choose_answer_aria")}
+              >
+                {#each ROTATION_DIRECTION_LESSON as item}
+                  <button
+                    type="button"
+                    class="answer-button"
+                    class:selected={selectedAnswer === item.id}
+                    class:correct={answerState !== null &&
+                      item.id === activeQuestion.answer}
+                    class:wrong={answerState === "wrong" &&
+                      selectedAnswer === item.id}
+                    disabled={answerState === "correct"}
+                    style:--choice-accent={item.accent}
+                    onclick={() => answerQuestion(item.id)}
+                  >
+                    <span>{item.name}</span>
+                    <small>{relationshipText(item.id, "cue")}</small>
+                  </button>
+                {/each}
+              </div>
+
+              {#if answerState === "wrong" && feedbackRelationship}
+                <div class="feedback wrong-feedback" role="status">
+                  <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                  <p>
+                    {tDynamic("learn_rotation_wrong_feedback", {
+                      selected: feedbackRelationship.name,
+                      meaning: relationshipText(
+                        feedbackRelationship.id,
+                        "meaning"
+                      ),
+                      correct: questionRelationship.name,
+                    })}
+                  </p>
+                </div>
+              {:else if answerState === "correct"}
+                <div class="feedback correct-feedback" role="status">
+                  <i class="fa-solid fa-check" aria-hidden="true"></i>
+                  <p>
+                    <strong>{questionRelationship.name}.</strong>
+                    {relationshipText(questionRelationship.id, "meaning")}
+                  </p>
+                </div>
+              {:else}
+                <div class="feedback feedback-placeholder" aria-hidden="true">
+                </div>
+              {/if}
             </div>
-          {:else if answerState === "correct"}
-            <div class="feedback correct-feedback" role="status">
-              <i class="fa-solid fa-check" aria-hidden="true"></i>
-              <p>
-                <strong>{questionRelationship.name}.</strong>
-                {relationshipText(questionRelationship.id, "meaning")}
-              </p>
+          </section>
+        {:else}
+          <section class="summary" aria-label={title}>
+            <div class="summary-grid">
+              {#each ROTATION_DIRECTION_LESSON as item}
+                <article
+                  class="summary-card"
+                  style:--choice-accent={item.accent}
+                >
+                  <span class="summary-letter">{item.letter}</span>
+                  <div>
+                    <h2>{item.name}</h2>
+                    <p>{relationshipText(item.id, "meaning")}</p>
+                  </div>
+                </article>
+              {/each}
             </div>
-          {/if}
 
-          <button
-            class="primary-action"
-            type="button"
-            disabled={answerState !== "correct"}
-            onclick={nextQuestion}
-          >
-            {questionIndex === ROTATION_DIRECTION_QUESTIONS.length - 1
-              ? tDynamic("learn_rotation_see_relationship")
-              : tDynamic("learn_rotation_next_pictograph")}
-            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-          </button>
-        </div>
-      </div>
-    </section>
-  {:else}
-    <section class="summary" aria-labelledby="rotation-summary-title">
-      <p class="eyebrow">{tDynamic("learn_rotation_found")}</p>
-      <h1 id="rotation-summary-title">
-        {tDynamic("learn_rotation_summary_title")}
-      </h1>
-      <p class="summary-lede">{tDynamic("learn_rotation_summary")}</p>
+            <aside class="base-rotation-note">
+              <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+              <p>{tDynamic("learn_rotation_base_note")}</p>
+            </aside>
+          </section>
+        {/if}
+      </Crossfade>
+    {/snippet}
 
-      <div class="summary-grid">
-        {#each ROTATION_DIRECTION_LESSON as item}
-          <article class="summary-card" style:--choice-accent={item.accent}>
-            <span class="summary-letter">{item.letter}</span>
-            <div>
-              <h2>{item.name}</h2>
-              <p>{relationshipText(item.id, "meaning")}</p>
-            </div>
-          </article>
-        {/each}
-      </div>
-
-      <aside class="base-rotation-note">
-        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-        <p>{tDynamic("learn_rotation_base_note")}</p>
-      </aside>
-
-      <button
-        class="primary-action complete-action"
-        type="button"
-        onclick={complete}
-      >
-        {tDynamic("learn_rotation_complete")}
-        <i class="fa-solid fa-check" aria-hidden="true"></i>
-      </button>
-    </section>
-  {/if}
-
-  <ExperienceProgressIndicator currentStep={phase} totalSteps={3} />
+    {#snippet controls()}
+      <LessonStageControls
+        progressAppearance="steps"
+        label={actionLabel}
+        currentStep={phase}
+        totalSteps={PHASE_COUNT}
+        onAction={handlePrimaryAction}
+        onPrevious={handleBack}
+        previousDisabled={phase === 1}
+        actionIcon={isLast ? "check" : "arrow"}
+        {actionDisabled}
+        {curriculumLabel}
+      />
+    {/snippet}
+  </LessonStageFrame>
 </div>
 
 <style>
-  .experience {
-    --lesson-max: 78rem;
-    display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
-    gap: 1rem;
+  .rotation-experience {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
     width: 100%;
-    height: 100%;
-    min-height: 0;
-    padding: 4.75rem clamp(1rem, 3vw, 3rem) 1rem;
-    overflow: auto;
+    min-height: 100%;
+    color: var(--theme-text);
+    outline: none;
     container-type: inline-size;
   }
 
-  .lesson-grid,
-  .challenge,
-  .summary {
-    width: min(100%, var(--lesson-max));
-    margin: auto;
+  .rotation-experience :global(.lesson-stage-frame) {
+    --lesson-workshop-max: 78rem;
+    --lesson-controls-max: 64rem;
   }
 
   .lesson-grid {
@@ -383,11 +449,11 @@
     grid-template-columns: minmax(18rem, 0.88fr) minmax(20rem, 1.12fr);
     align-items: center;
     gap: clamp(2rem, 5vw, 5.5rem);
+    width: 100%;
   }
 
   .lesson-copy,
   .visual-column,
-  .challenge-header,
   .answer-panel,
   .summary {
     min-width: 0;
@@ -397,41 +463,6 @@
     display: grid;
     align-content: center;
     gap: 1.2rem;
-  }
-
-  .eyebrow {
-    margin: 0;
-    color: var(--theme-accent);
-    font-size: clamp(0.72rem, 0.8vw, 0.9rem);
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  h1 {
-    max-width: 17ch;
-    margin: 0;
-    color: var(--theme-text);
-    font-size: clamp(2rem, 4.3cqw, 4.6rem);
-    font-weight: 850;
-    letter-spacing: -0.045em;
-    line-height: 0.98;
-    text-wrap: balance;
-  }
-
-  .lede,
-  .challenge-header > p:last-child,
-  .summary-lede {
-    max-width: 58ch;
-    margin: 0;
-    color: var(--theme-text-dim);
-    font-size: clamp(1rem, 1.45cqw, 1.2rem);
-    line-height: 1.55;
-  }
-
-  .lede strong,
-  .base-rotation-note strong {
-    color: var(--theme-text);
   }
 
   .relationship-picker {
@@ -532,34 +563,6 @@
     font-size: 0.78rem;
   }
 
-  .primary-action {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    justify-self: start;
-    gap: 0.65rem;
-    min-height: 3.2rem;
-    padding: 0.75rem 1.2rem;
-    border: 1px solid color-mix(in srgb, var(--theme-accent) 70%, white 14%);
-    border-radius: 0.85rem;
-    background: var(--theme-accent);
-    color: #061013;
-    font: inherit;
-    font-weight: 850;
-    cursor: pointer;
-  }
-
-  .primary-action:hover:not(:disabled) {
-    filter: brightness(1.12);
-    transform: translateY(-1px);
-  }
-
-  .primary-action:disabled {
-    cursor: not-allowed;
-    filter: saturate(0.2);
-    opacity: 0.38;
-  }
-
   button:focus-visible {
     outline: 3px solid color-mix(in srgb, var(--theme-accent) 72%, white);
     outline-offset: 3px;
@@ -619,34 +622,27 @@
     font-size: 1rem;
   }
 
-  .challenge {
-    display: grid;
-    align-content: center;
-    gap: clamp(1.3rem, 3vw, 2.5rem);
-  }
-
-  .challenge-header {
-    display: grid;
-    justify-items: center;
-    gap: 0.55rem;
-    text-align: center;
-  }
-
-  .challenge-header h1 {
-    max-width: 23ch;
-    font-size: clamp(1.8rem, 3.6cqw, 3.5rem);
-  }
-
   .challenge-grid {
     display: grid;
     grid-template-columns: minmax(18rem, 1fr) minmax(18rem, 0.9fr);
     align-items: center;
     gap: clamp(1.5rem, 4vw, 4rem);
+    width: 100%;
   }
 
   .answer-panel {
     display: grid;
     gap: 1rem;
+  }
+
+  .question-count {
+    margin: 0;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact, 0.75rem);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .answers {
@@ -706,6 +702,13 @@
     min-height: 4.6rem;
   }
 
+  /* The feedback slot keeps its height before an answer, so the answer
+     buttons do not jump when the feedback appears. */
+  .feedback-placeholder {
+    border-color: transparent;
+    background: none;
+  }
+
   .feedback p,
   .base-rotation-note p {
     margin: 0;
@@ -728,14 +731,9 @@
 
   .summary {
     display: grid;
-    align-content: center;
     justify-items: center;
     gap: 1.25rem;
-    text-align: center;
-  }
-
-  .summary h1 {
-    max-width: 18ch;
+    width: 100%;
   }
 
   .summary-grid {
@@ -782,24 +780,11 @@
   }
 
   .base-rotation-note i {
-    color: var(--theme-accent);
     margin-top: 0.15rem;
-  }
-
-  .complete-action {
-    justify-self: center;
-  }
-
-  :global(.experience > .progress-indicator) {
-    justify-self: center;
+    color: var(--theme-accent);
   }
 
   @container (max-width: 760px) {
-    .experience {
-      grid-template-rows: auto auto;
-      align-content: start;
-    }
-
     .lesson-grid,
     .challenge-grid {
       grid-template-columns: 1fr;
@@ -808,17 +793,12 @@
     .lesson-grid {
       gap: 1.5rem;
     }
-
-    h1 {
-      font-size: clamp(2rem, 10cqw, 3.4rem);
-    }
   }
 
   @container (min-width: 1680px) {
     .lesson-grid {
-      grid-template-columns: minmax(28rem, 0.72fr) minmax(64rem, 1.28fr);
+      grid-template-columns: minmax(28rem, 0.72fr) minmax(40rem, 1.28fr);
       gap: clamp(4rem, 7vw, 9rem);
-      width: min(100%, var(--shell-w));
     }
 
     .visual-pair {
@@ -839,10 +819,6 @@
   }
 
   @container (max-width: 480px) {
-    .experience {
-      padding: 4rem 0.75rem 0.75rem;
-    }
-
     .relationship-picker,
     .summary-grid {
       grid-template-columns: 1fr;
@@ -855,12 +831,6 @@
   }
 
   @media (max-height: 560px) and (min-width: 700px) {
-    .experience {
-      grid-template-rows: auto auto;
-      align-content: start;
-      padding-top: 3.9rem;
-    }
-
     .lesson-grid,
     .challenge-grid {
       align-items: start;
@@ -870,11 +840,6 @@
       gap: 0.65rem;
     }
 
-    h1 {
-      font-size: clamp(1.7rem, 4cqw, 2.6rem);
-    }
-
-    .lede,
     .visual-note {
       font-size: 0.8rem;
     }
@@ -890,7 +855,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .primary-action,
     .relationship-choice,
     .answer-button {
       transition: none;
