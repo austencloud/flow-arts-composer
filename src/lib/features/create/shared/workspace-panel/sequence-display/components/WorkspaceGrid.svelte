@@ -1549,6 +1549,91 @@
     width: 100%;
   }
 
+  /* ===== Guide strip look =====
+     The steps fuse into one block with hairline seams and rounded outer
+     corners, the way /guide strips draw them. The start tile stands beside the
+     block in a frame of its own. */
+  .grid-surface.timeline {
+    --seam: color-mix(in oklab, var(--theme-text, #fff) 16%, transparent);
+    --block-radius: 12px;
+    column-gap: 10px;
+  }
+
+  /* Seams paint over the artwork: its own square backing would cover a border
+     drawn underneath. Each cell draws its leading and bottom seam; the first
+     row adds the top edge and each row's last cell the trailing one. */
+  .timeline-row > .step-container::after,
+  .timeline-start-column > [data-history-start-placement]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-inline-start: 1px solid var(--seam);
+    border-block-end: 1px solid var(--seam);
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .timeline-row:first-child > .step-container::after {
+    border-block-start: 1px solid var(--seam);
+  }
+
+  .timeline-row > .step-container:last-child::after {
+    border-inline-end: 1px solid var(--seam);
+  }
+
+  /* Only the block's outer corners round. */
+  .timeline-row:first-child > .step-container:first-child {
+    border-start-start-radius: var(--block-radius);
+  }
+
+  .timeline-row:first-child > .step-container:last-child {
+    border-start-end-radius: var(--block-radius);
+  }
+
+  .timeline-row:last-child > .step-container:first-child {
+    border-end-start-radius: var(--block-radius);
+  }
+
+  .timeline-row:last-child > .step-container:last-child {
+    border-end-end-radius: var(--block-radius);
+  }
+
+  /* The start tile is a complete frame of its own. */
+  .timeline-start-column > [data-history-start-placement] {
+    position: relative;
+    border-radius: var(--block-radius);
+  }
+
+  .timeline-start-column > [data-history-start-placement]::after {
+    border: 1px solid var(--seam);
+  }
+
+  .grid-surface.timeline .mandala-cell {
+    border-color: var(--seam);
+    border-radius: var(--block-radius);
+  }
+
+  /* Empty start-column slots no longer paint a plate: the start frame and the
+     step block are the only filled shapes. */
+  .timeline-start-column > .timeline-cell:empty {
+    background: transparent;
+  }
+
+  /* Rounded cells clip their square artwork to the curve. A hovered or
+     selected cell lifts out of the block, so it is left unclipped. */
+  .timeline-row
+    > .step-container:is(:first-child, :last-child):not(:hover):not(
+      .cell-selected
+    )
+    > .history-layout-shell,
+  .timeline-start-column
+    > [data-history-start-placement]:not(:hover)
+    > .history-layout-shell {
+    border-radius: inherit;
+    overflow: hidden;
+  }
+
   .cell-selected {
     z-index: 10;
     border: 3px solid transparent;
