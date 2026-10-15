@@ -11,14 +11,14 @@ import {
 } from "../../../src/lib/features/learn/domain/concepts";
 
 describe("Reading a Choreo Card lesson", () => {
-  it("sits immediately after timing and direction with its prerequisite", () => {
+  it("keeps its curriculum place while withdrawn from the public lessons", () => {
     const timing = getConceptById("timing-and-direction");
     const cards = getConceptById("reading-choreo-cards");
 
     expect(cards?.prerequisites).toEqual(["timing-and-direction"]);
     expect(getNextConcept(timing!.id)?.id).toBe(cards?.id);
-    expect(isConceptExperienceAvailable(cards!.id)).toBe(true);
-    expect(getConceptExperience(cards!.id)?.reviewStatus).toBe("built");
+    expect(isConceptExperienceAvailable(cards!.id)).toBe(false);
+    expect(getConceptExperience(cards!.id)).toBeUndefined();
   });
 
   it("uses an existing hand-path card and its published scan URL", () => {

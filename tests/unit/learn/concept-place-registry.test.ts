@@ -71,16 +71,11 @@ describe("concept place registry", () => {
     expect(getConceptPlaceIdForLesson("not-a-lesson")).toBeNull();
   });
 
-  it("grounds rotation direction in its focused lesson and related Guide page", () => {
+  it("keeps rotation direction on its Guide page while its lesson is withdrawn", () => {
     const place = getConceptPlace("1.4")!;
 
-    expect(place.lessonIds).toEqual([
-      {
-        lessonId: "rotation-direction",
-        label: "Rotation Direction lesson",
-        coverage: "focused",
-      },
-    ]);
+    expect(getConceptPlaceIdForLesson("rotation-direction")).toBe("1.4");
+    expect(place.lessonIds).toEqual([]);
     expect(place.guideRefs).toEqual([
       {
         slug: "staff-motions",
