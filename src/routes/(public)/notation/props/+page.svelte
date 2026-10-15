@@ -20,6 +20,10 @@
   import MandalaContrast from "#lib/shared/landing/components/MandalaContrast.svelte";
   import demoJson from "#lib/shared/landing/data/demo-sequence.json";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import {
+    findPropTypeByValue,
+    getPropTypeDisplayInfo,
+  } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import { PROP_KEYS, PROPS, isPropKey, type PropKey } from "./props-content";
   import "#lib/shared/landing/styles/public-editorial.css";
 
@@ -45,6 +49,15 @@
   }
 
   const current = $derived(PROPS[selected]);
+  // The picker art the app's own prop picker uses, drawn as a mask so it
+  // takes the segment's ink (the raw SVGs are dark blue and vanish here).
+  const propImage = Object.fromEntries(
+    PROP_KEYS.map((key) => {
+      const type = findPropTypeByValue(PROPS[key].propType);
+      return [key, type ? getPropTypeDisplayInfo(type).image : null];
+    })
+  ) as Record<PropKey, string | null>;
+
   const options = PROP_KEYS.map((key) => ({
     value: key,
     label: PROPS[key].label,
@@ -98,7 +111,20 @@
         color="accent"
         semantics="tabs"
         ariaLabel="Prop"
-      />
+      >
+        {#snippet optionContent(key: PropKey)}
+          <span class="prop-option">
+            {#if propImage[key]}
+              <span
+                class="prop-art"
+                aria-hidden="true"
+                style:mask-image={`url("${propImage[key]}")`}
+              ></span>
+            {/if}
+            <span class="prop-option-label">{PROPS[key].label}</span>
+          </span>
+        {/snippet}
+      </SegmentedControl>
     </div>
     <div class="section-duo demo-star">
       <div class="duo-demo">
@@ -183,26 +209,77 @@
     border-top: 0;
     padding-top: 0;
   }
-  /* SegmentedControl fills its container, so the wrapper sets the width:
-     enough for five labels, never a page-wide bar. */
+  /* SegmentedControl fills its container, so the wrapper sets the width.
+     Each tab carries the prop's picture above its name, so the picker reads
+     at a glance and holds its own against the player below it. */
   .prop-switcher {
-    width: min(100%, 32rem);
+    width: min(100%, 44rem);
     margin: 0 auto clamp(1.5rem, 1rem + 1vw, 2.5rem);
   }
-  /* Text and player start on the same line under the switcher. The panel
-     cell is sized for the longest prop, so centring would float a short
-     prop's text away from the top. */
+  .prop-switcher :global(.segmented-control) {
+    border-radius: 14px;
+    padding: 4px;
+  }
+  .prop-switcher :global(.indicator) {
+    top: 4px;
+    bottom: 4px;
+    border-radius: 10px;
+  }
+  .prop-switcher :global(.segment) {
+    padding: 0.6rem 0.25rem 0.55rem;
+    min-width: 0;
+  }
+  .prop-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+  }
+  .prop-art {
+    display: block;
+    width: min(100%, 5.5rem);
+    height: clamp(1.75rem, 1.4rem + 1.4vw, 2.75rem);
+    mask-size: contain;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    background: currentColor;
+    opacity: 0.6;
+    transition: opacity 180ms ease;
+  }
+  .prop-switcher :global(.segment.selected .prop-art),
+  .prop-switcher :global(.segment:hover .prop-art) {
+    opacity: 1;
+  }
+  .prop-option-label {
+    font-size: clamp(0.8rem, 0.74rem + 0.25vw, 0.95rem);
+    font-weight: 600;
+  }
+  /* Text and player start on the same line under the switcher. */
   .prop-picker .section-duo {
     align-items: start;
   }
+  /* Side by side, the longest text (Staves) still runs past the player, so
+     the player rides along while it is read instead of leaving a gap. */
+  @media (min-width: 1100px) {
+    .prop-picker .duo-demo {
+      position: sticky;
+      top: 5.5rem;
+    }
+  }
 
-  /* All five panels sit in one cell. The tallest sets the height, so the
-     page never shifts when the pick changes. */
+  /* Only the picked prop's text takes up room. When every panel shared one
+     cell, the longest text (Staves) set the height for all five and left a
+     blank band under the player. The switcher sits above, so a height change
+     only moves what is below the section, never the control being pressed.
+     Inactive panels stay in the HTML for search and no-JS readers, laid over
+     the active one so the swap cross-fades. */
   .prop-panels {
-    display: grid;
+    position: relative;
   }
   .prop-panel {
-    grid-area: 1 / 1;
+    position: absolute;
+    inset: 0 0 auto;
     visibility: hidden;
     opacity: 0;
     transition:
@@ -210,6 +287,7 @@
       visibility 0s linear 180ms;
   }
   .prop-panel.active {
+    position: relative;
     visibility: visible;
     opacity: 1;
     transition:
