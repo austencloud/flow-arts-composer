@@ -162,3 +162,10 @@
 - Copy review: applied translate, testing and ai-bust guidance within the explicit batch scope. The supplied apply script and focused gate supersede broad catalog sorting/regeneration. ai-bust mechanical pre-pass found only eight CRITICAL emoji findings, all copied from fullscreen_prompt_message_1 through _8 in English; retained those source symbols for translation fidelity. No HIGH findings. Meaning review preserved source sentence/step order, recovery instructions, conditions and claims.
 - Uncertainty: the glossary does not define effort qualities, club-end knob/bulb, tunnel authored performers or generic Shape Matrix controls; the choices above follow source context but have no native acceptance evidence. pattern-strip-display.ts currently localizes several sentence fragments only when locale is de, so these Spanish entries alone do not activate that runtime localization. Runtime changes are outside this worker's authorized paths and were not made.
 - Delivery: committed on the assigned codex/i18n-es branch for the coordinator. No primary-checkout access, other-worktree access, integration, push, server, installation, broad checks or prohibited git commands were used.
+
+## REV (coordinator, 2026-10-14)
+
+Astra back-translation review of the P batches: SAMPLE 172 / FLAGGED 5 /
+2.9%. Applied two fixes (Composer intro, inbox "moved to original message").
+Dismissed three flags asking for English "Petal": counted petals translate
+normally under the 2026-10-14 glossary decision.
