@@ -46,3 +46,19 @@
 - Source context: `viewer_ui_static` is the paused/static mandala display option opposite Animated in `MandalaCategoryControl.svelte`, so it is Estático, not the protected TKA motion category Static. `viewer_ui_start` labels a starting position in step numbers and card settings, so it is Início. Linear shifts is movimentos Shift lineares.
 - Uncertain: TKA Core / Core are shelf navigation labels in `WorkShelfRail.svelte`, rendered Núcleo TKA / Núcleo. The glossary does not establish whether Core should be protected as a named deck group; native terminology review remains needed.
 - No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
+
+
+## R4 — 2026-10-14
+
+- Batch: `batch-R4.json`; 852 translated entries, 0 retranslation entries, 0 review entries. Shared Portuguese words, platform terms and glossary loanwords retain identical values where appropriate.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-R4.json`.
+- Initial apply result: `messages/pt.json: inserted 852, replaced 0, refused 0`.
+- Final apply result after two wording adjustments: `messages/pt.json: inserted 0, replaced 852, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 853 insertions, 1 deletion (net +852 lines; the previous final entry gains a comma).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Focused inspection: exactly 852 catalog additions, all belonging to this batch; no existing values changed. All output values match the applied catalog. Placeholder names and counts and markup tags match English; no multiline values or Unicode replacement characters. `git diff --check` passed.
+- Glossary choices: Brazilian Portuguese with você and infinitive action labels; salvar, passo for sequence positions, volta, sentido de rotação, andamento, grade, props, performer and timing. Composer, Post Studio, Flow Arts Composer, TKA, LOOP and Choreo Cards remain protected names. Fuse / Assemble / Tunnel use Fundir / Montar / Túnel, consistent with existing Portuguese navigation. Card uses cartão; frame uses quadro; keyframe uses quadro-chave. The source dollar symbol remains unchanged in `$10/mês`; no currency conversion or currency identity is assumed.
+- Uncertain: Post Studio take / landing / playhead have no glossary entries. Rendered tomada / chegada / cursor de reprodução; chegada describes each prop's arrival at the target pose. Native terminology review remains needed.
+- Uncertain: full account in `share_meta_account_required` is rendered conta completa. The source does not establish its exact distinction from other signed-in account types.
+- No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
