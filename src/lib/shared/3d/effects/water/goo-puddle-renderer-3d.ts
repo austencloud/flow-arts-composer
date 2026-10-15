@@ -8,8 +8,16 @@ import {
   type Texture,
 } from "three";
 
-const CAPACITY = 96;
+/** Pools on the floor at once; scattered drops each need their own. */
+const CAPACITY = 400;
+/** Grid vertices one pool may use when it is alone. */
 const VERTICES = 288;
+/** Vertex buffer size: a 16-bit index reaches 65536 vertices. */
+const MAX_VERTICES = 96 * VERTICES;
+/** Pools kept free so a crowded floor can fade spots out instead of popping them. */
+const RESERVE = 48;
+/** Seconds a spot crowded off the floor takes to fade. */
+const FADE_OUT = 0.5;
 const MAX_VOLUME = 0.025;
 const MAX_IMPACTS = 4;
 const IMPACT_LIFETIME = 2.2;
@@ -47,6 +55,8 @@ interface Puddle {
   viscosity: number;
   tension: number;
   idle: number;
+  /** 1 while settled; falls to 0 once the pool is crowded off the floor. */
+  fade: number;
   color: Color;
   metalness: number;
   alpha: number;
@@ -72,17 +82,19 @@ export class GooPuddleRenderer3D {
   readonly geometry = new BufferGeometry();
   readonly mesh: Mesh;
   private readonly puddles: Puddle[] = [];
-  private readonly positions = new Float32Array(CAPACITY * VERTICES * 3);
-  private readonly colors = new Float32Array(CAPACITY * VERTICES * 3);
-  private readonly alphas = new Float32Array(CAPACITY * VERTICES);
-  private readonly metalnesses = new Float32Array(CAPACITY * VERTICES);
-  private readonly glows = new Float32Array(CAPACITY * VERTICES);
-  private readonly normals = new Float32Array(CAPACITY * VERTICES * 3);
+  private readonly positions = new Float32Array(MAX_VERTICES * 3);
+  private readonly colors = new Float32Array(MAX_VERTICES * 3);
+  private readonly alphas = new Float32Array(MAX_VERTICES);
+  private readonly metalnesses = new Float32Array(MAX_VERTICES);
+  private readonly glows = new Float32Array(MAX_VERTICES);
+  private readonly normals = new Float32Array(MAX_VERTICES * 3);
   private readonly waveData = new Float32Array(4 * MAX_IMPACTS * 5);
   private readonly material: MeshPhysicalMaterial;
+  private readonly order: number[] = [];
+  private readonly parents = new Int32Array(CAPACITY);
 
   constructor(material: MeshPhysicalMaterial, envMap?: Texture) {
-    const indices = new Uint16Array(CAPACITY * VERTICES * 6);
+    const indices = new Uint16Array(MAX_VERTICES * 6);
     this.geometry.setIndex(
       new BufferAttribute(indices, 1).setUsage(DynamicDrawUsage)
     );
@@ -164,7 +176,7 @@ export class GooPuddleRenderer3D {
     let nearest: Puddle | undefined;
     let nearestDistance = Infinity;
     for (const puddle of this.puddles) {
-      if (Math.abs(puddle.floorY - floorY) > 0.01) continue;
+      if (Math.abs(puddle.floorY - floorY) > 0.01 || puddle.fade < 1) continue;
       const distance = Math.hypot(puddle.x - x, puddle.z - z);
       // Drops inside an existing pool feed it; a comparable landing near its
       // rim keeps a lobe of their own so the liquid can spread without moving
@@ -208,7 +220,9 @@ export class GooPuddleRenderer3D {
       this.addImpact(nearest, x, z, beadRadius, impactSpeed);
       return;
     }
-    if (this.puddles.length === CAPACITY) this.evict();
+    // update() folds and fades pools to keep spare room; this only runs out
+    // when one frame lands more new spots than that room holds.
+    if (this.puddles.length >= CAPACITY) this.evict(true);
     // Liquid landing on the move smears forward along its travel.
     const travel = Math.hypot(velocityX, velocityZ);
     const stretch = Number.isFinite(travel)
@@ -227,6 +241,7 @@ export class GooPuddleRenderer3D {
       viscosity,
       tension,
       idle: 0,
+      fade: 1,
       color: color.clone(),
       metalness,
       alpha,
@@ -279,8 +294,10 @@ export class GooPuddleRenderer3D {
       puddle.radius += (target - puddle.radius) * spread;
       // Surface tension slowly pulls a smear back toward round.
       puddle.stretch += (1 - puddle.stretch) * spread * 0.25 * (0.5 + puddle.tension);
-      if (puddle.idle > 18) this.puddles.splice(i, 1);
+      if (puddle.fade < 1) puddle.fade -= dt / FADE_OUT;
+      if (puddle.idle > 18 || puddle.fade <= 0) this.puddles.splice(i, 1);
     }
+    if (this.puddles.length > CAPACITY - RESERVE) this.makeRoom();
     const groups = this.connectedGroups();
     if (this.puddles.length === 0) {
       this.mesh.visible = false;
@@ -335,11 +352,14 @@ export class GooPuddleRenderer3D {
         sharedCell,
         Math.sqrt((width * depth) / budget)
       );
-      const columns = Math.min(256, Math.max(8, Math.ceil(width / cell) + 1));
+      // A lone drop needs only a small grid, so a floor of scattered spots
+      // still fits the vertex buffer.
+      const columns = Math.min(256, Math.max(6, Math.ceil(width / cell) + 1));
       const rows = Math.min(
-        Math.max(8, Math.floor(budget / columns)),
-        Math.max(8, Math.ceil(depth / cell) + 1)
+        Math.max(6, Math.floor(budget / columns)),
+        Math.max(6, Math.ceil(depth / cell) + 1)
       );
+      if (vertexStart + columns * rows > MAX_VERTICES) continue;
       const stepX = width / (columns - 1);
       const stepZ = depth / (rows - 1);
       const edgeWidth = Math.max(stepX, stepZ);
@@ -509,7 +529,9 @@ export class GooPuddleRenderer3D {
           this.colors[offset + 1] = green * shade;
           this.colors[offset + 2] = blue * shade;
           this.glows[vertex] = glow * shade;
-          const fade = Math.min(1, Math.max(0, (18 - strongest.idle) / 3));
+          const fade =
+            Math.min(1, Math.max(0, (18 - strongest.idle) / 3)) *
+            Math.max(0, strongest.fade);
           // The pool thins toward its rim, so the floor shows through there.
           const depth = Math.min(1, Math.max(0, field / (averageRadius * 0.35)));
           const body =
@@ -700,19 +722,107 @@ export class GooPuddleRenderer3D {
     return puddle.radius * puddle.stretch * 1.35;
   }
 
-  /** A full floor drops its smallest settled pool, not its newest. */
-  private evict(): void {
-    let victim = 0;
+  /** Pool indices sorted along x, so neighbor searches stop early. */
+  private sweepOrder(): number[] {
+    const order = this.order;
+    order.length = this.puddles.length;
+    for (let index = 0; index < order.length; index++) order[index] = index;
+    return order.sort(
+      (left, right) => this.puddles[left]!.x - this.puddles[right]!.x
+    );
+  }
+
+  /**
+   * A crowded floor first folds pools that are mostly covered by a bigger
+   * neighbor into it, so a busy pool frees room and a lone splash elsewhere
+   * stays where it landed. Only then does it fade out the smallest spots.
+   */
+  private makeRoom(): void {
+    const target = CAPACITY - RESERVE;
+    const order = this.sweepOrder();
+    let maxRadius = 0;
+    for (const puddle of this.puddles) maxRadius = Math.max(maxRadius, puddle.radius);
+    const pairs: { buried: number; keep: Puddle; fold: Puddle }[] = [];
+    for (let i = 0; i < order.length; i++) {
+      const a = this.puddles[order[i]!]!;
+      if (a.fade < 1) continue;
+      for (let j = i + 1; j < order.length; j++) {
+        const b = this.puddles[order[j]!]!;
+        // Below 1.6 the smaller pool's middle lies inside the bigger one.
+        if (b.x - a.x > 1.6 * Math.max(a.radius, maxRadius)) break;
+        if (b.fade < 1 || Math.abs(a.floorY - b.floorY) > 0.01) continue;
+        const aBigger = a.radius >= b.radius;
+        const big = aBigger ? a : b;
+        const small = aBigger ? b : a;
+        const buried =
+          (Math.hypot(a.x - b.x, a.z - b.z) + small.radius) / big.radius;
+        if (buried < 1.6) pairs.push({ buried, keep: big, fold: small });
+      }
+    }
+    pairs.sort((left, right) => left.buried - right.buried);
+    const folded = new Set<Puddle>();
+    let count = this.puddles.length;
+    for (const { keep, fold } of pairs) {
+      if (count <= target) break;
+      if (folded.has(keep) || folded.has(fold)) continue;
+      this.fold(keep, fold);
+      folded.add(fold);
+      count--;
+    }
+    if (folded.size > 0) {
+      for (let index = this.puddles.length - 1; index >= 0; index--)
+        if (folded.has(this.puddles[index]!)) this.puddles.splice(index, 1);
+    }
+    let fading = 0;
+    for (const puddle of this.puddles) if (puddle.fade < 1) fading++;
+    while (this.puddles.length - fading > target && this.evict(false)) fading++;
+  }
+
+  private fold(keep: Puddle, fold: Puddle): void {
+    const share = fold.volume / (keep.volume + fold.volume);
+    // The bigger pool takes the liquid and spreads with it.
+    keep.volume = Math.min(MAX_VOLUME, keep.volume + fold.volume);
+    keep.x += (fold.x - keep.x) * share * 0.5;
+    keep.z += (fold.z - keep.z) * share * 0.5;
+    keep.idle = Math.min(keep.idle, fold.idle);
+    this.mix(keep, fold, share);
+    keep.viscosity += (fold.viscosity - keep.viscosity) * share;
+    keep.tension += (fold.tension - keep.tension) * share;
+    for (const dye of fold.dyes)
+      if (keep.dyes.length < MAX_DYES) keep.dyes.push(dye);
+    for (const impact of fold.impacts)
+      if (keep.impacts.length < MAX_IMPACTS) keep.impacts.push(impact);
+  }
+
+  /**
+   * Start fading the smallest settled pool, not the newest. With `now`, a
+   * floor out of room drops its faintest fading pool at once instead.
+   */
+  private evict(now: boolean): boolean {
+    let victim = -1;
     let smallest = Infinity;
+    let faintest = -1;
     for (let index = 0; index < this.puddles.length; index++) {
       const puddle = this.puddles[index]!;
+      if (puddle.fade < 1) {
+        if (faintest < 0 || puddle.fade < this.puddles[faintest]!.fade)
+          faintest = index;
+        continue;
+      }
       const score = puddle.volume / (1 + puddle.idle);
       if (score < smallest) {
         smallest = score;
         victim = index;
       }
     }
-    this.puddles.splice(victim, 1);
+    if (now) {
+      const index = faintest >= 0 ? faintest : victim;
+      if (index >= 0) this.puddles.splice(index, 1);
+      return index >= 0;
+    }
+    if (victim < 0) return false;
+    this.puddles[victim]!.fade = 0.999;
+    return true;
   }
 
   private smoothMax(a: number, b: number, width: number): number {
@@ -721,28 +831,45 @@ export class GooPuddleRenderer3D {
   }
 
   private connectedGroups(): Puddle[][] {
-    const groups: Puddle[][] = [];
-    const visited = new Uint8Array(this.puddles.length);
-    for (let start = 0; start < this.puddles.length; start++) {
-      if (visited[start]) continue;
-      visited[start] = 1;
-      const group = [this.puddles[start]!];
-      for (let cursor = 0; cursor < group.length; cursor++) {
-        const first = group[cursor]!;
-        for (let index = 0; index < this.puddles.length; index++) {
-          if (visited[index]) continue;
-          const second = this.puddles[index]!;
-          if (
-            Math.abs(first.floorY - second.floorY) > 0.01 ||
-            Math.hypot(first.x - second.x, first.z - second.z) >=
-              (first.radius + second.radius) * 0.98
-          )
-            continue;
-          visited[index] = 1;
-          group.push(second);
-        }
+    const count = this.puddles.length;
+    const parent = this.parents;
+    for (let index = 0; index < count; index++) parent[index] = index;
+    const root = (index: number): number => {
+      while (parent[index] !== index) {
+        parent[index] = parent[parent[index]!]!;
+        index = parent[index]!;
       }
-      groups.push(group);
+      return index;
+    };
+    const order = this.sweepOrder();
+    let maxRadius = 0;
+    for (const puddle of this.puddles) maxRadius = Math.max(maxRadius, puddle.radius);
+    for (let i = 0; i < count; i++) {
+      const first = this.puddles[order[i]!]!;
+      for (let j = i + 1; j < count; j++) {
+        const second = this.puddles[order[j]!]!;
+        if (second.x - first.x >= (first.radius + maxRadius) * 0.98) break;
+        if (
+          Math.abs(first.floorY - second.floorY) > 0.01 ||
+          Math.hypot(first.x - second.x, first.z - second.z) >=
+            (first.radius + second.radius) * 0.98
+        )
+          continue;
+        parent[root(order[i]!)] = root(order[j]!);
+      }
+    }
+    // Groups keep the pools' own order, so the first pool leads its group.
+    const groups: Puddle[][] = [];
+    const slot = new Map<number, Puddle[]>();
+    for (let index = 0; index < count; index++) {
+      const key = root(index);
+      let group = slot.get(key);
+      if (!group) {
+        group = [];
+        slot.set(key, group);
+        groups.push(group);
+      }
+      group.push(this.puddles[index]!);
     }
     return groups;
   }

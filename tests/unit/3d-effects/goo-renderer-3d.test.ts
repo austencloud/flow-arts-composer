@@ -1152,4 +1152,56 @@ describe("GooRenderer3D", () => {
     expect(renderer.debugCounts().strands).toBeLessThanOrEqual(STRANDS);
     renderer.dispose();
   });
+
+  it("sprays a strong source upward and leaves a still one to drip", () => {
+    const rising = (ambientEmission: number) => {
+      const renderer = new GooRenderer3D();
+      renderer.initialize(new Object3D());
+      const tip = source({ velocity: { x: 0, y: 0, z: 0 }, speed: 0 });
+      tip.params = resolveGoo3D({ ...tip.params, ambientEmission, motionEmission: 0 });
+      let most = 0;
+      for (let frame = 0; frame < 60; frame++) {
+        renderer.update([tip], 1 / 60);
+        most = Math.max(
+          most,
+          internals(renderer).drops.filter(
+            (drop) => drop.active && drop.velocity.y > 1.5
+          ).length
+        );
+      }
+      renderer.dispose();
+      return most;
+    };
+    expect(rising(0)).toBe(0);
+    expect(rising(0.9)).toBeGreaterThan(3);
+  });
+
+  it("keeps a stray spot on a crowded floor", () => {
+    const material = new MeshPhysicalMaterial({ vertexColors: true });
+    const puddles = new GooPuddleRenderer3D(material);
+    const blue = new Color("#2060d0");
+    puddles.deposit(3, 0, 0, 0.03, 0, 0.5, blue, 0, 1);
+    let seed = 1;
+    const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let frame = 0; frame < 600; frame++) {
+      for (let drop = 0; drop < 8; drop++)
+        puddles.deposit(
+          (random() - 0.5) * 1.2,
+          (random() - 0.5) * 1.2,
+          0,
+          0.01 + 0.03 * random(),
+          0,
+          0.5,
+          blue,
+          0,
+          1
+        );
+      puddles.update(1 / 60);
+    }
+    const pools = (puddles as unknown as { puddles: { x: number; fade: number }[] })
+      .puddles;
+    expect(pools.some((pool) => pool.x > 2.5 && pool.fade === 1)).toBe(true);
+    puddles.dispose();
+    material.dispose();
+  });
 });
