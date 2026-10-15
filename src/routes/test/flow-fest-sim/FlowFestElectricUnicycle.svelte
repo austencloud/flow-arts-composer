@@ -1,6 +1,6 @@
 <script lang="ts">
   import { T } from "@threlte/core";
-  import type { Object3D } from "three";
+  import type { Group } from "three";
   import {
     type FlowFestElectricUnicycleDynamics,
     type FlowFestElectricUnicycleTerrainAttitude,
@@ -51,10 +51,10 @@
   const leftPedalLocal = flowFestEucPedalAnchorLocal("left");
   const rightPedalLocal = flowFestEucPedalAnchorLocal("right");
 
-  let vehicleRootRef: Object3D | undefined = $state();
-  let riderFrameRef: Object3D | undefined = $state();
-  let leftPedalAnchorRef: Object3D | undefined = $state();
-  let rightPedalAnchorRef: Object3D | undefined = $state();
+  let vehicleRootRef: Group | undefined = $state();
+  let riderFrameRef: Group | undefined = $state();
+  let leftPedalAnchorRef: Group | undefined = $state();
+  let rightPedalAnchorRef: Group | undefined = $state();
 </script>
 
 <T.Group

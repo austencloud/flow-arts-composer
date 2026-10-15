@@ -1,12 +1,4 @@
-<script lang="ts">
-  import { onMount } from "svelte";
-  import {
-    OceanBackgroundOrchestrator,
-    fishDebugConfig,
-    setOceanFishSimulationSeed,
-    type FishMarineLife,
-  } from "@austencloud/backgrounds";
-
+<script module lang="ts">
   type TrialKind = "curiosity" | "habituation" | "social" | "alarm";
   type ViewMode = "reel" | "evidence";
   type ReadChoice = "investigate" | "habituate" | "socialize" | "alarm";
@@ -55,9 +47,19 @@
       __oceanAgencyBenchmark?: AgencyBenchmarkApi;
     }
   }
+</script>
+
+<script lang="ts">
+  import { onMount } from "svelte";
+  import {
+    OceanBackgroundOrchestrator,
+    fishDebugConfig,
+    setOceanFishSimulationSeed,
+    type FishMarineLife,
+  } from "@austencloud/backgrounds";
 
   const SEED = "phase-three-agency-benchmark";
-  const TRIAL_ORDER: TrialKind[] = [
+  const TRIAL_ORDER: [TrialKind, ...TrialKind[]] = [
     "curiosity",
     "habituation",
     "social",

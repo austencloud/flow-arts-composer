@@ -1,6 +1,11 @@
 <script lang="ts">
   import { T, useTask } from "@threlte/core";
-  import { AdditiveBlending, CanvasTexture, type PointLight } from "three";
+  import {
+    AdditiveBlending,
+    CanvasTexture,
+    type PointLight,
+    type MeshBasicMaterial,
+  } from "three";
   import VolumetricFireComponent from "#lib/shared/3d/effects/volumetric-fire/VolumetricFireComponent.svelte";
   import FallingParticles from "#lib/shared/3d/environments/primitives/FallingParticles.svelte";
 
@@ -56,7 +61,7 @@
   let elapsedSeconds = 0;
   let practical = $state<PointLight>();
   let bounce = $state<PointLight>();
-  let glowMesh = $state<{ material: { opacity: number } }>();
+  let glowMaterial = $state<MeshBasicMaterial>();
   const fireHeight = $derived(2.72 + (props.energy ?? 0) * 1.08);
 
   // At 2:13 AM the rest of the rig sums to roughly 0.2 in three.js light units,
@@ -81,9 +86,8 @@
       bounce.intensity =
         BOUNCE_BASE_CANDELA * (1 + energy * 0.45) * (1 + flicker * 0.6);
     }
-    if (glowMesh) {
-      glowMesh.material.opacity =
-        (0.5 + energy * 0.22) * (1 + flicker * 0.85);
+    if (glowMaterial) {
+      glowMaterial.opacity = (0.5 + energy * 0.22) * (1 + flicker * 0.85);
     }
   });
 </script>
@@ -163,13 +167,13 @@
   </T.Group>
   {#if groundGlowTexture}
     <T.Mesh
-      bind:ref={glowMesh}
       position={[0, -0.028, 0]}
       rotation={[-Math.PI / 2, 0, 0]}
       renderOrder={2}
     >
       <T.PlaneGeometry args={[11.4, 11.4]} />
       <T.MeshBasicMaterial
+        bind:ref={glowMaterial}
         map={groundGlowTexture}
         transparent
         opacity={0.5}
