@@ -4,6 +4,7 @@
 
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Dom/JsonObject.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
@@ -33,6 +34,53 @@ TSharedPtr<FJsonObject> ReadCatalog(const TCHAR* Filename)
 bool Finite(const FVector& V)
 {
     return FMath::IsFinite(V.X) && FMath::IsFinite(V.Y) && FMath::IsFinite(V.Z);
+}
+
+bool FiniteUnit(const FQuat& Q)
+{
+    return FMath::IsFinite(Q.X) && FMath::IsFinite(Q.Y) &&
+        FMath::IsFinite(Q.Z) && FMath::IsFinite(Q.W) &&
+        FMath::Abs(Q.SizeSquared() - 1.f) < .01f;
+}
+
+bool ReadVisualTrack(FName CharacterId, FName Profile, TArray<FQuat>& Left, TArray<FQuat>& Right)
+{
+    FString Character = CharacterId.ToString();
+    Character.ReplaceInline(TEXT("-"), TEXT("_"));
+    const FString Path = FPaths::ProjectContentDir() / TEXT("Data/PropMotion") /
+        FString::Printf(TEXT("%s_%s.json"), *Character, *Profile.ToString());
+    FString Source;
+    TSharedPtr<FJsonObject> Motion;
+    const TArray<TSharedPtr<FJsonValue>>* Frames = nullptr;
+    if (!FFileHelper::LoadFileToString(Source, *Path) ||
+        !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Source), Motion) ||
+        !Motion.IsValid() || Motion->GetStringField(TEXT("schema")) != TEXT("flow-fest-prop-motion-v3") ||
+        !Motion->TryGetArrayField(TEXT("frames"), Frames) || !Frames || Frames->Num() != 480)
+        return false;
+    Left.Reserve(Frames->Num());
+    Right.Reserve(Frames->Num());
+    for (const TSharedPtr<FJsonValue>& Frame : *Frames)
+    {
+        const TArray<TSharedPtr<FJsonValue>>* Values = nullptr;
+        if (!Frame.IsValid() || !Frame->TryGetArray(Values) || !Values || Values->Num() != 28)
+            return false;
+        auto ReadQuat = [Values](int32 Offset)
+        {
+            return FQuat((*Values)[Offset]->AsNumber(), (*Values)[Offset + 1]->AsNumber(),
+                (*Values)[Offset + 2]->AsNumber(), (*Values)[Offset + 3]->AsNumber());
+        };
+        const FQuat L = ReadQuat(20), R = ReadQuat(24);
+        if (!FiniteUnit(L) || !FiniteUnit(R)) return false;
+        Left.Add(L); Right.Add(R);
+    }
+    return true;
+}
+
+FQuat SampleVisualTrack(const TArray<FQuat>& Track, float Seconds)
+{
+    const float Frame = FMath::Fmod(FMath::Max(0.f, Seconds) * 30.f, static_cast<float>(Track.Num()));
+    const int32 First = FMath::FloorToInt(Frame);
+    return FQuat::Slerp(Track[First], Track[(First + 1) % Track.Num()], Frame - First).GetNormalized();
 }
 
 struct FGripDiagnosticSample
@@ -70,7 +118,7 @@ void LogGripDiagnostics(const FString& Case, FName CharacterId, FName Profile,
         FVector& LeftGrip, FVector& RightGrip)
     {
         const TArray<TSharedPtr<FJsonValue>>* Values = nullptr;
-        if (!(*Frames)[Index]->TryGetArray(Values) || !Values || Values->Num() != 20) return false;
+        if (!(*Frames)[Index]->TryGetArray(Values) || !Values || Values->Num() < 20) return false;
         auto N = [Values](int32 I) { return (*Values)[I]->AsNumber(); };
         auto Root = [&N](int32 I)
         {
@@ -160,6 +208,18 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
     if (!TestNotNull(TEXT("Native skinned body"), Avatar->GetBodyMesh()) ||
         !TestTrue(TEXT("Initial hand attachment"), HeldProp->BindHands(Avatar->GetBodyMesh()))) return false;
     Avatar->BindPerformanceProp(HeldProp);
+    TArray<UStaticMeshComponent*> PropMeshComponents;
+    Performer->GetComponents(PropMeshComponents);
+    auto FindPropMesh = [&PropMeshComponents](const TCHAR* Name) -> UStaticMeshComponent*
+    {
+        for (UStaticMeshComponent* Mesh : PropMeshComponents)
+            if (Mesh && Mesh->GetFName() == FName(Name)) return Mesh;
+        return nullptr;
+    };
+    UStaticMeshComponent* LeftPropMesh = FindPropMesh(TEXT("FlowFestLeftPropMesh"));
+    UStaticMeshComponent* RightPropMesh = FindPropMesh(TEXT("FlowFestRightPropMesh"));
+    if (!TestNotNull(TEXT("Left physical prop mesh"), LeftPropMesh) ||
+        !TestNotNull(TEXT("Right physical prop mesh"), RightPropMesh)) return false;
 
     // All 71 meshes must equip on the same native hands used by the routines.
     int32 VariantCount = 0;
@@ -214,6 +274,9 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                 const FString Case = CharacterId.ToString() + TEXT("/") + Profile.ToString();
                 if (!TestTrue(*FString::Printf(TEXT("Captured prop roots load: %s"), *Case),
                     HeldProp->LoadPerformance(CharacterId, Profile))) continue;
+                TArray<FQuat> LeftVisualTrack, RightVisualTrack;
+                if (!TestTrue(*FString::Printf(TEXT("Captured v3 visual body track loads: %s"), *Case),
+                    ReadVisualTrack(CharacterId, Profile, LeftVisualTrack, RightVisualTrack))) continue;
                 if (!TestTrue(*FString::Printf(TEXT("Skinned routine loads: %s"), *Case),
                     Avatar->PlayPerformance(Profile))) continue;
                 const float Length = Avatar->GetPerformanceLength();
@@ -241,6 +304,12 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                 }
                 float CasePeakGrip = 0.f;
                 float CasePeakAnchor = 0.f;
+                float CasePeakVisualDegrees = 0.f;
+                float CasePeakVisualPointCm = 0.f;
+                float SourceVisualVariationDegrees = 0.f;
+                float RuntimeVisualVariationDegrees = 0.f;
+                FQuat FirstActualLeft = FQuat::Identity;
+                FQuat FirstActualRight = FQuat::Identity;
                 bool bPoseValid = true;
                 FGripDiagnosticSample PeakDiagnostic;
                 TArray<FGripDiagnosticSample> LandmarkDiagnostics;
@@ -269,6 +338,31 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                     bPoseValid &= FMath::Abs(Avatar->GetPerformanceTime() - Seconds) < .03f;
                     const float Error = HeldProp->GetGripErrorCm();
                     const float AnchorError = HeldProp->GetPropAnchorErrorCm();
+                    for (const bool bLeft : {true, false})
+                    {
+                        const TArray<FQuat>& Track = bLeft ? LeftVisualTrack : RightVisualTrack;
+                        UStaticMeshComponent* Mesh = bLeft ? LeftPropMesh : RightPropMesh;
+                        const FQuat Expected = SampleVisualTrack(Track, Seconds);
+                        const FQuat Actual = HeldProp->GetVisualRotation(bLeft);
+                        bPoseValid &= FiniteUnit(Actual);
+                        const float Degrees = FMath::RadiansToDegrees(Actual.AngularDistance(Expected));
+                        CasePeakVisualDegrees = FMath::Max(CasePeakVisualDegrees, Degrees);
+                        SourceVisualVariationDegrees = FMath::Max(SourceVisualVariationDegrees,
+                            FMath::RadiansToDegrees(Expected.AngularDistance(Track[0])));
+                        FQuat& FirstActual = bLeft ? FirstActualLeft : FirstActualRight;
+                        if (Sample == 0) FirstActual = Actual;
+                        RuntimeVisualVariationDegrees = FMath::Max(RuntimeVisualVariationDegrees,
+                            FMath::RadiansToDegrees(Actual.AngularDistance(FirstActual)));
+                        // A point away from the static mesh pivot must move with
+                        // the captured body rotation through the real mesh hierarchy.
+                        const FVector MeshPoint(17.f, 29.f, -11.f);
+                        const FVector ActualWorld = Mesh->GetComponentTransform().TransformPosition(MeshPoint);
+                        const FVector ExpectedWorld = HeldProp->GetPropRootTransform(bLeft).TransformPosition(
+                            Expected.RotateVector(Mesh->GetRelativeTransform().TransformPosition(MeshPoint)));
+                        bPoseValid &= Finite(ActualWorld) && Finite(ExpectedWorld);
+                        CasePeakVisualPointCm = FMath::Max(CasePeakVisualPointCm,
+                            FVector::Distance(ActualWorld, ExpectedWorld));
+                    }
                     bPoseValid &= FMath::IsFinite(Error) && FMath::IsFinite(AnchorError) &&
                         !HeldProp->IsEnteringPerformance() &&
                         Finite(HeldProp->GetPropRootTransform(true).GetLocation()) &&
@@ -287,6 +381,17 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                             Hips, LeftHand, RightHand});
                 }
                 TestTrue(*FString::Printf(TEXT("Finite pose and shared clock: %s"), *Case), bPoseValid);
+                TestTrue(*FString::Printf(TEXT("Captured visual body rotation within 0.5 degrees: %s (peak %.3f)"),
+                    *Case, CasePeakVisualDegrees), CasePeakVisualDegrees <= .5f);
+                TestTrue(*FString::Printf(TEXT("Physical prop mesh follows captured visual body within 1 cm: %s (peak %.3f)"),
+                    *Case, CasePeakVisualPointCm), CasePeakVisualPointCm <= 1.f);
+                if (Family == TEXT("staff") || Family == TEXT("poi"))
+                {
+                    TestTrue(*FString::Printf(TEXT("Source visual rotation animates: %s (%.2f degrees)"),
+                        *Case, SourceVisualVariationDegrees), SourceVisualVariationDegrees > 2.f);
+                    TestTrue(*FString::Printf(TEXT("Native visual rotation animates: %s (%.2f degrees)"),
+                        *Case, RuntimeVisualVariationDegrees), RuntimeVisualVariationDegrees > 2.f);
+                }
                 if (CasePeakGrip > GripToleranceCm || CasePeakAnchor > GripToleranceCm)
                 {
                     Body->UpdateBounds();
