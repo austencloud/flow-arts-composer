@@ -90,4 +90,14 @@
     line-height: 1.5;
     color: var(--theme-text-muted);
   }
+
+  /* Past 3000px the board widens to min(88vw, 3400px) (BoardAtlas). Give the
+     heading the same column so it starts at the board's left edge instead of
+     sitting in a narrow strip above the middle of it. */
+  @media (min-width: 3000px) {
+    .codex-guide {
+      max-width: min(88vw, 3400px);
+      padding-inline: 0;
+    }
+  }
 </style>

@@ -110,7 +110,9 @@ export function writeLetterExplorerRoute(
     url.searchParams.set("rightTurns", String(state.rightTurns));
     url.searchParams.set("rightRotation", state.rightRotation);
   }
-  url.hash = "cat-letter";
+  // The Atlas drills into its letter category by this hash. Other hosts of
+  // the explorer (the guide's codex page) have no such section.
+  if (url.pathname === CANONICAL_LETTER_EXPLORER_PATH) url.hash = "cat-letter";
 }
 
 /**
