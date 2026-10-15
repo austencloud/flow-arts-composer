@@ -84,6 +84,14 @@ The scripted experience covers the first night. Car and EUC movement remains sim
 
 ## Asset provenance
 
+### Shared native foundation
+
+Flow Fest and Museum share the native contract owner at `unreal/Shared/Tools`, with runtime primitives intended for the `FlowArtsRuntime` module under `unreal/Shared/FlowArtsRuntime`. The shared work owns catalog and capture validation, provenance, and asset distribution. Flow Fest owns the performer implementation until its current motion gates pass; extracting that implementation is a separate migration. Festival geography, journeys, attendee schedules, and UI remain game-specific.
+
+The current family schema is `flow-fest-prop-motion-v3`, captured with revision `clock-isolated-body-v3`. Character, physical prop family, and routine A/B must match exactly. Existing schema tags and `/Game/FlowFest` asset paths remain compatible during adoption. Moving assets to another mount requires an Unreal asset migration; renaming raw `.uasset` files is not supported. The prop converter's tested native Feet space is `(source.z, -source.x, source.y) * 100`; skeleton import and static prop mesh spaces have their own basis transformations and must not be treated as interchangeable.
+
+### Sources
+
 - `Tools/export-site.ts` reads the source terrain, runtime contract, species manifest, production dressing, grass, and ground-life ecology. It writes `Content/Data/site.json` and height samples in the source site's coordinate frame, preserving road and camp clearings.
 - `Tools/prepare-assets.mjs` decodes source tree, ecology, and car GLBs and their textures. `Tools/author-assets.py` converts them to FBX and builds campsite and set meshes. `Tools/import-assets.py` imports those assets, preserves foliage transparency and double-sided surfaces, and creates native materials and the festival map.
 - The imported Ace '11 hatchback is by [Daniel Zhabotinsky](https://sketchfab.com/3d-models/055ff8a21b8d4d279debca089e2fafcd), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), as recorded in the source repository's `static/models/flow-fest/cars/CREDITS.md`.
