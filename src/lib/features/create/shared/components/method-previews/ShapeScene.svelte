@@ -26,7 +26,11 @@
   import { EASE_OUT } from "#lib/shared/transitions/motion.js";
   import type { GhostState } from "#lib/shared/attract/services/attract-ghost.svelte.js";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
-  import { yieldToScheduler } from "#lib/shared/foundation/utils/background-scheduling.js";
+  import {
+    runAtBackgroundPriority,
+    runAtUserVisiblePriority,
+    yieldToScheduler,
+  } from "#lib/shared/foundation/utils/background-scheduling.js";
   import type { MandalaGuideRevealFrame } from "#lib/shared/mandala/services/mandala-guide-image.js";
   import {
     runShapeMatrixGridReveal,
@@ -276,8 +280,12 @@
     if (finished && !revealing) finished.paint(1);
   });
 
+  // The card mounts this scene from an idle callback, and a yield inherits
+  // that callback's background priority: each of the many yields in
+  // `prepare` would then wait behind the other scenes' work, and Shape
+  // would miss the reveal wave. The board is what the card waits on.
   onMount(() => {
-    void prepare();
+    void runAtUserVisiblePriority(prepare);
   });
 
   onDestroy(() => {
@@ -330,7 +338,8 @@
     finished.paint(1);
     announced = true;
     onready();
-    void prepareNextPage();
+    // The next page has no deadline: paint it behind the other cards.
+    runAtBackgroundPriority(() => void prepareNextPage());
   }
 
   /** The side a header's or tile's artwork measures, as the art does. */
