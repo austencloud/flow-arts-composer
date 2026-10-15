@@ -19,12 +19,22 @@
   step on every frame and remounts its strip pictographs. The profile stage's
   LiveSlots already budgets this; the wall reuses it and the rest of the tiles
   show their still card, which is the same square so nothing moves.
+
+  A sequence with a pre-rendered loop clip (sequence-clips) plays that clip
+  instead: one hardware-decoded <video>, no engine, so the wall can afford
+  many of them at once. The clip index is one fetch per page; tiles start on
+  the engine budget and move to the clip budget the moment it arrives.
 -->
 <script lang="ts">
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import WorkTile from "./WorkTile.svelte";
   import { LiveSlots } from "./profile/stage/live-slots.svelte";
+  import {
+    loadLoopClipIndex,
+    loopClipUrlFor,
+  } from "#lib/shared/sequence-clips/loop-clip-index.js";
+  import type { LoopClipIndex } from "#lib/shared/sequence-clips/loop-clip-spec.js";
   import { fitColumns } from "../domain/fit-columns";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
@@ -48,10 +58,21 @@
    *  5 ms of main-thread time per frame at 4K; two keeps the row moving
    *  without starting the step-change cascade described above. */
   const WALL_LIVE_BUDGET = 2;
+  /** Loop clips cost a decoder each and no main-thread time; this only
+   *  keeps phones under their decoder cap and parks off-screen tiles. */
+  const WALL_CLIP_BUDGET = 12;
 
   const slots = new LiveSlots();
   slots.budgets.sequence = WALL_LIVE_BUDGET;
+  slots.budgets.clip = WALL_CLIP_BUDGET;
   onDestroy(() => slots.destroy());
+
+  let clipIndex = $state<LoopClipIndex | null>(null);
+  onMount(() => {
+    void loadLoopClipIndex().then((index) => {
+      clipIndex = index;
+    });
+  });
 </script>
 
 {#if items.length > 0}
@@ -71,6 +92,7 @@
           creator={item.creator}
           {unitPx}
           {slots}
+          loopClipUrl={loopClipUrlFor(clipIndex, item.sequence.id)}
           {onselect}
           {oncreator}
         />
