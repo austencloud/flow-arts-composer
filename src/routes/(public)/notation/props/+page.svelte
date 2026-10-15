@@ -17,6 +17,7 @@
   import Seo from "#lib/shared/components/Seo.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
+  import BuugengChirality from "./BuugengChirality.svelte";
   import MandalaContrast from "#lib/shared/landing/components/MandalaContrast.svelte";
   import demoJson from "#lib/shared/landing/data/demo-sequence.json";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -35,12 +36,18 @@
   const URL = "https://tkaflowarts.com/notation/props";
 
   let selected = $state<PropKey>("staves");
+  // The Buugeng panel's pair pick. Page-local: it plays the demo and never
+  // touches the visitor's own prop settings.
+  let leftBuugengFlipped = $state(false);
+  let rightBuugengFlipped = $state(false);
 
   // The hash is the shareable state: /notation/props#poi opens on poi, and
-  // the header's prop links change the pick without leaving the page.
+  // the header's prop links change the pick without leaving the page. A part
+  // of a prop's text (#buugeng-chirality) opens that prop too.
   $effect(() => {
     const fromHash = page.url.hash.slice(1);
-    if (isPropKey(fromHash)) selected = fromHash;
+    const prop = fromHash.split("-")[0] ?? "";
+    if (isPropKey(prop)) selected = prop;
   });
 
   function choose(prop: PropKey) {
@@ -133,6 +140,8 @@
           note={current.note}
           leftPropType={current.propType}
           rightPropType={current.propType}
+          {leftBuugengFlipped}
+          {rightBuugengFlipped}
         />
       </div>
       <div class="duo-copy">
@@ -152,6 +161,16 @@
               {#each prop.paragraphs as paragraph, i (i)}
                 <p>{paragraph}</p>
               {/each}
+              {#if key === "buugeng"}
+                <BuugengChirality
+                  leftFlipped={leftBuugengFlipped}
+                  rightFlipped={rightBuugengFlipped}
+                  onchange={(left, right) => {
+                    leftBuugengFlipped = left;
+                    rightBuugengFlipped = right;
+                  }}
+                />
+              {/if}
             </div>
           {/each}
         </div>
