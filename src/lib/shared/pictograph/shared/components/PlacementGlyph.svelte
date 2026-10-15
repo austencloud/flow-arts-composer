@@ -10,6 +10,8 @@ Based on legacy start_to_end_pos_glyph.py implementation.
   import { GridPlacement } from "../../grid/domain/enums/grid-enums";
   import { Letter } from "../../../foundation/domain/models/letter";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
+  import { createPlacementPulse } from "./placement-pulse.js";
 
   let {
     startPlacement = null,
@@ -175,20 +177,13 @@ Based on legacy start_to_end_pos_glyph.py implementation.
   // Use centerX prop for horizontal centering (supports expanded timeline cells)
   const groupX = $derived(centerX - totalWidth / 2);
 
-  // Track when start/end placements change to trigger a subtle scale-pulse animation.
-
-  // Matches the golden step ring's guideStepRingIn duration so the two beat
-  // together during playback.
-  const PULSE_MS = 400;
-
-  // Plain lets, NOT $state: the effect both reads and writes these. As $state
-  // the write retriggered the effect, whose cleanup cleared the reset timeout,
-  // leaving isAnimating stuck true — the pulse then played once and never again.
+  // Keep the previous values nonreactive so recording a beat cannot trigger
+  // another pulse by itself.
   let prevStartPlacement: GridPlacement | null | undefined = undefined;
   let prevEndPlacement: GridPlacement | null | undefined = undefined;
   let prevPulseKey: string | number | null | undefined = undefined;
-  let pulseTimeout: ReturnType<typeof setTimeout> | undefined;
-  let isAnimating = $state(false);
+  let pulseTarget = $state<SVGGElement | null>(null);
+  const pulse = createPlacementPulse();
 
   $effect(() => {
     // With a pulseKey, beat on every key change (every step). Without one,
@@ -201,15 +196,7 @@ Based on legacy start_to_end_pos_glyph.py implementation.
           (prevEndPlacement !== undefined && endPlacement !== prevEndPlacement);
 
     if (changed && (startPlacement !== null || endPlacement !== null)) {
-      clearTimeout(pulseTimeout);
-      // Drop the class for a frame so a pulse already in flight restarts.
-      isAnimating = false;
-      requestAnimationFrame(() => {
-        isAnimating = true;
-      });
-      pulseTimeout = setTimeout(() => {
-        isAnimating = false;
-      }, PULSE_MS);
+      pulse.play(pulseTarget, reducedMotion());
     }
 
     prevStartPlacement = startPlacement;
@@ -217,7 +204,7 @@ Based on legacy start_to_end_pos_glyph.py implementation.
     prevPulseKey = pulseKey;
   });
 
-  $effect(() => () => clearTimeout(pulseTimeout));
+  $effect(() => () => pulse.destroy());
 </script>
 
 {#if shouldRender}
@@ -239,7 +226,7 @@ Based on legacy start_to_end_pos_glyph.py implementation.
     <!-- Pulse runs on this inner group: CSS transform animations override the
          SVG transform attribute, so animating the outer <g> would wipe its
          centering translate and park the glyph at the left edge mid-pulse. -->
-    <g class="pulse-target" class:animating={isAnimating}>
+    <g class="pulse-target" bind:this={pulseTarget}>
       <!-- Start placement letter -->
       {#if startSvgPath}
         <image
@@ -320,29 +307,9 @@ Based on legacy start_to_end_pos_glyph.py implementation.
     filter: invert(0.9);
   }
 
-  /* Scale-pulse animation when placement changes */
-  @keyframes placement-pulse {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(0.91);
-    }
-    100% {
-      transform: scale(1);
-    }
-  }
-
-  .pulse-target.animating {
+  /* Keep the pulse centered on the letters rather than the SVG origin. */
+  .pulse-target {
     transform-box: fill-box;
     transform-origin: center;
-    animation: placement-pulse var(--duration-dramatic) var(--ease-standard-out);
-  }
-
-  /* Respect reduced motion preference */
-  @media (prefers-reduced-motion: reduce) {
-    .pulse-target.animating {
-      animation: none;
-    }
   }
 </style>

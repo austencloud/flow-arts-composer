@@ -262,6 +262,18 @@ h6 {
   --alt-touch-target: 36px; /* For less critical elements */
   --min-touch-target-compact: 32px; /* Viewport overlay controls only */
 
+  /* The video editor package imports its own copy of the drawer stylesheet,
+     which loads globally after ours and reads these tokens with no fallback.
+     Its editor workspace defines them; everywhere else in the app they were
+     undefined, so its handle rules went invalid and every drawer handle
+     collapsed to a 10px nub. Point them at the app's own values. */
+  --ve-min-touch-target: var(--min-touch-target);
+  --ve-theme-stroke: var(--theme-stroke, rgba(255, 255, 255, 0.1));
+  --ve-theme-stroke-strong: var(
+    --theme-stroke-strong,
+    rgba(255, 255, 255, 0.2)
+  );
+
   /* Enhanced Shadow System */
   --shadow-glass:
     0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08),

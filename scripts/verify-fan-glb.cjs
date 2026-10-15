@@ -246,6 +246,10 @@ const dayPlate = nodes[nodeIndexByName.get("Fan_Day_DoodleGripPlate")];
 const fireGroup = nodes[nodeIndexByName.get("Fan_Fire")];
 const lotusGroup = nodes[nodeIndexByName.get("Fan_Lotus")];
 const moonGroup = nodes[nodeIndexByName.get("Fan_Moon")];
+// Astral exists in source before its Blender rebuild lands in fan.glb, so the
+// published model may not carry it yet. Check it fully once it does.
+const astralIndex = nodeIndexByName.get("Fan_Astral");
+const astralGroup = astralIndex === undefined ? null : nodes[astralIndex];
 invariant(
   moonGroup.extras?.tka_led_count === 78 &&
     moonGroup.extras?.tka_led_segments === 2,
@@ -255,6 +259,45 @@ invariant(
   Math.abs(moonGroup.extras?.tka_ring_hole_diameter_m - 0.081) < 1e-6,
   "Moon fan grip no longer preserves the published 81mm opening"
 );
+if (astralGroup) {
+  for (const name of [
+    "Fan_Astral_GripRing",
+    "Fan_Astral_BladeDiffuser",
+    "Fan_Astral_Blade_LED_01",
+    "Fan_Astral_Blade_LED_30",
+    "Fan_Astral_Sides_LED_6_6",
+  ]) {
+    invariant(nodeIndexByName.has(name), `Required node is missing: ${name}`);
+  }
+  invariant(
+    astralGroup.extras?.tka_led_count === 66 &&
+      astralGroup.extras?.tka_led_segments === 2,
+    "Astral fan no longer carries its documented 66-pixel, two-zone layout"
+  );
+  for (const [zone, expected] of [
+    ["Blade", 30],
+    ["Sides", 36],
+  ]) {
+    const emitters = nodes.filter((node) =>
+      node.name?.startsWith(`Fan_Astral_${zone}_LED_`)
+    );
+    invariant(
+      emitters.length === expected,
+      `Astral ${zone} must have ${expected} emitters`
+    );
+    invariant(
+      emitters.every((node) =>
+        (astralGroup.children ?? []).includes(nodes.indexOf(node))
+      ),
+      "Astral emitter escaped its build group"
+    );
+  }
+  invariant(
+    JSON.stringify(astralGroup.extras?.tka_control_zones) ===
+      JSON.stringify(["blade", "sides"]),
+    "Astral fan lost its independent Blade/Sides controls"
+  );
+}
 invariant(
   fireGroup.extras?.tka_build ===
     "Forged Creations five-wick DoodleGrip fire fan",
@@ -793,7 +836,9 @@ invariant(
   bytes.length >= 40_000,
   `fan.glb is suspiciously small: ${bytes.length}`
 );
-invariant(bytes.length <= 2_000_000, `fan.glb is too large: ${bytes.length}`);
+// Five physical builds and the optional cover share this request. Keep
+// the complete family below 2.5 MB while retaining discrete Astral lenses.
+invariant(bytes.length <= 2_500_000, `fan.glb is too large: ${bytes.length}`);
 invariant(
   stats.triangleCount >= 2_000,
   "Fan detail collapsed below the art target"
@@ -838,5 +883,5 @@ console.log(
   `FAN_LOTUS_DIMENSIONS_M=${lotusDimensions.x.toFixed(6)},${lotusDimensions.y.toFixed(6)},${lotusDimensions.z.toFixed(6)}`
 );
 console.log(
-  "FAN_VARIANTS=fire,lotus,day-black,day-white,moon,bare,covered-solid,covered-striped"
+  "FAN_VARIANTS=fire,lotus,day-black,day-white,moon,astral,bare,covered-solid,covered-striped"
 );

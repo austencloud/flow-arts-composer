@@ -81,3 +81,106 @@
 - gpt-6-astra review of a 233-key sample flagged 8 (3.4%); all fixes applied, plus the same thumb-end fix in learn_staff_thumb_end_mark.
 - Full In/Out orientation labels now match the glossary (Verso l’interno, Verso l’esterno); Codex restored as a product name; Double-Staff uses bastone doppio.
 - Gate: `Tests 66 passed (66)`.
+
+## 2026-10-14 - P1
+
+- Scope: 401 translated keys, 0 retranslate entries, 0 review entries; all supplied keys completed. The actual batch contains guide keys (hub, Codex, Level 2, motion paths, Zan's Diamond, Prospin and spin ratios).
+- Applied exclusively through the supplied apply-batch.js with out-P1.json and batch-P1.json.
+- Initial apply: `messages/it.json: inserted 401, replaced 0, refused 0`.
+- Final apply after reviewing stitched sentences: `messages/it.json: inserted 0, replaced 401, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 15.24s.
+- Before this ledger addition, `git diff --stat` showed only messages/it.json: 401 insertions, 0 deletions. Confirmed all 401 batch keys present, preexisting catalog values unchanged, matching placeholder names and occurrence counts, matching markup and single-line values. `git diff --check` passed.
+- Glossary: tu address and second-person imperative actions; Level -> Livello; turn -> giro; prop -> attrezzo; staff/double staff -> bastone/bastone doppio; hand path -> percorso della mano; Box -> Quadrato; Diamond -> Diamante; musical beat -> battito; sequence step -> passo; Practice -> Pratica. Full orientation phrases verso l'interno/verso l'esterno throughout. Preserved TKA, The Kinetic Alphabet, Codex, Composer, Zan's Diamond, Shift/Dash/Static/Float/Pro/Anti, Prospin/Antispin/Inspin/Isolation/Extension/Flower, Alpha/Beta/Gamma, letters, notation examples and placeholders. Ordinary geometric petal counts use petalo/petali.
+- Path labels: Arc -> Arco; Concave -> Concavo; Linear -> Lineare; Hybrid -> Ibrido; Shape Matrix -> matrice delle forme; Third Order -> Terzo ordine. Motion -> Movimento; Playback -> Riproduzione; Prop tips -> Punte degli attrezzi; Effort -> Sforzo, consistent with earlier batches.
+- Checked the ratios page's split strings against their call sites. Shape Engine is the inserted runtime name, so adjoining articles and participles are masculine. Split sentences around inline section links retain the teaching point and grammatical Italian, including moving the below reference before the link.
+- Text review: ai-bust mechanical pass on final out-P1.json returned `[]` at HIGH severity and above. Manually reviewed source meaning, glossary categories, numerical teaching steps and compact labels.
+- Uncertain: no glossary entries for stagger, lap, glyph slots, flower carrier, cat-eye or driving styles. Used sfasamento, passaggio (to distinguish laps from TKA giri), spazi superiore/inferiore, percorso portante, occhio di gatto and stili di conduzione. These choices await native/product review. The source phrase negative space or a turn is ambiguous about the kind of turn; retained spazio negativo o un giro without adding a body-turn claim. No native reviewer participated in this run.
+- Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout access, integration, push, installation, dev server, build, broad type-check or prohibited validator was run.
+
+## 2026-10-14 - P2
+
+- Scope: 401 translated keys, 0 retranslate entries, 0 review entries; all supplied keys completed. The actual batch contains Level 2 guide prose, the printable guide, grid and placement explanations, runtime controls and the animation companion.
+- Applied exclusively through the supplied apply-batch.js with out-P2.json and batch-P2.json.
+- Initial apply: `messages/it.json: inserted 401, replaced 0, refused 0`.
+- Final apply after terminology review: `messages/it.json: inserted 0, replaced 401, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 18.90s.
+- Before this ledger addition, `git diff --stat` showed only messages/it.json: 401 insertions, 0 deletions. Confirmed exactly the 401 batch keys added, all preexisting values unchanged, identical placeholder names and counts, identical markup tags and attributes/counts, and single-line values. `git diff --check` passed.
+- Glossary: tu address and second-person imperative actions; Level -> Livello; Type -> Tipo; turn -> giro; prop -> attrezzo; staff -> bastone; hand path -> percorso della mano; Box -> Quadrato; Diamond -> Diamante; placement -> posizione; centric -> centrico. Full orientation phrases verso l'interno/verso l'esterno, including diagrams and arrow sequences. Preserved TKA, The Kinetic Alphabet, Codex, LOOP placeholders, Alpha/Beta/Gamma, Split-Same/Tog-Same/Split-Opp/Tog-Opp, Shift/Dash/Static/Pro/Anti, Prospin/Antispin/Isolation/Extension, letters, code parameters, notation tuples, CSS attributes and colors. Static/Shift titles legitimately remain identical to English.
+- Matched P1 glyph terminology: spazi superiore/inferiore. Leading/following -> mano che precede/mano che segue; opening/closing -> apertura/chiusura. Described Same/Opp dots as points for the same/opposite direction while preserving s/o parameters. Thumb end/pinky end -> estremita sul lato del pollice/mignolo, distinguishing staff ends from fingers. Linear extension -> Extension lineare to preserve the protected flow arts term.
+- Controls: Mirror -> Specchia; Hand Swap -> Scambia le mani; Revert -> Ripristina; Reset -> Reimposta; Remix -> Ricombina; staged steps -> passi preparati; animation companion -> animazione di supporto. Compact labels stay single-line.
+- Text review: ai-bust mechanical pass on final out-P2.json returned `[]` at HIGH severity and above. Manually reviewed meaning, teaching-step order, orientation phrases, emphasis and compact labels.
+- Uncertain: the glossary does not define opening/closing, leading/following, Same/Opp dot terminology, staged steps, animation companion or Remix; the choices above await native/product review. As in P1, the source phrase negative space or a turn does not establish the kind of turn; retained spazio negativo o un giro without adding a body-turn claim. Preserved the source's turn counts and in/out examples, including compressed in-to-in examples, without inferring intermediate states. No native reviewer participated in this run.
+- Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout access, integration, push, installation, dev server, build, broad type-check or prohibited validator was run.
+
+## 2026-10-14 - P3
+
+- Scope: 676 translated batch entries, 0 retranslate entries, 0 review entries; all supplied keys completed. Actual contents: 239 Shape Engine keys and 437 verified Level 1 guide keys, including print labels, SEO and animation controls.
+- Applied exclusively through the supplied apply-batch.js with out-P3.json and batch-P3.json.
+- Initial apply: `messages/it.json: inserted 676, replaced 0, refused 0`.
+- Final apply after text review: `messages/it.json: inserted 0, replaced 676, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Initial result: 65 passed, 1 failed. Six markup-bearing mnemonic phrases were identical to English. Added Italian glosses consistently to their caption, inline and print versions while keeping the English initials mnemonic visible; did not change the test.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 9.22s.
+- Before this ledger addition, `git diff --stat` showed only messages/it.json: 676 insertions, 0 deletions. Confirmed exactly the 676 batch keys added, all preexisting catalog values unchanged, matching placeholder names/counts and markup tags/attributes/counts, and all values single-line. `git diff --check` passed.
+- Glossary: tu address and second-person imperative actions; Level -> Livello; Type -> Tipo; Box -> Quadrato; Diamond -> Diamante; turn -> giro; prop -> attrezzo; staff/double staff -> bastone/bastone doppio; placement -> posizione; hand path -> percorso della mano; sequence position -> passo; musical count -> battito. Full orientation phrases verso l'interno/verso l'esterno, including print diagrams. Preserved TKA, The Kinetic Alphabet, LOOP, Codex, Shape Engine, Spin Science, named matrix titles, Zan's Diamond, motion categories, flow arts jargon, VTG labels, placement names, letters, sequence words, placeholders, CSS attributes and colors.
+- Transform terms: Mirrored -> speculare; Rotated -> ruotato; Swapped -> scambiato. Aligned earlier batches: Effort -> Sforzo; driving styles -> stili di conduzione; thumb/pinky end -> estremita sul lato del pollice/mignolo; leading/following -> mano che precede/segue; opening/closing -> apertura/chiusura. Geometric petal count -> petali, as in P1; retained Flower/Isolation/Prospin/Antispin as jargon.
+- Mnemonic glosses: Disco Jam (jam da discoteca), Exploding Kitten (gattino esplosivo), Fruity Loops (anelli alla frutta), Magic Potion (pozione magica), Never Quit (non mollare mai), Open Road (strada aperta). These phrases teach DJ/EK/FL/MP/NQ/OR initials, so the English phrase remains alongside its translation rather than losing the letter association.
+- Text review: ai-bust mechanical pass on final out-P3.json returned `[]` at HIGH severity and above. Manually reviewed source meaning, teaching-step order, emphasis, orientation phrases and compact labels. No native reviewer participated.
+- Uncertain: the glossary does not define wall plane/wheel plane, negative space, hand/prop/full reversals, realization or Ratio Playground. Used piano frontale/piano della ruota, spazio negativo, inversione della mano/dell'attrezzo/completa, realizzazione and area rapporti; these await native/product review. The bilingual mnemonic presentation also awaits product review. Source teaching claims and ratios were preserved without independently validating them.
+- Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout or other worktree accessed, integration, push, installation, dev server, build, broad type-check or prohibited validator run.
+
+## 2026-10-14 - P4
+
+- Scope: 906 translated batch entries, 0 retranslate entries, 0 review entries; all supplied keys completed. Actual contents are feedback, inbox/messaging/sharing UI and effect controls/preset labels, rather than teaching-guide prose.
+- Applied exclusively through the supplied apply-batch.js with out-P4.json and batch-P4.json.
+- Apply result: `messages/it.json: inserted 906, replaced 0, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 5.67s.
+- Before this ledger addition, `git diff --stat` showed only messages/it.json: 906 insertions, 0 deletions. Confirmed exactly the 906 batch keys added, all preexisting catalog values unchanged, output equal to the applied catalog, matching placeholder names and occurrence counts, matching markup, and all values single-line. `git diff --check` passed.
+- Glossary: tu address and second-person imperative actions; prop -> attrezzo; staff -> bastone; sequence -> sequenza; library -> libreria; collection -> raccolta; sequence step -> passo; musical beat -> battito; effect -> effetto; Inbox -> Posta in arrivo. Preserved Flow Arts Composer, placeholders, file formats and proper names. This batch has no orientation or notation-category teaching text. Continued earlier batches' preset -> preimpostazione.
+- Effects: Afterglow -> bagliore residuo; Afterimage -> immagine residua; Bloom -> bagliore diffuso; Glow -> bagliore; Glare -> abbagliamento; Carry -> trascinamento; Curl -> arricciatura; Jitter -> tremolio; Flutter -> sfarfallio; Tracking -> tracciamento; Trail -> scia; Trigger -> attivazione; tuning -> regolazioni. Kept the source distinction between Momentum (slancio) and Asymmetry (asimmetria), despite their related key names. Ordinary playback Loop -> ciclo, distinct from protected notation LOOP.
+- Petals -> petali here refers to botanical visual particles, not the protected flow arts term Petal. Verified in effects-panel/thumbnails/look-copy.ts (pink blossoms, autumn leaves, big green leaves) and petals-tile.ts (ribbon of leaves); effect-ui-label.ts establishes that these batch values are translated display labels, not effect identifiers. No effect identifiers changed.
+- Feedback claim -> assegnazione; orphaned -> senza assegnazione; stale -> scaduta; outbox -> posta in uscita; access/permission -> accesso/permessi. Kept ordinary Italian loanwords Feedback, Bug, Link, Screenshot and Palette, and genuinely identical names/words (Aurora, Champagne, India, Neon, Plasma, Sonar, Sumi, Inferno, LED, Supernova, Tesla, Tornado). Time shorthand uses g for Italian giorni and preserves m/h.
+- Text review: ai-bust mechanical pass on final out-P4.json returned `[]` at HIGH severity and above. Manually reviewed meaning, action voice, compact labels and effect terminology. No native reviewer participated.
+- Uncertain: the glossary does not define claim/stale/orphaned or technical effect controls such as carry, curl, falloff, jitter, flutter and hang. Used assegnazione/scaduta/senza assegnazione and trascinamento/arricciatura/attenuazione/tremolio/sfarfallio/sospensione; these choices await native/product review.
+- Uncertain: evocative effect names such as Banked Ember, Gilt Wyrm, Cold gas-blue burn and One point, drawn long have no glossary definitions. Used Brace sotto la cenere, Drago dorato, Fiamma fredda blu da gas and Un punto allungato without adding behavioral claims. These names await native/product review.
+- Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout or other worktree accessed, integration, push, installation, dev server, build, broad type-check or prohibited validator run.
+
+## 2026-10-14 - P5
+
+- Scope: 917 translated batch entries, 0 retranslate entries, 0 review entries; all supplied keys completed. Actual contents: practice controls, site/FAQ copy, onboarding, Composer demo, notifications, pictograph descriptions, shared controls, playback/LOOP controls, tutorials, colors, animation, tunnel and pattern-strip text. No guide*/verified* teaching prose is present in this batch.
+- Applied exclusively through the supplied apply-batch.js with out-P5.json and batch-P5.json.
+- Apply result: `messages/it.json: inserted 917, replaced 0, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 7.36s.
+- Before this ledger addition, `git diff --stat` showed only messages/it.json: 917 insertions, 0 deletions. Confirmed exactly the 917 batch keys added, every preexisting catalog value unchanged, output equal to applied catalog, matching placeholder names and occurrence counts, matching markup and occurrence counts, and single-line values throughout. `git diff --check` passed.
+- Glossary: tu address and second-person imperative actions; placement -> posizione; sequence position -> passo (including train_auto_advance); musical beat -> battito; hand path -> percorso della mano; turn -> giro; prop -> attrezzo; staff/double staff -> bastone/bastone doppio; grid -> griglia; Box -> Quadrato; Diamond -> Diamante; library -> libreria; collection -> raccolta; performer -> performer. Preserved TKA, The Kinetic Alphabet, Flow Arts Composer, Composer, Choreo Cards, LOOP, Pro/Anti/Shift/Dash/Static/Float and compound categories, Prospin/Antispin/Flower, placement names, VTG labels, points, formats, placeholders and sequence data. Kept the source's expanded VTG labels (Split-Opposite, Together-Same, Together-Opposite, Quarter-Opposite) as written rather than normalizing notation.
+- Product consistency: retained Shape Engine as in P3 and Shape Matrix as a named surface; Efforts -> Sforzi, effect presets -> preimpostazioni effetti, trail -> scia, ordinary playback loop -> ciclo. Reflection actions explain vertical/horizontal axes; Mirrored -> speculare and Flipped -> ribaltato for labels. Only the inherited English fullscreen prompts contain emoji; all eight were retained from the source without adding any.
+- Text review: ai-bust mechanical pass found exactly eight CRITICAL emoji findings, all inherited from those source fullscreen prompts; no other HIGH/CRITICAL findings. Source fidelity takes precedence over removing source decoration. Manually reviewed source meaning, informal address, compact labels and terminology. No native reviewer participated.
+- Context checks: tunnel-discovery.ts defines authoredCount as the composition performer count, distinct from rendered appearances; used performer creati / creati, rather than suggesting independent choreography. Grid-join source confirms that one/two points describe separation; used a 1/2 punti di distanza.
+- Uncertain: the glossary does not define Shape Matrix, authored performers, stage appearance/frame, end hold, Knob or Bulb. Retained Shape Matrix and used performer creati, presenza in scena / riquadro della posizione in scena, pausa finale, pomello and bulbo. These await native/product review.
+- Limitation outside allowed scope: pattern-strip-display.ts currently localizes its sentence helpers only for de. The Italian keys are translated, but those helpers will still return English for it until application routing is extended. Composite Italian sentence agreement (including numeric giro/giri) needs runtime/product review when that routing is enabled; no source or test changes made.
+- Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout or other worktree accessed; no integration, push, install, dev server, build, broad type-check or prohibited validator run.
+
+## REV (coordinator, 2026-10-14)
+
+Astra back-translation review of the P batches: SAMPLE 172 / FLAGGED 6 /
+3.49%. Applied three fixes (axis value hint, "either orientation" meaning,
+Shift as the motion name). Dismissed three flags asking for English "Petal":
+the coordinator narrowed the glossary so counted petals translate normally
+(petalo/petali) while Flower stays English as a pattern name.
+
+## 2026-10-14 - Z1
+
+- Scope: 5 translated keys, 11 retranslated keys, 0 review keys. All 16 supplied entries completed using the NEW English for the rewritten Zan's Diamond guide.
+- Applied exclusively through the supplied apply-batch.js with out-Z1.json and batch-Z1.json.
+- Apply result: `messages/it.json: inserted 5, replaced 11, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 34.32s.
+- Before this ledger addition, `git diff --stat` showed only messages/it.json: 16 insertions, 11 deletions, matching 5 new keys and 11 replacements. `git diff --check` passed.
+- Glossary: kept Zan's Diamond, Zan Moore, Shift and Dash unchanged; diamond grid -> griglia Diamante; beat -> battito; step -> passo; collection -> raccolta; props -> attrezzi; Practice -> Pratica. Used informal tu and imperative Apri. Ordinary repeating loop -> ciclo. Used pattern as the Italian loanword for the named movement pattern; lead -> anticipo. Compact labels remain single-line, with placeholders preserved.
+- Manually reviewed all 16 translations against the new English, including the eight-beat path, odd/even leads, seven forward offsets and eight reversed starts for either hand. No native reviewer participated.
+- Uncertain: none.
+- Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout or other worktree accessed; no push, integration, installation, dev server, build, broad check or prohibited validator run.

@@ -282,13 +282,13 @@ const releasedKeys = Object.keys(english).filter(
 const RELEASED_COVERAGE_FLOOR: Record<string, number> = {
   ar: 0.06,
   de: 0.98,
-  es: 0.6,
-  fr: 0.6,
-  it: 0.6,
-  ja: 0.08,
-  ko: 0.06,
-  pt: 0.6,
-  ru: 0.08,
+  es: 0.98,
+  fr: 0.98,
+  it: 0.98,
+  ja: 0.6,
+  ko: 0.59,
+  pt: 0.98,
+  ru: 0.6,
   zh: 0.06,
 };
 
