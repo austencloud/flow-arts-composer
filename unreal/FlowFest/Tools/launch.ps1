@@ -86,6 +86,10 @@ if ($AutoExit) {
     if ($Capture -and ((-not (Test-Path -LiteralPath $Capture)) -or (Get-Item -LiteralPath $Capture).LastWriteTimeUtc -lt $launchStarted)) {
         throw "Flow Fest did not produce a new capture: $Capture"
     }
+    if ($LogPath -and (Test-Path -LiteralPath $LogPath -PathType Leaf) -and
+        (Select-String -LiteralPath $LogPath -SimpleMatch 'Failed to compile Material' -Quiet)) {
+        throw "Flow Fest rendered with failed material shaders. See $LogPath"
+    }
     if ($Smoke -and ((-not (Test-Path -LiteralPath $LogPath -PathType Leaf)) -or
         (Get-Item -LiteralPath $LogPath).LastWriteTimeUtc -lt $launchStarted -or
         -not (Select-String -LiteralPath $LogPath -SimpleMatch 'FlowFestSmoke PASS' -Quiet))) {
