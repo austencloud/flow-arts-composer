@@ -53,11 +53,11 @@ describe("SiteHeader desktop disclosures", () => {
     ).map((link) => link.getAttribute("href"));
     expect(notationHrefs).toEqual([
       "/shape-engine",
-      "/notation/staves",
-      "/notation/poi",
-      "/notation/fans",
-      "/notation/clubs",
-      "/notation/buugeng",
+      "/notation/props#staves",
+      "/notation/props#poi",
+      "/notation/props#fans",
+      "/notation/props#clubs",
+      "/notation/props#buugeng",
     ]);
   });
 
