@@ -86,3 +86,100 @@
 - gpt-6-astra review of a sample of this wave flagged a handful of keys (see coordinator notes); all fixes applied.
 - Codex restored as a product name where older strings translated it; Double-Staff uses the glossary prop term.
 - Gate: `Tests 66 passed (66)`.
+
+## P1 — 2026-10-14
+
+- Batch: `batch-P1.json`; 401 translated entries, 0 retranslation entries, 0 review entries. Protected names, loanwords, and language-neutral templates retain identical values where appropriate.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-P1.json`.
+- Initial apply result: `messages/pt.json: inserted 401, replaced 0, refused 0`.
+- Final apply result after checking the inserted Shape Engine name in sentence fragments: `messages/pt.json: inserted 0, replaced 401, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 401 insertions, 0 deletions (net +401 lines).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Focused inspection: exactly 401 catalog additions, all belonging to this batch; no existing catalog values changed. All output values match the applied catalog. Placeholder names and occurrence counts and markup match English; no multiline values or Unicode replacement characters. `git diff --check` passed. The ai-bust mechanical pass at HIGH severity returned `[]`; manual review preserved the source teaching points and step order.
+- Glossary choices: Brazilian Portuguese with você and infinitive action labels; posição, grade, Quadrado, Diamante, trajetória da mão, volta, sentido de rotação, bastão and props. Motion categories, placement names, protected products, Zan's Diamond, Prospin/Antispin/Inspin, Isolation/Extension and Flower/Petal stay English, with Flowers/Petals for plurals. Orientations use full para dentro / para fora in prose and labels. Sequence positions use passo; musical counts use batida. Spin ratio uses proporção de rotação; hand cycle uses ciclo da mão; lap uses circuito to distinguish a circuit around the center from the counted prop volta.
+- Source context: `src/lib/shared/shape-matrix/app/shape-engine-identity.ts` supplies the literal Shape Engine to the ratios page; the split attribution and explanation strings use masculine agreement around that name. Third Order is rendered Terceira Ordem, and motion-path options use Arco, Linear, Côncava and Híbrida consistently within the guide.
+- Uncertain: driving style / carrier path have no glossary entries; rendered estilo de condução / trajetória de suporte. Cat-eye is olho de gato and triquetra is triquetra. Native terminology review remains needed.
+- Uncertain: turn in the source phrase negative space or a turn is not defined more precisely; rendered giro without assuming which body part turns. Thumb switch is troca de polegar; the glossary does not specify a Portuguese technical term.
+- No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
+
+## P2 — 2026-10-14
+
+- Batch: `batch-P2.json`; 401 translated entries, 0 retranslation entries, 0 review entries. Protected Static labels retain identical source values where appropriate.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-P2.json`.
+- Apply result: `messages/pt.json: inserted 401, replaced 0, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 401 insertions, 0 deletions (net +401 lines).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Focused inspection: all 401 batch keys are present and match the applied catalog; exactly 401 catalog additions belong to this batch, and no existing values changed. Placeholder names and occurrence counts and all markup tags/attributes match the source. No multiline values or Unicode replacement characters. `git diff --check` passed. The ai-bust mechanical pass at HIGH severity returned `[]`; manual review preserved teaching points, step order, and emphasized terms.
+- Glossary choices: Brazilian Portuguese with você and infinitive action labels; posição, trajetória da mão, volta, sentido de rotação, ponto central, posição cêntrica, bastão, props and timing. Orientations use full para dentro / para fora throughout, including arrow progressions. Motion categories, placement names, protected product names, VTG labels and notation remain English. Shift/Dash are kept singular as category labels even when the English heading pluralizes them. Prospin, Antispin, Isolation and Extension remain English; linear extension is Extension linear. Opening/closing is abertura/fechamento; high/low slots are espaços superior/inferior. Thumb switch uses troca de polegar, consistent with P1. Same/Opp dots are described as pontos de mesma direção / de direções opostas; code parameters s, o, op and cl are preserved.
+- Uncertain: leading/following has no Portuguese glossary entry; rendered mão que vai à frente / mão que segue. Native terminology review remains needed.
+- Uncertain: high/low slots and opening/closing have no glossary entries; superior/inferior and abertura/fechamento describe their source meaning without establishing an officially reviewed Portuguese technical term.
+- Uncertain: turn in negative space or a turn does not specify a body part. Rendered giro, consistent with P1, without assuming which body part turns. Where the source explicitly says body turns, rendered voltas do corpo.
+- No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
+
+## P3 — 2026-10-14
+
+- Batch: `batch-P3.json`; 676 translated entries, 0 retranslation entries, 0 review entries. Of the 676 entries, 82 retain identical source values because they are protected names, notation, numbers, or language-neutral templates.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-P3.json`.
+- Apply result: `messages/pt.json: inserted 676, replaced 0, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 676 insertions, 0 deletions (net +676 lines).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Focused inspection: all 676 batch keys match the output and applied catalog; exactly 676 new keys belong to this batch, with all existing catalog values unchanged. Placeholder names and occurrence counts and all markup tags/attributes match English. No multiline values or Unicode replacement characters. `git diff --check` passed. The ai-bust mechanical pass at HIGH severity returned `[]`; manual review preserved teaching steps, examples, and highlighted terms.
+- Glossary choices: Brazilian Portuguese with você and infinitive action labels; grade, quadrado, diamante, posição, trajetória da mão, volta, sentido de rotação, bastão, props, performer and timing. Sequence positions use passo; musical counts use batida. Orientations use full para dentro / para fora, including captions and print labels. Placement names, VTG labels, motion categories, protected products, sequence words and letters remain English. Prospin, Antispin, Isolation, Flower and Petal remain English; plural Flowers/Petals follows the existing P1 convention. LOOP transforms use espelhado, rotacionado and trocado.
+- Mnemonic choice: DJ/EK/FL/MP/NQ/OR phrases retain their English mnemonic alongside a literal Portuguese gloss in the teaching examples, preserving the initial-letter association without inventing replacement mnemonics. Standalone print phrase keys translate the English meaning. No fact or notation corrections were inferred from the source.
+- Uncertain: driving styles, realization, crossing and phase have no glossary entries; rendered estilos de condução, realização, cruzamento and fase. Shape Engine remains its existing product name; Level Matrix / Ratio Playground use matriz de níveis / área de proporções. Native terminology review remains needed.
+- Uncertain: wall plane / wheel plane, finger-spinning, and hand/prop/full reversals have no glossary entries. Rendered plano de parede / plano de roda, girar o bastão entre os dedos, and reversão da mão / do prop / completa. Leading/following uses mão que lidera / mão que segue. English mnemonic retention with Portuguese glosses needs native pedagogical review.
+- No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
+
+## P4 — 2026-10-14
+
+- Batch: `batch-P4.json`; 906 translated entries (399 effect, 211 feedback, 296 inbox), 0 retranslation entries, 0 review entries. Twenty entries legitimately match English through shared Portuguese words, loanwords, technical terms, or proper names.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-P4.json`.
+- Apply result: `messages/pt.json: inserted 906, replaced 0, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 906 insertions, 0 deletions (net +906 lines).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Focused inspection: all 906 batch keys match the output and applied catalog; exactly 906 new keys belong to this batch, with all existing catalog values unchanged. Placeholder names and occurrence counts and all markup tags/attributes match English. No multiline values or Unicode replacement characters. `git diff --check` passed. The ai-bust mechanical pass at HIGH severity returned `[]`; manual review preserved direct wording, short labels, and sentence order.
+- Glossary choices: Brazilian Portuguese with você, infinitive action labels, salvar, sequência, coleção, biblioteca, caixa de entrada, visualizador, bastão and props. Sequence positions use passo; musical counts use batida. Flow Arts Composer remains the product name. Effect trail uses rastro consistently, preset uses predefinição, afterglow uses resplendor, and velocity threshold uses the full limiar de velocidade.
+- Source context: `src/lib/shared/animation-engine/components/effects-panel/effect-ui-label.ts` explicitly localizes display copy while preserving effect option values and presets. Consequently effect and preset display labels are translated, while code identifiers, Tesla, LED and Sumi remain unchanged. Pétalas describes the visual particles rather than the protected flow-arts term Petal.
+- Source limitations: `feedback_needs_info_hint` contains only the fragment `details below.`. `feedback_no_status_feedback`, `feedback_priority_title` and `feedback_lane_title` receive parameters at their call sites that are absent from their English values. Translations preserve the supplied English text and placeholder sets; no missing content or parameters were invented.
+- Uncertain: creative preset names have no reviewed Portuguese glossary entries. Cold gas-blue burn uses chama azul-gás fria; Gilt Wyrm uses serpente dourada; Banked Ember uses brasa abafada. Native terminology review remains needed.
+- No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed. Changes remain on the assigned worker branch for coordinator integration, as requested.
+
+## P5 — 2026-10-14
+
+- Batch: `batch-P5.json`; 917 translated entries, 0 retranslation entries, 0 review entries. Protected names, notation and language-neutral templates retain identical values where appropriate.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-P5.json`.
+- Initial apply result: `messages/pt.json: inserted 917, replaced 0, refused 0`.
+- Final apply result after terminology review: `messages/pt.json: inserted 0, replaced 917, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 917 insertions, 0 deletions (net +917 lines).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0. The initial gate also passed before the terminology corrections.
+- Focused inspection: all 917 batch keys match the output and applied catalog; exactly 917 new keys belong to this batch, with all existing catalog values unchanged. Placeholder names and occurrence counts and markup tags match English. No multiline values or Unicode replacement characters. `git diff --check` passed.
+- Glossary choices: Brazilian Portuguese with você and infinitive action labels; posição, grade, Quadrado, Diamante, volta, bastão, props, performer and timing. Sequence positions use passo; musical counts use batida. Protected products, placement names, motion categories and VTG labels remain English. Shape Engine retains the existing product name. Reversal uses reversão, consistent with previous batches; inverted LOOP transforms use invertido. Trail uses rastro; preset uses predefinição. Shape Matrix uses matriz de formas; motion paths uses trajetórias de movimento.
+- Source scope: the actual supplied P5 keys cover training, site and FAQ, onboarding, Composer demonstrations, notifications, pictograph descriptions, shared controls, playback, LOOP selection, tutorials, colors, animation, tunnels and pattern strips. They are not primarily guide_/verified_ teaching keys as the briefing description suggests. The exact supplied batch was translated without adding other keys.
+- Uncertain: knob / bulb have no reviewed Portuguese glossary entries; rendered pomo / bulbo for prop-end tracking labels. Native terminology review remains needed.
+- Uncertain: authored performers uses performers com coreografia própria, and stage position frame uses referencial de posição no palco. These source UI terms have no glossary definitions; no additional behavior was assumed.
+- Uncertain: 1 point across / 2 points across uses 1 ponto de distância / 2 pontos de distância. The English does not specify an axis or explicitly say whether this is shared-point count; no axis was invented. Shape Matrix uses matriz de formas, but this surface name has no explicit glossary entry.
+- No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed. Changes remain on the assigned worker branch for coordinator integration, as requested.
+
+## REV (coordinator, 2026-10-14)
+
+Astra back-translation review of the P batches: SAMPLE 172 / FLAGGED 3 /
+1.7%. Applied all three fixes (single-turn wording, authored performers,
+Shift as the motion name).
+
+## P6 — 2026-10-14
+
+- Batch: `batch-P6.json`; 0 translated entries, 21 retranslated entries, 0 review entries. Terminology correction only.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-P6.json`.
+- Apply result: `messages/pt.json: inserted 0, replaced 21, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 21 insertions, 21 deletions (21 corrected keys; net 0 lines).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Glossary choice: the coordinator's explicit 2026-10-14 P6 instruction supersedes the glossary's older protected Petal entry. Ordinary singular/plural nouns use pétala/pétalas, with Pétala at the start of labels. Existing feminine agreement (meia, uma, duas, alinhadas, Mesmas) already fits and needs no changes. Flower/Flowers remains exactly as supplied.
+- Focused inspection: exactly the 21 retranslation keys changed. Reversing only the Petal/Petals substitutions reproduces every original string, confirming that all other wording, placeholders, punctuation, markup and protected names are unchanged. `git diff --check` passed.
+- Uncertain: none. No native-speaker review performed.
+- Changes remain on the assigned worker branch for coordinator integration. No primary checkout access, install, broad checks, dev server, integration or push performed.
