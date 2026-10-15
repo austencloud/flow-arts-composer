@@ -81,3 +81,19 @@
 - gpt-6-astra review of a 233-key sample flagged 8 (3.4%); all fixes applied, plus the same thumb-end fix in learn_staff_thumb_end_mark.
 - Full In/Out orientation labels now match the glossary (Verso l’interno, Verso l’esterno); Codex restored as a product name; Double-Staff uses bastone doppio.
 - Gate: `Tests 66 passed (66)`.
+
+## 2026-10-14 - P1
+
+- Scope: 401 translated keys, 0 retranslate entries, 0 review entries; all supplied keys completed. The actual batch contains guide keys (hub, Codex, Level 2, motion paths, Zan's Diamond, Prospin and spin ratios).
+- Applied exclusively through the supplied apply-batch.js with out-P1.json and batch-P1.json.
+- Initial apply: `messages/it.json: inserted 401, replaced 0, refused 0`.
+- Final apply after reviewing stitched sentences: `messages/it.json: inserted 0, replaced 401, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 15.24s.
+- Before this ledger addition, `git diff --stat` showed only messages/it.json: 401 insertions, 0 deletions. Confirmed all 401 batch keys present, preexisting catalog values unchanged, matching placeholder names and occurrence counts, matching markup and single-line values. `git diff --check` passed.
+- Glossary: tu address and second-person imperative actions; Level -> Livello; turn -> giro; prop -> attrezzo; staff/double staff -> bastone/bastone doppio; hand path -> percorso della mano; Box -> Quadrato; Diamond -> Diamante; musical beat -> battito; sequence step -> passo; Practice -> Pratica. Full orientation phrases verso l'interno/verso l'esterno throughout. Preserved TKA, The Kinetic Alphabet, Codex, Composer, Zan's Diamond, Shift/Dash/Static/Float/Pro/Anti, Prospin/Antispin/Inspin/Isolation/Extension/Flower, Alpha/Beta/Gamma, letters, notation examples and placeholders. Ordinary geometric petal counts use petalo/petali.
+- Path labels: Arc -> Arco; Concave -> Concavo; Linear -> Lineare; Hybrid -> Ibrido; Shape Matrix -> matrice delle forme; Third Order -> Terzo ordine. Motion -> Movimento; Playback -> Riproduzione; Prop tips -> Punte degli attrezzi; Effort -> Sforzo, consistent with earlier batches.
+- Checked the ratios page's split strings against their call sites. Shape Engine is the inserted runtime name, so adjoining articles and participles are masculine. Split sentences around inline section links retain the teaching point and grammatical Italian, including moving the below reference before the link.
+- Text review: ai-bust mechanical pass on final out-P1.json returned `[]` at HIGH severity and above. Manually reviewed source meaning, glossary categories, numerical teaching steps and compact labels.
+- Uncertain: no glossary entries for stagger, lap, glyph slots, flower carrier, cat-eye or driving styles. Used sfasamento, passaggio (to distinguish laps from TKA giri), spazi superiore/inferiore, percorso portante, occhio di gatto and stili di conduzione. These choices await native/product review. The source phrase negative space or a turn is ambiguous about the kind of turn; retained spazio negativo o un giro without adding a body-turn claim. No native reviewer participated in this run.
+- Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout access, integration, push, installation, dev server, build, broad type-check or prohibited validator was run.
