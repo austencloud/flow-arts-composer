@@ -14,6 +14,7 @@
   import CodexTransitionGlyph from "../../../guide/codex/_components/CodexTransitionGlyph.svelte";
   import { CODEX_BOXES, type TaggedBox } from "./codex-letters";
   import { codexTypeLabel } from "../../../guide/codex/_data/codex-groups";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   let {
     onSelect,
@@ -24,10 +25,13 @@
      *  Atlas uses this for the Type 1 gamma land, where the printed sheet only
      *  repeats the caption over M-O even though it describes M-V. */
     flowHeader,
+    /** The prop drawn in every cell; omitted keeps the dataset's own. */
+    propType,
   }: {
     onSelect: (id: string) => void;
     boxes?: TaggedBox[];
     flowHeader?: string;
+    propType?: PropType;
   } = $props();
 
   function boxForFlow(tagged: TaggedBox, index: number) {
@@ -51,6 +55,7 @@
         theme="dark"
         reserveHead
         showName={false}
+        {propType}
         onCellSelect={onSelect}
       />
     </div>
