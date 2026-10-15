@@ -60,3 +60,18 @@
 - Text review: ai-bust mechanical pass on out-R4.json reported `clean: no mechanical tells found` at HIGH severity and above. Manually reviewed meaning, glossary terms, existing navigation labels and compact labels. Short labels remain single-line; Condividi and Indietro use the standard Italian labels despite being longer than Share and Back.
 - Uncertain: the glossary does not define Post Studio take, landing, held, move, pass, or timing-map terminology. The choices above are provisional pending native/product review, particularly arrivo for landing and in sosta for held animation. The glossary does not establish whether theme display names must stay English; followed the existing R3 approach of translating display labels while preserving identifiers. No native reviewer participated in this run.
 - Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout access, integration, push, installation, dev server, build, broad type-check or prohibited validator was run.
+
+## 2026-10-14 - R5
+
+- Scope: 516 translated keys, 0 retranslate entries, 0 review entries; all supplied keys completed.
+- Applied exclusively through the supplied apply-batch.js with out-R5.json and batch-R5.json.
+- Initial apply: `messages/it.json: inserted 516, replaced 0, refused 0`.
+- Final apply after aligning terminology with earlier Italian batches: `messages/it.json: inserted 0, replaced 516, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 12.91s.
+- Before appending this section, `git diff --stat` showed only messages/it.json: 516 insertions, 0 deletions. Confirmed exactly the 516 batch keys added and all preexisting catalog values unchanged. Checked placeholder names and occurrence counts, markup and single-line values against the batch source. `git diff --check` passed.
+- Glossary: tu address and second-person imperative buttons; prop -> attrezzo; collection -> raccolta; library -> libreria; sequence positions -> passi; placement -> posizione; clockwise/counterclockwise -> orario/antiorario; performer retained. Preserved TKA, LOOP, Flow Arts Composer, Choreo Cards, platform names, shortcut key names and placeholders.
+- Matched earlier Italian batches: Mirror -> Specchia; Flip -> Ribalta; Rewind -> Riavvolgi; Smart Collection -> raccolta intelligente; Visuals -> creazioni visive; preset -> preimpostazione. Hall of Shame retained as the existing named destination. Studio retained for the abbreviated Post Studio module label. Retained the data-like example your_username unchanged.
+- Other wording: Jump to -> Vai a; flow identity -> identità nelle flow arts; Realm -> Reame; prop skill -> abilità con un attrezzo. Kept Home, Arena, Mandala, Video and Tunnel where the Italian label is legitimately identical to English. Translated all supplied module and tab keys under the explicit batch scope.
+- Uncertain: the glossary does not define Jump to, flow identity, Realm or prop skill; choices above are provisional pending native/product review. It does not explicitly establish Hall of Shame as a protected brand; retained it for consistency with earlier batches. No native reviewer participated in this run.
+- Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout access, integration, push, installation, dev server, build, broad type-check or prohibited validator was run.
