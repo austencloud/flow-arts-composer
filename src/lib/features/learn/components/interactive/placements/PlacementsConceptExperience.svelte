@@ -262,6 +262,9 @@
         freePlay || (practicing && Boolean(workshop.challenge?.guided));
       return {
         kind,
+        pictureKey: fixing
+          ? `fix:${placement.leftLocation}`
+          : `${gridMode}:${pair.left}:${pair.right}`,
         picture: fixing
           ? correctionPreview
           : (exploring ? found : showExample)

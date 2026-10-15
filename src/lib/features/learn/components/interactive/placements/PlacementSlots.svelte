@@ -20,6 +20,8 @@
     kind: PlacementType;
     /** The pair the slot shows, or null to show only its symbol. */
     picture: ReturnType<typeof placementPairPreview> | null;
+    /** Names the pair shown, so a slot only refills when its pair changes. */
+    pictureKey: string;
     /** The line under the name, or null for none. */
     caption: string | null;
     checked: boolean;
@@ -54,7 +56,7 @@
     >
       <div class="art" aria-hidden="true">
         {#if slot.picture}
-          {#key slot.picture}
+          {#key slot.pictureKey}
             <div class="picture">
               <PictographContainer
                 pictographData={slot.picture}
