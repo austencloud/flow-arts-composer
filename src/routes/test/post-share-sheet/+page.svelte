@@ -27,6 +27,7 @@
   import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
   import { SequenceModalExporter } from "#lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte.js";
   import PostShareSheet from "#lib/shared/share/components/PostShareSheet.svelte";
+  import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import TkaEditorScope from "#lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
   import { VideoEditor } from "@austencloud/video-editor/ui";
   import type { MetaPublishStatus } from "#lib/shared/share/services/meta-publish.js";
@@ -468,8 +469,25 @@
     {/key}
   </main>
 {:else}
+  <!-- The same live player the Create workspace hands the sheet, so the home
+       screen's stage beside the actions is checked with real motion. -->
+  {#snippet harnessLivePreview()}
+    {#if sequence}
+      <InlineAnimationPlayer
+        {sequence}
+        chrome="minimal"
+        fill={true}
+        showControls={false}
+        autoPlay={true}
+        autoPlayDelay={0}
+        playbackAllowed={isOpen}
+        ephemeral={true}
+      />
+    {/if}
+  {/snippet}
   <PostShareSheet
     isOpen={isOpen && !!sequence}
+    liveVideoPreview={harnessLivePreview}
     {sequence}
     availableArtifacts={cardOnly ? ["card"] : ["card", "video"]}
     {initialArtifact}
