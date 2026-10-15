@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
+  import {
+    localizeLevel1Text,
+    localizeLevel1SelectionLabel,
+  } from "../_data/localize-level1-content";
   /**
    * Compound Letters - body page (manifest `lt1-dj-ek-fl`, retitled "Compound
    * Letters"), faithful to proof p23 / "1.1 - Compound Letters" artboard (the
@@ -39,16 +42,26 @@
     Orientation,
     RotationDirection,
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { GridMode, GridLocation, GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import {
+    GridMode,
+    GridLocation,
+    GridPlacement,
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
-  import { pt, ptDrag, editText, guideEdit, registerEditSource } from "../_data/guide-edit.svelte";
+  import {
+    pt,
+    ptDrag,
+    editText,
+    guideEdit,
+    registerEditSource,
+  } from "../_data/guide-edit.svelte.js";
   import { bakeReversals } from "../_data/guide-sequence-adapter";
   import { getGuideSequenceClick } from "../_data/guide-data-context";
-  import { getGuideActiveStep } from "../_data/guide-active-step.svelte";
-  import { overrideStepsFor } from "../_data/guide-overrides.svelte";
+  import { getGuideActiveStep } from "../_data/guide-active-step.svelte.js";
+  import { overrideStepsFor } from "../_data/guide-overrides.svelte.js";
 
   const S = 816 / 612; // pt → px (4/3)
   const { NORTH: N, EAST: E, SOUTH: SO_, WEST: W } = GridLocation;
@@ -64,8 +77,14 @@
   // Handpath direction on the compass ring (N→E→S→W = CW): pro's prop rides it,
   // anti's prop counter-rotates and flips the thumb (in↔out).
   const HP_CW = new Set(["s-w", "w-n", "n-e", "e-s"]);
-  const hpDir = (from: GridLocation, to: GridLocation) => (HP_CW.has(`${from}-${to}`) ? CW : CCW);
-  type HandSpec = { from: GridLocation; to: GridLocation; anti: boolean; so?: Orientation };
+  const hpDir = (from: GridLocation, to: GridLocation) =>
+    HP_CW.has(`${from}-${to}`) ? CW : CCW;
+  type HandSpec = {
+    from: GridLocation;
+    to: GridLocation;
+    anti: boolean;
+    so?: Orientation;
+  };
   const hand = (color: HandSide, h: HandSpec) => {
     const dir = hpDir(h.from, h.to);
     const so = h.so ?? IN;
@@ -97,8 +116,22 @@
   // ── The 12 grid cells ───────────────────────────────────────────────────────
   // [letter, blue from→to, red from→to]; anti flags from the column (Iso/Anti/
   // Hybrid = none/both/blue-only).
-  type CellDef = { letter: Letter; name: string; left: HandSpec; right: HandSpec };
-  const cell = (letter: Letter, name: string, bf: GridLocation, bt: GridLocation, rf: GridLocation, rt: GridLocation, leftAnti, rightAnti): CellDef => ({
+  type CellDef = {
+    letter: Letter;
+    name: string;
+    left: HandSpec;
+    right: HandSpec;
+  };
+  const cell = (
+    letter: Letter,
+    name: string,
+    bf: GridLocation,
+    bt: GridLocation,
+    rf: GridLocation,
+    rt: GridLocation,
+    leftAnti: boolean,
+    rightAnti: boolean
+  ): CellDef => ({
     letter,
     name,
     left: { from: bf, to: bt, anti: leftAnti },
@@ -139,7 +172,11 @@
     ],
   };
 
-  const cellStep = (c: CellDef, key: string, stepNumber: number | null): StepData =>
+  const cellStep = (
+    c: CellDef,
+    key: string,
+    stepNumber: number | null
+  ): StepData =>
     ({
       id: `${key}${stepNumber === null ? "" : `-${stepNumber}`}`,
       letter: c.letter,
@@ -167,7 +204,10 @@
       },
     }) as unknown as StepData;
 
-  const cellSteps = (c: CellDef, key: string): StepData[] => [startFor(c), cellStep({ ...c }, key, 1)];
+  const cellSteps = (c: CellDef, key: string): StepData[] => [
+    startFor(c),
+    cellStep({ ...c }, key, 1),
+  ];
 
   // ── The three compound words (β S → α W/E → β N) ────────────────────────────
   // Anti hands flip thumb each step, so step 2's start orientation continues
@@ -189,7 +229,11 @@
       x: 216.1,
       steps: [
         cell(Letter.E, "E", SO_, W, SO_, E, true, true),
-        { ...cell(Letter.K, "K", W, N, E, N, true, true), left: { from: W, to: N, anti: true, so: OUT }, right: { from: E, to: N, anti: true, so: OUT } },
+        {
+          ...cell(Letter.K, "K", W, N, E, N, true, true),
+          left: { from: W, to: N, anti: true, so: OUT },
+          right: { from: E, to: N, anti: true, so: OUT },
+        },
       ],
     },
     {
@@ -198,7 +242,10 @@
       x: 416.1,
       steps: [
         cell(Letter.F, "F", SO_, W, SO_, E, true, false),
-        { ...cell(Letter.L, "L", W, N, E, N, true, false), left: { from: W, to: N, anti: true, so: OUT } },
+        {
+          ...cell(Letter.L, "L", W, N, E, N, true, false),
+          left: { from: W, to: N, anti: true, so: OUT },
+        },
       ],
     },
   ];
@@ -211,9 +258,11 @@
   // ── Override resolution (admin edits replace the WHOLE strip when present;
   // reversal dots stay derived via bakeReversals either way). Reactive so a
   // save/revert/reset while the reader is open re-renders these cells.
-  const cellKey = (hi: number, c: CellDef) => `cl-${hi === 0 ? "tog" : "split"}-${c.name}`;
-  const ALL_CELLS: { c: CellDef; key: string }[] = [TOG, SPLIT].flatMap((half, hi) =>
-    half.rows.flatMap((row) => row.map((c) => ({ c, key: cellKey(hi, c) })))
+  const cellKey = (hi: number, c: CellDef) =>
+    `cl-${hi === 0 ? "tog" : "split"}-${c.name}`;
+  const ALL_CELLS: { c: CellDef; key: string }[] = [TOG, SPLIT].flatMap(
+    (half, hi) =>
+      half.rows.flatMap((row) => row.map((c) => ({ c, key: cellKey(hi, c) })))
   );
   const resolvedCellSteps = (c: CellDef, key: string): StepData[] => {
     const authored = cellSteps(c, key);
@@ -223,7 +272,9 @@
     return [start!, ...bakeReversals(steps)];
   };
   const CELL_RESOLVED: Record<string, StepData[]> = $derived(
-    Object.fromEntries(ALL_CELLS.map(({ c, key }) => [key, resolvedCellSteps(c, key)]))
+    Object.fromEntries(
+      ALL_CELLS.map(({ c, key }) => [key, resolvedCellSteps(c, key)])
+    )
   );
 
   const resolvedWordSteps = (w: WordDef): StepData[] => {
@@ -259,20 +310,66 @@
   ];
 
   // ── Text at proof coords ────────────────────────────────────────────────────
-  type Para = { x: number; y: number; fs: number; lh: number; bold?: boolean; html: string };
+  type Para = {
+    x: number;
+    y: number;
+    fs: number;
+    lh: number;
+    bold?: boolean;
+    html: string;
+  };
   let PARAS: Para[] = $state([
-    { x: 0, y: 91, fs: 15.5, lh: 18.6, html: "Now let’s look at the letters that move from β→α or α→β." },
-    { x: 0, y: 128.2, fs: 15.5, lh: 18.6, bold: true, html: "All pictographs can be rotated or mirrored without changing letters." },
-    { x: 0, y: 165.4, fs: 15.5, lh: 18.6, html: "These can be either <em>Tog-Opp</em> or <em>Split-Opp</em> depending on which α/β you start from." },
-    { x: 0, y: 488.5, fs: 15.5, lh: 18.6, html: "These compound letters can’t be self-combined like the previous letters." },
-    { x: 0, y: 525.7, fs: 15.5, lh: 18.6, html: "Instead, they combine with other compound letters to form the words DJ, EK, and FL." },
-    { x: 0, y: 562.9, fs: 15.5, lh: 18.6, html: "Here they are along with cute phrases to help you remember:" },
+    {
+      x: 0,
+      y: 91,
+      fs: 15.5,
+      lh: 18.6,
+      html: "Now let’s look at the letters that move from β→α or α→β.",
+    },
+    {
+      x: 0,
+      y: 128.2,
+      fs: 15.5,
+      lh: 18.6,
+      bold: true,
+      html: "All pictographs can be rotated or mirrored without changing letters.",
+    },
+    {
+      x: 0,
+      y: 165.4,
+      fs: 15.5,
+      lh: 18.6,
+      html: "These can be either <em>Tog-Opp</em> or <em>Split-Opp</em> depending on which α/β you start from.",
+    },
+    {
+      x: 0,
+      y: 488.5,
+      fs: 15.5,
+      lh: 18.6,
+      html: "These compound letters can’t be self-combined like the previous letters.",
+    },
+    {
+      x: 0,
+      y: 525.7,
+      fs: 15.5,
+      lh: 18.6,
+      html: "Instead, they combine with other compound letters to form the words DJ, EK, and FL.",
+    },
+    {
+      x: 0,
+      y: 562.9,
+      fs: 15.5,
+      lh: 18.6,
+      html: "Here they are along with cute phrases to help you remember:",
+    },
   ]);
 
   const r1 = (n: number) => Math.round(n * 10) / 10;
   $effect(() =>
     registerEditSource("Compound Letters (lt1-dj-ek-fl)", () =>
-      PARAS.map((p, i) => `  para[${i}]: x: ${r1(p.x)}, y: ${r1(p.y)}`).join("\n")
+      PARAS.map((p, i) => `  para[${i}]: x: ${r1(p.x)}, y: ${r1(p.y)}`).join(
+        "\n"
+      )
     )
   );
 
@@ -294,14 +391,27 @@
 <div class="compound-letters">
   <!-- Half + column headings. -->
   {#each HEADS as h (h.t)}
-    <span class="head" style="left:{h.x * S}px; top:{h.y * S}px; width:{h.w * S}px; font-size:{h.fs * S}px">{h.t}</span>
+    <span
+      class="head"
+      style="left:{h.x * S}px; top:{h.y * S}px; width:{h.w *
+        S}px; font-size:{h.fs * S}px">{h.t}</span
+    >
   {/each}
   {#each SUB_CENTERS as cx, i (cx)}
-    <span class="sub" style="left:{(cx - 30) * S}px; top:{SUB_Y * S}px; width:{60 * S}px; font-size:{13 * S}px">{SUBS[i % 3]}</span>
+    <span
+      class="sub"
+      style="left:{(cx - 30) * S}px; top:{SUB_Y * S}px; width:{60 *
+        S}px; font-size:{13 * S}px">{SUBS[i % 3]}</span
+    >
   {/each}
 
   <!-- Heavy vertical divider between the two halves. -->
-  <div class="vdivider" style="left:{DIVIDER.x * S}px; top:{DIVIDER.y0 * S}px; height:{(DIVIDER.y1 - DIVIDER.y0) * S}px"></div>
+  <div
+    class="vdivider"
+    style="left:{DIVIDER.x * S}px; top:{DIVIDER.y0 * S}px; height:{(DIVIDER.y1 -
+      DIVIDER.y0) *
+      S}px"
+  ></div>
 
   <!-- The 12 letter cells (each clickable in the reader). -->
   {#each [TOG, SPLIT] as half, hi (hi)}
@@ -313,7 +423,8 @@
           class:is-hovered={selection?.isHovered(key)}
           class:is-selected={selection?.isSelected(key)}
           class:guide-step-active={activeStep?.key === key}
-          style="left:{(half.x + ci * CELL) * S}px; top:{GRID_ROWS_Y[ri]! * S}px; width:{CELL * S}px; height:{CELL * S}px"
+          style="left:{(half.x + ci * CELL) * S}px; top:{GRID_ROWS_Y[ri]! *
+            S}px; width:{CELL * S}px; height:{CELL * S}px"
         >
           <PictographContainer
             pictographData={CELL_RESOLVED[key]![1]}
@@ -326,8 +437,16 @@
           <SelectionHit
             groupId={key}
             isGroupStart
-            label={localizeLevel1SelectionLabel(`Animate letter ${c.name} (${hi === 0 ? "Tog-Opp" : "Split-Opp"})`)}
-            onselect={() => emitSequence?.({ strip: CELL_RESOLVED[key]!, word: `Letter ${c.name}`, key, propType: "staff" })}
+            label={localizeLevel1SelectionLabel(
+              `Animate letter ${c.name} (${hi === 0 ? "Tog-Opp" : "Split-Opp"})`
+            )}
+            onselect={() =>
+              emitSequence?.({
+                strip: CELL_RESOLVED[key]!,
+                word: `Letter ${c.name}`,
+                key,
+                propType: "staff",
+              })}
           />
         </div>
       {/each}
@@ -341,13 +460,17 @@
       class="strip-wrap tka-seq-cell"
       class:is-hovered={selection?.isHovered(key)}
       class:is-selected={selection?.isSelected(key)}
-      style="left:{w.x * S}px; top:{WORD_Y * S}px; width:{CELL * 2 * S}px; height:{CELL * S}px"
+      style="left:{w.x * S}px; top:{WORD_Y * S}px; width:{CELL *
+        2 *
+        S}px; height:{CELL * S}px"
     >
       {#each WORD_RESOLVED[key]!.slice(1) as sd, i (i)}
         <div
           class="mini cell"
-          class:guide-step-active={activeStep?.key === key && activeStep.ringStep === i + 1}
-          style="left:{i * CELL * S}px; top:0; width:{CELL * S}px; height:{CELL * S}px"
+          class:guide-step-active={activeStep?.key === key &&
+            activeStep.ringStep === i + 1}
+          style="left:{i * CELL * S}px; top:0; width:{CELL *
+            S}px; height:{CELL * S}px"
         >
           <PictographContainer
             pictographData={sd}
@@ -363,18 +486,39 @@
         groupId={key}
         isGroupStart
         label={localizeLevel1SelectionLabel(`Animate the word ${w.word}`)}
-        onselect={() => emitSequence?.({ strip: WORD_RESOLVED[key]!, word: w.word, key, propType: "staff" })}
+        onselect={() =>
+          emitSequence?.({
+            strip: WORD_RESOLVED[key]!,
+            word: w.word,
+            key,
+            propType: "staff",
+          })}
       />
     </div>
-    <p class="caption" style="left:{w.x * S}px; top:{716.2 * S}px; width:{CELL * 2 * S}px; font-size:{14 * S}px">
-      <span class="tka-font">{w.word}</span> - <em>{localizeLevel1Text(w.phrase)}</em>
+    <p
+      class="caption"
+      style="left:{w.x * S}px; top:{716.2 * S}px; width:{CELL *
+        2 *
+        S}px; font-size:{14 * S}px"
+    >
+      <span class="tka-font">{w.word}</span> -
+      <em>{localizeLevel1Text(w.phrase)}</em>
     </p>
   {/each}
 
   <!-- Margin row labels: real TKA PlacementGlyphs. -->
   {#each MARGINS as m (m.t)}
-    <span class="margin glyph" style="left:{4 * S}px; top:{m.y * S}px; width:{44 * S}px">
-      <svg class="pos-glyph" viewBox="360 50 230 75" role="img" aria-label={m.t} style="height:{16 * S}px">
+    <span
+      class="margin glyph"
+      style="left:{4 * S}px; top:{m.y * S}px; width:{44 * S}px"
+    >
+      <svg
+        class="pos-glyph"
+        viewBox="360 50 230 75"
+        role="img"
+        aria-label={m.t}
+        style="height:{16 * S}px"
+      >
         <PlacementGlyph startPlacement={m.start} endPlacement={m.end} />
       </svg>
     </span>
@@ -389,7 +533,12 @@
       class:selected={guideEdit.selectedId === `cl-para-${i}`}
       style="top:{p.y * S}px; font-size:{p.fs * S}px; line-height:{p.lh * S}px"
       use:ptDrag={pt(`cl-para-${i}`, "para", p)}
-      use:editText={{ id: `cl-para-${i}`, label: "para", get: () => p.html, set: (h) => (p.html = h) }}
+      use:editText={{
+        id: `cl-para-${i}`,
+        label: "para",
+        get: () => p.html,
+        set: (h) => (p.html = h),
+      }}
     >
       {@html localizeLevel1Text(p.html)}
     </p>

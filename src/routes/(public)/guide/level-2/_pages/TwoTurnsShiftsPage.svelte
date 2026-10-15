@@ -56,7 +56,7 @@
   import PoseFrame from "../_components/PoseFrame.svelte";
   import { bakeReversals } from "../../level-1/_data/guide-sequence-adapter";
   import { getGuideSequenceClick } from "../../level-1/_data/guide-data-context";
-  import { getGuideActiveStep } from "../../level-1/_data/guide-active-step.svelte";
+  import { getGuideActiveStep } from "../../level-1/_data/guide-active-step.svelte.js";
 
   const S = 816 / 612; // pt → px
   const { EAST: E, SOUTH: SO_ } = GridLocation;
@@ -366,7 +366,12 @@
       lh: 20,
       html: translate("guide_l2_print_twoturnsshiftspage_4"),
     },
-    { y: 608, fs: 16, lh: 20, html: translate("guide_l2_print_twoturnsshiftspage_5") },
+    {
+      y: 608,
+      fs: 16,
+      lh: 20,
+      html: translate("guide_l2_print_twoturnsshiftspage_5"),
+    },
   ]);
 
   type Run = {
@@ -427,7 +432,9 @@
     startOrientation: so,
     endOrientation: eo,
   });
-  const mstep = (left, right) => ({ motions: { left, right } });
+  const mstep = (left: ReturnType<typeof m>, right: ReturnType<typeof m>) => ({
+    motions: { left, right },
+  });
   const mseq = (steps: unknown[]) => ({
     leftPropType: "staff",
     rightPropType: "staff",
@@ -639,7 +646,8 @@
     {#if r.style === "title" || (r.style === "mode" && r.x === 0)}
       <span
         class="run {r.style} centered"
-        style="top:{r.y * S}px; font-size:{r.fs * S}px">{localizePrintLabel(r.t)}</span
+        style="top:{r.y * S}px; font-size:{r.fs * S}px"
+        >{localizePrintLabel(r.t)}</span
       >
     {:else}
       <span

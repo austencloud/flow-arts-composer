@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
+  import {
+    localizeLevel1Text,
+    localizeLevel1SelectionLabel,
+  } from "../_data/localize-level1-content";
   /**
    * Hybrid Reversals (CCCC) - body page (manifest `examples-cccc`), faithful to
    * "1.2 - Guide pt. 2 - CCCC" artboard (old p35).
@@ -38,16 +41,25 @@
     Orientation,
     RotationDirection,
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import {
+    GridMode,
+    GridLocation,
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
-  import { pt, ptDrag, editText, guideEdit, registerEditSource } from "../_data/guide-edit.svelte";
+  import {
+    pt,
+    ptDrag,
+    editText,
+    guideEdit,
+    registerEditSource,
+  } from "../_data/guide-edit.svelte.js";
   import { bakeReversals } from "../_data/guide-sequence-adapter";
   import { getGuideSequenceClick } from "../_data/guide-data-context";
-  import { getGuideActiveStep } from "../_data/guide-active-step.svelte";
-  import { overrideStepsFor } from "../_data/guide-overrides.svelte";
+  import { getGuideActiveStep } from "../_data/guide-active-step.svelte.js";
+  import { overrideStepsFor } from "../_data/guide-overrides.svelte.js";
 
   const S = 816 / 612; // pt → px (4/3)
   const { NORTH: N, EAST: E, SOUTH: SO_, WEST: W } = GridLocation;
@@ -62,8 +74,18 @@
 
   const HP_CW = new Set(["s-w", "w-n", "n-e", "e-s"]);
   const flip = (o: Orientation) => (o === IN ? OUT : IN);
-  type HandStep = { anti: boolean; from: GridLocation; to: GridLocation; so: Orientation };
-  const h = (anti: boolean, from: GridLocation, to: GridLocation, so: Orientation = IN): HandStep => ({ anti, from, to, so });
+  type HandStep = {
+    anti: boolean;
+    from: GridLocation;
+    to: GridLocation;
+    so: Orientation;
+  };
+  const h = (
+    anti: boolean,
+    from: GridLocation,
+    to: GridLocation,
+    so: Orientation = IN
+  ): HandStep => ({ anti, from, to, so });
   const handMotion = (color: HandSide, x: HandStep) => {
     const dir = HP_CW.has(`${x.from}-${x.to}`) ? CW : CCW;
     return createMotionData({
@@ -92,10 +114,22 @@
     });
 
   type Step = { letter: Letter; left: HandStep; right: HandStep };
-  const st = (letter: Letter, left, right): Step => ({ letter, left, right });
+  const st = (letter: Letter, left: HandStep, right: HandStep): Step => ({
+    letter,
+    left,
+    right,
+  });
   const { A, B, C } = Letter;
 
-  type SeqDef = { key: string; word: string; label?: string; x: number; rowYs: number[]; cell: number; steps: Step[] };
+  type SeqDef = {
+    key: string;
+    word: string;
+    label?: string;
+    x: number;
+    rowYs: number[];
+    cell: number;
+    steps: Step[];
+  };
   const SEQS: SeqDef[] = [
     {
       // AABB ×2, reversals after the second B (step 4) - R/R derives on step 5.
@@ -188,7 +222,10 @@
       letter: Letter.ALPHA,
       gridMode: GridMode.DIAMOND,
       stepNumber: 0,
-      motions: { left: stat(HandSide.LEFT, SO_), right: stat(HandSide.RIGHT, N) },
+      motions: {
+        left: stat(HandSide.LEFT, SO_),
+        right: stat(HandSide.RIGHT, N),
+      },
     }) as unknown as StepData;
 
   // Admin override replaces the WHOLE strip when present, resolved before
@@ -208,14 +245,27 @@
   const RULES = [408.3];
 
   // ── Text (step-not-beat facelift; artboard typos fixed) ─────────────────────
-  type Para = { y: number; fs: number; lh: number; left?: number; width?: number; html: string };
+  type Para = {
+    y: number;
+    fs: number;
+    lh: number;
+    left?: number;
+    width?: number;
+    html: string;
+  };
   let PARAS: Para[] = $state([
     {
-      y: 54, fs: 15, lh: 18,
+      y: 54,
+      fs: 15,
+      lh: 18,
       html: "Let’s add reversals after the second B.",
     },
     {
-      y: 266, fs: 15, lh: 18, left: 46, width: 520,
+      y: 266,
+      fs: 15,
+      lh: 18,
+      left: 46,
+      width: 520,
       html:
         "Take note - step 5 has the right hand coming down on the left side of the grid, so it’s " +
         "impossible to follow through to step 6 while remaining square with the audience in wall " +
@@ -223,13 +273,19 @@
         "plane behind us as it comes up, moving our relative position into wheel plane.",
     },
     {
-      y: 356, fs: 15, lh: 18, left: 46, width: 520,
+      y: 356,
+      fs: 15,
+      lh: 18,
+      left: 46,
+      width: 520,
       html:
         "This sequence is a good example of how body turns can serve both as a method of " +
         "motion execution and a body movement that can add energy and contrast.",
     },
     {
-      y: 426, fs: 15, lh: 18,
+      y: 426,
+      fs: 15,
+      lh: 18,
       html:
         "Now let’s observe how reversals affect pro/anti hybrid words like CCCC.<br>" +
         "They present more variations than non-hybrids:",
@@ -239,7 +295,10 @@
   const r1 = (n: number) => Math.round(n * 10) / 10;
   $effect(() =>
     registerEditSource("Hybrid Reversals (examples-cccc)", () =>
-      PARAS.map((p, i) => `  para[${i}]: y: ${r1(p.y)}${p.left != null ? `, left: ${r1(p.left)}` : ""}`).join("\n")
+      PARAS.map(
+        (p, i) =>
+          `  para[${i}]: y: ${r1(p.y)}${p.left != null ? `, left: ${r1(p.left)}` : ""}`
+      ).join("\n")
     )
   );
 
@@ -260,12 +319,19 @@
 
 <div class="hybrid-reversals">
   {#each RULES as ry (ry)}
-    <div class="rule" style="left:{20 * S}px; top:{ry * S}px; width:{572 * S}px"></div>
+    <div
+      class="rule"
+      style="left:{20 * S}px; top:{ry * S}px; width:{572 * S}px"
+    ></div>
   {/each}
 
   <!-- Row labels for the three CCCC variants. -->
   {#each SEQS.filter((q) => q.label) as q (q.key)}
-    <span class="row-label" style="left:{34 * S}px; top:{(q.rowYs[0]! + 38) * S}px; width:{126 * S}px; font-size:{16 * S}px">{localizeLevel1Text(q.label!)}</span>
+    <span
+      class="row-label"
+      style="left:{34 * S}px; top:{(q.rowYs[0]! + 38) * S}px; width:{126 *
+        S}px; font-size:{16 * S}px">{localizeLevel1Text(q.label!)}</span
+    >
   {/each}
 
   <!-- The four strips, each one clickable sequence. -->
@@ -274,13 +340,20 @@
       class="seq tka-seq-cell"
       class:is-hovered={selection?.isHovered(q.key)}
       class:is-selected={selection?.isSelected(q.key)}
-      style="left:{q.x * S}px; top:{q.rowYs[0]! * S}px; width:{q.cell * 4 * S}px; height:{(q.rowYs.length === 1 ? q.cell : q.rowYs[1]! - q.rowYs[0]! + q.cell) * S}px"
+      style="left:{q.x * S}px; top:{q.rowYs[0]! * S}px; width:{q.cell *
+        4 *
+        S}px; height:{(q.rowYs.length === 1
+        ? q.cell
+        : q.rowYs[1]! - q.rowYs[0]! + q.cell) * S}px"
     >
       {#each q.steps as _, i (i)}
         <div
           class="mini"
-          class:guide-step-active={activeStep?.key === q.key && activeStep.ringStep === i + 1}
-          style="left:{(i % 4) * q.cell * S}px; top:{(Math.floor(i / 4) * (q.rowYs.length === 1 ? 0 : q.rowYs[1]! - q.rowYs[0]!)) * S}px; width:{q.cell * S}px; height:{q.cell * S}px"
+          class:guide-step-active={activeStep?.key === q.key &&
+            activeStep.ringStep === i + 1}
+          style="left:{(i % 4) * q.cell * S}px; top:{Math.floor(i / 4) *
+            (q.rowYs.length === 1 ? 0 : q.rowYs[1]! - q.rowYs[0]!) *
+            S}px; width:{q.cell * S}px; height:{q.cell * S}px"
         >
           <PictographContainer
             pictographData={RESOLVED[q.key]!.slice(1)[i]}
@@ -296,7 +369,13 @@
         groupId={q.key}
         isGroupStart
         label={localizeLevel1SelectionLabel(`Animate ${q.word}`)}
-        onselect={() => emitSequence?.({ strip: RESOLVED[q.key]!, word: q.word, key: q.key, propType: "staff" })}
+        onselect={() =>
+          emitSequence?.({
+            strip: RESOLVED[q.key]!,
+            word: q.word,
+            key: q.key,
+            propType: "staff",
+          })}
       />
     </div>
   {/each}
@@ -307,11 +386,17 @@
       class="para"
       class:edit={guideEdit.on}
       class:selected={guideEdit.selectedId === `hr-para-${i}`}
-      style="top:{p.y * S}px; font-size:{p.fs * S}px; line-height:{p.lh * S}px; {p.left != null
+      style="top:{p.y * S}px; font-size:{p.fs * S}px; line-height:{p.lh *
+        S}px; {p.left != null
         ? `left:${p.left * S}px; right:auto; width:${(p.width ?? 520) * S}px;`
         : ''}"
       use:ptDrag={pt(`hr-para-${i}`, "para", p)}
-      use:editText={{ id: `hr-para-${i}`, label: "para", get: () => p.html, set: (h2) => (p.html = h2) }}
+      use:editText={{
+        id: `hr-para-${i}`,
+        label: "para",
+        get: () => p.html,
+        set: (h2) => (p.html = h2),
+      }}
     >
       {@html localizeLevel1Text(p.html)}
     </p>

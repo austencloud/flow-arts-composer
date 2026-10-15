@@ -13,33 +13,94 @@
 
   const S = 816 / 612; // pt → px
 
-  const m = (mt: string, rd: string, sl: string, el: string, so: string, eo: string) =>
-    ({ motionType: mt, rotationDirection: rd, startLocation: sl, endLocation: el, startOrientation: so, endOrientation: eo });
-  const step = (left, right) => ({ motions: { left, right } });
-  const seq = (steps: unknown[]) => ({ leftPropType: "staff", rightPropType: "staff", steps });
+  const m = (
+    mt: string,
+    rd: string,
+    sl: string,
+    el: string,
+    so: string,
+    eo: string
+  ) => ({
+    motionType: mt,
+    rotationDirection: rd,
+    startLocation: sl,
+    endLocation: el,
+    startOrientation: so,
+    endOrientation: eo,
+  });
+  const step = (left: ReturnType<typeof m>, right: ReturnType<typeof m>) => ({
+    motions: { left, right },
+  });
+  const seq = (steps: unknown[]) => ({
+    leftPropType: "staff",
+    rightPropType: "staff",
+    steps,
+  });
 
   // Four forms, echoing the cover family: isolation, antispin, dash, hybrid.
   const ISO = seq([
-    step(m("pro", "cw", "n", "e", "in", "in"), m("pro", "cw", "s", "w", "in", "in")),
-    step(m("pro", "cw", "e", "s", "in", "in"), m("pro", "cw", "w", "n", "in", "in")),
-    step(m("pro", "cw", "s", "w", "in", "in"), m("pro", "cw", "n", "e", "in", "in")),
-    step(m("pro", "cw", "w", "n", "in", "in"), m("pro", "cw", "e", "s", "in", "in")),
+    step(
+      m("pro", "cw", "n", "e", "in", "in"),
+      m("pro", "cw", "s", "w", "in", "in")
+    ),
+    step(
+      m("pro", "cw", "e", "s", "in", "in"),
+      m("pro", "cw", "w", "n", "in", "in")
+    ),
+    step(
+      m("pro", "cw", "s", "w", "in", "in"),
+      m("pro", "cw", "n", "e", "in", "in")
+    ),
+    step(
+      m("pro", "cw", "w", "n", "in", "in"),
+      m("pro", "cw", "e", "s", "in", "in")
+    ),
   ]);
   const ANTI = seq([
-    step(m("anti", "ccw", "n", "e", "in", "out"), m("anti", "ccw", "s", "w", "in", "out")),
-    step(m("anti", "ccw", "e", "s", "out", "in"), m("anti", "ccw", "w", "n", "out", "in")),
-    step(m("anti", "ccw", "s", "w", "in", "out"), m("anti", "ccw", "n", "e", "in", "out")),
-    step(m("anti", "ccw", "w", "n", "out", "in"), m("anti", "ccw", "e", "s", "out", "in")),
+    step(
+      m("anti", "ccw", "n", "e", "in", "out"),
+      m("anti", "ccw", "s", "w", "in", "out")
+    ),
+    step(
+      m("anti", "ccw", "e", "s", "out", "in"),
+      m("anti", "ccw", "w", "n", "out", "in")
+    ),
+    step(
+      m("anti", "ccw", "s", "w", "in", "out"),
+      m("anti", "ccw", "n", "e", "in", "out")
+    ),
+    step(
+      m("anti", "ccw", "w", "n", "out", "in"),
+      m("anti", "ccw", "e", "s", "out", "in")
+    ),
   ]);
   const DASH = seq([
-    step(m("dash", "noRotation", "w", "e", "in", "out"), m("dash", "noRotation", "s", "n", "in", "out")),
-    step(m("dash", "noRotation", "e", "w", "out", "in"), m("dash", "noRotation", "n", "s", "out", "in")),
+    step(
+      m("dash", "noRotation", "w", "e", "in", "out"),
+      m("dash", "noRotation", "s", "n", "in", "out")
+    ),
+    step(
+      m("dash", "noRotation", "e", "w", "out", "in"),
+      m("dash", "noRotation", "n", "s", "out", "in")
+    ),
   ]);
   const HYBRID = seq([
-    step(m("pro", "cw", "n", "e", "in", "in"), m("anti", "ccw", "s", "w", "in", "out")),
-    step(m("pro", "cw", "e", "s", "in", "in"), m("anti", "ccw", "w", "n", "out", "in")),
-    step(m("pro", "cw", "s", "w", "in", "in"), m("anti", "ccw", "n", "e", "in", "out")),
-    step(m("pro", "cw", "w", "n", "in", "in"), m("anti", "ccw", "e", "s", "out", "in")),
+    step(
+      m("pro", "cw", "n", "e", "in", "in"),
+      m("anti", "ccw", "s", "w", "in", "out")
+    ),
+    step(
+      m("pro", "cw", "e", "s", "in", "in"),
+      m("anti", "ccw", "w", "n", "out", "in")
+    ),
+    step(
+      m("pro", "cw", "s", "w", "in", "in"),
+      m("anti", "ccw", "n", "e", "in", "out")
+    ),
+    step(
+      m("pro", "cw", "w", "n", "in", "in"),
+      m("anti", "ccw", "e", "s", "out", "in")
+    ),
   ]);
 
   const FORMS = [ISO, ANTI, DASH, HYBRID];
@@ -53,20 +114,46 @@
 <div class="divider">
   <!-- Top pictograph row -->
   {#each FORMS as f, i (i)}
-    <div class="cell" style="left:{cellX(i) * S}px; top:{64 * S}px; width:{CELL * S}px; height:{CELL * S}px">
-      <SequenceMandala sequence={f} size={CELL * S} darkMode={false} leftPropType="staff" rightPropType="staff" pathShape="arc" strokeWidth={3} />
+    <div
+      class="cell"
+      style="left:{cellX(i) * S}px; top:{64 * S}px; width:{CELL *
+        S}px; height:{CELL * S}px"
+    >
+      <SequenceMandala
+        sequence={f}
+        size={CELL * S}
+        darkMode={false}
+        leftPropType="staff"
+        rightPropType="staff"
+        pathShape="arc"
+        strokeWidth={3}
+      />
     </div>
   {/each}
 
   <div class="num" style="top:{232 * S}px">2.0</div>
   <div class="vrule" style="top:{330 * S}px; height:{115 * S}px"></div>
-  <div class="guide-title word" style="top:{492 * S}px">{translate("guide_l2_print_one_turns")}</div>
+  <div class="guide-title word" style="top:{492 * S}px">
+    {translate("guide_l2_print_one_turns")}
+  </div>
   <div class="vrule" style="top:{545 * S}px; height:{70 * S}px"></div>
 
   <!-- Bottom pictograph row (reversed order, like the original's variety) -->
   {#each FORMS as f, i (i)}
-    <div class="cell" style="left:{cellX(3 - i) * S}px; top:{632 * S}px; width:{CELL * S}px; height:{CELL * S}px">
-      <SequenceMandala sequence={f} size={CELL * S} darkMode={false} leftPropType="staff" rightPropType="staff" pathShape="arc" strokeWidth={3} />
+    <div
+      class="cell"
+      style="left:{cellX(3 - i) * S}px; top:{632 * S}px; width:{CELL *
+        S}px; height:{CELL * S}px"
+    >
+      <SequenceMandala
+        sequence={f}
+        size={CELL * S}
+        darkMode={false}
+        leftPropType="staff"
+        rightPropType="staff"
+        pathShape="arc"
+        strokeWidth={3}
+      />
     </div>
   {/each}
 </div>

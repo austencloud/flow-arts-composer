@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
+  import {
+    localizeLevel1Text,
+    localizeLevel1SelectionLabel,
+  } from "../_data/localize-level1-content";
   /**
    * Gamma Letters - body page (manifest `lt1-mp-nq-or-stuv`, retitled "Gamma
    * Letters"), faithful to proof p25 / "1.1 - Gamma Letters" artboard.
@@ -54,11 +57,11 @@
     editText,
     guideEdit,
     registerEditSource,
-  } from "../_data/guide-edit.svelte";
+  } from "../_data/guide-edit.svelte.js";
   import { bakeReversals } from "../_data/guide-sequence-adapter";
   import { getGuideSequenceClick } from "../_data/guide-data-context";
-  import { getGuideActiveStep } from "../_data/guide-active-step.svelte";
-  import { overrideStepsFor } from "../_data/guide-overrides.svelte";
+  import { getGuideActiveStep } from "../_data/guide-active-step.svelte.js";
+  import { overrideStepsFor } from "../_data/guide-overrides.svelte.js";
 
   const S = 816 / 612; // pt → px (4/3)
   const { NORTH: N, EAST: E, SOUTH: SO_, WEST: W } = GridLocation;
@@ -115,7 +118,12 @@
     left: HandSpec;
     right: HandSpec;
   };
-  const cell = (letter: Letter, name: string, left, right): CellDef => ({
+  const cell = (
+    letter: Letter,
+    name: string,
+    left: HandSpec,
+    right: HandSpec
+  ): CellDef => ({
     letter,
     name,
     left,
@@ -454,7 +462,8 @@
         2 *
         S}px; font-size:{16 * S}px"
     >
-      <span class="tka-font">{w.word}</span> - <em>{localizeLevel1Text(w.phrase)}</em>
+      <span class="tka-font">{w.word}</span> -
+      <em>{localizeLevel1Text(w.phrase)}</em>
     </p>
   {/each}
 
