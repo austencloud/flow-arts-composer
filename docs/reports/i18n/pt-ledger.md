@@ -62,3 +62,17 @@
 - Uncertain: Post Studio take / landing / playhead have no glossary entries. Rendered tomada / chegada / cursor de reprodução; chegada describes each prop's arrival at the target pose. Native terminology review remains needed.
 - Uncertain: full account in `share_meta_account_required` is rendered conta completa. The source does not establish its exact distinction from other signed-in account types.
 - No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
+
+## R5 — 2026-10-14
+
+- Batch: `batch-R5.json`; 517 translated entries, 0 retranslation entries, 0 review entries. Admin, Arena, Mandala and Prop retain identical values as shared labels or glossary loanwords.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-R5.json`.
+- Apply result: `messages/pt.json: inserted 517, replaced 0, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 517 insertions, 0 deletions (net +517 lines).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Focused inspection: 517 output keys match all 517 batch keys and applied values. Placeholder names and occurrence counts match English; no multiline values or Unicode replacement characters. `git diff --check` passed. The ai-bust mechanical pass at HIGH severity returned `[]`; manual review preserved short navigation labels and direct wording.
+- Glossary choices: Brazilian Portuguese with você and infinitive action labels; salvar, passo for sequence positions, posição inicial, sequência, coleção, biblioteca and props. Flow Arts Composer, TKA, LOOP, Choreo Cards, Poi and VTG remain protected names. Studio navigation uses Post Studio. Shift in keyboard combinations, Ctrl, Alt, Escape and Delete remain key names. Shift Start is the action Deslocar início rather than the motion category Shift. Flip / Mirror / Invert / Rewind use Virar / Espelhar / Inverter / Rebobinar, consistent with earlier batches.
+- Source context: `export_ui_performance` identifies the camera/performance-video format in `MediaPieceCard.svelte` and `CompositeControls.svelte`, so it is Apresentação rather than computer desempenho. `library_ui_looks_in` introduces the source scope in `SmartCollectionRuleSummary.svelte`, rendered Buscar em. `nav_ui_your_username` is a placeholder in both username editors, rendered seu_usuario rather than treated as an actual username. Realm / Collect use Reino / Colecionar, matching existing module labels.
+- Uncertain: flow identity and prop preset have no glossary entries; rendered identidade no flow and preset de props. Native terminology review remains needed.
+- No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
