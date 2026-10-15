@@ -359,11 +359,15 @@ Supports letter highlighting during animation playback.
   // The viewer chrome keeps the fixed 20px icons: it has the width to spare.
   let headerWidth = $state(0);
   const patternWidth = $derived(
-    (Math.min(34, Math.max(16, headerWidth * 0.07)) * 10) / 6
+    ((presentation === "chrome"
+      ? 20
+      : Math.min(34, Math.max(16, headerWidth * 0.07))) *
+      10) /
+      6
   );
   const patternGap = 4;
   const patternsFit = $derived.by(() => {
-    if (presentation !== "canvas" || headerWidth < 300) return false;
+    if (headerWidth < (presentation === "chrome" ? 180 : 300)) return false;
     const edge = Math.min(12, Math.max(6, headerWidth * 0.03));
     const left =
       (difficultyLevel != null ? difficultyBadgeWidth : 0) +
@@ -373,7 +377,10 @@ Supports letter highlighting during animation playback.
       (reversalGlyph ? patternWidth + patternGap : 0);
     // Keep the word at its intended size. Dense metadata yields first.
     const wordWidth =
-      wordEmWidth * Math.min(28, Math.max(10, headerWidth * 0.06));
+      wordEmWidth *
+      (presentation === "chrome"
+        ? 28
+        : Math.min(28, Math.max(10, headerWidth * 0.06)));
     return headerWidth - 2 * (Math.max(left, right) + edge + 10) >= wordWidth;
   });
   const showTurnGlyph = $derived(patternsFit && !!turnGlyphEntries?.length);
@@ -797,6 +804,11 @@ Supports letter highlighting during animation playback.
       clamp(18px, 40cqw, 28px),
       calc(var(--word-room) / max(var(--word-em, 1), 1))
     );
+  }
+
+  .word-header.chrome .pattern-glyph {
+    --glyph-unit: calc(20px / 6);
+    height: 20px;
   }
 
   :global(:root.dark) .word-header:not([data-controlled]) {
