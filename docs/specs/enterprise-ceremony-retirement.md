@@ -1,7 +1,9 @@
 # Enterprise Ceremony Retirement
 
+**Repository status (2026-10-14):** The interface/class/file counts below are April/May snapshots. Later history includes function owners such as `src/lib/features/create/generate/shared/services/turn-manager.ts` and `src/lib/features/create/shared/services/step-operations/turns-handler.ts`, alongside retained classes. This does not establish total completion or authorize a regenerated implementation audit.
+
 Date: 2026-04-30
-Status: In progress — Phases 1–4 substantially done (interface retirement + directory flattening); Phases 5–6 (stateless→function conversion, getter simplification) not started. See "Progress (2026-05-29)" at the end.
+Status: historical May progress account; phases and remaining counts require individual reconciliation. See "Progress (2026-05-29)" at the end.
 Scope: Codebase-wide removal of unnecessary 1:1 interface/implementation indirection AND conversion of stateless classes to plain function modules
 
 ## Problem
@@ -12,11 +14,11 @@ The codebase carries two layers of enterprise Java/C# ceremony adopted in 2024 t
 
 757 interface files in `contracts/` folders, 527 singleton getter files, and 799 `implements IFoo` declarations.
 
-| Category | Count | Action |
-|---|---|---|
-| Interfaces with exactly 1 implementation | 710 (93.8%) | Retire |
-| Interfaces with 0 explicit `implements` | 36 (4.8%) | Audit individually |
-| Interfaces with 2+ implementations (genuine polymorphism) | 11 (1.4%) | Keep |
+| Category                                                  | Count       | Action             |
+| --------------------------------------------------------- | ----------- | ------------------ |
+| Interfaces with exactly 1 implementation                  | 710 (93.8%) | Retire             |
+| Interfaces with 0 explicit `implements`                   | 36 (4.8%)   | Audit individually |
+| Interfaces with 2+ implementations (genuine polymorphism) | 11 (1.4%)   | Keep               |
 
 The 710 single-implementation interfaces contribute:
 
@@ -94,19 +96,19 @@ No class, no getter, no instance, no `this`, no `private`. Private methods becom
 
 These have genuine multiple implementations and should be preserved:
 
-| Interface | Impl Count | Reason |
-|---|---|---|
-| `ILOOPExecutor` | 8 | Strategy pattern: halved, quartered, rewound, etc. |
-| `ISubInterpreter` | 10 | Voice command interpreters per domain |
-| `IDirectionCalculator` | 5 | Different calculation strategies per prop type |
-| `ICodex` | 3 | Different codex implementations |
-| `IAnimationPlaybackController` | 2 | Different playback strategies |
-| `IAsciiRenderer` | 2 | Different ASCII rendering backends |
-| `IEndpointDetector` | 2 | Video trail endpoint detection strategies |
-| `ITrailOverlayCanvas` | 2 | Different canvas implementations |
-| `IDirectRenderer` | 2 | Different rendering backends |
-| `IOrientationPropagator` | 2 | Different propagation strategies |
-| `ITransitionGraph` | 2 | Different graph implementations |
+| Interface                      | Impl Count | Reason                                             |
+| ------------------------------ | ---------- | -------------------------------------------------- |
+| `ILOOPExecutor`                | 8          | Strategy pattern: halved, quartered, rewound, etc. |
+| `ISubInterpreter`              | 10         | Voice command interpreters per domain              |
+| `IDirectionCalculator`         | 5          | Different calculation strategies per prop type     |
+| `ICodex`                       | 3          | Different codex implementations                    |
+| `IAnimationPlaybackController` | 2          | Different playback strategies                      |
+| `IAsciiRenderer`               | 2          | Different ASCII rendering backends                 |
+| `IEndpointDetector`            | 2          | Video trail endpoint detection strategies          |
+| `ITrailOverlayCanvas`          | 2          | Different canvas implementations                   |
+| `IDirectRenderer`              | 2          | Different rendering backends                       |
+| `IOrientationPropagator`       | 2          | Different propagation strategies                   |
+| `ITransitionGraph`             | 2          | Different graph implementations                    |
 
 Additionally, `IHapticFeedback` should be evaluated: it has Capacitor native, web Vibration API, and SSR no-op implementations. If those exist as separate classes, keep the interface.
 
@@ -199,6 +201,7 @@ Consumer changes: `getBarService().doThing(x)` → `import { doThing } from './b
 ### Directory Structure
 
 After retirement:
+
 - `contracts/` directories with no remaining interfaces are deleted
 - `implementations/` directories are renamed to just `services/` or their contents are moved up one level
 - For features where `implementations/` has subdirectories (like `detection/`, `comparison/`), those subdirectories move up to `services/`
@@ -209,13 +212,14 @@ After retirement:
 
 Write a script that produces a JSON manifest of every interface, its implementation, its getter, whether it exports additional types, its consumer import count, and whether the implementation class is stateless. This manifest drives all subsequent phases.
 
-Deliverable: `scripts/ceremony-audit.json`
+Proposed deliverable: `scripts/ceremony-audit.json` (absent from the current tree).
 
 ### Phase 1: Zero-Consumer Pure Contracts (est. ~470 interfaces)
 
 These interfaces have zero consumer imports outside their own contracts/implementations/getter triad. They are pure ceremony.
 
 For each:
+
 1. Remove `implements IFoo` from the implementation class
 2. Update the getter to return the concrete class type instead of `IFoo`
 3. Delete the `IFoo.ts` contract file
@@ -230,6 +234,7 @@ Risk: Near zero. The TypeScript compiler will catch any missed references.
 These interfaces export additional types that consumers depend on.
 
 For each:
+
 1. Create a `types.ts` file in the feature directory (or append to existing)
 2. Move all non-service-contract exports to `types.ts`
 3. Update all consumer imports to point to `types.ts`
@@ -242,6 +247,7 @@ Risk: Low. Import errors are compile-time failures.
 ### Phase 3: The 36 No-Implements Interfaces
 
 Audit each individually:
+
 - If it's a type-only interface used as a data shape: move to `types.ts`, drop `I` prefix
 - If it's dead (zero imports): delete
 - If it's used structurally (TypeScript duck typing without `implements`): evaluate whether it serves as documentation or is pure ceremony
@@ -249,6 +255,7 @@ Audit each individually:
 ### Phase 4: Directory Flattening
 
 After Phases 1-3:
+
 1. Delete all empty `contracts/` directories
 2. For `implementations/` directories that are the only child of `services/`:
    - If single file: move file up to `services/`, delete `implementations/`
@@ -261,6 +268,7 @@ After Phases 1-3:
 This is the second layer of ceremony removal. For each class flagged as stateless in the Phase 0 manifest (zero instance fields, zero constructor parameters):
 
 For each stateless class:
+
 1. Create a new kebab-case module file (e.g., `BrowseSorter.ts` → `browse-sorter.ts`)
 2. Convert public methods to named export functions, removing `this` references
 3. Convert private methods to unexported module-scoped functions
@@ -273,6 +281,7 @@ For each stateless class:
 Consumer call site updates are the main complexity in this phase. Each getter call must be traced to its consumers and rewritten. The mechanical pattern is consistent: `getXxx().methodName(args)` → `methodName(args)` with the import updated.
 
 Subtleties to watch for:
+
 - Consumers that store the getter result in a variable: `const sorter = getBrowseSorter(); sorter.sort(...); sorter.group(...);` — these need to be unwound into separate function calls
 - Consumers that pass the service as an argument: `doSomething(getBrowseSorter())` — these need the receiving function's parameter type updated
 - Svelte reactive state holding a service reference: `let sortService = $state<IBrowseSorter | null>(null)` — these need restructuring
@@ -284,29 +293,31 @@ Risk: Low-moderate. The TypeScript compiler catches all broken references. The m
 For the remaining ~200 stateful classes that keep their getters:
 
 Before:
+
 ```typescript
-import { browser } from '$app/environment';
-import type { IBrowseFilter } from './services/contracts/IBrowseFilter';
-import { BrowseFilter } from './services/implementations/BrowseFilter';
+import { browser } from "$app/environment";
+import type { IBrowseFilter } from "./services/contracts/IBrowseFilter";
+import { BrowseFilter } from "./services/implementations/BrowseFilter";
 
 let instance: IBrowseFilter | null = null;
 
 export function getBrowseFilter(): IBrowseFilter {
-  if (!browser) throw new Error('getBrowseFilter() is browser-only');
-  return instance ??= new BrowseFilter();
+  if (!browser) throw new Error("getBrowseFilter() is browser-only");
+  return (instance ??= new BrowseFilter());
 }
 ```
 
 After:
+
 ```typescript
-import { browser } from '$app/environment';
-import { BrowseFilter } from './services/BrowseFilter';
+import { browser } from "$app/environment";
+import { BrowseFilter } from "./services/BrowseFilter";
 
 let instance: BrowseFilter | null = null;
 
 export function getBrowseFilter(): BrowseFilter {
-  if (!browser) throw new Error('getBrowseFilter() is browser-only');
-  return instance ??= new BrowseFilter();
+  if (!browser) throw new Error("getBrowseFilter() is browser-only");
+  return (instance ??= new BrowseFilter());
 }
 ```
 
@@ -341,18 +352,18 @@ This is ideal for parallel agentic execution. The work is mechanical, repetitive
 
 ## Expected Outcomes
 
-| Metric | Before | After |
-|---|---|---|
-| Interface files | 757 | ~11 |
-| Getter files | 527 | ~200 (stateful only) |
-| Stateless class files | 328 | 0 (converted to function modules) |
-| `implements IFoo` declarations | 799 | ~25 |
-| Lines of pure ceremony | ~55,000 | ~0 |
-| `contracts/` directories | 124 | ~5 |
-| `implementations/` directories | 127 | 0 (flattened) |
-| Total TypeScript files | 3,435 | ~2,450 (est. ~985 files eliminated) |
-| Avg files an AI agent reads per service | 3 (contract + impl + getter) | 1 |
-| Avg hops to understand a service | 3 | 1 |
+| Metric                                  | Before                       | After                               |
+| --------------------------------------- | ---------------------------- | ----------------------------------- |
+| Interface files                         | 757                          | ~11                                 |
+| Getter files                            | 527                          | ~200 (stateful only)                |
+| Stateless class files                   | 328                          | 0 (converted to function modules)   |
+| `implements IFoo` declarations          | 799                          | ~25                                 |
+| Lines of pure ceremony                  | ~55,000                      | ~0                                  |
+| `contracts/` directories                | 124                          | ~5                                  |
+| `implementations/` directories          | 127                          | 0 (flattened)                       |
+| Total TypeScript files                  | 3,435                        | ~2,450 (est. ~985 files eliminated) |
+| Avg files an AI agent reads per service | 3 (contract + impl + getter) | 1                                   |
+| Avg hops to understand a service        | 3                            | 1                                   |
 
 ## Risks
 
@@ -375,18 +386,18 @@ Executed across multiple parallel sessions (the wave/cluster batches). What's la
 
 ### Residual interface inventory (20 `I*.ts`)
 
-| Class | Count | Disposition |
-|---|---|---|
-| Genuine 2+ implementations | 8 — `ILOOPExecutor`, `ISubInterpreter`, `ILOOPDetector`, `IAsciiRenderer`, `IDirectRenderer`, `IEndpointDetector`, `IInputProvider`, `ITrailOverlayCanvas` | **Keep** (real polymorphism) |
-| Dependency-inversion boundary (1 impl, but interface lets a lower layer call a higher one via register/get) | 1 — `IFeedbackTesterWorkflow` | **Keep** — retiring it = layering violation (`shared/` would import `features/`) |
-| Type-only `I*` (impls=0; data-shape interfaces, not service contracts) | 10 — `IAnimationRenderer` (19 importers), `IAnimationRenderLoop`, `IAnimationPrecomputer`, `IAnimatorLoader`, `IAnimatorCanvasInitializer`, `IGlyphTextureLoader`, `IPropTextureLoader`, `ISVGGenerator`, `ITrailCapturer`, `IPublicIndexSyncer` | **Phase 3 pending** — migrate to `types.ts`, drop `I` prefix |
-| Retired 2026-05-29 | `ICSVPictographParser` | Done — `CSVRow` moved to `csv-pictograph-parser.ts`, consumers retyped to the concrete class |
+| Class                                                                                                       | Count                                                                                                                                                                                                                                            | Disposition                                                                                  |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Genuine 2+ implementations                                                                                  | 8 — `ILOOPExecutor`, `ISubInterpreter`, `ILOOPDetector`, `IAsciiRenderer`, `IDirectRenderer`, `IEndpointDetector`, `IInputProvider`, `ITrailOverlayCanvas`                                                                                       | **Keep** (real polymorphism)                                                                 |
+| Dependency-inversion boundary (1 impl, but interface lets a lower layer call a higher one via register/get) | 1 — `IFeedbackTesterWorkflow`                                                                                                                                                                                                                    | **Keep** — retiring it = layering violation (`shared/` would import `features/`)             |
+| Type-only `I*` (impls=0; data-shape interfaces, not service contracts)                                      | 10 — `IAnimationRenderer` (19 importers), `IAnimationRenderLoop`, `IAnimationPrecomputer`, `IAnimatorLoader`, `IAnimatorCanvasInitializer`, `IGlyphTextureLoader`, `IPropTextureLoader`, `ISVGGenerator`, `ITrailCapturer`, `IPublicIndexSyncer` | **Phase 3 pending** — migrate to `types.ts`, drop `I` prefix                                 |
+| Retired 2026-05-29                                                                                          | `ICSVPictographParser`                                                                                                                                                                                                                           | Done — `CSVRow` moved to `csv-pictograph-parser.ts`, consumers retyped to the concrete class |
 
-**Lesson:** the residual interfaces are the *hard tail*, not leftover ceremony. The easy 1:1 contracts were already retired by the waves. What remains is genuine polymorphism, inversion boundaries, and type-only shapes — each needs individual judgment, not a codemod.
+**Lesson:** the residual interfaces are the _hard tail_, not leftover ceremony. The easy 1:1 contracts were already retired by the waves. What remains is genuine polymorphism, inversion boundaries, and type-only shapes — each needs individual judgment, not a codemod.
 
-### Not started
+### Recorded as not started in the May snapshot
 
-- **Phase 5 (stateless class → function modules).** Scope per the 2026-05-28 manifest is **51 pure stateless + 52 stateless-deps ≈ 103 classes** (~80 KB source, ~675 methods) — far below the spec's original 328 estimate; the waves converted the rest and a tighter audit reclassified. **Bundle benefit is negligible, despite the tree-shaking argument.** All stateless source is ~50 KB of a 17 MB client bundle (~0.3%); per-function DCE recovers only the unused-method slice of that — low single-digit KB gzipped, not perceptible. So Phase 5 is the *same kind of win as Phases 1–4: source-org + code deletion* (~51 class files + ~51 getters removed, 1 import instead of 3, no lazy-init getter), not a runtime/bundle improvement. Do it for the cleanup, not the bytes. Biggest individual targets: `LOOPDetector` (19 methods), `BrowseSectionManager` (16), `BrowseFilter` (21).
+- **Phase 5 (stateless class → function modules).** Scope per the 2026-05-28 manifest is **51 pure stateless + 52 stateless-deps ≈ 103 classes** (~80 KB source, ~675 methods) — far below the spec's original 328 estimate; the waves converted the rest and a tighter audit reclassified. **Bundle benefit is negligible, despite the tree-shaking argument.** All stateless source is ~50 KB of a 17 MB client bundle (~0.3%); per-function DCE recovers only the unused-method slice of that — low single-digit KB gzipped, not perceptible. So Phase 5 is the _same kind of win as Phases 1–4: source-org + code deletion_ (~51 class files + ~51 getters removed, 1 import instead of 3, no lazy-init getter), not a runtime/bundle improvement. Do it for the cleanup, not the bytes. Biggest individual targets: `LOOPDetector` (19 methods), `BrowseSectionManager` (16), `BrowseFilter` (21).
 - **Phase 6 (getter return-type simplification for ~200 stateful classes).**
 - **Phase 7 (validation sweep).**
 

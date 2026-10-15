@@ -1,5 +1,7 @@
 # ADR 001: JSON-Based i18n System
 
+**Repository status (2026-10-14):** English has 9,654 keys, German 8,976; 678 English keys are absent from German. The 1,398-key examples and benchmark table are historical. The recorded 2025-01-15 decision date is retained; the actual decision date was not established from this tree.
+
 **Status:** Accepted
 **Date:** 2025-01-15
 **Deciders:** Austen Cloud
@@ -35,11 +37,13 @@ The question: Can we maintain type safety and developer experience while dramati
 ### Option 1: Keep Paraglide
 
 **Pros:**
+
 - Built-in type safety via code generation
 - Mature ecosystem and documentation
 - ICU MessageFormat support
 
 **Cons:**
+
 - 1,114 files per locale = build complexity
 - Barrel exports break tree-shaking
 - 1,000+ network requests in dev mode
@@ -50,6 +54,7 @@ The question: Can we maintain type safety and developer experience while dramati
 ### Option 2: Custom JSON-Based System
 
 **Pros:**
+
 - One JSON file per locale (99.9% fewer files)
 - Native JSON parsing (extremely fast)
 - Full control over loading strategy
@@ -58,6 +63,7 @@ The question: Can we maintain type safety and developer experience while dramati
 - Simple mental model
 
 **Cons:**
+
 - Need to build type generation ourselves
 - Need to build validation ourselves
 - No built-in ICU MessageFormat (can add later if needed)
@@ -65,10 +71,12 @@ The question: Can we maintain type safety and developer experience while dramati
 ### Option 3: i18next or react-i18next
 
 **Pros:**
+
 - Industry standard
 - Rich ecosystem
 
 **Cons:**
+
 - React-focused (not ideal for Svelte)
 - ~20KB bundle size
 - Overkill for our needs
@@ -81,6 +89,7 @@ The question: Can we maintain type safety and developer experience while dramati
 **Chosen option:** Custom JSON-Based System
 
 **Rationale:**
+
 - **99.9% reduction** in files (1,114 → 1)
 - **99.8% reduction** in network requests (1,200+ → 1-2)
 - **6-10x faster** cold start (3-5s → 0.4s)
@@ -152,7 +161,10 @@ async function loadLocaleMessages(locale: Locale): Promise<Messages> {
 let currentLocale = $state<Locale>(getInitialLocale());
 let messages = $state<Messages>(enMessages);
 
-export function t(key: TranslationKey, params?: Record<string, string | number>): string {
+export function t(
+  key: TranslationKey,
+  params?: Record<string, string | number>
+): string {
   let text = messages[key];
   // ... interpolation
   return text;
@@ -192,12 +204,12 @@ Components automatically re-render when `currentLocale` changes.
 
 Measured with Chrome DevTools Performance profiler:
 
-| Metric | Before (Paraglide) | After (JSON) | Improvement |
-|--------|-------------------|--------------|-------------|
-| Dev server requests | 1,200+ | 2 | **600x** |
-| Cold start time | 3.2s | 0.4s | **8x** |
-| Bundle overhead | 40KB | 2KB | **20x** |
-| Files per locale | 1,114 | 1 | **1,114x** |
+| Metric              | Before (Paraglide) | After (JSON) | Improvement |
+| ------------------- | ------------------ | ------------ | ----------- |
+| Dev server requests | 1,200+             | 2            | **600x**    |
+| Cold start time     | 3.2s               | 0.4s         | **8x**      |
+| Bundle overhead     | 40KB               | 2KB          | **20x**     |
+| Files per locale    | 1,114              | 1            | **1,114x**  |
 
 All while maintaining 100% type safety.
 
@@ -225,9 +237,9 @@ All while maintaining 100% type safety.
    - Real-time preview
    - Export to JSON
 
-3. **Locale fallback chains** - es-MX → es → en
-   - Currently all locales are complete
-   - Can add regional variants if needed
+3. **Locale fallback chains** - implemented: regional locale, base locale, then English.
+   - `src/lib/shared/i18n/i18n.svelte.ts` owns fallback and regional registration.
+   - Translation coverage is incomplete; see the current catalog note above.
 
 4. **Automatic translation via AI** - First draft for translators
    - Use Claude API to translate en.json → es.json

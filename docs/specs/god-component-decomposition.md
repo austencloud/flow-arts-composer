@@ -1,5 +1,7 @@
 # God Component Decomposition (Ceremony Refactor v2.0)
 
+**Repository status (2026-10-14):** The scores/line counts below are the dated May/June measurements, not current decomposition targets or a new census. The camera owner moved to `packages/camera-3d`; LOOP Labeler's old path is absent. The three bottom decisions remain unratified proposals.
+
 Date: 2026-05-31
 Status: Draft v2 — brainstormed 2026-06-02 against the live tree, reframed around
 evidence. Pending final ratification of the three open decisions at the bottom.
@@ -24,19 +26,19 @@ monsters hide under 800 total lines (`SequenceDrawerHost` 761, `AnimationSheetCo
 Across the 62 production `.svelte` over 800 lines, classified by which block
 dominates the file:
 
-| Species | Count | What's big | Right treatment |
-|---|---|---|---|
-| **Logic monster** (`<script>`-dominant) | 22 | reactive state + helpers + pipelines fused in one file | extract script → `*.svelte.ts` factory + plain modules. **PRIMARY.** |
-| **Style monster** (`<style>`-dominant) | 35 | cohesive CSS on a presentational component | **mostly KEEP.** Svelte colocates CSS by design; a 700-line `<style>` is not a defect. |
-| **Template monster** (markup-dominant) | 5 | a layout shell wiring many children | break markup into sub-layout children. **SECONDARY.** |
+| Species                                 | Count | What's big                                             | Right treatment                                                                        |
+| --------------------------------------- | ----- | ------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| **Logic monster** (`<script>`-dominant) | 22    | reactive state + helpers + pipelines fused in one file | extract script → `*.svelte.ts` factory + plain modules. **PRIMARY.**                   |
+| **Style monster** (`<style>`-dominant)  | 35    | cohesive CSS on a presentational component             | **mostly KEEP.** Svelte colocates CSS by design; a 700-line `<style>` is not a defect. |
+| **Template monster** (markup-dominant)  | 5     | a layout shell wiring many children                    | break markup into sub-layout children. **SECONDARY.**                                  |
 
 The worst logic monster, `ChoreoCard.svelte` (1,655 lines): the template is only
 149 lines and fine. The disease is a **1,433-line `<script>`** holding 57 `$derived`,
 9 `$effect`, and a single `renderAllCells()` function spanning **317 lines**
 (630–947), fused with layout math, crossfade animation, context-menu handling, and
 dimension tracking. The fix is not "split the component." It is "extract the
-script." For the majority of real targets, this project is **God *Script*
-Extraction**, not god *component* splitting.
+script." For the majority of real targets, this project is **God _Script_
+Extraction**, not god _component_ splitting.
 
 ### The disease-score (the metric this spec gates on)
 
@@ -47,18 +49,18 @@ score = scriptLines + 4·($derived count) + 8·($effect count) + 3·(function co
 `$effect` is weighted highest: it is the hardest reactivity to reason about and the
 riskiest to relocate (cleanup + ordering). The top targets by score:
 
-| score | total | script | $derived | $effect | fn | file |
-|---|---|---|---|---|---|---|
-| 1790 | 1655 | 1433 | 57 | 9 | 19 | `shared/sequence-viewer/components/ChoreoCard.svelte` |
-| 1016 | 978 | 856 | 76 | 6 | 16 | `shared/3d/camera/UnifiedCameraController.svelte` |
-| 957 | 1112 | 755 | 13 | 6 | 34 | `features/choreo-card/components/deck-releaser/DeckReleaserTab.svelte` |
-| 891 | 1194 | 678 | 18 | 6 | 31 | `features/create/shared/components/sequence-actions/SequenceActionsPanel.svelte` |
-| 871 | 761 | 708 | 6 | 8 | 25 | `features/create/shared/components/coordinators/SequenceDrawerHost.svelte` |
-| 845 | 852 | 703 | 9 | 5 | 22 | `features/tika/TikaModule.svelte` |
-| 800 | 883 | 714 | 2 | 3 | 18 | `features/create/shared/components/CreateModule.svelte` |
-| 779 | 716 | 656 | 5 | 8 | 13 | `shared/coordinators/AnimationSheetCoordinator.svelte` |
-| 709 | 810 | 538 | 21 | 3 | 21 | `features/loop-labeler/components/LOOPLabelerModule.svelte` |
-| 689 | 680 | 563 | 5 | 2 | 30 | `features/choreo-card/components/ChoreoCardTab.svelte` |
+| score | total | script | $derived | $effect | fn  | file                                                                                              |
+| ----- | ----- | ------ | -------- | ------- | --- | ------------------------------------------------------------------------------------------------- |
+| 1790  | 1655  | 1433   | 57       | 9       | 19  | `shared/sequence-viewer/components/ChoreoCard.svelte`                                             |
+| 1016  | 978   | 856    | 76       | 6       | 16  | `packages/camera-3d/src/lib/components/UnifiedCameraController.svelte` (moved; scores historical) |
+| 957   | 1112  | 755    | 13       | 6       | 34  | `features/choreo-card/components/deck-releaser/DeckReleaserTab.svelte`                            |
+| 891   | 1194  | 678    | 18       | 6       | 31  | `features/create/shared/components/sequence-actions/SequenceActionsPanel.svelte`                  |
+| 871   | 761   | 708    | 6        | 8       | 25  | `features/create/shared/components/coordinators/SequenceDrawerHost.svelte`                        |
+| 845   | 852   | 703    | 9        | 5       | 22  | `features/tika/TikaModule.svelte`                                                                 |
+| 800   | 883   | 714    | 2        | 3       | 18  | `features/create/shared/components/CreateModule.svelte`                                           |
+| 779   | 716   | 656    | 5        | 8       | 13  | `shared/coordinators/AnimationSheetCoordinator.svelte`                                            |
+| 709   | 810   | 538    | 21       | 3       | 21  | Historical removed target: `features/loop-labeler/components/LOOPLabelerModule.svelte`            |
+| 689   | 680   | 563    | 5        | 2       | 30  | `features/choreo-card/components/ChoreoCardTab.svelte`                                            |
 
 (`Museum3DScene`, `RainbowScene`, `EffectOrchestrator3D` score high but are
 declarative 3D scene graphs — candidate keepers, see classification.)
@@ -75,7 +77,7 @@ extraction. No new patterns get invented.
 
 This is the load-bearing rule. A split that scatters one cohesive flow across five
 files, or introduces prop-drilling, is a **regression** even if it satisfies a line
-budget. Mirroring `never-hand-roll.md`'s justification gate: before extracting
+budget. Mirroring `.claude/rules/never-hand-roll.md`'s justification gate: before extracting
 anything, state ONE of:
 
 1. **Cohesive responsibility** — this block is a self-contained job (a render
@@ -116,9 +118,10 @@ short-but-scattered.
 / style line splits, `$state`/`$derived`/`$effect`/function counts, the disease-score,
 and a proposed species (logic / style / template) + classification
 (extract / split / keeper-with-reason). Output: `scripts/component-manifest.json`
-+ a human-readable dry-run, and the **keeper allowlist seed** (3D scenes, shader
-hosts, cohesive style-dominant components — each with a one-line reason). Drives
-every later phase, exactly as `ceremony-manifest.json` drove v1.
+
+- a human-readable dry-run, and the **keeper allowlist seed** (3D scenes, shader
+  hosts, cohesive style-dominant components — each with a one-line reason). Drives
+  every later phase, exactly as `ceremony-manifest.json` drove v1.
 
 ### Phase 1: Pure-helper extraction (lowest risk, do first)
 
@@ -160,14 +163,14 @@ developed subtrees v1's progress note flagged for collision. Sequence accordingl
 
 ## Expected outcomes
 
-| Metric | Before | After (target) |
-|---|---|---|
-| Logic monsters (script-dominant, high disease-score) | 22 | 0 outside keeper allowlist |
-| Largest single function in a component | 317 lines (`renderAllCells`) | bounded; pure modules unit-tested |
-| Reactive state living inline in 1k-line scripts | widespread | extracted to `*.svelte.ts` |
-| Agent context cost to edit a logic monster | whole 1,400+ line file | one focused module |
-| Style-dominant components churned for size | (v1 would have forced 35) | 0 (correctly left alone) |
-| Complexity-lint gate | none | ratcheting, with keeper allowlist |
+| Metric                                               | Before                       | After (target)                    |
+| ---------------------------------------------------- | ---------------------------- | --------------------------------- |
+| Logic monsters (script-dominant, high disease-score) | 22                           | 0 outside keeper allowlist        |
+| Largest single function in a component               | 317 lines (`renderAllCells`) | bounded; pure modules unit-tested |
+| Reactive state living inline in 1k-line scripts      | widespread                   | extracted to `*.svelte.ts`        |
+| Agent context cost to edit a logic monster           | whole 1,400+ line file       | one focused module                |
+| Style-dominant components churned for size           | (v1 would have forced 35)    | 0 (correctly left alone)          |
+| Complexity-lint gate                                 | none                         | ratcheting, with keeper allowlist |
 
 ## Risks
 

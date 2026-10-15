@@ -40,8 +40,7 @@ the merged branch, prunes stale metadata, and prints the
 `https://localhost:5173` delivery URL.
 
 The agent must immediately open that URL in the desktop app's in-app Browser
-pane. A worktree preview can be used during verification but is never the final
-handoff.
+pane. When guarded integration is blocked, a verified live preview from the actual task worktree is an allowed final handoff. Keep its task-owned server and delivered tab alive, record worktree/port/process/log details and link the direct route. Nonvisual work needs a reviewable artifact and an explicit integration-incomplete status.
 
 ## Readiness diagnostics
 

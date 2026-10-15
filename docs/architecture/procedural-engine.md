@@ -20,17 +20,17 @@ shared/3d/procedural-engine/
 └── components/   WorldScene, WorldSceneContent, DebugPanel
 ```
 
-## Destinations that consume it
+## Destinations and historical consumers
 
 A destination is a `.svelte` component that composes `WorldScene` (or lower-level engine primitives) with its own world configuration. Each destination lives in its own feature folder:
 
 - `features/campground/CampgroundDestination.svelte` — procedural forest clearing
 - `features/hannons-camp/HannonsCampDestination.svelte` — Flow Fest Sim's checked geospatial manifest and binary terrain
-- `features/archive/ArchiveDestination.svelte` — curated indoor scene (does not use the procedural engine, uses `IndoorScene` instead)
+- Historical: `features/archive/ArchiveDestination.svelte` was the curated indoor scene. That owner is removed; `/archive` was redirected to `/museum`.
 - `features/museum/scenes/procedural/MuseumDestination.svelte` — procedural museum walk mode of the museum feature
 - `features/lab/tools/3d-controls/ThreeDControlsLab.svelte` — prop/motion tuning lab
 
-All are registered in `shared/3d/destinations/definitions.ts`.
+Current destination registration is owned by `shared/3d/destinations/definitions.ts`; the removed Archive entry above is historical.
 
 `shared/3d/StageWorld.svelte` also composes engine primitives directly for the sequence viewer's Stage mode.
 
@@ -40,4 +40,4 @@ The engine does not know about destination-specific data. When a destination nee
 
 ## Why it lives under shared/
 
-Campground, Hannon's Camp, and the 3D Museum scene all need the engine. The sequence viewer's Stage mode needs it too. Putting shared infrastructure inside a feature folder (as it was previously under `features/realm/`) forced every consumer to either cross feature boundaries or duplicate the engine. Moving it to `shared/3d/procedural-engine/` eliminates that coupling.
+Campground, Hannon's Camp, and the 3D Museum scene all need the engine. The sequence viewer's Stage mode needs it too. Putting shared infrastructure inside a feature folder (as it was historically under the now-removed `features/realm/`) forced every consumer to either cross feature boundaries or duplicate the engine. Moving it to `shared/3d/procedural-engine/` eliminates that coupling.
