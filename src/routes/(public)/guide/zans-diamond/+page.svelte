@@ -67,7 +67,8 @@
   ];
   const PROP_RENDER: PictographRender = $derived({ ...RENDER, propType });
 
-  // The prop's tip draws its petals, kept until the loop restarts.
+  // Each prop's tip draws its petals, kept until the loop restarts; the props
+  // player and every family player use it.
   const TIP_TRAIL: TrailSettings = {
     ...DEFAULT_TRAIL_SETTINGS,
     mode: TrailMode.LOOP_CLEAR,
@@ -184,7 +185,6 @@
       {#snippet text()}
         <h2>{t("guide_zans_props_title")}</h2>
         <p>{t("guide_zans_props_spin")}</p>
-        <p>{t("guide_zans_props_turns")}</p>
         <div class="prop-choice">
           <span class="prop-label">{t("guide_zans_props_picker")}</span>
           <PropChoiceRow
@@ -193,7 +193,6 @@
             label={t("guide_zans_props_picker")}
             onchange={(pt) => (propType = pt)}
           />
-          <p class="prop-hint">{t("guide_zans_props_picker_hint")}</p>
         </div>
       {/snippet}
     </SequenceShowcase>
@@ -208,6 +207,7 @@
           sequence={family.first.sequence}
           items={family.first.items}
           pool={family.pool}
+          trail={TIP_TRAIL}
           render={PROP_RENDER}
           canvasLetter={false}
           loop
@@ -260,9 +260,7 @@
     font-size: 1rem;
     font-weight: 600;
   }
-  /* guide.css centres every h1 on the hub's grid; this page reads left. */
   .zans-guide h1 {
-    text-align: left;
     margin: 0;
     padding: 0;
     grid-column: auto;
@@ -277,10 +275,16 @@
     color: var(--theme-text-muted);
     margin: 0;
   }
-  .intro {
+  /* The page header, the families intro and the closing note are centred
+     section breaks; the text beside each player reads left. */
+  .intro,
+  .families-intro,
+  .collection {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: var(--spacing-sm, 8px);
+    text-align: center;
   }
   .zans-guide .lede {
     font-size: 1.125rem;
@@ -306,9 +310,6 @@
     font-weight: 600;
     color: var(--theme-text-muted);
   }
-  .zans-guide .prop-hint {
-    font-size: var(--font-size-compact, 13px);
-  }
 
   .families {
     container-type: inline-size;
@@ -316,28 +317,10 @@
     flex-direction: column;
     gap: clamp(32px, 5vw, 56px);
   }
-  /* The intro sits on the showcases' grid: heading over the canvas column,
-     lead over the text column, so it does not leave the right half empty. */
-  .families-intro {
-    display: grid;
-    grid-template-columns: clamp(230px, 34cqw, 330px) minmax(0, 1fr);
-    column-gap: clamp(1.25rem, 4cqw, 2.5rem);
-    row-gap: var(--spacing-sm, 8px);
-    align-items: baseline;
-  }
-  @container (max-width: 600px) {
-    .families-intro {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-  .collection {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm, 8px);
-  }
   .links {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: var(--spacing-sm, 8px);
   }
 </style>
