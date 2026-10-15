@@ -62,6 +62,44 @@ function validatePerformance(result, character, role, propType) {
     )
   )
     throw new Error(`Incomplete production capture: ${character} / ${role}`);
+  const tracks = {
+    leftHand: (frame) => frame.leftHandWorld,
+    rightHand: (frame) => frame.rightHandWorld,
+    leftProp: (frame) => frame.leftProp.correctionWorld.position,
+    rightProp: (frame) => frame.rightProp.correctionWorld.position,
+  };
+  const motion = {};
+  for (const [name, point] of Object.entries(tracks)) {
+    const distances = result.frames
+      .slice(1)
+      .map((frame, index) =>
+        Math.hypot(
+          ...point(frame).map(
+            (value, axis) => value - point(result.frames[index])[axis]
+          )
+        )
+      );
+    const sorted = [...distances].sort((left, right) => left - right);
+    const p99StepMeters = sorted[Math.floor(sorted.length * 0.99)];
+    const seamMeters = Math.hypot(
+      ...point(result.frames[0]).map(
+        (value, axis) => value - point(result.frames.at(-1))[axis]
+      )
+    );
+    const maxStepMeters = sorted.at(-1);
+    motion[name] = { seamMeters, p99StepMeters, maxStepMeters };
+    if (
+      familyMode &&
+      (!Number.isFinite(seamMeters) ||
+        !Number.isFinite(maxStepMeters) ||
+        seamMeters > Math.max(0.15, Math.min(0.5, p99StepMeters * 2)) ||
+        maxStepMeters > 1)
+    )
+      throw new Error(
+        `Discontinuous ${name} capture: ${character} / ${role}; seam ${seamMeters.toFixed(3)}m, largest step ${maxStepMeters.toFixed(3)}m`
+      );
+  }
+  return motion;
 }
 
 const browser = await chromium.launch({
@@ -174,7 +212,12 @@ try {
           const path = resolve(outputDir, filename);
           const existing = await readJson(path);
           if (existing) {
-            validatePerformance(existing, character, role, family);
+            const motion = validatePerformance(
+              existing,
+              character,
+              role,
+              family
+            );
             if (JSON.stringify(existing.sequence) !== JSON.stringify(snapshot))
               throw new Error(`Preserved LOOP differs from ${filename}`);
             await record({
@@ -183,6 +226,7 @@ try {
               propType: family,
               filename,
               frames: 480,
+              motion,
             });
             continue;
           }
@@ -192,7 +236,7 @@ try {
               window.flowFestNativeCapture.captureFamily(id, prop, nextVariant),
             [character, family, variant]
           );
-          validatePerformance(result, character, role, family);
+          const motion = validatePerformance(result, character, role, family);
           if (JSON.stringify(result.sequence) !== JSON.stringify(snapshot))
             throw new Error(`Captured LOOP differs from ${snapshotPath}`);
           await writeJsonAtomic(path, result);
@@ -202,6 +246,7 @@ try {
             propType: family,
             filename,
             frames: 480,
+            motion,
           });
         }
         // A fresh page releases WebGL resources accumulated by dozens of production rigs.
