@@ -98,8 +98,9 @@ describe("Create workspace share control contract", () => {
     expect(shareButtonSource).toContain(
       "const hasFullAccount = $derived(authState.isFullAccount)"
     );
+    // The sign-in sheet also gets the sequence, to play beside the form.
     expect(shareButtonSource).toContain(
-      'authDrawerState.show("signup", "share-sequence")'
+      'authDrawerState.show("signup", "share-sequence", undefined, sequence)'
     );
     expect(shareButtonSource).toContain("if (!fullAccount || !menuOpen");
     expect(shareButtonSource).toContain(

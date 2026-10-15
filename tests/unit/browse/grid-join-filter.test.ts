@@ -115,8 +115,8 @@ describe("grid join chip text", () => {
     ]);
     await setLocale("de");
     expect([joined, single].map(localizeFilterChip)).toEqual([
-      "Verbundene Raster",
-      "Ein Raster",
+      "Verbundene Gitter",
+      "Ein Gitter",
     ]);
   });
 

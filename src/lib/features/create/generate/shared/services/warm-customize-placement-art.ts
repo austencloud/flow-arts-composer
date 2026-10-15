@@ -20,7 +20,15 @@ import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.
 import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { svgPreloader } from "#lib/shared/pictograph/shared/services/svg-preloader.js";
-import { preloadLetterDimensions } from "#lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
+import * as TKAGlyphModule from "#lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
+
+// Plain tsc types a .svelte import as a default component only; the glyph's
+// module script also exports its letter-size preloader.
+const { preloadLetterDimensions } = TKAGlyphModule as unknown as {
+  preloadLetterDimensions(
+    letters: (string | null | undefined)[]
+  ): Promise<void>;
+};
 
 const warmed = new Set<GridMode>();
 

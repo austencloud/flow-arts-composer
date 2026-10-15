@@ -73,8 +73,9 @@ describe("inbox inline sequence player contract", () => {
     expect(showcase).toContain(
       'cornerToggle: !alwaysLive && activation === "manual"'
     );
-    expect(showcase).toContain(
-      "playbackActive && (alwaysLive || visible) && !ambientCardRevealed"
+    // Prettier wraps this expression across lines since the clip pilot.
+    expect(showcase).toMatch(
+      /playbackActive &&\s*\(alwaysLive \|\| visible\) &&\s*!ambientCardRevealed/
     );
     expect(showcase).toContain("resumeWhenPlaybackAllowed: true");
     expect(showcase).toContain("disableContextMenu: true");

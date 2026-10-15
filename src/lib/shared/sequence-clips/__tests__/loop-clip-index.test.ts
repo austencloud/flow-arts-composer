@@ -17,7 +17,7 @@ describe("loadLoopClipIndex", () => {
   beforeEach(() => resetLoopClipIndexForTests());
 
   it("fetches the versioned index once and shares it", async () => {
-    const fetchImpl = vi.fn(() =>
+    const fetchImpl = vi.fn((_url: string) =>
       Promise.resolve(
         jsonResponse({
           rendererVersion: LOOP_CLIP_RENDERER_VERSION,

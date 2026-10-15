@@ -14,6 +14,6 @@
   "sourceSha256": {
     "scripts/assets/lotus-fire-reference.svg": "28300f76d877c8cb2f1125638d6cec192f61551cb72fa44aa063ae95ae89dc04",
     "scripts/assets/lotus-fire-reference.json": "75b95e7eb6fec016a5f4baaf5777cac830846bb8338c6b2278a8ab46bcf6ced3",
-    "scripts/build-fan-model.py": "cadf5afc1a1ba047b6ac90dcf2b3ac311998f4cd20effeb93162857df6f9744f"
+    "scripts/build-fan-model.py": "eeb43c924014229ef38b6628a824b3212b6fcf6940da4447a2ff17863472c22a"
   }
 }

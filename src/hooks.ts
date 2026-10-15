@@ -14,4 +14,5 @@ export const reroute: Reroute = ({ url }) => {
   if (localizedPageLocale(url.pathname)) {
     return splitLocalePath(url.pathname).path;
   }
+  return undefined;
 };
