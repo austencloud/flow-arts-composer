@@ -1,10 +1,10 @@
 # Flow Fest for Unreal Engine 5.8
 
-This is a native Unreal Engine 5.8 C++ game of the Thursday arrival and first night at Flow Fest. It uses the measured site terrain and placements exported from the browser simulator's source data. It does not embed or run the browser simulator.
+This is a native Unreal Engine 5.8 C++ game of the Thursday arrival and first night at Flow Fest. It uses the measured site terrain and placements exported from the browser simulator's source data. It does not embed or run the browser simulator. This guide is also included in the detached delivery copy at `E:/FlowFestNative58/Project`.
 
 ## Build and launch
 
-Prerequisites: Unreal Engine 5.8.3 for Windows, a UE 5.8 compatible Visual Studio C++ toolchain, Node.js and the source repository dependencies, and Blender 5.0. The editor target has compiled with Visual Studio 2026 MSVC 14.50.35717. The project generates local Unreal assets; those generated files are excluded from Git. Keep access to the source repository and its `node_modules` when rebuilding.
+Prerequisites for full asset regeneration: Unreal Engine 5.8.3 for Windows, a UE 5.8 compatible Visual Studio C++ toolchain, Node.js and the source repository dependencies, and Blender 5.0. The editor target has compiled with Visual Studio 2026 MSVC 14.50.35717. Generated Unreal assets are excluded from Git. The detached delivery copy includes those assets and can be opened in the editor, edited in C++, and repackaged. Full regeneration must run from `unreal/FlowFest` inside the source repository because its tools import files from the repository's `src` and `static` trees. Do not run `bootstrap.ps1` from the detached `E:/FlowFestNative58/Project` copy.
 
 First capture the production performances from the repository root on d2:
 
@@ -13,7 +13,7 @@ pnpm exec vite build --config unreal/FlowFest/Tools/native-capture.vite.config.m
 node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures
 ```
 
-Transfer that complete capture directory to the native build machine. Then, from this directory, run:
+Transfer that complete capture directory to the native build machine. Then, from the repository's `unreal/FlowFest` directory, run:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Tools\bootstrap.ps1 -SourceRoot E:\tka-platform
@@ -23,6 +23,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Tools\bootstrap.ps1 -S
 `bootstrap.ps1` exports the site data, converts the source GLBs and WebP textures for native import, authors campsite meshes in Blender, converts all 16 deployed characters and their locomotion, converts all 41 physical prop types and 71 variants for both hands, compiles the C++ editor target, and saves the Unreal assets and map. It also ports the authored electric unicycle. It creates a `node_modules` junction in the task worktree when needed. You can override `-EngineRoot`, `-BlenderExe`, and `-CompilerVersion`. Use the skip switches only when rerunning a completed stage.
 
 Performance capture must precede a fresh bootstrap. The harness samples the production performer, IK, fingers, prop transforms, and mounted pose. The static runner uses an isolated browser and closes its temporary server when finished. The 80 captures contain four flow profiles plus one mounted pose for each character. Pass another location with `bootstrap.ps1 -CaptureDirectory <directory>`. Raw captures stay in `Saved`; only compact prop motion goes into the packaged runtime data. See [the capture guide](Tools/native-capture-README.md) for exact revision and repair instructions.
+
+The delivery archive at `E:/FlowFestNative58/Evidence/production-performances.tar.gz` preserves those raw captures. Verify its SHA-256 against `9792c6a5947afc83ab270ff65effdab1e26c0a9a621275a689fa7df907284b2c`, then extract it into the repository's `unreal/FlowFest/Saved` directory. The archive's top-level folder becomes `Saved/PerformanceCaptures`. See `E:/FlowFestNative58/START-HERE.md` for the recovery commands.
 
 `Launch.cmd` starts Unreal Editor in game mode at 1600×900. The PowerShell launcher also supports review captures:
 
@@ -34,7 +36,7 @@ Performance capture must precede a fresh bootstrap. The harness samples the prod
 .\Tools\launch.ps1 -Character ch01 -Showcase ride
 ```
 
-For a cooked Windows build after a successful bootstrap, run `Package.cmd`. It invokes Unreal Automation Tool's `BuildCookRun` with build, cook, stage, package, pak, and archive enabled. The default archive directory is `Builds`; `-ArchiveDirectory` can target another local directory. `-EngineRoot` and `-CompilerVersion` are also accepted. The packaging script validates staged terrain, character and prop catalogs, and all 64 compact prop-motion clips. Launch its Windows archive with:
+For a cooked Windows build from generated assets, run `Package.cmd` in either the repository project or detached delivery project. It invokes Unreal Automation Tool's `BuildCookRun` with build, cook, stage, package, pak, and archive enabled. The default archive directory is `Builds`; `-ArchiveDirectory` can target another local directory. `-EngineRoot` and `-CompilerVersion` are also accepted. The packaging script validates staged terrain, character and prop catalogs, and all 64 compact prop-motion clips. Launch its Windows archive with:
 
 ```powershell
 .\Tools\launch.ps1 -PackageRoot .\Builds\Windows
