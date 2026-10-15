@@ -37,6 +37,9 @@ if (-not $SkipBuild) {
 }
 if (-not $SkipAssets) {
     if (-not (Test-Path -LiteralPath $BlenderExe)) { throw "Missing Blender: $BlenderExe" }
+    $characterManifest = Join-Path $project 'Saved\Performers\characters.json'
+    & node (Join-Path $repo 'unreal\Shared\Tools\character-catalog.mjs') --source-root $repo --output $characterManifest
+    if ($LASTEXITCODE -ne 0) { throw "Native character catalog generation failed ($LASTEXITCODE)" }
     & $BlenderExe -b -noaudio --python (Join-Path $PSScriptRoot 'convert-shells.py')
     if ($LASTEXITCODE -ne 0) { throw "Museum shell conversion failed ($LASTEXITCODE)" }
     $performerLog = Join-Path $project 'Saved\performers-convert.log'
