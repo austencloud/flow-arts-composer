@@ -10,6 +10,7 @@
    */
   import { browser } from "$app/env";
   import { onMount } from "svelte";
+  import { MediaQuery } from "svelte/reactivity";
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideFontPreload from "../_components/GuideFontPreload.svelte";
   import TopicHeader from "../level-1/_topics/TopicHeader.svelte";
@@ -50,6 +51,13 @@
     return () => window.removeEventListener("popstate", readProp);
   });
 
+  // A short desktop screen (the fit block below, under 1000px tall) gives
+  // the tiles' names to their hover tooltips, so the board keeps that height.
+  const shortScreen = new MediaQuery(
+    "(min-width: 80rem) and (min-height: 700px) and (max-height: 999.98px)",
+    false
+  );
+
   function chooseProp(next: PropType): void {
     if (next === propType) return;
     propType = next;
@@ -86,25 +94,29 @@
       <PropChoiceRow
         value={propType}
         sections={codexPropSections()}
+        iconOnly={shortScreen.current}
         label={tDynamic("guide_codex_prop")}
         onchange={chooseProp}
       />
     </div>
 
-    <LetterCodex {initialLetter} board="atlas" {propType} />
-
-    <div class="print">
-      <PanelButton variant="secondary" href={localHref("/guide/codex/print")}>
-        {tDynamic("guide_codex_print")}
-      </PanelButton>
+    <div class="board-host">
+      <LetterCodex {initialLetter} board="atlas" {propType} />
     </div>
   </article>
+
+  <div class="print">
+    <PanelButton variant="secondary" href={localHref("/guide/codex/print")}>
+      {tDynamic("guide_codex_print")}
+    </PanelButton>
+  </div>
 </GuideShell>
 
 <style>
   /* One column, top to bottom like every guide page: the Guide's header, the
      prop tiles, the full-width board, and the print link once the board has
-     been read. */
+     been read. On a desktop screen the first three fill the screen exactly
+     (see the fit block below). */
   .codex-guide {
     width: 100%;
     min-width: 0;
@@ -112,9 +124,8 @@
     margin-inline: auto;
     padding: clamp(20px, 3vw, 56px);
     color: var(--theme-text);
-    /* The board's height term: the header, padding and the prop row above
-       it. On a laptop the board is width-bound and scrolls a little; this
-       keeps a wide, short screen from drawing cells taller than it holds. */
+    /* Below desktop the board scrolls; this height term only keeps a wide,
+       short screen from drawing cells taller than it holds. */
     --codex-atlas-chrome: 26rem;
     /* TopicHeader speaks in the guide's ink tokens. */
     --ink: var(--theme-text);
@@ -135,7 +146,60 @@
   .print {
     display: flex;
     justify-content: center;
-    margin-top: clamp(24px, 3vw, 48px);
+    padding: clamp(16px, 2vw, 32px) 0 clamp(24px, 3vw, 48px);
+  }
+
+  /* A desktop screen holds the whole Codex without a scroll, whatever its
+     size. The page is exactly the screen under the site header: the Guide's
+     header and the prop tiles take what they need, and the board gets the
+     rest as a sized box (`codex-atlas-fit`, BoardAtlas), so its cells come
+     from the height actually left rather than a guess at the chrome. The
+     header and the tiles' margins scale with the screen height, so a short
+     screen gives the board more of itself. Below this size the page reads
+     top to bottom and scrolls; the height floor keeps cells near 60px. */
+  @media (min-width: 80rem) and (min-height: 700px) {
+    .codex-guide {
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      box-sizing: border-box;
+      height: calc(100dvh - var(--marketing-header-h, 64px));
+      padding-block: clamp(12px, 2.2vh, 48px) clamp(12px, 1.6vh, 32px);
+    }
+    article.codex-guide :global(.topic-head) {
+      gap: clamp(0.2rem, 0.7vh, 0.75rem);
+      max-width: none;
+    }
+    article.codex-guide :global(.topic-head h1) {
+      font-size: clamp(2rem, 4.6vh, 6rem);
+    }
+    article.codex-guide :global(.topic-head .lede) {
+      font-size: clamp(1rem, 1.8vh, 1.8rem);
+      line-height: 1.3;
+    }
+    /* All sixteen tiles on one line: the tile width shares the column, so
+       the two groups never wrap onto a second line of tiles. */
+    .props {
+      container-type: inline-size;
+      margin-block: clamp(6px, 1.2vh, 28px);
+      --prop-tile-width: clamp(
+        3.6rem,
+        calc((100cqi - 15 * var(--prop-tile-gap) - 24px) / 16),
+        4.75rem
+      );
+    }
+    .board-host {
+      container: codex-atlas-fit / size;
+      min-height: 0;
+    }
+  }
+
+  /* From 2000px wide, the 1480px column made the board width-bound and left
+     a band of empty screen under it at 2560x1440. A wider column lets the
+     screen's height decide the cells instead. */
+  @media (min-width: 2000px) {
+    .codex-guide {
+      max-width: 2400px;
+    }
   }
 
   /* Past 3000px the board widens to min(88vw, 3400px) (BoardAtlas); the
@@ -148,12 +212,8 @@
   }
 
   /* On a 4K screen the cells run 250px or more; laptop-sized tiles beside
-     them read as a footnote. The tiles grow, and the board's height term
-     takes the taller rows above it so the five rows still fit the screen. */
+     them read as a footnote. The tiles grow; the board fits what is left. */
   @media (min-width: 2400px) and (min-height: 1400px) {
-    .codex-guide {
-      --codex-atlas-chrome: 52rem;
-    }
     .props {
       --prop-tile-width: 6.5rem;
       --prop-tile-gap: 10px;
