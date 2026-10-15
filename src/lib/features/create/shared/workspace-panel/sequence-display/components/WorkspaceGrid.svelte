@@ -1618,7 +1618,8 @@
 
   /* Rounded cells clip their square artwork to the curve. A hovered cell
      lifts out of the block and is clipped by its own ring instead. */
-  .timeline-row > .step-container:not(:hover):not(.cell-selected)
+  .timeline-row
+    > .step-container:not(:hover):not(.cell-selected)
     > .history-layout-shell,
   .timeline-start-column > .timeline-cell:not(:hover) > .history-layout-shell {
     border-radius: inherit;
