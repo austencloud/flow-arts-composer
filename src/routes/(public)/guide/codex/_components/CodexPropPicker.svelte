@@ -83,8 +83,10 @@
 </div>
 
 <style>
+  /* A host can size the picker with --codex-prop-chip and --codex-prop-words
+     (the Codex page does past 2400px, beside cells that are 250px wide). */
   .prop-picker {
-    --chip: 2.75rem;
+    --chip: var(--codex-prop-chip, 2.75rem);
     container-type: inline-size;
     width: 100%;
     display: flex;
@@ -174,20 +176,20 @@
     -webkit-mask-repeat: no-repeat;
   }
 
-  /* The builds read as a line of words, set in the guide's italic. */
+  /* The builds read as a line of words, set in the guide's italic. Inline
+     words in a balanced block, so a wrap splits the line evenly and never
+     strands one build on a line of its own. */
   .builds {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: baseline;
-    column-gap: 0.2rem;
     min-height: 2rem;
+    text-align: center;
+    text-wrap: balance;
     font-family: var(--guide-display, inherit);
     font-style: italic;
-    font-size: 1.05rem;
+    font-size: var(--codex-prop-words, 1.05rem);
   }
 
   .build {
+    display: inline-block;
     padding: 0.2rem 0.55rem;
     border: 0;
     border-radius: 6px;
@@ -211,6 +213,13 @@
   }
   .build.only {
     cursor: default;
+  }
+
+  /* A mouse needs no 44px row; keep the wrapped words close. */
+  @media (pointer: fine) {
+    .build {
+      min-height: 0;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
