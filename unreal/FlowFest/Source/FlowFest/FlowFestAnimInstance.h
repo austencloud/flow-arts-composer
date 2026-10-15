@@ -21,6 +21,7 @@ public:
     void SetPerformanceRate(float Rate);
     float GetPerformanceTime() const { return PerformanceTime; }
     float GetPerformanceWeight() const { return PerformanceWeight; }
+    float GetOutgoingPerformanceWeight() const;
     bool IsPerforming() const { return bPerformanceTarget; }
     float GetMotionWeight(FName Name) const;
     void SetFootCorrection(float LeftCm, float RightCm);
@@ -33,6 +34,11 @@ private:
     friend struct FFlowFestAnimProxy;
     UPROPERTY(Transient) TArray<TObjectPtr<UAnimSequence>> MotionClips;
     UPROPERTY(Transient) TObjectPtr<UAnimSequence> PerformanceClip;
+    UPROPERTY(Transient) TArray<TObjectPtr<UAnimSequence>> OutgoingPerformanceClips;
+    TArray<float> OutgoingPerformanceTimes;
+    TArray<float> OutgoingPerformanceWeights;
+    TArray<float> OutgoingPerformanceRates;
+    TArray<bool> OutgoingPerformanceLoops;
     TArray<FName> MotionNames;
     TArray<float> MotionTimes;
     TArray<float> MotionWeights;

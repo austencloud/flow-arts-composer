@@ -125,6 +125,9 @@ private:
     float TransitionStart = 0.f;
     FTransform TransitionLeft = FTransform::Identity;
     FTransform TransitionRight = FTransform::Identity;
+    bool bSwitchingPerformance = false;
+    FTransform SwitchLeft = FTransform::Identity;
+    FTransform SwitchRight = FTransform::Identity;
 
     void UpdatePose();
     void UpdateEffects();

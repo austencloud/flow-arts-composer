@@ -21,6 +21,11 @@ void UFlowFestAnimInstance::Configure(const TMap<FName, TObjectPtr<UAnimSequence
     }
     TargetMotion = TEXT("Idle");
     PerformanceClip = nullptr;
+    OutgoingPerformanceClips.Empty();
+    OutgoingPerformanceTimes.Empty();
+    OutgoingPerformanceWeights.Empty();
+    OutgoingPerformanceRates.Empty();
+    OutgoingPerformanceLoops.Empty();
     PerformanceTime = 0.f;
     PerformanceWeight = 0.f;
     PerformanceRate = 1.f;
@@ -41,6 +46,17 @@ bool UFlowFestAnimInstance::SetMotion(FName Name)
 
 void UFlowFestAnimInstance::StartPerformance(UAnimSequence* Clip, bool bLoop)
 {
+    // Keep the outgoing pose alive across StopPerformance/StartPerformance in
+    // the same frame. The next clip starts at zero weight, so a routine switch
+    // has a real source pose to fade from even when locomotion is fully faded.
+    if (PerformanceClip && PerformanceWeight > .0001f)
+    {
+        OutgoingPerformanceClips.Add(PerformanceClip);
+        OutgoingPerformanceTimes.Add(PerformanceTime);
+        OutgoingPerformanceWeights.Add(PerformanceWeight);
+        OutgoingPerformanceRates.Add(PerformanceRate);
+        OutgoingPerformanceLoops.Add(bPerformanceLoop);
+    }
     PerformanceClip = Clip;
     PerformanceTime = 0.f;
     PerformanceWeight = 0.f;
@@ -70,6 +86,13 @@ float UFlowFestAnimInstance::GetMotionWeight(FName Name) const
 {
     const int32 Index = MotionNames.IndexOfByKey(Name);
     return MotionWeights.IsValidIndex(Index) ? MotionWeights[Index] : 0.f;
+}
+
+float UFlowFestAnimInstance::GetOutgoingPerformanceWeight() const
+{
+    float Sum = 0.f;
+    for (const float Weight : OutgoingPerformanceWeights) Sum += Weight;
+    return Sum;
 }
 
 void UFlowFestAnimInstance::SetFootCorrection(float LeftCm, float RightCm)
@@ -105,6 +128,14 @@ void UFlowFestAnimInstance::Advance(float DeltaSeconds)
                 ? FMath::Fmod(PerformanceTime + Dt * PerformanceRate, Length)
                 : FMath::Min(PerformanceTime + Dt * PerformanceRate, Length);
     }
+    for (int32 Index = 0; Index < OutgoingPerformanceClips.Num(); ++Index)
+    {
+        const float Length = OutgoingPerformanceClips[Index]->GetPlayLength();
+        if (Length > SMALL_NUMBER)
+            OutgoingPerformanceTimes[Index] = OutgoingPerformanceLoops[Index]
+                ? FMath::Fmod(OutgoingPerformanceTimes[Index] + Dt * OutgoingPerformanceRates[Index], Length)
+                : FMath::Min(OutgoingPerformanceTimes[Index] + Dt * OutgoingPerformanceRates[Index], Length);
+    }
     // A finite response time creates true per-bone pose blends, including
     // interrupted transitions, rather than swapping PlayAnimation assets.
     const float Alpha = 1.f - FMath::Exp(-Dt / .18f);
@@ -114,6 +145,18 @@ void UFlowFestAnimInstance::Advance(float DeltaSeconds)
         MotionWeights[Index] = FMath::Lerp(MotionWeights[Index], Goal, Alpha);
     }
     PerformanceWeight = FMath::Lerp(PerformanceWeight, bPerformanceTarget ? 1.f : 0.f, Alpha);
+    for (int32 Index = OutgoingPerformanceWeights.Num() - 1; Index >= 0; --Index)
+    {
+        OutgoingPerformanceWeights[Index] *= 1.f - Alpha;
+        if (OutgoingPerformanceWeights[Index] < .0001f)
+        {
+            OutgoingPerformanceClips.RemoveAt(Index);
+            OutgoingPerformanceTimes.RemoveAt(Index);
+            OutgoingPerformanceWeights.RemoveAt(Index);
+            OutgoingPerformanceRates.RemoveAt(Index);
+            OutgoingPerformanceLoops.RemoveAt(Index);
+        }
+    }
     if (!bPerformanceTarget && PerformanceWeight < .0001f)
     {
         PerformanceWeight = 0.f;
@@ -147,6 +190,12 @@ void FFlowFestAnimProxy::PreUpdate(UAnimInstance* Instance, float DeltaSeconds)
         Clips.Add(Source->MotionClips[Index].Get());
         Times.Add(Source->MotionTimes[Index]);
         Weights.Add(Weight);
+    }
+    for (int32 Index = 0; Index < Source->OutgoingPerformanceClips.Num(); ++Index)
+    {
+        Clips.Add(Source->OutgoingPerformanceClips[Index].Get());
+        Times.Add(Source->OutgoingPerformanceTimes[Index]);
+        Weights.Add(Source->OutgoingPerformanceWeights[Index]);
     }
     if (Source->PerformanceClip && Source->PerformanceWeight > .0001f)
     {

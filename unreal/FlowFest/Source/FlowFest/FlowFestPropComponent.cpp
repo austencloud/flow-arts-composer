@@ -329,7 +329,16 @@ void UFlowFestPropComponent::SetPerformanceTransforms(const FTransform& LeftLoca
     // captured orbit while the wrist is still in the previous body pose.
     const float Alpha = FMath::Clamp(PoseWeight, 0.f, 1.f);
     FTransform Left = LeftLocalToAvatarRoot, Right = RightLocalToAvatarRoot;
-    if (BoundBodyMesh && Alpha < .999f)
+    if (bSwitchingPerformance && Alpha < .999f)
+    {
+        // A routine change can happen immediately after ClearPerformanceTransforms.
+        // Hold the visible prop pose from that instant while the new body clip
+        // fades in, even if the hand attachment moved during the mesh tick.
+        Left.Blend(SwitchLeft, LeftLocalToAvatarRoot, Alpha);
+        Right.Blend(SwitchRight, RightLocalToAvatarRoot, Alpha);
+        bEnteringPerformance = true;
+    }
+    else if (BoundBodyMesh && Alpha < .999f)
     {
         const FQuat Spin = bSpin ? FQuat(FVector::UpVector, SpinPhase) : FQuat::Identity;
         const auto Natural = [this, Spin](FName HandName, const FQuat& Basis, const FVector& Offset)
@@ -343,6 +352,7 @@ void UFlowFestPropComponent::SetPerformanceTransforms(const FTransform& LeftLoca
         bEnteringPerformance = true;
     }
     else bEnteringPerformance = false;
+    if (Alpha >= .999f) bSwitchingPerformance = false;
     LeftRoot->SetRelativeTransform(Left);
     RightRoot->SetRelativeTransform(Right);
 }
@@ -445,6 +455,17 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
             return FTransform(Rotation, FVector(N[Offset], N[Offset+1], N[Offset+2]));
         };
         Parsed.Add({Transform(0), Transform(7), FVector(N[14], N[15], N[16]), FVector(N[17], N[18], N[19])});
+    }
+    // LoadPerformance precedes the avatar's clip switch. Capture the prop's
+    // current world-space pose now, before its temporary hand attachment can
+    // inherit the incoming skeletal pose on the next animation tick.
+    bSwitchingPerformance = !PerformanceFrames.IsEmpty() &&
+        (bPerformancePose || bReturningToHands) && AvatarRoot && LeftRoot && RightRoot;
+    if (bSwitchingPerformance)
+    {
+        const FTransform RootWorld = AvatarRoot->GetComponentTransform();
+        SwitchLeft = LeftRoot->GetComponentTransform().GetRelativeTransform(RootWorld);
+        SwitchRight = RightRoot->GetComponentTransform().GetRelativeTransform(RootWorld);
     }
     PerformanceFrames = MoveTemp(Parsed);
     PerformanceFps = static_cast<float>(Fps);

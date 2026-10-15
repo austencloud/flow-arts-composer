@@ -46,7 +46,7 @@ bool FFlowFestLocomotionTest::RunTest(const FString& Parameters)
         Body->TickAnimation(Seconds, false);
         Body->RefreshBoneTransforms();
         Avatar->TickComponent(Seconds, LEVELTICK_All, nullptr);
-        float Sum = Anim->GetPerformanceWeight();
+        float Sum = Anim->GetPerformanceWeight() + Anim->GetOutgoingPerformanceWeight();
         bool bFinite = FMath::IsFinite(Sum) && Sum >= 0.f && Sum <= 1.f;
         for (const TCHAR* Name : MotionNames)
         {
@@ -125,6 +125,28 @@ bool FFlowFestLocomotionTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("Dismount restores standing frame"),
         FMath::IsNearlyEqual(Body->GetRelativeLocation().Z, StandingZ, .1f));
     Settle();
+    if (TestTrue(TEXT("First authored flow clip loads"), Avatar->PlayPerformance(TEXT("FirePoi"))))
+    {
+        Settle(30);
+        Avatar->SetPerformancePhase(.35f);
+        Step(.001f);
+        const FVector BeforeSwitch = Body->GetSocketLocation(TEXT("LeftHand"));
+        // R stops and starts a new routine within one game frame. The old
+        // skeletal clip must still contribute to the very next evaluated pose.
+        Avatar->StopPerformance();
+        if (TestTrue(TEXT("Second authored flow clip loads"), Avatar->PlayPerformance(TEXT("Juggler"))))
+        {
+            Step(.001f);
+            const FVector AfterSwitch = Body->GetSocketLocation(TEXT("LeftHand"));
+            TestTrue(TEXT("Outgoing flow pose survives an immediate routine switch"),
+                Anim->GetOutgoingPerformanceWeight() > .9f);
+            TestTrue(TEXT("Routine switch does not teleport the hand"),
+                FVector::Distance(BeforeSwitch, AfterSwitch) < 15.f);
+            Settle(30);
+            TestTrue(TEXT("Incoming routine reaches full weight"),
+                Anim->GetPerformanceWeight() > .99f && Anim->GetOutgoingPerformanceWeight() < .001f);
+        }
+    }
     return !HasAnyErrors();
 }
 #endif
