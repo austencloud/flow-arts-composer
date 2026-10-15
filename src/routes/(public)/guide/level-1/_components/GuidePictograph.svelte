@@ -74,7 +74,13 @@
   // `data`, so it lands in the SSR/prerendered HTML even though the visual SVG
   // renders client-side (async prepare + IntersectionObserver). Without this the
   // 30+ pictographs on each indexable chapter page are empty, undescribed divs.
-  const a11yLabel = $derived(data ? describePictograph(data) : (label ?? ""));
+  // Describe what is drawn: with the letter glyph hidden, the label leaves
+  // the letter out too.
+  const a11yLabel = $derived(
+    data
+      ? describePictograph(showTKA ? data : { ...data, letter: null })
+      : (label ?? "")
+  );
   const hasA11yLabel = $derived(!!a11yLabel && a11yLabel !== "Pictograph (empty)");
 
   $effect(() => {
