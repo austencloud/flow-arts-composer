@@ -37,6 +37,7 @@ private:
     float ReviewScreenshotDelay = -1.f;
     bool bSprinting = false;
     bool bMovementSmoke = false;
+    bool bProgressionSmoke = false;
     bool bMovementBaseline = false;
     int32 MovementSmokeStage = -1;
     float MovementSmokeElapsed = 0.f;

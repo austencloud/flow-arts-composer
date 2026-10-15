@@ -1,9 +1,12 @@
 """Create reproducible native map and materials after the C++ editor build."""
 import json
+import sys
 from pathlib import Path
 import unreal as u
 
 project = Path(u.Paths.project_dir()).resolve()
+sys.path.insert(0, str(project / "Tools"))
+from museum_surface_materials import restore_shell_materials
 data = json.loads((project / "Content" / "Data" / "museum.json").read_text(encoding="utf-8"))
 if data.get("version") != 1 or len(data.get("rooms", [])) < 20:
     raise RuntimeError("Museum export is incomplete")
@@ -13,14 +16,13 @@ tools = u.AssetToolsHelpers.get_asset_tools()
 matlib = u.MaterialEditingLibrary
 u.SystemLibrary.execute_console_command(None, "Interchange.FeatureFlags.Import.FBX 0")
 
+surface_report = []
 for shell in ("DrownedGallery", "EarthRootTerrace", "FirstFire"):
     source = project / "Saved" / "Shells" / (shell + ".fbx")
     if not source.is_file():
         raise RuntimeError(f"Missing converted cave shell: {source}")
     folder = "/Game/MuseumGame/Shells/" + shell
     target = folder + "/SM_" + shell
-    if ed.does_asset_exist(target):
-        continue
     task = u.AssetImportTask()
     task.filename = str(source)
     task.destination_path = folder
@@ -38,13 +40,17 @@ for shell in ("DrownedGallery", "EarthRootTerrace", "FirstFire"):
     options.static_mesh_import_data.combine_meshes = True
     options.static_mesh_import_data.generate_lightmap_u_vs = False
     options.static_mesh_import_data.auto_generate_collision = False
+    options.static_mesh_import_data.normal_import_method = u.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS
     task.options = options
     tools.import_asset_tasks([task])
     asset = ed.load_asset(target)
     if not asset:
         raise RuntimeError(f"Failed to import {target}")
+    surface_report.append(restore_shell_materials(project, shell, asset))
     ed.save_loaded_asset(asset)
     u.log(f"MUSEUM_SHELL_IMPORTED {shell} {asset.get_bounds().box_extent}")
+
+(project / "Saved" / "museum-surface-import.json").write_text(json.dumps(surface_report, indent=2), encoding="utf-8")
 
 def material(name, color, roughness):
     path = "/Game/MuseumGame/Materials/" + name

@@ -33,6 +33,8 @@ Run `Tools/smoke-playback.ps1` after importing, or pass `-Executable` with a pac
 
 Use `-Mode Movement` for measured walking, sprint, release, diagonal and stopping checks on the entrance floor. `-MovementBaseline` measures the previous 290 cm/s traversal; it only applies to this diagnostic. `-FrameRate 20` checks movement at a lower rendering rate. The runner requires a fresh screenshot and a passing runtime log before stopping its own process.
 
+Use `-Mode Progression` for First Fire court order, orbit and exit completion, extinguishing, backtracking, mid-orbit save serialization, blackout timing, and the Earth growth reveal. It feeds authored positions to the progression system, then walks the actual character through the Fire–Earth corridor in both directions and pushes against a blocked wall. The movement diagnostic separately measures entrance traversal speeds.
+
 ## Play
 
 | Key | Action |
@@ -41,22 +43,24 @@ Use `-Mode Movement` for measured walking, sprint, release, diagonal and stoppin
 | Hold either Shift | Sprint |
 | Space | Jump |
 | E | Open or close a nearby exhibit plaque |
-| P | Pause or resume the nearest animated station |
-| B | Restart the nearest animated station |
+| P | Pause or resume the nearest animated station outside First Fire |
+| B | Restart the nearest animated station outside First Fire |
 | F5 / F9 | Save or load native progress |
 | R | Return to the entrance |
 | Esc | Quit |
 
-The native save records position, view direction, and viewed exhibits in the `MuseumGameNative1` slot. It is separate from browser storage.
+The native save records position, view direction, viewed exhibits, and First Fire progress in the `MuseumGameNative1` slot. Version 1 saves remain readable and begin Fire at its initial state. It is separate from browser storage.
 
-First-person traversal is 4.5 m/s normally and 7.5 m/s while holding Shift. Both Museum and Flow Fest use Unreal's `CharacterMovement` for movement and collision. Museum's camera has no visible walking body, so its traversal speeds are tuned independently of Flow Fest's visible gait. Animated exhibit performers continue to use the shared playback runtime.
+First-person traversal is 4.5 m/s normally and 7.5 m/s while holding Shift. Both Museum and Flow Fest use Unreal's `CharacterMovement` for movement and collision. Museum's capsule uses the browser visitor's 15 cm collision radius. Museum's camera has no visible walking body, so its traversal speeds are tuned independently of Flow Fest's visible gait. Animated exhibit performers continue to use the shared playback runtime.
 
 ## Current native scope
 
 The one-walk contains 27 rooms, 51 exhibits, and 33 performer stations. Thirty-one stations use 25 distinct authored routines captured from Museum sequence data. The initial native rig and prop are the shared x-bot and staff. One telekinetic formation hides the body and displays moving props. Two stations without authored sequences retain static figures. Playback uses the shared `FlowArtsRuntime` avatar and prop components.
 
-The runtime builds the tile footprint with collision, places three imported cave shells, and displays source plaque text in a native HUD. Cave floor collision follows exported terrain elevation. Room-specific water, fire, and earth console transformations, the collaboration village, other authored room dressing, and browser lighting effects remain unported. Cave shells are imported without their source materials, so native visuals still differ from the browser experience.
+The runtime builds the tile footprint with collision, places three imported cave shells, and displays source plaque text in a native HUD. Cave floor collision follows exported terrain elevation, and invisible blocked tile boundaries contain the visitor. The cave imports preserve source base color, roughness, metallic, normal and emissive textures, factors, and UV transforms, including the browser components' material tuning. Authored fixtures replace the generic light grid in these caves, and fixed camera exposure preserves dark scenes there and in their connecting corridors. Other galleries retain their existing automatic exposure. The native Fire shell extends its existing rock lip across the Fire–Earth mesh seam and tapers its roof into Earth's lower passage. First Fire follows the authored DJ → EK → FL court order, accumulates orbit progress, extinguishes completed courts as the visitor leaves, runs the 2.2-second blackout, and reveals growth at the Earth doorway. Its performers and lighting respond to that progression.
 
-The layout exporter is `Tools/export-museum.ts`; `Tools/build-export.mjs` runs it against source TypeScript. `Tools/adopt-shared-assets.mjs` verifies and copies the producer asset bundle. Shared Flow Fest converters produce the captured clips. `Tools/convert-shells.py` and `Tools/create-project-assets.py` prepare the cave environment and map. `Tools/convert-performers.py` and `Tools/import-performers.py` maintain static fallback figures.
+Water console transformations and prop switching, the collaboration village simulation, other authored room dressing, animated shader flames, and remaining browser lighting effects are still unported. Flame placement markers stay hidden, as they do in the source game. The separate lobby scene's assets do not fit the current one-walk entrance and are not placed there. Native lighting is not yet a complete match for the browser scenes.
+
+The layout exporter is `Tools/export-museum.ts`; `Tools/build-export.mjs` runs it against source TypeScript. `Tools/adopt-shared-assets.mjs` verifies and copies the producer asset bundle. Shared Flow Fest converters produce the captured clips. `Tools/prepare-shells.mjs` decodes compressed glTF and WebP sources using the same dependency stack as Flow Fest. `Tools/convert-shells.py` preserves mesh material slots, and `Tools/museum_surface_materials.py` restores PBR materials from source manifests with texture hashes. `Tools/create-project-assets.py` imports the cave environment and map. `Tools/convert-performers.py` and `Tools/import-performers.py` maintain static fallback figures.
 
 The [shared Unreal contract](../Shared/README.md) records package ownership, capture identity, timing, coordinates, and source verification.
