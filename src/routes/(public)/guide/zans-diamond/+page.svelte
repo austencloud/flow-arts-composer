@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
-   * /guide/zans-diamond: Zan's Diamond as one hand path, the original
-   * two-hand word, and the 23 variations made by changing one hand. Every
+   * /guide/zans-diamond: Zan's original two-hand word, whose hand trails
+   * draw the path, and the 23 variations made by changing one hand. Every
    * word plays in a SequenceShowcase (the guide's player + pictograph strip);
    * each family is one showcase that cycles through its words, so the page
    * reads like the Level 1 topics it builds on. The record lives in
@@ -26,22 +26,18 @@
     ZANS_DIAMOND_CROSS_SHIFTS_PATH,
     ZANS_DIAMOND_FAMILIES,
     ZANS_DIAMOND_ORIGINAL,
-    zansDiamondPathStrip,
     zansDiamondStrip,
     zansDiamondVariationLabel,
     type ZansDiamondVariation,
   } from "#lib/shared/guide-topics/zans-diamond-topic.js";
 
-  // The hand draws the diamond as it travels; the drawing stays until the
-  // loop restarts.
+  // Both hands draw the diamond as they travel, one trail over the other;
+  // the drawing stays until the loop restarts.
   const PATH_TRAIL: TrailSettings = {
     ...DEFAULT_TRAIL_SETTINGS,
     mode: TrailMode.LOOP_CLEAR,
     trackingMode: TrackingMode.HAND,
   };
-
-  const pathItems = zansDiamondPathStrip();
-  const pathSequence = stripToSequence(pathItems, { name: "zans-path" });
 
   const showcase = (variation: ZansDiamondVariation) => {
     const items = zansDiamondStrip(variation);
@@ -131,25 +127,14 @@
     </header>
 
     <SequenceShowcase
-      sequence={pathSequence}
-      items={pathItems}
+      sequence={original.sequence}
+      items={original.items}
       trail={PATH_TRAIL}
       {picTheme}
     >
       {#snippet text()}
-        <h2>{t("guide_zans_path_title")}</h2>
-        <p>{t("guide_zans_path_body_1")}</p>
-        <p>{t("guide_zans_path_body_2")}</p>
-      {/snippet}
-    </SequenceShowcase>
-
-    <SequenceShowcase
-      sequence={original.sequence}
-      items={original.items}
-      {picTheme}
-    >
-      {#snippet text()}
         <h2>{t("guide_zans_original_title")}</h2>
+        <p>{t("guide_zans_original_path")}</p>
         <p>
           {t("guide_zans_original_body", { word: ZANS_DIAMOND_ORIGINAL.word })}
         </p>
