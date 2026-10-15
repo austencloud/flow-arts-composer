@@ -161,14 +161,22 @@
       max-width: none;
     }
     article.codex-guide :global(.topic-head h1) {
-      font-size: clamp(2.4rem, 6vh, 7rem);
+      font-size: clamp(2rem, 4.6vh, 6rem);
     }
     article.codex-guide :global(.topic-head .lede) {
-      font-size: clamp(1rem, 1.9vh, 1.9rem);
+      font-size: clamp(1rem, 1.8vh, 1.8rem);
       line-height: 1.3;
     }
+    /* All sixteen tiles on one line: the tile width shares the column, so
+       the two groups never wrap onto a second line of tiles. */
     .props {
-      margin-block: clamp(8px, 1.6vh, 32px);
+      container-type: inline-size;
+      margin-block: clamp(6px, 1.2vh, 28px);
+      --prop-tile-width: clamp(
+        3.6rem,
+        calc((100cqi - 15 * var(--prop-tile-gap) - 24px) / 16),
+        4.75rem
+      );
     }
     .board-host {
       container: codex-atlas-fit / size;
