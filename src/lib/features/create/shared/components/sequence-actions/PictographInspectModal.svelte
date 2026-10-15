@@ -220,7 +220,7 @@
       const leftMotionData = pictographData.motions?.[HandSide.LEFT];
       const rightMotionData = pictographData.motions?.[HandSide.RIGHT];
 
-      let gridMode = GridMode.DIAMOND;
+      let gridMode: GridMode = GridMode.DIAMOND;
       if (leftMotionData && rightMotionData) {
         gridMode = deriveGridMode(leftMotionData, rightMotionData);
       }

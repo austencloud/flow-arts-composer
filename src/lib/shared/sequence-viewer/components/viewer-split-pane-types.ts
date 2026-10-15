@@ -78,12 +78,14 @@ export interface ViewerSplitPaneProps {
     mandalaController: MandalaViewerController;
   }) => void;
   /** Hands the active art view to the shell's post-share sheet. */
-  onArtShare?: (args: {
-    artType: "mandala" | "tunnel";
-    controller: TunnelViewController;
-    mandalaController: MandalaViewerController;
-    capturePreview: () => string;
-  }) => void;
+  onArtShare?: (
+    args: {
+      artType: "mandala" | "tunnel";
+      controller: TunnelViewController;
+      mandalaController: MandalaViewerController;
+      capturePreview: () => string;
+    } | null
+  ) => void;
   /**
    * The share sheet currently owns a render of this art. The pane suppresses
    * its own result overlay while true — otherwise the tunnel's inline

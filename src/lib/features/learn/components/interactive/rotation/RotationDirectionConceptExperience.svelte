@@ -4,6 +4,7 @@
   right answer), then the two relationships side by side.
 -->
 <script lang="ts">
+  import { lessonQuestion } from "../letters/type1/lesson-question.js";
   import { onMount } from "svelte";
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
@@ -68,7 +69,9 @@
       (item) => item.id === selectedRelationship
     ) ?? ROTATION_DIRECTION_LESSON[0]
   );
-  const activeQuestion = $derived(ROTATION_DIRECTION_QUESTIONS[questionIndex]);
+  const activeQuestion = $derived(
+    lessonQuestion(ROTATION_DIRECTION_QUESTIONS, questionIndex)
+  );
   const questionRelationship = $derived(
     ROTATION_DIRECTION_LESSON.find(
       (item) => item.id === activeQuestion.answer
@@ -131,10 +134,7 @@
 
     pictographs = Object.fromEntries(
       results
-        .filter(
-          (result): result is { letter: Letter; pictograph: PictographData } =>
-            Boolean(result.pictograph)
-        )
+        .filter((result) => result.pictograph !== null)
         .map((result) => [result.letter, result.pictograph])
     );
     loading = false;

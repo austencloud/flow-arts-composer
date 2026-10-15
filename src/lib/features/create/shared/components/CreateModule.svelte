@@ -252,8 +252,9 @@
   let currentDisplayWord = $state<string>(""); // Current word with contextual messages
   let currentLetterSources = $state<LetterSource[] | null>(null); // Letter sources for spell tab styling
   let isInputMode = $state(false); // Input mode - collapse workspace when word input is focused on mobile
-  const canShowSaveToLibraryPanel = $derived(
-    CreateModuleState?.isPersistenceInitialized === true &&
+  const canShowSaveToLibraryPanel = $derived.by(
+    () =>
+      CreateModuleState?.isPersistenceInitialized === true &&
       CreateModuleState.canShowActionButtons()
   );
 

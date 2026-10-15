@@ -148,7 +148,7 @@
 >
   <div class="sheet-content">
     <DrawerHeader
-      {displayTitle}
+      title={displayTitle}
       subtitle={t("settings_prop_sheet_help")}
       onClose={handleClose}
     />
@@ -200,7 +200,7 @@
       <BentoPropGrid
         {selectedPropType}
         {color}
-        {displayTitle}
+        title={displayTitle}
         variant="inline"
         flat
         scrollMode="internal"

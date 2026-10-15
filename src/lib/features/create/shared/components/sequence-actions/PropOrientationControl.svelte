@@ -31,7 +31,7 @@
     ghostKind,
   }: Props = $props();
 
-  const tone = $derived(hand === "left" ? "blue" : "red");
+  const tone = $derived<"blue" | "red">(hand === "left" ? "blue" : "red");
   const handLabel = $derived(
     hand === "left" ? t("shared_controls_left") : t("shared_controls_right")
   );

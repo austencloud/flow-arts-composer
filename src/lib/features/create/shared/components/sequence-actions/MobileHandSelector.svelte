@@ -31,7 +31,7 @@
     fullWidth = false,
   }: Props = $props();
 
-  const displayedOptions = $derived(
+  const displayedOptions = $derived<HandOption[]>(
     options ?? [
       {
         hand: "left",

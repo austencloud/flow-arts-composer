@@ -129,6 +129,9 @@ own Escape (which closes the sheet) gets a turn.
       .then((code) => {
         if (code) claimedCode = code;
       })
+      .catch(() => {
+        // The long link is already on screen; nothing to tell the person.
+      })
       .finally(() => {
         claimingCode = false;
       });

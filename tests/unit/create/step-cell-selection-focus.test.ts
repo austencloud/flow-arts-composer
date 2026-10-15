@@ -23,17 +23,16 @@ let stubbed: typeof document.createElement;
 const rows: Array<{ destroy: () => void }> = [];
 beforeEach(() => {
   stubbed = document.createElement;
-  document.createElement = Object.getPrototypeOf(document).createElement.bind(
-    document
-  );
+  document.createElement =
+    Object.getPrototypeOf(document).createElement.bind(document);
 });
 afterEach(() => {
   for (const row of rows.splice(0)) row.destroy();
   document.createElement = stubbed;
 });
 
-function row(stepCount: number) {
-  const mounted = mountStepCellRow(stepCount);
+function row(stepCount: number, shouldAnimate = false) {
+  const mounted = mountStepCellRow(stepCount, shouldAnimate);
   rows.push(mounted);
   return mounted;
 }
@@ -41,7 +40,9 @@ function row(stepCount: number) {
 /** A newly selected cell decides about focus on the next frame. */
 async function frames() {
   for (let frame = 0; frame < 2; frame += 1) {
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => resolve())
+    );
   }
 }
 
@@ -93,6 +94,15 @@ async function clickCell(cell: HTMLElement) {
 }
 
 describe("step cell focus while the selection moves", () => {
+  it("reveals a cell when its entrance animation is cancelled", () => {
+    const grid = row(1, true);
+    const cell = grid.cell(1);
+    expect(cell.classList.contains("invisible")).toBe(true);
+    cell.dispatchEvent(new Event("animationcancel"));
+    flushSync();
+    expect(cell.classList.contains("invisible")).toBe(false);
+  });
+
   // The Composer's Making demo and Create's playback both select the playing
   // step on every beat. Each selected cell used to take focus, so keyboard
   // focus left the Play button on the first beat and hopped cell to cell.

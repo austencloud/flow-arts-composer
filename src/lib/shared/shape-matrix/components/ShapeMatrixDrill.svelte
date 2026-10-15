@@ -614,19 +614,19 @@
     const resolver = tryGetLoopDisplayResolver();
     return resolver ? resolver(headerSequence) : null;
   });
-  const headerStepNumber = $derived(
-    headerSequence?.steps?.length &&
-      visibleStep >= 1 &&
-      visibleStep < headerSequence.steps.length + 0.99
-      ? Math.floor(visibleStep)
-      : null
-  );
   const visibleStep = $derived(
     visibleSource === "first"
       ? firstStep
       : visibleSource === "second"
         ? secondStep
         : 0
+  );
+  const headerStepNumber = $derived(
+    headerSequence?.steps?.length &&
+      visibleStep >= 1 &&
+      visibleStep < headerSequence.steps.length + 0.99
+      ? Math.floor(visibleStep)
+      : null
   );
   let firstSeek: ((step: number) => void) | null = null;
   let secondSeek: ((step: number) => void) | null = null;

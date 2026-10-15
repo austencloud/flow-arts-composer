@@ -149,12 +149,12 @@
     if (!preset) return;
     hapticService?.trigger("selection");
     const patch = presetSettingsPatch(preset, index);
-    selectedPresetIndex = patch.selectedPresetIndex;
-    selectedLeftPropType = patch.leftPropType;
-    selectedRightPropType = patch.rightPropType;
-    catDogMode = patch.catDogMode;
-    leftBuugengFlipped = patch.leftBuugengFlipped;
-    rightBuugengFlipped = patch.rightBuugengFlipped;
+    selectedPresetIndex = index;
+    selectedLeftPropType = preset.leftPropType;
+    selectedRightPropType = preset.rightPropType;
+    catDogMode = preset.catDogMode;
+    leftBuugengFlipped = preset.leftBuugengFlipped ?? false;
+    rightBuugengFlipped = preset.rightBuugengFlipped ?? false;
     propArtwork = normalizePropLook(patch.propArtwork);
     publish(patch);
   }
