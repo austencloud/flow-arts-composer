@@ -1,4 +1,5 @@
-#if WITH_DEV_AUTOMATION_TESTS
+// Material graph inspection needs editor data, which cooked game targets omit.
+#if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 #include "Misc/AutomationTest.h"
 #include "Dom/JsonObject.h"
 #include "Engine/StaticMesh.h"
