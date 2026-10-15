@@ -81,3 +81,9 @@
 - Glossary choices: section 11 informal tú address; Espere → Espera, Seleccione → Selecciona, Inicie → Inicia. These are sentence prompts, not action buttons. No placeholders or markup changed.
 - Uncertainty: none.
 - Delivery: committed on the assigned codex/i18n-es branch for the coordinator. No integration or push performed.
+
+## REV (coordinator) — 2026-10-14
+
+- gpt-6-astra review of a sample of this wave flagged a handful of keys (see coordinator notes); all fixes applied.
+- Codex restored as a product name where older strings translated it; Double-Staff uses the glossary prop term.
+- Gate: `Tests 66 passed (66)`.
