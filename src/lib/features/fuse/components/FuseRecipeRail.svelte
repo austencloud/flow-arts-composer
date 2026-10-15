@@ -14,6 +14,7 @@
   import ToggleCard from "#lib/features/create/generate/components/cards/ToggleCard.svelte";
   import TurnIntensityCard from "#lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
   import StepperCard from "#lib/shared/components/stepper-card/StepperCard.svelte";
+  import type { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import { maxTurnIntensitiesForLevel } from "#lib/shared/create/services/level-turn-values.js";
   import {
     fuseDifficultyByLevel,

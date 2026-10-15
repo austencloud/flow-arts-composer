@@ -2,6 +2,7 @@
   import GridModeCard from "#lib/features/create/generate/components/cards/GridModeCard.svelte";
   import LevelCard from "#lib/features/create/generate/components/cards/LevelCard.svelte";
   import TurnIntensityCard from "#lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
+  import type { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import { maxTurnIntensitiesForLevel } from "#lib/shared/create/services/level-turn-values.js";
   import StepperCard from "#lib/shared/components/stepper-card/StepperCard.svelte";
   import {
