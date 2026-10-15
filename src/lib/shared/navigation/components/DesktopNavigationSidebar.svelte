@@ -266,7 +266,7 @@
           isMain: true,
           sections: [],
         }))
-      : modules.map((module) => ({
+      : modules.map((module: ModuleDefinition) => ({
           ...module,
           sections: module.home
             ? [
