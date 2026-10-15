@@ -33,6 +33,7 @@ const EXCLUDED_PREFIXES = [
   "/guide/level-2/book",
   "/guide/codex/parity",
   "/guide/codex/poster",
+  "/guide/codex/print",
 ];
 
 const under = (path: string, prefix: string) =>

@@ -13,6 +13,7 @@
 <script lang="ts">
   import CodexFlow from "./CodexFlow.svelte";
   import CodexBandHead from "./CodexBandHead.svelte";
+  import { codexTypeLabel } from "../../../guide/codex/_data/codex-groups";
   import {
     MAJOR_TYPE_BANDS,
     MINOR_TYPE_BANDS,
@@ -43,7 +44,7 @@
       <section
         class="band"
         class:paired-letters={band.type.n === 2 || band.type.n === 3}
-        aria-label={band.type.word.replace(/:\s*$/, "")}
+        aria-label={codexTypeLabel(band.type)}
       >
         <CodexBandHead type={band.type} />
         {#each placementLandFlows(band) as flow, index (`${band.type.n}-${index}`)}
@@ -60,10 +61,7 @@
          reads as three bands sharing a line, not as one mixed band. -->
     <div class="minor-row">
       {#each MINOR_TYPE_BANDS as band (band.type.n)}
-        <section
-          class="band minor"
-          aria-label={band.type.word.replace(/:\s*$/, "")}
-        >
+        <section class="band minor" aria-label={codexTypeLabel(band.type)}>
           <CodexBandHead type={band.type} />
           <CodexFlow boxes={band.boxes} {onSelect} />
         </section>

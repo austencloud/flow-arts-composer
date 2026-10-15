@@ -1,6 +1,10 @@
 <script lang="ts">
   import CodexBox from "./CodexBox.svelte";
-  import type { CodexSheetDef } from "../_data/codex-groups";
+  import {
+    codexSegmentLabel,
+    codexTypeWord,
+    type CodexSheetDef,
+  } from "../_data/codex-groups";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { GuideCodexVisibility } from "../../level-1/_data/guide-codex-persistence";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
@@ -45,8 +49,8 @@
     {#if type.divider}<hr class="type-divider" />{/if}
     <div class="type-block">
       <h2 class="type-head">
-        <span class="type-word">{tDynamic("guide_codex_type_number", { number: type.n })}</span>{#each type.segs as seg}<span
-            style:color={seg.c}>{tDynamic(({ Dual: "guide_codex_dual", "-Shift": "guide_codex_dash_shift", Shift: "guide_codex_shift", Cross: "guide_codex_cross", Dash: "guide_codex_dash", "-Dash": "guide_codex_dash_dash", Static: "guide_codex_static" } as Record<string, string>)[seg.t] ?? "guide_codex_static")}</span
+        <span class="type-word">{codexTypeWord(type)}</span>{#each type.segs as seg}<span
+            style:color={seg.c}>{codexSegmentLabel(seg)}</span
           >{/each}
       </h2>
       <div class="type-boxes">
