@@ -15,6 +15,7 @@ if (!baseUrl || !outputArg) {
 const outputDir = resolve(outputArg);
 await mkdir(outputDir, { recursive: true });
 const selected = process.env.FLOW_FEST_CAPTURE_CHARACTERS?.split(",").map((id) => id.trim()).filter(Boolean);
+const rideOnly = process.env.FLOW_FEST_CAPTURE_RIDE_ONLY === "1";
 
 const browser = await chromium.launch({ headless: true, channel: "chrome" });
 try {
@@ -42,7 +43,7 @@ try {
       `Expected 16 rigs and four profiles; got ${catalog.characters.length} and ${catalog.roles.length}`
     );
 
-  if (selected) {
+  if (selected && !rideOnly) {
     if (selected.some((id) => !catalog.characters.includes(id)))
       throw new Error(`Unknown focused capture character: ${selected.join(", ")}`);
     const snapshots = {};
@@ -57,7 +58,7 @@ try {
 
   const artifacts = [];
   for (const character of selected ?? catalog.characters) {
-    for (const role of catalog.roles) {
+    for (const role of rideOnly ? [] : catalog.roles) {
       process.stdout.write(`${character} / ${role}\n`);
       const result = await page.evaluate(
         ([id, profile]) => window.flowFestNativeCapture.captureOne(id, profile),
@@ -103,7 +104,7 @@ try {
       frames: ride.frames.length,
     });
   }
-  if (!selected) await writeFile(
+  if (!selected && !rideOnly) await writeFile(
     resolve(outputDir, "manifest.json"),
     JSON.stringify(
       {
@@ -116,7 +117,7 @@ try {
     )
   );
   process.stdout.write(
-    `${selected ? "Recaptured" : "Captured"} ${artifacts.length} clips into ${outputDir}\n`
+    `${selected || rideOnly ? "Recaptured" : "Captured"} ${artifacts.length} clips into ${outputDir}\n`
   );
 } finally {
   await browser.close();

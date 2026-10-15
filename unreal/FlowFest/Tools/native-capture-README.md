@@ -8,6 +8,10 @@ shared across all characters. Each JSON frame contains local bone transforms,
 the performer world transform, and the final rendered prop transforms. `ride`
 contains the live pedal transforms. Raw captures belong in
 `unreal/FlowFest/Saved/PerformanceCaptures`, outside packaged game data.
+Ride frames also record `boneRootParentWorld`, the world transform of the
+non-bone parent above Hips. This includes Avatar3D's per-rig height scale;
+`skinnedMeshLocal` alone does not include it. Reconstruct a Ride joint in the
+vehicle frame as `inverse(vehicleWorld) * boneRootParentWorld * boneTRSChain`.
 
 Run from a worktree at the exact committed source revision with dependencies
 installed. Use d2 for the build and browser capture:
@@ -41,6 +45,11 @@ that all 80 files still match the manifest and that each frame contains the
 deployed GLB's full bone set before importing animations. GLB skins may omit
 unweighted ancestors from `skeleton.bones`; the exporter traverses parent Bone
 nodes to include them.
+
+To repair only Ride samples while preserving all performance JSON and the
+original manifest, set `FLOW_FEST_CAPTURE_RIDE_ONLY=1` before the runner. It
+can be combined with `FLOW_FEST_CAPTURE_CHARACTERS` for selected rigs. Remove
+both environment variables after capture.
 
 To run this on d2, use `scripts/d2-run.ps1` for a committed full capture job or
 reuse its scratch worktree for a focused repair so the preserved raw directory

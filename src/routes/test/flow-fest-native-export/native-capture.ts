@@ -190,6 +190,11 @@ export function captureMountedFrame(scene: Scene, id: string, frame: number) {
       mesh = candidate;
   });
   if (!mesh) throw new Error(`Mounted rig ${id} has no skinned mesh`);
+  const rootBones = posedBones(mesh).filter(
+    (bone) => !(bone.parent as Bone | null)?.isBone
+  );
+  if (rootBones.length !== 1 || !rootBones[0].parent)
+    throw new Error(`Mounted rig ${id} needs one parented root bone`);
   const left = scene.getObjectByName("FFS_EUC_LeftPedalCapture");
   const right = scene.getObjectByName("FFS_EUC_RightPedalCapture");
   if (!left || !right) throw new Error("Mounted pedal anchors are missing");
@@ -198,6 +203,10 @@ export function captureMountedFrame(scene: Scene, id: string, frame: number) {
     timeSeconds: frame / 30,
     performerWorld: worldTransform(performer),
     skinnedMeshLocal: localTransform(mesh),
+    // Avatar3D normalizes height on a non-bone ancestor. Mesh-local TRS does
+    // not include that scale or the ancestor offset needed to reproduce IK.
+    boneRootParentWorld: worldTransform(rootBones[0].parent),
+    rootBone: rootBones[0].name,
     bones: boneSamples(mesh),
     leftPedalWorld: worldTransform(left),
     rightPedalWorld: worldTransform(right),
