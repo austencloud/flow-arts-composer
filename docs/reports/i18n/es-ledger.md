@@ -55,3 +55,18 @@
 - Wording uncertainty: the glossary does not specify landing or pass in the timing editor. Used llegada and pasada from the supplied video/tap and repeated-movement context; native acceptance of those terms has not been established. No runtime behavior was investigated.
 - Copy review: used the ai-bust mechanical pre-pass on the output (HIGH/CRITICAL findings: none) and a meaning/terminology judgment pass. Repeated account prompts follow the English source; no additional claims were added.
 - Delivery: committed on the assigned codex/i18n-es branch for the coordinator. No primary-checkout access, integration, push, server, installation, broad checks or prohibited git commands were used.
+
+## R5 — 2026-10-14
+
+- Scope: 516 translated entries, 0 retranslation entries, 0 review entries. All 516 required output keys are present. No native-language review was performed.
+- Applied only with the supplied apply-batch.js command. Initial result: `messages/es.json: inserted 516, replaced 0, refused 0`. Final result after contextual wording corrections: `messages/es.json: inserted 0, replaced 516, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final gate result: `Test Files  1 passed (1)` and `Tests  66 passed (66)`; duration 11.94s, exit 0.
+- Focused contract review: required/applied 516/516; all 4832 preexisting catalog values preserved; placeholder occurrence counts and markup preserved; all values single-line; no usted/ustedes/vosotros/vuestro address forms or Unicode replacement characters. Result: 0 errors. `git diff --check` passed.
+- Catalog diff before this ledger: only messages/es.json, exactly 516 insertions and 0 deletions.
+- Glossary choices: neutral Latin American Spanish with tú and infinitive action labels. Used prop/props, secuencia, paso, cuadrícula, posición inicial, intérprete, biblioteca, ajustes, Crear, Explorar, Aprender and Componer. Preserved Flow Arts Composer, TKA, LOOP, VTG, Poi, Choreo Cards, placeholders and literal keyboard combinations including Shift/Alt/Ctrl/Delete/Escape. The identifier example your_username remains unchanged.
+- Other wording choices: keyboard shortcut → atajo de teclado; preset → preajuste; Smart Collection → colección inteligente; Jump to → Ir a; Hall of Shame → Salón de la vergüenza (consistent with R1); Choreo → Coreografía; Realm → Reino; Studio → Estudio for the source navigation label (the protected full name Post Studio was not present). Flip → voltear, mirror → espejar, invert → invertir, rewind → rebobinar. Shift Start is Desplazar inicio because it is an action rather than the Shift motion category.
+- Contextual correction: export_ui_performance → Interpretación. MediaPieceCard.svelte and CompositeControls.svelte use this label for the camera/video performance format, establishing that it refers to an artistic performance rather than computing speed.
+- Copy review: used the ai-bust mechanical pre-pass on the output (HIGH/CRITICAL findings: none) and a meaning/terminology judgment pass. The English source defines repeated account prompts and navigation descriptions; no additional product claims were introduced.
+- Uncertainty: no unresolved glossary questions. Native acceptance of new navigation wording has not been established.
+- Delivery: committed on the assigned codex/i18n-es branch for the coordinator. No primary-checkout access, integration, push, server, installation, broad checks or prohibited git commands were used.
