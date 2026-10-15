@@ -14,10 +14,16 @@ The living world upgrade is in verification. The earlier release at `E:/FlowFest
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Native editor build, corrected visual-body playback | Passed; UnrealBuildTool reports `Result: Succeeded`. | `Saved/build-v3-visual.log` |
-| Capture pilot | Eight x-bot routines (staff, poi, fan, stick; A/B) passed the source continuity gates on d2. The full catalog is pending. | d2 `E:/FlowFestLivingCaptures-v3` |
+| Native editor build, corrected visual-body playback | Passed; subsequent transition repair builds also compile. | `Saved/build-v3-visual.log`, `Saved/build-switch-profile.log` |
+| Corrected capture batches | x-bot, y-bot, and remy have 82 validated family roles each, with identical preserved sequence snapshots. Remaining rigs are in progress. | `E:/FlowFestLivingWorld58/Evidence/LivingCaptures-v3` |
 | Real source-to-compact basis conversion | Staff, poi, fan, and stick A pilots passed the asymmetric-point basis check, including the animated visual-body transform. Native playback remains a separate gate. | `Saved/PerformanceCaptures-v3-pilot` |
+| Native x-bot steady spinning | All 82 routines pass steady hand/prop alignment; measured maximum anchor error is 0.11 cm. Interrupted routine switches still have a separate displacement failure under repair. | `Saved/automation-xbot-full-v3.log`, `Saved/automation-xbot-switch-profile.log` |
+| Walking and jumping visuals | Native frame sequences show travel with alternating feet, takeoff, airborne pose, landing, and recovery. | `E:/FlowFestLivingWorld58/Evidence/walk-sequence.png`, `jump-sequence.png` and their numbered frames |
+| Prop variant visuals | Native frame sequences preserve triangle side grip and mirrored buugeng geometry during steady spinning. | `E:/FlowFestLivingWorld58/Evidence/triangle-side-v3-contact-sheet.png`, `buugeng-mirrored-v3-contact-sheet.png` |
+| Locomotion and crowd automation | Foot contacts, locomotion transitions, and attendee scheduling passed the full x-bot diagnostic run. | `Saved/automation-xbot-full-v3.log` |
+| Ecology | Native material imports compile; daytime camp review shows trees, ground layers, and grass. Night and late-afternoon review remain pending. | `Saved/Logs/import-ecology-art-pass.log`, `E:/FlowFestLivingWorld58/Evidence/camp-art-final.png` |
 | Audio generation | Six deterministic mono ambient loops generated on d2 with amplitude and loop-boundary checks. | `Tools/staged/audio/audio-report.json` |
+| Spatial sound state | Native distance falloff, reactive day/night/jam gains, mute/resume, and rebuild checks pass. Occlusion configuration is checked; this is not an auditory listening review or a physical obstruction trace test. | `FlowFest.Sound.DistanceAndReactiveMix` in `Saved/automation-xbot-full-v3.log` |
 | Incomplete runtime data rejection | Passed negative control: the packaging preflight rejects the incomplete motion manifest. | `Saved/validate-runtime-incomplete.log` |
 
 ## Final gates still pending
