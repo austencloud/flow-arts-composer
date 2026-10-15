@@ -16,6 +16,7 @@
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import {
     EIGHT_STEP_SOURCE_HREF,
     THREE_LEVELS_PATTERNS,
@@ -304,11 +305,15 @@
     <footer class="exits">
       <h2>{t("guide_three_levels_exits_title")}</h2>
       <div class="links">
-        <LinkChip href="/guide/level-1/permutations"
+        <LinkChip href={localHref("/guide/level-1/permutations")}
           >{t("guide_three_levels_exit_loops")}</LinkChip
         >
-        <LinkChip href="/guide/codex">{t("guide_nav_codex")}</LinkChip>
-        <LinkChip href="/guide/ratios">{t("guide_hub_ratios_title")}</LinkChip>
+        <LinkChip href={localHref("/guide/codex")}
+          >{t("guide_nav_codex")}</LinkChip
+        >
+        <LinkChip href={localHref("/guide/ratios")}
+          >{t("guide_hub_ratios_title")}</LinkChip
+        >
       </div>
     </footer>
   </article>
