@@ -91,10 +91,10 @@
   // The picker offers each word once, grouped the way Gage's chart sets the
   // hands against each other. A word shared by several CAPs plays the first.
   const GROUP_LABEL: Record<CapRelation, Parameters<typeof t>[0]> = {
-    opposite: "guide_caps_group_opposite",
-    same: "guide_caps_group_same",
-    "quarter-aligned": "guide_caps_group_quarter_aligned",
-    "quarter-opposed": "guide_caps_group_quarter_opposed",
+    opposite: "guide_eightstep_group_opposite_title",
+    same: "guide_eightstep_group_same_title",
+    "quarter-aligned": "guide_eightstep_group_quarter_aligned_title",
+    "quarter-opposed": "guide_eightstep_group_quarter_opposed_title",
   };
   const groups = CAP_RELATIONS.map((relation) => ({
     relation,
@@ -256,6 +256,9 @@
           <div class="links">
             <LinkChip href={EIGHT_STEP_SOURCE} target="_blank" rel="noopener"
               >{t("guide_caps_link_source")}</LinkChip
+            >
+            <LinkChip href={localHref("/guide/eight-step")}
+              >{t("guide_eightstep_title")}</LinkChip
             >
             <LinkChip href={localHref("/notation/caps")}
               >{t("guide_caps_link_caps")}</LinkChip

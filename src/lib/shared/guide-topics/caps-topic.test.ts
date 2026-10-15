@@ -15,8 +15,10 @@ import {
 import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 import {
   CAPS,
+  CAP_HAND_PATHS,
   CAP_WORDS,
   capBeats,
+  capPairing,
   capCell,
   capHandSteps,
   capStrip,
@@ -188,6 +190,61 @@ describe("what the essay says about them", () => {
           );
         }
       }
+    }
+  });
+});
+
+describe("what the Eight Step page says about them", () => {
+  const laps = (hand: CapHand) => {
+    let at = hand.start;
+    let quarters = 0;
+    for (const to of hand.path) {
+      quarters += forward(at, to) ? 1 : -1;
+      at = to;
+    }
+    return Math.abs(quarters) / 4;
+  };
+  const route = (hand: CapHand) => hand.start + hand.path.join("");
+
+  it("puts nine CAPs on each of eight hand paths", () => {
+    expect(CAP_HAND_PATHS).toHaveLength(8);
+    const routes = new Set<string>();
+    for (const { caps: column } of CAP_HAND_PATHS) {
+      expect(column).toHaveLength(9);
+      for (const cap of column) {
+        expect(route(cap.left)).toBe(route(column[0]!.left));
+        expect(route(cap.right)).toBe(route(column[0]!.right));
+      }
+      routes.add(route(column[0]!.left) + route(column[0]!.right));
+      // Nine distinct pairings of the three spins.
+      const pairings = column.map((cap) => {
+        const { capping, circling } = capPairing(cap);
+        return `${capping}/${circling}`;
+      });
+      expect(new Set(pairings).size).toBe(9);
+    }
+    expect(routes.size).toBe(8);
+  });
+
+  it("has the left hand cap once round while the right circles three times", () => {
+    for (const cap of CAPS) {
+      expect(laps(cap.left), cap.id).toBe(1);
+      expect(laps(cap.right), cap.id).toBe(3);
+    }
+  });
+
+  it("names each pairing as Gage's row code does", () => {
+    const CODE = { A: "antispin", E: "extension", I: "prospin" } as const;
+    for (const cap of CAPS) {
+      const [capping, circling] = [...cap.id.split("-")[1]!] as (
+        | "A"
+        | "E"
+        | "I"
+      )[];
+      expect(capPairing(cap), cap.id).toEqual({
+        capping: CODE[capping!],
+        circling: CODE[circling!],
+      });
     }
   });
 });

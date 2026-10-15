@@ -877,6 +877,33 @@ export const CAP_WORDS: readonly CapWord[] = (() => {
   }));
 })();
 
+/**
+ * Gage's eight hand paths, one per chart column. The nine CAPs in a column
+ * move the hands along the same two paths and differ only in how each hand
+ * spins. The left hand caps in every one.
+ */
+export interface CapHandPath {
+  column: number;
+  relation: CapRelation;
+  caps: readonly Cap[];
+}
+
+export const CAP_HAND_PATHS: readonly CapHandPath[] = [
+  1, 2, 3, 4, 5, 6, 7, 8,
+].map((column) => ({
+  column,
+  relation: RELATION_BY_COLUMN[String(column)]!,
+  caps: CAPS.filter((cap) => cap.id.startsWith(`${column}-`)),
+}));
+
+/**
+ * Gage's row for a CAP: the capping (left) hand's spin against the circling
+ * (right) hand's, each read from its first beat.
+ */
+export function capPairing(cap: Cap): { capping: CapSpin; circling: CapSpin } {
+  return { capping: cap.left.spins[0]!, circling: cap.right.spins[0]! };
+}
+
 /** The shortest run of letters the word repeats, e.g. "KEC". */
 export function capCell(word: string): string {
   for (let size = 1; size < word.length; size++) {
