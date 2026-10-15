@@ -1208,6 +1208,7 @@
                 <PropChiralityRow
                   propType={drill.prop}
                   hands={chirality.hands}
+                  partner={chirality.partner}
                   {colors}
                   {propLook}
                   onChange={chirality.onChange}
@@ -1243,6 +1244,7 @@
                     <PropChiralityRow
                       propType={familyMember}
                       hands={chirality.hands}
+                  partner={chirality.partner}
                       {colors}
                       {propLook}
                       onChange={chirality.onChange}
@@ -1926,6 +1928,13 @@
     overscroll-behavior-y: contain;
     scrollbar-width: thin;
     padding: 0 2px 8px;
+  }
+
+  /* The version cards fill the room the settings below them leave, but never
+     shrink under their own height: on a short sheet they once slid beneath the
+     buugeng pair picker. The options scroll instead. */
+  .detail-options.fill > :global(.prop-look-picker) {
+    min-height: auto;
   }
 
   .detail-options.fill > :global(.fan-style-options) {

@@ -338,6 +338,9 @@ export function createTunnelPresentationState(
         hands: catDog
           ? [handState(propHand)]
           : [handState("left"), handState("right")],
+        ...(catDog
+          ? { partner: handState(propHand === "left" ? "right" : "left") }
+          : {}),
         onChange(hand, flipped) {
           if (hand === "left") leftBuugengFlipped = flipped;
           else rightBuugengFlipped = flipped;
