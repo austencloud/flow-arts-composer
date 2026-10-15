@@ -70,6 +70,12 @@ interface Liquid {
   evaporate: number;
 }
 
+/** Repeatable 0-1 scatter, so a replay sprays the same way. */
+function scatter(n: number): number {
+  const x = Math.sin(n * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+}
+
 function makeLiquid(): Liquid {
   return {
     gravity: -9.8,
@@ -158,6 +164,8 @@ interface Drop {
 
 interface SourceState {
   accumulator: number;
+  /** Fountain drops owed to this source, carried between frames. */
+  jet: number;
   lastSeen: number;
   strand: number;
   last: Vector3;
@@ -414,6 +422,8 @@ export class GooRenderer3D {
   private readonly scratch = new Vector3();
   private readonly velocity = new Vector3();
   private frame = 0;
+  private jets = 0;
+  private readonly jetVelocity = new Vector3();
   private strandCursor = 0;
   private dropCursor = 0;
   private seed = 0x2f6b1d;
@@ -457,6 +467,7 @@ export class GooRenderer3D {
       if (!state) {
         state = {
           accumulator: 0,
+          jet: 0,
           lastSeen: this.frame,
           strand: -1,
           last: new Vector3(source.position.x, source.position.y, source.position.z),
@@ -566,6 +577,8 @@ export class GooRenderer3D {
       return;
     }
 
+    this.welling(source, state, liquid, dt);
+
     let strand =
       state.strand >= 0 ? this.strands[state.strand]! : undefined;
     if (
@@ -607,6 +620,59 @@ export class GooRenderer3D {
     const added = drips * sphereVolume(strand.nozzle * 1.45) * dt;
     if (strand.count >= 2) strand.vol[0] += added;
     else strand.bulb += added;
+  }
+
+  /**
+   * Liquid the prop gives off on its own wells up out of the tip in a small
+   * fountain, while liquid thrown by motion stays in the rope: Fountain
+   * sprays, Classic spits now and then, Whip only flings.
+   */
+  private welling(
+    source: GooTipSource3D,
+    state: SourceState,
+    liquid: Liquid,
+    dt: number
+  ): void {
+    const p = source.params;
+    const ambient = clamp01(p.ambientEmission);
+    const rate = Math.min(
+      32,
+      ambient ** 3 * p.ambientSpawnRate * 4 * (1 - 0.7 * liquid.viscosity)
+    );
+    if (!(rate > 0)) {
+      state.jet = 0;
+      return;
+    }
+    state.jet = Math.min(4, state.jet + dt * rate);
+    while (state.jet >= 1) {
+      state.jet -= 1;
+      const n = ++this.jets;
+      // A strong source throws a tall, tight column of fat drops; a weak
+      // one spits low and wide.
+      const angle = scatter(n) * Math.PI * 2;
+      const spread = (0.08 + 0.3 * scatter(n + 0.31)) * (1.6 - ambient);
+      const lift = (1.2 + 2.2 * ambient * ambient) * (0.85 + 0.3 * scatter(n + 0.57));
+      const velocity = this.jetVelocity.set(
+        source.velocity.x * 0.4 + Math.cos(angle) * spread,
+        source.velocity.y * 0.4 + lift,
+        source.velocity.z * 0.4 + Math.sin(angle) * spread
+      );
+      this.spawnDrop(
+        source.position,
+        velocity,
+        p.baseRadius * (0.2 + 0.3 * ambient) * (0.8 + 0.4 * scatter(n + 0.83)),
+        liquid,
+        this.dropLifetime(
+          source.position.y,
+          source.collisionFloorY,
+          velocity.y,
+          liquid.gravity,
+          0.34
+        ),
+        0,
+        true
+      );
+    }
   }
 
   private readLiquid(liquid: Liquid, source: GooTipSource3D): void {
