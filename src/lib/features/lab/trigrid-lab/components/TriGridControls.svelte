@@ -43,7 +43,7 @@
     motionType: TriGridMotionType;
     showGrid: boolean;
     onModeChange: (mode: TriGridMode) => void;
-    onPlacementChange: (left, right) => void;
+    onPlacementChange: (left: GridLocation, right: GridLocation) => void;
     onLeftOrientationChange: (o: Orientation) => void;
     onRightOrientationChange: (o: Orientation) => void;
     onMotionTypeChange: (t: TriGridMotionType) => void;
