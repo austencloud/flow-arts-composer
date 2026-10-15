@@ -95,3 +95,22 @@
 - gpt-6-astra review of a sample of this wave flagged a handful of keys (see coordinator notes); all fixes applied.
 - Codex restored as a product name where older strings translated it; Double-Staff uses the glossary prop term.
 - Gate: `Tests 66 passed (66)`.
+
+## P1 — 2026-10-14
+
+- Batch: P1, `batch-P1.json`; 401 translated keys, 0 retranslated keys, 0 review entries. The supplied batch contains only `guide_*` keys, despite the broader teaching/effect/inbox description in the brief.
+- Initial apply: `messages/fr.json: inserted 401, replaced 0, refused 0`.
+- Final apply after strict Petal terminology and neutral rotation wording corrections: `messages/fr.json: inserted 0, replaced 401, refused 0`.
+- Catalog diff before ledger: only `messages/fr.json` changed; 401 insertions, 0 deletions. All 401 supplied keys added, all previous catalog values unchanged, every output value applied.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files 1 passed (1)`; `Tests 66 passed (66)`; duration 23.43s; exit 0.
+- Focused checks: exact placeholder multiplicity preserved, single-line values, no vous/votre/vos forms, no added markup, and `git diff --check` passed.
+- Glossary: informal `tu`; infinitive buttons; Box = `Carré`, Diamond = `Diamant`, hand path = `trajectoire de la main`, prop = `accessoire`, staff = `bâton`, double staff = `bâton double`, club = `massue`, turn = `tour`, step = `étape`, beat = `temps`, Practice = `Entraînement`. Running orientation text and orientation labels use `vers l'intérieur` / `vers l'extérieur`; rotation senses are `horaire` / `antihoraire`.
+- Section 1 names retained: The Kinetic Alphabet, Codex, Composer, TKA, Zan's Diamond, Pro/Anti/Shift/Dash/Static/Float, Prospin/Antispin/Inspin/Isolation/Extension/Flower/Petal, Alpha/Beta/Gamma and Poi. Flower and Petal remain English even in explanatory prose under the glossary's explicit never-translate rule.
+- Codex `Dual`, `Cross`, `-Shift` and `-Dash` segments retained: CodexSheet combines those segments into the protected Dual-Shift/Cross-Shift/Dual-Dash category names. Existing names and data, including Austen Cloud, Lorq Nichols and Spin Science, remain unchanged.
+- Legitimately identical values: protected names and notation, French cognates such as Animation, Arc, Concave, Effort, Horizontal, Vertical and Sources, and the placeholder-only `{style}, {petals}` label (31 values altogether).
+- Context verification: RatioSwapMotion supplies `une fois` / `deux fois` for `{hand}` and `{prop}`; the accessibility sentence uses `la main parcourt son cercle {hand}` and `l'accessoire tourne {prop}` so those substitutions read correctly. Split prose fragments keep boundary spaces and link insertion positions.
+- Terms outside the glossary, without native review: spin ratio = `rapport de rotation`, lap = `tour de circuit`, cat-eye = `œil de chat`, third order = `troisième ordre`, stagger = `décalage`, leading/following = `en avance` / `qui suit`, glyph = `glyphe`, slots = `emplacements`. Product/community terminology for these choices remains unconfirmed.
+- Source ambiguity: the Static 2-turn description says to use negative space or a turn, without identifying what turns. French uses the neutral `une rotation`; no claim that the performer turns on themselves is added.
+- Prose review: ai-bust mechanical pass on the output returned `[]` at HIGH/CRITICAL severity. Judgment pass preserved the source teaching sequence and factual statements; no native review or independent confirmation of source mathematics/history was performed.
+- No primary-checkout access, other-worktree access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator.
