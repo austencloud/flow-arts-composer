@@ -1,11 +1,12 @@
 <script lang="ts">
   /**
-   * /guide/zans-diamond: Zan's original two-hand word, whose hand trails
-   * draw the path, and the 23 variations made by changing one hand. Every
-   * word plays in a SequenceShowcase (the guide's player + pictograph strip);
-   * each family is one showcase that cycles through its words, so the page
-   * reads like the Level 1 topics it builds on. The record lives in
-   * #lib/shared/guide-topics/zans-diamond-topic.ts.
+   * /guide/zans-diamond: Zan's original, whose hand trails draw the path,
+   * and the 23 variations made by changing one hand. These are hand paths,
+   * so the strips show no letters (the data keeps them: the letter keys the
+   * arrow placement that separates two hands floating the same path). Every
+   * variation loops in a SequenceShowcase (the guide's player + pictograph
+   * strip); each family is one showcase that cycles through its variations.
+   * The record lives in #lib/shared/guide-topics/zans-diamond-topic.ts.
    */
   import { onMount } from "svelte";
   import GuideShell from "../_components/GuideShell.svelte";
@@ -13,6 +14,8 @@
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PictographRender } from "../level-1/_data/guide-content-blocks";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     DEFAULT_TRAIL_SETTINGS,
@@ -23,7 +26,6 @@
   import {
     ZANS_DIAMOND_COLLECTION_PATH,
     ZANS_DIAMOND_CREDIT,
-    ZANS_DIAMOND_CROSS_SHIFTS_PATH,
     ZANS_DIAMOND_FAMILIES,
     ZANS_DIAMOND_ORIGINAL,
     zansDiamondStrip,
@@ -38,6 +40,13 @@
     mode: TrailMode.LOOP_CLEAR,
     trackingMode: TrackingMode.HAND,
   };
+
+  // Hand paths carry no letters; each cell is numbered instead.
+  const RENDER: PictographRender = { propType: PropType.HAND, showTKA: false };
+  const STEP_LABELS = [
+    "Start",
+    ...ZANS_DIAMOND_ORIGINAL.letters.map((_, i) => String(i + 1)),
+  ];
 
   const showcase = (variation: ZansDiamondVariation) => {
     const items = zansDiamondStrip(variation);
@@ -61,10 +70,7 @@
         pool: family.variations.map((variation) => ({
           word: variation.word,
           loopLabel: "",
-          proseHtml: t("guide_zans_variation_line", {
-            label: zansDiamondVariationLabel(variation, t),
-            word: variation.word,
-          }),
+          proseHtml: zansDiamondVariationLabel(variation, t),
           items: zansDiamondStrip(variation),
         })),
       };
@@ -130,14 +136,14 @@
       sequence={original.sequence}
       items={original.items}
       trail={PATH_TRAIL}
+      render={RENDER}
+      stepLabels={STEP_LABELS}
+      loop
       {picTheme}
     >
       {#snippet text()}
         <h2>{t("guide_zans_original_title")}</h2>
         <p>{t("guide_zans_original_path")}</p>
-        <p>
-          {t("guide_zans_original_body", { word: ZANS_DIAMOND_ORIGINAL.word })}
-        </p>
       {/snippet}
     </SequenceShowcase>
 
@@ -151,6 +157,9 @@
           sequence={family.first.sequence}
           items={family.first.items}
           pool={family.pool}
+          render={RENDER}
+          stepLabels={STEP_LABELS}
+          loop
           {picTheme}
         >
           {#snippet text()}
@@ -167,10 +176,6 @@
         <LinkChip href={ZANS_DIAMOND_COLLECTION_PATH}
           ><i class="fa-solid fa-layer-group" aria-hidden="true"></i>
           {t("guide_zans_open_collection")}</LinkChip
-        >
-        <LinkChip href={ZANS_DIAMOND_CROSS_SHIFTS_PATH}
-          ><i class="fa-solid fa-book-open" aria-hidden="true"></i>
-          {t("guide_zans_read_cross_shifts")}</LinkChip
         >
       </div>
     </footer>
@@ -241,14 +246,24 @@
   }
 
   .families {
+    container-type: inline-size;
     display: flex;
     flex-direction: column;
     gap: clamp(32px, 5vw, 56px);
   }
+  /* The intro sits on the showcases' grid: heading over the canvas column,
+     lead over the text column, so it does not leave the right half empty. */
   .families-intro {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm, 8px);
+    display: grid;
+    grid-template-columns: clamp(230px, 34cqw, 330px) minmax(0, 1fr);
+    column-gap: clamp(1.25rem, 4cqw, 2.5rem);
+    row-gap: var(--spacing-sm, 8px);
+    align-items: baseline;
+  }
+  @container (max-width: 600px) {
+    .families-intro {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
   .collection {
     display: flex;
