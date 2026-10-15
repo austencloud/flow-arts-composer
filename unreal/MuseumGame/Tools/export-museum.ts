@@ -14,6 +14,7 @@ import { buildEarthRootTerraceLayout } from "../../../src/lib/features/museum/da
 import { buildEarthRootTerraceBlenderContract } from "../../../src/lib/features/museum/data/earth-root-terrace-blender-contract";
 import { buildFirstFireProcessionBay } from "../../../src/lib/features/museum/data/first-fire-procession-terrain";
 import { buildFirstFireBlenderContract } from "../../../src/lib/features/museum/data/first-fire-blender-contract";
+import { buildMuseumNativePerformances } from "./museum-native-performances";
 
 const project = resolve(process.cwd(), "unreal/MuseumGame");
 const output = resolve(project, "Content/Data/museum.json");
@@ -49,6 +50,7 @@ const tiles = [...grid.tiles].map(([key, tile]) => {
     elevation: Number.isFinite(elevation) ? Math.round(elevation * 1000) / 1000 : 0,
   };
 });
+const native = buildMuseumNativePerformances(grid.performers);
 const payload = {
   version: 1,
   source: "src/lib/features/museum/data/museum-walk.ts",
@@ -60,11 +62,12 @@ const payload = {
   edges: MUSEUM_WALK_EDGES,
   tiles,
   exhibits: grid.exhibits,
-  performers: grid.performers,
+  performers: native.performers,
   furniture: grid.furniture,
   triggers: grid.triggers,
   shells,
 };
 await mkdir(resolve(project, "Content/Data"), { recursive: true });
 await writeFile(output, JSON.stringify(payload));
+await writeFile(resolve(project, "Content/Data/museum-performances.json"), JSON.stringify(native.manifest));
 console.log(`MUSEUM_EXPORT_OK ${grid.wings.length} rooms ${grid.exhibits.length} exhibits ${grid.performers.length} performers ${tiles.length} tiles -> ${output}`);

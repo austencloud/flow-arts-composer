@@ -58,6 +58,19 @@ function boneSamples(mesh: SkinnedMesh) {
   }));
 }
 
+function handWorld(
+  mesh: SkinnedMesh,
+  side: "left" | "right"
+): [number, number, number] {
+  const names =
+    side === "left"
+      ? /LeftHand$|^l_hand$|^hand\.L$/i
+      : /RightHand$|^r_hand$|^hand\.R$/i;
+  const hand = posedBones(mesh).find((bone) => names.test(bone.name));
+  if (!hand) throw new Error(`Production rig has no ${side} hand bone`);
+  return worldTransform(hand).position;
+}
+
 function containsMesh(root: Object3D, skinned: boolean): boolean {
   let found = false;
   root.traverse((object) => {
@@ -148,6 +161,20 @@ export function captureNativeFrame(
       containsMesh(child, false)
     );
     if (!propRoot) throw new Error(`Animated prop root is missing for ${id}`);
+    let rotatedBody: Object3D | null = null;
+    propRoot.traverse((object) => {
+      if (!object.name.endsWith("-rotated-body")) return;
+      if (rotatedBody)
+        throw new Error(`Multiple rotated prop bodies found for ${id}`);
+      rotatedBody = object;
+    });
+    // The packaged procedural and GLTF components place their rotation group
+    // directly inside Prop3D's scale group; Staff3D names its nested group.
+    rotatedBody ??=
+      propRoot.children.find(
+        (child) => child.type === "Group" && containsMesh(child, false)
+      ) ?? null;
+    if (!rotatedBody) throw new Error(`Rotated prop body is missing for ${id}`);
     const meshes: { name: string; world: TransformSample }[] = [];
     correction.traverse((object) => {
       if (
@@ -159,6 +186,7 @@ export function captureNativeFrame(
     return {
       correctionWorld: worldTransform(correction),
       propRootWorld: worldTransform(propRoot),
+      rotatedBodyWorld: worldTransform(rotatedBody),
       renderedMeshes: meshes,
     };
   };
@@ -170,6 +198,8 @@ export function captureNativeFrame(
     performerWorld: worldTransform(performer),
     skinnedMeshLocal: localTransform(skinned),
     bones: boneSamples(skinned),
+    leftHandWorld: handWorld(skinned, "left"),
+    rightHandWorld: handWorld(skinned, "right"),
     leftProp: prop(propBranches[0]!),
     rightProp: prop(propBranches[1]!),
   };
