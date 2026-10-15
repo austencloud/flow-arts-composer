@@ -6,7 +6,10 @@
 #include "Components/InputComponent.h"
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 
 namespace { const FString SaveSlot = TEXT("MuseumGameNative1"); }
 
@@ -29,6 +32,27 @@ void AMuseumCharacter::Tick(float DeltaSeconds)
     Super::Tick(DeltaSeconds);
     if (!Museum)
         for (TActorIterator<AMuseumWorld> It(GetWorld()); It; ++It) { Museum = *It; break; }
+    if (!bReviewStartApplied && Museum && Museum->IsLoaded())
+    {
+        bReviewStartApplied = true;
+        int32 TileX = 0, TileY = 0, Yaw = 0;
+        if (FParse::Value(FCommandLine::Get(), TEXT("MuseumStartX="), TileX)
+            && FParse::Value(FCommandLine::Get(), TEXT("MuseumStartY="), TileY)
+            && FParse::Value(FCommandLine::Get(), TEXT("MuseumStartYaw="), Yaw))
+        {
+            SetActorLocation(FVector(TileX * 50.f, TileY * 50.f, 250.f), false, nullptr, ETeleportType::TeleportPhysics);
+            if (Controller) Controller->SetControlRotation(FRotator(0, Yaw, 0));
+            if (FParse::Param(FCommandLine::Get(), TEXT("MuseumShot"))) ReviewScreenshotDelay = 2.f;
+            UE_LOG(LogTemp, Display, TEXT("MuseumGame review start: tile %d,%d yaw %d"), TileX, TileY, Yaw);
+        }
+    }
+    if (ReviewScreenshotDelay >= 0.f)
+    {
+        ReviewScreenshotDelay -= DeltaSeconds;
+        if (ReviewScreenshotDelay < 0.f)
+            if (APlayerController* Player = Cast<APlayerController>(Controller))
+                Player->ConsoleCommand(TEXT("HighResShot 1"));
+    }
     NearbyExhibit = Museum ? Museum->NearestExhibit(GetActorLocation(), 190.f) : nullptr;
     if (NoticeTime > 0) { NoticeTime -= DeltaSeconds; if (NoticeTime <= 0) Notice.Empty(); }
 }
@@ -46,6 +70,7 @@ void AMuseumCharacter::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindAction(TEXT("Save"), IE_Pressed, this, &AMuseumCharacter::SaveProgress);
     Input->BindAction(TEXT("Load"), IE_Pressed, this, &AMuseumCharacter::LoadProgress);
     Input->BindAction(TEXT("Reset"), IE_Pressed, this, &AMuseumCharacter::ResetToEntrance);
+    Input->BindAction(TEXT("Quit"), IE_Pressed, this, &AMuseumCharacter::QuitGame);
 }
 
 void AMuseumCharacter::MoveForward(float Value)
@@ -110,4 +135,9 @@ void AMuseumCharacter::ResetToEntrance()
     SetActorLocation(Museum->GetSpawnLocation(), false, nullptr, ETeleportType::TeleportPhysics);
     OpenExhibitId.Empty();
     ShowNotice(TEXT("Returned to entrance"));
+}
+
+void AMuseumCharacter::QuitGame()
+{
+    if (APlayerController* Player = Cast<APlayerController>(Controller)) Player->ConsoleCommand(TEXT("quit"));
 }

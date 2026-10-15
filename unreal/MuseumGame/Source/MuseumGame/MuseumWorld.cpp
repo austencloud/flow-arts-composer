@@ -3,6 +3,7 @@
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SceneComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Materials/MaterialInterface.h"
@@ -45,7 +46,7 @@ AMuseumWorld::AMuseumWorld()
     USceneComponent* Scene = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
     SetRootComponent(Scene);
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
-    auto MakeGroup = [this, &Cube](const TCHAR* Name, bool bCollision)
+    auto MakeGroup = [this](const TCHAR* Name, bool bCollision)
     {
         UHierarchicalInstancedStaticMeshComponent* Group = CreateDefaultSubobject<UHierarchicalInstancedStaticMeshComponent>(Name);
         Group->SetupAttachment(GetRootComponent());
@@ -55,6 +56,8 @@ AMuseumWorld::AMuseumWorld()
         return Group;
     };
     Floors = MakeGroup(TEXT("Floors"), false);
+    CaveFloorCollision = MakeGroup(TEXT("CaveFloorCollision"), true);
+    CaveFloorCollision->SetHiddenInGame(true);
     Corridors = MakeGroup(TEXT("Corridors"), true);
     Walls = MakeGroup(TEXT("Walls"), true);
     Displays = MakeGroup(TEXT("Displays"), true);
@@ -123,23 +126,39 @@ bool AMuseumWorld::LoadMuseum()
         if (W < 3 || H < 3) continue;
         Room.Bounds = FIntRect(X, Y, X + W, Y + H);
         Rooms.Add(Room);
-        UBoxComponent* FloorCollision = NewObject<UBoxComponent>(this);
-        FloorCollision->SetupAttachment(GetRootComponent());
-        FloorCollision->SetBoxExtent(FVector((W - 2) * TileCm / 2, (H - 2) * TileCm / 2, 5.f));
-        FloorCollision->SetRelativeLocation(TilePosition(X + (W - 1) / 2, Y + (H - 1) / 2, -8.f));
-        FloorCollision->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-        FloorCollision->SetCollisionResponseToAllChannels(ECR_Block);
-        FloorCollision->RegisterComponent();
-        RoomCollision.Add(FloorCollision);
+        const bool bCaveShell = Room.Id == TEXT("cave-water-approach") || Room.Id == TEXT("cave-water-gallery")
+            || Room.Id == TEXT("cave-water") || Room.Id == TEXT("cave-fire") || Room.Id == TEXT("cave-earth");
+        if (!bCaveShell)
+        {
+            UBoxComponent* FloorCollision = NewObject<UBoxComponent>(this);
+            FloorCollision->SetupAttachment(GetRootComponent());
+            FloorCollision->SetBoxExtent(FVector((W - 2) * TileCm / 2, (H - 2) * TileCm / 2, 5.f));
+            FloorCollision->SetRelativeLocation(TilePosition(X + (W - 1) / 2, Y + (H - 1) / 2, -8.f));
+            FloorCollision->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+            FloorCollision->SetCollisionResponseToAllChannels(ECR_Block);
+            FloorCollision->RegisterComponent();
+            RoomCollision.Add(FloorCollision);
+        }
 
-        UPointLightComponent* Light = NewObject<UPointLightComponent>(this);
-        Light->SetupAttachment(GetRootComponent());
-        Light->SetRelativeLocation(TilePosition(X + W / 2, Y + H / 2, 330.f));
-        Light->SetIntensity(Room.Theme == TEXT("cave") ? 1800.f : 3000.f);
-        Light->SetAttenuationRadius(FMath::Max(W, H) * TileCm * .9f);
-        Light->SetLightColor(Room.Theme == TEXT("cave") ? FLinearColor(1.f, .48f, .20f) : FLinearColor(.86f, .9f, 1.f));
-        Light->RegisterComponent();
-        RoomLights.Add(Light);
+        const bool bCave = Room.Theme == TEXT("cave");
+        const FLinearColor LightColor = Room.Id.Contains(TEXT("water")) ? FLinearColor(.45f, .7f, 1.f)
+            : Room.Id.Contains(TEXT("fire")) ? FLinearColor(1.f, .48f, .2f)
+            : Room.Id.Contains(TEXT("earth")) ? FLinearColor(.75f, .9f, .55f)
+            : FLinearColor(.86f, .9f, 1.f);
+        const int32 Spacing = bCave ? 10 : FMath::Max(W, H);
+        for (int32 LightX = X + (bCave ? FMath::Min(5, W / 2) : W / 2); LightX < X + W; LightX += Spacing)
+        for (int32 LightY = Y + (bCave ? FMath::Min(5, H / 2) : H / 2); LightY < Y + H; LightY += Spacing)
+        {
+            UPointLightComponent* Light = NewObject<UPointLightComponent>(this);
+            Light->SetupAttachment(GetRootComponent());
+            Light->SetRelativeLocation(TilePosition(LightX, LightY, bCave ? 250.f : 330.f));
+            Light->SetIntensity(bCave ? 6000.f : 3000.f);
+            Light->SetAttenuationRadius(bCave ? 800.f : FMath::Max(W, H) * TileCm * .9f);
+            Light->SetCastShadows(false);
+            Light->SetLightColor(LightColor);
+            Light->RegisterComponent();
+            RoomLights.Add(Light);
+        }
     }
 
     for (const auto& Value : *TileValues)
@@ -151,12 +170,37 @@ bool AMuseumWorld::LoadMuseum()
         const float Elevation = NumberField(Tile, TEXT("elevation")) * 100.f;
         const FVector Position = TilePosition(X, Y, Elevation);
         const FString Type = StringField(Tile, TEXT("type"));
-        if (Type == TEXT("floor")) AddCube(Floors, Position + FVector(0, 0, -5), FVector(.5f, .5f, .08f));
+        bool bAuthoredShell = false;
+        for (const FMuseumRoom& Room : Rooms)
+            if ((Room.Id == TEXT("cave-water-approach") || Room.Id == TEXT("cave-water-gallery") || Room.Id == TEXT("cave-water")
+                    || Room.Id == TEXT("cave-fire") || Room.Id == TEXT("cave-earth")) && Room.Bounds.Contains(FIntPoint(X, Y)))
+            { bAuthoredShell = true; break; }
+        if (bAuthoredShell && Tile->GetBoolField(TEXT("walkable")))
+            AddCube(CaveFloorCollision, Position + FVector(0, 0, -5), FVector(.5f, .5f, .08f));
+        if (Type == TEXT("floor") && !bAuthoredShell) AddCube(Floors, Position + FVector(0, 0, -5), FVector(.5f, .5f, .08f));
         else if (Type == TEXT("corridor") || Type == TEXT("door")) AddCube(Corridors, Position + FVector(0, 0, -5), FVector(.5f, .5f, .08f));
-        else if (Type == TEXT("wall") || Type == TEXT("rope") || Type == TEXT("scaffolding")) AddCube(Walls, Position + FVector(0, 0, 150), FVector(.5f, .5f, 3.f));
+        else if ((Type == TEXT("wall") || Type == TEXT("rope") || Type == TEXT("scaffolding")) && !bAuthoredShell) AddCube(Walls, Position + FVector(0, 0, 150), FVector(.5f, .5f, 3.f));
         else if (Type == TEXT("exhibit-panel") || Type == TEXT("sequence-screen") || Type == TEXT("sign")) AddCube(Displays, Position + FVector(0, 0, 105), FVector(.45f, .2f, 1.25f));
         else if (Type == TEXT("performer-station") || Type == TEXT("pedestal")) AddCube(Performers, Position + FVector(0, 0, 45), FVector(.6f, .6f, .8f));
     }
+    const TArray<TSharedPtr<FJsonValue>>* ShellValues = nullptr;
+    if (Root->TryGetArrayField(TEXT("shells"), ShellValues))
+        for (const auto& Value : *ShellValues)
+        {
+            const TSharedPtr<FJsonObject> ShellJson = Value->AsObject();
+            const FString Id = StringField(ShellJson, TEXT("id"));
+            if (Id.IsEmpty()) continue;
+            const FString AssetPath = FString::Printf(TEXT("/Game/MuseumGame/Shells/%s/SM_%s.SM_%s"), *Id, *Id, *Id);
+            UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *AssetPath);
+            if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("MuseumGame missing authored shell %s"), *AssetPath); continue; }
+            UStaticMeshComponent* Shell = NewObject<UStaticMeshComponent>(this);
+            Shell->SetupAttachment(GetRootComponent());
+            Shell->SetStaticMesh(Mesh);
+            Shell->SetRelativeLocation(FVector(NumberField(ShellJson, TEXT("x")) * 100.f, NumberField(ShellJson, TEXT("z")) * 100.f, 0));
+            Shell->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+            Shell->RegisterComponent();
+            AuthoredShells.Add(Shell);
+        }
     for (const auto& Value : *ExhibitValues)
     {
         const TSharedPtr<FJsonObject> Json = Value->AsObject();
@@ -173,6 +217,37 @@ bool AMuseumWorld::LoadMuseum()
         Exhibits.Add(MoveTemp(Exhibit));
     }
     PerformerCount = PerformerValues->Num();
+    static const TCHAR* AvatarIds[] = {
+        TEXT("ch01"), TEXT("ch07"), TEXT("ch10"), TEXT("ch12"),
+        TEXT("ch18"), TEXT("ch21"), TEXT("ch22"), TEXT("ch24"),
+        TEXT("ch26"), TEXT("ch34"), TEXT("ch41"), TEXT("ch42"),
+        TEXT("ch44"), TEXT("remy"), TEXT("x_bot"), TEXT("y_bot")
+    };
+    UStaticMesh* AvatarMeshes[UE_ARRAY_COUNT(AvatarIds)] = {};
+    for (int32 Index = 0; Index < UE_ARRAY_COUNT(AvatarIds); ++Index)
+    {
+        const FString AssetPath = FString::Printf(TEXT("/Game/MuseumGame/Performers/SM_%s.SM_%s"), AvatarIds[Index], AvatarIds[Index]);
+        AvatarMeshes[Index] = LoadObject<UStaticMesh>(nullptr, *AssetPath);
+        if (!AvatarMeshes[Index]) UE_LOG(LogTemp, Warning, TEXT("MuseumGame missing performer mesh %s"), *AssetPath);
+    }
+    for (int32 Index = 0; Index < PerformerValues->Num(); ++Index)
+    {
+        const TSharedPtr<FJsonObject> Json = (*PerformerValues)[Index]->AsObject();
+        if (!Json.IsValid()) continue;
+        UStaticMesh* Mesh = AvatarMeshes[Index % UE_ARRAY_COUNT(AvatarIds)];
+        if (!Mesh) continue;
+        UStaticMeshComponent* Figure = NewObject<UStaticMeshComponent>(this);
+        Figure->SetupAttachment(GetRootComponent());
+        Figure->SetStaticMesh(Mesh);
+        Figure->SetRelativeLocation(TilePosition(NumberField(Json, TEXT("tileX")), NumberField(Json, TEXT("tileY")),
+            85.f + NumberField(Json, TEXT("elevation")) * 100.f));
+        const FString Facing = StringField(Json, TEXT("facing"));
+        const float Yaw = Facing == TEXT("north") ? -90.f : Facing == TEXT("south") ? 90.f : Facing == TEXT("west") ? 180.f : 0.f;
+        Figure->SetRelativeRotation(FRotator(0, Yaw, 0));
+        Figure->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        Figure->RegisterComponent();
+        PerformerFigures.Add(Figure);
+    }
     const TArray<TSharedPtr<FJsonValue>>* FurnitureValues = nullptr;
     if (Root->TryGetArrayField(TEXT("furniture"), FurnitureValues))
         for (const auto& Value : *FurnitureValues)

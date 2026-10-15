@@ -7,6 +7,7 @@
 class UHierarchicalInstancedStaticMeshComponent;
 class UBoxComponent;
 class UPointLightComponent;
+class UStaticMeshComponent;
 
 USTRUCT()
 struct FMuseumExhibit
@@ -48,6 +49,7 @@ public:
 
 private:
     UPROPERTY() UHierarchicalInstancedStaticMeshComponent* Floors;
+    UPROPERTY() UHierarchicalInstancedStaticMeshComponent* CaveFloorCollision;
     UPROPERTY() UHierarchicalInstancedStaticMeshComponent* Corridors;
     UPROPERTY() UHierarchicalInstancedStaticMeshComponent* Walls;
     UPROPERTY() UHierarchicalInstancedStaticMeshComponent* Displays;
@@ -55,6 +57,8 @@ private:
     UPROPERTY() UHierarchicalInstancedStaticMeshComponent* Furniture;
     UPROPERTY() TArray<UBoxComponent*> RoomCollision;
     UPROPERTY() TArray<UPointLightComponent*> RoomLights;
+    UPROPERTY() TArray<UStaticMeshComponent*> AuthoredShells;
+    UPROPERTY() TArray<UStaticMeshComponent*> PerformerFigures;
     TArray<FMuseumExhibit> Exhibits;
     TArray<FMuseumRoom> Rooms;
     FVector SpawnLocation = FVector::ZeroVector;

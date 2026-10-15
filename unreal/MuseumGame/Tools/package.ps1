@@ -13,7 +13,7 @@ foreach ($path in @($file, $map, $data, $uat)) {
     if (-not (Test-Path -LiteralPath $path)) { throw "Missing prerequisite: $path" }
 }
 if (-not $ArchiveDirectory) { $ArchiveDirectory = Join-Path $project 'Builds' }
-$ubt = '-MaxParallelActions=4 -NoUBA'
+$ubt = '-WaitMutex -MaxParallelActions=4 -NoUBA'
 if ($CompilerVersion) { $ubt += " -CompilerVersion=$CompilerVersion" }
 & $uat BuildCookRun "-project=$file" -noP4 -platform=Win64 -clientconfig=Development -build -skipbuildeditor -cook -stage -package -archive -pak "-archivedirectory=$ArchiveDirectory" "-ubtargs=$ubt"
 if ($LASTEXITCODE -ne 0) { throw "Museum package failed ($LASTEXITCODE)" }

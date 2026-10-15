@@ -62,9 +62,9 @@ void AMuseumHUD::DrawHUD()
         if (!Exhibit->Footer.IsEmpty()) DrawText(Exhibit->Footer, Soft, X + 35, FMath::Min(LineY + 20, Y + H * .58f), Font, .95f);
         DrawText(TEXT("E CLOSE"), Cream, X + PanelW - 105, Y + H * .60f, Font, 1.f);
     }
-    else if (const FMuseumExhibit* Exhibit = Visitor->GetNearbyExhibit())
+    else if (const FMuseumExhibit* NearbyExhibit = Visitor->GetNearbyExhibit())
     {
         DrawRect(FLinearColor(.025f, .033f, .035f, .88f), W / 2 - 220, H - 105, 440, 55);
-        DrawText(FString::Printf(TEXT("E  EXAMINE  %s"), *Exhibit->Title), Cream, W / 2 - 200, H - 88, Font, 1.f);
+        DrawText(FString::Printf(TEXT("E  EXAMINE  %s"), *NearbyExhibit->Title), Cream, W / 2 - 200, H - 88, Font, 1.f);
     }
 }

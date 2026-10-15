@@ -9,6 +9,11 @@ import {
   attachMuseumWalkTerrain,
 } from "../../../src/lib/features/museum/data/museum-walk";
 import { getTileMetadata } from "../../../src/lib/features/museum/domain/tile-registry";
+import { buildDrownedGalleryLayout } from "../../../src/lib/features/museum/data/drowned-gallery-terrain";
+import { buildEarthRootTerraceLayout } from "../../../src/lib/features/museum/data/earth-root-terrace-terrain";
+import { buildEarthRootTerraceBlenderContract } from "../../../src/lib/features/museum/data/earth-root-terrace-blender-contract";
+import { buildFirstFireProcessionBay } from "../../../src/lib/features/museum/data/first-fire-procession-terrain";
+import { buildFirstFireBlenderContract } from "../../../src/lib/features/museum/data/first-fire-blender-contract";
 
 const project = resolve(process.cwd(), "unreal/MuseumGame");
 const output = resolve(project, "Content/Data/museum.json");
@@ -18,6 +23,18 @@ if (!result.validation.valid) {
 }
 const grid = result.grid;
 attachMuseumWalkTerrain(grid);
+const water = buildDrownedGalleryLayout(grid);
+const earth = buildEarthRootTerraceLayout(grid);
+const fire = buildFirstFireProcessionBay(grid);
+if (!water || !earth || !fire) throw new Error("Authored cave layout is incomplete");
+const waterRooms = [water.approach, water.gallery, water.grotto];
+const earthCentre = buildEarthRootTerraceBlenderContract(earth).room.planCentre;
+const fireCentre = buildFirstFireBlenderContract(fire.plan, fire.corridor).room.planCentre;
+const shells = [
+  { id: "DrownedGallery", x: (Math.min(...waterRooms.map(r => r.minX)) + Math.max(...waterRooms.map(r => r.maxX))) / 2, z: (Math.min(...waterRooms.map(r => r.minZ)) + Math.max(...waterRooms.map(r => r.maxZ))) / 2 },
+  { id: "EarthRootTerrace", x: earthCentre.x, z: earthCentre.z },
+  { id: "FirstFire", x: fireCentre.x, z: fireCentre.z },
+];
 const tiles = [...grid.tiles].map(([key, tile]) => {
   const [x, y] = key.split(",").map(Number);
   if (!Number.isInteger(x) || !Number.isInteger(y)) throw new Error(`Bad tile key ${key}`);
@@ -46,6 +63,7 @@ const payload = {
   performers: grid.performers,
   furniture: grid.furniture,
   triggers: grid.triggers,
+  shells,
 };
 await mkdir(resolve(project, "Content/Data"), { recursive: true });
 await writeFile(output, JSON.stringify(payload));

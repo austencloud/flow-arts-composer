@@ -11,13 +11,46 @@ if data.get("version") != 1 or len(data.get("rooms", [])) < 20:
 ed = u.EditorAssetLibrary
 tools = u.AssetToolsHelpers.get_asset_tools()
 matlib = u.MaterialEditingLibrary
+u.SystemLibrary.execute_console_command(None, "Interchange.FeatureFlags.Import.FBX 0")
+
+for shell in ("DrownedGallery", "EarthRootTerrace", "FirstFire"):
+    source = project / "Saved" / "Shells" / (shell + ".fbx")
+    if not source.is_file():
+        raise RuntimeError(f"Missing converted cave shell: {source}")
+    folder = "/Game/MuseumGame/Shells/" + shell
+    target = folder + "/SM_" + shell
+    if ed.does_asset_exist(target):
+        continue
+    task = u.AssetImportTask()
+    task.filename = str(source)
+    task.destination_path = folder
+    task.destination_name = "SM_" + shell
+    task.automated = True
+    task.replace_existing = True
+    task.save = True
+    options = u.FbxImportUI()
+    options.import_mesh = True
+    options.import_as_skeletal = False
+    options.mesh_type_to_import = u.FBXImportType.FBXIT_STATIC_MESH
+    options.automated_import_should_detect_type = False
+    options.import_materials = False
+    options.import_textures = False
+    options.static_mesh_import_data.combine_meshes = True
+    options.static_mesh_import_data.generate_lightmap_u_vs = False
+    options.static_mesh_import_data.auto_generate_collision = False
+    task.options = options
+    tools.import_asset_tasks([task])
+    asset = ed.load_asset(target)
+    if not asset:
+        raise RuntimeError(f"Failed to import {target}")
+    ed.save_loaded_asset(asset)
+    u.log(f"MUSEUM_SHELL_IMPORTED {shell} {asset.get_bounds().box_extent}")
 
 def material(name, color, roughness):
     path = "/Game/MuseumGame/Materials/" + name
     if ed.does_asset_exist(path):
-        m = ed.load_asset(path)
-    else:
-        m = tools.create_asset(name, "/Game/MuseumGame/Materials", u.Material, u.MaterialFactoryNew())
+        return ed.load_asset(path)
+    m = tools.create_asset(name, "/Game/MuseumGame/Materials", u.Material, u.MaterialFactoryNew())
     matlib.delete_all_material_expressions(m)
     pigment = matlib.create_material_expression(m, u.MaterialExpressionConstant3Vector)
     pigment.set_editor_property("constant", u.LinearColor(*color, 1))

@@ -30,11 +30,14 @@ private:
     TSet<FString> ViewedExhibits;
     FString Notice;
     float NoticeTime = 0;
+    bool bReviewStartApplied = false;
+    float ReviewScreenshotDelay = -1.f;
     void MoveForward(float Value);
     void MoveRight(float Value);
     void Interact();
     void SaveProgress();
     void LoadProgress();
     void ResetToEntrance();
+    void QuitGame();
     void ShowNotice(const FString& Message);
 };
