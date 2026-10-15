@@ -22,7 +22,11 @@
   }
   const props: Props = $props();
   const id = "native-export";
-  const { renderer: rendererValue, scene: sceneValue } = useThrelte();
+  const {
+    renderer: rendererValue,
+    scene: sceneValue,
+    autoRenderTask,
+  } = useThrelte();
   const renderer = resolveThrelteRenderer(rendererValue);
   const scene = resolveThrelteScene(sceneValue) as Scene;
   const { scheduler, resetFrameInvalidation } = useScheduler();
@@ -30,6 +34,7 @@
 
   export function pauseAutoLoop(): void {
     renderer.setAnimationLoop(null);
+    autoRenderTask.stop();
   }
 
   export function hasRenderedRig(): boolean {
