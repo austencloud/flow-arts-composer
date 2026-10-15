@@ -89,3 +89,9 @@
 - Existing source discrepancies preserved by this formality-only scope: `feedback_group_feedback_desc` describes notification when feedback is taken into account rather than the English status changes and replies; `feedback_notification_prefs_subtitle` describes choosing notifications rather than delivery and alert types. These are established text differences, not resolved in F1.
 - Uncertain glossary terms: none.
 - No primary-checkout access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator.
+
+## REV (coordinator) — 2026-10-14
+
+- gpt-6-astra review of a sample of this wave flagged a handful of keys (see coordinator notes); all fixes applied.
+- Codex restored as a product name where older strings translated it; Double-Staff uses the glossary prop term.
+- Gate: `Tests 66 passed (66)`.
