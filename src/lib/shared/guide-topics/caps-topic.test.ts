@@ -1,9 +1,9 @@
 /**
- * The cap record behind /guide/three-levels. The silent failures: the
- * checked-in cap table drifting from what the dataframe spells, a cap whose
- * hands do not close back where they started, a strip whose placements do not
- * chain, the Book spelling something other than DJ, or a VTG reading that
- * disagrees with the hand cycle.
+ * The CAP record behind /guide/three-levels. The silent failures: the compact
+ * table drifting from the SpiroAnim transcription of Gage's chart, a rebuilt
+ * step with the wrong rotation or orientation, a word the dataframe does not
+ * spell, the essay's claims about the CAPs (one hand caps, the other keeps
+ * circling; 72 CAPs, 32 words) going untrue, or a strip that does not chain.
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -12,107 +12,191 @@ import {
   lookupLetter,
   parseCsvEdges,
 } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
-import type { PairLetterLookup } from "#lib/shared/foundation/services/solo-prop-pair-variations.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 import {
-  BOOK_LEFT_STEPS,
-  BOOK_RIGHT_STEPS,
-  BOOK_WORD,
   CAPS,
-  bookStrip,
+  CAP_WORDS,
   capBeats,
   capCell,
-  capGap,
   capHandSteps,
   capStrip,
-  enumerateCaps,
-  spellPair,
+  type CapHand,
 } from "./caps-topic";
 
-const edges = parseCsvEdges(
-  readFileSync(
-    resolve(
-      process.cwd(),
-      "static/data/pictographs/DiamondPictographDataframe.csv"
-    ),
-    "utf8"
-  )
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8");
+
+interface SourceMotion {
+  motionType: string;
+  rotationDirection: string;
+  startLocation: string;
+  endLocation: string;
+  turns: number;
+  startOrientation: string;
+  endOrientation: string;
+}
+interface SourceSequence {
+  word: string;
+  metadata: { cell: string };
+  steps: {
+    letter: string;
+    motions: { left: SourceMotion; right: SourceMotion };
+  }[];
+}
+
+const source: SourceSequence[] = JSON.parse(
+  read("docs/research/spiroanim/eightstep-72-sequences.json")
 );
-const lookup: PairLetterLookup = (q) =>
-  lookupLetter(edges, {
-    startPlacement: q.startPlacement,
-    endPlacement: q.endPlacement,
-    left: q.left,
-    right: q.right,
+const edges = parseCsvEdges(
+  read("static/data/pictographs/DiamondPictographDataframe.csv")
+);
+
+const RING = ["n", "e", "s", "w"];
+const forward = (from: string, to: string) =>
+  (RING.indexOf(to) - RING.indexOf(from) + 4) % 4 === 1;
+
+describe("the CAP table", () => {
+  it("holds all 72 of Gage's CAPs in chart order", () => {
+    expect(CAPS.map((c) => c.id)).toEqual(source.map((s) => s.metadata.cell));
   });
 
-describe("the cap table", () => {
-  it("is every cap the dataframe spells under the cap rules", () => {
-    const derived = enumerateCaps(lookup)
-      .map((c) => c.word)
-      .sort();
-    expect(CAPS.map((c) => c.word).sort()).toEqual(derived);
-    expect(CAPS).toHaveLength(20);
-  });
-
-  it("spells each cap's word from its own hands", () => {
-    for (const cap of CAPS) {
-      expect(
-        spellPair(capHandSteps(cap.left), capHandSteps(cap.right), lookup)
-      ).toBe(cap.word);
-    }
-  });
-
-  it("brings both hands and both props back to where they started", () => {
-    for (const cap of CAPS) {
-      for (const hand of [cap.left, cap.right]) {
-        const steps = capHandSteps(hand);
-        expect(steps.at(-1)!.endLocation).toBe(steps[0]!.startLocation);
-        expect(steps.at(-1)!.endOrientation).toBe(steps[0]!.startOrientation);
+  it("rebuilds every step of the transcription exactly", () => {
+    for (const [i, cap] of CAPS.entries()) {
+      const src = source[i]!;
+      expect(cap.word).toBe(src.word);
+      for (const side of ["left", "right"] as const) {
+        const steps = capHandSteps(cap[side]);
+        steps.forEach((step, beat) => {
+          const m = src.steps[beat]!.motions[side];
+          expect({ ...step, duration: undefined }).toEqual({
+            duration: undefined,
+            motionType: m.motionType,
+            rotationDirection: m.rotationDirection,
+            startLocation: m.startLocation,
+            endLocation: m.endLocation,
+            turns: m.turns,
+            startOrientation: m.startOrientation,
+            endOrientation: m.endOrientation,
+          });
+        });
       }
     }
   });
 
-  it("groups the caps by how far apart the hands run: 7 in step, 8 one beat, 5 two", () => {
-    const count = (gap: number) => CAPS.filter((c) => capGap(c) === gap).length;
-    expect([count(0), count(1), count(2)]).toEqual([7, 8, 5]);
-  });
-
-  it("finds the repeating cell", () => {
-    expect(capCell("AABBAABB")).toBe("AABB");
-    expect(capCell("CCCCCCCC")).toBe("C");
-    expect(capCell("FLFLFLFL")).toBe("FL");
+  it("spells each word from the dataframe", () => {
+    for (const cap of CAPS) {
+      const left = capHandSteps(cap.left);
+      const right = capHandSteps(cap.right);
+      const word = left
+        .map((l, i) => {
+          const r = right[i]!;
+          return lookupLetter(edges, {
+            startPlacement: getGridPlacementFromLocations(
+              l.startLocation,
+              r.startLocation
+            ),
+            endPlacement: getGridPlacementFromLocations(
+              l.endLocation,
+              r.endLocation
+            ),
+            left: l,
+            right: r,
+          });
+        })
+        .join("");
+      expect(word).toBe(cap.word);
+    }
   });
 });
 
-describe("capBeats", () => {
-  it("reads two beats of 1:1 extension and two of 1:3 antispin in each hand", () => {
+describe("what the essay says about them", () => {
+  const caps = (hand: CapHand) => {
+    let at = hand.start;
+    return hand.path.every((to, i) => {
+      const ok =
+        (forward(at, to) === forward(hand.start, hand.path[0]!)) ===
+        (i % 3 !== 2);
+      at = to;
+      return ok;
+    });
+  };
+  const keepsCircling = (hand: CapHand) => {
+    let at = hand.start;
+    const way = forward(at, hand.path[0]!);
+    return hand.path.every((to) => {
+      const ok = forward(at, to) === way;
+      at = to;
+      return ok;
+    });
+  };
+
+  it("has one hand capping (two beats on, one back) and the other circling", () => {
     for (const cap of CAPS) {
-      const beats = capBeats(cap);
-      for (const side of ["left", "right"] as const) {
-        const spins = beats.map((b) => b[side].spin);
-        expect(spins.filter((s) => s === "extension")).toHaveLength(4);
-        for (const b of beats) {
-          expect(b[side].ratio).toBe(
-            b[side].spin === "extension" ? "1:1" : "1:3"
+      const [capper, other] = caps(cap.left)
+        ? [cap.left, cap.right]
+        : [cap.right, cap.left];
+      expect(caps(capper), cap.id).toBe(true);
+      expect(keepsCircling(other), cap.id).toBe(true);
+      // The capping hand changes its spin on the beat it doubles back.
+      capper.spins.forEach((spin, i) => {
+        const turnBack = i % 3 === 2;
+        expect(spin === capper.spins[0], `${cap.id} beat ${i + 1}`).toBe(
+          !turnBack
+        );
+      });
+    }
+  });
+
+  it("makes 72 CAPs into 32 words, each a cell repeated", () => {
+    expect(CAPS).toHaveLength(72);
+    expect(CAP_WORDS).toHaveLength(32);
+    for (const { word } of CAP_WORDS) {
+      expect([3, 6]).toContain(capCell(word).length);
+    }
+    expect(capCell("KECKECKECKEC")).toBe("KEC");
+    expect(capCell("IIDCCJIIDCCJ")).toBe("IIDCCJ");
+  });
+
+  it("shares a word only between CAPs that differ in turns alone", () => {
+    const shape = (hand: CapHand) =>
+      capHandSteps(hand)
+        .map(
+          (s) =>
+            `${s.startLocation}${s.endLocation}${s.motionType}${s.rotationDirection}`
+        )
+        .join();
+    for (const { caps } of CAP_WORDS) {
+      for (const cap of caps.slice(1)) {
+        expect(shape(cap.left)).toBe(shape(caps[0]!.left));
+        expect(shape(cap.right)).toBe(shape(caps[0]!.right));
+      }
+    }
+    const shapes = new Set(
+      CAP_WORDS.map((w) => shape(w.caps[0]!.left) + shape(w.caps[0]!.right))
+    );
+    expect(shapes.size).toBe(CAP_WORDS.length);
+  });
+
+  it("reads every beat as a Type 1 element with 1:1 or 1:3 in each hand", () => {
+    for (const cap of CAPS) {
+      for (const beat of capBeats(cap)) {
+        // Every beat moves both hands round the ring, so each has an element.
+        expect(beat.element, `${cap.id} beat ${beat.beat}`).not.toBeNull();
+        for (const side of ["left", "right"] as const) {
+          expect(beat[side].ratio).toBe(
+            beat[side].spin === "extension" ? "1:1" : "1:3"
           );
         }
       }
     }
   });
-
-  it("reads AABB as split-same throughout", () => {
-    const aabb = CAPS.find((c) => c.word === "AABBAABB")!;
-    expect(new Set(capBeats(aabb).map((b) => b.family))).toEqual(
-      new Set(["split-same"])
-    );
-  });
 });
 
 describe("strips", () => {
-  it("plays every cap as a start pose and eight chained beats", () => {
+  it("plays every CAP as a start pose and twelve chained beats", () => {
     for (const cap of CAPS) {
       const strip = capStrip(cap);
-      expect(strip).toHaveLength(9);
+      expect(strip).toHaveLength(13);
       for (let i = 1; i < strip.length; i++) {
         expect(strip[i]!.startPlacement).toBe(strip[i - 1]!.endPlacement);
       }
@@ -122,16 +206,6 @@ describe("strips", () => {
           .map((s) => s.letter)
           .join("")
       ).toBe(cap.word);
-    }
-  });
-
-  it("spells the Book as D and J, opening and closing", () => {
-    expect(spellPair(BOOK_LEFT_STEPS, BOOK_RIGHT_STEPS, lookup)).toBe(
-      BOOK_WORD
-    );
-    const strip = bookStrip();
-    for (let i = 1; i < strip.length; i++) {
-      expect(strip[i]!.startPlacement).toBe(strip[i - 1]!.endPlacement);
     }
   });
 });

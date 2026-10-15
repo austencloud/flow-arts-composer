@@ -4,8 +4,8 @@
 
 <script lang="ts">
   /**
-   * The essay's one live figure: a cap playing, with a readout that changes
-   * with the section being read. At the name level it is just "a cap"; at the
+   * The essay's one live figure: a CAP playing, with a readout that changes
+   * with the section being read. At the name level it is just "a CAP"; at the
    * letters level each beat's letter lights as it plays; at the VTG level the
    * playing beat shows its timing and direction (the TnD element) and each
    * hand's spin as the flower that spin draws, with its ratio.
@@ -24,7 +24,6 @@
   import ShapeMatrixMandalaArt from "#lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
   import { stripToSequence } from "../../level-1/_data/guide-sequence-adapter";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import { TND_BY_FAMILY } from "#lib/features/choreo-card/domain/tnd-element.js";
   import {
     CLUB_ARTWORK_PAINTER,
     headerArtworkSrc,
@@ -57,7 +56,7 @@
     cap: Cap;
     level: CapLevel;
     picTheme?: "light" | "dark";
-    /** 1-based place of this cap in the list, for "3 of 20". */
+    /** 1-based place of this CAP in the list, for "3 of 72". */
     position: number;
     total: number;
     onNext: () => void;
@@ -108,7 +107,7 @@
     return () => io.disconnect();
   });
 
-  // The two flowers a cap hand draws, painted by the Shape Engine once the
+  // The flowers a CAP hand draws, painted by the Shape Engine once the
   // VTG level is first reached. A staff has two ends; these are the outer
   // end's flowers, since at 1:1 the inner end stays in place and draws only
   // a point (see /guide/ratios).
@@ -126,6 +125,13 @@
       ori: "out",
       grid: "diamond",
       petals: flowerPetals({ style: "anti", turns: 1 }),
+    },
+    prospin: {
+      style: "pro",
+      turns: 1,
+      ori: "out",
+      grid: "diamond",
+      petals: flowerPetals({ style: "pro", turns: 1 }),
     },
   };
   let shapes = $state<ShapeMatrixData | null>(null);
@@ -147,11 +153,13 @@
           )
         : "";
 
-  const spinWord = (spin: CapSpin) =>
-    spin === "extension"
-      ? t("guide_caps_spin_extension")
-      : t("guide_caps_spin_antispin");
-  const element = $derived(TND_BY_FAMILY[shownBeat.family]);
+  const SPIN_WORD = {
+    extension: "guide_caps_spin_extension",
+    antispin: "guide_caps_spin_antispin",
+    prospin: "guide_caps_spin_prospin",
+  } as const;
+  const spinWord = (spin: CapSpin) => t(SPIN_WORD[spin]);
+  const element = $derived(shownBeat.element);
 </script>
 
 <figure class="cap-figure level-{level}" bind:this={rootEl}>
@@ -206,7 +214,7 @@
                 {#if browser}
                   <TKAWordGlyph
                     word={beat.letter}
-                    height={26}
+                    height={22}
                     darkMode={picTheme === "dark"}
                   />
                 {:else}
@@ -334,14 +342,14 @@
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(4, 34px);
-    gap: 4px;
+    grid-template-columns: repeat(6, 26px);
+    gap: 3px;
   }
   .letters li {
     display: grid;
     place-items: center;
-    height: 38px;
-    border-radius: 8px;
+    height: 32px;
+    border-radius: 7px;
     border: 1px solid color-mix(in oklab, var(--theme-text) 12%, transparent);
     transition: box-shadow var(--duration-fast, 120ms)
       var(--ease-standard, ease);

@@ -1,24 +1,27 @@
 /**
- * Eight-beat caps on the diamond grid, the record behind the /guide/three-levels
- * essay. A cap here is the simple kind: each hand travels steadily one way
- * round the grid, making two beats of extension (pro, no turns) and then two
- * beats of antispin (anti, one turn), twice. The hands may start that cycle
- * together or up to three beats apart, and may travel the same way or
- * opposite ways.
+ * Gage DeMello's twelve-beat CAPs (his Eight Step chart), the record behind the
+ * /guide/three-levels essay. Transcribed into TKA from Mentive's SpiroAnim; the
+ * full transcription is docs/research/spiroanim/eightstep-72-sequences.json.
  *
- * CAPS lists every cap those rules allow, each read from the beat that gives
- * the earliest word alphabetically, so a cap read from a different beat is not
- * counted twice. The letters are checked in so the public page never fetches
- * the letter dataframe; caps-topic.test.ts re-derives the whole table from
- * static/data/pictographs/DiamondPictographDataframe.csv with enumerateCaps.
+ * In every one, one hand caps: it travels two beats round the diamond and
+ * doubles back for one, changing its spin on the way back. The other hand keeps
+ * circling. Gage's chart sets the hands against each other four ways
+ * (opposite, same, quarter aligned, quarter opposed) and gives each hand one
+ * of three spins, which TKA writes as anti with one turn, pro with no turns
+ * and pro with one turn.
  *
- * The page also opens on two named patterns. Zan's Diamond has its own record
- * (zans-diamond-topic.ts); Opening and Closing the Book lives here: both hands
- * use extension and reverse on every beat, so the props open apart and close
- * together again.
+ * Each row keeps only what the page needs: where each hand starts, the points
+ * it reaches beat by beat, and its spin on each beat. Rotation direction and
+ * orientation follow from those, and caps-topic.test.ts rebuilds every step
+ * and checks it against the transcription. Gage's chart codes stay here as
+ * ids; the essay never shows them.
  */
-import { TYPE1_ROTATION } from "@tka/domain";
 import { ratioLabel } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
+import {
+  TND_ELEMENTS,
+  type TnDElement,
+} from "#lib/features/choreo-card/domain/tnd-element.js";
 import { calculateEndOrientation } from "#lib/shared/render/core/calculations/orientation.js";
 import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
@@ -37,92 +40,844 @@ import { createStepData } from "#lib/shared/foundation/domain/factories/create-s
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
-import type { PairLetterLookup } from "#lib/shared/foundation/services/solo-prop-pair-variations.js";
 
-export type Travel = "cw" | "ccw";
-export type CapSpin = "extension" | "antispin";
+/** A hand's spin on one beat: pro with no turns, anti with one, pro with one. */
+export type CapSpin = "extension" | "antispin" | "prospin";
 
-/** One hand's cycle: two beats of extension, then two of antispin. */
-export const CAP_CYCLE: readonly CapSpin[] = [
-  "extension",
-  "extension",
-  "antispin",
-  "antispin",
+/** How Gage's chart sets the two hands against each other. */
+export type CapRelation =
+  | "opposite"
+  | "same"
+  | "quarter-aligned"
+  | "quarter-opposed";
+
+export const CAP_RELATIONS: readonly CapRelation[] = [
+  "opposite",
+  "same",
+  "quarter-aligned",
+  "quarter-opposed",
 ];
 
-const RING: readonly GridLocation[] = ["n", "e", "s", "w"] as GridLocation[];
+export const CAP_BEATS = 12;
 
-function nextPoint(at: GridLocation, travel: Travel): GridLocation {
-  const i = RING.indexOf(at);
-  return RING[(i + (travel === "cw" ? 1 : 3)) % 4]!;
-}
+const SPIN_BY_CODE: Record<string, CapSpin> = {
+  E: "extension",
+  A: "antispin",
+  P: "prospin",
+};
 
-/** Where one hand starts, which way it travels, and where it is in its cycle. */
+export const CAP_SPIN_MOTION: Record<
+  CapSpin,
+  { motionType: MotionType; turns: number }
+> = {
+  extension: { motionType: MotionType.PRO, turns: 0 },
+  antispin: { motionType: MotionType.ANTI, turns: 1 },
+  prospin: { motionType: MotionType.PRO, turns: 1 },
+};
+
 export interface CapHand {
   start: GridLocation;
-  travel: Travel;
-  /** The cycle beat this hand is on at beat 1 (0 = first extension beat). */
-  phase: number;
+  /** The point the hand reaches on each beat. */
+  path: readonly GridLocation[];
+  spins: readonly CapSpin[];
 }
 
 export interface Cap {
+  /** Gage's chart code, kept as an id only. */
+  id: string;
   word: string;
+  relation: CapRelation;
   left: CapHand;
   right: CapHand;
 }
 
 type Row = [
+  id: string,
   word: string,
   leftStart: string,
-  leftTravel: Travel,
-  leftPhase: number,
+  leftPath: string,
+  leftSpins: string,
   rightStart: string,
-  rightTravel: Travel,
-  rightPhase: number,
+  rightPath: string,
+  rightSpins: string,
 ];
 
 const CAP_ROWS: readonly Row[] = [
-  ["GGHHGGHH", "n", "cw", 0, "n", "cw", 0],
-  ["GIHIGIHI", "n", "cw", 0, "n", "cw", 1],
-  ["IIIIIIII", "n", "cw", 0, "n", "cw", 2],
-  ["DJEKDJEK", "n", "cw", 0, "n", "ccw", 0],
-  ["DKEJDKEJ", "n", "cw", 1, "n", "ccw", 1],
-  ["DLELDLEL", "n", "cw", 0, "n", "ccw", 1],
-  ["FJFKFJFK", "n", "cw", 3, "n", "ccw", 0],
-  ["FLFLFLFL", "n", "cw", 0, "n", "ccw", 2],
-  ["SSTTSSTT", "n", "cw", 0, "e", "cw", 0],
-  ["SVTUSVTU", "n", "cw", 0, "e", "cw", 1],
-  ["UUVVUUVV", "n", "cw", 2, "e", "cw", 0],
-  ["SUTVSUTV", "n", "cw", 1, "e", "cw", 0],
-  ["MPNQMPNQ", "n", "ccw", 0, "e", "cw", 0],
-  ["MQNPMQNP", "n", "ccw", 1, "e", "cw", 1],
-  ["MRNRMRNR", "n", "ccw", 0, "e", "cw", 1],
-  ["OPOQOPOQ", "n", "ccw", 3, "e", "cw", 0],
-  ["OROROROR", "n", "ccw", 0, "e", "cw", 2],
-  ["AABBAABB", "n", "cw", 0, "s", "cw", 0],
-  ["ACBCACBC", "n", "cw", 0, "s", "cw", 1],
-  ["CCCCCCCC", "n", "cw", 0, "s", "cw", 2],
+  [
+    "1-AA",
+    "KECKECKECKEC",
+    "n",
+    "eseswswnwnen",
+    "AAEAAEAAEAAE",
+    "s",
+    "enwsenwsenws",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "1-AE",
+    "LFALFALFALFA",
+    "n",
+    "eseswswnwnen",
+    "AAEAAEAAEAAE",
+    "s",
+    "enwsenwsenws",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "1-AI",
+    "LFALFALFALFA",
+    "n",
+    "eseswswnwnen",
+    "AAEAAEAAEAAE",
+    "s",
+    "enwsenwsenws",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "1-EA",
+    "LFBLFBLFBLFB",
+    "n",
+    "eseswswnwnen",
+    "EEAEEAEEAEEA",
+    "s",
+    "enwsenwsenws",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "1-EE",
+    "JDCJDCJDCJDC",
+    "n",
+    "eseswswnwnen",
+    "EEAEEAEEAEEA",
+    "s",
+    "enwsenwsenws",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "1-EI",
+    "JDCJDCJDCJDC",
+    "n",
+    "eseswswnwnen",
+    "EEAEEAEEAEEA",
+    "s",
+    "enwsenwsenws",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "1-IA",
+    "LFBLFBLFBLFB",
+    "n",
+    "eseswswnwnen",
+    "PPAPPAPPAPPA",
+    "s",
+    "enwsenwsenws",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "1-IE",
+    "JDCJDCJDCJDC",
+    "n",
+    "eseswswnwnen",
+    "PPAPPAPPAPPA",
+    "s",
+    "enwsenwsenws",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "1-II",
+    "JDCJDCJDCJDC",
+    "n",
+    "eseswswnwnen",
+    "PPAPPAPPAPPA",
+    "s",
+    "enwsenwsenws",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "2-AA",
+    "EKIEKIEKIEKI",
+    "s",
+    "enenwnwswses",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "2-AE",
+    "FLGFLGFLGFLG",
+    "s",
+    "enenwnwswses",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "2-AI",
+    "FLGFLGFLGFLG",
+    "s",
+    "enenwnwswses",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "2-EA",
+    "FLHFLHFLHFLH",
+    "s",
+    "enenwnwswses",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "2-EE",
+    "DJIDJIDJIDJI",
+    "s",
+    "enenwnwswses",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "2-EI",
+    "DJIDJIDJIDJI",
+    "s",
+    "enenwnwswses",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "2-IA",
+    "FLHFLHFLHFLH",
+    "s",
+    "enenwnwswses",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "2-IE",
+    "DJIDJIDJIDJI",
+    "s",
+    "enenwnwswses",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "2-II",
+    "DJIDJIDJIDJI",
+    "s",
+    "enenwnwswses",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "3-AA",
+    "HHFBBLHHFBBL",
+    "s",
+    "enenwnwswses",
+    "AAEAAEAAEAAE",
+    "s",
+    "enwsenwsenws",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "3-AE",
+    "IIDCCJIIDCCJ",
+    "s",
+    "enenwnwswses",
+    "AAEAAEAAEAAE",
+    "s",
+    "enwsenwsenws",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "3-AI",
+    "IIDCCJIIDCCJ",
+    "s",
+    "enenwnwswses",
+    "AAEAAEAAEAAE",
+    "s",
+    "enwsenwsenws",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "3-EA",
+    "IIECCKIIECCK",
+    "s",
+    "enenwnwswses",
+    "EEAEEAEEAEEA",
+    "s",
+    "enwsenwsenws",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "3-EE",
+    "GGFAALGGFAAL",
+    "s",
+    "enenwnwswses",
+    "EEAEEAEEAEEA",
+    "s",
+    "enwsenwsenws",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "3-EI",
+    "GGFAALGGFAAL",
+    "s",
+    "enenwnwswses",
+    "EEAEEAEEAEEA",
+    "s",
+    "enwsenwsenws",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "3-IA",
+    "IIECCKIIECCK",
+    "s",
+    "enenwnwswses",
+    "PPAPPAPPAPPA",
+    "s",
+    "enwsenwsenws",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "3-IE",
+    "GGFAALGGFAAL",
+    "s",
+    "enenwnwswses",
+    "PPAPPAPPAPPA",
+    "s",
+    "enwsenwsenws",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "3-II",
+    "GGFAALGGFAAL",
+    "s",
+    "enenwnwswses",
+    "PPAPPAPPAPPA",
+    "s",
+    "enwsenwsenws",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "4-AA",
+    "BBLHHFBBLHHF",
+    "n",
+    "eseswswnwnen",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "4-AE",
+    "CCJIIDCCJIID",
+    "n",
+    "eseswswnwnen",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "4-AI",
+    "CCJIIDCCJIID",
+    "n",
+    "eseswswnwnen",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "4-EA",
+    "CCKIIECCKIIE",
+    "n",
+    "eseswswnwnen",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "4-EE",
+    "AALGGFAALGGF",
+    "n",
+    "eseswswnwnen",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "4-EI",
+    "AALGGFAALGGF",
+    "n",
+    "eseswswnwnen",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "4-IA",
+    "CCKIIECCKIIE",
+    "n",
+    "eseswswnwnen",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "4-IE",
+    "AALGGFAALGGF",
+    "n",
+    "eseswswnwnen",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "4-II",
+    "AALGGFAALGGF",
+    "n",
+    "eseswswnwnen",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "5-AA",
+    "TTRTTOTTRTTO",
+    "w",
+    "neneseswswnw",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "5-AE",
+    "VVPUUMVVPUUM",
+    "w",
+    "neneseswswnw",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "5-AI",
+    "VVPUUMVVPUUM",
+    "w",
+    "neneseswswnw",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "5-EA",
+    "UUQVVNUUQVVN",
+    "w",
+    "neneseswswnw",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "5-EE",
+    "SSRSSOSSRSSO",
+    "w",
+    "neneseswswnw",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "5-EI",
+    "SSRSSOSSRSSO",
+    "w",
+    "neneseswswnw",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "5-IA",
+    "UUQVVNUUQVVN",
+    "w",
+    "neneseswswnw",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "5-IE",
+    "SSRSSOSSRSSO",
+    "w",
+    "neneseswswnw",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "5-II",
+    "SSRSSOSSRSSO",
+    "w",
+    "neneseswswnw",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "6-AA",
+    "TTOTTRTTOTTR",
+    "e",
+    "swswnwnenese",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "6-AE",
+    "UUMVVPUUMVVP",
+    "e",
+    "swswnwnenese",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "6-AI",
+    "UUMVVPUUMVVP",
+    "e",
+    "swswnwnenese",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "6-EA",
+    "VVNUUQVVNUUQ",
+    "e",
+    "swswnwnenese",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "6-EE",
+    "SSOSSRSSOSSR",
+    "e",
+    "swswnwnenese",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "6-EI",
+    "SSOSSRSSOSSR",
+    "e",
+    "swswnwnenese",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "6-IA",
+    "VVNUUQVVNUUQ",
+    "e",
+    "swswnwnenese",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "6-IE",
+    "SSOSSRSSOSSR",
+    "e",
+    "swswnwnenese",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "6-II",
+    "SSOSSRSSOSSR",
+    "e",
+    "swswnwnenese",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "7-AA",
+    "QNUQNUQNUQNU",
+    "w",
+    "sesenenwnwsw",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "7-AE",
+    "ROSROSROSROS",
+    "w",
+    "sesenenwnwsw",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "7-AI",
+    "ROSROSROSROS",
+    "w",
+    "sesenenwnwsw",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "7-EA",
+    "ROTROTROTROT",
+    "w",
+    "sesenenwnwsw",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "7-EE",
+    "PMVPMVPMVPMV",
+    "w",
+    "sesenenwnwsw",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "7-EI",
+    "PMVPMVPMVPMV",
+    "w",
+    "sesenenwnwsw",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "7-IA",
+    "ROTROTROTROT",
+    "w",
+    "sesenenwnwsw",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "7-IE",
+    "PMVPMVPMVPMV",
+    "w",
+    "sesenenwnwsw",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "7-II",
+    "PMVPMVPMVPMV",
+    "w",
+    "sesenenwnwsw",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "8-AA",
+    "NQVNQVNQVNQV",
+    "e",
+    "nwnwswsesene",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "8-AE",
+    "ORSORSORSORS",
+    "e",
+    "nwnwswsesene",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "8-AI",
+    "ORSORSORSORS",
+    "e",
+    "nwnwswsesene",
+    "AAEAAEAAEAAE",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "8-EA",
+    "ORTORTORTORT",
+    "e",
+    "nwnwswsesene",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "8-EE",
+    "MPUMPUMPUMPU",
+    "e",
+    "nwnwswsesene",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "8-EI",
+    "MPUMPUMPUMPU",
+    "e",
+    "nwnwswsesene",
+    "EEAEEAEEAEEA",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
+  [
+    "8-IA",
+    "ORTORTORTORT",
+    "e",
+    "nwnwswsesene",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "AAAAAAAAAAAA",
+  ],
+  [
+    "8-IE",
+    "MPUMPUMPUMPU",
+    "e",
+    "nwnwswsesene",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "EEEEEEEEEEEE",
+  ],
+  [
+    "8-II",
+    "MPUMPUMPUMPU",
+    "e",
+    "nwnwswsesene",
+    "PPAPPAPPAPPA",
+    "s",
+    "wneswneswnes",
+    "PPEPPEPPEPPE",
+  ],
 ];
 
-/**
- * Every cap the rules allow, in the order the page offers them: hands in
- * step first, then one beat apart, then two, alphabetically within each.
- */
-export const CAPS: readonly Cap[] = CAP_ROWS.map(
-  ([word, ls, lt, lp, rs, rt, rp]): Cap => ({
-    word,
-    left: { start: ls as GridLocation, travel: lt, phase: lp },
-    right: { start: rs as GridLocation, travel: rt, phase: rp },
-  })
-).sort((a, b) => capGap(a) - capGap(b) || a.word.localeCompare(b.word));
+const RELATION_BY_COLUMN: Record<string, CapRelation> = {
+  "1": "opposite",
+  "2": "opposite",
+  "3": "same",
+  "4": "same",
+  "5": "quarter-aligned",
+  "6": "quarter-aligned",
+  "7": "quarter-opposed",
+  "8": "quarter-opposed",
+};
 
-/** How many beats apart the two hands' cycles run: 0, 1 or 2. */
-export function capGap(cap: Cap): number {
-  const d = (cap.right.phase - cap.left.phase + 4) % 4;
-  return Math.min(d, 4 - d);
+function hand(start: string, path: string, spins: string): CapHand {
+  return {
+    start: start as GridLocation,
+    path: [...path] as GridLocation[],
+    spins: [...spins].map((code) => SPIN_BY_CODE[code]!),
+  };
 }
 
-/** The shortest run of letters the word repeats, e.g. "AABB". */
+/** All 72, in the order of Gage's chart. */
+export const CAPS: readonly Cap[] = CAP_ROWS.map(
+  ([id, word, ls, lp, lsp, rs, rp, rsp]): Cap => ({
+    id,
+    word,
+    relation: RELATION_BY_COLUMN[id.split("-")[0]!]!,
+    left: hand(ls, lp, lsp),
+    right: hand(rs, rp, rsp),
+  })
+);
+
+/** A word and the CAPs that spell it, which differ only in their turns. */
+export interface CapWord {
+  word: string;
+  relation: CapRelation;
+  caps: readonly Cap[];
+}
+
+/** The distinct words, in chart order. Several CAPs can share one. */
+export const CAP_WORDS: readonly CapWord[] = (() => {
+  const byWord = new Map<string, Cap[]>();
+  for (const cap of CAPS) {
+    const list = byWord.get(cap.word);
+    if (list) list.push(cap);
+    else byWord.set(cap.word, [cap]);
+  }
+  return [...byWord.entries()].map(([word, caps]) => ({
+    word,
+    relation: caps[0]!.relation,
+    caps,
+  }));
+})();
+
+/** The shortest run of letters the word repeats, e.g. "KEC". */
 export function capCell(word: string): string {
   for (let size = 1; size < word.length; size++) {
     if (word.length % size !== 0) continue;
@@ -133,73 +888,60 @@ export function capCell(word: string): string {
   return word;
 }
 
-function soloStep(
-  from: GridLocation,
-  to: GridLocation,
-  motion: MotionType,
-  spin: RotationDirection,
-  turns: number,
-  orientation: Orientation
-): SoloPropStepData {
-  const endOrientation = calculateEndOrientation({
-    motionType: motion,
-    turns,
-    rotationDirection: spin,
-    startLocation: from,
-    endLocation: to,
-    startOrientation: orientation,
-  });
-  return {
-    duration: 1,
-    startLocation: from,
-    endLocation: to,
-    startOrientation: orientation,
-    endOrientation,
-    motionType: motion,
-    rotationDirection: spin,
-    turns,
-  };
+const RING: readonly GridLocation[] = ["n", "e", "s", "w"] as GridLocation[];
+
+/** Which way round a one-point move goes. */
+function travel(from: GridLocation, to: GridLocation): RotationDirection {
+  const step = (RING.indexOf(to) - RING.indexOf(from) + 4) % 4;
+  return step === 1
+    ? RotationDirection.CLOCKWISE
+    : RotationDirection.COUNTER_CLOCKWISE;
 }
 
-const opposite = (travel: Travel): Travel => (travel === "cw" ? "ccw" : "cw");
+function opposite(direction: RotationDirection): RotationDirection {
+  return direction === RotationDirection.CLOCKWISE
+    ? RotationDirection.COUNTER_CLOCKWISE
+    : RotationDirection.CLOCKWISE;
+}
 
 /**
- * One hand's eight beats. Extension spins the prop the way the hand travels
- * with no turns; antispin spins it against the hand with one turn.
+ * One hand's twelve beats. Pro spins the prop the way the hand travels and
+ * anti spins it against the hand; every prop starts pointing out.
  */
 export function capHandSteps(hand: CapHand): SoloPropStepData[] {
   const steps: SoloPropStepData[] = [];
   let at = hand.start;
-  let orientation: Orientation = Orientation.IN;
-  for (let i = 0; i < 8; i++) {
-    const spin = CAP_CYCLE[(i + hand.phase) % 4]!;
-    const to = nextPoint(at, hand.travel);
-    const step: SoloPropStepData =
-      spin === "extension"
-        ? soloStep(
-            at,
-            to,
-            MotionType.PRO,
-            hand.travel as RotationDirection,
-            0,
-            orientation
-          )
-        : soloStep(
-            at,
-            to,
-            MotionType.ANTI,
-            opposite(hand.travel) as RotationDirection,
-            1,
-            orientation
-          );
-    steps.push(step);
+  let orientation: Orientation = Orientation.OUT;
+  hand.path.forEach((to, i) => {
+    const { motionType, turns } = CAP_SPIN_MOTION[hand.spins[i]!];
+    const way = travel(at, to);
+    const rotationDirection =
+      motionType === MotionType.PRO ? way : opposite(way);
+    const endOrientation = calculateEndOrientation({
+      motionType,
+      turns,
+      rotationDirection,
+      startLocation: at,
+      endLocation: to,
+      startOrientation: orientation,
+    });
+    steps.push({
+      duration: 1,
+      startLocation: at,
+      endLocation: to,
+      startOrientation: orientation,
+      endOrientation,
+      motionType,
+      rotationDirection,
+      turns,
+    });
     at = to;
-    orientation = step.endOrientation;
-  }
+    orientation = endOrientation;
+  });
   return steps;
 }
 
-/** The spin a hand makes on a beat (1-based) and its VTG ratio. */
+/** The spin a hand makes on a beat and its VTG ratio. */
 export interface CapHandBeat {
   spin: CapSpin;
   ratio: string;
@@ -208,37 +950,30 @@ export interface CapHandBeat {
 export interface CapBeat {
   beat: number;
   letter: string;
-  /** VTG timing and direction as the TnD family id, e.g. "split-same". */
-  family: string;
+  /**
+   * The hands' timing and direction on this beat, read from their actual
+   * paths by the same owner as the pictograph's element glyph.
+   */
+  element: TnDElement | null;
   left: CapHandBeat;
   right: CapHandBeat;
 }
 
-const FAMILY_BY_GROUP: Record<string, string> = {
-  ss: "split-same",
-  so: "split-opp",
-  ts: "tog-same",
-  to: "tog-opp",
-  qs: "quarter-same",
-  qo: "quarter-opp",
-};
-
-function handBeat(hand: CapHand, i: number): CapHandBeat {
-  const spin = CAP_CYCLE[(i + hand.phase) % 4]!;
-  return { spin, ratio: ratioLabel(spin === "extension" ? 0 : 1) };
+function handBeat(spin: CapSpin): CapHandBeat {
+  return { spin, ratio: ratioLabel(CAP_SPIN_MOTION[spin].turns as 0 | 1) };
 }
 
-/** The VTG reading of every beat, from the letter canon and the hand cycles. */
+/** The VTG reading of every beat: the hands' element and each hand's spin. */
 export function capBeats(cap: Cap): CapBeat[] {
+  const strip = capStrip(cap);
   return [...cap.word].map((letter, i) => {
-    const canon = TYPE1_ROTATION[letter];
-    if (!canon) throw new Error(`${letter} is not a Type 1 letter`);
+    const { elementalType } = deriveTnDFromPictograph(strip[i + 1]);
     return {
       beat: i + 1,
       letter,
-      family: FAMILY_BY_GROUP[canon.vtgGroup]!,
-      left: handBeat(cap.left, i),
-      right: handBeat(cap.right, i),
+      element: TND_ELEMENTS.find((e) => e.element === elementalType) ?? null,
+      left: handBeat(cap.left.spins[i]!),
+      right: handBeat(cap.right.spins[i]!),
     };
   });
 }
@@ -322,99 +1057,9 @@ export function pairStrip(
 
 export function capStrip(cap: Cap): StepData[] {
   return pairStrip(
-    `cap-${cap.word}`,
+    `cap-${cap.id}`,
     cap.word,
     capHandSteps(cap.left),
     capHandSteps(cap.right)
   );
-}
-
-/**
- * Opening and Closing the Book: both hands start at the top, swing apart to
- * the sides with extension, and reverse back up on every beat.
- */
-export const BOOK_WORD = "DJDJDJDJ";
-
-function bookHand(side: GridLocation, open: Travel): SoloPropStepData[] {
-  const top = "n" as GridLocation;
-  const steps: SoloPropStepData[] = [];
-  for (let i = 0; i < 8; i++) {
-    const opening = i % 2 === 0;
-    steps.push(
-      soloStep(
-        opening ? top : side,
-        opening ? side : top,
-        MotionType.PRO,
-        (opening ? open : opposite(open)) as RotationDirection,
-        0,
-        Orientation.IN
-      )
-    );
-  }
-  return steps;
-}
-
-export const BOOK_LEFT_STEPS = bookHand("e" as GridLocation, "cw");
-export const BOOK_RIGHT_STEPS = bookHand("w" as GridLocation, "ccw");
-
-export function bookStrip(): StepData[] {
-  return pairStrip("book", BOOK_WORD, BOOK_LEFT_STEPS, BOOK_RIGHT_STEPS);
-}
-
-/**
- * Spell two hands' steps with the dataframe, beat by beat. Null when a beat
- * has no letter.
- */
-export function spellPair(
-  left: readonly SoloPropStepData[],
-  right: readonly SoloPropStepData[],
-  lookup: PairLetterLookup
-): string | null {
-  let word = "";
-  for (let i = 0; i < left.length; i++) {
-    const l = left[i]!;
-    const r = right[i]!;
-    const letter = lookup({
-      startPlacement: getGridPlacementFromLocations(
-        l.startLocation,
-        r.startLocation
-      ),
-      endPlacement: getGridPlacementFromLocations(l.endLocation, r.endLocation),
-      left: l,
-      right: r,
-    });
-    if (!letter) return null;
-    word += letter;
-  }
-  return word;
-}
-
-/**
- * Every cap the rules allow, derived from scratch: both hands from the top or
- * any later point, either travel, any phase. A cap read from another beat or
- * from a rotated start spells a rotation of the same word, so only the
- * earliest rotation is kept. Used by the test to hold CAPS to the dataframe.
- */
-export function enumerateCaps(lookup: PairLetterLookup): Cap[] {
-  const found = new Map<string, Cap>();
-  const rotations = (w: string) =>
-    [...w].map((_, n) => w.slice(n) + w.slice(0, n));
-  for (const ls of RING)
-    for (const rs of RING)
-      for (const lt of ["cw", "ccw"] as const)
-        for (const rt of ["cw", "ccw"] as const)
-          for (let lp = 0; lp < 4; lp++)
-            for (let rp = 0; rp < 4; rp++) {
-              const left: CapHand = { start: ls, travel: lt, phase: lp };
-              const right: CapHand = { start: rs, travel: rt, phase: rp };
-              const word = spellPair(
-                capHandSteps(left),
-                capHandSteps(right),
-                lookup
-              );
-              if (!word) continue;
-              if (word !== rotations(word).sort()[0]) continue;
-              if (!found.has(word)) found.set(word, { word, left, right });
-            }
-  return [...found.values()];
 }

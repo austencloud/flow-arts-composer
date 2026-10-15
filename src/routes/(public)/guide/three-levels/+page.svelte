@@ -11,11 +11,10 @@
    * letters, or by a VTG reading of each beat. Framed as a theory, not as an
    * established framework.
    *
-   * It opens on two named patterns playing (Zan's Diamond and Opening and
-   * Closing the Book), then follows one family, the cap, through the three
-   * descriptions with a single live figure. The figure's readout follows the
-   * section being read. Every cap comes from
-   * #lib/shared/guide-topics/caps-topic.ts.
+   * It opens on a named pattern playing (Zan's Diamond), then follows one
+   * family, Gage DeMello's twelve-beat CAPs, through the three descriptions
+   * with a single live figure. The figure's readout follows the section being
+   * read. Every CAP comes from #lib/shared/guide-topics/caps-topic.ts.
    */
   import { onMount } from "svelte";
   import { browser, dev } from "$app/env";
@@ -39,13 +38,17 @@
   } from "#lib/shared/guide-topics/zans-diamond-topic.js";
   import {
     CAPS,
-    bookStrip,
-    capGap,
+    CAP_RELATIONS,
+    CAP_WORDS,
+    type CapRelation,
   } from "#lib/shared/guide-topics/caps-topic.js";
 
-  // The opening patterns are shown by name only: their strips carry no
-  // letters, just the app's step labels, and their players get no letters
-  // to draw.
+  // Gage's own write-up of the chart, in Mentive's SpiroAnim repository.
+  const EIGHT_STEP_SOURCE =
+    "https://github.com/rbgirard/spiroanim/blob/main/docs/EIGHT_STEP.md";
+
+  // The opening pattern is shown by name only: its strip carries no letters,
+  // just the app's step labels, and its player gets no letters to draw.
   const unlettered = (items: StepData[]) =>
     items.map((step) => ({ ...step, letter: null }));
   const zansItems = zansDiamondStrip(ZANS_DIAMOND_ORIGINAL);
@@ -61,35 +64,43 @@
       showStepNumbers: true,
     } satisfies PictographRender,
   };
-  const bookItems = bookStrip();
-  const book = {
-    items: bookItems,
-    sequence: stripToSequence(unlettered(bookItems), {
-      word: "",
-      name: "Book",
-    }),
-    render: {
-      propType: PropType.STAFF,
-      showTKA: false,
-      showStepNumbers: true,
-    } satisfies PictographRender,
-  };
 
-  let capIndex = $state(0);
+  // Start on the first CAP that shares its word, so the VTG level can show
+  // two CAPs with one word coming apart without the reader hunting for one.
+  let capIndex = $state(
+    CAPS.indexOf(CAP_WORDS.find((w) => w.caps.length > 1)!.caps[0]!)
+  );
   const cap = $derived(CAPS[capIndex]!);
   const nextCap = () => (capIndex = (capIndex + 1) % CAPS.length);
+  // CAPs that spell the same word differ only in turns; the VTG level steps
+  // through them so a reader can watch the ratios come apart.
+  const sameWordCaps = $derived(
+    CAP_WORDS.find((w) => w.word === cap.word)!.caps
+  );
+  const sameWord = $derived({
+    n: sameWordCaps.indexOf(cap) + 1,
+    total: sameWordCaps.length,
+  });
+  const nextSameWord = () => {
+    const next = sameWordCaps[sameWord.n % sameWordCaps.length]!;
+    capIndex = CAPS.indexOf(next);
+  };
 
-  // The picker groups caps by how far apart the hands run.
-  const GROUPS = [
-    { gap: 0, label: "guide_caps_group_in_step" },
-    { gap: 1, label: "guide_caps_group_one_apart" },
-    { gap: 2, label: "guide_caps_group_two_apart" },
-  ] as const;
-  const groups = GROUPS.map((g) => ({
-    ...g,
-    caps: CAPS.map((c, i) => ({ cap: c, i })).filter(
-      ({ cap: c }) => capGap(c) === g.gap
-    ),
+  // The picker offers each word once, grouped the way Gage's chart sets the
+  // hands against each other. A word shared by several CAPs plays the first.
+  const GROUP_LABEL: Record<CapRelation, Parameters<typeof t>[0]> = {
+    opposite: "guide_caps_group_opposite",
+    same: "guide_caps_group_same",
+    "quarter-aligned": "guide_caps_group_quarter_aligned",
+    "quarter-opposed": "guide_caps_group_quarter_opposed",
+  };
+  const groups = CAP_RELATIONS.map((relation) => ({
+    relation,
+    label: GROUP_LABEL[relation],
+    words: CAP_WORDS.filter((w) => w.relation === relation).map((w) => ({
+      word: w.word,
+      i: CAPS.indexOf(w.caps[0]!),
+    })),
   }));
 
   // The figure's readout follows the section crossing the middle of the
@@ -203,20 +214,6 @@
               </div>
             {/snippet}
           </SequenceShowcase>
-          <SequenceShowcase
-            variant="compact"
-            sequence={book.sequence}
-            items={book.items}
-            render={book.render}
-            loop
-            {picTheme}
-          >
-            {#snippet text()}
-              <div class="name-label">
-                <h3>Opening and Closing the Book</h3>
-              </div>
-            {/snippet}
-          </SequenceShowcase>
         </div>
         <div class="prose">
           <p>{t("guide_caps_names_limit")}</p>
@@ -234,7 +231,11 @@
             <p>{t("guide_caps_cap_body")}</p>
             <p>{t("guide_caps_cap_rules", { count: CAPS.length })}</p>
             <p>{t("guide_caps_cap_limit")}</p>
+            <p class="credit">{t("guide_caps_cap_credit")}</p>
             <div class="links">
+              <LinkChip href={EIGHT_STEP_SOURCE} target="_blank" rel="noopener"
+                >{t("guide_caps_link_source")}</LinkChip
+              >
               <LinkChip href={localHref("/notation/caps")}
                 >{t("guide_caps_link_caps")}</LinkChip
               >
@@ -254,27 +255,27 @@
               role="group"
               aria-label={t("guide_caps_picker_label")}
             >
-              {#each groups as group (group.gap)}
+              {#each groups as group (group.relation)}
                 <div class="picker-group">
                   <p class="picker-heading">{t(group.label)}</p>
                   <div class="picker-words">
-                    {#each group.caps as entry (entry.cap.word)}
+                    {#each group.words as entry (entry.word)}
                       <button
                         type="button"
                         class="word"
-                        class:selected={entry.i === capIndex}
-                        aria-pressed={entry.i === capIndex}
-                        aria-label={entry.cap.word}
+                        class:selected={entry.word === cap.word}
+                        aria-pressed={entry.word === cap.word}
+                        aria-label={entry.word}
                         onclick={() => (capIndex = entry.i)}
                       >
                         {#if browser}
                           <TKAWordGlyph
-                            word={entry.cap.word}
+                            word={entry.word}
                             height={22}
                             darkMode={picTheme === "dark"}
                           />
                         {:else}
-                          <span class="word-text">{entry.cap.word}</span>
+                          <span class="word-text">{entry.word}</span>
                         {/if}
                       </button>
                     {/each}
@@ -282,6 +283,12 @@
                 </div>
               {/each}
             </div>
+            <p>
+              {t("guide_caps_letters_shared", {
+                caps: CAPS.length,
+                words: CAP_WORDS.length,
+              })}
+            </p>
             <p>{t("guide_caps_letters_think")}</p>
           </section>
 
@@ -294,6 +301,14 @@
             <p>{t("guide_caps_vtg_body")}</p>
             <p>{t("guide_caps_vtg_cap")}</p>
             <p>{t("guide_caps_vtg_check")}</p>
+            {#if sameWord.total > 1}
+              <div class="same-word">
+                <button type="button" onclick={nextSameWord}>
+                  {t("guide_caps_same_word")}
+                </button>
+                <span>{t("guide_caps_figure_count", sameWord)}</span>
+              </div>
+            {/if}
           </section>
         </div>
 
@@ -397,6 +412,9 @@
   .name-label h3 {
     font-size: 1.0625rem;
   }
+  .essay .credit {
+    font-size: 0.875rem;
+  }
   .essay .name-label p {
     font-size: 0.875rem;
   }
@@ -484,6 +502,34 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+  }
+  .same-word {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+  .same-word button {
+    min-height: 44px;
+    padding: 0 1rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--theme-text) 22%, transparent);
+    background: color-mix(in oklab, var(--theme-text) 6%, transparent);
+    color: var(--theme-text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .same-word button:hover {
+    background: color-mix(in oklab, var(--theme-text) 12%, transparent);
+  }
+  .same-word button:focus-visible {
+    outline: 2px solid var(--semantic-warning);
+    outline-offset: 2px;
+  }
+  .same-word span {
+    font-size: 0.875rem;
+    color: var(--theme-text-muted);
   }
   .links {
     display: flex;
