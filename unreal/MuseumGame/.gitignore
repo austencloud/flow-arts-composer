@@ -1,0 +1,8 @@
+Binaries/
+Builds/
+Content/
+DerivedDataCache/
+Intermediate/
+Saved/
+*.sln
+*.VC.db
