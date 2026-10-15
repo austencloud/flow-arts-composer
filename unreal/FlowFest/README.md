@@ -10,9 +10,9 @@ Capture the production performances from the repository root on d2. The default 
 
 ```powershell
 pnpm exec vite build --config unreal/FlowFest/Tools/native-capture.vite.config.mjs
-node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures
+node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures-v3
 $env:FLOW_FEST_CAPTURE_FAMILY_MODE = '1'
-node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures
+node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures-v3
 Remove-Item Env:FLOW_FEST_CAPTURE_FAMILY_MODE
 ```
 

@@ -1,6 +1,6 @@
 # Production performance capture
 
-The native capture bundle samples Flow Arts Composer's production Svelte/Three performer and mounted pose rigs at 30 fps. It uses an isolated Chrome and an ephemeral server rooted in the exact source worktree. Raw JSON belongs in `unreal/FlowFest/Saved/PerformanceCaptures`, outside packaged game data. Keep each generated sequence snapshot with its clips: a new snapshot can produce a different 16-step LOOP.
+The native capture bundle samples Flow Arts Composer's production Svelte/Three performer and mounted pose rigs at 30 fps. It uses an isolated Chrome and an ephemeral server rooted in the exact source worktree. Raw JSON belongs in `unreal/FlowFest/Saved/PerformanceCaptures-v3`, outside packaged game data. Keep each generated sequence snapshot with its clips: a new snapshot can produce a different 16-step LOOP. The older `Saved/PerformanceCaptures` family pilot is obsolete and must not replace finalized v3 captures.
 
 The default pass records 80 legacy clips for 16 deployed characters: four flow profiles and one ride pose per rig. The family pass adds 41 prop families × A/B × 16 rigs, or 1,312 captures. Each family routine has 480 frames over 16 seconds. The planned native animation total also includes 176 locomotion clips, for 1,568 clips across all groups. The family pass and full native verification for this upgrade are still pending.
 
@@ -8,9 +8,9 @@ Build and capture from a worktree at the exact committed source revision, with d
 
 ```powershell
 pnpm exec vite build --config unreal/FlowFest/Tools/native-capture.vite.config.mjs
-node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures
+node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures-v3
 $env:FLOW_FEST_CAPTURE_FAMILY_MODE = '1'
-node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures
+node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures-v3
 Remove-Item Env:FLOW_FEST_CAPTURE_FAMILY_MODE
 ```
 
@@ -23,7 +23,7 @@ $env:FLOW_FEST_CAPTURE_FAMILY_MODE = '1'
 $env:FLOW_FEST_CAPTURE_CHARACTERS = 'ch01,ch07'
 $env:FLOW_FEST_CAPTURE_FAMILIES = 'poi,hoop'
 $env:FLOW_FEST_CAPTURE_VARIANTS = 'A,B'
-node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures
+node unreal/FlowFest/Tools/native-capture-static-runner.mjs unreal/FlowFest/Saved/PerformanceCaptures-v3
 Remove-Item Env:FLOW_FEST_CAPTURE_FAMILY_MODE,Env:FLOW_FEST_CAPTURE_CHARACTERS,Env:FLOW_FEST_CAPTURE_FAMILIES,Env:FLOW_FEST_CAPTURE_VARIANTS
 ```
 
@@ -39,4 +39,4 @@ Ride frames also contain `boneRootParentWorld`, the world transform of the non-b
 
 These tools support `--family-only --allow-partial --capture-id <rig-id>` for incremental conversion, with `--captures <raw-directory>` also required by `prepare-characters.mjs`. Without `--allow-partial`, family conversion requires all 82 family A/B roles. `validate-runtime-data.mjs` rejects missing roles, stale capture revisions, malformed transforms, and incomplete catalogs. The package gate requires all 1,312 family tracks plus 64 legacy tracks. Native automation separately samples imported bodies, wrist alignment, live mesh rotation, loop playback, and entry/switch/exit transitions.
 
-For d2, use `scripts/d2-run.ps1` for a committed full capture or its scratch worktree for a focused repair, keeping the preserved raw directory available. Keep build and capture logs on d2, then transfer the finished `Saved/PerformanceCaptures` directory to the native build worktree. Do not capture from the primary checkout's port 5173 server.
+For d2, use `scripts/d2-run.ps1` for a committed full capture or its scratch worktree for a focused repair, keeping the preserved raw directory available. Keep build and capture logs on d2, then transfer the finished `Saved/PerformanceCaptures-v3` directory to the native build worktree. Do not capture from the primary checkout's port 5173 server.
