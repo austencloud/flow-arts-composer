@@ -465,6 +465,17 @@
     width: min(100%, calc(3 * var(--board-art) + 6.5rem));
   }
 
+  /* A phone's board is names only, so the picture takes the height. */
+  @media (max-width: 30rem) {
+    .board-stage.quiz {
+      --quiz-picture: max(
+        8rem,
+        min(16rem, calc(100 * var(--lesson-vh) - 33.5rem))
+      );
+      width: 100%;
+    }
+  }
+
   @media (min-aspect-ratio: 3 / 2) {
     .board-stage.quiz {
       --board-art: max(6rem, calc((100 * var(--lesson-vh) - 32rem) / 2.4));

@@ -5,6 +5,8 @@
   fills that cell and the next picture follows by itself, with no Next
   between rounds. A wrong tap shows that name's own picture for a moment, so
   the learner sees how it differs, and the round waits for the right one.
+  On a phone the board shows names only, so all six fit on screen under the
+  picture; there a wrong tap rings the name without its picture.
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
@@ -127,6 +129,7 @@
     {found}
     {lit}
     {peek}
+    namesOnlyWhenNarrow
     label={t("learn_motion_quiz_board")}
     onHint={answer}
   />

@@ -239,12 +239,23 @@
     border-radius: 0.75rem;
     transition:
       background-color var(--transition-normal),
-      border-color var(--transition-normal);
+      border-color var(--transition-normal),
+      box-shadow var(--transition-normal);
   }
 
+  /* The cell just found stands out from the blue page: a light ring and
+     glow, as the Learn slots light (Austen, 2026-10-14). */
   .cell.lit {
-    background: color-mix(in srgb, var(--tone-a) 12%, transparent);
-    border-color: color-mix(in srgb, var(--tone-a) 60%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-text, currentColor) 12%,
+      transparent
+    );
+    border-color: var(--theme-text, currentColor);
+    box-shadow:
+      inset 0 0 0 1px var(--theme-text, currentColor),
+      0 0 1.25rem
+        color-mix(in srgb, var(--theme-text, currentColor) 30%, transparent);
   }
 
   /* An unfound cell asked for as a hint: ringed and tinted whole, its name
