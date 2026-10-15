@@ -75,6 +75,15 @@ if (dryRun) {
 		});
 	}
 
+	if (opusReview) {
+		// Load the reviewer too, so a dry run proves --opus can start. No model call.
+		const { describeReviewSetup } = await import('./opus-reviewer.ts');
+		const setup = describeReviewSetup();
+		console.log(`\nOpus review: ${setup.model}, $${setup.pricePerMTok.input}/$${setup.pricePerMTok.output} per M tokens`);
+		console.log(`  ANTHROPIC_API_KEY: ${setup.apiKeySet ? 'set' : 'NOT SET (reviews would fail)'}`);
+		console.log(`  Data: ${setup.data.glossaryTerms} glossary terms, ${setup.data.letterTypes} letter types, ${setup.data.pictographRows} pictograph rows`);
+	}
+
 	console.log('\n');
 	process.exit(0);
 }
