@@ -379,7 +379,7 @@ even when Svelte recreates the component instance.
    */
   function mapRotationDirection(
     direction?: RotationDirection
-  ): RotationAnimationDirection | null {
+  ): Exclude<RotationAnimationDirection, "auto"> | null {
     if (!direction || direction === RotationDirection.NO_ROTATION) {
       return null;
     }
