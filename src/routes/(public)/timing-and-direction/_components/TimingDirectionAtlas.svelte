@@ -1,6 +1,7 @@
 <script lang="ts">
   import { browser } from "$app/env";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { isConceptExperienceAvailable } from "#lib/features/learn/domain/concept-experience-registry.js";
   import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import TimingDirectionIntro from "#lib/features/learn/components/interactive/motions/TimingDirectionIntro.svelte";
   import { reducedMotion } from "#lib/shared/transitions/motion.js";
@@ -160,12 +161,16 @@
     {#if browser}
       <TimingDirectionIntro />
     {/if}
-    <div class="lesson-link">
-      <PanelButton href="/learn/concepts/timing-and-direction">
-        <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-        Open full lesson
-      </PanelButton>
-    </div>
+    <!-- The lesson link follows the published registry, so it disappears
+         while the lesson is withdrawn instead of leading to a 404. -->
+    {#if isConceptExperienceAvailable("timing-and-direction")}
+      <div class="lesson-link">
+        <PanelButton href="/learn/concepts/timing-and-direction">
+          <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+          Open full lesson
+        </PanelButton>
+      </div>
+    {/if}
   </section>
 </section>
 

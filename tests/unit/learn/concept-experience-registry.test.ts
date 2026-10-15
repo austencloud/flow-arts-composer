@@ -11,12 +11,7 @@ import {
 import { TKA_CONCEPTS } from "../../../src/lib/features/learn/domain/concepts";
 import { GUIDE_BODY_PAGES } from "../../../src/routes/(public)/guide/level-1/_data/guide-manifest";
 
-const expectedPublishedIds = [
-  "grid",
-  "hand-placements",
-  "hand-motions-intro",
-  "timing-and-direction",
-];
+const expectedPublishedIds = ["grid", "hand-placements", "hand-motions-intro"];
 
 const learnDomainDir = resolve(process.cwd(), "src/lib/features/learn/domain");
 const registrySource = readFileSync(
@@ -72,7 +67,7 @@ describe("concept experience registry", () => {
   );
 
   it("lists only lessons that have a real published experience", () => {
-    expect(expectedPublishedIds).toHaveLength(4);
+    expect(expectedPublishedIds).toHaveLength(3);
     expect(getAvailableConcepts().map((concept) => concept.id)).toEqual(
       expectedPublishedIds
     );
@@ -86,6 +81,7 @@ describe("concept experience registry", () => {
   it.each<[string, string | null]>([
     ["staff-placements", "staff-placements"],
     ["words-alpha-beta", "words"],
+    ["timing-and-direction", null],
     ["reading-choreo-cards", null],
     ["rotation-direction", "staff-motions"],
     ["dual-shifts-alpha-beta", "hm-type1"],
@@ -135,20 +131,10 @@ describe("concept experience registry", () => {
     expect(isConceptExperienceAvailable("hand-motions")).toBe(false);
   });
 
-  it("shares the written reference without displacing the full hand-motions lesson", () => {
-    expect(getConceptExperience("timing-and-direction")?.guideSlug).toBe(
-      "hand-motions"
-    );
+  it("keeps the Hand Motions Guide topic on its lesson while Timing is withdrawn", () => {
     expect(getConceptExperienceForGuideSlug("hand-motions")?.conceptId).toBe(
       "hand-motions-intro"
     );
-  });
-
-  it("opens the dedicated timing reference while retaining the Guide association", () => {
-    expect(getConceptExperience("timing-and-direction")?.reference).toEqual({
-      href: "/timing-and-direction",
-      label: "Timing and Direction",
-    });
     expect(
       getConceptExperience("hand-motions-intro")?.reference
     ).toBeUndefined();
