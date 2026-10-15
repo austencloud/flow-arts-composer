@@ -203,6 +203,21 @@
     display: flex;
     flex-direction: column;
     gap: clamp(40px, 6vw, 72px);
+    /* SequenceShowcase colours its example cycler with the Level 1 ink
+       tokens; map them to this page's theme, as /guide/ratios does. */
+    --ink: var(--theme-text);
+    --ink-dim: var(--theme-text-muted);
+  }
+  /* The cycler's label line and button use the page's type, not the Level 1
+     book serif. */
+  .zans-guide :global(.example-prose > p),
+  .zans-guide :global(.cycle-btn),
+  .zans-guide :global(.cycle-count) {
+    font-family: inherit;
+  }
+  .zans-guide :global(.example-prose > p) {
+    font-size: 1rem;
+    font-weight: 600;
   }
   /* guide.css centres every h1 on the hub's grid; this page reads left. */
   .zans-guide h1 {
