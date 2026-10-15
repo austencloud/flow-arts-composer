@@ -31,6 +31,11 @@ export enum PropType {
   // and stick-right.svg, stick.glb and stick-right.glb): a matched pair, never
   // the same stick twice.
   STICK = "stick",
+  // A capped felt-tip pen spun as a double staff. Staff family -- same reach,
+  // same two tracked ends -- with the cap as the thumb end. The cap, clip and
+  // printed band take the hand color; the black barrel stays black, which is
+  // how a red pen and a blue pen actually read.
+  PEN = "pen",
 
   CLUB = "club",
   // The original flat 2D scan. It shares Club's physical geometry but remains

@@ -9,7 +9,7 @@ patchedDependencies:
     hash: c3af8573dd6280639488ac6ca0725551a64d91575fbdfb9d86ff2bc3a2af7e06
     path: patches/@austencloud__backgrounds@0.7.12.patch
   '@austencloud/scene-3d@0.1.6':
-    hash: 14147126624f650bd6da459af4e09f685a89062579745c726217b10fd1a02991
+    hash: 9121a2b3d3001c6689737710b024cc8da5eecd3ec2d94f8e53ffbf3570c14afe
     path: patches/@austencloud__scene-3d@0.1.6.patch
   rollup@4.57.1:
     hash: 6b60c20b3aab385a92f1669e15227e7bc9ad56e476a3847cadafd55aacf41847
@@ -69,7 +69,7 @@ importers:
         version: file:vendor/austencloud-phone-sign-in-0.1.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/scene-3d':
         specifier: ^0.1.6
-        version: 0.1.6(patch_hash=14147126624f650bd6da459af4e09f685a89062579745c726217b10fd1a02991)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)
+        version: 0.1.6(patch_hash=9121a2b3d3001c6689737710b024cc8da5eecd3ec2d94f8e53ffbf3570c14afe)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)
       '@austencloud/sidebar':
         specifier: file:vendor/austencloud-sidebar-1.1.0.tgz
         version: file:vendor/austencloud-sidebar-1.1.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
@@ -9689,7 +9689,7 @@ snapshots:
     optionalDependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 
-  '@austencloud/scene-3d@0.1.6(patch_hash=14147126624f650bd6da459af4e09f685a89062579745c726217b10fd1a02991)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)':
+  '@austencloud/scene-3d@0.1.6(patch_hash=9121a2b3d3001c6689737710b024cc8da5eecd3ec2d94f8e53ffbf3570c14afe)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)':
     dependencies:
       '@threlte/core': 8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)
       '@threlte/extras': 9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)

@@ -55,6 +55,10 @@ export const PROP_TYPE_DISPLAY_REGISTRY: Record<PropType, PropTypeDisplayInfo> =
       label: "Stick",
       image: "/images/props/buttons/stick.svg",
     },
+    [PropType.PEN]: {
+      label: "Pen",
+      image: "/images/props/buttons/pen.svg",
+    },
 
     [PropType.CLUB]: {
       label: "Club",
@@ -305,6 +309,7 @@ export const VARIANT_PROP_TYPES: PropType[] = [
   PropType.FIRE_DOUBLE_STAFF,
   PropType.ENERGY_STAFF,
   PropType.STICK,
+  PropType.PEN,
   // Club family
   PropType.CLASSIC_CLUB,
   PropType.TORCH,
@@ -349,6 +354,7 @@ const VARIANT_TO_BASE: Partial<Record<PropType, PropType>> = {
   [PropType.FIRE_DOUBLE_STAFF]: PropType.STAFF,
   [PropType.ENERGY_STAFF]: PropType.STAFF,
   [PropType.STICK]: PropType.STAFF,
+  [PropType.PEN]: PropType.STAFF,
   // Club variations
   [PropType.CLASSIC_CLUB]: PropType.CLUB,
   [PropType.TORCH]: PropType.CLUB,
@@ -395,6 +401,7 @@ const BASE_TO_VARIANTS: Partial<Record<PropType, PropType[]>> = {
     PropType.FIRE_DOUBLE_STAFF,
     PropType.ENERGY_STAFF,
     PropType.STICK,
+    PropType.PEN,
     PropType.SIMPLESTAFF,
     PropType.BIGSTAFF,
     PropType.STAFF2,
@@ -649,6 +656,7 @@ export const PROP_PICKER_SECTIONS: { label: string; props: PropType[] }[] = [
       PropType.FIRE_DOUBLE_STAFF,
       PropType.ENERGY_STAFF,
       PropType.STICK,
+      PropType.PEN,
       PropType.SIMPLESTAFF,
       PropType.STAFF2,
       PropType.CLUB,

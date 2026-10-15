@@ -47,6 +47,6 @@
   onpress={onSelect ? () => onSelect?.(propType) : undefined}
 >
   {#snippet art()}
-    <PropCompositionPreview {propType} neutral />
+    <PropCompositionPreview {propType} neutral useSavedOverrides={false} />
   {/snippet}
 </PropSelectionButton>

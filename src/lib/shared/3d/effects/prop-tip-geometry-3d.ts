@@ -149,6 +149,15 @@ const CAPSULE_BATON_REACH_M = 0.4099367;
 const FIRE_DOUBLE_STAFF_REACH_M = 0.413;
 
 /**
+ * Hand to either end of the pen, in metres. `pen.glb` authors a real 142mm
+ * pen held through its middle, and its ends are its tracked tips --
+ * `tracked_tip_y` in the model's root extras, printed by
+ * `scripts/build-pen-model.py`. The staff default would put the trail 40cm
+ * out in the air past a pen that ends 7cm from the hand.
+ */
+const PEN_REACH_M = 0.071;
+
+/**
  * Two-ended props whose ends sit somewhere other than half a staff from the
  * hand. Keyed by prop type, valued in metres given the staff length in metres.
  *
@@ -161,6 +170,7 @@ const TWO_ENDED_REACH_3D: Partial<
 > = {
   [PropType.CAPSULE_BATON]: () => CAPSULE_BATON_REACH_M,
   [PropType.FIRE_DOUBLE_STAFF]: () => FIRE_DOUBLE_STAFF_REACH_M,
+  [PropType.PEN]: () => PEN_REACH_M,
 };
 
 /**
