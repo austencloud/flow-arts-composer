@@ -99,7 +99,7 @@
 
 <style>
   .slots {
-    --slot-art: clamp(4.5rem, 11svh, 7rem);
+    --slot-art: 3.25rem;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.5rem;
@@ -135,16 +135,31 @@
     display: grid;
     place-items: center;
     justify-self: center;
-    width: 100%;
-    max-width: 6rem;
+    width: var(--slot-art);
     aspect-ratio: 1;
     border-radius: 0.5rem;
     background: color-mix(in srgb, currentColor 5%, transparent);
   }
 
+  /* Stacked under a phone's board, a slot is a small picture over its name;
+     its line stays for screen readers so the board keeps its height. */
+  .caption {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .name {
+    text-align: center;
+  }
+
   /* Beside the board, each slot is a row: picture, then name and line. */
   @container (min-width: 44.01rem) {
     .slots {
+      --slot-art: clamp(4.5rem, 11svh, 7rem);
       grid-template-columns: minmax(0, 1fr);
       gap: 0.6rem;
     }
@@ -159,16 +174,26 @@
       padding: 0.6rem 2.5rem 0.6rem 0.6rem;
     }
 
-    .art {
-      max-width: none;
-    }
-
     .name {
       align-self: end;
+      text-align: start;
     }
 
     .caption {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+      white-space: normal;
       align-self: start;
+    }
+
+    li .check {
+      top: 0.6rem;
+      right: 0.6rem;
+      width: 1.6rem;
+      font-size: 0.8rem;
     }
 
     li:not(:has(.caption)) .name {
@@ -278,16 +303,16 @@
   /* The check's slot is always reserved, so a find moves nothing. */
   .check {
     position: absolute;
-    top: 0.6rem;
-    right: 0.6rem;
+    top: 0.3rem;
+    right: 0.3rem;
     display: grid;
     place-items: center;
-    width: 1.6rem;
+    width: 1.25rem;
     aspect-ratio: 1;
     border-radius: 50%;
     background: var(--theme-panel-bg);
     color: var(--theme-text);
-    font-size: 0.8rem;
+    font-size: 0.65rem;
     opacity: 0;
     transition: opacity var(--transition-normal);
   }
