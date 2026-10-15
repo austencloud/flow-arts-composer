@@ -4,7 +4,10 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { getConceptProgressTracker } from "#lib/features/learn/get-concept-progress-tracker.js";
   import { getConceptsByCategory } from "../domain/concepts";
-  import { getConceptPlace } from "../domain/concept-place-registry";
+  import {
+    getConceptPlace,
+    getConceptPlacesByLevel,
+  } from "../domain/concept-place-registry";
   import {
     readConceptPlaceId,
     writeConceptPlaceId,
@@ -39,7 +42,9 @@
   let showCourseMap = $state(false);
   let mapElement = $state<HTMLDivElement | undefined>(undefined);
   let pendingMapScroll = false;
-  let selectedPlaceId = $state("1.1");
+  // Null until the learner picks a place; the map then opens on their next one.
+  let selectedPlaceId = $state<string | null>(null);
+  const levelOnePlaces = getConceptPlacesByLevel(1);
   const availableConcepts = getAvailableConcepts();
   const availableConceptIds = new Set(
     availableConcepts.map((concept) => concept.id)
@@ -207,6 +212,27 @@
     availableConcepts.length > 0 &&
       completedAvailableCount === availableConcepts.length
   );
+
+  // The Atlas centres the place holding the hero's lesson. Once every lesson
+  // is done, the next step is the place after the last one.
+  const nextPlaceId = $derived.by(() => {
+    const lessonId = currentConcept().id;
+    const index = levelOnePlaces.findIndex((place) =>
+      place.lessonIds.some((reference) => reference.lessonId === lessonId)
+    );
+    if (index < 0) return levelOnePlaces[0]!.id;
+    const place = isJourneyComplete
+      ? (levelOnePlaces[index + 1] ?? levelOnePlaces[index]!)
+      : levelOnePlaces[index]!;
+    return place.id;
+  });
+
+  // A new function per progress change, so the map re-reads lesson status.
+  const lessonStatus = $derived.by(() => {
+    void progress;
+    return (lessonId: string) =>
+      conceptProgressService.getConceptStatus(lessonId);
+  });
 </script>
 
 <div class="concept-path">
@@ -286,7 +312,9 @@
         onintroend={scrollToLinkedMap}
       >
         <ConceptLevelMap
-          selectedId={selectedPlaceId}
+          selectedId={selectedPlaceId ?? nextPlaceId}
+          {nextPlaceId}
+          {lessonStatus}
           onSelect={handlePlaceSelect}
           onLessonStart={handleConceptStart}
         />
