@@ -10,11 +10,11 @@
  * pieces the way intersecting 3D meshes merge: a rope and its bulb read as one
  * body with no seams.
  *
- * Shading follows the 3D goo's wet material: a dark studio with two tall
- * softboxes and a small hard key, reflected with Fresnel, a deep body color,
- * the thin edge lit in its own color, and Mercury as a mirror. Liquid on the
- * glass is drawn flattened, like a lens seen face on, and wet streaks as a
- * thin film.
+ * Shading follows the 3D goo's wet material: a dark studio with a tall warm
+ * softbox behind, a soft window high in front, a small hard key and a lit
+ * floor, reflected with Fresnel, a deep body color, the thin edge lit in its
+ * own color, and Mercury as a mirror. A piece's `flat` squashes its bulge and
+ * `tint` shades it toward the deep puddle color.
  */
 
 /** Floats per piece: (ax, ay, bx, by) (ra, rb, flat, alpha) (depth, tint, -, -). */

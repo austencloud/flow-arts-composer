@@ -1,8 +1,7 @@
 <!--
   Goo 2D lab: the production Goo2DRenderer driven by four staffs (two
-  spinning, one swinging, one held still) over a dark stage, so the ropes,
-  drops and the splats on the glass can be judged frame by frame without a
-  sequence.
+  spinning, one swinging, one held still) over a dark stage, so the ropes
+  and drops can be judged frame by frame without a sequence.
 -->
 <script lang="ts">
   import { onMount } from "svelte";
@@ -18,7 +17,7 @@
   let host: HTMLDivElement;
   let presetId = $state(GOO_PRESETS[0]!.id);
   let speed = $state<Speed>(1);
-  let stats = $state({ strands: 0, drops: 0, splats: 0, streaks: 0 });
+  let stats = $state({ strands: 0, drops: 0 });
 
   const STEP = 1 / 60;
   /** Pane size the effect scale is measured against. */
@@ -153,8 +152,6 @@
       return {
         strands: goo.sim.strands.length,
         drops: goo.sim.drops.length,
-        splats: goo.glass.splats.length,
-        streaks: goo.glass.streaks.length,
       };
     }
 
@@ -228,7 +225,7 @@
       <button onclick={() => clearLab()}>Clear</button>
     </div>
     <span class="stats">
-      {stats.strands} ropes, {stats.drops} drops, {stats.splats} splats, {stats.streaks} streaks
+      {stats.strands} ropes, {stats.drops} drops
     </span>
   </div>
 </div>

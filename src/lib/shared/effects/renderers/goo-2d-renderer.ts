@@ -4,14 +4,6 @@ import type { EmitterTip } from "./emitter-tip";
 import { emitterId } from "./emitter-tip";
 import { resolveGooLook2D, type GooLook2D } from "./goo-look-2d";
 import {
-  GooGlassSim,
-  splatRadius,
-  streakWidth,
-  type GooGlassParams,
-  type GooSplat,
-  type GooStreak,
-} from "./goo-glass-sim";
-import {
   GOO_PIECE_FLOATS,
   GooLiquidGL,
   GooPieces,
@@ -21,7 +13,6 @@ import {
 import {
   GOO_NODES,
   GooStrandSim,
-  approach,
   nodeRadius,
   segmentRadius,
   sphereRadius,
@@ -36,9 +27,7 @@ import {
  *
  * Each tracked tip grows a rope of liquid with the 3D goo's physics (see
  * `GooStrandSim`): it hangs, stretches, swings and curls as the prop moves,
- * beads and necks, and lets go of drops that ring as they fall. Drops thrown
- * at the viewer splat on the glass in front of the scene and run down it (see
- * `GooGlassSim`).
+ * beads and necks, and lets go of drops that ring as they fall away.
  *
  * Drawing is the 3D goo's wet material on a WebGL2 canvas (see
  * `GooLiquidGL`): every rope, drop and bead is a lit, rounded body of liquid
@@ -55,20 +44,16 @@ const SUB = 3;
 const RINGS = (GOO_NODES - 1) * SUB + 1;
 /** Thinnest a thread is drawn, device px; finer ones would flicker. */
 const HAIRLINE = 0.6;
-/** Depth bands: lower is nearer. */
+/** Depth every piece is drawn at; the union of pieces sorts within it. */
 const DEPTH_AIR = 0.75;
-const DEPTH_STREAK = 0.45;
-const DEPTH_SPLAT = 0.3;
 
 type Ctx2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 type Matrix = { a: number; b: number; c: number; d: number; e: number; f: number };
 
 export class Goo2DRenderer {
   readonly sim = new GooStrandSim();
-  readonly glass = new GooGlassSim();
   private painter: GooLiquidGL | null | undefined;
   private air = new GooPieces();
-  private onGlass = new GooPieces();
   private tips: GooTipInput[] = [];
   private layers: Array<{ canvas: HTMLCanvasElement | OffscreenCanvas; ctx: Ctx2D }> = [];
   private ringX = new Float32Array(RINGS);
@@ -118,20 +103,11 @@ export class Goo2DRenderer {
       pxPerMeter: k,
       look,
     };
-    const glassParams: GooGlassParams = {
-      scale,
-      gravity: liquid.gravity * look.gravity,
-      viscosity: clamp01(liquid.viscosity + 0.5 * liquid.surfaceTension),
-      look,
-    };
     this.sim.step(this.tips, dt, material, bounds);
-    this.glass.land(this.sim.impacts, glassParams);
-    this.glass.step(Math.min(Math.max(dt, 0), 1 / 15), glassParams, bounds);
 
     const rs = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) || 1;
     this.buildAir(material, m, k, rs);
-    this.buildGlass(scale, look.metal, m, rs);
-    if (!this.air.count && !this.onGlass.count) return;
+    if (!this.air.count) return;
 
     const shade = this.resolveShade(params, look);
     if (this.painter === undefined || this.painter?.lost) {
@@ -142,16 +118,14 @@ export class Goo2DRenderer {
     ctx.globalCompositeOperation = params.blendMode ?? "source-over";
     ctx.globalAlpha = 1;
     const glow = look.glow > 0 ? this.glowLayers(W, H) : null;
-    for (const pieces of [this.air, this.onGlass]) {
-      if (!pieces.count) continue;
-      let image: HTMLCanvasElement | OffscreenCanvas | null = null;
-      if (this.painter) {
-        this.painter.draw(W, H, pieces, shade);
-        image = this.painter.canvas;
-      } else {
-        image = this.fillFlat(W, H, pieces, params.resolvedPalette.core, shade.alpha);
-      }
-      if (!image) continue;
+    let image: HTMLCanvasElement | OffscreenCanvas | null = null;
+    if (this.painter) {
+      this.painter.draw(W, H, this.air, shade);
+      image = this.painter.canvas;
+    } else {
+      image = this.fillFlat(W, H, this.air, params.resolvedPalette.core, shade.alpha);
+    }
+    if (image) {
       ctx.drawImage(image as CanvasImageSource, 0, 0);
       if (glow) {
         for (const level of glow) {
@@ -163,9 +137,9 @@ export class Goo2DRenderer {
             level.canvas.height
           );
         }
+        this.addGlow(ctx, look, W, H, glow);
       }
     }
-    if (glow) this.addGlow(ctx, look, W, H, glow);
     ctx.restore();
   }
 
@@ -260,7 +234,7 @@ export class Goo2DRenderer {
     k: number,
     rs: number
   ): void {
-    const size = drop.r * approach(drop);
+    const size = drop.r;
     const tension = clamp01(material.tension);
     const omega =
       2 * Math.PI * (7 + 9 * tension) * Math.sqrt(0.02 / Math.max(drop.r, 0.003));
@@ -297,112 +271,6 @@ export class Goo2DRenderer {
       DEPTH_AIR,
       0
     );
-  }
-
-  /** Streaks under the splats, then the splats, in device pixels. */
-  private buildGlass(scale: number, metal: number, m: Matrix, rs: number): void {
-    this.onGlass.clear();
-    const now = this.glass.now;
-    for (const streak of this.glass.streaks) this.streakPieces(streak, now, scale, m, rs);
-    for (const splat of this.glass.splats) this.splatPieces(splat, scale, metal, m, rs);
-  }
-
-  /** A wet streak is a thin film, drying from its oldest end. */
-  private streakPieces(
-    streak: GooStreak,
-    now: number,
-    scale: number,
-    m: Matrix,
-    rs: number
-  ): void {
-    let has = false;
-    let ax = 0;
-    let ay = 0;
-    let ar = 0;
-    for (let i = 0; i < streak.n; i++) {
-      const w = streakWidth(streak, i, now);
-      if (w < 0.35 * scale) {
-        has = false;
-        continue;
-      }
-      const x = streak.x[i]!;
-      const y = streak.y[i]!;
-      const bx = m.a * x + m.c * y + m.e;
-      const by = m.b * x + m.d * y + m.f;
-      const br = w * rs;
-      if (has) this.onGlass.push(ax, ay, ar, bx, by, br, 0.15, 0.55, DEPTH_STREAK, 0.6);
-      ax = bx;
-      ay = by;
-      ar = br;
-      has = true;
-    }
-  }
-
-  /**
-   * A bead on the glass is a flattened lens. A running one trails a tail; a
-   * fresh one is still ragged with arms of liquid that pull back in.
-   */
-  private splatPieces(
-    splat: GooSplat,
-    scale: number,
-    metal: number,
-    m: Matrix,
-    rs: number
-  ): void {
-    const r = splatRadius(splat);
-    const x = splat.x;
-    const y = splat.y;
-    const cx = m.a * x + m.c * y + m.e;
-    const cy = m.b * x + m.d * y + m.f;
-    const flat = 0.35;
-    if (splat.vy > 2 * scale) {
-      const speed = Math.hypot(splat.vx, splat.vy);
-      const ux = splat.vx / speed;
-      const uy = splat.vy / speed;
-      const tail = r * Math.min(1.3, splat.vy / (70 * scale)) * (1 - 0.85 * metal);
-      const tx = x - ux * (r * 0.4 + tail);
-      const ty = y - uy * (r * 0.4 + tail);
-      this.onGlass.push(
-        cx,
-        cy,
-        r * rs,
-        m.a * tx + m.c * ty + m.e,
-        m.b * tx + m.d * ty + m.f,
-        r * 0.4 * rs,
-        flat,
-        1,
-        DEPTH_SPLAT,
-        0
-      );
-      return;
-    }
-    const splash = splat.splash;
-    const core = r * (1 - 0.3 * splash);
-    this.onGlass.push(cx, cy, core * rs, cx, cy, core * rs, flat, 1, DEPTH_SPLAT, 0);
-    if (splash <= 0.02) return;
-    const s = splat.seed;
-    for (let i = 0; i < 5; i++) {
-      const h = fract(Math.sin(s * 13.1 + i * 7.7) * 43758.5453);
-      const a = s * 2.4 + i * 1.2566 + 0.5 * Math.sin(s * 7 + i * 3.1);
-      // Smeared along the way it was flying.
-      const smear = 1 + 0.45 * splash * Math.cos(2 * (a - splat.heading));
-      const reach = r * (0.3 + 0.75 * splash) * (0.7 + 0.5 * h) * smear;
-      const lobe = r * (0.18 + 0.22 * h) * splash;
-      const lx = x + Math.cos(a) * reach;
-      const ly = y + Math.sin(a) * reach;
-      this.onGlass.push(
-        cx,
-        cy,
-        core * 0.7 * rs,
-        m.a * lx + m.c * ly + m.e,
-        m.b * lx + m.d * ly + m.f,
-        lobe * rs,
-        flat,
-        1,
-        DEPTH_SPLAT,
-        0
-      );
-    }
   }
 
   private resolveShade(params: GooParams, look: GooLook2D): GooLiquidShade {
@@ -505,9 +373,7 @@ export class Goo2DRenderer {
 
   dispose(): void {
     this.sim.clear();
-    this.glass.clear();
     this.air.clear();
-    this.onGlass.clear();
     this.tips = [];
     this.layers = [];
   }
@@ -551,10 +417,6 @@ function smoothMax(a: number, b: number, width: number): number {
   if (width <= 0) return Math.max(a, b);
   const overlap = Math.max(0, width - Math.abs(a - b)) / width;
   return Math.max(a, b) + overlap * overlap * width * 0.25;
-}
-
-function fract(value: number): number {
-  return value - Math.floor(value);
 }
 
 function isEndEnabled(end: "A" | "B", params: GooParams): boolean {
