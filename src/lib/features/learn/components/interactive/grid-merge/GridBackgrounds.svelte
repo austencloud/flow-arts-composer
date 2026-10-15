@@ -5,9 +5,12 @@
   - box-bg: Right/bottom background for split phases
 -->
 <script lang="ts">
-  import { GRID, type Phase } from "./grid-merge-constants";
+  import { GRID, type BoardLook, type Phase } from "./grid-merge-constants";
 
-  let { phase } = $props<{ phase: Phase }>();
+  let { phase, look = "lesson" } = $props<{
+    phase: Phase;
+    look?: BoardLook;
+  }>();
 
   const isSplit = $derived(
     phase === "split" ||
@@ -20,7 +23,11 @@
 <g
   class="backgrounds"
   class:split={isSplit}
-  class:merged={phase === "merged" || phase === "intro"}
+  class:merged={phase === "merged" ||
+    phase === "intro" ||
+    phase === "diamond" ||
+    phase === "box"}
+  class:pictograph={look === "pictograph"}
 >
   <!-- Single background for intro/merged -->
   <rect
@@ -61,7 +68,15 @@
     transition:
       transform var(--merge-duration)
         var(--merge-easing-soft, var(--merge-easing)),
-      opacity calc(var(--merge-duration) * 0.6) var(--ease-standard-out);
+      opacity calc(var(--merge-duration) * 0.6) var(--ease-standard-out),
+      fill var(--merge-duration) var(--ease-standard-out),
+      stroke-opacity var(--merge-duration) var(--ease-standard-out);
+  }
+
+  /* A pictograph card: the same backdrop the pictograph renderer paints. */
+  .pictograph .bg {
+    fill: var(--dm-pictograph-bg);
+    stroke-opacity: 0;
   }
 
   /* Merged state - single centered background */

@@ -98,6 +98,12 @@
     transparentBackground?: boolean;
     /** False hides the hands and shows the grid alone, as a self-building figure starts. */
     showProps?: boolean;
+    /** False leaves the grid to an `underlay` that draws the same 950-unit grid. */
+    showGrid?: boolean;
+    /** Art drawn under the pictograph in the grid's own square, such as a live grid. */
+    underlay?: Snippet;
+    /** Names the pose for assistive tech when the default description misleads. */
+    pictographLabel?: string;
     /** Fires once the pictograph has drawn (PictographContainer onReady). */
     onReady?: () => void;
     /** Figure art drawn over the pictograph and under the touch targets, in the grid's own square. */
@@ -146,6 +152,9 @@
     onPick,
     transparentBackground = false,
     showProps = true,
+    showGrid,
+    underlay,
+    pictographLabel,
     onReady,
     figureLayer,
     onDragTarget,
@@ -416,7 +425,13 @@
       style:--placement-drag-y={`${aim.locationDragDelta.y / pointScale}px`}
       bind:this={aim.gridWrapper}
     >
-      <div class="pictograph-layer">
+      {#if underlay}
+        <div class="underlay-layer" aria-hidden="true">
+          {@render underlay()}
+        </div>
+      {/if}
+
+      <div class="pictograph-layer" class:over-underlay={Boolean(underlay)}>
         <PictographContainer
           pictographData={withJoin(
             motion.step ??
@@ -446,6 +461,8 @@
           arrowOpacity={motion.active ? 0 : 1}
           {transparentBackground}
           {showProps}
+          {showGrid}
+          ariaLabel={pictographLabel}
           {onReady}
         />
       </div>
@@ -573,6 +590,16 @@
   .pictograph-layer {
     width: 100%;
     height: 100%;
+  }
+
+  .underlay-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .pictograph-layer.over-underlay {
+    position: relative;
   }
 
   /* Figure art shares the pictograph's square and never takes a pointer. */
