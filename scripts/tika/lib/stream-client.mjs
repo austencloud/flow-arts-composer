@@ -87,7 +87,7 @@ export async function callTikaStreaming(question, userLevel, completedConcepts =
 
 	if (!response.ok) {
 		const errorText = await response.text();
-		// The route wraps sign-in failures in a 500, so match the message too.
+		// The route answers 401 now; servers older than 2026-10-15 send 500, so match the message too.
 		if (response.status === 401 || /Bearer token|ID token expired|Invalid or expired token/.test(errorText)) {
 			throw new TikaAuthError(`Sign-in rejected (${response.status}): ${errorText}`);
 		}
