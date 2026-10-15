@@ -15,13 +15,15 @@ const GERMAN = [
   "Das Gitter hat vier Punkte um einen Mittelpunkt herum.",
 ];
 
+// Guide pages nest one <main> inside another.
 const page = (lang: string, path: string, lines: string[]) => {
   const alternates = ["en", ...LOCALES, "x-default"]
     .map((tag) => `<link rel="alternate" hreflang="${tag}" href="x">`)
     .join("");
   return `<!doctype html><html lang="${lang}"><head>
 <link rel="canonical" href="https://tkaflowarts.com${path}">${alternates}</head>
-<body><main>${lines.map((l) => `<p>${l}</p>`).join("")}</main></body></html>`;
+<body><main class="page"><!-- A comment in English is not page text. -->
+<main class="guide">${lines.map((l) => `<p>${l}</p>`).join("")}</main></main></body></html>`;
 };
 
 let root = "";

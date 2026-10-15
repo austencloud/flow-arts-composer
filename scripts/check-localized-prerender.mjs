@@ -24,15 +24,25 @@ const walk = (dir) =>
           : []
     );
 
-// Visible sentences of four or more words inside <main>. The site header and
-// footer sit outside it and are not translated yet.
+// Visible sentences of four or more words from the first <main> on (guide
+// pages nest a second one). The site header sits above it.
+const fromMain = (html) => {
+  const start = html.search(/<main[\s>]/);
+  return start === -1 ? html : html.slice(html.indexOf(">", start) + 1);
+};
 const sentences = (html) =>
-  (html.split(/<main[\s>]/)[1] ?? html)
+  fromMain(html)
+    .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, " ")
     .replace(/<[^>]+>/g, "\n")
     .split(/\n|(?<=[.!?])\s+/)
     .map((s) => s.trim())
-    .filter((s) => s.split(/\s+/).length >= 4);
+    .filter((s) => s.split(/\s+/).length >= 4)
+    // Prose has lowercase words; notation (β→γ: Sig Dash), formulas, names
+    // and the copyright line do not, and stay the same in every language.
+    .filter(
+      (s) => (s.match(/(?:^|\s)[a-z]{2,}(?=[\s,.;:!?]|$)/g) ?? []).length >= 3
+    );
 
 // Anchors into the English guide that are not the language row's own links.
 const englishLinks = (html) =>
