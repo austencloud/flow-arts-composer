@@ -41,7 +41,7 @@ AFlowFestCharacter::AFlowFestCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
     GetCapsuleComponent()->InitCapsuleSize(42.f, 92.f);
-    GetCharacterMovement()->MaxWalkSpeed = 380.f;
+    GetCharacterMovement()->MaxWalkSpeed = 185.f;
     GetCharacterMovement()->JumpZVelocity = 500.f;
     GetCharacterMovement()->AirControl = .35f;
     bUseControllerRotationYaw = false;
@@ -261,7 +261,7 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     }
     if (bPhotoFly) AddMovementInput(FVector::UpVector, (bRise ? 1.f : 0.f) - (bDescend ? 1.f : 0.f));
 
-    const float Speed = bPhotoFly ? 1600.f : bInVehicle ? (bSprint ? 2100.f : 1400.f) : bOnEUC ? 1050.f : bSprint ? 640.f : 380.f;
+    const float Speed = bPhotoFly ? 1600.f : bInVehicle ? (bSprint ? 2100.f : 1400.f) : bOnEUC ? 1050.f : bSprint ? 440.f : 185.f;
     GetCharacterMovement()->MaxWalkSpeed = Speed;
     GetCharacterMovement()->MaxFlySpeed = Speed;
     if (Phase == EFlowFestPhase::DriveIn && bInVehicle && !bPhotoFly && !FMath::IsNearlyZero(ForwardInput))
