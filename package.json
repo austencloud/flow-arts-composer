@@ -326,7 +326,7 @@
     "@austencloud/motion": "file:vendor/austencloud-motion-0.2.1.tgz",
     "@austencloud/phone-sign-in": "file:vendor/austencloud-phone-sign-in-0.1.0.tgz",
     "@austencloud/scene-3d": "^0.1.6",
-    "@austencloud/sidebar": "file:vendor/austencloud-sidebar-1.1.0.tgz",
+    "@austencloud/sidebar": "file:vendor/austencloud-sidebar-1.2.0.tgz",
     "@austencloud/theme": "^0.1.0",
     "@austencloud/video-editor": "^0.1.2",
     "@capacitor-firebase/authentication": "8.3.0",

@@ -26,6 +26,9 @@ interface BrowseNavigationStateData {
 interface NavigateOptions {
   replace?: boolean;
   syncUrl?: boolean;
+  /** Write the URL even when the location is unchanged. Leaving Browse's home
+   *  screen for the location Browse already holds still needs its address. */
+  forceUrl?: boolean;
 }
 
 const STORAGE_KEY = "tka-browse-nav-state";
@@ -67,6 +70,11 @@ function browserHistoryState(
     moduleId: "browse",
     sectionId: location.primary,
   };
+}
+
+/** `/browse` with nothing after it: the module's home screen. */
+export function isBrowseHomePath(pathname: string): boolean {
+  return pathname.replace(/\/+$/, "") === "/browse";
 }
 
 export function createBrowseNavigationState() {
@@ -137,11 +145,11 @@ export function createBrowseNavigationState() {
 
   function applyLocation(
     location: BrowseLocation,
-    { replace = false, syncUrl = true }: NavigateOptions = {}
+    { replace = false, syncUrl = true, forceUrl = false }: NavigateOptions = {}
   ): void {
     const current = state.history[state.currentIndex];
     if (current && browseLocationsEqual(current, location)) {
-      if (replace && syncUrl) writeLocation(location, true);
+      if ((replace || forceUrl) && syncUrl) writeLocation(location, replace);
       return;
     }
 
@@ -161,6 +169,8 @@ export function createBrowseNavigationState() {
 
   function syncFromBrowser(): void {
     if (typeof window === "undefined") return;
+    // Back to the home screen keeps the inner location where it was.
+    if (isBrowseHomePath(window.location.pathname)) return;
     const route = resolveBrowsePathname(window.location.pathname);
     if (!route || route.externalRedirect) return;
     isNavigating = true;
@@ -176,7 +186,17 @@ export function createBrowseNavigationState() {
     restoreState();
 
     const route = resolveBrowsePathname(window.location.pathname);
-    if (route && !route.externalRedirect) {
+    if (isBrowseHomePath(window.location.pathname)) {
+      // The bare address is Browse's home screen, owned by the global
+      // navigation. Keep the restored location underneath it and leave the
+      // address alone.
+      if (state.currentIndex < 0) {
+        applyLocation(defaultBrowseLocation(), {
+          replace: true,
+          syncUrl: false,
+        });
+      }
+    } else if (route && !route.externalRedirect) {
       applyLocation(route.location, { replace: true, syncUrl: true });
     } else if (state.currentIndex < 0) {
       applyLocation(defaultBrowseLocation(), { replace: true, syncUrl: true });
@@ -210,6 +230,15 @@ export function createBrowseNavigationState() {
 
     navigateTo(location: BrowseLocation, options?: NavigateOptions) {
       applyLocation(location, options);
+    },
+
+    /** The most recent location under one primary, newest first. */
+    lastLocationFor(primary: BrowsePrimary): BrowseLocation | undefined {
+      for (let index = state.currentIndex; index >= 0; index -= 1) {
+        const location = state.history[index];
+        if (location?.primary === primary) return location;
+      }
+      return undefined;
     },
 
     replace(location: BrowseLocation) {

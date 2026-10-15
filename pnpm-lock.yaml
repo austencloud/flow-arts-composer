@@ -71,8 +71,8 @@ importers:
         specifier: ^0.1.6
         version: 0.1.6(patch_hash=2a56f00239d9837aea228e5f8014e245a943a4513fda28b3bd654d547c16449d)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)
       '@austencloud/sidebar':
-        specifier: file:vendor/austencloud-sidebar-1.1.0.tgz
-        version: file:vendor/austencloud-sidebar-1.1.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
+        specifier: file:vendor/austencloud-sidebar-1.2.0.tgz
+        version: file:vendor/austencloud-sidebar-1.2.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/theme':
         specifier: ^0.1.0
         version: 0.1.0(svelte@5.57.2(@typescript-eslint/types@8.59.4))
@@ -895,9 +895,9 @@ packages:
       svelte: '>=5.0.0'
       three: '>=0.170.0'
 
-  '@austencloud/sidebar@file:vendor/austencloud-sidebar-1.1.0.tgz':
-    resolution: {integrity: sha512-3tQF29AWgs3xDiBWgLLo7CIcSqakXUr3uKSM/UfU51M/yNBJMAmiy5dCusfc1TSJBFdS7l0DqXCwQXUjx5NNRw==, tarball: file:vendor/austencloud-sidebar-1.1.0.tgz}
-    version: 1.1.0
+  '@austencloud/sidebar@file:vendor/austencloud-sidebar-1.2.0.tgz':
+    resolution: {integrity: sha512-KJ0Rot6VgtWzrs7OZCLzH67aGvpJ4S7z5IvF5WrFElFC+yaZ1EAyQTuwWB+A87dVT/Mct1LR0xFZeD9IQ5HV+w==, tarball: file:vendor/austencloud-sidebar-1.2.0.tgz}
+    version: 1.2.0
     peerDependencies:
       svelte: ^5.0.0
 
@@ -9681,7 +9681,7 @@ snapshots:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
       three: 0.182.0
 
-  '@austencloud/sidebar@file:vendor/austencloud-sidebar-1.1.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
+  '@austencloud/sidebar@file:vendor/austencloud-sidebar-1.2.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
     dependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 
