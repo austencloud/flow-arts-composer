@@ -136,6 +136,9 @@ const PROP_TYPE_ENCODE: Record<PropType, string> = {
   [PropType.TRIANGLE]: "8",
   // Stick is a standard-size staff variant too: the next free digit.
   [PropType.STICK]: "9",
+  // Pen is the next standard-size staff variant, but the digits have run out.
+  // N is free and is the last letter of "pen".
+  [PropType.PEN]: "N",
   [PropType.BUUGENG]: "B",
   [PropType.BIGBUUGENG]: "b",
   [PropType.TRIGENG]: "J",
