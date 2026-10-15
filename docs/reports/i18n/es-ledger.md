@@ -70,3 +70,14 @@
 - Copy review: used the ai-bust mechanical pre-pass on the output (HIGH/CRITICAL findings: none) and a meaning/terminology judgment pass. The English source defines repeated account prompts and navigation descriptions; no additional product claims were introduced.
 - Uncertainty: no unresolved glossary questions. Native acceptance of new navigation wording has not been established.
 - Delivery: committed on the assigned codex/i18n-es branch for the coordinator. No primary-checkout access, integration, push, server, installation, broad checks or prohibited git commands were used.
+
+## F1 — 2026-10-14
+
+- Scope: 0 translated entries, 3 retranslated entries, 0 review entries. Formal-address correction only; all other wording preserved.
+- Applied only with the supplied apply-batch.js command. Result: `messages/es.json: inserted 0, replaced 3, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Gate result: `Test Files  1 passed (1)` and `Tests  66 passed (66)`; duration 6.47s, exit 0.
+- Catalog diff before this ledger: only messages/es.json, exactly 3 insertions and 3 deletions. `git diff --check` passed.
+- Glossary choices: section 11 informal tú address; Espere → Espera, Seleccione → Selecciona, Inicie → Inicia. These are sentence prompts, not action buttons. No placeholders or markup changed.
+- Uncertainty: none.
+- Delivery: committed on the assigned codex/i18n-es branch for the coordinator. No integration or push performed.
